@@ -56,4 +56,59 @@ class ManagedProcessTest {
 			process.stop(Duration.ofMillis(100));
 		}
 	}
+	@Test
+	void consoleCursorExcludesOldLinesAndWaitsForNewOutput() {
+		ManagedServer process = echoProcess("cursor");
+		try {
+			assertEquals("READY", process.awaitLog("READY", 0, Duration.ofSeconds(1)));
+			long cursor = process.logCursor();
+			assertThrows(AnvilException.class, () -> process.awaitLog("READY", cursor, Duration.ofMillis(50)));
+			process.sendCommand("READY");
+			assertEquals("READY", process.awaitLog("READY", cursor, Duration.ofSeconds(1)));
+			assertTrue(process.logCursor() > cursor);
+			assertThrows(IllegalArgumentException.class,
+					() -> process.awaitLog("x", process.logCursor() + 1, Duration.ofSeconds(1)));
+		} finally {
+			process.stop(Duration.ofSeconds(1));
+		}
+	}
+
+	@Test
+	void consoleWaitReportsClosedOutputAndPreservesInterruption() {
+		ManagedServer process = echoProcess("closed-output");
+		try {
+			Thread.currentThread().interrupt();
+			assertThrows(AnvilException.class,
+					() -> process.awaitLog("missing", process.logCursor(), Duration.ofSeconds(1)));
+			assertTrue(Thread.currentThread().isInterrupted());
+		} finally {
+			Thread.interrupted();
+			process.stop(Duration.ofSeconds(1));
+		}
+		assertTrue(assertThrows(AnvilException.class,
+				() -> process.awaitLog("missing", process.logCursor(), Duration.ofSeconds(10)))
+				.getMessage().contains("no further console output"));
+	}
+
+	@Test
+	void consoleWaitRejectsEvictedHistory() {
+		ManagedServer process = process("overflow");
+		process.start(List.of("sh", "-c", "echo READY; read line; i=0; while [ $i -lt 2500 ]; do echo LINE; i=$((i+1)); done; echo END; read line"),
+				Map.of(), Pattern.compile("READY"), "stop", Duration.ofSeconds(3));
+		try {
+			process.sendCommand("flood");
+			assertTrue(assertThrows(AnvilException.class,
+					() -> process.awaitLog("END", 0, Duration.ofSeconds(3))).getMessage().contains("evicted"));
+		} finally {
+			process.stop(Duration.ofSeconds(1));
+		}
+	}
+
+	private ManagedServer echoProcess(String name) {
+		ManagedServer process = process(name);
+		process.start(List.of("sh", "-c", "echo READY; while read line; do [ \"$line\" = stop ] && exit 0; echo \"$line\"; done"),
+				Map.of(), Pattern.compile("READY"), "stop", Duration.ofSeconds(3));
+		return process;
+	}
+
 }

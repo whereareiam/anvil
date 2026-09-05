@@ -17,7 +17,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -36,9 +35,11 @@ public abstract class ManagedProcess implements RunningProcess {
 	private final InetSocketAddress address;
 	private final Path workDirectory;
 	private final AtomicReference<ProcessState> state = new AtomicReference<>(ProcessState.CREATED);
-	private final Deque<String> logs = new ArrayDeque<>();
+	private final Deque<LogLine> logs = new ArrayDeque<>();
 	private final CountDownLatch ready = new CountDownLatch(1);
 	private final CountDownLatch exited = new CountDownLatch(1);
+	private long logSequence;
+	private boolean outputClosed;
 	private volatile Process process;
 	private volatile BufferedWriter console;
 	private volatile String stopCommand = "stop";
@@ -156,11 +157,7 @@ public abstract class ManagedProcess implements RunningProcess {
 					 StandardOpenOption.APPEND)) {
 			String line;
 			while ((line = reader.readLine()) != null) {
-				synchronized (logs) {
-					logs.addLast(line);
-					while (logs.size() > LOG_HISTORY_LIMIT)
-						logs.removeFirst();
-				}
+				appendLog(line);
 				file.write(line);
 				file.newLine();
 				file.flush();
@@ -170,8 +167,11 @@ public abstract class ManagedProcess implements RunningProcess {
 					ready.countDown();
 			}
 		} catch (IOException e) {
+			appendLog("[Anvil] Failed to capture process output: " + e.getMessage());
+		} finally {
 			synchronized (logs) {
-				logs.addLast("[Anvil] Failed to capture process output: " + e.getMessage());
+				outputClosed = true;
+				logs.notifyAll();
 			}
 		}
 	}
@@ -222,10 +222,61 @@ public abstract class ManagedProcess implements RunningProcess {
 			throw new IllegalArgumentException("maximumLines must not be negative");
 
 		synchronized (logs) {
-			List<String> copy = new ArrayList<>(logs);
+			List<String> copy = logs.stream().map(LogLine::text).toList();
 			int from = Math.max(0, copy.size() - maximumLines);
 			return List.copyOf(copy.subList(from, copy.size()));
 		}
 	}
+
+	private void appendLog(String text) {
+		synchronized (logs) {
+			logs.addLast(new LogLine(++logSequence, text));
+			while (logs.size() > LOG_HISTORY_LIMIT)
+				logs.removeFirst();
+			logs.notifyAll();
+		}
+	}
+
+	@Override
+	public long logCursor() {
+		synchronized (logs) {
+			return logSequence;
+		}
+	}
+
+	@Override
+	public @NotNull String awaitLog(@NotNull String text, long after, @NotNull Duration timeout) {
+		if (text.isEmpty()) throw new IllegalArgumentException("text must not be empty");
+		if (timeout.isNegative() || timeout.isZero())
+			throw new IllegalArgumentException("timeout must be positive");
+		long budget = timeout.toNanos();
+		long started = System.nanoTime();
+		synchronized (logs) {
+			if (after < 0 || after > logSequence)
+				throw new IllegalArgumentException("Cursor is outside this process's console history");
+			while (true) {
+				if (!logs.isEmpty() && after < logs.getFirst().sequence() - 1)
+					throw new AnvilException("Console history after cursor " + after + " was evicted for '" + name + "'"
+							+ diagnosticTail());
+				for (LogLine line : logs)
+					if (line.sequence() > after && line.text().contains(text)) return line.text();
+				if (outputClosed || (process == null && state.get() != ProcessState.STARTING))
+					throw new AnvilException("Process '" + name + "' has no further console output while waiting for '"
+							+ text + "'" + diagnosticTail());
+				long remaining = budget - (System.nanoTime() - started);
+				if (remaining <= 0)
+					throw new AnvilException("Process '" + name + "' did not output '" + text + "' after cursor "
+							+ after + " within " + timeout + diagnosticTail());
+				try {
+					TimeUnit.NANOSECONDS.timedWait(logs, remaining);
+				} catch (InterruptedException exception) {
+					Thread.currentThread().interrupt();
+					throw new AnvilException("Interrupted while waiting for console output from '" + name + "'", exception);
+				}
+			}
+		}
+	}
+
+	private record LogLine(long sequence, String text) { }
 
 }
