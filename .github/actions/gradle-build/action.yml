@@ -45,13 +45,16 @@ runs:
 
     - name: Set up Gradle
       uses: gradle/actions/setup-gradle@v5
+      with:
+        cache-read-only: ${{ github.event_name != 'release' && github.event_name != 'workflow_dispatch' && github.ref != 'refs/heads/dev' }}
 
     - name: Build
       shell: bash
+      env:
+        GRADLE_COMMAND: ${{ inputs.gradle-command }}
       run: |
-        command='${{ inputs.gradle-command }}'
-        echo "Running: $command"
-        eval "$command"
+        echo "Running: $GRADLE_COMMAND"
+        bash --noprofile --norc -e -o pipefail -c "$GRADLE_COMMAND"
 
     - name: Upload test results
       if: ${{ always() && inputs.upload-test-results == 'true' }}
@@ -67,7 +70,7 @@ runs:
       if: ${{ !cancelled() && inputs.use-test-reporter == 'true' && hashFiles('**/build/test-results/**/*.xml') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
       uses: dorny/test-reporter@v3
       with:
-        name: Anvil Gradle tests
+        name: ${{ inputs.test-results-artifact-name }}
         path: '**/build/test-results/**/*.xml'
         reporter: java-junit
         use-actions-summary: "true"

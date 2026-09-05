@@ -2,72 +2,159 @@ name: Release
 
 on:
   release:
-    types:
-      - published
+    types: [published]
   workflow_dispatch:
     inputs:
       version:
-        description: Version to publish, without a leading v
+        description: Version to verify, without a leading v
         required: true
         type: string
+      publish:
+        description: Publish after all verification succeeds (leave disabled for a rehearsal)
+        required: true
+        type: boolean
+        default: false
 
 concurrency:
-  group: anvil-release
+  group: anvil-release-${{ github.event.release.tag_name || github.ref }}
   cancel-in-progress: false
 
 permissions:
   contents: read
-  checks: write
-  id-token: write
 
 jobs:
-  verify-and-publish:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 70
-    env:
-      RELEASE_VERSION: ${{ github.event.release.tag_name || inputs.version }}
-
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      checks: write
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+      commit: ${{ steps.version.outputs.commit }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.release.tag_name || github.ref }}
-
-      - name: Restore Anvil immutable cache
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.anvil/distributions
-            ~/.anvil/protocol
-            ~/.anvil/jdks
-          key: ${{ runner.os }}-anvil-release-${{ hashFiles('anvil-protocol/**/ProtocolCatalog.java', 'anvil-testing/**/CompatibilityScenarioCatalog.java', 'gradle/libs.versions.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-anvil-matrix-
-            ${{ runner.os }}-anvil-
-
-      - name: Resolve release version
+      - name: Resolve release identity
         id: version
-        shell: bash
+        env:
+          RELEASE_VERSION: ${{ github.event.release.tag_name || inputs.version }}
         run: |
           version="${RELEASE_VERSION#v}"
-          test -n "${version}"
-          echo "value=${version}" >> "${GITHUB_OUTPUT}"
-
-      - name: Verify release
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]] || { echo "Expected a semantic version" >&2; exit 1; }
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: ./.github/actions/anvil-cache
+        with:
+          shard: build
+      - name: Build and ordinary verification
         uses: ./.github/actions/gradle-build
         with:
+          test-results-artifact-name: Release ordinary tests
           gradle-command: >-
-            ./gradlew --no-daemon build test publishToMavenLocal -Panvil.testMode=full
+            ./gradlew --no-daemon build publishToMavenLocal
             -PanvilVersion='${{ steps.version.outputs.value }}'
+            -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
+      - name: Package verification inputs
+        run: |
+          mkdir -p "$RUNNER_TEMP/release-artifacts" "$HOME/.gradle/caches/build-cache-1"
+          tar -czf "$RUNNER_TEMP/release-artifacts/maven.tar.gz" -C "$RUNNER_TEMP/anvil-maven" .
+          tar -czf "$RUNNER_TEMP/release-artifacts/task-cache.tar.gz" -C "$HOME/.gradle/caches/build-cache-1" .
+      - uses: actions/upload-artifact@v6
+        with:
+          name: release-verification-artifacts
+          path: ${{ runner.temp }}/release-artifacts/*.tar.gz
+          compression-level: 0
+          retention-days: 3
 
-      - name: Verify consumer example
-        run: >-
-          ./gradlew --no-daemon -p examples/proof-of-patience build anvilTest
-          -PanvilVersion='${{ steps.version.outputs.value }}'
+  live:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      checks: write
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - name: direct
+            suite: compatibility
+            filter: '^(?!velocity-|bungee-).*'
+          - name: velocity
+            suite: compatibility
+            filter: '^velocity-.*'
+          - name: bungeecord
+            suite: compatibility
+            filter: '^bungee-.*'
+          - name: behavior
+            suite: behavior
+            filter: '.*'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.build.outputs.commit }}
+      - uses: ./.github/actions/release-artifacts
+      - uses: ./.github/actions/anvil-cache
+        with:
+          shard: ${{ matrix.name }}
+      - name: Verify ${{ matrix.name }}
+        uses: ./.github/actions/gradle-build
+        with:
+          test-results-artifact-name: Release live ${{ matrix.name }} tests
+          gradle-command: >-
+            ./gradlew --no-daemon :anvil-testing:testing-server:test
+            -Panvil.testMode=full -PanvilTestSuite='${{ matrix.suite }}'
+            -PanvilMatrixFilter='${{ matrix.filter }}'
+            -PanvilVersion='${{ needs.build.outputs.version }}'
 
+  consumer:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.build.outputs.commit }}
+      - uses: ./.github/actions/release-artifacts
+      - uses: ./.github/actions/anvil-cache
+        with:
+          shard: consumer
+      - name: Verify standalone consumer
+        uses: ./.github/actions/gradle-build
+        with:
+          test-results-artifact-name: Release consumer tests
+          use-test-reporter: 'false'
+          gradle-command: >-
+            ./gradlew --no-daemon -p examples/proof-of-patience build anvilTest
+            -PanvilVersion='${{ needs.build.outputs.version }}'
+            -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
+
+  publish:
+    needs: [build, live, consumer]
+    if: github.event_name == 'release' || inputs.publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.build.outputs.commit }}
+      - uses: ./.github/actions/release-artifacts
+      - name: Prepare publication tasks
+        uses: ./.github/actions/gradle-build
+        with:
+          upload-test-results: 'false'
+          use-test-reporter: 'false'
+          gradle-command: >-
+            ./gradlew --no-daemon assemble -PanvilVersion='${{ needs.build.outputs.version }}'
       - name: Publish Maven modules and Gradle plugin
         uses: whereareiam/devops/actions/registry/maven-publish@v2
         with:
           visibility: public
           repository: packages
-          command: ./gradlew --no-daemon publish -PanvilVersion='${{ steps.version.outputs.value }}'
+          command: ./gradlew --no-daemon publish -PanvilVersion='${{ needs.build.outputs.version }}'

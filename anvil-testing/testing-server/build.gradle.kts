@@ -36,12 +36,20 @@ dependencies {
 val fullTesting = providers.gradleProperty("anvil.testMode").orElse("unit")
     .map { it.equals("full", ignoreCase = true) }
 val matrixFilter = providers.gradleProperty("anvilMatrixFilter").orElse(".*")
+val testSuite = providers.gradleProperty("anvilTestSuite").orElse("all")
 
 tasks.test {
     val enabledForRun = fullTesting.get()
     onlyIf("Real server tests require -Panvil.testMode=full") { enabledForRun }
     inputs.property("anvilTestMode", fullTesting)
     inputs.property("anvilMatrixFilter", matrixFilter)
+    inputs.property("anvilTestSuite", testSuite)
+    when (val suite = testSuite.get()) {
+        "all" -> Unit
+        "compatibility" -> filter.includeTestsMatching("*.ProxyServerCompatibilitySystemTest")
+        "behavior" -> filter.excludeTestsMatching("*.ProxyServerCompatibilitySystemTest")
+        else -> throw GradleException("Unknown anvilTestSuite '$suite'; expected all, compatibility, or behavior")
+    }
     inputs.files(serverPlugin).withPropertyName("serverPlugin")
     systemProperty("anvil.testing.serverPlugin", serverPlugin.singleFile.absolutePath)
     systemProperty("anvil.matrix.filter", matrixFilter.get())

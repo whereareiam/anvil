@@ -1,0 +1,19 @@
+name: Anvil immutable cache
+description: Cache pinned server distributions, protocol artifacts, and downloaded JDKs.
+inputs:
+  shard:
+    description: Independent cache writer to avoid competing saves from parallel jobs.
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/cache@v5
+      with:
+        path: |
+          ~/.anvil/distributions
+          ~/.anvil/protocol
+          ~/.anvil/jdks
+        key: ${{ runner.os }}-anvil-release-${{ inputs.shard }}-${{ hashFiles('anvil-protocol/**/ProtocolCatalog.java', 'anvil-testing/**/CompatibilityScenarioCatalog.java', 'gradle/libs.versions.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-anvil-release-${{ inputs.shard }}-
+          ${{ runner.os }}-anvil-release-

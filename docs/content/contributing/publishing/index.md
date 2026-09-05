@@ -22,6 +22,25 @@ example scenarios, and publishes a commit-qualified snapshot. Pushes do not laun
 A published release first runs the same full verification, then publishes Maven modules and the
 Gradle plugin using the release version.
 
+Release verification builds and runs ordinary tests once, then shares its Maven-local artifacts and
+Gradle task cache with independent jobs. Direct routes, Velocity routes, BungeeCord routes, general
+live behavior, and the standalone consumer run concurrently on separate runners. Each live shard
+remains sequential internally to avoid competing Minecraft processes on the same runner. New
+versions are included automatically; the route split does not enumerate Minecraft versions.
+
+Publication requires every verification job to succeed and uses the exact commit resolved by the
+build job. It is not split into competing uploads. Each job has a unique test-results artifact and
+cache-writer key, and no verification job receives publication credentials. Downloaded verification
+artifacts are internal workflow inputs with a three-day retention, not release assets.
+
+For a release rehearsal, manually run `Release` with the next version and leave `publish` disabled
+(the default). A published GitHub release always publishes after successful verification; a manual
+run publishes only when explicitly enabled. Rehearsals do not create a release or move a tag.
+
+The live task also accepts `-PanvilTestSuite=compatibility` or `behavior`; the default `all` preserves
+the complete local test run. The three compatibility filters are mutually exclusive and exhaustive:
+`^(?!velocity-|bungee-).*`, `^velocity-.*`, and `^bungee-.*`.
+
 ## Release drafts and labels
 
 Release Drafter refreshes the draft on pushes to `dev` or manual dispatch. This lightweight draft
