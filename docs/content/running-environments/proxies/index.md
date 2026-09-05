@@ -61,3 +61,22 @@ player identity with agent observations; it does not infer a backend solely from
 Use the same native Minecraft version on every backend reachable by a player. Anvil rejects
 incompatible reachable server versions rather than adding protocol translation. See
 [platforms and versions](../platforms/index.md) and [authentication](../authentication/index.md).
+
+## Restarting a process during a test
+
+```java
+var restarted = anvil.restart("proxy");
+alice.capability(Session.class).rejoin();
+alice.capability(Session.class).connected();
+alice.capability(Server.class).joined("lobby");
+```
+
+Restart preserves the process workspace and game address, including a fresh workspace's database.
+Backends keep running when a proxy restarts. Anvil stops the old process, reapplies platform-owned
+configuration, starts a replacement, waits for readiness, and reconnects its agent with fresh
+credentials. Assets and caches are not reinstalled. Existing player capabilities borrow refreshed
+agent handles; reconnect disconnected sessions explicitly. Use the returned process handle or resolve
+it again through the context after restart. Old process handles represent the stopped generation.
+
+A restart failure retains failure diagnostics and prevents success-cache saves even when the test
+catches the exception. Final cleanup still attempts every resource.

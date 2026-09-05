@@ -70,6 +70,22 @@ public interface AnvilContext extends AutoCloseable {
 	@NotNull PlayerManager players();
 
 	/**
+	 * Restarts one managed process with its current workspace and listener address.
+	 * Other processes remain running. Existing players remain registered, but clients
+	 * disconnected by the restart must explicitly reconnect. The platform agent is
+	 * reauthenticated before this method returns and borrowed agent handles are refreshed.
+	 *
+	 * <p>The returned handle represents the new process generation. Previous process
+	 * handles remain stopped; obtain fresh console cursors from the returned handle.
+	 * Assets and caches are not reinstalled. Platform-owned configuration is reapplied.
+	 * A failed restart marks the scenario unsuccessful even if its exception is caught.</p>
+	 *
+	 * @param name scenario process name
+	 * @return replacement process after readiness and agent connection complete
+	 */
+	@NotNull RunningProcess restart(@NotNull String name);
+
+	/**
 	 * Destroys players and stops every process in reverse launch order.
 	 */
 	@Override

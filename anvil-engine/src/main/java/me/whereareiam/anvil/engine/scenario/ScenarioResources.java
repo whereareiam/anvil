@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.engine.scenario;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.engine.AnvilException;
 import me.whereareiam.anvil.agent.api.transport.AgentClient;
 import me.whereareiam.anvil.api.player.PlayerManager;
 import me.whereareiam.anvil.engine.provisioning.WorkspaceSession;
@@ -27,7 +28,9 @@ public final class ScenarioResources {
 	private final @NotNull Duration stopTimeout;
 	private final @NotNull Consumer<Boolean> runFinalizer;
 	private final Map<String, ManagedProcess> processes = new LinkedHashMap<>();
-	private final Map<String, AgentClient> agents = new LinkedHashMap<>();
+	private final Map<String, ScenarioAgent> agents = new LinkedHashMap<>();
+	private final Map<String, Runnable> restarts = new LinkedHashMap<>();
+	private boolean restartFailed;
 	private final List<WorkspaceSession> workspaces = new ArrayList<>();
 	private final AtomicBoolean closed = new AtomicBoolean();
 	private final PortAllocator ports = new PortAllocator();
@@ -42,7 +45,39 @@ public final class ScenarioResources {
 	}
 
 	public void addAgent(@NotNull String process, @NotNull AgentClient agent) {
-		agents.put(process, agent);
+		ScenarioAgent existing = agents.get(process);
+		if (existing == null) agents.put(process, new ScenarioAgent(agent));
+		else existing.replace(agent);
+	}
+
+	/**
+	 * Registers the launcher operation that replaces a process without preparing its workspace again.
+	 */
+	public void registerRestart(@NotNull String process, @NotNull Runnable restart) {
+		restarts.put(process, restart);
+	}
+
+	/**
+	 * Disconnects the old agent while retaining the borrowed handle for the replacement.
+	 */
+	public void detachAgent(@NotNull String process) {
+		ScenarioAgent agent = agents.get(process);
+		if (agent != null) agent.close();
+	}
+
+	/**
+	 * Serializes process restart against final scenario cleanup.
+	 */
+	public synchronized void restart(@NotNull String process) {
+		if (closed.get()) throw new AnvilException("Cannot restart a closed scenario");
+		Runnable restart = restarts.get(process);
+		if (restart == null) throw new AnvilException("No managed restart for process '" + process + "'");
+		try {
+			restart.run();
+		} catch (RuntimeException | Error failure) {
+			restartFailed = true;
+			throw failure;
+		}
 	}
 
 	public void addWorkspace(@NotNull WorkspaceSession workspace) {
@@ -65,7 +100,7 @@ public final class ScenarioResources {
 	 * Closes players and agents, then stops processes and finalizes workspaces in reverse order.
 	 * Any cleanup failure marks the run unsuccessful so diagnostic workspaces are retained.
 	 */
-	public void close(boolean successful) {
+	public synchronized void close(boolean successful) {
 		if (!closed.compareAndSet(false, true))
 			return;
 
@@ -77,8 +112,8 @@ public final class ScenarioResources {
 		for (ManagedProcess process : new ArrayList<>(processes.values()).reversed())
 			attempt(() -> process.stop(stopTimeout), failures);
 		for (WorkspaceSession workspace : workspaces.reversed())
-			attempt(() -> workspace.finish(successful && failures.isEmpty()), failures);
-		attempt(() -> runFinalizer.accept(successful && failures.isEmpty()), failures);
+			attempt(() -> workspace.finish(successful && !restartFailed && failures.isEmpty()), failures);
+		attempt(() -> runFinalizer.accept(successful && !restartFailed && failures.isEmpty()), failures);
 
 		if (failures.isEmpty())
 			return;

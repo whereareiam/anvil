@@ -127,6 +127,12 @@ public final class RunningAnvilContext implements AnvilContext {
 	}
 
 	@Override
+	public @NotNull RunningProcess restart(@NotNull String name) {
+		resources.restart(name);
+		return process(name);
+	}
+
+	@Override
 	public void close() {
 		close(true);
 	}

@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.engine.runtime.process;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.engine.AnvilException;
 import me.whereareiam.anvil.agent.api.transport.connection.AgentConnectionProvider;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
@@ -58,6 +59,27 @@ public final class ScenarioProcessLauncher {
 		ResolvedDistribution distribution = provider.resolve(declaration, context);
 		provider.configure(declaration, context);
 
+		launch(declaration, provider, scenario, context, distribution, resources);
+		resources.registerRestart(declaration.getName(), () -> {
+			resources.detachAgent(declaration.getName());
+			resources.processes().get(declaration.getName()).stop(options.getStopTimeout());
+			try {
+				provider.configure(declaration, context);
+				launch(declaration, provider, scenario, context, distribution, resources);
+			} catch (IOException exception) {
+				throw new AnvilException("Could not restart process '" + declaration.getName() + "'", exception);
+			}
+		});
+	}
+
+	private void launch(
+			MinecraftProcess declaration,
+			PlatformProvider provider,
+			AnvilScenario scenario,
+			PlatformContext context,
+			ResolvedDistribution distribution,
+			ScenarioResources resources
+	) {
 		ManagedProcess process = createProcess(declaration, context);
 		resources.addProcess(process);
 		AgentEndpoint agent = provider.platformAgent() == null ? null : agentEndpoint(resources);
