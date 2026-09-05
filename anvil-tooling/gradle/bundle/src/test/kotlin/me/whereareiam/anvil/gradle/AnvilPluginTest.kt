@@ -14,6 +14,7 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
 
 class AnvilPluginTest {
+    private val testedVersion = requireNotNull(System.getProperty("anvil.test.version"))
     @TempDir
     lateinit var projectDirectory: Path
 
@@ -84,7 +85,7 @@ class AnvilPluginTest {
         )
 
         val result = runner("dependencies", "--configuration", "anvilCompileClasspath").build()
-        assertContains(result.output, "me.whereareiam.anvil:api:0.0.1")
+        assertContains(result.output, "me.whereareiam.anvil:api:$testedVersion")
         assertFalse(result.output.contains("protocol-mcprotocol"), result.output)
         assertFalse(result.output.contains("mcprotocollib"), result.output)
         assertFalse(result.output.contains("platform-paper"), result.output)
@@ -103,7 +104,7 @@ class AnvilPluginTest {
         )
 
         val result = runner("dependencies", "--configuration", "anvilCapabilities").build()
-        assertContains(result.output, "me.whereareiam.anvil:default:0.0.1")
+        assertContains(result.output, "me.whereareiam.anvil:default:$testedVersion")
 
         val platforms = runner("dependencies", "--configuration", "anvilPlatforms").build()
         assertContains(platforms.output, "No dependencies")
@@ -122,7 +123,7 @@ class AnvilPluginTest {
         )
 
         val result = runner("dependencies", "--configuration", "anvilCapabilities").build()
-        assertContains(result.output, "me.whereareiam.anvil:builtin-inventory:0.0.1")
+        assertContains(result.output, "me.whereareiam.anvil:builtin-inventory:$testedVersion")
     }
 
     @Test
@@ -139,10 +140,10 @@ class AnvilPluginTest {
         )
 
         val result = runner("dependencies", "--configuration", "anvilPlatforms").build()
-        assertContains(result.output, "me.whereareiam.anvil:platform-paper-provider:0.0.1")
-        assertContains(result.output, "me.whereareiam.anvil:platform-bukkit-agent:0.0.1")
-        assertContains(result.output, "me.whereareiam.anvil:platform-velocity-provider:0.0.1")
-        assertContains(result.output, "me.whereareiam.anvil:platform-velocity-agent:0.0.1")
+        assertContains(result.output, "me.whereareiam.anvil:platform-paper-provider:$testedVersion")
+        assertContains(result.output, "me.whereareiam.anvil:platform-bukkit-agent:$testedVersion")
+        assertContains(result.output, "me.whereareiam.anvil:platform-velocity-provider:$testedVersion")
+        assertContains(result.output, "me.whereareiam.anvil:platform-velocity-agent:$testedVersion")
     }
 
     @Test
@@ -163,8 +164,8 @@ class AnvilPluginTest {
         )
 
         val result = runner("dependencies", "--configuration", "anvilCapabilities").build()
-        assertContains(result.output, "me.whereareiam.anvil:builtin-session:0.0.1")
-        assertContains(result.output, "me.whereareiam.anvil:builtin-server:0.0.1")
+        assertContains(result.output, "me.whereareiam.anvil:builtin-session:$testedVersion")
+        assertContains(result.output, "me.whereareiam.anvil:builtin-server:$testedVersion")
         assertContains(result.output, "example:external-capability:1.2.3")
         assertFalse(result.output.contains("me.whereareiam.anvil:default:"), result.output)
     }
@@ -457,7 +458,7 @@ class AnvilPluginTest {
 
     private fun runner(vararg arguments: String): GradleRunner = GradleRunner.create()
         .withProjectDir(projectDirectory.toFile())
-        .withArguments("--stacktrace", *arguments)
+        .withArguments("--stacktrace", "-PanvilVersion=$testedVersion", *arguments)
         .withPluginClasspath()
 
     private fun assertContains(actual: String, expected: String) {
