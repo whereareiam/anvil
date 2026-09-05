@@ -126,7 +126,7 @@ public final class AnvilEngine implements AutoCloseable {
 			if (effectiveScenario.getSetupHook() != null)
 				effectiveScenario.getSetupHook().execute(context);
 			return context;
-		} catch (Exception exception) {
+		} catch (Exception | Error exception) {
 			try {
 				if (context != null)
 					contexts.remove(context);
@@ -134,6 +134,8 @@ public final class AnvilEngine implements AutoCloseable {
 			} catch (RuntimeException cleanupFailure) {
 				exception.addSuppressed(cleanupFailure);
 			}
+			if (exception instanceof Error error)
+				throw error;
 			if (exception instanceof AnvilException anvilException)
 				throw anvilException;
 			throw new AnvilException("Could not start scenario '" + scenario.getName() + "'", exception);
