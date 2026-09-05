@@ -33,6 +33,7 @@ public final class WorkspaceSession implements AutoCloseable {
 	private final Path workspace;
 	private final WorkspacePlan plan;
 	private final String cacheIdentity;
+	private final String assetFingerprint;
 	private final WorkspaceFiles files;
 	private final WorkspaceCacheStore cacheStore;
 	private final FileChannel lockChannel;
@@ -51,6 +52,7 @@ public final class WorkspaceSession implements AutoCloseable {
 		this.workspace = workspace;
 		this.plan = plan;
 		this.cacheIdentity = cacheIdentity;
+		this.assetFingerprint = new WorkspaceAssetFingerprint().compute(plan.getAssets());
 		this.files = files;
 		this.cacheStore = cacheStore;
 		this.lockChannel = lockChannel;
@@ -111,7 +113,7 @@ public final class WorkspaceSession implements AutoCloseable {
 			session = new WorkspaceSession(
 					normalizedWorkspace,
 					plan,
-					cacheIdentity + "\nassets=" + new WorkspaceAssetFingerprint().compute(plan.getAssets()),
+					cacheIdentity,
 					files,
 					cacheStore,
 					lockChannel,
@@ -159,7 +161,7 @@ public final class WorkspaceSession implements AutoCloseable {
 				for (WorkspaceCache cache : plan.getCaches())
 					if (cache.getPolicy() == CachePolicy.RESTORE_AND_SAVE
 							|| cache.getPolicy() == CachePolicy.SAVE_ONLY)
-						cacheStore.save(cache, workspace, cacheIdentity);
+						cacheStore.save(cache, workspace, identity(cache));
 		} catch (RuntimeException exception) {
 			failure = exception;
 		}
@@ -190,6 +192,13 @@ public final class WorkspaceSession implements AutoCloseable {
 		finish(true);
 	}
 
+	private String identity(WorkspaceCache cache) {
+		return switch (cache.getIdentity()) {
+			case PROCESS_AND_ASSETS -> cacheIdentity + "\nassets=" + assetFingerprint;
+			case PROCESS -> cacheIdentity;
+		};
+	}
+
 	private void prepare() {
 		for (WorkspaceCleanup cleanup : plan.getCleanups())
 			if (cleanup.getPhase() == CleanupPhase.BEFORE_START)
@@ -198,7 +207,7 @@ public final class WorkspaceSession implements AutoCloseable {
 		for (WorkspaceCache cache : plan.getCaches())
 			if (cache.getPolicy() == CachePolicy.RESTORE_AND_SAVE
 					|| cache.getPolicy() == CachePolicy.RESTORE_ONLY)
-				cacheStore.restore(cache, workspace, cacheIdentity);
+				cacheStore.restore(cache, workspace, identity(cache));
 
 		for (WorkspaceAsset asset : plan.getAssets()) {
 			Path target = files.resolveRelative(workspace, asset.getTarget(), "Asset target");

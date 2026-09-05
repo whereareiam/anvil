@@ -77,3 +77,22 @@ and teardown. Failed tests stop all processes but retain diagnostic workspaces u
 failure policy and do not save success caches. For custom runners, use `context.close(false)` when
 the application fails; `close()` means successful completion. Cleanup failures are retained alongside
 the original test failure.
+
+## Reuse dependency caches across plugin rebuilds
+
+By default a cache uses `CacheIdentity.PROCESS_AND_ASSETS`: changing a plugin jar or configuration
+asset selects a different snapshot. Dependency caches can explicitly opt into process-only identity:
+
+```java
+WorkspaceCache.builder()
+        .group("plugin-libraries")
+        .path(Path.of("plugins", "example", ".libraries"))
+        .identity(CacheIdentity.PROCESS)
+        .build();
+```
+
+This keeps the process/platform/distribution boundary and the cache key, while allowing reuse after
+plugin or overlay edits. Use it only for contents whose owner validates individual entries, such as
+Maven artifacts stored by coordinates and repository metadata. Keep account databases, worlds, and
+other plugin state on the default identity. Change the explicit `key` to invalidate an opted-in
+cache deliberately. Save policies, failure handling, and path confinement are unchanged.

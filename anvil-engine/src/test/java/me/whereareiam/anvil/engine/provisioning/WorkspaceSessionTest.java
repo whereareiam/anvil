@@ -7,6 +7,7 @@ import me.whereareiam.anvil.api.model.workspace.WorkspaceCleanup;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 import me.whereareiam.anvil.api.type.AssetInstallMode;
 import me.whereareiam.anvil.api.type.CachePolicy;
+import me.whereareiam.anvil.api.type.CacheIdentity;
 import me.whereareiam.anvil.api.type.CleanupPhase;
 import me.whereareiam.anvil.api.type.WorkspaceMode;
 import me.whereareiam.anvil.engine.AnvilException;
@@ -150,4 +151,62 @@ class WorkspaceSessionTest {
 				root, workspace, plan, List.of(), "process", temporary.resolve("cache"), files));
 		assertFalse(Files.exists(workspace.resolve("failure-state")));
 	}
+	@Test
+	void processCachesSurviveAssetEditsWhileDefaultCachesRemainIsolated() throws Exception {
+		Path source = temporary.resolve("plugin.jar");
+		Files.writeString(source, "first plugin");
+		Path root = temporary.resolve("runs");
+		Path first = root.resolve("first");
+		Path cache = temporary.resolve("cache");
+		WorkspacePlan plan = WorkspacePlan.builder()
+				.asset(WorkspaceAsset.builder().source(AssetSource.path(source)).target(Path.of("plugins/plugin.jar")).build())
+				.cache(WorkspaceCache.builder().path(Path.of("libraries")).identity(CacheIdentity.PROCESS).build())
+				.cache(WorkspaceCache.builder().path(Path.of("state")).build()).build();
+		try (WorkspaceSession ignored = WorkspaceSession.prepare(root, first, plan, List.of(), "paper|1", cache, new WorkspaceFiles())) {
+			Files.createDirectories(first.resolve("libraries"));
+			Files.writeString(first.resolve("libraries/dependency.jar"), "dependency");
+			Files.createDirectories(first.resolve("state"));
+			Files.writeString(first.resolve("state/account.db"), "account state");
+		}
+		Files.writeString(source, "rebuilt plugin");
+		Path next = root.resolve("next");
+		try (WorkspaceSession ignored = WorkspaceSession.prepare(root, next, plan, List.of(), "paper|1", cache, new WorkspaceFiles())) {
+			assertEquals("dependency", Files.readString(next.resolve("libraries/dependency.jar")));
+			assertEquals("rebuilt plugin", Files.readString(next.resolve("plugins/plugin.jar")));
+			assertFalse(Files.exists(next.resolve("state/account.db")));
+		}
+	}
+
+	@Test
+	void processCachesStillRespectProcessIdentityKeysAndFailureOutcomes() throws Exception {
+		Path root = temporary.resolve("runs");
+		Path cache = temporary.resolve("cache");
+		WorkspaceCache libraryCache = WorkspaceCache.builder().path(Path.of("libraries"))
+				.identity(CacheIdentity.PROCESS).key("dependencies-v1").build();
+		WorkspacePlan plan = WorkspacePlan.builder().cache(libraryCache).build();
+		Path first = root.resolve("first");
+		try (WorkspaceSession ignored = WorkspaceSession.prepare(root, first, plan, List.of(), "paper|1", cache, new WorkspaceFiles())) {
+			Files.createDirectories(first.resolve("libraries"));
+			Files.writeString(first.resolve("libraries/dependency.jar"), "good");
+		}
+		Path failed = root.resolve("failed");
+		WorkspaceSession failure = WorkspaceSession.prepare(root, failed, plan, List.of(), "paper|1", cache, new WorkspaceFiles());
+		Files.writeString(failed.resolve("libraries/dependency.jar"), "bad");
+		failure.finish(false);
+		Path restored = root.resolve("restored");
+		try (WorkspaceSession ignored = WorkspaceSession.prepare(root, restored, plan, List.of(), "paper|1", cache, new WorkspaceFiles())) {
+			assertEquals("good", Files.readString(restored.resolve("libraries/dependency.jar")));
+		}
+		Path another = root.resolve("another-version");
+		try (WorkspaceSession ignored = WorkspaceSession.prepare(root, another, plan, List.of(), "paper|2", cache, new WorkspaceFiles())) {
+			assertFalse(Files.exists(another.resolve("libraries/dependency.jar")));
+		}
+		WorkspacePlan newKey = WorkspacePlan.builder().cache(WorkspaceCache.builder().path(Path.of("libraries"))
+				.identity(CacheIdentity.PROCESS).key("dependencies-v2").build()).build();
+		Path keyed = root.resolve("another-key");
+		try (WorkspaceSession ignored = WorkspaceSession.prepare(root, keyed, newKey, List.of(), "paper|1", cache, new WorkspaceFiles())) {
+			assertFalse(Files.exists(keyed.resolve("libraries/dependency.jar")));
+		}
+	}
+
 }
