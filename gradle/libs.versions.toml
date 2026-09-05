@@ -21,7 +21,7 @@ bungeecord = "26.1-R0.1-SNAPSHOT"
 
 # minecraft protocol
 mcprotocol = "26.1-SNAPSHOT"
-minecraft-auth = "5.0.0"
+minecraft-auth = "5.0.2"
 
 # testing
 junit = "6.1.3"
