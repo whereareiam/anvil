@@ -22,3 +22,18 @@ Run live journeys explicitly with `./gradlew anvilTest`.
 Platform selection, proxy topology, account authentication, and foreground sessions are covered in
 [running environments](../running-environments/index.md). Tests for Anvil's own implementation are
 covered separately under [contributing](../contributing/testing/index.md).
+
+## Observing process output
+
+Use the process console for commands and output observations. Capture a checkpoint before sending a setup or administration command:
+
+```java
+var proxy = anvil.proxy("proxy");
+long checkpoint = proxy.console().checkpoint();
+proxy.console().sendCommand("fixture create Alice");
+proxy.console().await("Created Alice", checkpoint, Duration.ofSeconds(10));
+```
+
+`await` matches only lines captured after that checkpoint. It waits on captured-output notifications,
+not sleeps in test code. Cursors belong to one running-process instance. A timed-out wait includes
+recent console output; closed output and evicted history fail explicitly instead of matching stale lines.
