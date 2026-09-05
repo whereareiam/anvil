@@ -29,8 +29,17 @@ public final class AnvilExtension implements BeforeEachCallback, ParameterResolv
 			EngineOptions options = EngineOptions.fromSystemProperties();
 
 			AnvilEngine engine = new AnvilEngine(options);
-			AnvilContext runtimeContext = engine.start(scenario);
-			context.getStore(NAMESPACE).put(STATE_KEY, new State(engine, runtimeContext));
+			try {
+				AnvilContext runtimeContext = engine.start(scenario);
+				context.getStore(NAMESPACE).put(STATE_KEY, new State(engine::close, runtimeContext, context));
+			} catch (RuntimeException | Error failure) {
+				try {
+					engine.close();
+				} catch (RuntimeException cleanup) {
+					failure.addSuppressed(cleanup);
+				}
+				throw failure;
+			}
 		} catch (ReflectiveOperationException e) {
 			throw new ExtensionConfigurationException("Could not instantiate scenario definition "
 					+ selection.value().getName(), e);
@@ -63,17 +72,32 @@ public final class AnvilExtension implements BeforeEachCallback, ParameterResolv
 	}
 
 	@RequiredArgsConstructor
-	private static final class State implements AutoCloseable {
-		private final AnvilEngine engine;
+	static final class State implements AutoCloseable {
+		private final Runnable closeEngine;
 		private final AnvilContext context;
+		private final ExtensionContext owner;
 
 		@Override
 		public void close() {
+			Throwable testFailure = owner.getExecutionException().orElse(null);
+			RuntimeException failure = null;
 			try {
-				context.close();
-			} finally {
-				engine.close();
+				context.close(testFailure == null);
+			} catch (RuntimeException exception) {
+				failure = exception;
 			}
+			try {
+				closeEngine.run();
+			} catch (RuntimeException exception) {
+				if (failure == null) failure = exception;
+				else if (failure != exception) failure.addSuppressed(exception);
+			}
+			if (failure == null) return;
+			if (testFailure != null) {
+				if (testFailure != failure) testFailure.addSuppressed(failure);
+				return;
+			}
+			throw failure;
 		}
 	}
 }
