@@ -6,7 +6,7 @@ freefair = "9.5.0"
 toolkit = "dev-a4c6f1b"
 
 # compile time processing
-lombok = "1.18.42"
+lombok = "1.18.48"
 annotations = "26.0.2-1"
 
 # general
