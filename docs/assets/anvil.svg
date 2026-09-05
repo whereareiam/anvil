@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
+  <title id="title">Anvil</title>
+  <rect width="96" height="96" rx="20" fill="#18181b"/>
+  <path d="M15 28h66v13H66c-9 0-15 7-15 16v5l15 6v7H28v-7l15-6V51H30c-8 0-15-8-15-16z" fill="#ff8929"/>
+</svg>

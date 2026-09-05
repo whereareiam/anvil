@@ -1,0 +1,6 @@
+name: AnvilPlatformAgent
+version: '0.0.1'
+main: me.whereareiam.anvil.agent.bukkit.AnvilBukkitAgent
+api-version: '1.21'
+load: STARTUP
+description: Loopback-only runtime agent installed by Anvil

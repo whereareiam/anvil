@@ -1,0 +1,9 @@
+name: ProofOfPatience
+version: '${version}'
+main: me.whereareiam.anvil.example.patience.plugin.ProofOfPatiencePlugin
+api-version: '1.21'
+description: Authentication by repeated reconnect, an innovation nobody requested
+commands:
+  auth:
+    description: Begins the internationally recognized proof-of-patience ceremony
+    usage: /auth

@@ -1,0 +1,68 @@
+[versions]
+
+# build tooling
+shadow = "9.3.0"
+freefair = "9.5.0"
+toolkit = "dev-f92ffe1"
+
+# compile time processing
+lombok = "1.18.42"
+annotations = "26.0.2-1"
+
+# general
+jackson = "2.20.1"
+slf4j = "2.0.17"
+adventure = "4.25.0"
+
+# platform api
+paper = "1.21.11-R0.1-SNAPSHOT"
+velocity = "3.5.1"
+bungeecord = "26.1-R0.1-SNAPSHOT"
+
+# minecraft protocol
+mcprotocol = "26.1-SNAPSHOT"
+minecraft-auth = "5.0.0"
+
+# testing
+junit = "6.0.1"
+
+[libraries]
+
+# build tooling
+lombok-plugin = { group = "io.freefair.gradle", name = "lombok-plugin", version.ref = "freefair" }
+shadow = { group = "com.gradleup.shadow", name = "shadow-gradle-plugin", version.ref = "shadow" }
+toolkit-publish-maven = { group = "me.whereareiam.toolkit", name = "publish-maven", version.ref = "toolkit" }
+toolkit-architecture = { group = "me.whereareiam.toolkit", name = "architecture", version.ref = "toolkit" }
+
+# compile time processing
+lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }
+annotations = { group = "org.jetbrains", name = "annotations", version.ref = "annotations" }
+
+# general
+jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
+jackson-toml = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-toml", version.ref = "jackson" }
+jackson-yaml = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-yaml", version.ref = "jackson" }
+slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
+slf4j-simple = { group = "org.slf4j", name = "slf4j-simple", version.ref = "slf4j" }
+adventure-plain = { group = "net.kyori", name = "adventure-text-serializer-plain", version.ref = "adventure" }
+
+# platform api
+paper = { group = "io.papermc.paper", name = "paper-api", version.ref = "paper" }
+velocity = { group = "com.velocitypowered", name = "velocity-api", version.ref = "velocity" }
+bungeecord = { group = "net.md-5", name = "bungeecord-api", version.ref = "bungeecord" }
+
+# minecraft protocol
+mcprotocol = { group = "org.geysermc.mcprotocollib", name = "protocol", version.ref = "mcprotocol" }
+minecraft-auth = { group = "net.raphimc", name = "MinecraftAuth", version.ref = "minecraft-auth" }
+
+# testing
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }
+junit-platform = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junit" }
+
+[plugins]
+
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+freefair-lombok = { id = "io.freefair.lombok", version.ref = "freefair" }
+toolkit-architecture = { id = "me.whereareiam.toolkit.architecture", version.ref = "toolkit" }
+toolkit-project-discovery = { id = "me.whereareiam.toolkit.project-discovery", version.ref = "toolkit" }
+toolkit-publish-maven = { id = "me.whereareiam.toolkit.publish.maven", version.ref = "toolkit" }

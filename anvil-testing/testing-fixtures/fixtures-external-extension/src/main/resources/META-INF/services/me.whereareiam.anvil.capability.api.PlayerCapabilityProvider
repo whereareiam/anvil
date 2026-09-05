@@ -1,0 +1,4 @@
+external.fixture.capability.FixtureSessionProvider
+external.fixture.capability.FixtureMovementProvider
+external.fixture.capability.FixtureProbeProvider
+external.fixture.capability.BrokenCapabilityProvider

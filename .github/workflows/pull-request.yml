@@ -1,0 +1,82 @@
+name: Pull request
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+concurrency:
+  group: anvil-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Restore Anvil immutable cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.anvil/distributions
+            ~/.anvil/protocol
+            ~/.anvil/jdks
+          key: ${{ runner.os }}-anvil-pr-${{ hashFiles('anvil-protocol/**/ProtocolCatalog.java', 'anvil-testing/**/CompatibilityScenarioCatalog.java', 'gradle/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-anvil-pr-
+            ${{ runner.os }}-anvil-
+
+      - name: Build and ordinary tests
+        uses: ./.github/actions/gradle-build
+        with:
+          test-results-artifact-name: Anvil PR ordinary test results
+          gradle-command: >-
+            ./gradlew --no-daemon build publishToMavenLocal
+
+      - name: Build consumer example
+        run: ./gradlew --no-daemon -p examples/proof-of-patience build anvilClasses
+
+  live:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment:
+      name: anvil-pr-live-tests
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Restore Anvil immutable cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.anvil/distributions
+            ~/.anvil/protocol
+            ~/.anvil/jdks
+          key: ${{ runner.os }}-anvil-pr-live-${{ hashFiles('anvil-protocol/**/ProtocolCatalog.java', 'anvil-testing/**/CompatibilityScenarioCatalog.java', 'gradle/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-anvil-pr-live-
+            ${{ runner.os }}-anvil-pr-
+            ${{ runner.os }}-anvil-
+
+      - name: Approved integration and Anvil tests
+        uses: ./.github/actions/gradle-build
+        with:
+          test-results-artifact-name: Anvil PR live test results
+          gradle-command: >-
+            ./gradlew --no-daemon test publishToMavenLocal -Panvil.testMode=full
+
+      - name: Verify consumer journeys
+        run: ./gradlew --no-daemon -p examples/proof-of-patience anvilTest

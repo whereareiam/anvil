@@ -1,0 +1,12 @@
+name: AnvilSystemFixture
+version: '${version}'
+main: me.whereareiam.anvil.testing.fixture.bukkit.AnvilSystemFixturePlugin
+api-version: '1.21'
+description: Internal behavior fixture for Anvil's live system tests
+commands:
+  auth:
+    description: Exercises kick, reconnect, and observed-identity behavior
+    usage: /auth
+  anvil-fixture:
+    description: Exposes behavior observed by Anvil's simulated player
+    usage: /anvil-fixture [ping|gui|item|position|block|entity|kick|transfer]

@@ -1,0 +1,11 @@
+{
+  "title": "Anvil",
+  "pages": [
+    "index",
+    "getting-started",
+    "writing-tests",
+    "running-environments",
+    "extending",
+    "contributing"
+  ]
+}

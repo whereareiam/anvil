@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to publish, without a leading v
+        required: true
+        type: string
+
+concurrency:
+  group: anvil-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  verify-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    env:
+      RELEASE_VERSION: ${{ github.event.release.tag_name || inputs.version }}
+      MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+      MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
+
+      - name: Restore Anvil immutable cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.anvil/distributions
+            ~/.anvil/protocol
+            ~/.anvil/jdks
+          key: ${{ runner.os }}-anvil-release-${{ hashFiles('anvil-protocol/**/ProtocolCatalog.java', 'anvil-testing/**/CompatibilityScenarioCatalog.java', 'gradle/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-anvil-matrix-
+            ${{ runner.os }}-anvil-
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          version="${RELEASE_VERSION#v}"
+          test -n "${version}"
+          echo "value=${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Verify release
+        uses: ./.github/actions/gradle-build
+        with:
+          gradle-command: >-
+            ./gradlew --no-daemon build test publishToMavenLocal -Panvil.testMode=full
+            -PanvilVersion='${{ steps.version.outputs.value }}'
+
+      - name: Verify consumer example
+        run: >-
+          ./gradlew --no-daemon -p examples/proof-of-patience build anvilTest
+          -PanvilVersion='${{ steps.version.outputs.value }}'
+
+      - name: Publish Maven modules and Gradle plugin
+        run: >-
+          ./gradlew --no-daemon publish
+          -PanvilVersion='${{ steps.version.outputs.value }}'

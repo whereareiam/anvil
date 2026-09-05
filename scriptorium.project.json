@@ -1,0 +1,44 @@
+{
+  "name": "Anvil",
+  "description": "Local Minecraft testing with real servers, native players, and extensible capabilities.",
+  "logo": "docs/assets/anvil.svg",
+  "favicon": "docs/assets/anvil.svg",
+  "state": {
+    "bundling": {
+      "captions": [
+        "Preparing the next scenario.",
+        "Giving Alice her instructions.",
+        "Checking the route through the proxy."
+      ]
+    }
+  },
+  "urls": {
+    "github": "https://github.com/whereareiam/anvil"
+  },
+  "links": [
+    {
+      "type": "icon",
+      "label": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/whereareiam/anvil",
+      "external": true
+    }
+  ],
+  "versions": {
+    "home": "dev",
+    "include": [
+      { "type": "branch", "pattern": "release/*" },
+      { "type": "tag", "pattern": "*" }
+    ],
+    "meta": {
+      "dev": {
+        "label": "Development",
+        "theme": {
+          "primary": "hsl(28 100% 56%)",
+          "primaryForeground": "hsl(0 0% 7%)",
+          "ring": "hsl(28 100% 56%)"
+        }
+      }
+    }
+  }
+}
