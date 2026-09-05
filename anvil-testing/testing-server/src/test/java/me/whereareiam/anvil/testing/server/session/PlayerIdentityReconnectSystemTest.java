@@ -7,8 +7,12 @@ import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.junit.AnvilTest;
+import me.whereareiam.anvil.testing.server.scenario.Paper1182SystemScenario;
+import me.whereareiam.anvil.testing.server.scenario.Paper1194SystemScenario;
+import me.whereareiam.anvil.testing.server.scenario.Paper1206SystemScenario;
 import me.whereareiam.anvil.testing.server.scenario.Paper12111SystemScenario;
 import me.whereareiam.anvil.testing.server.scenario.Paper2612SystemScenario;
+import me.whereareiam.anvil.testing.server.scenario.Paper262SystemScenario;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
@@ -32,6 +36,30 @@ class PlayerIdentityReconnectSystemTest {
 	@Test
 	@AnvilTest(Paper2612SystemScenario.class)
 	void observesKickRejoinAndIdentityReplacementOnPaper2612(AnvilContext anvil) {
+		verify(anvil);
+	}
+
+	@Test
+	@AnvilTest(Paper1182SystemScenario.class)
+	void observesKickRejoinAndIdentityReplacementOnPaper1182(AnvilContext anvil) {
+		verify(anvil);
+	}
+
+	@Test
+	@AnvilTest(Paper1194SystemScenario.class)
+	void observesKickRejoinAndIdentityReplacementOnPaper1194(AnvilContext anvil) {
+		verify(anvil);
+	}
+
+	@Test
+	@AnvilTest(Paper1206SystemScenario.class)
+	void observesKickRejoinAndIdentityReplacementOnPaper1206(AnvilContext anvil) {
+		verify(anvil);
+	}
+
+	@Test
+	@AnvilTest(Paper262SystemScenario.class)
+	void observesKickRejoinAndIdentityReplacementOnPaper262(AnvilContext anvil) {
 		verify(anvil);
 	}
 

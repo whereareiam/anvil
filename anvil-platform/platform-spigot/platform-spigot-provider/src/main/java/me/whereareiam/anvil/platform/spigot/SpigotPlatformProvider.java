@@ -9,6 +9,7 @@ import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.model.ResolvedDistribution;
 import me.whereareiam.anvil.platform.api.type.ForwardingMode;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.List;
@@ -60,10 +61,24 @@ public final class SpigotPlatformProvider implements PlatformProvider {
 	@Override
 	public int minimumJavaVersion(@NotNull MinecraftProcess process) {
 		MinecraftServer server = (MinecraftServer) process;
-		String version = server.getDistribution().isLocal()
+		String version = server.getMinecraftVersion() != null
 				? server.getMinecraftVersion() : server.getDistribution().getVersion();
 
+		if (version != null && version.matches("1\\.(18|19)(\\..*)?"))
+			return 17;
 		return version != null && version.startsWith("26.") ? 25 : 21;
+	}
+
+	@Override
+	public @Nullable Integer maximumJavaVersion(@NotNull MinecraftProcess process) {
+		MinecraftServer server = (MinecraftServer) process;
+		String version = server.getMinecraftVersion() != null
+				? server.getMinecraftVersion() : server.getDistribution().getVersion();
+		if (version != null && version.matches("1\\.18(?:\\..*)?"))
+			return 18;
+		if (version != null && version.matches("1\\.19(?:\\..*)?"))
+			return 20;
+		return null;
 	}
 
 	@Override

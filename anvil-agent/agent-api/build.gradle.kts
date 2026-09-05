@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.toolkit.architecture)
     alias(libs.plugins.toolkit.publish.maven)
-    id("unit")
+    id("agent-java")
 }
 
 description = "Public agent contracts used by Anvil platform integrations"

@@ -1,29 +1,20 @@
 plugins {
-    application
     alias(libs.plugins.toolkit.architecture)
     alias(libs.plugins.toolkit.publish.maven)
     id("unit")
 }
 
-description = "Version-isolated MCProtocolLib clients and workers for Anvil"
+architecture {
+    kind = assembly
+}
+
+description = "Version-isolated MCProtocolLib clients and native packet bindings"
 
 dependencies {
     api(projects.anvilProtocol.protocolApi)
 
-    implementation(projects.anvilProtocol.protocolAdapterApi)
-    implementation(libs.adventure.plain)
-    implementation(libs.jackson.databind)
-    implementation(libs.minecraft.auth)
-    implementation(libs.slf4j.api)
-
-    compileOnly(libs.mcprotocol)
-
-    runtimeOnly(libs.mcprotocol)
-    runtimeOnly(libs.slf4j.simple)
-
-    testImplementation(projects.anvilCapability.capabilityBuiltin.default)
-}
-
-application {
-    mainClass.set("me.whereareiam.anvil.protocol.mcprotocol.worker.child.McProtocolWorkerMain")
+    runtimeOnly(projects.anvilProtocol.protocolMcprotocol.mcprotocolBinding1182)
+    runtimeOnly(projects.anvilProtocol.protocolMcprotocol.mcprotocolBinding1206)
+    runtimeOnly(projects.anvilProtocol.protocolMcprotocol.mcprotocolBinding2026)
+    runtimeOnly(projects.anvilProtocol.protocolMcprotocol.mcprotocolClient)
 }

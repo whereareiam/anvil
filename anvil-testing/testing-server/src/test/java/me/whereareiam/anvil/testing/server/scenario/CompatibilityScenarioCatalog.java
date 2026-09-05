@@ -30,12 +30,21 @@ public final class CompatibilityScenarioCatalog implements AnvilScenarioProvider
 	@Override
 	public void register(@NotNull ScenarioRegistry registry) {
 		List<String> matrix = new ArrayList<>();
+		registerVersion(registry, "1.18.2", "388",
+				"6996f8025b497dd32271b09b6624b26b95d0e39dc9f6860d01fd0db38905076d", new Paper1182SystemScenario(), matrix);
+		registerVersion(registry, "1.19.4", "550",
+				"beb43043e8d03d1d4557755102aebc0bfe89368a594939fb1db5f9e5ee84ebb3", new Paper1194SystemScenario(), matrix);
+		registerVersion(registry, "1.20.6", "151",
+				"d9aab418f8404148b47c8faba484698a526f121f9fb5412264de9dc4b65db02f", new Paper1206SystemScenario(), matrix);
 		registerVersion(registry, "1.21.11", "132",
 				"6481503fca2838776b3da5a3f1c030e1328abc2fd77d9ea1bb4814889b540dcd",
 				new Paper12111SystemScenario(), matrix);
 		registerVersion(registry, "26.1.2", "74",
 				"95f871fd6d055ba10b5a058768ddad43b0be0286480c8eba435c835c95d5f19c",
 				new Paper2612SystemScenario(), matrix);
+		registerVersion(registry, "26.2", "121",
+				"b9295ba3fd4c9d75e361122ff89b7978b2afbe5538e60d7fa5cd7dcd96a355b1",
+				new Paper262SystemScenario(), matrix);
 		registry.group(ScenarioGroup.builder().name("native-compatibility-matrix").scenarios(matrix).build());
 	}
 

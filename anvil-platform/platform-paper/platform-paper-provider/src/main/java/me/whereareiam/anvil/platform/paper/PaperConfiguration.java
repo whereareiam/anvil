@@ -28,7 +28,7 @@ final class PaperConfiguration {
 		writeProperties(server, context);
 		Files.writeString(context.getWorkDirectory().resolve("eula.txt"),
 				"eula=" + context.isEulaAccepted() + "\n", StandardCharsets.UTF_8);
-		writeForwarding(context);
+		writeForwarding(server, context);
 	}
 
 	private void writeProperties(MinecraftServer server, PlatformContext context) throws IOException {
@@ -50,12 +50,15 @@ final class PaperConfiguration {
 		}
 	}
 
-	private void writeForwarding(PlatformContext context) throws IOException {
+	private void writeForwarding(MinecraftServer server, PlatformContext context) throws IOException {
 		var forwarding = context.getForwarding();
 		boolean modern = forwarding.getMode() == ForwardingMode.MODERN;
-		Path paperFile = context.getWorkDirectory().resolve("config/paper-global.yml");
+		String version = server.getMinecraftVersion() != null
+				? server.getMinecraftVersion() : server.getDistribution().getVersion();
+		boolean legacyLayout = version != null && version.matches("1\\.(?:[0-9]|1[0-8])(?:\\..*)?");
+		Path paperFile = context.getWorkDirectory().resolve(legacyLayout ? "paper.yml" : "config/paper-global.yml");
 		ObjectNode paper = read(paperFile);
-		ObjectNode velocity = paper.withObject("/proxies/velocity");
+		ObjectNode velocity = paper.withObject(legacyLayout ? "/settings/velocity-support" : "/proxies/velocity");
 		velocity.put("enabled", modern);
 		velocity.put("online-mode", forwarding.isProxyOnlineMode());
 		velocity.remove("secret");

@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.capability.inventory.internal;
 
 import me.whereareiam.anvil.protocol.adapter.api.capability.ProtocolCapabilityAdapter;
-import me.whereareiam.anvil.protocol.adapter.api.player.ProtocolWorkerPlayer;
 import me.whereareiam.anvil.protocol.adapter.api.capability.ProtocolCapabilityAdapterRegistry;
+import me.whereareiam.anvil.protocol.adapter.api.player.ProtocolWorkerPlayer;
 import org.geysermc.mcprotocollib.protocol.data.game.inventory.ClickItemAction;
 import org.geysermc.mcprotocollib.protocol.data.game.inventory.ContainerAction;
 import org.geysermc.mcprotocollib.protocol.data.game.inventory.ContainerActionType;
@@ -29,6 +29,11 @@ public final class McProtocolInventoryAdapter implements ProtocolCapabilityAdapt
 	@Override
 	public @NotNull String id() {
 		return McProtocolInventoryProvider.ID;
+	}
+
+	@Override
+	public boolean supports(int protocolNumber) {
+		return McProtocolInventoryAdapterProvider.supportsProtocol(protocolNumber);
 	}
 
 	@Override

@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.toolkit.architecture)
+    id("agent-java")
     id("platform-agent")
 }
 
@@ -17,7 +18,7 @@ publishing {
 
 dependencies {
     compileOnly(projects.anvilAgent.agentApi)
-    compileOnly(libs.paper)
+    compileOnly(libs.paperLegacy)
 
     embedded(projects.anvilAgent.agent) { isTransitive = false }
 }

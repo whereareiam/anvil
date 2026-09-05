@@ -1,15 +1,15 @@
 package me.whereareiam.anvil.platform.paper;
 
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
-import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.platform.api.ArtifactResolver;
-import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
+import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.type.ForwardingMode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -26,6 +26,28 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PaperPlatformProviderTest {
 	@TempDir
 	Path temporary;
+
+	@Test
+	void writesLegacyForwardingLayoutForPaper118() throws Exception {
+		Path work = Files.createDirectory(temporary.resolve("legacy"));
+		Files.writeString(work.resolve("paper.yml"), "settings:\n  legacy-setting: preserved\n");
+		MinecraftServer server = MinecraftServer.builder().name("server").platform(Platforms.PAPER)
+				.distribution(Distribution.remote("1.18.2", "388")).build();
+		AnvilScenario scenario = AnvilScenario.builder().name("legacy").entrypoint("server").server(server).build();
+		PlatformContext context = context(scenario, work, Map.of("server", 25565), 25565);
+		PaperPlatformProvider provider = new PaperPlatformProvider();
+		provider.configure(server, context);
+		var yaml = new YAMLMapper();
+		var paper = yaml.readTree(work.resolve("paper.yml").toFile());
+		assertEquals("test-secret", paper.at("/settings/velocity-support/secret").asText());
+		assertTrue(paper.at("/settings/velocity-support/enabled").asBoolean());
+		assertEquals("preserved", paper.at("/settings/legacy-setting").asText());
+		assertEquals(false, Files.exists(work.resolve("config/paper-global.yml")));
+		provider.configure(server, context.toBuilder().forwarding(ForwardingConfiguration.builder().build()).build());
+		paper = yaml.readTree(work.resolve("paper.yml").toFile());
+		assertEquals(false, paper.at("/settings/velocity-support/enabled").asBoolean());
+		assertTrue(paper.at("/settings/velocity-support/secret").isMissingNode());
+	}
 
 	@Test
 	void resolvesLocalArtifactAndAppliesRuntimeValuesAfterOverlay() throws Exception {

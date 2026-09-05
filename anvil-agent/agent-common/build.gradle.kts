@@ -1,6 +1,6 @@
 plugins {
     alias(libs.plugins.toolkit.architecture)
-    id("unit")
+    id("agent-java")
 }
 
 description = "Shared agent transport and runtime implementation"

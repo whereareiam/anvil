@@ -237,8 +237,12 @@ The compatibility catalog uses these pins, retrieved from GetBukkit on 2026-09-0
 
 | Minecraft version | Spigot JAR SHA-256 |
 |---|---|
+| `1.18.2` | `6996f8025b497dd32271b09b6624b26b95d0e39dc9f6860d01fd0db38905076d` |
+| `1.19.4` | `beb43043e8d03d1d4557755102aebc0bfe89368a594939fb1db5f9e5ee84ebb3` |
+| `1.20.6` | `d9aab418f8404148b47c8faba484698a526f121f9fb5412264de9dc4b65db02f` |
 | `1.21.11` | `6481503fca2838776b3da5a3f1c030e1328abc2fd77d9ea1bb4814889b540dcd` |
 | `26.1.2` | `95f871fd6d055ba10b5a058768ddad43b0be0286480c8eba435c835c95d5f19c` |
+| `26.2` | `b9295ba3fd4c9d75e361122ff89b7978b2afbe5538e60d7fa5cd7dcd96a355b1` |
 
 Downloads are verified and cached under
 `~/.anvil/distributions/getbukkit/spigot/<version>/<sha256>/spigot-<version>.jar`.
@@ -557,9 +561,15 @@ entire quality strategy.
 | Direct or backend server | Paper, Spigot        |
 | Proxy                    | Velocity, BungeeCord |
 
-Minecraft `1.21.11` and `26.1.2` are verified across direct servers and every supported
-proxy/backend combination. Distributions may come from pinned remote builds, local JARs, Maven
-artifacts, or Gradle project artifacts.
+Minecraft `1.18.2`, `1.19.4`, `1.20.6`, `1.21.11`, `26.1.2`, and `26.2` are supported natively across
+direct servers and every supported proxy/backend combination. The matrix covers 36 routes, plus
+capability and reconnect/identity checks for each version. Versions 1.16.5 and 1.17.1 are excluded
+because reproducible published protocol artifacts were not available from the supported sources.
+Distributions may come from pinned remote builds, local JARs, Maven artifacts, or Gradle project artifacts.
+
+The host framework and protocol workers require Java 21. Older Spigot runs with Java 17 within
+its upstream JVM limits; Bukkit agents target Java 17. Minecraft 26.* servers use Java 25.
+The provider's declared Java range controls selection—Anvil does not bypass upstream version checks.
 
 Anvil uses native Java protocol clients and local JVM processes. Docker, Kubernetes, hosted
 orchestration, Fabric, Sponge, and Bedrock are not supported yet. Pretending otherwise would make

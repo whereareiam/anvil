@@ -32,7 +32,9 @@ autonomous AI, and crafting automation are outside the current project scope.
 | `anvil-capability/capability-builtin/<feature>` | Separate feature API, packet/agent adapter, and consumer wiring modules                                       |
 | `anvil-protocol/protocol-api`                   | Backend-neutral providers, players, composition, and optional authentication contracts                        |
 | `anvil-protocol/protocol-adapter-api`           | Host/worker execution contracts for packet-backed capabilities                                                |
-| `anvil-protocol/protocol-mcprotocol`            | MCProtocolLib backend, pinned catalog, workers, and private authentication store                              |
+| `anvil-protocol/protocol-mcprotocol`            | Source-free composition of the MCProtocol client and native binding modules                                  |
+| `protocol-mcprotocol/mcprotocol-client`          | Pinned catalog, dependency resolution, authentication, and shared host/child worker control                   |
+| `protocol-mcprotocol/mcprotocol-binding-*`       | Native session bindings compiled against distinct packet-library API families                                |
 | `anvil-platform/platform-api`                   | Provisioning SPI, artifact resolution, distribution validation, and forwarding contracts                      |
 | `anvil-platform/platform-*`                     | Provider-specific distribution/configuration implementations and platform-agent assemblies                    |
 | `anvil-agent/agent-api`                         | Typed agent operations, native service access, transport, directory, and artifact contracts                   |
@@ -87,6 +89,8 @@ autonomous AI, and crafting automation are outside the current project scope.
 ## Java and package conventions
 
 - Target Java 21. Use tabs for indentation and spaces only for alignment.
+- Agent API/transport, the common agent assembly, Bukkit agents, and server fixtures target Java 17
+  through `agent-java` so older Spigot can run on a supported JVM. Host code and protocol workers stay on Java 21.
 - Use imports instead of fully qualified type references unless qualification resolves a name collision.
   Keep runtime class-name strings and service-descriptor names fully qualified.
 - Use feature-oriented packages: contracts at the feature root, public reusable
@@ -168,14 +172,14 @@ Run the nearest relevant test first, then architecture/build checks:
 ./gradlew :anvil-engine:test
 ./gradlew :anvil-agent:agent-common:test
 ./gradlew :anvil-capability:capability-runtime:test
-./gradlew :anvil-protocol:protocol-mcprotocol:test
+./gradlew :anvil-protocol:protocol-mcprotocol:mcprotocol-client:test
 ./gradlew :anvil-tooling:gradle:scenarios:test :anvil-tooling:gradle:bundle:test
 ./gradlew :anvil-testing:testing-runtime:test
 ./gradlew build
 ~~~
 
-For protocol behavior, run exact worker contracts for both catalog versions and full live coverage.
-For kicking/reconnects/identities, include `PlayerIdentityReconnectSystemTest` for both versions.
+For protocol behavior, run exact worker contracts for every catalog version and full live coverage.
+For kicking/reconnects/identities, include `PlayerIdentityReconnectSystemTest` for every catalog version.
 For providers/forwarding, run every affected direct/proxy combination. Inspect retained
 `anvil-console.log` files after startup or routing failures.
 

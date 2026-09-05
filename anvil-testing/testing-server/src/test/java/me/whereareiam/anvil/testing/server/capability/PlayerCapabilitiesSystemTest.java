@@ -1,7 +1,5 @@
 package me.whereareiam.anvil.testing.server.capability;
 
-import me.whereareiam.anvil.testing.server.extension.FixtureAgentProbeProvider;
-
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.runtime.AnvilContext;
@@ -18,8 +16,13 @@ import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.junit.AnvilTest;
+import me.whereareiam.anvil.testing.server.extension.FixtureAgentProbeProvider;
+import me.whereareiam.anvil.testing.server.scenario.Paper1182SystemScenario;
+import me.whereareiam.anvil.testing.server.scenario.Paper1194SystemScenario;
+import me.whereareiam.anvil.testing.server.scenario.Paper1206SystemScenario;
 import me.whereareiam.anvil.testing.server.scenario.Paper12111SystemScenario;
 import me.whereareiam.anvil.testing.server.scenario.Paper2612SystemScenario;
+import me.whereareiam.anvil.testing.server.scenario.Paper262SystemScenario;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -38,6 +41,30 @@ class PlayerCapabilitiesSystemTest {
 	@Test
 	@AnvilTest(Paper2612SystemScenario.class)
 	void controlsAProtocolPlayerOnPaper2612(AnvilContext anvil) {
+		verify(anvil);
+	}
+
+	@Test
+	@AnvilTest(Paper1182SystemScenario.class)
+	void controlsAProtocolPlayerOnPaper1182(AnvilContext anvil) {
+		verify(anvil);
+	}
+
+	@Test
+	@AnvilTest(Paper1194SystemScenario.class)
+	void controlsAProtocolPlayerOnPaper1194(AnvilContext anvil) {
+		verify(anvil);
+	}
+
+	@Test
+	@AnvilTest(Paper1206SystemScenario.class)
+	void controlsAProtocolPlayerOnPaper1206(AnvilContext anvil) {
+		verify(anvil);
+	}
+
+	@Test
+	@AnvilTest(Paper262SystemScenario.class)
+	void controlsAProtocolPlayerOnPaper262(AnvilContext anvil) {
 		verify(anvil);
 	}
 

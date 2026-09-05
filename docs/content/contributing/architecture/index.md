@@ -92,7 +92,9 @@ JUnit explicitly or through the combined plugin.
 ## Provider families
 
 - `anvil-protocol/protocol-api` defines backend-neutral protocol contracts. `protocol-mcprotocol`
-  provides the pinned MCProtocolLib backend and isolated worker runtime.
+  is a source-free composition artifact. Its `mcprotocol-client` implementation owns the catalog,
+  authentication, library resolution, and shared worker control; `mcprotocol-binding-*` modules
+  own native sessions for distinct packet API families.
 - `anvil-platform/platform-api` defines server and proxy providers. The Paper, Spigot, Velocity, and
   BungeeCord provider modules own distribution/configuration behavior.
   Provider-owned distribution validation runs during engine preflight. Build-addressed suppliers
@@ -135,6 +137,7 @@ to `me.whereareiam.anvil.protocol`:
 | `api.model`, `api.type` | Reusable public values and closed types |
 | `adapter.api.capability` | Worker adapter registration, named operations, and packet listeners |
 | `adapter.api.player` | Host connection and worker-side player execution services |
+| `adapter.api.binding` | Native session lifecycle and worker-owned state/callback contracts |
 | `mcprotocol.provider` | `McProtocolProvider` entry point and `McProtocolClientPool` ownership |
 | `mcprotocol.authentication` | Account workflow and private credential storage |
 | `mcprotocol.catalog`, `mcprotocol.model` | Pinned runtime resolution and shared internal values |
@@ -145,8 +148,9 @@ to `me.whereareiam.anvil.protocol`:
 
 `ProtocolWorkerProcess` owns one child process. `WorkerClasspathResolver`, `WorkerRpcClient`, and
 `WorkerDiagnostics` each own a focused part of its host-side infrastructure. `RemoteProtocolPlayer`
-is the host handle; `McProtocolPlayer` owns the actual MCProtocolLib session in the child.
-`McProtocolWorkerMain` validates the exact native codec and composes `McProtocolWorker`, which owns
+is the host handle; `WorkerPlayerContext` owns shared child-side state and delegates native connection
+behavior to a selected `ProtocolWorkerSession`. `McProtocolWorkerMain` validates the exact native
+codec through `ProtocolWorkerBinding` and composes `McProtocolWorker`, which owns
 player lifecycle and delegates capability operations to `WorkerCapabilityRegistry`.
 `WorkerMessageCodec` owns envelope serialization, parsing, and validation; `WorkerMessageWriter`
 serializes child output. These are internal collaborators, not extension
@@ -159,6 +163,23 @@ external namespaced capability operations remain open. Their adapters cannot reg
 `create`, `destroy`, or `shutdown` operations. Malformed private messages fail without retaining raw
 payloads in parser diagnostics. Host/child messages are internal and evolve together in the same
 backend artifact; extensions depend on the public adapter API, not these envelopes.
+
+Bindings are grouped by API shape: the PacketLib binding serves 1.18.2 and 1.19.4, the TCP-session
+binding serves 1.20.6, and the client-network-factory binding serves 1.21.11, 26.1.2, and 26.2.
+Capability families carry their own compatible packet adapters. Lazy adapter providers select by
+protocol number before loading native classes. Service descriptors are merged before duplicate
+resource exclusion, so every selected adapter survives wiring-artifact packaging.
+
+`ProtocolLibraryResolver` uses Apache Maven Resolver for the pinned library's declared dependencies.
+The exact protocol root JAR is SHA-256 verified; dependency JARs use the versioned Maven graph in
+`~/.anvil/protocol/dependencies`. The plain-text serializer matches that graph's Adventure version.
+Optional experimental io_uring artifacts are omitted; PacketLib selects its supported epoll/NIO
+transport instead. This changes transport selection, not Minecraft packet translation.
+
+Providers can declare an upper Java bound through `maximumJavaVersion`. Older Spigot requires
+Java 17–18 (1.18.2) or 17–20 (1.19.4), so the generic Java resolver chooses an appropriate executable
+instead of bypassing upstream checks. Bukkit agents and shared agent contracts/transport compile
+for Java 17 against the oldest supported Bukkit API. Host code and protocol workers remain Java 21.
 
 `MicrosoftAuthentication` owns login and token refresh. `AuthenticationProfileStore` owns only
 private profile-document persistence and atomic replacement. Neither serializable request models

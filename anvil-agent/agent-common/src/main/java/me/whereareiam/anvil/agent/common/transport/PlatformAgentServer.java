@@ -3,9 +3,9 @@ package me.whereareiam.anvil.agent.common.transport;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import me.whereareiam.anvil.agent.api.operation.AgentOperationProvider;
 import me.whereareiam.anvil.agent.api.platform.PlatformAgent;
 import me.whereareiam.anvil.agent.api.transport.AgentServer;
-import me.whereareiam.anvil.agent.api.operation.AgentOperationProvider;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
@@ -18,8 +18,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.Set;
 import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,7 +35,7 @@ public final class PlatformAgentServer implements AgentServer {
 	private final PlatformAgentRequestDispatcher dispatcher;
 	private final Consumer<String> logger;
 	private final ServerSocket server;
-	private final ExecutorService clients = Executors.newVirtualThreadPerTaskExecutor();
+	private final ExecutorService clients = Executors.newCachedThreadPool();
 	private final Set<Socket> connections = ConcurrentHashMap.newKeySet();
 
 	/**

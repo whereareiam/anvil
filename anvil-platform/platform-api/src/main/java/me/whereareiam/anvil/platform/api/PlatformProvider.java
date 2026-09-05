@@ -3,11 +3,11 @@ package me.whereareiam.anvil.platform.api;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
 import me.whereareiam.anvil.api.type.CachePolicy;
-import me.whereareiam.anvil.platform.api.model.PlatformContext;
+import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.api.model.PlatformAgentDescriptor;
+import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.model.ResolvedDistribution;
 import me.whereareiam.anvil.platform.api.type.ForwardingMode;
-import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -96,6 +96,16 @@ public interface PlatformProvider {
 	 * @return Java feature version
 	 */
 	int minimumJavaVersion(@NotNull MinecraftProcess process);
+
+	/**
+	 * Returns an upper Java feature-version bound when the selected distribution rejects newer JVMs.
+	 *
+	 * @param process server or proxy declaration
+	 * @return maximum supported Java version, or null when the provider imposes no upper bound
+	 */
+	default @Nullable Integer maximumJavaVersion(@NotNull MinecraftProcess process) {
+		return null;
+	}
 
 	/**
 	 * Returns arguments appended after the executable JAR.

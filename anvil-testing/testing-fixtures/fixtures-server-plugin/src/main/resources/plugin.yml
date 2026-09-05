@@ -1,7 +1,7 @@
 name: AnvilSystemFixture
 version: '${version}'
 main: me.whereareiam.anvil.testing.fixture.bukkit.AnvilSystemFixturePlugin
-api-version: '1.21'
+api-version: '1.18'
 description: Internal behavior fixture for Anvil's live system tests
 commands:
   auth:

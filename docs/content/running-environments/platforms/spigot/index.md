@@ -30,8 +30,16 @@ catalog. They are recorded content pins, not claims of upstream-signed releases.
 
 | Minecraft version | SHA-256 |
 |---|---|
+| `1.18.2` | `6996f8025b497dd32271b09b6624b26b95d0e39dc9f6860d01fd0db38905076d` |
+| `1.19.4` | `beb43043e8d03d1d4557755102aebc0bfe89368a594939fb1db5f9e5ee84ebb3` |
+| `1.20.6` | `d9aab418f8404148b47c8faba484698a526f121f9fb5412264de9dc4b65db02f` |
 | `1.21.11` | `6481503fca2838776b3da5a3f1c030e1328abc2fd77d9ea1bb4814889b540dcd` |
 | `26.1.2` | `95f871fd6d055ba10b5a058768ddad43b0be0286480c8eba435c835c95d5f19c` |
+| `26.2` | `b9295ba3fd4c9d75e361122ff89b7978b2afbe5538e60d7fa5cd7dcd96a355b1` |
+
+Spigot 1.18.2 permits Java 17–18 and 1.19.4 permits Java 17–20. Anvil selects a JVM within those
+bounds and supplies Java-17-compatible Bukkit agents. Plugins under test must target a compatible
+Java release as well. Do not add flags that bypass Spigot's Java-version validation.
 
 The provider downloads `https://cdn.getbukkit.org/spigot/spigot-<version>.jar` and verifies its
 SHA-256 before accepting it. If supplier bytes change, a fresh download fails until you deliberately
