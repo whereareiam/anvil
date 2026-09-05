@@ -43,7 +43,12 @@ The whole test task requires full mode. There are no mixed live/non-live methods
 ```
 
 `anvilMatrixFilter` affects compatibility cases only. Use `--tests` to select a test class. The root
-`test -Panvil.testMode=full` command continues to run all live coverage, including consumer journeys.
+`test -Panvil.testMode=full` command runs the complete framework matrix. Consumer journeys run
+separately after local publication with `./gradlew -p examples/proof-of-patience anvilTest`.
+
+The native matrix covers 1.18.2, 1.19.4, 1.20.6, 1.21.11, 26.1.2, and 26.2: 36 routes plus six
+capability and six identity/reconnect cases. Framework startup and each binding's exact library are
+also checked by `:anvil-protocol:protocol-mcprotocol:mcprotocol-client:test`.
 
 ## Fixture artifacts
 

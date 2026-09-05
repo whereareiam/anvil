@@ -9,5 +9,7 @@ dependencies {
     api(projects.anvilCapability.capabilityBuiltin.inventory.builtinInventoryApi)
 
     embedded(projects.anvilCapability.capabilityBuiltin.inventory.builtinInventoryProtocol) { isTransitive = false }
+    embedded(projects.anvilCapability.capabilityBuiltin.inventory.builtinInventoryProtocol1182) { isTransitive = false }
+    embedded(projects.anvilCapability.capabilityBuiltin.inventory.builtinInventoryProtocol1206) { isTransitive = false }
     embedded(projects.anvilCapability.capabilityBuiltin.session.builtinSession) { isTransitive = false }
 }

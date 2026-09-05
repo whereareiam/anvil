@@ -9,15 +9,15 @@ import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.type.WorkspaceMode;
 import me.whereareiam.anvil.engine.model.EngineOptions;
 import me.whereareiam.anvil.engine.provisioning.DownloadCache;
-import me.whereareiam.anvil.engine.provisioning.TemurinRuntimeProvisioner;
 import me.whereareiam.anvil.engine.provisioning.ProcessJavaResolver;
 import me.whereareiam.anvil.engine.provisioning.ScenarioArtifactResolver;
+import me.whereareiam.anvil.engine.provisioning.TemurinRuntimeProvisioner;
 import me.whereareiam.anvil.engine.provisioning.WorkspaceFiles;
 import me.whereareiam.anvil.engine.provisioning.WorkspaceSession;
 import me.whereareiam.anvil.engine.scenario.ScenarioResources;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
-import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
+import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.model.ResolvedDistribution;
 import org.jetbrains.annotations.NotNull;
 
@@ -95,7 +95,7 @@ public final class ScenarioProcessLauncher {
 			ForwardingConfiguration forwarding
 	) {
 		Path java = new ProcessJavaResolver(options, new TemurinRuntimeProvisioner(downloads))
-				.resolve(provider.minimumJavaVersion(process));
+				.resolve(provider.minimumJavaVersion(process), provider.maximumJavaVersion(process));
 		return PlatformContext.builder()
 				.scenario(scenario)
 				.cacheDirectory(options.getCacheDirectory())

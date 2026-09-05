@@ -20,9 +20,10 @@ workspaces automatically; consumers do not allocate agent ports or provide sessi
 
 ## Verified combinations
 
-Minecraft `1.21.11` and `26.1.2` are verified with direct Paper and Spigot connections and with
-Velocity or BungeeCord routing to either server. The internal matrix uses Paper builds `132` and
-`74`, Velocity `3.5.1` build `615`, and BungeeCord build `2085`. GetBukkit pins are listed on the
+Minecraft `1.18.2`, `1.19.4`, `1.20.6`, `1.21.11`, `26.1.2`, and `26.2` are covered by direct Paper
+and Spigot connections and Velocity/BungeeCord routes to either server: 36 native routes in total.
+The Paper builds are respectively `388`, `550`, `151`, `132`, `74`, and `121`. The matrix uses
+Velocity `3.5.1` build `615` and BungeeCord build `2085`. GetBukkit pins are listed on the
 [Spigot page](./spigot/index.md).
 
 Server and client versions are separate from the proxy's own version. A local or named server JAR
@@ -30,8 +31,11 @@ must declare `minecraftVersion` so Anvil can select a compatible native client.
 
 ## Java selection
 
-The framework targets Java 21. Current Paper/Spigot providers require Java 25 for `26.*` releases
-and Java 21 for the earlier verified release. Provider requirements guide engine Java selection.
+The framework and protocol workers target Java 21. Servers in `26.*` require Java 25; 1.20.6 and
+1.21.11 use Java 21. Older Paper/Spigot declare Java 17 as their minimum; Spigot 1.18.2 rejects JVMs
+above Java 18 and Spigot 1.19.4 rejects JVMs above Java 20. The engine honors those upper bounds and
+can provision Java 17. Bukkit agents support Java 17; plugins under test must also be compiled for
+their server JVM. Provider requirements guide engine Java selection.
 Set explicit executables where needed:
 
 ```kotlin

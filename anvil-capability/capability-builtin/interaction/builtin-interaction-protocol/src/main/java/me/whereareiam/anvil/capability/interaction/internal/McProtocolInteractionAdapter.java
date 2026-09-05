@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.capability.interaction.internal;
 
 import me.whereareiam.anvil.protocol.adapter.api.capability.ProtocolCapabilityAdapter;
-import me.whereareiam.anvil.protocol.adapter.api.player.ProtocolWorkerPlayer;
 import me.whereareiam.anvil.protocol.adapter.api.capability.ProtocolCapabilityAdapterRegistry;
+import me.whereareiam.anvil.protocol.adapter.api.player.ProtocolWorkerPlayer;
 import org.cloudburstmc.math.vector.Vector3d;
 import org.cloudburstmc.math.vector.Vector3i;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -20,6 +20,11 @@ public final class McProtocolInteractionAdapter implements ProtocolCapabilityAda
 	@Override
 	public @NotNull String id() {
 		return McProtocolInteractionProvider.ID;
+	}
+
+	@Override
+	public boolean supports(int protocolNumber) {
+		return McProtocolInteractionAdapterProvider.supportsProtocol(protocolNumber);
 	}
 
 	@Override

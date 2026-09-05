@@ -1,0 +1,65 @@
+package me.whereareiam.anvil.capability.messages.internal;
+
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundPlayerChatPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundChatCommandPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundChatPacket;
+import me.whereareiam.anvil.protocol.adapter.api.capability.ProtocolCapabilityAdapter;
+import me.whereareiam.anvil.protocol.adapter.api.capability.ProtocolCapabilityAdapterRegistry;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.jetbrains.annotations.NotNull;
+
+import java.time.Instant;
+import java.util.BitSet;
+import java.util.List;
+
+/**
+ * Installs chat packet operations and listeners into an MCProtocol worker.
+ */
+public final class McProtocol1194MessagesAdapter implements ProtocolCapabilityAdapter {
+	private final PlainTextComponentSerializer plain = PlainTextComponentSerializer.plainText();
+
+	@Override
+	public @NotNull String id() {
+		return "me.whereareiam.anvil.messages";
+	}
+
+	@Override
+	public boolean supports(int protocolNumber) {
+		return McProtocol1194MessagesAdapterProvider.supportsProtocol(protocolNumber);
+	}
+
+	@Override
+	public void install(@NotNull ProtocolCapabilityAdapterRegistry registry) {
+		registry.operation("messages.chat", (player, arguments) -> {
+			player.send(new ServerboundChatPacket(
+					arguments.path("message").asText(),
+					Instant.now().toEpochMilli(),
+					0L,
+					null,
+					0,
+					new BitSet(20)
+			));
+			return player.mapper().createObjectNode();
+		});
+		registry.operation("messages.command", (player, arguments) -> {
+			player.send(new ServerboundChatCommandPacket(arguments.path("command").asText(),
+					Instant.now().toEpochMilli(), 0L, List.of(), 0, new BitSet(20)));
+			return player.mapper().createObjectNode();
+		});
+		registry.packets((player, packet) -> {
+			if (packet instanceof ClientboundSystemChatPacket chat) {
+				player.emit("messages.received", payload -> payload.put("text", plain.serialize(chat.getContent())));
+				return;
+			}
+			if (packet instanceof ClientboundPlayerChatPacket chat) {
+				Component content = chat.getUnsignedContent();
+				player.emit("messages.received", payload -> payload.put(
+						"text",
+						content == null ? chat.getContent() : plain.serialize(content)
+				));
+			}
+		});
+	}
+}

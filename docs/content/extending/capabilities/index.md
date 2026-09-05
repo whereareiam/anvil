@@ -44,13 +44,22 @@ under `META-INF/services/me.whereareiam.anvil.protocol.adapter.api.capability.Pr
 Its `install` method registers namespaced operations and packet listeners. Its `supports(protocolNumber)`
 method declares compatible protocol bindings.
 
+When a bundle carries multiple native API families, implement `ProtocolCapabilityAdapterProvider`
+and register it under
+`META-INF/services/me.whereareiam.anvil.protocol.adapter.api.capability.ProtocolCapabilityAdapterProvider`.
+Its constructor and `supports(protocolNumber)` must not touch native packet classes. `create()` is
+called only after selection, so an incompatible adapter is never loaded merely to ask whether it
+supports a version. Keep packet behavior in the capability-owned adapter modules. Direct adapter
+registrations remain supported for existing single-family extensions.
+
 The host provider obtains `ProtocolPlayerConnection`, sends named requests, and subscribes to worker
 events. The worker uses MCProtocolLib packets and the shared worker execution surface. This adds
 behavior without editing the core worker dispatch. It does not replace the backend's packet codec
 or install support for arbitrary new library versions.
 
 Keep operation/event names globally unique and stable. Preserve external dependency classpath
-entries when testing against isolated workers; only the selected protocol JAR is replaced.
+entries when testing against isolated workers. The selected protocol JAR and its own library
+dependencies precede host entries; do not rely on another version's Netty, NBT, or Adventure classes.
 Operation names must be qualified with a namespace (for example `combat.attack` or `combat:attack`).
 The worker reserves `create`, `destroy`, and `shutdown` for its own lifecycle; adapter registration
 rejects those names. Use the public connection API instead of constructing private worker envelopes.

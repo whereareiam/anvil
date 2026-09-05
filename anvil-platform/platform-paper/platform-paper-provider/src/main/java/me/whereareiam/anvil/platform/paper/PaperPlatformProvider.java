@@ -57,8 +57,10 @@ public final class PaperPlatformProvider implements PlatformProvider {
 	@Override
 	public int minimumJavaVersion(@NotNull MinecraftProcess process) {
 		MinecraftServer server = (MinecraftServer) process;
-		String version = server.getDistribution().isLocal()
+		String version = server.getMinecraftVersion() != null
 				? server.getMinecraftVersion() : server.getDistribution().getVersion();
+		if (version != null && version.matches("1\\.(18|19)(\\..*)?"))
+			return 17;
 		return version != null && version.startsWith("26.") ? 25 : 21;
 	}
 

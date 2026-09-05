@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.toolkit.architecture)
+    id("agent-java")
     id("platform-agent")
 }
 
@@ -18,7 +19,6 @@ publishing {
 dependencies {
     embedded(projects.anvilAgent.agentApi) { isTransitive = false }
     embedded(projects.anvilAgent.agentCommon) { isTransitive = false }
-    embedded(projects.anvilApi) { isTransitive = false }
     embedded(libs.jackson.databind)
 }
 

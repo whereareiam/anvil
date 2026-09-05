@@ -16,12 +16,17 @@ adventure = "4.25.0"
 
 # platform api
 paper = "1.21.11-R0.1-SNAPSHOT"
+paper-legacy = "1.18.2-R0.1-SNAPSHOT"
 velocity = "3.5.1"
 bungeecord = "26.1-R0.1-SNAPSHOT"
 
 # minecraft protocol
 mcprotocol = "26.1-SNAPSHOT"
 minecraft-auth = "5.0.0"
+maven-resolver = "1.9.27"
+mcprotocol-1206 = "1.20.6-2-20240610.212238-11"
+mcprotocol-1194 = "1.19.4-2-20230503.145414-3"
+mcprotocol-1182 = "1.18.2-1"
 
 # testing
 junit = "6.0.1"
@@ -48,12 +53,17 @@ adventure-plain = { group = "net.kyori", name = "adventure-text-serializer-plain
 
 # platform api
 paper = { group = "io.papermc.paper", name = "paper-api", version.ref = "paper" }
+paperLegacy = { group = "io.papermc.paper", name = "paper-api", version.ref = "paper-legacy" }
 velocity = { group = "com.velocitypowered", name = "velocity-api", version.ref = "velocity" }
 bungeecord = { group = "net.md-5", name = "bungeecord-api", version.ref = "bungeecord" }
 
 # minecraft protocol
 mcprotocol = { group = "org.geysermc.mcprotocollib", name = "protocol", version.ref = "mcprotocol" }
 minecraft-auth = { group = "net.raphimc", name = "MinecraftAuth", version.ref = "minecraft-auth" }
+maven-resolver = { group = "org.apache.maven.resolver", name = "maven-resolver-supplier", version.ref = "maven-resolver" }
+mcprotocol1206 = { group = "org.geysermc.mcprotocollib", name = "protocol", version.ref = "mcprotocol-1206" }
+mcprotocol1194 = { group = "com.github.steveice10", name = "mcprotocollib", version.ref = "mcprotocol-1194" }
+mcprotocol1182 = { group = "com.github.steveice10", name = "mcprotocollib", version.ref = "mcprotocol-1182" }
 
 # testing
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }

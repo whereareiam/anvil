@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.engine.AnvilException;
 import me.whereareiam.anvil.engine.model.EngineOptions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,10 +19,17 @@ public final class ProcessJavaResolver {
 	private final @NotNull TemurinRuntimeProvisioner runtimes;
 
 	public @NotNull Path resolve(int minimumVersion) {
+		return resolve(minimumVersion, null);
+	}
+
+	public @NotNull Path resolve(int minimumVersion, @Nullable Integer maximumVersion) {
+		if (maximumVersion != null && maximumVersion < minimumVersion)
+			throw new AnvilException("Invalid Java version range: " + minimumVersion + ".." + maximumVersion);
 		Path configured = options.getJavaExecutables().get(minimumVersion);
 		if (configured != null)
 			return configured;
-		if (Runtime.version().feature() >= minimumVersion)
+		if (Runtime.version().feature() >= minimumVersion
+				&& (maximumVersion == null || Runtime.version().feature() <= maximumVersion))
 			return options.getDefaultJavaExecutable();
 
 		String variable = "JAVA_" + minimumVersion + "_HOME";
@@ -35,7 +43,8 @@ public final class ProcessJavaResolver {
 		}
 		if (options.isAutoDownloadJavaRuntimes())
 			return runtimes.resolve(minimumVersion, options.getCacheDirectory());
-		throw new AnvilException("Java " + minimumVersion + "+ is required. Configure anvil.javaExecutables["
+		String requirement = maximumVersion == null ? minimumVersion + "+" : minimumVersion + ".." + maximumVersion;
+		throw new AnvilException("Java " + requirement + " is required. Configure anvil.javaExecutables["
 				+ minimumVersion + "] or " + variable);
 	}
 }

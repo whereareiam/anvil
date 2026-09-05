@@ -15,6 +15,11 @@ public final class McProtocolMovementAdapter implements ProtocolCapabilityAdapte
 	}
 
 	@Override
+	public boolean supports(int protocolNumber) {
+		return McProtocolMovementAdapterProvider.supportsProtocol(protocolNumber);
+	}
+
+	@Override
 	public void install(@NotNull ProtocolCapabilityAdapterRegistry registry) {
 		registry.operation("movement.move", (player, arguments) -> {
 			float yaw = (float) arguments.path("yaw").asDouble();

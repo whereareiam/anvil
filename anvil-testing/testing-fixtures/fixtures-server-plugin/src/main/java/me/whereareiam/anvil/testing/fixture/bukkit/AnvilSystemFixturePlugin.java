@@ -146,10 +146,29 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 	}
 
 	private void spawnEntity(Player player) {
-		ArmorStand stand = player.getWorld().spawn(player.getLocation().add(1, 0, 0), ArmorStand.class);
+		Location target = player.getEyeLocation().add(0, 0, 1);
+		clearEntitySpace(player.getEyeLocation());
+		clearEntitySpace(target);
+		ArmorStand stand = player.getWorld().spawn(target, ArmorStand.class);
+		stand.setGravity(false);
+		stand.setInvulnerable(true);
 		stand.setCustomName("Anvil target");
 		stand.setCustomNameVisible(true);
-		player.sendMessage("anvil:entity-id:" + stand.getEntityId());
+		getServer().getScheduler().runTaskTimer(this, task -> {
+			if (!player.isOnline() || !stand.isValid()) {
+				task.cancel();
+				return;
+			}
+			if (!stand.getTrackedPlayers().contains(player) || !player.hasLineOfSight(stand))
+				return;
+			player.sendMessage("anvil:entity-id:" + stand.getEntityId());
+			task.cancel();
+		}, 1L, 1L);
+	}
+
+	private void clearEntitySpace(Location location) {
+		for (int height = 0; height < 3; height++)
+			location.clone().add(0, height, 0).getBlock().setType(Material.AIR);
 	}
 
 	private void sendPosition(Player player) {

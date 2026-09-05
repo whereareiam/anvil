@@ -25,6 +25,11 @@ public final class McProtocolMessagesAdapter implements ProtocolCapabilityAdapte
 	}
 
 	@Override
+	public boolean supports(int protocolNumber) {
+		return McProtocolMessagesAdapterProvider.supportsProtocol(protocolNumber);
+	}
+
+	@Override
 	public void install(@NotNull ProtocolCapabilityAdapterRegistry registry) {
 		registry.operation("messages.chat", (player, arguments) -> {
 			player.send(new ServerboundChatPacket(
