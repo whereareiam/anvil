@@ -46,8 +46,10 @@ summary and compatibility placeholders with the verified Java, Minecraft, and pl
 and explain relevant public API or configuration migrations. Updating a draft does not publish a
 release or run the Maven publication workflow.
 
-All workflows cache only immutable Anvil distributions, protocol runtimes, and JDKs. Credentials are
-provided to the publication job by GitHub secrets and are not passed to tests or scenario processes.
+All workflows cache only immutable Anvil distributions, protocol runtimes, and JDKs. Publication uses
+`whereareiam/devops/actions/registry/maven-publish@v2` with GitHub OIDC and the existing Anvil mapping
+in Artifact Keeper. Short-lived credentials are obtained only for publication, not passed to tests
+or scenario processes. Static Maven secrets are not required.
 
 ## Local commands
 

@@ -3,7 +3,7 @@
 # build tooling
 shadow = "9.3.0"
 freefair = "9.5.0"
-toolkit = "dev-f92ffe1"
+toolkit = "dev-a4c6f1b"
 
 # compile time processing
 lombok = "1.18.42"

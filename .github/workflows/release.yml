@@ -18,6 +18,7 @@ concurrency:
 permissions:
   contents: read
   checks: write
+  id-token: write
 
 jobs:
   verify-and-publish:
@@ -25,8 +26,6 @@ jobs:
     timeout-minutes: 70
     env:
       RELEASE_VERSION: ${{ github.event.release.tag_name || inputs.version }}
-      MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
-      MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
 
     steps:
       - name: Checkout repository
@@ -67,6 +66,8 @@ jobs:
           -PanvilVersion='${{ steps.version.outputs.value }}'
 
       - name: Publish Maven modules and Gradle plugin
-        run: >-
-          ./gradlew --no-daemon publish
-          -PanvilVersion='${{ steps.version.outputs.value }}'
+        uses: whereareiam/devops/actions/registry/maven-publish@v2
+        with:
+          visibility: public
+          repository: packages
+          command: ./gradlew --no-daemon publish -PanvilVersion='${{ steps.version.outputs.value }}'

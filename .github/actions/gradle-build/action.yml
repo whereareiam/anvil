@@ -36,6 +36,13 @@ runs:
         distribution: ${{ inputs.java-distribution }}
         check-latest: true
 
+    - name: Set up Java 21 compiler toolchain
+      if: inputs.java-version != '21'
+      uses: actions/setup-java@v5
+      with:
+        java-version: "21"
+        distribution: ${{ inputs.java-distribution }}
+
     - name: Set up Gradle
       uses: gradle/actions/setup-gradle@v5
 
@@ -57,7 +64,7 @@ runs:
         if-no-files-found: ignore
 
     - name: Test report
-      if: ${{ !cancelled() && inputs.use-test-reporter == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+      if: ${{ !cancelled() && inputs.use-test-reporter == 'true' && hashFiles('**/build/test-results/**/*.xml') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
       uses: dorny/test-reporter@v3
       with:
         name: Anvil Gradle tests

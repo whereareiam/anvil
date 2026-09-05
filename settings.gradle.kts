@@ -12,7 +12,7 @@ pluginManagement {
 }
 
 plugins {
-    id("me.whereareiam.toolkit.project-discovery") version "dev-8c0271b"
+    id("me.whereareiam.toolkit.project-discovery") version "dev-a4c6f1b"
 }
 
 rootProject.name = "Anvil"

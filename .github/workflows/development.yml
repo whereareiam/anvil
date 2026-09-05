@@ -10,14 +10,12 @@ concurrency:
 permissions:
   contents: read
   checks: write
+  id-token: write
 
 jobs:
   publish-development:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    env:
-      MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
-      MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
 
     steps:
       - name: Checkout repository
@@ -53,4 +51,8 @@ jobs:
           -PanvilVersion='${{ steps.version.outputs.value }}'
 
       - name: Publish development modules
-        run: ./gradlew --no-daemon publish -PanvilVersion='${{ steps.version.outputs.value }}'
+        uses: whereareiam/devops/actions/registry/maven-publish@v2
+        with:
+          visibility: public
+          repository: packages
+          command: ./gradlew --no-daemon publish -PanvilVersion='${{ steps.version.outputs.value }}'
