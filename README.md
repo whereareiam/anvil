@@ -165,10 +165,11 @@ selected runtime dependencies, so the launcher itself does not impose MCProtocol
 SDK on consumers. Add the selected provider and matching platform-agent artifacts to the embedding
 application's runtime classpath, then set `EngineOptions.protocolId` when more than one protocol
 provider is installed.
-`EngineOptions` lives in `me.whereareiam.anvil.engine.model`.
+Create an API `ScenarioEngine` with `AnvilLauncher.create(options)`; `EngineOptions` lives in
+`me.whereareiam.anvil.api.model`.
 
 For another tooling integration that needs the foreground shell, use
-`me.whereareiam.anvil:tooling-runner`. It exposes `AnvilRunner` and `AnvilRunnerConfiguration`
+`me.whereareiam.anvil:tooling-runner`. It exposes `AnvilRunner` and `EngineOptions`
 without a Gradle API dependency; the Anvil Gradle plugin is one adapter that supplies the
 configuration and consumer runtime classpath.
 
@@ -319,7 +320,7 @@ how many friends you have. Players belong to the running test and are created wh
 package com.example.test;
 
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
-import me.whereareiam.anvil.api.runtime.AnvilContext;
+import me.whereareiam.anvil.api.scenario.AnvilContext;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.junit.AnvilTest;

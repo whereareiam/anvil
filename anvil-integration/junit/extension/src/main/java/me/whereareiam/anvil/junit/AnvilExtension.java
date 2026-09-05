@@ -1,11 +1,13 @@
 package me.whereareiam.anvil.junit;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.api.runtime.AnvilContext;
+import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.scenario.AnvilContext;
 import me.whereareiam.anvil.api.scenario.AnvilScenarioDefinition;
-import me.whereareiam.anvil.engine.AnvilEngine;
-import me.whereareiam.anvil.engine.model.EngineOptions;
+import me.whereareiam.anvil.api.scenario.ScenarioEngine;
+import me.whereareiam.anvil.launcher.AnvilLauncher;
+import me.whereareiam.anvil.launcher.config.EngineProperties;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionConfigurationException;
@@ -26,9 +28,9 @@ public final class AnvilExtension implements BeforeEachCallback, ParameterResolv
 		try {
 			AnvilScenarioDefinition definition = selection.value().getDeclaredConstructor().newInstance();
 			AnvilScenario scenario = definition.define();
-			EngineOptions options = EngineOptions.fromSystemProperties();
+			EngineOptions options = EngineProperties.fromSystemProperties();
 
-			AnvilEngine engine = new AnvilEngine(options);
+			ScenarioEngine engine = AnvilLauncher.create(options);
 			AnvilContext runtimeContext = engine.start(scenario);
 			context.getStore(NAMESPACE).put(STATE_KEY, new State(engine, runtimeContext));
 		} catch (ReflectiveOperationException e) {
@@ -64,7 +66,7 @@ public final class AnvilExtension implements BeforeEachCallback, ParameterResolv
 
 	@RequiredArgsConstructor
 	private static final class State implements AutoCloseable {
-		private final AnvilEngine engine;
+		private final ScenarioEngine engine;
 		private final AnvilContext context;
 
 		@Override

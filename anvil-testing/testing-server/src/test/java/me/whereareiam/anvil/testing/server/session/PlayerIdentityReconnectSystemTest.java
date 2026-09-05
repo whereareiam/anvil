@@ -2,7 +2,7 @@ package me.whereareiam.anvil.testing.server.session;
 
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
-import me.whereareiam.anvil.api.runtime.AnvilContext;
+import me.whereareiam.anvil.api.scenario.AnvilContext;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;

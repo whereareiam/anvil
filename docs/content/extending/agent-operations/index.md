@@ -111,10 +111,3 @@ The adapter depends on public APIs and the shared operation contract, not the pl
 implementation. Register the host adapter through the capability SPI and add its wiring artifact to
 `anvilCapabilities` as usual. Clients are owned and closed by the scenario; capability adapters must
 not close them.
-
-## Compatibility notes
-
-Custom `AgentClient` implementations provide the generic request method inherited from
-`AgentConnection`. Existing engine embeddings import `EngineOptions` from
-`me.whereareiam.anvil.engine.model`. Protocol capabilities still use their separate worker-operation
-SPI; an agent operation does not replace the protocol backend or its packet codec.

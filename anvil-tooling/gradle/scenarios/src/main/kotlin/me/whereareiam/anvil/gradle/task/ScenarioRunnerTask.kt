@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.gradle.task
 
+import me.whereareiam.anvil.api.model.EngineOptions
 import me.whereareiam.anvil.gradle.internal.AnvilPluginNames
 import me.whereareiam.anvil.runner.AnvilRunner
-import me.whereareiam.anvil.runner.model.AnvilRunnerConfiguration
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
@@ -15,12 +15,13 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
+import org.gradle.work.DisableCachingByDefault
+
 import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.net.URLClassLoader
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
-import org.gradle.work.DisableCachingByDefault
 
 /** Lists registered scenarios or runs one foreground scenario or interactive scenario group. */
 @DisableCachingByDefault(because = "The task intentionally starts long-running external server processes")
@@ -152,8 +153,8 @@ abstract class ScenarioRunnerTask : DefaultTask() {
         }
     }
 
-    private fun runnerConfiguration(): AnvilRunnerConfiguration {
-        val builder = AnvilRunnerConfiguration.builder()
+    private fun runnerConfiguration(): EngineOptions {
+        val builder = EngineOptions.builder()
             .eulaAccepted(eulaAccepted.get())
             .cacheDirectory(cacheDirectory.get().asFile.toPath())
             .workDirectory(workDirectory.get().asFile.toPath())

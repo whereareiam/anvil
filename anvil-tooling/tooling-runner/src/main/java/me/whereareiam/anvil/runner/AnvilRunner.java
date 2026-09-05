@@ -3,12 +3,13 @@ package me.whereareiam.anvil.runner;
 import me.whereareiam.anvil.api.model.scenario.ScenarioGroup;
 import me.whereareiam.anvil.api.scenario.AnvilScenarioProvider;
 import me.whereareiam.anvil.api.scenario.ScenarioRegistry;
-import me.whereareiam.anvil.engine.AnvilEngine;
-import me.whereareiam.anvil.engine.model.EngineOptions;
+import me.whereareiam.anvil.api.scenario.ScenarioEngine;
+import me.whereareiam.anvil.launcher.AnvilLauncher;
+import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.launcher.config.EngineProperties;
 import me.whereareiam.anvil.runner.command.RunnerArgumentsParser;
-import me.whereareiam.anvil.runner.model.AnvilRunnerConfiguration;
-import me.whereareiam.anvil.runner.model.command.RunnerArguments;
 import me.whereareiam.anvil.runner.model.RunnerSelection;
+import me.whereareiam.anvil.runner.model.command.RunnerArguments;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStreamReader;
@@ -25,7 +26,7 @@ import java.util.Objects;
  */
 public final class AnvilRunner {
 	private final Reader input;
-	private final PrintWriter output;
+	private final RunnerTerminal terminal;
 
 	/**
 	 * Creates a runner backed by the supplied terminal streams.
@@ -35,7 +36,7 @@ public final class AnvilRunner {
 	 */
 	public AnvilRunner(@NotNull Reader input, @NotNull PrintWriter output) {
 		this.input = Objects.requireNonNull(input, "input");
-		this.output = Objects.requireNonNull(output, "output");
+		this.terminal = new RunnerTerminal(Objects.requireNonNull(output, "output"));
 	}
 
 	/**
@@ -58,7 +59,7 @@ public final class AnvilRunner {
 	 * @throws Exception when provider loading or scenario startup fails
 	 */
 	public void run(@NotNull String[] arguments) throws Exception {
-		run(arguments, AnvilRunnerConfiguration.fromSystemProperties());
+		run(arguments, EngineProperties.fromSystemProperties());
 	}
 
 	/**
@@ -68,26 +69,26 @@ public final class AnvilRunner {
 	 * @param configuration engine and workspace configuration
 	 * @throws Exception when provider loading or scenario startup fails
 	 */
-	public void run(@NotNull String[] arguments, @NotNull AnvilRunnerConfiguration configuration) throws Exception {
+	public void run(@NotNull String[] arguments, @NotNull EngineOptions configuration) throws Exception {
 		Objects.requireNonNull(configuration, "configuration");
 		RunnerArguments parsed = RunnerArgumentsParser.parse(arguments);
 		ScenarioRegistry registry = loadRegistry(parsed.getProvider());
 
 		if (parsed.isList()) {
-			RunnerOutput.printRegistry(registry, output);
+			terminal.showScenarios(registry);
 			return;
 		}
 
 		RunnerSelection selection = select(parsed, registry);
 		try (
-				AnvilEngine engine = new AnvilEngine(engineOptions(configuration));
+				ScenarioEngine engine = AnvilLauncher.create(configuration);
 				InteractiveSession session = new InteractiveSession(
 						engine,
 						registry,
 						selection.getScenario(),
 						selection.getGroup(),
 						input,
-						output
+						terminal
 				)
 		) {
 			session.run();
@@ -123,19 +124,6 @@ public final class AnvilRunner {
 		provider.register(registry);
 
 		return registry;
-	}
-
-	private static EngineOptions engineOptions(AnvilRunnerConfiguration configuration) {
-		EngineOptions.EngineOptionsBuilder options = EngineOptions.builder()
-				.protocolId(configuration.getProtocolId())
-				.eulaAccepted(configuration.isEulaAccepted())
-				.cacheDirectory(configuration.getCacheDirectory())
-				.workDirectory(configuration.getWorkDirectory());
-
-		configuration.getJavaExecutables().forEach(options::javaExecutable);
-		configuration.getArtifacts().forEach(options::artifact);
-
-		return options.build();
 	}
 
 	private ScenarioGroup requireGroup(ScenarioRegistry registry, String name) {

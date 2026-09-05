@@ -36,6 +36,8 @@ dependencies {
     api(projects.anvilProtocol.protocolAdapterApi)
     api(projects.anvilProtocol.protocolApi)
 
+    compileOnly(projects.anvilEngine)
+
     embedded(projects.anvilAgent.agentCommon) { isTransitive = false }
     embedded(projects.anvilCapability.capabilityRuntime) { isTransitive = false }
     embedded(projects.anvilEngine) { isTransitive = false }
@@ -64,4 +66,8 @@ toolkitPublish {
 
 tasks.named("build") {
     dependsOn("shadowJar")
+}
+
+configurations.testRuntimeOnly {
+    extendsFrom(configurations["embedded"])
 }

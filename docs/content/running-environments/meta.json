@@ -1,4 +1,4 @@
 {
   "title": "Running environments",
-  "pages": ["index", "platforms", "proxies", "authentication", "manual", "troubleshooting"]
+  "pages": ["index", "configuration", "platforms", "processes", "proxies", "authentication", "manual", "troubleshooting"]
 }

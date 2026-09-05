@@ -12,7 +12,7 @@ import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.engine.AnvilEngine;
-import me.whereareiam.anvil.engine.model.EngineOptions;
+import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.testing.fixture.extension.ExternalExtensionFixture;
 import me.whereareiam.anvil.testing.server.scenario.Paper12111SystemScenario;
 import org.junit.jupiter.api.Test;

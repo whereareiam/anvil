@@ -2,7 +2,7 @@ package me.whereareiam.anvil.testing.runtime.provider;
 
 import me.whereareiam.anvil.capability.api.CapabilityException;
 import me.whereareiam.anvil.engine.AnvilEngine;
-import me.whereareiam.anvil.engine.model.EngineOptions;
+import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.protocol.api.provider.ProtocolProviderRegistry;
 import me.whereareiam.anvil.testing.fixture.extension.ExternalExtensionFixture;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.api.scenario;
 
-import me.whereareiam.anvil.api.runtime.AnvilContext;
+import me.whereareiam.anvil.api.scenario.AnvilContext;
 import org.jetbrains.annotations.NotNull;
 
 /**

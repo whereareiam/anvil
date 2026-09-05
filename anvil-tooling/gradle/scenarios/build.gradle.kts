@@ -10,7 +10,7 @@ dependencies {
 	implementation(projects.anvilProtocol.protocolApi)
 	implementation(projects.anvilTooling.toolingRunner)
 
-	compileOnly(projects.anvilEngine)
+	compileOnly(projects.anvilLauncher)
 
 	testImplementation(gradleTestKit())
 }

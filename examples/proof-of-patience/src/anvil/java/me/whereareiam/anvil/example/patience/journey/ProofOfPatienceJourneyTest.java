@@ -2,13 +2,13 @@ package me.whereareiam.anvil.example.patience.journey;
 
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
-import me.whereareiam.anvil.api.runtime.AnvilContext;
+import me.whereareiam.anvil.api.scenario.AnvilContext;
 import me.whereareiam.anvil.api.type.ProcessState;
-import me.whereareiam.anvil.example.patience.scenario.Paper12111Scenario;
-import me.whereareiam.anvil.example.patience.scenario.Paper2612Scenario;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
+import me.whereareiam.anvil.example.patience.scenario.Paper12111Scenario;
+import me.whereareiam.anvil.example.patience.scenario.Paper2612Scenario;
 import me.whereareiam.anvil.junit.AnvilTest;
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +40,7 @@ class ProofOfPatienceJourneyTest {
 	}
 
 	private void verifyAliceProvesHerPatience(AnvilContext anvil) {
-		assertEquals(ProcessState.READY, anvil.server("authentication").state());
+		assertEquals(ProcessState.READY, anvil.processes().server("authentication").state());
 
 		SimulatedPlayer alice = anvil.players().create("Alice");
 		Session session = alice.capability(Session.class);

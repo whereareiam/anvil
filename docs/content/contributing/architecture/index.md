@@ -22,37 +22,125 @@ anvil-api
                  <- anvil-tooling/gradle/bundle (combined composition)
 ```
 
-`anvil-engine` owns platform-neutral scenario orchestration: process lifecycle, workspace and
-download provisioning, validation, shutdown, runtime context, and player management. It depends on
-`anvil-api` plus the public provider SPIs in `anvil-platform/platform-api`,
-`anvil-protocol/protocol-api`, and `anvil-agent/agent-api`. Providers, protocol backends, capability
-implementations, and agent transports are discovered through those SPIs; the engine does not import
-their implementation classes.
+## Engine lifecycle and ownership
 
-Protocol provider selection precedes capability discovery. The engine resolves one provider from
-the runtime class loader and supplies its actual ID to the composer, even when no explicit ID is
-configured. The selected backend is instantiated after scenario validation and closed by the engine.
-Authentication tooling calls the provider's optional `ProtocolAuthentication` API independently of
-backend creation. The Gradle adapter depends on `protocol-api`, not the MCProtocol implementation.
+Consumers create a `ScenarioEngine` through `AnvilLauncher.create(options)`. The launcher assembles
+the engine implementation and returns the API contract. The engine coordinates a scenario through
+installed platform, protocol, and agent services.
+Implementation modules consume the provider APIs; platform SDKs and protocol implementations stay
+in their owning modules. Use the following boundaries when changing startup or cleanup:
 
-Within the engine, `ScenarioProcessLauncher` prepares and starts one process through its provider,
-and `ProcessJavaResolver` selects its Java executable. `TemurinRuntimeProvisioner` owns the concrete
-JDK download and extraction behavior. `ScenarioArtifactResolver` resolves named distributions and
-workspace assets before provisioning and installs the declared platform agent. `WorkspacePlanValidator`
-and `WorkspaceAssetFingerprint` separate declaration validation and cache identity from workspace
-lifecycle. `ScenarioResources` owns the run's port assignments, players, agent connections, processes,
-and workspaces from startup through shutdown. Both failed
-startup and normal context shutdown use that owner; a failed cleanup does not skip later resources
-or finalize diagnostic workspaces as a successful run.
+| Owner | Responsibility | Lifetime |
+|---|---|---|
+| `AnvilEngine` | Retain successful runs and the shared protocol backend | One engine instance |
+| `EngineProviders` | Discover installed providers and select the protocol/player composer | Engine construction |
+| `ScenarioRun` | Own scenario preparation, setup, process replacement, and finalization | One scenario run |
+| `ScenarioProcess` | Retain a declaration, prepared workspace, executable, provider context, and agent handle | One declared process across restarts |
+| `ManagedProcess` | Supervise one JVM's readiness, state, and termination | One process generation |
 
-`ForwardingPlanner` negotiates forwarding from provider capabilities before launch. Connected
-proxy/server components share a compatible mode and per-run settings. Each platform module keeps
-its distribution resolver and configuration writer beside its thin provider entry point; no provider
-depends on another provider implementation. YAML and TOML serialization remain provider-owned.
-Engine options live under `engine.model`; MCProtocol catalog services live under `mcprotocol.catalog`
-and their shared values under `mcprotocol.model`.
+### Startup sequence
 
-`anvil-launcher` has no production source. Its shaded JAR packages the engine and selected reusable
+1. `EngineProviders` selects the protocol before discovering its player composer. The backend is
+   created lazily after scenario validation.
+2. `ScenarioRun` resolves artifacts and calls `ScenarioPreflight` to validate the declaration and
+   negotiate connected forwarding groups. `ForwardingPlanner` performs only topology and compatibility decisions; it has no I/O or
+   credential generation.
+3. The run selects distinct candidate listener ports and creates forwarding credentials per connected
+   group. One Java resolver is reused, with one executable selection for each required feature version.
+4. Each `ScenarioProcess` takes ownership before preparing its workspace. It resolves the executable
+   and command once, configures its platform, launches a `ManagedProcess`, and connects its agent.
+   Servers start before proxies.
+5. The run creates players and executes setup against itself as the `AnvilContext`. The engine retains
+   the run only after setup succeeds.
+
+A preparation or setup failure closes the partially acquired run. Setup assertions keep their
+original type, and cleanup failures are suppressed. Failed runs do not save success caches. The
+shared protocol backend remains owned by the engine.
+
+### Restart and shutdown
+
+`RunningScenarioProcesses` owns the authoritative collection of `ScenarioProcess` objects. Named
+lookups read that collection directly; collection methods create immutable snapshots on request. Restart asks the selected object to close its old agent connection and
+JVM, reapply platform configuration, and launch another generation. It reuses the prepared command,
+workspace, listener address, Java executable, and forwarding configuration. Assets and distributions
+are not resolved again. Agent credentials are fresh, while borrowed agent handles remain stable.
+
+Restart and run shutdown share one synchronization boundary. Failed replacement marks the run
+unsuccessful even when its exception is caught. Finalization closes players, then all agent
+connections, then JVMs in reverse launch order. Only after process cleanup does it finalize
+workspaces, so an earlier failure prevents success-cache saves. All cleanup operations are attempted.
+
+`ManagedProcessConsole` owns the generation's command writes, captured output, checkpoint waits,
+and log file. The lifecycle supervisor uses readiness and output-closure notifications without
+owning the console buffer itself.
+
+`PortSelection` probes currently free ports and prevents duplicate selections within a run. It does
+not reserve sockets for child JVMs: another application may bind a candidate before the child starts.
+The resulting startup failure follows normal rollback; the engine does not silently rewrite the
+prepared topology or retry with different ports.
+
+Tests exercise actual local JVM generations and fake agent transports to verify reuse, fresh agent
+credentials, shared forwarding secrets, rollback, reverse shutdown, and suppression of cleanup errors.
+The Minecraft restart matrix verifies the same public behavior through platform providers and native
+player connections.
+
+### Package responsibilities
+
+Public contract packages are relative to `me.whereareiam.anvil.api`:
+
+| Package | Contents |
+|---|---|
+| `scenario` | Scenario engine, context, definitions, hooks, and registry |
+| `process` | Base process handle, console, and scenario process access |
+| `process.type` | Specialized `RunningServer` and `RunningProxy` contracts |
+| `player` | Player and capability contracts |
+| `model`, `type`, `exception` | Declarative models, closed choices, and public failures |
+
+Engine packages are relative to `me.whereareiam.anvil.engine`:
+
+| Package | Contents |
+|---|---|
+| Engine root | Engine entry point, service discovery, and option defaults |
+| `scenario` | Whole-run lifecycle ownership |
+| `scenario.preflight` | Declaration validation and forwarding negotiation |
+| `scenario.process` | Prepared process collection, replacements, and stable agent connections |
+| `process` | Individual JVM supervision, console capture, and port selection |
+| `process.type` | Server/proxy specializations of `ManagedProcess` |
+| `provisioning.artifact` | Named artifact resolution and downloads |
+| `provisioning.java` | Java executable discovery, selection, and Temurin provisioning |
+| `provisioning.workspace` | Workspace lifecycle, validation, cache identity/storage, and confined file operations |
+| `player` | Context-owned players and observations |
+
+`ScenarioArtifactResolver` resolves named artifacts and installs the declared platform agent.
+`ProcessJavaResolver` chooses a Java installation; `JavaExecutables` owns executable naming and
+installation paths for both defaults and provisioning. `TemurinRuntimeProvisioner` handles verified
+JDK downloads and extraction. `WorkspacePlanValidator` validates asset/cache/cleanup declarations before
+`WorkspaceSession` executes them. `WorkspaceCacheStore` owns cache identity and persistence, including
+asset fingerprints. A session acquires workspace ownership before cleanup is permitted, and releases
+its persistent lock even when cleanup fails. Secondary failures remain suppressed on the primary
+failure. Platform providers own their distribution and configuration
+formats, including YAML/TOML parsing and native SDK interactions.
+
+## Configuration and failures
+
+`api.model.EngineOptions` is the immutable configuration passed to engines and foreground runners.
+Omitted environment-dependent paths remain unspecified in API and are resolved when the engine is
+created. Launcher's `config.EngineProperties` decodes JVM properties for JUnit and command-line tooling;
+`EngineDefaults` resolves environment-dependent paths. Keep property names and parsing out of the
+options model. The scenario defines process startup deadlines; engine options define shutdown policy.
+See [Configure an environment](../../running-environments/configuration/index.md) for usage and defaults.
+
+Public scenario failures derive from `api.exception.AnvilException`. Use the category corresponding
+to the failed operation: validation, provisioning, process execution, or scenario setup. Preserve
+provider-specific exceptions at their boundaries and preserve original causes when adding context.
+Use standard Java exceptions for caller misuse, such as an unknown lookup or an operation on a closed
+owner. [Troubleshooting](../../running-environments/troubleshooting/index.md) documents how callers
+interpret those failures.
+
+## Distribution and tooling
+
+`anvil-launcher` exposes `AnvilLauncher` and property decoding. Its public factory returns the
+`ScenarioEngine` API contract. Its shaded JAR packages the engine and selected reusable
 runtime implementations for direct consumers, merges their service descriptors, and excludes public
 API identities. It is a distribution boundary, not a second runtime layer.
 
@@ -63,8 +151,10 @@ share the `pluginMaven` publication supplied by Gradle instead of competing with
 at the same coordinates.
 
 `anvil-tooling/tooling-runner` owns the reusable foreground scenario shell. It accepts an immutable
-`AnvilRunnerConfiguration` and injected terminal streams, so it has no Gradle API dependency. The
-Gradle plugin adapts task properties and the consumer runtime classpath into that configuration;
+`EngineOptions` and injected terminal streams. It depends on API contracts and launcher assembly,
+with no direct engine or Gradle API dependency.
+`RunnerTerminal` formats and flushes user-facing output; `InteractiveSession` dispatches commands and
+coordinates scenario lifecycle. The Gradle plugin supplies options and the consumer runtime classpath;
 other tooling integrations can use the same runner artifact without depending on the Gradle plugin.
 
 `anvil-tooling/gradle/scenarios` keeps the public Gradle DSL, base wiring, foreground scenarios,
@@ -128,20 +218,20 @@ JUnit explicitly or through the combined plugin.
 Protocol contracts and runtime code are grouped by responsibility. Package names below are relative
 to `me.whereareiam.anvil.protocol`:
 
-| Package | Responsibility |
-|---|---|
-| `api.provider` | Provider selection, backend lifecycle, and optional authentication |
-| `api.player` | Backend-owned players and capability composition contracts |
-| `api.model`, `api.type` | Reusable public values and closed types |
-| `adapter.api.capability` | Worker adapter registration, named operations, and packet listeners |
-| `adapter.api.player` | Host connection and worker-side player execution services |
-| `mcprotocol.provider` | `McProtocolProvider` entry point and `McProtocolClientPool` ownership |
-| `mcprotocol.authentication` | Account workflow and private credential storage |
-| `mcprotocol.catalog`, `mcprotocol.model` | Pinned runtime resolution and shared internal values |
-| `mcprotocol.model.worker`, `mcprotocol.type` | Typed private worker messages and core lifecycle identifiers |
-| `mcprotocol.worker.host` | Child process lifecycle, remote player handles, requests, classpath, and diagnostics |
-| `mcprotocol.worker.child` | Child composition root, lifecycle dispatch, MCProtocol players, and adapter installation |
-| `mcprotocol.worker.transport` | Shared JSON-lines codec and serialized message output |
+| Package                                      | Responsibility                                                                           |
+|----------------------------------------------|------------------------------------------------------------------------------------------|
+| `api.provider`                               | Provider selection, backend lifecycle, and optional authentication                       |
+| `api.player`                                 | Backend-owned players and capability composition contracts                               |
+| `api.model`, `api.type`                      | Reusable public values and closed types                                                  |
+| `adapter.api.capability`                     | Worker adapter registration, named operations, and packet listeners                      |
+| `adapter.api.player`                         | Host connection and worker-side player execution services                                |
+| `mcprotocol.provider`                        | `McProtocolProvider` entry point and `McProtocolClientPool` ownership                    |
+| `mcprotocol.authentication`                  | Account workflow and private credential storage                                          |
+| `mcprotocol.catalog`, `mcprotocol.model`     | Pinned runtime resolution and shared internal values                                     |
+| `mcprotocol.model.worker`, `mcprotocol.type` | Typed private worker messages and core lifecycle identifiers                             |
+| `mcprotocol.worker.host`                     | Child process lifecycle, remote player handles, requests, classpath, and diagnostics     |
+| `mcprotocol.worker.child`                    | Child composition root, lifecycle dispatch, MCProtocol players, and adapter installation |
+| `mcprotocol.worker.transport`                | Shared JSON-lines codec and serialized message output                                    |
 
 `ProtocolWorkerProcess` owns one child process. `WorkerClasspathResolver`, `WorkerRpcClient`, and
 `WorkerDiagnostics` each own a focused part of its host-side infrastructure. `RemoteProtocolPlayer`

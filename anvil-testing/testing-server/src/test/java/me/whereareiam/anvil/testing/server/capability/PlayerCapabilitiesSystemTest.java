@@ -1,10 +1,8 @@
 package me.whereareiam.anvil.testing.server.capability;
 
-import me.whereareiam.anvil.testing.server.extension.FixtureAgentProbeProvider;
-
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
-import me.whereareiam.anvil.api.runtime.AnvilContext;
+import me.whereareiam.anvil.api.scenario.AnvilContext;
 import me.whereareiam.anvil.capability.interaction.Interaction;
 import me.whereareiam.anvil.capability.interaction.model.BlockPosition;
 import me.whereareiam.anvil.capability.interaction.type.BlockFace;
@@ -18,6 +16,7 @@ import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.junit.AnvilTest;
+import me.whereareiam.anvil.testing.server.extension.FixtureAgentProbeProvider;
 import me.whereareiam.anvil.testing.server.scenario.Paper12111SystemScenario;
 import me.whereareiam.anvil.testing.server.scenario.Paper2612SystemScenario;
 import org.junit.jupiter.api.Test;
