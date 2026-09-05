@@ -74,4 +74,13 @@ public interface AnvilContext extends AutoCloseable {
 	 */
 	@Override
 	void close();
+
+	/**
+	 * Stops all resources and finalizes the run with its test or application outcome.
+	 * Failed runs retain diagnostic workspaces according to engine policy and do not
+	 * save success caches. Cleanup failures also make the run unsuccessful.
+	 *
+	 * @param successful whether the scenario's test or application completed successfully
+	 */
+	void close(boolean successful);
 }

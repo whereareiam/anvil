@@ -23,4 +23,11 @@ dependencies {
     compileOnly(projects.anvilEngine)
 
     runtimeOnly(libs.junit.platform)
+
+    testImplementation(libs.junit.platform)
+}
+
+// These fixtures are executed explicitly by the nested JUnit launcher.
+tasks.test {
+    exclude("**/AnvilOutcomeTest*Fixture.class")
 }
