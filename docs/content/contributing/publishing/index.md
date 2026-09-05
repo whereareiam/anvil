@@ -1,112 +1,90 @@
 ---
 title: Building and publication
-description: Build Anvil locally and understand ordinary, approved-live, and release CI workflows.
+description: Verify Anvil locally, publish development artifacts, and prepare releases.
 ---
 
 # Building and publication
 
-Anvil separates ordinary verification from tests that start real Minecraft processes.
+## Local verification
 
-## Pull requests
+```shell
+./gradlew build
+./gradlew test -Panvil.testMode=full
+```
 
-The `verify` job builds Anvil, publishes to Maven Local, and builds the standalone consumer example.
-After it succeeds, the
-gated `live` job runs `./gradlew test -Panvil.testMode=full` against the native compatibility matrix.
-Live jobs require the maintainer-approved `anvil-pr-live-tests` environment.
+`build` checks architecture and runs unit and focused integration tests without Minecraft.
+Full mode also downloads pinned distributions and starts real Minecraft servers and proxies. See [Testing Anvil](../testing/index.md)
+for test groups, filters, and fixture ownership. Do not use real online accounts in CI.
 
-## Development and release
+## Local publication
 
-Development publication runs only through manual `workflow_dispatch`. Select the `dev` branch in
-GitHub Actions when publishing a development build. It builds, runs the full test mode, compiles the
-example scenarios, and publishes a commit-qualified snapshot. Pushes do not launch this workflow.
-A published release first runs the same full verification, then publishes Maven modules and the
-Gradle plugin using the release version.
+Publish Anvil before building the standalone consumer example:
 
-Release verification builds and runs ordinary tests once, then shares its Maven-local artifacts and
-Gradle task cache with independent jobs. Direct routes, Velocity routes, BungeeCord routes, general
-live behavior, and the standalone consumer run concurrently on separate runners. Each live shard
-remains sequential internally to avoid competing Minecraft processes on the same runner. New
-versions are included automatically; the route split does not enumerate Minecraft versions.
+```shell
+./gradlew publishToMavenLocal
+./gradlew -p examples/proof-of-patience build anvilClasses
+./gradlew -p examples/proof-of-patience anvilTest
+```
 
-Publication requires every verification job to succeed and uses the exact commit resolved by the
-build job. It is not split into competing uploads. Each job has a unique test-results artifact and
-cache-writer key, and no verification job receives publication credentials. Downloaded verification
-artifacts are internal workflow inputs with a three-day retention, not release assets.
+Pass the same `-PanvilVersion=<version>` to each command when testing another version. Consumer
+settings must include `mavenLocal()` in both plugin and dependency repositories. To isolate local
+artifacts, pass `-Dmaven.repo.local=/absolute/path/to/repository` to each command.
 
-For a release rehearsal, manually run `Release` with the next version and leave `publish` disabled
-(the default). A published GitHub release always publishes after successful verification; a manual
-run publishes only when explicitly enabled. Rehearsals do not create a release or move a tag.
+The example is excluded from the root build and consumes published artifacts. Internal fixture
+artifacts are not published.
 
-The live task also accepts `-PanvilTestSuite=compatibility` or `behavior`; the default `all` preserves
-the complete local test run. The three compatibility filters are mutually exclusive and exhaustive:
-`^(?!velocity-|bungee-).*`, `^velocity-.*`, and `^bungee-.*`.
+## CI verification
 
-## Release drafts and labels
+Pull requests, development builds, and releases share `.github/workflows/verify.yml`:
 
-Release Drafter refreshes the draft on pushes to `dev` or manual dispatch. This lightweight draft
-update is separate from the manual development build/publication workflow. It uses these label
-categories and version rules:
+- Build Anvil, run unit and integration tests without Minecraft, publish to an isolated Maven Local
+  repository, and compile/test the consumer example and its scenarios.
+- Run direct-server compatibility, Velocity compatibility, BungeeCord compatibility, player
+  capabilities/sessions/extensions, and consumer journeys on separate runners.
+- Reuse the build job's artifacts and Gradle task cache. Keep live tests sequential within each
+  runner to avoid competing Minecraft processes.
 
-| Label | Release-note category | Version bump |
+Pull requests pass through the `anvil-pr-live-tests` environment before any live group starts.
+Configure required reviewers for that environment in repository settings to enforce maintainer
+approval. Keep reviewers limited to repository maintainers/admins and update the named users or
+teams when access changes; GitHub does not select reviewers dynamically by repository role.
+An environment without protection rules starts automatically. With reviewers configured,
+each update requires approval for its new revision. Other workflows do not use this gate.
+Failed or cancelled verification prevents publication.
+
+## Development publication
+
+Run **Development publication** manually in GitHub Actions and select the `dev` branch.
+It verifies the selected commit, then publishes `<branch>-<seven-character-sha>`, such as
+`dev-a123bcd`. Slashes in branch names become hyphens. Versions do not use a `-SNAPSHOT` suffix.
+Pushes do not trigger development publication.
+
+## Release publication
+
+Prepare the release tag and publish its GitHub release to trigger verification and Maven
+publication. The artifact version comes from the tag, with an optional leading `v` removed.
+
+To verify without publishing, run **Release** manually with the intended version and leave
+`publish` disabled. A manual run uses the selected ref; it does not create a release or move a tag.
+
+Publication runs once, after all verification succeeds, against the exact verified commit.
+Only the publication job requests OIDC credentials through
+`whereareiam/devops/actions/registry/maven-publish@v2`. Artifact Keeper must authorize the
+repository's OIDC identity for the `packages` Maven repository; static Maven secrets are not needed.
+
+## Release drafts
+
+Release Drafter updates the draft on `dev` pushes or manual dispatch. Label PRs before merging:
+
+| Label | Release notes | Version bump |
 |---|---|---|
 | `feature` | Features | Minor |
 | `change` | Changes | Patch |
 | `bug` | Fixes | Patch |
 | `dependencies` | Dependencies | Patch |
-| `major` | Add alongside a category label for breaking changes | Major |
-| `skip-changelog` | Excluded from release notes | No category entry |
+| `major` | Add alongside a category label | Major |
+| `skip-changelog` | Excluded | Not a version-bump label |
 
-Unspecified version changes default to patch. `skip-changelog` controls inclusion in the notes; it
-is not a version-bump label. Label pull requests before merging so the draft can group their entries.
-The repository's other issue labels remain available but do not select a release-note category.
-
-Draft names and tags use the resolved version without a `v` prefix. Before publishing, replace the
-summary and compatibility placeholders with the verified Java, Minecraft, and platform coverage,
-and explain relevant public API or configuration migrations. Updating a draft does not publish a
-release or run the Maven publication workflow.
-
-All workflows cache only immutable Anvil distributions, protocol runtimes, and JDKs. Publication uses
-`whereareiam/devops/actions/registry/maven-publish@v2` with GitHub OIDC and the existing Anvil mapping
-in Artifact Keeper. Short-lived credentials are obtained only for publication, not passed to tests
-or scenario processes. Static Maven secrets are not required.
-
-## Local commands
-
-```shell
-./gradlew verifyArchitecture
-./gradlew build
-./gradlew :anvil-testing:testing-runtime:test
-./gradlew :anvil-testing:testing-server:test -Panvil.testMode=full
-./gradlew test -Panvil.testMode=full
-```
-
-The full mode downloads pinned server and protocol artifacts and starts local processes. Ordinary
-`./gradlew test` runs the module-owned tests and `testing-runtime`, while the whole
-`testing-server:test` task is skipped. The split is by Gradle module, not by tags on individual methods.
-
-## Local publication
-
-Use one version consistently across the plugin, public APIs, provider artifacts, and launcher.
-For development against Maven Local:
-
-```shell
-./gradlew publishToMavenLocal
-./gradlew -p examples/proof-of-patience build anvilClasses
-```
-
-Consumer settings need `mavenLocal()` in plugin and dependency repositories for this workflow.
-This changes the local Maven repository; it does not publish to the remote registry. For an isolated
-verification repository, pass `-Dmaven.repo.local=/absolute/path/to/a/temporary/repository` to both
-publication and consumer invocations.
-
-Examples are standalone builds, excluded from the root project graph: they consume the published
-plugin rather than requiring it while configuring the build that produces it. To verify another
-version, pass the same `-PanvilVersion=<version>` to both commands. Run the example's live journeys
-with `./gradlew -p examples/proof-of-patience anvilTest` after local publication.
-
-The launcher is a shaded assembly; the protocol and platform providers remain explicit dependencies.
-Fixture artifacts under `anvil-testing/testing-fixtures` are internal tests and are not published.
-The Gradle plugin marker publications and Maven coordinates are owned by the build conventions.
-
-Do not run online-account authentication in CI. The authentication-task tests use a fake provider
-and exercise configuration-cache reuse without authenticating a real account.
+The default bump is patch. Draft names and tags use the version without a `v` prefix.
+Before publishing, complete the summary, verified Java/Minecraft/platform coverage, and any
+public API or configuration migration notes. Updating a draft does not publish artifacts.

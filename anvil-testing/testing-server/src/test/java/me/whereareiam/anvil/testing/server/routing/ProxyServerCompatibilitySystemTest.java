@@ -13,6 +13,7 @@ import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.testing.server.scenario.CompatibilityScenarioCatalog;
 import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestFactory;
 
 import java.time.Duration;
@@ -20,6 +21,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Tag("compatibility")
 class ProxyServerCompatibilitySystemTest {
 	@TestFactory
 	Stream<DynamicTest> runsEveryNativePlatformAndVersion() {

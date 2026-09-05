@@ -1,0 +1,29 @@
+name: Test results
+description: Upload test reports and summarize failures.
+inputs:
+  name:
+    description: Unique artifact and check name for this test group.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Upload test results
+      uses: actions/upload-artifact@v6
+      with:
+        name: ${{ inputs.name }}
+        path: |
+          **/build/test-results/**/*.xml
+          **/build/reports/tests/**
+        if-no-files-found: ignore
+
+    - name: Summarize test failures
+      if: ${{ !cancelled() && hashFiles('**/build/test-results/**/*.xml') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+      uses: dorny/test-reporter@v3
+      with:
+        name: ${{ inputs.name }}
+        path: '**/build/test-results/**/*.xml'
+        reporter: java-junit
+        use-actions-summary: "true"
+        list-suites: failed
+        list-tests: failed
+        fail-on-error: "false"

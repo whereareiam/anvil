@@ -1,0 +1,60 @@
+name: Verify and publish Anvil
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Explicit release version; omitted for branch-qualified builds.
+        required: false
+        type: string
+        default: ''
+      source_ref:
+        required: true
+        type: string
+      publish:
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/verify.yml
+    with:
+      version: ${{ inputs.version }}
+      source_ref: ${{ inputs.source_ref }}
+
+  publish:
+    name: Publish Maven artifacts
+    needs: verify
+    if: inputs.publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.verify.outputs.commit }}
+
+      - uses: ./.github/actions/setup-gradle
+
+      - uses: ./.github/actions/verification-artifacts
+
+      - name: Prepare publication tasks
+        env:
+          ANVIL_VERSION: ${{ needs.verify.outputs.version }}
+        run: ./gradlew --no-daemon assemble -PanvilVersion="$ANVIL_VERSION"
+
+      - name: Publish Maven modules and Gradle plugin
+        uses: whereareiam/devops/actions/registry/maven-publish@v2
+        with:
+          visibility: public
+          repository: packages
+          command: ./gradlew --no-daemon publish -PanvilVersion='${{ needs.verify.outputs.version }}'

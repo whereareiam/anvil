@@ -1,0 +1,192 @@
+name: Verify Anvil
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Explicit release version; omitted for branch-qualified builds.
+        required: false
+        type: string
+        default: ''
+      source_ref:
+        required: true
+        type: string
+    outputs:
+      version:
+        value: ${{ jobs.build.outputs.version }}
+      commit:
+        value: ${{ jobs.build.outputs.commit }}
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  build:
+    name: Build, unit and integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+      commit: ${{ steps.version.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.source_ref }}
+
+      - name: Resolve artifact identity
+        id: version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+          SOURCE_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          commit="$(git rev-parse HEAD)"
+          version="${REQUESTED_VERSION#v}"
+          if [[ -z "$REQUESTED_VERSION" ]]; then
+            branch_name="${SOURCE_BRANCH//\//-}"
+            version="${branch_name}-${commit::7}"
+          fi
+
+          [[ "$version" =~ ^[A-Za-z0-9][A-Za-z0-9._+-]*$ ]] || { echo "Invalid artifact version" >&2; exit 1; }
+
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/setup-gradle
+
+      - uses: ./.github/actions/anvil-cache
+        with:
+          shard: build
+
+      - name: Build and test modules
+        env:
+          ANVIL_VERSION: ${{ steps.version.outputs.value }}
+        run: >-
+          ./gradlew --no-daemon build publishToMavenLocal
+          -PanvilVersion="$ANVIL_VERSION"
+          -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
+
+      - name: Compile standalone consumer and scenarios
+        env:
+          ANVIL_VERSION: ${{ steps.version.outputs.value }}
+        run: >-
+          ./gradlew --no-daemon -p examples/proof-of-patience build anvilClasses
+          -PanvilVersion="$ANVIL_VERSION"
+          -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
+
+      - uses: ./.github/actions/test-results
+        if: always()
+        with:
+          name: Unit and integration test results
+
+      - name: Package verification inputs
+        run: |
+          mkdir -p "$RUNNER_TEMP/verification-artifacts" "$HOME/.gradle/caches/build-cache-1"
+          tar -czf "$RUNNER_TEMP/verification-artifacts/maven.tar.gz" -C "$RUNNER_TEMP/anvil-maven" .
+          tar -czf "$RUNNER_TEMP/verification-artifacts/task-cache.tar.gz" -C "$HOME/.gradle/caches/build-cache-1" .
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: verification-artifacts
+          path: ${{ runner.temp }}/verification-artifacts/*.tar.gz
+          compression-level: 0
+          retention-days: 3
+
+  approve-live:
+    name: Approve live tests
+    needs: build
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: anvil-pr-live-tests
+    steps:
+      - name: Approval granted
+        run: echo "Live tests approved for this pull request revision."
+
+  live:
+    name: ${{ matrix.name }}
+    needs: [build, approve-live]
+    if: ${{ !cancelled() && needs.build.result == 'success' && (needs.approve-live.result == 'success' || needs.approve-live.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - name: Direct server compatibility
+            shard: direct
+            tags: compatibility
+            filter: '^(?!velocity-|bungee-).*'
+          - name: Velocity compatibility
+            shard: velocity
+            tags: compatibility
+            filter: '^velocity-.*'
+          - name: BungeeCord compatibility
+            shard: bungeecord
+            tags: compatibility
+            filter: '^bungee-.*'
+          - name: Player capabilities, sessions and extensions
+            shard: behavior
+            tags: '!compatibility'
+            filter: '.*'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.build.outputs.commit }}
+
+      - uses: ./.github/actions/setup-gradle
+
+      - uses: ./.github/actions/verification-artifacts
+
+      - uses: ./.github/actions/anvil-cache
+        with:
+          shard: ${{ matrix.shard }}
+
+      - name: Run live tests
+        env:
+          ANVIL_VERSION: ${{ needs.build.outputs.version }}
+          TEST_TAGS: ${{ matrix.tags }}
+          MATRIX_FILTER: ${{ matrix.filter }}
+        run: >-
+          ./gradlew --no-daemon :anvil-testing:testing-server:test
+          -Panvil.testMode=full -PanvilTestTags="$TEST_TAGS"
+          -PanvilMatrixFilter="$MATRIX_FILTER"
+          -PanvilVersion="$ANVIL_VERSION"
+
+      - uses: ./.github/actions/test-results
+        if: always()
+        with:
+          name: ${{ matrix.name }} test results
+
+  consumer:
+    name: Standalone consumer journeys
+    needs: [build, approve-live]
+    if: ${{ !cancelled() && needs.build.result == 'success' && (needs.approve-live.result == 'success' || needs.approve-live.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.build.outputs.commit }}
+
+      - uses: ./.github/actions/setup-gradle
+
+      - uses: ./.github/actions/verification-artifacts
+
+      - uses: ./.github/actions/anvil-cache
+        with:
+          shard: consumer
+
+      - name: Verify standalone consumer
+        env:
+          ANVIL_VERSION: ${{ needs.build.outputs.version }}
+        run: >-
+          ./gradlew --no-daemon -p examples/proof-of-patience anvilTest
+          -PanvilVersion="$ANVIL_VERSION"
+          -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
+
+      - uses: ./.github/actions/test-results
+        if: always()
+        with:
+          name: Standalone consumer journey results

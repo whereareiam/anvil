@@ -59,6 +59,30 @@ compatibility cases only; use `--tests` for selecting a class. Failed live works
 under the server module's `build/anvil` directory. Inspect each process's `anvil-console.log` after
 startup or routing failures.
 
+## Select live test groups
+
+`testing-server` accepts a JUnit tag expression through `-PanvilTestTags`. Without it, all live
+tests run. The routing matrix class owns `@Tag("compatibility")`; the remaining live classes
+cover player capabilities, sessions, and external extensions.
+
+```shell
+./gradlew :anvil-testing:testing-server:test -Panvil.testMode=full -PanvilTestTags=compatibility
+./gradlew :anvil-testing:testing-server:test -Panvil.testMode=full -PanvilTestTags='!compatibility'
+```
+
+CI divides compatibility cases with mutually exclusive `anvilMatrixFilter` expressions:
+
+| Group | Filter |
+|---|---|
+| Direct servers | `^(?!velocity-|bungee-).*` |
+| Velocity | `^velocity-.*` |
+| BungeeCord | `^bungee-.*` |
+
+New versions join these groups through the scenario catalog. Keep compatibility matrix classes
+tagged; other new live tests automatically join the non-compatibility group. If a new proxy family
+uses a different scenario-name prefix, update these filters and the workflow matrix together.
+Tag selection does not enable live tests without `-Panvil.testMode=full`.
+
 ## Fixture ownership
 
 Default to case-specific fixtures beside the test. Share setup only when multiple tests need it or
