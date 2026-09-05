@@ -10,7 +10,7 @@ lombok = "1.18.42"
 annotations = "26.1.0"
 
 # general
-jackson = "2.20.1"
+jackson = "2.22.2"
 slf4j = "2.0.18"
 adventure = "4.25.0"
 
