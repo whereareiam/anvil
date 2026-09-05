@@ -136,6 +136,7 @@ public final class RunningAnvilContext implements AnvilContext {
 	 *
 	 * @param successful whether the scenario completed normally
 	 */
+	@Override
 	public void close(boolean successful) {
 		resources.close(successful);
 	}

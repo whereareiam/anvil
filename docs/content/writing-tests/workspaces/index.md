@@ -71,3 +71,9 @@ The default shared cache root is `~/.anvil`, and the default workspace root is `
 Configure them with `anvil.cacheDirectory` and `anvil.workDirectory`. The shared cache contains
 distribution and protocol artifacts as well as provider-managed Java runtimes. The authentication
 store is private state and must never be uploaded as a build cache or artifact.
+
+JUnit records the test outcome before finalizing the scenario, including failures in test setup
+and teardown. Failed tests stop all processes but retain diagnostic workspaces under the configured
+failure policy and do not save success caches. For custom runners, use `context.close(false)` when
+the application fails; `close()` means successful completion. Cleanup failures are retained alongside
+the original test failure.

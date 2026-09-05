@@ -2,6 +2,10 @@ package me.whereareiam.anvil.engine.scenario;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.agent.api.model.AgentIdentity;
+import me.whereareiam.anvil.api.runtime.AnvilContext;
+import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
+import me.whereareiam.anvil.api.player.PlayerManager;
 import me.whereareiam.anvil.agent.api.transport.AgentClient;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceCleanup;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
@@ -13,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -73,6 +78,32 @@ class ScenarioResourcesTest {
 		resources.addProcess(process("proxy", () -> closed.add("proxy")));
 		resources.close(true);
 		assertEquals(List.of("proxy", "server", "finalizer"), closed);
+	}
+
+	@Test
+	void explicitFailureRetainsWorkspaceWithoutSavingItsCache() throws Exception {
+		Path root = temporary.resolve("runs");
+		Path cache = temporary.resolve("cache");
+		Path directory = root.resolve("first/server");
+		WorkspacePlan plan = WorkspacePlan.builder()
+				.cache(WorkspaceCache.builder().path(Path.of("library.jar")).build()).build();
+		WorkspaceSession workspace = WorkspaceSession.prepare(root, directory, plan, List.of(), "same", cache, new WorkspaceFiles());
+		Files.writeString(directory.resolve("library.jar"), "failed run");
+		List<Boolean> outcomes = new ArrayList<>();
+		ScenarioResources resources = new ScenarioResources(Duration.ofSeconds(1), outcomes::add);
+		resources.addWorkspace(workspace);
+		PlayerManager players = (PlayerManager) Proxy.newProxyInstance(getClass().getClassLoader(),
+				new Class<?>[]{PlayerManager.class}, (proxy, method, arguments) -> null);
+		AnvilContext context = new RunningAnvilContext(
+				AnvilScenario.builder().name("test").entrypoint("server").build(), players, resources);
+		context.close(false);
+		context.close();
+		assertEquals(List.of(false), outcomes);
+		assertEquals("failed run", Files.readString(directory.resolve("library.jar")));
+		Path next = root.resolve("next/server");
+		try (WorkspaceSession ignored = WorkspaceSession.prepare(root, next, plan, List.of(), "same", cache, new WorkspaceFiles())) {
+			assertFalse(Files.exists(next.resolve("library.jar")));
+		}
 	}
 
 	private ManagedProcess process(String name, Runnable close) {
