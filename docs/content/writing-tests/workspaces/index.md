@@ -71,3 +71,22 @@ The default shared cache root is `~/.anvil`, and the default workspace root is `
 Configure them with `anvil.cacheDirectory` and `anvil.workDirectory`. The shared cache contains
 distribution and protocol artifacts as well as provider-managed Java runtimes. The authentication
 store is private state and must never be uploaded as a build cache or artifact.
+
+## Reuse dependency caches across plugin rebuilds
+
+By default a cache uses `CacheIdentity.PROCESS_AND_ASSETS`: changing a plugin jar or configuration
+asset selects a different snapshot. Dependency caches can explicitly opt into process-only identity:
+
+```java
+WorkspaceCache.builder()
+        .group("plugin-libraries")
+        .path(Path.of("plugins", "example", ".libraries"))
+        .identity(CacheIdentity.PROCESS)
+        .build();
+```
+
+This keeps the process/platform/distribution boundary and the cache key, while allowing reuse after
+plugin or overlay edits. Use it only for contents whose owner validates individual entries, such as
+Maven artifacts stored by coordinates and repository metadata. Keep account databases, worlds, and
+other plugin state on the default identity. Change the explicit `key` to invalidate an opted-in
+cache deliberately. Save policies, failure handling, and path confinement are unchanged.
