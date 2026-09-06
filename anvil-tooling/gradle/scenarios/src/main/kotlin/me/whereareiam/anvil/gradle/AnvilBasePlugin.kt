@@ -11,17 +11,27 @@ import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.Usage
+import java.util.Properties
 
 /**
  * Installs the shared Anvil source set, dependency buckets, extension, and authentication tasks.
  */
 class AnvilBasePlugin : Plugin<Project> {
+    private fun packagedVersion(): String {
+        val properties = Properties()
+        val resource = requireNotNull(javaClass.getResourceAsStream(AnvilPluginNames.VERSION_RESOURCE)) {
+            "Anvil plugin version metadata is missing"
+        }
+        resource.use(properties::load)
+        return requireNotNull(properties.getProperty("version")) { "Anvil plugin version is missing" }
+    }
+
     override fun apply(project: Project) {
         project.pluginManager.apply(JavaPlugin::class.java)
 
         val frameworkVersion = AnvilBasePlugin::class.java.`package`.implementationVersion
             ?: project.providers.gradleProperty(AnvilPluginNames.VERSION_PROPERTY)
-                .orElse(AnvilPluginNames.DEFAULT_VERSION)
+                .orElse(packagedVersion())
                 .get()
         val capability = project.extensions.create(
             AnvilPluginNames.EXTENSION,

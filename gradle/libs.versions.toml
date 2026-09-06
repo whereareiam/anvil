@@ -66,3 +66,4 @@ freefair-lombok = { id = "io.freefair.lombok", version.ref = "freefair" }
 toolkit-architecture = { id = "me.whereareiam.toolkit.architecture", version.ref = "toolkit" }
 toolkit-project-discovery = { id = "me.whereareiam.toolkit.project-discovery", version.ref = "toolkit" }
 toolkit-publish-maven = { id = "me.whereareiam.toolkit.publish.maven", version.ref = "toolkit" }
+toolkit-versioning = { id = "me.whereareiam.toolkit.versioning", version.ref = "toolkit" }

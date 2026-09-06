@@ -1,8 +1,15 @@
+import me.whereareiam.toolkit.versioning.extension.ToolkitVersioningExtension
+
 plugins {
     alias(libs.plugins.toolkit.architecture)
+    alias(libs.plugins.toolkit.versioning)
 }
+
+val projectVersion = extensions.getByType<ToolkitVersioningExtension>().apply {
+    defaultVersion.set(providers.gradleProperty("anvilVersion"))
+}.resolvedVersion().get()
 
 allprojects {
     group = "me.whereareiam.anvil"
-    version = providers.gradleProperty("anvilVersion").get()
+    version = projectVersion
 }
