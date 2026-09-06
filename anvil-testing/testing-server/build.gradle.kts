@@ -36,12 +36,16 @@ dependencies {
 val fullTesting = providers.gradleProperty("anvil.testMode").orElse("unit")
     .map { it.equals("full", ignoreCase = true) }
 val matrixFilter = providers.gradleProperty("anvilMatrixFilter").orElse(".*")
+val testTags = providers.gradleProperty("anvilTestTags")
 
 tasks.test {
     val enabledForRun = fullTesting.get()
     onlyIf("Real server tests require -Panvil.testMode=full") { enabledForRun }
     inputs.property("anvilTestMode", fullTesting)
     inputs.property("anvilMatrixFilter", matrixFilter)
+    useJUnitPlatform {
+        testTags.orNull?.let { includeTags(it) }
+    }
     inputs.files(serverPlugin).withPropertyName("serverPlugin")
     systemProperty("anvil.testing.serverPlugin", serverPlugin.singleFile.absolutePath)
     systemProperty("anvil.matrix.filter", matrixFilter.get())

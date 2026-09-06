@@ -6,6 +6,10 @@ plugins {
 
 description = "Combined Anvil Gradle plugin"
 
+tasks.withType<Test>().configureEach {
+    systemProperty("anvil.test.version", project.version.toString())
+}
+
 dependencies {
 	implementation(projects.anvilIntegration.junit.gradle)
 	implementation(projects.anvilTooling.gradle.scenarios)

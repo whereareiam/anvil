@@ -1,18 +1,23 @@
 name: Release
+run-name: ${{ (github.event_name == 'release' || inputs.publish) && 'Release publication' || 'Release verification rehearsal' }}
 
 on:
   release:
-    types:
-      - published
+    types: [published]
   workflow_dispatch:
     inputs:
       version:
-        description: Version to publish, without a leading v
+        description: Version to verify, without a leading v
         required: true
         type: string
+      publish:
+        description: Publish after all verification succeeds (leave disabled for a rehearsal)
+        required: true
+        type: boolean
+        default: false
 
 concurrency:
-  group: anvil-release
+  group: anvil-release-${{ github.event.release.tag_name || github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -21,53 +26,9 @@ permissions:
   id-token: write
 
 jobs:
-  verify-and-publish:
-    runs-on: ubuntu-latest
-    timeout-minutes: 70
-    env:
-      RELEASE_VERSION: ${{ github.event.release.tag_name || inputs.version }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event.release.tag_name || github.ref }}
-
-      - name: Restore Anvil immutable cache
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.anvil/distributions
-            ~/.anvil/protocol
-            ~/.anvil/jdks
-          key: ${{ runner.os }}-anvil-release-${{ hashFiles('anvil-protocol/**/ProtocolCatalog.java', 'anvil-testing/**/CompatibilityScenarioCatalog.java', 'gradle/libs.versions.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-anvil-matrix-
-            ${{ runner.os }}-anvil-
-
-      - name: Resolve release version
-        id: version
-        shell: bash
-        run: |
-          version="${RELEASE_VERSION#v}"
-          test -n "${version}"
-          echo "value=${version}" >> "${GITHUB_OUTPUT}"
-
-      - name: Verify release
-        uses: ./.github/actions/gradle-build
-        with:
-          gradle-command: >-
-            ./gradlew --no-daemon build test publishToMavenLocal -Panvil.testMode=full
-            -PanvilVersion='${{ steps.version.outputs.value }}'
-
-      - name: Verify consumer example
-        run: >-
-          ./gradlew --no-daemon -p examples/proof-of-patience build anvilTest
-          -PanvilVersion='${{ steps.version.outputs.value }}'
-
-      - name: Publish Maven modules and Gradle plugin
-        uses: whereareiam/devops/actions/registry/maven-publish@v2
-        with:
-          visibility: public
-          repository: packages
-          command: ./gradlew --no-daemon publish -PanvilVersion='${{ steps.version.outputs.value }}'
+  verify:
+    uses: ./.github/workflows/verify-and-publish.yml
+    with:
+      version: ${{ github.event.release.tag_name || inputs.version }}
+      source_ref: ${{ github.event.release.tag_name || github.sha }}
+      publish: ${{ github.event_name == 'release' || inputs.publish }}

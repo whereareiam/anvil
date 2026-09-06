@@ -5,7 +5,7 @@ on:
 
 concurrency:
   group: anvil-development-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -13,46 +13,8 @@ permissions:
   id-token: write
 
 jobs:
-  publish-development:
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Restore Anvil immutable cache
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.anvil/distributions
-            ~/.anvil/protocol
-            ~/.anvil/jdks
-          key: ${{ runner.os }}-anvil-development-${{ hashFiles('anvil-protocol/**/ProtocolCatalog.java', 'anvil-testing/**/CompatibilityScenarioCatalog.java', 'gradle/libs.versions.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-anvil-development-
-            ${{ runner.os }}-anvil-
-
-      - name: Resolve development version
-        id: version
-        shell: bash
-        run: echo "value=dev-${GITHUB_SHA::7}-SNAPSHOT" >> "${GITHUB_OUTPUT}"
-
-      - name: Build development modules
-        uses: ./.github/actions/gradle-build
-        with:
-          gradle-command: >-
-            ./gradlew --no-daemon build test -Panvil.testMode=full publishToMavenLocal
-            -PanvilVersion='${{ steps.version.outputs.value }}'
-
-      - name: Verify consumer example
-        run: >-
-          ./gradlew --no-daemon -p examples/proof-of-patience build anvilTest
-          -PanvilVersion='${{ steps.version.outputs.value }}'
-
-      - name: Publish development modules
-        uses: whereareiam/devops/actions/registry/maven-publish@v2
-        with:
-          visibility: public
-          repository: packages
-          command: ./gradlew --no-daemon publish -PanvilVersion='${{ steps.version.outputs.value }}'
+  verify:
+    uses: ./.github/workflows/verify-and-publish.yml
+    with:
+      source_ref: ${{ github.sha }}
+      publish: true
