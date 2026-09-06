@@ -1,7 +1,7 @@
 [versions]
 
 # build tooling
-shadow = "9.3.0"
+shadow = "9.6.1"
 freefair = "9.5.0"
 toolkit = "dev-a4c6f1b"
 
