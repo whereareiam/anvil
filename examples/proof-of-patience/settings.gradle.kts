@@ -1,10 +1,6 @@
-pluginManagement {
-    val anvilVersion = providers.gradleProperty("anvilVersion").orElse("0.0.1").get()
-    plugins {
-        id("me.whereareiam.anvil") version anvilVersion
-        id("me.whereareiam.anvil.platform.paper") version anvilVersion
-    }
+import java.util.Properties
 
+pluginManagement {
     repositories {
         mavenLocal()
         gradlePluginPortal()
@@ -14,14 +10,30 @@ pluginManagement {
     }
 }
 
+val checkoutVersion = providers.fileContents(layout.settingsDirectory.file("../../gradle.properties"))
+    .asText.map { text ->
+        Properties().apply { load(text.reader()) }.getProperty("anvilVersion")
+    }
+
+val anvilVersion = providers.environmentVariable("VERSION")
+    .orElse(providers.gradleProperty("anvilVersion"))
+    .orElse(checkoutVersion)
+    .get()
+
+pluginManagement.resolutionStrategy.eachPlugin {
+    if (requested.id.id == "me.whereareiam.anvil" || requested.id.id.startsWith("me.whereareiam.anvil."))
+        useVersion(anvilVersion)
+}
+
 dependencyResolutionManagement {
-	versionCatalogs {
-		create("libs") {
-			from(files("../../gradle/libs.versions.toml"))
-		}
-	}
+    versionCatalogs {
+        create("libs") {
+            from(files("../../gradle/libs.versions.toml"))
+        }
+    }
 
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+
     repositories {
         mavenLocal()
         mavenCentral()

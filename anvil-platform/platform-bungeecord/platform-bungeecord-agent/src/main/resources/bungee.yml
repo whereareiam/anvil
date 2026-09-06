@@ -1,5 +1,5 @@
 name: AnvilPlatformAgent
-version: '0.0.1'
+version: '${version}'
 main: me.whereareiam.anvil.agent.bungeecord.AnvilBungeeCordAgent
 author: whereareiam
 description: Loopback-only runtime agent installed by Anvil

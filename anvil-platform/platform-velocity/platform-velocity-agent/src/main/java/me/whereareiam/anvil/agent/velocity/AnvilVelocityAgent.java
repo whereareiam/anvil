@@ -26,7 +26,7 @@ import java.util.Optional;
 @Plugin(
 		id = "anvil-platform-agent",
 		name = "Anvil Platform Agent",
-		version = "0.0.1",
+		version = "${version}",
 		description = "Loopback-only runtime agent installed by Anvil"
 )
 public final class AnvilVelocityAgent implements PlatformAgent {

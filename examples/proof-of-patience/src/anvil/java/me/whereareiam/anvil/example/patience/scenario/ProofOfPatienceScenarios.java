@@ -82,7 +82,6 @@ public final class ProofOfPatienceScenarios implements AnvilScenarioProvider {
 		if (registered != null)
 			return Path.of(registered).toAbsolutePath().normalize();
 
-		return Path.of("examples/proof-of-patience/build/libs/proof-of-patience-0.0.1.jar")
-				.toAbsolutePath().normalize();
+		throw new IllegalStateException("The plugin-under-test artifact must be supplied by the Anvil Gradle plugin");
 	}
 }

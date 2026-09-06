@@ -18,6 +18,6 @@ internal object AnvilPluginNames {
     const val PROFILE_OPTION = "auth-profile"
     const val LOGIN_OPERATION = "login"
     const val LOGOUT_OPERATION = "logout"
-    const val DEFAULT_VERSION = "0.0.1"
+    const val VERSION_RESOURCE = "/META-INF/anvil/plugin.properties"
     const val ARTIFACT_NAME_PATTERN = "[A-Za-z0-9_.-]+"
 }

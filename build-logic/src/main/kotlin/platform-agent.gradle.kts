@@ -11,6 +11,25 @@ tasks.named<ShadowJar>("shadowJar") {
     mergeServiceFiles()
 }
 
+val agentVersion = project.version.toString()
+
+tasks.withType<ProcessResources>().configureEach {
+    val descriptorVersion = agentVersion
+    inputs.property("agentVersion", agentVersion)
+    filesMatching(listOf("plugin.yml", "bungee.yml")) {
+        expand("version" to descriptorVersion)
+    }
+}
+
+tasks.withType<Jar>().configureEach {
+    val descriptorVersion = agentVersion
+    inputs.property("agentVersion", agentVersion)
+    manifest.attributes["Implementation-Version"] = agentVersion
+    filesMatching("velocity-plugin.json") {
+        expand("version" to descriptorVersion)
+    }
+}
+
 tasks.named<Jar>("jar") {
     archiveClassifier.set("plain")
 }
