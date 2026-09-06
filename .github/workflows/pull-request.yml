@@ -17,7 +17,17 @@ permissions:
   checks: write
 
 jobs:
+  approve:
+    name: Approve pull request verification
+    runs-on: ubuntu-latest
+    environment: anvil-pr-live-tests
+
+    steps:
+      - name: Approval received
+        run: echo "Maintainer approval received; starting pull request verification."
+
   verify:
+    needs: approve
     uses: ./.github/workflows/verify.yml
     with:
       source_ref: ${{ github.sha }}
