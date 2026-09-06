@@ -2,8 +2,7 @@
 
 The Minecraft test framework that got tired of watching you test everything by hand.
 
-[Documentation](docs/content/index.md) · [Getting started](docs/content/getting-started/index.md) ·
-[Extending Anvil](docs/content/extending/index.md) · [Contributing](docs/content/contributing/index.md)
+[Documentation](https://anvil.whereareiam.me)
 
 Anvil gives JUnit control over:
 
@@ -214,69 +213,7 @@ workspace assets under `plugins/anvil-agent-extensions`; the platform agent load
 descriptors automatically. Host capability providers obtain `AgentDirectory` through
 `PlayerCapabilityContext.requireService` and invoke those operations through the borrowed agent
 clients. Native APIs and platform-thread execution are exposed by `PlatformAgent.findService` and
-`PlatformAgent.call`. See [the complete extension workflow](docs/content/extending/agent-operations/index.md).
-
-### Prebuilt Spigot
-
-Spigot uses prebuilt JARs from the third-party [GetBukkit supplier](https://getbukkit.org/download/spigot).
-Anvil does not run BuildTools or compile Spigot. GetBukkit addresses releases by Minecraft version,
-so remote Spigot declarations pin the executable's SHA-256 instead of a BuildTools build number:
-
-```java
-MinecraftServer.builder()
-        .name("server")
-        .platform(Platforms.SPIGOT)
-        .distribution(Distribution.pinned(
-                "1.21.11",
-                "6481503fca2838776b3da5a3f1c030e1328abc2fd77d9ea1bb4814889b540dcd"
-        ))
-        .build();
-```
-
-The compatibility catalog uses these pins, retrieved from GetBukkit on 2026-09-05:
-
-| Minecraft version | Spigot JAR SHA-256 |
-|---|---|
-| `1.21.11` | `6481503fca2838776b3da5a3f1c030e1328abc2fd77d9ea1bb4814889b540dcd` |
-| `26.1.2` | `95f871fd6d055ba10b5a058768ddad43b0be0286480c8eba435c835c95d5f19c` |
-
-Downloads are verified and cached under
-`~/.anvil/distributions/getbukkit/spigot/<version>/<sha256>/spigot-<version>.jar`.
-Changed supplier bytes fail checksum verification; Anvil never changes a pin automatically or falls
-back to a local build. Local and named server artifacts remain supported and require
-`minecraftVersion`. Existing BuildTools cache files remain untouched and are not reused by this supplier.
-Migrate old Spigot `Distribution.remote(version, build)` declarations to `Distribution.pinned(version, sha256)`.
-Paper, Velocity, and BungeeCord retain their existing build selectors.
-
-### Add another protocol provider
-
-Protocols are providers, not engine branches. A protocol module implements `ProtocolProvider` and
-`ProtocolBackend` from `protocol-api`, registers its provider with
-`META-INF/services/me.whereareiam.anvil.protocol.api.provider.ProtocolProvider`, and contributes its own
-native client runtime and support catalog. Add that module to `anvilProtocols` and select its stable
-ID with `anvil { protocol("your-protocol") }`. The engine discovers it through the SPI alongside
-`mcprotocol`; no launcher or engine refactor is required.
-
-The engine selects the provider once before discovering capabilities, including when selection is
-automatic. Capability providers are then filtered using that resolved ID. Ambiguous or unknown
-selections fail before any backend or process starts. Backend instances are created after scenario
-validation and owned by the engine until it closes.
-
-Public capability interfaces such as `Session` and `Movement` remain portable. Our packet adapters
-are explicitly named `McProtocolSessionProvider`, `McProtocolMovementAdapter`, and so on; they target
-MCProtocolLib. Another backend provides its own adapters for the same APIs through its own public
-execution-service contracts. See [external provider conformance](docs/content/extending/protocol-providers/index.md).
-
-Protocol extension packages are grouped under `protocol.api.provider`, `protocol.api.player`,
-`protocol.adapter.api.capability`, and `protocol.adapter.api.player` (all prefixed by
-`me.whereareiam.anvil`). Extensions using the former flat packages must update imports and service
-descriptor filenames and recompile; existing extension JARs are not binary-compatible. Maven IDs
-and worker operation/event names remain unchanged. See the
-[package migration guide](docs/content/extending/protocol-providers/index.md#package-migration).
-
-MCProtocol worker adapters register namespaced operations such as `combat.attack`; `create`,
-`destroy`, and `shutdown` are reserved for internal lifecycle control. Use the public adapter API,
-not the backend's private JSON envelopes. See [custom capabilities](docs/content/extending/capabilities/index.md).
+`PlatformAgent.call`. Detailed extension guidance is available in the documentation.
 
 ### Select only the capabilities you need
 
@@ -504,11 +441,7 @@ provider without making `combat-mcprotocol` depend on the common implementation.
 artifact installs the selected adapter with `runtimeOnly`, ordinary test code sees `Combat` but not
 protocol or provider machinery.
 
-The complete module graph and enforced dependency rules are documented in
-[Architecture](docs/content/contributing/architecture/index.md).
-
-CI behavior, live-test approval, development publication, and release publication are documented in
-[Building and publication](docs/content/contributing/publishing/index.md).
+Detailed architecture and publication guidance is available in the documentation.
 
 ## One server would have been too reasonable
 
@@ -574,20 +507,6 @@ Good instinct. The repository contains an executable authentication use case:
 - [Its reusable scenario catalog](examples/proof-of-patience/src/anvil/java/me/whereareiam/anvil/example/patience/scenario/ProofOfPatienceScenarios.java)
 - [The release journey Alice performs instead of you](examples/proof-of-patience/src/anvil/java/me/whereareiam/anvil/example/patience/journey/ProofOfPatienceJourneyTest.java)
 
-The example tests plugin behavior. Anvil's cross-module checks live in
-[`anvil-testing`](anvil-testing/README.md): `testing-runtime` covers discovery and composition,
-`testing-server` covers real platform sessions and routing, and `testing-fixtures` contains the
-server-plugin and external-extension JAR modules. All use ordinary `src/test` or `src/main` layouts.
-
-```shell
-./gradlew :anvil-testing:testing-runtime:test
-./gradlew :anvil-testing:testing-server:test -Panvil.testMode=full
-```
-
-Ordinary builds skip the entire server-test task. Full mode enables it. Consumer journeys run
-separately after `./gradlew publishToMavenLocal`, using
-`./gradlew -p examples/proof-of-patience anvilTest`. The old grouping-module task
-`:anvil-testing:test` is replaced by the two explicit module tasks above.
 
 ## License
 

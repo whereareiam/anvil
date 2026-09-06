@@ -1,11 +1,11 @@
 package me.whereareiam.anvil.api.runtime;
 
-import me.whereareiam.anvil.api.type.ProcessState;
-import org.jetbrains.annotations.NotNull;
-
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
+import me.whereareiam.anvil.api.type.ProcessState;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Runtime view of one managed Minecraft server or proxy process.
@@ -40,18 +40,9 @@ public interface RunningProcess {
 	@NotNull ProcessState state();
 
 	/**
-	 * Sends a command to the process console.
+	 * Returns the process console for commands and output observations.
 	 *
-	 * @param command command without a leading slash
+	 * @return process console
 	 */
-	void sendCommand(@NotNull String command);
-
-	/**
-	 * Returns a tail of captured output.
-	 *
-	 * @param maximumLines maximum returned lines
-	 * @return immutable output tail
-	 */
-	@NotNull List<String> logs(int maximumLines);
-
+	@NotNull ProcessConsole console();
 }

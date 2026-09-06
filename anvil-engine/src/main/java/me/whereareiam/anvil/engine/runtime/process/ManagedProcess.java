@@ -1,7 +1,8 @@
 package me.whereareiam.anvil.engine.runtime.process;
 
-import me.whereareiam.anvil.api.type.ProcessState;
+import me.whereareiam.anvil.api.runtime.ProcessConsole;
 import me.whereareiam.anvil.api.runtime.RunningProcess;
+import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.engine.AnvilException;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,9 +17,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -30,17 +28,14 @@ import java.util.regex.Pattern;
  * Shared process-backed runtime for a Minecraft server or proxy.
  */
 public abstract class ManagedProcess implements RunningProcess {
-	private static final int LOG_HISTORY_LIMIT = 2000;
-
 	private final String name;
 	private final InetSocketAddress address;
 	private final Path workDirectory;
 	private final AtomicReference<ProcessState> state = new AtomicReference<>(ProcessState.CREATED);
-	private final Deque<String> logs = new ArrayDeque<>();
 	private final CountDownLatch ready = new CountDownLatch(1);
 	private final CountDownLatch exited = new CountDownLatch(1);
+	private final ManagedProcessConsole console;
 	private volatile Process process;
-	private volatile BufferedWriter console;
 	private volatile String stopCommand = "stop";
 
 	/**
@@ -48,6 +43,7 @@ public abstract class ManagedProcess implements RunningProcess {
 	 */
 	protected ManagedProcess(String name, InetSocketAddress address, Path workDirectory) {
 		this.name = name;
+		this.console = new ManagedProcessConsole(name);
 		this.address = address;
 		this.workDirectory = workDirectory;
 	}
@@ -55,25 +51,20 @@ public abstract class ManagedProcess implements RunningProcess {
 	/**
 	 * Starts the process and blocks until its readiness line is observed.
 	 */
-	public void start(
-			List<String> command,
-			Map<String, String> environment,
-			Pattern readinessPattern,
-			String stopCommand,
-			Duration timeout
-	) {
+	public void start(List<String> command, Map<String, String> environment, Pattern readinessPattern,
+					String stopCommand, Duration timeout) {
 		if (!state.compareAndSet(ProcessState.CREATED, ProcessState.STARTING))
 			throw new AnvilException("Process '" + name + "' cannot start from state " + state.get());
 
 		this.stopCommand = stopCommand;
 		try {
 			Files.createDirectories(workDirectory);
-			ProcessBuilder builder = new ProcessBuilder(command)
-					.directory(workDirectory.toFile())
-					.redirectErrorStream(true);
+			ProcessBuilder builder =
+				new ProcessBuilder(command).directory(workDirectory.toFile()).redirectErrorStream(true);
 			builder.environment().putAll(environment);
 			process = builder.start();
-			console = new BufferedWriter(new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8));
+			console.writer(
+				new BufferedWriter(new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8)));
 
 			Thread output = new Thread(() -> captureOutput(readinessPattern), "anvil-" + name + "-output");
 			output.setDaemon(true);
@@ -88,8 +79,8 @@ public abstract class ManagedProcess implements RunningProcess {
 
 			if (!ready.await(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
 				state.set(ProcessState.FAILED);
-				throw new AnvilException("Process '" + name + "' did not become ready within " + timeout
-						+ diagnosticTail());
+				throw new AnvilException("Process '" + name + "' did not become ready within " + timeout +
+										diagnosticTail());
 			}
 			if (!process.isAlive() || state.get() == ProcessState.FAILED)
 				throw new AnvilException("Process '" + name + "' exited before becoming ready" + diagnosticTail());
@@ -117,7 +108,7 @@ public abstract class ManagedProcess implements RunningProcess {
 		try {
 			RuntimeException consoleFailure = null;
 			try {
-				sendCommand(stopCommand);
+				console.sendCommand(stopCommand);
 			} catch (RuntimeException exception) {
 				consoleFailure = exception;
 			}
@@ -147,37 +138,30 @@ public abstract class ManagedProcess implements RunningProcess {
 
 	private void captureOutput(Pattern readinessPattern) {
 		Path logFile = workDirectory.resolve("anvil-console.log");
-		try (BufferedReader reader = new BufferedReader(
-				new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
-			 BufferedWriter file = Files.newBufferedWriter(
-					 logFile,
-					 StandardCharsets.UTF_8,
-					 StandardOpenOption.CREATE,
-					 StandardOpenOption.APPEND)) {
+		try (BufferedReader reader =
+				new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
+			BufferedWriter file = Files.newBufferedWriter(logFile, StandardCharsets.UTF_8, StandardOpenOption.CREATE,
+														StandardOpenOption.APPEND)) {
 			String line;
 			while ((line = reader.readLine()) != null) {
-				synchronized (logs) {
-					logs.addLast(line);
-					while (logs.size() > LOG_HISTORY_LIMIT)
-						logs.removeFirst();
-				}
+				console.append(line);
 				file.write(line);
 				file.newLine();
 				file.flush();
 
-				if (readinessPattern.matcher(line).find()
-						&& state.compareAndSet(ProcessState.STARTING, ProcessState.READY))
+				if (readinessPattern.matcher(line).find() &&
+					state.compareAndSet(ProcessState.STARTING, ProcessState.READY))
 					ready.countDown();
 			}
 		} catch (IOException e) {
-			synchronized (logs) {
-				logs.addLast("[Anvil] Failed to capture process output: " + e.getMessage());
-			}
+			console.append("[Anvil] Failed to capture process output: " + e.getMessage());
+		} finally {
+			console.closeOutput();
 		}
 	}
 
 	private String diagnosticTail() {
-		List<String> tail = logs(30);
+		List<String> tail = console.tail(30);
 		return tail.isEmpty() ? "" : "\nLast output:\n" + String.join("\n", tail);
 	}
 
@@ -202,30 +186,7 @@ public abstract class ManagedProcess implements RunningProcess {
 	}
 
 	@Override
-	public void sendCommand(@NotNull String command) {
-		BufferedWriter writer = console;
-		if (writer == null)
-			throw new AnvilException("Process '" + name + "' has no active console");
-
-		try {
-			writer.write(command);
-			writer.newLine();
-			writer.flush();
-		} catch (IOException e) {
-			throw new AnvilException("Could not write to process '" + name + "'", e);
-		}
+	public @NotNull ProcessConsole console() {
+		return console;
 	}
-
-	@Override
-	public @NotNull List<String> logs(int maximumLines) {
-		if (maximumLines < 0)
-			throw new IllegalArgumentException("maximumLines must not be negative");
-
-		synchronized (logs) {
-			List<String> copy = new ArrayList<>(logs);
-			int from = Math.max(0, copy.size() - maximumLines);
-			return List.copyOf(copy.subList(from, copy.size()));
-		}
-	}
-
 }
