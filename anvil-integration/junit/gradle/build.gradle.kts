@@ -9,7 +9,7 @@ description = "Gradle adapter for Anvil JUnit integration"
 dependencies {
 	implementation(projects.anvilTooling.gradle.scenarios)
 
-	compileOnly(projects.anvilEngine)
+	compileOnly(projects.anvilLauncher)
 
 	testImplementation(gradleTestKit())
 }

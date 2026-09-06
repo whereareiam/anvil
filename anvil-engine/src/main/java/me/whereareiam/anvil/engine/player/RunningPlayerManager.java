@@ -1,23 +1,23 @@
 package me.whereareiam.anvil.engine.player;
 
-import me.whereareiam.anvil.api.type.AuthenticationMode;
+import me.whereareiam.anvil.agent.api.transport.AgentClient;
+import me.whereareiam.anvil.agent.api.transport.AgentDirectory;
+import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
-import me.whereareiam.anvil.api.player.PlayerManager;
-import me.whereareiam.anvil.api.model.player.PlayerOptions;
-import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
-import me.whereareiam.anvil.agent.api.transport.AgentClient;
-import me.whereareiam.anvil.agent.api.transport.AgentDirectory;
-import me.whereareiam.anvil.protocol.api.type.ProtocolCapability;
-import me.whereareiam.anvil.protocol.api.provider.ProtocolBackend;
-import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
-import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
+import me.whereareiam.anvil.api.player.PlayerManager;
+import me.whereareiam.anvil.api.player.SimulatedPlayer;
+import me.whereareiam.anvil.api.type.AuthenticationMode;
+import me.whereareiam.anvil.engine.process.ManagedProcess;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolSupport;
-import me.whereareiam.anvil.engine.runtime.process.ManagedProcess;
-import me.whereareiam.anvil.engine.AnvilException;
+import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
+import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
+import me.whereareiam.anvil.protocol.api.provider.ProtocolBackend;
+import me.whereareiam.anvil.protocol.api.type.ProtocolCapability;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -134,21 +135,21 @@ public final class RunningPlayerManager implements PlayerManager {
 	public synchronized @NotNull SimulatedPlayer create(@NotNull PlayerOptions options) {
 		ensureOpen();
 		if (options.getName().isBlank())
-			throw new AnvilException("Simulated player name must not be blank");
+			throw new IllegalArgumentException("Simulated player name must not be blank");
 		if (players.containsKey(options.getName()))
-			throw new AnvilException("Simulated player '" + options.getName() + "' already exists");
+			throw new IllegalArgumentException("Simulated player '" + options.getName() + "' already exists");
 
 		String targetName = options.getConnectTo() == null ? scenario.getEntrypoint() : options.getConnectTo();
 		MinecraftProcess target = declarations.get(targetName);
 		ManagedProcess runningTarget = processes.get(targetName);
 		if (target == null || runningTarget == null)
-			throw new AnvilException("Player '" + options.getName() + "' cannot connect to unknown process '"
+			throw new ScenarioValidationException("Player '" + options.getName() + "' cannot connect to unknown process '"
 					+ targetName + "'. Available: " + declarations.keySet());
 
 		String version = selectVersion(options, target);
 		ProtocolSupport support = protocols.get(version);
 		if (support == null)
-			throw new AnvilException("Unsupported clientVersion '" + version + "'. Supported: "
+			throw new ScenarioValidationException("Unsupported clientVersion '" + version + "'. Supported: "
 					+ protocols.keySet());
 		validateAuthentication(options, target, support);
 
@@ -186,7 +187,7 @@ public final class RunningPlayerManager implements PlayerManager {
 	public @NotNull SimulatedPlayer get(@NotNull String name) {
 		SimulatedPlayer player = players.get(name);
 		if (player == null)
-			throw new AnvilException("Unknown simulated player '" + name + "'. Available: " + players.keySet());
+			throw new NoSuchElementException("Unknown simulated player '" + name + "'. Available: " + players.keySet());
 		return player;
 	}
 
@@ -223,9 +224,9 @@ public final class RunningPlayerManager implements PlayerManager {
 				.map(this::nativeVersion)
 				.collect(Collectors.toCollection(LinkedHashSet::new));
 		if (nativeVersions.isEmpty())
-			throw new AnvilException("Connection target '" + target.getName() + "' reaches no Minecraft servers");
+			throw new ScenarioValidationException("Connection target '" + target.getName() + "' reaches no Minecraft servers");
 		if (nativeVersions.size() > 1)
-			throw new AnvilException("Connection target '" + target.getName()
+			throw new ScenarioValidationException("Connection target '" + target.getName()
 					+ "' reaches servers with different native versions " + nativeVersions
 					+ "; no exact-fidelity client can traverse all of them");
 
@@ -233,7 +234,7 @@ public final class RunningPlayerManager implements PlayerManager {
 		if (options.getClientVersion() == null)
 			return compatible;
 		if (!options.getClientVersion().equals(compatible))
-			throw new AnvilException("Native client version '" + options.getClientVersion()
+			throw new ScenarioValidationException("Native client version '" + options.getClientVersion()
 					+ "' does not match servers reachable through '" + target.getName()
 					+ "' using version '" + compatible + "'");
 		return options.getClientVersion();
@@ -251,7 +252,7 @@ public final class RunningPlayerManager implements PlayerManager {
 				? server.getMinecraftVersion()
 				: server.getDistribution().getVersion();
 		if (version == null || version.isBlank())
-			throw new AnvilException("Server '" + server.getName() + "' does not declare its native Minecraft version");
+			throw new ScenarioValidationException("Server '" + server.getName() + "' does not declare its native Minecraft version");
 		return version;
 	}
 
@@ -261,17 +262,17 @@ public final class RunningPlayerManager implements PlayerManager {
 			ProtocolSupport support
 	) {
 		if (options.getAuthentication() == AuthenticationMode.OFFLINE && target.isOnlineMode())
-			throw new AnvilException("Offline player '" + options.getName()
+			throw new ScenarioValidationException("Offline player '" + options.getName()
 					+ "' cannot join online-mode process '" + target.getName() + "'");
 		if (options.getAuthentication() != AuthenticationMode.ONLINE)
 			return;
 		if (!target.isOnlineMode())
-			throw new AnvilException("Online player '" + options.getName()
+			throw new ScenarioValidationException("Online player '" + options.getName()
 					+ "' requires an online-mode entrypoint");
 		if (options.getAuthenticationProfile() == null || options.getAuthenticationProfile().isBlank())
-			throw new AnvilException("Online player '" + options.getName() + "' requires an authentication profile");
+			throw new ScenarioValidationException("Online player '" + options.getName() + "' requires an authentication profile");
 		if (!support.getCapabilities().contains(ProtocolCapability.ONLINE_AUTHENTICATION))
-			throw new AnvilException("Client version '" + support.getMinecraftVersion()
+			throw new ScenarioValidationException("Client version '" + support.getMinecraftVersion()
 					+ "' does not support online authentication");
 	}
 

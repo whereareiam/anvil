@@ -1,16 +1,15 @@
 package me.whereareiam.anvil.testing.server.routing;
 
-import me.whereareiam.anvil.testing.server.extension.FixtureAgentProbeProvider;
-
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.scenario.ScenarioRegistry;
-import me.whereareiam.anvil.engine.AnvilEngine;
-import me.whereareiam.anvil.engine.model.EngineOptions;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
+import me.whereareiam.anvil.engine.AnvilEngine;
+import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.testing.server.extension.FixtureAgentProbeProvider;
 import me.whereareiam.anvil.testing.server.scenario.CompatibilityScenarioCatalog;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Tag;
@@ -38,7 +37,7 @@ class ProxyServerCompatibilitySystemTest {
 		try (AnvilEngine engine = new AnvilEngine(options); var context = engine.start(scenario)) {
 			SimulatedPlayer alice = context.players().create("Alice");
 			FixtureAgentProbeProvider.Probe probe = alice.capability(FixtureAgentProbeProvider.Probe.class);
-			for (var process : context.servers())
+			for (var process : context.processes().servers())
 				assertEquals("external:matrix", probe.echo(process.name(), "matrix"));
 			Session session = alice.capability(Session.class);
 			Messages messages = alice.capability(Messages.class);

@@ -20,7 +20,5 @@ dependencies {
 
     implementation(projects.anvilLauncher)
 
-    compileOnly(projects.anvilEngine)
-
     runtimeOnly(libs.junit.platform)
 }

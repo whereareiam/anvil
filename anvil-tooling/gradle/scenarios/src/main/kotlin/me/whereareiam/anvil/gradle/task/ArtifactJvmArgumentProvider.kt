@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.gradle.task
 
-import me.whereareiam.anvil.engine.model.EngineOptions
+import me.whereareiam.anvil.launcher.config.EngineProperties
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Classpath
@@ -22,6 +22,6 @@ abstract class ArtifactJvmArgumentProvider : CommandLineArgumentProvider {
         require(files.size == 1) {
             "Anvil artifact '${artifactName.get()}' must resolve to exactly one file, found ${files.size}: $files"
         }
-        return listOf("-D${EngineOptions.artifactProperty(artifactName.get())}=${files.single().absolutePath}")
+        return listOf("-D${EngineProperties.artifactProperty(artifactName.get())}=${files.single().absolutePath}")
     }
 }

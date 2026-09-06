@@ -26,7 +26,7 @@ autonomous AI, and crafting automation are outside the current project scope.
 |-------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
 | `anvil-api`                                     | Global scenario, process, context, player, observation, and capability contracts; no Anvil project dependency |
 | `anvil-engine`                                  | Platform-neutral validation, provisioning, process lifecycle, runtime context, player management, and cleanup |
-| `anvil-launcher`                                | Source-free shaded runtime assembly; providers remain explicit runtime additions                              |
+| `anvil-launcher`                                | Scenario-engine factory, property decoding, and shaded assembly; providers remain explicit additions          |
 | `anvil-capability/capability-api`               | Capability-provider contracts and dependency descriptors                                                      |
 | `anvil-capability/capability-runtime`           | Discovery, ordering, capability composition, and the protocol player-composer implementation                  |
 | `anvil-capability/capability-builtin/<feature>` | Separate feature API, packet/agent adapter, and consumer wiring modules                                       |
@@ -75,7 +75,7 @@ autonomous AI, and crafting automation are outside the current project scope.
   platform SDKs into those JARs. Host capabilities borrow connections through `AgentDirectory`.
 - Platform agents expose native services and their scheduling rules. The endpoint owns its extension
   class loader; the scenario owns host connections.
-- `RunningProcess` exposes lifecycle, address, console, and logs. Player identities/routes belong to
+- `api.process.RunningProcess` exposes lifecycle, address, and console; server/proxy specializations live in `api.process.type`. Player identities/routes belong to
   `PlayerObservation` and the Server capability.
 - Forwarding is negotiated from provider-supported modes before launch, not from platform-name
   branches in the engine. Platform configuration writers own their formats and preserve unrelated

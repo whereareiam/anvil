@@ -1,9 +1,9 @@
 package me.whereareiam.anvil.junit.gradle
 
-import me.whereareiam.anvil.engine.model.EngineOptions
+import me.whereareiam.anvil.launcher.config.EngineProperties
+import me.whereareiam.anvil.gradle.AnvilBasePlugin
 import me.whereareiam.anvil.gradle.model.AnvilPluginState
 import me.whereareiam.anvil.gradle.model.state
-import me.whereareiam.anvil.gradle.AnvilBasePlugin
 import me.whereareiam.anvil.gradle.task.ArtifactJvmArgumentProvider
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -47,12 +47,12 @@ class AnvilJunitPlugin : Plugin<Project> {
                 exceptionFormat = TestExceptionFormat.FULL
             }
 
-            systemProperty(EngineOptions.EULA_ACCEPTED_PROPERTY, capability.eulaAccepted.get())
-            systemProperty(EngineOptions.CACHE_DIRECTORY_PROPERTY, capability.cacheDirectory.get().asFile.absolutePath)
-            systemProperty(EngineOptions.WORK_DIRECTORY_PROPERTY, capability.workDirectory.get().asFile.absolutePath)
-            capability.protocolId.orNull?.let { systemProperty(EngineOptions.PROTOCOL_PROPERTY, it) }
+            systemProperty(EngineProperties.EULA_ACCEPTED_PROPERTY, capability.eulaAccepted.get())
+            systemProperty(EngineProperties.CACHE_DIRECTORY_PROPERTY, capability.cacheDirectory.get().asFile.absolutePath)
+            systemProperty(EngineProperties.WORK_DIRECTORY_PROPERTY, capability.workDirectory.get().asFile.absolutePath)
+            capability.protocolId.orNull?.let { systemProperty(EngineProperties.PROTOCOL_PROPERTY, it) }
             capability.javaExecutables.get().forEach { (version, executable) ->
-                systemProperty(EngineOptions.javaExecutableProperty(version), executable)
+                systemProperty(EngineProperties.javaExecutableProperty(version), executable)
             }
         }
     }

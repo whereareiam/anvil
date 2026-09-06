@@ -1,19 +1,26 @@
 ---
 title: Running environments
-description: Select platforms and runtimes, configure proxy routes, and run automated or manual environments.
+description: Configure a test machine, choose a topology, inspect processes, and diagnose failed runs.
 ---
 
 # Running environments
 
-Anvil prepares and supervises the local server/proxy processes declared by a scenario. Use these
-guides to choose the runtime and diagnose how players reach it:
+A scenario describes the servers and proxies your test needs. These guides explain how to run that
+scenario on your machine and control it during a test. If you need to create your first scenario,
+start with [Getting started](../getting-started/index.md).
 
-- [Platforms and versions](./platforms/index.md): provider units, supported combinations, Java, and configuration formats.
-- [Proxies and forwarding](./proxies/index.md): backend topology and native identity forwarding.
-- [Authentication](./authentication/index.md): offline players and optional provider-owned account workflows.
-- [Manual environments](./manual/index.md): foreground sessions and explicit LAN access.
-- [Troubleshooting](./troubleshooting/index.md): startup, discovery, artifacts, and journey failures.
+## Prepare the environment
 
-Automated and manual workflows share the same [scenario declarations](../writing-tests/scenarios/index.md).
-Changing how an environment runs does not require a second set of test APIs. Manual mode still
-requires EULA acceptance and compatible client versions, and agent endpoints remain loopback-only.
+- [Configure an environment](./configuration/index.md): choose storage, Java installations, and timeouts; configure Gradle or embed the engine.
+- [Platforms and versions](./platforms/index.md): select provider units and compatible Minecraft/client versions.
+- [Proxies and forwarding](./proxies/index.md): connect a proxy to backend servers and configure identity forwarding.
+- [Authentication](./authentication/index.md): choose offline players or provider-owned online authentication.
+
+## Run and inspect it
+
+- [Inspect and restart processes](./processes/index.md): find current process handles and verify reconnection after replacing a proxy or server.
+- [Manual environments](./manual/index.md): open a foreground scenario and join it with your own client.
+- [Troubleshooting](./troubleshooting/index.md): identify the failed stage, inspect retained logs, and reproduce one journey.
+
+Automated tests and manual sessions use the same [scenario declarations](../writing-tests/scenarios/index.md).
+Workspace assets and caches are described in [Writing tests](../writing-tests/workspaces/index.md).

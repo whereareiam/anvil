@@ -1,16 +1,18 @@
 package me.whereareiam.anvil.runner;
 
+import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.model.scenario.ScenarioGroup;
 import me.whereareiam.anvil.api.scenario.AnvilScenarioProvider;
 import me.whereareiam.anvil.api.scenario.ScenarioRegistry;
-import me.whereareiam.anvil.runner.model.AnvilRunnerConfiguration;
 import org.junit.jupiter.api.Test;
 
+import java.io.BufferedWriter;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Path;
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -21,7 +23,7 @@ final class AnvilRunnerTest {
 	void listsScenariosThroughInjectedOutput() throws Exception {
 		StringWriter buffer = new StringWriter();
 
-		new AnvilRunner(new StringReader(""), new PrintWriter(buffer))
+		new AnvilRunner(new StringReader(""), new PrintWriter(new BufferedWriter(buffer)))
 				.run(new String[]{"--provider=" + TestProvider.class.getName(), "--list"});
 
 		String output = buffer.toString();
@@ -30,17 +32,20 @@ final class AnvilRunnerTest {
 	}
 
 	@Test
-	void mapsExplicitConfigurationWithoutSystemProperties() {
+	void acceptsCompleteExplicitOptionsWithoutSystemProperties() throws Exception {
 		Path cache = Path.of("cache");
 		Path work = Path.of("work");
 		Path java = Path.of("java-21");
 		Path artifact = Path.of("server.jar");
 
-		AnvilRunnerConfiguration configuration = AnvilRunnerConfiguration.builder()
+		EngineOptions configuration = EngineOptions.builder()
 				.eulaAccepted(true)
 				.cacheDirectory(cache)
 				.workDirectory(work)
 				.protocolId("mcprotocol")
+				.keepFailedWorkspaces(false)
+				.autoDownloadJavaRuntimes(false)
+				.stopTimeout(Duration.ofSeconds(7))
 				.javaExecutable(21, java)
 				.artifact("server", artifact)
 				.build();
@@ -51,6 +56,11 @@ final class AnvilRunnerTest {
 		assertEquals("mcprotocol", configuration.getProtocolId());
 		assertEquals(java, configuration.getJavaExecutables().get(21));
 		assertEquals(artifact, configuration.getArtifacts().get("server"));
+		StringWriter output = new StringWriter();
+		new AnvilRunner(new StringReader(""), new PrintWriter(output))
+				.run(new String[]{"--provider=" + TestProvider.class.getName(), "--list"}, configuration);
+		assertTrue(output.toString().contains("demo (manual)"));
+		assertEquals(Duration.ofSeconds(7), configuration.getStopTimeout());
 	}
 
 	@Test

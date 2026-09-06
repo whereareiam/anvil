@@ -15,7 +15,7 @@ toolkitPublish {
 }
 
 dependencies {
-	implementation(projects.anvilLauncher)
+	api(projects.anvilApi)
 
-	compileOnly(projects.anvilEngine)
+	implementation(projects.anvilLauncher)
 }

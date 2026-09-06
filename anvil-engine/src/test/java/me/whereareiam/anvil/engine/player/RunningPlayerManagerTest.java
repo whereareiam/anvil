@@ -1,22 +1,22 @@
 package me.whereareiam.anvil.engine.player;
 
+import me.whereareiam.anvil.api.exception.AnvilException;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
+import me.whereareiam.anvil.api.model.player.PlayerState;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
-import me.whereareiam.anvil.api.model.player.PlayerState;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.type.AuthenticationMode;
+import me.whereareiam.anvil.engine.process.type.ManagedServer;
+import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
+import me.whereareiam.anvil.protocol.api.model.ProtocolSupport;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.api.provider.ProtocolBackend;
-import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
-import me.whereareiam.anvil.protocol.api.model.ProtocolSupport;
 import me.whereareiam.anvil.protocol.api.type.ProtocolCapability;
-import me.whereareiam.anvil.engine.AnvilException;
-import me.whereareiam.anvil.engine.runtime.process.ManagedServer;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;

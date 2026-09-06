@@ -1,53 +1,52 @@
 package me.whereareiam.anvil.runner;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.util.Objects;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.model.scenario.ScenarioGroup;
-import me.whereareiam.anvil.api.runtime.AnvilContext;
+import me.whereareiam.anvil.api.scenario.AnvilContext;
+import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.api.scenario.ScenarioRegistry;
-import me.whereareiam.anvil.engine.AnvilEngine;
 import me.whereareiam.anvil.runner.command.RunnerCommandParser;
 import me.whereareiam.anvil.runner.model.command.RunnerCommand;
-import me.whereareiam.anvil.runner.type.RunnerCommandType;
+import org.jetbrains.annotations.NotNull;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.Objects;
 
 final class InteractiveSession implements AutoCloseable {
-	private final AnvilEngine engine;
+	private final ScenarioEngine engine;
 	private final ScenarioRegistry registry;
 	private final ScenarioGroup group;
 	private final BufferedReader input;
-	private final PrintWriter output;
+	private final RunnerTerminal terminal;
 	private AnvilContext context;
 
-	InteractiveSession(AnvilEngine engine, ScenarioRegistry registry, AnvilScenario initial, ScenarioGroup group,
-					Reader input, PrintWriter output) {
+	InteractiveSession(
+			ScenarioEngine engine,
+			ScenarioRegistry registry,
+			AnvilScenario initial,
+			ScenarioGroup group,
+			Reader input,
+			@NotNull RunnerTerminal terminal
+	) {
 		this.engine = engine;
 		this.registry = registry;
 		this.group = group;
 		this.input = new BufferedReader(Objects.requireNonNull(input, "input"));
-		this.output = Objects.requireNonNull(output, "output");
+		this.terminal = terminal;
 		this.context = engine.start(initial);
 	}
 
 	void run() throws IOException {
 		Runtime.getRuntime().addShutdownHook(new Thread(this::close, "anvil-runner-shutdown"));
-		RunnerOutput.printAddresses(context, output);
-		output.println(RunnerCommandType.help());
+		terminal.showScenario(context);
+		terminal.showHelp();
 
-		try {
-			String line;
-			while ((line = input.readLine()) != null) {
-				if (line.isBlank())
-					continue;
-				if (execute(RunnerCommandParser.parse(line)))
-					return;
-				output.flush();
-			}
-		} finally {
-			output.flush();
+		String line;
+		while ((line = input.readLine()) != null) {
+			if (line.isBlank()) continue;
+			if (execute(RunnerCommandParser.parse(line))) return;
 		}
 	}
 
@@ -58,7 +57,7 @@ final class InteractiveSession implements AutoCloseable {
 				yield true;
 			}
 			case STATUS -> {
-				printStatus();
+				showStatus();
 				yield false;
 			}
 			case LIST -> {
@@ -74,7 +73,7 @@ final class InteractiveSession implements AutoCloseable {
 				yield false;
 			}
 			case LOGS -> {
-				printLogs(command);
+				showLogs(command);
 				yield false;
 			}
 			case SEND -> {
@@ -86,26 +85,22 @@ final class InteractiveSession implements AutoCloseable {
 				yield false;
 			}
 			case UNKNOWN -> {
-				output.println("Unknown command: " + command.getToken());
+				terminal.showUnknownCommand(command.getToken());
 				yield false;
 			}
 		};
 	}
 
-	private synchronized void printStatus() {
-		if (context == null) {
-			output.println("No scenario is running.");
-			return;
-		}
-		RunnerOutput.printAddresses(context, output);
+	private synchronized void showStatus() {
+		terminal.showScenario(context);
 	}
 
 	private void list() {
 		if (group == null) {
-			RunnerOutput.printRegistry(registry, output);
+			terminal.showScenarios(registry);
 			return;
 		}
-		output.println(group.getScenarios());
+		terminal.showGroup(group);
 	}
 
 	private synchronized void start(RunnerCommand command) {
@@ -122,43 +117,44 @@ final class InteractiveSession implements AutoCloseable {
 		replace(context.scenario());
 	}
 
-	private synchronized void printLogs(RunnerCommand command) {
+	private synchronized void showLogs(RunnerCommand command) {
 		requireArguments(command, 1, "Usage: logs <process> [lines]");
-		int lines = command.getArguments().size() < 2 ? 30 : parseLineCount(command.getArguments().get(1));
+		int lines = command.getArguments().size() < 2
+				? 30
+				: parseLineCount(command.getArguments().get(1));
 		ensureRunning();
-		context.process(command.getArguments().getFirst()).console().tail(lines).forEach(output::println);
+		terminal.showLogs(context.processes().get(command.getArguments().getFirst()).console().tail(lines));
 	}
 
 	private synchronized void send(RunnerCommand command) {
 		requireArguments(command, 2, "Usage: send <process> <command>");
 		ensureRunning();
-		context.process(command.getArguments().getFirst()).console().sendCommand(command.getArguments().get(1));
+		context.processes().get(command.getArguments().getFirst()).console().sendCommand(command.getArguments().get(1));
 	}
 
-	private synchronized void stop() { close(); }
+	private synchronized void stop() {
+		close();
+	}
 
 	private synchronized void replace(AnvilScenario scenario) {
 		close();
 		context = engine.start(scenario);
-		RunnerOutput.printAddresses(context, output);
+		terminal.showScenario(context);
 	}
 
 	private void ensureRunning() {
-		if (context == null)
-			throw new IllegalStateException("No scenario is running. Use start <scenario> first");
+		if (context == null) throw new IllegalStateException("No scenario is running. Use start <scenario> first");
 	}
 
 	@Override
 	public synchronized void close() {
 		AnvilContext current = context;
 		context = null;
-		if (current != null)
-			current.close();
+		if (current != null) current.close();
 	}
 
 	private static void requireArguments(RunnerCommand command, int required, String usage) {
-		if (command.getArguments().size() < required)
-			throw new IllegalArgumentException(usage);
+		if (command.getArguments().size() < required) throw new IllegalArgumentException(usage);
 	}
 
 	private static int parseLineCount(String value) {
@@ -169,8 +165,7 @@ final class InteractiveSession implements AutoCloseable {
 			throw new IllegalArgumentException("Log line count must be a positive integer: " + value, exception);
 		}
 
-		if (lines <= 0)
-			throw new IllegalArgumentException("Log line count must be a positive integer: " + value);
+		if (lines <= 0) throw new IllegalArgumentException("Log line count must be a positive integer: " + value);
 
 		return lines;
 	}
