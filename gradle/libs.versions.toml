@@ -7,7 +7,7 @@ toolkit = "dev-a4c6f1b"
 
 # compile time processing
 lombok = "1.18.42"
-annotations = "26.0.2-1"
+annotations = "26.1.0"
 
 # general
 jackson = "2.20.1"
