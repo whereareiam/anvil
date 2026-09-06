@@ -30,7 +30,7 @@ jobs:
       version: ${{ steps.version.outputs.value }}
       commit: ${{ steps.version.outputs.commit }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.source_ref }}
 
@@ -131,7 +131,7 @@ jobs:
             tags: '!compatibility'
             filter: '.*'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.build.outputs.commit }}
 
@@ -166,7 +166,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.build.outputs.commit }}
 
