@@ -92,21 +92,10 @@ jobs:
           compression-level: 0
           retention-days: 3
 
-  approve-live:
-    name: Approve live tests
-    needs: build
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    environment: anvil-pr-live-tests
-    steps:
-      - name: Approval granted
-        run: echo "Live tests approved for this pull request revision."
-
   live:
     name: ${{ matrix.name }}
-    needs: [build, approve-live]
-    if: ${{ !cancelled() && needs.build.result == 'success' && (needs.approve-live.result == 'success' || needs.approve-live.result == 'skipped') }}
+    needs: build
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -161,8 +150,8 @@ jobs:
 
   consumer:
     name: Standalone consumer journeys
-    needs: [build, approve-live]
-    if: ${{ !cancelled() && needs.build.result == 'success' && (needs.approve-live.result == 'success' || needs.approve-live.result == 'skipped') }}
+    needs: build
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
