@@ -11,7 +11,7 @@ annotations = "26.0.2-1"
 
 # general
 jackson = "2.20.1"
-slf4j = "2.0.17"
+slf4j = "2.0.18"
 adventure = "4.25.0"
 
 # platform api
