@@ -12,7 +12,7 @@ annotations = "26.1.0"
 # general
 jackson = "2.22.2"
 slf4j = "2.0.18"
-adventure = "4.25.0"
+adventure = "5.2.0"
 
 # platform api
 paper = "1.21.11-R0.1-SNAPSHOT"
