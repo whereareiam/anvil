@@ -1,0 +1,9 @@
+{
+  "title": "Actions",
+  "pages": [
+    "index",
+    "console",
+    "agents",
+    "restarts"
+  ]
+}

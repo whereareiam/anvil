@@ -1,0 +1,12 @@
+{
+  "title": "Capabilities",
+  "pages": [
+    "index",
+    "session",
+    "server",
+    "messages",
+    "movement",
+    "inventory",
+    "interaction"
+  ]
+}

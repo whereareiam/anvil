@@ -1,80 +1,85 @@
 ---
-title: Protocol providers
-description: Integrate another client library and expose its services through public contracts.
+title: Overview
+description: Integrate a native client library and expose services for capability implementations.
 ---
 
-# External protocol providers and capabilities
+A protocol provider owns native client creation, verified version support, identity, and client
+cleanup. Use this extension point to integrate another client library. A packet-backed capability
+alone belongs under [Protocol adapters](../capabilities/protocol-adapters/index.md).
 
-An external backend owns its client library and connection lifecycle. Public capabilities describe
-what scenario authors can do, while adapters translate those contracts into the chosen library's
-operations. Anvil does not define a universal packet type or translate between unrelated libraries.
+Create a Java library depending on `me.whereareiam.anvil:protocol-api` at the consumer's Anvil version.
+Keep backend-specific service interfaces in a public adapter API if capability implementations in
+other artifacts will consume them.
 
-## Runtime integration
+## Implement the runtime contracts
 
-Provider contracts (`ProtocolProvider`, `ProtocolProviderRegistry`, `ProtocolBackend`, and
-`ProtocolAuthentication`) live in `me.whereareiam.anvil.protocol.api.provider`. Player and composer
-contracts (`ProtocolPlayer`, `ProtocolPlayerComposer`, and `ProtocolPlayerComposerProvider`) live
-in `me.whereareiam.anvil.protocol.api.player`. Public values remain under `api.model` and `api.type`.
+| Contract | Your implementation supplies |
+|---|---|
+| `ProtocolProvider` | Stable `id`, backend creation, optional authentication |
+| `ProtocolBackend` | Verified support catalog, initially disconnected players, complete cleanup |
+| `ProtocolPlayer` | Name, native version, identity, execution services, permanent destruction |
 
-Implement `ProtocolProvider`, `ProtocolBackend`, and `ProtocolPlayer` using `protocol-api`, then
-register the provider under `META-INF/services/me.whereareiam.anvil.protocol.api.provider.ProtocolProvider`.
-Add its artifact to `anvilProtocols`. One provider is selected per engine: the sole installed
-provider is automatic, and multiple providers require `anvil { protocol("provider-id") }`.
+Provider contracts are in `me.whereareiam.anvil.protocol.api.provider`; player contracts are in
+`me.whereareiam.anvil.protocol.api.player`. `PlayerRequest` and `ProtocolSupport` are in `api.model`.
 
-The engine resolves the provider ID before discovering capabilities. A capability descriptor's
-`supportedProtocolIds` selects its compatible backends; an empty set denotes backend-independent
-behavior. Only one selected provider may contribute a particular capability type.
+For exact creation, service lookup, and cleanup contracts, read the
+[ProtocolProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-protocol/protocol-api/src/main/java/me/whereareiam/anvil/protocol/api/provider/ProtocolProvider.java),
+[ProtocolBackend](https://github.com/whereareiam/anvil/blob/dev/anvil-protocol/protocol-api/src/main/java/me/whereareiam/anvil/protocol/api/provider/ProtocolBackend.java), and
+[ProtocolPlayer](https://github.com/whereareiam/anvil/blob/dev/anvil-protocol/protocol-api/src/main/java/me/whereareiam/anvil/protocol/api/player/ProtocolPlayer.java)
+source Javadocs. These links use `dev`; select your release tag when checking a released version.
 
-Define execution-service interfaces in the backend's own adapter API and expose them through
-`ProtocolPlayer.findService`. A capability adapter obtains those interfaces from
-`PlayerCapabilityContext.requireService`. Keep capability APIs dependent only on `anvil-api`, and
-keep both backend and capability implementations dependent on shared contracts instead of each
-other's implementation modules.
+`ProtocolProvider.create(cacheDirectory, artifacts)` receives the private Anvil cache root and the
+shared verified artifact resolver. `ProtocolBackend.create(PlayerRequest)` receives the exact
+native version and target address plus the selected authentication mode and optional profile name.
+Create a disconnected client; connection behavior is supplied through the appropriate capability.
 
-For example, an external movement adapter implements our `Movement` API through its own connection
-contract. It does not import our `McProtocolMovementProvider` or worker implementation. Existing
-MCProtocol capabilities continue to use their namespaced worker-operation and packet-listener SPI.
-Installing another client library does not replace the codec of an existing MCProtocol connection.
+Populate every `ProtocolSupport` entry with the exact Minecraft version, wire-protocol number,
+library runtime identifier, binding family, minimum Java version, and supported protocol flags.
+These flags describe backend support; capability-provider descriptors select capability adapters.
 
-### Package migration
+## Expose execution services
 
-Extensions using the former flat `me.whereareiam.anvil.protocol.api` package must update imports
-to the provider or player packages above and recompile. Rename provider service descriptors to
-`META-INF/services/me.whereareiam.anvil.protocol.api.provider.ProtocolProvider`. Custom composer
-registrations use `META-INF/services/me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposerProvider`.
-Descriptor contents must match the implementation's fully qualified class name.
+Implement stable interfaces for the operations your capability adapters need. Return them from
+`ProtocolPlayer.findService(Class<T>)`. A provider then resolves that service through
+`PlayerCapabilityContext.requireService(...)`.
 
-This is a source and binary compatibility change; old extension JARs must be rebuilt. Maven artifact
-IDs, provider IDs, and worker operation/event names are unchanged. Packet-adapter package migration
-is covered in [custom capabilities](../capabilities/index.md#mcprotocol-worker-adapter).
+Keep the interface meaningful for your backend. For example, an adapter API can expose typed client
+commands while retaining packet-library details in its implementation. Do not depend on Anvil's
+MCProtocol worker internals or reuse its opaque packet surface as a cross-library protocol format.
 
-## Authentication
+## Register and select the backend
 
-`ProtocolProvider.authentication(cacheDirectory)` returns an optional `ProtocolAuthentication`.
-Offline-only providers inherit the empty implementation. Authentication is provider-owned and does
-not require backend or player creation. Credentials stay inside the provider's private store and
-must not appear in tooling inputs, arguments, environment variables, or output callbacks.
+Create `src/main/resources/META-INF/services/me.whereareiam.anvil.protocol.api.provider.ProtocolProvider`
+containing your provider's fully qualified class name. Add your artifact to the consumer's
+`anvilProtocols` configuration.
 
-The Gradle tasks load the selected provider and its dependencies from `anvilProtocols` through the
-resolvable `anvilProtocolRuntime` configuration. Use `anvilLogin --auth-profile=name` and
-`anvilLogout --auth-profile=name`. `--profile` is Gradle's build-profiler option and is not an Anvil
-account selector. The MCProtocol provider supplies its Microsoft account workflow through this API.
+This fragment goes in a consumer build that already applies Anvil's scenario tooling; the coordinates
+and ID are examples for your published provider:
 
-## Agent capabilities
+```kotlin
+dependencies {
+	anvilProtocols("com.example:example-protocol:1.0.0")
+}
 
-`AgentDirectory` and `PlayerObservation` are supplied by the scenario runtime independently of the
-selected client library. The built-in `Server` capability consumes observation directly and does
-not require `Session`. A capability can use a backend service, agent operations, or both. Install
-platform-side operation implementations as described in [agent extensions](../agent-operations/index.md).
+anvil {
+	protocol("example")
+}
+```
 
-## Verify your implementation
+The sole installed provider is selected automatically. If several are installed, an explicit ID is
+required. The engine selects the provider before discovering capabilities, so adapters must declare
+that same provider ID in `supportedProtocolIds` where their implementation depends on it.
 
-Test selection with both the default adapters and your own provider installed. Verify the portable
-capability APIs through your connection service, missing-capability diagnostics, offline or optional
-authentication behavior, and cleanup after failures. Include a real platform-agent journey when
-your capability uses agent operations.
+## Verify selection and cleanup
 
-Anvil's [external-extension fixture](https://github.com/whereareiam/anvil/tree/dev/anvil-testing/testing-fixtures/fixtures-external-extension)
-shows these public boundaries in a separately compiled JAR. Its backend is an in-process contract
-fixture, not a second production Minecraft client. Instructions for running Anvil's internal
-conformance suites belong in [Testing Anvil](../../contributing/testing/index.md).
+Exercise automatic selection, explicit selection alongside MCProtocol, ambiguous selection, missing
+execution services, and unsupported versions. Destroying a player must release its client resources;
+closing the backend must attempt cleanup of all clients and any owned workers after failures.
+
+The external-extension fixture in Anvil's test modules demonstrates discovery and service composition
+through a separately compiled JAR. Its in-process backend is a contract fixture, not a production
+Minecraft client. Use a real platform journey to verify a production backend's login and capability
+behavior. See [Packaging and testing](../packaging/index.md).
+
+Add an account workflow only when needed; [Authentication](./authentication/index.md) describes its
+separate provider contract.

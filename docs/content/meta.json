@@ -1,11 +1,17 @@
 {
-  "title": "Anvil",
+  "title": "Docs",
   "pages": [
     "index",
     "getting-started",
-    "writing-tests",
-    "running-environments",
-    "extending",
-    "contributing"
+    "---Using Anvil---",
+    "building-blocks",
+    "workflows",
+    "integrations",
+    "---Extensions---",
+    "...extending",
+    "---Contributing---",
+    "...contributing",
+    "---Help---",
+    "...help"
   ]
 }

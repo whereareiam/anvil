@@ -1,0 +1,10 @@
+{
+  "title": "Gradle",
+  "pages": [
+    "index",
+    "plugins",
+    "dsl",
+    "testing",
+    "tasks"
+  ]
+}

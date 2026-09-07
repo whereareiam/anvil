@@ -1,4 +1,11 @@
 {
   "title": "Extending Anvil",
-  "pages": ["index", "capabilities", "protocol-providers", "agent-operations"]
+  "pages": [
+    "index",
+    "capabilities",
+    "agent-operations",
+    "packaging",
+    "protocol-providers",
+    "platform-providers"
+  ]
 }

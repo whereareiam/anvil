@@ -1,0 +1,12 @@
+{
+  "title": "Environments",
+  "pages": [
+    "index",
+    "definitions",
+    "platforms",
+    "provisioning",
+    "workspaces",
+    "configuration",
+    "actions"
+  ]
+}

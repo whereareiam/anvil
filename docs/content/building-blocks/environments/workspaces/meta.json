@@ -1,0 +1,10 @@
+{
+  "title": "Workspaces",
+  "pages": [
+    "index",
+    "assets",
+    "persistence",
+    "caches",
+    "cleanup"
+  ]
+}
