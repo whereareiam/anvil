@@ -1,0 +1,9 @@
+{
+  "title": "Testing Anvil",
+  "pages": [
+    "index",
+    "unit-runtime",
+    "fixtures",
+    "live"
+  ]
+}

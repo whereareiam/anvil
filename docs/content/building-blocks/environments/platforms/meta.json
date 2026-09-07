@@ -1,0 +1,9 @@
+{
+  "title": "Platforms",
+  "pages": [
+    "index",
+    "servers",
+    "proxies",
+    "versions"
+  ]
+}

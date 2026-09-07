@@ -1,20 +1,18 @@
 ---
 title: Building and publication
-description: Verify Anvil locally, publish development artifacts, and prepare releases.
+description: Build verified consumer artifacts and use the maintainer-controlled publication workflows.
 ---
 
-# Building and publication
-
-## Local verification
+Use the Gradle wrapper from the repository root. Anvil compiles with Java 21; live tests provision
+the runtimes required by their selected distributions.
 
 ```shell
 ./gradlew build
 ./gradlew test -Panvil.testMode=full
 ```
 
-`build` checks architecture and runs unit and focused integration tests without Minecraft.
-Full mode also downloads pinned distributions and starts real Minecraft servers and proxies. See [Testing Anvil](../testing/index.md)
-for test groups, filters, and fixture ownership. Do not use real online accounts in CI.
+The normal build runs architecture, unit, and focused integration checks. Full mode additionally
+starts real platforms. [Testing Anvil](../testing/index.md) explains focused tasks and filters.
 
 ## Local publication
 
@@ -22,82 +20,64 @@ Publish Anvil before building the standalone consumer example:
 
 ```shell
 ./gradlew publishToMavenLocal
-./gradlew -p examples/proof-of-patience build anvilClasses
-./gradlew -p examples/proof-of-patience anvilTest
+./gradlew -p examples/proof-of-patience build anvilTest
 ```
 
-Pass the same `-PanvilVersion=<version>` to each command when testing another version. Consumer
-settings must include `mavenLocal()` in both plugin and dependency repositories. To isolate local
-artifacts, pass `-Dmaven.repo.local=/absolute/path/to/repository` to each command.
+Use the same `-PanvilVersion=<version>` in both commands when overriding the version. The consumer
+must resolve Maven Local in both plugin and dependency repositories. To isolate artifacts, also
+pass `-Dmaven.repo.local=/absolute/path/to/repository` to both commands.
 
-The example is excluded from the root build and consumes published artifacts. Internal fixture
-artifacts are not published.
+The example consumes published artifacts and is excluded from root project discovery. Fixture
+artifacts are not published. A successful consumer run verifies plugin resolution, dependency
+wiring, and the example journeys across that publication boundary.
 
-## CI verification
+## Request pull request verification
 
-Pull requests, development builds, and releases share `.github/workflows/verify.yml`:
+Pull request build and live verification is maintainer-requested:
 
-- Build Anvil, run unit and integration tests without Minecraft, publish to an isolated Maven Local
-  repository, and compile/test the consumer example and its scenarios.
-- Run direct-server compatibility, Velocity compatibility, BungeeCord compatibility, player
-  capabilities/sessions/extensions, and consumer journeys on separate runners.
-- Reuse the build job's artifacts and Gradle task cache. Keep live tests sequential within each
-  runner to avoid competing Minecraft processes.
+1. Open GitHub **Actions** and select **Pull request verification**.
+2. Run the workflow from the default branch and supply the open pull request number.
+3. Review its resolved merge revision and the build, live, and consumer results.
+4. Request a new run after changing the pull request revision.
 
-Pull requests do not start this verification automatically. To verify one, open **Actions**, select
-**Pull request verification**, choose the default branch, enter the open pull request number, and
-run the workflow. The workflow resolves the pull request's merge revision and then runs the
-build, unit and integration tests, live platform matrix, and standalone consumer journeys.
+The workflow resolves the merge commit at dispatch time and verifies that immutable revision. It
+runs build/runtime checks, direct-server and proxy compatibility, player/session/extension behavior,
+and standalone consumer journeys. Live groups use separate runners and reuse the build job's
+published artifacts and task cache.
 
-A lightweight **Pull request metadata** check runs automatically when a PR changes. It validates the
-`Area: Title` format and exactly one release category label (`feature`, `change`, `bug`, or
-`dependencies`), unless the PR carries `skip-changelog`; `major` may accompany a category label.
-The manual verification workflow repeats this check before starting the build.
+A lightweight **Pull request metadata** workflow automatically validates the title and release labels.
+The manual verification repeats that validation. Pull request verification does not publish Maven
+artifacts.
 
-The workflow file runs from the default branch while the verification jobs check out the selected
-pull request merge revision. Contents and pull request access remain read-only; checks write access
-is used only for test reporting, and the workflow does not publish artifacts. Request a new run
-after the pull request changes; a previous run remains tied to the revision it resolved when it started.
-Manual workflow dispatch requires repository write access, and its checks should be reviewed from
-the workflow run rather than treated as an automatic pull request gate.
-If branch protection lists the former automatic pull request checks as required, remove or revise
-those rules because an unrequested manual run cannot satisfy them.
-Failed or cancelled verification prevents publication when the same verification workflow is used
-by a release or development publication.
+## Publish a development build
 
-## Development publication
+Run **Development publication** manually and select the intended branch, normally `dev`. After
+verification succeeds, it publishes a branch-qualified version such as `dev-a123bcd`; slashes in
+branch names become hyphens. Development versions do not use a `-SNAPSHOT` suffix. Pushes do not
+trigger publication.
 
-Run **Development publication** manually in GitHub Actions and select the `dev` branch.
-It verifies the selected commit, then publishes `<branch>-<seven-character-sha>`, such as
-`dev-a123bcd`. Slashes in branch names become hyphens. Versions do not use a `-SNAPSHOT` suffix.
-Pushes do not trigger development publication.
+## Prepare and publish a release
 
-## Release publication
+Release Drafter updates the draft on `dev` pushes or manual dispatch. Label changes before merging:
 
-Prepare the release tag and publish its GitHub release to trigger verification and Maven
-publication. The artifact version comes from the tag, with an optional leading `v` removed.
-
-To verify without publishing, run **Release** manually with the intended version and leave
-`publish` disabled. A manual run uses the selected ref; it does not create a release or move a tag.
-
-Publication runs once, after all verification succeeds, against the exact verified commit.
-Only the publication job requests OIDC credentials through
-`whereareiam/devops/actions/registry/maven-publish@v2`. Artifact Keeper must authorize the
-repository's OIDC identity for the `packages` Maven repository; static Maven secrets are not needed.
-
-## Release drafts
-
-Release Drafter updates the draft on `dev` pushes or manual dispatch. Label PRs before merging:
-
-| Label | Release notes | Version bump |
+| Label | Release category | Version bump |
 |---|---|---|
 | `feature` | Features | Minor |
 | `change` | Changes | Patch |
 | `bug` | Fixes | Patch |
 | `dependencies` | Dependencies | Patch |
-| `major` | Add alongside a category label | Major |
-| `skip-changelog` | Excluded | Not a version-bump label |
+| `major` | Accompanies a category | Major |
+| `skip-changelog` | Excluded from the changelog | No category bump |
 
-The default bump is patch. Draft names and tags use the version without a `v` prefix.
-Before publishing, complete the summary, verified Java/Minecraft/platform coverage, and any
-public API or configuration migration notes. Updating a draft does not publish artifacts.
+The default bump is patch. Complete the release summary, verified Java/Minecraft/platform coverage,
+and any public API, DSL, or packaging migration notes before publishing the draft.
+
+A published GitHub release triggers **Release** verification and Maven publication. The artifact
+version comes from the tag, with an optional leading `v` removed. For a rehearsal, run **Release**
+manually with the intended version and leave `publish` disabled. A manual run uses its selected ref;
+it does not create a release or move a tag.
+
+Publication runs once after successful verification against the exact verified commit. The
+publication job obtains registry credentials through the configured OIDC publishing action. Keep
+POM metadata, licenses, service descriptors, and distinct plain/shaded artifacts valid when changing
+release packaging. Failed verification prevents publication.

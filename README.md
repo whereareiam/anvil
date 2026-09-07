@@ -495,9 +495,10 @@ Minecraft `1.21.11` and `26.1.2` are verified across direct servers and every su
 proxy/backend combination. Distributions may come from pinned remote builds, local JARs, Maven
 artifacts, or Gradle project artifacts.
 
-Anvil uses native Java protocol clients and local JVM processes. Docker, Kubernetes, hosted
-orchestration, Fabric, Sponge, and Bedrock are not supported yet. Pretending otherwise would make
-the feature list longer, but the software would remain exactly the same.
+Anvil uses native Java protocol clients. Local JVM execution is the standard workflow; an embedded
+Docker setup requires explicit image mappings and local-daemon access. The documentation explains
+that setup and its limits. Kubernetes, SSH/hosted orchestration, Fabric, Sponge, and Bedrock are
+outside the current scope.
 
 ## Distrust the README
 

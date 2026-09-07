@@ -1,77 +1,77 @@
 ---
-title: Custom capabilities
-description: Keep consumer APIs portable while implementing behavior through a backend service or platform agent.
+title: Overview
+description: Create a player capability, compose existing capabilities, or implement an existing API for a backend.
 ---
 
-# Custom capabilities
+Create a capability when test authors need another typed operation or observation. Every capability
+instance belongs to one simulated player. Its provider can use that player's protocol services,
+other declared capabilities, and scenario services such as platform agents.
 
-A capability family separates the consumer API, its implementation, and the wiring that selects
-that implementation. Use your own Maven group and package namespace for external families.
+For method signatures and provider lifecycle contracts, read the
+[PlayerCapabilityProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-capability/capability-api/src/main/java/me/whereareiam/anvil/capability/api/PlayerCapabilityProvider.java) and
+[PlayerCapabilityContext](https://github.com/whereareiam/anvil/blob/dev/anvil-capability/capability-api/src/main/java/me/whereareiam/anvil/capability/api/PlayerCapabilityContext.java)
+source Javadocs. These links use `dev`; select your release tag when checking a released version.
 
-| Artifact | Dependencies and ownership |
+## Choose how to add behavior
+
+| Goal | Supported approach |
 |---|---|
-| `combat-api` | Public `Combat extends PlayerCapability`; depends on `anvil-api` |
-| `combat-mcprotocol` | Host provider and worker adapter; depends on public APIs and MCProtocolLib |
-| `combat-agent` | Alternative host adapter using shared agent-operation contracts |
-| `combat` | Wiring artifact exposing the API and installing the chosen implementation |
+| Expose a new operation to tests | Define an interface extending `PlayerCapability` and supply its provider and implementation |
+| Build on existing player behavior | Create a new capability with declared dependencies, then use those capabilities in its implementation |
+| Support an existing API on another backend | Implement that API and register a provider for the supported protocol IDs |
 
-Implementations do not depend on sibling implementations. If several adapters need a shared
-execution contract, give that contract a clear API owner. Do not use a `common` implementation module
-as a cross-module shortcut.
+For example, a custom `PluginCommands` capability can declare `Messages` as a required capability
+and obtain it through `context.requireCapability(Messages.class)`. Its implementation can then
+expose typed methods for your plugin's commands and expected replies.
 
-## Host provider
+An alternative implementation of `Movement` supplies the existing API's methods. Arrange the
+installed wiring and protocol selection so exactly one provider contributes `Movement.class`.
+Registering a second matching provider is an error, not an override or an extra layer.
 
-Implement `PlayerCapabilityProvider<Combat>` and register it under
-`META-INF/services/me.whereareiam.anvil.capability.api.PlayerCapabilityProvider`.
-Its `CapabilityDescriptor` supplies a globally unique ID, supported backend IDs, API version, and
-required predecessor capabilities. An empty supported-backend set means backend-independent behavior.
+Capability lookup uses the exact registered class. A Java interface that extends another capability
+interface does not automatically register the parent type. There is no implicit augmentation of an
+already installed capability.
 
-The runtime orders providers by declared dependencies. `findCapability` and `requireCapability`
-only expose declared predecessors. Obtain execution services with `context.requireService(...)`
-and register player-scoped cleanup with `context.onDestroy(...)`.
+## Create the example capability
 
-Do not declare a `Session` dependency merely because most players happen to use it. Declare it when
-the implementation actually needs the session capability. Agent-only behavior can be independent.
+This section builds an `Echo` capability whose host adapter calls a platform agent. Echo is a small
+transport example: it proves that your packaged handler can run in the selected process. Replace
+its contract with a useful domain operation after the installation path works.
 
-## MCProtocol worker adapter
+1. [Define the public contract](./contracts/index.md).
+2. For the Echo example, define its [operation contract and handler](../agent-operations/contracts/index.md),
+   then build the [agent adapter](./agent-adapters/index.md).
+3. [Install the handler](../agent-operations/installation/index.md) and
+   [package and test the extension](../packaging/index.md) through a consumer build.
 
-Worker adapter, registry, operation, and packet-listener contracts live in
-`me.whereareiam.anvil.protocol.adapter.api.capability`. `ProtocolPlayerConnection` and
-`ProtocolWorkerPlayer` live in `me.whereareiam.anvil.protocol.adapter.api.player`.
+A [protocol adapter](./protocol-adapters/index.md) is the alternative path for behavior carried by
+player packets. It does not require completing the agent example first.
 
-Implement `ProtocolCapabilityAdapter` in the capability's own MCProtocol module and register it
-under `META-INF/services/me.whereareiam.anvil.protocol.adapter.api.capability.ProtocolCapabilityAdapter`.
-Its `install` method registers namespaced operations and packet listeners. Its `supports(protocolNumber)`
-method declares compatible protocol bindings.
+## Arrange the artifacts
 
-The host provider obtains `ProtocolPlayerConnection`, sends named requests, and subscribes to worker
-events. The worker uses MCProtocolLib packets and the shared worker execution surface. This adds
-behavior without editing the core worker dispatch. It does not replace the backend's packet codec
-or install support for arbitrary new library versions.
+| Example artifact | Owns | Anvil API dependency |
+|---|---|---|
+| `echo-api` | `Echo` and its public models | `anvil-api` |
+| `echo-operations` | Shared request/response descriptors | `agent-api` |
+| `echo-host` | Capability provider calling the agent | `capability-api`, `agent-api` |
+| `echo-agent` | Handler loaded by the platform agent | `agent-api` |
+| `echo` | Consumer dependency wiring | The API and selected host implementation |
 
-Keep operation/event names globally unique and stable. Preserve external dependency classpath
-entries when testing against isolated workers; only the selected protocol JAR is replaced.
-Operation names must be qualified with a namespace (for example `combat.attack` or `combat:attack`).
-The worker reserves `create`, `destroy`, and `shutdown` for its own lifecycle; adapter registration
-rejects those names. Use the public connection API instead of constructing private worker envelopes.
+Your artifacts use your own Maven group and package namespace. The host and agent artifacts share
+operation contracts; the host does not depend on the handler implementation. For packet behavior,
+the protocol adapter occupies the host implementation role and may also supply worker-side code.
 
-Extensions using the former flat `me.whereareiam.anvil.protocol.adapter` package must update their
-imports, rename the adapter service descriptor to the path above, and recompile. The artifact remains
-`protocol-adapter-api`; capability operation/event names are unchanged. Do not import
-`mcprotocol.worker.host` or `mcprotocol.worker.child` implementation classes.
+## Declare what an implementation needs
 
-## Alternative backends and agents
+`CapabilityDescriptor` identifies the provider, declares its supported protocol IDs, and lists
+predecessor capability types. The runtime creates providers in dependency order. Access to other
+capabilities is restricted to those declared dependencies.
 
-For another packet library, implement the same consumer capability through that backend's own
-public connection-service interface. See [protocol providers](../protocol-providers/index.md).
+An empty `supportedProtocolIds` set means the provider is independent of a particular backend.
+Use it for agent-only behavior when the adapter has no backend-specific service dependency. Declare
+`Session` only when the implementation uses that capability. The built-in `Server` observation
+capability, for example, works independently of `Session`.
 
-For native server/proxy behavior, define typed agent operations and a host adapter that uses
-`AgentDirectory`. The operation implementation lives in the platform process, while the public
-capability remains independent of platform SDK types. See [agent operations](../agent-operations/index.md).
-
-## Wire and test the family
-
-The consumer adds the wiring artifact to `anvilCapabilities`. Avoid installing two selected providers
-for the same capability type. Test declared-dependency failures, unsupported backends, operation
-registration, player cleanup, and observable runtime behavior. Anvil's separately packaged
-external-extension fixture demonstrates the public boundaries without importing engine internals.
+At most one selected provider can contribute a given capability type. If you provide an alternative
+implementation of a built-in API, select compatible protocol IDs and avoid installing two matching
+implementations for the same engine.

@@ -1,4 +1,10 @@
 {
   "title": "Contributing",
-  "pages": ["index", "architecture", "testing", "publishing", "documentation"]
+  "pages": [
+    "index",
+    "architecture",
+    "testing",
+    "documentation",
+    "publishing"
+  ]
 }

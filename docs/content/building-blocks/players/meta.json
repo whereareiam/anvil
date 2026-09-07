@@ -1,0 +1,9 @@
+{
+  "title": "Players",
+  "pages": [
+    "index",
+    "connections",
+    "authentication",
+    "capabilities"
+  ]
+}

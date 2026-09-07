@@ -1,0 +1,115 @@
+---
+title: First test
+description: Start pinned Paper, connect a native player, and verify server presence and a message.
+---
+
+This test starts Paper, logs in an offline player called Alice, and verifies that the player receives
+a message sent through the server console. It gives you a working environment before adding your
+plugin's own assertions.
+
+Complete [installation](../installation/index.md) first. The example uses the pinned Paper build
+`1.21.11 / 132`, the Paper platform unit, and MCProtocol support from that setup.
+
+## Create the scenario [step]
+
+Save this as `src/anvil/java/com/example/test/PaperScenario.java`:
+
+```java
+package com.example.test;
+
+import me.whereareiam.anvil.api.model.process.Distribution;
+import me.whereareiam.anvil.api.model.process.MinecraftServer;
+import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.scenario.AnvilScenarioDefinition;
+import me.whereareiam.anvil.api.type.Platforms;
+import org.jetbrains.annotations.NotNull;
+
+public final class PaperScenario implements AnvilScenarioDefinition {
+	@Override
+	public @NotNull AnvilScenario define() {
+		MinecraftServer server = MinecraftServer.builder()
+				.name("server")
+				.platform(Platforms.PAPER)
+				.distribution(Distribution.remote("1.21.11", "132"))
+				.build();
+
+		return AnvilScenario.builder()
+				.name("first-paper-test")
+				.entrypoint("server")
+				.server(server)
+				.build();
+	}
+}
+```
+
+`server` identifies the process inside this scenario. Making it the entrypoint tells newly created
+players where to connect. The distribution identifies an exact build so repeated runs use the same
+server release.
+
+## Write the test [step]
+
+Save this as `src/anvil/java/com/example/test/PlayerJoinTest.java`:
+
+```java
+package com.example.test;
+
+import me.whereareiam.anvil.api.scenario.ScenarioContext;
+import me.whereareiam.anvil.capability.messages.Messages;
+import me.whereareiam.anvil.capability.server.Server;
+import me.whereareiam.anvil.capability.session.Session;
+import me.whereareiam.anvil.junit.AnvilTest;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class PlayerJoinTest {
+	@Test
+	@AnvilTest(PaperScenario.class)
+	void aliceReceivesTheServerMessage(ScenarioContext anvil) {
+		var alice = anvil.players().create("Alice");
+		var session = alice.capability(Session.class);
+		session.connect();
+		session.connected();
+
+		var identity = alice.capability(Server.class).joined("server");
+		assertEquals("Alice", identity.getObservedUsername());
+
+		anvil.processes().server("server").console()
+				.sendCommand("say anvil-first-test");
+		String message = alice.capability(Messages.class).received("anvil-first-test");
+		assertTrue(message.contains("anvil-first-test"));
+	}
+}
+```
+
+Creating Alice allocates the player; `connect()` starts login. The two waits establish different
+facts: `connected()` waits for the protocol session, while `joined("server")` waits for the server
+agent to observe Alice. The final assertion checks a message delivered to the client.
+
+## Run and inspect the result [step]
+
+Run from your project root:
+
+```shell
+./gradlew anvilTest --tests 'com.example.test.PlayerJoinTest'
+```
+
+The first run downloads the pinned runtime artifacts and prepares a workspace. A passing test means
+that Paper started, the native player joined, the agent observed its identity, and the client received
+the console message. Gradle writes the JUnit report to `build/reports/tests/anvilTest/index.html`.
+The extension closes the players and processes at the end of the test.
+
+If a distribution cannot be resolved, check the configured repositories and
+[distribution selection](../../building-blocks/environments/provisioning/platform/index.md). If login fails,
+check [versions and compatibility](../../building-blocks/environments/platforms/versions/index.md) and the
+process diagnostics in [troubleshooting](../../help/troubleshooting/index.md).
+
+<Callout type="info" title="Add an application assertion next">
+  This test establishes that the environment works. Install your plugin with
+  [workspace assets](../../building-blocks/environments/workspaces/assets/index.md), then trigger its command or
+  event and assert the resulting message, route, or state.
+</Callout>
+
+Continue with [Testing](../../workflows/testing/index.md) to turn this working example into a
+plugin-specific journey. Its reading path starts with the environment and the plugin artifact.

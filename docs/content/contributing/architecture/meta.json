@@ -1,0 +1,9 @@
+{
+  "title": "Architecture",
+  "pages": [
+    "index",
+    "modules",
+    "lifecycle",
+    "composition"
+  ]
+}

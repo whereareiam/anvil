@@ -1,0 +1,9 @@
+{
+  "title": "Creating capabilities",
+  "pages": [
+    "index",
+    "contracts",
+    "agent-adapters",
+    "protocol-adapters"
+  ]
+}
