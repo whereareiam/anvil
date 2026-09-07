@@ -47,4 +47,4 @@ access token only over private stdin. Per-run agent-session tokens are separate 
 
 Proxy forwarding has its own negotiated configuration. Online-mode proxies authenticate incoming
 players; forwarded backend listeners use offline game authentication. See
-[proxies and forwarding](../proxies/index.md).
+[proxy platforms](../platforms/proxies/index.md).

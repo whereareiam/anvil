@@ -1,9 +1,9 @@
 ---
-title: Prebuilt Spigot
+title: Spigot
 description: Download GetBukkit Spigot releases with explicit content pins and no local BuildTools run.
 ---
 
-# Prebuilt Spigot
+# Spigot
 
 Anvil downloads prebuilt Spigot JARs from the third-party
 [GetBukkit supplier](https://getbukkit.org/download/spigot). It does not run BuildTools or compile
@@ -13,6 +13,10 @@ GetBukkit addresses releases by version rather than immutable build number. Pin 
 executable bytes with `Distribution.pinned(version, sha256)`:
 
 ```java
+import me.whereareiam.anvil.api.model.process.Distribution;
+import me.whereareiam.anvil.api.model.process.MinecraftServer;
+import me.whereareiam.anvil.api.type.Platforms;
+
 MinecraftServer.builder()
         .name("server")
         .platform(Platforms.SPIGOT)

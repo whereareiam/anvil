@@ -1,6 +1,6 @@
 ---
 title: Running environments
-description: Configure a test machine, choose a topology, inspect processes, and diagnose failed runs.
+description: Configure a test machine, choose server and proxy platforms, inspect processes, and diagnose failed runs.
 ---
 
 # Running environments
@@ -12,8 +12,7 @@ start with [Getting started](../getting-started/index.md).
 ## Prepare the environment
 
 - [Configure an environment](./configuration/index.md): choose storage, Java installations, and timeouts; configure Gradle or embed the engine.
-- [Platforms and versions](./platforms/index.md): select provider units and compatible Minecraft/client versions.
-- [Proxies and forwarding](./proxies/index.md): connect a proxy to backend servers and configure identity forwarding.
+- [Platforms](./platforms/index.md): select server and proxy provider units and compatible versions.
 - [Authentication](./authentication/index.md): choose offline players or provider-owned online authentication.
 
 ## Run and inspect it

@@ -24,6 +24,12 @@ executable. For a single-project build, use `tasks.named("jar")` as the artifact
 ## Install an asset
 
 ```java
+import java.nio.file.Path;
+
+import me.whereareiam.anvil.api.model.workspace.WorkspaceAsset;
+import me.whereareiam.anvil.api.model.workspace.AssetSource;
+import me.whereareiam.anvil.api.type.AssetInstallMode;
+
 WorkspaceAsset.builder()
         .group("plugin-under-test")
         .source(AssetSource.artifact("plugin-under-test"))
@@ -46,6 +52,11 @@ forwarding, and other runtime-owned settings take precedence over copied configu
 ## Cache generated files
 
 ```java
+import java.nio.file.Path;
+
+import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
+import me.whereareiam.anvil.api.type.CachePolicy;
+
 WorkspaceCache.builder()
         .group("libraries")
         .path(Path.of("libraries"))
@@ -57,17 +68,23 @@ Providers can supply defaults, such as library directories. A scenario overrides
 declaring the same path, or disables it with `CachePolicy.DISABLED`. Cache policies also include
 `RESTORE_ONLY` and `SAVE_ONLY`. Cleanup paths cannot overlap cache paths.
 
-Successful completion saves enabled workspace caches. Failed preparation/runs do not save normal
+Successful completion saves enabled workspace caches. Failed preparation or runs do not save normal
 success snapshots. Cache identity includes distribution and asset inputs to avoid reusing an
 incompatible workspace snapshot.
 
 ## Cleanup and diagnostics
 
-Cleanup rules select `BEFORE_START`, `AFTER_STOP`, or `ON_FAILURE`. Keep failure diagnostics outside
-paths you explicitly delete. The default engine retains failed workspaces and writes
-`anvil-console.log` for each process; successful disposable runs are removed.
+Cleanup rules select `BEFORE_START`, `AFTER_STOP`, or `ON_FAILURE`. See
+[cleanup phases](cleanup.md) for the exact lifecycle semantics.
+
+The default engine retains failed workspaces and writes `anvil-console.log` for each process;
+successful disposable runs are removed. Keep failure diagnostics outside paths you explicitly
+delete.
 
 The default shared cache root is `~/.anvil`, and the default workspace root is `build/anvil`.
 Configure them with `anvil.cacheDirectory` and `anvil.workDirectory`. The shared cache contains
 distribution and protocol artifacts as well as provider-managed Java runtimes. The authentication
 store is private state and must never be uploaded as a build cache or artifact.
+
+See also [workspace cleanup](cleanup.md) for `WorkspaceCleanup`, `CleanupPhase`, and the common
+cleanup patterns used by managed processes.

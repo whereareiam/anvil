@@ -1,25 +1,35 @@
 ---
 title: Writing tests
-description: Describe an environment, create players, and assert behavior through Anvil's public APIs.
+description: Build Minecraft environments, create native protocol players, and assert observable behavior.
 ---
 
 # Writing tests
 
-Anvil tests combine a scenario with a player journey. The scenario declares the processes and assets;
-the test uses capabilities to perform actions and wait for observable results.
+An Anvil test has two parts: an `AnvilScenario` that describes the managed processes and a test
+journey that drives one or more `SimulatedPlayer` instances. The scenario owns process startup,
+workspace preparation, networking, and cleanup. The journey uses public capabilities to perform
+actions and wait for observations.
 
-If this is your first scenario, start with [the installation and first-test guide](../getting-started/index.md).
-For an existing Anvil project:
+For a new project, start with [installation and the first test](../getting-started/index.md). Once
+Anvil is configured, follow this sequence:
 
-1. [Define a scenario](./scenarios/index.md) with pinned distributions and a connection entrypoint.
-2. [Install workspace assets](./workspaces/index.md), including the packaged plugin under test.
-3. [Create and manage players](./players/index.md) in your JUnit journey.
-4. [Use capabilities](./capabilities/index.md) to drive actions and assert observations.
-5. [Control processes and observe output](../running-environments/processes/index.md) for console commands and restart checks.
+1. [Define a scenario](scenarios/index.md) with a pinned process distribution and entrypoint.
+2. [Select the JUnit integration](junit/index.md) or a scenario catalog for your runner.
+3. [Create players](players/index.md) and choose their connection targets.
+4. [Use player capabilities](capabilities/index.md) to drive protocol behavior.
+5. [Wait for observations and make assertions](assertions/index.md).
+6. [Install workspace assets and caches](workspaces/index.md) when a process needs files on disk.
 
-Put consumer scenarios and journeys in `src/anvil`, and keep ordinary plugin unit tests in `src/test`.
-Run live journeys explicitly with `./gradlew anvilTest`.
+Place consumer scenarios and journeys in `src/anvil`. Keep ordinary unit tests in `src/test`, and
+run managed journeys with `./gradlew anvilTest`.
 
-Platform selection, proxy topology, account authentication, and foreground sessions are covered in
-[running environments](../running-environments/index.md). Tests for Anvil's own implementation are
-covered separately under [contributing](../contributing/testing/index.md).
+## The test lifecycle
+
+Anvil prepares declared assets and caches, validates the topology, starts servers before proxies,
+and supplies a `ScenarioContext` to the test. When the test finishes, the context destroys players
+and stops processes in reverse order. A failed run retains its diagnostic workspace and bounded
+console output so that the failure can be investigated.
+
+Configuration for Java runtimes, process execution, platforms, and proxy topology lives under
+[running environments](../running-environments/index.md). Anvil implementation tests belong under
+[contributing](../contributing/testing/index.md).

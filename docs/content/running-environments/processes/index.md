@@ -12,7 +12,7 @@ the proxy.
 
 This guide assumes Anvil is configured in your project and you have a running `ScenarioContext` from
 an `@AnvilTest` method or `AnvilEngine.start()`. See [Getting started](../../getting-started/index.md)
-for a first test and [Proxies and forwarding](../proxies/index.md) for a proxy with a lobby backend.
+for a first test and [Proxy platforms](../platforms/proxies/index.md) for a proxy with a lobby backend.
 
 ## Find a running process
 

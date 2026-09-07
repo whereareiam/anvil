@@ -1,12 +1,55 @@
 ---
 title: Getting started
-description: Configure the Anvil Gradle plugin and run a pinned Paper scenario from JUnit.
+description: Add Anvil to a Gradle project, define a scenario, and run your first live test.
 ---
 
 # Getting started
 
-Use Java 21 or newer for the build. The snippets below use the release coordinate,
-`0.0.1`; keep the Anvil plugin and platform-unit versions aligned.
+Anvil runs a real Minecraft server or proxy around a JUnit journey. You describe the processes and
+artifacts in a scenario, create native-protocol players when the journey needs them, and let the
+test assert what the server, proxy, and player observe.
+
+This section takes you from an empty Gradle project to a passing live test:
+
+- [Install Anvil](./installation/index.md) and choose the Gradle plugins, protocol provider, and
+  platform units your project needs.
+- [Run your first scenario](./first-scenario/index.md) against a pinned Paper distribution and a
+  packaged plugin artifact.
+- [Learn the core concepts](./concepts/index.md) before building scenarios with multiple processes,
+  players, or capabilities.
+
+## Before you begin
+
+You need:
+
+- Java 21 or newer for the Gradle build. Anvil can select another Java runtime for a managed process
+  when that process requires it.
+- A Java project using Gradle and JUnit Jupiter.
+- A server or proxy distribution that the selected platform provider supports.
+- Explicit acceptance of the [Minecraft EULA](https://www.minecraft.net/eula) for automated server
+  runs.
+
+Anvil is a framework and library for developers. It does not install itself into a running server,
+replace your plugin's platform dependency, or provide a full game client. Your test project builds
+the plugin, Anvil starts the declared environment, and a lightweight client speaks the native
+Minecraft protocol.
+
+## Where the files go
+
+The Gradle plugin creates an `anvil` source set alongside the normal Java source sets:
+
+```text
+src/main/       plugin or application code
+src/test/       ordinary unit tests
+src/anvil/      scenario definitions and live journeys
+```
+
+Run live journeys with `./gradlew anvilTest`. The normal `test` task remains focused on unit tests;
+you can opt into live journeys with `-Panvil.testMode=full`.
+
+Once the first test works, continue with [Writing tests](../writing-tests/index.md) for scenario
+catalogs, workspaces, players, and capabilities, or [Running environments](../running-environments/index.md)
+for platform, Java, proxy, and process configuration.
 
 ## Configure repositories
 

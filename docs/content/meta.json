@@ -1,11 +1,20 @@
 {
   "title": "Anvil",
   "pages": [
+    "---Getting started---",
     "index",
     "getting-started",
+    "---Writing tests---",
     "writing-tests",
+    "---Running environments---",
     "running-environments",
+    "---Extending Anvil---",
     "extending",
-    "contributing"
+    "---Reference---",
+    "reference",
+    "---Contributing---",
+    "contributing",
+    "---Help---",
+    "help"
   ]
 }

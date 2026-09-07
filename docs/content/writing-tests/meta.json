@@ -1,4 +1,12 @@
 {
   "title": "Writing tests",
-  "pages": ["index", "scenarios", "players", "capabilities", "workspaces"]
+  "pages": [
+    "index",
+    "scenarios",
+    "junit",
+    "players",
+    "workspaces",
+    "capabilities",
+    "assertions"
+  ]
 }

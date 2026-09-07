@@ -1,27 +1,47 @@
 ---
 title: Overview
-description: Test packaged Minecraft plugins against real local servers and native-protocol players.
+description: A developer framework for repeatable Minecraft server, proxy, and player journeys.
 ---
 
 # Anvil
 
-Anvil starts real Minecraft servers and proxies, installs your packaged plugin, and gives your tests
-control of players that speak the native Minecraft protocol. The same scenario can run as a JUnit
-test or remain open as a foreground environment for a developer to join.
+Anvil is a Java framework for testing Minecraft behavior against real processes. A scenario describes
+the servers, proxies, distributions, and artifacts that make up an environment. A JUnit journey then
+creates native-protocol players, performs actions, and asserts what the environment observes.
 
-Use ordinary unit tests for isolated plugin logic. Use Anvil for behavior that depends on an actual
-server, network session, installed plugin, proxy route, or player identity.
+Anvil lives beside your plugin or integration project as a developer dependency. It does not run as a
+plugin on your production server and does not replace your platform API. It builds or receives the
+artifact under test, starts the declared processes, and cleans them up when the journey ends.
 
-## What a scenario does
+Use ordinary unit tests for isolated logic. Use Anvil when the behavior depends on a real server,
+network session, installed artifact, proxy route, or observed player identity.
 
-1. Declares pinned distributions, server/proxy topology, and workspace assets.
-2. Prepares the processes and installs the selected platform agents.
-3. Creates players on demand and exposes their installed capabilities.
-4. Runs assertions or a manual session.
-5. Releases players and stops processes, preserving diagnostic workspaces on failure.
+## The model
 
-The framework targets Java 21. Managed servers can require a newer Java runtime; the selected
-platform provider supplies that requirement.
+An Anvil run has four pieces:
+
+- **Scenario** — an immutable declaration of named servers, proxies, entrypoint, distributions,
+  workspace assets, and runtime policy.
+- **Process** — one managed server or proxy with its own workspace, listener, console, and agent.
+- **Player** — a context-owned client that speaks the selected native protocol.
+- **Capability** — a typed player behavior, such as session control, messages, movement, inventory,
+  interaction, or server observations.
+
+The engine validates the complete topology before startup, prepares assets and caches, starts servers
+before proxies, and releases resources in reverse order. Failed runs retain bounded diagnostics and
+their workspace when configured to do so.
+
+## What Anvil is for
+
+Use ordinary unit tests for isolated logic. Use Anvil when behavior depends on an actual server or
+proxy process, a packaged artifact, a network session, a native player, forwarding, or a reconnect and
+restart sequence.
+
+The same scenario can run as an automated JUnit test or as a foreground environment that a developer
+can join. One declaration can therefore serve repeatable checks and interactive investigation.
+
+The framework requires Java 21 or newer. Managed servers and proxies can require a newer Java runtime;
+the selected platform provider supplies that requirement.
 
 ## Supported runtime
 
@@ -32,18 +52,22 @@ platform provider supplies that requirement.
 | Bundled native client backend | MCProtocolLib |
 | Verified Minecraft versions | `1.21.11` and `26.1.2` |
 
-Both versions are covered directly and through every supported proxy/server combination. Clients
-must be natively compatible with every server reachable through their selected connection target.
-Anvil does not automatically install ViaVersion or translate between versions.
+The current compatibility matrix covers those versions directly and through every supported
+server/proxy combination. Clients must be natively compatible with every server reachable through
+their selected connection target. Anvil does not install ViaVersion or translate between versions
+automatically. Docker is available as an execution provider for scenarios that need container
+networking; local execution remains the default.
 
 ## Choose a starting point
 
-- [Getting started](./getting-started/index.md): configure Gradle and run a JUnit scenario.
-- [Writing tests](./writing-tests/index.md): define scenarios, install assets, and drive player journeys.
-- [Running environments](./running-environments/index.md): select platforms, configure proxies, and run manual sessions.
-- [Extending Anvil](./extending/index.md): add capabilities, protocol backends, or agent operations.
-- [Contributing](./contributing/index.md): work on Anvil's architecture, internal tests, builds, and documentation.
+- [Getting started](./getting-started/index.md) — install the Gradle integration and run a first live test.
+- [Writing tests](./writing-tests/index.md) — compose scenarios, players, capabilities, and waits.
+- [Running environments](./running-environments/index.md) — configure platforms, execution, Java,
+  proxies, and process lifecycle.
+- [Extending Anvil](./extending/index.md) — add capabilities, protocol providers, platform providers,
+  or agent operations.
+- [Contributing](./contributing/index.md) — change Anvil itself and run its verification suites.
 
-Anvil currently orchestrates local JVM processes for Java Edition. Docker, Kubernetes, SSH/hosted
-orchestration, Fabric, Sponge, Bedrock, rendering, pathfinding, and autonomous player AI are outside
-the current scope.
+Anvil currently orchestrates local JVM processes for Java Edition. Docker, Kubernetes, SSH or
+hosted orchestration, Fabric, Sponge, Bedrock, rendering, pathfinding, and autonomous player AI are
+outside the current scope.
