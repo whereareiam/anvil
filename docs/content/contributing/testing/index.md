@@ -59,6 +59,10 @@ compatibility cases only; use `--tests` for selecting a class. Failed live works
 under the server module's `build/anvil` directory. Inspect each process's `anvil-console.log` after
 startup or routing failures.
 
+Pull request verification is maintainer-requested. Use the repository's **Pull request verification**
+workflow, enter the open pull request number, and request a new run for each revision you want to
+check. The workflow resolves and tests the pull request merge revision at dispatch time.
+
 ## Select live test groups
 
 `testing-server` accepts a JUnit tag expression through `-PanvilTestTags`. Without it, all live

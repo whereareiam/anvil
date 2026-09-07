@@ -3,9 +3,12 @@ package me.whereareiam.anvil.engine.process;
 import me.whereareiam.anvil.api.exception.ProcessException;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.engine.process.type.ManagedServer;
+import me.whereareiam.anvil.execution.local.process.LocalProcess;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,11 +30,10 @@ class ManagedProcessTest {
 	@Test
 	void supervisesAndStopsAReadyProcess() {
 		ManagedServer process = process("ready");
-		process.start(
+		start(process,
 				List.of("sh", "-c", "echo READY; while read line; do [ \"$line\" = stop ] && exit 0; done"),
 				Map.of(),
 				Pattern.compile("READY"),
-				"stop",
 				Duration.ofSeconds(3)
 		);
 
@@ -45,9 +47,9 @@ class ManagedProcessTest {
 	void reportsReadinessTimeoutAndAllowsOwnerCleanup() {
 		ManagedServer process = process("timeout");
 		try {
-			ProcessException failure = assertThrows(ProcessException.class, () -> process.start(
+			ProcessException failure = assertThrows(ProcessException.class, () -> start(process,
 					List.of("sh", "-c", "while read line; do [ \"$line\" = stop ] && exit 0; done"),
-					Map.of(), Pattern.compile("READY"), "stop", Duration.ofMillis(100)
+					Map.of(), Pattern.compile("READY"), Duration.ofMillis(100)
 			));
 			assertEquals("timeout", failure.getProcessName());
 			assertEquals(ProcessState.FAILED, process.state());
@@ -58,11 +60,23 @@ class ManagedProcessTest {
 	}
 
 	@Test
+	void marksProcessFailedWhenExecutionCannotBeCreated() {
+		ManagedServer process = process("launch-failure");
+		assertThrows(UncheckedIOException.class, () -> process.start(
+				() -> { throw new UncheckedIOException(new IOException("launch failed")); },
+				Pattern.compile("READY"),
+				"stop",
+				Duration.ofSeconds(1)
+		));
+		assertEquals(ProcessState.FAILED, process.state());
+	}
+
+	@Test
 	void reportsExitBeforeReadinessWithoutWaitingForTheDeadline() {
 		ManagedServer process = process("early-exit");
 		try {
-			assertTimeoutPreemptively(Duration.ofSeconds(5), () -> assertThrows(ProcessException.class, () -> process.start(
-					List.of("sh", "-c", "echo FAILED; exit 7"), Map.of(), Pattern.compile("READY"), "stop", Duration.ofSeconds(30)
+			assertTimeoutPreemptively(Duration.ofSeconds(5), () -> assertThrows(ProcessException.class, () -> start(process,
+					List.of("sh", "-c", "echo FAILED; exit 7"), Map.of(), Pattern.compile("READY"), Duration.ofSeconds(30)
 			)));
 			assertEquals(ProcessState.FAILED, process.state());
 		} finally {
@@ -75,8 +89,8 @@ class ManagedProcessTest {
 		ManagedServer process = process("capture-failure");
 		Files.createDirectories(process.workDirectory().resolve("anvil-console.log"));
 		try {
-			assertTimeoutPreemptively(Duration.ofSeconds(5), () -> assertThrows(ProcessException.class, () -> process.start(
-					List.of("sh", "-c", "exec sleep 30"), Map.of(), Pattern.compile("READY"), "stop", Duration.ofSeconds(30)
+			assertTimeoutPreemptively(Duration.ofSeconds(5), () -> assertThrows(ProcessException.class, () -> start(process,
+					List.of("sh", "-c", "exec sleep 30"), Map.of(), Pattern.compile("READY"), Duration.ofSeconds(30)
 			)));
 			assertTrue(process.console().tail(10).stream().anyMatch(line -> line.contains("Failed to capture process output")));
 		} finally {
@@ -87,9 +101,9 @@ class ManagedProcessTest {
 	@Test
 	void escalatesWhenTheProcessIgnoresStopAndTermination() {
 		ManagedServer process = process("stubborn");
-		process.start(
+		start(process,
 				List.of("sh", "-c", "trap '' TERM; echo READY; while read line; do :; done"),
-				Map.of(), Pattern.compile("READY"), "stop", Duration.ofSeconds(3)
+				Map.of(), Pattern.compile("READY"), Duration.ofSeconds(3)
 		);
 		try {
 			assertTimeoutPreemptively(Duration.ofSeconds(5), () -> process.stop(Duration.ofMillis(50)));
@@ -104,9 +118,9 @@ class ManagedProcessTest {
 	@Test
 	void boundsHistoryWhilePersistingAllOutputAndKeepsSnapshotsImmutable() throws Exception {
 		ManagedServer process = process("history");
-		process.start(
+		start(process,
 				List.of("sh", "-c", "i=0; while [ $i -lt 2100 ]; do echo line-$i; i=$((i + 1)); done; echo READY; while read line; do [ \"$line\" = stop ] && exit 0; done"),
-				Map.of(), Pattern.compile("READY"), "stop", Duration.ofSeconds(3)
+				Map.of(), Pattern.compile("READY"), Duration.ofSeconds(3)
 		);
 		try {
 			var snapshot = process.console().tail(3000);
@@ -116,11 +130,30 @@ class ManagedProcessTest {
 			assertThrows(UnsupportedOperationException.class, snapshot::clear);
 			assertTrue(process.console().tail(0).isEmpty());
 			assertThrows(IllegalArgumentException.class, () -> process.console().tail(-1));
-			assertThrows(IllegalStateException.class, () -> process.start(
-					List.of("sh"), Map.of(), Pattern.compile("READY"), "stop", Duration.ofSeconds(1)));
+			assertThrows(IllegalStateException.class, () -> start(process,
+					List.of("sh"), Map.of(), Pattern.compile("READY"), Duration.ofSeconds(1)));
 		} finally {
 			process.stop(Duration.ofSeconds(1));
 		}
+	}
+
+	private void start(
+			ManagedServer process, List<String> command, Map<String, String> environment, Pattern readiness, Duration timeout
+	) {
+		process.start(() -> {
+			try {
+				Files.createDirectories(process.workDirectory());
+				ProcessBuilder builder = new ProcessBuilder(command)
+						.directory(process.workDirectory().toFile())
+						.redirectErrorStream(true);
+
+				builder.environment().putAll(environment);
+
+				return new LocalProcess(builder.start());
+			} catch (IOException failure) {
+				throw new UncheckedIOException(failure);
+			}
+		}, readiness, "stop", timeout);
 	}
 
 	private ManagedServer process(String name) {
@@ -130,10 +163,11 @@ class ManagedProcessTest {
 	@Test
 	void terminatesTheProcessEvenWhenItsConsoleIsClosed() {
 		ManagedServer process = process("closed-console");
-		process.start(
+		start(process,
 				List.of("sh", "-c", "exec 0<&-; echo READY; exec sleep 60"),
-				Map.of(), Pattern.compile("READY"), "stop", Duration.ofSeconds(3)
+				Map.of(), Pattern.compile("READY"), Duration.ofSeconds(3)
 		);
+
 		try {
 			assertThrows(ProcessException.class,
 					() -> process.stop(Duration.ofMillis(100)));
@@ -146,6 +180,7 @@ class ManagedProcessTest {
 	@Test
 	void consoleCheckpointExcludesOldLinesAndWaitsForNewOutput() {
 		ManagedServer process = echoProcess("cursor");
+
 		try {
 			assertEquals("READY", process.console().await("READY", 0, Duration.ofSeconds(1)));
 			long checkpoint = process.console().checkpoint();
@@ -173,6 +208,7 @@ class ManagedProcessTest {
 			Thread.interrupted();
 			process.stop(Duration.ofSeconds(1));
 		}
+
 		assertTrue(assertThrows(
 					ProcessException.class,
 					() -> process.console().await("missing", process.console().checkpoint(), Duration.ofSeconds(10)))
@@ -183,10 +219,11 @@ class ManagedProcessTest {
 	@Test
 	void consoleWaitRejectsEvictedHistory() {
 		ManagedServer process = process("overflow");
-		process.start(List.of("sh", "-c",
+		start(process, List.of("sh", "-c",
 							"echo READY; read line; i=0; while [ $i -lt 2500 ]; do echo LINE; i=$((i+1)); done; " +
 							"echo END; read line"),
-					Map.of(), Pattern.compile("READY"), "stop", Duration.ofSeconds(3));
+					Map.of(), Pattern.compile("READY"), Duration.ofSeconds(3));
+
 		try {
 			process.console().sendCommand("flood");
 			assertTrue(
@@ -200,9 +237,12 @@ class ManagedProcessTest {
 
 	private ManagedServer echoProcess(String name) {
 		ManagedServer process = process(name);
-		process.start(
-			List.of("sh", "-c", "echo READY; while read line; do [ \"$line\" = stop ] && exit 0; echo \"$line\"; done"),
-			Map.of(), Pattern.compile("READY"), "stop", Duration.ofSeconds(3));
+		start(
+				process,
+				List.of("sh", "-c", "echo READY; while read line; do [ \"$line\" = stop ] && exit 0; echo \"$line\"; done"),
+				Map.of(), Pattern.compile("READY"), Duration.ofSeconds(3)
+		);
+
 		return process;
 	}
 }

@@ -1,8 +1,11 @@
 package me.whereareiam.anvil.api.model.scenario;
 
 import lombok.Builder;
+import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.NetworkPolicy;
 import lombok.Singular;
 import lombok.Value;
+import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.scenario.ScenarioHook;
@@ -18,6 +21,25 @@ import java.util.List;
 @Value
 @Builder(toBuilder = true)
 public class AnvilScenario {
+	/**
+	 * Execution provider used for the whole topology: local or docker.
+	 */
+	@Nullable String execution;
+
+	@NotNull
+	@Builder.Default
+	NetworkPolicy networkPolicy = NetworkPolicy.builder().build();
+
+	/**
+	 * Default Java selection, overridden independently by each process.
+	 */
+	@Nullable JavaRequirement javaRequirement;
+
+	/**
+	 * Default explicit Java source, overridden independently by each process.
+	 */
+	@Nullable JavaSource javaSource;
+
 	@NotNull String name;
 	@NotNull String entrypoint;
 	@NotNull

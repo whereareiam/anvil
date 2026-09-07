@@ -6,7 +6,7 @@ import me.whereareiam.anvil.protocol.api.model.ProtocolSupport;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.api.provider.ProtocolBackend;
 import me.whereareiam.anvil.protocol.mcprotocol.authentication.MicrosoftAuthentication;
-import me.whereareiam.anvil.protocol.mcprotocol.catalog.ProtocolArtifactResolver;
+import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver;
 import me.whereareiam.anvil.protocol.mcprotocol.catalog.ProtocolCatalog;
 import me.whereareiam.anvil.protocol.mcprotocol.model.AuthenticationSession;
 import me.whereareiam.anvil.protocol.mcprotocol.model.ProtocolDefinition;
@@ -25,11 +25,13 @@ final class McProtocolClientPool implements ProtocolBackend {
 	private final Path cacheDirectory;
 	private final ProtocolCatalog catalog = new ProtocolCatalog();
 	private final MicrosoftAuthentication authentication;
-	private final ProtocolArtifactResolver artifacts = new ProtocolArtifactResolver();
+	private final ArtifactResolver artifacts;
+
 	private final Map<String, ProtocolWorkerProcess> workers = new LinkedHashMap<>();
 	private boolean closed;
 
-	McProtocolClientPool(@NotNull Path cacheDirectory, @NotNull MicrosoftAuthentication authentication) {
+	McProtocolClientPool(@NotNull Path cacheDirectory, @NotNull MicrosoftAuthentication authentication, @NotNull ArtifactResolver artifacts) {
+		this.artifacts = artifacts;
 		this.cacheDirectory = cacheDirectory;
 		this.authentication = authentication;
 	}
@@ -53,9 +55,17 @@ final class McProtocolClientPool implements ProtocolBackend {
 				? authentication.resolve(request.getAuthenticationProfile())
 				: null;
 		ProtocolWorkerProcess worker = workers.computeIfAbsent(request.getClientVersion(),
-				ignored -> new ProtocolWorkerProcess(definition, artifacts.resolve(definition, cacheDirectory)));
+				ignored -> new ProtocolWorkerProcess(definition, resolve(definition)));
 
 		return worker.create(request, session);
+	}
+
+	private Path resolve(ProtocolDefinition definition) {
+		Path destination = cacheDirectory.resolve("protocol")
+				.resolve(definition.getSupport().getMinecraftVersion())
+				.resolve("protocol-" + definition.getSupport().getLibraryVersion() + ".jar");
+
+		return artifacts.obtain(definition.getArtifact(), destination, definition.getSha256());
 	}
 
 	@Override

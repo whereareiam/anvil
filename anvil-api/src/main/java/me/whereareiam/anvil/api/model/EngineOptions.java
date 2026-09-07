@@ -3,6 +3,8 @@ package me.whereareiam.anvil.api.model;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
+import me.whereareiam.anvil.api.model.java.JavaSource;
+import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,65 +19,97 @@ import java.util.Map;
 @Value
 @Builder(toBuilder = true)
 public class EngineOptions {
-	/**
-	 * Selected protocol-provider identifier, or null to select the sole installed provider.
-	 */
-	@Nullable String protocolId;
+    /**
+     * Uses only previously acquired artifacts and resolution metadata.
+     */
+    boolean offline;
 
-	/**
-	 * Shared download and workspace cache directory, or null to use the current user's default cache.
-	 */
-	@Nullable Path cacheDirectory;
+    /**
+     * Resolves moving vendor selectors again, retaining newly selected immutable identities.
+     */
+    boolean refresh;
 
-	/**
-	 * Root for generated scenario workspaces.
-	 */
-	@NotNull
-	@Builder.Default
-	Path workDirectory = Path.of("build", "anvil");
+    /**
+     * Maximum number of independent preparation or startup operations running together.
+     */
+    @Nullable Integer parallelism;
 
-	/**
-	 * Explicit acceptance of the Minecraft EULA.
-	 */
-	@Builder.Default
-	boolean eulaAccepted = false;
+    /**
+     * Combined declared heaps permitted to be starting at once, in MiB.
+     */
+    @Nullable Integer startupMemoryMegabytes;
 
-	/**
-	 * Retains diagnostic workspaces when scenario startup or execution fails.
-	 */
-	@Builder.Default
-	boolean keepFailedWorkspaces = true;
+    /**
+     * Maximum simultaneous artifact transfers.
+     */
+    @Nullable Integer downloadParallelism;
 
-	/**
-	 * Permits provisioning Java when no suitable configured installation is available.
-	 */
-	@Builder.Default
-	boolean autoDownloadJavaRuntimes = true;
+    /**
+     * Selected protocol-provider identifier, or null to select the sole installed provider.
+     */
+    @Nullable String protocolId;
 
-	/**
-	 * Grace period before escalating process termination.
-	 */
-	@NotNull
-	@Builder.Default
-	Duration stopTimeout = Duration.ofSeconds(15);
+    /**
+     * Shared download and workspace cache directory, or null to use the current user's default cache.
+     */
+    @Nullable Path cacheDirectory;
 
-	/**
-	 * Executable for the current Java installation, or null to use its default executable.
-	 * Feature-version overrides take priority.
-	 */
-	@Nullable Path defaultJavaExecutable;
+    /**
+     * Root for generated scenario workspaces.
+     */
+    @NotNull
+    @Builder.Default
+    Path workDirectory = Path.of("build", "anvil");
 
-	/**
-	 * Explicit Java executable paths indexed by feature version.
-	 */
-	@NotNull
-	@Singular("javaExecutable")
-	Map<Integer, Path> javaExecutables;
+    /**
+     * Explicit acceptance of the Minecraft EULA.
+     */
+    @Builder.Default
+    boolean eulaAccepted = false;
 
-	/**
-	 * Named local artifacts referenced by scenario declarations.
-	 */
-	@NotNull
-	@Singular("artifact")
-	Map<String, Path> artifacts;
+    /**
+     * Retains diagnostic workspaces when scenario startup or execution fails.
+     */
+    @Builder.Default
+    boolean keepFailedWorkspaces = true;
+
+    /**
+     * Permits provisioning Java when no suitable configured installation is available.
+     */
+    @Builder.Default
+    boolean downloadJava = true;
+
+    /**
+     * Grace period before escalating process termination.
+     */
+    @NotNull
+    @Builder.Default
+    Duration stopTimeout = Duration.ofSeconds(15);
+
+    /**
+     * Default process Java selection, overridden by a scenario or process declaration.
+     */
+    @NotNull
+    @Builder.Default
+    JavaRequirement javaRequirement = JavaRequirement.builder().build();
+
+    /**
+     * Default explicit Java source, overridden by a scenario or process source.
+     */
+    @Nullable
+    JavaSource javaSource;
+
+    /**
+     * Default execution provider, overridden by a scenario declaration.
+     */
+    @NotNull
+    @Builder.Default
+    String executionId = "local";
+
+    /**
+     * Named local artifacts referenced by scenario declarations.
+     */
+    @NotNull
+    @Singular("artifact")
+    Map<String, Path> artifacts;
 }

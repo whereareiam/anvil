@@ -10,6 +10,8 @@ lombok = "1.18.42"
 annotations = "26.1.0"
 
 # general
+compress = "1.28.0"
+dockerJava = "3.7.1"
 jackson = "2.22.2"
 slf4j = "2.0.18"
 adventure = "5.2.0"
@@ -39,6 +41,9 @@ lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" 
 annotations = { group = "org.jetbrains", name = "annotations", version.ref = "annotations" }
 
 # general
+commons-compress = { group = "org.apache.commons", name = "commons-compress", version.ref = "compress" }
+docker-java = { group = "com.github.docker-java", name = "docker-java", version.ref = "dockerJava" }
+docker-java-transport-zerodep = { group = "com.github.docker-java", name = "docker-java-transport-zerodep", version.ref = "dockerJava" }
 jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
 jackson-toml = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-toml", version.ref = "jackson" }
 jackson-yaml = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-yaml", version.ref = "jackson" }

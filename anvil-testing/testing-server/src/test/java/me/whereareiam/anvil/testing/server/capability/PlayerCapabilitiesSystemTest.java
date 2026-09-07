@@ -2,7 +2,7 @@ package me.whereareiam.anvil.testing.server.capability;
 
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
-import me.whereareiam.anvil.api.scenario.AnvilContext;
+import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.interaction.Interaction;
 import me.whereareiam.anvil.capability.interaction.model.BlockPosition;
 import me.whereareiam.anvil.capability.interaction.type.BlockFace;
@@ -30,17 +30,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PlayerCapabilitiesSystemTest {
 	@Test
 	@AnvilTest(Paper12111SystemScenario.class)
-	void controlsAProtocolPlayerOnPaper12111(AnvilContext anvil) {
+	void controlsAProtocolPlayerOnPaper12111(ScenarioContext anvil) {
 		verify(anvil);
 	}
 
 	@Test
 	@AnvilTest(Paper2612SystemScenario.class)
-	void controlsAProtocolPlayerOnPaper2612(AnvilContext anvil) {
+	void controlsAProtocolPlayerOnPaper2612(ScenarioContext anvil) {
 		verify(anvil);
 	}
 
-	private void verify(AnvilContext anvil) {
+	private void verify(ScenarioContext anvil) {
 		SimulatedPlayer alice = anvil.players().create("Alice");
 		assertEquals("external:hello", alice.capability(FixtureAgentProbeProvider.Probe.class).echo("server", "hello"));
 		Session session = alice.capability(Session.class);

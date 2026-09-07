@@ -1,33 +1,99 @@
-name: Pull request
+name: Pull request verification
+run-name: "Verify pull request #${{ inputs.pr_number }}"
 
 on:
-  pull_request:
-    types:
-      - opened
-      - reopened
-      - synchronize
-      - ready_for_review
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Open pull request number to verify
+        required: true
+        type: string
 
 concurrency:
-  group: anvil-pr-${{ github.event.pull_request.number }}
+  group: anvil-pr-${{ inputs.pr_number }}
   cancel-in-progress: true
 
 permissions:
   contents: read
   checks: write
+  pull-requests: read
 
 jobs:
-  approve:
-    name: Approve pull request verification
+  resolve:
+    name: Resolve pull request
     runs-on: ubuntu-latest
-    environment: anvil-pr-live-tests
-
+    timeout-minutes: 5
+    outputs:
+      source_ref: ${{ steps.pull-request.outputs.source_ref }}
+      version: ${{ steps.pull-request.outputs.version }}
     steps:
-      - name: Approval received
-        run: echo "Maintainer approval received; starting pull request verification."
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Validate pull request title and labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+        run: bash .github/scripts/validate-pull-request-metadata.sh
+
+      - name: Resolve pull request revision
+        id: pull-request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "pr_number must be a positive integer" >&2
+            exit 1
+          fi
+
+          pull_request="$(gh api --header 'Accept: application/vnd.github+json' \
+            "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")"
+          state="$(jq -r '.state // empty' <<<"$pull_request")"
+          if [[ "$state" != "open" ]]; then
+            echo "Pull request #${PR_NUMBER} is not open" >&2
+            exit 1
+          fi
+
+          head_sha="$(jq -r '.head.sha // empty' <<<"$pull_request")"
+          if [[ -z "$head_sha" ]]; then
+            echo "Pull request #${PR_NUMBER} has no head revision" >&2
+            exit 1
+          fi
+
+          revision_sha="$(jq -r '.merge_commit_sha // empty' <<<"$pull_request")"
+          if [[ -z "$revision_sha" ]]; then
+            echo "Pull request #${PR_NUMBER} has no current merge revision; retry after GitHub updates it" >&2
+            exit 1
+          fi
+
+          mergeable_state="$(jq -r '.mergeable_state // empty' <<<"$pull_request")"
+          if [[ "$mergeable_state" == "dirty" ]]; then
+            echo "Pull request #${PR_NUMBER} has merge conflicts; refresh it before verification" >&2
+            exit 1
+          fi
+
+          merge_ref="refs/pull/${PR_NUMBER}/merge"
+          source_ref="$revision_sha"
+          echo "source_ref=$source_ref" >> "$GITHUB_OUTPUT"
+          echo "version=pr-${PR_NUMBER}-${revision_sha:0:7}" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Manual pull request verification"
+            echo
+            echo "- Pull request: #${PR_NUMBER}"
+            echo "- Head revision: \`${head_sha}\`"
+            echo "- Merge revision: \`${revision_sha}\`"
+            echo "- Merge ref: \`${merge_ref}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   verify:
-    needs: approve
+    needs: resolve
     uses: ./.github/workflows/verify.yml
     with:
-      source_ref: ${{ github.sha }}
+      source_ref: ${{ needs.resolve.outputs.source_ref }}
+      version: ${{ needs.resolve.outputs.version }}
+      cache_read_only: true

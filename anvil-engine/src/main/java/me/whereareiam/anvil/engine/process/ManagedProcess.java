@@ -7,13 +7,11 @@ import me.whereareiam.anvil.api.type.ProcessState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
+import me.whereareiam.anvil.execution.api.process.ProcessExecution;
+import java.util.function.Supplier;
 import java.net.InetSocketAddress;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -31,7 +29,7 @@ public abstract class ManagedProcess implements RunningProcess {
 	private final AtomicReference<ProcessState> state = new AtomicReference<>(ProcessState.CREATED);
 	private final CountDownLatch readiness = new CountDownLatch(1);
 
-	private @Nullable Process process;
+	private @Nullable ProcessExecution process;
 	private String stopCommand = "stop";
 
 	/**
@@ -49,8 +47,7 @@ public abstract class ManagedProcess implements RunningProcess {
 	 * The scenario owner remains responsible for stopping a failed startup attempt.
 	 */
 	public synchronized void start(
-			@NotNull List<String> command,
-			@NotNull Map<String, String> environment,
+			@NotNull Supplier<ProcessExecution> launch,
 			@NotNull Pattern readinessPattern,
 			@NotNull String stopCommand,
 			@NotNull Duration timeout
@@ -60,18 +57,18 @@ public abstract class ManagedProcess implements RunningProcess {
 
 		this.stopCommand = stopCommand;
 		try {
-			Process launched = launch(command, environment);
+			ProcessExecution launched = launch.get();
 			process = launched;
 			console.attach(launched, readinessPattern, this::becameReady, this::outputEnded);
 			launched.onExit().thenRun(this::exited);
 			awaitReadiness(launched, timeout);
-		} catch (IOException failure) {
-			state.set(ProcessState.FAILED);
-			throw new ProcessException(name, "Could not start process '" + name + "' using " + command, failure);
 		} catch (InterruptedException failure) {
 			Thread.currentThread().interrupt();
 			state.set(ProcessState.FAILED);
 			throw new ProcessException(name, "Interrupted while starting process '" + name + "'", failure);
+		} catch (RuntimeException | Error failure) {
+			state.set(ProcessState.FAILED);
+			throw failure;
 		}
 	}
 
@@ -80,7 +77,7 @@ public abstract class ManagedProcess implements RunningProcess {
 	 * A broken command channel does not prevent termination and is reported after the process stops.
 	 */
 	public synchronized void stop(@NotNull Duration timeout) {
-		Process current = process;
+		ProcessExecution current = process;
 		if (current == null || !current.isAlive()) {
 			state.set(ProcessState.STOPPED);
 			console.closeInput();
@@ -109,17 +106,7 @@ public abstract class ManagedProcess implements RunningProcess {
 		if (commandFailure != null) throw commandFailure;
 	}
 
-	private Process launch(List<String> command, Map<String, String> environment) throws IOException {
-		Files.createDirectories(workDirectory);
-		ProcessBuilder builder = new ProcessBuilder(command)
-				.directory(workDirectory.toFile())
-				.redirectErrorStream(true);
-		builder.environment().putAll(environment);
-
-		return builder.start();
-	}
-
-	private void awaitReadiness(Process launched, Duration timeout) throws InterruptedException {
+	private void awaitReadiness(ProcessExecution launched, Duration timeout) throws InterruptedException {
 		if (!readiness.await(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
 			state.set(ProcessState.FAILED);
 			throw new ProcessException(name, "Process '" + name + "' did not become ready within " + timeout
@@ -156,28 +143,21 @@ public abstract class ManagedProcess implements RunningProcess {
 		}
 	}
 
-	private void stopAndAwait(Process current, Duration timeout, boolean terminateImmediately) throws InterruptedException {
-		if (!terminateImmediately && current.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)) return;
+	private void stopAndAwait(ProcessExecution current, Duration timeout, boolean terminateImmediately) throws InterruptedException {
+		if (!terminateImmediately && current.await(timeout)) return;
 
 		long escalationMillis = Math.max(1000, timeout.toMillis() / 3);
 		terminateTree(current, false);
-		if (current.waitFor(escalationMillis, TimeUnit.MILLISECONDS)) return;
+		if (current.await(Duration.ofMillis(escalationMillis))) return;
 
 		terminateTree(current, true);
-		if (current.waitFor(escalationMillis, TimeUnit.MILLISECONDS)) return;
+		if (current.await(Duration.ofMillis(escalationMillis))) return;
 
 		throw new ProcessException(name, "Process '" + name + "' did not exit after forced termination");
 	}
 
-	private void terminateTree(Process current, boolean force) {
-		if (force) {
-			current.descendants().forEach(ProcessHandle::destroyForcibly);
-			current.destroyForcibly();
-			return;
-		}
-
-		current.descendants().forEach(ProcessHandle::destroy);
-		current.destroy();
+	private void terminateTree(ProcessExecution current, boolean force) {
+		current.terminate(force);
 	}
 
 	private ProcessException shutdownFailure(String message, Throwable cause, @Nullable ProcessException commandFailure) {

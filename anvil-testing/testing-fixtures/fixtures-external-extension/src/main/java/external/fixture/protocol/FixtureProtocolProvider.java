@@ -7,6 +7,7 @@ import me.whereareiam.anvil.protocol.api.provider.ProtocolProvider;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolSupport;
 import org.jetbrains.annotations.NotNull;
+import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -28,7 +29,7 @@ public class FixtureProtocolProvider implements ProtocolProvider {
 	}
 
 	@Override
-	public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory) {
+	public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull ArtifactResolver artifacts) {
 		Path trace = cacheDirectory.resolve(id() + ".lifecycle");
 		trace(trace, "created");
 		return new ProtocolBackend() {

@@ -8,7 +8,7 @@ import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Owns scenario execution and shared resources across one or more scenario runs.
+ * Owns scenario execution and shared resources across one or more scenario sessions.
  * Each returned context may be closed independently; closing the engine releases remaining contexts.
  */
 public interface ScenarioEngine extends AutoCloseable {
@@ -24,7 +24,7 @@ public interface ScenarioEngine extends AutoCloseable {
 	 * @throws ProcessException if a process fails to start
 	 * @throws ScenarioStartupException if the setup hook fails
 	 */
-	@NotNull AnvilContext start(@NotNull AnvilScenario scenario);
+	@NotNull ScenarioContext start(@NotNull AnvilScenario scenario);
 
 	/**
 	 * Closes remaining contexts and shared engine resources. Repeated calls have no effect.

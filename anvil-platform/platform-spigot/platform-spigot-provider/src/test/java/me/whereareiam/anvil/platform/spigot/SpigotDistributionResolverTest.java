@@ -3,9 +3,10 @@ package me.whereareiam.anvil.platform.spigot;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
-import me.whereareiam.anvil.platform.api.ArtifactResolver;
+import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,7 +30,7 @@ class SpigotDistributionResolverTest {
 		var server = server(Distribution.pinned(version, checksum));
 		ArtifactResolver artifacts = new ArtifactResolver() {
 			@Override
-			public Path obtain(URI uri, Path destination, String expectedSha256) {
+			public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, String expectedSha256) {
 				assertEquals(URI.create("https://cdn.getbukkit.org/spigot/spigot-" + version + ".jar"), uri);
 				assertEquals(checksum.toLowerCase(), expectedSha256);
 				assertEquals(temporary.resolve("distributions/getbukkit/spigot").resolve(version)
@@ -41,7 +42,7 @@ class SpigotDistributionResolverTest {
 			}
 
 			@Override
-			public String read(URI uri) {
+			public @NotNull String read(@NotNull URI uri) {
 				throw new AssertionError("The supplier does not require a BuildTools metadata request");
 			}
 		};
@@ -54,12 +55,12 @@ class SpigotDistributionResolverTest {
 	void rejectsUnpinnedAndLegacyBuildSelectorsBeforeDownloading() {
 		ArtifactResolver unused = new ArtifactResolver() {
 			@Override
-			public Path obtain(URI uri, Path destination, String expectedSha256) {
+			public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, String expectedSha256) {
 				throw new AssertionError("Invalid selectors must fail before download");
 			}
 
 			@Override
-			public String read(URI uri) {
+			public @NotNull String read(@NotNull URI uri) {
 				throw new AssertionError("Invalid selectors must fail before metadata lookup");
 			}
 		};
@@ -84,7 +85,7 @@ class SpigotDistributionResolverTest {
 				.scenario(AnvilScenario.builder().name("supplier").entrypoint("server").server(server).build())
 				.cacheDirectory(temporary).workDirectory(temporary.resolve("work"))
 				.bindAddress("127.0.0.1").port(25565)
-				.javaExecutable(temporary.resolve("must-not-be-executed"))
+
 				.artifactResolver(artifacts).build();
 	}
 }

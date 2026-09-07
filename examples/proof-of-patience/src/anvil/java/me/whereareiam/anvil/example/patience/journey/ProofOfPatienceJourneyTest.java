@@ -2,7 +2,7 @@ package me.whereareiam.anvil.example.patience.journey;
 
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
-import me.whereareiam.anvil.api.scenario.AnvilContext;
+import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.server.Server;
@@ -29,17 +29,17 @@ class ProofOfPatienceJourneyTest {
 
 	@Test
 	@AnvilTest(Paper12111Scenario.class)
-	void aliceProvesHerPatienceOnPaper12111(AnvilContext anvil) {
+	void aliceProvesHerPatienceOnPaper12111(ScenarioContext anvil) {
 		verifyAliceProvesHerPatience(anvil);
 	}
 
 	@Test
 	@AnvilTest(Paper2612Scenario.class)
-	void aliceProvesHerPatienceOnPaper2612(AnvilContext anvil) {
+	void aliceProvesHerPatienceOnPaper2612(ScenarioContext anvil) {
 		verifyAliceProvesHerPatience(anvil);
 	}
 
-	private void verifyAliceProvesHerPatience(AnvilContext anvil) {
+	private void verifyAliceProvesHerPatience(ScenarioContext anvil) {
 		assertEquals(ProcessState.READY, anvil.processes().server("authentication").state());
 
 		SimulatedPlayer alice = anvil.players().create("Alice");

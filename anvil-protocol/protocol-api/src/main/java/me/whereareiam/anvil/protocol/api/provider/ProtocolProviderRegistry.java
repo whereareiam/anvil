@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.api.provider;
 
 import org.jetbrains.annotations.NotNull;
+import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
@@ -74,8 +75,8 @@ public final class ProtocolProviderRegistry {
 	 * @param cacheDirectory private Anvil cache root
 	 * @return selected protocol backend
 	 */
-	public @NotNull ProtocolBackend create(@Nullable String id, @NotNull Path cacheDirectory) {
-		return select(id).create(cacheDirectory);
+	public @NotNull ProtocolBackend create(@Nullable String id, @NotNull Path cacheDirectory, @NotNull ArtifactResolver artifacts) {
+		return select(id).create(cacheDirectory, artifacts);
 	}
 
 	/**

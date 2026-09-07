@@ -5,11 +5,12 @@ import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
-import me.whereareiam.anvil.platform.api.ArtifactResolver;
+import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
 import me.whereareiam.anvil.platform.api.type.ForwardingMode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -20,8 +21,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class PaperPlatformProviderTest {
 	@TempDir
@@ -58,7 +58,7 @@ class PaperPlatformProviderTest {
 				.server(server)
 				.proxy(proxy)
 				.build();
-		PlatformContext context = context(scenario, work, Map.of("proxy", 25565, "server", 25566), 25566);
+		PlatformContext context = context(scenario, work, Map.of("proxy", 25565, "server", 25566));
 
 		PaperPlatformProvider provider = new PaperPlatformProvider();
 		assertEquals(localJar.toAbsolutePath(), provider.resolve(server, context).getJar());
@@ -78,7 +78,7 @@ class PaperPlatformProviderTest {
 		assertEquals("test-secret", configured.at("/proxies/velocity/secret").asText());
 		provider.configure(server, context.toBuilder().forwarding(ForwardingConfiguration.builder().build()).build());
 		configured = yaml.readTree(work.resolve("config/paper-global.yml").toFile());
-		assertEquals(false, configured.at("/proxies/velocity/enabled").asBoolean());
+        assertFalse(configured.at("/proxies/velocity/enabled").asBoolean());
 		assertTrue(configured.at("/proxies/velocity/secret").isMissingNode());
 		assertEquals("retained", yaml.readTree(work.resolve("spigot.yml").toFile()).at("/settings/sample").asText());
 	}
@@ -86,17 +86,15 @@ class PaperPlatformProviderTest {
 	private PlatformContext context(
 			AnvilScenario scenario,
 			Path work,
-			Map<String, Integer> ports,
-			int port
+			Map<String, Integer> ports
 	) {
 		return PlatformContext.builder()
 				.scenario(scenario)
 				.cacheDirectory(temporary.resolve("cache"))
 				.workDirectory(work)
 				.bindAddress("127.0.0.1")
-				.port(port)
-				.processPorts(ports)
-				.javaExecutable(Path.of(System.getProperty("java.home"), "bin", "java"))
+				.port(25566)
+				.processAddresses(ports.entrySet().stream().collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> new java.net.InetSocketAddress("127.0.0.1", entry.getValue()))))
 				.eulaAccepted(true)
 				.artifactResolver(artifactResolver())
 				.forwarding(ForwardingConfiguration.builder().mode(ForwardingMode.MODERN)
@@ -107,12 +105,12 @@ class PaperPlatformProviderTest {
 	private ArtifactResolver artifactResolver() {
 		return new ArtifactResolver() {
 			@Override
-			public Path obtain(URI uri, Path destination, String expectedSha256) {
+			public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, String expectedSha256) {
 				throw new AssertionError("No remote artifact expected");
 			}
 
 			@Override
-			public String read(URI uri) {
+			public @NotNull String read(@NotNull URI uri) {
 				throw new AssertionError("No remote resource expected");
 			}
 		};

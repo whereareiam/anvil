@@ -11,7 +11,8 @@ import me.whereareiam.anvil.capability.movement.Movement;
 import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
-import me.whereareiam.anvil.engine.AnvilEngine;
+import me.whereareiam.anvil.launcher.AnvilLauncher;
+import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.testing.fixture.extension.ExternalExtensionFixture;
 import me.whereareiam.anvil.testing.server.scenario.Paper12111SystemScenario;
@@ -36,7 +37,7 @@ class ExternalExtensionSystemTest {
 		try (var fixture = new ExternalExtensionFixture(temporary, "FixtureProtocolProvider", true)) {
 			SimulatedPlayer player;
 			Session session;
-			try (AnvilEngine engine = new AnvilEngine(options().toBuilder().protocolId("fixture").build());
+			try (ScenarioEngine engine = AnvilLauncher.create(options().toBuilder().protocolId("fixture").build());
 				 var context = engine.start(scenario(fixture.artifact()))) {
 				player = context.players().create("FixturePlayer");
 				session = player.capability(Session.class);
@@ -61,7 +62,7 @@ class ExternalExtensionSystemTest {
 	@Test
 	void usesServerObservationAndAgentOperationsWithoutASessionAdapter() throws Exception {
 		try (var fixture = new ExternalExtensionFixture(temporary, "ObservationProtocolProvider", false);
-			 var engine = new AnvilEngine(options())) {
+			 var engine = AnvilLauncher.create(options())) {
 			try (var context = engine.start(scenario(fixture.artifact()))) {
 				var player = context.players().create("Observer");
 				assertFalse(player.hasCapability(Session.class));

@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.gradle.task
 
+import me.whereareiam.anvil.launcher.config.EngineProperties
 import me.whereareiam.anvil.api.model.EngineOptions
 import me.whereareiam.anvil.gradle.internal.AnvilPluginNames
 import me.whereareiam.anvil.runner.AnvilRunner
@@ -22,6 +23,7 @@ import java.io.PrintWriter
 import java.net.URLClassLoader
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import java.util.Properties
 
 /** Lists registered scenarios or runs one foreground scenario or interactive scenario group. */
 @DisableCachingByDefault(because = "The task intentionally starts long-running external server processes")
@@ -51,9 +53,20 @@ abstract class ScenarioRunnerTask : DefaultTask() {
     @get:Optional
     abstract val protocolId: Property<String>
 
-    /** Server and worker Java executables keyed by feature version. */
+    /** Maximum concurrent preparation and process starts. */
     @get:Input
-    abstract val javaExecutables: MapProperty<Int, String>
+    @get:Optional
+    abstract val parallelism: Property<Int>
+
+    /** Combined heap budget for processes starting concurrently. */
+    @get:Input
+    @get:Optional
+    abstract val startupMemoryMegabytes: Property<Int>
+
+    /** Maximum concurrent artifact downloads. */
+    @get:Input
+    @get:Optional
+    abstract val downloadParallelism: Property<Int>
 
     /** Resolved project or Maven artifacts referenced by scenarios. */
     @get:Classpath
@@ -154,15 +167,16 @@ abstract class ScenarioRunnerTask : DefaultTask() {
     }
 
     private fun runnerConfiguration(): EngineOptions {
-        val builder = EngineOptions.builder()
+        val builder = EngineProperties.fromSystemProperties().toBuilder()
+
             .eulaAccepted(eulaAccepted.get())
             .cacheDirectory(cacheDirectory.get().asFile.toPath())
             .workDirectory(workDirectory.get().asFile.toPath())
 
+        parallelism.orNull?.let(builder::parallelism)
+        startupMemoryMegabytes.orNull?.let(builder::startupMemoryMegabytes)
+        downloadParallelism.orNull?.let(builder::downloadParallelism)
         protocolId.orNull?.let(builder::protocolId)
-        javaExecutables.get().forEach { (version, executable) ->
-            builder.javaExecutable(version, Path.of(executable))
-        }
         artifactPaths.get().forEach { (name, path) ->
             builder.artifact(name, Path.of(path))
         }

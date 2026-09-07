@@ -320,7 +320,7 @@ how many friends you have. Players belong to the running test and are created wh
 package com.example.test;
 
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
-import me.whereareiam.anvil.api.scenario.AnvilContext;
+import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.junit.AnvilTest;
@@ -329,7 +329,7 @@ import org.junit.jupiter.api.Test;
 final class PluginTest {
     @Test
     @AnvilTest(PaperScenario.class)
-    void reportsThatItIsReady(AnvilContext anvil) {
+    void reportsThatItIsReady(ScenarioContext anvil) {
         SimulatedPlayer alice = anvil.players().create("Alice");
         Session session = alice.capability(Session.class);
         Messages messages = alice.capability(Messages.class);

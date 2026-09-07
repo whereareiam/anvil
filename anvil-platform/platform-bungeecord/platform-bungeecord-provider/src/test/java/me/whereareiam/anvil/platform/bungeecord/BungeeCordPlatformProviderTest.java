@@ -5,11 +5,12 @@ import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
-import me.whereareiam.anvil.platform.api.ArtifactResolver;
+import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
 import me.whereareiam.anvil.platform.api.type.ForwardingMode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -54,8 +55,7 @@ class BungeeCordPlatformProviderTest {
 				.workDirectory(work)
 				.bindAddress("127.0.0.1")
 				.port(25565)
-				.processPorts(Map.of("proxy", 25565, "lobby", 25566))
-				.javaExecutable(Path.of(System.getProperty("java.home"), "bin", "java"))
+				.processAddresses(Map.of("proxy", new java.net.InetSocketAddress("127.0.0.1", 25565), "lobby", new java.net.InetSocketAddress("127.0.0.1", 25566)))
 				.eulaAccepted(true)
 				.artifactResolver(artifactResolver())
 				.forwarding(ForwardingConfiguration.builder().mode(ForwardingMode.LEGACY).build())
@@ -77,12 +77,12 @@ class BungeeCordPlatformProviderTest {
 	private ArtifactResolver artifactResolver() {
 		return new ArtifactResolver() {
 			@Override
-			public Path obtain(URI uri, Path destination, String expectedSha256) {
+			public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, String expectedSha256) {
 				throw new AssertionError("No remote artifact expected");
 			}
 
 			@Override
-			public String read(URI uri) {
+			public @NotNull String read(@NotNull URI uri) {
 				throw new AssertionError("No remote resource expected");
 			}
 		};

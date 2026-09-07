@@ -3,7 +3,7 @@ package me.whereareiam.anvil.junit;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
-import me.whereareiam.anvil.api.scenario.AnvilContext;
+import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.AnvilScenarioDefinition;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
@@ -31,7 +31,7 @@ public final class AnvilExtension implements BeforeEachCallback, ParameterResolv
 			EngineOptions options = EngineProperties.fromSystemProperties();
 
 			ScenarioEngine engine = AnvilLauncher.create(options);
-			AnvilContext runtimeContext = engine.start(scenario);
+			ScenarioContext runtimeContext = engine.start(scenario);
 			context.getStore(NAMESPACE).put(STATE_KEY, new State(engine, runtimeContext));
 		} catch (ReflectiveOperationException e) {
 			throw new ExtensionConfigurationException("Could not instantiate scenario definition "
@@ -41,14 +41,14 @@ public final class AnvilExtension implements BeforeEachCallback, ParameterResolv
 
 	@Override
 	public boolean supportsParameter(ParameterContext parameterContext, @NotNull ExtensionContext context) {
-		return parameterContext.getParameter().getType().equals(AnvilContext.class);
+		return parameterContext.getParameter().getType().equals(ScenarioContext.class);
 	}
 
 	@Override
 	public Object resolveParameter(@NotNull ParameterContext parameterContext, ExtensionContext context) {
 		State state = context.getStore(NAMESPACE).get(STATE_KEY, State.class);
 		if (state == null) {
-			throw new ExtensionConfigurationException("AnvilContext requested outside an @AnvilTest lifecycle");
+			throw new ExtensionConfigurationException("ScenarioContext requested outside an @AnvilTest lifecycle");
 		}
 
 		return state.context;
@@ -67,7 +67,7 @@ public final class AnvilExtension implements BeforeEachCallback, ParameterResolv
 	@RequiredArgsConstructor
 	private static final class State implements AutoCloseable {
 		private final ScenarioEngine engine;
-		private final AnvilContext context;
+		private final ScenarioContext context;
 
 		@Override
 		public void close() {

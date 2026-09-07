@@ -331,10 +331,11 @@ class AnvilPluginTest {
             package example;
             import java.nio.file.Path;
             import me.whereareiam.anvil.protocol.api.provider.ProtocolProvider;
+import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver;
             import me.whereareiam.anvil.protocol.api.provider.ProtocolBackend;
             public final class EulaProtocolProvider implements ProtocolProvider {
                 public String id() { return "eula-fixture"; }
-                public ProtocolBackend create(Path cache) {
+                public ProtocolBackend create(Path cache, ArtifactResolver artifacts) {
                     throw new AssertionError("EULA validation must happen before backend creation");
                 }
             }
@@ -430,6 +431,10 @@ class AnvilPluginTest {
         ).toString()
         entries += Path.of(
             Class.forName("me.whereareiam.anvil.junit.AnvilTest")
+                .protectionDomain.codeSource.location.toURI()
+        ).toString()
+        entries += Path.of(
+            Class.forName("me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver")
                 .protectionDomain.codeSource.location.toURI()
         ).toString()
         entries += Path.of(

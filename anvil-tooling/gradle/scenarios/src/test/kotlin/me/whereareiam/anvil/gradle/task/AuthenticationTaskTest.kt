@@ -1,7 +1,8 @@
 package me.whereareiam.anvil.gradle.task
 
 import me.whereareiam.anvil.api.player.PlayerCapability
-import me.whereareiam.anvil.protocol.api.provider.ProtocolProvider
+import me.whereareiam.anvil.protocol.api.provider.ProtocolProvider;
+import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -43,7 +44,7 @@ class AuthenticationTaskTest {
 
     private fun writeProject(authenticated: Boolean, additionalProvider: Boolean = false) {
         write("settings.gradle.kts", "rootProject.name = \"authentication-fixture\"")
-        val apiFiles = listOf(ProtocolProvider::class.java, PlayerCapability::class.java)
+        val apiFiles = listOf(ProtocolProvider::class.java, PlayerCapability::class.java, me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver::class.java)
             .map { Path.of(it.protectionDomain.codeSource.location.toURI()).toString() }
             .joinToString(", ") { "\"${it.replace("\\", "\\\\").replace("\"", "\\\"")}\"" }
         write("build.gradle.kts", """
@@ -60,11 +61,12 @@ class AuthenticationTaskTest {
             import java.util.Optional;
             import java.util.function.Consumer;
             import me.whereareiam.anvil.protocol.api.provider.ProtocolProvider;
+import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver;
             import me.whereareiam.anvil.protocol.api.provider.ProtocolBackend;
             import me.whereareiam.anvil.protocol.api.provider.ProtocolAuthentication;
             public class FixtureProvider implements ProtocolProvider {
                 public String id() { return "fixture"; }
-                public ProtocolBackend create(Path cache) {
+                public ProtocolBackend create(Path cache, ArtifactResolver artifacts) {
                     throw new AssertionError("Authentication must not create a backend");
                 }
                 public Optional<ProtocolAuthentication> authentication(Path cache) {

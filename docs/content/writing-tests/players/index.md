@@ -5,7 +5,7 @@ description: Choose connection targets, manage sessions, and release simulated p
 
 # Creating players
 
-Create players from the running `AnvilContext` supplied to your test. Each name is unique among
+Create players from the running `ScenarioContext` supplied to your test. Each name is unique among
 the players currently registered in that context:
 
 ```java

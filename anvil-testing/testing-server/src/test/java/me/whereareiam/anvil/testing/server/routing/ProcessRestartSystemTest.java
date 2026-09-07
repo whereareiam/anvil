@@ -2,13 +2,14 @@ package me.whereareiam.anvil.testing.server.routing;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
-import me.whereareiam.anvil.api.scenario.AnvilContext;
+import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioRegistry;
 import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
-import me.whereareiam.anvil.engine.AnvilEngine;
+import me.whereareiam.anvil.launcher.AnvilLauncher;
+import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.testing.server.extension.FixtureAgentProbeProvider;
 import me.whereareiam.anvil.testing.server.scenario.CompatibilityScenarioCatalog;
 import org.junit.jupiter.api.DynamicTest;
@@ -34,8 +35,8 @@ class ProcessRestartSystemTest {
 		AnvilScenario scenario = original.toBuilder().clearProxies().proxies(original.getProxies().stream()
 				.map(proxy -> proxy.toBuilder().setting(proxy.getPlatform().equals(Platforms.VELOCITY)
 						? "advanced.login-ratelimit" : "connection_throttle", "0").build()).toList()).build();
-		try (AnvilEngine engine = new AnvilEngine(EngineOptions.builder().eulaAccepted(true).build());
-		     AnvilContext context = engine.start(scenario)) {
+		try (ScenarioEngine engine = AnvilLauncher.create(EngineOptions.builder().eulaAccepted(true).build());
+		     ScenarioContext context = engine.start(scenario)) {
 			var alice = context.players().create("Alice");
 			Session session = alice.capability(Session.class);
 			Server server = alice.capability(Server.class);

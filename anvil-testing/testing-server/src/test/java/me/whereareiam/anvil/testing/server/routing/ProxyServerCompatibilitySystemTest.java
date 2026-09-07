@@ -7,7 +7,8 @@ import me.whereareiam.anvil.api.scenario.ScenarioRegistry;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
-import me.whereareiam.anvil.engine.AnvilEngine;
+import me.whereareiam.anvil.launcher.AnvilLauncher;
+import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.testing.server.extension.FixtureAgentProbeProvider;
 import me.whereareiam.anvil.testing.server.scenario.CompatibilityScenarioCatalog;
@@ -27,6 +28,7 @@ class ProxyServerCompatibilitySystemTest {
 		ScenarioRegistry registry = new ScenarioRegistry();
 		new CompatibilityScenarioCatalog().register(registry);
 		String filter = System.getProperty("anvil.matrix.filter", ".*");
+
 		return registry.scenarios().stream()
 				.filter(scenario -> scenario.getName().matches(filter))
 				.map(scenario -> DynamicTest.dynamicTest(scenario.getName(), () -> verify(scenario)));
@@ -34,7 +36,7 @@ class ProxyServerCompatibilitySystemTest {
 
 	private void verify(AnvilScenario scenario) {
 		EngineOptions options = EngineOptions.builder().eulaAccepted(true).build();
-		try (AnvilEngine engine = new AnvilEngine(options); var context = engine.start(scenario)) {
+		try (ScenarioEngine engine = AnvilLauncher.create(options); var context = engine.start(scenario)) {
 			SimulatedPlayer alice = context.players().create("Alice");
 			FixtureAgentProbeProvider.Probe probe = alice.capability(FixtureAgentProbeProvider.Probe.class);
 			for (var process : context.processes().servers())

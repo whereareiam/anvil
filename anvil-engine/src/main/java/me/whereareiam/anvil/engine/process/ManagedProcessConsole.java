@@ -5,6 +5,7 @@ import me.whereareiam.anvil.api.process.ProcessConsole;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import me.whereareiam.anvil.execution.api.process.ProcessExecution;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -41,13 +42,13 @@ final class ManagedProcessConsole implements ProcessConsole {
 	}
 
 	void attach(
-			@NotNull Process process,
+			@NotNull ProcessExecution process,
 			@NotNull Pattern readinessPattern,
 			@NotNull Runnable onReady,
 			@NotNull Runnable onOutputEnded
 	) {
 		synchronized (this) {
-			writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8));
+			writer = new BufferedWriter(new OutputStreamWriter(process.input(), StandardCharsets.UTF_8));
 		}
 
 		Thread capture = new Thread(
@@ -189,9 +190,9 @@ final class ManagedProcessConsole implements ProcessConsole {
 		return tail.isEmpty() ? "" : "\nLast output:\n" + String.join("\n", tail);
 	}
 
-	private void capture(Process process, Pattern readinessPattern, Runnable onReady, Runnable onOutputEnded) {
+	private void capture(ProcessExecution process, Pattern readinessPattern, Runnable onReady, Runnable onOutputEnded) {
 		try (BufferedReader reader = new BufferedReader(
-				new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
+				new InputStreamReader(process.output(), StandardCharsets.UTF_8));
 		     BufferedWriter log = Files.newBufferedWriter(
 				     logFile, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
 			String line;

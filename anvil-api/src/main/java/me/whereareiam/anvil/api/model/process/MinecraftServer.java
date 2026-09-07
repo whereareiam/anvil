@@ -3,6 +3,8 @@ package me.whereareiam.anvil.api.model.process;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
+import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,6 +21,17 @@ public class MinecraftServer implements MinecraftProcess {
 	@NotNull String name;
 	@NotNull String platform;
 	@NotNull Distribution distribution;
+
+	/**
+	 * Process Java override; null inherits the scenario requirement.
+	 */
+	@Nullable JavaRequirement javaRequirement;
+
+	/**
+	 * Process Java source; null inherits the scenario source.
+	 */
+	@Nullable JavaSource javaSource;
+
 	@Nullable String minecraftVersion;
 
 	@Builder.Default

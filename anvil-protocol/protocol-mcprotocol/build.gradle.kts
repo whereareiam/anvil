@@ -22,6 +22,7 @@ dependencies {
     runtimeOnly(libs.slf4j.simple)
 
     testImplementation(projects.anvilCapability.capabilityBuiltin.default)
+    testImplementation(projects.anvilProvisioning.provisioningCache)
 }
 
 application {

@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.api.scenario;
 
-import me.whereareiam.anvil.api.scenario.AnvilContext;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -10,8 +9,8 @@ public interface ScenarioHook {
 	/**
 	 * Executes the hook.
 	 *
-	 * @param context running Anvil context
+	 * @param context running scenario access
 	 * @throws Exception when the scenario cannot be prepared or reset
 	 */
-	void execute(@NotNull AnvilContext context) throws Exception;
+	void execute(@NotNull ScenarioAccess context) throws Exception;
 }

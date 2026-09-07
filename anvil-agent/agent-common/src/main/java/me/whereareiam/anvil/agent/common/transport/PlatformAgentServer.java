@@ -31,10 +31,12 @@ import java.util.function.Consumer;
  */
 public final class PlatformAgentServer implements AgentServer {
 	private final ObjectMapper mapper = new ObjectMapper();
+
 	private final String token;
 	private final PlatformAgentRequestDispatcher dispatcher;
 	private final Consumer<String> logger;
 	private final ServerSocket server;
+
 	private final ExecutorService clients = Executors.newVirtualThreadPerTaskExecutor();
 	private final Set<Socket> connections = ConcurrentHashMap.newKeySet();
 
@@ -82,11 +84,13 @@ public final class PlatformAgentServer implements AgentServer {
 		this.token = token;
 		this.dispatcher = dispatcher;
 		this.logger = logger;
+
 		try {
-			server = new ServerSocket(port, 20, InetAddress.getLoopbackAddress());
+			server = new ServerSocket(port, 20, InetAddress.getByName(System.getenv().getOrDefault("ANVIL_AGENT_BIND", "127.0.0.1")));
 		} catch (IOException e) {
 			throw new IllegalStateException("Could not bind Anvil agent on loopback:" + port, e);
 		}
+
 		Thread acceptor = new Thread(this::accept, "anvil-platform-agent-acceptor");
 		acceptor.setDaemon(true);
 		acceptor.start();
@@ -124,6 +128,7 @@ public final class PlatformAgentServer implements AgentServer {
 			closeConnection(socket);
 			return;
 		}
+
 		try {
 			clients.submit(() -> handle(socket));
 		} catch (RejectedExecutionException exception) {
@@ -138,14 +143,14 @@ public final class PlatformAgentServer implements AgentServer {
 			 BufferedWriter writer = new BufferedWriter(
 					 new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8))) {
 			String line;
+
 			while ((line = reader.readLine()) != null) {
 				writer.write(mapper.writeValueAsString(respond(line)));
 				writer.newLine();
 				writer.flush();
 			}
 		} catch (IOException e) {
-			if (!server.isClosed())
-				logger.accept("Anvil agent client failed: " + e.getMessage());
+			if (!server.isClosed()) logger.accept("Anvil agent client failed: " + e.getMessage());
 		} finally {
 			connections.remove(socket);
 		}
@@ -153,14 +158,16 @@ public final class PlatformAgentServer implements AgentServer {
 
 	private ObjectNode respond(String line) {
 		ObjectNode response = mapper.createObjectNode();
+
 		try {
 			JsonNode request = mapper.readTree(line);
 			response.put("id", request.path("id").asLong());
-			if (!authorized(request.path("token").asText()))
-				return response.put("success", false).put("error", "Unauthorized");
+			if (!authorized(request.path("token").asText())) return response.put("success", false).put("error", "Unauthorized");
+
 			JsonNode result = dispatcher.handle(request.path("operation").asText(), request.path("arguments"));
 			response.put("success", true);
 			response.set("result", result);
+
 			return response;
 		} catch (Exception exception) {
 			return response.put("success", false)
@@ -195,6 +202,7 @@ public final class PlatformAgentServer implements AgentServer {
 		} catch (IOException ignored) {
 			// Closing an already-closed agent is harmless.
 		}
+
 		connections.forEach(this::closeConnection);
 		clients.shutdownNow();
 	}
