@@ -4,10 +4,27 @@ inputs:
   shard:
     description: Independent cache writer to avoid competing saves from parallel jobs.
     required: true
+  read_only:
+    description: Restore the cache without saving data produced by the current run.
+    required: false
+    default: "false"
 runs:
   using: composite
   steps:
+    - uses: actions/cache/restore@v5
+      if: inputs.read_only == 'true'
+      with:
+        path: |
+          ~/.anvil/distributions
+          ~/.anvil/protocol
+          ~/.anvil/jdks
+        key: ${{ runner.os }}-anvil-${{ inputs.shard }}-${{ hashFiles('anvil-protocol/**/ProtocolCatalog.java', 'anvil-testing/**/CompatibilityScenarioCatalog.java', 'gradle/libs.versions.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-anvil-${{ inputs.shard }}-
+          ${{ runner.os }}-anvil-
+
     - uses: actions/cache@v5
+      if: inputs.read_only != 'true'
       with:
         path: |
           ~/.anvil/distributions

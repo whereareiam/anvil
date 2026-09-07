@@ -31,16 +31,26 @@ listOf("apiElements", "runtimeElements").forEach { name ->
 dependencies {
     api(projects.anvilAgent.agentApi)
     api(projects.anvilApi)
+    api(projects.anvilExecution.executionApi)
+    api(projects.anvilProvisioning.provisioningApi)
+    api(projects.anvilProvisioning.provisioningJava.api)
     api(projects.anvilCapability.capabilityApi)
     api(projects.anvilPlatform.platformApi)
     api(projects.anvilProtocol.protocolAdapterApi)
     api(projects.anvilProtocol.protocolApi)
 
     compileOnly(projects.anvilEngine)
+    compileOnly(projects.anvilProvisioning.provisioningCache)
+    compileOnly(projects.anvilProvisioning.provisioningJava)
 
     embedded(projects.anvilAgent.agentCommon) { isTransitive = false }
     embedded(projects.anvilCapability.capabilityRuntime) { isTransitive = false }
     embedded(projects.anvilEngine) { isTransitive = false }
+    embedded(projects.anvilExecution.executionLocal) { isTransitive = false }
+    embedded(projects.anvilExecution.executionDocker) { isTransitive = false }
+    embedded(projects.anvilProvisioning.provisioningCache) { isTransitive = false }
+    embedded(projects.anvilProvisioning.provisioningJava) { isTransitive = false }
+    embedded(libs.commons.compress)
     embedded(libs.jackson.databind)
     embedded(libs.slf4j.api)
     embedded(libs.slf4j.simple)

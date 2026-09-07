@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.runner;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.model.scenario.ScenarioGroup;
 import me.whereareiam.anvil.api.scenario.AnvilScenarioProvider;
@@ -44,9 +45,12 @@ final class AnvilRunnerTest {
 				.workDirectory(work)
 				.protocolId("mcprotocol")
 				.keepFailedWorkspaces(false)
-				.autoDownloadJavaRuntimes(false)
+				.downloadJava(false)
 				.stopTimeout(Duration.ofSeconds(7))
-				.javaExecutable(21, java)
+				.javaRequirement(JavaRequirement.builder()
+						.featureVersion(21)
+						.build()
+				)
 				.artifact("server", artifact)
 				.build();
 
@@ -54,7 +58,7 @@ final class AnvilRunnerTest {
 		assertEquals(cache, configuration.getCacheDirectory());
 		assertEquals(work, configuration.getWorkDirectory());
 		assertEquals("mcprotocol", configuration.getProtocolId());
-		assertEquals(java, configuration.getJavaExecutables().get(21));
+		assertEquals(21, configuration.getJavaRequirement().getFeatureVersion());
 		assertEquals(artifact, configuration.getArtifacts().get("server"));
 		StringWriter output = new StringWriter();
 		new AnvilRunner(new StringReader(""), new PrintWriter(output))

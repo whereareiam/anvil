@@ -30,28 +30,30 @@ installed platform, protocol, and agent services.
 Implementation modules consume the provider APIs; platform SDKs and protocol implementations stay
 in their owning modules. Use the following boundaries when changing startup or cleanup:
 
-| Owner | Responsibility | Lifetime |
-|---|---|---|
-| `AnvilEngine` | Retain successful runs and the shared protocol backend | One engine instance |
-| `EngineProviders` | Discover installed providers and select the protocol/player composer | Engine construction |
-| `ScenarioRun` | Own scenario preparation, setup, process replacement, and finalization | One scenario run |
-| `ScenarioProcess` | Retain a declaration, prepared workspace, executable, provider context, and agent handle | One declared process across restarts |
-| `ManagedProcess` | Supervise one JVM's readiness, state, and termination | One process generation |
+| Owner             | Responsibility                                                                           | Lifetime                             |
+|-------------------|------------------------------------------------------------------------------------------|--------------------------------------|
+| `AnvilEngine`     | Retain successful runs and the shared protocol backend                                   | One engine instance                  |
+| `EngineProviders` | Discover installed providers and select the protocol/player composer                     | Engine construction                  |
+| `ScenarioSession`     | Compose one active scenario context from its owned resources                             | One scenario session                 |
+| `SessionResources`     | Acquire, retain, and release execution, process, player, and workspace resources         | One scenario session                 |
+| `ProcessSlot` | Retain a declaration, prepared workspace, executable, provider context, and agent connection | One declared process across restarts |
+| `ManagedProcess`  | Supervise one execution generation's readiness, state, and termination                   | One process generation               |
 
 ### Startup sequence
 
 1. `EngineProviders` selects the protocol before discovering its player composer. The backend is
    created lazily after scenario validation.
-2. `ScenarioRun` resolves artifacts and calls `ScenarioPreflight` to validate the declaration and
-   negotiate connected forwarding groups. `ForwardingPlanner` performs only topology and compatibility decisions; it has no I/O or
+2. `ScenarioSession` resolves artifacts and calls `ScenarioPlanner` to validate the declaration and
+   build the immutable process and forwarding plan. `ForwardingNegotiator` performs only topology
+   and compatibility decisions; it has no I/O or
    credential generation.
 3. The run selects distinct candidate listener ports and creates forwarding credentials per connected
    group. One Java resolver is reused, with one executable selection for each required feature version.
-4. Each `ScenarioProcess` takes ownership before preparing its workspace. It resolves the executable
+4. Each `ProcessSlot` takes ownership before preparing its workspace. It resolves the executable
    and command once, configures its platform, launches a `ManagedProcess`, and connects its agent.
    Servers start before proxies.
-5. The run creates players and executes setup against itself as the `AnvilContext`. The engine retains
-   the run only after setup succeeds.
+5. The session creates players and executes setup against its `ScenarioContext`. The engine retains
+   the session only after setup succeeds.
 
 A preparation or setup failure closes the partially acquired run. Setup assertions keep their
 original type, and cleanup failures are suppressed. Failed runs do not save success caches. The
@@ -59,7 +61,7 @@ shared protocol backend remains owned by the engine.
 
 ### Restart and shutdown
 
-`RunningScenarioProcesses` owns the authoritative collection of `ScenarioProcess` objects. Named
+`ProcessRegistry` owns the authoritative collection of `ProcessSlot` objects. Named
 lookups read that collection directly; collection methods create immutable snapshots on request. Restart asks the selected object to close its old agent connection and
 JVM, reapply platform configuration, and launch another generation. It reuses the prepared command,
 workspace, listener address, Java executable, and forwarding configuration. Assets and distributions
@@ -88,33 +90,37 @@ player connections.
 
 Public contract packages are relative to `me.whereareiam.anvil.api`:
 
-| Package | Contents |
-|---|---|
-| `scenario` | Scenario engine, context, definitions, hooks, and registry |
-| `process` | Base process handle, console, and scenario process access |
-| `process.type` | Specialized `RunningServer` and `RunningProxy` contracts |
-| `player` | Player and capability contracts |
-| `model`, `type`, `exception` | Declarative models, closed choices, and public failures |
+| Package                      | Contents                                                   |
+|------------------------------|------------------------------------------------------------|
+| `scenario`                   | Scenario engine, context/access, definitions, hooks, and registry |
+| `process`                    | Base process handle, console, and scenario process access  |
+| `process.type`               | Specialized `RunningServer` and `RunningProxy` contracts   |
+| `player`                     | Player and capability contracts                            |
+| `model`, `type`, `exception` | Declarative models, closed choices, and public failures    |
 
 Engine packages are relative to `me.whereareiam.anvil.engine`:
 
-| Package | Contents |
-|---|---|
-| Engine root | Engine entry point, service discovery, and option defaults |
-| `scenario` | Whole-run lifecycle ownership |
-| `scenario.preflight` | Declaration validation and forwarding negotiation |
-| `scenario.process` | Prepared process collection, replacements, and stable agent connections |
-| `process` | Individual JVM supervision, console capture, and port selection |
-| `process.type` | Server/proxy specializations of `ManagedProcess` |
-| `provisioning.artifact` | Named artifact resolution and downloads |
-| `provisioning.java` | Java executable discovery, selection, and Temurin provisioning |
-| `provisioning.workspace` | Workspace lifecycle, validation, cache identity/storage, and confined file operations |
-| `player` | Context-owned players and observations |
+| Package                                | Contents                                                                              |
+|----------------------------------------|---------------------------------------------------------------------------------------|
+| Engine root                            | Engine entry point, service discovery, and option defaults                            |
+| `scenario.session`                     | Active context, resource ownership, and workspace layout                               |
+| `scenario.planning`                   | Immutable planning and validation                                                      |
+| `scenario.planning.validation`        | Scenario structure and provider declaration validation                                |
+| `scenario.topology`                   | Process topology and forwarding negotiation                                            |
+| `scenario.process`                     | Process slots, registry, agent connections, and startup scheduling                    |
+| `process`                              | Execution-generation supervision, console capture, and endpoint selection             |
+| `process.type`                         | Server/proxy specializations of `ManagedProcess`                                      |
+| `execution-api`                        | Provider/session/process execution contracts                                          |
+| `execution-local` / `execution-docker` | Host process and Docker Engine implementations                                        |
+| `provisioning.workspace`               | Workspace lifecycle, validation, cache identity/storage, and confined file operations |
+| `player`                               | Context-owned players and observations                                                |
 
 `ScenarioArtifactResolver` resolves named artifacts and installs the declared platform agent.
-`ProcessJavaResolver` chooses a Java installation; `JavaExecutables` owns executable naming and
-installation paths for both defaults and provisioning. `TemurinRuntimeProvisioner` handles verified
-JDK downloads and extraction. `WorkspacePlanValidator` validates asset/cache/cleanup declarations before
+`JavaRequirement` describes the process Java identity and `JavaSource` describes an explicit runtime
+origin. `provisioning-java` inspects local installations, resolves its built-in Foojay packages, and
+extracts user-supplied archives. `provisioning-api` owns artifact contracts, while
+`provisioning-java/api` owns Java installation and provisioning contracts. `provisioning-cache` owns
+verified artifact storage, metadata, and cross-process entry locks. `WorkspacePlanValidator` validates asset/cache/cleanup declarations before
 `WorkspaceSession` executes them. `WorkspaceCacheStore` owns cache identity and persistence, including
 asset fingerprints. A session acquires workspace ownership before cleanup is permitted, and releases
 its persistent lock even when cleanup fails. Secondary failures remain suppressed on the primary

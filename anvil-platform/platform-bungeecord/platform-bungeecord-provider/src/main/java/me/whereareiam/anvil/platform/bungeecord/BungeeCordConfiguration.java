@@ -29,6 +29,7 @@ final class BungeeCordConfiguration {
 	void write(MinecraftProxy proxy, PlatformContext context) throws IOException {
 		if (context.getForwarding().getMode() != ForwardingMode.LEGACY)
 			throw new PlatformException("BungeeCord requires legacy forwarding");
+
 		for (String key : proxy.getSettings().keySet())
 			if (OWNED.contains(key))
 				throw new PlatformException("BungeeCord setting '" + key + "' is owned by Anvil runtime configuration");
@@ -45,7 +46,7 @@ final class BungeeCordConfiguration {
 		config.putArray("listeners").add(listener(proxy, context));
 		ObjectNode servers = config.putObject("servers");
 		for (String server : proxy.getServers())
-			servers.putObject(server).put("address", context.getBindAddress() + ":" + context.getProcessPorts().get(server))
+			servers.putObject(server).put("address", context.getProcessAddresses().get(server).getHostString() + ":" + context.getProcessAddresses().get(server).getPort())
 					.put("motd", "Anvil server " + server).put("restricted", false);
 
 		yaml.writeValue(file.toFile(), config);
@@ -70,6 +71,7 @@ final class BungeeCordConfiguration {
 
 	private ObjectNode read(Path file) throws IOException {
 		if (!Files.exists(file)) return yaml.createObjectNode();
+
 		JsonNode document = yaml.readTree(file.toFile());
 		if (document == null) return yaml.createObjectNode();
 		if (document instanceof ObjectNode object) return object;

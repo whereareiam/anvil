@@ -7,12 +7,12 @@ description: Select server and proxy providers, Java runtimes, and native client
 
 Platforms are explicit Gradle unit plugins. Apply one for every platform used in your scenarios:
 
-| Unit plugin suffix | Role | Distribution source |
-|---|---|---|
-| `platform.paper` | Server | PaperMC Fill build |
-| `platform.spigot` | Server | SHA-256-pinned GetBukkit JAR |
-| `platform.velocity` | Proxy | PaperMC Fill build |
-| `platform.bungeecord` | Proxy | Selected BungeeCord Jenkins build |
+| Unit plugin suffix    | Role   | Distribution source               |
+|-----------------------|--------|-----------------------------------|
+| `platform.paper`      | Server | PaperMC Fill build                |
+| `platform.spigot`     | Server | SHA-256-pinned GetBukkit JAR      |
+| `platform.velocity`   | Proxy  | PaperMC Fill build                |
+| `platform.bungeecord` | Proxy  | Selected BungeeCord Jenkins build |
 
 The full plugin prefix is `me.whereareiam.anvil.`. Each unit supplies its provider and matching
 platform-agent artifact. Paper and Spigot share the Bukkit agent. Agents are installed into managed
@@ -28,21 +28,11 @@ Velocity or BungeeCord routing to either server. The internal matrix uses Paper 
 Server and client versions are separate from the proxy's own version. A local or named server JAR
 must declare `minecraftVersion` so Anvil can select a compatible native client.
 
-## Java selection
+## Java requirements
 
-The framework targets Java 21. Current Paper/Spigot providers require Java 25 for `26.*` releases
-and Java 21 for the earlier verified release. Provider requirements guide engine Java selection.
-Set explicit executables where needed:
-
-```kotlin
-anvil {
-    javaExecutables.put(25, "/path/to/jdk-25/bin/java")
-}
-```
-
-The engine also considers its current Java runtime and `JAVA_<version>_HOME`, and can provision a
-checksum-verified Temurin runtime when no suitable local runtime is available. Configure executable
-paths on the machine running the scenarios, not on the Minecraft client machine.
+Platform providers declare their minimum Java feature version. A server or proxy can declare a
+separate `JavaRequirement` with a distribution and exact release. Local homes and verified archives
+are execution-provider inputs; Docker image mappings are Docker settings.
 
 ## Configuration formats
 

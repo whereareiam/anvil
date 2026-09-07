@@ -113,7 +113,7 @@ Create `src/anvil/java/com/example/test/PlayerJoinTest.java`:
 ```java
 package com.example.test;
 
-import me.whereareiam.anvil.api.scenario.AnvilContext;
+import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.junit.AnvilTest;
@@ -124,7 +124,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class PlayerJoinTest {
 	@Test
 	@AnvilTest(PaperScenario.class)
-	void observesAliceOnTheServer(AnvilContext anvil) {
+	void observesAliceOnTheServer(ScenarioContext anvil) {
 		var alice = anvil.players().create("Alice");
 		var session = alice.capability(Session.class);
 		session.connect();

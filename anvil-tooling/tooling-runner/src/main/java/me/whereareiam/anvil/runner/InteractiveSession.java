@@ -2,7 +2,7 @@ package me.whereareiam.anvil.runner;
 
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.model.scenario.ScenarioGroup;
-import me.whereareiam.anvil.api.scenario.AnvilContext;
+import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.api.scenario.ScenarioRegistry;
 import me.whereareiam.anvil.runner.command.RunnerCommandParser;
@@ -20,7 +20,7 @@ final class InteractiveSession implements AutoCloseable {
 	private final ScenarioGroup group;
 	private final BufferedReader input;
 	private final RunnerTerminal terminal;
-	private AnvilContext context;
+	private ScenarioContext context;
 
 	InteractiveSession(
 			ScenarioEngine engine,
@@ -114,7 +114,7 @@ final class InteractiveSession implements AutoCloseable {
 
 	private synchronized void restart() {
 		ensureRunning();
-		replace(context.scenario());
+		replace(context.definition());
 	}
 
 	private synchronized void showLogs(RunnerCommand command) {
@@ -148,7 +148,7 @@ final class InteractiveSession implements AutoCloseable {
 
 	@Override
 	public synchronized void close() {
-		AnvilContext current = context;
+		ScenarioContext current = context;
 		context = null;
 		if (current != null) current.close();
 	}

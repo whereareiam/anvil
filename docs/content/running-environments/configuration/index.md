@@ -31,9 +31,9 @@ MCProtocol dependency.
 
 The two directories have different lifetimes:
 
-| Directory | Contains | Choose a location that… |
-|---|---|---|
-| `workDirectory` | Server files, installed plugins, configuration, and process logs | Can be recreated for disposable tests and inspected after a failure |
+| Directory        | Contains                                                                                   | Choose a location that…                                                    |
+|------------------|--------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| `workDirectory`  | Server files, installed plugins, configuration, and process logs                           | Can be recreated for disposable tests and inspected after a failure        |
 | `cacheDirectory` | Downloaded distributions, protocol artifacts, JDKs, and declared workspace-cache snapshots | Can be retained between runs to avoid downloading the same artifacts again |
 
 The defaults are `build/anvil` for workspaces and `~/.anvil` for the shared cache. The example uses a
@@ -50,25 +50,64 @@ Run a test after changing the settings:
 Replace the test name with a class in your project. Inspect its process workspaces under the chosen
 `workDirectory` if startup fails.
 
-## Select Java installations
+## Select execution and Java
 
-Anvil asks each platform provider which Java version its distribution requires. To supply an
-installation explicitly, add its executable path:
+Local execution is the default. Select Docker when the scenario needs container networking or isolated
+process workspaces. Each process may declare a separate `JavaRequirement`; the selected execution
+provider decides whether it uses a local installation, a verified archive, or a container image.
+Docker image mappings belong to `DockerExecutionSettings` and automated tests should use immutable
+digests. Configure every Java requirement used by Docker explicitly; Anvil does not select vendor
+image names inside the Docker execution provider.
 
-```kotlin
-anvil {
-    javaExecutables.put(21, "/opt/jdk-21/bin/java")
-    javaExecutables.put(25, "/opt/jdk-25/bin/java")
-}
+Embedding code supplies a configured `DockerExecutionProvider` to
+`AnvilLauncher.create(options, provider)`. Map keys such as `temurin:21` to the immutable image
+references selected by your build or deployment configuration. The service-discovered Docker
+provider has no image mappings until an embedding application supplies them.
+
+Configure topology separately from Java requirements:
+
+```java
+import me.whereareiam.anvil.api.type.network.NetworkServerAccess;
+import me.whereareiam.anvil.api.type.network.NetworkExposure;
+import me.whereareiam.anvil.api.model.NetworkPolicy;
+import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+
+AnvilScenario scenario = AnvilScenario.builder()
+        .execution("docker")
+        .networkPolicy(NetworkPolicy.builder()
+                .networkServerAccess(NetworkServerAccess.PROXY_ONLY)
+                .backendNetworkExposure(NetworkExposure.PRIVATE)
+                .build())
+        .build();
 ```
 
-Replace these paths with installations on the test machine. The map key is the Java feature version
-required by the provider. Anvil first checks that override, then the current Java installation, then
-`JAVA_<version>_HOME`. When none is suitable, automatic provisioning downloads a verified Temurin
-installation into the shared cache.
+`PROXY_ONLY` with `PRIVATE` backend exposure requires Docker execution. Local execution reports a
+validation failure because a host JVM cannot enforce process-level isolation.
 
-See [Platforms and versions](../platforms/index.md) for the requirements of supported distributions.
-A Java override chooses an executable; it does not change the Minecraft version in your scenario.
+The shared cache retains verified artifacts, metadata, Java archives, and workspace snapshots. Set
+`anvil.offline=true` to prevent network access, or `anvil.refresh=true` to refresh catalog metadata.
+
+Use an explicit Java source when a scenario must run with a particular local installation or archive:
+
+```java
+import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.java.JavaSource;
+import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+
+import java.nio.file.Path;
+
+AnvilScenario scenario = AnvilScenario.builder()
+        .javaRequirement(JavaRequirement.builder()
+                .featureVersion(25)
+                .distribution("graalvm-community")
+                .build())
+        .javaSource(JavaSource.home(Path.of("/opt/graalvm-25")))
+        .build();
+```
+
+The source can also be an executable or a checksum-verified archive. A process source overrides the
+scenario source, which overrides the engine default. With no explicit source, local execution checks
+available installations and then provisions the selected built-in distribution when downloads are enabled.
 
 ## Set startup and shutdown deadlines
 
@@ -83,7 +122,7 @@ the test JVM when you need a longer grace period or want to disable automatic Ja
 ```kotlin
 tasks.named<Test>("anvilTest") {
     systemProperty("anvil.stopTimeout", "PT30S")
-    systemProperty("anvil.autoDownloadJavaRuntimes", "false")
+    systemProperty("anvil.java.download", "false")
 }
 ```
 
@@ -104,7 +143,7 @@ This helper runs an existing scenario using explicit options. Pass a scenario wh
 
 ```java
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
-import me.whereareiam.anvil.api.scenario.AnvilContext;
+import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
 import me.whereareiam.anvil.api.model.EngineOptions;
@@ -124,7 +163,7 @@ public final class EmbeddedScenario {
                 .build();
 
         try (ScenarioEngine engine = AnvilLauncher.create(options);
-             AnvilContext context = engine.start(scenario)) {
+             ScenarioContext context = engine.start(scenario)) {
             var entrypoint = context.processes().get(scenario.getEntrypoint());
             System.out.println("Ready at " + entrypoint.address());
             // Perform assertions or player actions here while the context is open.
@@ -149,18 +188,29 @@ use `EngineProperties.fromSystemProperties()` from `me.whereareiam.anvil.launche
 `EngineProperties.from(properties)` to decode a supplied `java.util.Properties` object. Passing
 explicit `EngineOptions` to the engine or runner uses those options directly.
 
-| Property | Accepted value | Default |
-|---|---|---|
-| `anvil.protocol` | Installed provider ID | Select the sole installed provider |
-| `anvil.eula.accepted` | `true` or `false` | `false` |
-| `anvil.cacheDir` | Directory path | `~/.anvil` |
-| `anvil.workDir` | Directory path | `build/anvil` |
-| `anvil.keepFailedWorkspaces` | `true` or `false` | `true` |
-| `anvil.autoDownloadJavaRuntimes` | `true` or `false` | `true` |
-| `anvil.stopTimeout` | Positive ISO-8601 duration | `PT15S` |
-| `anvil.defaultJavaExecutable` | Executable path for the current Java installation | Current installation's `bin/java` or `bin/java.exe` |
-| `anvil.java.<feature>` | Executable path, with a positive integer feature version in the key | No override |
-| `anvil.artifact.<name>` | Local path for a named scenario artifact | No artifact registered |
+| Property                     | Accepted value                                                      | Default                            |
+|------------------------------|---------------------------------------------------------------------|------------------------------------|
+| `anvil.protocol`             | Installed provider ID                                               | Select the sole installed provider |
+| `anvil.eula.accepted`        | `true` or `false`                                                   | `false`                            |
+| `anvil.cacheDir`             | Directory path                                                      | `~/.anvil`                         |
+| `anvil.workDir`              | Directory path                                                      | `build/anvil`                      |
+| `anvil.keepFailedWorkspaces` | `true` or `false`                                                   | `true`                             |
+| `anvil.java.download`        | `true` or `false`                                                   | `true`                             |
+| `anvil.java.version`         | Positive Java feature version                                        | Platform minimum                  |
+| `anvil.java.distribution`    | Built-in distribution identifier                                    | `temurin` when downloading         |
+| `anvil.java.release`         | Exact Java release                                                   | Selected catalog release           |
+| `anvil.java.home`            | Installed JDK home path                                             | No override                        |
+| `anvil.java.executable`      | Installed Java executable path                                      | No override                        |
+| `anvil.java.archive.uri`     | HTTPS URI for a JDK archive                                          | No override                        |
+| `anvil.java.archive.sha256`  | 64-character SHA-256 for the archive                                | No override                        |
+| `anvil.execution`            | `local` or an installed provider ID                                 | `local`                            |
+| `anvil.offline`              | `true` or `false`                                                   | `false`                            |
+| `anvil.refresh`              | `true` or `false`                                                   | `false`                            |
+| `anvil.parallelism`          | Positive integer                                                    | Host-dependent, capped at `8`      |
+| `anvil.startupMemoryMegabytes` | Positive integer                                                 | Half host memory, capped at 8192 MiB |
+| `anvil.downloadParallelism`  | Positive integer                                                    | Host-dependent, capped at `8`      |
+| `anvil.stopTimeout`          | Positive ISO-8601 duration                                          | `PT15S`                            |
+| `anvil.artifact.<name>`      | Local path for a named scenario artifact                            | No artifact registered             |
 
 Set these on the JVM running Anvil. JVM arguments configured for a managed Minecraft process affect
 that child process instead. Invalid booleans, timeout values, and Java-version keys fail during

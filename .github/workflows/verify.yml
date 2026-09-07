@@ -11,6 +11,11 @@ on:
       source_ref:
         required: true
         type: string
+      cache_read_only:
+        description: Prevent this verification from writing shared dependency caches.
+        required: false
+        type: boolean
+        default: false
     outputs:
       version:
         value: ${{ jobs.build.outputs.version }}
@@ -33,6 +38,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.source_ref }}
+          persist-credentials: false
 
       - name: Resolve artifact identity
         id: version
@@ -53,10 +59,13 @@ jobs:
           echo "commit=$commit" >> "$GITHUB_OUTPUT"
 
       - uses: ./.github/actions/setup-gradle
+        with:
+          cache_read_only: ${{ inputs.cache_read_only || (github.event_name != 'release' && github.event_name != 'workflow_dispatch' && github.ref != 'refs/heads/dev') }}
 
       - uses: ./.github/actions/anvil-cache
         with:
           shard: build
+          read_only: ${{ inputs.cache_read_only || (github.event_name != 'release' && github.event_name != 'workflow_dispatch' && github.ref != 'refs/heads/dev') }}
 
       - name: Build and test modules
         env:
@@ -123,14 +132,18 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ needs.build.outputs.commit }}
+          persist-credentials: false
 
       - uses: ./.github/actions/setup-gradle
+        with:
+          cache_read_only: ${{ inputs.cache_read_only || (github.event_name != 'release' && github.event_name != 'workflow_dispatch' && github.ref != 'refs/heads/dev') }}
 
       - uses: ./.github/actions/verification-artifacts
 
       - uses: ./.github/actions/anvil-cache
         with:
           shard: ${{ matrix.shard }}
+          read_only: ${{ inputs.cache_read_only || (github.event_name != 'release' && github.event_name != 'workflow_dispatch' && github.ref != 'refs/heads/dev') }}
 
       - name: Run live tests
         env:
@@ -158,14 +171,18 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ needs.build.outputs.commit }}
+          persist-credentials: false
 
       - uses: ./.github/actions/setup-gradle
+        with:
+          cache_read_only: ${{ inputs.cache_read_only || (github.event_name != 'release' && github.event_name != 'workflow_dispatch' && github.ref != 'refs/heads/dev') }}
 
       - uses: ./.github/actions/verification-artifacts
 
       - uses: ./.github/actions/anvil-cache
         with:
           shard: consumer
+          read_only: ${{ inputs.cache_read_only || (github.event_name != 'release' && github.event_name != 'workflow_dispatch' && github.ref != 'refs/heads/dev') }}
 
       - name: Verify standalone consumer
         env:

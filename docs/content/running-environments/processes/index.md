@@ -10,7 +10,7 @@ the process workspace—for example, checking that a plugin can read state writt
 You can restart a proxy while its backends continue running, or restart one backend without replacing
 the proxy.
 
-This guide assumes Anvil is configured in your project and you have a running `AnvilContext` from
+This guide assumes Anvil is configured in your project and you have a running `ScenarioContext` from
 an `@AnvilTest` method or `AnvilEngine.start()`. See [Getting started](../../getting-started/index.md)
 for a first test and [Proxies and forwarding](../proxies/index.md) for a proxy with a lobby backend.
 
@@ -46,7 +46,7 @@ a proxy named `proxy` as the scenario entrypoint and a backend named `lobby` as 
 Apply the platform units for both processes and install the Session and Server capabilities.
 
 ```java
-import me.whereareiam.anvil.api.scenario.AnvilContext;
+import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
@@ -58,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 public final class ProxyRestartChecks {
-    public static void verify(AnvilContext anvil) {
+    public static void verify(ScenarioContext anvil) {
         var processes = anvil.processes();
         var originalProxy = processes.proxy("proxy");
         var lobby = processes.server("lobby");
@@ -137,6 +137,6 @@ See [Troubleshooting](../troubleshooting/index.md) for failure categories and th
 ## Updating process imports
 
 Process APIs are under `me.whereareiam.anvil.api.process`; import `RunningServer` and `RunningProxy`
-from its `type` subpackage. `AnvilContext` and `ScenarioEngine` are under
+from its `type` subpackage. `ScenarioContext` and `ScenarioEngine` are under
 `me.whereareiam.anvil.api.scenario`. Consumers using the former `api.runtime` packages must update
 imports and recompile against the matching Anvil artifacts.

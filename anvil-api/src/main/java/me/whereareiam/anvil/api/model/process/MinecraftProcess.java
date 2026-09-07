@@ -1,11 +1,13 @@
 package me.whereareiam.anvil.api.model.process;
 
+import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.java.JavaSource;
+import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
-
-import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 
 /**
  * Shared immutable configuration exposed to platform providers for one local Minecraft process.
@@ -31,6 +33,20 @@ public interface MinecraftProcess {
 	 * @return selected distribution
 	 */
 	@NotNull Distribution getDistribution();
+
+	/**
+	 * Returns process-specific Java requirements, or null to inherit scenario defaults.
+	 *
+	 * @return process Java requirement
+	 */
+	@Nullable JavaRequirement getJavaRequirement();
+
+	/**
+	 * Returns the process Java source, or null to inherit scenario and engine defaults.
+	 *
+	 * @return process Java source
+	 */
+	@Nullable JavaSource getJavaSource();
 
 	/**
 	 * Returns whether the process authenticates players with Mojang services.

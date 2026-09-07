@@ -4,8 +4,10 @@ import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolSupport;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import org.jetbrains.annotations.NotNull;
+import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver;
 import org.junit.jupiter.api.Test;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
@@ -15,20 +17,33 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ProtocolProviderRegistryTest {
+	private final ArtifactResolver artifacts = new ArtifactResolver() {
+		@Override
+		public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, String checksum) {
+			throw new AssertionError("Provider selection must not download artifacts");
+		}
+
+		@Override
+		public @NotNull String read(@NotNull URI uri) {
+			throw new AssertionError("Provider selection must not query metadata");
+		}
+	};
+
 	@Test
 	void selectsTheSoleProviderWithoutCreatingItsBackend() {
 		AtomicInteger creations = new AtomicInteger();
 		ProtocolProvider provider = new StubProvider("sole") {
 			@Override
-			public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory) {
+			public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull ArtifactResolver artifacts) {
 				creations.incrementAndGet();
-				return super.create(cacheDirectory);
+				return super.create(cacheDirectory, artifacts);
 			}
 		};
+
 		ProtocolProviderRegistry registry = new ProtocolProviderRegistry(List.of(provider));
 		assertEquals(provider, registry.select(null));
 		assertEquals(0, creations.get());
-		assertEquals("sole", registry.create(null, Path.of("cache")).id());
+		assertEquals("sole", registry.create(null, Path.of("cache"), artifacts).id());
 		assertEquals(1, creations.get());
 	}
 
@@ -39,14 +54,14 @@ class ProtocolProviderRegistryTest {
 				new StubProvider("first"),
 				new StubProvider("second") {
 					@Override
-					public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory) {
+					public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull ArtifactResolver artifacts) {
 						return backend;
 					}
 				}
 		));
 
 		assertEquals(List.of("first", "second"), registry.ids().stream().toList());
-		assertEquals("second", registry.create("second", Path.of("cache")).id());
+		assertEquals("second", registry.create("second", Path.of("cache"), artifacts).id());
 	}
 
 	@Test
@@ -56,8 +71,8 @@ class ProtocolProviderRegistryTest {
 				new StubProvider("second")
 		));
 
-		assertThrows(IllegalStateException.class, () -> registry.create(null, Path.of("cache")));
-		assertThrows(IllegalArgumentException.class, () -> registry.create("missing", Path.of("cache")));
+		assertThrows(IllegalStateException.class, () -> registry.create(null, Path.of("cache"), artifacts));
+		assertThrows(IllegalArgumentException.class, () -> registry.create("missing", Path.of("cache"), artifacts));
 	}
 
 	private static class StubProvider implements ProtocolProvider {
@@ -73,7 +88,7 @@ class ProtocolProviderRegistryTest {
 		}
 
 		@Override
-		public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory) {
+		public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull ArtifactResolver artifacts) {
 			return new StubBackend(id);
 		}
 	}

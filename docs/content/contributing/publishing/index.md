@@ -44,13 +44,26 @@ Pull requests, development builds, and releases share `.github/workflows/verify.
 - Reuse the build job's artifacts and Gradle task cache. Keep live tests sequential within each
   runner to avoid competing Minecraft processes.
 
-Pull requests pass through the `anvil-pr-live-tests` environment before any live group starts.
-Configure required reviewers for that environment in repository settings to enforce maintainer
-approval. Keep reviewers limited to repository maintainers/admins and update the named users or
-teams when access changes; GitHub does not select reviewers dynamically by repository role.
-An environment without protection rules starts automatically. With reviewers configured,
-each update requires approval for its new revision. Other workflows do not use this gate.
-Failed or cancelled verification prevents publication.
+Pull requests do not start this verification automatically. To verify one, open **Actions**, select
+**Pull request verification**, choose the default branch, enter the open pull request number, and
+run the workflow. The workflow resolves the pull request's merge revision and then runs the
+build, unit and integration tests, live platform matrix, and standalone consumer journeys.
+
+A lightweight **Pull request metadata** check runs automatically when a PR changes. It validates the
+`Area: Title` format and exactly one release category label (`feature`, `change`, `bug`, or
+`dependencies`), unless the PR carries `skip-changelog`; `major` may accompany a category label.
+The manual verification workflow repeats this check before starting the build.
+
+The workflow file runs from the default branch while the verification jobs check out the selected
+pull request merge revision. Contents and pull request access remain read-only; checks write access
+is used only for test reporting, and the workflow does not publish artifacts. Request a new run
+after the pull request changes; a previous run remains tied to the revision it resolved when it started.
+Manual workflow dispatch requires repository write access, and its checks should be reviewed from
+the workflow run rather than treated as an automatic pull request gate.
+If branch protection lists the former automatic pull request checks as required, remove or revise
+those rules because an unrequested manual run cannot satisfy them.
+Failed or cancelled verification prevents publication when the same verification workflow is used
+by a release or development publication.
 
 ## Development publication
 

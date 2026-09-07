@@ -50,10 +50,11 @@ class AnvilJunitPlugin : Plugin<Project> {
             systemProperty(EngineProperties.EULA_ACCEPTED_PROPERTY, capability.eulaAccepted.get())
             systemProperty(EngineProperties.CACHE_DIRECTORY_PROPERTY, capability.cacheDirectory.get().asFile.absolutePath)
             systemProperty(EngineProperties.WORK_DIRECTORY_PROPERTY, capability.workDirectory.get().asFile.absolutePath)
+            capability.parallelism.orNull?.let { systemProperty(EngineProperties.PARALLELISM_PROPERTY, it) }
+            capability.startupMemoryMegabytes.orNull?.let { systemProperty(EngineProperties.STARTUP_MEMORY_PROPERTY, it) }
+            capability.downloadParallelism.orNull?.let { systemProperty(EngineProperties.DOWNLOAD_PARALLELISM_PROPERTY, it) }
+
             capability.protocolId.orNull?.let { systemProperty(EngineProperties.PROTOCOL_PROPERTY, it) }
-            capability.javaExecutables.get().forEach { (version, executable) ->
-                systemProperty(EngineProperties.javaExecutableProperty(version), executable)
-            }
         }
     }
 
@@ -66,6 +67,7 @@ class AnvilJunitPlugin : Plugin<Project> {
             val argument = project.objects.newInstance(ArtifactJvmArgumentProvider::class.java)
             argument.artifactName.set(name)
             argument.artifactFiles.from(files)
+
             anvilTestTask.configure {
                 jvmArgumentProviders.add(argument)
                 dependsOn(files)

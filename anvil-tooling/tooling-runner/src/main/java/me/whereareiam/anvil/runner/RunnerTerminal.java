@@ -3,7 +3,7 @@ package me.whereareiam.anvil.runner;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.scenario.ScenarioGroup;
 import me.whereareiam.anvil.api.process.RunningProcess;
-import me.whereareiam.anvil.api.scenario.AnvilContext;
+import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioRegistry;
 import me.whereareiam.anvil.runner.type.RunnerCommandType;
 import org.jetbrains.annotations.NotNull;
@@ -38,15 +38,15 @@ final class RunnerTerminal {
 		output.flush();
 	}
 
-	void showScenario(@Nullable AnvilContext context) {
+	void showScenario(@Nullable ScenarioContext context) {
 		if (context == null) {
 			output.println("No scenario is running.");
 			output.flush();
 			return;
 		}
 
-		output.println("Scenario '" + context.scenario().getName() + "' is ready:");
-		output.println("  Join: " + context.processes().get(context.scenario().getEntrypoint()).address());
+		output.println("Scenario '" + context.definition().getName() + "' is ready:");
+		output.println("  Join: " + context.processes().get(context.definition().getEntrypoint()).address());
 		for (RunningProcess process : context.processes().all())
 			output.println("  " + process.name() + " [" + process.state() + "] " + process.address());
 

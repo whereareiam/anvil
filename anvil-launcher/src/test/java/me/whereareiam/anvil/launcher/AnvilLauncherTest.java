@@ -17,7 +17,7 @@ class AnvilLauncherTest {
 		ScenarioEngine engine = AnvilLauncher.create(options);
 		try (engine) {
 			assertNull(options.getCacheDirectory());
-			assertNull(options.getDefaultJavaExecutable());
+			assertNull(options.getJavaRequirement().getFeatureVersion());
 			assertThrows(ScenarioValidationException.class, () -> engine.start(invalid));
 		}
 

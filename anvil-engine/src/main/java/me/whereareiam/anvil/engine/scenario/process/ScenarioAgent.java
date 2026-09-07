@@ -13,10 +13,16 @@ import java.util.Optional;
  * Stable borrowed connection whose transport is replaced when its process restarts.
  */
 @AllArgsConstructor
-final class ScenarioAgent implements AgentClient {
+public final class ScenarioAgent implements AgentClient {
 	private @Nullable AgentClient connection;
 
-	synchronized void replace(@NotNull AgentClient replacement) {
+	/**
+	 * Replaces the borrowed transport after the owning process has stopped.
+	 *
+	 * @param replacement connection for the new process generation
+	 * @throws IllegalStateException when the previous connection is still attached
+	 */
+	public synchronized void replace(@NotNull AgentClient replacement) {
 		if (connection != null) {
 			replacement.close();
 			throw new IllegalStateException("Detach the existing agent before replacing its connection");

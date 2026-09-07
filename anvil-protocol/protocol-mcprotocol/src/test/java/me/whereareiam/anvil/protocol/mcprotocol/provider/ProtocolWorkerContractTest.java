@@ -21,12 +21,24 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProtocolWorkerContractTest {
+	private me.whereareiam.anvil.provisioning.cache.ArtifactCache artifacts;
+
+	@org.junit.jupiter.api.BeforeEach
+	void createArtifacts() {
+		artifacts = new me.whereareiam.anvil.provisioning.cache.ArtifactCache(temporary, false, false, 4);
+	}
+
+	@org.junit.jupiter.api.AfterEach
+	void closeArtifacts() {
+		artifacts.close();
+	}
+
 	@TempDir
 	Path temporary;
 
 	@Test
 	void refusesNewPlayersAfterClientPoolShutdown() {
-		ProtocolBackend clients = new McProtocolProvider().create(temporary);
+		ProtocolBackend clients = new McProtocolProvider().create(temporary, artifacts);
 		clients.close();
 		clients.close();
 		PlayerRequest request = PlayerRequest.builder().name("Alice").clientVersion("1.21.11")
@@ -37,7 +49,7 @@ class ProtocolWorkerContractTest {
 	@ParameterizedTest(name = "exact worker for {0}")
 	@ValueSource(strings = {"1.21.11", "26.1.2"})
 	void launchesExactWorkerWithBuiltInCapabilities(String version) {
-		try (ProtocolBackend clients = new McProtocolProvider().create(temporary)) {
+		try (ProtocolBackend clients = new McProtocolProvider().create(temporary, artifacts)) {
 			PlayerRequest request = PlayerRequest.builder()
 					.name("Alice")
 					.clientVersion(version)

@@ -1,7 +1,8 @@
 package me.whereareiam.anvil.testing.runtime.provider;
 
 import me.whereareiam.anvil.capability.api.CapabilityException;
-import me.whereareiam.anvil.engine.AnvilEngine;
+import me.whereareiam.anvil.launcher.AnvilLauncher;
+import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.protocol.api.provider.ProtocolProviderRegistry;
 import me.whereareiam.anvil.testing.fixture.extension.ExternalExtensionFixture;
@@ -24,7 +25,7 @@ class ExternalProviderDiscoveryIntegrationTest {
 	@Test
 	void selectsTheSoleBackendBeforeFilteringInstalledDefaultCapabilities() throws Exception {
 		try (var fixture = new ExternalExtensionFixture(temporary, "FixtureProtocolProvider", false);
-			 var engine = new AnvilEngine(options())) {
+			 var engine = AnvilLauncher.create(options())) {
 			assertEquals(List.of("fixture"), ProtocolProviderRegistry.discover().ids().stream().toList());
 		}
 		assertFalse(Files.exists(temporary.resolve("cache/fixture.lifecycle")));
@@ -33,7 +34,7 @@ class ExternalProviderDiscoveryIntegrationTest {
 	@Test
 	void rejectsAmbiguousBackendSelectionBeforeCreatingResources() throws Exception {
 		try (var fixture = new ExternalExtensionFixture(temporary, "FixtureProtocolProvider", true)) {
-			var failure = assertThrows(IllegalStateException.class, () -> new AnvilEngine(options()));
+			var failure = assertThrows(IllegalStateException.class, () -> AnvilLauncher.create(options()));
 			assertTrue(failure.getMessage().contains("Multiple protocol providers"));
 			assertFalse(Files.exists(temporary.resolve("cache/fixture.lifecycle")));
 		}
@@ -42,7 +43,7 @@ class ExternalProviderDiscoveryIntegrationTest {
 	@Test
 	void reportsMissingCapabilitiesBeforeCreatingTheBackend() throws Exception {
 		try (var fixture = new ExternalExtensionFixture(temporary, "BrokenProtocolProvider", false)) {
-			var failure = assertThrows(CapabilityException.class, () -> new AnvilEngine(options()));
+			var failure = assertThrows(CapabilityException.class, () -> AnvilLauncher.create(options()));
 			assertTrue(failure.getMessage().contains("missing capabilities"));
 			assertFalse(Files.exists(temporary.resolve("cache/fixture-broken.lifecycle")));
 		}

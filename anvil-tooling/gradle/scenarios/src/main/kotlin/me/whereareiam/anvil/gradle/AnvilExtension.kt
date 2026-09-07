@@ -41,9 +41,14 @@ open class AnvilExtension @Inject constructor(
         protocolId.set(id)
     }
 
-    /** Explicit Java executables keyed by feature version. */
-    val javaExecutables: MapProperty<Int, String> =
-        objects.mapProperty(Int::class.java, String::class.java).convention(emptyMap())
+    /** Maximum concurrent preparation and process starts. */
+    val parallelism: Property<Int> = objects.property(Int::class.java)
+
+    /** Combined heap budget for processes starting concurrently. */
+    val startupMemoryMegabytes: Property<Int> = objects.property(Int::class.java)
+
+    /** Maximum concurrent artifact downloads. */
+    val downloadParallelism: Property<Int> = objects.property(Int::class.java)
 
     /** Mojang EULA acknowledgement required before server launch. */
     val eulaAccepted: Property<Boolean> =
@@ -72,6 +77,7 @@ open class AnvilExtension @Inject constructor(
             is Project -> project.configurations.detachedConfiguration(
                 project.dependencies.project(mapOf("path" to notation.path))
             )
+
             is Dependency -> project.configurations.detachedConfiguration(notation)
             is CharSequence -> {
                 val value = notation.toString()
@@ -80,11 +86,13 @@ open class AnvilExtension @Inject constructor(
                 else
                     project.files(value)
             }
+
             else -> project.files(notation)
         }
         artifacts[name] = files
         artifactListeners.forEach { listener -> listener(name, files) }
-}
+    }
+
     internal fun onArtifact(listener: (String, FileCollection) -> Unit) {
         artifactListeners += listener
         artifacts.forEach(listener)

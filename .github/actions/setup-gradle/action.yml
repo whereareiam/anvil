@@ -10,6 +10,10 @@ inputs:
     description: Java distribution to install.
     required: false
     default: temurin
+  cache_read_only:
+    description: Set true to prevent Gradle from writing shared caches; auto preserves the event defaults.
+    required: false
+    default: auto
 
 runs:
   using: composite
@@ -31,4 +35,4 @@ runs:
     - name: Set up Gradle
       uses: gradle/actions/setup-gradle@v5
       with:
-        cache-read-only: ${{ github.event_name != 'release' && github.event_name != 'workflow_dispatch' && github.ref != 'refs/heads/dev' }}
+        cache-read-only: ${{ inputs.cache_read_only == 'true' || (inputs.cache_read_only == 'auto' && github.event_name != 'release' && github.event_name != 'workflow_dispatch' && github.ref != 'refs/heads/dev') }}

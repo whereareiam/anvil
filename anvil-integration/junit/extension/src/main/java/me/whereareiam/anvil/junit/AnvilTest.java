@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
  *
  * <pre>{@code
  * @AnvilTest(RegistrationScenario.class)
- * void registration(AnvilContext anvil) {
+ * void registration(ScenarioContext anvil) {
  *     SimulatedPlayer alice = anvil.players().create("Alice");
  *     Session session = alice.capability(Session.class);
  *     session.connect();

@@ -4,7 +4,7 @@
 
 Anvil is a Java 21 testing framework for local Minecraft Java Edition processes and native-protocol
 players. Preserve reproducibility, protocol fidelity, complete cleanup, and useful failure diagnostics.
-Docker, Kubernetes, SSH/hosted orchestration, Fabric, Sponge, Bedrock, rendering, pathfinding,
+Kubernetes, SSH/hosted orchestration, Fabric, Sponge, Bedrock, rendering, pathfinding,
 autonomous AI, and crafting automation are outside the current project scope.
 
 ## Working in this repository
@@ -22,32 +22,39 @@ autonomous AI, and crafting automation are outside the current project scope.
 
 ## Module ownership
 
-| Area                                            | Responsibility                                                                                                |
-|-------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
-| `anvil-api`                                     | Global scenario, process, context, player, observation, and capability contracts; no Anvil project dependency |
-| `anvil-engine`                                  | Platform-neutral validation, provisioning, process lifecycle, runtime context, player management, and cleanup |
-| `anvil-launcher`                                | Scenario-engine factory, property decoding, and shaded assembly; providers remain explicit additions          |
-| `anvil-capability/capability-api`               | Capability-provider contracts and dependency descriptors                                                      |
-| `anvil-capability/capability-runtime`           | Discovery, ordering, capability composition, and the protocol player-composer implementation                  |
-| `anvil-capability/capability-builtin/<feature>` | Separate feature API, packet/agent adapter, and consumer wiring modules                                       |
-| `anvil-protocol/protocol-api`                   | Backend-neutral providers, players, composition, and optional authentication contracts                        |
-| `anvil-protocol/protocol-adapter-api`           | Host/worker execution contracts for packet-backed capabilities                                                |
-| `anvil-protocol/protocol-mcprotocol`            | MCProtocolLib backend, pinned catalog, workers, and private authentication store                              |
-| `anvil-platform/platform-api`                   | Provisioning SPI, artifact resolution, distribution validation, and forwarding contracts                      |
-| `anvil-platform/platform-*`                     | Provider-specific distribution/configuration implementations and platform-agent assemblies                    |
-| `anvil-agent/agent-api`                         | Typed agent operations, native service access, transport, directory, and artifact contracts                   |
-| `anvil-agent/agent-common`                      | Authenticated loopback transport and external-operation loading                                               |
-| `anvil-agent/agent`                             | Common shaded runtime packaged by platform agents                                                             |
-| `anvil-integration/junit/extension`             | JUnit annotations, context injection, and lifecycle integration                                               |
-| `anvil-integration/junit/gradle`                | Optional `anvilTest` task and JUnit dependency wiring                                                         |
-| `anvil-tooling/tooling-runner`                  | Foreground scenario shell, independent of Gradle APIs                                                         |
-| `anvil-tooling/gradle/scenarios`                | Gradle DSL, `src/anvil`, artifacts, scenarios, authentication tasks, and unit-plugin registry                 |
-| `anvil-tooling/gradle/bundle`                   | Combined Gradle plugin and curated capability/platform unit plugins                                           |
-| `anvil-testing`                                 | Grouping module for cross-module tests and reusable test artifacts                                            |
-| `examples/proof-of-patience`                    | Consumer example, not a home for framework system assertions                                                  |
-| `build-logic`                                   | Shared Java, testing, assembly, and publication conventions                                                   |
-| `docs/content`                                  | Task-oriented Scriptorium guides for using, extending, and contributing to Anvil                              |
-| `scriptorium.project.json`                      | Scriptorium project metadata and version policy                                                               |
+| Area                                            | Responsibility                                                                                                                                         |
+|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `anvil-api`                                     | Global scenario, process, context, player, observation, and capability contracts; no Anvil project dependency                                          |
+| `anvil-engine`                                  | Scenario orchestration, validation, lifecycle ownership, player management, and cleanup; execution/provisioning implementations stay in their families |
+| `anvil-execution/execution-api`                 | Execution-provider, endpoint, stream, and process contracts                                                                                            |
+| `anvil-execution/execution-local`               | Host process execution and local endpoints                                                                                                             |
+| `anvil-execution/execution-docker`              | Typed Docker Engine execution, images, networks, and container endpoints                                                                               |
+| `anvil-provisioning/provisioning-api`           | Verified artifact and cache contracts                                                                                                                  |
+| `anvil-provisioning/provisioning-cache`         | Shared verified artifact, metadata, and cross-process cache locking                                                                                    |
+| `anvil-provisioning/provisioning-java/api`      | Java installation, source, and provisioning contracts                                                                                                  |
+| `anvil-provisioning/provisioning-java`          | Local JDK inspection, Foojay resolution, and user archive installation                                                                                 |
+| `anvil-launcher`                                | Scenario-engine factory, property decoding, and shaded assembly; providers remain explicit additions                                                   |
+| `anvil-capability/capability-api`               | Capability-provider contracts and dependency descriptors                                                                                               |
+| `anvil-capability/capability-runtime`           | Discovery, ordering, capability composition, and the protocol player-composer implementation                                                           |
+| `anvil-capability/capability-builtin/<feature>` | Separate feature API, packet/agent adapter, and consumer wiring modules                                                                                |
+| `anvil-protocol/protocol-api`                   | Backend-neutral providers, players, composition, and optional authentication contracts                                                                 |
+| `anvil-protocol/protocol-adapter-api`           | Host/worker execution contracts for packet-backed capabilities                                                                                         |
+| `anvil-protocol/protocol-mcprotocol`            | MCProtocolLib backend, pinned catalog, workers, and private authentication store                                                                       |
+| `anvil-platform/platform-api`                   | Provisioning SPI, artifact resolution, distribution validation, and forwarding contracts                                                               |
+| `anvil-platform/platform-*`                     | Provider-specific distribution/configuration implementations and platform-agent assemblies                                                             |
+| `anvil-agent/agent-api`                         | Typed agent operations, native service access, transport, directory, and artifact contracts                                                            |
+| `anvil-agent/agent-common`                      | Authenticated loopback transport and external-operation loading                                                                                        |
+| `anvil-agent/agent`                             | Common shaded runtime packaged by platform agents                                                                                                      |
+| `anvil-integration/junit/extension`             | JUnit annotations, context injection, and lifecycle integration                                                                                        |
+| `anvil-integration/junit/gradle`                | Optional `anvilTest` task and JUnit dependency wiring                                                                                                  |
+| `anvil-tooling/tooling-runner`                  | Foreground scenario shell, independent of Gradle APIs                                                                                                  |
+| `anvil-tooling/gradle/scenarios`                | Gradle DSL, `src/anvil`, artifacts, scenarios, authentication tasks, and unit-plugin registry                                                          |
+| `anvil-tooling/gradle/bundle`                   | Combined Gradle plugin and curated capability/platform unit plugins                                                                                    |
+| `anvil-testing`                                 | Grouping module for cross-module tests and reusable test artifacts                                                                                     |
+| `examples/proof-of-patience`                    | Consumer example, not a home for framework system assertions                                                                                           |
+| `build-logic`                                   | Shared Java, testing, assembly, and publication conventions                                                                                            |
+| `docs/content`                                  | Task-oriented Scriptorium guides for using, extending, and contributing to Anvil                                                                       |
+| `scriptorium.project.json`                      | Scriptorium project metadata and version policy                                                                                                        |
 
 ## Dependency and extension rules
 
@@ -75,6 +82,10 @@ autonomous AI, and crafting automation are outside the current project scope.
   platform SDKs into those JARs. Host capabilities borrow connections through `AgentDirectory`.
 - Platform agents expose native services and their scheduling rules. The endpoint owns its extension
   class loader; the scenario owns host connections.
+- Java requirements are execution-agnostic. Local homes and verified archives belong to Java provisioning;
+  Docker image mappings belong to the Docker execution provider.
+- Execution providers own network topology and endpoint translation. A local loopback bind is host exposure
+  control, not process isolation; strict proxy-only isolation is rejected unless the provider can enforce it.
 - `api.process.RunningProcess` exposes lifecycle, address, and console; server/proxy specializations live in `api.process.type`. Player identities/routes belong to
   `PlayerObservation` and the Server capability.
 - Forwarding is negotiated from provider-supported modes before launch, not from platform-name
@@ -97,6 +108,9 @@ autonomous AI, and crafting automation are outside the current project scope.
   one implementation. Avoid catch-all `util` or `common` packages.
 - Keep classes and methods focused. Prefer early returns and `continue` to nested or `else if` chains.
   For a short single-statement `if`/`for`, omit braces.
+- Prefer try-with-resources for lexical ownership. When cleanup must continue across independent
+  resources, use a focused helper to preserve the first failure and suppress later cleanup failures;
+  do not repeat identical try/catch blocks for each resource.
 - Prefer Lombok for immutable values, constructors, getters, and builders. Prefer final fields;
   add mutation only where lifecycle integration requires it. Do not add empty default constructors.
 - For long constructor parameter lists, put each parameter on its own line and the closing
@@ -135,7 +149,8 @@ autonomous AI, and crafting automation are outside the current project scope.
 - Local/named server artifacts declare `minecraftVersion`. Native clients must match every reachable
   server. Preserve explicit client overrides and deterministic native selection; no implicit ViaVersion fallback.
 - Prepare declared assets and caches before provider configuration. Runtime ports, forwarding,
-  agent credentials, and EULA values take precedence.
+  agent credentials, and EULA values take precedence. Independent preparation and startup work may run
+  concurrently within configured limits; provider configuration remains deterministic.
 - Agents bind to loopback and authenticate with per-run random tokens. Non-loopback game listeners
   require a manual scenario and explicit LAN opt-in.
 - Start servers before proxies; stop processes in reverse order. Cleanup attempts every resource,
@@ -197,8 +212,9 @@ For providers/forwarding, run every affected direct/proxy combination. Inspect r
   cache layout, packaging, test commands, or extension behavior. Keep examples copyable and verify symbols.
 - Use relative content links. Validate navigation, local links, and Scriptorium content
   compilation after documentation changes. Generated `.scriptorium/` output is ignored.
-- Keep `LICENSE`, wrapper, POM metadata, and CI/release workflows valid. Ordinary PR verification
-  runs build/runtime checks; approved live jobs run real-platform tests. Development publication is
-  manual-only (`workflow_dispatch`). Release Drafter updates on `dev` pushes or manual dispatch,
+- Keep `LICENSE`, wrapper, POM metadata, and CI/release workflows valid. Pull request verification
+  is maintainer-requested through `workflow_dispatch` and runs the build/runtime and real-platform
+  checks for the selected revision. Development publication is manual-only (`workflow_dispatch`).
+  Release Drafter updates on `dev` pushes or manual dispatch,
   using `feature`, `change`, `bug`, `dependencies`, `major`, and `skip-changelog` labels. Published
   releases trigger release verification/publication. No scheduled nightly workflow is required.
