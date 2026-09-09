@@ -41,7 +41,7 @@ session.connected();
 Disconnecting keeps the player object registered. Rejoining retains that player and its capability
 instances, uses its configured identity and target, and resets Session's connection and kick state.
 It does not create a replacement player or prove that plugin data survived. Other capabilities can
-retain observations; see [Messages history](../messages/index.md#match-the-intended-operation).
+retain observations; see [Messages history](../messages/index.md#match-the-intended-channeloperation).
 After login, wait for the expected agent-observed route and assert the application state you need.
 A proxy or backend may report an identity different from the configured one; see
 [server observations](../server/index.md).

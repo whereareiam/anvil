@@ -20,7 +20,7 @@ Declare a scenario
   └─ Workspace: which plugins, configuration, and data?
            ↓ start
 Use the running context
-  ├─ Processes: console, addresses, and lifecycle
+  ├─ Processes: console, addresses, lifecycle, and process capabilities
   └─ Players → capabilities → actions and observations
            ↓ close
 Release players and processes, then finalize workspaces
@@ -45,10 +45,10 @@ The sidebar and each page's next step follow this same sequence.
 | 5 | [Running context](./context/index.md) | How does my code access this active environment? |
 | 6 | [Processes](./processes/index.md) | How do I control its running servers and proxies? |
 | 7 | [Players](./players/index.md) | How do I create a client inside this run? |
-| 8 | [Capabilities](./capabilities/index.md) | How does that client act, and how do I observe the result? |
+| 8 | [Capabilities](./capabilities/index.md) | How do players and processes expose typed actions and observations? |
 
 The context comes before process and player operations because it is the entry point to both.
-Players come before capabilities because capabilities belong to a particular player.
+Capabilities follow their two owners: players and processes.
 
 You do not need to leave this sequence to follow the detailed setup or API guides linked along the
 way. They are follow-up reading. After the last concept, continue to Installation and First test.

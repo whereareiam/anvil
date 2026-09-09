@@ -43,8 +43,8 @@ import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
-import me.whereareiam.anvil.execution.docker.execution.DockerExecutionProvider;
-import me.whereareiam.anvil.execution.docker.execution.DockerExecutionSettings;
+import me.whereareiam.anvil.environment.execution.docker.execution.DockerExecutionProvider;
+import me.whereareiam.anvil.environment.execution.docker.execution.DockerExecutionSettings;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
 
 public final class DockerScenario {

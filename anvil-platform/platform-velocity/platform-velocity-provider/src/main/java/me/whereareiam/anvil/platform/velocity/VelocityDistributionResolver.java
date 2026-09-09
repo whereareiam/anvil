@@ -32,7 +32,7 @@ final class VelocityDistributionResolver {
 		String version = required(distribution.getVersion(), "Velocity version");
 		String build = required(distribution.getBuild(), "Velocity build");
 		URI metadata = URI.create("https://fill.papermc.io/v3/projects/velocity/versions/" + version + "/builds");
-		JsonNode selected = selectBuild(mapper.readTree(context.getArtifactResolver().read(metadata)), build);
+		JsonNode selected = selectBuild(mapper.readTree(context.getArtifactSource().read(metadata)), build);
 		JsonNode download = selected.path("downloads").path("server:default");
 
 		String name = required(download.path("name").asText(), "artifact filename");
@@ -44,7 +44,8 @@ final class VelocityDistributionResolver {
 		URI url = URI.create(required(download.path("url").asText(), "artifact URL"));
 		Path destination = context.getCacheDirectory().resolve("distributions/velocity")
 				.resolve(version).resolve(selected.path("id").asText()).resolve(name);
-		Path jar = context.getArtifactResolver().obtain(url, destination, checksum);
+		Path jar = context.getArtifactSource().obtain(url, destination, checksum);
+
 		return ResolvedDistribution.builder().jar(jar)
 				.description("Velocity " + version + " build " + selected.path("id").asText()).build();
 	}

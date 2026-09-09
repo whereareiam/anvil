@@ -11,6 +11,9 @@ val embedded: Configuration = configurations.create("embedded") {
 }
 
 tasks.withType<ShadowJar>().configureEach {
+    filesMatching("META-INF/services/**") {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
     mergeServiceFiles()
     configurations = listOf(embedded)
 }

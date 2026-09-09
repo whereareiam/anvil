@@ -17,7 +17,7 @@ workspace and save enabled workspace caches if the scenario lifecycle otherwise 
 For a test whose files you need to inspect, declare `WorkspaceMode.PERSISTENT` in that process's
 `WorkspacePlan`. This retains its directory across runs, so reset or reseed plugin state explicitly
 when test independence requires it. See [Persistent workspaces](../../../building-blocks/environments/workspaces/persistence/index.md)
-and [workspace caches](../../../building-blocks/environments/workspaces/caches/index.md).
+and [workspace caches](../../../building-blocks/environments/provisioning/cache/snapshots/index.md).
 
 A setup-hook failure happens during engine startup and uses the failed-startup path. A failed
 process restart also marks the run unsuccessful, even if the test catches the restart exception.

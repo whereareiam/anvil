@@ -21,6 +21,12 @@ gradle.projectsEvaluated {
         constraints {
             ArchitecturePublications.publishedProjects(rootProject).forEach { module ->
                 api(project(module.path))
+                module.extensions.getByType<PublishingExtension>().publications
+                    .withType<MavenPublication>()
+                    .filter { it.artifacts.isEmpty() }
+                    .forEach { publication ->
+                        api("${publication.groupId}:${publication.artifactId}:${publication.version}")
+                    }
             }
         }
     }

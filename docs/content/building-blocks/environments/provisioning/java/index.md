@@ -59,7 +59,7 @@ sources inherit independently. A process-specific source must still satisfy the 
 
 Provide a compatible local installation or prepare the required Java selection before going offline.
 `anvil.java.download=false` requires an already available installation; it does not disable platform
-artifact downloads. Use [Cache](../cache/index.md) for the complete offline workflow and the
+artifact downloads. Use [Cache](../cache/artifacts/index.md) for the complete offline workflow and the
 [engine options](../../configuration/engine/index.md) for setting these flags on the correct JVM.
 
 ## Use Java inside Docker

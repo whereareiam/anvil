@@ -3,11 +3,11 @@ title: Live tests
 description: Verify native workers and real server/proxy behavior across the supported catalog.
 ---
 
-Real platform tests live in `anvil-testing/testing-server/src/test`. They start pinned distributions
+Real platform tests live in `anvil-testkit/tests/server/src/test`. They start pinned distributions
 and run players or agent operations against them. Enable the whole task with `-Panvil.testMode=full`:
 
 ```shell
-./gradlew :anvil-testing:testing-server:test -Panvil.testMode=full
+./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full
 ```
 
 The first run may provision distribution JARs, protocol runtimes, and the Java installations required
@@ -26,9 +26,9 @@ real online-account authentication to this suite.
 For example:
 
 ```shell
-./gradlew :anvil-testing:testing-server:test -Panvil.testMode=full --tests '*PlayerIdentityReconnectSystemTest'
-./gradlew :anvil-testing:testing-server:test -Panvil.testMode=full --tests '*ExternalExtensionSystemTest'
-./gradlew :anvil-testing:testing-server:test -Panvil.testMode=full --tests '*ProxyServerCompatibilitySystemTest' -PanvilMatrixFilter='.*spigot.*'
+./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*PlayerIdentityReconnectSystemTest'
+./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*ExternalExtensionSystemTest'
+./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*ProxyServerCompatibilitySystemTest' -PanvilMatrixFilter='.*spigot.*'
 ```
 
 `anvilMatrixFilter` filters compatibility scenario names. It does not select other test classes.
@@ -54,8 +54,8 @@ versions. Provider or forwarding changes require every affected server/proxy com
 `anvilTestTags` accepts a JUnit tag expression. Compatibility tests are tagged `compatibility`:
 
 ```shell
-./gradlew :anvil-testing:testing-server:test -Panvil.testMode=full -PanvilTestTags=compatibility
-./gradlew :anvil-testing:testing-server:test -Panvil.testMode=full -PanvilTestTags='!compatibility'
+./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full -PanvilTestTags=compatibility
+./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full -PanvilTestTags='!compatibility'
 ./gradlew test -Panvil.testMode=full
 ```
 

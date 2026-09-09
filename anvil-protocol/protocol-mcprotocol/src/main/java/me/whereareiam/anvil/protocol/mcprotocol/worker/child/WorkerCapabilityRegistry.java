@@ -1,15 +1,14 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import me.whereareiam.anvil.protocol.adapter.api.capability.ProtocolCapabilityAdapter;
-import me.whereareiam.anvil.protocol.adapter.api.capability.ProtocolCapabilityAdapterRegistry;
-import me.whereareiam.anvil.protocol.adapter.api.capability.ProtocolPacketListener;
-import me.whereareiam.anvil.protocol.adapter.api.capability.ProtocolWorkerOperation;
-import me.whereareiam.anvil.protocol.adapter.api.player.ProtocolWorkerPlayer;
+import me.whereareiam.anvil.protocol.api.worker.NativeBinding;
+import me.whereareiam.anvil.protocol.api.worker.NativeOperations;
+import me.whereareiam.anvil.protocol.api.worker.NativeWorkerExtension;
+import me.whereareiam.anvil.protocol.api.worker.NativeWorkerProvider;
 import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerControlOperation;
-import org.geysermc.mcprotocollib.network.packet.Packet;
+import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
+import org.geysermc.mcprotocollib.network.ClientSession;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,68 +18,101 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
- * Validated operation and packet-listener registry for worker-side capabilities.
+ * Selects protocol-native assembly providers and owns each player's opaque operation table.
  */
-final class WorkerCapabilityRegistry implements ProtocolCapabilityAdapterRegistry {
-	private final Map<String, ProtocolWorkerOperation> operations = new LinkedHashMap<>();
-	private final List<ProtocolPacketListener> packetListeners = new ArrayList<>();
+final class WorkerCapabilityRegistry {
+	private final Map<String, NativeWorkerExtension<ClientSession>> extensions = new LinkedHashMap<>();
 	private final Set<String> capabilities = new LinkedHashSet<>();
-	private @Nullable String installing;
 
 	static @NotNull WorkerCapabilityRegistry discover(int protocolNumber) {
-		var adapters = ServiceLoader.load(ProtocolCapabilityAdapter.class).stream()
-				.map(ServiceLoader.Provider::get)
-				.toList();
-		return new WorkerCapabilityRegistry(protocolNumber, adapters);
+		List<NativeWorkerProvider<?>> providers = new ArrayList<>();
+		ServiceLoader.load(NativeWorkerProvider.class).forEach(providers::add);
+
+		return new WorkerCapabilityRegistry(protocolNumber, providers);
 	}
 
-	WorkerCapabilityRegistry(int protocolNumber, @NotNull Collection<ProtocolCapabilityAdapter> adapters) {
-		adapters.stream().filter(adapter -> adapter.supports(protocolNumber)).forEach(this::install);
-	}
+	WorkerCapabilityRegistry(int protocolNumber, @NotNull Collection<? extends NativeWorkerProvider<?>> candidates) {
+		for (NativeWorkerProvider<?> candidate : candidates) {
+			if (!candidate.backendId().equals("mcprotocol")) continue;
+			if (candidate.backendType() != ClientSession.class)
+				throw new IllegalArgumentException("Worker provider '" + candidate.id() + "' requires a different native context");
 
-	private void install(ProtocolCapabilityAdapter capability) {
-		if (!capabilities.add(capability.id())) throw new IllegalStateException("Duplicate MCProtocol worker capability ID: " + capability.id());
+			@SuppressWarnings("unchecked")
+			NativeWorkerProvider<ClientSession> provider = (NativeWorkerProvider<ClientSession>) candidate;
+			NativeWorkerExtension<ClientSession> extension = provider.create(protocolNumber);
+			if (extensions.putIfAbsent(provider.id(), extension) != null)
+				throw new IllegalStateException("Duplicate native worker provider: " + provider.id());
 
-		installing = capability.id();
-		try {
-			capability.install(this);
-		} finally {
-			installing = null;
+			for (String id : extension.capabilities())
+				if (!capabilities.add(id)) throw new IllegalStateException("Duplicate native capability: " + id);
 		}
 	}
 
-	@Override
-	public void operation(@NotNull String operation, @NotNull ProtocolWorkerOperation handler) {
-		if (installing == null) throw new IllegalStateException("Worker operations may only be registered while installing a capability");
-		if (WorkerControlOperation.find(operation).isPresent()) throw new IllegalArgumentException("Worker lifecycle operation is reserved: " + operation);
-		if (operation.isBlank() || (!operation.contains(".") && !operation.contains(":"))) throw new IllegalArgumentException("Worker operation must be namespaced: " + operation);
+	@NotNull PlayerBindings bind(@NotNull McProtocolPlayer player) {
+		var bindings = new PlayerBindings();
+		try {
+			for (NativeWorkerExtension<ClientSession> extension : extensions.values())
+				bindings.bindings.add(extension.bind(player, bindings));
 
-		ProtocolWorkerOperation duplicate = operations.putIfAbsent(operation, handler);
-		if (duplicate != null) throw new IllegalStateException("Duplicate MCProtocol worker operation '" + operation + "'");
-	}
+			bindings.installing = false;
+			return bindings;
+		} catch (RuntimeException | Error failure) {
+			try {
+				bindings.close();
+			} catch (RuntimeException | Error cleanup) {
+				if (failure != cleanup) failure.addSuppressed(cleanup);
+			}
 
-	@Override
-	public void packets(@NotNull ProtocolPacketListener listener) {
-		if (installing == null) throw new IllegalStateException("Packet listeners may only be registered while installing a capability");
-		packetListeners.add(listener);
-	}
-
-	@NotNull JsonNode execute(@NotNull String operation, @NotNull ProtocolWorkerPlayer player, @NotNull JsonNode arguments) throws Exception {
-		ProtocolWorkerOperation handler = operations.get(operation);
-		if (handler == null)
-			throw new IllegalArgumentException("Unknown protocol operation: " + operation
-					+ ". Installed capabilities: " + capabilities);
-		return handler.execute(player, arguments);
-	}
-
-	void packet(@NotNull ProtocolWorkerPlayer player, @NotNull Packet packet) {
-		for (ProtocolPacketListener listener : packetListeners)
-			listener.received(player, packet);
+			throw failure;
+		}
 	}
 
 	@NotNull Set<String> capabilities() {
 		return Set.copyOf(capabilities);
+	}
+
+	static final class PlayerBindings implements NativeOperations, AutoCloseable {
+		private final WorkerMessageCodec codec = new WorkerMessageCodec();
+		private final Map<String, Function<byte[], byte[]>> operations = new LinkedHashMap<>();
+		private final List<NativeBinding> bindings = new ArrayList<>();
+		private boolean installing = true;
+
+		@Override
+		public void register(@NotNull String id, @NotNull Function<byte[], byte[]> handler) {
+			if (!installing) throw new IllegalStateException("Worker operations may only be registered while binding a player");
+			if (WorkerControlOperation.find(id).isPresent()) throw new IllegalArgumentException("Reserved lifecycle operation: " + id);
+			if (id.isBlank() || (!id.contains(".") && !id.contains(":"))) throw new IllegalArgumentException("Worker operation must be namespaced: " + id);
+			if (operations.putIfAbsent(id, handler) != null) throw new IllegalStateException("Duplicate native operation: " + id);
+		}
+
+		@NotNull JsonNode execute(@NotNull String operation, @NotNull JsonNode arguments) {
+			Function<byte[], byte[]> handler = operations.get(operation);
+			if (handler == null) throw new IllegalArgumentException("Unknown protocol operation: " + operation);
+
+			return WorkerMessageCodec.message(handler.apply(codec.messageBytes(arguments)));
+		}
+
+		@Override
+		public void close() {
+			Throwable failure = null;
+			for (NativeBinding binding : bindings.reversed()) {
+				try {
+					binding.close();
+				} catch (RuntimeException | Error cleanup) {
+					if (failure == null) failure = cleanup;
+					else if (cleanup != failure) failure.addSuppressed(cleanup);
+				}
+			}
+
+			bindings.clear();
+			operations.clear();
+			installing = false;
+
+			if (failure instanceof RuntimeException exception) throw exception;
+			if (failure instanceof Error error) throw error;
+		}
 	}
 }

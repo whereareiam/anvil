@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.api.player;
 
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -38,6 +39,15 @@ public interface ProtocolPlayer {
 	 * @return matching service when supported
 	 */
 	@NotNull <T> Optional<T> findService(@NotNull Class<T> type);
+
+	/**
+	 * Returns the typed capability channel when the backend supports native worker operations.
+	 *
+	 * @return channel when available
+	 */
+	default @NotNull Optional<ProtocolChannel> channel() {
+		return Optional.empty();
+	}
 
 	/**
 	 * Reports whether this backend-owned player was permanently destroyed.

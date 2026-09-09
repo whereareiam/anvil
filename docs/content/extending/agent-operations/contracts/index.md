@@ -4,15 +4,25 @@ description: Define a shared request descriptor and register its platform implem
 ---
 
 This example creates an operation that returns `echo:` followed by the supplied string. Use two
-artifacts: `echo-operations` for the shared contract and `echo-agent` for the handler. Both compile
-against `me.whereareiam.anvil:agent-api` at the same version as the host.
+artifacts at the same Anvil version as the host:
 
-## Define the shared operation
+| Artifact | Anvil compile dependency |
+|---|---|
+| `echo-operations` | `me.whereareiam.anvil:agent-api` for shared request descriptors |
+| `echo-agent` | `me.whereareiam.anvil:agent-server-api` for native handler registration |
 
-Place this in `echo-operations/src/main/java/com/example/echo/operation/EchoOperations.java`:
+The `echo-operations` library exports `agent-api` with an `api` dependency so host wiring can use
+its descriptor types. The handler depends on `echo-operations` and uses `compileOnly` for
+`agent-server-api`: the installed platform agent supplies Anvil APIs. Keep those parent-provided
+APIs out of the packaged handler JAR, including transitive dependencies. The server API includes
+the shared contracts and does not depend on the client API or global `api` artifact.
+
+## Define the shared channelOperation
+
+Place this in `echo-operations/src/main/java/com/example/echo/channelOperation/EchoOperations.java`:
 
 ```java
-package com.example.echo.operation;
+package com.example.echo.channelOperation;
 
 import me.whereareiam.anvil.agent.api.model.AgentOperation;
 
@@ -42,13 +52,13 @@ Place this in `echo-agent/src/main/java/com/example/echo/agent/EchoAgentOperatio
 ```java
 package com.example.echo.agent;
 
-import com.example.echo.operation.EchoOperations;
-import me.whereareiam.anvil.agent.api.operation.AgentOperationProvider;
-import me.whereareiam.anvil.agent.api.operation.AgentOperationRegistry;
+import com.example.echo.channelOperation.EchoOperations;
+import me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider;
+import me.whereareiam.anvil.agent.server.api.operation.AgentOperationRegistry;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Installs the echo operation into a platform agent.
+ * Installs the echo channelOperation into a platform agent.
  */
 public final class EchoAgentOperations implements AgentOperationProvider {
 	@Override
@@ -64,14 +74,14 @@ public final class EchoAgentOperations implements AgentOperationProvider {
 }
 ```
 
-Create `src/main/resources/META-INF/services/me.whereareiam.anvil.agent.api.operation.AgentOperationProvider`
+Create `src/main/resources/META-INF/services/me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider`
 in the handler artifact containing:
 
 ```text
 com.example.echo.agent.EchoAgentOperations
 ```
 
-Registration is limited to `install`. Duplicate provider IDs, duplicate operation names, and names
+Registration is limited to `install`. Duplicate provider IDs, duplicate channelOperation names, and names
 outside the provider's namespace fail registration. The platform's built-in operations remain
 available alongside your extension.
 

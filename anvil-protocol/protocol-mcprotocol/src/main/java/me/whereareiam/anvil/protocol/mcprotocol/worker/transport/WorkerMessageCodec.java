@@ -3,13 +3,17 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.transport;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerEvent;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerMessage;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerReady;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerRequest;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerResponse;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.Optional;
 
 /**
@@ -66,6 +70,34 @@ public final class WorkerMessageCodec {
 
 	public @NotNull <T> T decodePayload(@NotNull JsonNode value, @NotNull Class<T> type) {
 		return decode(value, type);
+	}
+
+	public static @NotNull ObjectNode message(byte @NotNull [] payload) {
+		return JsonNodeFactory.instance.objectNode().put("data", payload);
+	}
+
+	public byte @NotNull [] messageBytes(@NotNull JsonNode envelope) {
+		try {
+			JsonNode value = envelope.get("data");
+			if (value == null || (!value.isBinary() && !value.isTextual()))
+				throw invalidMessage();
+
+			return value.binaryValue();
+		} catch (IOException failure) {
+			throw invalidMessage();
+		}
+	}
+
+	public byte @NotNull [] connection(boolean connected, @Nullable String reason) {
+		ObjectNode state = JsonNodeFactory.instance.objectNode()
+				.put("connected", connected)
+				.put("reason", reason);
+
+		try {
+			return mapper.writeValueAsBytes(state);
+		} catch (JsonProcessingException failure) {
+			throw new IllegalStateException("Could not encode native connection event");
+		}
 	}
 
 	private String encode(Object value) {

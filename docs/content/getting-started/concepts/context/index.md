@@ -31,7 +31,7 @@ can reuse to represent a later execution.
 
 The helper below receives an already running `ScenarioContext anvil` containing a Paper process named
 `server`. It can be called from a JUnit test or an embedding application. No player is needed because
-this operation uses the server console directly.
+this channelOperation uses the server console directly.
 
 Place `ContextExample.java` in package `com.example.test` alongside the code that calls it.
 Change the package declaration if your project uses a different package.

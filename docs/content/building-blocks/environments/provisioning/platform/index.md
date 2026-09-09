@@ -63,6 +63,6 @@ A server executable differs from the plugin JAR being tested. Install plugin JAR
 The selected JAR also needs a compatible [Java](../java/index.md) installation. Provisioning can keep
 the executable in the shared cache; its location is independent of the process's working directory.
 
-[Cache](../cache/index.md) explains acquired artifacts, resolution metadata, offline use, and refresh
+[Cache](../cache/artifacts/index.md) explains acquired artifacts, resolution metadata, offline use, and refresh
 behavior. A checksum mismatch is a failed acquisition; inspect the expected source and bytes before
 selecting a new pin. Do not replace a recorded checksum merely to bypass the mismatch.

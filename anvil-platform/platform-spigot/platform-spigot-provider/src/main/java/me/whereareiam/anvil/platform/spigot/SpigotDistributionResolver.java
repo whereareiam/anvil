@@ -41,7 +41,7 @@ final class SpigotDistributionResolver {
 		URI source = URI.create("https://cdn.getbukkit.org/spigot/spigot-" + version + ".jar");
 		Path destination = context.getCacheDirectory().resolve("distributions/getbukkit/spigot")
 				.resolve(version).resolve(checksum).resolve("spigot-" + version + ".jar");
-		Path jar = context.getArtifactResolver().obtain(source, destination, checksum);
+		Path jar = context.getArtifactSource().obtain(source, destination, checksum);
 		return requireJar(jar, "GetBukkit Spigot " + version + " (SHA-256 " + checksum + ")");
 	}
 

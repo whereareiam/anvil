@@ -62,7 +62,7 @@ A human-run scenario can help explore a behavior before you turn its checks into
 |---|---|
 | Look up engine properties and defaults | [Engine options](./building-blocks/environments/configuration/engine/index.md) |
 | Diagnose a failing run or report a defect | [Troubleshooting](./help/troubleshooting/index.md) |
-| Add a capability, agent operation, backend, or platform | [Extensions](./extending/index.md) |
+| Add a capability, agent channelOperation, backend, or platform | [Extensions](./extending/index.md) |
 | Change Anvil's implementation or documentation | [Contributing](./contributing/index.md) |
 
 Option tables and API links live beside the guides that use them. Extension and contributor guides

@@ -62,7 +62,7 @@ final class PlayerExample {
 
 The method returns after login and a matching agent-observed route, then releases Alice. In this
 direct-server example, the server agent supplies the observation. In a proxy topology, `Server.joined`
-can also match the proxy's report of its connected backend. Use a backend-specific agent operation
+can also match the proxy's report of its connected backend. Use a backend-specific agent channelOperation
 when you need independent proof from that backend.
 
 The returned identity is a snapshot. A caller can inspect `getObservedUsername()` or

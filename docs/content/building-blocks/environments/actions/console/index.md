@@ -4,7 +4,7 @@ description: Send process commands and wait for fresh output using a console che
 ---
 
 Use a process console when the behavior under test is exposed through a console command or log line.
-Take a checkpoint before the operation so an earlier matching line cannot satisfy the wait.
+Take a checkpoint before the channelOperation so an earlier matching line cannot satisfy the wait.
 
 ## Send a command and observe its output
 
@@ -37,6 +37,10 @@ when receipt by a player is the behavior under test.
 
 `sendCommand` takes console syntax without a leading slash. For a plugin command, use a marker or
 response that identifies that command's completion, rather than relying on unrelated periodic output.
+
+To dispatch through the native platform API and receive its boolean acceptance result, use the
+process's agent-backed [Console capability](../agents/index.md). The process console shown here supplies input and
+captured output; it remains available independently of installed process capabilities.
 
 ## Read a bounded tail
 

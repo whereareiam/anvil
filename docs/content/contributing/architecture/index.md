@@ -1,39 +1,46 @@
 ---
 title: Overview
-description: Understand the boundaries between scenario orchestration, execution, players, and agents.
+description: Understand the global engine lifecycle and the scoped services assembled around it.
 ---
 
-Anvil coordinates two kinds of work: managed server/proxy processes and native-protocol players.
-The engine connects them through public contracts. Provider implementations own the technologies
-that provision distributions, execute processes, or communicate with Minecraft.
+Anvil combines managed server/proxy processes and native-protocol players. The engine owns the
+global scenario lifecycle. Scoped APIs describe cache access, provisioning, execution, platforms,
+protocols, capabilities, and agents; the launcher binds those services into a scenario executor.
 
 ```text
 Gradle / JUnit / embedded application
                  │
-              launcher
+          launcher and extensions
                  │
-               engine
-       ┌─────────┼───────────┐
-   platforms   execution   protocol backend
-       │          │             │
- configuration  processes    native players
-                  │             │
-             platform agents ← capabilities
+             global engine
+                 │
+          ScenarioExecutor
+                 │
+           scenario assembly
+                 ├─ platform planning → providers
+                 ├─ execution → processes → process capabilities
+                 └─ protocol → players → player capabilities
 ```
 
-A capability may act through a protocol service, an agent connection, or both. Its public API remains
-usable without exposing the chosen packet library or platform SDK.
+The global API contains scenario definitions, public running handles, and extension/lifecycle
+registration. A service does not become global merely because several families need it. Each
+consumer declares the channelOperation it needs, and assembly binds it to the appropriate scoped provider.
 
 ## Find the boundary you need
 
 - [Module boundaries](./modules/index.md) maps responsibilities to Gradle families and dependencies.
 - [Lifecycle and ownership](./lifecycle/index.md) explains startup, restarts, and cleanup.
-- [Runtime composition](./composition/index.md) explains provider selection, worker isolation, and assemblies.
+- [Runtime composition](./composition/index.md) explains discovery and typed assembly bindings.
 
-A new operation should enter through the owner of its behavior. Packet features belong to capability
-adapters; native services belong to platform agents; endpoint translation belongs to execution
-providers. Keep the engine focused on validation and lifecycle rather than platform-name or packet-type
-branches.
+Packet behavior belongs to native capability implementations; native server services belong to
+platform agents; endpoint translation belongs to execution providers. The engine works through
+`ScenarioExecutor` and the public context rather than invoking any of those scoped services itself.
 
-Run `./gradlew verifyArchitecture` after dependency or module changes. Architecture checks protect
-dependency direction; observable behavior still needs the appropriate [tests](../testing/index.md).
+Capabilities have two owners: players and processes. Their shared composition validates
+dependencies and owns instance cleanup; scoped providers supply the behavior. Player capabilities
+can use either protocol channels or agent clients. Process capabilities expose process-wide behavior
+without a player. Their public contracts stay independent of implementation; agent-backed providers
+execute requests through native handlers in the server or proxy.
+
+Run `./gradlew verifyArchitecture` after dependency or module changes. Dependency checks complement
+the appropriate [behavioral tests](../testing/index.md).

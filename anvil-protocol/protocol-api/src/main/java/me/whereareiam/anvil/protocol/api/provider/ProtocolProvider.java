@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.api.provider;
 
+import me.whereareiam.anvil.protocol.api.provider.ProtocolRuntimeResolver;
 import org.jetbrains.annotations.NotNull;
-import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -24,7 +24,7 @@ public interface ProtocolProvider {
 	 * @param artifacts shared verified artifact cache
 	 * @return backend instance
 	 */
-	@NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull ArtifactResolver artifacts);
+	@NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull ProtocolRuntimeResolver artifacts);
 
 	/**
 	 * Provides an optional login/logout workflow without creating a protocol backend or player.

@@ -76,9 +76,14 @@ plugin JAR. The helper returns after closing the environment. To interact with i
 inside its open context.
 
 `start()` returns after processes and agents are ready and the setup hook has completed. Closing a
-context releases its players and processes. Closing the engine also releases any remaining contexts
-and the shared protocol backend. Unexpected exceptions should retain their original cause; cleanup
-can add suppressed failures.
+context releases its players and processes. Closing the returned engine also releases remaining
+contexts, the shared protocol backend, and artifact acquisition resources. Unexpected exceptions
+should retain their original cause; cleanup can add suppressed failures.
+
+Use `context.finish(false)` when your application catches a failed journey and needs to report that
+outcome to cleanup policy. The default `close()` reports normal completion. To install global
+diagnostics or per-scenario attachments, use `AnvilLauncher.builder()` and add an
+[engine extension](../../extending/engine/index.md).
 
 ## Configure other entry points
 

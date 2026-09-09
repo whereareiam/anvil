@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.api.player;
 
+import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
 import me.whereareiam.anvil.api.model.player.PlayerState;
 import org.jetbrains.annotations.NotNull;
@@ -12,7 +13,7 @@ import java.time.Duration;
  * <p>Capabilities group related operations so the player API can grow without turning this
  * interface into one flat collection of unrelated methods.</p>
  */
-public interface SimulatedPlayer {
+public interface SimulatedPlayer extends CapabilityOwner<PlayerCapability> {
 	/**
 	 * Default maximum wait used by observations without an explicit timeout.
 	 */

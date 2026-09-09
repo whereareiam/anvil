@@ -1,7 +1,9 @@
 package me.whereareiam.anvil.protocol.mcprotocol.provider;
 
 import me.whereareiam.anvil.api.type.AuthenticationMode;
-import me.whereareiam.anvil.protocol.adapter.api.player.ProtocolPlayerConnection;
+import me.whereareiam.anvil.environment.cache.filesystem.FileCache;
+import me.whereareiam.anvil.environment.provisioning.artifact.HttpArtifactAcquirer;
+import me.whereareiam.anvil.launcher.assembly.provisioning.CacheArtifactStorage;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.api.provider.ProtocolBackend;
@@ -21,11 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProtocolWorkerContractTest {
-	private me.whereareiam.anvil.provisioning.cache.ArtifactCache artifacts;
+	private HttpArtifactAcquirer artifacts;
 
 	@org.junit.jupiter.api.BeforeEach
 	void createArtifacts() {
-		artifacts = new me.whereareiam.anvil.provisioning.cache.ArtifactCache(temporary, false, false, 4);
+		artifacts = new HttpArtifactAcquirer(temporary, new CacheArtifactStorage(new FileCache(temporary)), false, false, 4);
 	}
 
 	@org.junit.jupiter.api.AfterEach
@@ -38,7 +40,7 @@ class ProtocolWorkerContractTest {
 
 	@Test
 	void refusesNewPlayersAfterClientPoolShutdown() {
-		ProtocolBackend clients = new McProtocolProvider().create(temporary, artifacts);
+		ProtocolBackend clients = new McProtocolProvider().create(temporary, artifacts::obtain);
 		clients.close();
 		clients.close();
 		PlayerRequest request = PlayerRequest.builder().name("Alice").clientVersion("1.21.11")
@@ -49,7 +51,7 @@ class ProtocolWorkerContractTest {
 	@ParameterizedTest(name = "exact worker for {0}")
 	@ValueSource(strings = {"1.21.11", "26.1.2"})
 	void launchesExactWorkerWithBuiltInCapabilities(String version) {
-		try (ProtocolBackend clients = new McProtocolProvider().create(temporary, artifacts)) {
+		try (ProtocolBackend clients = new McProtocolProvider().create(temporary, artifacts::obtain)) {
 			PlayerRequest request = PlayerRequest.builder()
 					.name("Alice")
 					.clientVersion(version)
@@ -61,8 +63,8 @@ class ProtocolWorkerContractTest {
 				assertEquals(version, player.clientVersion());
 				assertEquals(UUID.nameUUIDFromBytes("OfflinePlayer:Alice".getBytes(StandardCharsets.UTF_8)),
 						player.identity().getClientUniqueId());
-				var connection = player.findService(ProtocolPlayerConnection.class).orElseThrow();
-				assertTrue(connection.workerCapabilities().containsAll(Set.of(
+				var connection = player.channel().orElseThrow();
+				assertTrue(connection.installedCapabilities().containsAll(Set.of(
 						"me.whereareiam.anvil.session",
 						"me.whereareiam.anvil.messages",
 						"me.whereareiam.anvil.movement",

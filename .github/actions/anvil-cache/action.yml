@@ -18,7 +18,7 @@ runs:
           ~/.anvil/distributions
           ~/.anvil/protocol
           ~/.anvil/jdks
-        key: ${{ runner.os }}-anvil-${{ inputs.shard }}-${{ hashFiles('anvil-protocol/**/ProtocolCatalog.java', 'anvil-testing/**/CompatibilityScenarioCatalog.java', 'gradle/libs.versions.toml') }}
+        key: ${{ runner.os }}-anvil-${{ inputs.shard }}-${{ hashFiles('anvil-protocol/**/ProtocolCatalog.java', 'anvil-testkit/**/CompatibilityScenarioCatalog.java', 'gradle/libs.versions.toml') }}
         restore-keys: |
           ${{ runner.os }}-anvil-${{ inputs.shard }}-
           ${{ runner.os }}-anvil-
@@ -30,7 +30,7 @@ runs:
           ~/.anvil/distributions
           ~/.anvil/protocol
           ~/.anvil/jdks
-        key: ${{ runner.os }}-anvil-${{ inputs.shard }}-${{ hashFiles('anvil-protocol/**/ProtocolCatalog.java', 'anvil-testing/**/CompatibilityScenarioCatalog.java', 'gradle/libs.versions.toml') }}
+        key: ${{ runner.os }}-anvil-${{ inputs.shard }}-${{ hashFiles('anvil-protocol/**/ProtocolCatalog.java', 'anvil-testkit/**/CompatibilityScenarioCatalog.java', 'gradle/libs.versions.toml') }}
         restore-keys: |
           ${{ runner.os }}-anvil-${{ inputs.shard }}-
           ${{ runner.os }}-anvil-

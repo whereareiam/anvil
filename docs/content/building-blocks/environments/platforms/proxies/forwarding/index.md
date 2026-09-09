@@ -47,7 +47,7 @@ Run the containing class using `./gradlew anvilTest --tests 'your.package.YourTe
 The first wait establishes the client connection. The final wait matches the route reported by
 platform agents. In a proxied topology, the proxy agent's connected-backend report can satisfy this
 wait; it does not require an independent observation from the backend agent. Use a backend-specific
-[agent operation](../../../../../extending/agent-operations/index.md) if your test needs proof of
+[agent channelOperation](../../../../../extending/agent-operations/index.md) if your test needs proof of
 application behavior inside that backend.
 
 Use the same check after a server switch or [process restart](../../../actions/restarts/index.md).

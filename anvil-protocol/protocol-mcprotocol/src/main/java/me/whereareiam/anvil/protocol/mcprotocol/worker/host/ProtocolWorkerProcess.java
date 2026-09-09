@@ -53,7 +53,7 @@ public final class ProtocolWorkerProcess implements AutoCloseable {
 	/**
 	 * Launches and validates the exact catalog worker before exposing its request channel.
 	 *
-	 * @param definition verified runtime selection
+	 * @param definition  verified runtime selection
 	 * @param protocolJar verified exact protocol runtime supplied by the backend
 	 */
 	public ProtocolWorkerProcess(@NotNull ProtocolDefinition definition, @NotNull Path protocolJar) {
@@ -77,7 +77,7 @@ public final class ProtocolWorkerProcess implements AutoCloseable {
 	/**
 	 * Creates an initially disconnected player owned by this worker.
 	 *
-	 * @param request resolved player options
+	 * @param request        resolved player options
 	 * @param authentication optional online session delivered only over private stdin
 	 * @return host-side handle for the child worker's native player
 	 */
@@ -113,6 +113,10 @@ public final class ProtocolWorkerProcess implements AutoCloseable {
 		} catch (IllegalStateException exception) {
 			throw new IllegalStateException(exception.getMessage() + diagnostics.tail(), exception);
 		}
+	}
+
+	void recordDiagnostic(@NotNull String message) {
+		diagnostics.remember(message);
 	}
 
 	@NotNull String diagnosticTail() {

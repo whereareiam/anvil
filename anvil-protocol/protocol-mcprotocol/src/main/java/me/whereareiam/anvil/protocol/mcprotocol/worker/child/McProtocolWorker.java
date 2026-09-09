@@ -44,9 +44,9 @@ final class McProtocolWorker implements AutoCloseable {
 			var control = WorkerControlOperation.find(request.getOperation());
 			JsonNode result = control.isPresent()
 					? execute(control.get(), request)
-					: capabilities.execute(request.getOperation(), require(request.getPlayer()), request.getArguments());
+					: require(request.getPlayer()).execute(request.getOperation(), request.getArguments());
 			responses.success(request.getId(), result);
-		} catch (Exception failure) {
+		} catch (Exception | LinkageError | AssertionError failure) {
 			responses.failure(request.getId(), failure);
 		}
 	}
@@ -66,7 +66,7 @@ final class McProtocolWorker implements AutoCloseable {
 
 		WorkerPlayerOptions options = codec.decodePayload(request.getArguments(), WorkerPlayerOptions.class);
 		if (options.getPort() < 1 || options.getPort() > 65535) throw new IllegalArgumentException("Invalid worker player options");
-		players.put(id, new McProtocolPlayer(
+		McProtocolPlayer player = new McProtocolPlayer(
 				id,
 				options.getName(),
 				options.getHost(),
@@ -75,7 +75,9 @@ final class McProtocolWorker implements AutoCloseable {
 				options.getAccessToken(),
 				responses,
 				capabilities
-		));
+		);
+		player.initialize();
+		players.put(id, player);
 	}
 
 	private void destroy(@Nullable String id) {
@@ -100,18 +102,17 @@ final class McProtocolWorker implements AutoCloseable {
 	@Override
 	public void close() {
 		running = false;
-		IllegalStateException failure = null;
+		Throwable failure = null;
 		for (McProtocolPlayer player : players.values()) {
 			try {
 				player.close();
-			} catch (RuntimeException exception) {
-				if (failure == null)
-					failure = new IllegalStateException("Could not close all worker players");
-				failure.addSuppressed(exception);
+			} catch (RuntimeException | Error exception) {
+				if (failure == null) failure = exception;
+				else if (failure != exception) failure.addSuppressed(exception);
 			}
 		}
 		players.clear();
-		if (failure != null)
-			throw failure;
+		if (failure instanceof RuntimeException exception) throw exception;
+		if (failure instanceof Error error) throw error;
 	}
 }

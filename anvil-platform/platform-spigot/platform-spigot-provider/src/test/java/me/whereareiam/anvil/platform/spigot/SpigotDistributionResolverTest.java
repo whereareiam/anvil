@@ -3,7 +3,7 @@ package me.whereareiam.anvil.platform.spigot;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
-import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver;
+import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import org.jetbrains.annotations.NotNull;
@@ -28,7 +28,7 @@ class SpigotDistributionResolverTest {
 	void downloadsTheContentPinnedSupplierArtifactWithoutRunningJava(String version) throws Exception {
 		String checksum = "AB".repeat(32);
 		var server = server(Distribution.pinned(version, checksum));
-		ArtifactResolver artifacts = new ArtifactResolver() {
+		PlatformArtifactSource artifacts = new PlatformArtifactSource() {
 			@Override
 			public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, String expectedSha256) {
 				assertEquals(URI.create("https://cdn.getbukkit.org/spigot/spigot-" + version + ".jar"), uri);
@@ -53,7 +53,7 @@ class SpigotDistributionResolverTest {
 
 	@Test
 	void rejectsUnpinnedAndLegacyBuildSelectorsBeforeDownloading() {
-		ArtifactResolver unused = new ArtifactResolver() {
+		PlatformArtifactSource unused = new PlatformArtifactSource() {
 			@Override
 			public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, String expectedSha256) {
 				throw new AssertionError("Invalid selectors must fail before download");
@@ -80,12 +80,12 @@ class SpigotDistributionResolverTest {
 		return MinecraftServer.builder().name("server").platform("spigot").distribution(distribution).build();
 	}
 
-	private PlatformContext context(MinecraftServer server, ArtifactResolver artifacts) {
+	private PlatformContext context(MinecraftServer server, PlatformArtifactSource artifacts) {
 		return PlatformContext.builder()
 				.scenario(AnvilScenario.builder().name("supplier").entrypoint("server").server(server).build())
 				.cacheDirectory(temporary).workDirectory(temporary.resolve("work"))
 				.bindAddress("127.0.0.1").port(25565)
 
-				.artifactResolver(artifacts).build();
+				.artifactSource(artifacts).build();
 	}
 }

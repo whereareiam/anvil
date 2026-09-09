@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.transport;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerEvent;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerMessage;
@@ -24,7 +23,7 @@ public final class WorkerMessageWriter {
 		write(WorkerReady.builder().protocol(protocol).capabilities(capabilities).build());
 	}
 
-	public void event(@NotNull String player, @NotNull String event, @NotNull ObjectNode payload) {
+	public void event(@NotNull String player, @NotNull String event, @NotNull JsonNode payload) {
 		write(WorkerEvent.builder().event(event).player(player).payload(payload).build());
 	}
 

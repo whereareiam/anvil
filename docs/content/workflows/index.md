@@ -15,7 +15,7 @@ Anvil's two workflows. Choose according to who performs the actions and evaluate
 
 Write a test when you can express the expected behavior as a repeatable sequence with observable
 results. The test can use a simulated player, interact through the process console, or call an
-installed agent operation. A failing assertion makes a regression visible without repeating the
+installed agent channelOperation. A failing assertion makes a regression visible without repeating the
 steps by hand.
 
 Follow [Testing](./testing/index.md) for journey design and assertions. The

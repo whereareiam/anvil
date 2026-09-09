@@ -44,7 +44,7 @@ hosted orchestration system. Read [Execution providers](../../building-blocks/en
 ## Does a reconnect or restart prove my plugin's state survived?
 
 It proves the connection or lifecycle transition you observed. Verify the plugin's data through
-its commands, messages, or a typed agent operation after that transition. See
+its commands, messages, or a typed agent channelOperation after that transition. See
 [Restarting processes](../../building-blocks/environments/actions/restarts/index.md).
 
 ## Why did a failed test remove its workspace?

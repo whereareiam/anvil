@@ -5,8 +5,21 @@ package me.whereareiam.anvil.api.scenario;
  */
 public interface ScenarioContext extends ScenarioAccess, AutoCloseable {
 	/**
-	 * Releases players, processes, execution resources, and scenario workspace state.
+	 * Releases the scenario using the caller's outcome for persistence and diagnostics.
+	 * Earlier lifecycle failures still prevent successful finalization.
+	 * Every owned cleanup is attempted; secondary failures are suppressed on the first.
+	 * Repeated finalization does not release resources again.
+	 *
+	 * @param successful whether caller work completed normally
+	 */
+	void finish(boolean successful);
+
+	/**
+	 * Finalizes normally completed caller work. Use {@link #finish(boolean)} with false
+	 * when caller work failed so persistence and diagnostic policies receive that outcome.
 	 */
 	@Override
-	void close();
+	default void close() {
+		finish(true);
+	}
 }

@@ -168,6 +168,11 @@ provider is installed.
 Create an API `ScenarioEngine` with `AnvilLauncher.create(options)`; `EngineOptions` lives in
 `me.whereareiam.anvil.api.model`.
 
+Use `AnvilLauncher.builder().options(options).extension(extension).build()` to add application
+diagnostics or scenario lifecycle observers. Engine extensions use the global API; capabilities,
+platforms, protocols, and agents have their own extension contracts in the
+[documentation](https://anvil.whereareiam.me).
+
 For another tooling integration that needs the foreground shell, use
 `me.whereareiam.anvil:tooling-runner`. It exposes `AnvilRunner` and `EngineOptions`
 without a Gradle API dependency; the Anvil Gradle plugin is one adapter that supplies the
@@ -201,20 +206,10 @@ Each unit owns its provider and matching agent artifacts. The selected agent is 
 automatically into the managed workspace; consumers do not configure agent ports, tokens, or plugin
 paths.
 
-Platform agents discover their transport through `AgentServerProvider` from `agent-api`. Their
-platform code depends on the agent contracts; the packaged runtime supplies the authenticated
-loopback implementation. Host integrations use `AgentClient` for typed operations. The lower-level
-`AgentConnection` accepts request and response models and delegates serialization to its transport.
-The runtime classpath must supply the packaged platform-agent JAR. Anvil does not select artifacts
-by scanning a neighboring `build/libs` directory.
-
-External platform-agent operations implement `AgentOperationProvider` and register typed
-`AgentOperation` descriptors and handlers through `AgentOperationRegistry`. Install their JARs as
-workspace assets under `plugins/anvil-agent-extensions`; the platform agent loads their service
-descriptors automatically. Host capability providers obtain `AgentDirectory` through
-`PlayerCapabilityContext.requireService` and invoke those operations through the borrowed agent
-clients. Native APIs and platform-thread execution are exposed by `PlatformAgent.findService` and
-`PlatformAgent.call`. Detailed extension guidance is available in the documentation.
+Custom capabilities can call typed operations installed in a server or proxy's platform agent.
+Package the native handler separately and install it as a workspace asset. Anvil supplies
+process-scoped request channels to the host capability and replaces their underlying agent connections
+when a process restarts. The [documentation](https://anvil.whereareiam.me) covers the complete extension workflow.
 
 ### Select only the capabilities you need
 
@@ -388,7 +383,7 @@ No core fork. No giant player interface. No waiting for the next Anvil release b
 invented a packet you care about.
 
 The built-in observations wait for a sensible timeout and fail with recent history when the
-expected event never arrives. Add a `Duration` when your server needs special treatment.
+expected channelEvent never arrives. Add a `Duration` when your server needs special treatment.
 
 Providers can retrieve only the capability dependencies declared in their `CapabilityDescriptor`.
 Registered cleanup runs in reverse order, including when capability construction fails. Cleanup
@@ -401,48 +396,16 @@ different backend or without any packet-capability adapter.
 Players can be created dynamically, disconnected, rejoined, or destroyed independently. Installed
 capabilities decide what else they can do.
 
-### Build an external capability without leaking its backend
+### Build an external capability
 
-A capability family keeps its public contract, optional independent implementation, protocol
-adapter, and consumer wiring separate:
+Publish the public capability separately from its implementation so tests can use your domain
+operations. A provider can compose declared capabilities, send typed requests to a native worker,
+or call a server/proxy agent. Native worker extensions bind to the actual client SDK and own their
+packet handling and listener cleanup.
 
-For an external family, use the capability owner's Maven group and stable artifact suffixes such as
-`com.example.anvil:combat-api`, `com.example.anvil:combat-mcprotocol`, and
-`com.example.anvil:combat`. Keep public Java types under `com.example.anvil.combat` and adapter
-classes under `com.example.anvil.combat.internal`. The `me.whereareiam.anvil` group is reserved for
-Anvil's own artifacts.
-
-```text
-combat-api
-  -> anvil-api
-
-combat-common                 (optional independent provider implementation)
-  -> anvil-api
-  -> combat-api
-  -> capability-api
-
-combat-mcprotocol             (MCProtocolLib adaptation)
-  -> anvil-api
-  -> combat-api
-  -> capability-api
-  -> protocol-adapter-api
-
-combat                        (source-free wiring bundle)
-  api          -> combat-api
-  runtimeOnly  -> exactly one of combat-common or combat-mcprotocol
-```
-
-`combat-mcprotocol` never depends on `combat-common`, and neither implementation depends on another
-implementation or wiring module. Both may exist as alternative wiring choices, but they must not
-register two providers for the same `Combat` type. If common code must be shared by multiple
-providers, put its contract in a separate `combat-common-api` and compose it through a dedicated
-provider without making `combat-mcprotocol` depend on the common implementation.
-`protocol-adapter-api` carries opaque backend packet values and has no MCProtocolLib dependency.
-`combat-mcprotocol` adds MCProtocolLib directly for its binding. Because the consumer-facing `combat`
-artifact installs the selected adapter with `runtimeOnly`, ordinary test code sees `Combat` but not
-protocol or provider machinery.
-
-Detailed architecture and publication guidance is available in the documentation.
+Use your own Maven group and packages, register the provider's service descriptor, and install the
+selected implementation through `anvilCapabilities`. The [documentation](https://anvil.whereareiam.me)
+walks through contracts, host and worker adapters, agent handlers, and packaged consumer tests.
 
 ## One server would have been too reasonable
 

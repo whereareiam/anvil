@@ -6,7 +6,7 @@ internal enum class AnvilDependencyBucket(
 ) {
     FRAMEWORK("anvilFramework", "Anvil compile-time framework modules"),
     LAUNCHER("anvilLauncher", "Anvil executable launcher distribution"),
-    CAPABILITIES("anvilCapabilities", "Explicit Anvil player capabilities"),
+    CAPABILITIES("anvilCapabilities", "Explicit Anvil player and agent capabilities"),
     PROTOCOLS("anvilProtocols", "Selected Anvil protocol providers"),
     PLATFORMS("anvilPlatforms", "Anvil platform providers and agents"),
 }

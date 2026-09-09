@@ -29,6 +29,9 @@ public interface ScenarioEngine extends AutoCloseable {
 	/**
 	 * Closes remaining contexts and shared engine resources. Repeated calls have no effect.
 	 * Cleanup attempts all owned resources and preserves secondary failures as suppressed exceptions.
+	 * A startup callback must return or fail before its caller closes the parent engine.
+	 *
+	 * @throws IllegalStateException when called synchronously from a scenario startup callback
 	 */
 	@Override
 	void close();

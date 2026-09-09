@@ -22,9 +22,10 @@ validation.
 
 ## Resolve through the supplied context
 
-`PlatformContext` provides an `ArtifactResolver`, cache root, process work directory, and scenario
-values. Obtain remote content through its artifact resolver so offline mode, integrity checks, and
-cache coordination follow the same contract as the rest of Anvil.
+`PlatformContext` provides a `PlatformArtifactSource`, cache root, process work directory, and
+scenario values. Obtain remote content through `artifactSource` so offline policy and integrity
+checks apply to distribution artifacts and catalog metadata. The source belongs to `platform-api`;
+the provider does not need an artifact-acquisition or cache API dependency.
 
 Return `ResolvedDistribution` with the executable JAR and a description that identifies the selected
 distribution. Use exact artifact paths; do not guess another module's `build/libs` output. Write

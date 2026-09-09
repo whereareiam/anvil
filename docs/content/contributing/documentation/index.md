@@ -28,9 +28,8 @@ Keep Environments and Players together under Building blocks: both supply resour
 workflow. Testing and Scenarios belong under Workflows; they describe automated verification and
 human testing respectively. Integrations comes last under Using Anvil and supports both workflows.
 
-Under Environments, Provisioning covers obtaining platform software, Java, and acquired-artifact
-caching. Workspaces covers assets, persistence, cache snapshots, and cleanup. Keep the acquired
-artifact cache distinct from workspace snapshots, even though they share a cache root.
+Under Environments, Provisioning covers Platform, Java, and Cache, with Artifacts and Snapshots
+under Cache. Workspaces covers assets, persistence, and cleanup.
 
 All readers are developers. Group related tasks under a shared directory; give a coherent task its
 own page. Use `index.md` or `index.mdx` as the page entry and `meta.json` to order meaningful child
@@ -51,7 +50,7 @@ Write the guide body here. Scriptorium displays the frontmatter title above it.
 
 Start with the outcome and prerequisites. Show file placement, dependencies, a complete example or
 explicitly scoped fragment, the invocation, and what success proves. Check public packages and
-symbols against source. Explain failure symptoms beside the operation that can fail.
+symbols against source. Explain failure symptoms beside the channelOperation that can fail.
 
 Use relative content links including the `.md` or `.mdx` extension. Reuse Scriptorium steps, tabs,
 callouts, and partials when they clarify a choice or avoid actual repetition. Shared MDX partials

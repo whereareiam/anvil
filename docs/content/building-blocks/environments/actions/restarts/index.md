@@ -78,6 +78,7 @@ A successful reconnection alone does not prove that plugin data survived.
 | Installed assets | Remain in place; initial asset installation and cache restoration do not repeat |
 | Platform configuration | Reapplied before launch |
 | Agent connection | Reestablished with fresh credentials |
+| Process capability instances | Retained for the logical process; agent-backed operations may be unavailable during replacement |
 | Original process handle | Remains attached to the stopped process |
 | Simulated player | Remains registered; its connection needs an explicit reconnect |
 

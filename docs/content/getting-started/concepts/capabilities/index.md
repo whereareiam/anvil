@@ -1,31 +1,39 @@
 ---
 title: Capabilities
-description: Understand the typed actions and observations attached to each simulated player.
+description: Understand the typed actions and observations owned by players and running processes.
 ---
 
-A capability groups related player behavior behind a Java interface. A player exposes the
-capabilities installed in its runtime, and your journey asks for the interface it needs. For example,
-`Session` controls connections, `Messages` sends chat and observes replies, and `Inventory` works with
-client-observed items and containers.
+A capability groups related behavior behind a Java interface. Retrieve it from the owner whose
+behavior you want to control: a simulated player or a running server or proxy.
 
-In the current API, all capability instances are player-scoped and their interfaces extend
-`PlayerCapability`. An implementation can call a server or proxy agent, but this does not turn it into
-a process-wide capability. Even `Server` describes a particular player's identity and route. General
-process controls are accessed through the running context.
+| Owner | Capability contract | Examples |
+|---|---|---|
+| Player | `PlayerCapability` | `Session` controls connections; `Messages` sends chat and observes replies |
+| Process | `ProcessCapability` | `Console` dispatches native server or proxy commands |
 
-Use a capability when the behavior belongs to a player. Sending a chat command should use that
-player's `Messages`; sending an administrative console command uses the running process's console.
-These operations can have different permissions and trigger different application behavior.
+Both extend the shared `Capability` contract. Ownership determines which object exposes the
+capability and how long its instance lives. It does not determine the implementation mechanism:
+a player capability can use packets or agents, and a process capability can use an agent or
+another implementation. For example, `Server` uses agents to observe one player's identity and
+route, so it still belongs to that player.
+
+Use `Messages` to send a command as a player and `Console` to dispatch it as the process console.
+The two callers can have different permissions and trigger different application behavior.
 
 ## Request behavior by its public type
 
 `alice.capability(Messages.class)` retrieves Alice's message capability. The interface describes the
-operation, while an installed provider implements it for the selected runtime. Tests use the public
+channelOperation, while an installed provider implements it for the selected runtime. Tests use the public
 interface without importing protocol packets, platform SDKs, or transport code.
 
-Installing an API alone does not supply its implementation. Anvil's bundled runtime offers several
-built-in capabilities, and external libraries can provide more. The [capability guide](../../../building-blocks/players/capabilities/index.md)
-lists the available units and their requirements. You will choose those dependencies during setup.
+For a process, use `process.capability(Console.class)`. This does not require creating a player.
+The installed implementation determines whether a capability is available; Anvil's built-in
+`Console` requires the process's platform agent.
+
+Installing an API alone does not supply its implementation. Anvil's bundled runtime offers
+[player capabilities](../../../building-blocks/players/capabilities/index.md) and
+[agent-backed process capabilities](../../../building-blocks/environments/actions/agents/index.md); external
+libraries can provide more. You will choose those dependencies during setup.
 
 ## Example: observe a message delivered to Alice
 
@@ -76,12 +84,18 @@ The `Server` capability observes aggregate identity and routes through platform 
 include a proxy's connected-server report, so it is distinct from inspecting native state directly
 on a particular backend.
 
-## Keep capabilities with their player
+## Keep capabilities with their owner
 
-Capability instances belong to the player from which you retrieved them. Use new instances after
-destroying and replacing that player, and stop using them when the scenario closes. If a required
-capability is missing, retrieval fails with `CapabilityUnavailableException`; do not silently skip
-the behavior your test promises to verify.
+Player capability instances belong to the player from which you retrieved them. Use new instances
+after destroying and replacing that player. Process capability instances belong to the logical
+scenario process and remain the same across JVM restarts. Agent-backed requests can fail while
+the replacement connection is unavailable.
+
+After the scenario closes, capability lookup fails and `hasCapability(...)` returns `false`.
+Stop using previously retrieved capabilities at that point.
+
+If a required capability is missing, retrieval fails with `CapabilityUnavailableException`; do not
+silently skip the behavior your test promises to verify.
 
 For more actions, see [using capabilities](../../../building-blocks/players/capabilities/index.md)
 and [assertions and waits](../../../workflows/testing/assertions/index.md).

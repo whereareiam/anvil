@@ -36,6 +36,10 @@ class SessionPlugin : CapabilityUnitPlugin() {
     override fun capability(registry: AnvilUnitRegistry): String = "builtin-session"
 }
 
+class ConsolePlugin : CapabilityUnitPlugin() {
+    override fun capability(registry: AnvilUnitRegistry): String = "builtin-console"
+}
+
 class ServerPlugin : CapabilityUnitPlugin() {
     override fun capability(registry: AnvilUnitRegistry): String = "builtin-server"
 }

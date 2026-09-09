@@ -9,8 +9,8 @@ composition, and real platforms where the change crosses those boundaries.
 | Change | Verification path |
 |---|---|
 | Local algorithm, cache, file writer, or API behavior | Owning module's unit/focused integration tests |
-| Dependency graph or runtime provider composition | Architecture checks and `testing-runtime` |
-| Packet bindings, sessions, identity, routing, or native agents | Exact worker contracts and `testing-server` |
+| Dependency graph or runtime provider composition | Architecture checks and `anvil-testkit/tests/runtime` |
+| Packet bindings, sessions, identity, routing, or native agents | Exact worker contracts and `anvil-testkit/tests/server` |
 | Published plugin or artifact wiring | Local publication and the standalone consumer |
 | Documentation only | Links, navigation, symbols, and Scriptorium compilation |
 
@@ -21,7 +21,9 @@ composition, and real platforms where the change crosses those boundaries.
 ## Keep test locations predictable
 
 Production modules use ordinary `src/test`, normally mirroring the production package. Cross-module
-runtime and live tests live under their `anvil-testing` modules. Fixture artifacts use `src/main`.
+runtime and live tests live under `anvil-testkit/tests`. The independent fixture consumer build in
+`anvil-testkit/fixtures` uses `src/main` for its executable, plugin, and extension artifacts. Reusable
+host-side artifact access and classloader support belongs in `anvil-testkit/support`.
 Consumer journeys use `src/anvil` in the standalone example.
 
 Do not combine live and non-live methods in one test class behind tags. Keep assertions about Anvil

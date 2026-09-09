@@ -18,7 +18,7 @@ Declare a `WorkspacePlan` on the server or proxy builder. Its four concerns are 
 |---|---|
 | [Assets](./assets/index.md) | Place supplied plugin JARs, configuration, and fixture files at workspace-relative targets |
 | [Persistence](./persistence/index.md) | Choose whether a process gets a fresh directory or reuses its retained files |
-| [Cache snapshots](./caches/index.md) | Restore and save selected generated paths across executions |
+| [Snapshots](../provisioning/cache/snapshots/index.md) | Restore and save selected generated paths across executions |
 | [Cleanup](./cleanup/index.md) | Delete selected paths at declared lifecycle phases |
 
 Start with assets in a fresh workspace for a repeatable test. Choose persistence when retaining the
@@ -26,15 +26,7 @@ whole directory is part of the task, or use snapshots to reuse specific generate
 rules for files that should be reset at a defined point. Assigning the same `group` label to declarations
 does not couple their behavior.
 
-## Keep working state separate from acquired inputs
-
-Process workspaces normally live below `build/anvil`. The shared cache normally lives at `~/.anvil`.
-That cache root contains distinct kinds of data: [provisioned software and metadata](../provisioning/cache/index.md),
-workspace snapshots, and provider-owned state such as authentication profiles.
-
-A workspace snapshot is a copy of a declared path. It does not inherit the download cache's artifact
-verification contract, and it does not make the entire workspace persistent. Each policy must be
-chosen explicitly.
+Process workspaces normally live below `build/anvil`.
 
 These file rules are shared by [Testing](../../../workflows/testing/index.md) and
 [Scenarios](../../../workflows/scenarios/index.md). Choose the workflow after preparing the inputs;

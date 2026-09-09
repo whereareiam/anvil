@@ -1,12 +1,12 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
-import me.whereareiam.anvil.protocol.adapter.api.player.ProtocolWorkerPlayer;
-import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerPlayerEvent;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolSubscription;
+import me.whereareiam.anvil.protocol.api.worker.NativePlayer;
+import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageWriter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -33,21 +33,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /**
  * MCProtocolLib-bound core player state shared with worker capabilities through a narrow provider API.
  */
 @RequiredArgsConstructor
 @Accessors(fluent = true)
-final class McProtocolPlayer implements ProtocolWorkerPlayer, AutoCloseable {
-	private static final String DISCONNECT_REASON_FIELD = "reason";
+final class McProtocolPlayer implements NativePlayer<ClientSession>, AutoCloseable {
 	private static final String CLIENT_LOCALE = "en_us";
 	private static final int VIEW_DISTANCE = 8;
 
@@ -61,15 +56,38 @@ final class McProtocolPlayer implements ProtocolWorkerPlayer, AutoCloseable {
 	private final @Nullable String accessToken;
 	private final WorkerMessageWriter events;
 	private final WorkerCapabilityRegistry capabilities;
-	@Getter
-	private final @NotNull ObjectMapper mapper = new ObjectMapper();
+
+	private final @NotNull WorkerMessageCodec codec = new WorkerMessageCodec();
 	private final PlainTextComponentSerializer plain = PlainTextComponentSerializer.plainText();
-	private final AtomicInteger sequence = new AtomicInteger();
 	private final AtomicBoolean disconnectNotified = new AtomicBoolean();
-	private final Map<Class<?>, Object> capabilityState = new ConcurrentHashMap<>();
+	private final NativeSessionBindings nativeBindings = new NativeSessionBindings();
+
+	private WorkerCapabilityRegistry.PlayerBindings bindings;
 	private volatile @Nullable ClientSession session;
 	private volatile float yaw;
 	private volatile float pitch;
+
+	void initialize() {
+		try {
+			bindings = capabilities.bind(this);
+		} catch (RuntimeException | Error failure) {
+			try {
+				close();
+			} catch (RuntimeException | Error cleanup) {
+				if (failure != cleanup) failure.addSuppressed(cleanup);
+			}
+			throw failure;
+		}
+	}
+
+	@NotNull JsonNode execute(@NotNull String operation, @NotNull JsonNode arguments) {
+		return bindings.execute(operation, arguments);
+	}
+
+	@Override
+	public @NotNull UUID uniqueId() {
+		return uuid;
+	}
 
 	@Override
 	public synchronized void connect() {
@@ -84,6 +102,7 @@ final class McProtocolPlayer implements ProtocolWorkerPlayer, AutoCloseable {
 
 		created.addListener(new Listener());
 		session = created;
+		nativeBindings.attach(created);
 		created.connect(true);
 	}
 
@@ -102,26 +121,26 @@ final class McProtocolPlayer implements ProtocolWorkerPlayer, AutoCloseable {
 	}
 
 	@Override
-	public void send(@NotNull Object packet) {
+	public @NotNull ClientSession backend() {
 		ClientSession current = session;
 		if (current == null || !current.isConnected())
 			throw new IllegalStateException("Player '" + name + "' is not connected");
-		if (!(packet instanceof Packet mcPacket))
-			throw new IllegalArgumentException("MCProtocol worker received an unsupported packet: "
-					+ packet.getClass().getName());
-		current.send(mcPacket);
+		return current;
 	}
 
 	@Override
-	public void emit(@NotNull String event, @NotNull Consumer<ObjectNode> payload) {
-		ObjectNode value = mapper.createObjectNode();
-		payload.accept(value);
-		events.event(id, event, value);
+	public boolean isCurrentBackend(@NotNull ClientSession backend) {
+		return session == backend;
 	}
 
 	@Override
-	public @NotNull <T> T state(@NotNull Class<T> key, @NotNull Supplier<T> factory) {
-		return key.cast(capabilityState.computeIfAbsent(key, ignored -> factory.get()));
+	public synchronized @NotNull ProtocolSubscription bindBackend(@NotNull Function<ClientSession, ProtocolSubscription> listener) {
+		return nativeBindings.register(listener);
+	}
+
+	@Override
+	public void emit(@NotNull String event, byte @NotNull [] payload) {
+		events.event(id, event, WorkerMessageCodec.message(payload));
 	}
 
 	@Override
@@ -141,15 +160,12 @@ final class McProtocolPlayer implements ProtocolWorkerPlayer, AutoCloseable {
 	}
 
 	@Override
-	public int nextSequence() {
-		return sequence.incrementAndGet();
-	}
-
-	@Override
 	public void close() {
-		disconnect();
-		session = null;
-		capabilityState.clear();
+		try (nativeBindings; var ignored = bindings) {
+			disconnect();
+		} finally {
+			session = null;
+		}
 	}
 
 	private final class Listener extends SessionAdapter {
@@ -169,7 +185,7 @@ final class McProtocolPlayer implements ProtocolWorkerPlayer, AutoCloseable {
 						true,
 						ParticleStatus.ALL
 				));
-				emit(WorkerPlayerEvent.CONNECTED.getWireName(), ignored -> { });
+				emit("player.connection", codec.connection(true, null));
 			}
 
 			if (packet instanceof ClientboundPlayerPositionPacket position) {
@@ -181,7 +197,6 @@ final class McProtocolPlayer implements ProtocolWorkerPlayer, AutoCloseable {
 			if (packet instanceof ClientboundDisconnectPacket disconnect) disconnected(disconnect.getReason());
 			if (packet instanceof ClientboundLoginDisconnectPacket disconnect) disconnected(disconnect.getReason());
 
-			capabilities.packet(McProtocolPlayer.this, packet);
 		}
 
 		@Override
@@ -192,7 +207,7 @@ final class McProtocolPlayer implements ProtocolWorkerPlayer, AutoCloseable {
 
 		private void disconnected(Component reason) {
 			if (!disconnectNotified.compareAndSet(false, true)) return;
-			emit(WorkerPlayerEvent.DISCONNECTED.getWireName(), payload -> payload.put(DISCONNECT_REASON_FIELD, plain.serialize(reason)));
+			emit("player.connection", codec.connection(false, plain.serialize(reason)));
 		}
 	}
 }

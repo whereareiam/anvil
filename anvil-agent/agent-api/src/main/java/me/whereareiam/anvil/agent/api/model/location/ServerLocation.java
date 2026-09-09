@@ -10,8 +10,8 @@ import org.jetbrains.annotations.NotNull;
 @Value
 @Builder
 public class ServerLocation implements AgentLocation {
-    /**
-     * Server name.
-     */
-    @NotNull String server;
+	/**
+	 * Server name.
+	 */
+	@NotNull String server;
 }

@@ -16,10 +16,10 @@ publishing {
 }
 
 dependencies {
-    compileOnly(projects.anvilAgent.agentApi)
+    compileOnly(projects.anvilAgent.agentServer.serverApi)
     compileOnly(libs.paper)
 
-    embedded(projects.anvilAgent.agent) { isTransitive = false }
+    embedded(projects.anvilAgent.agentServer) { isTransitive = false }
 }
 
 tasks.processResources {
