@@ -19,7 +19,7 @@ Implement `me.whereareiam.anvil.platform.api.PlatformProvider` and register its 
 | `configurationType()` | Supported declaration type, such as `MinecraftServer` or `MinecraftProxy` |
 | `validateDistribution(process)` | Selector validation without downloads or process execution |
 | `resolve(process, context)` | Verified executable JAR and a useful description |
-| `configure(process, context)` | Platform configuration using the engine's runtime values |
+| `configure(process, context)` | Platform configuration using the allocated runtime values |
 | `readinessPattern()` | Log expression that marks the process ready for players |
 | `minimumJavaVersion(process)` | Minimum Java feature version for this distribution |
 
@@ -39,8 +39,9 @@ runtime ports inside `configure`.
 
 ## Follow the provisioning sequence
 
-The engine validates selectors and topology, prepares artifacts and declared assets, then calls
-provider configuration in declaration order. Configure the files from the supplied workspace rather
+Platform planning validates selectors and topology. The assembled preparation path resolves
+artifacts and declared assets, then calls provider configuration in declaration order. Configure
+the files from the supplied workspace rather
 than assuming no files exist. Runtime-owned settings take precedence over prepared assets.
 
 [Distributions and configuration](./distributions/index.md) covers this boundary in detail.

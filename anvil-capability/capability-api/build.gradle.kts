@@ -4,7 +4,7 @@ plugins {
     id("unit")
 }
 
-description = "Public contracts for dependency-discovered Anvil capabilities"
+description = "Shared capability composition, player lifecycle, and typed request contracts"
 
 dependencies {
     api(projects.anvilApi)

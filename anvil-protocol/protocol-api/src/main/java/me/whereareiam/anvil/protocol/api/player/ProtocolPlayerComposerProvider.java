@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
  * Service-provider contract for the public player composition layer.
  */
 public interface ProtocolPlayerComposerProvider {
-	/**
+	/*
 	 * Returns the stable composer identifier.
 	 *
 	 * @return composer identifier

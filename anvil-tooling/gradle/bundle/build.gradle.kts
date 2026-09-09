@@ -38,6 +38,12 @@ gradlePlugin {
             displayName = "Anvil Session Capability"
             description = "Includes the built-in Session capability"
         }
+        create("anvilCapabilityConsole") {
+            id = "me.whereareiam.anvil.capability.console"
+            implementationClass = "me.whereareiam.anvil.gradle.unit.ConsolePlugin"
+            displayName = "Anvil Console Capability"
+            description = "Includes the agent-owned Console capability"
+        }
         create("anvilCapabilityServer") {
             id = "me.whereareiam.anvil.capability.server"
             implementationClass = "me.whereareiam.anvil.gradle.unit.ServerPlugin"

@@ -3,7 +3,7 @@
 # build tooling
 shadow = "9.6.1"
 freefair = "9.5.0"
-toolkit = "dev-a4c6f1b"
+toolkit = "dev-757d944"
 
 # compile time processing
 lombok = "1.18.42"
@@ -45,6 +45,7 @@ commons-compress = { group = "org.apache.commons", name = "commons-compress", ve
 docker-java = { group = "com.github.docker-java", name = "docker-java", version.ref = "dockerJava" }
 docker-java-transport-zerodep = { group = "com.github.docker-java", name = "docker-java-transport-zerodep", version.ref = "dockerJava" }
 jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
+jackson-parameters = { group = "com.fasterxml.jackson.module", name = "jackson-module-parameter-names", version.ref = "jackson" }
 jackson-toml = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-toml", version.ref = "jackson" }
 jackson-yaml = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-yaml", version.ref = "jackson" }
 slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }

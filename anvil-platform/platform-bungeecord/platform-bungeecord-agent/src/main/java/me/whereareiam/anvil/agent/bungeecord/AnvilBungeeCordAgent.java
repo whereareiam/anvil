@@ -1,12 +1,12 @@
 package me.whereareiam.anvil.agent.bungeecord;
 
-import me.whereareiam.anvil.agent.api.platform.PlatformAgent;
-import me.whereareiam.anvil.agent.api.transport.AgentServer;
-import me.whereareiam.anvil.agent.api.transport.AgentServerProvider;
-import me.whereareiam.anvil.agent.api.model.location.ProxyLocation;
-import me.whereareiam.anvil.agent.api.model.AgentIdentity;
 import me.whereareiam.anvil.agent.api.model.AgentInfo;
+import me.whereareiam.anvil.agent.server.api.PlatformAgent;
+import me.whereareiam.anvil.agent.server.api.transport.AgentServer;
+import me.whereareiam.anvil.agent.server.api.transport.AgentServerProvider;
 import me.whereareiam.anvil.agent.api.type.AgentRole;
+import me.whereareiam.anvil.agent.api.model.AgentIdentity;
+import me.whereareiam.anvil.agent.api.model.location.ProxyLocation;
 import me.whereareiam.anvil.api.type.Platforms;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Plugin;

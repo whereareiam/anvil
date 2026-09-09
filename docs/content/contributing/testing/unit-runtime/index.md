@@ -6,9 +6,9 @@ description: Run the closest regression test before architecture and cross-modul
 Run a focused test in its owning module first. For example, after changing capability composition:
 
 ```shell
-./gradlew :anvil-capability:capability-runtime:test
+./gradlew :anvil-capability:test
 ./gradlew verifyArchitecture
-./gradlew :anvil-testing:testing-runtime:test
+./gradlew :anvil-testkit:tests:runtime:test
 ```
 
 A focused integration test can use temporary files, sockets, isolated protocol workers, or Gradle
@@ -16,26 +16,40 @@ TestKit without starting Minecraft. Its location follows the owner of the behavi
 
 ## Use the relevant module suite
 
-| Owner | Task |
-|---|---|
-| Scenario orchestration | `:anvil-engine:test` |
-| Agent transport and extension loading | `:anvil-agent:agent-common:test` |
-| Capability discovery and composition | `:anvil-capability:capability-runtime:test` |
-| MCProtocol backend and worker contracts | `:anvil-protocol:protocol-mcprotocol:test` |
-| Gradle scenario tooling | `:anvil-tooling:gradle:scenarios:test` |
-| Curated plugin composition | `:anvil-tooling:gradle:bundle:test` |
+| Owner                                                   | Task                                                          |
+|---------------------------------------------------------|---------------------------------------------------------------|
+| Global registration, extensions, and scenario lifecycle | `:anvil-engine:test`                                          |
+| Default scoped-service assembly and ownership           | `:anvil-launcher:test`                                        |
+| Cache entry access and publication                      | `:anvil-environment:cache:test`                               |
+| Artifact acquisition                                    | `:anvil-environment:provisioning:provisioning-artifact:test`  |
+| Java provisioning                                       | `:anvil-environment:provisioning:provisioning-java:test`      |
+| Workspace policies and snapshots                        | `:anvil-environment:provisioning:provisioning-workspace:test` |
+| Process lifecycle and restarts                          | `:anvil-environment:execution:execution-managed:test`         |
+| Platform planning and forwarding                        | `:anvil-platform:platform-planning:test`                      |
+| Player registration and observations                    | `:anvil-protocol:test`                                        |
+| Agent clients, sessions, and observations                | `:anvil-agent:agent-client:test`                              |
+| Native agent dispatch and extension loading              | `:anvil-agent:agent-server:test`                              |
+| Capability discovery and composition                    | `:anvil-capability:test`                                      |
+| MCProtocol backend and worker contracts                 | `:anvil-protocol:protocol-mcprotocol:test`                    |
+| Gradle scenario tooling                                 | `:anvil-tooling:gradle:scenarios:test`                        |
+| Curated plugin composition                              | `:anvil-tooling:gradle:bundle:test`                           |
 
 Use `--tests '*ClassName'` to select the regression class when appropriate. Tests should establish an
 observable contract or failure outcome, rather than repeat the implementation's steps.
 
+Workspace tests mirror the `directory`, `preparation`, and `snapshot` implementation packages.
+Agent client tests exercise host lifetimes and connections; server tests exercise embedded handlers
+and endpoints. Cross-process assertions belong in the live suite, with the independently compiled
+fixture checking the public client and server API dependencies.
+
 ## Check cross-module discovery
 
-`anvil-testing/testing-runtime` exercises provider selection and capability composition without
+`anvil-testkit/tests/runtime` exercises provider selection and capability composition without
 Minecraft. It consumes actual runtime dependencies and the separately built external-extension JAR.
 
 ```shell
-./gradlew :anvil-testing:testing-runtime:test
-./gradlew :anvil-testing:testing-runtime:test --tests '*ExternalProviderDiscoveryIntegrationTest'
+./gradlew :anvil-testkit:tests:runtime:test
+./gradlew :anvil-testkit:tests:runtime:test --tests '*ExternalProviderDiscoveryIntegrationTest'
 ```
 
 Use these tests for automatic and explicit provider selection, ambiguity, missing dependencies,

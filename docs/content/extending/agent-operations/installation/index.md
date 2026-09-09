@@ -3,14 +3,14 @@ title: Installing agent operations
 description: Package the handler and add it to each target process as a workspace asset.
 ---
 
-The managed JVM loads operation JARs from `plugins/anvil-agent-extensions`. Adding a host dependency
+The managed JVM loads channelOperation JARs from `plugins/anvil-agent-extensions`. Adding a host dependency
 to `anvilCapabilities` makes it available to Anvil; install the platform handler separately as a
 workspace asset.
 
 ## Build the JAR
 
-Package the handler, shared operation contract, and implementation dependencies together, or install
-the dependency JARs in the same extension directory. Preserve the operation-provider service file
+Package the handler, shared channelOperation contract, and implementation dependencies together, or install
+the dependency JARs in the same extension directory. Preserve the channelOperation-provider service file
 when shading. Do not bundle Anvil agent APIs or the platform SDK; those classes come from the parent
 loader supplied by the platform agent.
 
@@ -49,7 +49,7 @@ WorkspacePlan workspace = WorkspacePlan.builder().asset(extension).build();
 ```
 
 Pass `workspace` to `.workspace(workspace)` on the target `MinecraftServer` or `MinecraftProxy`
-builder. Include the asset in each process that must handle the operation. If the process already
+builder. Include the asset in each process that must handle the channelOperation. If the process already
 has a workspace plan, add the asset to that plan so its other declarations remain present. Assets
 are installed before provider configuration and process startup.
 
@@ -61,9 +61,9 @@ to load a new handler.
 ## Verify installation
 
 Run the [Echo capability assertion](../../capabilities/contracts/index.md) against a named process
-with a platform agent. If the operation is unavailable, inspect that process's `anvil-console.log`
+with a platform agent. If the channelOperation is unavailable, inspect that process's `anvil-console.log`
 and the packaged service file. A class-loading failure usually requires checking the contract JAR,
 implementation dependencies, or duplicate copies of parent-provided APIs.
 
-Keep the host's operation-contract dependency and the installed handler's contract version aligned.
-For a real native operation, verify the application result in addition to successful dispatch.
+Keep the host's channelOperation-contract dependency and the installed handler's contract version aligned.
+For a real native channelOperation, verify the application result in addition to successful dispatch.

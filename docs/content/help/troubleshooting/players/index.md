@@ -26,7 +26,7 @@ lists the intended backend and has a valid default server. See
 | A declared dependency is unavailable | Install compatible wiring for the predecessor capabilities |
 | The same capability has competing providers | Keep one selected implementation for that type and protocol |
 | An external adapter is ignored | Check its declared protocol IDs and service descriptor |
-| An agent operation is unknown | Install the extension JAR under `plugins/anvil-agent-extensions` and verify its operation namespace |
+| An agent channelOperation is unknown | Install the extension JAR under `plugins/anvil-agent-extensions` and verify its channelOperation namespace |
 
 Provider selection happens before capability composition. MCProtocol-specific adapters do not
 become compatible with another backend by putting them on its classpath. See
@@ -37,13 +37,13 @@ become compatible with another backend by putting them on its classpath. See
 
 A client connection proves a protocol session was established. To verify the backend, use the
 Server capability's observed route and identity. Its joined wait can be satisfied by a proxy agent's
-connected-backend report; use a backend-specific operation if you need independent confirmation
+connected-backend report; use a backend-specific channelOperation if you need independent confirmation
 inside that server. A successful reconnect by itself does not prove
 that your plugin restored data; assert the plugin-specific behavior after reconnecting.
 
 Use bounded capability waits for messages, connection changes, and backend arrival. A fixed sleep
 only delays the test. If a wait times out, inspect the reported recent history and confirm that the
-action actually triggers the expected event. When old messages could satisfy an assertion, use the
+action actually triggers the expected channelEvent. When old messages could satisfy an assertion, use the
 distinct message text for each action, and inspect the captured history as described in [Messages](../../../building-blocks/players/capabilities/messages/index.md).
 
 For online players, verify that the selected profile exists in the same private cache root used by

@@ -1,75 +1,189 @@
 ---
 title: Protocol adapters
-description: Implement capability behavior through an explicit backend service and MCProtocol worker extension.
+description: Connect a typed capability channel to a worker extension using the selected native client SDK.
 ---
 
-Use a protocol adapter for behavior carried by the native player's connection. The public capability
-continues to depend on `anvil-api`; its implementation depends on the selected backend's execution
-service API and packet library.
+Use a protocol adapter for behavior carried by the native player's connection. Keep your public
+capability and request models in a feature API, depending on `me.whereareiam.anvil:api`. Put provider
+and worker registration in the wiring artifact, which adds `me.whereareiam.anvil:capability-protocol-api`.
+The native implementation uses the actual backend SDK. For MCProtocol, that SDK context is
+`org.geysermc.mcprotocollib.network.ClientSession`.
 
-For the bundled `mcprotocol` backend, the extension surface is `protocol-adapter-api`. Host providers
-use `ProtocolPlayerConnection`; worker adapters use `ProtocolWorkerPlayer`. Packet values on the
-worker side are MCProtocolLib values. These contracts do not translate packets from unrelated
-client libraries.
+Host providers call `ProtocolPlayerCapabilityContext.channel()`. Worker extensions implement
+`WorkerExtension<ClientSession>` from the protocol capability API. Its `bind` method receives a
+`PlayerBindingContext<ClientSession>` for native SDK access and an `OperationRegistry` for typed
+handlers. The runtime owns serialization and transport; your extension owns the operations, native
+packets, and player-specific state.
 
-## Connect the host and worker halves
+## Define a shared channelOperation
 
-1. Implement `PlayerCapabilityProvider` in your capability artifact. Set its supported protocol ID
-   to `mcprotocol` and declare actual predecessor capabilities.
-2. Obtain `ProtocolPlayerConnection` through `context.requireService(...)` in `create`.
-3. Implement `ProtocolCapabilityAdapter` with an `id()` matching the host provider's descriptor ID.
-4. Register operations and inbound packet listeners during `install`.
-5. Check `connection.workerCapabilities()` before creating a host implementation that requires the
-   worker adapter. An adapter excluded by `supports(protocolNumber)` will not appear in that set.
+This diagnostic channelOperation returns a supplied message without sending a game packet. It checks the
+host/worker installation path. Put the request in your feature API and the channelOperation descriptor in
+your wiring artifact, both under `src/main/java/com/example/roundtrip`. Enable Lombok and Java's
+`-parameters` compiler option for immutable request construction.
 
-The worker adapter's service file is
-`META-INF/services/me.whereareiam.anvil.protocol.adapter.api.capability.ProtocolCapabilityAdapter`.
-Its content is the fully qualified implementation class name. The host provider needs its own
-[capability service descriptor](../../packaging/index.md).
-
-## Register an operation
-
-This scoped fragment belongs in `ProtocolCapabilityAdapter.install`, where `registry` is its
-`ProtocolCapabilityAdapterRegistry` parameter. It registers a round-trip diagnostic operation
-without sending a game packet:
+`RoundTripRequest.java`:
 
 ```java
-registry.operation("com.example.echo.roundtrip", (player, arguments) ->
-		player.mapper().createObjectNode().put("message", arguments.path("message").asText()));
+package com.example.roundtrip;
+
+import lombok.Value;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * Message passed to the worker diagnostic channelOperation.
+ */
+@Value
+public class RoundTripRequest {
+	@NotNull String message;
+}
 ```
 
-The corresponding host fragment assumes `connection` was resolved in the provider's `create` method:
+`RoundTripOperations.java`:
 
 ```java
-String reply = connection.request("com.example.echo.roundtrip",
-		arguments -> arguments.put("message", "hello")).path("message").asText();
+package com.example.roundtrip;
+
+import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
+
+/**
+ * Shared descriptors used by the host provider and native worker extension.
+ */
+public final class RoundTripOperations {
+	/**
+	 * Returns the request message from the worker.
+	 */
+	public static final ChannelOperation<RoundTripRequest, String> ROUNDTRIP = new ChannelOperation<>(
+			"com.example.roundtrip.message.v1", RoundTripRequest.class, String.class
+	);
+}
 ```
 
-For packet behavior, use `registry.packets(...)` to inspect inbound packets and
-`ProtocolWorkerPlayer.send(...)` to send the backend's packet types. Store per-player adapter state
-with `player.state(State.class, State::new)` and emit namespaced host events with `player.emit(...)`.
-`connection.subscribe(...)` observes those events for that host player. Packet listeners receive
-packets for every worker player, so shared listener fields must not accidentally mix player state.
+The descriptor binds a namespaced channelOperation ID to explicit request and response classes. Use a new
+ID when changing its payload contract. MCProtocol requests use immutable object models, or `Void`
+for an channelOperation with no request. Keep packet-library types and transport annotations out of these
+models; the bundled codec supports constructors whose parameter names are retained by `-parameters`.
 
-## Keep registration and version support explicit
+## Bind behavior to a player
 
-Operation names must contain a namespace separator (`.` or `:`), and must be globally unique.
-`create`, `destroy`, and `shutdown` are reserved lifecycle operations. Registration is accepted only
-during the adapter's installation call. Choose stable names owned by your extension, such as
-`com.example.combat.attack`.
+Put this registration class in your wiring artifact's `src/main/java/com/example/roundtrip/mcprotocol`
+directory. Its compile dependencies are your feature API, Anvil's `capability-protocol-api`, and the MCProtocol
+SDK matching the native runtimes you support. For a real feature, delegate packet behavior to a
+focused native implementation that depends on its feature API and the SDK.
 
-Override `supports(int protocolNumber)` for packet bindings that only support specific protocols.
-Returning `true` by default is appropriate only when the adapter actually supports every worker
-runtime on which it can be installed. The selected native codec is resolved by the backend catalog;
-adding a capability does not add a new codec or a new catalog version.
+```java
+package com.example.roundtrip.mcprotocol;
 
-## Test the real boundary
+import com.example.roundtrip.RoundTripOperations;
+import me.whereareiam.anvil.capability.api.channel.OperationRegistry;
+import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
+import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerBinding;
+import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerExtension;
+import org.geysermc.mcprotocollib.network.ClientSession;
+import org.jetbrains.annotations.NotNull;
 
-Test host requests against the packaged worker adapter at every supported catalog version. Include
-unsupported-version diagnostics, duplicate registration, packet observations, and player destruction.
-For game actions, assert the result through a real server observation as well as the request result.
-The repository's [live and worker tests](../../../contributing/testing/live/index.md) show the relevant
-verification commands.
+/**
+ * Registers a diagnostic channelOperation for each MCProtocol player.
+ */
+public final class RoundTripExtension implements WorkerExtension<ClientSession> {
+	@Override
+	public @NotNull String id() {
+		return "com.example.roundtrip";
+	}
 
-For another client library, expose a service owned by that backend's public adapter API and implement
-the capability against it. See [Protocol providers](../../protocol-providers/index.md).
+	@Override
+	public @NotNull String backendId() {
+		return "mcprotocol";
+	}
+
+	@Override
+	public @NotNull Class<ClientSession> backendType() {
+		return ClientSession.class;
+	}
+
+	@Override
+	public @NotNull WorkerBinding bind(
+			@NotNull PlayerBindingContext<ClientSession> bindingContext,
+			@NotNull OperationRegistry operations
+	) {
+		operations.register(RoundTripOperations.ROUNDTRIP, request -> request.getMessage());
+		return () -> { };
+	}
+}
+```
+
+`PlayerBindingContext` supplies the existing player's SDK session, connection lifecycle, and event
+emission to this binding. Keep the binding's state in the object returned from `bind`.
+`OperationRegistry` accepts the shared descriptor and a typed handler; encoding and decoding stay
+outside the feature implementation.
+
+Create `src/main/resources/META-INF/services/me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerExtension`
+in the adapter artifact containing:
+
+```text
+com.example.roundtrip.mcprotocol.RoundTripExtension
+```
+
+The host `ProtocolPlayerCapabilityProvider` needs its own [service descriptor](../../packaging/index.md).
+Give its descriptor the matching capability ID `com.example.roundtrip` and return `Set.of("mcprotocol")`
+from `supportedProtocolIds()`.
+Obtain `CapabilityChannel channel = context.channel()` from `capability.protocol.api.player.channel` during
+its `create` method and check that
+`channel.installedCapabilities()` contains the capability ID before constructing the host capability.
+
+With that channel, this fragment performs the diagnostic request:
+
+```java
+import com.example.roundtrip.RoundTripOperations;
+import com.example.roundtrip.RoundTripRequest;
+
+String reply = channel.request(RoundTripOperations.ROUNDTRIP, new RoundTripRequest("hello"));
+```
+
+The reply should be `hello`. This proves the registered worker channelOperation ran; it does not establish
+that a Minecraft server accepted a game action.
+
+## Own native state and listeners
+
+Within the binding, call `bindingContext.backend().send(...)` with actual MCProtocol packet values.
+`backend()` requires a connected player and returns that connection generation's session. Resolve
+it when sending rather than retaining it across a reconnect.
+
+Attach native listeners through `bindingContext.bindBackend(...)`. Its callback receives each replacement
+session before login starts and returns a `Subscription` that removes that session's listeners.
+In native callbacks, check `bindingContext.isCurrentBackend(session)` before updating observations; a
+callback already in flight can outlive listener removal. Close the returned registration from your
+`WorkerBinding.close()`. Keep state such as inventory contents and action counters in an object
+created by `bind`, so different players cannot share it.
+
+An `EventDescriptor<E>` declares the event ID and payload class shared by the worker and host.
+Send a value with `bindingContext.emit(eventDescriptor, payload)` and receive that value through
+`channel.subscribe(eventDescriptor, listener)`. For example, a connection event carries a
+`PlayerConnectionEvent` value; the descriptor identifies how to deliver and decode it. Use `Void`
+with a `null` payload when an event carries no value.
+
+Register host subscription cleanup with `context.onDestroy(...)`. `bindingContext.viewRotation()`
+returns the shared `ViewRotation`: yaw and pitch in degrees, including server corrections. Movement
+updates this state when sending a new direction, and interaction reads it for the current view.
+Calling `bindingContext.viewRotation(rotation)` records the value; the native adapter remains
+responsible for sending the packet.
+
+## Declare support and verify it
+
+Override `supports(int protocolNumber)` when your native bindings support a limited set of protocols.
+The worker checks the backend ID and exact SDK context type before binding. Extensions excluded by
+version support are absent from `installedCapabilities()`. Native extensions load in the selected
+worker JVM. MCProtocol selects the protocol-library JAR from its pinned catalog and starts that
+worker with the Java executable of the Anvil JVM.
+
+Operation IDs must be unique and namespaced. The lifecycle IDs `create`, `destroy`, and `shutdown`
+are reserved. Register operations only during `bind`; a capability cannot add handlers after its
+player is exposed.
+
+Test the packaged adapter at every supported catalog version. Cover requests, events, malformed
+payloads, duplicate registration, per-player isolation, and cleanup. Exercise reconnects to catch
+duplicate listeners and stale-session observations. For game actions, assert the result through a
+real server observation. See the repository's [live and worker tests](../../../contributing/testing/live/index.md).
+
+For another client library, bind to its actual SDK context or expose a stable backend-specific
+service. See [Protocol providers](../../protocol-providers/index.md).

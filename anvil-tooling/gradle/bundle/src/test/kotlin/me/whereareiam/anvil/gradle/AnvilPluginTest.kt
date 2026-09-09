@@ -15,6 +15,7 @@ import kotlin.io.path.writeText
 
 class AnvilPluginTest {
     private val testedVersion = requireNotNull(System.getProperty("anvil.test.version"))
+
     @TempDir
     lateinit var projectDirectory: Path
 
@@ -111,19 +112,21 @@ class AnvilPluginTest {
     }
 
     @Test
-    fun `capability unit plugin selects its wiring`() {
+    fun `player and agent capability unit plugins select their wiring`() {
         writeSettings()
         writeBuild(
             """
             plugins {
                 id("me.whereareiam.anvil.scenarios")
                 id("me.whereareiam.anvil.capability.inventory")
+                id("me.whereareiam.anvil.capability.console")
             }
             """.trimIndent()
         )
 
         val result = runner("dependencies", "--configuration", "anvilCapabilities").build()
         assertContains(result.output, "me.whereareiam.anvil:builtin-inventory:$testedVersion")
+        assertContains(result.output, "me.whereareiam.anvil:builtin-console:$testedVersion")
     }
 
     @Test
@@ -327,19 +330,22 @@ class AnvilPluginTest {
     }
 
     private fun writeEulaScenario() {
-        writeJava("example/EulaProtocolProvider.java", """
+        writeJava(
+            "example/EulaProtocolProvider.java", """
             package example;
             import java.nio.file.Path;
             import me.whereareiam.anvil.protocol.api.provider.ProtocolProvider;
-import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver;
+            import me.whereareiam.anvil.protocol.api.provider.ProtocolRuntimeResolver;
             import me.whereareiam.anvil.protocol.api.provider.ProtocolBackend;
             public final class EulaProtocolProvider implements ProtocolProvider {
                 public String id() { return "eula-fixture"; }
-                public ProtocolBackend create(Path cache, ArtifactResolver artifacts) {
+                public ProtocolBackend create(Path cache, ProtocolRuntimeResolver artifacts) {
                     throw new AssertionError("EULA validation must happen before backend creation");
                 }
             }
-        """.trimIndent())
+        """.trimIndent()
+        )
+
         projectDirectory.resolve("src/anvil/resources/META-INF/services/me.whereareiam.anvil.protocol.api.provider.ProtocolProvider")
             .also { it.parent.createDirectories() }.writeText("example.EulaProtocolProvider\n")
         writeJava(
@@ -434,7 +440,7 @@ import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver;
                 .protectionDomain.codeSource.location.toURI()
         ).toString()
         entries += Path.of(
-            Class.forName("me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver")
+            Class.forName("me.whereareiam.anvil.protocol.api.provider.ProtocolRuntimeResolver")
                 .protectionDomain.codeSource.location.toURI()
         ).toString()
         entries += Path.of(

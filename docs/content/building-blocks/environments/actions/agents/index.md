@@ -1,85 +1,105 @@
 ---
 title: Interacting through agents
-description: Run typed native operations inside a named server or proxy through its platform agent.
+description: Use process capabilities backed by native server or proxy agents without creating a player.
 ---
 
-Use a platform agent when a test needs to read or change state through the server or proxy's native
-API. The agent runs inside the managed process. An operation can inspect world or plugin state,
-query proxy configuration, or perform other work that does not involve an online player.
+Use an agent-backed process capability when a test needs to read or change state through the
+server or proxy's native API. Retrieve the capability directly from the running process. The
+process owns the behavior; its platform agent supplies the native implementation. This does not
+require a simulated player or a game session.
 
-## Choose the interaction you need
+## Execute a native command
+
+This complete helper expects a running Paper or Spigot process named `lobby`. Apply its platform
+unit and the `me.whereareiam.anvil.capability.console` unit, or use the umbrella Anvil plugin with
+the platform unit. Put the helper in `src/anvil/java/com/example/test/AgentChecks.java` and call
+`AgentChecks.announce(anvil)` from a test receiving `ScenarioContext anvil`:
+
+```java
+package com.example.test;
+
+import me.whereareiam.anvil.api.scenario.ScenarioContext;
+import me.whereareiam.anvil.capability.console.Console;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public final class AgentChecks {
+	public static void announce(ScenarioContext anvil) {
+		var lobby = anvil.processes().server("lobby");
+		Console console = lobby.capability(Console.class);
+		assertTrue(console.execute("say hello-from-anvil"));
+	}
+}
+```
+
+Run the containing test with `./gradlew anvilTest`. The boolean result reports whether the platform
+accepted the command. It does not return console output or prove that the requested application
+work finished. Use a typed observation or [captured process output](../console/index.md) to establish
+that outcome.
+
+The built-in `Console` requires an enabled platform agent. Capability retrieval fails with
+`CapabilityUnavailableException` when the installed providers do not supply the requested type.
+Use `process.hasCapability(type)` only when absence is an intentional supported case; it reports
+whether the capability is installed, not whether its next request will succeed.
+
+## Choose the owner and interaction
 
 | Task | Entry point |
 |---|---|
-| Execute a console command or inspect process output | [Running console commands](../console/index.md) |
-| Read or change native server/proxy state with a typed result | An installed agent operation exposed through a host capability |
+| Dispatch a command through the native platform API | The process's `Console` capability |
+| Send console input or inspect captured process output | The process's [console](../console/index.md) |
+| Read or change plugin state with a typed result | An installed process capability calling a native channelOperation |
+| Observe one player's identity or route through agents | The player's [Server capability](../../../players/capabilities/server/index.md) |
 | Restart one process | [Restarting processes](../restarts/index.md) |
 
-Console commands use the process console directly. Native operations need a handler installed in the
-process and a matching operation contract on the host. The handler calls the native API and returns
-serializable result values; the test does not receive the platform's live objects.
+A capability's owner and its implementation mechanism are separate choices. `Server` belongs to a
+player because its observations concern that player. `Console` belongs to the process because the
+command concerns that server or proxy. A custom process capability can use another implementation
+without exposing an agent in its public API.
 
-## Understand the current host entry point
+## Call an external capability
 
-`ScenarioContext` and `RunningProcess` do not expose a direct `agents()` accessor. The current
-extension API exposes `AgentDirectory` to `PlayerCapabilityContext`, which a host capability provider
-receives when Anvil creates a player. Tests call the installed capability, and its adapter addresses
-the required server or proxy by scenario process name.
-
-This means the host-facing capability is player-scoped even when its operation concerns the process
-itself. A simulated player must exist to obtain that capability. An operation that does not need a
-game session can run while that player is disconnected; it does not need to connect or use `Session`.
-
-## Call an installed operation
-
-The [Echo example](../../../../extending/agent-operations/index.md) provides a small native-process
-round trip. Before using this fragment:
-
-- Install its [host capability adapter](../../../../extending/capabilities/agent-adapters/index.md) in
-  `anvilCapabilities`.
-- Install its [handler JAR](../../../../extending/agent-operations/installation/index.md) into a running
-  server or proxy named `lobby` that supplies a platform agent.
-- Supply `SimulatedPlayer player` created by that running scenario's player manager. The player can
-  remain disconnected.
-
-Inside a JUnit test with that supplied `player`, call:
+The [Echo example](../../../../extending/capabilities/contracts/index.md) supplies a process capability
+that calls an installed handler. Add its host adapter to `anvilCapabilities`, and install its
+[handler JAR](../../../../extending/agent-operations/installation/index.md) in `lobby`.
+Inside a test with the running `ScenarioContext anvil`, use:
 
 ```java
 import com.example.echo.Echo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-String reply = player.capability(Echo.class).send("lobby", "hello");
-assertEquals("echo:hello", reply);
+var lobby = anvil.processes().server("lobby");
+assertEquals("echo:hello", lobby.capability(Echo.class).send("hello"));
 ```
 
-Run the containing test with `./gradlew anvilTest`. Success establishes that the handler in `lobby`
-received the request and returned `echo:hello`. It does not establish any application-specific state;
-replace Echo with an operation that returns the state your test needs to assert.
+Success establishes that the handler in `lobby` returned `echo:hello`. Replace Echo with an
+channelOperation that returns the application state your test needs to assert. The result contains
+serializable values, not the platform's live objects.
 
-The adapter resolves `AgentDirectory` with `context.requireService(AgentDirectory.class)`, where
-`context` is its `PlayerCapabilityContext`. `agents.require("lobby")` selects that process's
-`AgentClient`, and `request(operation, request)` invokes the shared typed operation. These clients
-belong to the scenario; adapters borrow them and must not close them.
+Process capability instances remain stable across a JVM restart. Retrieve the current process
+handle for state and console observations; the replacement handle exposes the same capability
+instances. Agent-backed requests can fail while the replacement connection is unavailable;
+retry only after the process has started successfully.
 
-`AgentClient` also exposes built-in native console dispatch through `executeCommand(command)`.
-Its boolean result reports whether the platform accepted the command; it does not return console
-output or prove the application finished the requested work. Use an observation or a typed
-operation result to establish that outcome.
+Closing the scenario closes process capabilities after players and before their agent connections.
+Subsequent capability lookup fails and `hasCapability(...)` returns `false`. Do not use retained
+capability instances after that cleanup.
 
-## Add a native operation
+## Add native behavior
 
-Follow [Contracts and handlers](../../../../extending/agent-operations/contracts/index.md) to define the
-request, result, and handler, then [install the operation JAR](../../../../extending/agent-operations/installation/index.md)
-as a workspace asset under `plugins/anvil-agent-extensions`. A host capability dependency alone does
-not install code inside the managed JVM.
+A host capability provider calls a typed channelOperation through its borrowed `RequestChannel`.
+Anvil connects that channel to the process's agent client. The matching `AgentOperationProvider`
+installs the handler inside the managed JVM. These are separate
+extension points: adding the host dependency does not install the native handler.
 
-Handlers access supported native services through `PlatformAgent.requireService(...)`. The bundled
-Bukkit agent exposes `org.bukkit.Server`; Velocity and BungeeCord agents expose their proxy APIs.
-Use `platform.call(...)` for the agent's scheduling rules. Bukkit schedules work onto its main
-thread; the default implementation runs on the request thread. Handlers must also obey the threading
-rules of the specific native API they call.
+Follow [Agent providers](../../../../extending/capabilities/agent-adapters/index.md) for host wiring
+and [Contracts and handlers](../../../../extending/agent-operations/contracts/index.md) for native
+implementation. Install handlers as workspace assets under `plugins/anvil-agent-extensions`.
 
-If a request fails, check the named process, agent readiness, installed handler and service descriptor,
-and that process's `anvil-console.log`. Keep the host and handler operation contracts aligned. For the
-complete host wiring, continue with [Agent adapters](../../../../extending/capabilities/agent-adapters/index.md).
+Handlers access native services through `PlatformAgent.requireService(...)`. The bundled Bukkit
+agent exposes `org.bukkit.Server`; Velocity and BungeeCord agents expose their proxy APIs.
+Use `platform.call(...)` and follow the native API's threading rules.
+
+If a request fails, check agent readiness, handler installation and service descriptors, matching
+channelOperation contracts, and the target process's `anvil-console.log`.

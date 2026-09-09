@@ -3,9 +3,9 @@ package me.whereareiam.anvil.protocol.mcprotocol.provider;
 import me.whereareiam.anvil.protocol.api.provider.ProtocolAuthentication;
 import me.whereareiam.anvil.protocol.api.provider.ProtocolBackend;
 import me.whereareiam.anvil.protocol.api.provider.ProtocolProvider;
+import me.whereareiam.anvil.protocol.api.provider.ProtocolRuntimeResolver;
 import me.whereareiam.anvil.protocol.mcprotocol.authentication.MicrosoftAuthentication;
 import org.jetbrains.annotations.NotNull;
-import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -22,7 +22,7 @@ public final class McProtocolProvider implements ProtocolProvider {
 	}
 
 	@Override
-	public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull ArtifactResolver artifacts) {
+	public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull ProtocolRuntimeResolver artifacts) {
 		return new McProtocolClientPool(cacheDirectory, new MicrosoftAuthentication(cacheDirectory), artifacts);
 	}
 

@@ -6,6 +6,7 @@
     "agent-operations",
     "packaging",
     "protocol-providers",
-    "platform-providers"
+    "platform-providers",
+    "engine"
   ]
 }

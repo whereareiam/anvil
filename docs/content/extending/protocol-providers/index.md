@@ -17,10 +17,11 @@ other artifacts will consume them.
 |---|---|
 | `ProtocolProvider` | Stable `id`, backend creation, optional authentication |
 | `ProtocolBackend` | Verified support catalog, initially disconnected players, complete cleanup |
-| `ProtocolPlayer` | Name, native version, identity, execution services, permanent destruction |
+| `ProtocolPlayer` | Name, native version, identity, optional capability channel, execution services, permanent destruction |
 
 Provider contracts are in `me.whereareiam.anvil.protocol.api.provider`; player contracts are in
-`me.whereareiam.anvil.protocol.api.player`. `PlayerRequest` and `ProtocolSupport` are in `api.model`.
+`me.whereareiam.anvil.protocol.api.player`. `PlayerRequest` and `ProtocolSupport` are in
+`me.whereareiam.anvil.protocol.api.model`.
 
 For exact creation, service lookup, and cleanup contracts, read the
 [ProtocolProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-protocol/protocol-api/src/main/java/me/whereareiam/anvil/protocol/api/provider/ProtocolProvider.java),
@@ -28,8 +29,9 @@ For exact creation, service lookup, and cleanup contracts, read the
 [ProtocolPlayer](https://github.com/whereareiam/anvil/blob/dev/anvil-protocol/protocol-api/src/main/java/me/whereareiam/anvil/protocol/api/player/ProtocolPlayer.java)
 source Javadocs. These links use `dev`; select your release tag when checking a released version.
 
-`ProtocolProvider.create(cacheDirectory, artifacts)` receives the private Anvil cache root and the
-shared verified artifact resolver. `ProtocolBackend.create(PlayerRequest)` receives the exact
+`ProtocolProvider.create(cacheDirectory, runtimes)` receives the private Anvil cache root and a
+`ProtocolRuntimeResolver`. Its `resolve(uri, destination, sha256)` channelOperation supplies an exact pinned
+native runtime; it does not expose generic acquisition or cache APIs. `ProtocolBackend.create(PlayerRequest)` receives the exact
 native version and target address plus the selected authentication mode and optional profile name.
 Create a disconnected client; connection behavior is supplied through the appropriate capability.
 
@@ -39,13 +41,25 @@ These flags describe backend support; capability-provider descriptors select cap
 
 ## Expose execution services
 
-Implement stable interfaces for the operations your capability adapters need. Return them from
-`ProtocolPlayer.findService(Class<T>)`. A provider then resolves that service through
-`PlayerCapabilityContext.requireService(...)`.
+For typed worker operations, expose your protocol API's `ProtocolChannel` through
+`ProtocolPlayer.channel()`. Launcher binding supplies the corresponding capability-owned channel to
+`ProtocolPlayerCapabilityContext.channel()`. The backend owns serialization and transport; feature wiring
+owns channelOperation descriptors and the public feature API owns domain payload models.
+
+For another backend-specific service, implement a stable interface and return it from
+`ProtocolPlayer.findService(Class<T>)`. A provider can resolve that service through
+`ProtocolPlayerCapabilityContext.requireService(...)`. Player observations use the shared
+`PlayerCapabilityContext.observation()` contract. Providers that need only those observations and
+capability dependencies use `PlayerCapabilityProvider` from `capability-api`; they do not need a
+protocol-specific context. Agent-backed player factories use `AgentPlayerCapabilityProvider` and
+`AgentPlayerCapabilityContext` from `capability-agent-api`; they request native work through
+`channel(processName)`. Process capabilities backed by agents use `AgentProcessCapabilityProvider` and
+its own-process `channel()`, independently of protocol player composition.
 
 Keep the interface meaningful for your backend. For example, an adapter API can expose typed client
-commands while retaining packet-library details in its implementation. Do not depend on Anvil's
-MCProtocol worker internals or reuse its opaque packet surface as a cross-library protocol format.
+commands while retaining packet-library details in its implementation. Native worker bindings use
+the actual SDK context; another client library supplies its own context and bindings. MCProtocol's
+worker transport and dispatch remain private implementation details.
 
 ## Register and select the backend
 
@@ -67,8 +81,9 @@ anvil {
 ```
 
 The sole installed provider is selected automatically. If several are installed, an explicit ID is
-required. The engine selects the provider before discovering capabilities, so adapters must declare
-that same provider ID in `supportedProtocolIds` where their implementation depends on it.
+required. Launcher composition selects the provider before discovering capabilities. Protocol-backed
+capability adapters declare that same ID in `supportedProtocolIds()` where their implementation
+depends on it; neutral player providers use the shared observation/dependency context.
 
 ## Verify selection and cleanup
 

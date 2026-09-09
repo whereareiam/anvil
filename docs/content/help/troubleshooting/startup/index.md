@@ -8,17 +8,18 @@ out, inspect its `anvil-console.log` before raising the readiness deadline.
 
 ## Before launch
 
-| Symptom | Concrete next check |
-|---|---|
-| EULA acceptance is missing | Record acceptance through `anvil { acceptEula() }` in the project running the scenario |
-| Platform provider is unavailable | Apply a unit for every server and proxy platform used in the scenario |
-| No protocol provider is installed | Add the provider dependency to `anvilProtocols` |
-| Protocol selection is ambiguous | Set `anvil { protocol("provider-id") }` to an installed ID |
-| Local or named server has no native version | Set the server declaration's `minecraftVersion` |
-| Mutable distribution rejected | Select an explicit provider build or content checksum for automated runs |
-| Checksum mismatch | Check the chosen source and expected pin; do not replace the pin merely to silence validation |
-| Artifact resolves to zero or multiple files | Register the exact producer output and check transitive artifact notation |
-| Offline artifact/metadata is missing | Prepare the exact inputs with downloads enabled, then retry offline |
+| Symptom                                               | Concrete next check                                                                           |
+|-------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| EULA acceptance is missing                            | Record acceptance through `anvil { acceptEula() }` in the project running the scenario        |
+| Platform provider is unavailable                      | Apply a unit for every server and proxy platform used in the scenario                         |
+| No protocol provider is installed                     | Add the provider dependency to `anvilProtocols`                                               |
+| Protocol selection is ambiguous                       | Set `anvil { protocol("provider-id") }` to an installed ID                                    |
+| Local or named server has no native version           | Set the server declaration's `minecraftVersion`                                               |
+| Mutable distribution rejected                         | Select an explicit provider build or content checksum for automated runs                      |
+| Checksum mismatch                                     | Check the chosen source and expected pin; do not replace the pin merely to silence validation |
+| Artifact resolves to zero or multiple files           | Register the exact producer output and check transitive artifact notation                     |
+| Two processes resolve to the same workspace directory | Choose distinct directory-safe names: `server/a` and `server?a` both become `server-a`        |
+| Offline artifact/metadata is missing                  | Prepare the exact inputs with downloads enabled, then retry offline                           |
 
 The complete setup is in [Installation](../../../getting-started/installation/index.md),
 [distribution selection](../../../building-blocks/environments/provisioning/platform/index.md), and

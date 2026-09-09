@@ -17,10 +17,10 @@ publishing {
 
 dependencies {
     compileOnly(projects.anvilApi)
-    compileOnly(projects.anvilAgent.agentApi)
+    compileOnly(projects.anvilAgent.agentServer.serverApi)
     compileOnly(libs.velocity)
 
-    embedded(projects.anvilAgent.agent) { isTransitive = false }
+    embedded(projects.anvilAgent.agentServer) { isTransitive = false }
 
     annotationProcessor(libs.velocity)
 }

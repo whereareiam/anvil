@@ -60,5 +60,5 @@ neither establish completion nor explain which result was missing.
 
 Check the nearest evidence first: connection state, received messages, observed route, then the
 relevant process console tail. A command error or missing permission needs setup corrected, not a
-longer wait. Increase an explicit timeout only when the operation legitimately needs more time.
+longer wait. Increase an explicit timeout only when the channelOperation legitimately needs more time.
 Use [troubleshooting](../../../help/troubleshooting/index.md) for startup, routing, and retained diagnostics.

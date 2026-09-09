@@ -1,9 +1,9 @@
 package me.whereareiam.anvil.capability.api.model;
 
-import me.whereareiam.anvil.api.player.PlayerCapability;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
+import me.whereareiam.anvil.api.capability.Capability;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
@@ -30,9 +30,5 @@ public class CapabilityDescriptor {
 	/**
 	 * Capability types that must be created before this provider.
 	 */
-	@NotNull @Singular Set<Class<? extends PlayerCapability>> requiredCapabilities;
-	/**
-	 * Protocol-provider IDs supported by this implementation. An empty set means backend-neutral.
-	 */
-	@NotNull @Singular("supportedProtocolId") Set<String> supportedProtocolIds;
+	@NotNull @Singular Set<Class<? extends Capability>> requiredCapabilities;
 }

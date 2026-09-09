@@ -37,9 +37,9 @@ large jump can cause a correction or kick.
 ## Assert the effect you need
 
 After the update, wait for the behavior under test: a region-entry message, a movement restriction
-response, or a position observation exposed by an [agent operation](../../../../extending/agent-operations/index.md).
+response, or a position observation exposed by an [agent channelOperation](../../../../extending/agent-operations/index.md).
 The `move` call returning does not establish that the server accepted the position or that a plugin
-event completed.
+channelEvent completed.
 
 The capability does not expose a position getter, pathfinding, walking simulation, or autonomous
 navigation. Supply deliberate updates from your Java journey. If exact initial coordinates matter,

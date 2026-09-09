@@ -28,15 +28,15 @@ For your own plugin, send its command with `messages.command("your-command argum
 the reply it documents. Commands accept either a leading slash or no slash. Public chat uses
 `messages.chat("text")`; it sends a chat message, not a console command.
 
-## Match the intended operation
+## Match the intended channelOperation
 
 `received(text)` matches messages containing the supplied text. It searches captured history, so a
-message received before the current operation can satisfy the wait. The bundled implementation keeps
+message received before the current channelOperation can satisfy the wait. The bundled implementation keeps
 that history across reconnects of the same player.
 
 Use a response token unique to the step or an application state observation when repeating an action.
 For example, have a test command echo a request identifier. The Messages API does not expose a history
-clear operation or a checkpoint parameter. For console assertions that must ignore earlier output,
+clear channelOperation or a checkpoint parameter. For console assertions that must ignore earlier output,
 use a [console checkpoint](../../../../workflows/testing/assertions/index.md).
 
 ## Inspect failures

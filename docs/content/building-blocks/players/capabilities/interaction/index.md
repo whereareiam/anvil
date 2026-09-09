@@ -19,7 +19,7 @@ interaction.useItem(Hand.MAIN);
 ```
 
 Use [Inventory](../inventory/index.md) to select the hotbar slot first when needed. Observe your
-plugin's resulting event or response; sending the interaction does not itself establish success.
+plugin's resulting channelEvent or response; sending the interaction does not itself establish success.
 
 ## Target a prepared block
 
@@ -51,4 +51,4 @@ action. The identifier is the protocol entity ID, not a UUID, and must refer to 
 instance. This capability does not discover nearby entities or choose targets automatically.
 
 Use [messages](../messages/index.md), [inventory observations](../inventory/index.md), or a custom
-[agent operation](../../../../extending/agent-operations/index.md) to verify the application result.
+[agent channelOperation](../../../../extending/agent-operations/index.md) to verify the application result.

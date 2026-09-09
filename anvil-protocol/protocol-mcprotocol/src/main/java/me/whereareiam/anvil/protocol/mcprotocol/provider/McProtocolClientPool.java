@@ -1,12 +1,13 @@
 package me.whereareiam.anvil.protocol.mcprotocol.provider;
 
+import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.AuthenticationMode;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolSupport;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.api.provider.ProtocolBackend;
+import me.whereareiam.anvil.protocol.api.provider.ProtocolRuntimeResolver;
 import me.whereareiam.anvil.protocol.mcprotocol.authentication.MicrosoftAuthentication;
-import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver;
 import me.whereareiam.anvil.protocol.mcprotocol.catalog.ProtocolCatalog;
 import me.whereareiam.anvil.protocol.mcprotocol.model.AuthenticationSession;
 import me.whereareiam.anvil.protocol.mcprotocol.model.ProtocolDefinition;
@@ -21,20 +22,15 @@ import java.util.Map;
 /**
  * Creates protocol clients and shares one isolated worker process per selected client version.
  */
+@RequiredArgsConstructor
 final class McProtocolClientPool implements ProtocolBackend {
 	private final Path cacheDirectory;
 	private final ProtocolCatalog catalog = new ProtocolCatalog();
 	private final MicrosoftAuthentication authentication;
-	private final ArtifactResolver artifacts;
+	private final ProtocolRuntimeResolver artifacts;
 
 	private final Map<String, ProtocolWorkerProcess> workers = new LinkedHashMap<>();
 	private boolean closed;
-
-	McProtocolClientPool(@NotNull Path cacheDirectory, @NotNull MicrosoftAuthentication authentication, @NotNull ArtifactResolver artifacts) {
-		this.artifacts = artifacts;
-		this.cacheDirectory = cacheDirectory;
-		this.authentication = authentication;
-	}
 
 	@Override
 	public @NotNull String id() {
@@ -65,7 +61,7 @@ final class McProtocolClientPool implements ProtocolBackend {
 				.resolve(definition.getSupport().getMinecraftVersion())
 				.resolve("protocol-" + definition.getSupport().getLibraryVersion() + ".jar");
 
-		return artifacts.obtain(definition.getArtifact(), destination, definition.getSha256());
+		return artifacts.resolve(definition.getArtifact(), destination, definition.getSha256());
 	}
 
 	@Override

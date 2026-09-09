@@ -17,8 +17,7 @@ own workspace. Supplying software and managing those working files are separate 
    executable through a local path or registered artifact.
 2. [Java](./java/index.md): select the required Java version and use an installed runtime or a verified
    archive where supported by the execution provider.
-3. [Cache](./cache/index.md): reuse acquired artifacts and resolution metadata, prepare offline runs,
-   and refresh selections deliberately.
+3. [Cache](./cache/index.md): reuse acquired software or selected workspace files between runs.
 
 The platform pages explain their own distribution selectors. Anvil uses those provider choices to
 resolve the executable; it does not infer a server's native Minecraft version from an arbitrary JAR

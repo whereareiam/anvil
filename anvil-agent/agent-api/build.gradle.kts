@@ -4,8 +4,9 @@ plugins {
     id("unit")
 }
 
-description = "Public agent contracts used by Anvil platform integrations"
+description = "Shared agent operation descriptors, payloads, and process identities"
 
 dependencies {
+    api(libs.annotations)
     api(libs.jackson.databind)
 }

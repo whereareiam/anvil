@@ -32,6 +32,8 @@ check whether the named process has the expected role.
 | `restart(name)` | Replacement process after readiness |
 
 Every handle exposes `name()`, `address()`, `workDirectory()`, `state()`, and `console()`.
+Use `capability(Type.class)` for installed process behavior, including
+[capabilities backed by agents](./agents/index.md).
 After a restart, request a fresh lookup or use the returned replacement handle.
 An earlier snapshot continues to contain the earlier handles.
 
@@ -47,9 +49,9 @@ appropriate player, server, or console assertion.
 
 ## Choose an action
 
-Choose the operation your test needs to perform against an existing server or proxy:
+Choose the channelOperation your test needs to perform against an existing server or proxy:
 
 - [Running console commands](./console/index.md) shows bounded log observations.
-- [Interacting through agents](./agents/index.md) explains typed work inside a server or proxy and the current host-access path.
+- [Interacting through agents](./agents/index.md) explains typed capabilities and native work inside a server or proxy.
 - [Restarting processes](./restarts/index.md) covers workspace preservation and explicit player reconnection.
 - [Cleanup diagnostics](../../../help/troubleshooting/cleanup/index.md) explains lifecycle failures and retention.

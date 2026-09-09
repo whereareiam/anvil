@@ -1,77 +1,99 @@
 ---
 title: Overview
-description: Create a player capability, compose existing capabilities, or implement an existing API for a backend.
+description: Create typed behavior for a player or process and supply its implementation.
 ---
 
-Create a capability when test authors need another typed operation or observation. Every capability
-instance belongs to one simulated player. Its provider can use that player's protocol services,
-other declared capabilities, and scenario services such as platform agents.
+Create a capability when test authors need another typed action or observation. Start by choosing
+its owner, then choose the mechanism that supplies the behavior.
 
-For method signatures and provider lifecycle contracts, read the
-[PlayerCapabilityProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-capability/capability-api/src/main/java/me/whereareiam/anvil/capability/api/PlayerCapabilityProvider.java) and
-[PlayerCapabilityContext](https://github.com/whereareiam/anvil/blob/dev/anvil-capability/capability-api/src/main/java/me/whereareiam/anvil/capability/api/PlayerCapabilityContext.java)
-source Javadocs. These links use `dev`; select your release tag when checking a released version.
+| Behavior | Public contract | Provider |
+|---|---|---|
+| Player behavior using observations or other capabilities | `PlayerCapability` | `PlayerCapabilityProvider` |
+| Player actions through a protocol backend | `PlayerCapability` | `ProtocolPlayerCapabilityProvider` |
+| Player observations or actions through agents | `PlayerCapability` | `AgentPlayerCapabilityProvider` |
+| Server or proxy behavior through its agent, independent of a player | `ProcessCapability` | `AgentProcessCapabilityProvider` |
 
-## Choose how to add behavior
+`ProcessCapability` belongs to the global API. A custom `RunningProcess` implementation can
+supply it through the inherited `CapabilityOwner` lookup contract without an agent.
+`AgentProcessCapabilityProvider` is the factory used when an agent supplies that process behavior.
 
-| Goal | Supported approach |
-|---|---|
-| Expose a new operation to tests | Define an interface extending `PlayerCapability` and supply its provider and implementation |
-| Build on existing player behavior | Create a new capability with declared dependencies, then use those capabilities in its implementation |
-| Support an existing API on another backend | Implement that API and register a provider for the supported protocol IDs |
-
-For example, a custom `PluginCommands` capability can declare `Messages` as a required capability
-and obtain it through `context.requireCapability(Messages.class)`. Its implementation can then
-expose typed methods for your plugin's commands and expected replies.
-
-An alternative implementation of `Movement` supplies the existing API's methods. Arrange the
-installed wiring and protocol selection so exactly one provider contributes `Movement.class`.
-Registering a second matching provider is an error, not an override or an extra layer.
-
-Capability lookup uses the exact registered class. A Java interface that extends another capability
-interface does not automatically register the parent type. There is no implicit augmentation of an
-already installed capability.
+For example, `PluginCommands` could belong to a player and use `Messages` to execute commands with
+that player's permissions. A process capability could read your plugin's server-wide state
+through a native handler. Using an agent to implement a feature does not by itself make the feature
+process-owned: the built-in `Server` capability observes one player's identity and route. Its provider
+uses shared player observations, so it needs neither a protocol channel nor direct agent requests.
 
 ## Create the example capability
 
-This section builds an `Echo` capability whose host adapter calls a platform agent. Echo is a small
-transport example: it proves that your packaged handler can run in the selected process. Replace
-its contract with a useful domain operation after the installation path works.
+This section builds a process-owned `Echo` capability backed by an agent. It proves that your
+packaged native handler can run in the selected process and return a result, without creating a
+simulated player. Replace its contract with a useful domain channelOperation after the installation
+path works.
 
 1. [Define the public contract](./contracts/index.md).
-2. For the Echo example, define its [operation contract and handler](../agent-operations/contracts/index.md),
-   then build the [agent adapter](./agent-adapters/index.md).
+2. Define its [channelOperation contract and handler](../agent-operations/contracts/index.md), then build
+   the [agent provider](./agent-adapters/index.md).
 3. [Install the handler](../agent-operations/installation/index.md) and
    [package and test the extension](../packaging/index.md) through a consumer build.
 
-A [protocol adapter](./protocol-adapters/index.md) is the alternative path for behavior carried by
-player packets. It does not require completing the agent example first.
+A [protocol adapter](./protocol-adapters/index.md) supplies player behavior carried by packets.
+That path does not require completing the agent example first.
 
 ## Arrange the artifacts
 
 | Example artifact | Owns | Anvil API dependency |
 |---|---|---|
-| `echo-api` | `Echo` and its public models | `anvil-api` |
+| `echo-api` | `Echo` and its public models | `api` |
 | `echo-operations` | Shared request/response descriptors | `agent-api` |
-| `echo-host` | Capability provider calling the agent | `capability-api`, `agent-api` |
-| `echo-agent` | Handler loaded by the platform agent | `agent-api` |
+| `echo-host` | Process capability provider using a typed request channel | `capability-agent-api` |
+| `echo-agent` | Handler loaded by the platform agent | `agent-server-api` |
 | `echo` | Consumer dependency wiring | The API and selected host implementation |
 
 Your artifacts use your own Maven group and package namespace. The host and agent artifacts share
-operation contracts; the host does not depend on the handler implementation. For packet behavior,
+channelOperation contracts through `echo-operations`, which exports `agent-api` for its descriptor
+types. Host wiring derives a `ChannelOperation` from those descriptors and sends it through the
+capability request channel. The host does not depend on the handler implementation. For packet behavior,
 the protocol adapter occupies the host implementation role and may also supply worker-side code.
+Anvil artifact IDs in this table use the Maven group `me.whereareiam.anvil`.
 
-## Declare what an implementation needs
+## Declare dependencies and support
 
-`CapabilityDescriptor` identifies the provider, declares its supported protocol IDs, and lists
-predecessor capability types. The runtime creates providers in dependency order. Access to other
-capabilities is restricted to those declared dependencies.
+The runtime orders creation by declared predecessor capabilities. Access to other capabilities is
+restricted to those dependencies, within the same owner. A player capability can declare `Messages`
+and obtain it through `context.requireCapability(Messages.class)`. A process capability backed by
+an agent can declare `Console` and obtain it through its provider context.
 
-An empty `supportedProtocolIds` set means the provider is independent of a particular backend.
-Use it for agent-only behavior when the adapter has no backend-specific service dependency. Declare
-`Session` only when the implementation uses that capability. The built-in `Server` observation
-capability, for example, works independently of `Session`.
+All capability providers return a `CapabilityDescriptor` from `descriptor()`. It contains provider
+identity, contract version, and required capability types. The shared `capability-api` owns this
+contract, generic provider/context interfaces, typed request descriptors/channels, and neutral player
+contracts under `capability.api.player`. Use `PlayerCapabilityProvider` when the implementation
+needs only player identity/version, observations, declared dependencies, and cleanup.
 
-At most one selected provider can contribute a given capability type. If you provide an alternative
-implementation of a built-in API, select compatible protocol IDs and avoid installing two matching
-implementations for the same engine.
+Protocol-backed player providers and native worker bindings use `capability-protocol-api`.
+`ProtocolPlayerCapabilityProvider` adds `supportedProtocolIds()`; its creation context supplies the
+protocol channel and external backend services. An empty ID set allows any selected backend.
+Declare `Session` only when the implementation uses it.
+
+Agent-backed process and player providers use `capability-agent-api`, which includes the shared
+capability contracts and neutral player context. Its process/player contexts add scoped request
+channels for native agent work. `AgentProcessCapabilityProvider`
+can restrict platforms with `supportsPlatform(...)`.
+[Agent providers](./agent-adapters/index.md) explains both scopes and their cleanup hooks.
+
+For exact signatures, consult the
+[PlayerCapabilityProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-capability/capability-api/src/main/java/me/whereareiam/anvil/capability/api/player/PlayerCapabilityProvider.java),
+[ProtocolPlayerCapabilityProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-capability/capability-protocol-api/src/main/java/me/whereareiam/anvil/capability/protocol/api/player/ProtocolPlayerCapabilityProvider.java)
+and [AgentProcessCapabilityProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-capability/capability-agent-api/src/main/java/me/whereareiam/anvil/capability/agent/api/process/AgentProcessCapabilityProvider.java)
+source Javadocs. These links use `dev`; select your release tag when checking a released version.
+
+## Implement an existing capability
+
+An alternative implementation of `Movement` supplies the existing API's methods. Arrange the
+installed wiring and protocol selection so exactly one provider contributes `Movement.class` to a
+player. The same uniqueness rule applies to capabilities contributed to a process. Multiple matching
+providers are an error.
+
+Capability lookup uses the exact registered class. A Java interface extending another capability
+interface does not automatically register the parent type. There is no implicit augmentation of an
+already installed capability. To compose additional behavior, define a capability with explicit
+dependencies on the existing APIs.

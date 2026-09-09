@@ -71,7 +71,7 @@ class AnnouncementJourneyTest {
 
 Each test receives its own fresh execution and creates its own player. The helper establishes login,
 agent-observed presence in this direct-server environment, and receipt of the announcement. Replace
-the announcement step with your application's command or event and assert the result it promises.
+the announcement step with your application's command or channelEvent and assert the result it promises.
 The runner closes remaining players and processes after each method.
 
 The marker is sufficient here because each player is new and the helper runs once per test. For

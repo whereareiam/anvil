@@ -12,12 +12,20 @@ pluginManagement {
 }
 
 plugins {
-    id("me.whereareiam.toolkit.project-discovery") version "dev-a4c6f1b"
+    id("me.whereareiam.toolkit.project-discovery") version "dev-757d944"
 }
 
 rootProject.name = "Anvil"
 // Consumer examples resolve the published plugin independently of the build that produces it.
 rootProject.children.removeAll { it.name == "examples" }
+project(":anvil-testkit").children.removeAll { it.name == "fixtures" }
+
+includeBuild(".")
+
+includeBuild("anvil-testkit/fixtures") {
+    name = "anvil-test-fixtures"
+}
+
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 dependencyResolutionManagement {

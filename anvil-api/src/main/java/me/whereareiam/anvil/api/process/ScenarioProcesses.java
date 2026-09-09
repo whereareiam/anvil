@@ -73,7 +73,8 @@ public interface ScenarioProcesses {
 	 * Restarts one managed process with its current workspace and listener address.
 	 * Other processes remain running. Existing players remain registered, but clients
 	 * disconnected by the restart must explicitly reconnect. The platform agent is
-	 * reauthenticated before this method returns and borrowed agent handles are refreshed.
+	 * reauthenticated before this method returns. Process capability instances are retained;
+	 * agent-backed operations use the replacement connection.
 	 *
 	 * <p>The returned handle represents the new process generation. Previous process
 	 * handles remain stopped; obtain fresh console checkpoints from the returned handle.

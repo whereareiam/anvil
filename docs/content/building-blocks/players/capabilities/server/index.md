@@ -30,7 +30,7 @@ assertEquals("server", identity.getRoute().getServer());
 route can come from either a backend agent's presence observation or a proxy agent's connected-server
 observation. It does not guarantee that the named backend's agent has independently observed the player.
 When an assertion requires proof from that backend, use a backend-specific
-[agent operation](../../../../extending/agent-operations/index.md) and await the native state you need.
+[agent channelOperation](../../../../extending/agent-operations/index.md) and await the native state you need.
 
 ## Read an observed identity
 
@@ -58,4 +58,4 @@ A matching route does not establish that plugin data, permissions, or authentica
 survived. Add the corresponding application assertion.
 
 For topology setup, follow [proxy forwarding](../../../environments/platforms/proxies/forwarding/index.md).
-For more detailed native server state, add an [agent operation](../../../../extending/agent-operations/index.md).
+For more detailed native server state, add an [agent channelOperation](../../../../extending/agent-operations/index.md).

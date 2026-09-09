@@ -3,11 +3,11 @@ package me.whereareiam.anvil.platform.bungeecord;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
-import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
-import me.whereareiam.anvil.provisioning.api.artifact.ArtifactResolver;
-import me.whereareiam.anvil.platform.api.model.PlatformContext;
+import me.whereareiam.anvil.api.type.Platforms;
+import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
+import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.type.ForwardingMode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.jetbrains.annotations.NotNull;
@@ -57,7 +57,7 @@ class BungeeCordPlatformProviderTest {
 				.port(25565)
 				.processAddresses(Map.of("proxy", new java.net.InetSocketAddress("127.0.0.1", 25565), "lobby", new java.net.InetSocketAddress("127.0.0.1", 25566)))
 				.eulaAccepted(true)
-				.artifactResolver(artifactResolver())
+				.artifactSource(artifactSource())
 				.forwarding(ForwardingConfiguration.builder().mode(ForwardingMode.LEGACY).build())
 				.build();
 
@@ -74,8 +74,8 @@ class BungeeCordPlatformProviderTest {
 		provider.configure(proxy, context);
 	}
 
-	private ArtifactResolver artifactResolver() {
-		return new ArtifactResolver() {
+	private PlatformArtifactSource artifactSource() {
+		return new PlatformArtifactSource() {
 			@Override
 			public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, String expectedSha256) {
 				throw new AssertionError("No remote artifact expected");

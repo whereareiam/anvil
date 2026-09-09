@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.Serial;
 
 /**
- * Reports that a simulated player does not expose a requested capability.
+ * Reports that a player or process does not expose a requested capability.
  */
 public class CapabilityUnavailableException extends IllegalStateException {
 	@Serial

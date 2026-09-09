@@ -11,7 +11,7 @@ separate repository and install them through normal dependency and workspace con
 The Echo example is the shortest complete extension path:
 
 1. [Define a capability contract](./capabilities/contracts/index.md) for test authors.
-2. [Define the agent operation and handler](./agent-operations/contracts/index.md) that perform the work.
+2. [Define the agent channelOperation and handler](./agent-operations/contracts/index.md) that perform the work.
 3. [Connect the host adapter](./capabilities/agent-adapters/index.md) and
    [install the handler](./agent-operations/installation/index.md) as a workspace asset.
 4. [Package and test](./packaging/index.md) the resulting library from a separate consumer.
@@ -26,13 +26,14 @@ These are independent advanced paths, not prerequisites for writing a capability
 
 - [Protocol providers](./protocol-providers/index.md) integrate another native client library.
 - [Platform providers](./platform-providers/index.md) provision another server or proxy distribution.
+- [Engine extensions](./engine/index.md) contribute global diagnostics and scenario lifecycle attachments.
 
-Both use the same [packaging and discovery checks](./packaging/index.md) before consumer installation.
+Provider artifacts use the same [packaging and discovery checks](./packaging/index.md) before consumer installation.
 
 Start from a working [first test](../getting-started/first-test/index.mdx). Use the same Anvil version
-across your extension's API dependencies and the consumer build. Public player capabilities keep
+across your extension's API dependencies and the consumer build. Public capability interfaces keep
 platform SDKs, packet libraries, and transport types out of the test-facing contract.
 
 If the existing APIs already express the behavior, implement that API for your backend. Define a new
-capability when scenario authors need a new operation. Repository implementation changes belong in
+capability when scenario authors need a new channelOperation. Repository implementation changes belong in
 [Contributing](../contributing/index.md).

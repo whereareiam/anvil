@@ -3,13 +3,14 @@ title: Overview
 description: Install and retrieve the typed actions and observations that a player journey needs.
 ---
 
-Retrieve behavior by its public capability type with `player.capability(Type.class)`. Capabilities are
-player-scoped; keep them with that player and retrieve new instances after creating a replacement.
+Retrieve player behavior by its public capability type with `player.capability(Type.class)`. Keep
+these instances with that player and retrieve new ones after creating a replacement.
 
-All public capability APIs extend `PlayerCapability`, and a provider creates each instance for one
-player. This scope does not require a connected session: `Server`, for example, uses platform agents
+The capabilities in this section extend `PlayerCapability`; a provider creates each instance for
+one player. This scope does not require a connected session: `Server`, for example, uses platform agents
 to observe that player's identity and route independently of `Session`. General server or proxy
-control uses the context's [process API](../../environments/actions/index.md).
+control uses the context's [process API](../../environments/actions/index.md) or a capability owned
+by its [agent](../../environments/actions/agents/index.md), such as `Console`.
 
 ## Choose the behavior
 
@@ -31,7 +32,7 @@ platform agents, while packet-backed capabilities operate through the selected p
 
 ## Install built-in capabilities
 
-The umbrella `me.whereareiam.anvil` Gradle plugin includes all six built-ins. For a smaller JUnit setup,
+The umbrella `me.whereareiam.anvil` Gradle plugin includes these player capabilities. For a smaller JUnit setup,
 this plugin block selects connection, messages, and server-observation behavior:
 
 ```kotlin

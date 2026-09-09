@@ -2,13 +2,17 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import me.whereareiam.anvil.protocol.adapter.api.capability.ProtocolCapabilityAdapter;
-import me.whereareiam.anvil.protocol.adapter.api.capability.ProtocolCapabilityAdapterRegistry;
+import me.whereareiam.anvil.protocol.api.worker.NativeBinding;
+import me.whereareiam.anvil.protocol.api.worker.NativeOperations;
+import me.whereareiam.anvil.protocol.api.worker.NativePlayer;
+import me.whereareiam.anvil.protocol.api.worker.NativeWorkerExtension;
+import me.whereareiam.anvil.protocol.api.worker.NativeWorkerProvider;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerRequest;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerResponse;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageWriter;
+import org.geysermc.mcprotocollib.network.ClientSession;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
@@ -16,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,10 +35,10 @@ class McProtocolWorkerTest {
 		var empty = JsonNodeFactory.instance.objectNode();
 		String input = String.join("\n",
 				request(1, "create", codec.payload(options)),
-				request(2, "example.identity", empty),
+				request(2, "example.identity", WorkerMessageCodec.message(new byte[0])),
 				request(3, "create", codec.payload(options)),
 				request(4, "destroy", empty),
-				request(5, "example.identity", empty),
+				request(5, "example.identity", WorkerMessageCodec.message(new byte[0])),
 				request(6, "shutdown", empty),
 				request(7, "create", codec.payload(options))
 		);
@@ -47,7 +52,7 @@ class McProtocolWorkerTest {
 				.map(line -> assertInstanceOf(WorkerResponse.class, codec.decodeMessage(line).orElseThrow())).toList();
 		assertEquals(6, responses.size());
 		assertTrue(responses.getFirst().isSuccess());
-		assertEquals(identity.toString(), responses.get(1).getResult().path("uuid").asText());
+		assertEquals(identity.toString(), new String(codec.messageBytes(responses.get(1).getResult()), StandardCharsets.UTF_8));
 		assertTrue(responses.get(2).getError().contains("already exists"));
 		assertTrue(responses.get(3).isSuccess());
 		assertTrue(responses.get(4).getError().contains("Unknown worker player"));
@@ -59,17 +64,19 @@ class McProtocolWorkerTest {
 				.player("player").arguments(arguments).build());
 	}
 
-	private ProtocolCapabilityAdapter identityAdapter() {
-		return new ProtocolCapabilityAdapter() {
-			@Override
-			public String id() {
-				return "example.identity";
-			}
-
-			@Override
-			public void install(ProtocolCapabilityAdapterRegistry registry) {
-				registry.operation("example.identity", (player, arguments) ->
-						player.mapper().createObjectNode().put("uuid", player.uuid().toString()));
+	private NativeWorkerProvider<ClientSession> identityAdapter() {
+		return new NativeWorkerProvider<>() {
+			public String id() { return "example.identity"; }
+			public String backendId() { return "mcprotocol"; }
+			public Class<ClientSession> backendType() { return ClientSession.class; }
+			public NativeWorkerExtension<ClientSession> create(int protocolNumber) {
+				return new NativeWorkerExtension<>() {
+					public Set<String> capabilities() { return Set.of("example.identity"); }
+					public NativeBinding bind(NativePlayer<ClientSession> player, NativeOperations operations) {
+						operations.register("example.identity", ignored -> player.uniqueId().toString().getBytes(StandardCharsets.UTF_8));
+						return () -> { };
+					}
+				};
 			}
 		};
 	}
