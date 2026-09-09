@@ -17,7 +17,7 @@ slf4j = "2.0.18"
 adventure = "5.2.0"
 
 # platform api
-paper = "1.21.11-R0.1-SNAPSHOT"
+paper = "26.2.build.121-stable"
 velocity = "3.5.1"
 bungeecord = "26.1-R0.1-SNAPSHOT"
 
