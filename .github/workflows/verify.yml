@@ -94,7 +94,7 @@ jobs:
           tar -czf "$RUNNER_TEMP/verification-artifacts/maven.tar.gz" -C "$RUNNER_TEMP/anvil-maven" .
           tar -czf "$RUNNER_TEMP/verification-artifacts/task-cache.tar.gz" -C "$HOME/.gradle/caches/build-cache-1" .
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: verification-artifacts
           path: ${{ runner.temp }}/verification-artifacts/*.tar.gz
