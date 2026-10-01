@@ -1,10 +1,11 @@
+import me.whereareiam.anvil.buildlogic.anvilJavaVersion
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
-val javaVersion = 21
+val javaVersion = anvilJavaVersion()
 
 plugins.withId("java") {
 	extensions.configure<JavaPluginExtension> {

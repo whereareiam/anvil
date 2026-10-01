@@ -1,22 +1,27 @@
 package me.whereareiam.anvil.engine;
 
+import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.engine.EngineBuilder;
 import me.whereareiam.anvil.api.engine.EngineExtension;
 import me.whereareiam.anvil.api.engine.EngineRegistration;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
-import me.whereareiam.anvil.api.scenario.ScenarioExecutor;
 import me.whereareiam.anvil.api.scenario.ScenarioExtension;
+import me.whereareiam.anvil.api.scenario.ScenarioFactory;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Installs global contributions transactionally without knowing any scoped Anvil API.
+ * Installs global contributions around an explicitly supplied scenario factory.
+ * The factory is borrowed. Its caller owns the shared resources unless it transfers
+ * them to the engine through an extension during build.
  */
+@RequiredArgsConstructor
 public final class AnvilEngineBuilder implements EngineBuilder {
+	private final @NotNull ScenarioFactory scenarioFactory;
+
 	private EngineOptions options = EngineOptions.builder().build();
 	private final List<EngineExtension> extensions = new ArrayList<>();
 	private boolean consumed;
@@ -45,7 +50,7 @@ public final class AnvilEngineBuilder implements EngineBuilder {
 			for (EngineExtension extension : extensions)
 				extension.install(registration);
 
-			return registration.build(options);
+			return registration.build(options, scenarioFactory);
 		} catch (RuntimeException | Error failure) {
 			try {
 				registration.close();
@@ -64,17 +69,9 @@ public final class AnvilEngineBuilder implements EngineBuilder {
 	}
 
 	private static final class Registration implements EngineRegistration, AutoCloseable {
-		private @Nullable ScenarioExecutor executor;
 		private final List<ScenarioExtension> extensions = new ArrayList<>();
 		private final List<AutoCloseable> resources = new ArrayList<>();
 		private boolean closed;
-
-		@Override
-		public synchronized void executor(@NotNull ScenarioExecutor executor) {
-			ensureOpen();
-			if (this.executor != null) throw new IllegalStateException("A scenario executor is already registered");
-			this.executor = executor;
-		}
 
 		@Override
 		public synchronized void scenarios(@NotNull ScenarioExtension extension) {
@@ -92,15 +89,13 @@ public final class AnvilEngineBuilder implements EngineBuilder {
 			resources.add(resource);
 		}
 
-		private synchronized AnvilEngine build(EngineOptions options) {
+		private synchronized AnvilEngine build(EngineOptions options, ScenarioFactory scenarioFactory) {
 			ensureOpen();
-			if (executor == null) throw new IllegalStateException("No scenario executor is registered");
 
-			AnvilEngine engine = new AnvilEngine(options, executor, List.copyOf(extensions), List.copyOf(resources));
+			AnvilEngine engine = new AnvilEngine(options, scenarioFactory, List.copyOf(extensions), List.copyOf(resources));
 			closed = true;
 			resources.clear();
 			extensions.clear();
-			executor = null;
 
 			return engine;
 		}
@@ -115,7 +110,6 @@ public final class AnvilEngineBuilder implements EngineBuilder {
 			} finally {
 				resources.clear();
 				extensions.clear();
-				executor = null;
 			}
 		}
 

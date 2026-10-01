@@ -20,12 +20,12 @@ public final class JavaExecutionRuntime implements LocalRuntimePreparation, Runt
 
 	@Override
 	public @NotNull Path executable(@NotNull ProcessRequest request, @Nullable JavaSource source) {
-		return java.resolve(request.getJavaRequirement(), request.getMinimumJavaVersion(), source);
+		return java.resolve(request.getJavaSelection().getRequirement(), request.getMinimumJavaVersion(), source);
 	}
 
 	@Override
 	public void validate(@NotNull String properties, @NotNull ProcessRequest request) {
 		var installation = java.inspect(properties, Path.of("java"));
-		java.validate(installation, request.getJavaRequirement(), request.getMinimumJavaVersion());
+		java.validate(installation, request.getJavaSelection().getRequirement(), request.getMinimumJavaVersion());
 	}
 }

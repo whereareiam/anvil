@@ -1,12 +1,14 @@
 package me.whereareiam.anvil.launcher.config;
 
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessScheduling;
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.java.JavaArchive;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.model.java.local.LocalJavaExecutable;
 import me.whereareiam.anvil.api.model.java.local.LocalJavaHome;
-import me.whereareiam.anvil.launcher.config.EngineDefaults;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.URI;
@@ -21,19 +23,62 @@ import java.util.Properties;
  */
 public final class EngineProperties {
 	/**
+	 * Default execution-provider identifier.
+	 */
+	public static final String EXECUTION_PROPERTY = "anvil.execution";
+
+	/**
 	 * Selected protocol-provider identifier.
 	 */
 	public static final String PROTOCOL_PROPERTY = "anvil.protocol";
 
 	/**
-	 * Explicit Minecraft EULA acceptance.
+	 * Requested Java feature version.
 	 */
-	public static final String EULA_ACCEPTED_PROPERTY = "anvil.eula.accepted";
+	public static final String JAVA_VERSION_PROPERTY = "anvil.java.version";
+
+	/**
+	 * Requested Java vendor distribution.
+	 */
+	public static final String JAVA_DISTRIBUTION_PROPERTY = "anvil.java.distribution";
+
+	/**
+	 * Requested Java release.
+	 */
+	public static final String JAVA_RELEASE_PROPERTY = "anvil.java.release";
+
+	/**
+	 * Explicit local Java installation directory.
+	 */
+	public static final String JAVA_HOME_PROPERTY = "anvil.java.home";
+
+	/**
+	 * Explicit local Java executable.
+	 */
+	public static final String JAVA_EXECUTABLE_PROPERTY = "anvil.java.executable";
+
+	/**
+	 * URI of an explicit Java runtime archive.
+	 */
+	public static final String JAVA_ARCHIVE_URI_PROPERTY = "anvil.java.archive.uri";
+
+	/**
+	 * Required SHA-256 checksum of the explicit Java archive.
+	 */
+	public static final String JAVA_ARCHIVE_SHA256_PROPERTY = "anvil.java.archive.sha256";
+
+	/**
+	 * Whether missing Java runtimes may be downloaded.
+	 */
+	public static final String AUTO_DOWNLOAD_JAVA_PROPERTY = "anvil.java.download";
 
 	/**
 	 * Shared cache directory.
 	 */
 	public static final String CACHE_DIRECTORY_PROPERTY = "anvil.cacheDir";
+
+	/** Local account store directory. */
+	public static final String ACCOUNTS_DIRECTORY_PROPERTY = "anvil.accountsDir";
 
 	/**
 	 * Scenario workspace directory.
@@ -46,9 +91,44 @@ public final class EngineProperties {
 	public static final String KEEP_FAILED_WORKSPACES_PROPERTY = "anvil.keepFailedWorkspaces";
 
 	/**
-	 * Whether missing Java runtimes may be downloaded.
+	 * Prefix for named artifact paths supplied to the engine through JVM properties.
 	 */
-	public static final String AUTO_DOWNLOAD_JAVA_PROPERTY = "anvil.java.download";
+	public static final String ARTIFACT_PROPERTY_PREFIX = "anvil.artifact.";
+
+	/**
+	 * Restricts artifact resolution to previously acquired content and metadata.
+	 */
+	public static final String OFFLINE_PROPERTY = "anvil.offline";
+
+	/**
+	 * Resolves moving artifact selectors again.
+	 */
+	public static final String REFRESH_PROPERTY = "anvil.refresh";
+
+	/**
+	 * Maximum simultaneous artifact transfers.
+	 */
+	public static final String DOWNLOAD_PARALLELISM_PROPERTY = "anvil.downloadParallelism";
+
+	/**
+	 * Explicit Minecraft EULA acceptance.
+	 */
+	public static final String EULA_ACCEPTED_PROPERTY = "anvil.eula.accepted";
+
+	/**
+	 * Maximum concurrent preparation or startup operations.
+	 */
+	public static final String PARALLELISM_PROPERTY = "anvil.parallelism";
+
+	/**
+	 * Combined declared heaps permitted to start concurrently, in MiB.
+	 */
+	public static final String STARTUP_MEMORY_PROPERTY = "anvil.startupMemoryMegabytes";
+
+	/**
+	 * Default process startup timeout as an ISO-8601 duration.
+	 */
+	public static final String STARTUP_TIMEOUT_PROPERTY = "anvil.startupTimeout";
 
 	/**
 	 * Process shutdown timeout as an ISO-8601 duration.
@@ -56,23 +136,9 @@ public final class EngineProperties {
 	public static final String STOP_TIMEOUT_PROPERTY = "anvil.stopTimeout";
 
 	/**
-	 * Requested Java feature version.
+	 * Requests ANSI output from supporting platforms; false leaves their existing defaults unchanged.
 	 */
-	public static final String JAVA_VERSION_PROPERTY = "anvil.java.version";
-	public static final String JAVA_DISTRIBUTION_PROPERTY = "anvil.java.distribution";
-	public static final String JAVA_RELEASE_PROPERTY = "anvil.java.release";
-	public static final String JAVA_HOME_PROPERTY = "anvil.java.home";
-	public static final String JAVA_EXECUTABLE_PROPERTY = "anvil.java.executable";
-	public static final String JAVA_ARCHIVE_URI_PROPERTY = "anvil.java.archive.uri";
-	public static final String JAVA_ARCHIVE_SHA256_PROPERTY = "anvil.java.archive.sha256";
-	public static final String EXECUTION_PROPERTY = "anvil.execution";
-	public static final String OFFLINE_PROPERTY = "anvil.offline";
-	public static final String REFRESH_PROPERTY = "anvil.refresh";
-	public static final String PARALLELISM_PROPERTY = "anvil.parallelism";
-	public static final String STARTUP_MEMORY_PROPERTY = "anvil.startupMemoryMegabytes";
-	public static final String DOWNLOAD_PARALLELISM_PROPERTY = "anvil.downloadParallelism";
-
-	private static final String ARTIFACT_PREFIX = "anvil.artifact.";
+	public static final String CONSOLE_COLORS_PROPERTY = "anvil.console.colors";
 
 	/**
 	 * Reads a snapshot of the current process properties.
@@ -96,41 +162,38 @@ public final class EngineProperties {
 	public static @NotNull EngineOptions from(@NotNull Properties properties) {
 		EngineOptions defaults = EngineDefaults.resolve(EngineOptions.builder().build());
 		var builder = EngineOptions.builder()
+				.executionProviderId(properties.getProperty(EXECUTION_PROPERTY, defaults.getExecutionProviderId()))
 				.protocolId(properties.getProperty(PROTOCOL_PROPERTY))
-				.eulaAccepted(booleanValue(properties, EULA_ACCEPTED_PROPERTY, defaults.isEulaAccepted()))
-				.keepFailedWorkspaces(booleanValue(properties, KEEP_FAILED_WORKSPACES_PROPERTY, defaults.isKeepFailedWorkspaces()))
+				.javaSelection(javaSelection(properties))
 				.downloadJava(booleanValue(properties, AUTO_DOWNLOAD_JAVA_PROPERTY, defaults.isDownloadJava()))
 				.cacheDirectory(pathValue(properties, CACHE_DIRECTORY_PROPERTY, defaults.getCacheDirectory()))
+				.accountsDirectory(pathValue(properties, ACCOUNTS_DIRECTORY_PROPERTY, defaults.getAccountsDirectory()))
 				.workDirectory(pathValue(properties, WORK_DIRECTORY_PROPERTY, defaults.getWorkDirectory()))
-				.javaRequirement(JavaRequirement.builder()
-						.featureVersion(optionalPositive(properties))
-						.distribution(properties.getProperty(JAVA_DISTRIBUTION_PROPERTY))
-						.release(properties.getProperty(JAVA_RELEASE_PROPERTY))
-						.build()
-				)
-				.javaSource(javaSource(properties))
-				.executionId(properties.getProperty(EXECUTION_PROPERTY, defaults.getExecutionId()))
+				.keepFailedWorkspaces(booleanValue(properties, KEEP_FAILED_WORKSPACES_PROPERTY, defaults.isKeepFailedWorkspaces()))
 				.offline(booleanValue(properties, OFFLINE_PROPERTY, false))
 				.refresh(booleanValue(properties, REFRESH_PROPERTY, false))
-				.parallelism(positive(properties, PARALLELISM_PROPERTY, defaults.getParallelism()))
-				.startupMemoryMegabytes(positive(properties, STARTUP_MEMORY_PROPERTY, defaults.getStartupMemoryMegabytes()))
 				.downloadParallelism(positive(properties, DOWNLOAD_PARALLELISM_PROPERTY, defaults.getDownloadParallelism()))
-				.stopTimeout(stopTimeout(properties, defaults.getStopTimeout()));
+				.eulaAccepted(booleanValue(properties, EULA_ACCEPTED_PROPERTY, defaults.isEulaAccepted()))
+				.processScheduling(ProcessScheduling.builder()
+						.parallelism(positive(properties, PARALLELISM_PROPERTY, defaults.getProcessScheduling().getParallelism()))
+						.startupMemoryMegabytes(positive(properties, STARTUP_MEMORY_PROPERTY, defaults.getProcessScheduling().getStartupMemoryMegabytes()))
+						.build())
+				.processTimeouts(ProcessTimeouts.builder()
+						.startup(durationValue(properties, STARTUP_TIMEOUT_PROPERTY, defaults.getProcessTimeouts().getStartup()))
+						.shutdown(durationValue(properties, STOP_TIMEOUT_PROPERTY, defaults.getProcessTimeouts().getShutdown()))
+						.build())
+				.consoleColors(booleanValue(properties, CONSOLE_COLORS_PROPERTY, defaults.isConsoleColors()));
 
 		for (String name : properties.stringPropertyNames().stream().sorted().toList()) {
-			if (name.startsWith(ARTIFACT_PREFIX)) {
-				String artifact = name.substring(ARTIFACT_PREFIX.length());
+			if (name.startsWith(ARTIFACT_PROPERTY_PREFIX)) {
+				String artifact = name.substring(ARTIFACT_PROPERTY_PREFIX.length());
 				if (artifact.isBlank()) throw new IllegalArgumentException("Artifact name must not be blank");
 
 				builder.artifact(artifact, Path.of(properties.getProperty(name)));
 			}
 		}
 
-		EngineOptions options = builder.build();
-		if (options.getStopTimeout().isNegative() || options.getStopTimeout().isZero())
-			throw new IllegalArgumentException("Stop timeout must be positive");
-
-		return options;
+		return builder.build();
 	}
 
 	/**
@@ -141,7 +204,18 @@ public final class EngineProperties {
 	 */
 	public static @NotNull String artifactProperty(@NotNull String name) {
 		if (name.isBlank()) throw new IllegalArgumentException("Artifact name must not be blank");
-		return ARTIFACT_PREFIX + name;
+		return ARTIFACT_PROPERTY_PREFIX + name;
+	}
+
+	private static JavaSelection javaSelection(Properties properties) {
+		return JavaSelection.builder()
+				.requirement(JavaRequirement.builder()
+						.featureVersion(optionalPositive(properties))
+						.distribution(properties.getProperty(JAVA_DISTRIBUTION_PROPERTY))
+						.release(properties.getProperty(JAVA_RELEASE_PROPERTY))
+						.build())
+				.source(javaSource(properties))
+				.build();
 	}
 
 	private static Integer optionalPositive(Properties properties) {
@@ -173,14 +247,17 @@ public final class EngineProperties {
 		return result;
 	}
 
-	private static Duration stopTimeout(Properties properties, Duration fallback) {
-		String value = properties.getProperty(STOP_TIMEOUT_PROPERTY);
+	private static Duration durationValue(Properties properties, String key, Duration fallback) {
+		String value = properties.getProperty(key);
 		if (value == null) return fallback;
 
 		try {
-			return Duration.parse(value);
+			Duration duration = Duration.parse(value);
+			if (duration.isNegative() || duration.isZero()) throw new IllegalArgumentException(key + " must be positive");
+
+			return duration;
 		} catch (DateTimeParseException failure) {
-			throw new IllegalArgumentException(STOP_TIMEOUT_PROPERTY + " must be an ISO-8601 duration", failure);
+			throw new IllegalArgumentException(key + " must be an ISO-8601 duration", failure);
 		}
 	}
 

@@ -15,7 +15,7 @@ import me.whereareiam.anvil.capability.movement.Movement;
 import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
-import me.whereareiam.anvil.junit.AnvilTest;
+import me.whereareiam.anvil.integration.junit.AnvilTest;
 import me.whereareiam.anvil.testkit.tests.server.extension.FixtureAgentProbeProvider;
 import me.whereareiam.anvil.testkit.tests.server.scenario.Paper12111SystemScenario;
 import me.whereareiam.anvil.testkit.tests.server.scenario.Paper2612SystemScenario;
@@ -62,7 +62,7 @@ class PlayerCapabilitiesSystemTest {
 
 		PlayerIdentity identity = server.joined("server", Duration.ofSeconds(10));
 		assertEquals("Alice", identity.getUsername());
-		assertEquals("server", identity.getServer());
+		assertEquals("server", identity.getRoute().getServer());
 		assertEquals("Alice", identity.getObservedUsername());
 		assertNotNull(server.identity());
 

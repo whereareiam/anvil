@@ -4,7 +4,7 @@ description: Wait for inventory or container state and send selection and click 
 ---
 
 `Inventory` observes the latest client inventory or open container and can select a hotbar slot or
-click a container slot. Install the inventory unit and Session dependency, or use the umbrella plugin.
+click a container slot. Install the inventory unit and Session dependency, or explicitly select the default capability unit.
 
 ## Wait for a supplied item
 

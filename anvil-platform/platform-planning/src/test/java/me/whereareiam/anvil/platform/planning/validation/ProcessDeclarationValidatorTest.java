@@ -10,6 +10,7 @@ import me.whereareiam.anvil.platform.api.PlatformProvider;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.model.ResolvedDistribution;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -136,12 +137,12 @@ class ProcessDeclarationValidatorTest {
 		}
 
 		@Override
-		public @NotNull ResolvedDistribution resolve(MinecraftProcess process, PlatformContext context) {
+		public @NotNull ResolvedDistribution resolve(@NonNull MinecraftProcess process, @NonNull PlatformContext context) {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public void configure(MinecraftProcess process, PlatformContext context) {
+		public void configure(@NonNull MinecraftProcess process, @NonNull PlatformContext context) {
 			throw new UnsupportedOperationException();
 		}
 
@@ -151,7 +152,7 @@ class ProcessDeclarationValidatorTest {
 		}
 
 		@Override
-		public int minimumJavaVersion(MinecraftProcess process) {
+		public int minimumJavaVersion(@NonNull MinecraftProcess process) {
 			return 21;
 		}
 	}

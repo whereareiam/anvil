@@ -1,6 +1,8 @@
 package me.whereareiam.anvil.capability.api.player;
 
+import me.whereareiam.anvil.api.model.PresentationMetadata;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Player identity and backend lifetime supplied to capability composition.
@@ -14,6 +16,15 @@ public interface CapabilityPlayer {
 	 * @return player name
 	 */
 	@NotNull String name();
+
+	/**
+	 * Returns optional presentation metadata without changing the backend's player identity.
+	 *
+	 * @return metadata, or null when no label was declared
+	 */
+	default @Nullable PresentationMetadata metadata() {
+		return null;
+	}
 
 	/**
 	 * Returns the selected Minecraft client version.

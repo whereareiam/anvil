@@ -157,7 +157,7 @@ class ManagedProcessTest {
 	}
 
 	private ManagedServer process(String name) {
-		return new ManagedServer(name, new InetSocketAddress("127.0.0.1", 25565), temporary.resolve(name));
+		return new ManagedServer(name, new InetSocketAddress("127.0.0.1", 25565), temporary.resolve(name), null);
 	}
 
 	@Test

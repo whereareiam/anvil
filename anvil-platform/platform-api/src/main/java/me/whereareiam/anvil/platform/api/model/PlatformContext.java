@@ -9,8 +9,8 @@ import me.whereareiam.anvil.platform.api.PlatformProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.nio.file.Path;
 import java.net.InetSocketAddress;
+import java.nio.file.Path;
 import java.util.Map;
 
 /**
@@ -22,21 +22,26 @@ import java.util.Map;
 @Value
 @Builder(toBuilder = true)
 public class PlatformContext {
+	// Scenario and artifact acquisition.
 	@NotNull AnvilScenario scenario;
+	@NotNull PlatformArtifactSource artifactSource;
 	@NotNull Path cacheDirectory;
+
+	// Prepared workspace locations.
 	@NotNull Path workDirectory;
 
 	/**
 	 * Directory shared by processes in one scenario run for cross-process generated state.
 	 */
 	@Nullable Path workspaceGroupDirectory;
+
+	// Platform configuration and execution-selected network topology.
+	boolean eulaAccepted;
 	@NotNull String bindAddress;
 	int port;
 	@NotNull
 	@Singular("processAddress")
 	Map<String, InetSocketAddress> processAddresses;
-	boolean eulaAccepted;
-	@NotNull PlatformArtifactSource artifactSource;
 
 	/**
 	 * Forwarding settings negotiated from provider declarations before any process starts.

@@ -1,18 +1,19 @@
 package me.whereareiam.anvil.launcher.assembly.process;
 
-import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityContext;
-import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider;
 import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
-import me.whereareiam.anvil.api.process.ProcessCapability;
-import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
+import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
+import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.type.RunningServer;
+import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityContext;
+import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
@@ -109,7 +110,7 @@ class ProcessCompositionTest {
 			var server = MinecraftServer.builder().name(name).platform("test")
 					.distribution(Distribution.remote("1.21.11", "test")).build();
 			scenario.server(server);
-			plan.process(name, ProcessPlan.builder().declaration(server).agent(agents).javaRequirement(JavaRequirement.builder().build())
+			plan.process(name, ProcessPlan.builder().declaration(server).agent(agents).javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().build()).build())
 					.workspace(WorkspacePlan.builder().build())
 					.forwarding(ForwardingConfiguration.builder().build())
 					.readinessPattern(Pattern.compile("READY")).stopCommand("stop").build());

@@ -14,7 +14,7 @@ Server and proxy platforms share the same scenario lifecycle and are selected ex
 | [Proxies](./proxies/index.md) | Velocity, BungeeCord | Accepting player connections and routing them to declared servers |
 
 A proxy scenario applies a unit plugin for the proxy and for every backend platform it uses.
-The umbrella Anvil plugin does not select a platform for you.
+Select every required platform explicitly.
 
 ## Build up from one server
 

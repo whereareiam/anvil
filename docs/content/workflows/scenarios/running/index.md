@@ -1,68 +1,37 @@
 ---
 title: Running scenarios
-description: List prepared environments, launch a scenario or group, and replace the active environment.
+description: List prepared environments and launch one discovered scenario from Gradle.
 ---
 
-Launch a prepared environment from the Gradle project containing its catalog. The foreground task
-keeps one environment running while you use its shell and Minecraft client.
-Complete [catalog registration](../catalogs/index.md) before following these commands.
+Run these commands from the Gradle project containing your `AnvilScenarioDefinition` classes.
+Preparation compiles the source set and resolves its runtime; the selected scenario starts only
+after the tooling JVM is ready.
 
-## Start one environment
-
-The example catalog registers `local-paper`. From the project root, run:
+## List and start a scenario
 
 ```shell
+./gradlew anvilScenario --list --console=plain
 ./gradlew anvilScenario --scenario=local-paper --console=plain
+./gradlew anvilScenario --definition=com.example.test.LocalPaperScenario --console=plain
 ```
 
-Anvil prepares the declared inputs, starts the processes and agents, and executes the setup hook.
-When ready, the terminal prints the environment name, an entrypoint after `Join:`, process addresses,
-and the available shell commands. Follow [joining an environment](../joining/index.md) to connect.
+`--list` evaluates the indexed definitions without starting Minecraft. Select exactly one of
+`--scenario` and `--definition` when starting. A scenario name must be unique within its module;
+the fully qualified definition class is always unambiguous.
 
-Use `./gradlew anvilScenario --list --console=plain` to check names without starting an environment.
-Do not combine `--list` with a scenario or group selection. Starting requires exactly one of
-`--scenario` and `--group`.
+Anvil prepares the declared inputs, starts every server and proxy in dependency order, and runs the
+setup hook. The scenario's entrypoint is the default player connection target; it does not limit
+which declared processes start.
 
-## Open a group
+## Control a running environment
 
-```shell
-./gradlew anvilScenario --group=development --console=plain
-```
+The interactive session supports:
 
-The runner starts the group's first registered member. In its shell, `list` shows the allowed member
-names. Use `start <scenario>` to replace the current environment with one of those members.
-For a session launched without a group, `list` shows the selected provider's catalog and `start` can
-select any registered scenario in that catalog.
+- `startAll` to start the remaining processes and complete setup;
+- `start <process>` to start one prepared process;
+- `stop <process>` and `restart <process>` for individual lifecycle operations;
+- `stop` to finish the complete scenario;
+- `quit` or `exit` to close the runner.
 
-The example group contains only `local-paper`; add more members in Java when you want to switch
-between different prepared setups. The group stays selected for the lifetime of that runner session.
-
-## Select a provider when needed
-
-With exactly one configured provider, selection is automatic. If several are registered, choose one:
-
-```shell
-./gradlew anvilScenario --provider=com.example.test.DevelopmentScenarios --scenario=local-paper --console=plain
-```
-
-An unqualified `--list` can list all configured providers, but a running session uses one selected
-provider. Change providers by leaving the runner and launching another session with the desired class.
-
-## Replace or stop the environment
-
-Enter these commands in the running shell, without `./gradlew`:
-
-- `restart` closes the current environment and starts its declaration again.
-- `stop` closes the current environment and leaves the shell open.
-- `start local-paper` starts that registered environment, closing an active one first.
-- `quit` or `exit` closes the environment and leaves the runner.
-
-A whole-environment restart starts new processes, runs workspace preparation, and repeats the setup
-hook. Human clients must reconnect to the printed address. Files survive according to the declared
-[workspace policy](../../../building-blocks/environments/workspaces/index.md); manual mode does not
-make a fresh workspace persistent.
-
-The shell's `restart` differs from the Java
-[per-process restart action](../../../building-blocks/environments/actions/restarts/index.md), which
-replaces only one process inside an open environment.
-For command syntax, logs, and error behavior, see [runner controls](../controls/index.md).
+Starting one process does not start its peers or execute the scenario setup hook. A whole-scenario
+restart prepares fresh process generations and runs setup again.

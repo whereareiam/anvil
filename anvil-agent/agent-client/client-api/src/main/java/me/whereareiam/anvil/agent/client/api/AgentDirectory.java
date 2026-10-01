@@ -10,13 +10,14 @@ import java.util.Optional;
  * Scenario-owned agent connections made available to host-side capability providers.
  * Connections are borrowed; the scenario closes them after player cleanup.
  * Handles can remain stable across process restarts while their connection is temporarily
- * unavailable. Callers must not close borrowed handles.
+ * unavailable. Registration and lookup do not imply availability; use {@link AgentClient#available()}
+ * to inspect the current connection lifecycle. Callers must not close borrowed handles.
  */
 public interface AgentDirectory {
 	/**
 	 * Returns an immutable snapshot keyed by scenario process name.
 	 *
-	 * @return authenticated agent connections
+	 * @return registered agent clients, including clients awaiting a connection
 	 */
 	@NotNull Map<String, AgentClient> agents();
 
@@ -34,8 +35,8 @@ public interface AgentDirectory {
 	 * Resolves the agent installed into one process.
 	 *
 	 * @param process scenario process name
-	 * @return authenticated connection
-	 * @throws AgentException when no agent is available for that process
+	 * @return registered agent client, which may currently be unavailable
+	 * @throws AgentException when no agent is registered for that process
 	 */
 	default @NotNull AgentClient require(@NotNull String process) {
 		return find(process).orElseThrow(() -> new AgentException("No agent for process '" + process

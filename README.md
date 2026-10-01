@@ -99,52 +99,51 @@ dependencyResolutionManagement {
 
 Choose the plugin that matches the workflow:
 
-| Plugin ID                        | What it installs                                        |
-|----------------------------------|---------------------------------------------------------|
-| `me.whereareiam.anvil.junit`     | Automated `anvilTest` execution only                    |
-| `me.whereareiam.anvil.scenarios` | `anvilScenario` for listing and foreground environments |
-| `me.whereareiam.anvil`           | Both workflows and all built-in capabilities            |
+| Plugin ID                    | What it installs                                                          |
+|------------------------------|---------------------------------------------------------------------------|
+| `me.whereareiam.anvil`       | `anvilScenario`, `anvilAccount`, and IDE discovery for foreground runs    |
+| `me.whereareiam.anvil.junit` | Automated `anvilTest` execution                                           |
+
+Neither plugin installs capabilities or a protocol provider. Apply capability units, such as
+`me.whereareiam.anvil.capability.default` for the whole built-in set, and add the protocol provider to
+`anvilRuntimeOnly` when scenarios use simulated players.
 
 Platform units are applied separately: `me.whereareiam.anvil.platform.paper`,
 `me.whereareiam.anvil.platform.spigot`, `me.whereareiam.anvil.platform.velocity`, and
-`me.whereareiam.anvil.platform.bungeecord`. Capability units such as
-`me.whereareiam.anvil.capability.inventory` can be applied with the scenarios plugin when the
-aggregate capability set is not wanted.
+`me.whereareiam.anvil.platform.bungeecord`. Single capability units such as
+`me.whereareiam.anvil.capability.inventory` replace the default set when only some are wanted.
 
-Every Anvil plugin also provides `anvilLogin` and `anvilLogout` for the optional online-player
-authentication profile flow.
+Authentication belongs to the selected protocol provider. Manage local account files from the
+Anvil IntelliJ panel, sign in with `./gradlew anvilAccount --login=<id>`, or place provider-generated
+account files in the configured account directory.
+Use `anvil { engine { protocol("your-provider") } }` when several providers are installed. Without
+a selection, the sole provider is used. MCProtocol supplies Microsoft device-code authentication
+through both of those entry points and retains its provider-owned account files.
+Global accounts default to `~/.anvil/accounts`; project-specific account directories and account
+pools are managed from the **Accounts** action in the Anvil tool window. Named pools are declared in
+the account directory's `pools.properties`, which other machines can write by hand. Account IDs are referenced
+from `PlayerOptions`, while the provider retrieves the real username and UUID.
 
-Authentication belongs to the selected protocol provider. A provider can expose a
-`ProtocolAuthentication` service; offline-only providers need no login implementation. The Gradle
-tasks resolve providers from `anvilProtocols` and do not construct a client backend to authenticate:
-
-```shell
-./gradlew anvilLogin --auth-profile=main
-./gradlew anvilLogout --auth-profile=main
-```
-
-Use `anvil { protocol("your-provider") }` when several providers are installed. Without a selection,
-the sole provider is used. A provider without interactive authentication reports that directly.
-MCProtocol supplies the Microsoft device-code workflow and retains its private profile store.
-The option is `--auth-profile`; Gradle reserves `--profile` for its own build profiler.
-
-Apply Anvil where the scenarios live. The umbrella plugin includes the built-in capability set, but
-platforms are always explicit:
+Apply Anvil where the scenarios live. Capabilities, platforms, and the protocol provider are always
+explicit:
 
 ```kotlin
 plugins {
     java
     id("me.whereareiam.anvil") version "0.0.1"
+    id("me.whereareiam.anvil.capability.default") version "0.0.1"
     id("me.whereareiam.anvil.platform.paper") version "0.0.1"
 }
 
 dependencies {
-    add("anvilProtocols", anvil.protocols.mcprotocol)
+    add("anvilRuntimeOnly", "me.whereareiam.anvil:protocol-mcprotocol:0.0.1")
 }
 
 anvil {
     acceptEula()
-    protocol("mcprotocol")
+    engine {
+        protocol("mcprotocol")
+    }
     artifact("plugin-under-test", project(":plugin"))
 }
 ```
@@ -174,23 +173,12 @@ platforms, protocols, and agents have their own extension contracts in the
 [documentation](https://anvil.whereareiam.me).
 
 For another tooling integration that needs the foreground shell, use
-`me.whereareiam.anvil:tooling-runner`. It exposes `AnvilRunner` and `EngineOptions`
-without a Gradle API dependency; the Anvil Gradle plugin is one adapter that supplies the
-configuration and consumer runtime classpath.
+`me.whereareiam.anvil:tooling-runner`. Supply `AnvilRunner` with terminal streams and a factory
+for an owned `ScenarioEngine`. For executable CLI and IDE entry points using the default engine,
+use `me.whereareiam.anvil:tooling-launcher`; the Gradle plugin supplies that runtime automatically.
 
-With the Gradle plugin, Anvil ships MCProtocolLib as a ready-to-use provider. Add the provider and
-select the protocol when more than one is present. Apply one platform unit for every platform used by
-the scenario:
-
-```kotlin
-dependencies {
-    add("anvilProtocols", anvil.protocols.mcprotocol)
-}
-
-anvil {
-    protocol("mcprotocol")
-}
-```
+Add the bundled MCProtocol provider to `anvilRuntimeOnly` when using simulated players. Select it when
+more than one provider is installed. Apply one platform unit for every platform used by the scenario:
 
 Apply the platform units alongside the Anvil plugin:
 
@@ -214,12 +202,12 @@ when a process restarts. The [documentation](https://anvil.whereareiam.me) cover
 ### Select only the capabilities you need
 
 The umbrella plugin includes `default`, the aggregate of all built-in capabilities. For a smaller
-compile and runtime surface, use `me.whereareiam.anvil.scenarios` and apply individual capability
+compile and runtime surface, use `me.whereareiam.anvil` and apply individual capability
 units:
 
 ```kotlin
 plugins {
-    id("me.whereareiam.anvil.scenarios") version "0.0.1"
+    id("me.whereareiam.anvil") version "0.0.1"
     id("me.whereareiam.anvil.capability.session") version "0.0.1"
     id("me.whereareiam.anvil.capability.messages") version "0.0.1"
     id("me.whereareiam.anvil.capability.server") version "0.0.1"
@@ -231,11 +219,11 @@ The available built-in unit IDs are `session`, `server`, `messages`, `movement`,
 aggregate artifact. Unit plugins own their capability artifact coordinates; the scenarios plugin has
 no built-in capability catalog.
 
-An external capability is installed through the same bucket:
+An external capability is installed on the Anvil source set:
 
 ```kotlin
 dependencies {
-    anvilCapabilities("com.example:combat:1.4.0")
+    add("anvilImplementation", "com.example:combat:1.4.0")
 }
 ```
 
@@ -318,7 +306,7 @@ import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.session.Session;
-import me.whereareiam.anvil.junit.AnvilTest;
+import me.whereareiam.anvil.integration.junit.AnvilTest;
 import org.junit.jupiter.api.Test;
 
 final class PluginTest {
@@ -404,7 +392,7 @@ or call a server/proxy agent. Native worker extensions bind to the actual client
 packet handling and listener cleanup.
 
 Use your own Maven group and packages, register the provider's service descriptor, and install the
-selected implementation through `anvilCapabilities`. The [documentation](https://anvil.whereareiam.me)
+selected implementation through `anvilImplementation`. The [documentation](https://anvil.whereareiam.me)
 walks through contracts, host and worker adapters, agent handlers, and packaged consumer tests.
 
 ## One server would have been too reasonable
@@ -440,12 +428,15 @@ Sometimes you genuinely want to join the server. Fine. Run the same scenario in 
 ```shell
 ./gradlew anvilScenario --list
 ./gradlew anvilScenario --scenario=manual-paper
-./gradlew anvilScenario --group=development
 ```
 
 Anvil prints the vanilla-client join address and gives you status, logs, restarts, scenario
 switching, and routed console commands. Manual testing remains available; it simply stops being the
 entire quality strategy.
+
+Prefer buttons? The [Anvil plugin for IntelliJ IDEA](https://anvil.whereareiam.me/docs/dev/integrations/intellij/installation)
+lists the same scenarios in a tool window, starts whole environments or single servers, and keeps
+each process's console, commands, and players one click away. Install it from JetBrains Marketplace.
 
 ## What it actually supports
 
@@ -469,7 +460,7 @@ Good instinct. The repository contains an executable authentication use case:
 
 - [The plugin](examples/proof-of-patience/src/main/java/me/whereareiam/anvil/example/patience/plugin/ProofOfPatiencePlugin.java), which accepts patience where credentials would usually go
 - [Its ordinary unit test](examples/proof-of-patience/src/test/java/me/whereareiam/anvil/example/patience/plugin/ReconnectChallengeTest.java)
-- [Its reusable scenario catalog](examples/proof-of-patience/src/anvil/java/me/whereareiam/anvil/example/patience/scenario/ProofOfPatienceScenarios.java)
+- [Its reusable scenario definitions](examples/proof-of-patience/src/anvil/java/me/whereareiam/anvil/example/patience/scenario/)
 - [The release journey Alice performs instead of you](examples/proof-of-patience/src/anvil/java/me/whereareiam/anvil/example/patience/journey/ProofOfPatienceJourneyTest.java)
 
 

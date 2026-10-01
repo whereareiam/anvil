@@ -46,6 +46,6 @@ only delays the test. If a wait times out, inspect the reported recent history a
 action actually triggers the expected channelEvent. When old messages could satisfy an assertion, use the
 distinct message text for each action, and inspect the captured history as described in [Messages](../../../building-blocks/players/capabilities/messages/index.md).
 
-For online players, verify that the selected profile exists in the same private cache root used by
-the run. Authenticate explicitly with `anvilLogin --auth-profile=<name>`; do not put tokens in
-scenario code or Gradle properties. See [Authentication](../../../building-blocks/players/authentication/index.md).
+For online players, verify that the selected account exists in the configured private account root used by
+the run. Add or import the account through Anvil's account manager; do not put tokens in scenario
+code or Gradle properties. See [Authentication](../../../building-blocks/players/authentication/index.md).

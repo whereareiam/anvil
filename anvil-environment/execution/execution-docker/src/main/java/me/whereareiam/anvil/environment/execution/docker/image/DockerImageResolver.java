@@ -23,7 +23,7 @@ public final class DockerImageResolver {
 	private final DockerExecutionSettings settings;
 
 	public String resolve(ProcessRequest request) {
-		String requested = settings.image(request.getJavaRequirement(), request.getMinimumJavaVersion());
+		String requested = settings.image(request.getJavaSelection().getRequirement(), request.getMinimumJavaVersion());
 		String key = UUID.nameUUIDFromBytes(requested.getBytes(StandardCharsets.UTF_8)).toString();
 		Path directory = context.getCacheDirectory().resolve("docker-images").resolve(key);
 

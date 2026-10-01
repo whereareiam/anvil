@@ -39,7 +39,7 @@ autonomous AI, and crafting automation are outside the current project scope.
 | `anvil-environment/execution/execution-managed`                       | Complete topology allocation, prepared-input handoff, readiness, consoles, generation replacement, and ordered finalization; no foreign scoped APIs                                 |
 | `anvil-environment/execution/execution-local`                         | Host process execution and local endpoints                                                                                                                                          |
 | `anvil-environment/execution/execution-docker`                        | Typed Docker Engine execution, images, networks, and container endpoints                                                                                                            |
-| `anvil-launcher`                                                      | Public default builder, property decoding, scoped-service adapters, default ScenarioExecutor/per-run assembly, native worker bridge, and shaded packaging                           |
+| `anvil-launcher`                                                      | Public default builder, property decoding, scoped-service adapters, default ScenarioFactory/per-run assembly, native worker bridge, and shaded packaging                            |
 | `anvil-capability/capability-api`                                     | Owner-neutral composition, typed requests/handler registration, and neutral player identity/observations/dependency/lifetime contracts                                              |
 | `anvil-capability/capability-protocol-api`                            | Protocol-backed player providers/contexts, channels/events, and native worker contracts                                                                                             |
 | `anvil-capability/capability-agent-api`                               | Agent-backed process/player providers and scoped request-channel contexts; shared capability API only                                                                               |
@@ -57,11 +57,19 @@ autonomous AI, and crafting automation are outside the current project scope.
 | `anvil-agent/agent-server/server-api`                                 | Embedded endpoint, native service, and operation provider contracts; exports only shared agent contracts                                                                            |
 | `anvil-agent/agent-client`                                            | Host connections, stable process clients/directories, agent sessions, player observations, and artifact location                                                                    |
 | `anvil-agent/agent-server`                                            | Embedded authenticated endpoint, native channelOperation dispatch, extension loading, and the shaded agent artifact used by platform agents                                         |
-| `anvil-integration/junit/extension`                                   | JUnit annotations, context injection, and lifecycle integration                                                                                                                     |
-| `anvil-integration/junit/gradle`                                      | Optional anvilTest task and JUnit dependency wiring                                                                                                                                 |
-| `anvil-tooling/tooling-runner`                                        | Foreground scenario shell, independent of Gradle APIs                                                                                                                               |
-| `anvil-tooling/gradle/scenarios`                                      | Gradle DSL, src/anvil, artifacts, scenarios, authentication tasks, and unit-plugin registry                                                                                         |
-| `anvil-tooling/gradle/bundle`                                         | Combined Gradle plugin and curated capability/platform unit plugins                                                                                                                 |
+| `anvil-integration/integration-junit`                                             | JUnit annotations, context injection, and lifecycle integration                                                                                                                     |
+| `anvil-integration/integration-gradle/gradle-junit`                                      | Optional anvilTest task and JUnit dependency wiring                                                                                                                                 |
+| `anvil-tooling/tooling-api`                                           | Editor-independent scenario, session, target, and log contracts                                                                                                                     |
+| `anvil-integration/integration-gradle/gradle-tooling`                             | Gradle task discovery, definition indexing, source-set preparation, and tooling runtime                                                                                             |
+| `anvil-tooling/tooling-runner`                                        | Reusable sessions, direct scenario-definition discovery, terminal commands, and structured protocol; supplied engine factory, no default launcher dependency                      |
+| `anvil-integration/integration-intellij/intellij-api`                                      | IntelliJ integration contracts and immutable cross-module values                                                                 |
+| `anvil-integration/integration-intellij/intellij-engine`                                   | IntelliJ integration lifecycle, tooling processes, project services, and account logic                              |
+| `anvil-integration/integration-intellij/intellij-gradle`                                   | Optional native Gradle project discovery, sync, and preparation adapter                                |
+| `anvil-integration/integration-intellij/intellij-ui`                                       | IntelliJ Swing, tool windows, dialogs, settings, navigation, and presentation                                    |
+| `anvil-integration/integration-intellij/intellij`                                          | Plugin descriptor, branding, dependency composition, and IDE packaging                                            |
+| `anvil-integration/integration-gradle/gradle-plugin`                                      | Standard scenario entry point assembling shared Gradle declarations, foreground tasks, and project discovery                                                                                         |
+| `anvil-integration/integration-gradle/gradle-platforms`                                    | Gradle adapters for platform providers                                                                                                                     |
+| `anvil-integration/integration-gradle/gradle-capabilities`                                 | Gradle adapters for capability providers                                                                                                                   |
 | `anvil-testkit/tests`                                                 | Cross-module runtime and live assertions                                                                                                                                            |
 | `anvil-testkit/fixtures`                                              | Independent consumer build for process, server-plugin, and extension fixture JARs                                                                                                   |
 | `anvil-testkit/support`                                               | Host-side fixture artifact access and scoped extension loading                                                                                                                      |
@@ -135,7 +143,10 @@ autonomous AI, and crafting automation are outside the current project scope.
   Anvil protocol/capability services cross their boundary through explicit assembly bridges, not
   `findService` or a fake universal packet abstraction.
 - Authentication is an optional `ProtocolProvider` service. Tooling depends on that API, not
-  MCProtocol's account-store implementation. The Gradle account option is `--auth-profile`.
+  MCProtocol's account-store implementation. Account files are managed outside project configuration.
+  The IntelliJ account manager and Gradle `anvilAccount` share the `AnvilAuthentication` entry point.
+  Named pools live in the account directory's versioned `pools.properties`, documented on
+  `AccountManager.pool(String)`; the runtime reads it and the IDE writes it, with the same rules.
 - External embedded-agent handlers implement `agent.server.api.operation.AgentOperationProvider`
   and own their channelOperation namespace.
   Install their JARs under `plugins/anvil-agent-extensions`; do not bundle Anvil agent APIs or
@@ -143,6 +154,14 @@ autonomous AI, and crafting automation are outside the current project scope.
   bind them to connections obtained through `AgentDirectory`.
 - Platform agents expose native services and their scheduling rules. The endpoint owns its extension
   class loader; the scenario owns host connections.
+- `executionProviderId` selects providers in declarations and execution plans; `RunningProcess.executionId()`
+  identifies one execution attempt. Engine `ProcessTimeouts` defaults are overridden independently by scenario
+  startup/shutdown values. Engine `ProcessScheduling` governs each scenario operation, not aggregate engine usage.
+  Keep artifact download concurrency separate.
+- `JavaSelection` groups Java requirement and source in engine, scenario, and process declarations.
+  Omitted members inherit independently; an explicit empty requirement overrides an inherited version.
+  Planning supplies a resolved selection to execution. Scenario listener binding and LAN permission
+  belong to `NetworkPolicy`, alongside exposure and access policy.
 - Java requirements are execution-agnostic. Local homes and verified archives belong to Java provisioning;
   Docker image mappings belong to the Docker execution provider.
 - Execution providers own network topology and endpoint translation. A local loopback bind is host exposure
@@ -197,8 +216,9 @@ autonomous AI, and crafting automation are outside the current project scope.
 - Examples are standalone consumer builds, excluded from root project discovery. Publish Anvil to
   Maven Local first, then run `./gradlew -p examples/proof-of-patience build anvilTest` with the same version.
 - Preserve configuration-cache behavior when changing task inputs or plugin wiring.
-- Keep platform units explicit. The umbrella plugin supplies the curated built-in capability set;
-  smaller installations choose capability unit plugins.
+- Keep platform and capability units explicit. `me.whereareiam.anvil` supplies scenarios and project
+  discovery; `me.whereareiam.anvil.junit` supplies automated testing. Both use the shared Gradle base;
+  neither installs default capabilities or depends on the other execution plugin.
 - EULA acceptance uses `anvil { acceptEula() }`.
 
 ## Runtime and reproducibility requirements
@@ -212,10 +232,18 @@ autonomous AI, and crafting automation are outside the current project scope.
   server. Preserve explicit client overrides and deterministic native selection; no implicit ViaVersion fallback.
 - Prepare declared assets and caches before provider configuration. Runtime ports, forwarding,
   agent credentials, and EULA values take precedence. Independent preparation and startup work may run
-  concurrently within configured limits; provider configuration remains deterministic.
+  concurrently within configured limits. Configure each process during its start, including the first
+  start and every restart; independent configurations may overlap and must use the supplied process
+  workspace and planned shared values. Preparation owns reusable inputs, not launch resources.
 - Agents bind to loopback and authenticate with per-run random tokens. Non-loopback game listeners
   require a manual scenario and explicit LAN opt-in.
-- Global `ScenarioExecutor` returns a ready context before engine extensions and setup run.
+- Global `ScenarioFactory.create` acquires a context without starting processes. The core engine builder
+  requires its factory at construction; extensions register only lifecycle contributions and resource ownership.
+  Launcher assembly creates the factory and transfers shared services before installing caller extensions. There is one
+  lifecycle: prepare, `ScenarioContext.start`, then `finish(boolean)`. The engine's `start` method
+  performs those first two phases; global extensions and setup run once after full scoped readiness.
+  Do not retain separate ready-only executors, optional preparation adapters, or fallback startup paths.
+  Each process execution has an opaque UUID assigned by execution. Consumers correlate that identity across snapshots and logs; it is not a restart counter.
   Use `ScenarioContext.finish(boolean)` and `ScenarioAttachment.finish(boolean)` to propagate caller
   outcomes; default `close()` means normal completion and does not erase earlier lifecycle failures.
 - Start servers before proxies; stop processes in reverse dependency order. Cleanup attempts every resource,
@@ -223,8 +251,34 @@ autonomous AI, and crafting automation are outside the current project scope.
 - Never put online access/refresh tokens in Gradle inputs, CLI arguments, environment variables,
   system properties, logs, or project workspaces. Workers receive them only through private stdin.
   Agent session tokens are separate per-run credentials used by the managed child process.
-- Use `AnvilScenarioDefinition` for a type-selected JUnit environment and `AnvilScenarioProvider`
-  for catalogs, discovery, matrices, and interactive groups.
+- Use `AnvilScenarioDefinition` as the one-scenario unit for JUnit, foreground execution, and IDE
+  discovery. Gradle indexes compiled definition classes; scenario metadata supplies presentation labels,
+  categories, and tags. Keep generated matrices as explicit definition classes or an advanced source,
+  rather than requiring a catalog registry.
+- Presentation metadata remains optional. Resolve labels in tooling while preserving technical
+  scenario-definition, process, capability, and player identities.
+- `RunnerSession` owns its engine and foreground context. Partial execution uses the canonical
+  preparation/start lifecycle; process allocation and generations remain in managed execution, with scoped
+  services bound by the launcher. Failed runner operations finalize contexts with `finish(false)`.
+- IntelliJ scenario-source discovery uses `BuildIntegration` through
+  `ProjectBuildIntegrations`. Keep Gradle APIs in the optional
+  `integration-intellij/intellij-gradle` adapter. Import the native Gradle task model during sync and
+  use the standard preparation task as the source marker; do not scan source directories or
+  instantiate scenario definitions. Project import does not compile sources or resolve artifacts.
+- Build integrations own compilation, fixture/artifact resolution, and preparation. Consumer and
+  framework targets use the standard Anvil plugin and its internal preparation task. The generated launch manifest contains
+  explicit inputs and belongs to the caller; the IDE removes it after launch or failure. Native
+  authentication credentials do not belong in manifests. Version the local session protocol.
+- The main BOM aligns the project-tooling API, Gradle model API, artifact binding, and Gradle producer
+  publications directly. Derive constraints from actual publications; do not maintain a second tooling BOM.
+- Tooling capability features use the public tooling-extension-api. Keep built-in capability imports out of
+  the generic runner and IDE. The optional tooling-builtin module contributes through the same ServiceLoader
+  SPI as external projects. Wire models remain independent of core/runtime APIs. Validate invocation session,
+  target, capability support, availability, and inputs before calling a handler. Never infer arbitrary capability
+  methods through reflection. Observations are read-only contributions; their failures remain visible as values.
+- Keep IDE views and controls independent of engine implementations. Saved selections use stable
+  project/definition/scenario identities; optional names never change execution routing. Native
+  settings control personal IDE behavior, while runtime options stay in project/scenario definitions.
 - Adding a supported MCProtocol version requires exact artifact URL/SHA-256, protocol number,
   Java requirement, binding family, worker/capability contracts, all supported direct/proxy routes,
   and supported-version documentation updates.
@@ -233,6 +287,11 @@ autonomous AI, and crafting automation are outside the current project scope.
 
 - Unit and focused integration tests stay in their owning module's `src/test`, normally mirroring
   the production package. Test observable contracts rather than duplicating implementation details.
+- IntelliJ tests belong to `intellij-engine`, `intellij-ui`, or `intellij-gradle` according to
+  the behavior under test. API contract tests live in `intellij-engine`; `intellij-api` has no test sources. Only production descriptor/composition smoke tests belong
+  in `intellij`. Engine tests use recording output without a UI dependency; UI tests bind their
+  collaborators locally without depending on the assembly. Share controlled process fixtures through
+  the engine's `src/testFixtures`, never through production artifacts or another module's whole test tree.
 - `anvil-testkit/tests/runtime/src/test`: cross-module discovery/composition without live Minecraft.
 - `anvil-testkit/tests/server/src/test`: real sessions, capabilities, routes, and external agents,
   grouped by behavior. The whole task requires `-Panvil.testMode=full`.
@@ -260,7 +319,7 @@ Run the nearest relevant test first, then architecture/build checks:
 ./gradlew :anvil-agent:agent-server:test
 ./gradlew :anvil-capability:test
 ./gradlew :anvil-protocol:protocol-mcprotocol:test
-./gradlew :anvil-tooling:gradle:scenarios:test :anvil-tooling:gradle:bundle:test
+./gradlew :anvil-integration:integration-gradle:gradle-plugin:test :anvil-integration:integration-gradle:gradle-capabilities:test :anvil-integration:integration-gradle:gradle-platforms:test
 ./gradlew :anvil-testkit:tests:runtime:test
 ./gradlew build
 ~~~
@@ -294,3 +353,123 @@ For providers/forwarding, run every affected direct/proxy combination. Inspect r
   Release Drafter updates on `dev` pushes or manual dispatch,
   using `feature`, `change`, `bug`, `dependencies`, `major`, and `skip-changelog` labels. Published
   releases trigger release verification/publication. No scheduled nightly workflow is required.
+
+## Integration composition
+
+- External integrations live under `anvil-integration`; editor-independent session tooling stays in `anvil-tooling`.
+- Gradle base owns the public `AnvilExtension` surface and creates it with the `anvil` source set. Gradle
+  execution adapters consume its source set, versioned module coordinates, EULA acceptance, and tracked
+  artifact registrations through `getByType(AnvilExtension)`; do not restore a private state holder or lookup.
+  `gradle-dsl` only maps that configuration to engine properties. Scenario discovery scans the `anvil`
+  source set only; ordinary `src/test` classes are never compiled or scanned for definitions.
+- JUnit runtime does not depend on Gradle or IDE code. Gradle–JUnit assembly installs its runtime dependency
+  and configures Gradle Test tasks without importing the scenario plugin or project-discovery producer.
+- Gradle project tooling lives in the normal root modules under `anvil-integration/integration-gradle`: `gradle-tooling`
+  and `gradle-artifacts`. The standard Anvil plugin wires the preparation task internally; JUnit wiring does
+  not depend on the project producer.
+- The IntelliJ integration keeps contracts in `intellij-api`, lifecycle and tooling logic in
+  `intellij-engine`, native Gradle behavior in `intellij-gradle`, IntelliJ presentation in `intellij-ui`,
+  and service-interface bindings, extension registration, and plugin packaging in `intellij`.
+  UI areas live under `view.settings` and `view.window.main` / `view.window.account`, with components
+  scoped beneath their consumers. Shared console presentation lives in `component.console`; native
+  Run/Debug configuration integration lives in `runconfiguration`. Its project-scoped
+  `RunConfigurationService` owns saved-configuration matching, source resolution, validation, and
+  launch requests through `EnvironmentLifecycle`. The assembly registers the service; the catalog
+  calls it to save configurations, the editor uses its source choices, and `AnvilRunConfiguration`
+  adapts native validation/execution while retaining XML persistence and giving the Run tab its own console presentation. Ordinary
+  catalog runs remain independent of saved configurations. Main-window navigation lives in
+  `view.window.main.navigation`: `DefinitionNavigator` owns indexed source lookup and editor navigation,
+  while `WorkspaceNavigator` refreshes and opens process directories. Lookup carriers stay private.
+  `MainWindowController` owns tool-window contents and retention. Catalog layout belongs to
+  `ScenarioCatalogPanel` composes the catalog screen through `CatalogView`; `CatalogController` composes three concrete owners in the same package.
+  `CatalogDiscoveryController` observes discovery/catalog/preferences and owns source controls and
+  loading/failure messages. `CatalogExecutionController` replaces the active-session subscription and
+  renders overlays/inspector state. `CatalogCommandController` rechecks selection and availability for
+  launch/save/navigation requests. Each owner disposes its own observers; closing a catalog does not
+  stop its environment. Command failures are reported to the discovery owner for display. Its tree lives under `view.window.main.catalog.tree`: `ScenarioTreeView` owns the
+  Swing tree boundary, `ScenarioTreeModel` projects typed scenario/process nodes, `ScenarioTreeExpansion`
+  retains stable user expansion choices, and `ScenarioTreeRenderer` owns labels, icons, tooltips, and
+  execution overlays.
+  `SettingsForm` owns editable controls, while `AnvilSettingsConfigurable` handles Apply/Reset.
+  Define all panels and dialogs in `intellij-ui/src/main/kotlin`, using Kotlin UI DSL for forms and Swing
+  composition for tool-window layouts, alongside Java
+  controllers and platform adapters in the matching `src/main/java` packages. Dialogs own titles,
+  actions, component composition, and disposal; Java controllers own persistence, service calls,
+  asynchronous work, validation rules, and operation lifetimes. Forms own layout,
+  editable values, presentation validation, and local control interactions. Java owns service calls,
+  persistence, subscriptions, history policy, and operation lifetimes. Use ordinary methods and
+  Java callback types at that boundary. Custom tree/list renderers and platform console adapters may
+  remain Java; panel construction belongs in Kotlin. `EnvironmentSessionController` owns session
+  subscriptions and disposal; `EnvironmentController`, `PlayersController`, `ConsoleController`, and
+  `TargetContributionsController` own their screen interactions. Configure Kotlin's Lombok compiler plugin
+  alongside Java annotation processing so Kotlin can consume generated Java members in the UI module.
+  Kotlin compilation targets Java 21 and the baseline IDE's Kotlin API; use the IDE-provided runtime.
+  UI and Gradle production code depend on `intellij-api`, never engine implementations. Persistence
+  beans stay in engine; cross-module settings use immutable snapshots. Native IntelliJ project and
+  disposal types are allowed in IntelliJ contracts; Gradle SDK types stay in the Gradle adapter.
+- IntelliJ environment presentation packages use `environment`; reserve the repository's `/run/`
+  directory for generated runtime files. Engine features live under `source`, `scenario`, `settings`,
+  `account`, and `tooling`. Process transport/termination belongs to `ToolingConnection`.
+  `ProjectSourceDiscovery` implements `SourceDiscovery` and owns source selection, sync,
+  and scenario loading; `ImportRefreshPolicy` decides when a completed import reloads the selected source. Once initialized, it observes the project independently of open views;
+  `DiscoverySnapshot` and `DiscoveryState` expose its state. Refresh waits for active environment cleanup.
+  `ProjectScenarioCatalog` owns catalog state, discovered definitions, and discovery output;
+  `ProjectEnvironmentLifecycle` owns the active environment and retained handles. `ProjectToolingHost`
+  arbitrates reuse/reservation/replacement of one tooling launch, and `ToolingLaunch` owns preparation,
+  the runner, temporary credentials, and cleanup. Its private `LaunchResources` owns partially acquired
+  files and accounts; try-with-resources releases both even when another cleanup step fails.
+  `ToolingConnection` owns stdout/stderr reading and drains diagnostic delivery before file cleanup.
+  `ToolingLaunch` publishes one typed `ToolingLaunch.Outcome` (finished, stopped, or failed) after cleanup, and requests scenario discovery only when asked; listener failures cannot skip resource
+  release or pending-future completion. A replacement waits for the previous launch's cleanup.
+  `EnvironmentExecution` owns one environment snapshot and lifecycle. `RetainedEnvironmentSession`
+  stays bound to that execution; commands never look up a replacement through a project service.
+  A disposed handle is removed from the retained list while its launch remains reserved until cleanup.
+  `StoredSessionLog` lives in the shared `log` package. `CatalogSnapshot` and its `CatalogState` describe catalog
+  lifecycle, while the engine calculates `EnvironmentState` from `SessionSnapshot` and exposes it
+  through `EnvironmentSession`; UI derives labels and tones from those typed states.
+  UI console presentations subscribe without an engine-to-UI factory. `ToolingClient` owns handshake,
+  ordered request submission, response correlation, and pending-result completion on closure or failure.
+  `ToolingMessageCodec` owns typed JSON binding and version checks; transport frames stay internal.
+  Portable `tooling-api` payloads use Jackson-compatible Lombok builders and are reused by both peers;
+  do not recreate their fields in a manual JSON model reader. `ScenarioOperations`, `EnvironmentOperations`,
+  and `ProcessOperations` declare predefined `ToolingOperation<Q, R>` schemas at the `tooling-api` root.
+  `ToolingClient.request` retains the declared response type, including collection element types.
+  `ToolingOperationRegistry` binds typed runner handlers and cancellation policy; `ToolingRequestReader`
+  decodes registered payload types generically. Do not add per-operation codec factories or duplicate
+  operation enums. `ToolingProtocolWriter` emits typed envelopes. Protocol 7 uses nested action targets.
+  Environment contracts expose explicit controls, never string protocol operation names. Response IDs
+  correlate requests and must not be overloaded with operation names.
+  `ConfiguredAccountLibrary` owns the project-facing account contract while
+  `AccountDirectoryRepository` and `AccountPoolRepository` own persistent files.
+  `AccountWorkspace` owns temporary credential copies and cleanup. Keep native persistent component
+  names stable when renaming implementation classes.
+- IntelliJ is a frontend in the logical `:anvil-tooling` API family, declared through `architecture.family`
+  on `integration-intellij`. Its physical location remains under `anvil-integration`. Reuse portable
+  models from `anvil-tooling/tooling-api` through `intellij-api`; keep IDE-specific contracts there.
+  Ordinary implementation dependencies remain forbidden. The IDE launches the tooling runtime in
+  a separate project JVM and does not depend on the runner implementation.
+
+- `tooling-runner` is reusable implementation code over core/tooling APIs. `AnvilRunner` and
+  `RunnerSession` receive an owned-engine factory. Default engine construction, property decoding,
+  and executable main methods belong to `tooling-launcher`; Gradle and IDE launch that assembly.
+
+## Build conventions
+
+- `build-logic/settings` owns the lean settings/composite convention classpath. Keep it independent
+  of the producer and of project plugins such as architecture, publication, and the IntelliJ plugin.
+- Declare included builds, lifecycle participation, and standalone discovery exclusions in
+  `BuildLayout`; module build files must not repeat included-build task wiring.
+- `composite` owns fixture-repository publication. The `fixture-repository` project convention
+  only connects a module's tests to that prepared repository.
+- The standard Anvil plugin owns the executable runtime configuration and its lazy version-aligned
+  dependencies. Keep source-set wiring, runtime dependencies, artifact mappings, and generated
+  definition indexes internal to the build integration; expose only engine settings, EULA acceptance,
+  and named artifacts through the normal `anvil` DSL.
+
+- Tooling action/observation roots live under `tooling.extension.api.action` and `.observation`.
+  Scoped scenario specializations live under `.action.scoped` and `.observation.scoped`; player and
+  process variants, including capability-specific parents, live in their `player` and `process`
+  subpackages. Registration accepts contribution objects through `action` and `observation` and
+  rejects generic-base subclasses without a supported scope. Capability parents supply the current
+  typed capability; keep identifier validation and registration lifetime enforcement in the runner,
+  and do not restore target-specific registration overloads.

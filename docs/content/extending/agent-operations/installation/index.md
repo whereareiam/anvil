@@ -4,7 +4,7 @@ description: Package the handler and add it to each target process as a workspac
 ---
 
 The managed JVM loads channelOperation JARs from `plugins/anvil-agent-extensions`. Adding a host dependency
-to `anvilCapabilities` makes it available to Anvil; install the platform handler separately as a
+to `anvilImplementation` makes it available to Anvil; install the platform handler separately as a
 workspace asset.
 
 ## Build the JAR

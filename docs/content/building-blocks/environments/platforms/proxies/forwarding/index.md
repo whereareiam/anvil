@@ -25,7 +25,7 @@ platform configuration; do not store per-run forwarding values in fixture files.
 ## Assert the route
 
 In a JUnit method receiving `ScenarioContext anvil`, this fragment targets the example proxy and
-checks the backend. The umbrella plugin supplies the required Session and Server capabilities;
+checks the backend. The default capability unit supplies the required Session and Server capabilities;
 a smaller installation must add both units.
 
 ```java

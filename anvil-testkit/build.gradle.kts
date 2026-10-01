@@ -6,5 +6,4 @@ description = "Internal test support, fixture applications, and cross-module ver
 
 tasks.named("build") {
 	dependsOn(":anvil-testkit:support:build", ":anvil-testkit:tests:build")
-	dependsOn(gradle.includedBuild("anvil-test-fixtures").task(":build"))
 }

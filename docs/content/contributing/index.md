@@ -19,8 +19,11 @@ Read `AGENTS.md`, inspect the working tree, and find the narrowest module that o
 Read its build file, adjacent implementation, and tests before editing. Preserve existing staged and
 unstaged work.
 
-Use Java 21 for Anvil's own source. Managed distributions and protocol workers may require a newer
-Java runtime; those requirements are separate from the framework's compilation target.
+Anvil source targets Java 21. IntelliJ panel definitions use Kotlin in `intellij-ui`;
+controllers, platform adapters, and engine code remain Java. See the
+[UI ownership guidance](./architecture/modules/index.md) before adding a form. Managed distributions
+and protocol workers may require a newer Java runtime; those requirements are separate from the
+framework's compilation target.
 
 When changing a public contract, update its callers, provider descriptors, packaging, tests, and
 consumer documentation together. Keep a complete runnable example for public DSL changes. Choose

@@ -2,6 +2,7 @@ package me.whereareiam.anvil.api.scenario;
 
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerManager;
+import me.whereareiam.anvil.api.player.account.AccountManager;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,4 +30,9 @@ public interface ScenarioAccess {
 	 * @return player manager
 	 */
 	@NotNull PlayerManager players();
+
+	/** @return scenario-owned authenticated account discovery and pooling */
+	default @NotNull AccountManager accounts() {
+		return java.util.List::of;
+	}
 }

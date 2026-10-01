@@ -3,7 +3,6 @@ package me.whereareiam.anvil.testkit.tests.server.routing;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
-import me.whereareiam.anvil.api.scenario.ScenarioRegistry;
 import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.capability.server.Server;
@@ -12,7 +11,7 @@ import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.testkit.tests.server.extension.FixtureAgentProbeProvider;
-import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioCatalog;
+import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 
@@ -25,10 +24,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class ProcessRestartSystemTest {
 	@TestFactory
 	Stream<DynamicTest> restartsEverySupportedPlatformAndNativeVersion() {
-		ScenarioRegistry registry = new ScenarioRegistry();
-		new CompatibilityScenarioCatalog().register(registry);
 		String filter = System.getProperty("anvil.matrix.filter", ".*");
-		return registry.scenarios().stream().filter(scenario -> scenario.getName().matches(filter))
+		return CompatibilityScenarioFactory.scenarios().stream().filter(scenario -> scenario.getName().matches(filter))
 				.map(scenario -> DynamicTest.dynamicTest(scenario.getName(), () -> verify(scenario)));
 	}
 

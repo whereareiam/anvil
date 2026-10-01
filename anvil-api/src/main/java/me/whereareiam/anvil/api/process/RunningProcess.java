@@ -7,16 +7,26 @@ import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
+import java.util.UUID;
 
 /**
- * Runtime view of one generation of a managed Minecraft server or proxy process.
- * Lifecycle state, listener address, workspace, and console describe this generation. Capabilities
+ * Runtime view of one execution of a managed Minecraft server or proxy process.
+ * Lifecycle state, listener address, workspace, and console describe this execution. Capabilities
  * belong to the logical process declared in the scenario: their instances remain shared across
- * replacement generations, although operations can be unavailable while a process restarts.
+ * replacement executions, although operations can be unavailable while a process restarts.
  * Capabilities are finalized with the scenario; subsequent lookup fails and availability checks
  * return false. Implementations that do not supply capabilities inherit empty lookup behavior.
  */
 public interface RunningProcess extends CapabilityOwner<ProcessCapability> {
+	/**
+	 * Identifies this execution attempt independently of the logical process name and operating-system PID.
+	 * The identifier remains unchanged for this handle; starting a replacement creates a new identifier.
+	 * Identifiers are opaque and carry no ordering or restart-count meaning.
+	 *
+	 * @return execution-owned unique identifier shared by observations and snapshots
+	 */
+	@NotNull UUID executionId();
+
 	/**
 	 * Returns the scenario process name.
 	 *

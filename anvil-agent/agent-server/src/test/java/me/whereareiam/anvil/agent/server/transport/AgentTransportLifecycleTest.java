@@ -1,13 +1,14 @@
 package me.whereareiam.anvil.agent.server.transport;
 
-import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.agent.api.model.AgentIdentity;
 import me.whereareiam.anvil.agent.api.model.AgentInfo;
 import me.whereareiam.anvil.agent.api.model.location.ProxyLocation;
+import me.whereareiam.anvil.agent.api.type.AgentRole;
+import me.whereareiam.anvil.agent.client.api.AgentClient;
+import me.whereareiam.anvil.agent.client.api.exception.AgentUnavailableException;
+import me.whereareiam.anvil.agent.client.transport.connection.JsonLineAgentConnectionProvider;
 import me.whereareiam.anvil.agent.server.api.PlatformAgent;
 import me.whereareiam.anvil.agent.server.api.transport.AgentServerProvider;
-import me.whereareiam.anvil.agent.api.type.AgentRole;
-import me.whereareiam.anvil.agent.client.transport.connection.JsonLineAgentConnectionProvider;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +41,7 @@ class AgentTransportLifecycleTest {
 		int port = freePort();
 		try (PlatformAgentServer ignored1 = new PlatformAgentServer(port, "token", new TestPlatform(), ignored -> {});
 		     AgentClient client = new JsonLineAgentConnectionProvider().connect(port, "token", Duration.ofSeconds(2))) {
+			assertTrue(client.available());
 			assertTrue(client.identity("missing").isEmpty());
 			AgentIdentity identity = client.identity("Alice").orElseThrow();
 			assertEquals("Alice", identity.getUsername());
@@ -48,6 +50,10 @@ class AgentTransportLifecycleTest {
 			assertEquals("server", location.getConnectedServer());
 			assertTrue(client.executeCommand("accepted"));
 			assertFalse(client.executeCommand("rejected"));
+			client.close();
+			assertFalse(client.available());
+			assertThrows(AgentUnavailableException.class, () -> client.identity("missing"));
+			assertThrows(AgentUnavailableException.class, () -> client.executeCommand("accepted"));
 		}
 	}
 

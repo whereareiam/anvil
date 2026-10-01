@@ -24,16 +24,16 @@ class ProtocolProviderRegistryTest {
 		AtomicInteger creations = new AtomicInteger();
 		ProtocolProvider provider = new StubProvider("sole") {
 			@Override
-			public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull ProtocolRuntimeResolver runtimes) {
+			public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull Path accountsDirectory, @NotNull ProtocolRuntimeResolver runtimes) {
 				creations.incrementAndGet();
-				return super.create(cacheDirectory, runtimes);
+				return super.create(cacheDirectory, accountsDirectory, runtimes);
 			}
 		};
 
 		ProtocolProviderRegistry registry = new ProtocolProviderRegistry(List.of(provider));
 		assertEquals(provider, registry.select(null));
 		assertEquals(0, creations.get());
-		assertEquals("sole", registry.create(null, Path.of("cache"), runtimes).id());
+		assertEquals("sole", registry.create(null, Path.of("cache"), Path.of("accounts"), runtimes).id());
 		assertEquals(1, creations.get());
 	}
 
@@ -44,14 +44,14 @@ class ProtocolProviderRegistryTest {
 				new StubProvider("first"),
 				new StubProvider("second") {
 					@Override
-					public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull ProtocolRuntimeResolver runtimes) {
+				public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull Path accountsDirectory, @NotNull ProtocolRuntimeResolver runtimes) {
 						return backend;
 					}
 				}
 		));
 
 		assertEquals(List.of("first", "second"), registry.ids().stream().toList());
-		assertEquals("second", registry.create("second", Path.of("cache"), runtimes).id());
+		assertEquals("second", registry.create("second", Path.of("cache"), Path.of("accounts"), runtimes).id());
 	}
 
 	@Test
@@ -61,8 +61,8 @@ class ProtocolProviderRegistryTest {
 				new StubProvider("second")
 		));
 
-		assertThrows(IllegalStateException.class, () -> registry.create(null, Path.of("cache"), runtimes));
-		assertThrows(IllegalArgumentException.class, () -> registry.create("missing", Path.of("cache"), runtimes));
+		assertThrows(IllegalStateException.class, () -> registry.create(null, Path.of("cache"), Path.of("accounts"), runtimes));
+		assertThrows(IllegalArgumentException.class, () -> registry.create("missing", Path.of("cache"), Path.of("accounts"), runtimes));
 	}
 
 	private static class StubProvider implements ProtocolProvider {
@@ -78,7 +78,7 @@ class ProtocolProviderRegistryTest {
 		}
 
 		@Override
-		public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull ProtocolRuntimeResolver runtimes) {
+		public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull Path accountsDirectory, @NotNull ProtocolRuntimeResolver runtimes) {
 			return new StubBackend(id);
 		}
 	}

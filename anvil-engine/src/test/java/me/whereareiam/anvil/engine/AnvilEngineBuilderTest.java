@@ -3,7 +3,7 @@ package me.whereareiam.anvil.engine;
 import me.whereareiam.anvil.api.engine.EngineRegistration;
 import me.whereareiam.anvil.api.exception.AnvilException;
 import me.whereareiam.anvil.api.model.EngineOptions;
-import me.whereareiam.anvil.api.scenario.ScenarioExecutor;
+import me.whereareiam.anvil.api.scenario.ScenarioFactory;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -13,17 +13,16 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AnvilEngineBuilderTest {
-	private final ScenarioExecutor unused = scenario -> { throw new AssertionError("No scenario starts during assembly"); };
+	private final ScenarioFactory unused = (scenario, observer) -> { throw new AssertionError("No scenario starts during assembly"); };
 
 	@Test
 	void defersInstallationAndSealsTypedRegistrationsAfterOwnershipTransfer() {
 		List<String> calls = new ArrayList<>();
 		AtomicReference<EngineRegistration> installed = new AtomicReference<>();
-		var builder = new AnvilEngineBuilder();
+		var builder = new AnvilEngineBuilder(unused);
 		builder.extension(registration -> {
 			calls.add("installed");
 			installed.set(registration);
-			registration.executor(unused);
 			registration.own(() -> calls.add("first"));
 			registration.own(() -> calls.add("second"));
 		});
@@ -31,7 +30,6 @@ class AnvilEngineBuilderTest {
 
 		var engine = builder.build();
 		assertEquals(List.of("installed"), calls);
-		assertThrows(IllegalStateException.class, () -> installed.get().executor(unused));
 		assertThrows(IllegalStateException.class, () -> installed.get().scenarios(scenario -> successful -> { }));
 		assertThrows(IllegalStateException.class, () -> installed.get().own(() -> { }));
 		assertThrows(IllegalStateException.class, builder::build);
@@ -48,7 +46,7 @@ class AnvilEngineBuilderTest {
 		List<String> closed = new ArrayList<>();
 		AssertionError installation = new AssertionError("installation");
 		IllegalStateException cleanup = new IllegalStateException("cleanup");
-		var builder = new AnvilEngineBuilder().extension(registration -> {
+		var builder = new AnvilEngineBuilder(unused).extension(registration -> {
 			registration.own(() -> closed.add("first"));
 			registration.own(() -> { closed.add("second"); throw cleanup; });
 			throw installation;
@@ -62,7 +60,7 @@ class AnvilEngineBuilderTest {
 	@Test
 	void rollbackDoesNotSelfSuppressTheInstallationFailure() {
 		IllegalStateException failure = new IllegalStateException("shared failure");
-		var builder = new AnvilEngineBuilder().extension(registration -> {
+		var builder = new AnvilEngineBuilder(unused).extension(registration -> {
 			registration.own(() -> { throw failure; });
 			throw failure;
 		});
@@ -72,24 +70,17 @@ class AnvilEngineBuilderTest {
 	}
 
 	@Test
-	void missingOrDuplicateExecutorsReleaseTransferredResources() {
-		List<String> closed = new ArrayList<>();
-		var missing = new AnvilEngineBuilder().extension(registration -> registration.own(() -> closed.add("missing")));
-		assertThrows(IllegalStateException.class, missing::build);
-		var duplicate = new AnvilEngineBuilder().extension(registration -> {
-			registration.own(() -> closed.add("duplicate"));
-			registration.executor(unused);
-			registration.executor(unused);
-		});
-		assertThrows(IllegalStateException.class, duplicate::build);
-		assertEquals(List.of("missing", "duplicate"), closed);
+	void buildsWithoutAnExtensionToSupplyTheFactory() {
+		try (var engine = new AnvilEngineBuilder(unused).build()) {
+			assertNotNull(engine);
+		}
 	}
 
 	@Test
 	void rejectsDuplicateResourceOwnershipAndClosesItOnlyOnce() {
 		List<String> closed = new ArrayList<>();
 		AutoCloseable resource = () -> closed.add("resource");
-		var builder = new AnvilEngineBuilder().extension(registration -> {
+		var builder = new AnvilEngineBuilder(unused).extension(registration -> {
 			registration.own(resource);
 			registration.own(resource);
 		});
@@ -102,8 +93,7 @@ class AnvilEngineBuilderTest {
 	void preservesInterruptionWhileAttemptingRemainingSharedCleanup() {
 		List<String> closed = new ArrayList<>();
 		InterruptedException interrupted = new InterruptedException("cleanup interrupted");
-		var engine = new AnvilEngineBuilder().extension(registration -> {
-			registration.executor(unused);
+		var engine = new AnvilEngineBuilder(unused).extension(registration -> {
 			registration.own(() -> closed.add("remaining"));
 			registration.own(() -> { throw interrupted; });
 		}).build();

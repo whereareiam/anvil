@@ -35,7 +35,7 @@ import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
-import me.whereareiam.anvil.junit.AnvilTest;
+import me.whereareiam.anvil.integration.junit.AnvilTest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -82,7 +82,7 @@ repeated actions on the same player, use distinct response markers or another ob
 
 Several tests can select one definition while exercising different behavior. To exercise one journey
 against another supported environment, add a method selecting that definition and call the same
-helper. Use common process names when the helper expects the same roles. A catalog or group does not
+helper. Use common process names when the helper expects the same roles. A set of definitions does not
 automatically create a JUnit test matrix; select each environment through the
 [JUnit integration](../../../integrations/junit/selection/index.md).
 

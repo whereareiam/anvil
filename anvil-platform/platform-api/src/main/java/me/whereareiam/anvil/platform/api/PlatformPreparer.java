@@ -24,7 +24,8 @@ public interface PlatformPreparer {
 
 	/**
 	 * Applies runtime-owned settings, preserving unrelated platform configuration.
-	 * Called after preparation and again before a replacement process generation starts.
+	 * Called during each process start after input preparation, including the first start and restarts.
+	 * Calls for independent processes may overlap; configure only the supplied process workspace.
 	 *
 	 * @param process validated process plan
 	 * @param request workspace and execution-selected endpoints

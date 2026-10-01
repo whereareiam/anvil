@@ -40,7 +40,7 @@ class ProtocolWorkerContractTest {
 
 	@Test
 	void refusesNewPlayersAfterClientPoolShutdown() {
-		ProtocolBackend clients = new McProtocolProvider().create(temporary, artifacts::obtain);
+		ProtocolBackend clients = new McProtocolProvider().create(temporary, temporary.resolve("accounts"), artifacts::obtain);
 		clients.close();
 		clients.close();
 		PlayerRequest request = PlayerRequest.builder().name("Alice").clientVersion("1.21.11")
@@ -51,7 +51,7 @@ class ProtocolWorkerContractTest {
 	@ParameterizedTest(name = "exact worker for {0}")
 	@ValueSource(strings = {"1.21.11", "26.1.2"})
 	void launchesExactWorkerWithBuiltInCapabilities(String version) {
-		try (ProtocolBackend clients = new McProtocolProvider().create(temporary, artifacts::obtain)) {
+		try (ProtocolBackend clients = new McProtocolProvider().create(temporary, temporary.resolve("accounts"), artifacts::obtain)) {
 			PlayerRequest request = PlayerRequest.builder()
 					.name("Alice")
 					.clientVersion(version)

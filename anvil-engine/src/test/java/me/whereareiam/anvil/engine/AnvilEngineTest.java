@@ -1,25 +1,30 @@
 package me.whereareiam.anvil.engine;
 
-import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.exception.scenario.ScenarioStartupException;
+import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerManager;
+import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
-import me.whereareiam.anvil.api.scenario.ScenarioExecutor;
 import me.whereareiam.anvil.api.scenario.ScenarioExtension;
+import me.whereareiam.anvil.api.scenario.ScenarioFactory;
 import me.whereareiam.anvil.api.scenario.ScenarioHook;
+import me.whereareiam.anvil.api.scenario.ScenarioObserver;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -32,7 +37,7 @@ class AnvilEngineTest {
 
 	@Test
 	void installsScenarioExtensionsBeforeSetupAndClosesThemBeforeTheScopedContext() {
-		var engine = engine(scenario -> new Context(scenario),
+		var engine = engine((scenario, observer) -> new Context(scenario),
 				scenario -> { events.add("attach:first"); return successful -> events.add("first:" + successful); },
 				scenario -> { events.add("attach:second"); return successful -> events.add("second:" + successful); });
 		var context = engine.start(scenario(run -> events.add("setup")));
@@ -47,7 +52,7 @@ class AnvilEngineTest {
 
 	@Test
 	void passesCallerFailureToEveryContributionAndTheUnderlyingContext() {
-		var engine = engine(scenario -> new Context(scenario),
+		var engine = engine((scenario, observer) -> new Context(scenario),
 				scenario -> successful -> events.add("extension:" + successful));
 		var context = engine.start(scenario(null));
 
@@ -60,7 +65,7 @@ class AnvilEngineTest {
 	@Test
 	void aCleanupFailureChangesTheOutcomeForRemainingAttachmentsAndTheContext() {
 		IllegalStateException failure = new IllegalStateException("second attachment cleanup");
-		var engine = engine(scenario -> new Context(scenario),
+		var engine = engine((scenario, observer) -> new Context(scenario),
 				scenario -> successful -> events.add("first:" + successful),
 				scenario -> successful -> {
 					events.add("second:" + successful);
@@ -79,7 +84,7 @@ class AnvilEngineTest {
 		AssertionError setup = new AssertionError("setup");
 		IllegalStateException attachmentCleanup = new IllegalStateException("attachment cleanup");
 		IllegalArgumentException contextCleanup = new IllegalArgumentException("context cleanup");
-		var engine = engine(scenario -> {
+		var engine = engine((scenario, observer) -> {
 			Context context = new Context(scenario);
 			context.failure = contextCleanup;
 			return context;
@@ -99,7 +104,7 @@ class AnvilEngineTest {
 	@Test
 	void rollsBackEarlierAttachmentsWhenALaterExtensionCannotAttach() {
 		IllegalStateException attachment = new IllegalStateException("attach failed");
-		var engine = engine(scenario -> new Context(scenario),
+		var engine = engine((scenario, observer) -> new Context(scenario),
 				scenario -> successful -> events.add("first:" + successful),
 				scenario -> { throw attachment; });
 
@@ -111,7 +116,7 @@ class AnvilEngineTest {
 
 	@Test
 	void finalizesAnAttachmentReturnedAfterItsExtensionClosedTheContext() {
-		var engine = engine(scenario -> new Context(scenario), scenario -> {
+		var engine = engine((scenario, observer) -> new Context(scenario), scenario -> {
 			scenario.finish(false);
 			return successful -> events.add("late:" + successful);
 		});
@@ -125,7 +130,7 @@ class AnvilEngineTest {
 	@Test
 	void rejectsClosingTheParentEngineFromSetupUntilTheCurrentContextIsFinalized() {
 		AtomicReference<ScenarioEngine> owner = new AtomicReference<>();
-		var engine = engine(scenario -> new Context(scenario),
+		var engine = engine((scenario, observer) -> new Context(scenario),
 				scenario -> successful -> events.add("attachment:" + successful));
 		owner.set(engine);
 
@@ -140,7 +145,7 @@ class AnvilEngineTest {
 	@Test
 	void rejectsClosingTheParentEngineFromAnExtensionBeforeAttachmentTransfer() {
 		AtomicReference<ScenarioEngine> owner = new AtomicReference<>();
-		var engine = engine(scenario -> new Context(scenario),
+		var engine = engine((scenario, observer) -> new Context(scenario),
 				scenario -> successful -> events.add("first:" + successful),
 				scenario -> {
 					owner.get().close();
@@ -158,7 +163,7 @@ class AnvilEngineTest {
 	@Test
 	void keepsTheOuterStartupProtectedAfterANestedScenarioHasStarted() {
 		AtomicReference<ScenarioEngine> owner = new AtomicReference<>();
-		var engine = engine(scenario -> new Context(scenario));
+		var engine = engine((scenario, observer) -> new Context(scenario));
 		owner.set(engine);
 
 		var failure = assertThrows(ScenarioStartupException.class, () -> engine.start(scenario(run -> {
@@ -173,7 +178,7 @@ class AnvilEngineTest {
 
 	@Test
 	void aSetupHookMayFinishItsContextWithoutRetainingIt() {
-		var engine = engine(scenario -> new Context(scenario));
+		var engine = engine((scenario, observer) -> new Context(scenario));
 
 		engine.start(scenario(run -> ((ScenarioContext) run).close()));
 		engine.close();
@@ -183,7 +188,7 @@ class AnvilEngineTest {
 
 	@Test
 	void rejectsInvalidStructureBeforeOpeningScopedServices() {
-		var engine = engine(scenario -> { throw new AssertionError("Scoped execution must not run"); });
+		var engine = engine((scenario, observer) -> { throw new AssertionError("Scoped execution must not run"); });
 		assertThrows(ScenarioValidationException.class, () -> engine.start(scenario(null).toBuilder().entrypoint("missing").build()));
 		engine.close();
 		assertEquals(List.of("shared"), events);
@@ -192,7 +197,7 @@ class AnvilEngineTest {
 	@Test
 	void scopedStartupFailureDoesNotPreventSharedCleanup() {
 		IllegalStateException failure = new IllegalStateException("executor rolled back startup");
-		var engine = engine(scenario -> { throw failure; });
+		var engine = engine((scenario, observer) -> { throw failure; });
 		assertSame(failure, assertThrows(IllegalStateException.class, () -> engine.start(scenario(null))));
 		engine.close();
 		assertEquals(List.of("shared"), events);
@@ -201,7 +206,7 @@ class AnvilEngineTest {
 	@Test
 	void attemptsEverySessionBeforeClosingSharedResources() {
 		List<Context> contexts = new ArrayList<>();
-		var engine = engine(scenario -> {
+		var engine = engine((scenario, observer) -> {
 			Context context = new Context(scenario);
 			contexts.add(context);
 			return context;
@@ -222,7 +227,7 @@ class AnvilEngineTest {
 		CountDownLatch closing = new CountDownLatch(1);
 		CountDownLatch release = new CountDownLatch(1);
 		AtomicReference<ScenarioEngine> owner = new AtomicReference<>();
-		var engine = engine(scenario -> new Context(scenario), scenario -> successful -> {
+		var engine = engine((scenario, observer) -> new Context(scenario), scenario -> successful -> {
 			closing.countDown();
 			await(release);
 			assertThrows(IllegalStateException.class, () -> owner.get().start(scenario(null)));
@@ -246,10 +251,78 @@ class AnvilEngineTest {
 		assertEquals(List.of("extension-finished", "context:true", "shared"), events);
 	}
 
-	private ScenarioEngine engine(ScenarioExecutor executor, ScenarioExtension... extensions) {
-		return new AnvilEngineBuilder().options(EngineOptions.builder().eulaAccepted(true).build())
+	@Test
+	@Timeout(10)
+	void rejectsFinishingTheScenarioOrClosingTheEngineFromAProcessObserver() {
+		AtomicReference<ScenarioEngine> owner = new AtomicReference<>();
+		AtomicReference<ScenarioContext> prepared = new AtomicReference<>();
+		List<Throwable> rejected = new ArrayList<>();
+		var engine = engine((scenario, observer) -> {
+			Context context = new Context(scenario);
+			RunningProcess process = (RunningProcess) Proxy.newProxyInstance(
+					RunningProcess.class.getClassLoader(),
+					new Class<?>[]{RunningProcess.class},
+					(proxy, method, arguments) -> { throw new UnsupportedOperationException(); }
+			);
+			context.onStart = () -> observer.processCreated(process);
+			return context;
+		});
+		owner.set(engine);
+		ScenarioObserver observer = process -> {
+			for (Runnable action : List.<Runnable>of(() -> prepared.get().finish(false), () -> owner.get().close())) {
+				try {
+					action.run();
+				} catch (IllegalStateException failure) {
+					rejected.add(failure);
+				}
+			}
+		};
+
+		prepared.set(engine.prepare(scenario(null), observer));
+		prepared.get().start();
+		assertEquals(2, rejected.size());
+		assertEquals(List.of(), events);
+
+		prepared.get().close();
+		engine.close();
+		assertEquals(List.of("context:true", "shared"), events);
+	}
+
+	@Test
+	@Timeout(10)
+	void anotherThreadCanFinishAScenarioWhileItsStartupIsBlocked() throws Exception {
+		CountDownLatch starting = new CountDownLatch(1);
+		CountDownLatch released = new CountDownLatch(1);
+		var engine = engine((scenario, observer) -> {
+			Context context = new Context(scenario) {
+				@Override
+				public void finish(boolean successful) {
+					released.countDown();
+					super.finish(successful);
+				}
+			};
+			context.onStart = () -> {
+				starting.countDown();
+				await(released);
+			};
+			return context;
+		});
+		var context = engine.prepare(scenario(null), null);
+
+		try (var tasks = Executors.newVirtualThreadPerTaskExecutor()) {
+			var start = tasks.submit(context::start);
+			assertTrue(starting.await(5, TimeUnit.SECONDS));
+
+			context.finish(false);
+			assertThrows(ExecutionException.class, () -> start.get(5, TimeUnit.SECONDS));
+		}
+		engine.close();
+		assertEquals(List.of("context:false", "shared"), events);
+	}
+
+	private ScenarioEngine engine(ScenarioFactory executor, ScenarioExtension... extensions) {
+		return new AnvilEngineBuilder(executor).options(EngineOptions.builder().eulaAccepted(true).build())
 				.extension(registration -> {
-					registration.executor(executor);
 					for (ScenarioExtension extension : extensions) registration.scenarios(extension);
 					registration.own(() -> events.add("shared"));
 				}).build();
@@ -271,14 +344,17 @@ class AnvilEngineTest {
 		}
 	}
 
-	private final class Context implements ScenarioContext {
+	private class Context implements ScenarioContext {
 		private final AnvilScenario scenario;
 		private RuntimeException failure;
+		private Runnable onStart = () -> { };
 
 		private Context(AnvilScenario scenario) {
 			this.scenario = scenario;
 		}
 
+		@Override
+		public void start() { onStart.run(); }
 		@Override
 		public @NotNull AnvilScenario definition() { return scenario; }
 		@Override

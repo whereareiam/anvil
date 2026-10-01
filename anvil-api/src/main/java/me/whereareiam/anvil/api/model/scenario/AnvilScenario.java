@@ -1,18 +1,18 @@
 package me.whereareiam.anvil.api.model.scenario;
 
 import lombok.Builder;
-import me.whereareiam.anvil.api.model.java.JavaRequirement;
-import me.whereareiam.anvil.api.model.NetworkPolicy;
 import lombok.Singular;
 import lombok.Value;
-import me.whereareiam.anvil.api.model.java.JavaSource;
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
+import me.whereareiam.anvil.api.model.NetworkPolicy;
+import me.whereareiam.anvil.api.model.PresentationMetadata;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.scenario.ScenarioHook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.time.Duration;
 import java.util.List;
 
 /**
@@ -21,33 +21,14 @@ import java.util.List;
 @Value
 @Builder(toBuilder = true)
 public class AnvilScenario {
-	/**
-	 * Execution provider used for the whole topology: local or docker.
-	 */
-	@Nullable String execution;
-
-	@NotNull
-	@Builder.Default
-	NetworkPolicy networkPolicy = NetworkPolicy.builder().build();
-
-	/**
-	 * Default Java selection, overridden independently by each process.
-	 */
-	@Nullable JavaRequirement javaRequirement;
-
-	/**
-	 * Default explicit Java source, overridden independently by each process.
-	 */
-	@Nullable JavaSource javaSource;
-
 	@NotNull String name;
-	@NotNull String entrypoint;
-	@NotNull
-	@Builder.Default
-	String bindAddress = "127.0.0.1";
 
-	@Builder.Default
-	boolean allowLanBinding = false;
+	/**
+	 * Optional labels for tooling; the scenario name remains its lookup identity.
+	 */
+	@Nullable PresentationMetadata metadata;
+
+	@NotNull String entrypoint;
 
 	@NotNull
 	@Singular
@@ -57,12 +38,31 @@ public class AnvilScenario {
 	@Singular
 	List<MinecraftProxy> proxies;
 
+	/**
+	 * Execution provider used for the whole topology: local or docker.
+	 */
+	@Nullable String executionProviderId;
+
+	/**
+	 * Default Java selection; requirements and installation source inherit independently.
+	 */
+	@NotNull
 	@Builder.Default
-	boolean manual = false;
+	JavaSelection javaSelection = JavaSelection.builder().build();
 
 	@NotNull
 	@Builder.Default
-	Duration startupTimeout = Duration.ofMinutes(2);
+	NetworkPolicy networkPolicy = NetworkPolicy.builder().build();
+
+	@Builder.Default
+	boolean manual = false;
+
+	/**
+	 * Scenario-specific process deadlines; omitted members inherit engine defaults.
+	 */
+	@NotNull
+	@Builder.Default
+	ProcessTimeouts processTimeouts = ProcessTimeouts.builder().build();
 
 	@Nullable ScenarioHook setupHook;
 }

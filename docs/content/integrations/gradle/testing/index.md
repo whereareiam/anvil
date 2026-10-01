@@ -3,7 +3,7 @@ title: Running tests
 description: Keep live journeys separate and choose when Gradle starts Minecraft.
 ---
 
-Apply the JUnit or umbrella [Gradle plugin](../plugins/index.md) and select scenarios through
+Apply the JUnit [Gradle plugin](../plugins/index.md) and select scenarios through
 [JUnit annotations](../../junit/selection/index.md). The plugin creates a dedicated source set and task.
 
 Keep live scenario definitions and journeys in `src/anvil/java`. Use `src/anvil/resources` for resources
@@ -17,8 +17,8 @@ workflow stays useful without launching Minecraft.
 ```
 
 `anvilTest` is a Gradle `Test` task configured for JUnit Jupiter. Its `--tests` filter selects test
-classes or methods; it does not select a catalog scenario name. The test's annotation supplies the
-definition.
+classes or methods; it does not select a scenario by name. The test's annotation supplies the
+definition class.
 
 ## Run the suite
 

@@ -83,6 +83,31 @@ Use `TestExtensionLoader` to open a prepared extension JAR in a scoped classload
 isolation and restores the original loader when closed. Keep JAR creation and service-descriptor
 selection in the fixture build so a test failure is about the loaded artifact's behavior.
 
+## Expose fixture-backed scenario definitions to the IDE
+
+A scenario definition may need a fixture path while constructing its declaration. Register those same Gradle
+file collections with the project tooling producer; do not resolve a sibling `build/libs` path or
+copy the complete JUnit task configuration. With the `fixtures` convention, the standard Anvil
+plugin, and the required fixture variants already declared, share the inputs as follows:
+
+```kotlin
+val declaredFixtures = fixtures.artifacts()
+
+anvil {
+	declaredFixtures.forEach { (name, files) ->
+		val artifactName = "testkit-$name"
+		artifact(artifactName, files)
+	}
+}
+```
+
+The file collections establish producer dependencies, and preparation resolves their exact
+resolved paths into the separate tooling JVM. `FixtureArtifacts` can read the generated
+`anvil.artifact.*` values there.
+The server test module uses this declaration with its existing `test` source set and compatibility
+definitions. Loading those definitions builds fixtures and declarations without executing JUnit methods or
+starting Minecraft. See [the framework IDE workflow](../live/index.md#inspect-framework-environments-in-the-ide).
+
 ## Keep the tested boundary intact
 
 The external-extension fixture compiles against public Anvil contracts. Its runtime tests verify

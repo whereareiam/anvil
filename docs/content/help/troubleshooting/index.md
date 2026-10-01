@@ -20,6 +20,7 @@ configured `workDirectory`, normally `build/anvil`.
 | EULA, distribution, provider, Java, or startup failure | [Startup and provisioning](./startup/index.md) |
 | Login, capability, native-version, identity, or routing failure | [Players and routing](./players/index.md) |
 | Missing diagnostics, locked directories, or shutdown failure | [Cleanup and retained files](./cleanup/index.md) |
+| Scenarios do not appear or load in IntelliJ IDEA | [IntelliJ IDEA plugin](./intellij/index.md) |
 
 ## Read the exception contract
 

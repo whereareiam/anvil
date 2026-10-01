@@ -11,7 +11,7 @@ require a simulated player or a game session.
 ## Execute a native command
 
 This complete helper expects a running Paper or Spigot process named `lobby`. Apply its platform
-unit and the `me.whereareiam.anvil.capability.console` unit, or use the umbrella Anvil plugin with
+unit and the `me.whereareiam.anvil.capability.console` unit, or explicitly select the default capability unit with
 the platform unit. Put the helper in `src/anvil/java/com/example/test/AgentChecks.java` and call
 `AgentChecks.announce(anvil)` from a test receiving `ScenarioContext anvil`:
 
@@ -60,7 +60,7 @@ without exposing an agent in its public API.
 ## Call an external capability
 
 The [Echo example](../../../../extending/capabilities/contracts/index.md) supplies a process capability
-that calls an installed handler. Add its host adapter to `anvilCapabilities`, and install its
+that calls an installed handler. Add its host adapter to `anvilImplementation`, and install its
 [handler JAR](../../../../extending/agent-operations/installation/index.md) in `lobby`.
 Inside a test with the running `ScenarioContext anvil`, use:
 

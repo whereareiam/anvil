@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.launcher.assembly.process;
 
 import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
+import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider;
@@ -11,6 +12,7 @@ import me.whereareiam.anvil.capability.process.ProcessCapabilityRuntime;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import me.whereareiam.anvil.platform.api.model.ProcessPlan;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -66,13 +68,32 @@ public final class ProcessComposition {
 	}
 
 	/**
-	 * Attaches capability-owned process views after execution and agent readiness.
+	 * Transfers deferred capability lifetime to the prepared group without replacing execution handles.
 	 *
-	 * @param processes ready process group
+	 * @param processes prepared process group
 	 * @return group owning the composed process capabilities
 	 */
 	public @NotNull ProcessGroup bind(@NotNull ProcessGroup processes) {
 		return capabilities.bind(processes);
+	}
+
+	/**
+	 * Supplies the core capability owner borrowed by every native generation of this process.
+	 *
+	 * @param name declared process identity
+	 * @return deferred logical owner, or null when no capability provider applies
+	 */
+	public @Nullable CapabilityOwner<ProcessCapability> owner(@NotNull String name) {
+		return capabilities.owner(name);
+	}
+
+	/**
+	 * Initializes process capabilities after the generation's agent transport is ready.
+	 *
+	 * @param name declared process identity
+	 */
+	public void initialize(@NotNull String name) {
+		capabilities.initialize(name);
 	}
 
 	private static @NotNull List<AgentProcessCapabilityProvider<?>> load(@NotNull ClassLoader loader) {

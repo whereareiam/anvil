@@ -9,7 +9,7 @@ import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.example.patience.scenario.Paper12111Scenario;
 import me.whereareiam.anvil.example.patience.scenario.Paper2612Scenario;
-import me.whereareiam.anvil.junit.AnvilTest;
+import me.whereareiam.anvil.integration.junit.AnvilTest;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
@@ -50,7 +50,7 @@ class ProofOfPatienceJourneyTest {
 		session.connected();
 
 		PlayerIdentity initialIdentity = server.joined("authentication");
-		UUID initialUuid = initialIdentity.getObservedUuid();
+		UUID initialUuid = initialIdentity.getObservedUniqueId();
 		assertNotNull(initialUuid);
 		assertNotEquals(AUTHENTICATED_UUID, initialUuid);
 
@@ -67,13 +67,13 @@ class ProofOfPatienceJourneyTest {
 		session.rejoin();
 		session.connected();
 		PlayerIdentity authenticatedIdentity = server.joined("authentication");
-		assertEquals("authentication", authenticatedIdentity.getServer());
-		assertEquals(AUTHENTICATED_UUID, authenticatedIdentity.getObservedUuid());
-		assertNotEquals(initialUuid, authenticatedIdentity.getObservedUuid());
+		assertEquals("authentication", authenticatedIdentity.getRoute().getServer());
+		assertEquals(AUTHENTICATED_UUID, authenticatedIdentity.getObservedUniqueId());
+		assertNotEquals(initialUuid, authenticatedIdentity.getObservedUniqueId());
 
 		PlayerIdentity observedByPlugin = server.identity();
 		assertNotNull(observedByPlugin);
-		assertEquals(AUTHENTICATED_UUID, observedByPlugin.getObservedUuid());
+		assertEquals(AUTHENTICATED_UUID, observedByPlugin.getObservedUniqueId());
 
 		alice.destroy();
 	}

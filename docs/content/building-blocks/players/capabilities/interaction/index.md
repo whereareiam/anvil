@@ -4,7 +4,7 @@ description: Use held items and target known blocks or entities from a player jo
 ---
 
 `Interaction` sends item use, block interaction, and entity interaction actions. Install the interaction
-unit and Session dependency, or use the umbrella plugin. Your fixture supplies the world, reachable
+unit and Session dependency, or explicitly select the default capability unit. Your fixture supplies the world, reachable
 targets, and any items needed by the journey.
 
 ## Use the selected item

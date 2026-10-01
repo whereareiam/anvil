@@ -21,6 +21,8 @@ public enum RunnerCommandType {
 	RESTART("restart", "restart"),
 	LOGS("logs", "logs <process> [lines]"),
 	SEND("send", "send <process> <command>"),
+	ACTIONS("actions", "actions"),
+	ACTION("action", "action <id> <scenario|process|player> <target> [JSON inputs]"),
 	STOP("stop", "stop"),
 	UNKNOWN("", "");
 
@@ -52,6 +54,8 @@ public enum RunnerCommandType {
 				RESTART.usage,
 				LOGS.usage,
 				SEND.usage,
+				ACTIONS.usage,
+				ACTION.usage,
 				STOP.usage,
 				QUIT.usage
 		);

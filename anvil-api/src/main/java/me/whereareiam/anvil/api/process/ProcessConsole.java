@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.api.process;
 
+import me.whereareiam.anvil.api.model.process.console.ConsoleOutput;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -25,6 +26,16 @@ public interface ProcessConsole {
 	 * @return captured output tail
 	 */
 	@NotNull List<String> tail(int maximumLines);
+
+	/**
+	 * Reads captured lines after a checkpoint without waiting, reporting history eviction.
+	 * Checkpoints belong to one process generation and must not exceed its current position.
+	 *
+	 * @param after last consumed checkpoint, or zero to read available history
+	 * @param maximumLines positive read limit
+	 * @return immutable output batch and its next checkpoint
+	 */
+	@NotNull ConsoleOutput read(long after, int maximumLines);
 
 	/**
 	 * Captures the current output position before an operation.

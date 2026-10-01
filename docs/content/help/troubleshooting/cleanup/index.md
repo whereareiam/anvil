@@ -10,9 +10,9 @@ process's workspace.
 
 ## Files after a failed assertion
 
-The current JUnit extension closes the context without passing a test-body assertion failure to
-workspace finalization. Consequently, a failed JUnit assertion can still remove a disposable
-workspace and save enabled workspace caches if the scenario lifecycle otherwise succeeded.
+The JUnit extension passes the final test outcome to workspace finalization. A failed assertion
+therefore retains disposable workspaces when `keepFailedWorkspaces` is enabled and prevents
+success-only cache saves. Directly owned contexts need an explicit `finish(false)` when their caller fails.
 
 For a test whose files you need to inspect, declare `WorkspaceMode.PERSISTENT` in that process's
 `WorkspacePlan`. This retains its directory across runs, so reset or reseed plugin state explicitly
@@ -21,8 +21,7 @@ and [workspace caches](../../../building-blocks/environments/provisioning/cache/
 
 A setup-hook failure happens during engine startup and uses the failed-startup path. A failed
 process restart also marks the run unsuccessful, even if the test catches the restart exception.
-Do not assume these cases have the same finalization behavior as an assertion that only fails in
-the JUnit method body.
+These lifecycle failures remain recorded even if later cleanup changes a process's visible state to stopped.
 
 ## Persistent workspace in use
 

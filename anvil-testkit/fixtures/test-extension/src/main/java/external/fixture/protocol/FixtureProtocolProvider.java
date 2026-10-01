@@ -29,7 +29,7 @@ public class FixtureProtocolProvider implements ProtocolProvider {
 	}
 
 	@Override
-	public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull ProtocolRuntimeResolver artifacts) {
+	public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull Path accountsDirectory, @NotNull ProtocolRuntimeResolver artifacts) {
 		Path trace = cacheDirectory.resolve(id() + ".lifecycle");
 		trace(trace, "created");
 		return new ProtocolBackend() {

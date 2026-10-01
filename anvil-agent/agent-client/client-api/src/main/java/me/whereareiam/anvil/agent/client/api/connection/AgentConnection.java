@@ -1,7 +1,9 @@
 package me.whereareiam.anvil.agent.client.api.connection;
 
-import me.whereareiam.anvil.agent.client.api.AgentClient;
+import me.whereareiam.anvil.agent.api.exception.AgentException;
 import me.whereareiam.anvil.agent.api.model.AgentOperation;
+import me.whereareiam.anvil.agent.client.api.AgentClient;
+import me.whereareiam.anvil.agent.client.api.exception.AgentUnavailableException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,6 +15,15 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface AgentConnection extends AutoCloseable {
 	/**
+	 * Reports whether a connection is currently attached and locally open for requests.
+	 * This is a local lifecycle snapshot, not a remote health check. A subsequent request
+	 * can still fail if the connection closes or communication fails.
+	 *
+	 * @return whether requests can currently be attempted
+	 */
+	boolean available();
+
+	/**
 	 * Invokes a shared typed operation contract.
 	 *
 	 * @param operation request and response descriptor
@@ -20,6 +31,8 @@ public interface AgentConnection extends AutoCloseable {
 	 * @param <Q> request type
 	 * @param <R> response type
 	 * @return decoded result, or {@code null} when the remote operation has no result
+	 * @throws AgentUnavailableException when no open connection is available before the request
+	 * @throws AgentException when communication or the remote operation fails
 	 */
 	default <Q, R> @Nullable R request(@NotNull AgentOperation<Q, R> operation, @Nullable Q request) {
 		return request(operation.getName(), request, operation.getResponseType());
@@ -34,6 +47,8 @@ public interface AgentConnection extends AutoCloseable {
 	 * @param responseType response model supported by the selected transport
 	 * @param <T> response type
 	 * @return decoded result, or {@code null} when the remote operation has no result
+	 * @throws AgentUnavailableException when no open connection is available before the request
+	 * @throws AgentException when communication or the remote operation fails
 	 */
 	<T> @Nullable T request(
 			@NotNull String operation,

@@ -3,6 +3,7 @@
   "pages": [
     "index",
     "capabilities",
+    "tooling",
     "agent-operations",
     "packaging",
     "protocol-providers",

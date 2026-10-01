@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.environment.execution.managed;
 
 import me.whereareiam.anvil.api.process.RunningProcess;
-import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.process.type.RunningProxy;
 import me.whereareiam.anvil.api.process.type.RunningServer;
 import me.whereareiam.anvil.environment.execution.managed.slot.ProcessSlot;
@@ -13,14 +12,20 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Owns a run's prepared process collection, current-generation access, and process finalization.
  * The scenario session synchronizes on this owner when closing players before the process group.
  */
-public final class ProcessRegistry implements ScenarioProcesses {
+public final class ProcessRegistry {
+	private final ReentrantReadWriteLock lifecycle = new ReentrantReadWriteLock();
 	private final Map<String, ProcessSlot> processes = new LinkedHashMap<>();
 	private volatile boolean failed;
+	private volatile boolean stopping;
 	private boolean closed;
 	private boolean finalized;
 
@@ -39,12 +44,45 @@ public final class ProcessRegistry implements ScenarioProcesses {
 		execute(() -> require(name).prepare());
 	}
 
-	public void configure(@NotNull String name) {
-		execute(() -> require(name).configure());
+	public @NotNull RunningProcess start(@NotNull String name) {
+		return mutate(name, process -> { }, ProcessSlot::start);
 	}
 
-	public void start(@NotNull String name) {
-		execute(() -> require(name).start());
+	public void stop(@NotNull String name) {
+		mutate(name, process -> { }, process -> {
+			if (process.currentOrNull() != null) process.stopGeneration();
+			return null;
+		});
+	}
+
+	/**
+	 * Applies a lifecycle action to one process. Caller mistakes, such as an unknown name or a violated
+	 * precondition, are reported without failing the run; failures of the action itself fail it.
+	 */
+	private <T> T mutate(
+			@NotNull String name,
+			@NotNull Consumer<ProcessSlot> precondition,
+			@NotNull Function<ProcessSlot, T> action
+	) {
+		rejectNestedChange("change processes");
+		if (stopping) throw new IllegalStateException("Cannot change processes while the scenario is finishing");
+
+		lifecycle.readLock().lock();
+		try {
+			if (closed) throw new IllegalStateException("Cannot change processes after scenario cleanup");
+
+			ProcessSlot process = require(name);
+			precondition.accept(process);
+			recordFailures();
+			try {
+				return action.apply(process);
+			} catch (RuntimeException | Error failure) {
+				failed = true;
+				throw failure;
+			}
+		} finally {
+			lifecycle.readLock().unlock();
+		}
 	}
 
 	private void execute(Runnable action) {
@@ -56,26 +94,26 @@ public final class ProcessRegistry implements ScenarioProcesses {
 		}
 	}
 
-	@Override
 	public synchronized @NotNull Collection<RunningProcess> all() {
-		return processes.values().stream().map(process -> (RunningProcess) process.current()).toList();
+		return processes.values().stream()
+				.map(ProcessSlot::currentOrNull)
+				.filter(Objects::nonNull)
+				.map(RunningProcess.class::cast)
+				.toList();
 	}
 
-	@Override
 	public synchronized @NotNull RunningProcess get(@NotNull String name) {
 		return require(name).current();
 	}
 
-	@Override
 	public synchronized @NotNull Collection<RunningServer> servers() {
 		return processes.values().stream()
-				.map(ProcessSlot::current)
+				.map(ProcessSlot::currentOrNull)
 				.filter(RunningServer.class::isInstance)
 				.map(RunningServer.class::cast)
 				.toList();
 	}
 
-	@Override
 	public synchronized @NotNull RunningServer server(@NotNull String name) {
 		RunningProcess process = get(name);
 		if (!(process instanceof RunningServer server))
@@ -84,16 +122,14 @@ public final class ProcessRegistry implements ScenarioProcesses {
 		return server;
 	}
 
-	@Override
 	public synchronized @NotNull Collection<RunningProxy> proxies() {
 		return processes.values().stream()
-				.map(ProcessSlot::current)
+				.map(ProcessSlot::currentOrNull)
 				.filter(RunningProxy.class::isInstance)
 				.map(RunningProxy.class::cast)
 				.toList();
 	}
 
-	@Override
 	public synchronized @NotNull RunningProxy proxy(@NotNull String name) {
 		RunningProcess process = get(name);
 		if (!(process instanceof RunningProxy proxy))
@@ -102,16 +138,10 @@ public final class ProcessRegistry implements ScenarioProcesses {
 		return proxy;
 	}
 
-	@Override
-	public synchronized @NotNull RunningProcess restart(@NotNull String name) {
-		if (closed) throw new IllegalStateException("Cannot restart a closed scenario");
-		ProcessSlot process = require(name);
-		try {
-			return process.restart();
-		} catch (RuntimeException | Error failure) {
-			failed = true;
-			throw failure;
-		}
+	public @NotNull RunningProcess restart(@NotNull String name) {
+		return mutate(name, process -> {
+			if (process.currentOrNull() == null) throw new IllegalStateException("Process has not started: " + name);
+		}, ProcessSlot::restart);
 	}
 
 	/**
@@ -120,14 +150,50 @@ public final class ProcessRegistry implements ScenarioProcesses {
 	 * @return whether this collection prevents successful run finalization
 	 */
 	public synchronized boolean failed() {
+		recordFailures();
 		return failed;
+	}
+
+	private void recordFailures() {
+		if (processes.values().stream().anyMatch(ProcessSlot::failed)) failed = true;
+	}
+
+	/**
+	 * Rejects an action requested by a thread that is itself starting or changing a process, such as a
+	 * process observer. Such an action would wait for the change that is running it.
+	 *
+	 * @param action description of the rejected action, such as "finish the process group"
+	 * @throws IllegalStateException when the current thread is inside a process change
+	 */
+	public void rejectNestedChange(@NotNull String action) {
+		if (lifecycle.getReadHoldCount() > 0)
+			throw new IllegalStateException("Cannot " + action + " while this thread is starting or changing a process");
 	}
 
 	/**
 	 * Closes launch attachments and JVMs, retaining workspaces until execution resources are released.
 	 */
-	public synchronized void stop() {
+	public void stop() {
+		rejectNestedChange("stop processes");
+		// Starts in progress hold the read lock until readiness; cancel them instead of waiting.
+		stopping = true;
+		slots().forEach(ProcessSlot::cancelStart);
+		lifecycle.writeLock().lock();
+
+		try {
+			stopAll();
+		} finally {
+			lifecycle.writeLock().unlock();
+		}
+	}
+
+	private synchronized List<ProcessSlot> slots() {
+		return List.copyOf(processes.values());
+	}
+
+	private void stopAll() {
 		if (closed) return;
+		recordFailures();
 		closed = true;
 
 		List<Throwable> failures = new ArrayList<>();
@@ -145,6 +211,8 @@ public final class ProcessRegistry implements ScenarioProcesses {
 	public synchronized void finish(boolean successful) {
 		if (finalized) return;
 		if (!closed) throw new IllegalStateException("Processes must stop before finalizing their workspaces");
+
+		recordFailures();
 		finalized = true;
 
 		List<Throwable> failures = new ArrayList<>();
@@ -167,7 +235,10 @@ public final class ProcessRegistry implements ScenarioProcesses {
 
 	private ProcessSlot require(String name) {
 		ProcessSlot process = processes.get(name);
-		if (process == null) throw new NoSuchElementException("Unknown process '" + name + "'. Available: " + processes.keySet());
+		if (process == null) {
+			throw new NoSuchElementException("Unknown process '" + name + "'. Available: " + processes.keySet());
+		}
+
 		return process;
 	}
 

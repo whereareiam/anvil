@@ -93,6 +93,11 @@ class AgentRequestChannelTest {
 
 	@RequiredArgsConstructor
 	private static final class Connection implements AgentConnection {
+		@Override
+		public boolean available() {
+			return true;
+		}
+
 		private final Function<Invocation, Object> response;
 		private final List<Invocation> invocations = new ArrayList<>();
 		private int closed;

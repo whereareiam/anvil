@@ -3,8 +3,9 @@ package me.whereareiam.anvil.agent.client.transport.connection;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import me.whereareiam.anvil.agent.client.api.connection.AgentConnection;
 import me.whereareiam.anvil.agent.api.exception.AgentException;
+import me.whereareiam.anvil.agent.client.api.connection.AgentConnection;
+import me.whereareiam.anvil.agent.client.api.exception.AgentUnavailableException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,11 +46,18 @@ final class JsonLineAgentConnection implements AgentConnection {
 	}
 
 	@Override
+	public boolean available() {
+		return socket.isConnected() && !socket.isClosed();
+	}
+
+	@Override
 	public synchronized <T> @Nullable T request(
 			@NotNull String operation,
 			@Nullable Object arguments,
 			@NotNull Class<T> responseType
 	) {
+		if (!available()) throw new AgentUnavailableException("Platform agent connection is closed");
+
 		ObjectNode request = mapper.createObjectNode();
 		long id = ids.incrementAndGet();
 		request.put("id", id);
@@ -63,7 +71,10 @@ final class JsonLineAgentConnection implements AgentConnection {
 			writer.flush();
 
 			String line = reader.readLine();
-			if (line == null) throw new AgentException("Platform agent closed the connection");
+			if (line == null) {
+				close();
+				throw new AgentException("Platform agent closed the connection");
+			}
 
 			JsonNode response = mapper.readTree(line);
 			if (response == null || !response.path("id").isIntegralNumber() || response.path("id").asLong() != id) {

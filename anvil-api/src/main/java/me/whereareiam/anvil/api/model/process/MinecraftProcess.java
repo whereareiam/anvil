@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.api.model.process;
 
-import me.whereareiam.anvil.api.model.java.JavaRequirement;
-import me.whereareiam.anvil.api.model.java.JavaSource;
+import me.whereareiam.anvil.api.model.PresentationMetadata;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,6 +21,13 @@ public interface MinecraftProcess {
 	@NotNull String getName();
 
 	/**
+	 * Returns optional labels for tooling without changing the process name used for routing.
+	 *
+	 * @return presentation metadata, or null when none is supplied
+	 */
+	@Nullable PresentationMetadata getMetadata();
+
+	/**
 	 * Returns the platform-provider identifier.
 	 *
 	 * @return platform identifier
@@ -35,18 +42,12 @@ public interface MinecraftProcess {
 	@NotNull Distribution getDistribution();
 
 	/**
-	 * Returns process-specific Java requirements, or null to inherit scenario defaults.
+	 * Returns process-specific Java requirements and installation source.
+	 * Omitted members inherit independently from the scenario and engine selections.
 	 *
-	 * @return process Java requirement
+	 * @return declared Java selection
 	 */
-	@Nullable JavaRequirement getJavaRequirement();
-
-	/**
-	 * Returns the process Java source, or null to inherit scenario and engine defaults.
-	 *
-	 * @return process Java source
-	 */
-	@Nullable JavaSource getJavaSource();
+	@NotNull JavaSelection getJavaSelection();
 
 	/**
 	 * Returns whether the process authenticates players with Mojang services.

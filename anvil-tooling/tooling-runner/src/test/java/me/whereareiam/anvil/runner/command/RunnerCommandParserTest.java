@@ -4,6 +4,8 @@ import me.whereareiam.anvil.runner.model.command.RunnerCommand;
 import me.whereareiam.anvil.runner.type.RunnerCommandType;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 final class RunnerCommandParserTest {
@@ -15,6 +17,13 @@ final class RunnerCommandParserTest {
 		assertEquals("send", command.getToken());
 		assertEquals("server", command.getArguments().get(0));
 		assertEquals("say hello from Anvil", command.getArguments().get(1));
+	}
+
+	@Test
+	void preservesJsonActionInputsAsOneArgument() {
+		var command = RunnerCommandParser.parse("action external.inspect process proxy {\"key\": \"hello world\"}");
+		assertEquals(RunnerCommandType.ACTION, command.getType());
+		assertEquals(List.of("external.inspect", "process", "proxy", "{\"key\": \"hello world\"}"), command.getArguments());
 	}
 
 	@Test

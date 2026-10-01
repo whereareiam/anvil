@@ -3,6 +3,7 @@ package me.whereareiam.anvil.environment.execution.local;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.model.NetworkPolicy;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.model.java.local.LocalJavaHome;
 import me.whereareiam.anvil.api.type.network.NetworkExposure;
@@ -29,7 +30,7 @@ class LocalExecutionSessionTest {
 		List<ProcessRequest> requests = new ArrayList<>();
 		LocalRuntimePreparation runtime = (request, source) -> {
 			requests.add(request);
-			return Path.of("java-" + request.getJavaRequirement().getDistribution());
+			return Path.of("java-" + request.getJavaSelection().getRequirement().getDistribution());
 		};
 		JavaRequirement temurin = JavaRequirement.builder().distribution("temurin").featureVersion(21).build();
 		JavaRequirement graal = JavaRequirement.builder().distribution("graalvm-community").featureVersion(21).build();
@@ -72,14 +73,25 @@ class LocalExecutionSessionTest {
 		}
 	}
 
+	@Test
+	void usesTheGroupedNetworkBindingWithoutChangingAgentExposure() {
+		var context = context((request, source) -> Path.of("java")).toBuilder()
+				.networkPolicy(NetworkPolicy.builder().bindAddress("127.0.0.2").build())
+				.build();
+		try (ExecutionSession session = new LocalExecutionProvider().open(context)) {
+			var target = session.prepare(request("server", JavaRequirement.builder().build(), null));
+			assertEquals("127.0.0.2", target.address().getHostString());
+			assertTrue(target.agentAddress().getAddress().isLoopbackAddress());
+		}
+	}
+
 	private ExecutionContext context(LocalRuntimePreparation runtime) {
-		return ExecutionContext.builder().cacheDirectory(directory).bindAddress("127.0.0.1").localRuntime(runtime)
+		return ExecutionContext.builder().cacheDirectory(directory).localRuntime(runtime)
 				.runtimeValidator((properties, request) -> { throw new AssertionError("Local execution must not inspect images"); })
 				.imageLocks(path -> { throw new AssertionError("Local execution must not access images"); }).build();
 	}
 
 	private ProcessRequest request(String name, JavaRequirement requirement, JavaSource source) {
-		return ProcessRequest.builder().name(name).workspace(directory.resolve(name)).javaRequirement(requirement)
-				.javaSource(source).minimumJavaVersion(21).build();
+		return ProcessRequest.builder().name(name).workspace(directory.resolve(name)).javaSelection(JavaSelection.builder().requirement(requirement).source(source).build()).minimumJavaVersion(21).build();
 	}
 }

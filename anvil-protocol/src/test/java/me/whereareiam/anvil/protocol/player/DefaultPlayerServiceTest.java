@@ -28,7 +28,7 @@ class DefaultPlayerServiceTest {
 	@Test
 	void preparesOneBackendAndClosesItsManagersBeforeReleasingIt() {
 		StubProvider provider = new StubProvider();
-		DefaultPlayerService service = new DefaultPlayerService(provider, directory, artifacts());
+		DefaultPlayerService service = new DefaultPlayerService(provider, directory, directory.resolve("accounts"), artifacts());
 		assertEquals(0, provider.created);
 
 		service.prepare();
@@ -51,7 +51,7 @@ class DefaultPlayerServiceTest {
 	@Test
 	void closingAnUnusedServiceDoesNotInitializeItsBackend() {
 		StubProvider provider = new StubProvider();
-		DefaultPlayerService service = new DefaultPlayerService(provider, directory, artifacts());
+		DefaultPlayerService service = new DefaultPlayerService(provider, directory, directory.resolve("accounts"), artifacts());
 
 		service.close();
 
@@ -65,7 +65,7 @@ class DefaultPlayerServiceTest {
 		StubProvider provider = new StubProvider();
 		IllegalStateException failure = new IllegalStateException("backend cleanup failed");
 		provider.onClose = () -> { throw failure; };
-		DefaultPlayerService service = new DefaultPlayerService(provider, directory, artifacts());
+		DefaultPlayerService service = new DefaultPlayerService(provider, directory, directory.resolve("accounts"), artifacts());
 		service.prepare();
 
 		assertSame(failure, assertThrows(IllegalStateException.class, service::close));
@@ -79,7 +79,7 @@ class DefaultPlayerServiceTest {
 	}
 
 	private ProtocolPlayerComposer composer() {
-		return (player, observation, onDestroyed) -> {
+		return (player, observation, metadata, onDestroyed) -> {
 			throw new AssertionError("These service lifecycle tests do not create players");
 		};
 	}
@@ -96,7 +96,7 @@ class DefaultPlayerServiceTest {
 		}
 
 		@Override
-		public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull ProtocolRuntimeResolver artifacts) {
+		public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull Path accountsDirectory, @NotNull ProtocolRuntimeResolver artifacts) {
 			created++;
 			this.cacheDirectory = cacheDirectory;
 			return new ProtocolBackend() {

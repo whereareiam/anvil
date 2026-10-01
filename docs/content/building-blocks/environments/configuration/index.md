@@ -18,11 +18,13 @@ Add this fragment to your existing build:
 ```kotlin
 anvil {
 	acceptEula()
-	protocol("mcprotocol")
-	workDirectory.set(layout.buildDirectory.dir("anvil"))
-	parallelism.set(2)
-	startupMemoryMegabytes.set(2048)
-	downloadParallelism.set(4)
+	engine {
+		protocol("mcprotocol")
+		workDirectory.set(layout.buildDirectory.dir("anvil"))
+		parallelism.set(2)
+		startupMemoryMegabytes.set(2048)
+		downloadParallelism.set(4)
+	}
 }
 ```
 
@@ -38,7 +40,7 @@ change its heap allocation.
 
 | Layer | Put these choices here |
 |---|---|
-| Gradle `anvil` block | EULA, directories, provider selection, artifacts, and concurrency |
+| Gradle `anvil` block | EULA, artifacts, and `engine` launch defaults |
 | `AnvilScenario` | Processes, entrypoint, execution provider, Java defaults, and startup timeout |
 | `MinecraftServer` or `MinecraftProxy` | Distribution, workspace, Java override, heap, platform settings, and child JVM arguments |
 | `EngineOptions` | Shared options when [embedding](../../../integrations/embedding/index.md) |

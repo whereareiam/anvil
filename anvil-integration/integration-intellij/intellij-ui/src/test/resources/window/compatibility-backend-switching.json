@@ -1,0 +1,73 @@
+[
+  {
+    "definition": "me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory",
+    "name": "velocity-paper-1.21.11",
+    "displayName": "Backend switching \u00b7 Velocity / Paper 1.21.11",
+    "description": "Two backends let compatibility tests join through Velocity, move from Lobby to Game, and verify that plugin commands reach the new backend. Restart tests reuse this environment to check reconnection, preserved player identity and agent extension calls after restarting the proxy or Lobby.",
+    "category": "Native compatibility",
+    "tags": [
+      "routing",
+      "restart"
+    ],
+    "entrypoint": "proxy",
+    "processes": [
+      {
+        "name": "lobby",
+        "displayName": "Lobby",
+        "description": "Default join destination. Tests verify initial login here and reconnect after restarting this backend while the same proxy stays running.",
+        "role": "SERVER",
+        "platform": "paper",
+        "distribution": "1.21.11 (build 132)",
+        "distributionVersion": "1.21.11",
+        "distributionBuild": "132",
+        "minecraftVersion": null,
+        "memoryMegabytes": 768,
+        "onlineMode": false,
+        "javaRequirement": "Project default",
+        "backendNames": [],
+        "defaultBackend": null
+      },
+      {
+        "name": "game",
+        "displayName": "Game",
+        "description": "Transfer destination. Tests move the connected player here from Lobby and verify that fixture commands still reach the backend.",
+        "role": "SERVER",
+        "platform": "paper",
+        "distribution": "1.21.11 (build 132)",
+        "distributionVersion": "1.21.11",
+        "distributionBuild": "132",
+        "minecraftVersion": null,
+        "memoryMegabytes": 768,
+        "onlineMode": false,
+        "javaRequirement": "Project default",
+        "backendNames": [],
+        "defaultBackend": null
+      },
+      {
+        "name": "proxy",
+        "displayName": "Proxy",
+        "description": "Accepts the player's connection and routes it to Lobby or Game. Restart tests verify that the player can reconnect through the replacement proxy.",
+        "role": "PROXY",
+        "platform": "velocity",
+        "distribution": "3.5.1 (build 615)",
+        "distributionVersion": "3.5.1",
+        "distributionBuild": "615",
+        "minecraftVersion": null,
+        "memoryMegabytes": 512,
+        "onlineMode": false,
+        "javaRequirement": "Project default",
+        "backendNames": [
+          "lobby",
+          "game"
+        ],
+        "defaultBackend": "lobby"
+      }
+    ],
+    "manual": false,
+    "setupAvailable": false,
+    "startupTimeoutMillis": 0,
+    "shutdownTimeoutMillis": 0,
+    "executionProviderId": null,
+    "javaRequirement": "Project default"
+  }
+]

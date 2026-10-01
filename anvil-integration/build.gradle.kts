@@ -3,5 +3,5 @@ plugins {
 }
 
 tasks.named("build") {
-    dependsOn(":anvil-integration:junit:build")
+    dependsOn(subprojects.map { "${it.path}:build" })
 }

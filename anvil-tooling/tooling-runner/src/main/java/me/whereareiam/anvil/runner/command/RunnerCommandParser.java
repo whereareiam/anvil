@@ -17,13 +17,13 @@ public final class RunnerCommandParser {
 	public static @NotNull RunnerCommand parse(@NotNull String line) {
 		if (line.isBlank()) throw new IllegalArgumentException("Command line must not be blank");
 
-		String[] parts = line.trim().split("\\s+", 3);
+		String token = line.trim().split("\\s+", 2)[0];
+		String[] parts = line.trim().split("\\s+", RunnerCommandType.fromName(token) == RunnerCommandType.ACTION ? 5 : 3);
 		RunnerCommand.RunnerCommandBuilder command = RunnerCommand.builder()
 				.type(RunnerCommandType.fromName(parts[0]))
 				.token(parts[0]);
 
-		if (parts.length > 1) command.argument(parts[1]);
-		if (parts.length > 2) command.argument(parts[2]);
+		for (int index = 1; index < parts.length; index++) command.argument(parts[index]);
 
 		return command.build();
 	}

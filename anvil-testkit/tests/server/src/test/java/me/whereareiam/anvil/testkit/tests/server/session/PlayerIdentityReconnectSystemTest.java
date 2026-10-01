@@ -6,7 +6,7 @@ import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
-import me.whereareiam.anvil.junit.AnvilTest;
+import me.whereareiam.anvil.integration.junit.AnvilTest;
 import me.whereareiam.anvil.testkit.tests.server.scenario.Paper12111SystemScenario;
 import me.whereareiam.anvil.testkit.tests.server.scenario.Paper2612SystemScenario;
 import org.junit.jupiter.api.Test;
@@ -43,7 +43,7 @@ class PlayerIdentityReconnectSystemTest {
 		session.connect();
 		session.connected();
 
-		UUID initialUuid = server.joined("server").getObservedUuid();
+		UUID initialUuid = server.joined("server").getObservedUniqueId();
 		assertNotNull(initialUuid);
 		assertNotEquals(AUTHENTICATED_UUID, initialUuid);
 
@@ -60,11 +60,11 @@ class PlayerIdentityReconnectSystemTest {
 		session.rejoin();
 		session.connected();
 		PlayerIdentity authenticated = server.joined("server");
-		assertEquals(AUTHENTICATED_UUID, authenticated.getObservedUuid());
-		assertNotEquals(initialUuid, authenticated.getObservedUuid());
+		assertEquals(AUTHENTICATED_UUID, authenticated.getObservedUniqueId());
+		assertNotEquals(initialUuid, authenticated.getObservedUniqueId());
 
 		PlayerIdentity observedByServer = server.identity();
 		assertNotNull(observedByServer);
-		assertEquals(AUTHENTICATED_UUID, observedByServer.getObservedUuid());
+		assertEquals(AUTHENTICATED_UUID, observedByServer.getObservedUniqueId());
 	}
 }

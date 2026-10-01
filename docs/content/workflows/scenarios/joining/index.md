@@ -12,7 +12,7 @@ Minecraft Java Edition client; Anvil does not launch or control that rendered cl
 2. Read the endpoint printed after `Join:`. Enter `status` in the runner to print it again.
 3. Open Multiplayer in your Minecraft client and use Direct Connection with that host and port.
 
-For the `local-paper` catalog example, use a Minecraft `1.21.11` client. A loopback address is usually
+For the `local-paper` scenario definition, use a Minecraft `1.21.11` client. A loopback address is usually
 `127.0.0.1` and the port is allocated for the run. Copy the address and port, omitting any leading
 slash shown by Java's address formatting. Do not assume the default Minecraft port.
 
@@ -28,22 +28,24 @@ set `.onlineMode(true)` on the direct server or entry proxy, and sign into your 
 normally. Let Anvil configure [forwarded backends](../../../building-blocks/environments/platforms/proxies/forwarding/index.md)
 through the declared topology.
 
-`anvilLogin` configures a protocol provider's stored profile for simulated players. It is not a login
-step for the Minecraft client you operate yourself. If a setup hook also creates simulated players,
+The Anvil account manager configures a protocol provider's stored account for simulated players. It
+is not a login step for the Minecraft client you operate yourself. If a setup hook also creates simulated players,
 give them distinct names so they do not compete with your client for the same player identity.
 
 ## Join from another machine
 
-Game listeners default to loopback. To expose a local prepared environment, add all three settings
-to its `AnvilScenario` builder in the catalog:
+Game listeners default to loopback. To expose a local prepared environment, configure manual mode and the network policy
+on its `AnvilScenario` builder in the definition. Import `me.whereareiam.anvil.api.model.NetworkPolicy`:
 
 ```java
 .manual(true)
-.allowLanBinding(true)
-.bindAddress("0.0.0.0")
+.networkPolicy(NetworkPolicy.builder()
+		.bindAddress("0.0.0.0")
+		.allowLanBinding(true)
+		.build())
 ```
 
-This is a builder fragment for the [catalog example](../catalogs/index.md). Keep its processes,
+This is a builder fragment for the [scenario definition example](../definitions/index.md). Keep its processes,
 entrypoint, and other settings, then relaunch the scenario. On the other machine, join using the
 Anvil host's reachable LAN address and the allocated game port. `0.0.0.0` is a bind address, not the
 destination to enter in the client.

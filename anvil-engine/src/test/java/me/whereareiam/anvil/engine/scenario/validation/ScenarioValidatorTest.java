@@ -1,6 +1,9 @@
 package me.whereareiam.anvil.engine.scenario.validation;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.NetworkPolicy;
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
+import java.time.Duration;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
@@ -20,6 +23,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ScenarioValidatorTest {
 	private final ScenarioValidator validator = new ScenarioValidator();
+
+	@ParameterizedTest
+	@ValueSource(longs = {0, -1})
+	void rejectsNonPositiveScenarioTimeoutOverrides(long seconds) {
+		Duration invalid = Duration.ofSeconds(seconds);
+		var startup = scenario().toBuilder().processTimeouts(ProcessTimeouts.builder().startup(invalid).build()).build();
+		var shutdown = scenario().toBuilder().processTimeouts(ProcessTimeouts.builder().shutdown(invalid).build()).build();
+		assertThrows(ScenarioValidationException.class, () -> validator.validate(startup, true));
+		assertThrows(ScenarioValidationException.class, () -> validator.validate(shutdown, true));
+	}
+
 
 	@ParameterizedTest
 	@MethodSource("invalidDeclarations")
@@ -52,28 +66,28 @@ class ScenarioValidatorTest {
 	@ParameterizedTest
 	@CsvSource({"false, false", "true, false", "false, true"})
 	void requiresBothManualModeAndLanOptInForNonLoopbackBinding(boolean manual, boolean allowLanBinding) {
-		var scenario = scenario().toBuilder().bindAddress("0.0.0.0")
-				.manual(manual).allowLanBinding(allowLanBinding).build();
+		var scenario = scenario().toBuilder().manual(manual)
+				.networkPolicy(NetworkPolicy.builder().bindAddress("0.0.0.0").allowLanBinding(allowLanBinding).build()).build();
 		var failure = assertThrows(ScenarioValidationException.class, () -> validator.validate(scenario, true));
 		assertEquals("Non-loopback binding requires a manual scenario and allowLanBinding=true", failure.getMessage());
 	}
 
 	@Test
 	void permitsNonLoopbackBindingForManualScenariosWithLanOptIn() {
-		var scenario = scenario().toBuilder().bindAddress("0.0.0.0").manual(true).allowLanBinding(true).build();
+		var scenario = scenario().toBuilder().manual(true).networkPolicy(NetworkPolicy.builder().bindAddress("0.0.0.0").allowLanBinding(true).build()).build();
 		assertDoesNotThrow(() -> validator.validate(scenario, true));
 	}
 
 	@ParameterizedTest
 	@ValueSource(strings = {"127.0.0.1", "::1"})
 	void permitsLoopbackBindingWithoutLanOptIn(String address) {
-		var scenario = scenario().toBuilder().bindAddress(address).build();
+		var scenario = scenario().toBuilder().networkPolicy(NetworkPolicy.builder().bindAddress(address).build()).build();
 		assertDoesNotThrow(() -> validator.validate(scenario, true));
 	}
 
 	@Test
 	void preservesInvalidBindAddressCauseBeforeCheckingEula() {
-		var scenario = scenario().toBuilder().bindAddress(":::").build();
+		var scenario = scenario().toBuilder().networkPolicy(NetworkPolicy.builder().bindAddress(":::").build()).build();
 		var failure = assertThrows(ScenarioValidationException.class, () -> validator.validate(scenario, false));
 		assertEquals("Invalid scenario bind address: :::", failure.getMessage());
 		assertInstanceOf(UnknownHostException.class, failure.getCause());

@@ -1,12 +1,13 @@
 package me.whereareiam.anvil.launcher.assembly.execution;
 
 import lombok.Builder;
-import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
 import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
+import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.process.ProcessGroup;
+import me.whereareiam.anvil.api.scenario.ScenarioObserver;
 import me.whereareiam.anvil.environment.execution.api.image.ImageLocks;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionPlan;
@@ -15,10 +16,12 @@ import me.whereareiam.anvil.environment.execution.api.model.process.ProcessSpec;
 import me.whereareiam.anvil.environment.execution.managed.ManagedProcessService;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.WorkspaceProvisioner;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceLayout;
+import me.whereareiam.anvil.launcher.assembly.process.ProcessComposition;
 import me.whereareiam.anvil.platform.api.PlatformPreparer;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import me.whereareiam.anvil.platform.api.model.ProcessPlan;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Launches resolved platform processes through execution-owned plans and workspace preparation.
@@ -34,6 +37,31 @@ public final class ProcessLauncher {
 	private final @NotNull ImageLocks imageLocks;
 
 	public @NotNull ProcessGroup start(@NotNull PlatformPlan platformPlan, @NotNull ScenarioAgentDirectory agents) {
+		ProcessGroup prepared = prepare(platformPlan, agents, null, null);
+		try {
+			prepared.startAll();
+			return prepared;
+		} catch (RuntimeException | Error failure) {
+			try {
+				prepared.finish(false);
+			} catch (RuntimeException | Error cleanup) {
+				if (cleanup != failure) failure.addSuppressed(cleanup);
+			}
+
+			throw failure;
+		}
+	}
+
+	/**
+	 * Prepares platform and workspace inputs through the managed execution topology without starting JVMs.
+	 *
+	 * @param platformPlan validated platform requirements
+	 * @param agents       stable agent directory for later generations
+	 * @param capabilities optional logical process capability composition
+	 * @param observer     optional public generation observer
+	 * @return prepared resource-owning group
+	 */
+	public @NotNull ProcessGroup prepare(@NotNull PlatformPlan platformPlan, @NotNull ScenarioAgentDirectory agents, @Nullable ProcessComposition capabilities, @Nullable ScenarioObserver observer) {
 		var layout = workspaces.layout(options.getWorkDirectory(), platformPlan.getScenario());
 		var preparation = new ScenarioProcessPreparation(
 				options,
@@ -42,21 +70,20 @@ public final class ProcessLauncher {
 				workspaces,
 				platforms,
 				connections,
-				agents
+				agents,
+				capabilities
 		);
 
-		return processes.start(plan(platformPlan, layout), preparation);
+		return processes.prepare(plan(platformPlan, layout), preparation, observer);
 	}
 
 	private @NotNull ExecutionPlan plan(@NotNull PlatformPlan platforms, @NotNull WorkspaceLayout layout) {
 		AnvilScenario scenario = platforms.getScenario();
 		var plan = ExecutionPlan.builder()
-				.executionId(scenario.getExecution() == null ? options.getExecutionId() : scenario.getExecution())
+				.executionProviderId(scenario.getExecutionProviderId() == null ? options.getExecutionProviderId() : scenario.getExecutionProviderId())
 				.context(context(scenario))
-				.startupTimeout(scenario.getStartupTimeout())
-				.stopTimeout(options.getStopTimeout())
-				.parallelism(options.getParallelism())
-				.startupMemoryMegabytes(options.getStartupMemoryMegabytes());
+				.processTimeouts(scenario.getProcessTimeouts().withDefaults(options.getProcessTimeouts()))
+				.processScheduling(options.getProcessScheduling());
 		platforms.getProcesses().forEach((name, process) ->
 				plan.process(process(name, process, layout)));
 
@@ -66,7 +93,6 @@ public final class ProcessLauncher {
 	private @NotNull ExecutionContext context(@NotNull AnvilScenario scenario) {
 		return ExecutionContext.builder()
 				.cacheDirectory(options.getCacheDirectory())
-				.bindAddress(scenario.getBindAddress())
 				.localRuntime(javaRuntime)
 				.runtimeValidator(javaRuntime)
 				.imageLocks(imageLocks)
@@ -85,8 +111,7 @@ public final class ProcessLauncher {
 		var request = ProcessRequest.builder()
 				.name(name)
 				.workspace(layout.processDirectory(name))
-				.javaRequirement(plan.getJavaRequirement())
-				.javaSource(plan.getJavaSource())
+				.javaSelection(plan.getJavaSelection())
 				.minimumJavaVersion(plan.getMinimumJavaVersion())
 				.agent(plan.isAgent())
 				.publishGame(plan.isPublishGame())

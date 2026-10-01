@@ -9,11 +9,13 @@ This fragment assumes an Anvil entry-point plugin has already been applied:
 ```kotlin
 anvil {
 	acceptEula()
-	protocol("mcprotocol")
-	workDirectory.set(layout.buildDirectory.dir("anvil"))
-	parallelism.set(2)
-	startupMemoryMegabytes.set(4096)
-	downloadParallelism.set(4)
+	engine {
+		protocol("mcprotocol")
+		workDirectory.set(layout.buildDirectory.dir("anvil"))
+		parallelism.set(2)
+		startupMemoryMegabytes.set(4096)
+		downloadParallelism.set(4)
+	}
 	artifact("plugin-under-test", tasks.named("jar"))
 }
 ```
@@ -27,17 +29,24 @@ running processes or a JVM heap setting.
 | Member | Meaning | Default |
 |---|---|---|
 | `acceptEula()` | Record explicit acceptance for managed servers | Not accepted |
-| `protocol(id)` / `protocolId` | Select an installed protocol provider | Sole installed provider |
-| `workDirectory` | Root for generated process workspaces | `build/anvil` |
-| `cacheDirectory` | Shared artifact, Java, workspace-cache, and provider state root | `~/.anvil` |
-| `parallelism` | Concurrent independent preparation/start operations | Engine detects from CPU count |
-| `startupMemoryMegabytes` | Combined declared heaps permitted to start together | Engine detects from host memory |
-| `downloadParallelism` | Concurrent artifact transfers | Engine detects from CPU count |
-| `scenarioProviders` | Fully qualified `AnvilScenarioProvider` class names for the foreground runner | Empty list |
+| `engine.protocol(id)` / `engine.protocolId` | Optional fallback protocol provider | Sole installed provider |
+| `engine.workDirectory` | Root for generated process workspaces | `build/anvil` |
+| `engine.cacheDirectory` | Shared artifact, Java, and workspace-cache root | `~/.anvil` |
+| `engine.accountsDirectory` | Local authenticated account files used by simulated players | `~/.anvil/accounts` |
+| `engine.parallelism` | Concurrent independent preparation/start operations | Engine detects from CPU count |
+| `engine.startupMemoryMegabytes` | Combined declared heaps permitted to start together | Engine detects from host memory |
+| `engine.downloadParallelism` | Concurrent artifact transfers | Engine detects from CPU count |
 | `protocols.mcprotocol` | Version-aligned MCProtocol provider coordinate | Uses the plugin's framework version |
 
-These shared settings are wired into the tasks. Additional JUnit test JVM properties belong in
-`tasks.named<Test>("anvilTest")`; see [Engine options](../../../building-blocks/environments/configuration/engine/index.md) for that distinction.
+JUnit, foreground runs, and IDE preparation use the same lazy mapping of these settings. Task
+realization does not freeze DSL values before the build script finishes configuring them.
+Supported engine JVM properties, such as `-Danvil.offline=true`, `-Danvil.stopTimeout=PT9S`, and
+`-Danvil.console.colors=false`, are forwarded to each workflow. The DSL's EULA and directory
+conventions take precedence over those JVM properties; configured protocol and concurrency values
+also take precedence. Unrelated JVM properties are not forwarded.
+
+Additional JUnit test JVM properties belong in `tasks.named<Test>("anvilTest")`; see
+[Engine options](../../../building-blocks/environments/configuration/engine/index.md) for that distinction.
 
 ## Register artifacts
 
@@ -59,14 +68,7 @@ Use the name through `AssetSource.artifact(name)` to install a plugin or asset, 
 `Distribution.artifact(name)` to select a server/proxy executable. A named server executable also
 needs its `minecraftVersion` in the scenario. See [Workspace assets](../../../building-blocks/environments/workspaces/assets/index.md).
 
-## Register catalogs
-
-```kotlin
-anvil {
-	scenarioProviders.add("com.example.test.DevelopmentScenarios")
-}
-```
-
-The class must implement `AnvilScenarioProvider` and be on the Anvil runtime classpath. This setting
-does not select the `AnvilScenarioDefinition` used by a JUnit annotation. See
-[Catalogs and groups](../../../workflows/scenarios/catalogs/index.md).
+Scenario definitions are discovered from the compiled `anvil` source set. There is no definition list
+to maintain in Gradle. The standard Anvil plugin feeds the generated definition index into the
+[IDE project declaration](../tooling/index.md). Sync the project after changing scenario sources,
+then refresh the IDE scenario list.

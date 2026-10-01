@@ -1,12 +1,14 @@
 package me.whereareiam.anvil.agent.client;
 
-import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.agent.api.exception.AgentException;
+import me.whereareiam.anvil.agent.client.api.AgentClient;
+import me.whereareiam.anvil.agent.client.api.exception.AgentUnavailableException;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,6 +28,30 @@ class ProcessAgentClientTest {
 
 		assertEquals(List.of("old:before", "old:close", "new:after", "new:close"), calls);
 		assertThrows(AgentException.class, () -> borrowed.executeCommand("closed"));
+	}
+
+	@Test
+	void distinguishesUnavailableConnectionsFromUnobservedPlayersAcrossRestarts() {
+		ProcessAgentClient client = new ProcessAgentClient();
+		assertFalse(client.available());
+		assertThrows(AgentUnavailableException.class, () -> client.identity("Alice"));
+
+		List<String> calls = new ArrayList<>();
+		client.attach(agent("first", calls));
+		assertTrue(client.available());
+		assertTrue(client.identity("Alice").isEmpty());
+		client.close();
+		assertFalse(client.available());
+		assertThrows(AgentUnavailableException.class, () -> client.identity("Alice"));
+		assertThrows(AgentUnavailableException.class, () -> client.request("probe", null, String.class));
+		assertThrows(AgentUnavailableException.class, () -> client.executeCommand("probe"));
+
+		client.attach(agent("second", calls));
+		assertTrue(client.available());
+		assertTrue(client.identity("Alice").isEmpty());
+		client.close();
+		assertFalse(client.available());
+		assertEquals(List.of("first:Alice", "first:close", "second:Alice", "second:close"), calls);
 	}
 
 	@Test
@@ -52,7 +78,9 @@ class ProcessAgentClientTest {
 	private AgentClient agent(String generation, List<String> calls) {
 		return (AgentClient) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[]{AgentClient.class},
 				(proxy, method, arguments) -> {
+					if (method.getName().equals("available")) return true;
 					calls.add(generation + ":" + (arguments == null ? method.getName() : arguments[0]));
+					if (method.getName().equals("identity")) return Optional.empty();
 					return method.getName().equals("executeCommand") ? true : null;
 				});
 	}

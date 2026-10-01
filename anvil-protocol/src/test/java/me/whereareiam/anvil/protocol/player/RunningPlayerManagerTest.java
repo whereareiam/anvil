@@ -18,6 +18,10 @@ import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.api.provider.ProtocolBackend;
 import me.whereareiam.anvil.protocol.api.type.ProtocolCapability;
 import org.jetbrains.annotations.NotNull;
+import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
+import me.whereareiam.anvil.api.type.AuthenticationMode;
+import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.protocol.player.account.AccountReservations;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -97,7 +101,7 @@ class RunningPlayerManagerTest {
 		StubBackend backend = new StubBackend();
 		IllegalStateException failure = new IllegalStateException("composition failed");
 		backend.destructionFailure = new IllegalStateException("destruction failed");
-		ProtocolPlayerComposer composer = (player, observation, onDestroyed) -> { throw failure; };
+		ProtocolPlayerComposer composer = (player, observation, metadata, onDestroyed) -> { throw failure; };
 		RunningPlayerManager manager = new RunningPlayerManager(scenario(), backend,
 				new StubScenarioProcesses("server", temporary), player -> observation(player), composer, ignored -> { });
 
@@ -128,6 +132,56 @@ class RunningPlayerManagerTest {
 		assertEquals(1, releases.get());
 	}
 
+	@Test
+	void failedOnlineCreationReleasesTheAccountForTheNextAttempt() {
+		StubBackend backend = new StubBackend();
+		IllegalStateException refresh = new IllegalStateException("Token refresh failed");
+		backend.creationFailure = refresh;
+		AuthenticationAccount alice = new AuthenticationAccount("alice", "test", "Alice", null);
+		RunningPlayerManager manager = onlineManager(backend, new AccountReservations(), alice);
+		PlayerOptions options = online("alice");
+
+		assertSame(refresh, assertThrows(IllegalStateException.class, () -> manager.create(options)));
+		backend.creationFailure = null;
+
+		assertEquals("alice", manager.create(options).name());
+	}
+
+	@Test
+	void scenariosOfOneEngineCannotUseTheSameAccountAtOnce() {
+		AuthenticationAccount alice = new AuthenticationAccount("alice", "test", "Alice", null);
+		AccountReservations reservations = new AccountReservations();
+		RunningPlayerManager first = onlineManager(new StubBackend(), reservations, alice);
+		RunningPlayerManager second = onlineManager(new StubBackend(), reservations, alice);
+		var player = first.create(online("alice"));
+
+		assertThrows(ScenarioValidationException.class, () -> second.create(online("alice")));
+		player.destroy();
+		assertEquals("alice", second.create(online("alice")).name());
+	}
+
+	private RunningPlayerManager onlineManager(StubBackend backend, AccountReservations reservations, AuthenticationAccount account) {
+		MinecraftServer server = MinecraftServer.builder()
+				.name("server")
+				.platform("test")
+				.distribution(Distribution.remote("1.21.11", "1"))
+				.onlineMode(true)
+				.build();
+		AnvilScenario scenario = AnvilScenario.builder().name("online").entrypoint("server").server(server).build();
+
+		return new RunningPlayerManager(scenario, backend,
+				new StubScenarioProcesses("server", temporary.resolve("server")), player -> observation(player), composer(),
+				ignored -> { }, () -> List.of(account), reservations);
+	}
+
+	private PlayerOptions online(String accountId) {
+		return PlayerOptions.builder()
+				.name(accountId)
+				.authentication(AuthenticationMode.ONLINE)
+				.accountId(accountId)
+				.build();
+	}
+
 	private RunningPlayerManager manager(StubBackend backend) {
 		return new RunningPlayerManager(scenario(), backend,
 				new StubScenarioProcesses("server", temporary.resolve("server")), player -> observation(player), composer(), ignored -> { });
@@ -154,7 +208,7 @@ class RunningPlayerManagerTest {
 	}
 
 	private ProtocolPlayerComposer composer() {
-		return (player, observation, onDestroyed) -> new SimulatedPlayer() {
+		return (player, observation, metadata, onDestroyed) -> new SimulatedPlayer() {
 			@Override
 			public @NotNull String name() {
 				return player.name();
@@ -192,6 +246,7 @@ class RunningPlayerManagerTest {
 		private PlayerRequest lastRequest;
 		private StubPlayer lastPlayer;
 		private RuntimeException destructionFailure;
+		private RuntimeException creationFailure;
 
 		@Override
 		public @NotNull String id() {
@@ -212,6 +267,7 @@ class RunningPlayerManagerTest {
 
 		@Override
 		public @NotNull ProtocolPlayer create(@NotNull PlayerRequest request) {
+			if (creationFailure != null) throw creationFailure;
 			lastRequest = request;
 			lastPlayer = new StubPlayer(request, destructionFailure);
 			return lastPlayer;

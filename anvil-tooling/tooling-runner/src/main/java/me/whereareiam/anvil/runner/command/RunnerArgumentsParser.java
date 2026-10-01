@@ -29,33 +29,22 @@ public final class RunnerArgumentsParser {
 			if (options.putIfAbsent(option, value) != null) throw new IllegalArgumentException("Duplicate option: --" + name);
 		}
 
-		String provider = required(options);
 		String scenario = optional(options, RunnerOption.SCENARIO);
-		String group = optional(options, RunnerOption.GROUP);
+		String definition = optional(options, RunnerOption.DEFINITION);
 		boolean list = options.containsKey(RunnerOption.LIST);
 
-		if (list && (scenario != null || group != null)) {
-			throw new IllegalArgumentException("Select --list or exactly one of --scenario=<name> or --group=<name>");
+		if (list && (scenario != null || definition != null)) {
+			throw new IllegalArgumentException("Select --list or exactly one of --scenario=<name> or --definition=<class>");
 		}
-		if (!list && (scenario == null) == (group == null)) {
-			throw new IllegalArgumentException("Select exactly one of --scenario=<name> or --group=<name>");
+		if (!list && (scenario == null) == (definition == null)) {
+			throw new IllegalArgumentException("Select exactly one of --scenario=<name> or --definition=<class>");
 		}
 
 		return RunnerArguments.builder()
-				.provider(provider)
 				.list(list)
 				.scenario(scenario)
-				.group(group)
+				.definition(definition)
 				.build();
-	}
-
-	private static @NotNull String required(Map<RunnerOption, String> options) {
-		String value = optional(options, RunnerOption.PROVIDER);
-		if (value == null) {
-			throw new IllegalArgumentException("--" + RunnerOption.PROVIDER.getName() + "=<value> is required");
-		}
-
-		return value;
 	}
 
 	private static String optional(Map<RunnerOption, String> options, RunnerOption option) {

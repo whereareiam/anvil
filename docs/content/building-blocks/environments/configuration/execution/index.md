@@ -14,7 +14,7 @@ The selected provider applies to the whole scenario.
 | `local` | Compatible local or provisioned Java | Starts JVMs on the host with allocated listener ports |
 | `docker` | Local Docker daemon, accessible workspace paths, configured Java images | Starts containers on a scenario network and publishes host endpoints |
 
-Set `.execution("local")` or `.execution("docker")` on an `AnvilScenario` to override the engine's
+Set `.executionProviderId("local")` or `.executionProviderId("docker")` on an `AnvilScenario` to override the engine's
 `executionId`. Selecting Docker alone is insufficient: the service-discovered provider has no image
 mappings, and the Gradle DSL does not currently expose image configuration.
 
@@ -40,6 +40,7 @@ servers use Java 21, plus a verified immutable Java 21 image reference from your
 ```java
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
@@ -55,15 +56,17 @@ public final class DockerScenario {
 		var options = EngineOptions.builder()
 				.eulaAccepted(true)
 				.protocolId("mcprotocol")
-				.executionId("docker")
-				.javaRequirement(JavaRequirement.builder()
-						.featureVersion(21)
-						.distribution("temurin")
+				.executionProviderId("docker")
+				.javaSelection(JavaSelection.builder()
+						.requirement(JavaRequirement.builder()
+								.featureVersion(21)
+								.distribution("temurin")
+								.build())
 						.build())
 				.build();
 
 		try (ScenarioEngine engine = AnvilLauncher.create(options, docker);
-		     ScenarioContext context = engine.start(scenario.toBuilder().execution("docker").build())) {
+		     ScenarioContext context = engine.start(scenario.toBuilder().executionProviderId("docker").build())) {
 			System.out.println(context.processes().get(scenario.getEntrypoint()).address());
 		}
 	}

@@ -3,6 +3,7 @@ package me.whereareiam.anvil.environment.execution.managed;
 import lombok.experimental.Delegate;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
+import me.whereareiam.anvil.api.scenario.ScenarioObserver;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionPlan;
@@ -27,8 +28,9 @@ final class ManagedProcessGroup implements ProcessGroup {
 	private final ExecutionProvider execution;
 	private final ExecutionPreparation preparation;
 	private final List<List<ProcessSpec>> startupOrder;
+	private final @Nullable ScenarioObserver observer;
 	private final Map<String, ProcessTarget> targets = new ConcurrentHashMap<>();
-	@Delegate(types = ScenarioProcesses.class)
+	@Delegate(types = ScenarioProcesses.class, excludes = CompleteStartup.class)
 	private final ProcessRegistry processes = new ProcessRegistry();
 	private @Nullable ExecutionSession session;
 	private boolean closed;
@@ -37,19 +39,21 @@ final class ManagedProcessGroup implements ProcessGroup {
 			ExecutionPlan plan,
 			ExecutionProvider execution,
 			ExecutionPreparation preparation,
-			List<List<ProcessSpec>> startupOrder
+			List<List<ProcessSpec>> startupOrder,
+			@Nullable ScenarioObserver observer
 	) {
 		this.plan = plan;
 		this.execution = execution;
 		this.preparation = preparation;
 		this.startupOrder = startupOrder;
+		this.observer = observer;
 	}
 
-	void start() {
+	void prepare() {
 		preparation.open();
 		ExecutionSession opened = execution.open(plan.getContext());
 		session = opened;
-		StartupScheduler tasks = new StartupScheduler(plan.getParallelism(), plan.getStartupMemoryMegabytes());
+		ProcessScheduler tasks = new ProcessScheduler(plan.getProcessScheduling().getParallelism(), plan.getProcessScheduling().getStartupMemoryMegabytes());
 		tasks.run(plan.getProcesses(), process -> {
 			ProcessTarget target = opened.prepare(process.getRequest());
 			targets.put(process.getRequest().getName(), target);
@@ -64,17 +68,30 @@ final class ManagedProcessGroup implements ProcessGroup {
 		for (ProcessSpec process : orderedProcesses()) {
 			String name = process.getRequest().getName();
 			processes.register(new ProcessSlot(process, targets.get(name), preparation, peers,
-					plan.getStartupTimeout(), plan.getStopTimeout()));
+					plan.getProcessTimeouts().getStartup(), plan.getProcessTimeouts().getShutdown(), observer));
 		}
 
 		tasks.run(plan.getProcesses(), process -> processes.prepare(process.getRequest().getName()));
-		for (ProcessSpec process : plan.getProcesses()) processes.configure(process.getRequest().getName());
+	}
+
+	@Override
+	public void startAll() {
+		synchronized (this) {
+			if (closed) throw new IllegalStateException("Cannot start a finalized process group");
+		}
+		ProcessScheduler tasks = new ProcessScheduler(plan.getProcessScheduling().getParallelism(), plan.getProcessScheduling().getStartupMemoryMegabytes());
 		for (List<ProcessSpec> layer : startupOrder)
 			tasks.start(layer, process -> processes.start(process.getRequest().getName()));
 	}
 
 	@Override
-	public synchronized void finish(boolean successful) {
+	public void finish(boolean successful) {
+		// Checked before any teardown or the monitor, so a rejected call leaves the group intact.
+		processes.rejectNestedChange("finish the process group");
+		finishOwned(successful);
+	}
+
+	private synchronized void finishOwned(boolean successful) {
 		if (closed) return;
 		closed = true;
 
@@ -107,4 +124,8 @@ final class ManagedProcessGroup implements ProcessGroup {
 			failures.add(failure);
 		}
 	}
+	private interface CompleteStartup {
+		void startAll();
+	}
+
 }

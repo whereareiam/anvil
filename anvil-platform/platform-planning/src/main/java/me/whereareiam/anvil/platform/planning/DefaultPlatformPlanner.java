@@ -2,7 +2,7 @@ package me.whereareiam.anvil.platform.planning;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
-import me.whereareiam.anvil.api.model.java.JavaSource;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
@@ -24,7 +24,6 @@ import me.whereareiam.anvil.platform.planning.topology.ForwardingPlan;
 import me.whereareiam.anvil.platform.planning.topology.ProcessTopology;
 import me.whereareiam.anvil.platform.planning.validation.ProcessDeclarationValidator;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -40,6 +39,7 @@ import java.util.Map;
  */
 public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPreparer {
 	private final EngineOptions options;
+	private final JavaSelection javaDefaults;
 	private final Map<String, PlatformProvider> providers;
 	private final PlatformArtifactSource downloads;
 	private final ScenarioArtifactResolver artifacts;
@@ -51,6 +51,9 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 			@NotNull PlatformAgentSource agents
 	) {
 		this.options = options;
+		this.javaDefaults = options.getJavaSelection().withDefaults(JavaSelection.builder()
+				.requirement(JavaRequirement.builder().build())
+				.build());
 		this.providers = Map.copyOf(providers);
 		this.downloads = downloads;
 		this.artifacts = new ScenarioArtifactResolver(options.getArtifacts(), agents);
@@ -71,8 +74,7 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 			boolean proxy = !(declaration instanceof MinecraftServer);
 			plan.process(name, ProcessPlan.builder()
 					.declaration(declaration)
-					.javaRequirement(javaRequirement(resolved, declaration))
-					.javaSource(javaSource(resolved, declaration))
+					.javaSelection(declaration.getJavaSelection().withDefaults(resolved.getJavaSelection()).withDefaults(javaDefaults))
 					.proxy(proxy)
 					.publishGame(proxy || resolved.getNetworkPolicy().getBackendNetworkExposure() != NetworkExposure.PRIVATE)
 					.dependencies(proxy ? servers : List.of())
@@ -82,6 +84,7 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 					.agent(agent != null)
 					.readinessPattern(provider.readinessPattern())
 					.stopCommand(provider.stopCommand())
+					.jvmArguments(provider.jvmArguments(declaration, options.isConsoleColors()))
 					.programArguments(provider.programArguments(declaration))
 					.defaultCaches(provider.defaultCaches(declaration))
 					.build());
@@ -98,20 +101,6 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 	@Override
 	public void configure(@NotNull ProcessPlan process, @NotNull PlatformRequest request) throws IOException {
 		provider(process).configure(process.getDeclaration(), context(process, request));
-	}
-
-	private @NotNull JavaRequirement javaRequirement(@NotNull AnvilScenario scenario, @NotNull MinecraftProcess process) {
-		if (process.getJavaRequirement() != null) return process.getJavaRequirement();
-		if (scenario.getJavaRequirement() != null) return scenario.getJavaRequirement();
-
-		return options.getJavaRequirement();
-	}
-
-	private @Nullable JavaSource javaSource(@NotNull AnvilScenario scenario, @NotNull MinecraftProcess process) {
-		if (process.getJavaSource() != null) return process.getJavaSource();
-		if (scenario.getJavaSource() != null) return scenario.getJavaSource();
-
-		return options.getJavaSource();
 	}
 
 	private PlatformProvider provider(ProcessPlan process) {

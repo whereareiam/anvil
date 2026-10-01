@@ -19,10 +19,10 @@ It speaks the native protocol through the selected provider. It does not render 
 supply autonomous movement, pathfinding, or crafting. Installed [capabilities](../../building-blocks/players/capabilities/index.md)
 provide the actions your test can request.
 
-## Does the umbrella plugin install every runtime?
+## Does the Anvil plugin install every runtime?
 
-It supplies the JUnit/foreground integrations and built-in capabilities. Platform units remain
-explicit, and the protocol provider must be installed. See [Plugins and dependencies](../../integrations/gradle/plugins/index.md).
+The standard plugin supplies scenario execution and IDE discovery. Add the JUnit plugin for
+automated tests. Platform, capability, and protocol providers are selected explicitly. See [Plugins and dependencies](../../integrations/gradle/plugins/index.md).
 
 ## Can one player visit servers on different native versions?
 
@@ -32,7 +32,7 @@ Consult the [compatibility page](../../building-blocks/environments/platforms/ve
 
 ## Can I join the environment myself?
 
-Yes. Use a catalog and the [manual runner](../../workflows/scenarios/running/index.md).
+Yes. Use a scenario definition and the [manual runner](../../workflows/scenarios/running/index.md).
 Joining from another machine requires the scenario's explicit LAN exposure configuration.
 
 ## Can Anvil use Docker or a remote host?

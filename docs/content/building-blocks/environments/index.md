@@ -7,9 +7,9 @@ An environment contains the server and proxy processes a test or prepared scenar
 its topology and inputs once, then reuse that declaration for automated verification or a manual
 session with a real client.
 
-The Java declaration is `AnvilScenario`. `AnvilScenarioDefinition` supplies one reusable declaration;
-`AnvilScenarioProvider` can expose several declarations through a catalog. Neither requires that
-players be created inside the declaration: a running context can create them when needed.
+The Java declaration is `AnvilScenario`. `AnvilScenarioDefinition` supplies one independently
+discoverable declaration. Neither requires that players be created inside the declaration: a
+running context can create them when needed.
 
 ## Build the environment
 
@@ -36,8 +36,8 @@ capabilities. Its APIs let a test or setup hook add participants to this environ
 ## Reuse it across workflows
 
 For [Testing](../../workflows/testing/index.md), the test starts the environment, performs a journey,
-and asserts the results. For [Scenarios](../../workflows/scenarios/index.md), a catalog exposes a
-prepared environment that stays available while a human joins and tests it. A manual variant can
+and asserts the results. For [Scenarios](../../workflows/scenarios/index.md), the runner exposes a
+prepared definition that stays available while a human joins and tests it. A manual variant can
 reuse the same definition while changing only the settings needed for that workflow.
 
 [Integrations](../../integrations/index.md) covers the entry points. If preparation or execution

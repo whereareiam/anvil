@@ -7,10 +7,10 @@ import me.whereareiam.anvil.api.exception.AnvilException;
 import me.whereareiam.anvil.api.exception.scenario.ScenarioStartupException;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerManager;
+import me.whereareiam.anvil.api.player.account.AccountManager;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.scenario.ScenarioAttachment;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
-import me.whereareiam.anvil.api.scenario.ScenarioExecutor;
 import me.whereareiam.anvil.api.scenario.ScenarioExtension;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,44 +26,70 @@ import java.util.function.Consumer;
 public final class ScenarioSession implements ScenarioContext {
 	private final ScenarioContext context;
 	private final Consumer<ScenarioSession> onClosed;
+	private final List<ScenarioExtension> extensions;
+	private final Consumer<Runnable> startup;
+	private final ObserverGuard observers;
 
 	private final List<ScenarioAttachment> attachments = new ArrayList<>();
 	private boolean closed;
+	private boolean initialized;
+	private boolean initializing;
 	@Getter
 	private volatile boolean finished;
 
 	/**
-	 * Opens scoped functionality, attaches global contributions, then executes scenario setup.
-	 * Each successful attachment is owned before the next extension executes. A startup failure
-	 * finalizes accepted attachments and the scoped context with a failed outcome.
+	 * Owns an explicitly prepared context and defers global contributions until its full start.
 	 *
-	 * @param scenario   validated scenario declaration
-	 * @param executor   scoped context factory that owns its own acquisition rollback
-	 * @param extensions contributions in installation order
-	 * @param onClosed   registration cleanup invoked after all finalization attempts
-	 * @return ready session after extensions and setup finish
+	 * @param context prepared scoped resources
+	 * @param extensions ready-only global contributions
+	 * @param onClosed registration cleanup
+	 * @param startup engine-owned startup serialization and close guard
+	 * @param observers engine guard that rejects finishing from a process observer
+	 * @return unstarted global session
 	 */
-	public static @NotNull ScenarioSession start(
-			@NotNull AnvilScenario scenario,
-			@NotNull ScenarioExecutor executor,
+	public static @NotNull ScenarioSession prepare(
+			@NotNull ScenarioContext context,
 			@NotNull List<ScenarioExtension> extensions,
-			@NotNull Consumer<ScenarioSession> onClosed
+			@NotNull Consumer<ScenarioSession> onClosed,
+			@NotNull Consumer<Runnable> startup,
+			@NotNull ObserverGuard observers
 	) {
-		ScenarioContext context = Objects.requireNonNull(executor.open(scenario), "Scenario executor returned no context");
-		ScenarioSession session = new ScenarioSession(context, onClosed);
-		try {
-			for (ScenarioExtension extension : extensions)
-				session.attach(extension);
-			session.executeSetup();
+		return new ScenarioSession(context, onClosed, extensions, startup, observers);
+	}
 
-			return session;
-		} catch (RuntimeException | Error failure) {
-			try {
-				session.finish(false);
-			} catch (RuntimeException | Error cleanup) {
-				if (cleanup != failure) failure.addSuppressed(cleanup);
+	@Override
+	public void start() {
+		startup.accept(this::completeStart);
+	}
+
+	private void completeStart() {
+		boolean firstStart;
+		synchronized (this) {
+			if (closed) throw new IllegalStateException("Cannot start a closed scenario");
+			if (initializing) throw new IllegalStateException("Scenario startup is already in progress");
+
+			initializing = true;
+			firstStart = !initialized;
+		}
+
+		// Runs outside the monitor, so another thread can finish the scenario and cancel a slow startup.
+		try {
+			context.start();
+			if (!firstStart) return;
+
+			for (ScenarioExtension extension : extensions) attach(extension);
+			executeSetup();
+			synchronized (this) {
+				initialized = true;
 			}
+		} catch (RuntimeException | Error failure) {
+			try { finish(false); }
+			catch (RuntimeException | Error cleanup) { if (cleanup != failure) failure.addSuppressed(cleanup); }
 			throw failure;
+		} finally {
+			synchronized (this) {
+				initializing = false;
+			}
 		}
 	}
 
@@ -83,7 +109,18 @@ public final class ScenarioSession implements ScenarioContext {
 	}
 
 	@Override
-	public synchronized void finish(boolean successful) {
+	public @NotNull AccountManager accounts() {
+		return context.accounts();
+	}
+
+	@Override
+	public void finish(boolean successful) {
+		// Checked before the monitor: a parallel startup holds it while another thread runs the observer.
+		observers.reject("finish the scenario");
+		finishOwned(successful);
+	}
+
+	private synchronized void finishOwned(boolean successful) {
 		if (closed) return;
 		closed = true;
 		try {

@@ -11,9 +11,9 @@ individual implementation classes.
 
 | Artifact | Consumer installation |
 |---|---|
-| Capability API and host implementation | `anvilCapabilities` dependency, usually through a wiring artifact |
-| Protocol backend | `anvilProtocols` dependency |
-| Platform provider and required agent assembly | `anvilPlatforms` dependency or platform unit wiring |
+| Capability API and host implementation | `anvilImplementation` dependency, usually through a wiring artifact |
+| Protocol backend | `anvilRuntimeOnly` dependency |
+| Platform provider and required agent assembly | `anvilRuntimeOnly` dependency or platform unit wiring |
 | External agent handler | Workspace asset under `plugins/anvil-agent-extensions` |
 
 See [Gradle integration](../../integrations/gradle/index.md) for configuration ownership. A host classpath

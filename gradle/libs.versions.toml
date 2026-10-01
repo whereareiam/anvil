@@ -1,6 +1,8 @@
 [versions]
 
 # build tooling
+java = "21"
+kotlin = "2.4.0"
 shadow = "9.6.1"
 freefair = "9.5.0"
 toolkit = "dev-757d944"
@@ -16,6 +18,12 @@ jackson = "2.22.2"
 slf4j = "2.0.18"
 adventure = "5.2.0"
 
+# tooling
+## intellij
+intellij-platform = "2.18.1"
+intellij-idea = "2025.2.5"
+intellij-verify = "2026.2.2"
+
 # platform api
 paper = "1.21.11-R0.1-SNAPSHOT"
 velocity = "3.5.1"
@@ -26,6 +34,7 @@ mcprotocol = "26.1-SNAPSHOT"
 minecraft-auth = "5.0.2"
 
 # testing
+junit4 = "4.13.2"
 junit = "6.1.3"
 
 [libraries]
@@ -34,6 +43,7 @@ junit = "6.1.3"
 lombok-plugin = { group = "io.freefair.gradle", name = "lombok-plugin", version.ref = "freefair" }
 shadow = { group = "com.gradleup.shadow", name = "shadow-gradle-plugin", version.ref = "shadow" }
 toolkit-publish-maven = { group = "me.whereareiam.toolkit", name = "publish-maven", version.ref = "toolkit" }
+toolkit-project-discovery = { group = "me.whereareiam.toolkit", name = "project-discovery", version.ref = "toolkit" }
 toolkit-architecture = { group = "me.whereareiam.toolkit", name = "architecture", version.ref = "toolkit" }
 
 # compile time processing
@@ -62,14 +72,21 @@ mcprotocol = { group = "org.geysermc.mcprotocollib", name = "protocol", version.
 minecraft-auth = { group = "net.raphimc", name = "MinecraftAuth", version.ref = "minecraft-auth" }
 
 # testing
+junit4 = { group = "junit", name = "junit", version.ref = "junit4" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }
 junit-platform = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junit" }
+junit-vintage = { group = "org.junit.vintage", name = "junit-vintage-engine", version.ref = "junit" }
 
 [plugins]
 
+
+# build tooling
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-lombok = { id = "org.jetbrains.kotlin.plugin.lombok", version.ref = "kotlin" }
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 freefair-lombok = { id = "io.freefair.lombok", version.ref = "freefair" }
 toolkit-architecture = { id = "me.whereareiam.toolkit.architecture", version.ref = "toolkit" }
 toolkit-project-discovery = { id = "me.whereareiam.toolkit.project-discovery", version.ref = "toolkit" }
 toolkit-publish-maven = { id = "me.whereareiam.toolkit.publish.maven", version.ref = "toolkit" }
 toolkit-versioning = { id = "me.whereareiam.toolkit.versioning", version.ref = "toolkit" }
+intellij-platform = { id = "org.jetbrains.intellij.platform", version.ref = "intellij-platform" }

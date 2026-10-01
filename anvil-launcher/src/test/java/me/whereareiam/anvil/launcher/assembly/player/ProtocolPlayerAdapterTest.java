@@ -1,12 +1,11 @@
 package me.whereareiam.anvil.launcher.assembly.player;
 
-import me.whereareiam.anvil.capability.protocol.api.player.ProtocolCapabilityPlayer;
-
 import lombok.Value;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
-import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.binding.JsonCapabilityCodec;
+import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
+import me.whereareiam.anvil.capability.protocol.api.player.ProtocolCapabilityPlayer;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolSubscription;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
@@ -26,7 +25,7 @@ class ProtocolPlayerAdapterTest {
 	@Test
 	void adaptsTypedMessagesAndSubscriptionLifetime() {
 		StubPlayer protocol = new StubPlayer();
-		ProtocolCapabilityPlayer player = new ProtocolPlayerAdapter(protocol);
+		ProtocolCapabilityPlayer player = new ProtocolPlayerAdapter(protocol, null);
 		var channel = player.channel().orElseThrow();
 		ChannelOperation<Message, Message> echo = new ChannelOperation<>("external.echo", Message.class, Message.class);
 		Message request = new Message("hello");
@@ -47,7 +46,7 @@ class ProtocolPlayerAdapterTest {
 	@Test
 	void hidesProtocolContractsWhilePreservingExternalServicesOnTheSamePlayer() {
 		StubPlayer protocol = new StubPlayer();
-		ProtocolCapabilityPlayer player = new ProtocolPlayerAdapter(protocol);
+		ProtocolCapabilityPlayer player = new ProtocolPlayerAdapter(protocol, null);
 
 		assertSame(protocol.external, player.findService(ExternalService.class).orElseThrow());
 		assertSame(protocol, player.findService(ExternalPlayerService.class).orElseThrow());
@@ -62,13 +61,13 @@ class ProtocolPlayerAdapterTest {
 		StubPlayer protocol = new StubPlayer();
 		IllegalStateException failure = new IllegalStateException("player-specific transport failure");
 		protocol.transport.failure = failure;
-		var player = new ProtocolPlayerAdapter(protocol);
+		var player = new ProtocolPlayerAdapter(protocol, null);
 
 		assertSame(failure, assertThrows(IllegalStateException.class, () -> player.channel().orElseThrow()
 				.request(new ChannelOperation<>("external.echo", Void.class, Void.class), null)));
 
 		protocol.hasChannel = false;
-		assertTrue(new ProtocolPlayerAdapter(protocol).channel().isEmpty());
+		assertTrue(new ProtocolPlayerAdapter(protocol, null).channel().isEmpty());
 	}
 
 	@Value

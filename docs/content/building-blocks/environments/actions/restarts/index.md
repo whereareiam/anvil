@@ -7,6 +7,44 @@ Restart a process when a test needs to exercise initialization again using files
 its workspace. `processes.restart(name)` replaces that one server or proxy and waits for readiness.
 Other processes continue running.
 
+## Start and stop individual components
+
+For an existing `ScenarioEngine engine` from `AnvilLauncher` and a wired `AnvilScenario network`,
+prepare the environment without starting any JVMs, then choose its initial components:
+
+```java
+import me.whereareiam.anvil.api.scenario.ScenarioContext;
+
+try (ScenarioContext context = engine.prepare(network)) {
+	context.processes().start("lobby");
+	context.processes().start("proxy");
+
+	// Starts the remaining components and runs the scenario setup hook once.
+	context.start();
+
+	context.processes().stop("lobby");
+	var replacement = context.processes().start("lobby");
+	context.start(); // Restores any remaining stopped components; setup does not repeat.
+}
+```
+
+Preparation validates and provisions the complete topology, preserving its ports, routes, and
+forwarding configuration. Starting a component starts only that process, so a proxy may have
+configured routes to backends that are not running yet. Collections contain processes that have
+had a generation; looking up a known but never-started process reports that it has not started.
+Start is idempotent for a ready process. Stop retains its address, installed assets, and workspace;
+starting it again creates a fresh generation and reconnects its platform agent. Closing the context
+also releases prepared components that were never started.
+
+`ScenarioContext` owns the topology from preparation through startup and finalization.
+`engine.start(network)` performs preparation and complete startup before returning that same
+kind of context. Use it for the ordinary test path; use `engine.prepare(network)` when your
+application controls which components start first.
+
+A failed startup finalizes the prepared context unsuccessfully. If your own actions or assertions
+fail after startup, pass that outcome through `context.finish(false)`; default `close()` reports
+normal caller completion. Cleanup attempts every owned resource and preserves earlier lifecycle failures.
+
 ## Verify a proxy restart
 
 Use the [proxy environment](../../platforms/proxies/index.md), with `proxy` as the entrypoint and

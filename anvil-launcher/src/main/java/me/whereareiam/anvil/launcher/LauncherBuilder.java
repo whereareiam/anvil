@@ -6,7 +6,7 @@ import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.engine.AnvilEngineBuilder;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
-import me.whereareiam.anvil.launcher.assembly.LauncherEngineExtension;
+import me.whereareiam.anvil.launcher.assembly.LauncherAssembly;
 import me.whereareiam.anvil.launcher.config.EngineDefaults;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Supplies default scoped assembly before caller-provided global extensions are installed.
+ * Constructs the default scenario factory and transfers its services before installing caller extensions.
  */
 final class LauncherBuilder implements EngineBuilder {
 	private final @NotNull List<ExecutionProvider> executions;
@@ -48,12 +48,26 @@ final class LauncherBuilder implements EngineBuilder {
 		ensureOpen();
 		consumed = true;
 		EngineOptions effective = EngineDefaults.resolve(options);
-		EngineBuilder engine = new AnvilEngineBuilder().options(effective)
-				.extension(new LauncherEngineExtension(effective, executions));
-		extensions.forEach(engine::extension);
-		extensions.clear();
 
-		return engine.build();
+		try {
+			return build(effective, new LauncherAssembly(effective, executions));
+		} finally {
+			extensions.clear();
+		}
+	}
+
+	private ScenarioEngine build(EngineOptions effective, LauncherAssembly assembly) {
+		try {
+			EngineBuilder engine = new AnvilEngineBuilder(assembly.getScenarioFactory()).options(effective)
+					.extension(registration -> registration.own(assembly));
+			extensions.forEach(engine::extension);
+
+			return engine.build();
+		} catch (RuntimeException | Error failure) {
+			try (assembly) {
+				throw failure;
+			}
+		}
 	}
 
 	private void ensureOpen() {

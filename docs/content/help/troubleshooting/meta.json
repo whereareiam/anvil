@@ -4,6 +4,7 @@
     "index",
     "startup",
     "players",
-    "cleanup"
+    "cleanup",
+    "intellij"
   ]
 }

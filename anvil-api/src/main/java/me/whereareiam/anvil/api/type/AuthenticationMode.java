@@ -9,7 +9,7 @@ public enum AuthenticationMode {
 	 */
 	OFFLINE,
 	/**
-	 * Authenticate with a named device-code profile stored outside the project.
+	 * Authenticate with a named account stored outside the project.
 	 */
 	ONLINE
 }

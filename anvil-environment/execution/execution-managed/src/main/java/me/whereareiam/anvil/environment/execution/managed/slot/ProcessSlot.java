@@ -1,6 +1,8 @@
 package me.whereareiam.anvil.environment.execution.managed.slot;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.scenario.ScenarioObserver;
+import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessSpec;
 import me.whereareiam.anvil.environment.execution.api.preparation.ExecutionPreparation;
 import me.whereareiam.anvil.environment.execution.api.preparation.PreparedLaunch;
@@ -18,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Retains prepared inputs while replacing generation-specific commands and attachments.
+ * Retains prepared inputs while owning commands and attachments for each process start.
  */
 @RequiredArgsConstructor
 public final class ProcessSlot {
@@ -28,9 +30,14 @@ public final class ProcessSlot {
 	private final Map<String, InetSocketAddress> peers;
 	private final Duration startupTimeout;
 	private final Duration stopTimeout;
+	private final @Nullable ScenarioObserver observer;
+
 	private @Nullable PreparedProcess prepared;
 	private @Nullable PreparedLaunch launch;
-	private @Nullable ManagedProcess current;
+
+	private volatile @Nullable ManagedProcess current;
+	private volatile boolean failed;
+	private volatile boolean cancelled;
 
 	public @NotNull String name() {
 		return spec.getRequest().getName();
@@ -41,32 +48,50 @@ public final class ProcessSlot {
 		prepared = preparation.prepare(spec, target, peers);
 	}
 
-	public void configure() {
+	public synchronized @NotNull ManagedProcess start() {
 		if (prepared == null) throw new IllegalStateException("Process is not prepared: " + name());
-		if (launch != null) throw new IllegalStateException("Process already has a launch: " + name());
-		launch = prepared.launch();
+		if (current != null && current.state() == ProcessState.READY) return current;
+
+		if (cancelled) throw new IllegalStateException("Cannot start process '" + name() + "' while the scenario is finishing");
+
+		try {
+			if (current != null && (launch != null || current.state() != ProcessState.STOPPED)) stopGeneration();
+			PreparedLaunch preparedLaunch = prepared.launch();
+			launch = preparedLaunch;
+			current = spec.isProxy()
+					? new ManagedProxy(name(), target.address(), spec.getRequest().getWorkspace(), prepared.capabilities())
+					: new ManagedServer(name(), target.address(), spec.getRequest().getWorkspace(), prepared.capabilities());
+
+			// A cancellation that read the previous generation is caught here; a later one sees this one.
+			if (cancelled) current.cancelStart();
+			if (observer != null) observer.processCreated(current);
+
+			current.start(() -> target.start(
+							preparedLaunch.command()),
+					spec.getReadinessPattern(),
+					spec.getStopCommand(),
+					startupTimeout
+			);
+			preparedLaunch.started();
+
+			return current;
+		} catch (RuntimeException | Error failure) {
+			try {
+				stopGeneration();
+			} catch (RuntimeException | Error cleanup) {
+				if (cleanup != failure) failure.addSuppressed(cleanup);
+			}
+			throw failure;
+		}
 	}
 
-	public void start() {
-		if (launch == null) throw new IllegalStateException("Process launch is not configured: " + name());
-		PreparedLaunch generation = launch;
-		current = spec.isProxy()
-				? new ManagedProxy(name(), target.address(), spec.getRequest().getWorkspace())
-				: new ManagedServer(name(), target.address(), spec.getRequest().getWorkspace());
-		current.start(() -> target.start(generation.command()), spec.getReadinessPattern(), spec.getStopCommand(), startupTimeout);
-		generation.started();
-	}
-
-	public @NotNull ManagedProcess restart() {
+	public synchronized @NotNull ManagedProcess restart() {
 		if (current == null) throw new IllegalStateException("Process has not started: " + name());
 		stopGeneration();
-		configure();
-		start();
-
-		return current();
+		return start();
 	}
 
-	private void stopGeneration() {
+	public synchronized void stopGeneration() {
 		Throwable failure = null;
 		for (Runnable action : List.<Runnable>of(this::closeLaunch, this::stopProcess)) {
 			try {
@@ -80,8 +105,21 @@ public final class ProcessSlot {
 		if (failure != null) throw (RuntimeException) failure;
 	}
 
+	/**
+	 * Abandons any start in progress without waiting for the slot, and rejects later starts.
+	 */
+	public void cancelStart() {
+		cancelled = true;
+		ManagedProcess process = current;
+		if (process != null) process.cancelStart();
+	}
+
 	public @NotNull ManagedProcess current() {
 		if (current == null) throw new IllegalStateException("Process has not started: " + name());
+		return current;
+	}
+
+	public @Nullable ManagedProcess currentOrNull() {
 		return current;
 	}
 
@@ -92,7 +130,19 @@ public final class ProcessSlot {
 	}
 
 	public void stopProcess() {
-		if (current != null) current.stop(stopTimeout);
+		ManagedProcess process = current;
+		if (process == null) return;
+
+		try {
+			process.stop(stopTimeout);
+		} finally {
+			failed |= process.failed();
+		}
+	}
+
+	public boolean failed() {
+		ManagedProcess process = current;
+		return failed || process != null && process.failed();
 	}
 
 	public void finish(boolean successful) {

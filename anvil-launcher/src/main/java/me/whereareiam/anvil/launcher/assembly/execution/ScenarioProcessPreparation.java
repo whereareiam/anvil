@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.launcher.assembly.execution;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
 import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
+import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
@@ -14,13 +14,16 @@ import me.whereareiam.anvil.environment.provisioning.workspace.api.PreparedWorks
 import me.whereareiam.anvil.environment.provisioning.workspace.api.WorkspaceProvisioner;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceLayout;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceRequest;
+import me.whereareiam.anvil.launcher.assembly.process.ProcessComposition;
 import me.whereareiam.anvil.platform.api.PlatformPreparer;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import me.whereareiam.anvil.platform.api.model.PlatformRequest;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.Map;
 
 /**
@@ -35,6 +38,7 @@ final class ScenarioProcessPreparation implements ExecutionPreparation {
 	private final @NotNull PlatformPreparer platforms;
 	private final @NotNull AgentConnectionProvider connections;
 	private final @NotNull ScenarioAgentDirectory agents;
+	private final @Nullable ProcessComposition capabilities;
 
 	@Override
 	public void open() {
@@ -66,12 +70,16 @@ final class ScenarioProcessPreparation implements ExecutionPreparation {
 				.build());
 		try {
 			var jar = platforms.resolve(planned, request);
+			var jvmArguments = new ArrayList<>(planned.getJvmArguments());
+			jvmArguments.addAll(declaration.getJvmArguments());
+
 			var command = JavaCommand.builder()
 					.jar(jar)
 					.memoryMegabytes(declaration.getMemoryMegabytes())
-					.jvmArguments(declaration.getJvmArguments())
+					.jvmArguments(jvmArguments)
 					.arguments(planned.getProgramArguments())
 					.build();
+
 			return new PreparedPlatformProcess(
 					planned,
 					request,
@@ -80,7 +88,9 @@ final class ScenarioProcessPreparation implements ExecutionPreparation {
 					command,
 					target,
 					connections,
-					planned.isAgent() ? agents.register(declaration.getName()) : null
+					planned.isAgent() ? agents.register(declaration.getName()) : null,
+					capabilities == null ? null : () -> capabilities.initialize(declaration.getName()),
+					capabilities == null ? null : capabilities.owner(declaration.getName())
 			);
 		} catch (IOException failure) {
 			ProvisioningException contextual = new ProvisioningException("Could not prepare process '" + declaration.getName() + "'", failure);

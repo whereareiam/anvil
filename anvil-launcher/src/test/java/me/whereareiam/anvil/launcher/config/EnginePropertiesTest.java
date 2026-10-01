@@ -6,8 +6,8 @@ import me.whereareiam.anvil.api.model.java.local.LocalJavaExecutable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Path;
 import java.net.URI;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -46,7 +46,7 @@ final class EnginePropertiesTest {
 		assertTrue(options.isEulaAccepted());
 		assertEquals(Path.of("cache"), options.getCacheDirectory());
 		assertEquals(Path.of("work"), options.getWorkDirectory());
-		assertEquals(21, options.getJavaRequirement().getFeatureVersion());
+		assertEquals(21, options.getJavaSelection().getRequirement().getFeatureVersion());
 		assertEquals(Path.of("server.jar"), options.getArtifacts().get("server"));
 	}
 
@@ -57,16 +57,18 @@ final class EnginePropertiesTest {
 		properties.setProperty(EngineProperties.KEEP_FAILED_WORKSPACES_PROPERTY, "false");
 		properties.setProperty(EngineProperties.AUTO_DOWNLOAD_JAVA_PROPERTY, "false");
 		properties.setProperty(EngineProperties.STOP_TIMEOUT_PROPERTY, "PT7S");
+		properties.setProperty(EngineProperties.STARTUP_TIMEOUT_PROPERTY, "PT3M");
 		properties.setProperty(EngineProperties.JAVA_VERSION_PROPERTY, "32");
 		properties.setProperty(EngineProperties.artifactProperty("plugin"), "plugin.jar");
 
 		EngineOptions options = EngineProperties.from(properties);
 		properties.setProperty(EngineProperties.JAVA_VERSION_PROPERTY, "32");
-		assertEquals(32, options.getJavaRequirement().getFeatureVersion());
+		assertEquals(32, options.getJavaSelection().getRequirement().getFeatureVersion());
 		assertFalse(options.isKeepFailedWorkspaces());
 		assertFalse(options.isDownloadJava());
-		assertEquals(Duration.ofSeconds(7), options.getStopTimeout());
-		assertEquals(32, options.getJavaRequirement().getFeatureVersion());
+		assertEquals(Duration.ofSeconds(7), options.getProcessTimeouts().getShutdown());
+		assertEquals(Duration.ofMinutes(3), options.getProcessTimeouts().getStartup());
+		assertEquals(32, options.getJavaSelection().getRequirement().getFeatureVersion());
 		assertEquals(Path.of("plugin.jar"), options.getArtifacts().get("plugin"));
 		assertThrows(UnsupportedOperationException.class, () -> options.getArtifacts().clear());
 	}
@@ -78,7 +80,7 @@ final class EnginePropertiesTest {
 
 		EngineOptions options = EngineProperties.from(properties);
 
-		assertEquals(new LocalJavaExecutable(Path.of("/opt/jdk-25/bin/java")), options.getJavaSource());
+		assertEquals(new LocalJavaExecutable(Path.of("/opt/jdk-25/bin/java")), options.getJavaSelection().getSource());
 	}
 
 	@Test
@@ -89,7 +91,7 @@ final class EnginePropertiesTest {
 
 		EngineOptions options = EngineProperties.from(properties);
 
-		assertEquals(JavaArchive.builder().uri(URI.create("https://example.test/jdk.tar.gz")).sha256("a".repeat(64)).build(), options.getJavaSource());
+		assertEquals(JavaArchive.builder().uri(URI.create("https://example.test/jdk.tar.gz")).sha256("a".repeat(64)).build(), options.getJavaSelection().getSource());
 		properties.remove(EngineProperties.JAVA_ARCHIVE_SHA256_PROPERTY);
 		assertThrows(IllegalArgumentException.class, () -> EngineProperties.from(properties));
 	}
@@ -109,6 +111,28 @@ final class EnginePropertiesTest {
 		Properties properties = new Properties();
 		properties.setProperty(EngineProperties.EULA_ACCEPTED_PROPERTY, "yes");
 		assertThrows(IllegalArgumentException.class, () -> EngineProperties.from(properties));
+	}
+
+	@Test
+	void consoleColorsDefaultToPlatformBehaviorAndDecodeExplicitRequests() {
+		assertFalse(EngineOptions.builder().build().isConsoleColors());
+		assertFalse(EngineProperties.from(new Properties()).isConsoleColors());
+		Properties properties = new Properties();
+		properties.setProperty(EngineProperties.CONSOLE_COLORS_PROPERTY, "true");
+		assertTrue(EngineProperties.from(properties).isConsoleColors());
+		properties.setProperty(EngineProperties.CONSOLE_COLORS_PROPERTY, "FALSE");
+		assertFalse(EngineProperties.from(properties).isConsoleColors());
+		assertEquals("FALSE", properties.getProperty(EngineProperties.CONSOLE_COLORS_PROPERTY));
+	}
+
+	@Test
+	void rejectsInvalidConsoleColorProperties() {
+		for (String value : new String[]{"yes", "1", "", " true "}) {
+			Properties properties = new Properties();
+			properties.setProperty(EngineProperties.CONSOLE_COLORS_PROPERTY, value);
+			IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> EngineProperties.from(properties));
+			assertEquals("anvil.console.colors must be true or false", failure.getMessage());
+		}
 	}
 
 	private void setProperty(String name, String value) {

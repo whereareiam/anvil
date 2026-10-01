@@ -20,6 +20,28 @@ actual endpoint, so the caller does not need to discover the allocated port. Cre
 player but does not connect it. Use [Session](../capabilities/session/index.md) for login,
 disconnection, reconnects, and kick observations.
 
+## Add an optional display label
+
+Attach presentation details through `PlayerOptions` when a participant's role is more useful in
+tooling than its connection name. With no player named `ReturningPlayer` registered yet, import
+`me.whereareiam.anvil.api.model.PresentationMetadata` and
+`me.whereareiam.anvil.api.model.player.PlayerOptions`, then create:
+
+```java
+var returning = anvil.players().create(PlayerOptions.builder()
+		.name("ReturningPlayer")
+		.metadata(PresentationMetadata.builder()
+				.displayName("Returning player")
+				.description("Participant used for repeat-login checks.")
+				.build())
+		.build());
+```
+
+The connection and registry name remains `ReturningPlayer`; retrieve it with
+`anvil.players().get("ReturningPlayer")`. Creation still leaves it disconnected.
+`returning.metadata()` exposes the optional details, or returns `null` when none were supplied.
+Omitting metadata keeps the ordinary `create(name)` workflow unchanged.
+
 ## Override the connection target
 
 For a scenario declaring a process named `proxy`, import
@@ -50,8 +72,8 @@ a distribution or diagnosing a mismatch.
 ## Use an online account deliberately
 
 Offline authentication is the default. An online player requires a configured private authentication
-profile and a compatible online-mode topology. Follow [authentication](../authentication/index.md)
-for profile creation and `PlayerOptions` setup. Keep real account credentials out of test declarations
+account and a compatible online-mode topology. Follow [authentication](../authentication/index.md)
+for account creation and `PlayerOptions` setup. Keep real account credentials out of test declarations
 and automated CI suites.
 
 ## Release and replace a player

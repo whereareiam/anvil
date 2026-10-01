@@ -1,20 +1,23 @@
 package me.whereareiam.anvil.environment.execution.managed.process;
 
+import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.exception.ProcessException;
+import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.api.process.ProcessConsole;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.type.ProcessState;
+import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
-import java.util.function.Supplier;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 /**
@@ -23,6 +26,8 @@ import java.util.regex.Pattern;
  */
 public abstract class ManagedProcess implements RunningProcess {
 	private final String name;
+	private final UUID executionId = UUID.randomUUID();
+	private final @Nullable CapabilityOwner<ProcessCapability> capabilities;
 	private final InetSocketAddress address;
 	private final Path workDirectory;
 	private final ManagedProcessConsole console;
@@ -30,16 +35,39 @@ public abstract class ManagedProcess implements RunningProcess {
 	private final CountDownLatch readiness = new CountDownLatch(1);
 
 	private @Nullable ProcessExecution process;
+	private volatile boolean failed;
+	private volatile boolean cancelled;
 	private String stopCommand = "stop";
 
 	/**
 	 * Creates a not-yet-started process generation.
 	 */
-	protected ManagedProcess(@NotNull String name, @NotNull InetSocketAddress address, @NotNull Path workDirectory) {
+	protected ManagedProcess(
+			@NotNull String name,
+			@NotNull InetSocketAddress address,
+			@NotNull Path workDirectory,
+			@Nullable CapabilityOwner<ProcessCapability> capabilities
+	) {
 		this.name = name;
+		this.capabilities = capabilities;
 		this.address = address;
 		this.workDirectory = workDirectory;
 		this.console = new ManagedProcessConsole(name, workDirectory);
+	}
+
+	@Override
+	public @NotNull UUID executionId() {
+		return executionId;
+	}
+
+	@Override
+	public @NotNull <C extends ProcessCapability> C capability(@NotNull Class<C> type) {
+		return capabilities == null ? RunningProcess.super.capability(type) : capabilities.capability(type);
+	}
+
+	@Override
+	public boolean hasCapability(@NotNull Class<? extends ProcessCapability> type) {
+		return capabilities != null && capabilities.hasCapability(type);
 	}
 
 	/**
@@ -57,6 +85,8 @@ public abstract class ManagedProcess implements RunningProcess {
 
 		this.stopCommand = stopCommand;
 		try {
+			if (cancelled) throw cancellation();
+
 			ProcessExecution launched = launch.get();
 			process = launched;
 			console.attach(launched, readinessPattern, this::becameReady, this::outputEnded);
@@ -64,12 +94,21 @@ public abstract class ManagedProcess implements RunningProcess {
 			awaitReadiness(launched, timeout);
 		} catch (InterruptedException failure) {
 			Thread.currentThread().interrupt();
-			state.set(ProcessState.FAILED);
+			markFailed();
 			throw new ProcessException(name, "Interrupted while starting process '" + name + "'", failure);
 		} catch (RuntimeException | Error failure) {
-			state.set(ProcessState.FAILED);
+			markFailed();
 			throw failure;
 		}
+	}
+
+	/**
+	 * Abandons a start in progress from another thread: the readiness wait returns at once and the start
+	 * fails, leaving its launched JVM for the owner's normal stop. Has no effect on a ready generation.
+	 */
+	public void cancelStart() {
+		cancelled = true;
+		readiness.countDown();
 	}
 
 	/**
@@ -79,12 +118,15 @@ public abstract class ManagedProcess implements RunningProcess {
 	public synchronized void stop(@NotNull Duration timeout) {
 		ProcessExecution current = process;
 		if (current == null || !current.isAlive()) {
-			state.set(ProcessState.STOPPED);
+			ProcessState previous = state.getAndSet(ProcessState.STOPPED);
+			if (current != null && previous != ProcessState.STOPPING && previous != ProcessState.STOPPED) failed = true;
 			console.closeInput();
+			if (current == null) console.closeOutput();
 			return;
 		}
 
 		ProcessState previous = state.getAndSet(ProcessState.STOPPING);
+		if (previous == ProcessState.FAILED) failed = true;
 		boolean graceful = previous == ProcessState.READY;
 		ProcessException commandFailure = graceful ? requestStop() : null;
 		try {
@@ -93,10 +135,10 @@ public abstract class ManagedProcess implements RunningProcess {
 		} catch (InterruptedException failure) {
 			Thread.currentThread().interrupt();
 			terminateTree(current, true);
-			state.set(ProcessState.FAILED);
+			markFailed();
 			throw shutdownFailure("Interrupted while stopping process '" + name + "'", failure, commandFailure);
 		} catch (ProcessException failure) {
-			state.set(ProcessState.FAILED);
+			markFailed();
 			if (commandFailure != null) failure.addSuppressed(commandFailure);
 			throw failure;
 		} finally {
@@ -108,15 +150,22 @@ public abstract class ManagedProcess implements RunningProcess {
 
 	private void awaitReadiness(ProcessExecution launched, Duration timeout) throws InterruptedException {
 		if (!readiness.await(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
-			state.set(ProcessState.FAILED);
+			markFailed();
 			throw new ProcessException(name, "Process '" + name + "' did not become ready within " + timeout
 					+ console.diagnosticTail());
 		}
 		if (launched.isAlive() && state.get() == ProcessState.READY) return;
+		if (cancelled) throw cancellation();
 
-		state.set(ProcessState.FAILED);
+		markFailed();
 		throw new ProcessException(name, "Process '" + name + "' exited or ended output before becoming ready"
 				+ console.diagnosticTail());
+	}
+
+	private ProcessException cancellation() {
+		markFailed();
+
+		return new ProcessException(name, "Start of process '" + name + "' was cancelled because the scenario is finishing");
 	}
 
 	private void becameReady() {
@@ -124,14 +173,29 @@ public abstract class ManagedProcess implements RunningProcess {
 	}
 
 	private void outputEnded() {
-		if (state.compareAndSet(ProcessState.STARTING, ProcessState.FAILED)) readiness.countDown();
+		if (state.compareAndSet(ProcessState.STARTING, ProcessState.FAILED)) { failed = true; readiness.countDown(); }
 	}
 
 	private void exited() {
-		state.updateAndGet(current -> current == ProcessState.STOPPING || current == ProcessState.STOPPED
+		ProcessState stopped = state.updateAndGet(current -> current == ProcessState.STOPPING || current == ProcessState.STOPPED
 				? current : ProcessState.FAILED);
+		if (stopped == ProcessState.FAILED) failed = true;
 		readiness.countDown();
 		console.closeInput();
+	}
+
+	/**
+	 * Reports failure history even after cleanup changes the visible generation state to stopped.
+	 *
+	 * @return whether this generation failed before or during shutdown
+	 */
+	public boolean failed() {
+		return failed || state.get() == ProcessState.FAILED;
+	}
+
+	private void markFailed() {
+		failed = true;
+		state.set(ProcessState.FAILED);
 	}
 
 	private @Nullable ProcessException requestStop() {

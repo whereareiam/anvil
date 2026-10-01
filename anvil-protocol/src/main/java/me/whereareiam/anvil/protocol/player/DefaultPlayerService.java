@@ -1,14 +1,16 @@
 package me.whereareiam.anvil.protocol.player;
 
-import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerManager;
+import me.whereareiam.anvil.api.player.account.AccountManager;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.protocol.api.player.PlayerObservationFactory;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.api.provider.ProtocolBackend;
 import me.whereareiam.anvil.protocol.api.provider.ProtocolProvider;
 import me.whereareiam.anvil.protocol.api.provider.ProtocolRuntimeResolver;
+import me.whereareiam.anvil.protocol.player.account.AccountReservations;
+import me.whereareiam.anvil.protocol.player.account.ProtocolAccountManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,18 +22,36 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * Lazily creates one selected protocol backend and owns its scenario player managers.
  */
-@RequiredArgsConstructor
 public final class DefaultPlayerService implements AutoCloseable {
 	private final @NotNull ProtocolProvider provider;
 	private final @NotNull Path cacheDirectory;
+	private final @NotNull Path accountsDirectory;
 	private final @NotNull ProtocolRuntimeResolver artifacts;
+	private final @NotNull AccountManager accounts;
 	private final List<RunningPlayerManager> managers = new CopyOnWriteArrayList<>();
+	// One engine: pools and directly selected accounts of every scenario share these reservations.
+	private final AccountReservations reservations = new AccountReservations();
 	private @Nullable ProtocolBackend backend;
 	private boolean closed;
 
+	public DefaultPlayerService(
+			@NotNull ProtocolProvider provider,
+			@NotNull Path cacheDirectory,
+			@NotNull Path accountsDirectory,
+			@NotNull ProtocolRuntimeResolver artifacts
+	) {
+		this.provider = provider;
+		this.cacheDirectory = cacheDirectory;
+		this.accountsDirectory = accountsDirectory;
+		this.artifacts = artifacts;
+		this.accounts = new ProtocolAccountManager(provider, accountsDirectory, reservations);
+	}
+
+	public @NotNull AccountManager accounts() { return accounts; }
+
 	public synchronized void prepare() {
 		ensureOpen();
-		if (backend == null) backend = provider.create(cacheDirectory, artifacts);
+		if (backend == null) backend = provider.create(cacheDirectory, accountsDirectory, artifacts);
 	}
 
 	public synchronized @NotNull PlayerManager open(
@@ -41,7 +61,7 @@ public final class DefaultPlayerService implements AutoCloseable {
 			@NotNull ProtocolPlayerComposer composer
 	) {
 		prepare();
-		RunningPlayerManager manager = new RunningPlayerManager(scenario, backend, processes, observations, composer, managers::remove);
+		RunningPlayerManager manager = new RunningPlayerManager(scenario, backend, processes, observations, composer, managers::remove, accounts, reservations);
 		managers.add(manager);
 
 		return manager;

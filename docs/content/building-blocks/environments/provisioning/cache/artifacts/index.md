@@ -25,7 +25,7 @@ is copied into the workspace or that your plugin's generated data is retained au
 
 First run the intended environment with normal online settings and the same cache root, or supply
 its required local artifacts and Java installations. Then add this fragment to the consumer
-`build.gradle.kts` after applying the JUnit or umbrella plugin:
+`build.gradle.kts` after applying the JUnit plugin:
 
 ```kotlin
 import org.gradle.api.tasks.testing.Test

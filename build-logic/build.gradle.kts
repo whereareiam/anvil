@@ -5,7 +5,7 @@ plugins {
     `kotlin-dsl`
 }
 
-val javaVersion = 21
+val javaVersion = libs.versions.java.get().toInt()
 
 java {
     sourceCompatibility = JavaVersion.toVersion(javaVersion)

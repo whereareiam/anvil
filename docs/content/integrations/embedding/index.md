@@ -42,6 +42,7 @@ an entrypoint and any desired processes. If its workspace uses
 
 ```java
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
@@ -57,7 +58,7 @@ public final class EmbeddedScenario {
 				.protocolId("mcprotocol")
 				.workDirectory(Path.of("build", "anvil"))
 				.keepFailedWorkspaces(true)
-				.stopTimeout(Duration.ofSeconds(30))
+				.processTimeouts(ProcessTimeouts.builder().shutdown(Duration.ofSeconds(30)).build())
 				.artifact("plugin-under-test", pluginJar)
 				.build();
 
@@ -85,14 +86,46 @@ outcome to cleanup policy. The default `close()` reports normal completion. To i
 diagnostics or per-scenario attachments, use `AnvilLauncher.builder()` and add an
 [engine extension](../../extending/engine/index.md).
 
+## Prepare before starting individual processes
+
+When your application chooses which components to start, use `engine.prepare(scenario)` to obtain
+a `ScenarioContext`. The launcher prepares the complete topology, routes, and process inputs while
+leaving JVMs stopped. Call `context.processes().start(name)` for an individual component and
+`context.start()` for the remaining processes plus global extensions and scenario setup. The
+[individual-start example](../../building-blocks/environments/actions/restarts/index.md#start-and-stop-individual-components)
+shows this sequence and its cleanup.
+
+The context owns unstarted resources too. Closing either the context or its engine releases them.
+Every assembly supplies this lifecycle through `ScenarioFactory.create(...)`, returning the
+context before process startup. `engine.start(...)` is the convenience that prepares a context
+and completes its `start()` before handing it to the caller.
+
 ## Configure other entry points
 
 `EngineProperties.fromSystemProperties()` or `EngineProperties.from(properties)` decodes the
 [JVM property contract](../../building-blocks/environments/configuration/engine/index.md) into `EngineOptions`.
 Passing explicit options to the launcher uses those options directly.
 
-For a terminal application, construct `AnvilRunner` with its input reader and output writer and call
-`run(arguments, options)`; add the `tooling-runner` artifact at the matching version. The
-[manual environment guide](../../workflows/scenarios/running/index.md) covers catalog selection and commands.
+For a terminal application, add `me.whereareiam.anvil:tooling-runner` at the matching version.
+Supply a `Supplier<ScenarioEngine>` that creates an engine owned by the runner, together with the
+application's input reader and output writer:
+
+```java
+import me.whereareiam.anvil.runner.AnvilRunner;
+
+// input is a Reader, output is a PrintWriter, and engineFactory creates a ScenarioEngine.
+new AnvilRunner(input, output, engineFactory).run(arguments);
+```
+
+The runner acquires an engine only when a scenario starts and closes it when the session ends.
+Listing scenario definitions does not create an engine. The runner library does not include the default launcher;
+your application supplies its engine assembly. `RunnerSession` accepts the same engine-factory boundary
+for applications serving structured tooling instead of a terminal shell.
+
+For a ready-to-run process using the default engine, add `me.whereareiam.anvil:tooling-launcher`.
+Its `me.whereareiam.anvil.tooling.launcher.AnvilCli` entry point binds standard streams and decodes
+engine properties. `me.whereareiam.anvil.tooling.launcher.AnvilTooling` serves the structured protocol.
+The Gradle integration selects this executable assembly automatically. The
+[manual environment guide](../../workflows/scenarios/running/index.md) covers scenario selection and commands.
 For container execution, supply a configured
 [`DockerExecutionProvider`](../../building-blocks/environments/configuration/execution/index.md) to the launcher.

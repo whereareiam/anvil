@@ -1,11 +1,13 @@
 package me.whereareiam.anvil.environment.execution.managed.process;
 
 import me.whereareiam.anvil.api.exception.ProcessException;
+import me.whereareiam.anvil.api.model.process.console.ConsoleLine;
+import me.whereareiam.anvil.api.model.process.console.ConsoleOutput;
 import me.whereareiam.anvil.api.process.ProcessConsole;
+import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -104,6 +106,23 @@ final class ManagedProcessConsole implements ProcessConsole {
 			int from = Math.max(0, copy.size() - maximumLines);
 
 			return List.copyOf(copy.subList(from, copy.size()));
+		}
+	}
+
+	@Override
+	public @NotNull ConsoleOutput read(long after, int maximumLines) {
+		if (maximumLines <= 0) throw new IllegalArgumentException("maximumLines must be positive");
+
+		synchronized (lines) {
+			validateCheckpoint(after);
+			boolean truncated = !lines.isEmpty() && after < lines.getFirst().sequence() - 1;
+			List<ConsoleLine> batch = lines.stream()
+					.filter(line -> line.sequence() > after)
+					.limit(maximumLines)
+					.map(line -> new ConsoleLine(line.sequence(), line.text()))
+					.toList();
+
+			return new ConsoleOutput(batch.isEmpty() ? after : batch.getLast().getSequence(), truncated, closed, batch);
 		}
 	}
 

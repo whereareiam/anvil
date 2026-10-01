@@ -3,8 +3,10 @@ package me.whereareiam.anvil.api.model;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
-import me.whereareiam.anvil.api.model.java.JavaSource;
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessScheduling;
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,102 +16,108 @@ import java.util.Map;
 
 /**
  * Immutable engine configuration shared by direct embedding, JUnit, and the foreground runner.
- * Process startup deadlines are declared by the scenario, rather than by this configuration.
+ * Process deadlines are defaults that a scenario may override independently.
  */
 @Value
 @Builder(toBuilder = true)
 public class EngineOptions {
-    /**
-     * Uses only previously acquired artifacts and resolution metadata.
-     */
-    boolean offline;
+	/**
+	 * Default execution provider, overridden by a scenario declaration.
+	 */
+	@NotNull
+	@Builder.Default
+	String executionProviderId = "local";
 
-    /**
-     * Resolves moving vendor selectors again, retaining newly selected immutable identities.
-     */
-    boolean refresh;
+	/**
+	 * Selected protocol-provider identifier, or null to select the sole installed provider.
+	 */
+	@Nullable String protocolId;
 
-    /**
-     * Maximum number of independent preparation or startup operations running together.
-     */
-    @Nullable Integer parallelism;
+	/**
+	 * Default Java selection; requirements and installation source inherit independently.
+	 */
+	@NotNull
+	@Builder.Default
+	JavaSelection javaSelection = JavaSelection.builder().requirement(JavaRequirement.builder().build()).build();
 
-    /**
-     * Combined declared heaps permitted to be starting at once, in MiB.
-     */
-    @Nullable Integer startupMemoryMegabytes;
+	/**
+	 * Default per-process deadlines; scenarios may override startup and shutdown separately.
+	 */
+	@NotNull
+	@Builder.Default
+	ProcessTimeouts processTimeouts = ProcessTimeouts.builder()
+			.startup(Duration.ofMinutes(2))
+			.shutdown(Duration.ofSeconds(15))
+			.build();
 
-    /**
-     * Maximum simultaneous artifact transfers.
-     */
-    @Nullable Integer downloadParallelism;
+	/**
+	 * Concurrency and startup memory limits for each scenario operation.
+	 */
+	@NotNull
+	@Builder.Default
+	ProcessScheduling processScheduling = ProcessScheduling.builder().build();
 
-    /**
-     * Selected protocol-provider identifier, or null to select the sole installed provider.
-     */
-    @Nullable String protocolId;
+	/**
+	 * Explicit acceptance of the Minecraft EULA.
+	 */
+	@Builder.Default
+	boolean eulaAccepted = false;
 
-    /**
-     * Shared download and workspace cache directory, or null to use the current user's default cache.
-     */
-    @Nullable Path cacheDirectory;
+	/**
+	 * Shared download and workspace cache directory, or null to use the current user's default cache.
+	 */
+	@Nullable Path cacheDirectory;
 
-    /**
-     * Root for generated scenario workspaces.
-     */
-    @NotNull
-    @Builder.Default
-    Path workDirectory = Path.of("build", "anvil");
+	/**
+	 * Local account store directory. This is user-local state and is never part of a scenario definition.
+	 */
+	@Nullable Path accountsDirectory;
 
-    /**
-     * Explicit acceptance of the Minecraft EULA.
-     */
-    @Builder.Default
-    boolean eulaAccepted = false;
+	/**
+	 * Root for generated scenario workspaces.
+	 */
+	@NotNull
+	@Builder.Default
+	Path workDirectory = Path.of("build", "anvil");
 
-    /**
-     * Retains diagnostic workspaces when scenario startup or execution fails.
-     */
-    @Builder.Default
-    boolean keepFailedWorkspaces = true;
+	/**
+	 * Retains diagnostic workspaces when scenario startup or execution fails.
+	 */
+	@Builder.Default
+	boolean keepFailedWorkspaces = true;
 
-    /**
-     * Permits provisioning Java when no suitable configured installation is available.
-     */
-    @Builder.Default
-    boolean downloadJava = true;
+	/**
+	 * Named local artifacts referenced by scenario declarations.
+	 */
+	@NotNull
+	@Singular("artifact")
+	Map<String, Path> artifacts;
+	/**
+	 * Uses only previously acquired artifacts and resolution metadata.
+	 */
+	boolean offline;
 
-    /**
-     * Grace period before escalating process termination.
-     */
-    @NotNull
-    @Builder.Default
-    Duration stopTimeout = Duration.ofSeconds(15);
+	/**
+	 * Resolves moving vendor selectors again, retaining newly selected immutable identities.
+	 */
+	boolean refresh;
 
-    /**
-     * Default process Java selection, overridden by a scenario or process declaration.
-     */
-    @NotNull
-    @Builder.Default
-    JavaRequirement javaRequirement = JavaRequirement.builder().build();
+	/**
+	 * Permits provisioning Java when no suitable configured installation is available.
+	 */
+	@Builder.Default
+	boolean downloadJava = true;
 
-    /**
-     * Default explicit Java source, overridden by a scenario or process source.
-     */
-    @Nullable
-    JavaSource javaSource;
+	/**
+	 * Maximum simultaneous artifact transfers.
+	 */
+	@Nullable Integer downloadParallelism;
 
-    /**
-     * Default execution provider, overridden by a scenario declaration.
-     */
-    @NotNull
-    @Builder.Default
-    String executionId = "local";
+	/**
+	 * Requests ANSI-colored console output from supporting platform providers. The default is false,
+	 * which leaves platform output defaults unchanged; it does not strip colors already emitted.
+	 * This capability does not request a terminal or interactive line editing.
+	 */
+	boolean consoleColors;
 
-    /**
-     * Named local artifacts referenced by scenario declarations.
-     */
-    @NotNull
-    @Singular("artifact")
-    Map<String, Path> artifacts;
 }
