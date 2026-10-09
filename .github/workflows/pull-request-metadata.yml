@@ -18,4 +18,4 @@ jobs:
     timeout-minutes: 5
     steps:
       # Reads the pull request through the API and never checks out its code.
-      - uses: whereareiam/devops/primitive/pull-request/validate-metadata@feature/v3-structure
+      - uses: whereareiam/devops/primitive/pull-request/validate-metadata@v3

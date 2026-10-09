@@ -32,7 +32,7 @@ runs:
         esac
 
     # Gradle runs on Java 21; Java 25 is there for the servers and tests that need it.
-    - uses: whereareiam/devops/primitive/setup/gradle@feature/v3-structure
+    - uses: whereareiam/devops/primitive/setup/gradle@v3
       with:
         java-version: "21"
         toolchain-versions: "25"

@@ -121,7 +121,7 @@ jobs:
           -PanvilVersion="$ANVIL_VERSION"
           -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
 
-      - uses: whereareiam/devops/primitive/report/junit/publish@feature/v3-structure
+      - uses: whereareiam/devops/primitive/report/junit/publish@v3
         if: always()
         with:
           name: Build test results
@@ -189,7 +189,7 @@ jobs:
           -PanvilVersion="$ANVIL_VERSION"
           -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
 
-      - uses: whereareiam/devops/primitive/report/junit/publish@feature/v3-structure
+      - uses: whereareiam/devops/primitive/report/junit/publish@v3
         if: always()
         with:
           name: Live test results (${{ matrix.shard }})
@@ -223,7 +223,7 @@ jobs:
           -PanvilVersion="$ANVIL_VERSION"
           -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
 
-      - uses: whereareiam/devops/primitive/report/junit/publish@feature/v3-structure
+      - uses: whereareiam/devops/primitive/report/junit/publish@v3
         if: always()
         with:
           name: Live test results (consumer)

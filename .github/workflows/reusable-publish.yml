@@ -58,7 +58,7 @@ jobs:
         run: ./gradlew --no-daemon assemble -Panvil.bootstrap -PanvilVersion="$ANVIL_VERSION"
 
       - name: Publish Maven modules and Gradle plugins
-        uses: whereareiam/devops/composite/package/maven/publish@feature/v3-structure
+        uses: whereareiam/devops/composite/package/maven/publish@v3
         with:
           visibility: public
           command: ./gradlew --no-daemon publish -Panvil.bootstrap -PanvilVersion='${{ inputs.version }}'
