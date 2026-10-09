@@ -20,13 +20,21 @@ public class PlayerOptions {
 	 */
 	@Nullable PresentationMetadata metadata;
 
+	/**
+	 * Native Minecraft version; when set it must equal the version of every server the player can reach.
+	 */
 	@Nullable String clientVersion;
 	@Nullable String connectTo;
+
+	/**
+	 * Protocol library for this player, overriding the scenario and engine defaults.
+	 */
+	@Nullable String protocolLibrary;
 
 	@NotNull
 	@Builder.Default
 	AuthenticationMode authentication = AuthenticationMode.OFFLINE;
 
-	/** Local account identifier resolved by the selected protocol provider. */
+	/** Local account identifier resolved by the selected protocol library. */
 	@Nullable String accountId;
 }

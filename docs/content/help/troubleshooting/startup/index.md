@@ -12,8 +12,9 @@ out, inspect its `anvil-console.log` before raising the readiness deadline.
 |-------------------------------------------------------|-----------------------------------------------------------------------------------------------|
 | EULA acceptance is missing                            | Record acceptance through `anvil { acceptEula() }` in the project running the scenario        |
 | Platform provider is unavailable                      | Apply a unit for every server and proxy platform used in the scenario                         |
-| No protocol provider is installed                     | Add the provider dependency to `anvilRuntimeOnly`                                              |
-| Protocol selection is ambiguous                       | Set `anvil { engine { protocol("provider-id") } }` to an installed ID                       |
+| No protocol library is installed                      | Add the library dependency, such as `protocol-mcprotocol`, to `anvilRuntimeOnly`              |
+| A scenario or engine selects an unknown protocol library | Use one of the installed library IDs that the message lists                                |
+| A warning says a scenario cannot create players for a server | The server's default release cannot be launched yet; see [player creation](../players/index.md#check-the-protocol-library) |
 | Local or named server has no native version           | Set the server declaration's `minecraftVersion`                                               |
 | Mutable distribution rejected                         | Select an explicit provider build or content checksum for automated runs                      |
 | Checksum mismatch                                     | Check the chosen source and expected pin; do not replace the pin merely to silence validation |
@@ -27,9 +28,15 @@ The complete setup is in [Installation](../../../getting-started/installation/in
 
 ## Java and execution
 
-The JVM running Gradle and the JVM running a server can be different installations. Check the
-platform's minimum Java version and any engine, scenario, or process overrides. If downloads are
-disabled, supply a compatible local installation. Archive sources need both a URI and SHA-256.
+The JVM running Gradle and the JVM running a server can be different installations. Each process
+runs on exactly one LTS release: the one it requests, or its platform version's preferred LTS. Check
+engine, scenario, and process overrides when planning refuses a version. If downloads are disabled,
+supply that exact version through `JAVA_<feature>_HOME` or an explicit source. Archive sources need
+both a URI and SHA-256.
+
+Paper `1.16.5` and `1.17.x` print `Unsupported Java detected` when they run above their maximum with
+`-DPaper.IgnoreJavaVersion=true`, which Anvil adds only for an explicitly requested newer Java. The
+line is expected; see [Java selection](../../../building-blocks/environments/provisioning/java/index.md#run-above-a-platforms-maximum).
 
 Docker needs an available local daemon and explicit provider image mappings for the requested
 Java selections. Setting only `anvil.execution=docker` does not supply those mappings. Use the

@@ -1,5 +1,5 @@
 plugins {
-	id("unit")
+	id("jvm")
 	id("fixtures")
 	id("me.whereareiam.anvil")
 }
@@ -11,7 +11,12 @@ dependencies {
 	testImplementation(projects.anvilCapability.capabilityBuiltin.default)
 	testImplementation(projects.anvilIntegration.integrationJunit)
 	testImplementation(projects.anvilLauncher)
+	testImplementation(projects.anvilPlatform.platformApi)
+	testImplementation(projects.anvilProtocol.protocolApi)
 	testImplementation(projects.anvilTooling.toolingRunner)
+
+	// The launcher's shaded JAR carries the planner at runtime; the matrix data test only compiles against it.
+	testCompileOnly(projects.anvilPlatform.platformPlanning)
 
 	testRuntimeOnly(projects.anvilPlatform.platformBukkit.platformBukkitAgent)
 	testRuntimeOnly(projects.anvilPlatform.platformBungeecord.platformBungeecordAgent)
@@ -28,6 +33,8 @@ val fullTesting = providers.gradleProperty("anvil.testMode").orElse("unit")
 	.map { it.equals("full", ignoreCase = true) }
 val matrixFilter = providers.gradleProperty("anvilMatrixFilter").orElse(".*")
 val testTags = providers.gradleProperty("anvilTestTags")
+// Plans the live matrix without starting a process to check that verified data lists exactly what it runs.
+val matrixDataTest = "*.CompatibilityScenarioFactoryTest"
 
 tasks.test {
 	val enabledForRun = fullTesting.get()
@@ -37,8 +44,26 @@ tasks.test {
 	useJUnitPlatform {
 		testTags.orNull?.let { includeTags(it) }
 	}
+	filter {
+		excludeTestsMatching(matrixDataTest)
+	}
 	systemProperty("anvil.matrix.filter", matrixFilter.get())
 	systemProperty("anvil.eula.accepted", "true")
+}
+
+// The matrix data check starts no server, so every build runs it, unlike the real-server tests above.
+val matrixTest = tasks.register<Test>("matrixTest") {
+	group = LifecycleBasePlugin.VERIFICATION_GROUP
+	description = "Checks that the verified platform and protocol data equal the live matrix."
+	testClassesDirs = sourceSets.test.get().output.classesDirs
+	classpath = sourceSets.test.get().runtimeClasspath
+	filter {
+		includeTestsMatching(matrixDataTest)
+	}
+}
+
+tasks.check {
+	dependsOn(matrixTest)
 }
 
 fixtures {

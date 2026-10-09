@@ -4,7 +4,9 @@ description: Configure a pinned BungeeCord proxy with YAML settings and legacy f
 ---
 
 Apply `me.whereareiam.anvil.platform.bungeecord` alongside your backend platform unit.
-The unit supplies the provider and matching BungeeCord agent. Its current Java minimum is 21.
+The unit supplies the provider and matching BungeeCord agent. BungeeCord builds carry no release
+version, so one Java row applies to every build, and the agent's Java 21 floor sets the default; see
+[Java per platform version](../../../provisioning/java/index.md#java-per-platform-version).
 
 ## Select a Jenkins build
 

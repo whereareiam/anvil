@@ -1,6 +1,5 @@
 plugins {
 	`kotlin-dsl`
-	alias(libs.plugins.toolkit.architecture)
 	id("gradle-plugin")
 	id("fixtures")
 	id("fixture-repository")
@@ -15,7 +14,6 @@ dependencies {
 	implementation(projects.anvilIntegration.integrationGradle.gradleTooling)
 
 	testImplementation(projects.anvilProtocol.protocolApi)
-	testImplementation(gradleTestKit())
 	testImplementation(libs.jackson.databind)
 }
 

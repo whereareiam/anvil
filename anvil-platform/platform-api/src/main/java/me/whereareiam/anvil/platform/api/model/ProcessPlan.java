@@ -24,8 +24,9 @@ public class ProcessPlan {
 	@NotNull ForwardingConfiguration forwarding;
 
 	/**
-	 * Effective Java selection after process, scenario, and engine inheritance.
-	 * The requirement must be present; the source may remain unspecified for execution to select.
+	 * Effective Java selection after process, scenario, and engine inheritance. Its requirement
+	 * always carries the exact LTS feature version planning selected from the platform's Java row;
+	 * the source may remain unspecified for execution to select.
 	 */
 	@NotNull JavaSelection javaSelection;
 
@@ -46,12 +47,12 @@ public class ProcessPlan {
 	@Singular
 	List<String> dependencies;
 
-	int minimumJavaVersion;
 	boolean agent;
 	@NotNull Pattern readinessPattern;
 	@NotNull String stopCommand;
 	/**
-	 * Platform JVM defaults selected during planning, before explicit declaration arguments.
+	 * JVM arguments selected during planning, before explicit declaration arguments: the platform's
+	 * Java maximum bypass property when the requested Java version needs it, then platform defaults.
 	 */
 	@NotNull
 	@Singular

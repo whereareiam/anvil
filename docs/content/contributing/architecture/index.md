@@ -19,12 +19,12 @@ IDE / Gradle / JUnit / embedded application
            scenario assembly
                  ├─ platform planning → providers
                  ├─ execution → processes → process capabilities
-                 └─ protocol → players → player capabilities
+                 └─ protocol libraries → players → player capabilities
 ```
 
 The global API contains scenario definitions, public running handles, and extension/lifecycle
 registration. A service does not become global merely because several families need it. Each
-consumer declares the channelOperation it needs, and assembly binds it to the appropriate scoped provider.
+consumer declares the operation it needs, and assembly binds it to the appropriate scoped provider.
 
 ## Find the boundary you need
 
@@ -33,8 +33,8 @@ consumer declares the channelOperation it needs, and assembly binds it to the ap
 - [Runtime composition](./composition/index.md) explains discovery and typed assembly bindings.
 - [Project tooling](./tooling/index.md) traces declarations, prepared runtimes, and IDE session ownership.
 
-Packet behavior belongs to native capability implementations; native server services belong to
-platform agents; endpoint translation belongs to execution providers. The engine works through
+Packet behavior belongs to native capability implementations, whose release-specific code lives in
+segments behind library-neutral ports; native server services belong to platform agents; endpoint translation belongs to execution providers. The engine works through
 `ScenarioFactory.create(...)` and the returned `ScenarioContext` for preparation, startup, and
 finalization. Scoped services remain behind the factory boundary.
 

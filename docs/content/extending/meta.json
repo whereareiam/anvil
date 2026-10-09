@@ -6,7 +6,7 @@
     "tooling",
     "agent-operations",
     "packaging",
-    "protocol-providers",
+    "protocol-libraries",
     "platform-providers",
     "engine"
   ]

@@ -49,7 +49,7 @@ appropriate player, server, or console assertion.
 
 ## Choose an action
 
-Choose the channelOperation your test needs to perform against an existing server or proxy:
+Choose the operation your test needs to perform against an existing server or proxy:
 
 - [Running console commands](./console/index.md) shows bounded log observations.
 - [Interacting through agents](./agents/index.md) explains typed capabilities and native work inside a server or proxy.

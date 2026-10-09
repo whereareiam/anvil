@@ -21,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -28,6 +30,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -69,15 +72,15 @@ class PlayerCapabilityRuntimeTest {
 		int tested = 0;
 		for (ProtocolPlayerCapabilityProvider<?> provider : ServiceLoader.load(ProtocolPlayerCapabilityProvider.class)) {
 			if (!independent.contains(provider.descriptor().getId())) continue;
-			StubPlayer backend = new StubPlayer();
-			backend.channel = new CapabilityChannel() {
+			StubPlayer stub = new StubPlayer();
+			stub.channel = new CapabilityChannel() {
 				public <Q, R> R request(@NotNull ChannelOperation<Q, R> channelOperation, Q request) { throw new AssertionError("Creation must not execute packets"); }
 				public <E> @NotNull Subscription subscribe(@NotNull EventDescriptor<E> eventDescriptor, @NotNull Consumer<E> listener) { return () -> { }; }
 				public void await(@NotNull BooleanSupplier condition, @NotNull String description, @NotNull Duration timeout) { throw new AssertionError(); }
 				public @NotNull Set<String> installedCapabilities() { return Set.of(provider.descriptor().getId()); }
 			};
 			SimulatedPlayer player = new PlayerCapabilityRuntime(List.of(), List.of(provider))
-					.compose(backend, observation(), ignored -> { });
+					.compose(stub, observation(), ignored -> { });
 			assertTrue(player.hasCapability(provider.capability()));
 			player.destroy();
 			tested++;
@@ -101,7 +104,7 @@ class PlayerCapabilityRuntimeTest {
 	}
 
 	public static final class DiscoveredDependent implements ProtocolPlayerCapabilityProvider<DependentCapability> {
-		public @NotNull Set<String> supportedProtocolIds() {
+		public @NotNull Set<String> supportedLibraries() {
 			return Set.of("additional-test");
 		}
 		public @NotNull CapabilityDescriptor descriptor() {
@@ -110,6 +113,96 @@ class PlayerCapabilityRuntimeTest {
 		}
 		public @NotNull Class<DependentCapability> capability() { return DependentCapability.class; }
 		public @NotNull DependentCapability create(@NotNull ProtocolPlayerCapabilityContext context) { return () -> "dependent"; }
+	}
+
+	@Test
+	void skipsProtocolFactoriesTheWorkerDidNotInstallTogetherWithTheirDependents() {
+		AtomicInteger created = new AtomicInteger();
+		var installed = provider("installed", BaseCapability.class, Set.of(), context -> {
+			created.incrementAndGet();
+			return () -> "installed";
+		});
+		var linked = provider("linked", DependentCapability.class, Set.of(), context -> {
+			throw new AssertionError("An unavailable capability must not be created");
+		});
+		var summary = sharedProvider("summary", SummaryCapability.class, Set.of(DependentCapability.class), context -> {
+			throw new AssertionError("A dependent of an unavailable capability must not be created");
+		});
+		StubPlayer stub = new StubPlayer();
+		stub.channel = channel(Set.of("installed"), Map.of("linked", "NoSuchMethodError: 'void example.Packet.<init>(int)'"));
+		var output = new ByteArrayOutputStream();
+		var previous = System.err;
+
+		SimulatedPlayer player;
+		System.setErr(new PrintStream(output, true, StandardCharsets.UTF_8));
+		try {
+			player = new PlayerCapabilityRuntime(List.of(summary), List.of(installed, linked))
+					.compose(stub, observation(), ignored -> { });
+		} finally {
+			System.setErr(previous);
+		}
+
+		assertEquals(1, created.get());
+		assertEquals("installed", player.capability(BaseCapability.class).value());
+		assertFalse(player.hasCapability(DependentCapability.class));
+		assertFalse(player.hasCapability(SummaryCapability.class));
+		var missing = assertThrows(CapabilityUnavailableException.class, () -> player.capability(DependentCapability.class));
+		assertTrue(missing.getMessage().endsWith(": NoSuchMethodError: 'void example.Packet.<init>(int)'"), missing.getMessage());
+		var dependent = assertThrows(CapabilityUnavailableException.class, () -> player.capability(SummaryCapability.class));
+		assertTrue(dependent.getMessage().contains("requires " + DependentCapability.class.getName() + ", which is unavailable"),
+				dependent.getMessage());
+		var lines = output.toString(StandardCharsets.UTF_8).lines().toList();
+		assertEquals(1, lines.size(), lines.toString());
+		assertTrue(lines.getFirst().startsWith("[Anvil] Warning: player 'Alice' on Minecraft test runs without"), lines.getFirst());
+		assertTrue(lines.getFirst().contains(DependentCapability.class.getName()));
+		assertTrue(lines.getFirst().contains(SummaryCapability.class.getName()));
+		player.destroy();
+	}
+
+	@Test
+	void skipsProtocolFactoriesTheWorkerNeitherInstallsNorReportsWithTheLibraryInTheReason() {
+		var unknown = provider("unknown", DependentCapability.class, Set.of(), context -> {
+			throw new AssertionError("A capability the worker does not install must not be created");
+		});
+		StubPlayer stub = new StubPlayer();
+		stub.channel = channel(Set.of("other"), Map.of("another", "NoClassDefFoundError: example/Other"));
+		var previous = System.err;
+
+		SimulatedPlayer player;
+		System.setErr(new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
+		try {
+			player = new PlayerCapabilityRuntime(List.of(), List.of(unknown)).compose(stub, observation(), ignored -> { });
+		} finally {
+			System.setErr(previous);
+		}
+
+		assertFalse(player.hasCapability(DependentCapability.class));
+		var missing = assertThrows(CapabilityUnavailableException.class, () -> player.capability(DependentCapability.class));
+		assertTrue(missing.getMessage().endsWith(": not installed by the stub worker"), missing.getMessage());
+		player.destroy();
+	}
+
+	@Test
+	void composesServiceBackedProtocolFactoriesForPlayersWithoutANativeWorker() {
+		var serviceBacked = provider("service-backed", DependentCapability.class, Set.of(),
+				context -> () -> context.requireService(String.class));
+		StubPlayer stub = new StubPlayer();
+
+		SimulatedPlayer player = new PlayerCapabilityRuntime(List.of(), List.of(serviceBacked)).compose(stub, observation(), ignored -> { });
+
+		assertTrue(player.hasCapability(DependentCapability.class));
+		assertEquals("service", player.capability(DependentCapability.class).value());
+		player.destroy();
+	}
+
+	private static CapabilityChannel channel(Set<String> installed, Map<String, String> unavailable) {
+		return new CapabilityChannel() {
+			public <Q, R> R request(@NotNull ChannelOperation<Q, R> channelOperation, Q request) { throw new AssertionError(); }
+			public <E> @NotNull Subscription subscribe(@NotNull EventDescriptor<E> eventDescriptor, @NotNull Consumer<E> listener) { return () -> { }; }
+			public void await(@NotNull BooleanSupplier condition, @NotNull String description, @NotNull Duration timeout) { throw new AssertionError(); }
+			public @NotNull Set<String> installedCapabilities() { return installed; }
+			public @NotNull Map<String, String> unavailableCapabilities() { return unavailable; }
+		};
 	}
 
 	@Test
@@ -163,15 +256,15 @@ class PlayerCapabilityRuntimeTest {
 			context.onClose(() -> released.add("shared"));
 			return () -> context.observation().identity().getUsername();
 		});
-		var backend = new PlainPlayer();
+		var plain = new PlainPlayer();
 		SimulatedPlayer player = new PlayerCapabilityRuntime(List.of(provider))
-				.compose(backend, observation, ignored -> released.add("removed"));
+				.compose(plain, observation, ignored -> released.add("removed"));
 
 		assertEquals("Alice", player.capability(BaseCapability.class).value());
 		assertFalse(player.state().destroyed());
 		player.destroy();
 		player.destroy();
-		assertTrue(backend.destroyed());
+		assertTrue(plain.destroyed());
 		assertTrue(player.state().destroyed());
 		assertEquals(List.of("shared", "removed"), released);
 	}
@@ -275,9 +368,9 @@ class PlayerCapabilityRuntimeTest {
 	}
 
 	@Test
-	void destroysCapabilitiesAndRemovesPlayerEvenWhenBackendDestructionThrowsAnError() {
+	void destroysCapabilitiesAndRemovesPlayerEvenWhenLibraryPlayerDestructionThrowsAnError() {
 		List<String> released = new ArrayList<>();
-		AssertionError backendFailure = new AssertionError("backend failed");
+		AssertionError destructionFailure = new AssertionError("library player destruction failed");
 		RuntimeException cleanupFailure = new IllegalStateException("capability cleanup failed");
 		ProtocolPlayerCapabilityProvider<BaseCapability> base = provider("base", BaseCapability.class, Set.of(), context -> {
 			context.onClose(() -> {
@@ -286,14 +379,14 @@ class PlayerCapabilityRuntimeTest {
 			});
 			return () -> "base";
 		});
-		StubPlayer backend = new StubPlayer();
-		backend.destroyFailure = backendFailure;
+		StubPlayer stub = new StubPlayer();
+		stub.destroyFailure = destructionFailure;
 		SimulatedPlayer player = new PlayerCapabilityRuntime(List.of(), List.of(base))
-				.compose(backend, observation(), ignored -> released.add("removed"));
+				.compose(stub, observation(), ignored -> released.add("removed"));
 
-		assertSame(backendFailure, assertThrows(AssertionError.class, player::destroy));
-		assertSame(cleanupFailure, backendFailure.getSuppressed()[0]);
-		assertTrue(backend.destroyed());
+		assertSame(destructionFailure, assertThrows(AssertionError.class, player::destroy));
+		assertSame(cleanupFailure, destructionFailure.getSuppressed()[0]);
+		assertTrue(stub.destroyed());
 		assertTrue(player.state().destroyed());
 		assertEquals(List.of("capability", "removed"), released);
 		player.destroy();
@@ -452,6 +545,11 @@ class PlayerCapabilityRuntimeTest {
 		@Override
 		public @NotNull String name() {
 			return "Alice";
+		}
+
+		@Override
+		public @NotNull String libraryId() {
+			return "stub";
 		}
 
 		@Override

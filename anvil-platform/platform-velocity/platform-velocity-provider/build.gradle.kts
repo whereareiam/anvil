@@ -1,18 +1,15 @@
 plugins {
-    alias(libs.plugins.toolkit.architecture)
-    alias(libs.plugins.toolkit.publish.maven)
-    id("unit")
+	id("platform-provider")
+	id("publication")
 }
 
 description = "Velocity platform provider for Anvil"
 
-toolkitPublish {
-    artifactId.set("platform-velocity-provider")
-}
-
 dependencies {
-    api(projects.anvilPlatform.platformApi)
+	api(projects.anvilPlatform.platformApi)
 
-    implementation(libs.jackson.databind)
-    implementation(libs.jackson.toml)
+	implementation(libs.jackson.databind)
+	implementation(libs.jackson.toml)
+
+	platformAgent(projects.anvilPlatform.platformVelocity.platformVelocityAgent)
 }

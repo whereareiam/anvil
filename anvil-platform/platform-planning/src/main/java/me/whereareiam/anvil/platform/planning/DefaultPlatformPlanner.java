@@ -1,8 +1,6 @@
 package me.whereareiam.anvil.platform.planning;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
-import me.whereareiam.anvil.api.model.java.JavaRequirement;
-import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
@@ -34,12 +32,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Owns provider selection, artifact declarations, forwarding, and platform preparation.
+ * Owns provider selection, artifact declarations, Java planning, forwarding, and platform preparation.
  * Execution supplies endpoints only after the scenario has a compatible platform plan.
  */
 public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPreparer {
 	private final EngineOptions options;
-	private final JavaSelection javaDefaults;
+	private final JavaRequirementPlanner javaPlanner;
 	private final Map<String, PlatformProvider> providers;
 	private final PlatformArtifactSource downloads;
 	private final ScenarioArtifactResolver artifacts;
@@ -51,9 +49,7 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 			@NotNull PlatformAgentSource agents
 	) {
 		this.options = options;
-		this.javaDefaults = options.getJavaSelection().withDefaults(JavaSelection.builder()
-				.requirement(JavaRequirement.builder().build())
-				.build());
+		this.javaPlanner = new JavaRequirementPlanner(options, providers, System.err);
 		this.providers = Map.copyOf(providers);
 		this.downloads = downloads;
 		this.artifacts = new ScenarioArtifactResolver(options.getArtifacts(), agents);
@@ -72,18 +68,19 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 			PlatformProvider provider = providers.get(declaration.getPlatform());
 			var agent = provider.platformAgent();
 			boolean proxy = !(declaration instanceof MinecraftServer);
+			JavaRequirementPlanner.PlannedJava planned = javaPlanner.plan(resolved, declaration);
 			plan.process(name, ProcessPlan.builder()
 					.declaration(declaration)
-					.javaSelection(declaration.getJavaSelection().withDefaults(resolved.getJavaSelection()).withDefaults(javaDefaults))
+					.javaSelection(planned.selection())
 					.proxy(proxy)
 					.publishGame(proxy || resolved.getNetworkPolicy().getBackendNetworkExposure() != NetworkExposure.PRIVATE)
 					.dependencies(proxy ? servers : List.of())
 					.workspace(artifacts.installAgent(declaration.getWorkspace(), agent))
 					.forwarding(forwarding.get(name))
-					.minimumJavaVersion(provider.minimumJavaVersion(declaration))
 					.agent(agent != null)
 					.readinessPattern(provider.readinessPattern())
 					.stopCommand(provider.stopCommand())
+					.jvmArguments(planned.jvmArguments())
 					.jvmArguments(provider.jvmArguments(declaration, options.isConsoleColors()))
 					.programArguments(provider.programArguments(declaration))
 					.defaultCaches(provider.defaultCaches(declaration))

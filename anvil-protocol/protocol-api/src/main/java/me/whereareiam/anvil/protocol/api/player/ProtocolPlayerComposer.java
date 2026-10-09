@@ -9,16 +9,16 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.Consumer;
 
 /**
- * Composes the public simulated-player facade around a backend-owned protocol player.
+ * Composes the public simulated-player facade around a library-owned protocol player.
  *
- * <p>The protocol backend remains responsible for native transport. A composer may add
- * dependency-discovered capabilities without making the backend depend on their implementation.</p>
+ * <p>The protocol library remains responsible for native transport. A composer may add
+ * dependency-discovered capabilities without making the library depend on their implementation.</p>
  */
 public interface ProtocolPlayerComposer {
 	/**
-	 * Composes one backend player.
+	 * Composes one library-owned player.
 	 *
-	 * @param player backend-owned protocol player
+	 * @param player library-owned protocol player
 	 * @param observation player identity and route observation
 	 * @param metadata optional presentation details supplied by the player declaration
 	 * @param onDestroyed callback invoked after permanent destruction

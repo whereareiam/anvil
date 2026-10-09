@@ -4,7 +4,7 @@ import me.whereareiam.anvil.api.player.PlayerCapability;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Lets a player capability call a native operation independently of the selected packet backend.
+ * Lets a player capability call a native operation independently of the selected protocol library.
  */
 public interface PlayerAgentEcho extends PlayerCapability {
 	/**

@@ -134,7 +134,7 @@ class ScenarioDescriptorFactoryTest {
 		assertEquals("Java 21 (scenario); " + home + " (scenario)", descriptor.getProcesses().get(0).getJavaRequirement());
 		assertEquals("Java 25; " + home + " (scenario)", descriptor.getProcesses().get(1).getJavaRequirement());
 		assertEquals("Java 21 (scenario); Java archive: https://invalid.example/jdk.tar.gz", descriptor.getProcesses().get(2).getJavaRequirement());
-		assertEquals("Platform Java requirement; Java executable: " + Path.of("unresolved", "custom-java"),
+		assertEquals("Planned default LTS; Java executable: " + Path.of("unresolved", "custom-java"),
 				descriptor.getProcesses().get(3).getJavaRequirement());
 	}
 

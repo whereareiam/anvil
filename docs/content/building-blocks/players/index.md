@@ -25,4 +25,4 @@ surrounding workflow separately from the player behavior.
 A player is a network client, so asynchronous effects need explicit waits. A connected session proves
 login completion; use the `Server` capability to await an agent-observed route to a named backend.
 That route can come from the proxy's connected-server observation. Use a backend-specific agent
-channelOperation when you need proof from that backend itself, and assert application state separately.
+operation when you need proof from that backend itself, and assert application state separately.

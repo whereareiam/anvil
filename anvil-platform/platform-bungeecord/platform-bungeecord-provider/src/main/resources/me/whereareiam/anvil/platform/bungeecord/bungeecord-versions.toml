@@ -1,0 +1,15 @@
+# BungeeCord version data exposed by BungeeCordPlatformProvider.versionData() and read by platform
+# planning. BungeeCord distributions are selected by CI build number and carry no release version, so
+# the single Java row has no `since` and applies to every build. Anvil cannot tell whether a build is
+# one it verified, so it assesses BungeeCord by Java alone (COMPATIBLE) and lists no verified data.
+#
+# agent: the oldest Java the BungeeCord agent runs on. It compiles for Java 21, so planning runs every
+#        build on Java 21 or newer although BungeeCord itself starts on Java 17, and the provider's
+#        checkAgentJava build task fails when the agent's classes need newer Java.
+
+[agent]
+minimumJava = 21
+
+[[java]]
+minimum = 17
+preferred = 21

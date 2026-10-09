@@ -16,22 +16,22 @@ import org.gradle.process.ExecOperations
 import javax.inject.Inject
 
 /**
- * Signs a stored account in or out through the project's protocol provider.
+ * Signs a stored account in or out through the project's protocol library.
  *
  * Runs the same authentication entry point as the IntelliJ account manager in a separate JVM, so
- * prompts reach the console and credentials stay in the provider's account store. Select exactly one
+ * prompts reach the console and credentials stay in the library's account store. Select exactly one
  * of `--login=<id>` or `--logout=<id>`.
  */
 @UntrackedTask(because = "Interactive sign-in changes the local account store outside the build")
 abstract class AccountTask : DefaultTask() {
     /**
-     * Tooling runtime containing the authentication entry point and the protocol provider.
+     * Tooling runtime containing the authentication entry point and the protocol libraries.
      */
     @get:Classpath
     abstract val runtimeClasspath: ConfigurableFileCollection
 
     /**
-     * Engine properties that select the account directory and protocol provider.
+     * Engine properties that select the account directory and protocol library.
      */
     @get:Input
     abstract val engineProperties: MapProperty<String, String>

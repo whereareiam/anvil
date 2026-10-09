@@ -27,12 +27,13 @@ preparation, agents, processes, and players.
 
 ## Follow startup in dependency order
 
-1. Assemble shared services and select the protocol provider, construct the engine with its factory,
-   and install global extensions.
+1. Assemble shared services, including the player service over every installed protocol library,
+   construct the engine with its factory, and install global extensions.
 2. Validate the scenario's global structure. The factory validates scoped declarations, resolves
    named artifacts, and negotiates forwarding through platform planning. Bind and validate compatible
    capability providers using each process's platform and available agent implementation.
-3. Initialize the selected protocol backend before process startup. Allocate the complete execution
+3. Check the protocol library the scenario declares and validate the capability graph of every
+   library its players select by default, before process startup. Allocate the complete execution
    topology and resolve process runtimes.
 4. Prepare distributions and workspaces, restoring snapshots before installing assets. Independent
    preparation may run concurrently within the configured limits.
@@ -44,9 +45,9 @@ preparation, agents, processes, and players.
 7. After the context's complete startup reaches readiness, attach global scenario extensions and
    run the setup hook once. `engine.start(...)` returns to its caller only after this phase succeeds.
 
-The default player service creates its backend lazily for the first scenario and reuses it for
-later scenarios. Native-version and authentication compatibility are checked for each requested
-player. A failed acquisition must release resources that were not transferred to another owner.
+The default player service creates each protocol library lazily, when the first player selects it,
+and reuses it for later scenarios until the engine closes. Library selection, the support policy,
+native-version and authentication compatibility are checked for each requested player. A failed acquisition must release resources that were not transferred to another owner.
 
 ## Prepare an environment for individual startup
 

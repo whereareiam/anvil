@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.launcher.assembly.player;
 
 import lombok.Value;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.binding.JsonCapabilityCodec;
@@ -8,6 +9,7 @@ import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolCapabilityPlayer;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolSubscription;
+import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -44,10 +46,11 @@ class ProtocolPlayerAdapterTest {
 	}
 
 	@Test
-	void hidesProtocolContractsWhilePreservingExternalServicesOnTheSamePlayer() {
+	void namesTheLibraryAndHidesProtocolContractsWhilePreservingExternalServicesOnTheSamePlayer() {
 		StubPlayer protocol = new StubPlayer();
 		ProtocolCapabilityPlayer player = new ProtocolPlayerAdapter(protocol, null);
 
+		assertEquals(protocol.libraryId(), player.libraryId());
 		assertSame(protocol.external, player.findService(ExternalService.class).orElseThrow());
 		assertSame(protocol, player.findService(ExternalPlayerService.class).orElseThrow());
 		assertTrue(player.findService(ProtocolPlayer.class).isEmpty());
@@ -95,6 +98,17 @@ class ProtocolPlayerAdapterTest {
 		@Override
 		public @NotNull String clientVersion() {
 			return "1.21.11";
+		}
+
+		@Override
+		public @NotNull String libraryId() {
+			return "external";
+		}
+
+		@Override
+		public @NotNull ProtocolRelease release() {
+			MinecraftVersion version = MinecraftVersion.parse("1.21.11");
+			return ProtocolRelease.builder().libraryVersion("test").minecraftVersion(version).protocolNumber(774).javaVersion(21).build();
 		}
 
 		@Override

@@ -23,7 +23,7 @@ The two callers can have different permissions and trigger different application
 ## Request behavior by its public type
 
 `alice.capability(Messages.class)` retrieves Alice's message capability. The interface describes the
-channelOperation, while an installed provider implements it for the selected runtime. Tests use the public
+operation, while an installed provider implements it for the selected runtime. Tests use the public
 interface without importing protocol packets, platform SDKs, or transport code.
 
 For a process, use `process.capability(Console.class)`. This does not require creating a player.

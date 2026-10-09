@@ -44,12 +44,12 @@ dependencyResolutionManagement {
             library("capability-api", "me.whereareiam.anvil", "capability-api").versionRef("anvil")
             library("platform-api", "me.whereareiam.anvil", "platform-api").versionRef("anvil")
             library("agent-api", "me.whereareiam.anvil", "agent-api").versionRef("anvil")
-            library("agent-server-api", "me.whereareiam.anvil", module("agent-server-api", "server-api")).versionRef("anvil")
+            library("agent-server-api", "me.whereareiam.anvil", "agent-server-api").versionRef("anvil")
             library("capability-agent-api", "me.whereareiam.anvil", "capability-agent-api").versionRef("anvil")
             library("capability-protocol-api", "me.whereareiam.anvil", "capability-protocol-api").versionRef("anvil")
-            library("movement-api", "me.whereareiam.anvil", "builtin-movement-api").versionRef("anvil")
+            library("movement-api", "me.whereareiam.anvil", module("builtin-movement-api", "movement-api")).versionRef("anvil")
             library("protocol-api", "me.whereareiam.anvil", "protocol-api").versionRef("anvil")
-            library("session-api", "me.whereareiam.anvil", "builtin-session-api").versionRef("anvil")
+            library("session-api", "me.whereareiam.anvil", module("builtin-session-api", "session-api")).versionRef("anvil")
         }
     }
 }

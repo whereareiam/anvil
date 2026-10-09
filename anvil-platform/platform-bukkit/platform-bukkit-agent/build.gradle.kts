@@ -1,27 +1,21 @@
 plugins {
-    alias(libs.plugins.toolkit.architecture)
-    id("platform-agent")
+	id("assembly")
+	id("bundle")
+	id("in-server")
+	id("descriptor-version")
 }
 
 description = "Anvil platform agent for Paper and Spigot"
 
-architecture {
-    kind = assembly
-}
-
-publishing {
-    publications.withType<MavenPublication>().configureEach {
-        artifactId = "platform-bukkit-agent"
-    }
-}
-
 dependencies {
-    compileOnly(projects.anvilAgent.agentServer.serverApi)
-    compileOnly(libs.paper)
+	compileOnly(projects.anvilAgent.agentServer.agentServerApi)
+	compileOnly(libs.bukkit.spigot)
 
-    embedded(projects.anvilAgent.agentServer) { isTransitive = false }
+	embedded(projects.anvilAgent.agentServer) { isTransitive = false }
 }
 
-tasks.processResources {
-    expand("version" to project.version.toString())
+// The agent uses only API names that Mojang and Spigot mappings share, so Paper loads it without remapping.
+// The shaded JAR inherits this manifest.
+tasks.named<Jar>("jar") {
+	manifest.attributes["paperweight-mappings-namespace"] = "mojang"
 }

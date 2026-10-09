@@ -12,7 +12,7 @@ on Gradle tasks or source-set conventions.
 
 Add `me.whereareiam.anvil:junit` at your chosen Anvil version to the dependencies of the tests that
 use it. The published artifact brings the Anvil API, JUnit Jupiter, and launcher dependencies.
-Supply the selected platform provider and matching agent, a protocol provider, and the capabilities
+Supply the selected platform provider and matching agent, a protocol library, and the capabilities
 your tests use on the runtime classpath. Keep Anvil artifact versions aligned.
 
 For example, a project that manages its own Gradle test tasks can add the library directly:
@@ -21,7 +21,7 @@ For example, a project that manages its own Gradle test tasks can add the librar
 dependencies {
 	testImplementation(platform("me.whereareiam.anvil:bom:0.0.1"))
 	testImplementation("me.whereareiam.anvil:junit")
-	// Add the platform, protocol, and capability providers required by your scenarios.
+	// Add the platform providers, protocol library, and capabilities required by your scenarios.
 }
 
 tasks.test {
@@ -32,7 +32,7 @@ tasks.test {
 Maven users import the same BOM in dependency management and add the `junit` artifact with test
 scope. No Anvil Gradle or IntelliJ integration is required. Use a JUnit Platform runner with the Jupiter engine. Configure Anvil's
 [engine properties](../../building-blocks/environments/configuration/engine/index.md) on the JVM executing those tests, including EULA
-acceptance, provider selection when needed, and any named artifact paths. The JUnit extension reads
+acceptance, protocol library selection when needed, and any named artifact paths. The JUnit extension reads
 those properties when it starts each scenario.
 
 The [Gradle integration](../gradle/index.md) prepares these dependencies and settings for its

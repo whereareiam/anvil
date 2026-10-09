@@ -55,7 +55,7 @@ public final class DockerScenario {
 				.build());
 		var options = EngineOptions.builder()
 				.eulaAccepted(true)
-				.protocolId("mcprotocol")
+				.protocolLibrary("mcprotocol")
 				.executionProviderId("docker")
 				.javaSelection(JavaSelection.builder()
 						.requirement(JavaRequirement.builder()
@@ -75,8 +75,10 @@ public final class DockerScenario {
 
 Call the helper from the application's entry point. Supply an image such as
 `your-registry/your-jdk@sha256:<verified-image-digest>`, replacing the entire placeholder with an actual
-reference. The mapped image must contain a matching `java` executable and support the mounted scenario
-workspace. Provide another mapping, such as `temurin:25`, for every other effective Java requirement.
+reference. The mapped image must contain a `java` executable of exactly that feature version and support
+the mounted scenario workspace. Map every LTS release your processes plan, such as `temurin:17` for a
+Paper `1.18.2` server or `temurin:25` for `26.1.2`; a requirement without a distribution uses the
+`temurin` key. A missing mapping fails before any container starts and lists the configured keys.
 Process or scenario Java overrides still take precedence over the helper's engine default.
 
 Success means the processes and agents became ready and an entrypoint address was returned.
@@ -88,7 +90,8 @@ artifacts as local scenarios.
 
 The Docker daemon must be local and able to mount the host workspace. Unix sockets and Windows named
 pipes are accepted; remote TCP `DOCKER_HOST` endpoints are rejected. Host Java sources are rejected.
-Images are inspected for Java compatibility and their resolved identities are retained in the cache.
+Images are inspected to contain exactly the planned Java feature version, and their resolved identities
+are retained in the cache.
 Use immutable digest references when repeatability across fresh caches matters.
 
 For a proxy scenario, setting `backendNetworkExposure` to `PRIVATE` suppresses published backend game

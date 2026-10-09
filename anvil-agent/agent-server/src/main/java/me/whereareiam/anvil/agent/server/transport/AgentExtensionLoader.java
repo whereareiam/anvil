@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.stream.Collectors;
 
 /**
  * Owns the operation-extension class loader installed into one managed platform workspace.
@@ -24,7 +25,7 @@ final class AgentExtensionLoader implements AutoCloseable {
 			if (Files.isDirectory(directory))
 				try (var paths = Files.list(directory)) {
 					for (Path path : paths.filter(Files::isRegularFile)
-							.filter(path -> path.getFileName().toString().endsWith(".jar")).sorted().toList())
+							.filter(path -> path.getFileName().toString().endsWith(".jar")).sorted().collect(Collectors.toUnmodifiableList()))
 						artifacts.add(path.toUri().toURL());
 				}
 			loader = new URLClassLoader(artifacts.toArray(URL[]::new), parent);
@@ -35,7 +36,7 @@ final class AgentExtensionLoader implements AutoCloseable {
 
 	List<AgentOperationProvider> providers() {
 		return ServiceLoader.load(AgentOperationProvider.class, loader).stream()
-				.map(ServiceLoader.Provider::get).toList();
+				.map(ServiceLoader.Provider::get).collect(Collectors.toUnmodifiableList());
 	}
 
 	@Override

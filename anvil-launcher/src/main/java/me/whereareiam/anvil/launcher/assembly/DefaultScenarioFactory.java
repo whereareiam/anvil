@@ -28,16 +28,15 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 	private final @NotNull PlatformPlanner platforms;
 	private final @NotNull ProcessLauncher execution;
 	private final @NotNull DefaultPlayerService players;
-	private final @NotNull String protocolId;
 
 	@Override
 	public @NotNull ScenarioContext create(@NotNull AnvilScenario scenario, @Nullable ScenarioObserver observer) {
 		var plan = platforms.plan(scenario);
+		players.prepare(plan.getScenario());
+
 		var agents = new ScenarioAgentDirectory();
 		var capabilities = ProcessComposition.discover(plan, agents);
-		var composer = PlayerComposition.create(protocolId, agents);
-
-		players.prepare();
+		var composer = PlayerComposition.create(players.scenarioLibraries(plan.getScenario()), agents);
 		ProcessGroup processes = execution.prepare(plan, agents, capabilities, observer);
 
 		try {

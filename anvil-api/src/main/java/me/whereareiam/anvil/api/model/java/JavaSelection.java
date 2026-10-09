@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Java requirements and an optional installation source selected at one configuration level.
  * Each omitted member inherits independently from the enclosing level. An explicitly empty
- * requirement selects the platform minimum rather than inheriting a parent requirement.
+ * requirement selects the platform's preferred LTS release rather than inheriting a parent requirement.
  */
 @Value
 @Builder(toBuilder = true)

@@ -1,7 +1,6 @@
 plugins {
-	alias(libs.plugins.toolkit.architecture)
-	alias(libs.plugins.toolkit.publish.maven)
-	id("unit")
+	id("jvm")
+	id("publication")
 }
 
 description = "Filesystem cache entries and staged publication for Anvil environments"

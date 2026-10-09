@@ -9,14 +9,15 @@ Keep real account sign-in out of CI.
 
 ## Add a local account
 
-Use an [installed MCProtocol provider](../../../getting-started/installation/index.md).
-When several providers are installed, select it in `build.gradle.kts` with
-`anvil { engine { protocol("mcprotocol") } }`.
-Use the Anvil IntelliJ panel's **Accounts** action to authenticate. Follow the provider's device-code
+Use the [installed MCProtocolLib library](../../../getting-started/installation/index.md), whose ID is
+`mcprotocol`. Accounts are signed in through one library: the engine's
+`anvil { engine { protocolLibrary("mcprotocol") } }`, or the sole installed library that offers
+authentication.
+Use the Anvil IntelliJ panel's **Accounts** action to authenticate. Follow the library's device-code
 instructions in your browser; Anvil retrieves the Minecraft username and UUID and stores the account
-file under the configured account directory. You can also import a provider-generated account file
-manually. The MCProtocol provider stores one account per JSON file and restricts files to the owner on
-filesystems supporting POSIX permissions.
+file under the configured account directory. You can also import an account file that the library
+generated elsewhere. MCProtocolLib's library stores one account per JSON file and restricts files to
+the owner on filesystems supporting POSIX permissions.
 
 Without IntelliJ IDEA, sign in from the project that applies the Anvil plugin:
 
@@ -24,7 +25,7 @@ Without IntelliJ IDEA, sign in from the project that applies the Anvil plugin:
 ./gradlew anvilAccount --login=main
 ```
 
-The task runs the same provider workflow in a separate JVM and prints the device-code instructions.
+The task runs the same library workflow in a separate JVM and prints the device-code instructions.
 It stores the account in the directory configured by `anvil { engine { accountsDirectory } }`, which
 defaults to `~/.anvil/accounts`. Remove an account with `./gradlew anvilAccount --logout=main`. Sign in
 on developer machines only; the stored file holds refresh tokens.
@@ -69,6 +70,10 @@ public final class AuthenticatedPlayers {
 }
 ```
 
+The account must be stored by the protocol library selected for the player, and that library's release
+for the player's Minecraft version must support online authentication; otherwise creation fails before
+the player connects.
+
 Call `AuthenticatedPlayers.connect(anvil)` from a local test in the same package and run that class with
 `./gradlew anvilTest --tests 'your.package.YourOnlineTest'`. A connected session establishes that
 the account authenticated at the target. Check [identity and server observations](../capabilities/server/index.md)
@@ -85,6 +90,12 @@ var one = anvil.players().create("player-1", first);
 var two = anvil.players().create("player-2", second);
 // The two players use different authenticated accounts. Player cleanup releases the leases.
 ```
+
+Account IDs belong to the protocol library that stores them. A pool holds one account per ID and refuses
+an ID that several libraries store, so a lease always names the account its player signs in with. A player
+created from a lease uses that account's library, whatever `protocolLibrary` the scenario or engine selects.
+Creation fails before the player connects when that library cannot serve the player's Minecraft version, and
+the lease returns to the pool.
 
 A named pool keeps account IDs out of scenario code, so each machine can supply its own accounts.
 Declare it in `pools.properties` in the account directory. The IntelliJ account manager writes this
@@ -106,5 +117,5 @@ and shared cache archives. Access and refresh tokens do not belong in Gradle inp
 environment variables, system properties, or scenario files. MCProtocol sends the access token to its
 worker through private stdin. Agent session credentials are separate per-run values.
 
-Authentication is an optional service of the selected protocol provider. A provider without that
-service can still support offline players; selecting it does not enable MCProtocol's account workflow.
+Authentication is an optional service of a protocol library. A library without that service can still
+support offline players; selecting it does not enable MCProtocolLib's account workflow.

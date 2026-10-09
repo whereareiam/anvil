@@ -19,7 +19,7 @@ Add this fragment to your existing build:
 anvil {
 	acceptEula()
 	engine {
-		protocol("mcprotocol")
+		protocolLibrary("mcprotocol")
 		workDirectory.set(layout.buildDirectory.dir("anvil"))
 		parallelism.set(2)
 		startupMemoryMegabytes.set(2048)
@@ -28,8 +28,10 @@ anvil {
 }
 ```
 
-`acceptEula()` records explicit EULA acceptance. Selecting `mcprotocol` chooses an installed provider;
-it does not add the dependency. Provider selection is automatic when exactly one provider is installed.
+`acceptEula()` records explicit EULA acceptance. `protocolLibrary("mcprotocol")` makes an installed
+protocol library the default for every player; it does not add the dependency. Without it, each
+player uses the installed library with the strongest support for its Minecraft version, and a
+scenario or player declaration can still choose another library.
 
 The concurrency limits affect independent preparation and startup work. The memory value limits
 the sum of declared process heaps starting at once; it does not set each process's heap or cap

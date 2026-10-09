@@ -1,14 +1,8 @@
 plugins {
-	alias(libs.plugins.toolkit.architecture)
-	alias(libs.plugins.toolkit.publish.maven)
-	id("unit")
+	id("api")
 }
 
 description = "Editor-independent discovery and live session contracts for Anvil"
-
-toolkitPublish {
-	artifactId.set("tooling-api")
-}
 
 dependencies {
 	api(libs.annotations)

@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
@@ -36,7 +37,13 @@ public final class PlatformAgentServer implements AgentServer {
 	private final ServerSocket server;
 
 	private final ObjectMapper mapper = new ObjectMapper();
-	private final ExecutorService clients = Executors.newVirtualThreadPerTaskExecutor();
+	private final AtomicInteger clientThreads = new AtomicInteger();
+	// Daemon threads keep a blocked client read from delaying the server JVM's shutdown.
+	private final ExecutorService clients = Executors.newCachedThreadPool(task -> {
+		Thread thread = new Thread(task, "anvil-platform-agent-client-" + clientThreads.incrementAndGet());
+		thread.setDaemon(true);
+		return thread;
+	});
 	private final Set<Socket> connections = ConcurrentHashMap.newKeySet();
 
 	/**

@@ -1,8 +1,11 @@
 package me.whereareiam.anvil.platform.api;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
+import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
 import me.whereareiam.anvil.api.type.CachePolicy;
+import me.whereareiam.anvil.api.type.SupportLevel;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.api.model.PlatformAgentDescriptor;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
@@ -12,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -92,12 +96,68 @@ public interface PlatformProvider {
 	@NotNull Pattern readinessPattern();
 
 	/**
-	 * Returns the minimum Java runtime for the selected distribution.
+	 * Returns this platform's version data: a TOML resource, by convention
+	 * {@code <platform>-versions.toml} beside the provider class. Planning reads it once per engine,
+	 * selects the exact Java version of each process from it, and assesses the process's
+	 * {@link SupportLevel} before anything is downloaded or launched.
+	 *
+	 * <pre>{@code
+	 * # Platform versions the data declares as supported (COMPATIBLE).
+	 * known = ["1.16.5", "1.17.1", "1.18.2"]
+	 *
+	 * # Oldest Java the agent from platformAgent() runs on. Required when the provider installs an
+	 * # agent; planning never selects older Java for the platform.
+	 * [agent]
+	 * minimumJava = 11
+	 *
+	 * # Platform version -> Java feature versions Anvil's live matrix runs it on (VERIFIED).
+	 * [verified]
+	 * "1.16.5" = [11, 17]
+	 *
+	 * # Each row applies from `since` until the next row starts. Only the first row may omit
+	 * # `since`; it then applies from the oldest version. A maximum is the platform's own refusal.
+	 * [[java]]
+	 * since = "1.16.5"
+	 * minimum = 11
+	 * maximum = 16
+	 * preferred = 11
+	 * maximumBypassProperty = "Paper.IgnoreJavaVersion"
+	 * }</pre>
+	 *
+	 * <p>Platform versions are the values {@link #platformVersion(MinecraftProcess)} returns; a process
+	 * without a version uses the newest row. Each preferred version is an LTS release (11, 17, 21, 25,
+	 * then every fourth release) inside its row. A bypass property needs a maximum, and planning sets
+	 * it only for an explicitly requested Java version above that maximum. Unknown keys are refused.</p>
+	 *
+	 * <pre>{@code
+	 * public @NotNull URL versionData() {
+	 *     return ExamplePlatformProvider.class.getResource("example-versions.toml");
+	 * }
+	 * }</pre>
+	 *
+	 * @return location of this provider's version data resource
+	 */
+	@NotNull URL versionData();
+
+	/**
+	 * Returns the version that keys this process in {@link #versionData()}. The default returns a
+	 * server's {@link MinecraftServer#nativeVersion() native Minecraft version} and null for
+	 * proxies. A proxy whose data is keyed by its own release overrides it.
 	 *
 	 * @param process server or proxy declaration
-	 * @return Java feature version
+	 * @return platform version, or null when the distribution carries none; planning then uses the
+	 * newest Java row and does not assess the version
+	 * @throws PlatformException when the declared version is not a release version
 	 */
-	int minimumJavaVersion(@NotNull MinecraftProcess process);
+	default @Nullable MinecraftVersion platformVersion(@NotNull MinecraftProcess process) {
+		if (!(process instanceof MinecraftServer server)) return null;
+
+		try {
+			return server.nativeVersion();
+		} catch (IllegalArgumentException invalid) {
+			throw new PlatformException(invalid.getMessage(), invalid);
+		}
+	}
 
 	/**
 	 * Returns JVM defaults selected by this platform while planning a process launch.
@@ -148,6 +208,12 @@ public interface PlatformProvider {
 
 	/**
 	 * Returns the optional in-process platform agent installed into the managed workspace.
+	 *
+	 * <p>A provider that returns an agent must declare the oldest Java the agent runs on as
+	 * {@code [agent] minimumJava} in its {@link #versionData()}; planning refuses its processes before
+	 * launch otherwise, and never selects older Java for them. Keep the declaration equal to the Java
+	 * release the agent's classes target: planning trusts it, so a lower value lets a process start on
+	 * Java its agent cannot load.</p>
 	 *
 	 * @return platform agent descriptor, or {@code null} when the provider exposes no agent
 	 */

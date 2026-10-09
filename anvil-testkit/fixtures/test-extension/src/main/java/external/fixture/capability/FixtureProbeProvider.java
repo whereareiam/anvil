@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Set;
 
 /**
- * Combines a backend-specific execution service with backend-independent agent operations.
+ * Combines a library-specific execution service with library-independent agent operations.
  */
 public final class FixtureProbeProvider implements ProtocolPlayerCapabilityProvider<FixtureProbeProvider.Probe> {
 	@Override
@@ -23,7 +23,7 @@ public final class FixtureProbeProvider implements ProtocolPlayerCapabilityProvi
 	}
 
 	@Override
-	public @NotNull Set<String> supportedProtocolIds() {
+	public @NotNull Set<String> supportedLibraries() {
 		return Set.of("fixture", "fixture-observer");
 	}
 

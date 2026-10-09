@@ -42,11 +42,22 @@ public class ToolingCommandReader {
 		return List.copyOf(command);
 	}
 
+	/**
+	 * Builds the account sign-in command for the prepared tooling runtime.
+	 *
+	 * @param manifest prepared launch manifest
+	 * @param accountsDirectory account directory used by the IDE
+	 * @param accountId account to sign in
+	 * @param libraryId protocol library to sign in with, or null for the manifest's
+	 *                  {@code anvil.protocolLibrary} property, then the runtime's sole library offering authentication
+	 * @return authentication JVM command
+	 * @throws IOException when the manifest cannot be read or is unsupported
+	 */
 	public static @NotNull List<String> authenticationCommand(
 			@NotNull Path manifest,
 			@NotNull Path accountsDirectory,
 			@NotNull String accountId,
-			@Nullable String providerId
+			@Nullable String libraryId
 	) throws IOException {
 		JsonNode root = read(manifest);
 		List<String> command = javaCommand(
@@ -61,14 +72,14 @@ public class ToolingCommandReader {
 		command.add("--account-id");
 		command.add(accountId);
 
-		String selectedProvider = providerId;
-		if ((selectedProvider == null || selectedProvider.isBlank())
-				&& root.path("properties").has("anvil.protocol"))
-			selectedProvider = root.path("properties").path("anvil.protocol").asText();
+		String selectedLibrary = libraryId;
+		if ((selectedLibrary == null || selectedLibrary.isBlank())
+				&& root.path("properties").has("anvil.protocolLibrary"))
+			selectedLibrary = root.path("properties").path("anvil.protocolLibrary").asText();
 
-		if (selectedProvider != null && !selectedProvider.isBlank()) {
-			command.add("--provider");
-			command.add(selectedProvider);
+		if (selectedLibrary != null && !selectedLibrary.isBlank()) {
+			command.add("--library");
+			command.add(selectedLibrary);
 		}
 
 		return List.copyOf(command);

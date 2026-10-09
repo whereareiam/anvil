@@ -1,0 +1,7 @@
+# Shaped like the built-in BungeeCord data: unversioned builds, and an agent that needs Java 21.
+[agent]
+minimumJava = 21
+
+[[java]]
+minimum = 17
+preferred = 21

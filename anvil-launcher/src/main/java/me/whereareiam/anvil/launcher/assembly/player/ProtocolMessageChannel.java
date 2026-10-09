@@ -7,6 +7,7 @@ import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -36,5 +37,10 @@ final class ProtocolMessageChannel implements MessageChannel {
 	@Override
 	public @NotNull Set<String> installedCapabilities() {
 		return channel.installedCapabilities();
+	}
+
+	@Override
+	public @NotNull Map<String, String> unavailableCapabilities() {
+		return channel.unavailableCapabilities();
 	}
 }

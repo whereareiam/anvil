@@ -1,0 +1,48 @@
+# Shaped like the built-in Spigot data.
+[agent]
+minimumJava = 11
+
+[verified]
+"1.16.5" = [11]
+"1.19.4" = [17]
+"1.20.6" = [21]
+
+[[java]]
+since = "1.16.5"
+minimum = 11
+maximum = 16
+preferred = 11
+
+[[java]]
+since = "1.17"
+minimum = 17
+maximum = 17
+preferred = 17
+
+[[java]]
+since = "1.18"
+minimum = 17
+maximum = 18
+preferred = 17
+
+[[java]]
+since = "1.19"
+minimum = 17
+maximum = 20
+preferred = 17
+
+[[java]]
+since = "1.20.5"
+minimum = 21
+maximum = 22
+preferred = 21
+
+[[java]]
+since = "1.21"
+minimum = 21
+preferred = 21
+
+[[java]]
+since = "26.1"
+minimum = 25
+preferred = 25

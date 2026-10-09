@@ -17,8 +17,8 @@ environment and players. Then choose a [workflow](../workflows/index.md): automa
 prepared Scenario you join with a real client.
 
 You need a Java 21 or newer build environment, Gradle, network access for the first downloads, and
-enough memory to run the selected processes. Anvil resolves the managed processes' Java requirements
-separately from the JVM running your build.
+enough memory to run the selected processes. Anvil runs each managed process on the LTS Java release
+its platform version prefers, separately from the JVM running your build.
 
 Already have a working environment? Choose [Testing](../workflows/testing/index.md) to automate a
 journey, or [Scenarios](../workflows/scenarios/index.md) to make it available for human testing.

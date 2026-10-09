@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
@@ -18,17 +19,20 @@ import java.util.Properties;
 
 /**
  * Applies Paper runtime settings to existing properties and YAML documents.
+ * Paper reads modern forwarding from {@code paper.yml} {@code settings.velocity-support} before
+ * 1.19 and from {@code config/paper-global.yml} {@code proxies.velocity} since 1.19.
  */
 final class PaperConfiguration {
+	private static final MinecraftVersion GLOBAL_CONFIGURATION_SINCE = MinecraftVersion.parse("1.19");
 	private final YAMLMapper yaml = YAMLMapper.builder()
 			.enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
 			.disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER).build();
 
-	void write(MinecraftServer server, PlatformContext context) throws IOException {
+	void write(MinecraftServer server, MinecraftVersion version, PlatformContext context) throws IOException {
 		writeProperties(server, context);
 		Files.writeString(context.getWorkDirectory().resolve("eula.txt"),
 				"eula=" + context.isEulaAccepted() + "\n", StandardCharsets.UTF_8);
-		writeForwarding(context);
+		writeForwarding(version, context);
 	}
 
 	private void writeProperties(MinecraftServer server, PlatformContext context) throws IOException {
@@ -50,12 +54,13 @@ final class PaperConfiguration {
 		}
 	}
 
-	private void writeForwarding(PlatformContext context) throws IOException {
+	private void writeForwarding(MinecraftVersion version, PlatformContext context) throws IOException {
 		var forwarding = context.getForwarding();
 		boolean modern = forwarding.getMode() == ForwardingMode.MODERN;
-		Path paperFile = context.getWorkDirectory().resolve("config/paper-global.yml");
+		boolean global = version.isAtLeast(GLOBAL_CONFIGURATION_SINCE);
+		Path paperFile = context.getWorkDirectory().resolve(global ? "config/paper-global.yml" : "paper.yml");
 		ObjectNode paper = read(paperFile);
-		ObjectNode velocity = paper.withObject("/proxies/velocity");
+		ObjectNode velocity = paper.withObject(global ? "/proxies/velocity" : "/settings/velocity-support");
 		velocity.put("enabled", modern);
 		velocity.put("online-mode", forwarding.isProxyOnlineMode());
 		velocity.remove("secret");

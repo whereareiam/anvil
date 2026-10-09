@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -86,7 +87,9 @@ class ProcessLauncherIntegrationTest {
 			@Override
 			public @NotNull Pattern readinessPattern() { return Pattern.compile("READY"); }
 			@Override
-			public int minimumJavaVersion(@NotNull MinecraftProcess process) { return 21; }
+			public @NotNull URL versionData() {
+				return ProcessLauncherIntegrationTest.class.getResource("/me/whereareiam/anvil/launcher/assembly/fixture-versions.toml");
+			}
 			@Override
 			public PlatformAgentDescriptor platformAgent() { return PlatformAgentDescriptor.builder().entrypointClassName("fixture").build(); }
 		};

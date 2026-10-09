@@ -1,7 +1,7 @@
 package external.fixture.protocol;
 
 /**
- * Service contract supplied by the fixture backend and consumed by its capability adapters.
+ * Service contract supplied by the fixture library and consumed by its capability adapters.
  * It intentionally exposes no Anvil implementation or MCProtocolLib types.
  */
 public interface FixtureConnection {

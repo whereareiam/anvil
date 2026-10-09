@@ -11,7 +11,11 @@ The unit supplies the provider and its matching Velocity agent.
 
 Use `Distribution.remote("3.5.1", "615")` with `Platforms.VELOCITY` on a `MinecraftProxy`.
 The version names the Velocity release, while each backend independently declares its Minecraft version.
-The provider resolves the selected build through PaperMC Fill and requires Java 21.
+The provider resolves the selected build through PaperMC Fill. Java follows the Velocity release, and
+a qualifier such as `-SNAPSHOT` is ignored. The Velocity agent needs Java 21, so releases that start
+on Java 17 also run Java 21; see
+[Java per platform version](../../../provisioning/java/index.md#java-per-platform-version). A local or
+artifact JAR carries no release and uses the newest row.
 
 ## Supply TOML values
 

@@ -1,0 +1,58 @@
+# Paper version data exposed by PaperPlatformProvider.versionData() and read by platform planning.
+#
+# known:    Minecraft versions Paper publishes builds for; Anvil assesses them as COMPATIBLE.
+# agent:    the oldest Java the Bukkit agent installed into Paper runs on. Planning never selects
+#           older Java, and the provider's checkAgentJava build task fails when the agent's classes
+#           need newer Java.
+# verified: Minecraft version -> Java feature versions Anvil's live matrix (CompatibilityScenarioFactory)
+#           runs (VERIFIED); every other supported version is listed in `known` only.
+# java:     each row applies from `since` until the next row starts. `maximum` is Paper's own
+#           startup refusal; `maximumBypassProperty` lifts it when a scenario explicitly requests
+#           a newer LTS release (Paper 1.16.5 and 1.17.x check `Paper.IgnoreJavaVersion`).
+
+known = [
+	"1.16.5",
+	"1.17", "1.17.1",
+	"1.18", "1.18.1", "1.18.2",
+	"1.19", "1.19.1", "1.19.2", "1.19.3", "1.19.4",
+	"1.20", "1.20.1", "1.20.2", "1.20.4", "1.20.5", "1.20.6",
+	"1.21", "1.21.1", "1.21.3", "1.21.4", "1.21.5", "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.21.10", "1.21.11",
+	"26.1", "26.1.1", "26.1.2",
+]
+
+[agent]
+minimumJava = 11
+
+[verified]
+"1.18.2" = [17]
+"1.21.11" = [21]
+"26.1.2" = [25]
+
+[[java]]
+since = "1.16.5"
+minimum = 11
+maximum = 16
+preferred = 11
+maximumBypassProperty = "Paper.IgnoreJavaVersion"
+
+[[java]]
+since = "1.17"
+minimum = 17
+maximum = 17
+preferred = 17
+maximumBypassProperty = "Paper.IgnoreJavaVersion"
+
+[[java]]
+since = "1.18"
+minimum = 17
+preferred = 17
+
+[[java]]
+since = "1.20.5"
+minimum = 21
+preferred = 21
+
+[[java]]
+since = "26.1"
+minimum = 25
+preferred = 25

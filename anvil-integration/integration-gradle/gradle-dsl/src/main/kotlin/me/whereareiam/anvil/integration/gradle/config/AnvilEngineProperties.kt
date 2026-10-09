@@ -25,7 +25,12 @@ object AnvilEngineProperties {
         properties.put(EngineProperties.ACCOUNTS_DIRECTORY_PROPERTY, engine.accountsDirectory.map { it.asFile.absolutePath })
         properties.put(EngineProperties.WORK_DIRECTORY_PROPERTY, engine.workDirectory.map { it.asFile.absolutePath })
         properties.putAll(engine.executionProviderId.map { mapOf(EngineProperties.EXECUTION_PROPERTY to it) }.orElse(emptyMap()))
-        properties.putAll(engine.protocolId.map { mapOf(EngineProperties.PROTOCOL_PROPERTY to it) }.orElse(emptyMap()))
+        properties.putAll(engine.protocolLibrary.map { mapOf(EngineProperties.PROTOCOL_LIBRARY_PROPERTY to it) }.orElse(emptyMap()))
+        properties.putAll(engine.supportPolicy.map { mapOf(EngineProperties.SUPPORT_POLICY_PROPERTY to it) }.orElse(emptyMap()))
+        properties.putAll(engine.protocolReleases.map { releases ->
+            releases.entries.associate { (library, file) -> EngineProperties.protocolReleasesProperty(library) to file.absolutePath }
+        })
+        properties.putAll(project.providers.systemPropertiesPrefixedBy(EngineProperties.PROTOCOL_RELEASES_PROPERTY_PREFIX))
         properties.putAll(engine.parallelism.map { mapOf(EngineProperties.PARALLELISM_PROPERTY to it.toString()) }.orElse(emptyMap()))
         properties.putAll(engine.startupMemoryMegabytes.map { mapOf(EngineProperties.STARTUP_MEMORY_PROPERTY to it.toString()) }.orElse(emptyMap()))
         properties.putAll(engine.downloadParallelism.map { mapOf(EngineProperties.DOWNLOAD_PARALLELISM_PROPERTY to it.toString()) }.orElse(emptyMap()))
@@ -41,7 +46,8 @@ object AnvilEngineProperties {
 
     private val supportedProperties = listOf(
         EngineProperties.EXECUTION_PROPERTY,
-        EngineProperties.PROTOCOL_PROPERTY,
+        EngineProperties.PROTOCOL_LIBRARY_PROPERTY,
+        EngineProperties.SUPPORT_POLICY_PROPERTY,
         EngineProperties.JAVA_VERSION_PROPERTY,
         EngineProperties.JAVA_DISTRIBUTION_PROPERTY,
         EngineProperties.JAVA_RELEASE_PROPERTY,

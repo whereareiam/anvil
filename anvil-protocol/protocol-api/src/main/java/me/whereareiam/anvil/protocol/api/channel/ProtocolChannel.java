@@ -3,12 +3,13 @@ package me.whereareiam.anvil.protocol.api.channel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /**
- * Player-scoped named-message transport. Payload bytes are opaque to the protocol backend;
+ * Player-scoped named-message transport. Payload bytes are opaque to the protocol library;
  * outer codec adapters own their typed schemas and serialization.
  * Callbacks execute in player order outside the shared response reader.
  */
@@ -43,4 +44,16 @@ public interface ProtocolChannel {
 	 * @return immutable installed IDs
 	 */
 	@NotNull Set<String> installedCapabilities();
+
+	/**
+	 * Returns capabilities that the native worker could not install for this player, with the reason
+	 * for each, such as the exact class or member missing from the loaded library release.
+	 * Capability composition skips the providers of every capability that is not installed instead of
+	 * failing the player, and reports these reasons for them.
+	 *
+	 * @return immutable reasons keyed by capability ID
+	 */
+	default @NotNull Map<String, String> unavailableCapabilities() {
+		return Map.of();
+	}
 }

@@ -18,7 +18,7 @@ autonomous AI, and crafting automation are outside the current project scope.
   abstraction, fallback, or wrapper just to move complexity elsewhere.
 - Use interfaces at real module and extension boundaries. Keep ordinary local collaborators concrete.
 - Names describe responsibilities and, when relevant, their technology: for example,
-  `McProtocolMovementAdapter`, `SpigotDistributionResolver`, and `WorkspacePlanValidator`.
+  `McProtocolMovementExtension`, `SpigotDistributionResolver`, and `WorkspacePlanValidator`.
 
 ## Module ownership
 
@@ -44,19 +44,28 @@ autonomous AI, and crafting automation are outside the current project scope.
 | `anvil-capability/capability-protocol-api`                            | Protocol-backed player providers/contexts, channels/events, and native worker contracts                                                                                             |
 | `anvil-capability/capability-agent-api`                               | Agent-backed process/player providers and scoped request-channel contexts; shared capability API only                                                                               |
 | `anvil-capability`                                                    | Shared dependency validation/composition/cleanup for capability owners, process/player facades, agent-provider adaptation, codecs, and worker bindings                              |
-| `anvil-capability/capability-builtin/player/<feature>`                | Player feature API, native implementation using its own API and SDK, and provider/worker wiring                                                                                     |
-| `anvil-capability/capability-builtin/agent/<feature>`                 | Process feature API and agent-backed wiring, independent of simulated players                                                                                                       |
-| `anvil-protocol/protocol-api`                                         | Backend providers, player creation/composition, protocol-owned channels/workers, pinned runtime resolution, and optional authentication                                             |
+| `anvil-capability/capability-builtin/player/<feature>`                | Player capability family whose wiring-only root publishes the shaded `builtin-<feature>` bundle                                                                                     |
+| `anvil-capability/capability-builtin/player/<feature>/<feature>-api`  | Public feature API (`builtin-<feature>-api`) and, for packet capabilities, the stateless release port in `.packet`                                                                  |
+| `anvil-capability/capability-builtin/player/<feature>/<feature>-common` | Embedded, unpublished host provider, operation descriptors, and library-neutral binding in the feature root package                                                               |
+| `anvil-capability/capability-builtin/player/<feature>/<feature>-<library>` | Segmented side folder holding the library's `WorkerExtension` (`builtin-<feature>-<library>`)                                                                                  |
+| `anvil-capability/capability-builtin/player/<feature>/<feature>-<library>/V*` | Segments that implement only the feature's port for the library releases from their key on                                                                                 |
+| `anvil-capability/capability-builtin/process/<feature>`               | Process capability family: `<feature>-api` and a root holding the agent-backed provider, independent of simulated players                                                           |
+| `anvil-capability/capability-builtin/default`                         | Aggregate of every built-in player and process capability                                                                                                                           |
+| `anvil-protocol/protocol-api`                                         | Protocol library providers and releases, player creation/composition, protocol-owned channels/workers, pinned runtime resolution, and optional authentication                       |
 | `anvil-protocol`                                                      | Player registration, version selection, authentication compatibility, composition, and observations                                                                                 |
-| `anvil-protocol/protocol-mcprotocol`                                  | MCProtocolLib backend, pinned catalog, native workers, typed-channel transport, and private authentication store                                                                    |
-| `anvil-platform/platform-api`                                         | Platform-provider/planning SPI, artifact sources, distribution validation, and configuration contracts                                                                              |
-| `anvil-platform/platform-planning`                                    | Platform declaration validation, effective Java/topology requirements, forwarding negotiation, artifact planning, and provider preparation/configuration                            |
+| `anvil-protocol/protocol-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port and the client segments; owns `mcprotocol-releases.toml` and `pinLibraryReleases`  |
+| `anvil-protocol/protocol-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell                                                                                       |
+| `anvil-protocol/protocol-mcprotocol/mcprotocol-common`                | MCProtocolLib library provider, release data, worker host and segment selection, MCProtocolLib-free worker shell, and private authentication store                                  |
+| `anvil-protocol/protocol-mcprotocol/mcprotocol-client`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
+| `anvil-protocol/protocol-mcprotocol/mcprotocol-client/V*`             | Client segments `V1_18_2` and `V1_21_11`, each implementing only `McProtocolClient` from its release key on; `V1_21_11` also serves `26.1.2`                                        |
+| `anvil-platform/platform-api`                                         | Platform-provider/planning SPI, version data contract, artifact sources, distribution validation, and configuration contracts                                                      |
+| `anvil-platform/platform-planning`                                    | Platform declaration validation, version data reading, effective Java/topology requirements, forwarding negotiation, artifact planning, and provider preparation/configuration      |
 | `anvil-platform/platform-*`                                           | Provider-specific distribution/configuration implementations and platform-agent assemblies                                                                                          |
 | `anvil-agent/agent-api`                                               | Shared operation descriptors, payloads, identities, types, and exceptions; no client/server contracts or core dependency                                                            |
 | `anvil-agent/agent-client/client-api`                                 | Host-side clients, directories, connections, and artifact lookup; exports shared agent contracts without core or capability APIs                                                    |
-| `anvil-agent/agent-server/server-api`                                 | Embedded endpoint, native service, and operation provider contracts; exports only shared agent contracts                                                                            |
+| `anvil-agent/agent-server/agent-server-api`                           | Embedded endpoint, native service, and operation provider contracts; exports only shared agent contracts                                                                            |
 | `anvil-agent/agent-client`                                            | Host connections, stable process clients/directories, agent sessions, player observations, and artifact location                                                                    |
-| `anvil-agent/agent-server`                                            | Embedded authenticated endpoint, native channelOperation dispatch, extension loading, and the shaded agent artifact used by platform agents                                         |
+| `anvil-agent/agent-server`                                            | Embedded authenticated endpoint, native operation dispatch, extension loading, and the shaded agent artifact used by platform agents                                         |
 | `anvil-integration/integration-junit`                                             | JUnit annotations, context injection, and lifecycle integration                                                                                                                     |
 | `anvil-integration/integration-gradle/gradle-junit`                                      | Optional anvilTest task and JUnit dependency wiring                                                                                                                                 |
 | `anvil-tooling/tooling-api`                                           | Editor-independent scenario, session, target, and log contracts                                                                                                                     |
@@ -74,7 +83,8 @@ autonomous AI, and crafting automation are outside the current project scope.
 | `anvil-testkit/fixtures`                                              | Independent consumer build for process, server-plugin, and extension fixture JARs                                                                                                   |
 | `anvil-testkit/support`                                               | Host-side fixture artifact access and scoped extension loading                                                                                                                      |
 | `examples/proof-of-patience`                                          | Standalone consumer example, not a home for framework system assertions                                                                                                             |
-| `build-logic`                                                         | Shared Java, testing, assembly, and publication conventions                                                                                                                         |
+| `build-logic`                                                         | Shared conventions grouped by `jvm/`, `role/`, `packaging/`, `segment/`, `library/`, `platform/`, `capability/`, `integration/`, and `fixture/`                                    |
+| `build-logic/settings`                                                | Lean settings conventions loaded by every project's parent classloader: library registry, library repositories, and library and platform layout checks                             |
 | `docs/content`                                                        | Task-oriented Scriptorium guides for using, extending, and contributing to Anvil                                                                                                    |
 | `scriptorium.project.json`                                            | Scriptorium project metadata and version policy                                                                                                                                     |
 
@@ -90,7 +100,7 @@ autonomous AI, and crafting automation are outside the current project scope.
   modules out of `anvil-api`. Global declarations and engine/scenario registration belong in core;
   scoped services stay in their owning APIs even when another family needs them.
 - Bind scoped services at the assembly boundary through consumer-owned inputs or preparation contracts.
-  Keep those contracts focused on the required channelOperation; do not copy a complete foreign API into
+  Keep those contracts focused on the required operation; do not copy a complete foreign API into
   a wrapper or pass Anvil family services through untyped service lookup.
 - Implementations/adapters consume APIs and external libraries, not sibling implementations.
   Do not disguise source dependencies as external Maven coordinates or classify implementations as
@@ -98,28 +108,55 @@ autonomous AI, and crafting automation are outside the current project scope.
   `anvil-integration` is reserved for external integrations.
 - Use `ServiceLoader` for the existing provider SPIs. Preserve service descriptors and merge them
   when shading. Do not add broad reflection scanning as an alternative discovery path.
-- Launcher composition selects one protocol provider before capability discovery. Automatic selection uses
-  the sole installed provider; ambiguity requires an explicit ID.
+- Each player selects its protocol library: its own `protocolLibrary`, else the scenario's, else the engine's,
+  else the one installed library whose release supports its Minecraft version most strongly; a tie requires an
+  explicit choice. A player created from a lease uses the leased account's library instead. Launcher composition
+  creates one capability runtime per selected library.
 - Public capabilities extend `PlayerCapability` or `ProcessCapability`, both rooted in the neutral
   `Capability` contract. Dependencies remain within the same owner. Neutral player providers use
-  shared observations and dependencies. Protocol-backed providers declare protocol support through
-  `supportedProtocolIds()`; agent process providers select supported platform IDs.
+  shared observations and dependencies. Protocol-backed providers declare library support through
+  `supportedLibraries()`; agent process providers select supported platform IDs.
 - Retrieve only declared capability dependencies. The agent-backed `Server` capability must remain
   independent of `Session`.
 - Packet behavior belongs in feature-owned native implementations. Feature wiring registers scoped
-  typed channelOperation/channelEvent descriptors and `WorkerExtension<B>` bindings to the actual external SDK.
+  typed operation/event descriptors and `WorkerExtension<S>` bindings, where `S` is the session type the
+  extension accepts: built-ins accept `Object` and let the port's `sessionType()` cast it, because the
+  native session type differs between releases. Release-specific packet code lives in segments behind the
+  feature's port.
   Shared `OperationRegistry` accepts typed handlers. `WorkerCapabilities` enforces registration phase,
   namespaced uniqueness, and cleanup; launcher `ProtocolOperationRegistry` binds handlers to
   protocol-owned native operations; capability codecs own typed handler wire encoding/decoding.
   Never add feature branches or an opaque universal packet abstraction to the MCProtocol worker.
-- `PlayerBindingContext` supplies an existing player's native SDK/session and lifecycle to a binding;
-  it is not another player entity. `PlayerConnectionEvent` lives under `.api.model.player`, while
+- A built-in capability is a family folder whose root applies the `capability` convention and only wires
+  its members into `builtin-<feature>`: `<feature>-api` (artifact `builtin-<feature>-api`) holds the API and,
+  for packet capabilities, the stateless port `<feature root>.packet.<Feature>Packets<S>`; `<feature>-common`
+  (embedded, unpublished) holds the host provider and the library-neutral `<Feature>Binding<S>`;
+  `<feature>-<library>` (artifact `builtin-<feature>-<library>`) holds the library's `WorkerExtension<Object>`
+  and its `V*` segments, which implement only the port and never wire anything. The root is a wiring bundle: consumers compile against
+  its shaded JAR, and its sources and Javadoc JARs carry the embedded common code. The convention derives every
+  artifact ID from the folder names and fails a build file that sets its own, and `gradle-capabilities` tests
+  that each family has a plugin installing `builtin-<feature>`.
+  Common code lives in the feature packages, never in `common` or `util` packages. A process family without
+  common code or library sides, such as console, keeps its agent-backed provider in the root: the provider
+  binds the family API to agent operations, which only an assembly may depend on; the convention refuses root
+  code in every other family. The extension takes the port's adapter only through
+  `PlayerBindingContext.adapter(Class)` while binding a player, never in its constructor and never through
+  `ServiceLoader`; `checkAdapterLookup` fails a library side whose classes reference `ServiceLoader`. No segment
+  for the release, a segment failing its linkage self-check, or more than one adapter throws
+  `AdapterUnavailableException`, and the worker reports the capability unavailable with that reason; a
+  `LinkageError` or `ServiceConfigurationError` while binding likewise disables only that capability.
+  For a player with a native worker, composition skips every protocol-backed provider whose capability the
+  worker does not install, and its dependents, with the worker's reason or "not installed by the <library>
+  worker"; host providers do not check installation themselves. Players without a native worker compose
+  every provider of their library.
+- `PlayerBindingContext` supplies an existing player's native SDK/session, lifecycle and release adapters to a
+  binding; it is not another player entity. Its `adapter` maps to the native worker's `NativePlayer.adapter`.
+  `PlayerConnectionEvent` lives under `.api.model.player`, while
   `ViewRotation` and `EventDescriptor<E>` live directly under `.api.model`. View rotation holds yaw/pitch;
   an event descriptor pairs an event ID with its payload class.
   Event payloads such as `PlayerConnectionEvent` remain separate values. Worker bindings own per-player
-  state and native listeners. Use
-  `bindBackend` for generation-scoped
-  listeners across reconnects; old native handles must not silently bind to replacement sessions.
+  state and native listeners. Use `bindNativeSession` for generation-scoped listeners across reconnects;
+  old native handles must not silently bind to replacement sessions.
   Neutral player provider/context and lifecycle contracts live under `capability.api.player`.
   Protocol factories, channels/events, and native worker contracts live under
   `capability.protocol.api.player` in `capability-protocol-api`. Agent-backed player
@@ -139,16 +176,16 @@ autonomous AI, and crafting automation are outside the current project scope.
   and close after players, before process/transport finalization. A restart replaces the transport
   while retaining capability instances; requests can be unavailable during replacement. Closed owners
   reject capability lookup and report `hasCapability` as false.
-- External backends expose their own stable execution-service contracts through `ProtocolPlayer`.
+- A protocol library may expose its own stable services through `ProtocolPlayer.findService`.
   Anvil protocol/capability services cross their boundary through explicit assembly bridges, not
   `findService` or a fake universal packet abstraction.
-- Authentication is an optional `ProtocolProvider` service. Tooling depends on that API, not
+- Authentication is an optional `ProtocolLibraryProvider` service. Tooling depends on that API, not
   MCProtocol's account-store implementation. Account files are managed outside project configuration.
   The IntelliJ account manager and Gradle `anvilAccount` share the `AnvilAuthentication` entry point.
   Named pools live in the account directory's versioned `pools.properties`, documented on
   `AccountManager.pool(String)`; the runtime reads it and the IDE writes it, with the same rules.
 - External embedded-agent handlers implement `agent.server.api.operation.AgentOperationProvider`
-  and own their channelOperation namespace.
+  and own their operation namespace.
   Install their JARs under `plugins/anvil-agent-extensions`; do not bundle Anvil agent APIs or
   platform SDKs into those JARs. Host capabilities receive scoped request channels; launcher adapters
   bind them to connections obtained through `AgentDirectory`.
@@ -159,9 +196,31 @@ autonomous AI, and crafting automation are outside the current project scope.
   startup/shutdown values. Engine `ProcessScheduling` governs each scenario operation, not aggregate engine usage.
   Keep artifact download concurrency separate.
 - `JavaSelection` groups Java requirement and source in engine, scenario, and process declarations.
-  Omitted members inherit independently; an explicit empty requirement overrides an inherited version.
-  Planning supplies a resolved selection to execution. Scenario listener binding and LAN permission
-  belong to `NetworkPolicy`, alongside exposure and access policy.
+  Omitted members inherit independently; an explicit empty requirement overrides an inherited version
+  and selects the platform's preferred LTS. `JavaRequirementPlanner` supplies execution a selection with
+  an exact feature version. Scenario listener binding and LAN permission belong to `NetworkPolicy`,
+  alongside exposure and access policy.
+- Processes run on LTS releases only (11, 17, 21, 25, then every fourth); Java 8 is not one of them.
+  Each provider owns `<platform>-versions.toml` (Java rows, `[agent] minimumJava`, verified and known
+  versions) and exposes it through `PlatformProvider.versionData()`; platform-planning reads it, so
+  platform-api carries no parser. The agent minimum raises the effective minimum and the default LTS;
+  a default it pushes above the row maximum is refused. A maximum is refused unless the row names a
+  bypass property; planning then adds `-D<property>=true` before provider defaults for explicit requests
+  only, never for the default. Version and Java assessments follow `SupportLevel`/`SupportPolicy` and
+  refuse before any download. Execution resolves exactly the planned feature version; never fall back
+  to a newer or older JVM.
+- Providers that install an agent apply the `platform-provider` convention and name the agent through
+  `platformAgent(...)`; `checkAgentJava` fails unless the declared `[agent] minimumJava` equals the Java
+  release the agent targets and no agent class, embedded code included, needs newer Java. The `platform-layout`
+  settings plugin fails the configuration of any project whose main resources ship version data with an
+  `[agent]` table unless it applies the convention. The `platformAgent` configuration only feeds that check, so
+  it is intentionally outside the architecture verifier's production configurations even though it names
+  another family's agent. VERIFIED means run by the live matrix: a platform's and a protocol library's
+  verified data list exactly the combinations `CompatibilityScenarioFactory` runs (checked in every build by
+  `CompatibilityScenarioFactoryTest` through the server suite's `matrixTest`), and every other supported
+  version is only known (COMPATIBLE). Docs keep one Java-per-version table in the Java provisioning guide,
+  which `JavaVersionTableDocumentationTest` compares with the installed providers' version data and the
+  planner's defaults.
 - Java requirements are execution-agnostic. Local homes and verified archives belong to Java provisioning;
   Docker image mappings belong to the Docker execution provider.
 - Execution providers own network topology and endpoint translation. A local loopback bind is host exposure
@@ -186,7 +245,11 @@ autonomous AI, and crafting automation are outside the current project scope.
 - Physical paths must match package declarations. Keep API models as separate top-level files.
   Use private inner types for implementation-local state; records are allowed only as small inner records.
 - Add subpackages for coherent responsibilities shared by several files, not merely to classify
-  one implementation. Avoid catch-all `util` or `common` packages.
+  one implementation; a package holds at least two files. The fixed role packages `model`, `type`,
+  `exception`, and `packet` are exempt: every packet capability keeps its release port in `.packet`,
+  even when it is the package's only file. A segment's version package (`.v1_18_2`) and a library side's
+  wiring package (`<feature>.mcprotocol`) hold one class by design and are exempt too. Avoid catch-all
+  `util` or `common` packages.
 - Keep classes and methods focused. Prefer early returns and `continue` to nested or `else if` chains.
   For a short single-statement `if`/`for`, omit braces.
 - Prefer try-with-resources for lexical ownership. When cleanup must continue across independent
@@ -279,9 +342,19 @@ autonomous AI, and crafting automation are outside the current project scope.
 - Keep IDE views and controls independent of engine implementations. Saved selections use stable
   project/definition/scenario identities; optional names never change execution routing. Native
   settings control personal IDE behavior, while runtime options stay in project/scenario definitions.
-- Adding a supported MCProtocol version requires exact artifact URL/SHA-256, protocol number,
-  Java requirement, binding family, worker/capability contracts, all supported direct/proxy routes,
-  and supported-version documentation updates.
+- Adding a Minecraft version follows the contributing guide `docs/content/contributing/minecraft-versions`.
+  Add the version to the `mcprotocol-releases.toml` release that speaks its protocol, or a `[[release]]` row
+  for a new protocol (version, module, protocol, Minecraft versions, verified versions, Java, features), and
+  pin its closure with `pinLibraryReleases`. Add a segment only to a side whose newest segment fails
+  `checkSegmentLinkage` against the new closure, named after the new release key; a segment folder must name
+  a release key, so raising a key renames that segment. Add the release to `McProtocolWorkerContractTest`,
+  platform `known` versions and `[[java]]` rows only where Java changes, and mark as verified exactly what
+  `CompatibilityScenarioFactory` runs; every other listed version is COMPATIBLE, and user-supplied release
+  data is UNTESTED. Update the versions page, the Java table, the README, and the FAQ. The worker shell never
+  imports MCProtocolLib; release-specific client code lives only in `mcprotocol-client` segments, whose
+  `linkage.txt` requirement keywords the worker's self-check enforces. A release with an unpinned closure is
+  listed but cannot be launched: preparing a scenario whose servers would use it by default prints a warning,
+  and creating a player that selects it is refused.
 
 ## Tests and verification
 
@@ -294,7 +367,8 @@ autonomous AI, and crafting automation are outside the current project scope.
   the engine's `src/testFixtures`, never through production artifacts or another module's whole test tree.
 - `anvil-testkit/tests/runtime/src/test`: cross-module discovery/composition without live Minecraft.
 - `anvil-testkit/tests/server/src/test`: real sessions, capabilities, routes, and external agents,
-  grouped by behavior. The whole task requires `-Panvil.testMode=full`.
+  grouped by behavior. The whole task requires `-Panvil.testMode=full`; only its `matrixTest` task, which
+  checks `CompatibilityScenarioFactoryTest` without starting a server, runs in every build.
 - The independent `anvil-test-fixtures` consumer build under `anvil-testkit/fixtures` contains
   `test-process`, `test-server-plugin`, and `test-extension`. They use `src/main`; dependencies on Anvil
   use public artifact aliases, with current source projects substituted in the root composite build.
@@ -311,6 +385,7 @@ Run the nearest relevant test first, then architecture/build checks:
 
 ~~~shell
 ./gradlew verifyArchitecture
+./gradlew checkSegmentLinkage
 ./gradlew :anvil-engine:test
 ./gradlew :anvil-environment:execution:execution-managed:test
 ./gradlew :anvil-platform:platform-planning:test
@@ -318,16 +393,19 @@ Run the nearest relevant test first, then architecture/build checks:
 ./gradlew :anvil-agent:agent-client:test
 ./gradlew :anvil-agent:agent-server:test
 ./gradlew :anvil-capability:test
-./gradlew :anvil-protocol:protocol-mcprotocol:test
+./gradlew :anvil-protocol:protocol-mcprotocol:mcprotocol-common:test
 ./gradlew :anvil-integration:integration-gradle:gradle-plugin:test :anvil-integration:integration-gradle:gradle-capabilities:test :anvil-integration:integration-gradle:gradle-platforms:test
 ./gradlew :anvil-testkit:tests:runtime:test
+./gradlew :anvil-testkit:tests:server:matrixTest
+./gradlew :build-logic:check :build-logic-settings:check
 ./gradlew build
 ~~~
 
-For protocol behavior, run exact worker contracts for both catalog versions and full live coverage.
-For kicking/reconnects/identities, include `PlayerIdentityReconnectSystemTest` for both versions.
-For providers/forwarding, run every affected direct/proxy combination. Inspect retained
-`anvil-console.log` files after startup or routing failures.
+For protocol behavior, run the exact worker contracts, which cover every release in
+`mcprotocol-releases.toml`, and full live coverage. For kicking/reconnects/identities, include
+`PlayerIdentityReconnectSystemTest` for both Paper versions it runs. For platform providers/forwarding, run
+every affected direct/proxy combination. Inspect retained `anvil-console.log` files after startup or routing
+failures.
 
 ~~~shell
 ./gradlew test -Panvil.testMode=full
@@ -455,12 +533,23 @@ For providers/forwarding, run every affected direct/proxy combination. Inspect r
 
 ## Build conventions
 
-- `build-logic/settings` owns the lean settings/composite convention classpath. Keep it independent
-  of the producer and of project plugins such as architecture, publication, and the IntelliJ plugin.
-- Declare included builds, lifecycle participation, and standalone discovery exclusions in
-  `BuildLayout`; module build files must not repeat included-build task wiring.
-- `composite` owns fixture-repository publication. The `fixture-repository` project convention
-  only connects a module's tests to that prepared repository.
+- `build-logic/settings` (included as `build-logic-settings`, whose `check` the root `check` runs) owns the lean
+  settings/composite convention classpath. Keep it independent of the producer and of project plugins such as
+  architecture, publication, and the IntelliJ plugin. Its `library-registry` plugin owns the library registry, the
+  library repositories that `settings.gradle.kts` declares as data (`libraryRepositories { url(...) }`, searched in
+  order by `pinLibraryReleases`), and checks that each library family root applies `library-releases` and each
+  folder holding segments applies `segmented`. Its `platform-layout` plugin checks that each project shipping
+  platform agent data applies `platform-provider`.
+- Segments check their linkage against the locked `[[release.artifact]]` closures that workers download, not the
+  release module's dependency graph; worker tests run on the same closures through the `release-closures`
+  convention. `compileForInServer` compiles a source set for the in-server release and registers its
+  `check<SourceSet>ClassRelease`; the `in-server` convention applies it to the main classes, and no other
+  compilation gets the check. The platform provider convention checks the agent JAR against its version data.
+- `settings.gradle.kts` declares the included builds and the standalone discovery exclusions; the root build
+  wires their lifecycle (`check` runs the convention builds' checks, `build` builds the fixtures). Module build
+  files must not repeat included-build task wiring.
+- The root build's `prepareGradleFixtureRepository` publishes framework artifacts to the fixture repository.
+  The `fixture-repository` project convention only connects a module's tests to that prepared repository.
 - The standard Anvil plugin owns the executable runtime configuration and its lazy version-aligned
   dependencies. Keep source-set wiring, runtime dependencies, artifact mappings, and generated
   definition indexes internal to the build integration; expose only engine settings, EULA acceptance,

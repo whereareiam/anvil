@@ -5,6 +5,7 @@ import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
 import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
@@ -13,14 +14,19 @@ import me.whereareiam.anvil.platform.api.type.ForwardingMode;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.StringReader;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -85,6 +91,75 @@ class PaperPlatformProviderTest {
         assertFalse(configured.at("/proxies/velocity/enabled").asBoolean());
 		assertTrue(configured.at("/proxies/velocity/secret").isMissingNode());
 		assertEquals("retained", yaml.readTree(work.resolve("spigot.yml").toFile()).at("/settings/sample").asText());
+		assertFalse(Files.exists(work.resolve("paper.yml")), "Paper 1.19+ reads forwarding from paper-global.yml only");
+	}
+
+	@ParameterizedTest
+	@CsvSource({"1.16.5", "1.17.1", "1.18.2"})
+	void writesVelocitySupportToPaperYmlBeforeOneNineteen(String version) throws Exception {
+		Path work = Files.createDirectories(temporary.resolve("legacy-" + version));
+		Files.writeString(work.resolve("paper.yml"), "config-version: 20\nsettings:\n  velocity-support:\n    enabled: false\n  retained: true\n");
+		MinecraftServer server = MinecraftServer.builder().name("server").platform(Platforms.PAPER)
+				.distribution(Distribution.remote(version, "1")).build();
+		AnvilScenario scenario = AnvilScenario.builder().name("legacy").entrypoint("server").server(server).build();
+		PlatformContext modern = context(scenario, work, Map.of("server", 25566));
+		PaperPlatformProvider provider = new PaperPlatformProvider();
+		YAMLMapper yaml = new YAMLMapper();
+
+		provider.configure(server, modern);
+		var paper = yaml.readTree(work.resolve("paper.yml").toFile());
+		assertTrue(paper.at("/settings/velocity-support/enabled").asBoolean());
+		assertTrue(paper.at("/settings/velocity-support/online-mode").asBoolean());
+		assertEquals("test-secret", paper.at("/settings/velocity-support/secret").asText());
+		assertTrue(paper.at("/settings/retained").asBoolean());
+		assertEquals(20, paper.path("config-version").asInt());
+		assertFalse(yaml.readTree(work.resolve("spigot.yml").toFile()).at("/settings/bungeecord").asBoolean());
+		assertFalse(Files.exists(work.resolve("config/paper-global.yml")), "Paper before 1.19 has no paper-global.yml");
+
+		provider.configure(server, modern.toBuilder().forwarding(ForwardingConfiguration.builder()
+				.mode(ForwardingMode.LEGACY).secret("legacy-secret").build()).build());
+		paper = yaml.readTree(work.resolve("paper.yml").toFile());
+		assertFalse(paper.at("/settings/velocity-support/enabled").asBoolean());
+		assertTrue(paper.at("/settings/velocity-support/secret").isMissingNode());
+		assertTrue(yaml.readTree(work.resolve("spigot.yml").toFile()).at("/settings/bungeecord").asBoolean());
+
+		provider.configure(server, modern.toBuilder().forwarding(ForwardingConfiguration.builder().build()).build());
+		paper = yaml.readTree(work.resolve("paper.yml").toFile());
+		assertFalse(paper.at("/settings/velocity-support/enabled").asBoolean());
+		assertFalse(yaml.readTree(work.resolve("spigot.yml").toFile()).at("/settings/bungeecord").asBoolean());
+	}
+
+	@Test
+	void writesProxiesVelocityToPaperGlobalFromOneNineteen() throws Exception {
+		Path work = Files.createDirectories(temporary.resolve("modern"));
+		MinecraftServer server = MinecraftServer.builder().name("server").platform(Platforms.PAPER)
+				.distribution(Distribution.remote("1.19.4", "1")).build();
+		AnvilScenario scenario = AnvilScenario.builder().name("modern").entrypoint("server").server(server).build();
+
+		new PaperPlatformProvider().configure(server, context(scenario, work, Map.of("server", 25566)));
+		var global = new YAMLMapper().readTree(work.resolve("config/paper-global.yml").toFile());
+		assertTrue(global.at("/proxies/velocity/enabled").asBoolean());
+		assertEquals("test-secret", global.at("/proxies/velocity/secret").asText());
+		assertFalse(Files.exists(work.resolve("paper.yml")));
+	}
+
+	@Test
+	void packagesItsVersionDataBesideTheProvider() {
+		var data = new PaperPlatformProvider().versionData();
+
+		assertNotNull(data, "paper-versions.toml is packaged with the provider");
+		assertTrue(data.getPath().endsWith("me/whereareiam/anvil/platform/paper/paper-versions.toml"), data.toString());
+	}
+
+	@ParameterizedTest
+	@CsvSource({"1.16.5, cache", "1.17.1, cache", "1.18.2, libraries cache", "1.21.11, libraries cache"})
+	void cachesPaperclipOutputsForTheServerVersion(String version, String paths) {
+		MinecraftServer server = MinecraftServer.builder().name("server").platform(Platforms.PAPER)
+				.distribution(Distribution.remote(version, "1")).build();
+
+		List<WorkspaceCache> caches = new PaperPlatformProvider().defaultCaches(server);
+		assertEquals(Arrays.stream(paths.split(" ")).map(Path::of).toList(), caches.stream().map(WorkspaceCache::getPath).toList());
+		assertTrue(caches.stream().allMatch(cache -> cache.getGroup().equals("paper")));
 	}
 
 	private PlatformContext context(
@@ -98,7 +173,7 @@ class PaperPlatformProviderTest {
 				.workDirectory(work)
 				.bindAddress("127.0.0.1")
 				.port(25566)
-				.processAddresses(ports.entrySet().stream().collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> new java.net.InetSocketAddress("127.0.0.1", entry.getValue()))))
+				.processAddresses(ports.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> new InetSocketAddress("127.0.0.1", entry.getValue()))))
 				.eulaAccepted(true)
 				.artifactSource(artifactSource())
 				.forwarding(ForwardingConfiguration.builder().mode(ForwardingMode.MODERN)

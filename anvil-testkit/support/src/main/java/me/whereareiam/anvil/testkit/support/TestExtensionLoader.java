@@ -14,7 +14,7 @@ import java.util.Enumeration;
  * The creating thread owns the loader and must close it after discovery and extension use finish.
  */
 public final class TestExtensionLoader implements AutoCloseable {
-	private static final String PROTOCOL_SERVICE = "META-INF/services/me.whereareiam.anvil.protocol.api.provider.ProtocolProvider";
+	private static final String PROTOCOL_SERVICE = "META-INF/services/me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider";
 
 	private final Path artifact;
 	private final ClassLoader previous;
@@ -24,7 +24,7 @@ public final class TestExtensionLoader implements AutoCloseable {
 	 * Installs the extension as the current thread's context loader.
 	 *
 	 * @param artifact the prepared fixture JAR supplied by the test task
-	 * @param includeInstalledProtocols whether parent protocol provider descriptors remain visible
+	 * @param includeInstalledProtocols whether parent protocol library descriptors remain visible
 	 */
 	public TestExtensionLoader(@NotNull Path artifact, boolean includeInstalledProtocols) throws IOException {
 		this.artifact = artifact;

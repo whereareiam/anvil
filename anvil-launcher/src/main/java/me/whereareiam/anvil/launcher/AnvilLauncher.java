@@ -24,7 +24,7 @@ public final class AnvilLauncher {
 
 	/**
 	 * Resolves local defaults and discovers the services needed to execute scenarios.
-	 * No scenario or protocol backend is started until requested through the returned engine.
+	 * No scenario or protocol library is started until requested through the returned engine.
 	 *
 	 * <pre>{@code
 	 * try (ScenarioEngine engine = AnvilLauncher.create(options)) {

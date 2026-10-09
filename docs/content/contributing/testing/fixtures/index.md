@@ -10,7 +10,7 @@ compiling and loading a real JAR is part of the behavior being verified.
 |---|---|
 | `test-process` | A small executable for process startup, output, and lifecycle assertions |
 | `test-server-plugin` | Commands and native observations installed in real servers |
-| `test-extension` | External backend, capabilities, and agent operations loaded from real JARs |
+| `test-extension` | External protocol library, capabilities, and agent operations loaded from real JARs |
 
 These projects belong to the independent `anvil-test-fixtures` consumer build. They use ordinary
 `src/main/java` and `src/main/resources` and produce real JARs. They are internal test artifacts and
@@ -32,11 +32,11 @@ Declare the needed fixture in the test module's Gradle configuration. Shared bui
 the artifact, establishes its build dependency, and passes the resolved path as a tracked test
 input. `FixtureArtifacts` in `anvil-testkit/support` gives Java tests access to those paths.
 
-For example, a repository test module that verifies an external protocol provider uses:
+For example, a repository test module that verifies an external protocol library uses:
 
 ```kotlin
 plugins {
-	id("unit")
+	id("jvm")
 	id("fixtures")
 }
 
@@ -52,7 +52,7 @@ dependencies {
 The `fixtures` convention adds host-side test support. Put this test in the module's `src/test/java`:
 
 ```java
-import me.whereareiam.anvil.protocol.api.provider.ProtocolProviderRegistry;
+import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.testkit.support.FixtureArtifacts;
 import me.whereareiam.anvil.testkit.support.TestExtensionLoader;
 import org.junit.jupiter.api.Test;
@@ -61,19 +61,19 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ExternalProviderTest {
+class ExternalLibraryTest {
 	@Test
-	void discoversPackagedProvider() throws Exception {
+	void discoversPackagedLibrary() throws Exception {
 		try (var ignored = new TestExtensionLoader(FixtureArtifacts.extension(), false)) {
-			assertEquals(List.of("fixture"), ProtocolProviderRegistry.discover().ids().stream().toList());
+			assertEquals(List.of("fixture"), ProtocolLibraryRegistry.discover().ids().stream().toList());
 		}
 	}
 }
 ```
 
 Run the module's `test` task. The assertion checks discovery from the prepared JAR. Passing `false`
-hides installed parent protocol descriptors for this scope, while keeping parent API classes shared.
-Pass `true` when testing selection alongside installed backends.
+hides installed parent protocol library descriptors for this scope, while keeping parent API classes
+shared. Pass `true` when testing selection alongside the installed libraries.
 
 Gradle produces three extension variants: normal, broken-provider, and observation-only. Select the
 variant that exercises the intended discovery behavior. For example, a missing-capability test
@@ -111,7 +111,7 @@ starting Minecraft. See [the framework IDE workflow](../live/index.md#inspect-fr
 ## Keep the tested boundary intact
 
 The external-extension fixture compiles against public Anvil contracts. Its runtime tests verify
-provider selection, missing-capability diagnostics, and offline authentication defaults. Its live
+protocol library selection, missing-capability diagnostics, and offline authentication defaults. Its live
 tests verify agent-backed process capabilities without players, agent-backed player observations
 without a Session adapter, native operations, and cleanup.
 
@@ -122,8 +122,8 @@ packaged boundary, using `compileOnly` dependencies so parent-provided API class
 into its JAR. Shared native operation descriptors use `agent-api`; host wiring maps their metadata
 to capability request descriptors without depending on agent client contracts.
 
-Its in-process backend is a contract fixture, not another production Minecraft client. Use a real
-backend for assertions about native protocol compatibility.
+Its in-process protocol library is a contract fixture, not another production Minecraft client. Use a
+real library for assertions about native protocol compatibility.
 
 Resolve fixture JARs through Gradle dependency configurations. Do not guess a sibling `build/libs` filename;
 that bypasses build dependencies and can pick a stale or plain artifact when a shaded one is needed.

@@ -4,7 +4,7 @@ description: Send process commands and wait for fresh output using a console che
 ---
 
 Use a process console when the behavior under test is exposed through a console command or log line.
-Take a checkpoint before the channelOperation so an earlier matching line cannot satisfy the wait.
+Take a checkpoint before the operation so an earlier matching line cannot satisfy the wait.
 
 ## Send a command and observe its output
 

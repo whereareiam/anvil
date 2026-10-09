@@ -50,7 +50,7 @@ Write the guide body here. Scriptorium displays the frontmatter title above it.
 
 Start with the outcome and prerequisites. Show file placement, dependencies, a complete example or
 explicitly scoped fragment, the invocation, and what success proves. Check public packages and
-symbols against source. Explain failure symptoms beside the channelOperation that can fail.
+symbols against source. Explain failure symptoms beside the operation that can fail.
 
 Use relative content links including the `.md` or `.mdx` extension. Reuse Scriptorium steps, tabs,
 callouts, and partials when they clarify a choice or avoid actual repetition. Shared MDX partials

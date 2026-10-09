@@ -31,7 +31,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests an external backend and capabilities calling extensions installed in a real Paper agent.
+ * Tests an external protocol library and capabilities calling extensions installed in a real Paper agent.
  */
 class ExternalExtensionSystemTest {
 	@TempDir
@@ -42,7 +42,7 @@ class ExternalExtensionSystemTest {
 		try (var fixture = new TestExtensionLoader(FixtureArtifacts.extension(), true)) {
 			SimulatedPlayer player;
 			Session session;
-			try (ScenarioEngine engine = AnvilLauncher.create(options().toBuilder().protocolId("fixture").build());
+			try (ScenarioEngine engine = AnvilLauncher.create(options().toBuilder().protocolLibrary("fixture").build());
 				 var context = engine.start(scenario(fixture.artifact()))) {
 				player = context.players().create("FixturePlayer");
 				assertEquals("FixturePlayer@1.21.11", probe(fixture, player, "label", new Class<?>[0]));

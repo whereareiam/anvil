@@ -1,6 +1,5 @@
 plugins {
 	`kotlin-dsl`
-	alias(libs.plugins.toolkit.architecture)
 	id("gradle-plugin")
 }
 
@@ -8,7 +7,6 @@ description = "Gradle adapters for Anvil platform providers"
 
 dependencies {
 	implementation(projects.anvilIntegration.integrationGradle.gradleBase)
-	testImplementation(gradleTestKit())
 }
 
 gradlePlugin {
@@ -38,9 +36,4 @@ gradlePlugin {
 			description = "Includes the BungeeCord platform provider and agent"
 		}
 	}
-}
-
-toolkitPublish {
-	name.set("pluginMaven")
-	artifactId.set("gradle-platforms")
 }

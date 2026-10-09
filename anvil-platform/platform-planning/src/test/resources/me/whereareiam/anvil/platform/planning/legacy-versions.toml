@@ -1,0 +1,10 @@
+# A server whose agent needs newer Java than the version's maximum.
+[agent]
+minimumJava = 17
+
+[[java]]
+since = "1.16.5"
+minimum = 11
+maximum = 16
+preferred = 11
+maximumBypassProperty = "Legacy.IgnoreJavaVersion"

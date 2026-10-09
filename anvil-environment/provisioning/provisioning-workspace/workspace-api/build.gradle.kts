@@ -1,11 +1,5 @@
 plugins {
-	alias(libs.plugins.toolkit.architecture)
-	alias(libs.plugins.toolkit.publish.maven)
-	id("unit")
-}
-
-architecture {
-	kind = api
+	id("api")
 }
 
 description = "Workspace preparation, snapshot publication, and lifetime contracts"

@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.environment.provisioning.java.installation;
 
+import me.whereareiam.anvil.api.exception.JavaVersionMismatchException;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.environment.provisioning.java.api.model.JavaInstallation;
@@ -15,7 +16,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-/** Inspects Java executables once and validates their typed identity. */
+/**
+ * Inspects Java executables once and validates their typed identity against a planned
+ * requirement, which always names an exact feature version.
+ */
 public final class JavaInstallationInspector {
 	private final Map<Path, JavaInstallation> installations = new ConcurrentHashMap<>();
 	private final Map<String, JavaDistributionDescriptor> distributions;
@@ -31,7 +35,7 @@ public final class JavaInstallationInspector {
 		String version = property(properties, "java.version");
 
 		return JavaInstallation.builder().executable(path)
-				.featureVersion(Runtime.Version.parse(version).feature()).version(version)
+				.featureVersion(feature(version, path)).version(version)
 				.runtimeVersion(property(properties, "java.runtime.version"))
 				.vendor(property(properties, "java.vendor"))
 				.virtualMachine(property(properties, "java.vm.name"))
@@ -45,21 +49,37 @@ public final class JavaInstallationInspector {
 		return properties.get(path);
 	}
 
-	public JavaInstallation require(@NotNull Path executable, @NotNull JavaRequirement requirement, int minimumVersion) {
+	public JavaInstallation require(@NotNull Path executable, @NotNull JavaRequirement requirement) {
 		JavaInstallation installation = installations.computeIfAbsent(executable.toAbsolutePath().normalize(), this::inspect);
-		validate(installation, requirement, minimumVersion);
+		validate(installation, requirement);
 		return installation;
 	}
 
-	public boolean matches(Path executable, JavaRequirement requirement, int minimumVersion) {
+	public boolean matches(Path executable, JavaRequirement requirement) {
 		if (!Files.isExecutable(executable)) return false;
 
 		try {
-			require(executable, requirement, minimumVersion);
+			require(executable, requirement);
 			return true;
 		} catch (ProvisioningException mismatch) {
 			return false;
 		}
+	}
+
+	/**
+	 * Returns the exact feature version a planned requirement names.
+	 *
+	 * @param requirement planned process requirement
+	 * @return required feature version
+	 * @throws ProvisioningException when planning left the feature version unset
+	 */
+	public int featureVersion(@NotNull JavaRequirement requirement) {
+		Integer feature = requirement.getFeatureVersion();
+		if (feature == null)
+			throw new ProvisioningException("Java requirement " + requirement + " has no feature version; platform "
+					+ "planning selects an exact LTS release before execution");
+
+		return feature;
 	}
 
 	private JavaInstallation inspect(Path executable) {
@@ -87,10 +107,11 @@ public final class JavaInstallationInspector {
 		}
 	}
 
-	public void validate(JavaInstallation installation, JavaRequirement requirement, int minimumVersion) {
-		if (installation.getFeatureVersion() < minimumVersion
-				|| requirement.getFeatureVersion() != null && installation.getFeatureVersion() != requirement.getFeatureVersion())
-			throw new ProvisioningException("Java " + installation.getVersion() + " does not meet " + requirement);
+	public void validate(JavaInstallation installation, JavaRequirement requirement) {
+		int feature = featureVersion(requirement);
+		if (installation.getFeatureVersion() != feature)
+			throw new JavaVersionMismatchException("Java at " + installation.getExecutable() + " is Java " + installation.getVersion()
+					+ ", but the process requires exactly Java " + feature);
 		if (requirement.getRelease() != null
 				&& !requirement.getRelease().equals(installation.getVersion())
 				&& !requirement.getRelease().equals(installation.getRuntimeVersion()))
@@ -104,6 +125,15 @@ public final class JavaInstallationInspector {
 		boolean matches = provider.matches(installation);
 
 		if (!matches) throw new ProvisioningException("Java distribution mismatch: requested " + distribution);
+	}
+
+	private int feature(String version, Path executable) {
+		try {
+			return Runtime.Version.parse(version).feature();
+		} catch (IllegalArgumentException unreadable) {
+			throw new ProvisioningException("Java at " + executable + " reports version '" + version
+					+ "', which Anvil cannot read; Anvil runs Java 11 or newer", unreadable);
+		}
 	}
 
 	private String property(String properties, String name) {

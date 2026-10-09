@@ -1,6 +1,5 @@
 plugins {
 	`kotlin-dsl`
-	alias(libs.plugins.toolkit.architecture)
 	id("gradle-plugin")
 }
 
@@ -8,8 +7,6 @@ description = "Gradle adapter for Anvil JUnit integration"
 
 dependencies {
 	api(projects.anvilIntegration.integrationGradle.gradleDsl)
-
-	testImplementation(gradleTestKit())
 }
 
 gradlePlugin {

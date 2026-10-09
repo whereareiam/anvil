@@ -11,14 +11,18 @@ import me.whereareiam.anvil.platform.api.type.ForwardingMode;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import java.util.regex.Pattern;
 
 /**
  * Supplies BungeeCord provisioning, configuration, and launch requirements.
+ * Its single Java row and its agent's minimum Java live in {@code bungeecord-versions.toml}; builds carry no
+ * release version.
  */
 public final class BungeeCordPlatformProvider implements PlatformProvider {
 	private static final Pattern READY = Pattern.compile("Listening on .+:[0-9]+");
+	private static final URL VERSION_DATA = BungeeCordPlatformProvider.class.getResource("bungeecord-versions.toml");
 	private final BungeeCordDistributionResolver distributions = new BungeeCordDistributionResolver();
 	private final BungeeCordConfiguration configuration = new BungeeCordConfiguration();
 
@@ -53,8 +57,8 @@ public final class BungeeCordPlatformProvider implements PlatformProvider {
 	}
 
 	@Override
-	public int minimumJavaVersion(@NotNull MinecraftProcess process) {
-		return 21;
+	public @NotNull URL versionData() {
+		return VERSION_DATA;
 	}
 
 	@Override

@@ -26,11 +26,11 @@ TestKit without starting Minecraft. Its location follows the owner of the behavi
 | Workspace policies and snapshots                        | `:anvil-environment:provisioning:provisioning-workspace:test` |
 | Process lifecycle and restarts                          | `:anvil-environment:execution:execution-managed:test`         |
 | Platform planning and forwarding                        | `:anvil-platform:platform-planning:test`                      |
-| Player registration and observations                    | `:anvil-protocol:test`                                        |
+| Player registration, library selection, and observations | `:anvil-protocol:test`                                       |
 | Agent clients, sessions, and observations                | `:anvil-agent:agent-client:test`                              |
 | Native agent dispatch and extension loading              | `:anvil-agent:agent-server:test`                              |
 | Capability discovery and composition                    | `:anvil-capability:test`                                      |
-| MCProtocol backend and worker contracts                 | `:anvil-protocol:protocol-mcprotocol:test`                    |
+| MCProtocolLib library, worker contracts and segments   | `:anvil-protocol:protocol-mcprotocol:mcprotocol-common:test` and `:anvil-protocol:protocol-mcprotocol:mcprotocol-client:<segment>:check` |
 | Gradle scenario tooling                                 | `:anvil-integration:integration-gradle:gradle-plugin:test`                        |
 | Curated plugin composition                              | `:anvil-integration:integration-gradle:gradle-capabilities:test`                   |
 | Root build discovery and fixture publication                  | `./gradlew help`                                    |
@@ -41,6 +41,7 @@ TestKit without starting Minecraft. Its location follows the owner of the behavi
 | IntelliJ native Gradle import | `:anvil-integration:integration-intellij:intellij-gradle:test` |
 | Installed plugin registration and composition | `:anvil-integration:integration-intellij:intellij:test` |
 | Gradle tooling producer                                  | `:anvil-integration:integration-gradle:gradle-tooling:test`                |
+| Build conventions: release data, segments, linkage, in-server release, and library layout | `:build-logic:check` and `:build-logic-settings:check`, which the root `check` runs |
 
 Use `--tests '*ClassName'` to select the regression class when appropriate. Tests should establish an
 observable contract or failure outcome, rather than repeat the implementation's steps.
@@ -52,16 +53,18 @@ fixture checking the public client and server API dependencies.
 
 ## Check cross-module discovery
 
-`anvil-testkit/tests/runtime` exercises provider selection and capability composition without
-Minecraft. It consumes actual runtime dependencies and the separately built external-extension JAR.
+`anvil-testkit/tests/runtime` exercises protocol library selection, platform providers, and capability
+composition without Minecraft. It consumes actual runtime dependencies and the separately built external-extension JAR.
 
 ```shell
 ./gradlew :anvil-testkit:tests:runtime:test
 ./gradlew :anvil-testkit:tests:runtime:test --tests '*ExternalProviderDiscoveryIntegrationTest'
 ```
 
-Use these tests for automatic and explicit provider selection, ambiguity, missing dependencies,
-external service discovery, and offline authentication defaults. They complement module-level tests
+Use these tests for ranked and explicit protocol library selection, ties between libraries, missing
+dependencies, external service discovery, and offline authentication defaults. The runtime suite also
+holds `JavaVersionTableDocumentationTest`, which compares the Java guide's table with the platform
+providers' version data. They complement module-level tests
 by testing the installed composition rather than manually assembled implementation objects.
 
 ## Check the IntelliJ package

@@ -1,23 +1,22 @@
 import me.whereareiam.toolkit.architecture.ArchitecturePublications
 
 plugins {
-    `java-platform`
-    alias(libs.plugins.toolkit.publish.maven)
+	`java-platform`
+	id("publication")
 }
 
 description = "Bill of materials for Anvil modules"
 
 toolkitPublish {
-    component.set("javaPlatform")
-    artifactId.set("bom")
-    pom {
-        name.set("Anvil BOM")
-        description.set(project.description)
-    }
+	component.set("javaPlatform")
+	artifactId.set("bom")
+	pom {
+		name.set("Anvil BOM")
+	}
 }
 
 javaPlatform {
-    allowDependencies()
+	allowDependencies()
 }
 
 val projectToolingModules = listOf(
@@ -26,19 +25,19 @@ val projectToolingModules = listOf(
 )
 
 gradle.projectsEvaluated {
-    dependencies {
-        constraints {
-            (ArchitecturePublications.publishedProjects(rootProject) + projectToolingModules.map(rootProject::project))
-                .distinctBy { it.path }
-                .forEach { module ->
-                api(project(module.path))
-                module.extensions.getByType<PublishingExtension>().publications
-                    .withType<MavenPublication>()
-                    .filter { it.artifacts.isEmpty() }
-                    .forEach { publication ->
-                        api("${publication.groupId}:${publication.artifactId}:${publication.version}")
-                    }
-            }
-        }
-    }
+	dependencies {
+		constraints {
+			(ArchitecturePublications.publishedProjects(rootProject) + projectToolingModules.map(rootProject::project))
+				.distinctBy { it.path }
+				.forEach { module ->
+					api(project(module.path))
+					module.extensions.getByType<PublishingExtension>().publications
+						.withType<MavenPublication>()
+						.filter { it.artifacts.isEmpty() }
+						.forEach { publication ->
+							api("${publication.groupId}:${publication.artifactId}:${publication.version}")
+						}
+				}
+		}
+	}
 }

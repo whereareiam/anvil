@@ -25,6 +25,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -40,6 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DefaultPlatformPlannerTest {
+	private static final URL VERSION_DATA = DefaultPlatformPlannerTest.class.getResource("test-versions.toml");
+
 	@TempDir
 	Path directory;
 
@@ -84,8 +87,8 @@ class DefaultPlatformPlannerTest {
 			}
 
 			@Override
-			public int minimumJavaVersion(@NotNull MinecraftProcess process) {
-				return 21;
+			public @NotNull URL versionData() {
+				return VERSION_DATA;
 			}
 		};
 		PlatformArtifactSource artifacts = new PlatformArtifactSource() {
@@ -138,7 +141,7 @@ class DefaultPlatformPlannerTest {
 	void resolvesJavaPrecedenceAndProcessTopologyBeforeExecution() {
 		var engineJava = JavaRequirement.builder().featureVersion(21).build();
 		var scenarioJava = JavaRequirement.builder().featureVersion(25).build();
-		var processJava = JavaRequirement.builder().featureVersion(26).build();
+		var processJava = JavaRequirement.builder().featureVersion(17).build();
 		var engineSource = JavaSource.home(directory.resolve("engine-java"));
 		var scenarioSource = JavaSource.home(directory.resolve("scenario-java"));
 		var processSource = JavaSource.home(directory.resolve("process-java"));
@@ -155,12 +158,12 @@ class DefaultPlatformPlannerTest {
 				.networkPolicy(NetworkPolicy.builder().backendNetworkExposure(NetworkExposure.PRIVATE).build()).build();
 
 		var enginePlan = planner.plan(scenario).getProcesses();
-		assertSame(engineJava, enginePlan.get("inherited").getJavaSelection().getRequirement());
+		assertEquals(engineJava, enginePlan.get("inherited").getJavaSelection().getRequirement());
 		assertSame(engineSource, enginePlan.get("inherited").getJavaSelection().getSource());
 		var scenarioPlan = planner.plan(scenario.toBuilder().javaSelection(JavaSelection.builder().requirement(scenarioJava).source(scenarioSource).build()).build()).getProcesses();
-		assertSame(scenarioJava, scenarioPlan.get("inherited").getJavaSelection().getRequirement());
+		assertEquals(scenarioJava, scenarioPlan.get("inherited").getJavaSelection().getRequirement());
 		assertSame(scenarioSource, scenarioPlan.get("inherited").getJavaSelection().getSource());
-		assertSame(processJava, scenarioPlan.get("overridden").getJavaSelection().getRequirement());
+		assertEquals(processJava, scenarioPlan.get("overridden").getJavaSelection().getRequirement());
 		assertSame(processSource, scenarioPlan.get("overridden").getJavaSelection().getSource());
 		assertTrue(scenarioPlan.get("proxy").isProxy());
 		assertTrue(scenarioPlan.get("proxy").isPublishGame());
@@ -191,7 +194,7 @@ class DefaultPlatformPlannerTest {
 
 		var inherited = planner.plan(scenario).getProcesses().get("server").getJavaSelection();
 		assertNotNull(inherited.getRequirement());
-		assertNull(inherited.getRequirement().getFeatureVersion());
+		assertEquals(21, inherited.getRequirement().getFeatureVersion(), "Planning selects the platform's preferred LTS");
 		assertSame(engineSource, inherited.getSource());
 
 		var scenarioRequirement = JavaRequirement.builder().featureVersion(25).build();
@@ -202,7 +205,7 @@ class DefaultPlatformPlannerTest {
 				.server(process.toBuilder().javaSelection(JavaSelection.builder().source(processSource).build()).build())
 				.build();
 		var effective = planner.plan(configured).getProcesses().get("server").getJavaSelection();
-		assertSame(scenarioRequirement, effective.getRequirement());
+		assertEquals(scenarioRequirement, effective.getRequirement());
 		assertSame(processSource, effective.getSource());
 		assertNull(options.getJavaSelection().getRequirement());
 	}
@@ -229,7 +232,7 @@ class DefaultPlatformPlannerTest {
 			public @NotNull Pattern readinessPattern() { return Pattern.compile("READY"); }
 
 			@Override
-			public int minimumJavaVersion(@NotNull MinecraftProcess process) { return 21; }
+			public @NotNull URL versionData() { return VERSION_DATA; }
 		};
 		PlatformArtifactSource artifacts = new PlatformArtifactSource() {
 			@Override

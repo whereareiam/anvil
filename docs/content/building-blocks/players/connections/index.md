@@ -69,6 +69,11 @@ Use `alice.clientVersion()` to inspect the resolved version. Consult
 [versions and compatibility](../../environments/platforms/versions/index.md) when choosing
 a distribution or diagnosing a mismatch.
 
+The player speaks that version through one protocol library. `PlayerOptions.protocolLibrary(...)`
+selects it for one player, overriding `AnvilScenario.protocolLibrary(...)` and the engine's
+`protocolLibrary`. Without a declaration, Anvil uses the installed library with the strongest support
+for the version and refuses a tie.
+
 ## Use an online account deliberately
 
 Offline authentication is the default. An online player requires a configured private authentication

@@ -45,7 +45,7 @@ dependencies {
 
 anvil {
 	acceptEula()
-	engine.protocol("mcprotocol")
+	engine.protocolLibrary("mcprotocol")
 	artifact("plugin-under-test", tasks.named("jar"))
 }
 ```
@@ -64,7 +64,7 @@ manual inspection; it does not start Minecraft.
 
 | Declaration member | Purpose |
 |---|---|
-| `engine { ... }` | Configure execution provider, protocol, cache/work directories, timeouts, parallelism, and other engine options |
+| `engine { ... }` | Configure execution provider, protocol library, cache/work directories, timeouts, parallelism, and other engine options |
 | `acceptEula()` | Record EULA acceptance for managed servers |
 | `artifact(name, notation)` | Register one file or task output for scenario workspaces |
 
@@ -74,7 +74,7 @@ when their names should describe the behavior being tested.
 
 Artifact registration also supplies `anvil.artifact.<name>` to the scenario JVM. Use [engine
 property names](../../../building-blocks/environments/configuration/engine/index.md) for engine
-options. Keep authentication credentials in the provider's private account store, not in exported
+options. Keep authentication credentials in the protocol library's private account store, not in exported
 files.
 
 ## Prepare a launch without starting it

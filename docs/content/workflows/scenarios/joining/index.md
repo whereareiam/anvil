@@ -28,7 +28,7 @@ set `.onlineMode(true)` on the direct server or entry proxy, and sign into your 
 normally. Let Anvil configure [forwarded backends](../../../building-blocks/environments/platforms/proxies/forwarding/index.md)
 through the declared topology.
 
-The Anvil account manager configures a protocol provider's stored account for simulated players. It
+The Anvil account manager configures a protocol library's stored account for simulated players. It
 is not a login step for the Minecraft client you operate yourself. If a setup hook also creates simulated players,
 give them distinct names so they do not compete with your client for the same player identity.
 

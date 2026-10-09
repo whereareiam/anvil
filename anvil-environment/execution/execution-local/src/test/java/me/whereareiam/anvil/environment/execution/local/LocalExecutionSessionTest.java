@@ -69,7 +69,7 @@ class LocalExecutionSessionTest {
 				.networkPolicy(NetworkPolicy.builder().networkServerAccess(NetworkServerAccess.PROXY_ONLY)
 						.backendNetworkExposure(NetworkExposure.PRIVATE).build()).build();
 		try (ExecutionSession session = new LocalExecutionProvider().open(context)) {
-			assertThrows(ProvisioningException.class, () -> session.prepare(request("server", JavaRequirement.builder().build(), null)));
+			assertThrows(ProvisioningException.class, () -> session.prepare(request("server", JavaRequirement.builder().featureVersion(21).build(), null)));
 		}
 	}
 
@@ -79,7 +79,7 @@ class LocalExecutionSessionTest {
 				.networkPolicy(NetworkPolicy.builder().bindAddress("127.0.0.2").build())
 				.build();
 		try (ExecutionSession session = new LocalExecutionProvider().open(context)) {
-			var target = session.prepare(request("server", JavaRequirement.builder().build(), null));
+			var target = session.prepare(request("server", JavaRequirement.builder().featureVersion(21).build(), null));
 			assertEquals("127.0.0.2", target.address().getHostString());
 			assertTrue(target.agentAddress().getAddress().isLoopbackAddress());
 		}
@@ -92,6 +92,6 @@ class LocalExecutionSessionTest {
 	}
 
 	private ProcessRequest request(String name, JavaRequirement requirement, JavaSource source) {
-		return ProcessRequest.builder().name(name).workspace(directory.resolve(name)).javaSelection(JavaSelection.builder().requirement(requirement).source(source).build()).minimumJavaVersion(21).build();
+		return ProcessRequest.builder().name(name).workspace(directory.resolve(name)).javaSelection(JavaSelection.builder().requirement(requirement).source(source).build()).build();
 	}
 }

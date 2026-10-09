@@ -30,11 +30,13 @@ public final class IdentityHandler implements AgentOperationHandler<AgentIdentit
 	}
 
 	private @NotNull AgentLocationPayload toPayload(@NotNull AgentLocation location) {
-		if (location instanceof ServerLocation server)
+		if (location instanceof ServerLocation)
 			return AgentLocationPayload.builder()
 					.type(AgentLocationType.SERVER)
-					.server(server.getServer())
+					.server(((ServerLocation) location).getServer())
 					.build();
+		if (!(location instanceof ProxyLocation))
+			throw new IllegalArgumentException("Unsupported agent location: " + location.getClass().getName());
 
 		ProxyLocation proxy = (ProxyLocation) location;
 		return AgentLocationPayload.builder()

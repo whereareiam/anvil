@@ -1,6 +1,5 @@
 plugins {
-	alias(libs.plugins.toolkit.architecture)
-	id("unit")
+	id("jvm")
 }
 
 description = "HTTP artifact acquisition and verification for Anvil"

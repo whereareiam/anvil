@@ -1,0 +1,5 @@
+# A server that installs an agent but whose data declares no agent Java.
+[[java]]
+since = "1.16.5"
+minimum = 17
+preferred = 17

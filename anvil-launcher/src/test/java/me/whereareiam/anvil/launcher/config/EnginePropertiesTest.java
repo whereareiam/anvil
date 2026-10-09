@@ -3,6 +3,7 @@ package me.whereareiam.anvil.launcher.config;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.java.JavaArchive;
 import me.whereareiam.anvil.api.model.java.local.LocalJavaExecutable;
+import me.whereareiam.anvil.api.type.SupportPolicy;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,8 +33,31 @@ final class EnginePropertiesTest {
 	}
 
 	@Test
+	void decodesProtocolLibrarySupportPolicyAndAdditionalReleases() {
+		Properties properties = new Properties();
+		properties.setProperty(EngineProperties.PROTOCOL_LIBRARY_PROPERTY, "mcprotocol");
+		properties.setProperty(EngineProperties.SUPPORT_POLICY_PROPERTY, "Strict");
+		properties.setProperty(EngineProperties.protocolReleasesProperty("mcprotocol"), "releases.toml");
+
+		EngineOptions options = EngineProperties.from(properties);
+
+		assertEquals("mcprotocol", options.getProtocolLibrary());
+		assertEquals(SupportPolicy.STRICT, options.getSupportPolicy());
+		assertEquals(Map.of("mcprotocol", Path.of("releases.toml")), options.getProtocolReleases());
+	}
+
+	@Test
+	void defaultsToLenientSupportAndRejectsUnknownPolicies() {
+		assertEquals(SupportPolicy.LENIENT, EngineProperties.from(new Properties()).getSupportPolicy());
+
+		Properties properties = new Properties();
+		properties.setProperty(EngineProperties.SUPPORT_POLICY_PROPERTY, "relaxed");
+		assertThrows(IllegalArgumentException.class, () -> EngineProperties.from(properties));
+	}
+
+	@Test
 	void mapsRuntimePropertiesThroughOneSharedContract() {
-		setProperty(EngineProperties.PROTOCOL_PROPERTY, "mcprotocol");
+		setProperty(EngineProperties.PROTOCOL_LIBRARY_PROPERTY, "mcprotocol");
 		setProperty(EngineProperties.EULA_ACCEPTED_PROPERTY, "true");
 		setProperty(EngineProperties.CACHE_DIRECTORY_PROPERTY, "cache");
 		setProperty(EngineProperties.WORK_DIRECTORY_PROPERTY, "work");
@@ -42,7 +66,7 @@ final class EnginePropertiesTest {
 
 		EngineOptions options = EngineProperties.fromSystemProperties();
 
-		assertEquals("mcprotocol", options.getProtocolId());
+		assertEquals("mcprotocol", options.getProtocolLibrary());
 		assertTrue(options.isEulaAccepted());
 		assertEquals(Path.of("cache"), options.getCacheDirectory());
 		assertEquals(Path.of("work"), options.getWorkDirectory());

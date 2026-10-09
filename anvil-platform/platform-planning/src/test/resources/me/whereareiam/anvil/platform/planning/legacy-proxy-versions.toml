@@ -1,0 +1,6 @@
+# An unversioned proxy without an agent whose only row has a maximum and a bypass.
+[[java]]
+minimum = 11
+maximum = 16
+preferred = 11
+maximumBypassProperty = "Proxy.IgnoreJavaVersion"

@@ -1,11 +1,9 @@
 plugins {
-    alias(libs.plugins.toolkit.architecture)
-    alias(libs.plugins.toolkit.publish.maven)
-    id("unit")
+	id("api")
 }
 
 description = "Shared capability composition, player lifecycle, and typed request contracts"
 
 dependencies {
-    api(projects.anvilApi)
+	api(projects.anvilApi)
 }

@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AnvilLauncherTest {
 	@Test
 	void createsAnApiEngineWithoutStartingAScenarioOrMutatingOptions() {
-		EngineOptions options = EngineOptions.builder().protocolId("mcprotocol").build();
+		EngineOptions options = EngineOptions.builder().protocolLibrary("mcprotocol").build();
 		AnvilScenario invalid = AnvilScenario.builder().name("empty").entrypoint("missing").build();
 		ScenarioEngine engine = AnvilLauncher.create(options);
 		try (engine) {
@@ -31,7 +31,7 @@ class AnvilLauncherTest {
 	void assemblesServicesBeforeInstallingCallerExtensions() {
 		List<String> installed = new ArrayList<>();
 		var builder = AnvilLauncher.builder()
-				.options(EngineOptions.builder().protocolId("missing-test-provider").build())
+				.options(EngineOptions.builder().protocolLibrary("missing-test-provider").build())
 				.extension(registration -> installed.add("installed"));
 
 		assertThrows(IllegalArgumentException.class, builder::build);
@@ -45,7 +45,7 @@ class AnvilLauncherTest {
 		var installation = new IllegalStateException("Caller extension failed");
 		var cleanup = new IllegalArgumentException("Caller resource cleanup failed");
 		var builder = AnvilLauncher.builder()
-				.options(EngineOptions.builder().protocolId("mcprotocol").build())
+				.options(EngineOptions.builder().protocolLibrary("mcprotocol").build())
 				.extension(registration -> registration.own(() -> closed.add("first")))
 				.extension(registration -> {
 					registration.own(() -> { closed.add("second"); throw cleanup; });

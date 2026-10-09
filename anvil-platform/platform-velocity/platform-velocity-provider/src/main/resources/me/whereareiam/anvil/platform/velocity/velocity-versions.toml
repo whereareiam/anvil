@@ -1,0 +1,35 @@
+# Velocity version data exposed by VelocityPlatformProvider.versionData() and read by platform planning.
+# Velocity is keyed by its own release (3.5.1), not by Minecraft version; a snapshot qualifier
+# such as 3.5.0-SNAPSHOT is ignored. A local or artifact JAR carries no release, so it uses the
+# newest row.
+#
+# known:    Velocity releases Anvil's data supports; Anvil assesses them as COMPATIBLE.
+# agent:    the oldest Java the Velocity agent runs on. It compiles against the current Velocity API
+#           for Java 21, so planning raises Velocity 3.3.x and 3.4.x (which run on Java 17) to Java 21,
+#           and the provider's checkAgentJava build task fails when the agent's classes need newer Java.
+# verified: Velocity release -> Java feature versions Anvil's live matrix (CompatibilityScenarioFactory)
+#           runs (VERIFIED); every other supported release is listed in `known` only.
+# java:     each row applies from `since` until the next row starts.
+
+known = ["3.3.0", "3.4.0", "3.5.0", "3.5.1"]
+
+[agent]
+minimumJava = 21
+
+[verified]
+"3.5.1" = [21]
+
+[[java]]
+since = "3.3.0"
+minimum = 17
+preferred = 17
+
+[[java]]
+since = "3.5.0"
+minimum = 21
+preferred = 21
+
+[[java]]
+since = "4.0.0"
+minimum = 25
+preferred = 25

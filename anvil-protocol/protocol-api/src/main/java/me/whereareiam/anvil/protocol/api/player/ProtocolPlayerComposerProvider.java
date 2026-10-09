@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
  * Service-provider contract for the public player composition layer.
  */
 public interface ProtocolPlayerComposerProvider {
-	/*
+	/**
 	 * Returns the stable composer identifier.
 	 *
 	 * @return composer identifier
@@ -14,10 +14,10 @@ public interface ProtocolPlayerComposerProvider {
 	@NotNull String id();
 
 	/**
-	 * Creates a composer compatible with the selected protocol backend.
+	 * Creates a composer for players of every installed protocol library. The composer selects
+	 * library-specific behavior for each player from {@link ProtocolPlayer#libraryId()}.
 	 *
-	 * @param protocolId resolved protocol-provider ID
 	 * @return player composer
 	 */
-	@NotNull ProtocolPlayerComposer create(@NotNull String protocolId);
+	@NotNull ProtocolPlayerComposer create();
 }

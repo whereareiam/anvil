@@ -5,7 +5,7 @@ description: Configure repositories, Gradle plugins, protocol support, and the l
 
 Apply Anvil to the Gradle project that will contain your scenarios and journeys. This can be an
 existing plugin project or a dedicated Java test project. The setup below supplies JUnit, the built-in
-capabilities, Paper support, and the MCProtocol backend used by the [first test](../first-test/index.mdx).
+capabilities, Paper support, and the MCProtocolLib protocol library used by the [first test](../first-test/index.mdx).
 
 ## Configure repositories
 
@@ -54,13 +54,13 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 dependencies {
-	add("anvilRuntimeOnly", "me.whereareiam.anvil:protocol-mcprotocol:$anvilVersion")
+	add("anvilRuntimeOnly", "me.whereareiam.anvil:protocol-mcprotocol:0.0.1")
 }
 
 anvil {
 	acceptEula()
 	engine {
-		protocol("mcprotocol")
+		protocolLibrary("mcprotocol")
 	}
 }
 ```
@@ -69,7 +69,7 @@ Calling `acceptEula()` records your acceptance of the [Minecraft EULA](https://w
 Review it before using this configuration.
 
 The standard Anvil plugin adds foreground scenarios and IDE discovery. The JUnit plugin adds
-automated tests, and the explicitly selected default capability unit supplies the built-in capabilities. The Paper unit adds Paper provisioning and its platform agent. Add the protocol provider to `anvilRuntimeOnly` when using simulated players. Applying Anvil does not package your plugin into a server automatically;
+automated tests, and the explicitly selected default capability unit supplies the built-in capabilities. The Paper unit adds Paper provisioning and its platform agent. Add a protocol library to `anvilRuntimeOnly` when using simulated players; `protocolLibrary("mcprotocol")` makes MCProtocolLib the default for every player. See [Versions and compatibility](../../building-blocks/environments/platforms/versions/index.md) for the Minecraft versions it supports. Applying Anvil does not package your plugin into a server automatically;
 [register its built JAR as an asset](../../building-blocks/environments/workspaces/assets/index.md) when you are ready
 to test its behavior.
 
@@ -92,5 +92,5 @@ without starting a server. Then follow the [first test](../first-test/index.mdx)
 Use `me.whereareiam.anvil.junit` for the automated JUnit workflow or
 `me.whereareiam.anvil` for foreground environments. For either entry point,
 choose [capability units](../../building-blocks/players/capabilities/index.md) explicitly and keep the
-required platform and protocol providers installed. The [Gradle integration](../../integrations/gradle/index.md)
+required platform providers and protocol library installed. The [Gradle integration](../../integrations/gradle/index.md)
 lists the plugin and dependency choices.

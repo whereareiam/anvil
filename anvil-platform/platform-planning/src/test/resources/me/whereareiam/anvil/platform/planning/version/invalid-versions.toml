@@ -1,0 +1,4 @@
+[[java]]
+since = "1.16.5"
+minimum = "eleven"
+preferred = 11

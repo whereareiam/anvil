@@ -112,7 +112,6 @@ public final class ProcessLauncher {
 				.name(name)
 				.workspace(layout.processDirectory(name))
 				.javaSelection(plan.getJavaSelection())
-				.minimumJavaVersion(plan.getMinimumJavaVersion())
 				.agent(plan.isAgent())
 				.publishGame(plan.isPublishGame())
 				.build();

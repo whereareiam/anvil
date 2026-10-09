@@ -14,7 +14,7 @@ to retain:
 ## Configure the cache location
 
 Both use the shared cache root, normally `~/.anvil`. Choose another location through
-`anvil.cacheDirectory` in Gradle or `EngineOptions.cacheDirectory` when embedding. See
+`anvil { engine { cacheDirectory } }` in Gradle or `EngineOptions.cacheDirectory` when embedding. See
 [Directories](../../configuration/directories/index.md) for the Gradle setup. Keep the same root when
 preparing an environment and later running it offline.
 

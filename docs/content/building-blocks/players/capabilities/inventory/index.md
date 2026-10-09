@@ -54,8 +54,9 @@ exercise. Then wait for the plugin's result, such as a message or changed invent
 An open-screen packet can produce a nonzero container ID before its content arrives. Waiting for
 the expected item prevents a click against that initial empty snapshot.
 
-Click modes include `LEFT`, `RIGHT`, `SHIFT_LEFT`, `HOTBAR_SWAP`, `DROP_ONE`, and `DROP_STACK`. The third
-argument specifies a hotbar button for `HOTBAR_SWAP`; use zero for the other modes.
+Click modes include `LEFT`, `RIGHT`, `SHIFT_LEFT`, `HOTBAR_SWAP`, `DROP_ONE`, and `DROP_STACK`. For
+`HOTBAR_SWAP`, the third argument is the hotbar slot `0` to `8`, or `40` to swap with the off hand; use zero
+for the other modes.
 
 ## Interpret snapshots
 
@@ -63,3 +64,12 @@ argument specifies a hotbar button for `HOTBAR_SWAP`; use zero for the other mod
 client-observed data, not a full server inventory API. The adapter uses its latest received container
 state when sending a click, so wait for the intended container before acting. Crafting automation is
 outside this capability's scope.
+
+The snapshot follows the container the server last opened or filled. Slot updates for other containers
+and for the cursor do not change it. A change the server addresses to the player's own inventory by
+inventory index instead of a container slot updates the snapshot only while the player's inventory
+container (ID `0`) is the observed one, at that index's slot in the container.
+
+## Behavior across Minecraft versions
+
+Inventory works on every Minecraft version the MCProtocol library supports.

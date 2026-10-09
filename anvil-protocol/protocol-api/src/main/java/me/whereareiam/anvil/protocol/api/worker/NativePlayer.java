@@ -1,19 +1,20 @@
 package me.whereareiam.anvil.protocol.api.worker;
 
 import me.whereareiam.anvil.protocol.api.channel.ProtocolSubscription;
+import me.whereareiam.anvil.protocol.api.exception.NativeAdapterUnavailableException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 import java.util.function.Function;
 
 /**
- * Player lifecycle and typed access to an external native SDK context.
- * Native contexts represent individual connection generations; callers must not retain
+ * Player lifecycle and typed access to the native session of an external protocol library.
+ * Native sessions represent individual connection generations; callers must not retain
  * them across reconnects. Capability bindings, in contrast, live until player destruction.
  *
- * @param <B> actual external SDK context type
+ * @param <S> native session type of the external library
  */
-public interface NativePlayer<B> {
+public interface NativePlayer<S> {
 	/**
 	 * Returns the authenticated player name.
 	 * @return player name
@@ -37,19 +38,19 @@ public interface NativePlayer<B> {
 	 */
 	void rejoin();
 	/**
-	 * Returns the current connected SDK context.
+	 * Returns the current connected native session.
 	 * @return native session
 	 * @throws IllegalStateException when the player is not connected
 	 */
-	@NotNull B backend();
+	@NotNull S nativeSession();
 	/**
 	 * Tests whether a callback still belongs to the current native connection generation.
 	 * Listeners use this check to ignore callbacks already in flight during a reconnect.
 	 *
-	 * @param backend native context captured when the listener was installed
-	 * @return whether the context is still current
+	 * @param nativeSession native session captured when the listener was installed
+	 * @return whether the session is still current
 	 */
-	boolean isCurrentBackend(@NotNull B backend);
+	boolean isCurrentNativeSession(@NotNull S nativeSession);
 
 	/**
 	 * Binds native listeners before each session starts connecting. Previous listener bindings
@@ -59,7 +60,7 @@ public interface NativePlayer<B> {
 	 * @param listener factory returning cleanup for the supplied native generation
 	 * @return owned generation-listener registration
 	 */
-	@NotNull ProtocolSubscription bindBackend(@NotNull Function<B, ProtocolSubscription> listener);
+	@NotNull ProtocolSubscription bindNativeSession(@NotNull Function<S, ProtocolSubscription> listener);
 	/**
 	 * Returns the latest protocol view yaw, including server corrections.
 	 * @return yaw in degrees
@@ -82,4 +83,18 @@ public interface NativePlayer<B> {
 	 * @param payload encoded event bytes
 	 */
 	void emit(@NotNull String event, byte @NotNull [] payload);
+
+	/**
+	 * Returns the adapter of a library-neutral port for the worker's loaded release: the one implementation that
+	 * the segment selected for the release provides. Adapters are stateless, so a worker may hand the same instance
+	 * to every player.
+	 *
+	 * @param port port interface the adapter implements
+	 * @param <P> port type
+	 * @return the adapter
+	 * @throws NativeAdapterUnavailableException when no segment selected for the release provides the port, the
+	 * providing segment failed its linkage self-check against the loaded release, or more than one adapter is
+	 * provided; its message names the port and, where known, the segment and the member that does not link
+	 */
+	<P> @NotNull P adapter(@NotNull Class<P> port);
 }

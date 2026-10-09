@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Set;
 
 /**
- * Translates the portable Movement API into this backend's own payload representation.
+ * Translates the portable Movement API into this library's own payload representation.
  */
 public final class FixtureMovementProvider implements ProtocolPlayerCapabilityProvider<Movement> {
 	@Override
@@ -23,7 +23,7 @@ public final class FixtureMovementProvider implements ProtocolPlayerCapabilityPr
 	}
 
 	@Override
-	public @NotNull Set<String> supportedProtocolIds() {
+	public @NotNull Set<String> supportedLibraries() {
 		return Set.of("fixture");
 	}
 

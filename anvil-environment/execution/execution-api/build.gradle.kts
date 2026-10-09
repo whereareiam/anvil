@@ -1,8 +1,8 @@
 plugins {
-	alias(libs.plugins.toolkit.architecture)
-	alias(libs.plugins.toolkit.publish.maven)
-	id("unit")
+	id("api")
 }
+
+description = "Execution plans, providers, endpoints, and process lifetime contracts for Anvil environments"
 
 dependencies {
 	api(projects.anvilApi)

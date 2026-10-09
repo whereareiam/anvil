@@ -8,7 +8,6 @@ import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.model.workspace.AssetSource;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceAsset;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
-import me.whereareiam.anvil.api.scenario.AnvilScenarioDefinition;
 import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.testkit.support.FixtureArtifacts;
 
@@ -17,13 +16,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Internal scenario factory used to verify every native platform and protocol combination
- * supported by Anvil.
+ * Internal scenario factory defining Anvil's live matrix: every platform, Minecraft version and Java
+ * combination these scenarios run is what the platforms' and protocol libraries' version data call
+ * verified. Every Minecraft version runs direct on Paper, one release key of each MCProtocolLib release, and
+ * player capability tests run their full journey on those servers; current versions also run on Spigot and behind
+ * both proxies.
  */
 public final class CompatibilityScenarioFactory {
 	private static final String VELOCITY_VERSION = "3.5.1";
 	private static final String VELOCITY_BUILD = "615";
 	private static final String BUNGEE_BUILD = "2085";
+	private static final List<PaperBuild> DIRECT_PAPER = List.of(
+			new PaperBuild("1.18.2", "388")
+	);
 
 	/**
 	 * Returns pinned direct and routed environments used by compatibility tests.
@@ -31,13 +36,26 @@ public final class CompatibilityScenarioFactory {
 	 * @return all supported compatibility scenarios
 	 */
 	public static List<AnvilScenario> scenarios() {
-		List<AnvilScenario> scenarios = new ArrayList<>();
+		List<AnvilScenario> scenarios = new ArrayList<>(paperReleaseScenarios());
 		registerVersion("1.21.11", "132",
-				"6481503fca2838776b3da5a3f1c030e1328abc2fd77d9ea1bb4814889b540dcd",
-				new Paper12111SystemScenario(), scenarios);
+				"6481503fca2838776b3da5a3f1c030e1328abc2fd77d9ea1bb4814889b540dcd", scenarios);
 		registerVersion("26.1.2", "74",
-				"95f871fd6d055ba10b5a058768ddad43b0be0286480c8eba435c835c95d5f19c",
-				new Paper2612SystemScenario(), scenarios);
+				"95f871fd6d055ba10b5a058768ddad43b0be0286480c8eba435c835c95d5f19c", scenarios);
+		return List.copyOf(scenarios);
+	}
+
+	/**
+	 * Returns the direct Paper scenario of each Minecraft version in the matrix, oldest first, on the Java that
+	 * planning selects by default. Player capability tests run their full journey on these scenarios, so that the
+	 * capability code of every protocol library release meets a real server.
+	 *
+	 * @return one direct Paper scenario per Minecraft version of the matrix
+	 */
+	public static List<AnvilScenario> paperReleaseScenarios() {
+		List<AnvilScenario> scenarios = new ArrayList<>();
+		DIRECT_PAPER.forEach(paper -> register(scenarios, paperScenario(paper.version(), paper.build())));
+		register(scenarios, new Paper12111SystemScenario().define());
+		register(scenarios, new Paper2612SystemScenario().define());
 		return List.copyOf(scenarios);
 	}
 
@@ -45,12 +63,10 @@ public final class CompatibilityScenarioFactory {
 			String version,
 			String paperBuild,
 			String spigotSha256,
-			AnvilScenarioDefinition paperScenario,
 			List<AnvilScenario> matrix
 	) {
 		Distribution paper = Distribution.remote(version, paperBuild);
 		Distribution spigot = Distribution.pinned(version, spigotSha256);
-		register(matrix, paperScenario.define());
 		register(matrix, directScenario(
 				"spigot-" + version,
 				Platforms.SPIGOT,
@@ -192,6 +208,14 @@ public final class CompatibilityScenarioFactory {
 					.build();
 		};
 	}
+
+	/**
+	 * Pinned Paper build of one Minecraft version.
+	 *
+	 * @param version Minecraft version
+	 * @param build Paper build number
+	 */
+	private record PaperBuild(String version, String build) { }
 
 	private static String platformLabel(String platform) {
 		return switch (platform) {

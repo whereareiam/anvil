@@ -21,10 +21,64 @@ Implement `me.whereareiam.anvil.platform.api.PlatformProvider` and register its 
 | `resolve(process, context)` | Verified executable JAR and a useful description |
 | `configure(process, context)` | Platform configuration using the allocated runtime values |
 | `readinessPattern()` | Log expression that marks the process ready for players |
-| `minimumJavaVersion(process)` | Minimum Java feature version for this distribution |
+| `versionData()` | Location of the provider's `<platform>-versions.toml` resource |
 
 Override `jvmArguments`, `programArguments`, `stopCommand`, and `defaultCaches` where the defaults do not fit your
 platform. Add `forwardingModes` and `platformAgent` when your platform supports those features.
+
+## Declare Java and version data
+
+Keep version data in a `<platform>-versions.toml` resource beside the provider class and return its
+location from `versionData()`. The provider only exposes the resource; Anvil's platform planning reads
+and validates it once per engine, before anything is downloaded.
+
+```java
+@Override
+public @NotNull URL versionData() {
+	return YourPlatformProvider.class.getResource("your-versions.toml");
+}
+```
+
+```toml
+# Versions your data supports; Anvil assesses them as COMPATIBLE.
+known = ["1.20.4", "1.20.6", "1.21.11"]
+
+# Oldest Java your platform agent runs on. Required when platformAgent() installs an agent.
+[agent]
+minimumJava = 17
+
+# Version -> Java feature versions you have verified (VERIFIED).
+[verified]
+"1.21.11" = [21]
+
+# Each row applies from `since` until the next row starts.
+[[java]]
+since = "1.20"
+minimum = 17
+maximum = 20
+preferred = 17
+
+[[java]]
+since = "1.20.5"
+minimum = 21
+preferred = 21
+```
+
+`preferred` must be an LTS release inside `[minimum, maximum]`; planning uses it when no declaration
+requests a version. `maximum` is optional and models the platform's own refusal of newer Java. Add
+`maximumBypassProperty` only when the platform offers a system property that lifts that refusal;
+planning then adds `-D<property>=true` for an explicitly requested newer LTS. Without it, planning
+refuses such a request. Only the first row may omit `since`; it then applies from the oldest version,
+which suits a platform whose builds carry no version. Unknown keys are refused.
+
+`[agent] minimumJava` raises every row: planning never selects older Java for the platform, raises a
+preferred version below it to the next LTS release, and refuses a version whose maximum leaves no LTS
+release for the agent unless the declaration explicitly requests Java above the maximum through a
+bypass. Verified Java must not be older than the agent's minimum.
+
+`platformVersion(process)` keys the data: by default a server's native Minecraft version and no
+version for proxies. Override it when your proxy's data is keyed by its own release; a process without
+a version uses the newest row and is assessed by its Java range only.
 
 `jvmArguments(process, consoleColors)` supplies platform launch defaults before the declaration's explicit
 JVM arguments. Use `consoleColors` to request ANSI output through your platform's supported

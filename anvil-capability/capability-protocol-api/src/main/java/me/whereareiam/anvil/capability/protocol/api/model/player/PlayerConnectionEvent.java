@@ -11,11 +11,11 @@ import org.jetbrains.annotations.Nullable;
 @Value
 public class PlayerConnectionEvent {
 	/**
-	 * Connection state events emitted by the backend after login or disconnect.
+	 * Connection state events emitted by the protocol library after login or disconnect.
 	 */
 	public static final @NotNull EventDescriptor<PlayerConnectionEvent> CHANGED = new EventDescriptor<>("player.connection", PlayerConnectionEvent.class);
 	/**
-	 * Permanent destruction event emitted after backend resources are released.
+	 * Permanent destruction event emitted after the protocol library releases its resources.
 	 */
 	public static final @NotNull EventDescriptor<Void> DESTROYED = new EventDescriptor<>("player.destroyed", Void.class);
 

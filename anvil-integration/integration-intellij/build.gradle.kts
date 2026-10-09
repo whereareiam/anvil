@@ -1,5 +1,4 @@
 plugins {
-	base
 	alias(libs.plugins.toolkit.architecture)
 }
 

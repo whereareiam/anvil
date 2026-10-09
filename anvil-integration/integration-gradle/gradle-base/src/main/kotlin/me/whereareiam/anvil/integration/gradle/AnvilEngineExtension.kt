@@ -14,7 +14,9 @@ open class AnvilEngineExtension(
     project: Project,
 ) {
     val executionProviderId: Property<String> = objects.property(String::class.java)
-    val protocolId: Property<String> = objects.property(String::class.java)
+    val protocolLibrary: Property<String> = objects.property(String::class.java)
+    val supportPolicy: Property<String> = objects.property(String::class.java)
+    val protocolReleases: MapProperty<String, File> = objects.mapProperty(String::class.java, File::class.java)
     val cacheDirectory: DirectoryProperty = objects.directoryProperty().convention(
         project.layout.dir(project.providers.systemProperty("user.home").map { File(it, ".anvil") })
     )
@@ -34,9 +36,21 @@ open class AnvilEngineExtension(
     val stopTimeout: Property<Duration> = objects.property(Duration::class.java)
     val properties: MapProperty<String, String> = objects.mapProperty(String::class.java, String::class.java)
 
-    /** Selects a protocol provider fallback using the concise Gradle DSL form. */
-    fun protocol(id: String) {
-        require(id.isNotBlank()) { "Anvil protocol ID must not be blank" }
-        protocolId.set(id)
+    /** Selects the default protocol library; scenarios and players may still choose another one. */
+    fun protocolLibrary(id: String) {
+        require(id.isNotBlank()) { "Anvil protocol library must not be blank" }
+        protocolLibrary.set(id)
+    }
+
+    /** Selects the default support policy: `lenient` runs untested versions with a warning, `strict` refuses them. */
+    fun supportPolicy(policy: String) {
+        require(policy.lowercase() in setOf("lenient", "strict")) { "Anvil support policy must be lenient or strict" }
+        supportPolicy.set(policy.lowercase())
+    }
+
+    /** Adds release data for a protocol library, for example a Minecraft version newer than this Anvil release. */
+    fun protocolReleases(library: String, file: File) {
+        require(library.isNotBlank()) { "Anvil protocol library must not be blank" }
+        protocolReleases.put(library, file)
     }
 }

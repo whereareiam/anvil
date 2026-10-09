@@ -1,5 +1,7 @@
 package me.whereareiam.anvil.environment.provisioning.java.api;
 
+import me.whereareiam.anvil.api.exception.JavaVersionMismatchException;
+import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.environment.provisioning.java.api.model.JavaInstallation;
 import org.jetbrains.annotations.NotNull;
@@ -20,11 +22,13 @@ public interface JavaRuntimeValidator {
 	@NotNull JavaInstallation inspect(@NotNull String properties, @NotNull Path executable);
 
 	/**
-	 * Validates an inspected runtime against a process requirement.
+	 * Validates an inspected runtime against a process requirement: the feature version must be
+	 * exactly the requirement's, and a requested release or distribution must match.
 	 *
 	 * @param installation inspected Java identity
-	 * @param selection requested Java identity
-	 * @param minimumVersion platform minimum feature version
+	 * @param requirement planned process requirement carrying an exact feature version
+	 * @throws JavaVersionMismatchException when the runtime is another Java feature version
+	 * @throws ProvisioningException when a requested release or distribution does not match
 	 */
-	void validate(@NotNull JavaInstallation installation, @NotNull JavaRequirement selection, int minimumVersion);
+	void validate(@NotNull JavaInstallation installation, @NotNull JavaRequirement requirement);
 }

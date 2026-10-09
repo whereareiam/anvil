@@ -5,13 +5,14 @@ import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /**
- * Executes typed capability operations and observes events for one backend-owned player.
- * Serialization and transport are owned by the backend, not capability implementations.
+ * Executes typed capability operations and observes events for one library-owned player.
+ * Serialization and transport are owned by the protocol library, not capability implementations.
  */
 public interface CapabilityChannel extends RequestChannel {
 	/**
@@ -29,7 +30,7 @@ public interface CapabilityChannel extends RequestChannel {
 	@NotNull <E> Subscription subscribe(@NotNull EventDescriptor<E> eventDescriptor, @NotNull Consumer<E> listener);
 
 	/**
-	 * Waits for an observation, retaining backend diagnostics on timeout.
+	 * Waits for an observation, retaining library diagnostics on timeout.
 	 *
 	 * @param condition observation predicate
 	 * @param description diagnostic action description
@@ -38,9 +39,23 @@ public interface CapabilityChannel extends RequestChannel {
 	void await(@NotNull BooleanSupplier condition, @NotNull String description, @NotNull Duration timeout);
 
 	/**
-	 * Returns the capability IDs installed in the selected native binding.
+	 * Returns the capability IDs installed in the selected native binding. Composition skips every
+	 * protocol-backed provider whose capability ID is missing here, together with the providers that depend
+	 * on its capability.
 	 *
 	 * @return immutable capability IDs
 	 */
 	@NotNull Set<String> installedCapabilities();
+
+	/**
+	 * Returns capabilities that the native worker could not install for this player, with the reason
+	 * for each, such as the exact class or member missing from the loaded library release. A skipped
+	 * capability reports this reason when it is requested; a capability missing from both this map and
+	 * {@link #installedCapabilities()} reports that the library's worker does not install it.
+	 *
+	 * @return immutable reasons keyed by capability ID
+	 */
+	default @NotNull Map<String, String> unavailableCapabilities() {
+		return Map.of();
+	}
 }

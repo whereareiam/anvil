@@ -1,7 +1,5 @@
 package me.whereareiam.anvil.launcher.assembly.scenario;
 
-import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
-import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.agent.api.model.AgentIdentity;
 import me.whereareiam.anvil.agent.api.model.AgentOperations;
 import me.whereareiam.anvil.agent.api.model.transport.command.AgentCommandRequest;
@@ -13,22 +11,30 @@ import me.whereareiam.anvil.api.exception.ProcessException;
 import me.whereareiam.anvil.api.exception.scenario.ScenarioStartupException;
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceCleanup;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
+import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.scenario.ScenarioAccess;
 import me.whereareiam.anvil.api.scenario.ScenarioHook;
 import me.whereareiam.anvil.api.type.CachePolicy;
 import me.whereareiam.anvil.api.type.CleanupPhase;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.api.type.WorkspaceMode;
+import me.whereareiam.anvil.capability.api.exception.CapabilityException;
+import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.console.Console;
+import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
+import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
 import me.whereareiam.anvil.engine.AnvilEngineBuilder;
 import me.whereareiam.anvil.engine.scenario.ScenarioSession;
 import me.whereareiam.anvil.environment.execution.local.LocalExecutionProvider;
@@ -47,12 +53,13 @@ import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.model.ResolvedDistribution;
 import me.whereareiam.anvil.platform.api.type.ForwardingMode;
 import me.whereareiam.anvil.platform.planning.DefaultPlatformPlanner;
+import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
+import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
+import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
-import me.whereareiam.anvil.protocol.api.model.ProtocolSupport;
+import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
+import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
-import me.whereareiam.anvil.protocol.api.provider.ProtocolBackend;
-import me.whereareiam.anvil.protocol.api.provider.ProtocolProvider;
-import me.whereareiam.anvil.protocol.api.provider.ProtocolRuntimeResolver;
 import me.whereareiam.anvil.protocol.player.DefaultPlayerService;
 import me.whereareiam.anvil.testkit.support.FixtureArtifacts;
 import org.jetbrains.annotations.NotNull;
@@ -65,11 +72,12 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,7 +97,7 @@ class DefaultScenarioFactoryIntegrationTest {
 	Path temporary;
 
 	private Path executable;
-	private boolean backendClosed;
+	private boolean libraryClosed;
 	private final List<AutoCloseable> owned = new ArrayList<>();
 
 	@AfterEach
@@ -111,10 +119,10 @@ class DefaultScenarioFactoryIntegrationTest {
 	}
 
 	@Test
-	void transfersOwnershipAfterSetupAndRetainsTheSharedBackendUntilAssemblyCloses() throws Exception {
+	void transfersOwnershipAfterSetupAndRetainsTheSharedLibraryUntilAssemblyCloses() throws Exception {
 		var context = start(true, new TestPlatform(), scenario(anvil -> {
 			assertEquals(ProcessState.READY, anvil.processes().server("server").state());
-		}), this::backend);
+		}), this::library);
 		var process = context.processes().server("server");
 		Path run = process.workDirectory().getParent();
 		assertTrue(Files.isDirectory(run));
@@ -122,12 +130,12 @@ class DefaultScenarioFactoryIntegrationTest {
 
 		assertEquals(ProcessState.STOPPED, process.state());
 		assertFalse(Files.exists(run));
-		assertFalse(backendClosed);
+		assertFalse(libraryClosed);
 	}
 
 	@Test
 	void processesWithoutAgentCapabilitiesUseEmptyLookup() {
-		try (var run = start(true, new TestPlatform(), scenario(null), this::backend)) {
+		try (var run = start(true, new TestPlatform(), scenario(null), this::library)) {
 			var process = run.processes().server("server");
 			assertFalse(process.hasCapability(Console.class));
 			assertThrows(CapabilityUnavailableException.class, () -> process.capability(Console.class));
@@ -144,11 +152,11 @@ class DefaultScenarioFactoryIntegrationTest {
 		});
 
 		assertSame(failure, assertThrows(AssertionError.class,
-				() -> start(true, new TestPlatform(), scenario, this::backend)));
+				() -> start(true, new TestPlatform(), scenario, this::library)));
 		var process = captured.get().processes().server("server");
 		assertEquals(ProcessState.STOPPED, process.state());
 		assertTrue(Files.exists(process.workDirectory()));
-		assertFalse(backendClosed);
+		assertFalse(libraryClosed);
 	}
 
 	@Test
@@ -161,19 +169,54 @@ class DefaultScenarioFactoryIntegrationTest {
 		});
 
 		ScenarioStartupException failure = assertThrows(ScenarioStartupException.class,
-				() -> start(false, new TestPlatform(), scenario, this::backend));
+				() -> start(false, new TestPlatform(), scenario, this::library));
 		assertEquals("test", failure.getScenarioName());
 		assertSame(cause, failure.getCause());
 		assertFalse(Files.exists(captured.get().processes().server("server").workDirectory().getParent()));
 	}
 
 	@Test
-	void validatesBeforeCreatingBackendOrWorkspace() {
+	void validatesBeforeCreatingLibraryOrWorkspace() {
 		var invalid = scenario(null).toBuilder().entrypoint("missing").build();
 		assertThrows(ScenarioValidationException.class, () -> start(true, new TestPlatform(), invalid, () -> {
-			throw new AssertionError("Backend must not be created before validation");
+			throw new AssertionError("The library must not be created before validation");
 		}));
 		assertFalse(Files.exists(temporary.resolve("work")));
+	}
+
+	@Test
+	void validatesOnlyTheCapabilityGraphsOfLibrariesTheScenarioSelectsWithoutDeclarations(@TempDir Path services) throws Exception {
+		Path descriptor = services.resolve("META-INF/services/" + ProtocolPlayerCapabilityProvider.class.getName());
+		Files.createDirectories(descriptor.getParent());
+		Files.writeString(descriptor, UnreachedLibraryCapabilityProvider.class.getName());
+		// The scenario's server speaks 1.21.11, so it selects "current" by default and never "unreached".
+		List<ProtocolLibraryProvider> libraries = List.of(releasedLibrary("current", "1.21.11"), releasedLibrary("unreached", "1.20.6"));
+		ClassLoader original = Thread.currentThread().getContextClassLoader();
+		try (var loader = new URLClassLoader(new URL[]{services.toUri().toURL()}, original)) {
+			Thread.currentThread().setContextClassLoader(loader);
+			try (var run = start(true, new TestPlatform(), scenario(null), libraries, (port, token, timeout) -> {
+				throw new AssertionError("No agent is declared");
+			})) {
+				assertEquals(ProcessState.READY, run.processes().server("server").state());
+			}
+
+			// Tied libraries are selectable only by declaration, so neither graph is validated up front.
+			List<ProtocolLibraryProvider> tied = List.of(releasedLibrary("current", "1.21.11"), releasedLibrary("unreached", "1.21.11"));
+			var tie = scenario(null).toBuilder().name("tied").build();
+			try (var run = start(true, new TestPlatform(), tie, tied, (port, token, timeout) -> {
+				throw new AssertionError("No agent is declared");
+			})) {
+				assertEquals(ProcessState.READY, run.processes().server("server").state());
+			}
+
+			var declared = scenario(null).toBuilder().name("declared").protocolLibrary("unreached").build();
+			var failure = assertThrows(CapabilityException.class, () -> start(true, new TestPlatform(), declared, libraries,
+					(port, token, timeout) -> { throw new AssertionError("No agent is declared"); }));
+			assertTrue(failure.getMessage().contains("requires missing capabilities"), failure.getMessage());
+			assertFalse(Files.exists(temporary.resolve("work/declared")));
+		} finally {
+			Thread.currentThread().setContextClassLoader(original);
+		}
 	}
 
 	@ParameterizedTest
@@ -189,7 +232,7 @@ class DefaultScenarioFactoryIntegrationTest {
 				.build();
 
 		var failure = assertThrows(ScenarioValidationException.class,
-				() -> start(true, new TestPlatform(), scenario, this::backend));
+				() -> start(true, new TestPlatform(), scenario, this::library));
 
 		assertTrue(failure.getMessage().contains("Processes 'server/a' and 'server?a' resolve to the same workspace directory"));
 		assertFalse(Files.exists(temporary.resolve("work")));
@@ -205,7 +248,7 @@ class DefaultScenarioFactoryIntegrationTest {
 			}
 		};
 		assertSame(failure, assertThrows(PlatformException.class,
-				() -> start(false, provider, scenario(null), this::backend)));
+				() -> start(false, provider, scenario(null), this::library)));
 		assertNoRunDirectories();
 	}
 
@@ -222,13 +265,13 @@ class DefaultScenarioFactoryIntegrationTest {
 		};
 		ProcessException failure;
 		if (restart) {
-			try (var run = start(false, provider, scenario(null), this::backend)) {
+			try (var run = start(false, provider, scenario(null), this::library)) {
 				var original = run.processes().server("server");
 				failure = assertThrows(ProcessException.class, () -> run.processes().restart("server"));
 				assertEquals(ProcessState.STOPPED, original.state());
 			}
 		} else {
-			failure = assertThrows(ProcessException.class, () -> start(false, provider, scenario(null), this::backend));
+			failure = assertThrows(ProcessException.class, () -> start(false, provider, scenario(null), this::library));
 		}
 		assertEquals("server", failure.getProcessName());
 		assertSame(cause, failure.getCause());
@@ -244,7 +287,7 @@ class DefaultScenarioFactoryIntegrationTest {
 			}
 		};
 		ProcessException failure = assertThrows(ProcessException.class,
-				() -> start(false, provider, scenario(null), this::backend));
+				() -> start(false, provider, scenario(null), this::library));
 		assertEquals("server", failure.getProcessName());
 		assertNoRunDirectories();
 	}
@@ -275,7 +318,7 @@ class DefaultScenarioFactoryIntegrationTest {
 				.proxy(MinecraftProxy.builder().name("proxy").platform("test")
 						.distribution(Distribution.remote("1", "1")).server("server").defaultServer("server").build())
 				.build();
-		try (var run = start(true, provider, scenario, this::backend)) {
+		try (var run = start(true, provider, scenario, this::library)) {
 			var processes = run.processes();
 			var original = processes.proxy("proxy");
 			var server = processes.server("server");
@@ -322,7 +365,7 @@ class DefaultScenarioFactoryIntegrationTest {
 			}
 		};
 		var scenario = withWorkspace(scenario(null));
-		var run = start(true, provider, scenario, this::backend);
+		var run = start(true, provider, scenario, this::library);
 		var process = run.processes().server("server");
 		Files.createDirectories(process.workDirectory().resolve("data"));
 		Files.writeString(process.workDirectory().resolve("data/value"), "unsuccessful");
@@ -355,7 +398,7 @@ class DefaultScenarioFactoryIntegrationTest {
 				.proxy(MinecraftProxy.builder().name("proxy").platform("test")
 						.distribution(Distribution.remote("1", "1")).server("server").defaultServer("server").build())
 				.build();
-		try (var run = start(true, provider, scenario, this::backend, (port, token, timeout) -> {
+		try (var run = start(true, provider, scenario, this::library, (port, token, timeout) -> {
 			int generation = connections.incrementAndGet();
 			return agent(() -> { }, command -> commands.add(generation + ":" + command));
 		})) {
@@ -410,7 +453,7 @@ class DefaultScenarioFactoryIntegrationTest {
 		var scenario = scenario(null).toBuilder().server(MinecraftServer.builder().name("second").platform("test")
 				.distribution(Distribution.remote("1.21.11", "1")).build()).build();
 		scenario = withWorkspace(scenario);
-		var run = start(true, provider, scenario, this::backend, (port, token, timeout) -> {
+		var run = start(true, provider, scenario, this::library, (port, token, timeout) -> {
 			int generation = connections.incrementAndGet();
 			return agent(() -> {
 				closed.add("agent-" + generation);
@@ -462,7 +505,7 @@ class DefaultScenarioFactoryIntegrationTest {
 						.server("second").defaultServer("second").build())
 				.build();
 		String previous;
-		try (var run = start(true, provider, scenario, this::backend)) {
+		try (var run = start(true, provider, scenario, this::library)) {
 			previous = contexts.get("server").getForwarding().getSecret();
 			assertNotNull(previous);
 			assertEquals(previous, contexts.get("proxy").getForwarding().getSecret());
@@ -471,7 +514,7 @@ class DefaultScenarioFactoryIntegrationTest {
 			run.processes().restart("proxy");
 			assertEquals(previous, contexts.get("proxy").getForwarding().getSecret());
 		}
-		try (var ignored = start(true, provider, scenario, this::backend)) {
+		try (var ignored = start(true, provider, scenario, this::library)) {
 			assertNotEquals(previous, contexts.get("server").getForwarding().getSecret());
 		}
 	}
@@ -485,7 +528,7 @@ class DefaultScenarioFactoryIntegrationTest {
 				return PlatformAgentDescriptor.builder().entrypointClassName("fixture").build();
 			}
 		};
-		var run = start(true, provider, scenario(null), this::backend, (port, token, timeout) -> {
+		var run = start(true, provider, scenario(null), this::library, (port, token, timeout) -> {
 			if (connections.incrementAndGet() > 1) throw new IllegalStateException("agent unavailable");
 			return agent(() -> { });
 		});
@@ -552,8 +595,8 @@ class DefaultScenarioFactoryIntegrationTest {
 		}
 	}
 
-	private ScenarioSession start(boolean keepFailed, PlatformProvider provider, AnvilScenario scenario, Supplier<ProtocolBackend> backend) {
-		return start(keepFailed, provider, scenario, backend, (port, token, timeout) -> {
+	private ScenarioSession start(boolean keepFailed, PlatformProvider provider, AnvilScenario scenario, Supplier<ProtocolLibrary> library) {
+		return start(keepFailed, provider, scenario, library, (port, token, timeout) -> {
 			throw new AssertionError("No agent is declared");
 		});
 	}
@@ -562,7 +605,32 @@ class DefaultScenarioFactoryIntegrationTest {
 			boolean keepFailed,
 			PlatformProvider provider,
 			AnvilScenario scenario,
-			Supplier<ProtocolBackend> backend,
+			Supplier<ProtocolLibrary> library,
+			AgentConnectionProvider connections
+	) {
+		var protocol = new ProtocolLibraryProvider() {
+			@Override
+			public @NotNull String id() { return "test"; }
+
+			@Override
+			public @NotNull List<ProtocolRelease> releases(@NotNull ProtocolLibraryContext context) {
+				return List.of();
+			}
+
+			@Override
+			public @NotNull ProtocolLibrary create(@NotNull ProtocolLibraryContext context) {
+				return library.get();
+			}
+		};
+
+		return start(keepFailed, provider, scenario, List.of(protocol), connections);
+	}
+
+	private ScenarioSession start(
+			boolean keepFailed,
+			PlatformProvider provider,
+			AnvilScenario scenario,
+			List<ProtocolLibraryProvider> libraries,
 			AgentConnectionProvider connections
 	) {
 		EngineOptions options = EngineOptions.builder()
@@ -586,17 +654,8 @@ class DefaultScenarioFactoryIntegrationTest {
 				.javaRuntime(new JavaExecutionRuntime(provisioning.getJava()))
 				.imageLocks(new CacheImageLocks(provisioning.getCache()))
 				.build();
-		var protocol = new ProtocolProvider() {
-			@Override
-			public @NotNull String id() { return "test"; }
-
-			@Override
-			public @NotNull ProtocolBackend create(@NotNull Path directory, @NotNull Path accounts, @NotNull ProtocolRuntimeResolver runtimes) {
-				return backend.get();
-			}
-		};
-		var players = new DefaultPlayerService(protocol, options.getCacheDirectory(), options.getAccountsDirectory(), provisioning.getArtifacts()::obtain);
-		var engine = new AnvilEngineBuilder(new DefaultScenarioFactory(platforms, processes, players, "test")).options(options).extension(registration -> {
+		var players = new DefaultPlayerService(new ProtocolLibraryRegistry(libraries), options, provisioning.getArtifacts()::obtain);
+		var engine = new AnvilEngineBuilder(new DefaultScenarioFactory(platforms, processes, players)).options(options).extension(registration -> {
 			registration.own(provisioning);
 			registration.own(players);
 		}).build();
@@ -619,15 +678,15 @@ class DefaultScenarioFactoryIntegrationTest {
 				.build();
 	}
 
-	private ProtocolBackend backend() {
-		return new ProtocolBackend() {
+	private ProtocolLibrary library() {
+		return new ProtocolLibrary() {
 			@Override
 			public @NotNull String id() {
 				return "test";
 			}
 
 			@Override
-			public @NotNull Collection<ProtocolSupport> supportedProtocols() {
+			public @NotNull List<ProtocolRelease> releases() {
 				return List.of();
 			}
 
@@ -638,10 +697,59 @@ class DefaultScenarioFactoryIntegrationTest {
 
 			@Override
 			public void close() {
-				backendClosed = true;
+				libraryClosed = true;
 			}
 		};
 	}
+
+	private ProtocolLibraryProvider releasedLibrary(String id, String version) {
+		MinecraftVersion parsed = MinecraftVersion.parse(version);
+		ProtocolRelease release = ProtocolRelease.builder().libraryVersion(id + "-" + version).minecraftVersion(parsed)
+				.verifiedVersion(parsed).protocolNumber(774).javaVersion(21).build();
+		return new ProtocolLibraryProvider() {
+			@Override
+			public @NotNull String id() { return id; }
+
+			@Override
+			public @NotNull List<ProtocolRelease> releases(@NotNull ProtocolLibraryContext context) {
+				return List.of(release);
+			}
+
+			@Override
+			public @NotNull ProtocolLibrary create(@NotNull ProtocolLibraryContext context) {
+				throw new AssertionError("No player is created");
+			}
+		};
+	}
+
+	/**
+	 * Capability provider of the "unreached" library whose dependency no provider supplies.
+	 */
+	public static final class UnreachedLibraryCapabilityProvider implements ProtocolPlayerCapabilityProvider<UnreachedCapability> {
+		@Override
+		public @NotNull Set<String> supportedLibraries() {
+			return Set.of("unreached");
+		}
+
+		@Override
+		public @NotNull CapabilityDescriptor descriptor() {
+			return CapabilityDescriptor.builder().id("unreached").requiredCapability(MissingCapability.class).build();
+		}
+
+		@Override
+		public @NotNull Class<UnreachedCapability> capability() {
+			return UnreachedCapability.class;
+		}
+
+		@Override
+		public @NotNull UnreachedCapability create(@NotNull ProtocolPlayerCapabilityContext context) {
+			throw new AssertionError("Validation must fail before creation");
+		}
+	}
+
+	private interface UnreachedCapability extends PlayerCapability { }
+
+	private interface MissingCapability extends PlayerCapability { }
 
 	private class TestPlatform implements PlatformProvider {
 		@Override
@@ -668,8 +776,8 @@ class DefaultScenarioFactoryIntegrationTest {
 		}
 
 		@Override
-		public int minimumJavaVersion(@NotNull MinecraftProcess process) {
-			return 21;
+		public @NotNull URL versionData() {
+			return DefaultScenarioFactoryIntegrationTest.class.getResource("/me/whereareiam/anvil/launcher/assembly/fixture-versions.toml");
 		}
 	}
 

@@ -1,16 +1,12 @@
 plugins {
-    id("unit")
+	id("jvm")
+	id("in-server")
+	id("descriptor-version")
 }
 
 description = "Server plugin and native agent operations used by live Anvil tests"
 
 dependencies {
-    compileOnly(anvil.agent.server.api)
-    compileOnly(anvil.api)
-    compileOnly(libs.paper)
-}
-
-tasks.processResources {
-    inputs.property("version", project.version.toString())
-    expand("version" to project.version.toString())
+	compileOnly(anvil.agent.server.api)
+	compileOnly(libs.bukkit.paper)
 }

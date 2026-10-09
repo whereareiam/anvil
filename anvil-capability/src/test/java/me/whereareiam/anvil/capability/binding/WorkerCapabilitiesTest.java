@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.binding;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.capability.api.channel.OperationRegistry;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
+import me.whereareiam.anvil.capability.protocol.api.exception.AdapterUnavailableException;
 import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
 import me.whereareiam.anvil.capability.protocol.api.model.ViewRotation;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
@@ -16,6 +17,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.ServiceConfigurationError;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -37,7 +41,7 @@ class WorkerCapabilitiesTest {
 			operations.register(COUNT, ignored -> counter.incrementAndGet());
 			return closed::incrementAndGet;
 		});
-		var capabilities = new WorkerCapabilities<>("external", String.class, 1, List.of(extension));
+		var capabilities = new WorkerCapabilities("external", String.class, List.of(extension));
 		Registry first = new Registry();
 		Registry second = new Registry();
 		try (var ignored = capabilities.bind(new Player(), first);
@@ -57,7 +61,7 @@ class WorkerCapabilitiesTest {
 	void closesRegistrationAfterBindingAndKeepsCleanupIdempotent() {
 		AtomicReference<OperationRegistry> captured = new AtomicReference<>();
 		AtomicInteger closed = new AtomicInteger();
-		var capabilities = new WorkerCapabilities<>("external", String.class, 1, List.of(
+		var capabilities = new WorkerCapabilities("external", String.class, List.of(
 				new Extension("counter", (player, operations) -> {
 					captured.set(operations);
 					operations.register(COUNT, ignored -> 1);
@@ -80,7 +84,7 @@ class WorkerCapabilitiesTest {
 	@Test
 	void rejectsDuplicateOperationIdsBeforeForwardingEvenWhenTheirSchemasDiffer() {
 		AtomicInteger closed = new AtomicInteger();
-		var capabilities = new WorkerCapabilities<>("external", String.class, 1, List.of(
+		var capabilities = new WorkerCapabilities("external", String.class, List.of(
 				new Extension("counter", (player, operations) -> {
 					operations.register(COUNT, ignored -> 1);
 					return closed::incrementAndGet;
@@ -103,7 +107,7 @@ class WorkerCapabilitiesTest {
 	void rejectsMissingNamespacesBeforeForwarding() {
 		for (String id : List.of("", " ", "count")) {
 			Registry registry = new Registry();
-			var capabilities = new WorkerCapabilities<>("external", String.class, 1, List.of(
+			var capabilities = new WorkerCapabilities("external", String.class, List.of(
 					new Extension("counter", (player, operations) -> {
 						operations.register(new ChannelOperation<>(id, Void.class, Integer.class), ignored -> 1);
 						return () -> { };
@@ -120,12 +124,12 @@ class WorkerCapabilitiesTest {
 		List<String> closed = new ArrayList<>();
 		IllegalStateException original = new IllegalStateException("transport registration failed");
 		LinkageError cleanup = new LinkageError("cleanup failed");
-		var capabilities = new WorkerCapabilities<>("external", String.class, 1, List.of(
+		var capabilities = new WorkerCapabilities("external", String.class, List.of(
 				new Extension("first", (player, operations) -> () -> { closed.add("first"); throw cleanup; }),
 				new Extension("second", (player, operations) -> () -> closed.add("second")),
-				new Extension("broken", (player, operations) -> {
+				new Extension("rejected", (player, operations) -> {
 					operations.register(COUNT, ignored -> 1);
-					throw new AssertionError("The delegate must reject registration");
+					return () -> closed.add("rejected");
 				})
 		));
 		OperationRegistry registry = new OperationRegistry() {
@@ -137,8 +141,127 @@ class WorkerCapabilitiesTest {
 		};
 
 		assertSame(original, assertThrows(IllegalStateException.class, () -> capabilities.bind(new Player(), registry)));
-		assertEquals(List.of("second", "first"), closed);
+		assertEquals(List.of("rejected", "second", "first"), closed);
 		assertArrayEquals(new Throwable[]{cleanup}, original.getSuppressed());
+	}
+
+	@Test
+	void linkageFailuresMarkOnlyTheirCapabilityUnavailableAndLeaveNothingBound() {
+		List<String> events = new ArrayList<>();
+		AtomicInteger attempts = new AtomicInteger();
+		var late = new ChannelOperation<>("example.late", Void.class, Integer.class);
+		var capabilities = new WorkerCapabilities("external", String.class, List.of(
+				new Extension("first", (player, operations) -> {
+					operations.register(COUNT, ignored -> 1);
+					return () -> events.add("close first");
+				}),
+				new Extension("linked", (player, operations) -> {
+					attempts.incrementAndGet();
+					operations.register(new ChannelOperation<>("example.linked", Void.class, Integer.class), ignored -> 2);
+					player.bindNativeSession(session -> () -> events.add("detach linked"));
+					throw new NoClassDefFoundError("org/example/MissingPacket");
+				}),
+				new Extension("last", (player, operations) -> {
+					operations.register(late, ignored -> 3);
+					return () -> events.add("close last");
+				})
+		));
+		Registry first = new Registry();
+		Registry second = new Registry();
+
+		try (var ignored = capabilities.bind(new Player(), first); var alsoIgnored = capabilities.bind(new Player(), second)) {
+			assertEquals(Set.of(COUNT.getId(), late.getId()), first.registrations.keySet());
+			assertEquals(Set.of(COUNT.getId(), late.getId()), second.registrations.keySet());
+			assertEquals(List.of("detach linked"), events);
+			assertEquals(1, attempts.get(), "An unavailable capability is not bound for later players");
+			assertEquals(Set.of("first", "last"), capabilities.capabilities());
+			assertEquals(Map.of("linked", "NoClassDefFoundError: org/example/MissingPacket"), capabilities.unavailable());
+		}
+		assertEquals(List.of("detach linked", "close last", "close first", "close last", "close first"), events);
+	}
+
+	@Test
+	void bindingsReceiveTheWorkersAdaptersAndUnavailableAdaptersMarkOnlyTheirCapabilityUnavailable() {
+		List<Runnable> received = new ArrayList<>();
+		var capabilities = new WorkerCapabilities("external", String.class, List.of(
+				new Extension("adapted", (player, operations) -> {
+					received.add(player.adapter(Runnable.class));
+					operations.register(COUNT, ignored -> 1);
+					return () -> { };
+				}),
+				new Extension("segmented", (player, operations) -> {
+					operations.register(new ChannelOperation<>("example.segmented", Void.class, Integer.class), ignored -> 2);
+					player.adapter(Comparable.class);
+					return () -> { };
+				})
+		));
+		Registry registry = new Registry();
+
+		try (var ignored = capabilities.bind(new Player(), registry)) {
+			assertEquals(List.of(Player.ADAPTER), received);
+			assertEquals(Set.of(COUNT.getId()), registry.registrations.keySet());
+			assertEquals(Set.of("adapted"), capabilities.capabilities());
+			assertEquals(Map.of("segmented", "no external segment provides java.lang.Comparable"), capabilities.unavailable());
+		}
+	}
+
+	@Test
+	void serviceLookupFailuresWhileBindingMarkOnlyTheirCapabilityUnavailable() {
+		AtomicInteger attempts = new AtomicInteger();
+		var capabilities = new WorkerCapabilities("external", String.class, List.of(
+				new Extension("looked-up", (player, operations) -> {
+					attempts.incrementAndGet();
+					operations.register(new ChannelOperation<>("example.looked-up", Void.class, Integer.class), ignored -> 2);
+					throw new ServiceConfigurationError("org.example.Port: Provider org.example.MissingPort not found");
+				}),
+				new Extension("counter", (player, operations) -> {
+					operations.register(COUNT, ignored -> 1);
+					return () -> { };
+				})
+		));
+		Registry first = new Registry();
+		Registry second = new Registry();
+
+		try (var ignored = capabilities.bind(new Player(), first); var alsoIgnored = capabilities.bind(new Player(), second)) {
+			assertEquals(Set.of(COUNT.getId()), first.registrations.keySet());
+			assertEquals(Set.of(COUNT.getId()), second.registrations.keySet());
+			assertEquals(1, attempts.get(), "An unavailable capability is not bound for later players");
+			assertEquals(Set.of("counter"), capabilities.capabilities());
+			assertEquals(Map.of("looked-up", "ServiceConfigurationError: org.example.Port: Provider org.example.MissingPort not found"),
+					capabilities.unavailable());
+		}
+	}
+
+	@Test
+	void selectsExtensionsByLibraryAndAssignableNativeSessionType() {
+		var capabilities = new WorkerCapabilities("external", String.class, List.of(
+				new Extension("exact", Optional.of("external"), String.class),
+				new Extension("any-library", Optional.empty(), Object.class),
+				new Extension("supertype", Optional.of("external"), CharSequence.class),
+				new Extension("other-library", Optional.of("other"), String.class),
+				new Extension("other-session", Optional.of("external"), Integer.class)
+		));
+
+		assertEquals(Set.of("exact", "any-library", "supertype"), capabilities.capabilities());
+		assertEquals(Map.of("other-session", "requires native session java.lang.Integer, but the external worker provides java.lang.String"),
+				capabilities.unavailable());
+		assertThrows(IllegalStateException.class, () -> new WorkerCapabilities("external", String.class, List.of(
+				new Extension("same", Optional.empty(), Object.class), new Extension("same", Optional.of("external"), String.class))));
+	}
+
+	@Test
+	void reportsAnExtensionWhoseSessionTypeIsMissingFromTheLoadedRelease() {
+		var missing = new Extension("missing-session", Optional.of("external"), String.class) {
+			@Override
+			public @NotNull Class<Object> nativeSessionType() {
+				throw new NoClassDefFoundError("org/example/ClientSession");
+			}
+		};
+		var capabilities = new WorkerCapabilities("external", String.class, List.of(missing,
+				new Extension("exact", Optional.of("external"), String.class)));
+
+		assertEquals(Set.of("exact"), capabilities.capabilities());
+		assertEquals(Map.of("missing-session", "NoClassDefFoundError: org/example/ClientSession"), capabilities.unavailable());
 	}
 
 	@Test
@@ -146,7 +269,7 @@ class WorkerCapabilitiesTest {
 		List<String> closed = new ArrayList<>();
 		AssertionError original = new AssertionError("bind failed");
 		LinkageError cleanup = new LinkageError("cleanup failed");
-		var capabilities = new WorkerCapabilities<>("external", String.class, 1, List.of(
+		var capabilities = new WorkerCapabilities("external", String.class, List.of(
 				new Extension("first", (player, operations) -> () -> closed.add("first")),
 				new Extension("second", (player, operations) -> () -> { closed.add("second"); throw cleanup; }),
 				new Extension("broken", (player, operations) -> { throw original; })
@@ -177,26 +300,44 @@ class WorkerCapabilitiesTest {
 	private record Registration<Q, R>(ChannelOperation<Q, R> operation, Function<Q, R> handler) { }
 
 	@RequiredArgsConstructor
-	private static final class Extension implements WorkerExtension<String> {
+	private static class Extension implements WorkerExtension<Object> {
 		private final String id;
-		private final BiFunction<PlayerBindingContext<String>, OperationRegistry, WorkerBinding> binding;
+		private final Optional<String> libraryId;
+		private final Class<?> sessionType;
+		private final BiFunction<PlayerBindingContext<Object>, OperationRegistry, WorkerBinding> binding;
+
+		private Extension(String id, BiFunction<PlayerBindingContext<Object>, OperationRegistry, WorkerBinding> binding) {
+			this(id, Optional.of("external"), String.class, binding);
+		}
+
+		private Extension(String id, Optional<String> libraryId, Class<?> sessionType) {
+			this(id, libraryId, sessionType, (player, operations) -> () -> { });
+		}
+
 		public @NotNull String id() { return id; }
-		public @NotNull String backendId() { return "external"; }
-		public @NotNull Class<String> backendType() { return String.class; }
-		public @NotNull WorkerBinding bind(@NotNull PlayerBindingContext<String> player, @NotNull OperationRegistry operations) { return binding.apply(player, operations); }
+		public @NotNull Optional<String> libraryId() { return libraryId; }
+		@SuppressWarnings("unchecked")
+		public @NotNull Class<Object> nativeSessionType() { return (Class<Object>) sessionType; }
+		public @NotNull WorkerBinding bind(@NotNull PlayerBindingContext<Object> player, @NotNull OperationRegistry operations) { return binding.apply(player, operations); }
 	}
 
-	private static final class Player implements PlayerBindingContext<String> {
+	private static final class Player implements PlayerBindingContext<Object> {
+		private static final Runnable ADAPTER = () -> { };
+
 		public @NotNull String name() { return "Alice"; }
 		public @NotNull UUID uniqueId() { return new UUID(0, 1); }
 		public void connect() { throw new AssertionError(); }
 		public void disconnect() { throw new AssertionError(); }
 		public void rejoin() { throw new AssertionError(); }
-		public @NotNull String backend() { return "native"; }
-		public boolean isCurrentBackend(@NotNull String backend) { return backend.equals("native"); }
-		public @NotNull Subscription bindBackend(@NotNull Function<String, Subscription> listener) { return listener.apply(backend()); }
+		public @NotNull Object nativeSession() { return "native"; }
+		public boolean isCurrentNativeSession(@NotNull Object nativeSession) { return nativeSession.equals("native"); }
+		public @NotNull Subscription bindNativeSession(@NotNull Function<Object, Subscription> listener) { return listener.apply(nativeSession()); }
 		public @NotNull ViewRotation viewRotation() { return new ViewRotation(0, 0); }
 		public void viewRotation(@NotNull ViewRotation rotation) { throw new AssertionError(); }
 		public <E> void emit(@NotNull EventDescriptor<E> eventDescriptor, E payload) { throw new AssertionError(); }
+		public <P> @NotNull P adapter(@NotNull Class<P> port) {
+			if (port == Runnable.class) return port.cast(ADAPTER);
+			throw new AdapterUnavailableException("no external segment provides " + port.getName());
+		}
 	}
 }

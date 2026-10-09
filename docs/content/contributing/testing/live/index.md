@@ -18,9 +18,10 @@ real online-account authentication to this suite.
 
 | Test class | Contract |
 |---|---|
-| `PlayerCapabilitiesSystemTest` | Actions and observations through real servers |
-| `PlayerIdentityReconnectSystemTest` | Kicks, reconnects, and observed identity replacement |
-| `ProxyServerCompatibilitySystemTest` | Supported direct and proxy routes |
+| `PlayerCapabilitiesSystemTest` | Actions and observations of every built-in player capability on the direct Paper server of each matrix version |
+| `PlayerIdentityReconnectSystemTest` | Kicks, reconnects, and observed identity replacement on Paper `1.21.11` and `26.1.2` |
+| `ProxyServerCompatibilitySystemTest` | Login, commands, and routes for every scenario of the live matrix |
+| `ProcessRestartSystemTest` | Restarting the processes of every scenario of the live matrix |
 | `ExternalExtensionSystemTest` | Externally packaged capabilities and platform-agent operations |
 | `PartialScenarioLifecycleSystemTest` | Individual starts in a wired two-proxy, three-server environment; setup once, retained endpoints/workspaces, agent reconnection, and cleanup |
 
@@ -31,37 +32,60 @@ For example:
 ./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*ExternalExtensionSystemTest'
 ./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*PartialScenarioLifecycleSystemTest'
 ./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*ProxyServerCompatibilitySystemTest' -PanvilMatrixFilter='.*spigot.*'
+./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*PlayerCapabilitiesSystemTest' -PanvilMatrixFilter='paper-1\.16\.5'
 ```
 
-`anvilMatrixFilter` filters compatibility scenario names. It does not select other test classes.
-Use `--tests` for class selection.
+`anvilMatrixFilter` filters compatibility scenario names in the classes that iterate the matrix:
+`ProxyServerCompatibilitySystemTest`, `ProcessRestartSystemTest` and `PlayerCapabilitiesSystemTest`. It
+does not select test classes. Use `--tests` for class selection.
 
 ## Exercise exact protocol workers
 
-For packet or worker changes, run the catalog-version worker contracts before live coverage:
+For packet or worker changes, run the worker contracts before live coverage. They start a real worker for
+every release in `mcprotocol-releases.toml` on the release's locked runtime closure, the `[[release.artifact]]`
+modules Gradle resolves exactly as listed, and check the protocol number, the selected client segment and
+that every built-in capability is installed, none reported unavailable. `ClientSegmentLinkageTest` reads the
+linkage manifests of the built client segments and checks them against every release they serve, as the worker
+does:
 
 ```shell
-./gradlew :anvil-protocol:protocol-mcprotocol:test --tests '*ProtocolWorkerContractTest'
+./gradlew :anvil-protocol:protocol-mcprotocol:mcprotocol-common:test --tests '*McProtocolWorkerContractTest'
 ```
 
-Retain coverage for both catalog versions. Adding a supported version requires an exact runtime
-artifact URL and SHA-256, protocol number, Java requirement, binding family, worker and capability
-contracts, every supported direct/proxy route, and updated supported-version documentation.
+Retain coverage for every release. [Adding a Minecraft version](../../minecraft-versions/index.md)
+describes the release row, its pinned closure, segments, worker contracts, platform data, and the live
+matrix that a new version needs.
 
 Kicking, reconnect, and identity changes also require `PlayerIdentityReconnectSystemTest` for both
-versions. Provider or forwarding changes require every affected server/proxy combination.
+Paper versions it runs. Platform provider or forwarding changes require every affected server/proxy
+combination.
+
+## Keep verified data equal to the matrix
+
+`CompatibilityScenarioFactory` defines the live matrix: every release key directly on Paper, and
+`1.21.11` and `26.1.2` also on Spigot and behind Velocity and BungeeCord.
+The `verified` data of MCProtocolLib's releases and of each platform lists exactly the combinations it
+runs. `CompatibilityScenarioFactoryTest` plans the matrix without starting a server and fails when they
+differ; every build runs it through the `matrixTest` task, without `-Panvil.testMode=full`:
+
+```shell
+./gradlew :anvil-testkit:tests:server:matrixTest
+```
 
 ## Run groups and full verification
 
-`anvilTestTags` accepts a JUnit tag expression. Compatibility tests are tagged `compatibility`:
+`anvilTestTags` accepts a JUnit tag expression. Compatibility tests are tagged `compatibility`, and
+`PlayerCapabilitiesSystemTest`, which starts a Paper server for every Minecraft version, is tagged
+`capabilities`:
 
 ```shell
 ./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full -PanvilTestTags=compatibility
-./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full -PanvilTestTags='!compatibility'
+./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full -PanvilTestTags=capabilities
+./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full -PanvilTestTags='!compatibility & !capabilities'
 ./gradlew test -Panvil.testMode=full
 ```
 
-CI divides compatibility names into these mutually exclusive groups:
+CI runs the `capabilities` tag in one job and the untagged tests in another. It divides compatibility names into these mutually exclusive groups, one job each:
 
 | Group | Matrix filter |
 |---|---|
@@ -84,10 +108,9 @@ source projects.
 Preparation compiles those definitions and resolves the declared fixture variants from the
 independent `anvil-testkit/fixtures` build. Its root-composite invocation substitutes current public
 Anvil source projects. The declaration forwards exact `anvil.testkit.fixture.*` paths as tracked
-artifact inputs; JUnit task properties are not copied implicitly. The definitions contain twelve
-environments: Paper, Spigot, Velocity→Paper, Velocity→Spigot, BungeeCord→Paper, and BungeeCord→Spigot
-for both `1.21.11` and `26.1.2`. The IDE presents the eight wired environments and their components;
-the matching standalone presets stay available to the direct-server test matrix and saved runs.
+artifact inputs; JUnit task properties are not copied implicitly. The definitions are the direct
+Paper `1.21.11` and `26.1.2` environments; the rest of the live matrix is built by
+`CompatibilityScenarioFactory` for JUnit only and is not listed in the IDE.
 Loading the definitions starts no Minecraft processes. Selecting Run starts
 the chosen environment with the module's declared properties and artifacts. Selecting a component
 exposes its individual Start action; the prepared environment retains the full wiring while its

@@ -43,6 +43,38 @@ class ToolingCommandReaderTest {
 	}
 
 	@Test
+	void forwardsTheProjectProtocolLibraryToAccountSignIn() throws Exception {
+		Path manifest = directory.resolve("tooling.json");
+		new ObjectMapper()
+				.writeValue(
+						manifest.toFile(),
+						Map.of(
+								"schemaVersion", 1,
+								"toolingJavaExecutable", "java",
+								"classpath", List.of("/libs/runtime.jar"),
+								"properties", Map.of("anvil.protocolLibrary", "mcprotocol"),
+								"definitions", List.of()));
+		Path accounts = directory.resolve("accounts");
+
+		List<String> command = ToolingCommandReader.authenticationCommand(manifest, accounts, "alice", null);
+
+		assertEquals(
+				List.of(
+						"java",
+						"-cp",
+						"/libs/runtime.jar",
+						"me.whereareiam.anvil.tooling.launcher.AnvilAuthentication",
+						"--accounts-dir",
+						accounts.toAbsolutePath().toString(),
+						"--account-id",
+						"alice",
+						"--library",
+						"mcprotocol"),
+				command);
+		assertEquals("other", ToolingCommandReader.authenticationCommand(manifest, accounts, "alice", "other").getLast());
+	}
+
+	@Test
 	void rejectsUnknownSchemaBeforeStartingProjectCode() throws Exception {
 		Path manifest = directory.resolve("tooling.json");
 		Files.writeString(manifest, "{\"schemaVersion\":3}");
