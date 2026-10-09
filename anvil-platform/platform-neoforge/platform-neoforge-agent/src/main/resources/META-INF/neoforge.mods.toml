@@ -4,7 +4,7 @@ license = "MIT"
 
 [[mods]]
 modId = "anvil_platform_agent"
-version = "${file.jarVersion}"
+version = "${modVersion}"
 displayName = "Anvil Platform Agent"
 description = "Loopback-only runtime agent installed by Anvil"
 
