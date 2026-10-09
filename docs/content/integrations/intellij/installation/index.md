@@ -44,7 +44,7 @@ Build the plugin ZIP from an Anvil checkout:
 
 The ZIP appears under `anvil-integration/integration-intellij/intellij/build/distributions`.
 Completed [verification runs](https://github.com/whereareiam/anvil/actions) also retain it as an
-`anvil-intellij-<version>` artifact; extract that download and use the plugin ZIP inside it.
+`anvil-intellij-plugin-<version>` artifact; extract that download and use the plugin ZIP inside it.
 
 1. Open **Settings → Plugins**.
 2. Open the gear menu and choose **Install Plugin from Disk**.

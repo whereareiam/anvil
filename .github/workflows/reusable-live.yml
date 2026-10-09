@@ -81,7 +81,8 @@ jobs:
       - uses: whereareiam/devops/primitive/report/junit/publish@v3
         if: always()
         with:
-          name: Live test results (${{ matrix.shard }})
+          name: Live test results (${{ matrix.name }})
+          artifact-name: test-results-live-${{ matrix.shard }}
 
   consumer:
     name: Example consumer
@@ -113,6 +114,7 @@ jobs:
       - uses: whereareiam/devops/primitive/report/junit/publish@v3
         if: always()
         with:
-          name: Live test results (consumer)
+          name: Live test results (Example consumer)
+          artifact-name: test-results-live-consumer
           results: examples/**/build/test-results/**/*.xml
           reports: examples/**/build/reports/tests/**
