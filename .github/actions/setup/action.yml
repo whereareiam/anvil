@@ -1,0 +1,65 @@
+name: Set up the Anvil build
+description: Install the JDKs and Gradle, and restore the cache of pinned server distributions, protocol artifacts and JDKs.
+
+inputs:
+  cache-shard:
+    description: Name of this job's own Anvil cache, so that parallel jobs do not save over each other.
+    required: true
+  cache:
+    description: >-
+      Cache policy: auto or read-only. With auto, pushes to the default branch, releases and manual runs write the
+      caches and every other run only reads them. A run of code that is not yet reviewed passes read-only.
+    required: false
+    default: auto
+
+runs:
+  using: composite
+  steps:
+    - name: Decide cache policy
+      id: cache
+      shell: bash
+      env:
+        POLICY: ${{ inputs.cache }}
+        WRITES: >-
+          ${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+          || github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+      run: |
+        set -euo pipefail
+        case "$POLICY" in
+          read-only) echo "read-only=true" >> "$GITHUB_OUTPUT" ;;
+          auto) [[ "$WRITES" == "true" ]] && echo "read-only=false" >> "$GITHUB_OUTPUT" || echo "read-only=true" >> "$GITHUB_OUTPUT" ;;
+          *) echo "cache must be auto or read-only" >&2; exit 1 ;;
+        esac
+
+    # Gradle runs on Java 21; Java 25 is there for the servers and tests that need it.
+    - uses: whereareiam/devops/primitive/setup/gradle@v3
+      with:
+        java-version: "21"
+        toolchain-versions: "25"
+        cache: ${{ steps.cache.outputs.read-only == 'true' && 'read-only' || 'read-write' }}
+
+    - name: Restore Anvil cache
+      if: steps.cache.outputs.read-only == 'true'
+      uses: actions/cache/restore@v5
+      with:
+        path: |
+          ~/.anvil/distributions
+          ~/.anvil/protocol
+          ~/.anvil/jdks
+        key: ${{ runner.os }}-anvil-${{ inputs.cache-shard }}-${{ hashFiles('anvil-protocol/**/*-releases.toml', 'anvil-platform/**/*-versions.toml', 'anvil-testkit/**/CompatibilityScenarioFactory.java', 'gradle/libs.versions.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-anvil-${{ inputs.cache-shard }}-
+          ${{ runner.os }}-anvil-
+
+    - name: Restore and save Anvil cache
+      if: steps.cache.outputs.read-only != 'true'
+      uses: actions/cache@v5
+      with:
+        path: |
+          ~/.anvil/distributions
+          ~/.anvil/protocol
+          ~/.anvil/jdks
+        key: ${{ runner.os }}-anvil-${{ inputs.cache-shard }}-${{ hashFiles('anvil-protocol/**/*-releases.toml', 'anvil-platform/**/*-versions.toml', 'anvil-testkit/**/CompatibilityScenarioFactory.java', 'gradle/libs.versions.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-anvil-${{ inputs.cache-shard }}-
+          ${{ runner.os }}-anvil-

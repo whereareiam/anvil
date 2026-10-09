@@ -41,5 +41,5 @@ Explain the concrete behavior change and the checks you ran. Use an `Area: Title
 and one release category label: `feature`, `change`, `bug`, or `dependencies`. `major` can accompany
 a category; `skip-changelog` excludes a change from release notes.
 
-A maintainer requests build and live verification through the manual workflow. See
-[Building and publication](./publishing/index.md) for its revision and publication behavior.
+Quick checks run on every pull request; a maintainer requests live verification through the manual
+workflow. See [Building and publication](./publishing/index.md#verify-a-pull-request) for both.

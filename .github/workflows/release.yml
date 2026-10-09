@@ -1,35 +1,49 @@
 name: Release
-run-name: ${{ (github.event_name == 'release' || inputs.publish) && 'Release publication' || 'Release verification rehearsal' }}
+run-name: "Release ${{ github.event.release.tag_name }}"
 
 on:
   release:
     types: [published]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: Version to verify, without a leading v
-        required: true
-        type: string
-      publish:
-        description: Publish after all verification succeeds (leave disabled for a rehearsal)
-        required: true
-        type: boolean
-        default: false
 
 concurrency:
-  group: anvil-release-${{ github.event.release.tag_name || github.ref }}
+  group: release-${{ github.event.release.tag_name }}
   cancel-in-progress: false
 
 permissions:
   contents: read
-  checks: write
-  id-token: write
 
 jobs:
   verify:
-    uses: ./.github/workflows/verify-and-publish.yml
+    name: Verify
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/reusable-verify.yml
     with:
-      version: ${{ github.event.release.tag_name || inputs.version }}
-      source_ref: ${{ github.event.release.tag_name || github.sha }}
-      publish: ${{ github.event_name == 'release' || inputs.publish }}
+      ref: ${{ github.event.release.tag_name }}
+      version: ${{ github.event.release.tag_name }}
+      packaging: true
+
+  live:
+    name: Live
+    needs: verify
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/reusable-live.yml
+    with:
+      commit: ${{ needs.verify.outputs.commit }}
+      version: ${{ needs.verify.outputs.version }}
+
+  publish:
+    name: Publish
+    needs: [verify, live]
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/reusable-publish.yml
+    with:
+      commit: ${{ needs.verify.outputs.commit }}
+      version: ${{ needs.verify.outputs.version }}
+      marketplace: true
     secrets: inherit

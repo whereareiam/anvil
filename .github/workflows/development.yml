@@ -1,20 +1,54 @@
-name: Development publication
+name: Development build
+run-name: "Development build of ${{ github.ref_name }}"
 
 on:
   workflow_dispatch:
+    inputs:
+      live:
+        description: Also run the live suites against real servers and proxies
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
-  group: anvil-development-${{ github.ref }}
+  group: development-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
   contents: read
-  checks: write
-  id-token: write
 
 jobs:
   verify:
-    uses: ./.github/workflows/verify-and-publish.yml
+    name: Verify
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/reusable-verify.yml
     with:
-      source_ref: ${{ github.sha }}
-      publish: true
+      ref: ${{ github.sha }}
+      packaging: true
+
+  live:
+    name: Live
+    needs: verify
+    if: inputs.live
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/reusable-live.yml
+    with:
+      commit: ${{ needs.verify.outputs.commit }}
+      version: ${{ needs.verify.outputs.version }}
+
+  publish:
+    name: Publish
+    needs: [verify, live]
+    # A skipped live job does not block publication; a failed or cancelled one does.
+    if: ${{ !cancelled() && needs.verify.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.live.result) }}
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/reusable-publish.yml
+    with:
+      commit: ${{ needs.verify.outputs.commit }}
+      version: ${{ needs.verify.outputs.version }}
