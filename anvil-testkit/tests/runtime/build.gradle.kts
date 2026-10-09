@@ -1,4 +1,4 @@
-import me.whereareiam.anvil.buildlogic.jvm.TestFileArgument
+import me.whereareiam.anvil.buildlogic.module.TestFileArgument
 
 plugins {
 	id("module-java")

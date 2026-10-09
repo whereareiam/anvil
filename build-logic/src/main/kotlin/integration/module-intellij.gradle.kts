@@ -1,5 +1,5 @@
 import me.whereareiam.anvil.buildlogic.integration.IntellijPlatformModule
-import me.whereareiam.anvil.buildlogic.jvm.catalog
+import me.whereareiam.anvil.buildlogic.module.catalog
 
 plugins {
 	id("module-java")

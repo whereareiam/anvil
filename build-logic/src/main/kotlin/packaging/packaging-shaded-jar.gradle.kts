@@ -1,5 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import me.whereareiam.anvil.buildlogic.jvm.JavaRelease
+import me.whereareiam.anvil.buildlogic.module.JavaRelease
 
 plugins {
 	id("module-java")

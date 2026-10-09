@@ -41,7 +41,7 @@ TestKit without starting Minecraft. Its location follows the owner of the behavi
 | IntelliJ native Gradle import | `:anvil-integration:integration-intellij:intellij-gradle:test` |
 | Installed plugin registration and composition | `:anvil-integration:integration-intellij:intellij:test` |
 | Gradle tooling producer                                  | `:anvil-integration:integration-gradle:gradle-tooling:test`                |
-| Build conventions: release data, segments, linkage, in-server release, and library layout | `:build-logic:check` and `:build-logic-settings:check`, which the root `check` runs |
+| Build conventions: release data, segments, linkage, legacy Java release, and library layout | `:build-logic:check` and `:build-logic-settings:check`, which the root `check` runs |
 
 Use `--tests '*ClassName'` to select the regression class when appropriate. Tests should establish an
 observable contract or failure outcome, rather than repeat the implementation's steps.

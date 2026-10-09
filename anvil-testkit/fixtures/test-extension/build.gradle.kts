@@ -1,4 +1,4 @@
-import me.whereareiam.anvil.buildlogic.jvm.compileForInServer
+import me.whereareiam.anvil.buildlogic.module.compileForLegacyJava
 import org.gradle.api.attributes.java.TargetJvmVersion
 
 plugins {
@@ -7,11 +7,11 @@ plugins {
 
 description = "External protocol library, capabilities, and agent operations compiled against public APIs only"
 
-// The agent operations load inside Minecraft servers, so they compile for the in-server Java release in
+// The agent operations load inside Minecraft servers, so they compile for the legacy Java release in
 // their own source set, which checkAgentClassRelease verifies. The host code stays on the build's release and
 // shares the operations' wire contract.
 val agent = sourceSets.create("agent")
-compileForInServer(agent)
+compileForLegacyJava(agent)
 
 sourceSets.main {
 	compileClasspath += agent.output

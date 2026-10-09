@@ -3,7 +3,7 @@
 # build tooling
 java = "21"
 # Main classes loaded by Minecraft servers run on the oldest supported server's Java.
-java-in-server = "11"
+java-legacy = "11"
 asm = "9.9.1"
 kotlin = "2.4.0"
 shadow = "9.6.1"

@@ -83,7 +83,7 @@ autonomous AI, and crafting automation are outside the current project scope.
 | `anvil-testkit/fixtures`                                              | Independent consumer build for process, server-plugin, and extension fixture JARs                                                                                                   |
 | `anvil-testkit/support`                                               | Host-side fixture artifact access and scoped extension loading                                                                                                                      |
 | `examples/proof-of-patience`                                          | Standalone consumer example, not a home for framework system assertions                                                                                                             |
-| `build-logic`                                                         | Shared conventions grouped by `jvm/`, `role/`, `packaging/`, `segment/`, `library/`, `platform/`, `capability/`, `integration/`, and `fixture/`                                    |
+| `build-logic`                                                         | Shared conventions grouped by `module/`, `packaging/`, `adapter/`, `library/`, `platform/`, `capability/`, `integration/`, and `fixture/`                                           |
 | `build-logic/settings`                                                | Lean settings conventions loaded by every project's parent classloader: library registry, library repositories, and library and platform layout checks                             |
 | `docs/content`                                                        | Task-oriented Scriptorium guides for using, extending, and contributing to Anvil                                                                                                    |
 | `scriptorium.project.json`                                            | Scriptorium project metadata and version policy                                                                                                                                     |
@@ -542,7 +542,7 @@ failures.
   platform agent data applies `module-platform-provider`.
 - Segments check their linkage against the locked `[[release.artifact]]` closures that workers download, not the
   release module's dependency graph; worker tests run on the same closures through the `test-library-closures`
-  convention. `compileForInServer` compiles a source set for the in-server release and registers its
+  convention. `compileForLegacyJava` compiles a source set for the legacy Java release and registers its
   `check<SourceSet>ClassRelease`; the `module-java-legacy` convention applies it to the main classes, and no other
   compilation gets the check. The platform provider convention checks the agent JAR against its version data.
 - `settings.gradle.kts` declares the included builds and the standalone discovery exclusions; the root build

@@ -1,6 +1,6 @@
 import me.whereareiam.anvil.buildlogic.integration.IntellijPlatformModule
-import me.whereareiam.anvil.buildlogic.jvm.catalog
-import me.whereareiam.anvil.buildlogic.jvm.library
+import me.whereareiam.anvil.buildlogic.module.catalog
+import me.whereareiam.anvil.buildlogic.module.library
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 

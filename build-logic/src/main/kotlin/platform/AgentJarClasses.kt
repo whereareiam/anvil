@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.buildlogic.platform
 
-import me.whereareiam.anvil.buildlogic.jvm.ClassFileVersion
+import me.whereareiam.anvil.buildlogic.module.ClassFileVersion
 import java.io.File
 import java.util.zip.ZipFile
 
