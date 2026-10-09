@@ -27,18 +27,14 @@ on its class. A lease reserves its account for the whole engine, and the pool re
 leases when the test ends.
 
 To create the player with options of your own, for example
-[authentication on request](../../../building-blocks/players/authentication/index.md), read the leased
-account and claim the lease:
+[authentication on request](../../../building-blocks/players/authentication/index.md), pass the options
+together with the lease. The leased account supplies the account ID and protocol library:
 
 ```java
-AccountPool.AccountLease lease = accounts.lease();
-lease.claim();
 SimulatedPlayer player = anvil.players().create(PlayerOptions.builder()
 		.name("premium")
-		.protocolLibrary(lease.account().getLibraryId())
 		.authentication(AuthenticationMode.ON_REQUEST)
-		.accountId(lease.account().getAccountId())
-		.build());
+		.build(), accounts.lease());
 ```
 
 ## Restrict the accounts to a pool

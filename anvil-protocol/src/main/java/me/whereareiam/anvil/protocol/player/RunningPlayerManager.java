@@ -105,11 +105,11 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	}
 
 	/**
-	 * Creates an online player signed in with a leased account. The leased account belongs to one protocol
-	 * library, so the player selects that library, whatever the scenario or engine declares; any other library
-	 * would sign it in with a different account stored under the same ID.
+	 * Creates a player signed in with a leased account. The leased account belongs to one protocol
+	 * library, so the player selects that library, whatever the options, scenario or engine declare; any other
+	 * library would sign it in with a different account stored under the same ID.
 	 *
-	 * @param name unique player name
+	 * @param options player options with an authentication mode that uses an account
 	 * @param lease unclaimed lease whose account the player signs in with
 	 * @return created player, which returns the lease when it is destroyed
 	 * @throws ScenarioValidationException when the player cannot be created, for example because the leased
@@ -117,7 +117,11 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	 * returned
 	 */
 	@Override
-	public synchronized @NotNull SimulatedPlayer create(@NotNull String name, @NotNull AccountLease lease) {
+	public synchronized @NotNull SimulatedPlayer create(@NotNull PlayerOptions options, @NotNull AccountLease lease) {
+		String name = options.getName();
+		if (!options.getAuthentication().usesAccount())
+			throw new IllegalArgumentException("Player '" + name + "' uses " + options.getAuthentication()
+					+ " authentication, which takes no account");
 		if (!lease.claim())
 			throw new IllegalStateException("Account lease for '" + lease.account().getAccountId() + "' is no longer available");
 
@@ -129,9 +133,8 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		}
 
 		try {
-			return create(PlayerOptions.builder().name(name)
+			return create(options.toBuilder()
 					.protocolLibrary(lease.account().getLibraryId())
-					.authentication(AuthenticationMode.ONLINE)
 					.accountId(lease.account().getAccountId()).build());
 		} catch (RuntimeException | Error failure) {
 			accountReturns.remove(name, returnLease);

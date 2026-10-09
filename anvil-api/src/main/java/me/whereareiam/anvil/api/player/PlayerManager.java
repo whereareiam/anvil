@@ -80,12 +80,41 @@ public interface PlayerManager extends AutoCloseable {
 	 * account's library has no permitted, launchable release for the player's Minecraft version
 	 */
 	default @NotNull SimulatedPlayer create(@NotNull String name, @NotNull AccountPool.AccountLease lease) {
+		return create(PlayerOptions.builder().name(name).authentication(AuthenticationMode.ONLINE).build(), lease);
+	}
+
+	/**
+	 * Creates a player from explicit options using an exclusively reserved authenticated account. Use it when
+	 * the player needs more than a name, for example {@link AuthenticationMode#ON_REQUEST} or a client version.
+	 * The player claims the lease and releases it when destroyed; a creation that fails releases it at once.
+	 *
+	 * <p>The leased account replaces the options' account ID and protocol library, because an account belongs
+	 * to the library that stores it.</p>
+	 *
+	 * <pre>{@code
+	 * SimulatedPlayer player = players.create(PlayerOptions.builder()
+	 *         .name("premium")
+	 *         .authentication(AuthenticationMode.ON_REQUEST)
+	 *         .build(), accounts.lease());
+	 * }</pre>
+	 *
+	 * @param options player creation options with an authentication mode that uses an account
+	 * @param lease unclaimed account reservation
+	 * @return context-owned simulated player
+	 * @throws IllegalArgumentException when the options' authentication mode uses no account
+	 * @throws IllegalStateException when the lease was already claimed or released
+	 * @throws ScenarioValidationException when the player cannot be created as declared
+	 */
+	default @NotNull SimulatedPlayer create(@NotNull PlayerOptions options, @NotNull AccountPool.AccountLease lease) {
+		if (!options.getAuthentication().usesAccount())
+			throw new IllegalArgumentException("Player '" + options.getName() + "' uses " + options.getAuthentication()
+					+ " authentication, which takes no account");
 		if (!lease.claim())
 			throw new IllegalStateException("Account lease for '" + lease.account().getAccountId() + "' is no longer available");
 
 		try {
-			return create(PlayerOptions.builder().name(name).protocolLibrary(lease.account().getLibraryId())
-					.authentication(AuthenticationMode.ONLINE).accountId(lease.account().getAccountId()).build());
+			return create(options.toBuilder().protocolLibrary(lease.account().getLibraryId())
+					.accountId(lease.account().getAccountId()).build());
 		} catch (RuntimeException exception) {
 			lease.close();
 			throw exception;

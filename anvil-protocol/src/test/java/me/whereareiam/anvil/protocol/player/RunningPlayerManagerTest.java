@@ -247,6 +247,34 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
+	void aLeaseKeepsThePlayerOptionsAndSuppliesItsAccount() {
+		StubLibrary library = new StubLibrary();
+		AuthenticationAccount leased = new AuthenticationAccount("stored", "test", "Alice", null);
+		RunningPlayerManager manager = onlineManager(new ProtocolLibrarySelector(List.of("test"),
+				Map.of("test", library.releases())::get, "test", SupportPolicy.LENIENT, ignored -> { }), library, leased);
+		RecordingLease lease = new RecordingLease(leased);
+
+		manager.create(PlayerOptions.builder().name("alice").authentication(AuthenticationMode.ON_REQUEST).build(), lease);
+
+		assertEquals("stored", library.lastRequest.getAccountId());
+		assertEquals(AuthenticationMode.ON_REQUEST, library.lastRequest.getAuthentication());
+		assertFalse(lease.closed);
+	}
+
+	@Test
+	void aLeaseIsRefusedForAnOfflinePlayerWithoutBeingClaimed() {
+		StubLibrary library = new StubLibrary();
+		AuthenticationAccount leased = new AuthenticationAccount("stored", "test", "Alice", null);
+		RunningPlayerManager manager = onlineManager(new ProtocolLibrarySelector(List.of("test"),
+				Map.of("test", library.releases())::get, "test", SupportPolicy.LENIENT, ignored -> { }), library, leased);
+		RecordingLease lease = new RecordingLease(leased);
+
+		assertThrows(IllegalArgumentException.class,
+				() -> manager.create(PlayerOptions.builder().name("alice").build(), lease));
+		assertTrue(lease.claim());
+	}
+
+	@Test
 	void aLeasedAccountWhoseLibraryCannotServeThePlayerIsRefusedAndReturned() {
 		StubLibrary library = new StubLibrary();
 		AuthenticationAccount leased = new AuthenticationAccount("alice", "other", "Alice", null);
