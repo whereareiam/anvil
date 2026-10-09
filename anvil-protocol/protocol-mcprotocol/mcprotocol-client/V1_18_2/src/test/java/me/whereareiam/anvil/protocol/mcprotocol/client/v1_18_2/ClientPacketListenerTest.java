@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
+import me.whereareiam.anvil.api.type.DisconnectCause;
 import com.github.steveice10.mc.protocol.data.game.entity.player.HandPreference;
 import com.github.steveice10.mc.protocol.data.game.setting.ChatVisibility;
 import com.github.steveice10.mc.protocol.data.game.setting.SkinPart;
@@ -69,7 +70,7 @@ class ClientPacketListenerTest {
 				.append(Component.text(" by Anvil"))));
 		receive(new ClientboundLoginDisconnectPacket(Component.text("Outdated: ").append(Component.translatable("version", Component.text("1.18.2")))));
 
-		assertEquals(List.of("disconnected multiplayer.disconnect.kicked Alice by Anvil", "disconnected Outdated: version 1.18.2"), events);
+		assertEquals(List.of("disconnected SERVER multiplayer.disconnect.kicked Alice by Anvil", "disconnected SERVER Outdated: version 1.18.2"), events);
 	}
 
 	private void receive(Packet packet) {
@@ -110,8 +111,8 @@ class ClientPacketListenerTest {
 		}
 
 		@Override
-		public void disconnected(@NotNull Session session, @NotNull String reason) {
-			events.add("disconnected " + reason);
+		public void disconnected(@NotNull Session session, @NotNull DisconnectCause cause, @NotNull String reason) {
+			events.add("disconnected " + cause + " " + reason);
 		}
 	}
 }

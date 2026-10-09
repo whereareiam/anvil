@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.session;
 
+import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
 import me.whereareiam.anvil.capability.protocol.api.model.player.PlayerConnectionEvent;
@@ -42,21 +43,22 @@ class ChannelSessionTest {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelSession session = new ChannelSession(channel);
 
-		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(true, null));
+		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(true, null, null));
 		session.connected(TIMEOUT);
 		assertEquals(SessionState.builder().connected(true).build(), session.state());
 
-		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(false, "Server closed"));
+		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(false, "Server closed", DisconnectCause.SERVER));
 		session.disconnected(TIMEOUT);
 		assertEquals("Server closed", session.kicked(TIMEOUT));
-		assertEquals(SessionState.builder().connected(false).kickReason("Server closed").build(), session.state());
+		assertEquals(SessionState.builder().connected(false).kickReason("Server closed").disconnectCause(DisconnectCause.SERVER).build(),
+				session.state());
 	}
 
 	@Test
 	void forgetsTheKickReasonWhenConnectingAgain() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelSession session = new ChannelSession(channel);
-		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(false, "Server closed"));
+		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(false, "Server closed", DisconnectCause.SERVER));
 
 		session.rejoin();
 
@@ -68,7 +70,7 @@ class ChannelSessionTest {
 	void reportsDisconnectedOnceThePlayerIsDestroyed() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelSession session = new ChannelSession(channel);
-		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(true, null));
+		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(true, null, null));
 
 		channel.publish(PlayerConnectionEvent.DESTROYED, null);
 

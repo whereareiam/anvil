@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import net.kyori.adventure.text.Component;
@@ -11,6 +12,7 @@ import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.event.session.DisconnectedEvent;
 import org.geysermc.mcprotocollib.network.event.session.SessionAdapter;
 import org.geysermc.mcprotocollib.network.packet.Packet;
+import org.geysermc.mcprotocollib.protocol.data.UnexpectedEncryptionException;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.HandPreference;
 import org.geysermc.mcprotocollib.protocol.data.game.setting.ChatVisibility;
 import org.geysermc.mcprotocollib.protocol.data.game.setting.SkinPart;
@@ -47,14 +49,25 @@ final class ClientPacketListener extends SessionAdapter {
 		}
 		// A vanilla client answers every ping; NeoForge waits for the answer to tell a vanilla client from a modded one.
 		if (packet instanceof ClientboundPingPacket ping) session.send(new ServerboundPongPacket(ping.getId()));
-		if (packet instanceof ClientboundDisconnectPacket disconnect) listener.disconnected(session, plainText(disconnect.getReason()));
+		if (packet instanceof ClientboundDisconnectPacket disconnect)
+			listener.disconnected(session, DisconnectCause.SERVER, plainText(disconnect.getReason()));
 		if (packet instanceof ClientboundLoginDisconnectPacket disconnect)
-			listener.disconnected(session, plainText(disconnect.getReason()));
+			listener.disconnected(session, DisconnectCause.SERVER, plainText(disconnect.getReason()));
 	}
 
 	@Override
 	public void disconnected(DisconnectedEvent event) {
-		listener.disconnected(event.getSession(), event.getReason() == null ? "" : plainText(event.getReason()));
+		listener.disconnected(event.getSession(), cause(event), event.getReason() == null ? "" : plainText(event.getReason()));
+	}
+
+	/**
+	 * A close caused by the library refusing an encryption request means that the server wanted online
+	 * authentication from a client that signed in with no account.
+	 */
+	private static DisconnectCause cause(DisconnectedEvent event) {
+		return event.getCause() instanceof UnexpectedEncryptionException
+				? DisconnectCause.AUTHENTICATION_REQUIRED
+				: DisconnectCause.CONNECTION_LOST;
 	}
 
 	private static String plainText(Component component) {

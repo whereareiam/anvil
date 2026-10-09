@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.NativeWorkerContext;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -59,11 +60,11 @@ class McProtocolPlayerTest {
 
 			client.listener(first).loggedIn(first);
 			client.listener(first).teleported(first, 10, 20);
-			client.listener(first).disconnected(first, "replaced");
+			client.listener(first).disconnected(first, DisconnectCause.SERVER, "replaced");
 			client.listener(second).loggedIn(second);
 			client.listener(second).teleported(second, 30, 40);
-			client.listener(second).disconnected(second, "kicked anvil:requested-kick");
-			client.listener(second).disconnected(second, "closed");
+			client.listener(second).disconnected(second, DisconnectCause.SERVER, "kicked anvil:requested-kick");
+			client.listener(second).disconnected(second, DisconnectCause.CONNECTION_LOST, "closed");
 
 			assertEquals(30, player.yaw());
 			assertEquals(40, player.pitch());
@@ -72,6 +73,41 @@ class McProtocolPlayerTest {
 			assertEquals(2, events.size());
 			assertTrue(events.getFirst().path("connected").asBoolean());
 			assertEquals("kicked anvil:requested-kick", events.get(1).path("reason").asText());
+			assertEquals("SERVER", events.get(1).path("cause").asText());
+		}
+	}
+
+	@Test
+	void prefersTheServersReasonOverAConnectionThatClosedFirst() throws Exception {
+		try (McProtocolPlayer player = player(null)) {
+			player.connect();
+			Object session = client.sessions().getFirst();
+
+			client.listener(session).disconnected(session, DisconnectCause.CONNECTION_LOST, "disconnect.endOfStream");
+			client.listener(session).disconnected(session, DisconnectCause.SERVER, "anvil:kicked");
+			Thread.sleep(600);
+
+			List<JsonNode> events = events();
+			assertEquals(1, events.size());
+			assertEquals("anvil:kicked", events.getFirst().path("reason").asText());
+			assertEquals("SERVER", events.getFirst().path("cause").asText());
+		}
+	}
+
+	@Test
+	void reportsAClosedConnectionOnceNoReasonFollowsAndARefusedEncryptionAtOnce() throws Exception {
+		try (McProtocolPlayer player = player(null)) {
+			player.connect();
+			Object first = client.sessions().getFirst();
+			client.listener(first).disconnected(first, DisconnectCause.CONNECTION_LOST, "disconnect.endOfStream");
+			assertEquals(List.of(), events());
+			Thread.sleep(600);
+			assertEquals("CONNECTION_LOST", events().getFirst().path("cause").asText());
+
+			player.rejoin();
+			Object second = client.sessions().get(1);
+			client.listener(second).disconnected(second, DisconnectCause.AUTHENTICATION_REQUIRED, "encryption");
+			assertEquals("AUTHENTICATION_REQUIRED", events().get(1).path("cause").asText());
 		}
 	}
 
