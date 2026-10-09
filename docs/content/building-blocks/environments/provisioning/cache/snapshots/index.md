@@ -38,6 +38,26 @@ exists, the path is left untouched. Enabled outputs are saved after the process 
 finalizes the run successfully. A missing output leaves the previous snapshot untouched. Preparation
 or recorded lifecycle failures do not produce ordinary successful cache snapshots.
 
+## Choose what invalidates a snapshot
+
+A snapshot belongs to the process selection (name, platform and distribution) and, by default, to the
+process's installed assets: a rebuilt plugin JAR or an edited configuration file starts a new snapshot.
+That is right for state whose validity depends on what is under test, such as a plugin's database.
+
+Downloads that the plugin validates itself, such as its dependency libraries, do not depend on the
+assets. Declare them with `CacheIdentity.PROCESS` so that rebuilding the plugin keeps them:
+
+```java
+.cache(WorkspaceCache.builder()
+		.group("plugin-libraries")
+		.path(Path.of("plugins", "example", "libraries"))
+		.identity(CacheIdentity.PROCESS)
+		.build())
+```
+
+Import `me.whereareiam.anvil.api.type.CacheIdentity`. Use an explicit `.key(...)` to separate
+dependency sets that must not share a snapshot.
+
 ## Choose a policy
 
 | Policy             | Restore before startup | Save after successful finalization |
