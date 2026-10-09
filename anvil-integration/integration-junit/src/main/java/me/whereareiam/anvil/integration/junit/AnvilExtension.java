@@ -2,6 +2,7 @@ package me.whereareiam.anvil.integration.junit;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.player.account.AccountPool;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
 import me.whereareiam.anvil.launcher.config.EngineProperties;
@@ -22,23 +23,30 @@ public final class AnvilExtension implements BeforeEachCallback, ParameterResolv
 	@Override
 	public void beforeEach(@NotNull ExtensionContext context) {
 		AnvilScenario scenario = ScenarioSelection.scenario(context.getRequiredTestMethod(), context.getRequiredTestClass());
+		AccountRequirement accounts = AccountRequirement.of(context.getRequiredTestMethod(), context.getRequiredTestClass());
 		EngineOptions options = EngineProperties.fromSystemProperties();
-		new ScenarioInvocation(AnvilLauncher.create(options), scenario, () -> context.getExecutionException().isEmpty())
+		new ScenarioInvocation(AnvilLauncher.create(options), scenario, () -> context.getExecutionException().isEmpty(), accounts)
 				.register(invocation -> context.getStore(NAMESPACE).put(STATE_KEY, invocation));
 	}
 
 	@Override
 	public boolean supportsParameter(ParameterContext parameterContext, @NotNull ExtensionContext context) {
-		return parameterContext.getParameter().getType().equals(ScenarioContext.class);
+		Class<?> type = parameterContext.getParameter().getType();
+		return type.equals(ScenarioContext.class) || type.equals(AccountPool.class);
 	}
 
 	@Override
 	public Object resolveParameter(@NotNull ParameterContext parameterContext, ExtensionContext context) {
 		ScenarioInvocation state = context.getStore(NAMESPACE).get(STATE_KEY, ScenarioInvocation.class);
 		if (state == null) {
-			throw new ExtensionConfigurationException("ScenarioContext requested outside an Anvil test lifecycle");
+			throw new ExtensionConfigurationException(parameterContext.getParameter().getType().getSimpleName()
+					+ " requested outside an Anvil test lifecycle");
 		}
 
-		return state.getContext();
+		if (!parameterContext.getParameter().getType().equals(AccountPool.class)) return state.getContext();
+		if (state.getAccounts() == null)
+			throw new ExtensionConfigurationException("An AccountPool parameter requires @AnvilAccounts on the test or its class");
+
+		return state.getAccounts();
 	}
 }
