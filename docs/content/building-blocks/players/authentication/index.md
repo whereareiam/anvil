@@ -7,21 +7,35 @@ Offline players are the default for automated plugin tests. Use an online accoun
 journey specifically depends on authenticated Minecraft identity.
 Keep real account sign-in out of CI.
 
-## Sign in to a named profile
+## Add a local account
 
 Use an [installed MCProtocol provider](../../../getting-started/installation/index.md).
 When several providers are installed, select it in `build.gradle.kts` with
-`anvil { protocol("mcprotocol") }`.
-Then run:
+`anvil { engine { protocol("mcprotocol") } }`.
+Use the Anvil IntelliJ panel's **Accounts** action to authenticate. Follow the provider's device-code
+instructions in your browser; Anvil retrieves the Minecraft username and UUID and stores the account
+file under the configured account directory. You can also import a provider-generated account file
+manually. The MCProtocol provider stores one account per JSON file and restricts files to the owner on
+filesystems supporting POSIX permissions.
+
+Without IntelliJ IDEA, sign in from the project that applies the Anvil plugin:
 
 ```shell
-./gradlew anvilLogin --auth-profile=main
+./gradlew anvilAccount --login=main
 ```
 
-Follow the provider's device-code instructions in your browser. The MCProtocol provider stores the
-refreshable profile under `<cacheDirectory>/auth/main.json`. It restricts directories and files to the
-owner on filesystems supporting POSIX permissions.
-The CLI option is `--auth-profile`; `--profile` belongs to Gradle's build profiler.
+The task runs the same provider workflow in a separate JVM and prints the device-code instructions.
+It stores the account in the directory configured by `anvil { engine { accountsDirectory } }`, which
+defaults to `~/.anvil/accounts`. Remove an account with `./gradlew anvilAccount --logout=main`. Sign in
+on developer machines only; the stored file holds refresh tokens.
+
+When a scenario references an account that is not stored, the run fails with the account ID and the
+directory that was searched.
+
+The global account directory defaults to `~/.anvil/accounts`. Configure another directory in
+**Settings → Tools → Anvil → Accounts**. Project-specific accounts and pools are managed from the
+**Accounts** action in the Anvil tool window; each project's directory defaults to a folder under
+`~/.anvil/projects`, outside the project tree, so credentials are not committed with the source.
 
 ## Create and connect an online player
 
@@ -45,7 +59,7 @@ public final class AuthenticatedPlayers {
 		var player = anvil.players().create(PlayerOptions.builder()
 				.name("OnlinePlayer")
 				.authentication(AuthenticationMode.ONLINE)
-				.authenticationProfile("main")
+				.accountId("main")
 				.build());
 		var session = player.capability(Session.class);
 		session.connect();
@@ -60,18 +74,37 @@ Call `AuthenticatedPlayers.connect(anvil)` from a local test in the same package
 the account authenticated at the target. Check [identity and server observations](../capabilities/server/index.md)
 for assertions about what the platform sees; the authenticated identity is controlled by the account.
 
+For several real accounts, create a pool from local account IDs. A leased or directly selected account
+is exclusive across every scenario of the engine until its player is destroyed or the lease is closed:
+
+```java
+var testers = anvil.accounts().pool(java.util.List.of("alice", "bob", "charlie"));
+var first = testers.lease();
+var second = testers.lease();
+var one = anvil.players().create("player-1", first);
+var two = anvil.players().create("player-2", second);
+// The two players use different authenticated accounts. Player cleanup releases the leases.
+```
+
+A named pool keeps account IDs out of scenario code, so each machine can supply its own accounts.
+Declare it in `pools.properties` in the account directory. The IntelliJ account manager writes this
+file; on other machines, create it by hand:
+
+```properties
+schemaVersion=1
+pool.testers=alice,bob,charlie
+```
+
+Each `pool.<name>` entry lists distinct account IDs separated by commas; leases follow that order.
+Resolve the pool by name with `anvil.accounts().pool("testers")`. An undeclared pool, a repeated
+account ID, or another `schemaVersion` fails the lookup.
+
 ## Keep the account store private
 
 Treat the authentication directory as credentials. Exclude it from source control, diagnostic uploads,
 and shared cache archives. Access and refresh tokens do not belong in Gradle inputs, CLI arguments,
 environment variables, system properties, or scenario files. MCProtocol sends the access token to its
 worker through private stdin. Agent session credentials are separate per-run values.
-
-Remove the locally stored profile with:
-
-```shell
-./gradlew anvilLogout --auth-profile=main
-```
 
 Authentication is an optional service of the selected protocol provider. A provider without that
 service can still support offline players; selecting it does not enable MCProtocol's account workflow.

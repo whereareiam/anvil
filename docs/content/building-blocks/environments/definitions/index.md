@@ -17,7 +17,7 @@ This example prepares one Paper server and a connected player named `GuideBot`. 
 player in its journey, or a human can join a manual variant with the participant already present.
 
 Use the dependencies from [Installation](../../../getting-started/installation/index.md): Paper,
-MCProtocol, and the Session and Server capabilities, which the umbrella plugin includes. Save the
+MCProtocol, and the Session and Server capabilities, which the explicitly selected default capability unit includes. Save the
 class as `com/example/test/PreparedEnvironment.java` in the source set used by your integration. With
 the Anvil Gradle plugin, the complete path is `src/anvil/java/com/example/test/PreparedEnvironment.java`.
 
@@ -66,6 +66,60 @@ The setup waits establish a native connection and agent-observed presence on thi
 They make GuideBot part of the starting state; they do not verify your plugin's behavior. A journey
 can retrieve the existing player with `anvil.players().get("GuideBot")`, or create another player with
 a different name. An environment that needs only processes can omit the setup hook.
+
+## Describe the scenario's purpose
+
+Give a scenario a name that explains the behavior you want to investigate. Its description should
+explain the starting state, the important interaction, and the outcome a test or person should check.
+Server products and versions identify variants of that purpose; they rarely explain it on their own.
+
+Put this information in the definition's `PresentationMetadata`. The IDE and runner read it from the
+discovered scenario. This fragment derives a labeled variant of `PreparedEnvironment`; import
+`me.whereareiam.anvil.api.model.PresentationMetadata` alongside `AnvilScenario`:
+
+```java
+AnvilScenario labeled = new PreparedEnvironment().define().toBuilder()
+		.metadata(PresentationMetadata.builder()
+				.displayName("Joining an occupied server")
+				.description("GuideBot is already connected. Use this starting state to check that a second "
+						+ "player can join while the existing participant stays connected.")
+				.category("Player connections")
+				.tag("paper")
+				.build())
+		.build();
+```
+
+Its name remains `prepared-paper`. Metadata is optional, and each field is optional: tooling derives
+a label from the technical name when `displayName` is absent. Category and tags organize presentation
+without changing the topology or startup behavior.
+
+`MinecraftServer` and `MinecraftProxy` builders accept the same metadata. Describe their role within
+the scenario: for example, a **Lobby** accepts the initial connection and a **Game server** receives
+the transfer. Their lookup and entrypoint names stay stable even when their display labels change.
+
+For a plugin that replicates sessions across proxies through Redis, a useful purpose would be
+**Session replication across proxies**. The following metadata fragment assumes that
+`replicationTopology` is an existing `AnvilScenario` with the plugin, proxy topology, and Redis
+connection configuration already supplied by your integration:
+
+```java
+AnvilScenario replication = replicationTopology.toBuilder()
+		.name("cross-proxy-session-replication")
+		.metadata(PresentationMetadata.builder()
+				.displayName("Session replication across proxies")
+				.description("Sign in through the first proxy, then reconnect through the second. "
+						+ "Check that both proxies observe the same session through Redis and that logout "
+						+ "on either proxy invalidates the session on the other.")
+				.category("Session replication")
+				.tag("redis")
+				.build())
+		.build();
+```
+
+The example adds presentation to that prepared topology. Your integration supplies Redis and owns
+its lifecycle. Keep the connection actions and bounded replication assertions in the
+[test journey](../../../workflows/testing/journeys/index.md); starting the environment in the IDE
+prepares it for investigation. A **Running** status reports process readiness, not an assertion result.
 
 ## Keep inputs in the declaration
 
@@ -119,19 +173,22 @@ Before that test method starts, GuideBot is already connected. The method can cr
 its own results. JUnit's per-method creation and teardown are documented in
 [scenario selection](../../../integrations/junit/selection/index.md).
 
-For human testing, a catalog can derive a manual variant from the same definition. This fragment
-belongs in `AnvilScenarioProvider.register(ScenarioRegistry registry)`, with `PreparedEnvironment` in
-the same package and `AnvilScenario` imported as above:
+For human testing, create a separate definition class that derives a manual variant from the same
+environment. Keep the returned value in that definition; no registry or provider is required:
 
 ```java
-AnvilScenario manual = new PreparedEnvironment().define().toBuilder()
-		.name("prepared-paper-manual")
-		.manual(true)
-		.build();
-registry.scenario(manual);
+public final class PreparedPaperManualScenario implements AnvilScenarioDefinition {
+	@Override
+	public AnvilScenario define() {
+		return new PreparedEnvironment().define().toBuilder()
+				.name("prepared-paper-manual")
+				.manual(true)
+				.build();
+	}
+}
 ```
 
-Register the catalog as described in [Catalogs and groups](../../../workflows/scenarios/catalogs/index.md).
-You can then launch `prepared-paper-manual` through the runner and join with your real client while
+The compiled definition is indexed with the other scenarios. Launch `prepared-paper-manual` through
+the runner and join with your real client while
 GuideBot remains present. Manual mode does not install missing components or accept the EULA; the
 same declared dependencies and explicit runtime settings still apply.

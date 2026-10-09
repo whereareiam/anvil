@@ -32,7 +32,7 @@ source Javadocs. These links use `dev`; select your release tag when checking a 
 `ProtocolProvider.create(cacheDirectory, runtimes)` receives the private Anvil cache root and a
 `ProtocolRuntimeResolver`. Its `resolve(uri, destination, sha256)` channelOperation supplies an exact pinned
 native runtime; it does not expose generic acquisition or cache APIs. `ProtocolBackend.create(PlayerRequest)` receives the exact
-native version and target address plus the selected authentication mode and optional profile name.
+native version and target address plus the selected authentication mode and optional account ID.
 Create a disconnected client; connection behavior is supplied through the appropriate capability.
 
 Populate every `ProtocolSupport` entry with the exact Minecraft version, wire-protocol number,
@@ -61,18 +61,45 @@ commands while retaining packet-library details in its implementation. Native wo
 the actual SDK context; another client library supplies its own context and bindings. MCProtocol's
 worker transport and dispatch remain private implementation details.
 
+## Compose the public player facade
+
+The installed `ProtocolPlayerComposer` wraps a backend `ProtocolPlayer` as a public `SimulatedPlayer`.
+A custom composer implements this signature:
+
+```java
+@NotNull SimulatedPlayer compose(
+		@NotNull ProtocolPlayer player,
+		@NotNull PlayerObservation observation,
+		@Nullable PresentationMetadata metadata,
+		@NotNull Consumer<SimulatedPlayer> onDestroyed
+);
+```
+
+`ProtocolPlayer` belongs to `me.whereareiam.anvil.protocol.api.player`. `PlayerObservation` and
+`SimulatedPlayer` belong to `me.whereareiam.anvil.api.player`; `PresentationMetadata` belongs to
+`me.whereareiam.anvil.api.model`. The destruction callback uses `java.util.function.Consumer`,
+with JetBrains nullability annotations on the signature.
+
+The protocol player manager passes metadata from `PlayerOptions` alongside the native player and
+its scoped `PlayerObservation`. Preserve that optional value in `SimulatedPlayer.metadata()` while
+retaining the backend's connection identity. The launcher binds the bundled capability composer
+to its scoped request channels; a composer does not receive an untyped collection of scenario services.
+Invoke `onDestroyed` after permanent player destruction, not on an ordinary disconnect.
+`ProtocolPlayerComposerProvider.create(protocolId)` supplies the composer instance; `compose(...)`
+performs the per-player composition.
+
 ## Register and select the backend
 
 Create `src/main/resources/META-INF/services/me.whereareiam.anvil.protocol.api.provider.ProtocolProvider`
 containing your provider's fully qualified class name. Add your artifact to the consumer's
-`anvilProtocols` configuration.
+`anvilRuntimeOnly` configuration.
 
 This fragment goes in a consumer build that already applies Anvil's scenario tooling; the coordinates
 and ID are examples for your published provider:
 
 ```kotlin
 dependencies {
-	anvilProtocols("com.example:example-protocol:1.0.0")
+	add("anvilRuntimeOnly", "com.example:example-protocol:1.0.0")
 }
 
 anvil {

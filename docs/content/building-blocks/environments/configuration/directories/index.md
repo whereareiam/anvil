@@ -30,9 +30,20 @@ A different cache root does not preserve plugin data automatically. Declare
 
 ## Set readiness and shutdown deadlines
 
-A scenario's `.startupTimeout(Duration.ofMinutes(3))` gives each process three minutes to become
-ready, replacing the default two-minute deadline. This is a fragment for an `AnvilScenario` builder;
-import `java.time.Duration` in the defining Java file. It does not change player capability waits.
+Set `processTimeouts` on an `AnvilScenario` to override either engine deadline. Import
+`me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts` and `java.time.Duration`:
+
+```java
+.processTimeouts(ProcessTimeouts.builder()
+		.startup(Duration.ofMinutes(3))
+		.shutdown(Duration.ofSeconds(30))
+		.build())
+```
+
+This builder fragment gives each process three minutes to become ready and thirty seconds of
+shutdown grace. Omit either member to inherit its engine default: two minutes for startup and
+fifteen seconds for shutdown unless configured otherwise. These settings do not change player
+capability waits.
 
 For a longer shutdown grace period in JUnit, configure the test JVM in `build.gradle.kts`:
 
@@ -50,10 +61,10 @@ See [engine options](../engine/index.md) for each entry point's configuration.
 ## Retain useful diagnostics
 
 `keepFailedWorkspaces` defaults to `true` for failures recorded by the scenario lifecycle, including
-startup and restart failures. A JUnit assertion failure in the test body is not currently passed to
-the context as a failed lifecycle; its disposable workspace can still be cleaned up normally.
-Use a persistent workspace while investigating such a failure, or collect the relevant console tail
-before the context closes.
+startup and restart failures. The JUnit integration passes the test outcome to context finalization,
+so assertion failures also retain diagnostics under this policy. Directly embedded contexts should
+call `finish(false)` when their caller fails. Collect relevant console output before discarding a
+completed context.
 
 Run one class to check a configuration change:
 

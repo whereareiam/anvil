@@ -1,10 +1,11 @@
 package me.whereareiam.anvil.launcher.assembly.execution;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
 import me.whereareiam.anvil.agent.client.ProcessAgentClient;
+import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
+import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.exception.ProcessException;
-import me.whereareiam.anvil.api.exception.ProvisioningException;
+import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.preparation.PreparedLaunch;
 import me.whereareiam.anvil.environment.execution.api.preparation.PreparedProcess;
@@ -31,8 +32,8 @@ final class PreparedPlatformProcess implements PreparedProcess {
 	private final @NotNull ProcessTarget target;
 	private final @NotNull AgentConnectionProvider connections;
 	private final @Nullable ProcessAgentClient agent;
-
-	private boolean configured;
+	private final @Nullable Runnable ready;
+	private final @Nullable CapabilityOwner<ProcessCapability> capabilities;
 
 	@Override
 	public @NotNull PreparedLaunch launch() {
@@ -40,12 +41,15 @@ final class PreparedPlatformProcess implements PreparedProcess {
 			platforms.configure(plan, request);
 		} catch (IOException failure) {
 			String name = plan.getDeclaration().getName();
-			if (configured) throw new ProcessException(name, "Could not reconfigure process '" + name + "'", failure);
-			throw new ProvisioningException("Could not configure process '" + name + "'", failure);
+			throw new ProcessException(name, "Could not configure process '" + name + "'", failure);
 		}
-		configured = true;
 
-		return new ProcessLaunch(command, target, connections, agent);
+		return new ProcessLaunch(command, target, connections, agent, ready);
+	}
+
+	@Override
+	public @Nullable CapabilityOwner<ProcessCapability> capabilities() {
+		return capabilities;
 	}
 
 	@Override

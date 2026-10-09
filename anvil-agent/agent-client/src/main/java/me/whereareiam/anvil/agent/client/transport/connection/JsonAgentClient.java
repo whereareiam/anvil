@@ -2,10 +2,9 @@ package me.whereareiam.anvil.agent.client.transport.connection;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.agent.client.api.AgentClient;
-import me.whereareiam.anvil.agent.client.api.connection.AgentConnection;
 import me.whereareiam.anvil.agent.api.exception.AgentException;
 import me.whereareiam.anvil.agent.api.model.AgentIdentity;
+import me.whereareiam.anvil.agent.api.model.AgentOperations;
 import me.whereareiam.anvil.agent.api.model.location.AgentLocation;
 import me.whereareiam.anvil.agent.api.model.location.ProxyLocation;
 import me.whereareiam.anvil.agent.api.model.location.ServerLocation;
@@ -13,8 +12,9 @@ import me.whereareiam.anvil.agent.api.model.transport.command.AgentCommandReques
 import me.whereareiam.anvil.agent.api.model.transport.identity.AgentIdentityRequest;
 import me.whereareiam.anvil.agent.api.model.transport.identity.AgentIdentityResponse;
 import me.whereareiam.anvil.agent.api.model.transport.identity.AgentLocationPayload;
-import me.whereareiam.anvil.agent.api.model.AgentOperations;
 import me.whereareiam.anvil.agent.api.type.AgentLocationType;
+import me.whereareiam.anvil.agent.client.api.AgentClient;
+import me.whereareiam.anvil.agent.client.api.connection.AgentConnection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,6 +27,11 @@ import java.util.UUID;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class JsonAgentClient implements AgentClient {
 	private final @NotNull AgentConnection connection;
+
+	@Override
+	public boolean available() {
+		return connection.available();
+	}
 
 	@Override
 	public @NotNull Optional<AgentIdentity> identity(@NotNull String username) {

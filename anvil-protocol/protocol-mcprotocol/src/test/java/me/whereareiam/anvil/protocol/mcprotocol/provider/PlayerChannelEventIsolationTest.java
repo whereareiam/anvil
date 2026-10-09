@@ -43,7 +43,7 @@ class PlayerChannelEventIsolationTest {
 	@CsvSource({"1.21.11,false", "1.21.11,true", "26.1.2,false", "26.1.2,true"})
 	void listenerFailuresStayWithOnePlayerWhileAnotherIssuesRpcInsideCallback(String version, boolean badSchema) throws Exception {
 		try (var artifacts = new HttpArtifactAcquirer(temporary, new CacheArtifactStorage(new FileCache(temporary)), false, false, 4);
-			 ProtocolBackend backend = new McProtocolProvider().create(temporary, artifacts::obtain)
+				 ProtocolBackend backend = new McProtocolProvider().create(temporary, temporary.resolve("accounts"), artifacts::obtain)
 		) {
 			ProtocolPlayer alice = backend.create(request("Alice", version));
 			ProtocolPlayer bob = backend.create(request("Bob", version));
@@ -92,7 +92,7 @@ class PlayerChannelEventIsolationTest {
 	@ValueSource(strings = {"1.21.11", "26.1.2"})
 	void destructionDrainsAcceptedCallbacksBeforeRemovingTheirChildPlayer(String version) throws Exception {
 		try (var artifacts = new HttpArtifactAcquirer(temporary, new CacheArtifactStorage(new FileCache(temporary)), false, false, 4);
-			 ProtocolBackend backend = new McProtocolProvider().create(temporary, artifacts::obtain);
+				ProtocolBackend backend = new McProtocolProvider().create(temporary, temporary.resolve("accounts"), artifacts::obtain);
 			 var closers = Executors.newVirtualThreadPerTaskExecutor()
 		) {
 			ProtocolPlayer player = backend.create(request("Alice", version));
@@ -123,7 +123,7 @@ class PlayerChannelEventIsolationTest {
 	@ValueSource(strings = {"1.21.11", "26.1.2"})
 	void destructionInsideCallbackDoesNotJoinItselfOrReplayQueuedNormalEvents(String version) throws Exception {
 		try (var artifacts = new HttpArtifactAcquirer(temporary, new CacheArtifactStorage(new FileCache(temporary)), false, false, 4);
-			 ProtocolBackend backend = new McProtocolProvider().create(temporary, artifacts::obtain)
+				 ProtocolBackend backend = new McProtocolProvider().create(temporary, temporary.resolve("accounts"), artifacts::obtain)
 		) {
 			ProtocolPlayer player = backend.create(request("Alice", version));
 			ProtocolPlayer other = backend.create(request("Bob", version));

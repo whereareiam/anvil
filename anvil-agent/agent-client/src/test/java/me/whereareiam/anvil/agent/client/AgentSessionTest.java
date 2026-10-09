@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.agent.client;
 
+import me.whereareiam.anvil.agent.api.exception.AgentException;
 import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
-import me.whereareiam.anvil.agent.api.exception.AgentException;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
@@ -167,6 +167,7 @@ class AgentSessionTest {
 	private AgentClient agent(String generation, List<String> calls) {
 		return (AgentClient) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[]{AgentClient.class},
 				(proxy, method, arguments) -> {
+					if (method.getName().equals("available")) return true;
 					calls.add(generation + ":" + (arguments == null ? method.getName() : arguments[0]));
 					return method.getName().equals("executeCommand") ? true : null;
 				});

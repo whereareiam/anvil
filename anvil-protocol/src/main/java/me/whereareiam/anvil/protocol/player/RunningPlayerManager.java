@@ -2,11 +2,15 @@ package me.whereareiam.anvil.protocol.player;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
+import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerManager;
+import me.whereareiam.anvil.api.player.account.AccountManager;
+import me.whereareiam.anvil.api.player.account.AccountPool;
+import me.whereareiam.anvil.api.player.account.AccountPool.AccountLease;
 import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.process.RunningProcess;
@@ -19,7 +23,9 @@ import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.api.provider.ProtocolBackend;
 import me.whereareiam.anvil.protocol.api.type.ProtocolCapability;
+import me.whereareiam.anvil.protocol.player.account.AccountReservations;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,7 +44,7 @@ import java.util.stream.Collectors;
 /**
  * Default context-owned simulated-player factory and registry.
  */
-final class RunningPlayerManager implements PlayerManager {
+final class RunningPlayerManager implements PlayerManager, AccountManager {
 	private final AnvilScenario scenario;
 	private final ProtocolBackend backend;
 	private final ScenarioProcesses processes;
@@ -48,9 +54,40 @@ final class RunningPlayerManager implements PlayerManager {
 	private final Map<String, ProtocolSupport> protocols;
 	private final ProtocolPlayerComposer playerComposer;
 	private final Consumer<RunningPlayerManager> onClosed;
+	private final AccountManager accounts;
+	private final AccountReservations reservations;
 
 	private final Map<String, SimulatedPlayer> players = new ConcurrentHashMap<>();
+	// Engine-wide account releases per online player: a claimed pool lease or a direct reservation.
+	// Destruction runs them on the destroying thread without the manager lock, so a destroy callback can
+	// never wait behind a create blocked on the backend.
+	private final Map<String, Runnable> accountReleases = new ConcurrentHashMap<>();
 	private boolean closed;
+
+	RunningPlayerManager(
+			@NotNull AnvilScenario scenario,
+			@NotNull ProtocolBackend backend,
+			@NotNull ScenarioProcesses processes,
+			@NotNull PlayerObservationFactory observations,
+			@NotNull ProtocolPlayerComposer playerComposer,
+			@NotNull Consumer<RunningPlayerManager> onClosed,
+			@NotNull AccountManager accounts,
+			@NotNull AccountReservations reservations
+	) {
+		this.scenario = scenario;
+		this.backend = backend;
+		this.processes = processes;
+		this.observations = observations;
+		this.playerComposer = playerComposer;
+		this.onClosed = onClosed;
+		this.accounts = accounts;
+		this.reservations = reservations;
+		this.declarations = declarations(scenario);
+		this.servers = scenario.getServers().stream()
+				.collect(Collectors.toUnmodifiableMap(MinecraftServer::getName, Function.identity()));
+		this.protocols = backend.supportedProtocols().stream()
+				.collect(Collectors.toUnmodifiableMap(ProtocolSupport::getMinecraftVersion, Function.identity()));
+	}
 
 	RunningPlayerManager(
 			@NotNull AnvilScenario scenario,
@@ -60,22 +97,44 @@ final class RunningPlayerManager implements PlayerManager {
 			@NotNull ProtocolPlayerComposer playerComposer,
 			@NotNull Consumer<RunningPlayerManager> onClosed
 	) {
-		this.scenario = scenario;
-		this.backend = backend;
-		this.processes = processes;
-		this.observations = observations;
-		this.playerComposer = playerComposer;
-		this.onClosed = onClosed;
-		this.declarations = declarations(scenario);
-		this.servers = scenario.getServers().stream()
-				.collect(Collectors.toUnmodifiableMap(MinecraftServer::getName, Function.identity()));
-		this.protocols = backend.supportedProtocols().stream()
-				.collect(Collectors.toUnmodifiableMap(ProtocolSupport::getMinecraftVersion, Function.identity()));
+		this(scenario, backend, processes, observations, playerComposer, onClosed, List::of, new AccountReservations());
 	}
+
+	@Override
+	public @NotNull Collection<AuthenticationAccount> list() { return accounts.list(); }
+
+	@Override
+	public @NotNull AccountPool pool(@NotNull Collection<String> accountIds) { return accounts.pool(accountIds); }
+
+	@Override
+	public @NotNull AccountPool pool(@NotNull String poolName) { return accounts.pool(poolName); }
 
 	@Override
 	public @NotNull SimulatedPlayer create(@NotNull String name) {
 		return create(PlayerOptions.builder().name(name).build());
+	}
+
+	@Override
+	public synchronized @NotNull SimulatedPlayer create(@NotNull String name, @NotNull AccountLease lease) {
+		if (!lease.claim())
+			throw new IllegalStateException("Account lease for '" + lease.account().getAccountId() + "' is no longer available");
+
+		// Recorded before the player exists, so a player destroyed immediately still returns its lease.
+		Runnable release = lease::close;
+		if (accountReleases.putIfAbsent(name, release) != null) {
+			lease.close();
+			throw new IllegalArgumentException("Simulated player '" + name + "' already exists");
+		}
+
+		try {
+			return create(PlayerOptions.builder().name(name)
+					.authentication(AuthenticationMode.ONLINE)
+					.accountId(lease.account().getAccountId()).build());
+		} catch (RuntimeException | Error failure) {
+			accountReleases.remove(name, release);
+			lease.close();
+			throw failure;
+		}
 	}
 
 	@Override
@@ -99,33 +158,57 @@ final class RunningPlayerManager implements PlayerManager {
 			throw new ScenarioValidationException("Unsupported clientVersion '" + version + "'. Supported: "
 					+ protocols.keySet());
 		validateAuthentication(options, target, support);
+		Runnable directRelease = reserveDirectly(options);
 
-		ProtocolPlayer driven = backend.create(PlayerRequest.builder()
-				.name(options.getName())
-				.clientVersion(version)
-				.address(runningTarget.address())
-				.authentication(options.getAuthentication())
-				.authenticationProfile(options.getAuthenticationProfile())
-				.build());
+		ProtocolPlayer driven = null;
 		SimulatedPlayer player;
 		try {
+			// Creation can fail after the account is marked in use, for example when a token refresh fails.
+			driven = backend.create(PlayerRequest.builder()
+					.name(options.getName())
+					.clientVersion(version)
+					.address(runningTarget.address())
+					.authentication(options.getAuthentication())
+					.accountId(options.getAccountId())
+					.build());
 			PlayerObservation observation = observations.create(driven);
 			player = playerComposer.compose(
 					driven,
 					observation,
-					destroyed -> players.remove(options.getName(), destroyed)
+					options.getMetadata(),
+					destroyed -> {
+					players.remove(options.getName(), destroyed);
+					Runnable release = accountReleases.remove(options.getName());
+					if (release != null) release.run();
+				}
 			);
 		} catch (RuntimeException | Error failure) {
-			try {
-				driven.destroy();
-			} catch (RuntimeException | Error cleanup) {
-				if (cleanup != failure) failure.addSuppressed(cleanup);
-			}
+			if (directRelease != null && accountReleases.remove(options.getName(), directRelease)) directRelease.run();
+			if (driven != null) destroyAfterFailure(driven, failure);
 			throw failure;
 		}
 
 		players.put(options.getName(), player);
 		return player;
+	}
+
+	/**
+	 * Reserves an online account selected by ID rather than through a lease, which already holds it.
+	 *
+	 * @return the reservation's release, or null when nothing was reserved here
+	 */
+	private @Nullable Runnable reserveDirectly(@NotNull PlayerOptions options) {
+		if (options.getAuthentication() != AuthenticationMode.ONLINE) return null;
+		if (accountReleases.containsKey(options.getName())) return null;
+
+		String accountId = options.getAccountId();
+		if (!reservations.reserve(accountId))
+			throw new ScenarioValidationException("Authenticated account '" + accountId + "' is already in use");
+
+		Runnable release = () -> reservations.release(accountId);
+		accountReleases.put(options.getName(), release);
+
+		return release;
 	}
 
 	@Override
@@ -157,6 +240,8 @@ final class RunningPlayerManager implements PlayerManager {
 			}
 
 		players.clear();
+		accountReleases.values().forEach(Runnable::run);
+		accountReleases.clear();
 		if (failure instanceof Error error) throw error;
 		if (failure != null) throw (RuntimeException) failure;
 	}
@@ -173,6 +258,14 @@ final class RunningPlayerManager implements PlayerManager {
 			destroyAll();
 		} finally {
 			onClosed.accept(this);
+		}
+	}
+
+	private static void destroyAfterFailure(@NotNull ProtocolPlayer driven, @NotNull Throwable failure) {
+		try {
+			driven.destroy();
+		} catch (RuntimeException | Error cleanup) {
+			if (cleanup != failure) failure.addSuppressed(cleanup);
 		}
 	}
 
@@ -229,8 +322,10 @@ final class RunningPlayerManager implements PlayerManager {
 		if (!target.isOnlineMode())
 			throw new ScenarioValidationException("Online player '" + options.getName()
 					+ "' requires an online-mode entrypoint");
-		if (options.getAuthenticationProfile() == null || options.getAuthenticationProfile().isBlank())
-			throw new ScenarioValidationException("Online player '" + options.getName() + "' requires an authentication profile");
+		if (options.getAccountId() == null || options.getAccountId().isBlank())
+			throw new ScenarioValidationException("Online player '" + options.getName() + "' requires an account ID");
+		if (accounts.list().stream().noneMatch(account -> account.getAccountId().equals(options.getAccountId())))
+			throw new ScenarioValidationException("Authenticated account '" + options.getAccountId() + "' is not available");
 		if (!support.getCapabilities().contains(ProtocolCapability.ONLINE_AUTHENTICATION))
 			throw new ScenarioValidationException("Client version '" + support.getMinecraftVersion()
 					+ "' does not support online authentication");

@@ -1,6 +1,6 @@
 ---
 title: Tasks and options
-description: Compile Anvil sources, run JUnit tests, select manual scenarios, and manage authentication profiles.
+description: Compile Anvil sources, run JUnit tests, select manual scenarios, and sign in accounts.
 ---
 
 Run these commands from your consumer project's root. The corresponding entry-point plugin must
@@ -25,32 +25,48 @@ unchanged run. The plugin does not make every invocation bypass Gradle's task st
 ```shell
 ./gradlew anvilScenario --list
 ./gradlew anvilScenario --scenario=manual-paper
-./gradlew anvilScenario --group=development
+./gradlew anvilScenario --definition=com.example.test.ManualPaperScenario
 ```
 
-The names are examples declared by your catalog. Configure `anvil.scenarioProviders` or provide
-`--provider=com.example.test.DevelopmentScenarios` explicitly.
+The names are produced from compiled `AnvilScenarioDefinition` classes in the Anvil source set.
+The class name can be selected directly with `--definition` when scenario names are ambiguous.
 
 | Option | Meaning |
 |---|---|
-| `--list` | List scenarios and groups without starting them |
+| `--list` | List discovered scenarios without starting them |
 | `--scenario=<name>` | Start one named scenario |
-| `--group=<name>` | Open one named interactive group |
-| `--provider=<class>` | Select one scenario-provider class |
+| `--definition=<class>` | Start one definition class directly |
 
-Use `--list` alone, or exactly one of `--scenario` and `--group`. Listing can enumerate all
-configured providers; starting requires a single provider or an explicit selection. These tasks
+Use `--list` alone, or exactly one of `--scenario` and `--definition`. The runner
+executes in a separate JVM using the declared runtime classpath and properties. These tasks
 are interactive and are not Gradle build-cache outputs. The available shell commands are documented
 in [Manual environments](../../../workflows/scenarios/running/index.md).
 
-## Authentication
+## IDE preparation
 
 ```shell
-./gradlew anvilLogin --auth-profile=main
-./gradlew anvilLogout --auth-profile=main
+./gradlew anvilTooling
+./gradlew anvilTooling --output-file=/absolute/path/to/tooling.json
 ```
 
-`--auth-profile` is required. It names private provider-owned account state, not an access token.
-Gradle reserves `--profile` for its build profiler. Authentication tasks use the selected provider
-from `anvilProtocols`; an offline-only provider may have no interactive authentication service.
-See [Authentication](../../../building-blocks/players/authentication/index.md) before using online players.
+These commands compile the declared source set and required artifacts, then export the runtime
+without starting Minecraft. The default output is `build/anvil/tooling.json`. The standard Anvil plugin configures this task for `src/anvil`; the standalone project producer supports an
+existing source set. See [IDE project tooling](../tooling/index.md) for declaration and ownership.
+
+## Accounts
+
+```shell
+./gradlew anvilAccount --login=main
+./gradlew anvilAccount --logout=main
+```
+
+| Option | Meaning |
+|---|---|
+| `--login=<id>` | Sign in through the selected protocol provider and store the account |
+| `--logout=<id>` | Remove the stored account |
+
+Use exactly one option. The task runs the provider's interactive sign-in in a separate JVM, using the
+same protocol selection and account directory as scenario runs. It prints the provider's prompts;
+tokens stay in the account file and never become task inputs or arguments. The task is untracked and
+always runs. See [Authentication](../../../building-blocks/players/authentication/index.md) before
+using online players.

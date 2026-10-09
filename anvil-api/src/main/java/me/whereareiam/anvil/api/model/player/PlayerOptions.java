@@ -2,6 +2,7 @@ package me.whereareiam.anvil.api.model.player;
 
 import lombok.Builder;
 import lombok.Value;
+import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.type.AuthenticationMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -13,6 +14,12 @@ import org.jetbrains.annotations.Nullable;
 @Builder(toBuilder = true)
 public class PlayerOptions {
 	@NotNull String name;
+
+	/**
+	 * Optional labels for tooling; the player name remains its connection identity.
+	 */
+	@Nullable PresentationMetadata metadata;
+
 	@Nullable String clientVersion;
 	@Nullable String connectTo;
 
@@ -20,5 +27,6 @@ public class PlayerOptions {
 	@Builder.Default
 	AuthenticationMode authentication = AuthenticationMode.OFFLINE;
 
-	@Nullable String authenticationProfile;
+	/** Local account identifier resolved by the selected protocol provider. */
+	@Nullable String accountId;
 }

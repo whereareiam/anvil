@@ -34,6 +34,28 @@ class ProcessSlotTest {
 	}
 
 	@Test
+	void failedReplacementLaunchStopsOldExecutionAndAllowsFreshRetry() {
+		ExecutionFixture fixture = new ExecutionFixture(directory);
+		var group = fixture.service().start(fixture.plan(fixture.spec("server", false)), fixture.preparation);
+		try (group) {
+			var original = group.server("server");
+			fixture.failingConfiguration = "server";
+			assertSame(fixture.failure, assertThrows(IllegalStateException.class, () -> group.restart("server")));
+			assertEquals(ProcessState.STOPPED, original.state());
+			assertEquals(1, fixture.calls.stream().filter("detach:server:1"::equals).count());
+			assertFalse(fixture.calls.contains("detach:server:2"));
+
+			fixture.failingConfiguration = null;
+			assertEquals(ProcessState.READY, group.start("server").state());
+			assertEquals(List.of("1", "3"), fixture.targets.get("server").commands.stream()
+					.map(command -> command.getEnvironment().get("GENERATION")).toList());
+			assertEquals(1, fixture.calls.stream().filter("prepare:server"::equals).count());
+		}
+		assertEquals(1, fixture.calls.stream().filter("detach:server:3"::equals).count());
+		assertEquals("finish:false", fixture.calls.getLast());
+	}
+
+	@Test
 	void failedRestartAttachmentStillStopsTheOldProcessAndPreventsSuccessfulFinalization() {
 		ExecutionFixture fixture = new ExecutionFixture(directory);
 		var group = fixture.service().start(fixture.plan(fixture.spec("server", false)), fixture.preparation);

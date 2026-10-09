@@ -65,6 +65,11 @@ public final class VelocityPlatformProvider implements PlatformProvider {
 	}
 
 	@Override
+	public @NotNull List<String> jvmArguments(@NotNull MinecraftProcess process, boolean consoleColors) {
+		return consoleColors ? List.of("-Dterminal.ansi=true", "-Dterminal.jline=false") : List.of();
+	}
+
+	@Override
 	public @NotNull String stopCommand() {
 		return "shutdown";
 	}

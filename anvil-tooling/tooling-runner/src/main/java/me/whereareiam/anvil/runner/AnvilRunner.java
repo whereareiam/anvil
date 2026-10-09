@@ -1,30 +1,25 @@
 package me.whereareiam.anvil.runner;
 
-import me.whereareiam.anvil.api.model.scenario.ScenarioGroup;
-import me.whereareiam.anvil.api.scenario.AnvilScenarioProvider;
-import me.whereareiam.anvil.api.scenario.ScenarioRegistry;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
-import me.whereareiam.anvil.launcher.AnvilLauncher;
-import me.whereareiam.anvil.api.model.EngineOptions;
-import me.whereareiam.anvil.launcher.config.EngineProperties;
+import me.whereareiam.anvil.runner.scenario.ScenarioRepository;
+import me.whereareiam.anvil.runner.command.InteractiveSession;
 import me.whereareiam.anvil.runner.command.RunnerArgumentsParser;
-import me.whereareiam.anvil.runner.model.RunnerSelection;
+import me.whereareiam.anvil.runner.command.RunnerTerminal;
 import me.whereareiam.anvil.runner.model.command.RunnerArguments;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
- * Reusable foreground command-line runner for listing and joining manual Anvil scenarios.
- *
- * <p>The runner is deliberately independent of Gradle. A Gradle task, another plugin, or a
- * standalone entry point can provide the runtime configuration and terminal streams.</p>
+ * Reusable foreground command-line runner for directly discoverable Anvil scenarios.
+ * The runner is independent of Gradle and receives an engine factory from its host.
  */
 public final class AnvilRunner {
+	private final Supplier<ScenarioEngine> engineFactory;
 	private final Reader input;
 	private final RunnerTerminal terminal;
 
@@ -33,103 +28,55 @@ public final class AnvilRunner {
 	 *
 	 * @param input command input
 	 * @param output user-facing command output
+	 * @param engineFactory creates an owned engine on the first scenario start; listing does not call it
 	 */
-	public AnvilRunner(@NotNull Reader input, @NotNull PrintWriter output) {
+	public AnvilRunner(
+			@NotNull Reader input,
+			@NotNull PrintWriter output,
+			@NotNull Supplier<ScenarioEngine> engineFactory
+	) {
+		this.engineFactory = engineFactory;
 		this.input = Objects.requireNonNull(input, "input");
 		this.terminal = new RunnerTerminal(Objects.requireNonNull(output, "output"));
 	}
 
 	/**
-	 * Runs the CLI using the current process standard input and output.
+	 * Runs the scenario CLI using the supplied engine factory and borrowed terminal streams.
+	 * Definitions are read from the generated index unless a direct definition class is selected.
 	 *
 	 * @param arguments command-line arguments
-	 * @throws Exception when provider loading or scenario startup fails
-	 */
-	public static void main(@NotNull String[] arguments) throws Exception {
-		new AnvilRunner(
-				new InputStreamReader(System.in, StandardCharsets.UTF_8),
-				new PrintWriter(System.out, true)
-		).run(arguments);
-	}
-
-	/**
-	 * Runs the scenario CLI using system-property configuration.
-	 *
-	 * @param arguments command-line arguments
-	 * @throws Exception when provider loading or scenario startup fails
+	 * @throws Exception when definition loading or scenario execution fails
 	 */
 	public void run(@NotNull String[] arguments) throws Exception {
-		run(arguments, EngineProperties.fromSystemProperties());
-	}
-
-	/**
-	 * Runs the scenario CLI with explicit runtime configuration.
-	 *
-	 * @param arguments command-line arguments
-	 * @param configuration engine and workspace configuration
-	 * @throws Exception when provider loading or scenario startup fails
-	 */
-	public void run(@NotNull String[] arguments, @NotNull EngineOptions configuration) throws Exception {
-		Objects.requireNonNull(configuration, "configuration");
 		RunnerArguments parsed = RunnerArgumentsParser.parse(arguments);
-		ScenarioRegistry registry = loadRegistry(parsed.getProvider());
-
+		ScenarioRepository repository = parsed.getDefinition() == null
+				? ScenarioRepository.discover()
+				: ScenarioRepository.load(List.of(parsed.getDefinition()));
 		if (parsed.isList()) {
-			terminal.showScenarios(registry);
+			terminal.showScenarios(repository.scenarios());
 			return;
 		}
 
-		RunnerSelection selection = select(parsed, registry);
-		try (
-				ScenarioEngine engine = AnvilLauncher.create(configuration);
-				InteractiveSession session = new InteractiveSession(
-						engine,
-						registry,
-						selection.getScenario(),
-						selection.getGroup(),
-						input,
-						terminal
-				)
-		) {
-			session.run();
+		String selection = parsed.getDefinition() == null ? parsed.getScenario() : parsed.getDefinition();
+		if (selection == null) throw new IllegalArgumentException("A scenario or definition selection is required");
+		repository.require(selection);
+		try (RunnerSession session = new RunnerSession(engineFactory, repository)) {
+			// Ctrl+C or a cancelled Gradle task must still stop the environment and its processes.
+			Thread shutdown = new Thread(session::close, "anvil-runner-shutdown");
+			Runtime.getRuntime().addShutdownHook(shutdown);
+			try {
+				new InteractiveSession(session, repository, selection, input, terminal).run();
+			} finally {
+				unregister(shutdown);
+			}
 		}
 	}
 
-	private RunnerSelection select(RunnerArguments arguments, ScenarioRegistry registry) {
-		String scenarioName = arguments.getScenario();
-		if (scenarioName != null) {
-			return RunnerSelection.builder()
-					.scenario(registry.requireScenario(scenarioName))
-					.build();
+	private static void unregister(@NotNull Thread shutdown) {
+		try {
+			Runtime.getRuntime().removeShutdownHook(shutdown);
+		} catch (IllegalStateException ignored) {
+			// The JVM is already running the hook, which closes the session.
 		}
-
-		String groupName = arguments.getGroup();
-		ScenarioGroup group = requireGroup(registry, groupName);
-		if (group.getScenarios().isEmpty()) throw new IllegalArgumentException("Scenario group is empty: " + group.getName());
-
-		return RunnerSelection.builder()
-				.scenario(registry.requireScenario(group.getScenarios().getFirst()))
-				.group(group)
-				.build();
-	}
-
-	private ScenarioRegistry loadRegistry(String providerName) throws ReflectiveOperationException {
-		ClassLoader loader = Thread.currentThread().getContextClassLoader();
-		Class<? extends AnvilScenarioProvider> providerType = Class
-				.forName(providerName, true, loader)
-				.asSubclass(AnvilScenarioProvider.class);
-
-		AnvilScenarioProvider provider = providerType.getDeclaredConstructor().newInstance();
-		ScenarioRegistry registry = new ScenarioRegistry();
-		provider.register(registry);
-
-		return registry;
-	}
-
-	private ScenarioGroup requireGroup(ScenarioRegistry registry, String name) {
-		return registry.groups().stream()
-				.filter(group -> group.getName().equals(name))
-				.findFirst()
-				.orElseThrow(() -> new IllegalArgumentException("Unknown group: " + name));
 	}
 }

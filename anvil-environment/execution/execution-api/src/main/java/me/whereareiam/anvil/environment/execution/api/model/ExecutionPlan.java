@@ -3,10 +3,11 @@ package me.whereareiam.anvil.environment.execution.api.model;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessScheduling;
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessSpec;
 import org.jetbrains.annotations.NotNull;
 
-import java.time.Duration;
 import java.util.List;
 
 /**
@@ -16,11 +17,16 @@ import java.util.List;
 @Value
 @Builder
 public class ExecutionPlan {
-	@NotNull String executionId;
+	@NotNull String executionProviderId;
 	@NotNull ExecutionContext context;
 	@NotNull @Singular("process") List<ProcessSpec> processes;
-	@NotNull Duration startupTimeout;
-	@NotNull Duration stopTimeout;
-	int parallelism;
-	int startupMemoryMegabytes;
+	/**
+	 * Resolved positive startup and shutdown deadlines for each process.
+	 */
+	@NotNull ProcessTimeouts processTimeouts;
+
+	/**
+	 * Resolved positive limits applied within each preparation or bulk-start operation.
+	 */
+	@NotNull ProcessScheduling processScheduling;
 }

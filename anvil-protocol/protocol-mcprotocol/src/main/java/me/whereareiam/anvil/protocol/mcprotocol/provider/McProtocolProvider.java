@@ -22,12 +22,16 @@ public final class McProtocolProvider implements ProtocolProvider {
 	}
 
 	@Override
-	public @NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull ProtocolRuntimeResolver artifacts) {
-		return new McProtocolClientPool(cacheDirectory, new MicrosoftAuthentication(cacheDirectory), artifacts);
+	public @NotNull ProtocolBackend create(
+			@NotNull Path cacheDirectory,
+			@NotNull Path accountsDirectory,
+			@NotNull ProtocolRuntimeResolver artifacts
+	) {
+		return new McProtocolClientPool(cacheDirectory, new MicrosoftAuthentication(accountsDirectory), artifacts);
 	}
 
 	@Override
-	public @NotNull Optional<ProtocolAuthentication> authentication(@NotNull Path cacheDirectory) {
-		return Optional.of(new MicrosoftAuthentication(cacheDirectory));
+	public @NotNull Optional<ProtocolAuthentication> authentication(@NotNull Path accountsDirectory) {
+		return Optional.of(new MicrosoftAuthentication(accountsDirectory));
 	}
 }

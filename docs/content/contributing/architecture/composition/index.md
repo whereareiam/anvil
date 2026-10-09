@@ -3,15 +3,28 @@ title: Runtime composition
 description: Connect scoped services through global registration and typed assembly bindings.
 ---
 
-`AnvilLauncher.builder()` creates an `EngineBuilder` with the default scenario executor. An
-`EngineExtension` contributes global lifecycle behavior through `EngineRegistration`: it can
-register a `ScenarioExecutor`, add `ScenarioExtension` callbacks, and transfer shared resources with
-`own`. Registration closes before the engine accepts scenarios.
+`AnvilLauncher.builder()` defers assembly until `build()`. `LauncherAssembly` then acquires shared
+services and creates the default scenario factory. The launcher supplies that factory directly to
+`AnvilEngineBuilder`, transfers assembly ownership to the engine, and installs caller extensions.
+An `EngineExtension` adds `ScenarioExtension` callbacks and transfers shared resources through
+`EngineRegistration.own`. Registration closes before the engine accepts scenarios.
 
-The default executor belongs to launcher assembly. It binds scoped services and returns a ready
-`ScenarioContext` using the engine-owned `RunningScenario` implementation. That context closes
-players before finalizing processes. The engine then attaches global scenario extensions and runs the setup hook.
-External integrations such as JUnit and Gradle use this public lifecycle.
+The factory is a required construction dependency, independent of optional extensions. A bare
+`AnvilEngineBuilder(factory)` can build an engine without registering any extensions. The factory
+is borrowed: a custom assembly either retains its resources or transfers them through `own`.
+Failed launcher assembly releases acquired services; failed extension installation releases
+transferred resources in reverse order, with assembly services released last.
+
+The default scenario factory belongs to launcher assembly. `ScenarioFactory.create(scenario, observer)`
+binds scoped services and returns a `ScenarioContext` before process startup. That context owns
+prepared resources, starts its process group, and closes players before finalizing processes.
+The engine retains it immediately and installs global attachments and setup once, after complete
+startup reaches readiness.
+
+`ScenarioEngine.prepare(...)` exposes that owned context for individual controls.
+`ScenarioEngine.start(...)` prepares a context and completes its `start()` before returning.
+JUnit, the foreground runner, and the [IDE session](../tooling/index.md) share these phases;
+individual controls retain one wired environment across server/proxy starts and stops.
 
 ## Compose capabilities for each owner
 
@@ -51,12 +64,26 @@ directly from the process without creating a player. Global process contracts do
 APIs. A custom process implementation can supply capabilities through the same lookup contract.
 
 Launcher `ProcessComposition` selects agent-backed factories and supplies their request channels.
-Capability-owned adapters feed `ProcessCapabilityRuntime`, which validates each process graph,
-creates `ProcessCapabilities`, and attaches them through `CapabilityProcessGroup`. Each handle
-describes one generation; capability instances belong to the logical process and survive generation
-replacement. The agent client reconnects to the new generation, and requests during disconnection
-report unavailability. Closing the process capability owner makes lookups fail and availability
-checks return `false`.
+Capability-owned adapters feed `ProcessCapabilityRuntime`, which validates each process graph and
+retains one logical `ProcessCapabilities` owner. Launcher assembly supplies that core `CapabilityOwner`
+as an execution input. Managed process handles delegate capability lookup to the owner directly;
+Launcher preparation initializes each owner from `PreparedLaunch.started()` after agent attachment.
+`CapabilityProcessGroup` finalizes the logical owners before the processes; execution operations and
+handles stay with managed execution.
+
+Capabilities initialize after their process first reaches readiness and survive generation
+replacement. Execution assigns the immutable `RunningProcess.executionId()` UUID, so the observer,
+lookup, and tooling share one authoritative execution identity. The agent client reconnects to the
+new generation, and requests during disconnection report unavailability. Closing the process
+capability owner makes lookups fail and availability checks return `false`.
+
+Agent directory entries identify registered process clients, including processes that have not
+started. `AgentConnection.available()` reports whether a connection is attached and locally open;
+it does not probe remote health or guarantee a later request succeeds. Requests made without an
+open connection throw `AgentUnavailableException`. An empty `AgentClient.identity()` result means
+that a connected platform does not observe the player. Player observation skips unavailable agents
+and tolerates disconnection before a query begins, while communication and remote operation failures
+remain visible to the caller.
 
 `PlayerObservation` is a global player contract, so the built-in `Server` capability can observe
 identity and route information through a neutral `PlayerCapabilityProvider`, without depending on
@@ -67,8 +94,12 @@ own stable SDK service interfaces through the protocol player's explicit extensi
 
 Platform planning resolves Java requirement/source precedence, process roles, startup dependencies,
 and game endpoint exposure in `ProcessPlan`. Launcher assembly maps those values to execution inputs.
-Custom planners constructing `ProcessPlan` directly must supply the effective `javaRequirement`,
-optional `javaSource`, `proxy` and `publishGame` flags, and ordered `dependencies`.
+`JavaSelection` groups requirement and source at engine, scenario, and process levels. Planning
+fills omitted members independently, then passes the resolved selection through `ProcessPlan` and
+execution's `ProcessRequest`. Custom planners must supply a selection containing a requirement;
+its source may remain unspecified. They also supply `proxy`, `publishGame`, and ordered `dependencies`.
+`NetworkPolicy` carries declared bind address, LAN permission, exposure, and access constraints into
+execution. Provider-translated process endpoints remain separate runtime values.
 
 Managed execution receives an `ExecutionPlan` containing locations, readiness rules, resource
 budgets, and dependencies. Its separate `ExecutionPreparation` boundary prepares files once the

@@ -1,6 +1,6 @@
 ---
 title: Live tests
-description: Verify native workers and real server/proxy behavior across the supported catalog.
+description: Verify native workers and real server/proxy behavior across the supported compatibility definitions.
 ---
 
 Real platform tests live in `anvil-testkit/tests/server/src/test`. They start pinned distributions
@@ -22,12 +22,14 @@ real online-account authentication to this suite.
 | `PlayerIdentityReconnectSystemTest` | Kicks, reconnects, and observed identity replacement |
 | `ProxyServerCompatibilitySystemTest` | Supported direct and proxy routes |
 | `ExternalExtensionSystemTest` | Externally packaged capabilities and platform-agent operations |
+| `PartialScenarioLifecycleSystemTest` | Individual starts in a wired two-proxy, three-server environment; setup once, retained endpoints/workspaces, agent reconnection, and cleanup |
 
 For example:
 
 ```shell
 ./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*PlayerIdentityReconnectSystemTest'
 ./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*ExternalExtensionSystemTest'
+./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*PartialScenarioLifecycleSystemTest'
 ./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*ProxyServerCompatibilitySystemTest' -PanvilMatrixFilter='.*spigot.*'
 ```
 
@@ -70,6 +72,31 @@ CI divides compatibility names into these mutually exclusive groups:
 Keep scenario prefixes and CI filters aligned when adding another proxy family. Tag or matrix
 selection does not enable live tests without full mode.
 
+## Inspect framework environments in the IDE
+
+Open the Anvil repository with the [IntelliJ plugin](../../../integrations/intellij/installation/index.md)
+and open its Anvil tool window. It imports the project model when needed and loads the scenario definitions
+automatically. The `anvil-testkit/tests/server` module applies the standard Anvil plugin to its `src/anvil`
+compatibility definitions. The plugin itself is resolved at the build's `anvilVersion`, so publish it
+first with `./gradlew publishToMavenLocal`; the Anvil runtime it adds is substituted with the current
+source projects.
+
+Preparation compiles those definitions and resolves the declared fixture variants from the
+independent `anvil-testkit/fixtures` build. Its root-composite invocation substitutes current public
+Anvil source projects. The declaration forwards exact `anvil.testkit.fixture.*` paths as tracked
+artifact inputs; JUnit task properties are not copied implicitly. The definitions contain twelve
+environments: Paper, Spigot, Velocity→Paper, Velocity→Spigot, BungeeCord→Paper, and BungeeCord→Spigot
+for both `1.21.11` and `26.1.2`. The IDE presents the eight wired environments and their components;
+the matching standalone presets stay available to the direct-server test matrix and saved runs.
+Loading the definitions starts no Minecraft processes. Selecting Run starts
+the chosen environment with the module's declared properties and artifacts. Selecting a component
+exposes its individual Start action; the prepared environment retains the full wiring while its
+other JVMs remain stopped.
+
+These scenario definitions do not create players automatically. Individual JUnit methods create
+their players and method-scoped fixtures, and still use the live-test commands above. Starting an
+IDE environment does not run those methods or their assertions.
+
 ## Investigate a failure
 
 Read the test failure and captured process output first. Startup, restart, or cleanup failures can
@@ -77,6 +104,8 @@ retain diagnostic workspaces under the server module's `build/anvil` directory; 
 process's `anvil-console.log`. Check the distribution pin, Java requirement, readiness, and forwarding
 configuration before increasing timeouts.
 
-An assertion failure by itself does not currently guarantee retention of an otherwise successful
-scenario. Collect the diagnostics relevant to your assertion in the test output. Consumer journeys
+The JUnit integration supplies failed test outcomes to finalization. Tests that own a prepared
+context directly, including `PartialScenarioLifecycleSystemTest`, pass
+their success flag to `finish(successful)` so failed caller work reaches retention policy. Collect
+the diagnostics relevant to your assertion in the test output. Consumer journeys
 run separately after [local publication](../../publishing/index.md#local-publication).

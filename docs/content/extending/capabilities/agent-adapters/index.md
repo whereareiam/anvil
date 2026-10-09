@@ -114,7 +114,7 @@ where the consumer retrieves the result:
 
 ## Verify the round trip
 
-Install the host dependency in `anvilCapabilities`, install the handler JAR as a workspace asset, and
+Install the host dependency in `anvilImplementation`, install the handler JAR as a workspace asset, and
 run the assertion on the [public contract page](../contracts/index.md). See
 [Installing agent operations](../../agent-operations/installation/index.md) for the workspace path.
 

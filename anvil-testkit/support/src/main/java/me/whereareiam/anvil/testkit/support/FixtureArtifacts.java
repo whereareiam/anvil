@@ -11,6 +11,7 @@ import java.nio.file.Path;
  */
 public final class FixtureArtifacts {
 	private static final String PROPERTY_PREFIX = "anvil.testkit.fixture.";
+	private static final String ANVIL_ARTIFACT_PREFIX = "anvil.artifact.testkit-";
 
 	public static @NotNull Path process() {
 		return artifact("process");
@@ -35,8 +36,10 @@ public final class FixtureArtifacts {
 	private static Path artifact(String name) {
 		String property = PROPERTY_PREFIX + name;
 		String configured = System.getProperty(property);
+		if (configured == null || configured.isBlank()) configured = System.getProperty(ANVIL_ARTIFACT_PREFIX + name);
 		if (configured == null || configured.isBlank())
-			throw new IllegalStateException("The test task did not supply fixture artifact '" + name + "' through " + property);
+			throw new IllegalStateException("The Anvil runtime did not supply fixture artifact '" + name
+					+ "' through " + property + " or " + ANVIL_ARTIFACT_PREFIX + name);
 
 		Path artifact;
 		try {

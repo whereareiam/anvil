@@ -30,6 +30,11 @@ dependencyResolutionManagement {
         create("libs") {
             from(files("../../gradle/libs.versions.toml"))
         }
+        // Framework modules follow the same version as the Anvil plugins above.
+        create("anvilModules") {
+            version("anvil", anvilVersion)
+            library("protocol-mcprotocol", "me.whereareiam.anvil", "protocol-mcprotocol").versionRef("anvil")
+        }
     }
 
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)

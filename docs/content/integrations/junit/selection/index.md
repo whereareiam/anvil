@@ -18,7 +18,7 @@ package com.example.test;
 
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.type.ProcessState;
-import me.whereareiam.anvil.junit.AnvilTest;
+import me.whereareiam.anvil.integration.junit.AnvilTest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -45,7 +45,7 @@ instance lifecycle.
 
 Keep reusable assertion code in helper methods, then call those helpers from separate annotated
 methods for different definition classes. The [consumer example](https://github.com/whereareiam/anvil/tree/dev/examples/proof-of-patience)
-uses this pattern to exercise one journey on both catalog versions.
+uses this pattern to exercise one journey on both supported versions.
 
 ## Lifecycle boundaries
 

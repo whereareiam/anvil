@@ -72,6 +72,25 @@ jobs:
           ANVIL_VERSION: ${{ steps.version.outputs.value }}
         run: >-
           ./gradlew --no-daemon build publishToMavenLocal
+          :anvil-integration:integration-intellij:intellij:buildPlugin
+          :anvil-integration:integration-intellij:intellij:verifyPlugin
+          -PanvilVersion="$ANVIL_VERSION"
+          -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
+
+      - name: Upload IntelliJ plugin
+        uses: actions/upload-artifact@v6
+        with:
+          name: anvil-intellij-${{ steps.version.outputs.value }}
+          path: anvil-integration/integration-intellij/intellij/build/distributions/*.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      - name: Verify standalone fixture consumers
+        env:
+          ANVIL_VERSION: ${{ steps.version.outputs.value }}
+        run: >-
+          ./gradlew --no-daemon -p anvil-testkit/fixtures clean build
           -PanvilVersion="$ANVIL_VERSION"
           -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
 

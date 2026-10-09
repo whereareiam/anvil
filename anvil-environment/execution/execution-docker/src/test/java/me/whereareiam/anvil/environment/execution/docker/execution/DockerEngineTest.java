@@ -1,14 +1,15 @@
 package me.whereareiam.anvil.environment.execution.docker.execution;
 
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.docker.DockerEngine;
 import me.whereareiam.anvil.environment.execution.docker.DockerNetwork;
 import me.whereareiam.anvil.testkit.support.FixtureArtifacts;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -51,7 +52,7 @@ class DockerEngineTest {
 	void coordinatesAndValidatesTheImageThenRunsThePreparedCommand() throws Exception {
 		ReentrantLock metadata = new ReentrantLock();
 		AtomicBoolean validated = new AtomicBoolean();
-		ExecutionContext context = ExecutionContext.builder().cacheDirectory(directory).bindAddress("127.0.0.1")
+		ExecutionContext context = ExecutionContext.builder().cacheDirectory(directory)
 				.localRuntime((request, source) -> { throw new AssertionError("Docker must not acquire host Java"); })
 				.imageLocks(path -> {
 					assertTrue(path.startsWith(directory.resolve("docker-images")));
@@ -71,7 +72,7 @@ class DockerEngineTest {
 				Files.createDirectories(workspace);
 				Path jar = Files.copy(FixtureArtifacts.process(), workspace.resolve("process.jar"));
 				var request = ProcessRequest.builder().name("smoke").workspace(workspace)
-						.javaRequirement(JavaRequirement.builder().featureVersion(21).build()).minimumJavaVersion(21).build();
+						.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().featureVersion(21).build()).build()).minimumJavaVersion(21).build();
 				try (var target = session.prepare(request)) {
 					assertTrue(validated.get());
 					assertFalse(metadata.isLocked());

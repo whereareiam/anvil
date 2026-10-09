@@ -13,10 +13,9 @@ import java.util.Map;
 @Getter
 @RequiredArgsConstructor
 public enum RunnerOption {
-	PROVIDER("provider"),
 	LIST("list"),
 	SCENARIO("scenario"),
-	GROUP("group");
+	DEFINITION("definition");
 
 	private static final Map<String, RunnerOption> BY_NAME = byName();
 

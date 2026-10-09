@@ -11,7 +11,8 @@ composition, and real platforms where the change crosses those boundaries.
 | Local algorithm, cache, file writer, or API behavior | Owning module's unit/focused integration tests |
 | Dependency graph or runtime provider composition | Architecture checks and `anvil-testkit/tests/runtime` |
 | Packet bindings, sessions, identity, routing, or native agents | Exact worker contracts and `anvil-testkit/tests/server` |
-| Published plugin or artifact wiring | Local publication and the standalone consumer |
+| IDE discovery, run controls, or presentation | Project-model producer, runner, and native IntelliJ tests |
+| Published plugin or artifact wiring | Local publication, independent fixtures, and the standalone consumer |
 | Documentation only | Links, navigation, symbols, and Scriptorium compilation |
 
 - [Unit and runtime tests](./unit-runtime/index.md) covers fast checks and module ownership.

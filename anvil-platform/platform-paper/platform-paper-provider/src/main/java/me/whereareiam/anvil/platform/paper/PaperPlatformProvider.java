@@ -63,6 +63,11 @@ public final class PaperPlatformProvider implements PlatformProvider {
 	}
 
 	@Override
+	public @NotNull List<String> jvmArguments(@NotNull MinecraftProcess process, boolean consoleColors) {
+		return consoleColors ? List.of("-Dterminal.ansi=true", "-Dterminal.jline=false") : List.of();
+	}
+
+	@Override
 	public @NotNull List<String> programArguments(@NotNull MinecraftProcess process) {
 		return List.of("nogui");
 	}

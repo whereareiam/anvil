@@ -1,11 +1,13 @@
 package me.whereareiam.anvil.launcher.assembly.player;
 
+import me.whereareiam.anvil.api.model.PresentationMetadata;
+import me.whereareiam.anvil.capability.binding.TypedCapabilityChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolCapabilityPlayer;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
-import me.whereareiam.anvil.capability.binding.TypedCapabilityChannel;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -15,10 +17,17 @@ import java.util.Optional;
 final class ProtocolPlayerAdapter implements ProtocolCapabilityPlayer {
 	private final @NotNull ProtocolPlayer player;
 	private final @NotNull Optional<CapabilityChannel> channel;
+	private final @Nullable PresentationMetadata metadata;
 
-	ProtocolPlayerAdapter(@NotNull ProtocolPlayer player) {
+	ProtocolPlayerAdapter(@NotNull ProtocolPlayer player, @Nullable PresentationMetadata metadata) {
 		this.player = player;
+		this.metadata = metadata;
 		channel = player.channel().map(protocol -> new TypedCapabilityChannel(new ProtocolMessageChannel(protocol)));
+	}
+
+	@Override
+	public @Nullable PresentationMetadata metadata() {
+		return metadata;
 	}
 
 	@Override

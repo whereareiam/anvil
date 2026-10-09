@@ -7,6 +7,13 @@ package me.whereareiam.anvil.api.process;
  */
 public interface ProcessGroup extends ScenarioProcesses, AutoCloseable {
 	/**
+	 * Starts all remaining prepared processes in dependency order without executing scenario setup.
+	 * Ready processes retain their current generation and stopped processes receive fresh generations.
+	 * Callers outside the scenario owner use {@code ScenarioContext.start()}, which also runs setup.
+	 */
+	void startAll();
+
+	/**
 	 * Releases every owned resource and records the run outcome for workspace retention.
 	 *
 	 * @param successful whether scenario setup and caller work completed successfully

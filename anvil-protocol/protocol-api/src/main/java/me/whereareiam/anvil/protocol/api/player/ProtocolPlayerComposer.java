@@ -1,8 +1,10 @@
 package me.whereareiam.anvil.protocol.api.player;
 
+import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 
@@ -18,12 +20,14 @@ public interface ProtocolPlayerComposer {
 	 *
 	 * @param player backend-owned protocol player
 	 * @param observation player identity and route observation
+	 * @param metadata optional presentation details supplied by the player declaration
 	 * @param onDestroyed callback invoked after permanent destruction
 	 * @return public simulated player facade
 	 */
 	@NotNull SimulatedPlayer compose(
 			@NotNull ProtocolPlayer player,
 			@NotNull PlayerObservation observation,
+			@Nullable PresentationMetadata metadata,
 			@NotNull Consumer<SimulatedPlayer> onDestroyed
 	);
 

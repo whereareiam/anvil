@@ -7,6 +7,7 @@ import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Duration;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashSet;
@@ -25,6 +26,8 @@ public final class ScenarioValidator {
 	 */
 	public void validate(@NotNull AnvilScenario scenario, boolean eulaAccepted) {
 		validateDeclaration(scenario);
+		validateTimeout("Startup", scenario.getProcessTimeouts().getStartup());
+		validateTimeout("Shutdown", scenario.getProcessTimeouts().getShutdown());
 		validateBinding(scenario);
 		validateEula(scenario, eulaAccepted);
 		validateProcessReferences(scenario);
@@ -37,13 +40,18 @@ public final class ScenarioValidator {
 			throw new ScenarioValidationException("Scenario '" + scenario.getName() + "' has no servers or proxies");
 	}
 
+	private void validateTimeout(String name, @Nullable Duration timeout) {
+		if (timeout != null && (timeout.isZero() || timeout.isNegative()))
+			throw new ScenarioValidationException(name + " timeout must be positive");
+	}
+
 	private void validateBinding(@NotNull AnvilScenario scenario) {
 		try {
-			if (InetAddress.getByName(scenario.getBindAddress()).isLoopbackAddress()) return;
+			if (InetAddress.getByName(scenario.getNetworkPolicy().getBindAddress()).isLoopbackAddress()) return;
 		} catch (UnknownHostException failure) {
-			throw new ScenarioValidationException("Invalid scenario bind address: " + scenario.getBindAddress(), failure);
+			throw new ScenarioValidationException("Invalid scenario bind address: " + scenario.getNetworkPolicy().getBindAddress(), failure);
 		}
-		if (!scenario.isManual() || !scenario.isAllowLanBinding())
+		if (!scenario.isManual() || !scenario.getNetworkPolicy().isAllowLanBinding())
 			throw new ScenarioValidationException("Non-loopback binding requires a manual scenario and allowLanBinding=true");
 	}
 

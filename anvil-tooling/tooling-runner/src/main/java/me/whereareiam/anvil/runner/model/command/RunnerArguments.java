@@ -11,12 +11,10 @@ import org.jetbrains.annotations.Nullable;
 @Value
 @Builder
 public class RunnerArguments {
-    @NotNull
-    String provider;
-    @Builder.Default
-    boolean list = false;
-    @Nullable
-    String scenario;
-    @Nullable
-    String group;
+	@Builder.Default
+	boolean list = false;
+	@Nullable
+	String scenario;
+	@Nullable
+	String definition;
 }

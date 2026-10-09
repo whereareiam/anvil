@@ -74,7 +74,9 @@ public interface PlatformProvider {
 	) throws IOException;
 
 	/**
-	 * Writes platform configuration into a clean workspace.
+	 * Applies runtime settings to the prepared workspace before each process start, including restarts.
+	 * Preserve unrelated configuration and restrict writes to this process's workspace.
+	 * Independent processes may be configured concurrently using the same provider instance.
 	 *
 	 * @param process server or proxy declaration
 	 * @param context provisioning context
@@ -96,6 +98,20 @@ public interface PlatformProvider {
 	 * @return Java feature version
 	 */
 	int minimumJavaVersion(@NotNull MinecraftProcess process);
+
+	/**
+	 * Returns JVM defaults selected by this platform while planning a process launch.
+	 * The engine places these arguments before the process declaration's explicit JVM arguments,
+	 * so an explicit process system property overrides a provider default for the same property.
+	 * Implementations must leave the process declaration unchanged. The default supplies no arguments.
+	 *
+	 * @param process server or proxy declaration
+	 * @param consoleColors whether the output consumer requests ANSI colors; false preserves platform defaults
+	 * @return immutable ordered provider JVM defaults
+	 */
+	default @NotNull List<String> jvmArguments(@NotNull MinecraftProcess process, boolean consoleColors) {
+		return List.of();
+	}
 
 	/**
 	 * Returns arguments appended after the executable JAR.

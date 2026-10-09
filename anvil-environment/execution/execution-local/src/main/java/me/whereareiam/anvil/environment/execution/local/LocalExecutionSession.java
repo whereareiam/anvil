@@ -36,13 +36,13 @@ final class LocalExecutionSession implements ExecutionSession {
 				&& context.getNetworkPolicy().getBackendNetworkExposure() == NetworkExposure.PRIVATE)
 			throw new ProvisioningException("Local execution cannot enforce proxy-only private backend access");
 
-		JavaSource source = request.getJavaSource() == null
-				? settings.source(request.getJavaRequirement())
-				: request.getJavaSource();
+		JavaSource source = request.getJavaSelection().getSource() == null
+				? settings.source(request.getJavaSelection().getRequirement())
+				: request.getJavaSelection().getSource();
 
 		Path executable = runtime.executable(request, source);
 		return new LocalProcessTarget(request, executable,
-				new InetSocketAddress(context.getBindAddress(), port(context.getBindAddress())),
+				new InetSocketAddress(context.getNetworkPolicy().getBindAddress(), port(context.getNetworkPolicy().getBindAddress())),
 				new InetSocketAddress("127.0.0.1", port("127.0.0.1")));
 	}
 

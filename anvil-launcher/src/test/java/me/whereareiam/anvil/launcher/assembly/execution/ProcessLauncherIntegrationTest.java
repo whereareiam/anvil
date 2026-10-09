@@ -1,9 +1,10 @@
 package me.whereareiam.anvil.launcher.assembly.execution;
 
-import me.whereareiam.anvil.agent.client.api.AgentClient;
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.agent.api.exception.AgentException;
 import me.whereareiam.anvil.agent.api.model.AgentIdentity;
 import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
+import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
@@ -56,9 +57,9 @@ class ProcessLauncherIntegrationTest {
 						.source(AssetSource.path(asset)).target(Path.of("installed.txt")).build()).build())
 				.build();
 		var scenario = AnvilScenario.builder().name("test").entrypoint("server").server(declaration)
-				.startupTimeout(Duration.ofSeconds(5)).build();
+				.processTimeouts(ProcessTimeouts.builder().startup(Duration.ofSeconds(5)).build()).build();
 		var options = EngineDefaults.resolve(EngineOptions.builder().workDirectory(directory.resolve("work"))
-				.cacheDirectory(directory.resolve("cache")).eulaAccepted(true).stopTimeout(Duration.ofSeconds(2)).build());
+				.cacheDirectory(directory.resolve("cache")).eulaAccepted(true).processTimeouts(ProcessTimeouts.builder().shutdown(Duration.ofSeconds(2)).build()).build());
 		List<String> calls = new ArrayList<>();
 		List<String> tokens = new ArrayList<>();
 		List<Integer> ports = new ArrayList<>();
@@ -107,7 +108,11 @@ class ProcessLauncherIntegrationTest {
 					.imageLocks(new CacheImageLocks(provisioning.getCache()))
 					.build();
 			var agents = new ScenarioAgentDirectory();
-			try (var group = launcher.start(platforms.plan(scenario), agents)) {
+			try (var group = launcher.prepare(platforms.plan(scenario), agents, null, null)) {
+				assertEquals(List.of("resolve"), preparation);
+				assertTrue(tokens.isEmpty());
+				assertTrue(group.all().isEmpty());
+				group.startAll();
 				var original = group.server("server");
 				borrowed.set(agents.require("server"));
 				borrowed.get().executeCommand("before");
@@ -131,6 +136,11 @@ class ProcessLauncherIntegrationTest {
 
 	private AgentClient agent(int generation, List<String> calls) {
 		return new AgentClient() {
+			@Override
+			public boolean available() {
+				return true;
+			}
+
 			@Override
 			public <T> T request(@NotNull String operation, @NotNull Object args, @NotNull Class<T> response) { throw new UnsupportedOperationException(); }
 			@Override

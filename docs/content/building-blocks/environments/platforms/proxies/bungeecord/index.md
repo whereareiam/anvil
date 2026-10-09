@@ -16,7 +16,7 @@ these builder fragments:
 .distribution(Distribution.remote("BungeeCord", "2085"))
 ```
 
-`BungeeCord` names the Jenkins job and `2085` is the pinned build used in Anvil's compatibility catalog.
+`BungeeCord` names the Jenkins job and `2085` is the pinned build used in Anvil's compatibility definitions.
 Keep the existing backend declarations, default server, and scenario entrypoint.
 Run the same consumer test to establish that the player reaches the named lobby through BungeeCord.
 

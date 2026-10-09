@@ -4,7 +4,7 @@ description: Inspect agent-observed player presence, identity, and aggregate rou
 ---
 
 `Server` exposes a player's agent-observed identity and aggregate route. Install
-the server capability unit and the relevant platform units, or use the umbrella plugin with those
+the server capability unit and the relevant platform units, or explicitly select the default capability unit with those
 platform units. The capability uses platform agents and has no Session dependency.
 
 ## Wait for an observed route

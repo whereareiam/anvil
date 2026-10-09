@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 
 final class StubScenarioProcesses implements ScenarioProcesses {
 	private RunningServer server;
@@ -54,6 +55,16 @@ final class StubScenarioProcesses implements ScenarioProcesses {
 	}
 
 	@Override
+	public @NotNull RunningProcess start(@NotNull String name) {
+		return get(name);
+	}
+
+	@Override
+	public void stop(@NotNull String name) {
+		get(name);
+	}
+
+	@Override
 	public @NotNull RunningProcess restart(@NotNull String name) {
 		RunningServer previous = server(name);
 		server = new StubServer(name, previous.workDirectory(),
@@ -66,6 +77,10 @@ final class StubScenarioProcesses implements ScenarioProcesses {
 		private final String name;
 		private final Path workspace;
 		private final InetSocketAddress address;
+		private final UUID executionId = UUID.randomUUID();
+
+		@Override
+		public @NotNull UUID executionId() { return executionId; }
 
 		@Override
 		public @NotNull String name() {

@@ -2,10 +2,8 @@ package me.whereareiam.anvil.environment.execution.api.model.process;
 
 import lombok.Builder;
 import lombok.Value;
-import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import org.jetbrains.annotations.NotNull;
-import me.whereareiam.anvil.api.model.java.JavaSource;
-import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 
@@ -17,9 +15,13 @@ import java.nio.file.Path;
 public class ProcessRequest {
 	@NotNull String name;
 	@NotNull Path workspace;
-	@NotNull JavaRequirement javaRequirement;
-	@Nullable JavaSource javaSource;
+
+	/**
+	 * Resolved Java selection with a requirement and an optional explicit source.
+	 */
+	@NotNull JavaSelection javaSelection;
 	int minimumJavaVersion;
+
 	boolean agent;
 	@Builder.Default
 	boolean publishGame = true;

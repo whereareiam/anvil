@@ -1,6 +1,8 @@
 plugins {
     java
     id("me.whereareiam.anvil")
+    id("me.whereareiam.anvil.junit")
+    id("me.whereareiam.anvil.capability.default")
     id("me.whereareiam.anvil.platform.paper")
 }
 
@@ -11,7 +13,7 @@ dependencies {
 
     testRuntimeOnly(libs.junit.platform)
 
-    add("anvilProtocols", anvil.protocols.mcprotocol)
+    add("anvilRuntimeOnly", anvilModules.protocol.mcprotocol)
 }
 
 tasks.test {
@@ -20,6 +22,8 @@ tasks.test {
 
 anvil {
     acceptEula()
-    protocol("mcprotocol")
+    engine {
+        protocol("mcprotocol")
+    }
     artifact("plugin-under-test", tasks.named("jar"))
 }

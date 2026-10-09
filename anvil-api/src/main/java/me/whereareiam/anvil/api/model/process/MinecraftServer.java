@@ -3,8 +3,8 @@ package me.whereareiam.anvil.api.model.process;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
-import me.whereareiam.anvil.api.model.java.JavaRequirement;
-import me.whereareiam.anvil.api.model.java.JavaSource;
+import me.whereareiam.anvil.api.model.PresentationMetadata;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,18 +19,21 @@ import java.util.Map;
 @Builder(toBuilder = true)
 public class MinecraftServer implements MinecraftProcess {
 	@NotNull String name;
+
+	/**
+	 * Optional labels for tooling; the process name remains its routing identity.
+	 */
+	@Nullable PresentationMetadata metadata;
+
 	@NotNull String platform;
 	@NotNull Distribution distribution;
 
 	/**
-	 * Process Java override; null inherits the scenario requirement.
+	 * Process-specific Java selection; omitted members inherit from the scenario and engine.
 	 */
-	@Nullable JavaRequirement javaRequirement;
-
-	/**
-	 * Process Java source; null inherits the scenario source.
-	 */
-	@Nullable JavaSource javaSource;
+	@NotNull
+	@Builder.Default
+	JavaSelection javaSelection = JavaSelection.builder().build();
 
 	@Nullable String minecraftVersion;
 

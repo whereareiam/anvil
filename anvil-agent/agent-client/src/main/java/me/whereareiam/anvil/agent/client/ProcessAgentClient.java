@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.agent.client;
 
-import me.whereareiam.anvil.agent.client.api.AgentClient;
-import me.whereareiam.anvil.agent.api.exception.AgentException;
 import me.whereareiam.anvil.agent.api.model.AgentIdentity;
+import me.whereareiam.anvil.agent.client.api.AgentClient;
+import me.whereareiam.anvil.agent.client.api.exception.AgentUnavailableException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,9 +15,9 @@ public final class ProcessAgentClient implements AgentClient {
 	private @Nullable AgentClient connection;
 
 	/**
-	 * Attaches the transport for a process generation after the previous generation has closed.
+	 * Attaches the transport for a process execution after the previous execution has closed.
 	 *
-	 * @param replacement connection for the new process generation
+	 * @param replacement connection for the new process execution
 	 * @throws IllegalStateException when the previous connection is still attached
 	 */
 	public synchronized void attach(@NotNull AgentClient replacement) {
@@ -28,6 +28,11 @@ public final class ProcessAgentClient implements AgentClient {
 		}
 
 		connection = replacement;
+	}
+
+	@Override
+	public synchronized boolean available() {
+		return connection != null && connection.available();
 	}
 
 	@Override
@@ -61,7 +66,7 @@ public final class ProcessAgentClient implements AgentClient {
 	}
 
 	private @NotNull AgentClient connection() {
-		if (connection == null) throw new AgentException("Platform agent is unavailable during process restart or after cleanup");
+		if (connection == null) throw new AgentUnavailableException("No open connection to the process agent");
 
 		return connection;
 	}

@@ -48,7 +48,7 @@ public final class CapabilityPlayerComposerProvider implements ProtocolPlayerCom
 							.orElseThrow(() -> new CapabilityException("Process '" + processName + "' has no agent request channel"))));
 
 		PlayerCapabilityRuntime capabilities = PlayerCapabilityRuntime.discover(protocolId, adapted);
-		return (player, observation, onDestroyed) -> capabilities.compose(
-				new ProtocolPlayerAdapter(player), observation, onDestroyed);
+		return (player, observation, metadata, onDestroyed) -> capabilities.compose(
+				new ProtocolPlayerAdapter(player, metadata), observation, onDestroyed);
 	}
 }

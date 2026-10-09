@@ -3,8 +3,5 @@ plugins {
 }
 
 tasks.named("build") {
-    dependsOn(
-        ":anvil-tooling:tooling-runner:build",
-        ":anvil-tooling:gradle:build"
-    )
+    dependsOn(subprojects.map { "${it.path}:build" })
 }

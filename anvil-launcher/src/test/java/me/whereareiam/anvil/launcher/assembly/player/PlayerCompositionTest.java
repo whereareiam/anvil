@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class PlayerCompositionTest {
 	private static final String PROVIDER_DESCRIPTOR = "META-INF/services/" + ProtocolPlayerComposerProvider.class.getName();
-	private static final ProtocolPlayerComposer COMPOSER = (player, observation, onDestroyed) -> {
+	private static final ProtocolPlayerComposer COMPOSER = (player, observation, metadata, onDestroyed) -> {
 		throw new AssertionError("Discovery must not create a player");
 	};
 
@@ -61,10 +61,10 @@ public class PlayerCompositionTest {
 			var provider = new CapabilityPlayerComposerProvider();
 			var protocol = new StubPlayer();
 			var observation = new AgentPlayerObservation(protocol.name(), protocol::identity, Map::of, Set.of());
-			var scoped = PlayerComposition.create("selected", agents, provider).compose(protocol, observation, ignored -> {});
+			var scoped = PlayerComposition.create("selected", agents, provider).compose(protocol, observation, null, ignored -> {});
 			try (AutoCloseable scopedCleanup = scoped::destroy) {
 				assertNotNull(scoped.capability(AgentFeature.class).context.channel("server"));
-				var standalone = provider.create("selected").compose(new StubPlayer(), observation, ignored -> {});
+				var standalone = provider.create("selected").compose(new StubPlayer(), observation, null, ignored -> {});
 				try (AutoCloseable standaloneCleanup = standalone::destroy) {
 					var failure = assertThrows(CapabilityException.class,
 							() -> standalone.capability(AgentFeature.class).context.channel("server"));
@@ -127,6 +127,11 @@ public class PlayerCompositionTest {
 	}
 
 	private static final class StubAgent implements AgentClient {
+		@Override
+		public boolean available() {
+			return true;
+		}
+
 		@Override
 		public <T> @Nullable T request(@NotNull String operation, @Nullable Object arguments, @NotNull Class<T> responseType) {
 			throw new AssertionError("Composition must not send agent requests");

@@ -44,29 +44,32 @@ Use this in `build.gradle.kts`:
 plugins {
 	java
 	id("me.whereareiam.anvil") version "0.0.1"
+	id("me.whereareiam.anvil.junit") version "0.0.1"
+	id("me.whereareiam.anvil.capability.default") version "0.0.1"
 	id("me.whereareiam.anvil.platform.paper") version "0.0.1"
-}
-
-dependencies {
-	add("anvilProtocols", anvil.protocols.mcprotocol)
 }
 
 tasks.withType<JavaCompile>().configureEach {
 	options.release.set(21)
 }
 
+dependencies {
+	add("anvilRuntimeOnly", "me.whereareiam.anvil:protocol-mcprotocol:$anvilVersion")
+}
+
 anvil {
 	acceptEula()
-	protocol("mcprotocol")
+	engine {
+		protocol("mcprotocol")
+	}
 }
 ```
 
 Calling `acceptEula()` records your acceptance of the [Minecraft EULA](https://www.minecraft.net/eula).
 Review it before using this configuration.
 
-The umbrella plugin adds JUnit and foreground scenario tooling, together with the built-in
-capabilities. The Paper unit adds Paper provisioning and its platform agent. The protocol dependency
-supplies the native players. Applying Anvil does not package your plugin into a server automatically;
+The standard Anvil plugin adds foreground scenarios and IDE discovery. The JUnit plugin adds
+automated tests, and the explicitly selected default capability unit supplies the built-in capabilities. The Paper unit adds Paper provisioning and its platform agent. Add the protocol provider to `anvilRuntimeOnly` when using simulated players. Applying Anvil does not package your plugin into a server automatically;
 [register its built JAR as an asset](../../building-blocks/environments/workspaces/assets/index.md) when you are ready
 to test its behavior.
 
@@ -87,7 +90,7 @@ without starting a server. Then follow the [first test](../first-test/index.mdx)
 ## Smaller installations
 
 Use `me.whereareiam.anvil.junit` for the automated JUnit workflow or
-`me.whereareiam.anvil.scenarios` for foreground environments. With either smaller installation,
+`me.whereareiam.anvil` for foreground environments. For either entry point,
 choose [capability units](../../building-blocks/players/capabilities/index.md) explicitly and keep the
 required platform and protocol providers installed. The [Gradle integration](../../integrations/gradle/index.md)
 lists the plugin and dependency choices.

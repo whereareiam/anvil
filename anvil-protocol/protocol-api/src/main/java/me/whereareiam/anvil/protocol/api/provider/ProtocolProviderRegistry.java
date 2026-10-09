@@ -71,11 +71,17 @@ public final class ProtocolProviderRegistry {
 	 * Creates the selected backend.
 	 *
 	 * @param id selected provider ID, or {@code null} when exactly one provider is installed
-	 * @param cacheDirectory private Anvil cache root
+	 * @param cacheDirectory private Anvil artifact/cache root
+	 * @param accountsDirectory local account store directory
 	 * @return selected protocol backend
 	 */
-	public @NotNull ProtocolBackend create(@Nullable String id, @NotNull Path cacheDirectory, @NotNull ProtocolRuntimeResolver artifacts) {
-		return select(id).create(cacheDirectory, artifacts);
+	public @NotNull ProtocolBackend create(
+			@Nullable String id,
+			@NotNull Path cacheDirectory,
+			@NotNull Path accountsDirectory,
+			@NotNull ProtocolRuntimeResolver artifacts
+	) {
+		return select(id).create(cacheDirectory, accountsDirectory, artifacts);
 	}
 
 	/**

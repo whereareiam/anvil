@@ -3,13 +3,14 @@ package me.whereareiam.anvil.platform.planning;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.NetworkPolicy;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.java.JavaSource;
-import me.whereareiam.anvil.api.model.process.MinecraftProxy;
-import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
+import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
@@ -34,6 +35,7 @@ import java.util.regex.Pattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -140,11 +142,11 @@ class DefaultPlatformPlannerTest {
 		var engineSource = JavaSource.home(directory.resolve("engine-java"));
 		var scenarioSource = JavaSource.home(directory.resolve("scenario-java"));
 		var processSource = JavaSource.home(directory.resolve("process-java"));
-		var options = EngineOptions.builder().javaRequirement(engineJava).javaSource(engineSource).build();
+		var options = EngineOptions.builder().javaSelection(JavaSelection.builder().requirement(engineJava).source(engineSource).build()).build();
 		var planner = policyPlanner(options);
 		var inherited = MinecraftServer.builder().name("inherited").platform("test")
 				.distribution(Distribution.remote("1.21.11", "1")).build();
-		var overridden = inherited.toBuilder().name("overridden").javaRequirement(processJava).javaSource(processSource).build();
+		var overridden = inherited.toBuilder().name("overridden").javaSelection(JavaSelection.builder().requirement(processJava).source(processSource).build()).build();
 		var proxy = MinecraftProxy.builder().name("proxy").platform("test")
 				.distribution(Distribution.remote("1.21.11", "1"))
 				.server("inherited").server("overridden").defaultServer("inherited").build();
@@ -153,27 +155,56 @@ class DefaultPlatformPlannerTest {
 				.networkPolicy(NetworkPolicy.builder().backendNetworkExposure(NetworkExposure.PRIVATE).build()).build();
 
 		var enginePlan = planner.plan(scenario).getProcesses();
-		assertSame(engineJava, enginePlan.get("inherited").getJavaRequirement());
-		assertSame(engineSource, enginePlan.get("inherited").getJavaSource());
-		var scenarioPlan = planner.plan(scenario.toBuilder().javaRequirement(scenarioJava).javaSource(scenarioSource).build()).getProcesses();
-		assertSame(scenarioJava, scenarioPlan.get("inherited").getJavaRequirement());
-		assertSame(scenarioSource, scenarioPlan.get("inherited").getJavaSource());
-		assertSame(processJava, scenarioPlan.get("overridden").getJavaRequirement());
-		assertSame(processSource, scenarioPlan.get("overridden").getJavaSource());
+		assertSame(engineJava, enginePlan.get("inherited").getJavaSelection().getRequirement());
+		assertSame(engineSource, enginePlan.get("inherited").getJavaSelection().getSource());
+		var scenarioPlan = planner.plan(scenario.toBuilder().javaSelection(JavaSelection.builder().requirement(scenarioJava).source(scenarioSource).build()).build()).getProcesses();
+		assertSame(scenarioJava, scenarioPlan.get("inherited").getJavaSelection().getRequirement());
+		assertSame(scenarioSource, scenarioPlan.get("inherited").getJavaSelection().getSource());
+		assertSame(processJava, scenarioPlan.get("overridden").getJavaSelection().getRequirement());
+		assertSame(processSource, scenarioPlan.get("overridden").getJavaSelection().getSource());
 		assertTrue(scenarioPlan.get("proxy").isProxy());
 		assertTrue(scenarioPlan.get("proxy").isPublishGame());
 		assertEquals(List.of("inherited", "overridden"), scenarioPlan.get("proxy").getDependencies());
 		assertFalse(scenarioPlan.get("inherited").isProxy());
 		assertFalse(scenarioPlan.get("inherited").isPublishGame());
 		assertTrue(scenarioPlan.get("inherited").getDependencies().isEmpty());
-		assertNull(inherited.getJavaRequirement(), "Planning must preserve the caller's declarations");
-		assertNull(inherited.getJavaSource());
+		assertNull(inherited.getJavaSelection().getRequirement(), "Planning must preserve the caller's declarations");
+		assertNull(inherited.getJavaSelection().getSource());
 
 		var direct = scenario.toBuilder().clearProxies().entrypoint("inherited")
 				.networkPolicy(NetworkPolicy.builder().build()).build();
 		var directPlan = policyPlanner(EngineOptions.builder().build()).plan(direct).getProcesses().get("inherited");
 		assertTrue(directPlan.isPublishGame());
-		assertNull(directPlan.getJavaSource(), "Execution may select its own source when none is declared");
+		assertNull(directPlan.getJavaSelection().getSource(), "Execution may select its own source when none is declared");
+	}
+
+	@Test
+	void completesSourceOnlyEngineSelectionAndPreservesIndependentOverrides() {
+		var engineSource = JavaSource.home(directory.resolve("engine-java"));
+		var options = EngineOptions.builder()
+				.javaSelection(JavaSelection.builder().source(engineSource).build())
+				.build();
+		var process = MinecraftServer.builder().name("server").platform("test")
+				.distribution(Distribution.remote("1.21.11", "1")).build();
+		var scenario = AnvilScenario.builder().name("test").entrypoint("server").server(process).build();
+		var planner = policyPlanner(options);
+
+		var inherited = planner.plan(scenario).getProcesses().get("server").getJavaSelection();
+		assertNotNull(inherited.getRequirement());
+		assertNull(inherited.getRequirement().getFeatureVersion());
+		assertSame(engineSource, inherited.getSource());
+
+		var scenarioRequirement = JavaRequirement.builder().featureVersion(25).build();
+		var processSource = JavaSource.home(directory.resolve("process-java"));
+		var configured = scenario.toBuilder()
+				.javaSelection(JavaSelection.builder().requirement(scenarioRequirement).build())
+				.clearServers()
+				.server(process.toBuilder().javaSelection(JavaSelection.builder().source(processSource).build()).build())
+				.build();
+		var effective = planner.plan(configured).getProcesses().get("server").getJavaSelection();
+		assertSame(scenarioRequirement, effective.getRequirement());
+		assertSame(processSource, effective.getSource());
+		assertNull(options.getJavaSelection().getRequirement());
 	}
 
 	private DefaultPlatformPlanner policyPlanner(EngineOptions options) {

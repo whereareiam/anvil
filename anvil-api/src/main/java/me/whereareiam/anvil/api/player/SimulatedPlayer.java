@@ -2,8 +2,10 @@ package me.whereareiam.anvil.api.player;
 
 import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
+import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.player.PlayerState;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 
@@ -25,6 +27,16 @@ public interface SimulatedPlayer extends CapabilityOwner<PlayerCapability> {
 	 * @return player name
 	 */
 	@NotNull String name();
+
+	/**
+	 * Returns optional presentation details supplied when this player was created.
+	 * The configured player name remains its connection and lookup identity.
+	 *
+	 * @return presentation metadata, or null when none was supplied
+	 */
+	default @Nullable PresentationMetadata metadata() {
+		return null;
+	}
 
 	/**
 	 * Returns the resolved Minecraft client version.

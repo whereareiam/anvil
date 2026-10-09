@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.process;
 
+import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.capability.CapabilityRuntime;
@@ -10,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -18,7 +20,8 @@ import java.util.function.Function;
  * Validates each logical process's capability graph and owns composition and cleanup across generations.
  */
 public final class ProcessCapabilityRuntime {
-	private final Map<String, CapabilityRuntime<ProcessCapability, CapabilityContext<ProcessCapability>>> owners = new LinkedHashMap<>();
+	private final Map<String, ProcessCapabilities> owners = new LinkedHashMap<>();
+	private boolean bound;
 
 	/**
 	 * Validates independently supplied process providers without creating capabilities.
@@ -28,29 +31,53 @@ public final class ProcessCapabilityRuntime {
 	public ProcessCapabilityRuntime(
 			@NotNull Map<String, ? extends Collection<? extends CapabilityProvider<? extends ProcessCapability, CapabilityContext<ProcessCapability>>>> providers
 	) {
-		providers.forEach((name, supplied) -> owners.put(name, new CapabilityRuntime<>(ProcessCapability.class, supplied)));
+		providers.forEach((name, supplied) -> {
+			var runtime = new CapabilityRuntime<ProcessCapability, CapabilityContext<ProcessCapability>>(ProcessCapability.class, supplied);
+			owners.put(name, new ProcessCapabilities(name, () -> runtime.compose("Process '" + name + "'", Function.identity())));
+		});
 	}
 
 	/**
-	 * Creates capabilities using the prepared provider contexts and transfers their lifetime to the group.
-	 * If composition fails, releases all created capabilities while leaving process rollback to the caller.
+	 * Supplies a borrowed logical capability owner to the actual execution generation handles.
+	 * Lookup remains unavailable until the managed group's first successful start of that process.
 	 *
-	 * @param processes ready process group whose provider inputs are available
-	 * @return process views owning the composed process capabilities
+	 * @param name declared process identity
+	 * @return logical owner, or null when no capabilities are installed for this process
 	 */
-	public @NotNull ProcessGroup bind(@NotNull ProcessGroup processes) {
-		if (owners.isEmpty()) return processes;
+	public @Nullable CapabilityOwner<ProcessCapability> owner(@NotNull String name) {
+		return owners.get(name);
+	}
 
-		Map<String, ProcessCapabilities> capabilities = new LinkedHashMap<>();
-		try {
-			owners.forEach((name, runtime) -> capabilities.put(name,
-					new ProcessCapabilities(name, runtime.compose("Process '" + name + "'", Function.identity()))));
-
-			return new CapabilityProcessGroup(processes, capabilities);
-		} catch (RuntimeException | Error failure) {
-			close(capabilities.values(), failure);
-			throw failure;
+	/**
+	 * Initializes a logical process owner after its transport first becomes ready.
+	 * Repeated readiness notifications preserve previously created capabilities.
+	 *
+	 * @param name declared process identity
+	 */
+	public void initialize(@NotNull String name) {
+		synchronized (this) {
+			if (!bound) throw new IllegalStateException("Bind process capability ownership before startup");
 		}
+
+		ProcessCapabilities owner = owners.get(name);
+		if (owner != null) owner.initialize();
+	}
+
+	/**
+	 * Transfers this composition's lifecycle to one prepared process group. Execution handles must
+	 * already delegate capability lookup to the corresponding owners returned by owner(name).
+	 * Capabilities are initialized after readiness and closed before underlying process finalization.
+	 *
+	 * @param processes prepared execution group
+	 * @return group coordinating readiness and capability lifetime without replacing its handles
+	 */
+	public synchronized @NotNull ProcessGroup bind(@NotNull ProcessGroup processes) {
+		if (bound) throw new IllegalStateException("Process capability ownership was already transferred");
+
+		bound = true;
+		return owners.isEmpty()
+				? processes
+				: new CapabilityProcessGroup(processes, Collections.unmodifiableMap(new LinkedHashMap<>(owners)));
 	}
 
 	static @Nullable Throwable close(@NotNull Collection<ProcessCapabilities> capabilities, @Nullable Throwable first) {

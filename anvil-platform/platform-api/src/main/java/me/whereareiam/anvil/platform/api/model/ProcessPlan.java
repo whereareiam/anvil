@@ -3,13 +3,11 @@ package me.whereareiam.anvil.platform.api.model;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
-import me.whereareiam.anvil.api.model.java.JavaRequirement;
-import me.whereareiam.anvil.api.model.java.JavaSource;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -26,14 +24,10 @@ public class ProcessPlan {
 	@NotNull ForwardingConfiguration forwarding;
 
 	/**
-	 * Effective Java requirement selected from process, scenario, then engine declarations.
+	 * Effective Java selection after process, scenario, and engine inheritance.
+	 * The requirement must be present; the source may remain unspecified for execution to select.
 	 */
-	@NotNull JavaRequirement javaRequirement;
-
-	/**
-	 * Effective explicit Java source, or null to let execution select its source.
-	 */
-	@Nullable JavaSource javaSource;
+	@NotNull JavaSelection javaSelection;
 
 	/**
 	 * Whether the declared process is a proxy rather than a server.
@@ -56,6 +50,12 @@ public class ProcessPlan {
 	boolean agent;
 	@NotNull Pattern readinessPattern;
 	@NotNull String stopCommand;
+	/**
+	 * Platform JVM defaults selected during planning, before explicit declaration arguments.
+	 */
+	@NotNull
+	@Singular
+	List<String> jvmArguments;
 	@NotNull
 	@Singular
 	List<String> programArguments;

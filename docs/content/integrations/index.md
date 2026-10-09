@@ -1,20 +1,37 @@
 ---
 title: Overview
-description: Connect Anvil to a test framework or build tool and choose how your environments run.
+description: Connect Anvil to a test framework, build tool, or IDE and choose how your environments run.
 ---
 
 Anvil's integrations serve different parts of a test workflow. Choose the test framework that owns
 your assertions and the build tooling that prepares and runs them.
 
-| Integration | Responsibility |
-| --- | --- |
-| [JUnit Jupiter](./junit/index.md) | Select a scenario with `@AnvilTest`, start it before each test, inject `ScenarioContext`, and close it afterwards. |
-| [Gradle](./gradle/index.md) | Resolve dependencies and registered artifacts, compile scenario sources, configure execution, and provide test and foreground tasks. |
-| [Embedding](./embedding/index.md) | Let a Java application own the engine and context lifetimes directly |
+| Integration                          | Responsibility                                                                                                                       |
+|--------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| [JUnit Jupiter](./junit/index.md)    | Select a scenario with `@AnvilTest`, start it before each test, inject `ScenarioContext`, and close it afterwards.                   |
+| [Gradle](./gradle/index.md)          | Resolve dependencies and registered artifacts, compile scenario sources, configure execution, and provide test and foreground tasks. |
+| [IntelliJ IDEA](./intellij/index.md) | Discover project scenarios, save run configurations, and inspect or control live environments from the IDE.                          |
+| [Embedding](./embedding/index.md)    | Let a Java application own the engine and context lifetimes directly                                                                 |
 
 JUnit's scenario lifecycle can be used wherever JUnit Jupiter runs with the required Anvil runtime
 dependencies. Gradle configures that runtime for its `anvilTest` task and also supplies foreground
 scenario tooling that can run without JUnit.
+
+## Choose a combination
+
+| Workflow | Install |
+|---|---|
+| Embedded Java application | `me.whereareiam.anvil:launcher` and the required runtime providers |
+| JUnit with any build tool | `me.whereareiam.anvil:junit` and the required runtime providers |
+| Gradle scenarios and IDE discovery | `me.whereareiam.anvil` Gradle plugin |
+| Gradle JUnit tests | `me.whereareiam.anvil.junit` Gradle plugin |
+| Gradle tests and interactive scenarios | Both Gradle plugins |
+| IntelliJ scenario controls | Anvil IDE plugin plus a declared project runtime; standard Anvil Gradle plugin supplies that declaration |
+
+Library consumers can import `me.whereareiam.anvil:bom` to align Anvil versions. Applying a Gradle
+integration is optional when running JUnit or embedding the launcher. Gradle adapters supply the
+build-specific wiring; the JUnit runtime does not load Gradle or IntelliJ code. IntelliJ's optional
+Gradle adapter reads project declarations without requiring JUnit in the scenario runtime.
 
 ## Use Gradle with JUnit
 

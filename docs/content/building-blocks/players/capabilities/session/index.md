@@ -3,7 +3,7 @@ title: Session
 description: Connect and reconnect a native player and wait for login, disconnection, or a kick.
 ---
 
-`Session` controls the current network connection. Install the session unit or use the umbrella plugin;
+`Session` controls the current network connection. Install the session unit or explicitly select the default capability unit;
 the bundled implementation requires MCProtocol. All fragments below use a live test's
 `ScenarioContext anvil` and import `me.whereareiam.anvil.capability.session.Session`.
 

@@ -5,6 +5,7 @@
     "plugins",
     "dsl",
     "testing",
-    "tasks"
+    "tasks",
+    "tooling"
   ]
 }

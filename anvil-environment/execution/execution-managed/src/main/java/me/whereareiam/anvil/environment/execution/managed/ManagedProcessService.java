@@ -1,11 +1,13 @@
 package me.whereareiam.anvil.environment.execution.managed;
 
 import me.whereareiam.anvil.api.process.ProcessGroup;
+import me.whereareiam.anvil.api.scenario.ScenarioObserver;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionPlan;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessSpec;
 import me.whereareiam.anvil.environment.execution.api.preparation.ExecutionPreparation;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -33,13 +35,33 @@ public final class ManagedProcessService {
 	 * @return caller-owned running group
 	 */
 	public @NotNull ProcessGroup start(@NotNull ExecutionPlan plan, @NotNull ExecutionPreparation preparation) {
-		ExecutionProvider execution = executions.get(plan.getExecutionId());
-		if (execution == null)
-			throw new IllegalArgumentException("No execution provider '" + plan.getExecutionId() + "'. Available: " + executions.keySet());
-		List<List<ProcessSpec>> order = startupOrder(plan);
-		ManagedProcessGroup group = new ManagedProcessGroup(plan, execution, preparation, order);
+		ProcessGroup group = prepare(plan, preparation, null);
 		try {
-			group.start();
+			group.startAll();
+			return group;
+		} catch (RuntimeException | Error failure) {
+			try { group.finish(false); }
+			catch (RuntimeException | Error cleanup) { if (cleanup != failure) failure.addSuppressed(cleanup); }
+			throw failure;
+		}
+	}
+
+	/**
+	 * Allocates the complete topology and prepares every input without launching a process.
+	 *
+	 * @param plan validated execution requirements
+	 * @param preparation owned input and launch preparation
+	 * @param observer optional borrowed-generation observer
+	 * @return owned prepared process group
+	 */
+	public @NotNull ProcessGroup prepare(@NotNull ExecutionPlan plan, @NotNull ExecutionPreparation preparation, @Nullable ScenarioObserver observer) {
+		ExecutionProvider execution = executions.get(plan.getExecutionProviderId());
+		if (execution == null)
+			throw new IllegalArgumentException("No execution provider '" + plan.getExecutionProviderId() + "'. Available: " + executions.keySet());
+		List<List<ProcessSpec>> order = startupOrder(plan);
+		ManagedProcessGroup group = new ManagedProcessGroup(plan, execution, preparation, order, observer);
+		try {
+			group.prepare();
 			return group;
 		} catch (RuntimeException | Error failure) {
 			try {
@@ -52,11 +74,15 @@ public final class ManagedProcessService {
 	}
 
 	private List<List<ProcessSpec>> startupOrder(ExecutionPlan plan) {
-		if (plan.getParallelism() < 1 || plan.getStartupMemoryMegabytes() < 1)
-			throw new IllegalArgumentException("Startup limits must be positive");
-		if (plan.getStartupTimeout().isNegative() || plan.getStartupTimeout().isZero()
-				|| plan.getStopTimeout().isNegative() || plan.getStopTimeout().isZero())
-			throw new IllegalArgumentException("Process timeouts must be positive");
+		var scheduling = plan.getProcessScheduling();
+		if (scheduling.getParallelism() == null || scheduling.getStartupMemoryMegabytes() == null
+				|| scheduling.getParallelism() < 1 || scheduling.getStartupMemoryMegabytes() < 1)
+			throw new IllegalArgumentException("Process scheduling limits must be resolved and positive");
+		var timeouts = plan.getProcessTimeouts();
+		if (timeouts.getStartup() == null || timeouts.getShutdown() == null
+				|| timeouts.getStartup().isNegative() || timeouts.getStartup().isZero()
+				|| timeouts.getShutdown().isNegative() || timeouts.getShutdown().isZero())
+			throw new IllegalArgumentException("Process timeouts must be resolved and positive");
 
 		Map<String, ProcessSpec> remaining = new LinkedHashMap<>();
 		for (ProcessSpec process : plan.getProcesses()) {

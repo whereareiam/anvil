@@ -1,6 +1,8 @@
 package me.whereareiam.anvil.capability.player;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
+import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.player.PlayerState;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.PlayerObservation;
@@ -8,12 +10,12 @@ import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.CapabilityRuntime;
 import me.whereareiam.anvil.capability.CapabilitySet;
 import me.whereareiam.anvil.capability.api.CapabilityContext;
+import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.api.player.CapabilityPlayer;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolCapabilityPlayer;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
-import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -58,13 +60,19 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 	}
 
 	@Override
+	public @Nullable PresentationMetadata metadata() {
+		return player.metadata();
+	}
+
+	@Override
 	public @NotNull <C extends PlayerCapability> C capability(@NotNull Class<C> type) {
+		if (destroyed.get() || player.destroyed()) throw new CapabilityUnavailableException("Player '" + name() + "' is destroyed");
 		return capabilities.capability(type);
 	}
 
 	@Override
 	public boolean hasCapability(@NotNull Class<? extends PlayerCapability> type) {
-		return capabilities.hasCapability(type);
+		return !destroyed.get() && !player.destroyed() && capabilities.hasCapability(type);
 	}
 
 	@Override

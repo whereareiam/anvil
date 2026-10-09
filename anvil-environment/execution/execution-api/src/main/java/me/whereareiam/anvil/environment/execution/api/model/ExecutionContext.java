@@ -19,7 +19,6 @@ import java.nio.file.Path;
 @Builder(toBuilder = true)
 public class ExecutionContext {
 	@NotNull Path cacheDirectory;
-	@NotNull String bindAddress;
 	@NotNull LocalRuntimePreparation localRuntime;
 	@NotNull RuntimeValidator runtimeValidator;
 	@NotNull ImageLocks imageLocks;

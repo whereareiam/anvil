@@ -1,0 +1,11 @@
+<idea-plugin>
+	<extensions defaultExtensionNs="org.jetbrains.plugins.gradle">
+		<projectResolve implementation="me.whereareiam.anvil.integration.intellij.gradle.ModuleImportExtension"/>
+	</extensions>
+	<extensions defaultExtensionNs="com.intellij">
+		<externalProjectDataService implementation="me.whereareiam.anvil.integration.intellij.gradle.ModuleDataRegistration"/>
+	</extensions>
+	<extensions defaultExtensionNs="me.whereareiam.anvil">
+		<buildIntegration implementation="me.whereareiam.anvil.integration.intellij.gradle.GradleBuildIntegration"/>
+	</extensions>
+</idea-plugin>

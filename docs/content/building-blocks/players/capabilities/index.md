@@ -32,7 +32,7 @@ platform agents, while packet-backed capabilities operate through the selected p
 
 ## Install built-in capabilities
 
-The umbrella `me.whereareiam.anvil` Gradle plugin includes these player capabilities. For a smaller JUnit setup,
+The `me.whereareiam.anvil.capability.default` Gradle plugin includes these player capabilities. For a smaller JUnit setup,
 this plugin block selects connection, messages, and server-observation behavior:
 
 ```kotlin
@@ -70,11 +70,11 @@ MCProtocol.
 
 ## Add an external capability
 
-Add its consumer wiring artifact to `anvilCapabilities`:
+Add its consumer wiring artifact to `anvilImplementation`:
 
 ```kotlin
 dependencies {
-	add("anvilCapabilities", "com.example:combat:1.0.0")
+	add("anvilImplementation", "com.example:combat:1.0.0")
 }
 ```
 

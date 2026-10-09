@@ -5,17 +5,26 @@ import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
+import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.testing.Test
 
 /** Declares fixture artifacts consumed as tracked files, outside the parent test classpath. */
 open class FixtureInputs(private val project: Project) {
 	private val registered = mutableSetOf<String>()
+	private val artifactFiles = linkedMapOf<String, FileCollection>()
 
+	fun toolingExtension() = register("tooling-extension", "test-tooling-extension")
 	fun process() = register("process", "test-process")
 	fun serverPlugin() = register("server-plugin", "test-server-plugin")
 	fun extension() = register("extension-normal", "test-extension", "normal")
 	fun brokenExtension() = register("extension-broken", "test-extension", "broken")
 	fun observationExtension() = register("extension-observation", "test-extension", "observation")
+
+	/**
+	 * Returns declared fixture files for another task or tooling launch without resolving their artifacts.
+	 * Keys match the suffixes of the standard anvil.testkit.fixture JVM properties.
+	 */
+	fun artifacts(): Map<String, FileCollection> = artifactFiles.toMap()
 
 	private fun register(key: String, artifact: String, variant: String? = null) {
 		if (!registered.add(key)) return
@@ -33,6 +42,7 @@ open class FixtureInputs(private val project: Project) {
 			}
 		}
 		project.dependencies.add(configuration.name, "me.whereareiam.anvil.testkit:$artifact:${project.version}")
+		artifactFiles[key] = configuration
 		val arguments = project.objects.newInstance(FixtureJvmArguments::class.java).apply {
 			propertyName.set("anvil.testkit.fixture.$key")
 			artifactFiles.from(configuration)

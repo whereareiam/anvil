@@ -28,16 +28,15 @@ Create a named scenario when you want to bring up the same environment repeatedl
 yourself. Its declaration supplies the platforms, plugins, configuration, and common setup. The
 runner starts it and exposes the address you use in your own Minecraft client.
 
-Follow [Scenarios](./scenarios/index.md) to prepare a catalog, start an environment, join it, and use
+Follow [Scenarios](./scenarios/index.md) to discover definitions, start an environment, join it, and use
 the interactive controls. Scenario setup can also create simulated players when human testing
 needs other participants; their behavior is defined by code.
 
 ## Share definitions between the two
 
-`AnvilScenario` is the environment declaration used by both workflows. A manual scenario can be
-derived from an automated test's definition and registered in a catalog. Moving a manual check into
-an automated test means adding code-driven actions and assertions, rather than rebuilding the
-whole server setup.
+`AnvilScenario` is the environment declaration used by both workflows. A manual definition can be
+shared with an automated test, and moving a manual check into an automated test means adding
+code-driven actions and assertions rather than rebuilding the whole server setup.
 
 For an application that owns execution directly, see [Embedding](../integrations/embedding/index.md).
 Embedding provides another integration with Anvil; the application still decides how to drive and

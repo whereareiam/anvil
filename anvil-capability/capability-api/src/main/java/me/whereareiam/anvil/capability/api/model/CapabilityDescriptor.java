@@ -4,7 +4,9 @@ import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
 import me.whereareiam.anvil.api.capability.Capability;
+import me.whereareiam.anvil.api.model.PresentationMetadata;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
 
@@ -23,6 +25,10 @@ public class CapabilityDescriptor {
 	 * Stable provider identifier used for discovery diagnostics.
 	 */
 	@NotNull String id;
+	/**
+	 * Optional display details that do not change dependency or provider identity.
+	 */
+	@Nullable PresentationMetadata metadata;
 	/**
 	 * Provider contract version understood by this Anvil release.
 	 */

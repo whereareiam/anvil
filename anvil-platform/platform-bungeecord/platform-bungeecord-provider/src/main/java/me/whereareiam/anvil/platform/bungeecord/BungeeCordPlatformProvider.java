@@ -58,6 +58,11 @@ public final class BungeeCordPlatformProvider implements PlatformProvider {
 	}
 
 	@Override
+	public @NotNull List<String> jvmArguments(@NotNull MinecraftProcess process, boolean consoleColors) {
+		return consoleColors ? List.of("-Dorg.jline.terminal.dumb.color=true") : List.of();
+	}
+
+	@Override
 	public @NotNull String stopCommand() {
 		return "end";
 	}

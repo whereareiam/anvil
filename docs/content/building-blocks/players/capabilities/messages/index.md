@@ -4,7 +4,7 @@ description: Send player chat or commands and await a matching message in captur
 ---
 
 `Messages` sends chat and commands as the connected player and captures received plain text. Install
-the messages unit and its Session dependency, or use the umbrella plugin.
+the messages unit and its Session dependency, or explicitly select the default capability unit.
 
 ## Send and await a response
 

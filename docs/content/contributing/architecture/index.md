@@ -5,16 +5,16 @@ description: Understand the global engine lifecycle and the scoped services asse
 
 Anvil combines managed server/proxy processes and native-protocol players. The engine owns the
 global scenario lifecycle. Scoped APIs describe cache access, provisioning, execution, platforms,
-protocols, capabilities, and agents; the launcher binds those services into a scenario executor.
+protocols, capabilities, and agents; the launcher binds those services into a scenario factory.
 
 ```text
-Gradle / JUnit / embedded application
+IDE / Gradle / JUnit / embedded application
                  │
           launcher and extensions
                  │
              global engine
                  │
-          ScenarioExecutor
+          ScenarioFactory.create
                  │
            scenario assembly
                  ├─ platform planning → providers
@@ -31,10 +31,12 @@ consumer declares the channelOperation it needs, and assembly binds it to the ap
 - [Module boundaries](./modules/index.md) maps responsibilities to Gradle families and dependencies.
 - [Lifecycle and ownership](./lifecycle/index.md) explains startup, restarts, and cleanup.
 - [Runtime composition](./composition/index.md) explains discovery and typed assembly bindings.
+- [Project tooling](./tooling/index.md) traces declarations, prepared runtimes, and IDE session ownership.
 
 Packet behavior belongs to native capability implementations; native server services belong to
 platform agents; endpoint translation belongs to execution providers. The engine works through
-`ScenarioExecutor` and the public context rather than invoking any of those scoped services itself.
+`ScenarioFactory.create(...)` and the returned `ScenarioContext` for preparation, startup, and
+finalization. Scoped services remain behind the factory boundary.
 
 Capabilities have two owners: players and processes. Their shared composition validates
 dependencies and owns instance cleanup; scoped providers supply the behavior. Player capabilities

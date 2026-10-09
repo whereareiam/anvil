@@ -16,10 +16,21 @@ toolkitPublish {
     }
 }
 
+javaPlatform {
+    allowDependencies()
+}
+
+val projectToolingModules = listOf(
+	":anvil-integration:integration-gradle:gradle-artifacts",
+	":anvil-integration:integration-gradle:gradle-tooling",
+)
+
 gradle.projectsEvaluated {
     dependencies {
         constraints {
-            ArchitecturePublications.publishedProjects(rootProject).forEach { module ->
+            (ArchitecturePublications.publishedProjects(rootProject) + projectToolingModules.map(rootProject::project))
+                .distinctBy { it.path }
+                .forEach { module ->
                 api(project(module.path))
                 module.extensions.getByType<PublishingExtension>().publications
                     .withType<MavenPublication>()

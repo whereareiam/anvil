@@ -13,17 +13,17 @@ used by [automated tests](../testing/index.md); this workflow changes how you la
 
 ## Prepare, run, and join
 
-1. [Catalogs and groups](./catalogs/index.md): give your prepared environments names and register them
-   with the runner.
+1. [Scenario definitions](./definitions/index.md): give each prepared environment a definition class
+   and presentation metadata.
 2. [Running scenarios](./running/index.md): list environments, start one, and switch or restart it.
 3. [Joining an environment](./joining/index.md): find the entrypoint and connect from this machine or
    an explicitly enabled LAN listener.
 4. [Runner controls](./controls/index.md): inspect status and logs, send console commands, and stop.
 
-Complete [installation](../../getting-started/installation/index.md) first. The umbrella plugin supplies
-foreground tooling; a smaller installation uses `me.whereareiam.anvil.scenarios` with explicit
-platform, protocol, and capability choices. The catalog guide provides a Paper example that you can
-launch without writing a JUnit test.
+Complete [installation](../../getting-started/installation/index.md) first. The standard
+`me.whereareiam.anvil` plugin supplies foreground tooling and IDE discovery. Select platforms,
+protocols, and capabilities explicitly. The definitions guide provides a Paper example that you
+can launch without writing a JUnit test.
 
 ## Reuse the building blocks
 

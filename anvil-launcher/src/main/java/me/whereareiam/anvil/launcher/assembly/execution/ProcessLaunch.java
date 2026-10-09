@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.launcher.assembly.execution;
 
-import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
 import me.whereareiam.anvil.agent.client.AgentSession;
 import me.whereareiam.anvil.agent.client.ProcessAgentClient;
+import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.preparation.PreparedLaunch;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
@@ -15,13 +15,16 @@ import org.jetbrains.annotations.Nullable;
 final class ProcessLaunch implements PreparedLaunch {
 	private final @NotNull JavaCommand command;
 	private final @Nullable AgentSession agent;
+	private final @Nullable Runnable ready;
 
 	ProcessLaunch(
 			@NotNull JavaCommand command,
 			@NotNull ProcessTarget target,
 			@NotNull AgentConnectionProvider connections,
-			@Nullable ProcessAgentClient client
+			@Nullable ProcessAgentClient client,
+			@Nullable Runnable ready
 	) {
+		this.ready = ready;
 		if (client == null) {
 			agent = null;
 			this.command = command;
@@ -46,6 +49,7 @@ final class ProcessLaunch implements PreparedLaunch {
 	@Override
 	public void started() {
 		if (agent != null) agent.connect();
+		if (ready != null) ready.run();
 	}
 
 	@Override

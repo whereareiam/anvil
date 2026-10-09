@@ -8,7 +8,7 @@ release version; that version does not select the simulated player's protocol.
 
 ## Bundled native versions
 
-The current MCProtocol catalog contains these Minecraft versions. The compatibility test catalog
+The current MCProtocol catalog contains these Minecraft versions. The compatibility test definitions
 covers direct Paper and Spigot sessions and Velocity/BungeeCord routes to each server platform.
 
 | Minecraft version | Paper build | Spigot selection | Server Java minimum |
@@ -32,7 +32,7 @@ Anvil cannot determine the required native client solely from an arbitrary artif
 
 A mixed topology with incompatible reachable server versions fails validation. Anvil does not insert
 a protocol translator or silently fall back to ViaVersion. If you test several versions, define separate
-scenarios or a [scenario catalog](../../index.md).
+scenarios or separate [scenario definitions](../../index.md).
 
 ## Check an upgrade
 

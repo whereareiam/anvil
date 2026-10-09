@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.platform.paper;
 
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
@@ -9,7 +10,6 @@ import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.type.ForwardingMode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -18,6 +18,7 @@ import java.io.StringReader;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -61,6 +62,9 @@ class PaperPlatformProviderTest {
 		PlatformContext context = context(scenario, work, Map.of("proxy", 25565, "server", 25566));
 
 		PaperPlatformProvider provider = new PaperPlatformProvider();
+		assertTrue(provider.jvmArguments(server, false).isEmpty(), "Ordinary engine runs retain native console defaults");
+		assertEquals(List.of("-Dterminal.ansi=true", "-Dterminal.jline=false"),
+				provider.jvmArguments(server, true));
 		assertEquals(localJar.toAbsolutePath(), provider.resolve(server, context).getJar());
 		provider.configure(server, context);
 

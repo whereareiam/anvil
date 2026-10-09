@@ -33,7 +33,7 @@ with [workspace assets](../../../workspaces/index.md), then run the consuming te
 
 ## Recorded content pins
 
-These are the content hashes recorded in Anvil's compatibility catalog. They identify the expected
+These are the content hashes recorded in Anvil's compatibility definitions. They identify the expected
 executable bytes; they are not an upstream signature or a selector that follows a moving release.
 
 | Minecraft version | SHA-256 |

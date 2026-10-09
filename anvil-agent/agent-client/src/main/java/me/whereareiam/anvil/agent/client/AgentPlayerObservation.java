@@ -1,10 +1,12 @@
 package me.whereareiam.anvil.agent.client;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.agent.client.api.AgentClient;
-import me.whereareiam.anvil.agent.client.api.AgentDirectory;
+import me.whereareiam.anvil.agent.api.model.AgentIdentity;
 import me.whereareiam.anvil.agent.api.model.location.ProxyLocation;
 import me.whereareiam.anvil.agent.api.model.location.ServerLocation;
+import me.whereareiam.anvil.agent.client.api.AgentClient;
+import me.whereareiam.anvil.agent.client.api.AgentDirectory;
+import me.whereareiam.anvil.agent.client.api.exception.AgentUnavailableException;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.model.player.PlayerRoute;
 import me.whereareiam.anvil.api.player.PlayerObservation;
@@ -12,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -32,13 +35,21 @@ public final class AgentPlayerObservation implements PlayerObservation {
 		PlayerIdentity.PlayerIdentityBuilder result = initial.toBuilder();
 		PlayerRoute.PlayerRouteBuilder route = initial.getRoute().toBuilder();
 		for (Map.Entry<String, AgentClient> entry : agents.agents().entrySet()) {
-			var observed = entry.getValue().identity(playerName);
-			if (observed.isEmpty())
-				continue;
+			AgentClient agent = entry.getValue();
+			if (!agent.available()) continue;
 
+			Optional<AgentIdentity> observed;
+			try {
+				observed = agent.identity(playerName);
+			} catch (AgentUnavailableException exception) {
+				continue;
+			}
+
+			if (observed.isEmpty()) continue;
 			var observedIdentity = observed.get();
 			result.observedUsername(observedIdentity.getUsername())
 					.observedUniqueId(observedIdentity.getUniqueId());
+
 			if (observedIdentity.getLocation() instanceof ProxyLocation proxy)
 				route.proxy(proxy.getProxy());
 			if (observedIdentity.getLocation() instanceof ServerLocation server)

@@ -22,7 +22,7 @@ class ManagedProcessServiceTest {
 		assertTrue(fixture.calls.indexOf("target:server") < fixture.calls.indexOf("prepare:proxy"));
 		assertTrue(fixture.calls.indexOf("prepare:server") < fixture.calls.indexOf("configure:proxy:1"));
 		assertTrue(fixture.calls.indexOf("configure:server:1") < fixture.calls.indexOf("start:server"));
-		assertTrue(fixture.calls.indexOf("attach:server:1") < fixture.calls.indexOf("start:proxy"));
+		assertTrue(fixture.calls.indexOf("attach:server:1") < fixture.calls.indexOf("configure:proxy:1"));
 		group.finish(true);
 		group.finish(true);
 		assertTrue(fixture.calls.indexOf("stop:proxy") < fixture.calls.indexOf("stop:server"));
@@ -57,13 +57,16 @@ class ManagedProcessServiceTest {
 	}
 
 	@Test
-	void closesConfiguredLaunchesEvenWhenNoProcessStarted() {
+	void rollsBackStartedDependenciesWhenDependentLaunchCreationFails() {
 		ExecutionFixture fixture = new ExecutionFixture(directory);
 		fixture.failingConfiguration = "proxy";
 		var plan = fixture.plan(fixture.spec("server", false), fixture.spec("proxy", true, "server"));
 		assertSame(fixture.failure, assertThrows(IllegalStateException.class, () -> fixture.service().start(plan, fixture.preparation)));
 		assertTrue(fixture.calls.contains("detach:server:1"));
-		assertFalse(fixture.calls.stream().anyMatch(call -> call.startsWith("start:")));
+		assertTrue(fixture.calls.containsAll(List.of("attach:server:1", "stop:server")));
+		assertFalse(fixture.calls.contains("start:proxy"));
+		assertFalse(fixture.calls.contains("detach:proxy:1"));
+		assertTrue(fixture.calls.contains("prepared-finish:proxy:false"));
 		assertEquals("finish:false", fixture.calls.getLast());
 	}
 
@@ -73,7 +76,8 @@ class ManagedProcessServiceTest {
 		fixture.failingAttachment = "server";
 		var plan = fixture.plan(fixture.spec("server", false), fixture.spec("proxy", true, "server"));
 		assertSame(fixture.failure, assertThrows(IllegalStateException.class, () -> fixture.service().start(plan, fixture.preparation)));
-		assertTrue(fixture.calls.containsAll(List.of("detach:server:1", "detach:proxy:1", "stop:server")));
+		assertTrue(fixture.calls.containsAll(List.of("detach:server:1", "stop:server")));
+		assertFalse(fixture.calls.contains("configure:proxy:1"));
 		assertFalse(fixture.calls.contains("start:proxy"));
 		assertEquals("finish:false", fixture.calls.getLast());
 	}

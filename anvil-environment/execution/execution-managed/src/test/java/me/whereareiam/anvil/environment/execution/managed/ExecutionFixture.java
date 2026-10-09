@@ -1,6 +1,9 @@
 package me.whereareiam.anvil.environment.execution.managed;
 
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessScheduling;
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
@@ -24,19 +27,20 @@ import java.io.PipedOutputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
@@ -57,6 +61,8 @@ final class ExecutionFixture {
 	RuntimeException targetCleanupFailure;
 	RuntimeException sessionCleanupFailure;
 	RuntimeException attachmentCleanupFailure;
+	Runnable beforeDetach = () -> { };
+	final Set<String> silent = Collections.synchronizedSet(new HashSet<>());
 
 	ExecutionFixture(Path directory) {
 		this.directory = directory;
@@ -67,18 +73,17 @@ final class ExecutionFixture {
 	}
 
 	ExecutionPlan plan(ProcessSpec... processes) {
-		ExecutionContext context = ExecutionContext.builder().cacheDirectory(directory).bindAddress("127.0.0.1")
+		ExecutionContext context = ExecutionContext.builder().cacheDirectory(directory)
 				.localRuntime((request, source) -> { throw new AssertionError("Not a local runtime"); })
 				.runtimeValidator((properties, request) -> { throw new AssertionError("No image probe"); })
 				.imageLocks(path -> { throw new AssertionError("No image coordination"); }).build();
-		return ExecutionPlan.builder().executionId("fixture").context(context).processes(List.of(processes))
-				.parallelism(1).startupMemoryMegabytes(1024).startupTimeout(Duration.ofSeconds(3))
-				.stopTimeout(Duration.ofSeconds(1)).build();
+		return ExecutionPlan.builder().executionProviderId("fixture").context(context).processes(List.of(processes))
+				.processScheduling(ProcessScheduling.builder().parallelism(1).startupMemoryMegabytes(1024).build()).processTimeouts(ProcessTimeouts.builder().startup(Duration.ofSeconds(3)).shutdown(Duration.ofSeconds(1)).build()).build();
 	}
 
 	ProcessSpec spec(String name, boolean proxy, String... dependencies) {
 		return ProcessSpec.builder().request(ProcessRequest.builder().name(name).workspace(directory.resolve(name))
-				.javaRequirement(JavaRequirement.builder().build()).minimumJavaVersion(21).build())
+				.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().build()).build()).minimumJavaVersion(21).build())
 				.proxy(proxy).dependencies(Set.of(dependencies)).readinessPattern(Pattern.compile("READY"))
 				.stopCommand("stop").memoryMegabytes(256).build();
 	}
@@ -151,6 +156,7 @@ final class ExecutionFixture {
 						@Override
 						public void close() {
 							calls.add("detach:" + name + ":" + current);
+							beforeDetach.run();
 							if (attachmentCleanupFailure != null) throw attachmentCleanupFailure;
 						}
 					};
@@ -169,6 +175,7 @@ final class ExecutionFixture {
 		final String name;
 		final int index;
 		final List<JavaCommand> commands = new ArrayList<>();
+		ProcessExecution current;
 
 		Target(String name, int index) {
 			this.name = name;
@@ -191,7 +198,8 @@ final class ExecutionFixture {
 		public @NotNull ProcessExecution start(@NotNull JavaCommand command) {
 			calls.add("start:" + name);
 			commands.add(command);
-			return new Running(name, calls);
+			current = new Running(name, calls, !silent.contains(name));
+			return current;
 		}
 		@Override
 		public void close() {
@@ -216,11 +224,13 @@ final class ExecutionFixture {
 			}
 		};
 
-		Running(String name, List<String> calls) {
+		Running(String name, List<String> calls, boolean ready) {
 			this.name = name;
 			this.calls = calls;
 			try {
 				writer = new PipedOutputStream(output);
+				if (!ready) return;
+
 				writer.write("READY\n".getBytes(StandardCharsets.UTF_8));
 				writer.flush();
 			} catch (IOException failure) {

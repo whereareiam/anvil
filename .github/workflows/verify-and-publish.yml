@@ -15,6 +15,15 @@ on:
         required: false
         type: boolean
         default: false
+    secrets:
+      JETBRAINS_MARKETPLACE_TOKEN:
+        required: false
+      INTELLIJ_CERTIFICATE_CHAIN:
+        required: false
+      INTELLIJ_PRIVATE_KEY:
+        required: false
+      INTELLIJ_PRIVATE_KEY_PASSWORD:
+        required: false
 
 permissions:
   contents: read
@@ -58,3 +67,31 @@ jobs:
           visibility: public
           repository: packages
           command: ./gradlew --no-daemon publish -PanvilVersion='${{ needs.verify.outputs.version }}'
+
+  publish-intellij:
+    name: Publish IntelliJ plugin
+    needs: [verify, publish]
+    # Only explicit release versions reach JetBrains Marketplace; branch-qualified builds stay in Actions artifacts.
+    if: inputs.publish && inputs.version != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.verify.outputs.commit }}
+
+      - uses: ./.github/actions/setup-gradle
+
+      - name: Sign and publish to JetBrains Marketplace
+        env:
+          ANVIL_VERSION: ${{ needs.verify.outputs.version }}
+          JETBRAINS_MARKETPLACE_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
+          INTELLIJ_CERTIFICATE_CHAIN: ${{ secrets.INTELLIJ_CERTIFICATE_CHAIN }}
+          INTELLIJ_PRIVATE_KEY: ${{ secrets.INTELLIJ_PRIVATE_KEY }}
+          INTELLIJ_PRIVATE_KEY_PASSWORD: ${{ secrets.INTELLIJ_PRIVATE_KEY_PASSWORD }}
+        run: >-
+          ./gradlew --no-daemon
+          :anvil-integration:integration-intellij:intellij:publishPlugin
+          -PanvilVersion="$ANVIL_VERSION"

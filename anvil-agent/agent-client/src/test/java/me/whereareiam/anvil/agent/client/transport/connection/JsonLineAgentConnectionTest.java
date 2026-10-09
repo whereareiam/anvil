@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.agent.client.transport.connection;
 
 import me.whereareiam.anvil.agent.api.exception.AgentException;
+import me.whereareiam.anvil.agent.client.api.exception.AgentUnavailableException;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -34,6 +35,32 @@ class JsonLineAgentConnectionTest {
 				AgentException failure = assertThrows(AgentException.class,
 						() -> connection.request("ping", Map.of(), Map.class));
 				assertTrue(failure.getMessage().contains("Mismatched response"));
+				assertFalse(connection.available());
+				assertThrows(AgentUnavailableException.class, () -> connection.request("ping", Map.of(), Map.class));
+			}
+			remote.get(3, TimeUnit.SECONDS);
+		}
+	}
+
+	@Test
+	void reportsUnexpectedDisconnectionAsCommunicationFailureBeforeBecomingUnavailable() throws Exception {
+		try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
+		     var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+			var remote = executor.submit(() -> {
+				try (var socket = server.accept()) {
+					socket.setSoTimeout(2000);
+					var reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+					assertNotNull(reader.readLine());
+				}
+				return null;
+			});
+			try (var connection = new JsonLineAgentConnection(server.getLocalPort(), "token")) {
+				assertTrue(connection.available());
+				AgentException failure = assertThrows(AgentException.class,
+						() -> connection.request("ping", Map.of(), Map.class));
+				assertFalse(failure instanceof AgentUnavailableException);
+				assertFalse(connection.available());
+				assertThrows(AgentUnavailableException.class, () -> connection.request("ping", Map.of(), Map.class));
 			}
 			remote.get(3, TimeUnit.SECONDS);
 		}

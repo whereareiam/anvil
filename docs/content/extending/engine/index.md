@@ -85,9 +85,39 @@ The logging example borrows its message sink and does not close `System.out`. If
 opens a file or subscribes to an external observer, assign that resource to the engine or return a
 scenario attachment that closes it at the appropriate lifetime.
 
-`EngineRegistration.executor(...)` selects the single `ScenarioExecutor` that opens ready contexts.
-The launcher supplies its default executor. Applications building a different assembly bind their
-scoped services behind that global boundary; registration does not expose a scoped service locator.
+## Supply a custom scenario assembly
+
+Application extensions add lifecycle behavior; they do not select the engine's scenario factory.
+A custom assembly supplies its `ScenarioFactory` directly to the core engine builder constructor:
+
+```java
+import me.whereareiam.anvil.engine.AnvilEngineBuilder;
+
+// factory and options are supplied by your assembly.
+try (var engine = new AnvilEngineBuilder(factory).options(options).build()) {
+    // Prepare or start scenarios through engine.
+}
+```
+
+This requires the `engine` artifact alongside `api`. The factory is borrowed. If it depends on
+shared resources that should close with the engine, transfer them through an extension using
+`registration.own(resource)`; release any resources that have not been transferred if assembly fails.
+
+`ScenarioFactory.create(scenario, observer)` acquires the complete topology and returns an owned `ScenarioContext`
+before any process generation starts. Implement the context's `start()` to bring remaining
+processes to readiness; the engine then attaches global extensions and runs setup once. Both
+contracts are in `me.whereareiam.anvil.api.scenario`.
+
+The launcher supplies the default scenario factory. Applications building a different assembly bind their
+scoped services behind the same lifecycle boundary. The engine's full-start convenience prepares
+a context and completes its startup; individual controls use that context's process group.
+
+A failed acquisition releases resources before returning. A prepared owner must release all its
+resources through `finish(successful)`, including inputs for processes that never started. Honor
+the supplied observer before each generation launches and expose that managed handle through later
+process lookup. Execution assigns an opaque `RunningProcess.executionId()` UUID; consumers use
+that identity when separating replacement output. See [individual process controls](../../building-blocks/environments/actions/restarts/index.md#start-and-stop-individual-components)
+for the consumer lifecycle.
 
 Test registration failures, setup failures, repeated closure, attachment order, and the final outcome.
 See [Lifecycle and ownership](../../contributing/architecture/lifecycle/index.md) for the framework's

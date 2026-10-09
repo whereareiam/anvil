@@ -4,6 +4,7 @@
     "index",
     "modules",
     "lifecycle",
-    "composition"
+    "composition",
+    "tooling"
   ]
 }

@@ -1,9 +1,17 @@
 package me.whereareiam.anvil.api.scenario;
 
 /**
- * Owns one active scenario execution and exposes its runtime services.
+ * Owns one prepared or running scenario execution and exposes its runtime services.
  */
 public interface ScenarioContext extends ScenarioAccess, AutoCloseable {
+	/**
+	 * Creates fresh launch resources for remaining prepared processes and starts them in dependency order.
+	 * After readiness, installs global extensions and executes setup once.
+	 * Repeated calls start stopped processes without repeating completed global initialization.
+	 * Failed full startup finalizes the context with an unsuccessful outcome.
+	 */
+	void start();
+
 	/**
 	 * Releases the scenario using the caller's outcome for persistence and diagnostics.
 	 * Earlier lifecycle failures still prevent successful finalization.

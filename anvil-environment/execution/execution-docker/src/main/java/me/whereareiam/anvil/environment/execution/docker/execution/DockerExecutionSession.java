@@ -58,7 +58,7 @@ final class DockerExecutionSession implements ExecutionSession {
 
 	@Override
 	public @NotNull ProcessTarget prepare(@NotNull ProcessRequest request) {
-		if (request.getJavaSource() != null)
+		if (request.getJavaSelection().getSource() != null)
 			throw new ProvisioningException("Docker execution does not support explicit host Java sources; configure a Docker image instead");
 
 		String image = images.resolve(request);
@@ -67,7 +67,7 @@ final class DockerExecutionSession implements ExecutionSession {
 			if (closed) throw new IllegalStateException("Docker environment is closed");
 
 			DockerProcessTarget target = new DockerProcessTarget(containers, dockerNetwork.id(), alias, image, request,
-					new InetSocketAddress(context.getBindAddress(), port(context.getBindAddress())),
+					new InetSocketAddress(context.getNetworkPolicy().getBindAddress(), port(context.getNetworkPolicy().getBindAddress())),
 					new InetSocketAddress("127.0.0.1", port("127.0.0.1")));
 			targets.add(target);
 			return target;

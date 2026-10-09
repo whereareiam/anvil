@@ -48,7 +48,7 @@ final class McProtocolClientPool implements ProtocolBackend {
 
 		ProtocolDefinition definition = catalog.require(request.getClientVersion());
 		AuthenticationSession session = request.getAuthentication() == AuthenticationMode.ONLINE
-				? authentication.resolve(request.getAuthenticationProfile())
+				? authentication.resolve(request.getAccountId())
 				: null;
 		ProtocolWorkerProcess worker = workers.computeIfAbsent(request.getClientVersion(),
 				ignored -> new ProtocolWorkerProcess(definition, resolve(definition)));

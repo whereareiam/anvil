@@ -8,24 +8,27 @@ commands, not Gradle arguments or Minecraft chat commands. The command names are
 
 ## Interactive commands
 
-| Command | Effect |
-|---|---|
-| `status` | Print the active environment, entrypoint, and process addresses and states; report when nothing is running. |
-| `list` | Show the selected group's members, or the selected provider's scenarios and groups. |
-| `start <scenario>` | Close an active environment and start the named scenario; group sessions accept only members of that group. |
-| `restart` | Close and start the entire current environment again. |
-| `logs <process> [lines]` | Print a bounded console tail; defaults to 30 lines. |
-| `send <process> <command>` | Send the rest of the line to that process's console. |
-| `stop` | Close the current environment and keep the shell open. |
-| `quit` / `exit` | Close the environment and leave the runner. |
+| Command                                                          | Effect                                                                                                      |
+|------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
+| `status`                                                         | Print the active environment, entrypoint, and process addresses and states; report when nothing is running. |
+| `list`                                                           | Show the discovered scenarios and their declared processes.                                                   |
+| `start <scenario>`                                               | Close an active environment and start the named scenario or definition.                                        |
+| `restart`                                                        | Close and start the entire current environment again.                                                       |
+| `logs <process> [lines]`                                         | Print a bounded console tail, including retained output after `stop`; defaults to 30 lines.                 |
+| `actions`                                                        | List contributed actions, their inputs, and current observations.                                           |
+| `action <id> <scenario\|process\|player> <target> [JSON inputs]` | Invoke a registered action against the selected target.                                                     |
+| `send <process> <command>`                                       | Send the rest of the line to that process's console.                                                        |
+| `stop`                                                           | Close the current environment and keep the shell open.                                                      |
+| `quit` / `exit`                                                  | Close the environment and leave the runner.                                                                 |
 
-`restart`, `logs`, and `send` require a running environment. After `stop`, use `start <scenario>`
-before trying them. There is no shell command for stopping, starting, or restarting one individual
+`restart` and `send` require a running environment. After `stop`, use `start <scenario>` before trying
+them. `logs` remains available for the stopped environment until the next start replaces its retained
+process handles. There is no shell command for stopping, starting, or restarting one individual
 process. The Java API exposes a separate [per-process restart action](../../../building-blocks/environments/actions/restarts/index.md).
 
 ## Inspect a console
 
-For the catalog example's server named `server`, enter:
+For the definitions guide's server named `server`, enter:
 
 ```text
 send server say scenario-console-check
@@ -41,6 +44,20 @@ Use the exact scenario process name shown by `status`. In a proxy environment, t
 have separate consoles. For a full log while its workspace exists, inspect the process's
 `anvil-console.log`; [environment actions](../../../building-blocks/environments/actions/index.md)
 cover console checkpoints and typed native operations from Java.
+
+## Invoke a tooling extension
+
+After installing an [extension](../../../extending/tooling/index.md), list its bound actions and
+invoke one by its namespaced identifier. For an external counter capability on player `External`:
+
+```text
+actions
+action external.counter.add player External {"amount":4}
+```
+
+The JSON object supplies scalar inputs. The runner validates types, applies declared defaults, and
+checks current target availability. Results can contain a message and a table. An invalid action
+request reports its error while leaving the shell open; it does not invoke an arbitrary Java method.
 
 ## Handle command failures
 

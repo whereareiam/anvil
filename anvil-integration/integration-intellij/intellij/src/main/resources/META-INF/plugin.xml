@@ -1,0 +1,68 @@
+<idea-plugin url="https://anvil.whereareiam.me">
+	<name>Anvil</name>
+	<description><![CDATA[
+		<p>Run and inspect Minecraft server test environments defined with
+		<a href="https://anvil.whereareiam.me">Anvil</a>, a testing framework for Minecraft Java Edition
+		servers, proxies, and simulated players.</p>
+
+		<p>Anvil finds the scenario definitions in your Gradle project and lists them in the <b>Anvil</b>
+		tool window. Start a whole environment or a single server or proxy, then follow it in a session tab:</p>
+		<ul>
+			<li><b>Environment</b>: live status, join address, workspaces, and per-process start, stop, and restart</li>
+			<li><b>Console</b>: merged or per-process output with ANSI colors, and commands sent to one process</li>
+			<li><b>Players</b>: simulated players with actions and observations contributed by their capabilities</li>
+		</ul>
+		<p>The plugin also manages project and global accounts and account pools, including browser sign-in,
+		and can save a scenario or a single process as a Run Configuration.</p>
+
+		<h3>Requirements</h3>
+		<ul>
+			<li>A Gradle project that applies the <code>me.whereareiam.anvil</code> Gradle plugin, at an Anvil
+			version matching this plugin</li>
+			<li>Java 21 or newer for the project runtime</li>
+		</ul>
+		<p>Open <b>View | Tool Windows | Anvil</b> to begin, and configure preferences in
+		<b>Settings | Tools | Anvil</b>. See the
+		<a href="https://anvil.whereareiam.me/docs/dev/integrations/intellij">IntelliJ IDEA guide</a> for setup
+		and usage.</p>
+
+		<h3>Limitations</h3>
+		<p>Only Gradle projects are supported. One environment runs per IntelliJ project at a time, and
+		processes cannot be debugged from the IDE.</p>
+
+		<p><i>Anvil is not an official Minecraft product and is not approved by or associated with Mojang or
+		Microsoft.</i></p>
+	]]></description>
+	<depends>com.intellij.modules.platform</depends>
+	<depends>com.intellij.java</depends>
+	<depends optional="true" config-file="anvil-gradle.xml">org.jetbrains.plugins.gradle</depends>
+	<extensionPoints>
+		<extensionPoint name="buildIntegration"
+			interface="me.whereareiam.anvil.integration.intellij.source.BuildIntegration" dynamic="true"/>
+	</extensionPoints>
+	<extensions defaultExtensionNs="com.intellij">
+		<projectService serviceInterface="me.whereareiam.anvil.integration.intellij.source.BuildIntegrations"
+				serviceImplementation="me.whereareiam.anvil.integration.intellij.source.ProjectBuildIntegrations"/>
+		<projectService serviceImplementation="me.whereareiam.anvil.integration.intellij.tooling.ProjectToolingHost"/>
+		<projectService serviceInterface="me.whereareiam.anvil.integration.intellij.source.SourceDiscovery"
+				serviceImplementation="me.whereareiam.anvil.integration.intellij.source.ProjectSourceDiscovery"/>
+		<projectService serviceInterface="me.whereareiam.anvil.integration.intellij.ScenarioCatalog"
+				serviceImplementation="me.whereareiam.anvil.integration.intellij.scenario.ProjectScenarioCatalog"/>
+		<projectService serviceInterface="me.whereareiam.anvil.integration.intellij.environment.EnvironmentLifecycle"
+				serviceImplementation="me.whereareiam.anvil.integration.intellij.scenario.execution.ProjectEnvironmentLifecycle"/>
+		<applicationService serviceInterface="me.whereareiam.anvil.integration.intellij.settings.Preferences"
+				serviceImplementation="me.whereareiam.anvil.integration.intellij.settings.PersistentPreferences"/>
+		<projectService serviceInterface="me.whereareiam.anvil.integration.intellij.account.AccountLibrary"
+				serviceImplementation="me.whereareiam.anvil.integration.intellij.account.persistence.ConfiguredAccountLibrary"/>
+		<projectService serviceInterface="me.whereareiam.anvil.integration.intellij.settings.ProjectCommandHistory"
+				serviceImplementation="me.whereareiam.anvil.integration.intellij.settings.StoredCommandHistory"/>
+		<projectService serviceInterface="me.whereareiam.anvil.integration.intellij.account.authentication.AccountAuthenticator"
+				serviceImplementation="me.whereareiam.anvil.integration.intellij.account.authentication.BuildAccountAuthenticator"/>
+		<applicationConfigurable parentId="tools" id="me.whereareiam.anvil.settings" displayName="Anvil"
+			instance="me.whereareiam.anvil.integration.intellij.view.settings.AnvilSettingsConfigurable"/>
+		<projectService serviceImplementation="me.whereareiam.anvil.integration.intellij.runconfiguration.RunConfigurationService"/>
+		<configurationType implementation="me.whereareiam.anvil.integration.intellij.runconfiguration.AnvilConfigurationType"/>
+		<toolWindow id="Anvil" anchor="bottom" icon="/icons/anvil.svg" canCloseContents="true"
+			factoryClass="me.whereareiam.anvil.integration.intellij.view.window.main.AnvilToolWindowFactory"/>
+	</extensions>
+</idea-plugin>

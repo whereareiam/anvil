@@ -21,5 +21,5 @@ preparing an environment and later running it offline.
 ## Share selected data
 
 For another machine or CI run, copy only the cache data you intend to reuse. The root can also contain
-private authentication profiles; exclude those account files rather than archiving the entire root.
+private authentication accounts; exclude those account files rather than archiving the entire root.
 See [Authentication](../../../players/authentication/index.md).

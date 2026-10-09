@@ -52,3 +52,28 @@ A checkpoint belongs to one process generation. After restarting a process, use 
 handle's console and take a new checkpoint. If a wait expires, inspect the tail for command syntax,
 plugin initialization failures, and the actual response text before increasing the timeout.
 See [startup troubleshooting](../../../../help/troubleshooting/startup/index.md).
+
+## Read incremental output
+
+For a log view or polling loop, use `console.read(checkpoint, maximumLines)`. It returns immediately
+with a bounded batch. With an existing process console named `console`, initialize `long checkpoint = 0`
+once, then repeat this fragment to consume available history:
+
+```java
+var output = console.read(checkpoint, 50);
+output.getLines().forEach(line -> System.out.println(line.getText()));
+checkpoint = output.getNextCheckpoint();
+```
+
+`output.isTruncated()` reports that unread lines were evicted from bounded history. Treat it as an
+output gap. `output.isClosed()` means no future lines will be captured; consume any remaining buffered
+lines before ending the reader. Maintain separate checkpoints for replacement process generations.
+Use `process.executionId()` to identify the console stream; the runtime assigns a fresh opaque UUID
+to each process execution. The scenario and process name describe its logical ownership.
+
+An embedding application can observe startup through `engine.start(scenario, observer)`, supplying a
+`ScenarioObserver` from `me.whereareiam.anvil.api.scenario`. Its `processCreated` callback receives each
+initial or replacement process before native launch. Retain the borrowed handle and read its console
+from another thread while startup proceeds. Return promptly from the callback; waiting for readiness
+there would prevent launch. The scenario owns cleanup, and captured output remains readable through
+retained handles after failed startup.

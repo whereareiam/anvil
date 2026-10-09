@@ -1,7 +1,10 @@
 package me.whereareiam.anvil.protocol.api.provider;
 
 import org.jetbrains.annotations.NotNull;
+import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -11,18 +14,25 @@ import java.util.function.Consumer;
  */
 public interface ProtocolAuthentication {
 	/**
-	 * Authenticates and stores a named profile using this provider's account workflow.
+	 * Lists locally stored accounts owned by this provider.
 	 *
-	 * @param profile owner-local profile name
-	 * @param output user-facing prompts and status; never access or refresh tokens
+	 * @return account metadata without credential material
 	 */
-	void login(@NotNull String profile, @NotNull Consumer<String> output);
+	default @NotNull Collection<AuthenticationAccount> accounts() { return List.of(); }
 
 	/**
-	 * Removes the named profile from this provider's private authentication store.
+	 * Authenticates and stores a named account using this provider's account workflow.
 	 *
-	 * @param profile owner-local profile name
+	 * @param accountId owner-local account ID
+	 * @param output user-facing prompts and status; never access or refresh tokens
+	 */
+	void login(@NotNull String accountId, @NotNull Consumer<String> output);
+
+	/**
+	 * Removes the named account from this provider's private authentication store.
+	 *
+	 * @param accountId owner-local account ID
 	 * @param output user-facing status; never credentials
 	 */
-	void logout(@NotNull String profile, @NotNull Consumer<String> output);
+	void logout(@NotNull String accountId, @NotNull Consumer<String> output);
 }

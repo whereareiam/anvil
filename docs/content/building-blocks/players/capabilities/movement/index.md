@@ -4,7 +4,7 @@ description: Send an absolute player position and view update and verify its app
 ---
 
 `Movement` sends an absolute position, rotation, and on-ground flag. Install the movement unit and
-Session dependency, or use the umbrella plugin. Connect the player before sending updates.
+Session dependency, or explicitly select the default capability unit. Connect the player before sending updates.
 
 ## Send a controlled movement
 

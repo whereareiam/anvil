@@ -58,9 +58,9 @@ integration, selecting the same definition for multiple methods still starts a f
 execution for each method; it does not share a running server automatically.
 
 Create another definition when the environment changes, such as a different platform or a proxy
-topology. A named catalog can also expose definitions to the manual runner. Use
-`AnvilScenarioDefinition` for a type-selected environment and `AnvilScenarioProvider` for a catalog;
-[scenario guides](../../../building-blocks/environments/index.md) explain both entry points.
+topology. The compiled definition is available to the manual runner and IDE automatically. Use
+`AnvilScenarioDefinition` for both type-selected JUnit environments and interactive scenarios;
+[scenario guides](../../../building-blocks/environments/index.md) explain the shared declaration.
 
 ## Decide what belongs here
 

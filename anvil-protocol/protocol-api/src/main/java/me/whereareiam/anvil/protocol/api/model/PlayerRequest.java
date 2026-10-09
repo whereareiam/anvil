@@ -33,7 +33,7 @@ public class PlayerRequest {
 	@Builder.Default
 	AuthenticationMode authentication = AuthenticationMode.OFFLINE;
 	/**
-	 * Provider-owned profile name when online authentication is selected.
+	 * Local account identifier when online authentication is selected.
 	 */
-	@Nullable String authenticationProfile;
+	@Nullable String accountId;
 }

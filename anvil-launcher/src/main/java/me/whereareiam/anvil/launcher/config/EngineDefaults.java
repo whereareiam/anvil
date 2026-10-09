@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.launcher.config;
 
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessScheduling;
 import com.sun.management.OperatingSystemMXBean;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import org.jetbrains.annotations.NotNull;
@@ -18,15 +19,19 @@ public final class EngineDefaults {
 	 * @return options containing the effective local paths
 	 */
 	public static @NotNull EngineOptions resolve(@NotNull EngineOptions options) {
+		ProcessScheduling scheduling = options.getProcessScheduling();
+
 		return options.toBuilder()
 				.cacheDirectory(options.getCacheDirectory() == null ? cacheDirectory() : options.getCacheDirectory())
-				.parallelism(options.getParallelism() == null ? detectedParallelism() : options.getParallelism())
-				.startupMemoryMegabytes(options.getStartupMemoryMegabytes() == null
-						? detectedStartupMemory()
-						: options.getStartupMemoryMegabytes())
+				.accountsDirectory(options.getAccountsDirectory() == null ? accountsDirectory() : options.getAccountsDirectory())
+				.processTimeouts(options.getProcessTimeouts().withDefaults(EngineOptions.builder().build().getProcessTimeouts()))
+				.processScheduling(ProcessScheduling.builder()
+						.parallelism(scheduling.getParallelism() == null ? detectedParallelism() : scheduling.getParallelism())
+						.startupMemoryMegabytes(scheduling.getStartupMemoryMegabytes() == null
+								? detectedStartupMemory() : scheduling.getStartupMemoryMegabytes())
+						.build())
 				.downloadParallelism(options.getDownloadParallelism() == null
-						? detectedDownloadParallelism()
-						: options.getDownloadParallelism())
+						? detectedDownloadParallelism() : options.getDownloadParallelism())
 				.build();
 	}
 
@@ -51,6 +56,11 @@ public final class EngineDefaults {
 	 */
 	public static @NotNull Path cacheDirectory() {
 		return Path.of(System.getProperty("user.home"), ".anvil");
+	}
+
+	/** Returns the default user-local authenticated account directory. */
+	public static @NotNull Path accountsDirectory() {
+		return cacheDirectory().resolve("accounts");
 	}
 
 }

@@ -20,20 +20,25 @@ public interface ProtocolProvider {
 	/**
 	 * Creates a protocol backend using the supplied private cache root.
 	 *
-	 * @param cacheDirectory Anvil cache directory
+	 * @param cacheDirectory Anvil artifact/cache directory
+	 * @param accountsDirectory local account store directory
 	 * @param artifacts shared verified artifact cache
 	 * @return backend instance
 	 */
-	@NotNull ProtocolBackend create(@NotNull Path cacheDirectory, @NotNull ProtocolRuntimeResolver artifacts);
+	@NotNull ProtocolBackend create(
+			@NotNull Path cacheDirectory,
+			@NotNull Path accountsDirectory,
+			@NotNull ProtocolRuntimeResolver artifacts
+	);
 
 	/**
 	 * Provides an optional login/logout workflow without creating a protocol backend or player.
 	 * Offline-only providers keep the empty default implementation.
 	 *
-	 * @param cacheDirectory private Anvil cache root
+	 * @param accountsDirectory local account store directory
 	 * @return provider-owned authentication service, when supported
 	 */
-	default @NotNull Optional<ProtocolAuthentication> authentication(@NotNull Path cacheDirectory) {
+	default @NotNull Optional<ProtocolAuthentication> authentication(@NotNull Path accountsDirectory) {
 		return Optional.empty();
 	}
 }

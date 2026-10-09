@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.platform.bungeecord;
 
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
@@ -9,14 +10,14 @@ import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.type.ForwardingMode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -62,6 +63,9 @@ class BungeeCordPlatformProviderTest {
 				.build();
 
 		BungeeCordPlatformProvider provider = new BungeeCordPlatformProvider();
+		assertTrue(provider.jvmArguments(proxy, false).isEmpty(), "Ordinary engine runs retain native console defaults");
+		assertEquals(List.of("-Dorg.jline.terminal.dumb.color=true"),
+				provider.jvmArguments(proxy, true));
 		assertEquals(jar.toAbsolutePath(), provider.resolve(proxy, context).getJar());
 		provider.configure(proxy, context);
 

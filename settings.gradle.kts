@@ -1,3 +1,5 @@
+import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
+
 pluginManagement {
     includeBuild("build-logic")
 
@@ -9,9 +11,15 @@ pluginManagement {
         maven("https://repo.opencollab.dev/main/")
         maven("https://repo.opencollab.dev/maven-snapshots/")
     }
+
+    plugins {
+        // The server testkit applies the scenario plugin published for this build's own version.
+        id("me.whereareiam.anvil") version providers.gradleProperty("anvilVersion").get()
+    }
 }
 
 plugins {
+    id("org.jetbrains.intellij.platform.settings") version "2.18.1"
     id("me.whereareiam.toolkit.project-discovery") version "dev-757d944"
 }
 
@@ -32,6 +40,7 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
 
     repositories {
+        intellijPlatform { defaultRepositories() }
         mavenLocal()
         mavenCentral()
         maven("https://registry.whereareiam.me/maven/packages")

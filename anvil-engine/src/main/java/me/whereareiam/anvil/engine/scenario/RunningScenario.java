@@ -3,6 +3,7 @@ package me.whereareiam.anvil.engine.scenario;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerManager;
+import me.whereareiam.anvil.api.player.account.AccountManager;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
@@ -21,6 +22,26 @@ public final class RunningScenario implements ScenarioContext {
 	private boolean closed;
 
 	@Override
+	public void start() {
+		synchronized (this) {
+			if (closed) throw new IllegalStateException("Cannot start a finalized scenario");
+		}
+
+		// Started outside the monitor, so finishing from another thread can cancel a slow startup.
+		try {
+			processes.startAll();
+		} catch (RuntimeException | Error failure) {
+			try {
+				finish(false);
+			} catch (RuntimeException | Error cleanup) {
+				if (cleanup != failure) failure.addSuppressed(cleanup);
+			}
+
+			throw failure;
+		}
+	}
+
+	@Override
 	public @NotNull AnvilScenario definition() {
 		return definition;
 	}
@@ -33,6 +54,13 @@ public final class RunningScenario implements ScenarioContext {
 	@Override
 	public @NotNull PlayerManager players() {
 		return players;
+	}
+
+	@Override
+	public @NotNull AccountManager accounts() {
+		return players instanceof AccountManager accounts ? accounts : () -> {
+			throw new UnsupportedOperationException("Account discovery is unavailable");
+		};
 	}
 
 	@Override

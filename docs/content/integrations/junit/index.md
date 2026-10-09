@@ -15,7 +15,22 @@ use it. The published artifact brings the Anvil API, JUnit Jupiter, and launcher
 Supply the selected platform provider and matching agent, a protocol provider, and the capabilities
 your tests use on the runtime classpath. Keep Anvil artifact versions aligned.
 
-Use a JUnit Platform runner with the Jupiter engine. Configure Anvil's
+For example, a project that manages its own Gradle test tasks can add the library directly:
+
+```kotlin
+dependencies {
+	testImplementation(platform("me.whereareiam.anvil:bom:0.0.1"))
+	testImplementation("me.whereareiam.anvil:junit")
+	// Add the platform, protocol, and capability providers required by your scenarios.
+}
+
+tasks.test {
+	useJUnitPlatform()
+}
+```
+
+Maven users import the same BOM in dependency management and add the `junit` artifact with test
+scope. No Anvil Gradle or IntelliJ integration is required. Use a JUnit Platform runner with the Jupiter engine. Configure Anvil's
 [engine properties](../../building-blocks/environments/configuration/engine/index.md) on the JVM executing those tests, including EULA
 acceptance, provider selection when needed, and any named artifact paths. The JUnit extension reads
 those properties when it starts each scenario.

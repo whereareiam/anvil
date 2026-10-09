@@ -23,8 +23,15 @@ Implement `me.whereareiam.anvil.platform.api.PlatformProvider` and register its 
 | `readinessPattern()` | Log expression that marks the process ready for players |
 | `minimumJavaVersion(process)` | Minimum Java feature version for this distribution |
 
-Override `programArguments`, `stopCommand`, and `defaultCaches` where the defaults do not fit your
+Override `jvmArguments`, `programArguments`, `stopCommand`, and `defaultCaches` where the defaults do not fit your
 platform. Add `forwardingModes` and `platformAgent` when your platform supports those features.
+
+`jvmArguments(process, consoleColors)` supplies platform launch defaults before the declaration's explicit
+JVM arguments. Use `consoleColors` to request ANSI output through your platform's supported
+console settings. The planner stores these defaults in `ProcessPlan`; the launcher combines them with
+explicit JVM arguments when constructing the command. `PlatformPreparer` resolves software and applies
+configuration. Streams remain pipes; enabling colors must not require an interactive terminal.
+Keep these platform-specific options in the provider. The engine and IDE do not branch on platform IDs.
 
 The
 [PlatformProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-platform/platform-api/src/main/java/me/whereareiam/anvil/platform/api/PlatformProvider.java)
@@ -40,16 +47,18 @@ runtime ports inside `configure`.
 ## Follow the provisioning sequence
 
 Platform planning validates selectors and topology. The assembled preparation path resolves
-artifacts and declared assets, then calls provider configuration in declaration order. Configure
-the files from the supplied workspace rather
-than assuming no files exist. Runtime-owned settings take precedence over prepared assets.
+artifacts and declared assets. Each process start then calls provider configuration before launching
+that process, including on its first start and every restart. Independent starts may configure
+processes concurrently; modify only the supplied process workspace and use the planned forwarding
+values and peer addresses. Configure existing files from that workspace. Runtime-owned settings
+take precedence over prepared assets.
 
 [Distributions and configuration](./distributions/index.md) covers this boundary in detail.
 [Agents and forwarding](./agents/index.md) covers native services and proxy/server compatibility.
 
 ## Install and verify
 
-Put the provider artifact on the consumer's `anvilPlatforms` configuration, then select its ID in the
+Put the provider artifact on the consumer's `anvilRuntimeOnly` configuration, then select its ID in the
 server or proxy declaration. Ensure any required agent assembly is also available on the scenario
 runtime classpath. Use an exact build or verified checksum in automated scenarios.
 
