@@ -80,12 +80,23 @@ jobs:
       ref: ${{ needs.resolve.outputs.merge }}
       version: pr-${{ inputs.pull-request }}
       packaging: true
-      live: true
+      cache: read-only
+
+  live:
+    name: Live
+    needs: verify
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/reusable-live.yml
+    with:
+      commit: ${{ needs.verify.outputs.commit }}
+      version: ${{ needs.verify.outputs.version }}
       cache: read-only
 
   report:
     name: Report result
-    needs: [resolve, verify]
+    needs: [resolve, verify, live]
     if: ${{ always() && needs.resolve.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -96,12 +107,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           HEAD: ${{ needs.resolve.outputs.head }}
-          RESULT: ${{ needs.verify.result }}
+          RESULTS: ${{ needs.verify.result }} ${{ needs.live.result }}
         run: |
           set -euo pipefail
-          case "$RESULT" in
-            success) state=success; description="Passed" ;;
-            cancelled) state=error; description="Cancelled" ;;
+          case "$RESULTS" in
+            "success success") state=success; description="Passed" ;;
+            *cancelled*) state=error; description="Cancelled" ;;
             *) state=failure; description="Failed" ;;
           esac
           gh api "repos/$GITHUB_REPOSITORY/statuses/$HEAD" --silent \

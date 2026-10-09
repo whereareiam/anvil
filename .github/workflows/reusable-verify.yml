@@ -13,12 +13,9 @@ on:
         type: string
         default: ""
       packaging:
-        description: Also build and verify the IntelliJ plugin and build the standalone consumers against the published artifacts.
-        required: false
-        type: boolean
-        default: false
-      live:
-        description: Also run the suites that start real servers and proxies. Requires packaging.
+        description: >-
+          Also build and verify the IntelliJ plugin, build the standalone consumers against the published artifacts,
+          and hand the build outputs over to the jobs that follow.
         required: false
         type: boolean
         default: false
@@ -130,102 +127,3 @@ jobs:
         if: inputs.packaging
         with:
           mode: save
-
-  live:
-    name: Live · ${{ matrix.name }}
-    needs: build
-    if: inputs.live
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Direct servers
-            shard: direct
-            tags: compatibility
-            filter: "^(?!velocity-|bungee-).*"
-          - name: Velocity
-            shard: velocity
-            tags: compatibility
-            filter: "^velocity-.*"
-          - name: BungeeCord
-            shard: bungeecord
-            tags: compatibility
-            filter: "^bungee-.*"
-          - name: Player capabilities
-            shard: capabilities
-            tags: capabilities
-            filter: ".*"
-          - name: Sessions, routing and extensions
-            shard: behavior
-            tags: "!compatibility & !capabilities"
-            filter: ".*"
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.build.outputs.commit }}
-          persist-credentials: false
-
-      - uses: ./.github/actions/setup
-        with:
-          cache-shard: ${{ matrix.shard }}
-          cache: ${{ inputs.cache }}
-
-      - uses: ./.github/actions/build-outputs
-        with:
-          mode: restore
-
-      - name: Run live tests
-        env:
-          ANVIL_VERSION: ${{ needs.build.outputs.version }}
-          TEST_TAGS: ${{ matrix.tags }}
-          MATRIX_FILTER: ${{ matrix.filter }}
-        run: >-
-          ./gradlew --no-daemon :anvil-testkit:tests:server:test
-          -Panvil.testMode=full
-          -PanvilTestTags="$TEST_TAGS"
-          -PanvilMatrixFilter="$MATRIX_FILTER"
-          -PanvilVersion="$ANVIL_VERSION"
-          -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
-
-      - uses: whereareiam/devops/primitive/report/junit/publish@v3
-        if: always()
-        with:
-          name: Live test results (${{ matrix.shard }})
-
-  consumer:
-    name: Live · Example consumer
-    needs: build
-    if: inputs.live
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.build.outputs.commit }}
-          persist-credentials: false
-
-      - uses: ./.github/actions/setup
-        with:
-          cache-shard: consumer
-          cache: ${{ inputs.cache }}
-
-      - uses: ./.github/actions/build-outputs
-        with:
-          mode: restore
-
-      - name: Run the example's journeys
-        env:
-          ANVIL_VERSION: ${{ needs.build.outputs.version }}
-        run: >-
-          ./gradlew --no-daemon -p examples/proof-of-patience anvilTest
-          -PanvilVersion="$ANVIL_VERSION"
-          -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
-
-      - uses: whereareiam/devops/primitive/report/junit/publish@v3
-        if: always()
-        with:
-          name: Live test results (consumer)
-          results: examples/**/build/test-results/**/*.xml
-          reports: examples/**/build/reports/tests/**

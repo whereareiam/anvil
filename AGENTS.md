@@ -435,7 +435,7 @@ failures.
 - Use relative content links. Validate navigation, local links, and Scriptorium content
   compilation after documentation changes. Generated `.scriptorium/` output is ignored.
 - Keep `LICENSE`, wrapper, POM metadata, and CI/release workflows valid. Entry workflows only select a trigger
-  and call `reusable-verify.yml` and `reusable-publish.yml`; shared steps come from `whereareiam/devops`, and
+  and call `reusable-verify.yml`, `reusable-live.yml` and `reusable-publish.yml`; shared steps come from `whereareiam/devops`, and
   only Anvil-specific ones live in `.github/actions`. Pull requests automatically get the metadata check and
   the quick `build` checks, which start no server. Full verification with the IntelliJ plugin, standalone
   consumers and real platforms is maintainer-requested through `workflow_dispatch` and reports a

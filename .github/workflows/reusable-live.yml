@@ -1,0 +1,118 @@
+name: Live
+
+on:
+  workflow_call:
+    inputs:
+      commit:
+        description: Verified commit whose build outputs this run holds.
+        required: true
+        type: string
+      version:
+        description: Verified artifact version.
+        required: true
+        type: string
+      cache:
+        description: Cache policy, auto or read-only. A run of code that is not yet reviewed passes read-only.
+        required: false
+        type: string
+        default: auto
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  suites:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Direct servers
+            shard: direct
+            tags: compatibility
+            filter: "^(?!velocity-|bungee-).*"
+          - name: Velocity
+            shard: velocity
+            tags: compatibility
+            filter: "^velocity-.*"
+          - name: BungeeCord
+            shard: bungeecord
+            tags: compatibility
+            filter: "^bungee-.*"
+          - name: Player capabilities
+            shard: capabilities
+            tags: capabilities
+            filter: ".*"
+          - name: Sessions, routing and extensions
+            shard: behavior
+            tags: "!compatibility & !capabilities"
+            filter: ".*"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.commit }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          cache-shard: ${{ matrix.shard }}
+          cache: ${{ inputs.cache }}
+
+      - uses: ./.github/actions/build-outputs
+        with:
+          mode: restore
+
+      - name: Run live tests
+        env:
+          ANVIL_VERSION: ${{ inputs.version }}
+          TEST_TAGS: ${{ matrix.tags }}
+          MATRIX_FILTER: ${{ matrix.filter }}
+        run: >-
+          ./gradlew --no-daemon :anvil-testkit:tests:server:test
+          -Panvil.testMode=full
+          -PanvilTestTags="$TEST_TAGS"
+          -PanvilMatrixFilter="$MATRIX_FILTER"
+          -PanvilVersion="$ANVIL_VERSION"
+          -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
+
+      - uses: whereareiam/devops/primitive/report/junit/publish@v3
+        if: always()
+        with:
+          name: Live test results (${{ matrix.shard }})
+
+  consumer:
+    name: Example consumer
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.commit }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          cache-shard: consumer
+          cache: ${{ inputs.cache }}
+
+      - uses: ./.github/actions/build-outputs
+        with:
+          mode: restore
+
+      - name: Run the example's journeys
+        env:
+          ANVIL_VERSION: ${{ inputs.version }}
+        run: >-
+          ./gradlew --no-daemon -p examples/proof-of-patience anvilTest
+          -PanvilVersion="$ANVIL_VERSION"
+          -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
+
+      - uses: whereareiam/devops/primitive/report/junit/publish@v3
+        if: always()
+        with:
+          name: Live test results (consumer)
+          results: examples/**/build/test-results/**/*.xml
+          reports: examples/**/build/reports/tests/**

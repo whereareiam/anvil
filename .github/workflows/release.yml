@@ -23,11 +23,21 @@ jobs:
       ref: ${{ github.event.release.tag_name }}
       version: ${{ github.event.release.tag_name }}
       packaging: true
-      live: true
+
+  live:
+    name: Live
+    needs: verify
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/reusable-live.yml
+    with:
+      commit: ${{ needs.verify.outputs.commit }}
+      version: ${{ needs.verify.outputs.version }}
 
   publish:
     name: Publish
-    needs: verify
+    needs: [verify, live]
     permissions:
       contents: read
       id-token: write

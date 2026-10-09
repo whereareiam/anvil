@@ -27,11 +27,24 @@ jobs:
     with:
       ref: ${{ github.sha }}
       packaging: true
-      live: ${{ inputs.live }}
+
+  live:
+    name: Live
+    needs: verify
+    if: inputs.live
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/reusable-live.yml
+    with:
+      commit: ${{ needs.verify.outputs.commit }}
+      version: ${{ needs.verify.outputs.version }}
 
   publish:
     name: Publish
-    needs: verify
+    needs: [verify, live]
+    # A skipped live job does not block publication; a failed or cancelled one does.
+    if: ${{ !cancelled() && needs.verify.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.live.result) }}
     permissions:
       contents: read
       id-token: write
