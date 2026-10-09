@@ -93,6 +93,15 @@ class VelocityPlatformProviderTest {
 	}
 
 	@Test
+	void verifiesLoginsAgainstTheDeclaredSessionServer() {
+		MinecraftProxy proxy = proxy(Path.of("velocity.jar"), "server");
+
+		assertEquals(List.of("-Dmojang.sessionserver=http://127.0.0.1:25580/session/minecraft/hasJoined"),
+				new VelocityPlatformProvider().sessionServerArguments(proxy,
+						URI.create("http://127.0.0.1:25580/session/minecraft")));
+	}
+
+	@Test
 	void leavesAJarWithoutReleaseUnversionedAndRejectsUnreadableVersions() {
 		VelocityPlatformProvider provider = new VelocityPlatformProvider();
 		MinecraftProxy local = proxy(Path.of("velocity.jar"), "server");

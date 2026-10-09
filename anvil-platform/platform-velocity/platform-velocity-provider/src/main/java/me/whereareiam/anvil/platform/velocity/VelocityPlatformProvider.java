@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
@@ -96,6 +97,18 @@ public final class VelocityPlatformProvider implements PlatformProvider {
 	@Override
 	public @NotNull List<String> jvmArguments(@NotNull MinecraftProcess process, boolean consoleColors) {
 		return consoleColors ? List.of("-Dterminal.ansi=true", "-Dterminal.jline=false") : List.of();
+	}
+
+	/**
+	 * Points Velocity's login verification at the session server's {@code hasJoined} endpoint.
+	 *
+	 * @param process proxy declaration
+	 * @param sessionServer base address of the session server
+	 * @return the system property Velocity reads its verification address from
+	 */
+	@Override
+	public @NotNull List<String> sessionServerArguments(@NotNull MinecraftProcess process, @NotNull URI sessionServer) {
+		return List.of("-Dmojang.sessionserver=" + sessionServer + "/hasJoined");
 	}
 
 	@Override

@@ -6,6 +6,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import org.geysermc.mcprotocollib.auth.GameProfile;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.factory.ClientNetworkSessionFactory;
+import org.geysermc.mcprotocollib.protocol.MinecraftConstants;
 import org.geysermc.mcprotocollib.protocol.MinecraftProtocol;
 import org.geysermc.mcprotocollib.protocol.codec.MinecraftCodec;
 import org.jetbrains.annotations.NotNull;
@@ -33,6 +34,8 @@ public final class McProtocolClientAdapter implements McProtocolClient<ClientSes
 				.setAddress(login.getHost(), login.getPort())
 				.setProtocol(new MinecraftProtocol(profile, login.getAccessToken()))
 				.create();
+		if (login.getSessionServer() != null)
+			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, new RedirectedSessionService(login.getSessionServer()));
 		session.addListener(new ClientPacketListener(session, login, listener));
 		return session;
 	}

@@ -16,6 +16,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageWr
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.URI;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -53,6 +54,7 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 	@Getter
 	private final @NotNull UUID uuid;
 	private final @Nullable String accessToken;
+	private final @Nullable URI sessionServer;
 	private final McProtocolClient<Object> client;
 	private final WorkerSegments segments;
 	private final WorkerMessageWriter events;
@@ -109,6 +111,7 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 				.host(host)
 				.port(port)
 				.accessToken(accessToken)
+				.sessionServer(sessionServer)
 				.locale(CLIENT_LOCALE)
 				.viewDistance(VIEW_DISTANCE)
 				.build();

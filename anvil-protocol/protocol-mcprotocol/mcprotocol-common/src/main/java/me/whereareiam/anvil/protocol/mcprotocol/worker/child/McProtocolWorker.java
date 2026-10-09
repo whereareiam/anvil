@@ -80,6 +80,7 @@ final class McProtocolWorker implements AutoCloseable {
 				options.getPort(),
 				options.getUuid(),
 				options.getAccessToken(),
+				options.getSessionServer(),
 				client,
 				segments,
 				responses,

@@ -6,6 +6,7 @@ import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
+import me.whereareiam.anvil.api.model.player.SessionIdentity;
 import me.whereareiam.anvil.api.model.player.PlayerState;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
@@ -25,9 +26,11 @@ import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.api.type.ProtocolFeature;
 import me.whereareiam.anvil.protocol.player.account.AccountReservations;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -231,6 +234,26 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
+	void aSessionIdentitySignsInWithoutAStoredAccountWhenTheProcessVerifiesAgainstTheSameServer() {
+		StubLibrary library = new StubLibrary();
+		URI sessionServer = URI.create("http://127.0.0.1:25580/session/minecraft");
+		SessionIdentity identity = SessionIdentity.builder().username("Alice").uniqueId(UUID.randomUUID())
+				.accessToken("token").sessionServer(sessionServer).build();
+		PlayerOptions options = PlayerOptions.builder().name("alice").authentication(AuthenticationMode.ONLINE)
+				.sessionIdentity(identity).build();
+
+		onlineManager(selector(library), library, new AccountReservations(), sessionServer).create(options);
+		assertSame(identity, library.lastRequest.getSessionIdentity());
+
+		RunningPlayerManager mojang = onlineManager(library, new AccountReservations());
+		var refused = assertThrows(ScenarioValidationException.class, () -> mojang.create(options));
+		assertTrue(refused.getMessage().contains("verifies logins against Mojang"), refused.getMessage());
+		assertThrows(ScenarioValidationException.class, () -> mojang.create(options.toBuilder().accountId("alice").build()));
+		assertThrows(ScenarioValidationException.class,
+				() -> mojang.create(options.toBuilder().authentication(AuthenticationMode.OFFLINE).build()));
+	}
+
+	@Test
 	void aLeasedAccountSelectsItsOwnLibraryOverTheEngineChoice() {
 		StubLibrary library = new StubLibrary();
 		AuthenticationAccount leased = new AuthenticationAccount("alice", "other", "Alice", null);
@@ -293,11 +316,22 @@ class RunningPlayerManagerTest {
 			AccountReservations reservations,
 			AuthenticationAccount... accounts
 	) {
+		return onlineManager(selector, library, reservations, null, accounts);
+	}
+
+	private RunningPlayerManager onlineManager(
+			ProtocolLibrarySelector selector,
+			StubLibrary library,
+			AccountReservations reservations,
+			@Nullable URI sessionServer,
+			AuthenticationAccount... accounts
+	) {
 		MinecraftServer server = MinecraftServer.builder()
 				.name("server")
 				.platform("test")
 				.distribution(Distribution.remote("1.21.11", "1"))
 				.onlineMode(true)
+				.sessionServer(sessionServer)
 				.build();
 		AnvilScenario scenario = AnvilScenario.builder().name("online").entrypoint("server").server(server).build();
 

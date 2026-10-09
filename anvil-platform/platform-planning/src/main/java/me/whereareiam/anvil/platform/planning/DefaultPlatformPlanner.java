@@ -82,6 +82,9 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 					.stopCommand(provider.stopCommand())
 					.jvmArguments(planned.jvmArguments())
 					.jvmArguments(provider.jvmArguments(declaration, options.isConsoleColors()))
+					.jvmArguments(declaration.getSessionServer() == null
+							? List.of()
+							: provider.sessionServerArguments(declaration, declaration.getSessionServer()))
 					.programArguments(provider.programArguments(declaration))
 					.defaultCaches(provider.defaultCaches(declaration))
 					.build());

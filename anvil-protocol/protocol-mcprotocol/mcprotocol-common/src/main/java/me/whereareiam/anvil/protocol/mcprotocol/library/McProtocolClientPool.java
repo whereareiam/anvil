@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.library;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.model.player.SessionIdentity;
 import me.whereareiam.anvil.protocol.api.library.ProtocolArtifactResolver;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
@@ -13,6 +14,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.model.AuthenticationSession;
 import me.whereareiam.anvil.protocol.mcprotocol.model.ReleaseDefinition;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.host.ProtocolWorkerProcess;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
@@ -53,13 +55,29 @@ final class McProtocolClientPool implements ProtocolLibrary {
 					+ "' does not speak Minecraft " + request.getClientVersion());
 		if (!request.getRelease().isLaunchable()) throw new IllegalStateException(request.getRelease().getLaunchRefusal());
 
-		AuthenticationSession session = request.getAuthentication().usesAccount()
-				? authentication.resolve(request.getAccountId())
-				: null;
+		AuthenticationSession session = session(request);
 		ProtocolWorkerProcess worker = workers.computeIfAbsent(request.getRelease().getLibraryVersion(),
 				ignored -> new ProtocolWorkerProcess(definition.getRelease(), closure(definition)));
 
 		return worker.create(request, session);
+	}
+
+	/**
+	 * Resolves what the player signs in with: nothing offline, the scenario's session identity when it declares
+	 * one, and otherwise the stored account.
+	 */
+	private @Nullable AuthenticationSession session(PlayerRequest request) {
+		if (!request.getAuthentication().usesAccount()) return null;
+
+		SessionIdentity identity = request.getSessionIdentity();
+		if (identity == null) return authentication.resolve(request.getAccountId());
+
+		return AuthenticationSession.builder()
+				.username(identity.getUsername())
+				.uuid(identity.getUniqueId())
+				.accessToken(identity.getAccessToken())
+				.sessionServer(identity.getSessionServer())
+				.build();
 	}
 
 	private List<Path> closure(ReleaseDefinition definition) {

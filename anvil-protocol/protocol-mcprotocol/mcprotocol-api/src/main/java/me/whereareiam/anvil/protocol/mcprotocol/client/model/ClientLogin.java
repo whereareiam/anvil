@@ -7,6 +7,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.URI;
 import java.util.UUID;
 
 /**
@@ -48,6 +49,10 @@ public class ClientLogin {
 	 */
 	@ToString.Exclude
 	@Nullable String accessToken;
+	/**
+	 * Session server the login is reported to instead of Mojang's, or null for Mojang's.
+	 */
+	@Nullable URI sessionServer;
 	/**
 	 * Locale reported in the client information, such as {@code en_us}.
 	 */

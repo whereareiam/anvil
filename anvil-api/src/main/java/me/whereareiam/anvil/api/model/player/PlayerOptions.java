@@ -37,4 +37,10 @@ public class PlayerOptions {
 
 	/** Local account identifier resolved by the selected protocol library. */
 	@Nullable String accountId;
+
+	/**
+	 * Identity verified by a session server the scenario chooses. It replaces {@link #getAccountId() accountId}
+	 * for an authentication mode that uses an account; declaring both is refused.
+	 */
+	@Nullable SessionIdentity sessionIdentity;
 }

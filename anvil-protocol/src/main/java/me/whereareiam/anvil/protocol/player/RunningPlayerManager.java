@@ -28,6 +28,7 @@ import me.whereareiam.anvil.protocol.player.account.AccountReservations;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -172,6 +173,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 					.address(runningTarget.address())
 					.authentication(options.getAuthentication())
 					.accountId(options.getAccountId())
+					.sessionIdentity(options.getSessionIdentity())
 					.build());
 			PlayerObservation observation = observations.create(driven);
 			player = playerComposer.compose(
@@ -200,7 +202,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	 * @return the action that unreserves the account, or null when nothing was reserved here
 	 */
 	private @Nullable Runnable reserveDirectly(@NotNull PlayerOptions options) {
-		if (!options.getAuthentication().usesAccount()) return null;
+		if (!options.getAuthentication().usesAccount() || options.getSessionIdentity() != null) return null;
 		if (accountReturns.containsKey(options.getName())) return null;
 
 		String accountId = options.getAccountId();
@@ -323,6 +325,23 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		}
 	}
 
+	/**
+	 * A session identity is only verifiable by the session server it names, so the process the player joins
+	 * must verify against that same server; Mojang would refuse it.
+	 */
+	private void validateSessionIdentity(PlayerOptions options, MinecraftProcess target) {
+		if (options.getAccountId() != null)
+			throw new ScenarioValidationException("Player '" + options.getName()
+					+ "' declares both an account ID and a session identity; declare one");
+
+		URI sessionServer = options.getSessionIdentity().getSessionServer();
+		if (!sessionServer.equals(target.getSessionServer()))
+			throw new ScenarioValidationException("Player '" + options.getName() + "' is verified by session server "
+					+ sessionServer + ", but process '" + target.getName() + "' verifies logins against "
+					+ (target.getSessionServer() == null ? "Mojang" : target.getSessionServer())
+					+ "; declare the same sessionServer on the process");
+	}
+
 	private void validateAuthentication(
 			PlayerOptions options,
 			MinecraftProcess target,
@@ -332,12 +351,20 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		if (options.getAuthentication() == AuthenticationMode.OFFLINE && target.isOnlineMode())
 			throw new ScenarioValidationException("Offline player '" + options.getName()
 					+ "' cannot join online-mode process '" + target.getName() + "'");
-		if (!options.getAuthentication().usesAccount())
+		if (!options.getAuthentication().usesAccount()) {
+			if (options.getSessionIdentity() != null)
+				throw new ScenarioValidationException("Offline player '" + options.getName()
+						+ "' declares a session identity, which only an online or on-request login uses");
 			return;
+		}
 		if (options.getAuthentication() == AuthenticationMode.ONLINE && !target.isOnlineMode())
 			throw new ScenarioValidationException("Online player '" + options.getName()
 					+ "' requires an online-mode entrypoint; use AuthenticationMode.ON_REQUEST when a plugin of an "
 					+ "offline-mode entrypoint requests authentication itself");
+		if (options.getSessionIdentity() != null) {
+			validateSessionIdentity(options, target);
+			return;
+		}
 		if (options.getAccountId() == null || options.getAccountId().isBlank())
 			throw new ScenarioValidationException("Online player '" + options.getName() + "' requires an account ID");
 
