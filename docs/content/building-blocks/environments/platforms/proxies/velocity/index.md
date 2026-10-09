@@ -35,8 +35,8 @@ The zero login rate limit is useful for rapid reconnect tests; configure it only
 needs repeated connections. Run that journey after changing the setting and verify the reconnect
 through Session and Server observations.
 
-To verify online logins against a local stand-in instead of Mojang, declare `.sessionServer(uri)` on the
-proxy; see [Sign in without a real account](../../../../players/authentication/index.md#sign-in-without-a-real-account).
+To verify online logins against another session server than Mojang's, declare `.sessionServer(uri)` on the
+proxy; see [Sign in through another session server](../../../../players/authentication/index.md#sign-in-through-another-session-server).
 
 Anvil rejects settings for runtime-owned keys such as `bind`, `online-mode`, `servers`, and
 `player-info-forwarding-mode`. Configure topology and authentication through the proxy declaration.

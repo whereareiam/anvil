@@ -3,10 +3,10 @@ plugins {
 	id("packaging-publication")
 }
 
-description = "Local stand-in for Mojang's profile lookup and session server"
+description = "Test-only Yggdrasil session server and profile lookup for online-mode logins without Mojang"
 
 toolkitPublish {
-	artifactId.set("service-mojang")
+	artifactId.set("yggdrasil-mock")
 }
 
 dependencies {

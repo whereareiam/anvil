@@ -10,12 +10,13 @@ import java.util.UUID;
 
 /**
  * An online identity that a session server chosen by the scenario verifies, instead of a stored account
- * that Mojang's session server verifies. Use it with a local stand-in for the session server, so an
- * online-mode login can be tested without a real Minecraft account.
+ * that Mojang's session server verifies. The session server is any server speaking the Yggdrasil session
+ * protocol: a self-hosted one, or a test-only mock when a login is tested without a real account.
  *
  * <p>The session server is the base address whose {@code join} endpoint the client reports its login to,
  * for example {@code http://127.0.0.1:25580/session/minecraft}. The process the player joins must verify
- * logins against the same server; see {@code MinecraftProcess.getSessionServer()}.</p>
+ * logins against the same server; see {@code MinecraftProcess.getSessionServer()}. A Mojang account does not
+ * use this model: it stays a stored account selected by ID or lease.</p>
  *
  * <pre>{@code
  * SessionIdentity identity = SessionIdentity.builder()
@@ -40,7 +41,8 @@ public class SessionIdentity {
 	@NotNull UUID uniqueId;
 
 	/**
-	 * Token the session server accepts for this profile. It is never a real Minecraft access token.
+	 * Token the session server accepts for this profile. It is a credential of that server, never a Mojang
+	 * access token, and is kept out of logs like one.
 	 */
 	@ToString.Exclude
 	@NotNull String accessToken;

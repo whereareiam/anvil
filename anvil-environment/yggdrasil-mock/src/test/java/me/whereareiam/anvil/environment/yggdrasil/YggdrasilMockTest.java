@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.service.mojang;
+package me.whereareiam.anvil.environment.yggdrasil;
 
 import me.whereareiam.anvil.api.model.player.SessionIdentity;
 import org.junit.jupiter.api.AfterEach;
@@ -13,30 +13,30 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class MojangServiceTest {
-	private final MojangService mojang = MojangService.start();
+class YggdrasilMockTest {
+	private final YggdrasilMock yggdrasil = YggdrasilMock.start();
 	private final HttpClient client = HttpClient.newHttpClient();
 
 	@AfterEach
 	void stop() {
 		client.close();
-		mojang.close();
+		yggdrasil.close();
 	}
 
 	@Test
 	void looksUpOnlyRegisteredUsernamesWhateverTheirCase() throws Exception {
 		UUID uniqueId = UUID.fromString("069a79f4-44e9-4726-a5be-fca90e38aaf5");
-		mojang.register("Alice", uniqueId);
+		yggdrasil.register("Alice", uniqueId);
 
-		HttpResponse<String> found = get(mojang.profileLookup() + "alice");
+		HttpResponse<String> found = get(yggdrasil.profileLookup() + "alice");
 		assertEquals(200, found.statusCode());
 		assertEquals("{\"id\":\"069a79f444e94726a5befca90e38aaf5\",\"name\":\"Alice\",\"properties\":[]}", found.body());
-		assertEquals(404, get(mojang.profileLookup() + "Bob").statusCode());
+		assertEquals(404, get(yggdrasil.profileLookup() + "Bob").statusCode());
 	}
 
 	@Test
 	void verifiesALoginOnceAfterTheProfileReportedItWithItsOwnToken() throws Exception {
-		SessionIdentity alice = mojang.register("Alice");
+		SessionIdentity alice = yggdrasil.register("Alice");
 		String verification = alice.getSessionServer() + "/hasJoined?username=Alice&serverId=hash&ip=127.0.0.1";
 
 		assertEquals(204, get(verification).statusCode());
@@ -53,12 +53,12 @@ class MojangServiceTest {
 
 	@Test
 	void failsEveryEndpointDuringAnOutageUntilReset() throws Exception {
-		mojang.register("Alice");
-		mojang.available(false);
-		assertEquals(503, get(mojang.profileLookup() + "Alice").statusCode());
+		yggdrasil.register("Alice");
+		yggdrasil.available(false);
+		assertEquals(503, get(yggdrasil.profileLookup() + "Alice").statusCode());
 
-		mojang.reset();
-		assertEquals(404, get(mojang.profileLookup() + "Alice").statusCode());
+		yggdrasil.reset();
+		assertEquals(404, get(yggdrasil.profileLookup() + "Alice").statusCode());
 	}
 
 	private HttpResponse<String> get(String address) throws Exception {

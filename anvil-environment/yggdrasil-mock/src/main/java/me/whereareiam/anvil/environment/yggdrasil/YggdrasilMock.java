@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.service.mojang;
+package me.whereareiam.anvil.environment.yggdrasil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,22 +25,23 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * A local stand-in for the two Mojang services an online-mode login depends on: the profile lookup that tells
- * whether a username belongs to a paid account, and the session server that verifies a login. A test registers
- * the profiles that exist, so online-mode behavior is tested without a real account and without Mojang.
+ * A test-only server for Yggdrasil, the protocol behind online-mode logins: the session server that verifies a
+ * login, and the profile lookup that tells whether a username belongs to a paid account. A test registers the
+ * profiles that exist, so online-mode behavior is tested without a real account and without Mojang.
  *
- * <p>The service runs in the calling JVM. Start it before declaring the scenario, because the scenario names
- * its address, and close it when the tests that use it are done:</p>
+ * <p>It is one server a process's {@code sessionServer} and a player's {@code SessionIdentity} can name; any other
+ * Yggdrasil-compatible server serves them equally. The mock runs in the calling JVM. Start it before declaring
+ * the scenario, because the scenario names its address, and close it when the tests that use it are done:</p>
  *
  * <pre>{@code
- * try (MojangService mojang = MojangService.start()) {
+ * try (YggdrasilMock yggdrasil = YggdrasilMock.start()) {
  *     MinecraftProxy proxy = MinecraftProxy.builder()
  *             .name("proxy")
  *             .platform(Platforms.VELOCITY)
  *             .onlineMode(true)
- *             .sessionServer(mojang.sessionServer())
+ *             .sessionServer(yggdrasil.sessionServer())
  *             .build();
- *     SessionIdentity alice = mojang.register("Alice");
+ *     SessionIdentity alice = yggdrasil.register("Alice");
  *     // start the scenario, then:
  *     // players.create(PlayerOptions.builder().name("Alice")
  *     //         .authentication(AuthenticationMode.ONLINE).sessionIdentity(alice).build());
@@ -51,7 +52,7 @@ import java.util.concurrent.Executors;
  * {@code GET /session/minecraft/hasJoined} the way Mojang does for the cases a login meets. It signs nothing,
  * serves no skins and must never be reachable from outside the test machine.</p>
  */
-public final class MojangService implements AutoCloseable {
+public final class YggdrasilMock implements AutoCloseable {
 	private static final String PROFILES = "/users/profiles/minecraft/";
 	private static final String SESSION = "/session/minecraft";
 
@@ -63,7 +64,7 @@ public final class MojangService implements AutoCloseable {
 
 	private volatile boolean available = true;
 
-	private MojangService(InetSocketAddress address) throws IOException {
+	private YggdrasilMock(InetSocketAddress address) throws IOException {
 		server = HttpServer.create(address, 0);
 		server.createContext(PROFILES, exchange -> answer(exchange, this::lookup));
 		server.createContext(SESSION + "/join", exchange -> answer(exchange, this::join));
@@ -73,26 +74,26 @@ public final class MojangService implements AutoCloseable {
 	}
 
 	/**
-	 * Starts the service on a free loopback port.
+	 * Starts the mock on a free loopback port.
 	 *
-	 * @return running service, owned by the caller
+	 * @return running mock, owned by the caller
 	 */
-	public static @NotNull MojangService start() {
+	public static @NotNull YggdrasilMock start() {
 		return start(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
 	}
 
 	/**
-	 * Starts the service on a chosen address, for example one that processes in containers can reach.
-	 * Bind beyond loopback only on a network you trust: the service accepts every registered profile's token.
+	 * Starts the mock on a chosen address, for example one that processes in containers can reach.
+	 * Bind beyond loopback only on a network you trust: the mock accepts every registered profile's token.
 	 *
 	 * @param address address and port to listen on; port zero selects a free port
-	 * @return running service, owned by the caller
+	 * @return running mock, owned by the caller
 	 */
-	public static @NotNull MojangService start(@NotNull InetSocketAddress address) {
+	public static @NotNull YggdrasilMock start(@NotNull InetSocketAddress address) {
 		try {
-			return new MojangService(address);
+			return new YggdrasilMock(address);
 		} catch (IOException exception) {
-			throw new UncheckedIOException("Could not start the Mojang service on " + address, exception);
+			throw new UncheckedIOException("Could not start the Yggdrasil mock on " + address, exception);
 		}
 	}
 
@@ -162,7 +163,7 @@ public final class MojangService implements AutoCloseable {
 	}
 
 	/**
-	 * Stops the service. Requests in progress are abandoned.
+	 * Stops the mock. Requests in progress are abandoned.
 	 */
 	@Override
 	public void close() {

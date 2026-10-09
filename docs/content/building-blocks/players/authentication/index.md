@@ -128,58 +128,73 @@ Each `pool.<name>` entry lists distinct account IDs separated by commas; leases 
 Resolve the pool by name with `anvil.accounts().pool("testers")`. An undeclared pool, a repeated
 account ID, or another `schemaVersion` fails the lookup.
 
-## Sign in without a real account
+## Sign in through another session server
 
-An online-mode login needs Mojang twice: the client reports the login to Mojang's session server, and the
-proxy or server asks that session server to verify it. To test online-mode behavior without a real account,
-and in CI, point both sides at a local stand-in. The `service-mojang` artifact provides one:
+An online-mode login involves a session server twice: the client reports the login to it, and the proxy or
+server asks it to verify the login. By default that server is Mojang's and the player signs in with a stored
+account. Both sides can name another server that speaks the same protocol, Yggdrasil, such as a self-hosted
+one. The contract is its base address with two endpoints: `POST <base>/join` from the client and
+`GET <base>/hasJoined?username=...&serverId=...` from the process.
 
-```kotlin
-dependencies {
-	add("anvilImplementation", "me.whereareiam.anvil:service-mojang:0.0.1")
-}
-```
-
-Start the service before declaring the scenario, declare its session server on the process that verifies
-logins, and register the accounts that exist:
+Declare the address on the process that verifies logins, and give the player an identity that server accepts:
 
 ```java
-MojangService mojang = MojangService.start();
+URI sessionServer = URI.create("http://127.0.0.1:25580/session/minecraft");
 
 MinecraftProxy proxy = MinecraftProxy.builder()
 		.name("proxy")
 		.platform(Platforms.VELOCITY)
 		.distribution(Distribution.remote("3.5.1", "615"))
 		.onlineMode(true)
-		.sessionServer(mojang.sessionServer())
+		.sessionServer(sessionServer)
 		.server("server")
 		.build();
 ```
 
 ```java
-SessionIdentity alice = mojang.register("Alice");
 var player = anvil.players().create(PlayerOptions.builder()
 		.name("Alice")
 		.authentication(AuthenticationMode.ONLINE)
-		.sessionIdentity(alice)
+		.sessionIdentity(SessionIdentity.builder()
+				.username("Alice")
+				.uniqueId(aliceId)
+				.accessToken(aliceToken)
+				.sessionServer(sessionServer)
+				.build())
 		.build());
 ```
 
 A session identity replaces the account ID and works with `ONLINE` and `ON_REQUEST`. Anvil refuses the
-player before it connects unless the process it joins declares the same session server, because Mojang
-would not verify it. A username that is not registered fails verification, as an unpaid account does.
+player before it connects unless the process it joins declares the same session server, because any other
+server would not verify it. Only Velocity can be redirected today: planning refuses `sessionServer` on any
+other platform, and BungeeCord has no setting for it.
 
-The service also answers the profile lookup that login plugins use to recognize paid usernames, at
-`mojang.profileLookup()` followed by the username: status 200 for a registered username and 404 otherwise.
-`mojang.available(false)` makes every request fail with status 503, as during an outage. Close the service
-when the tests that use it are done.
+### Test without a real account
 
-Limitations:
+The optional `yggdrasil-mock` artifact is a test-only session server, so online-mode behavior can be tested
+without a real account, and in CI:
 
-- Only Velocity can be redirected today. Planning refuses `sessionServer` on any other platform; BungeeCord
-  has no setting for it.
-- The service runs in the JVM that runs the tests and listens on loopback. A process in a container reaches
-  it only when you start it with `MojangService.start(address)` on an address the container can route to.
+```kotlin
+dependencies {
+	add("anvilImplementation", anvil.module("yggdrasil-mock"))
+}
+```
+
+Start it before declaring the scenario, pass `yggdrasil.sessionServer()` to the process, and register the
+accounts that exist. Registration returns the identity a player signs in with:
+
+```java
+YggdrasilMock yggdrasil = YggdrasilMock.start();
+SessionIdentity alice = yggdrasil.register("Alice");
+```
+
+A username that is not registered fails verification, as an unpaid account does. The mock also answers the
+profile lookup that login plugins use to recognize paid usernames, at `yggdrasil.profileLookup()` followed by
+the username: status 200 for a registered username and 404 otherwise. `yggdrasil.available(false)` makes
+every request fail with status 503, as during an outage. Close the mock when the tests that use it are done.
+
+- The mock runs in the JVM that runs the tests and listens on loopback. A process in a container reaches it
+  only when you start it with `YggdrasilMock.start(address)` on an address the container can route to.
 - It signs nothing and serves no skins, so behavior that depends on signed profile properties is not covered.
 
 ## Keep the account store private
