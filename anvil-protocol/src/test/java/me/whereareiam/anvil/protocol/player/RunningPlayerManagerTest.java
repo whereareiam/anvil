@@ -203,6 +203,23 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
+	void onRequestPlayersSignInOnAnOfflineEntrypointThatOnlinePlayersCannotJoin() {
+		StubLibrary library = new StubLibrary();
+		AuthenticationAccount account = new AuthenticationAccount("alice", "test", "Alice", null);
+		RunningPlayerManager manager = new RunningPlayerManager(scenario(), selector(library), ignored -> library,
+				new StubScenarioProcesses("server", temporary.resolve("server")), player -> observation(player), composer(),
+				ignored -> { }, () -> List.of(account), new AccountReservations());
+
+		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create(online("alice")));
+		assertEquals("Online player 'alice' requires an online-mode entrypoint; use AuthenticationMode.ON_REQUEST when a "
+				+ "plugin of an offline-mode entrypoint requests authentication itself", refused.getMessage());
+
+		assertEquals("alice", manager.create(online("alice").toBuilder().authentication(AuthenticationMode.ON_REQUEST).build()).name());
+		assertEquals(AuthenticationMode.ON_REQUEST, library.lastRequest.getAuthentication());
+		assertEquals("alice", library.lastRequest.getAccountId());
+	}
+
+	@Test
 	void anAccountIdStoredBySeveralLibrariesSignsInWithTheAccountOfTheSelectedLibrary() {
 		StubLibrary library = new StubLibrary();
 		RunningPlayerManager manager = onlineManager(library, new AccountReservations(),

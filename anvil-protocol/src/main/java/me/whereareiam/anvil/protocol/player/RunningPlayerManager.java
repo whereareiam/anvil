@@ -200,7 +200,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	 * @return the action that unreserves the account, or null when nothing was reserved here
 	 */
 	private @Nullable Runnable reserveDirectly(@NotNull PlayerOptions options) {
-		if (options.getAuthentication() != AuthenticationMode.ONLINE) return null;
+		if (!options.getAuthentication().usesAccount()) return null;
 		if (accountReturns.containsKey(options.getName())) return null;
 
 		String accountId = options.getAccountId();
@@ -332,11 +332,12 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		if (options.getAuthentication() == AuthenticationMode.OFFLINE && target.isOnlineMode())
 			throw new ScenarioValidationException("Offline player '" + options.getName()
 					+ "' cannot join online-mode process '" + target.getName() + "'");
-		if (options.getAuthentication() != AuthenticationMode.ONLINE)
+		if (!options.getAuthentication().usesAccount())
 			return;
-		if (!target.isOnlineMode())
+		if (options.getAuthentication() == AuthenticationMode.ONLINE && !target.isOnlineMode())
 			throw new ScenarioValidationException("Online player '" + options.getName()
-					+ "' requires an online-mode entrypoint");
+					+ "' requires an online-mode entrypoint; use AuthenticationMode.ON_REQUEST when a plugin of an "
+					+ "offline-mode entrypoint requests authentication itself");
 		if (options.getAccountId() == null || options.getAccountId().isBlank())
 			throw new ScenarioValidationException("Online player '" + options.getName() + "' requires an account ID");
 
