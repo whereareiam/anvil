@@ -16,8 +16,10 @@ import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 
+import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Insets;
 import java.awt.Rectangle;
 import java.util.List;
 import javax.swing.JComponent;
@@ -417,7 +419,8 @@ public class EnvironmentSessionPanelPlatformTest extends UiPlatformTestCase {
 						.processes(List.of(run.getSnapshot().getProcesses().getFirst()))
 						.build());
 		EnvironmentSessionPanel panel = panel(run);
-		for (int width : new int[] {1200, 700, 420})
+		int narrow = widthWithoutLabelRoom(panel);
+		for (int width : new int[] {1200, 700, narrow})
 			for (int index = 0; index < panel.tabs().getTabCount(); index++) {
 				panel.tabs().setSelectedIndex(index);
 				UIUtil.dispatchAllInvocationEvents();
@@ -425,8 +428,8 @@ public class EnvironmentSessionPanelPlatformTest extends UiPlatformTestCase {
 				assertInlineHeader(panel);
 				var badge = WindowTestSupport.find(panel, StatusBadge.class);
 				assertEquals("Partially running", badge.getAccessibleContext().getAccessibleName());
-				// At 420px the badge gives up its label so every section tab stays visible.
-				assertEquals(width == 420 ? null : "Partially running", badge.getText());
+				// Without room for it, the badge gives up its label so every section tab stays visible.
+				assertEquals(width == narrow ? null : "Partially running", badge.getText());
 				assertNotNull(badge.getIcon());
 			}
 
@@ -504,6 +507,19 @@ public class EnvironmentSessionPanelPlatformTest extends UiPlatformTestCase {
 		}
 		for (Component component : container.getComponents())
 			if (component instanceof Container child) updateToolbars(child);
+	}
+
+	/**
+	 * Returns the widest panel that is one pixel short of showing the badge's label beside every section tab.
+	 * Label and tab widths follow the machine's fonts, so a fixed width is compact on one machine and not on another.
+	 */
+	private static int widthWithoutLabelRoom(EnvironmentSessionPanel panel) {
+		var badge = WindowTestSupport.find(panel, StatusBadge.class);
+		var header = (JComponent) panel.tabs().getParent();
+		Insets headerInsets = header.getInsets();
+		Insets leadingInsets = ((JComponent) badge.getParent()).getInsets();
+		return headerInsets.left + headerInsets.right + leadingInsets.left + leadingInsets.right
+				+ ((BorderLayout) header.getLayout()).getHgap() + panel.tabs().runWidth() + badge.fullWidth() - 1;
 	}
 
 	private static void assertInlineHeader(EnvironmentSessionPanel panel) {
