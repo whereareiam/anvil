@@ -1,6 +1,6 @@
 plugins {
 	`kotlin-dsl`
-	id("gradle-plugin")
+	id("module-gradle-plugin")
 }
 
 description = "Maps the Anvil Gradle configuration to engine properties for execution adapters"

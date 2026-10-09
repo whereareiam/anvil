@@ -1,5 +1,5 @@
 plugins {
-	id("api")
+	id("module-api")
 }
 
 description = "Editor-independent discovery and live session contracts for Anvil"

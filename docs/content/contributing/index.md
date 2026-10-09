@@ -21,7 +21,7 @@ Read its build file, adjacent implementation, and tests before editing. Preserve
 unstaged work.
 
 Anvil source targets Java 21. Code that Minecraft servers load, such as `agent-api`, `agent-server`,
-the Bukkit platform agent, and the server-plugin fixture, applies the `in-server` convention instead:
+the Bukkit platform agent, and the server-plugin fixture, applies the `module-java-legacy` convention instead:
 its main classes compile for Java 11, the Bukkit agent and the fixture plugin against the Bukkit API of
 Minecraft 1.16.5, and
 `checkClassRelease` fails the build on a newer class. IntelliJ panel definitions use Kotlin in

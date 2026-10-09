@@ -6,9 +6,9 @@ import java.io.File
  * The conventions the projects of the build's protocol libraries must apply, derived from the project tree:
  *
  * - the family root of each registered library, the project whose folder owns `<id>-releases.toml`, applies
- *   `library-releases`, which pins that release data;
+ *   `module-library`, which pins that release data;
  * - a library side folder, any project holding segment projects named `V<major>_<minor>[_<patch>]`, applies
- *   `segmented`, which is the only way its segments reach a worker's class path.
+ *   `module-adapter`, which is the only way its segments reach a worker's class path.
  *
  * @property conventions the convention each such project must apply, keyed by project path
  */
@@ -38,8 +38,8 @@ class LibraryLayout private constructor(val conventions: Map<String, String>) {
 	}
 
 	companion object {
-		private const val releasesConvention = "library-releases"
-		private const val sideConvention = "segmented"
+		private const val releasesConvention = "module-library"
+		private const val sideConvention = "module-adapter"
 
 		/**
 		 * The shape of a segment's folder and project name. Segment conventions validate the version it names.

@@ -3,7 +3,7 @@ import me.whereareiam.anvil.buildlogic.segment.LibrarySideSource
 
 plugins {
 	java
-	id("jvm")
+	id("module-java")
 }
 
 // A library side folder exports all of its segments at runtime; the worker selects one per release. Its only

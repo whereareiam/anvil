@@ -11,7 +11,7 @@ plugins {
 	id("me.whereareiam.toolkit.architecture")
 }
 
-// Compilation and test defaults of every JVM module, whatever its source language. Java modules apply `jvm`,
+// Compilation and test defaults of every JVM module, whatever its source language. Java modules apply `module-java`,
 // which adds Lombok; Kotlin-only modules, such as Gradle plugins, apply this convention directly.
 val javaVersion = catalog.featureVersion("java")
 val javaRelease = extensions.create<JavaRelease>("javaRelease")

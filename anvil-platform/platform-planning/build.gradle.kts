@@ -1,5 +1,5 @@
 plugins {
-	id("jvm")
+	id("module-java")
 }
 
 description = "Platform selection, distribution preparation, and forwarding plans"

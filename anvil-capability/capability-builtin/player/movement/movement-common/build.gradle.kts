@@ -1,5 +1,5 @@
 plugins {
-	id("jvm")
+	id("module-java")
 }
 
 description = "Library-neutral host provider and worker binding of the built-in movement capability"

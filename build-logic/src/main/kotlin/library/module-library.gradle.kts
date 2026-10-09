@@ -12,15 +12,15 @@ plugins {
 
 // A protocol library family root owns <id>-releases.toml and pins it: pinLibraryReleases resolves each release's
 // module and rewrites the release's [[release.artifact]] lock tables. The settings own the library repositories,
-// which the library-registry settings plugin exposes; it also fails a family root that does not apply this.
+// which the build-libraries settings plugin exposes; it also fails a family root that does not apply this.
 val releaseData = providers.of(LibraryRegistrySource::class) {
 	parameters.rootDirectory.set(isolated.rootProject.projectDirectory)
 }.get().values.singleOrNull { it.parentFile.absoluteFile == projectDir.absoluteFile } ?: throw GradleException(
-	"$path applies library-releases, but only a library family root that owns its <id>-releases.toml, such as "
+	"$path applies module-library, but only a library family root that owns its <id>-releases.toml, such as "
 		+ "anvil-protocol/protocol-mcprotocol/mcprotocol-releases.toml, has release data to pin"
 )
 val libraryRepositories = gradle.extensions.findByType<LibraryRepositories>() ?: throw GradleException(
-	"$path applies library-releases, which needs the library repositories: add id(\"library-registry\") to the settings plugins"
+	"$path applies module-library, which needs the library repositories: add id(\"build-libraries\") to the settings plugins"
 )
 val releases = providers.of(LibraryReleasesSource::class) {
 	parameters.releasesFile.set(releaseData)

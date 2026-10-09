@@ -28,7 +28,7 @@ Declare the oldest Java the agent runs on as `[agent] minimumJava` in the provid
 [version data](../index.md#declare-java-and-version-data); planning refuses to start the platform
 without it. Compile the agent, and everything it shades, for that Java release, for example with
 `options.release` on its `compileJava` task. The `agent` runtime artifact targets Java 11. Anvil's
-own providers apply the `platform-provider` build convention, whose `checkAgentJava` task fails when a
+own providers apply the `module-platform-provider` build convention, whose `checkAgentJava` task fails when a
 class the agent loads needs newer Java than declared.
 
 ## Define scheduling behavior

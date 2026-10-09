@@ -25,9 +25,9 @@ plugins {
     id("org.jetbrains.intellij.platform.settings") version "2.18.1"
     id("me.whereareiam.toolkit.project-discovery") version "dev-757d944"
     // Owns the protocol library repositories below and checks the conventions of library projects.
-    id("library-registry")
+    id("build-libraries")
     // Checks that every project shipping a platform agent's version data applies the platform provider convention.
-    id("platform-layout")
+    id("build-platforms")
 }
 
 // Protocol library releases download from these repositories; pinLibraryReleases records the first one that serves

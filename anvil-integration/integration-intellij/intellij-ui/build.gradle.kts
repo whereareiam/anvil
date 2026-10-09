@@ -3,8 +3,8 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 plugins {
 	alias(libs.plugins.kotlin.jvm)
 	alias(libs.plugins.kotlin.lombok)
-	id("jvm")
-	id("intellij-platform-tests")
+	id("module-java")
+	id("test-intellij")
 }
 
 description = "IntelliJ presentation and platform adapters for Anvil"

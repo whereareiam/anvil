@@ -2,7 +2,7 @@ import me.whereareiam.toolkit.architecture.ArchitecturePublications
 
 plugins {
 	`java-platform`
-	id("publication")
+	id("packaging-publication")
 }
 
 description = "Bill of materials for Anvil modules"

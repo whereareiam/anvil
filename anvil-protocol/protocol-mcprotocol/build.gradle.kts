@@ -1,7 +1,7 @@
 plugins {
-	id("assembly")
-	id("wiring-bundle")
-	id("library-releases")
+	id("module-assembly")
+	id("packaging-shaded-root")
+	id("module-library")
 }
 
 // Owning mcprotocol-api makes this family its own API family, so the protocol library API it implements is shared explicitly.

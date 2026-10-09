@@ -1,6 +1,6 @@
 plugins {
-	id("jvm")
-	id("intellij-platform-tests")
+	id("module-java")
+	id("test-intellij")
 }
 
 description = "IntelliJ IDEA helper plugin for Anvil"

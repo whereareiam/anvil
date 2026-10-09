@@ -1,6 +1,6 @@
 plugins {
-	id("api")
-	id("in-server")
+	id("module-api")
+	id("module-java-legacy")
 }
 
 description = "Embedded agent endpoints, native platform access, and operation provider contracts"

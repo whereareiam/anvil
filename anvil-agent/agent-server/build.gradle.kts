@@ -1,9 +1,9 @@
 plugins {
-	id("jvm")
-	id("publication")
-	id("bundle")
-	id("in-server")
-	id("descriptor-version")
+	id("module-java")
+	id("packaging-publication")
+	id("packaging-shaded-jar")
+	id("module-java-legacy")
+	id("packaging-version-stamp")
 }
 
 architecture {

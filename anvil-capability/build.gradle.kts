@@ -1,5 +1,5 @@
 plugins {
-	id("jvm")
+	id("module-java")
 }
 
 description = "Dependency-ordered capability composition for player and process owners"

@@ -1,5 +1,5 @@
 plugins {
-	id("capability")
+	id("module-capability")
 }
 
 description = "Agent wiring bundle for the built-in console capability"

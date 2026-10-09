@@ -1,5 +1,5 @@
 plugins {
-	id("assembly")
+	id("module-assembly")
 }
 
 description = "Executable CLI and IDE entry points using Anvil's default engine assembly"

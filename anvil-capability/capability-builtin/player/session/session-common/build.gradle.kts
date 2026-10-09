@@ -1,5 +1,5 @@
 plugins {
-	id("jvm")
+	id("module-java")
 }
 
 description = "Library-neutral host session and worker session binding of the built-in session capability"

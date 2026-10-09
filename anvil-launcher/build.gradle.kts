@@ -17,9 +17,9 @@ class ProtocolAdapterDependencies(
 }
 
 plugins {
-    id("assembly")
-    id("bundle")
-    id("fixtures")
+    id("module-assembly")
+    id("packaging-shaded-jar")
+    id("test-fixtures-consumer")
 }
 
 description = "Anvil's executable scenario launcher distribution"

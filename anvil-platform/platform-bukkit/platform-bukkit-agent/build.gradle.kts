@@ -1,8 +1,8 @@
 plugins {
-	id("assembly")
-	id("bundle")
-	id("in-server")
-	id("descriptor-version")
+	id("module-assembly")
+	id("packaging-shaded-jar")
+	id("module-java-legacy")
+	id("packaging-version-stamp")
 }
 
 description = "Anvil platform agent for Paper and Spigot"

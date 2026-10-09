@@ -1,7 +1,7 @@
 plugins {
-	id("jvm")
-	id("in-server")
-	id("descriptor-version")
+	id("module-java")
+	id("module-java-legacy")
+	id("packaging-version-stamp")
 }
 
 description = "Server plugin and native agent operations used by live Anvil tests"

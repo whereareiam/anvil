@@ -1,6 +1,6 @@
 plugins {
-	id("api")
-	id("in-server")
+	id("module-api")
+	id("module-java-legacy")
 }
 
 description = "Shared agent operation descriptors, payloads, and process identities"

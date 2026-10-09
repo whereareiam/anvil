@@ -1,5 +1,5 @@
 plugins {
-	id("assembly")
+	id("module-assembly")
 }
 
 description = "JUnit extension integration for Anvil scenarios"

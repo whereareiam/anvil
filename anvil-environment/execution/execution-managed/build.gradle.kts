@@ -1,5 +1,5 @@
 plugins {
-	id("jvm")
+	id("module-java")
 }
 
 description = "Managed Minecraft process generations and workspace lifecycle"

@@ -1,5 +1,5 @@
 plugins {
-	id("api")
+	id("module-api")
 }
 
 description = "Public API for the built-in server capability"

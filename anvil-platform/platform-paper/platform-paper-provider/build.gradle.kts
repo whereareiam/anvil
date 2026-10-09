@@ -1,6 +1,6 @@
 plugins {
-	id("platform-provider")
-	id("publication")
+	id("module-platform-provider")
+	id("packaging-publication")
 }
 
 description = "Paper platform provider for Anvil"

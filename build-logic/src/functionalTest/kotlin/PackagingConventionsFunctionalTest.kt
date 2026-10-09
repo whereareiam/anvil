@@ -45,7 +45,7 @@ class PackagingConventionsFunctionalTest {
 		val javadoc = project.jarText("wiring/build/libs/wiring-1.2.3-javadoc.jar", "demo/common/Greeter.html")
 		assertTrue(javadoc.contains("getName()"), javadoc)
 
-		project.write("published/build.gradle.kts", "plugins {\n\tid(\"jvm\")\n\tid(\"publication\")\n}\n")
+		project.write("published/build.gradle.kts", "plugins {\n\tid(\"module-java\")\n\tid(\"packaging-publication\")\n}\n")
 		val undescribed = project.fail("help")
 		assertTrue(undescribed.output.contains(":published is published and must declare a description"), undescribed.output)
 	}
@@ -69,16 +69,16 @@ class PackagingConventionsFunctionalTest {
 		""")
 		project.write("plugin/build.gradle.kts", """
 			plugins {
-				id("gradle-plugin")
+				id("module-gradle-plugin")
 			}
 
 			description = "Demo Gradle plugin"
 		""")
 		project.write("agent/build.gradle.kts", """
 			plugins {
-				id("jvm")
-				id("bundle")
-				id("descriptor-version")
+				id("module-java")
+				id("packaging-shaded-jar")
+				id("packaging-version-stamp")
 			}
 		""")
 		project.write("agent/src/main/java/demo/agent/Agent.java", "package demo.agent;\n\npublic final class Agent {\n}\n")
@@ -89,23 +89,23 @@ class PackagingConventionsFunctionalTest {
 		project.write("agent/src/main/resources/config.yml", "unrelated: \${version}\n")
 		project.write("published/build.gradle.kts", """
 			plugins {
-				id("jvm")
-				id("publication")
+				id("module-java")
+				id("packaging-publication")
 			}
 
 			description = "Demo published module"
 		""")
 		project.write("versioned/build.gradle.kts", """
 			plugins {
-				id("jvm")
-				id("descriptor-version")
+				id("module-java")
+				id("packaging-version-stamp")
 			}
 
 			version = "2.0.0"
 		""")
 		project.write("versioned/src/main/resources/META-INF/anvil/plugin.properties", "version=\${version}\n")
 
-		project.write("common/build.gradle.kts", "plugins {\n\tid(\"jvm\")\n}\n")
+		project.write("common/build.gradle.kts", "plugins {\n\tid(\"module-java\")\n}\n")
 		project.write("common/src/main/java/demo/common/Greeter.java", """
 			package demo.common;
 
@@ -122,9 +122,9 @@ class PackagingConventionsFunctionalTest {
 		""")
 		project.write("wiring/build.gradle.kts", """
 			plugins {
-				id("jvm")
-				id("publication")
-				id("wiring-bundle")
+				id("module-java")
+				id("packaging-publication")
+				id("packaging-shaded-root")
 			}
 
 			description = "Demo wiring bundle"
@@ -133,7 +133,7 @@ class PackagingConventionsFunctionalTest {
 				embedded(project(":common")) { isTransitive = false }
 			}
 		""")
-		project.write("user/build.gradle.kts", "plugins {\n\tid(\"jvm\")\n}\n\ndependencies {\n\timplementation(project(\":wiring\"))\n}\n")
+		project.write("user/build.gradle.kts", "plugins {\n\tid(\"module-java\")\n}\n\ndependencies {\n\timplementation(project(\":wiring\"))\n}\n")
 		project.write("user/src/main/java/demo/user/User.java", """
 			package demo.user;
 

@@ -14,7 +14,7 @@ plugins {
 val (libraryId, releaseData) = providers.of(LibraryRegistrySource::class) {
 	parameters.rootDirectory.set(isolated.rootProject.projectDirectory)
 }.get().entries.singleOrNull { projectDir.absoluteFile.startsWith(it.value.parentFile.absoluteFile) } ?: throw GradleException(
-	"$path applies release-closures, but only a project inside a library family root, such as "
+	"$path applies test-library-closures, but only a project inside a library family root, such as "
 		+ "anvil-protocol/protocol-mcprotocol, has release data"
 )
 val releases = providers.of(LibraryReleasesSource::class) {

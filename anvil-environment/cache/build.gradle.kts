@@ -1,6 +1,6 @@
 plugins {
-	id("jvm")
-	id("publication")
+	id("module-java")
+	id("packaging-publication")
 }
 
 description = "Filesystem cache entries and staged publication for Anvil environments"

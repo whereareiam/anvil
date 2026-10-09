@@ -1,7 +1,7 @@
 plugins {
-	id("assembly")
-	id("bundle")
-	id("descriptor-version")
+	id("module-assembly")
+	id("packaging-shaded-jar")
+	id("packaging-version-stamp")
 }
 
 description = "Anvil platform agent for BungeeCord"

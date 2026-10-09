@@ -6,13 +6,13 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
 	java
-	// Applied by intellij-platform; listed for its type-safe accessors.
+	// Applied by module-intellij; listed for its type-safe accessors.
 	id("org.jetbrains.intellij.platform")
-	id("intellij-platform")
+	id("module-intellij")
 }
 
 // Tests of an IntelliJ module run in the baseline platform with its test framework. Contract-only modules
-// without tests apply intellij-platform alone.
+// without tests apply module-intellij alone.
 val module = the<IntellijPlatformModule>()
 val verificationIde = catalog.findVersion("intellij-verify")
 	.orElseThrow { GradleException("The libs catalog has no 'intellij-verify' version") }

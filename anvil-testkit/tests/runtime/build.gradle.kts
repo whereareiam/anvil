@@ -1,8 +1,8 @@
 import me.whereareiam.anvil.buildlogic.jvm.TestFileArgument
 
 plugins {
-	id("jvm")
-	id("fixtures")
+	id("module-java")
+	id("test-fixtures-consumer")
 }
 
 description = "Provider discovery, capability composition, and cross-module runtime integration tests"

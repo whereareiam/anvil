@@ -1,5 +1,5 @@
 plugins {
-	id("api")
+	id("module-api")
 }
 
 description = "Public, platform-independent API for Anvil"

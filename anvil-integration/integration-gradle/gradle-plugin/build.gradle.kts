@@ -1,8 +1,8 @@
 plugins {
 	`kotlin-dsl`
-	id("gradle-plugin")
-	id("fixtures")
-	id("fixture-repository")
+	id("module-gradle-plugin")
+	id("test-fixtures-consumer")
+	id("test-fixture-repository")
 }
 
 description = "Gradle scenario tooling for Anvil"

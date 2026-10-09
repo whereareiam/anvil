@@ -1,5 +1,5 @@
 plugins {
-	id("jvm")
+	id("module-java")
 }
 
 description = "Scenario player management and protocol lifecycle ownership for Anvil"

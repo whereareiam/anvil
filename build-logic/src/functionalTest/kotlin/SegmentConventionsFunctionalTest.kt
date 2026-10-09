@@ -98,18 +98,18 @@ class SegmentConventionsFunctionalTest {
 				}
 			}
 		""")
-		project.write("demo-mcprotocol/build.gradle.kts", "plugins {\n\tid(\"segmented\")\n}\n\ndependencies {\n\tcompileOnly(project(\":demo-api\"))\n}\n")
+		project.write("demo-mcprotocol/build.gradle.kts", "plugins {\n\tid(\"module-adapter\")\n}\n\ndependencies {\n\tcompileOnly(project(\":demo-api\"))\n}\n")
 		val lookup = project.fail(":demo-mcprotocol:check")
 		assertTrue(lookup.output.contains("must obtain adapters through PlayerBindingContext.adapter(Class), not java.util.ServiceLoader: "
 			+ "demo.mcprotocol.DemoWiring"), lookup.output)
 		project.file(wiring).delete()
 
-		project.write("demo-mcprotocol/build.gradle.kts", "plugins {\n\tid(\"jvm\")\n}\n")
+		project.write("demo-mcprotocol/build.gradle.kts", "plugins {\n\tid(\"module-java\")\n}\n")
 		val unexported = project.fail("help")
 		assertTrue(unexported.output.contains(
-			":demo-mcprotocol holds segments, which reach a worker only through their library side folder; it must apply id(\"segmented\")"
+			":demo-mcprotocol holds segments, which reach a worker only through their library side folder; it must apply id(\"module-adapter\")"
 		), unexported.output)
-		project.write("demo-mcprotocol/build.gradle.kts", "plugins {\n\tid(\"segmented\")\n}\n")
+		project.write("demo-mcprotocol/build.gradle.kts", "plugins {\n\tid(\"module-adapter\")\n}\n")
 
 		// Worker tests of the library receive each release's locked closure, in release data order, from a file
 		// without a timestamp, which stays the same while the closures do. The file is ASCII, as the test JVM's
@@ -135,7 +135,7 @@ class SegmentConventionsFunctionalTest {
 		publishLibrary(LibraryRepository(project.file("repository")))
 		project.write("settings.gradle.kts", """
 			plugins {
-				id("library-registry")
+				id("build-libraries")
 			}
 
 			dependencyResolutionManagement {
@@ -149,11 +149,11 @@ class SegmentConventionsFunctionalTest {
 			include(":demo-api", ":demo-mcprotocol", ":demo-mcprotocol:V1_18_2", ":demo-mcprotocol:V1_20_6", ":consumer")
 			include(":anvil-protocol:protocol-mcprotocol:mcprotocol-common")
 		""")
-		project.write("anvil-protocol/protocol-mcprotocol/build.gradle.kts", "plugins {\n\tid(\"library-releases\")\n}\n")
+		project.write("anvil-protocol/protocol-mcprotocol/build.gradle.kts", "plugins {\n\tid(\"module-library\")\n}\n")
 		project.write("anvil-protocol/protocol-mcprotocol/mcprotocol-common/build.gradle.kts", """
 			plugins {
-				id("jvm")
-				id("release-closures")
+				id("module-java")
+				id("test-library-closures")
 			}
 		""")
 		project.write("build.gradle.kts", """
@@ -176,7 +176,7 @@ class SegmentConventionsFunctionalTest {
 			release("1.20.6-1", "com.example.modern:protocol:1.20.6-1", 766, "1.20.6", 17, "com.example:auth:2.0", "1.20.5"),
 		).joinToString("\n\n"))
 
-		project.write("demo-api/build.gradle.kts", "plugins {\n\tid(\"jvm\")\n}\n")
+		project.write("demo-api/build.gradle.kts", "plugins {\n\tid(\"module-java\")\n}\n")
 		project.write("demo-api/src/main/java/demo/api/packet/DemoPackets.java", """
 			package demo.api.packet;
 
@@ -184,11 +184,11 @@ class SegmentConventionsFunctionalTest {
 				String profileName(String username);
 			}
 		""")
-		project.write("demo-mcprotocol/build.gradle.kts", "plugins {\n\tid(\"segmented\")\n}\n")
+		project.write("demo-mcprotocol/build.gradle.kts", "plugins {\n\tid(\"module-adapter\")\n}\n")
 		listOf("1_18_2" to "com.example.legacy", "1_20_6" to "com.example.modern").forEach { (version, library) ->
 			project.write("demo-mcprotocol/V$version/build.gradle.kts", """
 				plugins {
-					id("segment")
+					id("module-adapter-segment")
 				}
 
 				dependencies {
@@ -199,7 +199,7 @@ class SegmentConventionsFunctionalTest {
 		}
 		project.write("consumer/build.gradle.kts", """
 			plugins {
-				id("jvm")
+				id("module-java")
 			}
 
 			dependencies {

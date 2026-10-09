@@ -2,7 +2,7 @@ import io.freefair.gradle.plugins.lombok.tasks.Delombok
 
 plugins {
 	java
-	id("bundle")
+	id("packaging-shaded-jar")
 }
 
 // A wiring root ships the code of the projects it embeds, besides any code of its own, such as the agent-backed

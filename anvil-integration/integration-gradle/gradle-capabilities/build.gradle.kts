@@ -2,7 +2,7 @@ import me.whereareiam.anvil.buildlogic.capability.CapabilityFamiliesArgument
 
 plugins {
 	`kotlin-dsl`
-	id("gradle-plugin")
+	id("module-gradle-plugin")
 }
 
 description = "Gradle adapters for Anvil capability providers"

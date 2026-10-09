@@ -1,5 +1,5 @@
 plugins {
-	id("api")
+	id("module-api")
 }
 
 description = "Workspace preparation, snapshot publication, and lifetime contracts"

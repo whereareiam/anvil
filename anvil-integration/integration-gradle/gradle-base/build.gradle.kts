@@ -1,6 +1,6 @@
 plugins {
 	`kotlin-dsl`
-	id("gradle-plugin")
+	id("module-gradle-plugin")
 }
 
 description = "Shared Anvil Gradle declarations, runtime inputs, and engine configuration"

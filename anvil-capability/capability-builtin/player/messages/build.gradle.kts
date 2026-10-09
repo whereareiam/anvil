@@ -1,5 +1,5 @@
 plugins {
-	id("capability")
+	id("module-capability")
 }
 
 architecture {

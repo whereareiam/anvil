@@ -1,5 +1,5 @@
 plugins {
-	id("jvm")
+	id("module-java")
 }
 
 description = "Workspace preparation, persistence, snapshots, and cleanup for Anvil"

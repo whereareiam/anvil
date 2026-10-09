@@ -127,7 +127,7 @@ autonomous AI, and crafting automation are outside the current project scope.
   namespaced uniqueness, and cleanup; launcher `ProtocolOperationRegistry` binds handlers to
   protocol-owned native operations; capability codecs own typed handler wire encoding/decoding.
   Never add feature branches or an opaque universal packet abstraction to the MCProtocol worker.
-- A built-in capability is a family folder whose root applies the `capability` convention and only wires
+- A built-in capability is a family folder whose root applies the `module-capability` convention and only wires
   its members into `builtin-<feature>`: `<feature>-api` (artifact `builtin-<feature>-api`) holds the API and,
   for packet capabilities, the stateless port `<feature root>.packet.<Feature>Packets<S>`; `<feature>-common`
   (embedded, unpublished) holds the host provider and the library-neutral `<Feature>Binding<S>`;
@@ -209,9 +209,9 @@ autonomous AI, and crafting automation are outside the current project scope.
   only, never for the default. Version and Java assessments follow `SupportLevel`/`SupportPolicy` and
   refuse before any download. Execution resolves exactly the planned feature version; never fall back
   to a newer or older JVM.
-- Providers that install an agent apply the `platform-provider` convention and name the agent through
+- Providers that install an agent apply the `module-platform-provider` convention and name the agent through
   `platformAgent(...)`; `checkAgentJava` fails unless the declared `[agent] minimumJava` equals the Java
-  release the agent targets and no agent class, embedded code included, needs newer Java. The `platform-layout`
+  release the agent targets and no agent class, embedded code included, needs newer Java. The `build-platforms`
   settings plugin fails the configuration of any project whose main resources ship version data with an
   `[agent]` table unless it applies the convention. The `platformAgent` configuration only feeds that check, so
   it is intentionally outside the architecture verifier's production configurations even though it names
@@ -535,21 +535,21 @@ failures.
 
 - `build-logic/settings` (included as `build-logic-settings`, whose `check` the root `check` runs) owns the lean
   settings/composite convention classpath. Keep it independent of the producer and of project plugins such as
-  architecture, publication, and the IntelliJ plugin. Its `library-registry` plugin owns the library registry, the
+  architecture, publication, and the IntelliJ plugin. Its `build-libraries` plugin owns the library registry, the
   library repositories that `settings.gradle.kts` declares as data (`libraryRepositories { url(...) }`, searched in
-  order by `pinLibraryReleases`), and checks that each library family root applies `library-releases` and each
-  folder holding segments applies `segmented`. Its `platform-layout` plugin checks that each project shipping
-  platform agent data applies `platform-provider`.
+  order by `pinLibraryReleases`), and checks that each library family root applies `module-library` and each
+  folder holding segments applies `module-adapter`. Its `build-platforms` plugin checks that each project shipping
+  platform agent data applies `module-platform-provider`.
 - Segments check their linkage against the locked `[[release.artifact]]` closures that workers download, not the
-  release module's dependency graph; worker tests run on the same closures through the `release-closures`
+  release module's dependency graph; worker tests run on the same closures through the `test-library-closures`
   convention. `compileForInServer` compiles a source set for the in-server release and registers its
-  `check<SourceSet>ClassRelease`; the `in-server` convention applies it to the main classes, and no other
+  `check<SourceSet>ClassRelease`; the `module-java-legacy` convention applies it to the main classes, and no other
   compilation gets the check. The platform provider convention checks the agent JAR against its version data.
 - `settings.gradle.kts` declares the included builds and the standalone discovery exclusions; the root build
   wires their lifecycle (`check` runs the convention builds' checks, `build` builds the fixtures). Module build
   files must not repeat included-build task wiring.
 - The root build's `prepareGradleFixtureRepository` publishes framework artifacts to the fixture repository.
-  The `fixture-repository` project convention only connects a module's tests to that prepared repository.
+  The `test-fixture-repository` project convention only connects a module's tests to that prepared repository.
 - The standard Anvil plugin owns the executable runtime configuration and its lazy version-aligned
   dependencies. Keep source-set wiring, runtime dependencies, artifact mappings, and generated
   definition indexes internal to the build integration; expose only engine settings, EULA acceptance,

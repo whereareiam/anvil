@@ -2,7 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import me.whereareiam.anvil.buildlogic.jvm.JavaRelease
 
 plugins {
-	id("jvm")
+	id("module-java")
 	id("com.gradleup.shadow")
 }
 

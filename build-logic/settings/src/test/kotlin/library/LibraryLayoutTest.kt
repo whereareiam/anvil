@@ -17,11 +17,11 @@ class LibraryLayoutTest {
 	), libraries)
 
 	@Test
-	fun `requires library-releases on family roots and segmented on folders holding segments`() {
+	fun `requires module-library on family roots and module-adapter on folders holding segments`() {
 		assertEquals(mapOf(
-			":anvil-protocol:protocol-mcprotocol" to "library-releases",
-			":anvil-protocol:protocol-mcprotocol:mcprotocol-client" to "segmented",
-			":movement:movement-mcprotocol" to "segmented",
+			":anvil-protocol:protocol-mcprotocol" to "module-library",
+			":anvil-protocol:protocol-mcprotocol:mcprotocol-client" to "module-adapter",
+			":movement:movement-mcprotocol" to "module-adapter",
 		), layout.conventions)
 	}
 
@@ -29,12 +29,12 @@ class LibraryLayoutTest {
 	fun `explains a missing convention and accepts an applied one`() {
 		val side = ":movement:movement-mcprotocol"
 
-		assertNull(layout.violation(side) { it == "segmented" })
+		assertNull(layout.violation(side) { it == "module-adapter" })
 		assertNull(layout.violation(":anvil-protocol:protocol-mcprotocol:mcprotocol-common") { false })
-		assertEquals("$side holds segments, which reach a worker only through their library side folder; it must apply id(\"segmented\")",
+		assertEquals("$side holds segments, which reach a worker only through their library side folder; it must apply id(\"module-adapter\")",
 			layout.violation(side) { false })
 		assertEquals(":anvil-protocol:protocol-mcprotocol owns the release data of a protocol library and must apply "
-			+ "id(\"library-releases\"), which pins it", layout.violation(":anvil-protocol:protocol-mcprotocol") { false })
+			+ "id(\"module-library\"), which pins it", layout.violation(":anvil-protocol:protocol-mcprotocol") { false })
 	}
 
 	private fun project(path: String, directory: String, vararg children: String) =

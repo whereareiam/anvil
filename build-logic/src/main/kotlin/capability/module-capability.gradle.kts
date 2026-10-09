@@ -2,8 +2,8 @@ import me.whereareiam.anvil.buildlogic.capability.CapabilityFamilySource
 import me.whereareiam.toolkit.publish.maven.extension.ToolkitPublishExtension
 
 plugins {
-	id("assembly")
-	id("wiring-bundle")
+	id("module-assembly")
+	id("packaging-shaded-root")
 }
 
 // A built-in capability family root only wires its members: it exports the family API, embeds the

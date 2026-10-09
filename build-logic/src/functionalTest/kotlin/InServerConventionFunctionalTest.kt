@@ -67,8 +67,8 @@ class InServerConventionFunctionalTest {
 		""")
 		project.write("server/build.gradle.kts", """
 			plugins {
-				id("jvm")
-				id("in-server")
+				id("module-java")
+				id("module-java-legacy")
 			}
 		""")
 		project.write("server/src/main/java/demo/server/Agent.java", "package demo.server;\n\npublic final class Agent {\n}\n")
@@ -84,13 +84,13 @@ class InServerConventionFunctionalTest {
 				}
 			}
 		""")
-		project.write("host/build.gradle.kts", "plugins {\n\tid(\"jvm\")\n}\n")
+		project.write("host/build.gradle.kts", "plugins {\n\tid(\"module-java\")\n}\n")
 		project.write("host/src/main/java/demo/host/Host.java", "package demo.host;\n\npublic final class Host {\n}\n")
 		project.write("bundled/build.gradle.kts", """
 			plugins {
-				id("jvm")
-				id("in-server")
-				id("bundle")
+				id("module-java")
+				id("module-java-legacy")
+				id("packaging-shaded-jar")
 			}
 
 			dependencies {

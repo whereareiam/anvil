@@ -1,5 +1,5 @@
 plugins {
-	id("api")
+	id("module-api")
 }
 
 description = "Execution plans, providers, endpoints, and process lifetime contracts for Anvil environments"

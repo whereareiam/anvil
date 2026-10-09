@@ -10,7 +10,7 @@ import java.io.File
 
 /**
  * Builds a consumer project whose `provider` declares the agent it installs and the agent's minimum Java in its
- * versions data, and checks the agent's compiled classes against that declaration. The `platform-layout` settings
+ * versions data, and checks the agent's compiled classes against that declaration. The `build-platforms` settings
  * plugin refuses agent data in a project without the convention.
  */
 class PlatformProviderConventionFunctionalTest {
@@ -28,7 +28,7 @@ class PlatformProviderConventionFunctionalTest {
 
 		write("agent/build.gradle.kts", """
 			plugins {
-				id("jvm")
+				id("module-java")
 			}
 
 			javaRelease {
@@ -51,15 +51,15 @@ class PlatformProviderConventionFunctionalTest {
 			+ "installs agent-1.0.0.jar"), undeclared.output)
 
 		write("provider/src/main/resources/demo/demo-versions.toml", versionData("[agent]\nminimumJava = 11\n"))
-		write("provider/build.gradle.kts", "plugins {\n\tid(\"platform-provider\")\n}\n")
+		write("provider/build.gradle.kts", "plugins {\n\tid(\"module-platform-provider\")\n}\n")
 		val unchecked = runner(":provider:checkAgentJava").buildAndFail()
 		assertTrue(unchecked.output.contains("demo-versions.toml declares [agent] minimumJava = 11, but the provider "
 			+ "names no platformAgent dependency to check it against"), unchecked.output)
 
-		write("provider/build.gradle.kts", "plugins {\n\tid(\"jvm\")\n}\n")
+		write("provider/build.gradle.kts", "plugins {\n\tid(\"module-java\")\n}\n")
 		val unconventional = runner("help").buildAndFail()
 		assertTrue(unconventional.output.contains(":provider ships platform version data [demo/demo-versions.toml] but "
-			+ "does not apply id(\"platform-provider\")"), unconventional.output)
+			+ "does not apply id(\"module-platform-provider\")"), unconventional.output)
 	}
 
 	private fun versionData(agent: String): String = agent + """
@@ -74,7 +74,7 @@ class PlatformProviderConventionFunctionalTest {
 		write("gradle.properties", "org.gradle.configuration-cache=true\n")
 		write("settings.gradle.kts", """
 			plugins {
-				id("platform-layout")
+				id("build-platforms")
 			}
 
 			dependencyResolutionManagement {
@@ -92,11 +92,11 @@ class PlatformProviderConventionFunctionalTest {
 				version = "1.0.0"
 			}
 		""")
-		write("agent/build.gradle.kts", "plugins {\n\tid(\"jvm\")\n}\n")
+		write("agent/build.gradle.kts", "plugins {\n\tid(\"module-java\")\n}\n")
 		write("agent/src/main/java/demo/agent/Agent.java", "package demo.agent;\n\npublic final class Agent {\n}\n")
 		write("provider/build.gradle.kts", """
 			plugins {
-				id("platform-provider")
+				id("module-platform-provider")
 			}
 
 			dependencies {

@@ -1,6 +1,6 @@
 plugins {
-	id("jvm")
-	id("publication")
+	id("module-java")
+	id("packaging-publication")
 }
 
 description = "Reusable foreground scenario runner for Anvil tooling"

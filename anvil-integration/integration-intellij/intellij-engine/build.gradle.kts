@@ -1,7 +1,7 @@
 plugins {
 	`java-test-fixtures`
-	id("jvm")
-	id("intellij-platform-tests")
+	id("module-java")
+	id("test-intellij")
 }
 
 description = "Lifecycle and tooling logic for the IntelliJ integration"

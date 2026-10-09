@@ -1,7 +1,7 @@
 import me.whereareiam.anvil.buildlogic.platform.AgentJavaCheck
 
 plugins {
-	id("jvm")
+	id("module-java")
 }
 
 // The agent this provider installs into its platform's processes. Only its runtime JAR is checked; the provider

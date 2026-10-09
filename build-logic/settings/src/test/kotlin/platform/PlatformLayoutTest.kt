@@ -37,10 +37,10 @@ class PlatformLayoutTest {
 	fun `explains a missing convention and accepts an applied one`() {
 		val layout = PlatformLayout(mapOf(":provider" to listOf("demo/demo-versions.toml")))
 
-		assertNull(layout.violation(":provider") { it == "platform-provider" })
+		assertNull(layout.violation(":provider") { it == "module-platform-provider" })
 		assertNull(layout.violation(":api") { false })
 		assertEquals(":provider ships platform version data [demo/demo-versions.toml] but does not apply "
-			+ "id(\"platform-provider\"), which checks the platform agent against it", layout.violation(":provider") { false })
+			+ "id(\"module-platform-provider\"), which checks the platform agent against it", layout.violation(":provider") { false })
 	}
 
 	private fun write(path: String, text: String) {

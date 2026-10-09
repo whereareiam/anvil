@@ -2,7 +2,7 @@ import me.whereareiam.anvil.buildlogic.jvm.compileForInServer
 import org.gradle.api.attributes.java.TargetJvmVersion
 
 plugins {
-	id("jvm")
+	id("module-java")
 }
 
 description = "External protocol library, capabilities, and agent operations compiled against public APIs only"

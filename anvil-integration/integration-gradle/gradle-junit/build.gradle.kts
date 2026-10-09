@@ -1,6 +1,6 @@
 plugins {
 	`kotlin-dsl`
-	id("gradle-plugin")
+	id("module-gradle-plugin")
 }
 
 description = "Gradle adapter for Anvil JUnit integration"

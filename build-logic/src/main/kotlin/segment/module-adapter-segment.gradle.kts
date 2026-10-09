@@ -8,8 +8,8 @@ import me.whereareiam.anvil.buildlogic.segment.linkage.CheckSegmentLinkage
 
 plugins {
 	java
-	id("jvm")
-	id("publication")
+	id("module-java")
+	id("packaging-publication")
 }
 
 // A segment adapts one feature to one library release: its folder V<major>_<minor>[_<patch>] names the release
@@ -21,10 +21,10 @@ val plan = providers.of(SegmentPlanSource::class) {
 	}
 }.get()
 
-// Only the side folder puts its segments on the runtime classpath. The library-registry settings plugin fails a
-// side folder that does not apply `segmented`, so a segment requires that plugin.
+// Only the side folder puts its segments on the runtime classpath. The build-libraries settings plugin fails a
+// side folder that does not apply `module-adapter`, so a segment requires that plugin.
 if (gradle.extensions.findByType<LibraryRepositories>() == null)
-	throw GradleException("Segment $path needs the library layout checks: add id(\"library-registry\") to the settings plugins")
+	throw GradleException("Segment $path needs the library layout checks: add id(\"build-libraries\") to the settings plugins")
 
 // Segments of different side folders share project names, and Gradle conflates projects with equal
 // group:name, so the side folder is part of the group and of the JAR name.

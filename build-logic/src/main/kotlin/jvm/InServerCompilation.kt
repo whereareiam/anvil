@@ -13,7 +13,7 @@ import org.gradle.language.base.plugins.LifecycleBasePlugin
  * registers `check<SourceSet>ClassRelease`, which `check` runs: none of the source set's classes may be newer than
  * that release, whatever a build file later sets on the compilation. Only such source sets get the check.
  *
- * The `in-server` convention applies it to the main source set. A build file applies it to another source set whose
+ * The `module-java-legacy` convention applies it to the main source set. A build file applies it to another source set whose
  * classes servers load, such as the agent operations of an extension that the host also loads:
  *
  * ```kotlin

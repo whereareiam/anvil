@@ -1,5 +1,5 @@
 plugins {
-	id("assembly")
+	id("module-assembly")
 }
 
 description = "Default aggregate containing the built-in player and process capabilities"

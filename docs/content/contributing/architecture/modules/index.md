@@ -195,7 +195,7 @@ and is not a separate public owner. Public feature packages and artifact IDs rem
 Each built-in capability is a family folder: `<feature>-api` holds the public API (and, for packet
 capabilities, the library-neutral port in its `packet` package), `<feature>-common` holds the host provider
 and worker binding in the feature packages, and `<feature>-<library>` adapts the feature to one protocol
-library through `V*` segments. The family root applies the `capability` convention and only wires these
+library through `V*` segments. The family root applies the `module-capability` convention and only wires these
 members into the `builtin-<feature>` bundle. The convention publishes the members as `builtin-<member>`,
 such as `builtin-movement-api`, and refuses a child that is not a member, a `common` or `util` package, and
 code in the root of a family with common code or library sides.
@@ -242,7 +242,7 @@ implementation uses global player observations where needed without exposing the
 ## Locate a protocol library
 
 A protocol library is a family under `anvil-protocol/protocol-<library>`, and its folder holds the
-library's release data, `<library>-releases.toml`. The settings plugin `library-registry` registers
+library's release data, `<library>-releases.toml`. The settings plugin `build-libraries` registers
 every such library. MCProtocolLib's family is laid out like this:
 
 | Module | Owns |

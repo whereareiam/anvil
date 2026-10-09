@@ -1,6 +1,6 @@
 plugins {
-	id("assembly")
-	id("segmented")
+	id("module-assembly")
+	id("module-adapter")
 }
 
 description = "MCProtocolLib worker side of the built-in interaction capability, with one segment per release range"

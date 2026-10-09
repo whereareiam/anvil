@@ -69,7 +69,7 @@ The `check` task runs the same verification. A segment's report is
 - **A segment does not link:** the failure names the missing or changed class, field, or method. Add
   a segment named after the new release key in that side only, such as `V1_21_11` beside `V1_18_2`.
   Copy the previous segment, change its package suffix to the new folder name in lower case, such as
-  `.v1_21_11`, and adapt the code the failure names. The side's `segmented` convention adds the new
+  `.v1_21_11`, and adapt the code the failure names. The side's `module-adapter` convention adds the new
   child automatically.
 - **The port cannot express the release:** change the port in the feature API's `packet` package,
   such as `MovementPackets`, and every segment implementing it, or `McProtocolClient` in

@@ -2,11 +2,11 @@ import me.whereareiam.anvil.buildlogic.integration.IntellijPlatformModule
 import me.whereareiam.anvil.buildlogic.jvm.catalog
 
 plugins {
-	id("jvm")
+	id("module-java")
 	id("org.jetbrains.intellij.platform")
 }
 
-// Modules compile against the oldest supported IntelliJ IDEA. Modules with tests apply intellij-platform-tests,
+// Modules compile against the oldest supported IntelliJ IDEA. Modules with tests apply test-intellij,
 // which runs them in the platform.
 val module = extensions.create<IntellijPlatformModule>("intellijPlatformModule")
 module.bundledPlugins.convention(listOf("com.intellij.java"))

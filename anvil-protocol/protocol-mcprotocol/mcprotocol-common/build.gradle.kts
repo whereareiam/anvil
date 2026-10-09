@@ -1,7 +1,7 @@
 plugins {
-	id("jvm")
+	id("module-java")
 	// Worker contract tests start real workers on each release's locked closure instead of downloading it.
-	id("release-closures")
+	id("test-library-closures")
 }
 
 description = "MCProtocolLib library provider, release data, worker host and the MCProtocolLib-free worker shell"

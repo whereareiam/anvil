@@ -36,8 +36,8 @@ For example, a repository test module that verifies an external protocol library
 
 ```kotlin
 plugins {
-	id("jvm")
-	id("fixtures")
+	id("module-java")
+	id("test-fixtures-consumer")
 }
 
 fixtures {
@@ -49,7 +49,7 @@ dependencies {
 }
 ```
 
-The `fixtures` convention adds host-side test support. Put this test in the module's `src/test/java`:
+The `test-fixtures-consumer` convention adds host-side test support. Put this test in the module's `src/test/java`:
 
 ```java
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
@@ -87,7 +87,7 @@ selection in the fixture build so a test failure is about the loaded artifact's 
 
 A scenario definition may need a fixture path while constructing its declaration. Register those same Gradle
 file collections with the project tooling producer; do not resolve a sibling `build/libs` path or
-copy the complete JUnit task configuration. With the `fixtures` convention, the standard Anvil
+copy the complete JUnit task configuration. With the `test-fixtures-consumer` convention, the standard Anvil
 plugin, and the required fixture variants already declared, share the inputs as follows:
 
 ```kotlin

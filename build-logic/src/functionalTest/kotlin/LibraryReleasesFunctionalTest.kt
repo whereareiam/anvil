@@ -11,8 +11,8 @@ import java.util.HexFormat
 
 /**
  * Pins the release data of a generated `demo` library offline, from two file repositories inside the project, with
- * the `library-registry` settings plugin, which owns the library repositories and checks the family root, and the
- * `library-releases` convention on the family root.
+ * the `build-libraries` settings plugin, which owns the library repositories and checks the family root, and the
+ * `module-library` convention on the family root.
  */
 class LibraryReleasesFunctionalTest {
 	@TempDir
@@ -58,14 +58,14 @@ class LibraryReleasesFunctionalTest {
 		project.write("anvil-protocol/protocol-demo/build.gradle.kts", "plugins {\n\tbase\n}\n")
 		val unpinned = project.fail("help")
 		assertTrue(unpinned.output.contains(
-			":anvil-protocol:protocol-demo owns the release data of a protocol library and must apply id(\"library-releases\")"
+			":anvil-protocol:protocol-demo owns the release data of a protocol library and must apply id(\"module-library\")"
 		), unpinned.output)
-		project.write("anvil-protocol/protocol-demo/build.gradle.kts", "plugins {\n\tid(\"library-releases\")\n}\n")
+		project.write("anvil-protocol/protocol-demo/build.gradle.kts", "plugins {\n\tid(\"module-library\")\n}\n")
 
-		project.write("other/build.gradle.kts", "plugins {\n\tid(\"library-releases\")\n}\n")
+		project.write("other/build.gradle.kts", "plugins {\n\tid(\"module-library\")\n}\n")
 		project.write("settings.gradle.kts", project.file("settings.gradle.kts").readText() + "include(\":other\")\n")
 		val foreign = project.fail("help")
-		assertTrue(foreign.output.contains(":other applies library-releases, but only a library family root"), foreign.output)
+		assertTrue(foreign.output.contains(":other applies module-library, but only a library family root"), foreign.output)
 	}
 
 	private fun writeProject(project: TestProject) {
@@ -89,7 +89,7 @@ class LibraryReleasesFunctionalTest {
 
 		project.write("settings.gradle.kts", """
 			plugins {
-				id("library-registry")
+				id("build-libraries")
 			}
 
 			libraryRepositories {
@@ -107,7 +107,7 @@ class LibraryReleasesFunctionalTest {
 			rootProject.name = "release-consumer"
 			include(":anvil-protocol:protocol-demo")
 		""")
-		project.write("anvil-protocol/protocol-demo/build.gradle.kts", "plugins {\n\tid(\"library-releases\")\n}\n")
+		project.write("anvil-protocol/protocol-demo/build.gradle.kts", "plugins {\n\tid(\"module-library\")\n}\n")
 	}
 
 	private val legacyRelease = """

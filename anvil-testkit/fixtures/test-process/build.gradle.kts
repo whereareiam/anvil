@@ -1,5 +1,5 @@
 plugins {
-	id("jvm")
+	id("module-java")
 }
 
 description = "Small JVM process used to verify lifecycle and shutdown ordering"

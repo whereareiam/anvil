@@ -1,6 +1,6 @@
 plugins {
-	id("jvm")
-	id("publication")
+	id("module-java")
+	id("packaging-publication")
 }
 
 description = "Anvil tooling preparation and definition discovery for Gradle"

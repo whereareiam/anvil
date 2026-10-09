@@ -9,7 +9,7 @@ import java.io.File
 import java.util.jar.JarFile
 
 /**
- * Builds a consumer of the `demo` capability family to check what the `capability` convention wires from the
+ * Builds a consumer of the `demo` capability family to check what the `module-capability` convention wires from the
  * family folder: the API for compilation, the common code embedded into the root's JAR and described by its
  * sources JAR, the library side at runtime, and the published artifact IDs of the root and its members.
  */
@@ -52,7 +52,7 @@ class CapabilityConventionFunctionalTest {
 		writeProject(project)
 
 		val settings = project.file("settings.gradle.kts").readText()
-		project.write("demo/demo-extra/build.gradle.kts", "plugins {\n\tid(\"jvm\")\n}\n")
+		project.write("demo/demo-extra/build.gradle.kts", "plugins {\n\tid(\"module-java\")\n}\n")
 		project.write("settings.gradle.kts", settings + "include(\":demo:demo-extra\")\n")
 		val foreign = project.fail("help")
 		assertTrue(foreign.output.contains("found 'demo-extra'"), foreign.output)
@@ -105,7 +105,7 @@ class CapabilityConventionFunctionalTest {
 
 		project.write("demo/build.gradle.kts", """
 			plugins {
-				id("capability")
+				id("module-capability")
 			}
 
 			description = "Demo capability family"
@@ -113,7 +113,7 @@ class CapabilityConventionFunctionalTest {
 		project.write("demo/src/main/resources/META-INF/services/demo.Provider", "demo.DemoProvider")
 		project.write("demo/demo-api/build.gradle.kts", """
 			plugins {
-				id("api")
+				id("module-api")
 			}
 
 			description = "Demo capability API"
@@ -121,7 +121,7 @@ class CapabilityConventionFunctionalTest {
 		project.write("demo/demo-api/src/main/java/demo/Demo.java", "package demo;\n\npublic interface Demo {\n}\n")
 		project.write("demo/demo-common/build.gradle.kts", """
 			plugins {
-				id("jvm")
+				id("module-java")
 			}
 
 			dependencies {
@@ -139,8 +139,8 @@ class CapabilityConventionFunctionalTest {
 		""")
 		project.write("demo/demo-mcprotocol/build.gradle.kts", """
 			plugins {
-				id("jvm")
-				id("publication")
+				id("module-java")
+				id("packaging-publication")
 			}
 
 			description = "Demo capability side for MCProtocolLib"
@@ -148,7 +148,7 @@ class CapabilityConventionFunctionalTest {
 		project.write("demo/demo-mcprotocol/src/main/java/demo/mcprotocol/DemoExtension.java", "package demo.mcprotocol;\n\npublic final class DemoExtension {\n}\n")
 		project.write("consumer/build.gradle.kts", """
 			plugins {
-				id("jvm")
+				id("module-java")
 			}
 
 			dependencies {

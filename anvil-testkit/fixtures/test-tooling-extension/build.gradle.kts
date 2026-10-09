@@ -1,5 +1,5 @@
 plugins {
-	id("jvm")
+	id("module-java")
 }
 
 description = "Independent custom capability and tooling extension using public Anvil contracts"

@@ -1,5 +1,5 @@
 plugins {
-	id("segment")
+	id("module-adapter-segment")
 }
 
 dependencies {

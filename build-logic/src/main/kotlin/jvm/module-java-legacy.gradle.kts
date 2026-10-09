@@ -2,7 +2,7 @@ import me.whereareiam.anvil.buildlogic.jvm.compileForInServer
 
 plugins {
 	java
-	id("jvm")
+	id("module-java")
 }
 
 // Minecraft servers load these main classes, and the oldest supported server runs on the in-server release.

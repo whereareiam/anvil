@@ -1,6 +1,6 @@
 plugins {
-	id("jvm")
-	id("intellij-platform")
+	id("module-java")
+	id("module-intellij")
 }
 
 description = "Contracts and immutable values for the IntelliJ integration"

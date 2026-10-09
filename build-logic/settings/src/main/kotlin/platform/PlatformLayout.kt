@@ -4,7 +4,7 @@ import java.io.File
 
 /**
  * The projects whose main resources ship platform version data declaring the agent a provider installs: a
- * `<platform>-versions.toml` file with an `[agent]` table. Each must apply `platform-provider`, the only convention
+ * `<platform>-versions.toml` file with an `[agent]` table. Each must apply `module-platform-provider`, the only convention
  * that checks the declared minimum Java against the agent's classes, so such data in any other project would go
  * unchecked.
  *
@@ -31,7 +31,7 @@ class PlatformLayout(val agentData: Map<String, List<String>>) {
 	}
 
 	companion object {
-		private const val providerConvention = "platform-provider"
+		private const val providerConvention = "module-platform-provider"
 		private const val dataSuffix = "-versions.toml"
 		private val agentTable = Regex("""\s*(\[\s*agent\s*]\s*(#.*)?|agent\s*[.=].*)""")
 

@@ -1,6 +1,6 @@
 plugins {
-	id("jvm")
-	id("fixtures")
+	id("module-java")
+	id("test-fixtures-consumer")
 }
 
 description = "Host-side access and classloader lifetime for prepared test artifacts"
