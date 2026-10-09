@@ -26,6 +26,12 @@ import java.util.concurrent.locks.ReentrantLock;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DockerEngineTest {
+	/**
+	 * The official Temurin image from Amazon's public mirror of Docker's library. Docker Hub limits anonymous pulls
+	 * per address, which shared CI runners exhaust; the mirror serves the same image without that limit.
+	 */
+	private static final String IMAGE = "public.ecr.aws/docker/library/eclipse-temurin:21-jdk";
+
 	private final Path directory = Path.of("build", "docker-smoke", UUID.randomUUID().toString()).toAbsolutePath();
 
 	@AfterEach
@@ -42,8 +48,8 @@ class DockerEngineTest {
 			String network = "anvil-test-" + UUID.randomUUID();
 			try (DockerNetwork created = docker.createNetwork(network, true)) {
 				assertFalse(created.id().isBlank());
-				assertTrue(docker.images().inspectMetadata("eclipse-temurin:21-jdk").id().startsWith("sha256:"));
-				assertTrue(docker.images().probeJavaRuntime("eclipse-temurin:21-jdk").contains("Property settings"));
+				assertTrue(docker.images().inspectMetadata(IMAGE).id().startsWith("sha256:"));
+				assertTrue(docker.images().probeJavaRuntime(IMAGE).contains("Property settings"));
 			}
 		}
 	}
@@ -67,7 +73,7 @@ class DockerEngineTest {
 				}).build();
 		try (var docker = new DockerEngine()) {
 			try (DockerExecutionSession session = new DockerExecutionSession(context, docker,
-					DockerExecutionSettings.builder().image("temurin:21", "eclipse-temurin:21-jdk").build())) {
+					DockerExecutionSettings.builder().image("temurin:21", IMAGE).build())) {
 				Path workspace = directory.resolve("work");
 				Files.createDirectories(workspace);
 				Path jar = Files.copy(FixtureArtifacts.process(), workspace.resolve("process.jar"));
