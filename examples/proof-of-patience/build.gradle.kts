@@ -23,7 +23,7 @@ tasks.test {
 anvil {
     acceptEula()
     engine {
-        protocol("mcprotocol")
+        protocolLibrary("mcprotocol")
     }
     artifact("plugin-under-test", tasks.named("jar"))
 }

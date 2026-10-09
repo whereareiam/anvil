@@ -11,7 +11,8 @@ import java.util.function.Consumer;
 
 /**
  * Holds the authenticated accounts in use across one engine, whether leased from a pool or selected
- * directly by a player, so no two players share an account.
+ * directly by a player, so no two players share an account. Reservations hold account IDs, so an ID
+ * stored by several protocol libraries is in use at most once, whichever library signs in with it.
  */
 public final class AccountReservations {
 	private final Set<String> reserved = ConcurrentHashMap.newKeySet();
@@ -31,7 +32,7 @@ public final class AccountReservations {
 	 *
 	 * @param accountId reserved account
 	 */
-	public void release(@NotNull String accountId) {
+	public void unreserve(@NotNull String accountId) {
 		reserved.remove(accountId);
 	}
 
@@ -39,7 +40,7 @@ public final class AccountReservations {
 	 * Reserves an account for a pool lease.
 	 *
 	 * @param account account to reserve
-	 * @param onSettled called once when the lease is claimed, or released without a claim
+	 * @param onSettled called once when the lease is claimed, or closed without a claim
 	 * @return unclaimed lease, or null when the account is already reserved
 	 */
 	@Nullable AccountLease lease(@NotNull AuthenticationAccount account, @NotNull Consumer<AccountLease> onSettled) {
@@ -52,7 +53,7 @@ public final class AccountReservations {
 		private final AuthenticationAccount account;
 		private final Consumer<AccountLease> onSettled;
 		private boolean claimed;
-		private boolean released;
+		private boolean closed;
 
 		private Lease(AuthenticationAccount account, Consumer<AccountLease> onSettled) {
 			this.account = account;
@@ -67,7 +68,7 @@ public final class AccountReservations {
 		@Override
 		public boolean claim() {
 			synchronized (this) {
-				if (claimed || released) return false;
+				if (claimed || closed) return false;
 				claimed = true;
 			}
 
@@ -80,12 +81,12 @@ public final class AccountReservations {
 		public void close() {
 			boolean settled;
 			synchronized (this) {
-				if (released) return;
-				released = true;
+				if (closed) return;
+				closed = true;
 				settled = claimed;
 			}
 
-			release(account.getAccountId());
+			unreserve(account.getAccountId());
 			if (!settled) onSettled.accept(this);
 		}
 	}

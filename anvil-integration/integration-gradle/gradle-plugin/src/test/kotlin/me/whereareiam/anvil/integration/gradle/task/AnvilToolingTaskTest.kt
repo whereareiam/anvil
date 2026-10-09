@@ -43,7 +43,7 @@ class AnvilToolingTaskTest {
 
         val properties = manifest.path("properties")
         assertEquals("true", properties.path("anvil.eula.accepted").asText())
-        assertEquals("fixture-protocol", properties.path("anvil.protocol").asText())
+        assertEquals("fixture-protocol", properties.path("anvil.protocolLibrary").asText())
         assertEquals("4", properties.path("anvil.parallelism").asText())
         assertEquals("2048", properties.path("anvil.startupMemoryMegabytes").asText())
         assertEquals("2", properties.path("anvil.downloadParallelism").asText())
@@ -131,7 +131,7 @@ class AnvilToolingTaskTest {
             anvil {
                 acceptEula()
                 engine {
-                    protocol("fixture-protocol")
+                    protocolLibrary("fixture-protocol")
                     parallelism.set(4)
                     startupMemoryMegabytes.set(2048)
                     downloadParallelism.set(2)
@@ -145,7 +145,7 @@ class AnvilToolingTaskTest {
             import me.whereareiam.anvil.api.scenario.AnvilScenarioDefinition;
             public final class DemoScenario implements AnvilScenarioDefinition {
                 public AnvilScenario define() {
-                    if (!"fixture-protocol".equals(System.getProperty("anvil.protocol")))
+                    if (!"fixture-protocol".equals(System.getProperty("anvil.protocolLibrary")))
                         throw new AssertionError("Engine properties were not forwarded");
                     return AnvilScenario.builder().name("independent-tooling-ready").entrypoint("server").build();
                 }

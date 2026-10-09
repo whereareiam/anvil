@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 /**
- * Supplies typed capability transport and lifetime while preserving deliberate external backend services.
+ * Supplies typed capability transport and lifetime while preserving deliberate external library services.
  */
 final class ProtocolPlayerAdapter implements ProtocolCapabilityPlayer {
 	private final @NotNull ProtocolPlayer player;
@@ -38,6 +38,11 @@ final class ProtocolPlayerAdapter implements ProtocolCapabilityPlayer {
 	@Override
 	public @NotNull String clientVersion() {
 		return player.clientVersion();
+	}
+
+	@Override
+	public @NotNull String libraryId() {
+		return player.libraryId();
 	}
 
 	@Override

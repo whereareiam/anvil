@@ -5,7 +5,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Player identity and backend lifetime supplied to capability composition.
+ * Player identity and lifetime that the player's owner, such as a protocol library, supplies to
+ * capability composition.
  * The composed player owns permanent destruction through this input. Mechanism-specific inputs
  * can extend it with their own services without exposing those services to every player capability.
  */
@@ -18,7 +19,7 @@ public interface CapabilityPlayer {
 	@NotNull String name();
 
 	/**
-	 * Returns optional presentation metadata without changing the backend's player identity.
+	 * Returns optional presentation metadata without changing the underlying player's identity.
 	 *
 	 * @return metadata, or null when no label was declared
 	 */
@@ -34,14 +35,14 @@ public interface CapabilityPlayer {
 	@NotNull String clientVersion();
 
 	/**
-	 * Reports permanent destruction of the backend player.
+	 * Reports permanent destruction of the underlying player.
 	 *
-	 * @return whether the backend player has been destroyed
+	 * @return whether the underlying player has been destroyed
 	 */
 	boolean destroyed();
 
 	/**
-	 * Permanently releases the backend player and its owned resources.
+	 * Permanently destroys the underlying player and its owned resources.
 	 */
 	void destroy();
 }

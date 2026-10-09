@@ -2,12 +2,13 @@ package me.whereareiam.anvil.protocol.api.player;
 
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
 /**
- * Backend-owned protocol client before dependency-discovered capabilities are composed around it.
+ * Library-owned protocol client before dependency-discovered capabilities are composed around it.
  */
 public interface ProtocolPlayer {
 	/**
@@ -25,7 +26,22 @@ public interface ProtocolPlayer {
 	@NotNull String clientVersion();
 
 	/**
-	 * Returns the client identity established by the protocol backend.
+	 * Returns the identifier of the protocol library that owns this client. Composition selects the
+	 * player's capability providers by this identifier.
+	 *
+	 * @return protocol-library identifier
+	 */
+	@NotNull String libraryId();
+
+	/**
+	 * Returns the library release that speaks this client's version.
+	 *
+	 * @return selected library release
+	 */
+	@NotNull ProtocolRelease release();
+
+	/**
+	 * Returns the client identity established by the protocol library.
 	 *
 	 * @return immutable client identity
 	 */
@@ -41,7 +57,7 @@ public interface ProtocolPlayer {
 	@NotNull <T> Optional<T> findService(@NotNull Class<T> type);
 
 	/**
-	 * Returns the typed capability channel when the backend supports native worker operations.
+	 * Returns the typed capability channel when the library supports native worker operations.
 	 *
 	 * @return channel when available
 	 */
@@ -50,7 +66,7 @@ public interface ProtocolPlayer {
 	}
 
 	/**
-	 * Reports whether this backend-owned player was permanently destroyed.
+	 * Reports whether this library-owned player was permanently destroyed.
 	 *
 	 * @return destruction state
 	 */

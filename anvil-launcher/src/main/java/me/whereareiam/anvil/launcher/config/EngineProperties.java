@@ -9,6 +9,7 @@ import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.model.java.local.LocalJavaExecutable;
 import me.whereareiam.anvil.api.model.java.local.LocalJavaHome;
+import me.whereareiam.anvil.api.type.SupportPolicy;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.URI;
@@ -28,9 +29,19 @@ public final class EngineProperties {
 	public static final String EXECUTION_PROPERTY = "anvil.execution";
 
 	/**
-	 * Selected protocol-provider identifier.
+	 * Default protocol-library identifier for simulated players.
 	 */
-	public static final String PROTOCOL_PROPERTY = "anvil.protocol";
+	public static final String PROTOCOL_LIBRARY_PROPERTY = "anvil.protocolLibrary";
+
+	/**
+	 * Prefix for additional protocol-library release data files, followed by the library identifier.
+	 */
+	public static final String PROTOCOL_RELEASES_PROPERTY_PREFIX = "anvil.protocolReleases.";
+
+	/**
+	 * Default support policy: {@code lenient} or {@code strict}, case-insensitive.
+	 */
+	public static final String SUPPORT_POLICY_PROPERTY = "anvil.supportPolicy";
 
 	/**
 	 * Requested Java feature version.
@@ -157,13 +168,14 @@ public final class EngineProperties {
 	 *
 	 * @param properties property representation
 	 * @return immutable engine options
-	 * @throws IllegalArgumentException if a Java version, boolean, or timeout is invalid
+	 * @throws IllegalArgumentException if a Java version, boolean, timeout, or support policy is invalid
 	 */
 	public static @NotNull EngineOptions from(@NotNull Properties properties) {
 		EngineOptions defaults = EngineDefaults.resolve(EngineOptions.builder().build());
 		var builder = EngineOptions.builder()
 				.executionProviderId(properties.getProperty(EXECUTION_PROPERTY, defaults.getExecutionProviderId()))
-				.protocolId(properties.getProperty(PROTOCOL_PROPERTY))
+				.protocolLibrary(properties.getProperty(PROTOCOL_LIBRARY_PROPERTY))
+				.supportPolicy(supportPolicy(properties, defaults.getSupportPolicy()))
 				.javaSelection(javaSelection(properties))
 				.downloadJava(booleanValue(properties, AUTO_DOWNLOAD_JAVA_PROPERTY, defaults.isDownloadJava()))
 				.cacheDirectory(pathValue(properties, CACHE_DIRECTORY_PROPERTY, defaults.getCacheDirectory()))
@@ -190,10 +202,27 @@ public final class EngineProperties {
 				if (artifact.isBlank()) throw new IllegalArgumentException("Artifact name must not be blank");
 
 				builder.artifact(artifact, Path.of(properties.getProperty(name)));
+				continue;
 			}
+			if (!name.startsWith(PROTOCOL_RELEASES_PROPERTY_PREFIX)) continue;
+
+			String library = name.substring(PROTOCOL_RELEASES_PROPERTY_PREFIX.length());
+			if (library.isBlank()) throw new IllegalArgumentException("Protocol library must not be blank");
+			builder.protocolRelease(library, Path.of(properties.getProperty(name)));
 		}
 
 		return builder.build();
+	}
+
+	/**
+	 * Returns the property key for a protocol library's additional release data.
+	 *
+	 * @param library non-blank protocol-library identifier
+	 * @return property key
+	 */
+	public static @NotNull String protocolReleasesProperty(@NotNull String library) {
+		if (library.isBlank()) throw new IllegalArgumentException("Protocol library must not be blank");
+		return PROTOCOL_RELEASES_PROPERTY_PREFIX + library;
 	}
 
 	/**
@@ -238,6 +267,15 @@ public final class EngineProperties {
 		if (!archiveSha256.matches("[a-fA-F0-9]{64}"))
 			throw new IllegalArgumentException("Java archive SHA-256 must contain 64 hexadecimal characters");
 		return JavaArchive.builder().uri(URI.create(archiveUri)).sha256(archiveSha256).build();
+	}
+
+	private static SupportPolicy supportPolicy(Properties properties, SupportPolicy fallback) {
+		String value = properties.getProperty(SUPPORT_POLICY_PROPERTY);
+		if (value == null) return fallback;
+
+		for (SupportPolicy policy : SupportPolicy.values())
+			if (policy.name().equalsIgnoreCase(value)) return policy;
+		throw new IllegalArgumentException(SUPPORT_POLICY_PROPERTY + " must be lenient or strict");
 	}
 
 	private static int positive(Properties properties, String key, int fallback) {

@@ -1,11 +1,13 @@
 plugins {
-	alias(libs.plugins.toolkit.architecture)
-	id("unit")
+	id("jvm")
 }
 
 description = "Platform selection, distribution preparation, and forwarding plans"
 
 dependencies {
+	implementation(libs.jackson.databind)
+	implementation(libs.jackson.toml)
+
 	compileOnly(projects.anvilApi)
 	compileOnly(projects.anvilPlatform.platformApi)
 

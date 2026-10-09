@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.platform.velocity;
 
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
@@ -14,7 +15,10 @@ import me.whereareiam.anvil.platform.api.type.ForwardingMode;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -71,6 +77,32 @@ class VelocityPlatformProviderTest {
 		assertThrows(PlatformException.class, () -> provider.configure(proxy.toBuilder().setting("servers.fake", "'localhost:1'").build(), context));
 	}
 
+	@ParameterizedTest
+	@CsvSource({
+			"3.3.0,          3.3.0",
+			"3.4.0-SNAPSHOT, 3.4.0",
+			"3.5.0-SNAPSHOT, 3.5.0",
+			"3.5.1,          3.5.1",
+			"4.1.1,          4.1.1"
+	})
+	void keysVersionDataByVelocityReleaseWithoutItsQualifier(String version, String release) {
+		MinecraftProxy proxy = proxy(Path.of("velocity.jar"), "server").toBuilder()
+				.distribution(Distribution.remote(version, "1")).build();
+
+		assertEquals(MinecraftVersion.parse(release), new VelocityPlatformProvider().platformVersion(proxy));
+	}
+
+	@Test
+	void leavesAJarWithoutReleaseUnversionedAndRejectsUnreadableVersions() {
+		VelocityPlatformProvider provider = new VelocityPlatformProvider();
+		MinecraftProxy local = proxy(Path.of("velocity.jar"), "server");
+
+		assertNull(provider.platformVersion(local));
+		assertThrows(PlatformException.class, () -> provider.platformVersion(local.toBuilder()
+				.distribution(Distribution.remote("latest-velocity", "1")).build()));
+		assertNotNull(provider.versionData(), "velocity-versions.toml is packaged with the provider");
+	}
+
 	private MinecraftProxy proxy(Path jar, String server) {
 		return MinecraftProxy.builder()
 				.name("proxy")
@@ -97,7 +129,7 @@ class VelocityPlatformProviderTest {
 				.workDirectory(work)
 				.bindAddress("127.0.0.1")
 				.port(25565)
-				.processAddresses(Map.of("proxy", new java.net.InetSocketAddress("127.0.0.1", 25565), "server", new java.net.InetSocketAddress("127.0.0.1", 25566)))
+				.processAddresses(Map.of("proxy", new InetSocketAddress("127.0.0.1", 25565), "server", new InetSocketAddress("127.0.0.1", 25566)))
 				.eulaAccepted(true)
 				.artifactSource(artifactSource())
 				.forwarding(ForwardingConfiguration.builder().mode(ForwardingMode.MODERN).secret("test-secret").build())

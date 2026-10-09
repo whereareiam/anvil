@@ -24,7 +24,7 @@ class AccountTaskTest {
     }
 
     @Test
-    fun `signs out through the provider in the configured account directory`() {
+    fun `signs out through the sole library in the configured account directory`() {
         project()
 
         val result = runner("anvilAccount", "--logout=ci-player").build()

@@ -16,6 +16,6 @@ final class AuthenticatedProfile {
 	}
 
 	static void apply(AsyncPlayerPreLoginEvent event) {
-		event.setPlayerProfile(Bukkit.createProfileExact(AUTHENTICATED_UUID, event.getName()));
+		event.setPlayerProfile(Bukkit.createProfile(AUTHENTICATED_UUID, event.getName()));
 	}
 }

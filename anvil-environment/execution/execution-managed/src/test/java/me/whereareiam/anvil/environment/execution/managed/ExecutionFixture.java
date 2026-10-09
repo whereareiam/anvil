@@ -83,7 +83,7 @@ final class ExecutionFixture {
 
 	ProcessSpec spec(String name, boolean proxy, String... dependencies) {
 		return ProcessSpec.builder().request(ProcessRequest.builder().name(name).workspace(directory.resolve(name))
-				.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().build()).build()).minimumJavaVersion(21).build())
+				.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().featureVersion(21).build()).build()).build())
 				.proxy(proxy).dependencies(Set.of(dependencies)).readinessPattern(Pattern.compile("READY"))
 				.stopCommand("stop").memoryMegabytes(256).build();
 	}

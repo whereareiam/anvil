@@ -48,8 +48,8 @@ fails, already-installed attachments receive an unsuccessful outcome.
 
 ## Install the extension
 
-Use the [embedding classpath](../../integrations/embedding/index.md), including the platform and
-protocol providers your scenario needs. This fragment assumes supplied `EngineOptions options`
+Use the [embedding classpath](../../integrations/embedding/index.md), including the platform
+providers and protocol libraries your scenario needs. This fragment assumes supplied `EngineOptions options`
 and `AnvilScenario scenario`:
 
 ```java

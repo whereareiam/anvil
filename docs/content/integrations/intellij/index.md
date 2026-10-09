@@ -7,7 +7,7 @@ The Anvil plugin lists your project's scenario definitions in an **Anvil** tool 
 complete environment or a single server or proxy, then follow it in a session tab: live process
 state, per-process console output and commands, and the players the scenario connects.
 
-Your project supplies the scenario definitions, platforms, protocol provider, artifacts, and runtime
+Your project supplies the scenario definitions, platforms, protocol library, artifacts, and runtime
 settings. The plugin supports Gradle projects that apply the standard Anvil Gradle plugin; Maven and
 other build tools are not supported.
 

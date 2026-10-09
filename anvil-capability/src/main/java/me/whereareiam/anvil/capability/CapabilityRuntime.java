@@ -6,6 +6,7 @@ import me.whereareiam.anvil.capability.api.CapabilityProvider;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -62,10 +63,35 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 			@NotNull String ownerDescription,
 			@NotNull Function<CapabilityContext<C>, X> contextFactory
 	) {
+		return compose(ownerDescription, Map.of(), contextFactory);
+	}
+
+	/**
+	 * Creates a capability set without the providers this owner cannot support. A provider listed in
+	 * {@code unavailable}, and every provider requiring a capability skipped this way, is not created;
+	 * the set reports the recorded reason when its capability is requested.
+	 *
+	 * @param ownerDescription owner identity used in failure diagnostics
+	 * @param unavailable reasons keyed by the provider IDs to skip
+	 * @param contextFactory supplies the owner's services around each restricted context
+	 * @return composed capabilities, skipped capabilities with their reasons, and the cleanup lifetime
+	 */
+	public @NotNull CapabilitySet<C> compose(
+			@NotNull String ownerDescription,
+			@NotNull Map<String, String> unavailable,
+			@NotNull Function<CapabilityContext<C>, X> contextFactory
+	) {
 		CapabilitySet<C> capabilities = new CapabilitySet<>(ownerDescription);
 		try {
-			for (CapabilityProvider<? extends C, X> provider : providers)
+			for (CapabilityProvider<? extends C, X> provider : providers) {
+				String reason = unavailableReason(provider, unavailable, capabilities);
+				if (reason != null) {
+					capabilities.unavailable(provider.capability(), reason);
+					continue;
+				}
+
 				create(provider, capabilities, ownerDescription, contextFactory);
+			}
 		} catch (RuntimeException | Error failure) {
 			try {
 				capabilities.close();
@@ -77,6 +103,23 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 		}
 
 		return capabilities;
+	}
+
+	private @Nullable String unavailableReason(
+			CapabilityProvider<? extends C, X> provider,
+			Map<String, String> unavailable,
+			CapabilitySet<C> capabilities
+	) {
+		CapabilityDescriptor descriptor = provider.descriptor();
+		String reason = unavailable.get(descriptor.getId());
+		if (reason != null) return reason;
+
+		for (Class<? extends Capability> dependency : descriptor.getRequiredCapabilities()) {
+			String missing = capabilities.unavailable().get(dependency);
+			if (missing != null) return "requires " + dependency.getName() + ", which is unavailable: " + missing;
+		}
+
+		return null;
 	}
 
 	private <T extends C> void create(

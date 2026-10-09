@@ -1,7 +1,5 @@
 plugins {
-	alias(libs.plugins.toolkit.architecture)
-	alias(libs.plugins.toolkit.publish.maven)
-	id("unit")
+	id("api")
 }
 
 description = "Agent-backed process and player capability provider contracts"

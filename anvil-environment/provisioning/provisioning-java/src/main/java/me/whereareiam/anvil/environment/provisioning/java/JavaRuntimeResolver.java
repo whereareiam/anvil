@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.environment.provisioning.java;
 
+import me.whereareiam.anvil.api.exception.JavaVersionMismatchException;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.model.java.JavaArchive;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
@@ -28,7 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Resolves one process Java requirement to a verified executable.
+ * Resolves one process Java requirement to a verified executable of exactly its feature version.
  * Local homes, user archives, current installations, and catalog packages are separate sources;
  * this class coordinates their order and owns the resulting cache identity.
  */
@@ -77,33 +78,29 @@ public final class JavaRuntimeResolver implements JavaProvisioner {
 	}
 
 	@Override
-	public void validate(@NotNull JavaInstallation installation, @NotNull JavaRequirement requirement, int minimumVersion) {
-		inspector.validate(installation, requirement, minimumVersion);
+	public void validate(@NotNull JavaInstallation installation, @NotNull JavaRequirement requirement) {
+		inspector.validate(installation, requirement);
 	}
 
 	@Override
-	public @NotNull Path resolve(@NotNull JavaRequirement selection, int minimumVersion) {
-		return resolve(selection, minimumVersion, null);
-	}
-
-	@Override
-	public @NotNull Path resolve(@NotNull JavaRequirement selection, int minimumVersion, @Nullable JavaSource source) {
+	public @NotNull Path resolve(@NotNull JavaRequirement selection, @Nullable JavaSource source) {
+		int version = inspector.featureVersion(selection);
 		if (source instanceof LocalJavaHome home)
-			return inspector.require(JavaExecutables.atHome(home.getHome()), selection, minimumVersion).getExecutable();
+			return requireSource(JavaExecutables.atHome(home.getHome()), selection, version);
 
 		if (source instanceof LocalJavaExecutable executable)
-			return inspector.require(executable.getExecutable(), selection, minimumVersion).getExecutable();
+			return requireSource(executable.getExecutable(), selection, version);
 
-		if (source instanceof JavaArchive archive) return archive(archive, selection, minimumVersion);
+		if (source instanceof JavaArchive archive) return archive(archive, selection, version);
 
 		Path current = JavaExecutables.current();
-		if (inspector.matches(current, selection, minimumVersion)) return current;
+		if (inspector.matches(current, selection)) return current;
 
-		int version = selection.getFeatureVersion() == null ? minimumVersion : selection.getFeatureVersion();
-		String environment = System.getenv("JAVA_" + version + "_HOME");
+		String variable = "JAVA_" + version + "_HOME";
+		String environment = System.getenv(variable);
 		if (environment != null) {
 			Path executable = JavaExecutables.atHome(Path.of(environment));
-			if (inspector.matches(executable, selection, minimumVersion)) return executable;
+			if (inspector.matches(executable, selection)) return executable;
 		}
 
 		String distribution = selection.getDistribution() == null ? "temurin" : selection.getDistribution();
@@ -118,10 +115,15 @@ public final class JavaRuntimeResolver implements JavaProvisioner {
 			Path marker = installation.resolve("executable");
 			if (!refresh && Files.isRegularFile(marker)) {
 				Path executable = installation.resolve(Files.readString(marker));
-				if (Files.isExecutable(executable)) return inspector.require(executable, selection, minimumVersion).getExecutable();
+				if (Files.isExecutable(executable)) return inspector.require(executable, selection).getExecutable();
 			}
 
-			if (!download) throw new ProvisioningException("No matching Java installation is available: " + selection);
+			if (!download)
+				throw new ProvisioningException("No Java " + version + " installation matches " + selection
+						+ ": the current JVM is Java " + Runtime.version().feature() + " (" + current + "), "
+						+ (environment == null ? variable + " is not set" : variable + " points to " + environment
+						+ ", which does not match") + ", and nothing is cached at " + installation + ". Set " + variable
+						+ " or enable downloads with anvil.java.download=true.");
 
 			FoojayJavaCatalog.Package selected = catalog.select(distribution, version, selection.getRelease(), os, architecture);
 			Path archive = packages.archive(JavaArchive.builder().uri(selected.uri()).sha256(selected.sha256()).build(),
@@ -130,7 +132,7 @@ public final class JavaRuntimeResolver implements JavaProvisioner {
 			if (!Files.isDirectory(contents)) new JavaArchiveInstaller().install(archive, contents);
 
 			Path executable = findJava(contents);
-			inspector.require(executable, selection, minimumVersion);
+			inspector.require(executable, selection);
 			Files.createDirectories(installation);
 			Files.writeString(marker, installation.relativize(executable).toString());
 			Files.writeString(installation.resolve("release.properties"),
@@ -142,12 +144,25 @@ public final class JavaRuntimeResolver implements JavaProvisioner {
 		}
 	}
 
-	private Path archive(JavaArchive source, JavaRequirement selection, int minimumVersion) {
+	/**
+	 * Requires an explicitly declared local Java. Anvil uses nothing else while the source is declared, so a
+	 * mismatch names the fix in the declaration rather than the variables of the automatic lookup.
+	 */
+	private Path requireSource(Path executable, JavaRequirement selection, int version) {
+		try {
+			return inspector.require(executable, selection).getExecutable();
+		} catch (JavaVersionMismatchException mismatch) {
+			throw new ProvisioningException(mismatch.getMessage() + "; point the Java source at Java " + version
+					+ ", or remove it so Anvil uses JAVA_" + version + "_HOME, the cache or a download", mismatch);
+		}
+	}
+
+	private Path archive(JavaArchive source, JavaRequirement selection, int version) {
 		Path destination = root.resolve("java-sources").resolve(source.getSha256()).resolve("jdk");
 		try (JavaInstallationAccess ignored = storage.acquire(destination)) {
 			Path executable = Files.isDirectory(destination) ? findJava(destination) : null;
 			if (executable != null && Files.isExecutable(executable))
-				return inspector.require(executable, selection, minimumVersion).getExecutable();
+				return requireArchive(executable, selection, source, version);
 
 			if (!download)
 				throw new ProvisioningException("Java archive is not cached and downloads are disabled: " + source.getUri());
@@ -155,9 +170,19 @@ public final class JavaRuntimeResolver implements JavaProvisioner {
 			Path archive = packages.archive(source, archivePath(source));
 			new JavaArchiveInstaller().install(archive, destination);
 
-			return inspector.require(findJava(destination), selection, minimumVersion).getExecutable();
+			return requireArchive(findJava(destination), selection, source, version);
 		} catch (IOException failure) {
 			throw new ProvisioningException("Could not prepare Java archive " + source.getUri(), failure);
+		}
+	}
+
+	private Path requireArchive(Path executable, JavaRequirement selection, JavaArchive source, int version) {
+		try {
+			return inspector.require(executable, selection).getExecutable();
+		} catch (JavaVersionMismatchException mismatch) {
+			throw new ProvisioningException(mismatch.getMessage() + "; point the Java archive source " + source.getUri()
+					+ " at a Java " + version + " package, or remove it so Anvil uses JAVA_" + version
+					+ "_HOME, the cache or a download", mismatch);
 		}
 	}
 

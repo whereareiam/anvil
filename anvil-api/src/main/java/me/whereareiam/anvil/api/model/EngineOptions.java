@@ -7,6 +7,8 @@ import me.whereareiam.anvil.api.model.process.lifecycle.ProcessScheduling;
 import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
+import me.whereareiam.anvil.api.type.SupportLevel;
+import me.whereareiam.anvil.api.type.SupportPolicy;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,9 +31,27 @@ public class EngineOptions {
 	String executionProviderId = "local";
 
 	/**
-	 * Selected protocol-provider identifier, or null to select the sole installed provider.
+	 * Default protocol library for simulated players, overridden by a scenario or player declaration.
+	 * When no declaration names a library, each player uses the installed library with the strongest
+	 * support for its Minecraft version.
 	 */
-	@Nullable String protocolId;
+	@Nullable String protocolLibrary;
+
+	/**
+	 * Additional release data per protocol-library identifier, in the format owned by that library.
+	 * Releases read from these files are {@link SupportLevel#UNTESTED}, for example a Minecraft
+	 * version released after this Anvil version.
+	 */
+	@NotNull
+	@Singular
+	Map<String, Path> protocolReleases;
+
+	/**
+	 * Default support policy for player and process versions, overridden by a scenario declaration.
+	 */
+	@NotNull
+	@Builder.Default
+	SupportPolicy supportPolicy = SupportPolicy.LENIENT;
 
 	/**
 	 * Default Java selection; requirements and installation source inherit independently.

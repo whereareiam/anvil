@@ -12,7 +12,7 @@ individual implementation classes.
 | Artifact | Consumer installation |
 |---|---|
 | Capability API and host implementation | `anvilImplementation` dependency, usually through a wiring artifact |
-| Protocol backend | `anvilRuntimeOnly` dependency |
+| Protocol library | `anvilRuntimeOnly` dependency |
 | Platform provider and required agent assembly | `anvilRuntimeOnly` dependency or platform unit wiring |
 | External agent handler | Workspace asset under `plugins/anvil-agent-extensions` |
 
@@ -31,9 +31,9 @@ qualified implementation class names, one per line.
 | Agent-backed player capability provider | `me.whereareiam.anvil.capability.agent.api.player.AgentPlayerCapabilityProvider` |
 | Agent-backed process capability provider | `me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider` |
 | Native worker extension | `me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerExtension` |
-| Protocol provider | `me.whereareiam.anvil.protocol.api.provider.ProtocolProvider` |
+| Protocol library | `me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider` |
 | Platform provider | `me.whereareiam.anvil.platform.api.PlatformProvider` |
-| Agent channelOperation provider | `me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider` |
+| Agent operation provider | `me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider` |
 
 Merge service files when shading several implementations into one artifact. Inspect the resulting
 JAR, not only the source resource. Keep public API identities shared: agent extension JARs must use
@@ -51,7 +51,7 @@ Use each scoped API at the same Anvil version as the host:
 | Host agent clients, connections, and directories | `agent-client-api` |
 | Embedded native handlers and platform agents | `agent-server-api` |
 | Shared agent request/response descriptors and payloads | `agent-api` |
-| Protocol providers | `protocol-api` |
+| Protocol libraries | `protocol-api` |
 | Global engine extensions and public scenario, player, process, and capability contracts | `api` |
 
 Both mechanism APIs, `capability-protocol-api` and `capability-agent-api`, include `capability-api`.
@@ -64,23 +64,24 @@ The `protocol-adapter-api` compatibility coordinate supplies a POM-only dependen
 for new integrations; the compatibility bundle does not restore old interfaces or adapt compiled
 extension binaries. Anvil's BOM includes this coordinate alongside the canonical scoped artifacts.
 
-Update imports, service filenames, and typed channelOperation descriptors together, then recompile and run
+Update imports, service filenames, and typed operation descriptors together, then recompile and run
 the packaged checks below. Artifact-coordinate compatibility does not make an extension compiled
 against different SPI signatures binary-compatible.
 
 ## Verify three boundaries
 
-1. **Contract behavior:** verify dependency declarations, supported protocol IDs, input handling, and
+1. **Contract behavior:** verify dependency declarations, supported library IDs, input handling, and
    meaningful observations using focused tests in the owning artifact.
 2. **Packaged discovery:** load the produced JAR through the same service/class-loader boundary as a
    consumer. Test missing services and ambiguous providers with useful diagnostics.
 3. **Runtime behavior:** run the consumer journey against the supported platform and protocol
-   combinations. Check cleanup after startup failures, channelOperation errors, and player destruction.
+   combinations. Check cleanup after startup failures, operation errors, and player destruction.
 
-For packet adapters, exercise exact worker contracts at each supported catalog version. For agent
+For packet adapters, exercise exact worker contracts on each supported library release, so every
+segment runs on the releases it serves. For agent
 handlers, test dispatch inside a real platform agent. For forwarding, assert the server-observed
 player identity after direct and proxy connections.
 
 Anvil's `test-extension` artifact and its runtime/live tests provide a repository example
-of the packaging boundary. Its synthetic backend is suitable for discovery assertions; it does not
+of the packaging boundary. Its synthetic protocol library is suitable for discovery assertions; it does not
 establish Minecraft compatibility. Repository commands are in [Testing Anvil](../../contributing/testing/index.md).

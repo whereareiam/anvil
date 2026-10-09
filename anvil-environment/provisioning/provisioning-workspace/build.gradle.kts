@@ -1,6 +1,5 @@
 plugins {
-	alias(libs.plugins.toolkit.architecture)
-	id("unit")
+	id("jvm")
 }
 
 description = "Workspace preparation, persistence, snapshots, and cleanup for Anvil"

@@ -10,7 +10,7 @@ This fragment assumes an Anvil entry-point plugin has already been applied:
 anvil {
 	acceptEula()
 	engine {
-		protocol("mcprotocol")
+		protocolLibrary("mcprotocol")
 		workDirectory.set(layout.buildDirectory.dir("anvil"))
 		parallelism.set(2)
 		startupMemoryMegabytes.set(4096)
@@ -29,21 +29,24 @@ running processes or a JVM heap setting.
 | Member | Meaning | Default |
 |---|---|---|
 | `acceptEula()` | Record explicit acceptance for managed servers | Not accepted |
-| `engine.protocol(id)` / `engine.protocolId` | Optional fallback protocol provider | Sole installed provider |
+| `engine.protocolLibrary(id)` | Default protocol library for players; a scenario or player may choose another | The installed library with the strongest support for each player's version |
+| `engine.supportPolicy(policy)` | `lenient` runs `UNTESTED` versions with a warning; `strict` refuses them | `lenient` |
+| `engine.protocolReleases(library, file)` | Additional release data for one protocol library, in that library's format | No additional releases |
 | `engine.workDirectory` | Root for generated process workspaces | `build/anvil` |
 | `engine.cacheDirectory` | Shared artifact, Java, and workspace-cache root | `~/.anvil` |
 | `engine.accountsDirectory` | Local authenticated account files used by simulated players | `~/.anvil/accounts` |
 | `engine.parallelism` | Concurrent independent preparation/start operations | Engine detects from CPU count |
 | `engine.startupMemoryMegabytes` | Combined declared heaps permitted to start together | Engine detects from host memory |
 | `engine.downloadParallelism` | Concurrent artifact transfers | Engine detects from CPU count |
-| `protocols.mcprotocol` | Version-aligned MCProtocol provider coordinate | Uses the plugin's framework version |
+| `module(artifact)` | Coordinate of one Anvil module at the plugin's version, such as `module("protocol-mcprotocol")` | Not applicable |
 
 JUnit, foreground runs, and IDE preparation use the same lazy mapping of these settings. Task
 realization does not freeze DSL values before the build script finishes configuring them.
 Supported engine JVM properties, such as `-Danvil.offline=true`, `-Danvil.stopTimeout=PT9S`, and
 `-Danvil.console.colors=false`, are forwarded to each workflow. The DSL's EULA and directory
-conventions take precedence over those JVM properties; configured protocol and concurrency values
-also take precedence. Unrelated JVM properties are not forwarded.
+conventions take precedence over those JVM properties; a configured protocol library, support
+policy, and concurrency values also take precedence. An `-Danvil.protocolReleases.<library>=<file>`
+property replaces the DSL file for that library. Unrelated JVM properties are not forwarded.
 
 Additional JUnit test JVM properties belong in `tasks.named<Test>("anvilTest")`; see
 [Engine options](../../../building-blocks/environments/configuration/engine/index.md) for that distinction.

@@ -11,14 +11,18 @@ import me.whereareiam.anvil.platform.api.type.ForwardingMode;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import java.util.regex.Pattern;
 
 /**
  * Supplies Spigot provisioning, configuration, and launch requirements.
+ * Java rows, the agent's minimum Java, verified versions and known versions live in
+ * {@code spigot-versions.toml}.
  */
 public final class SpigotPlatformProvider implements PlatformProvider {
 	private static final Pattern READY = Pattern.compile("Done \\([^)]+\\)! For help");
+	private static final URL VERSION_DATA = SpigotPlatformProvider.class.getResource("spigot-versions.toml");
 	private final SpigotDistributionResolver distributions = new SpigotDistributionResolver();
 	private final SpigotConfiguration configuration = new SpigotConfiguration();
 
@@ -58,12 +62,8 @@ public final class SpigotPlatformProvider implements PlatformProvider {
 	}
 
 	@Override
-	public int minimumJavaVersion(@NotNull MinecraftProcess process) {
-		MinecraftServer server = (MinecraftServer) process;
-		String version = server.getDistribution().isLocal()
-				? server.getMinecraftVersion() : server.getDistribution().getVersion();
-
-		return version != null && version.startsWith("26.") ? 25 : 21;
+	public @NotNull URL versionData() {
+		return VERSION_DATA;
 	}
 
 	@Override

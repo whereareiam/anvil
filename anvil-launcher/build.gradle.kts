@@ -1,4 +1,3 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import java.io.Serializable
 
 class ProtocolAdapterDependencies(
@@ -17,35 +16,18 @@ class ProtocolAdapterDependencies(
     }
 }
 
-// TODO
-
 plugins {
-    alias(libs.plugins.toolkit.architecture)
-    alias(libs.plugins.toolkit.publish.maven)
-    id("unit")
-	id("fixtures")
+    id("assembly")
     id("bundle")
-}
-
-architecture {
-    kind = assembly
+    id("fixtures")
 }
 
 description = "Anvil's executable scenario launcher distribution"
 
-tasks.named<ShadowJar>("shadowJar") {
-    archiveClassifier.set("")
-}
-
-tasks.named<Jar>("jar") {
-    archiveClassifier.set("plain")
-}
-
-listOf("apiElements", "runtimeElements").forEach { name ->
-    configurations.named(name) {
-        outgoing.artifacts.clear()
-        outgoing.artifact(tasks.named("shadowJar"))
-    }
+// Consumers also compile against the shaded JAR, which carries the embedded implementations' API types.
+configurations.named("apiElements") {
+    outgoing.artifacts.clear()
+    outgoing.artifact(tasks.named("shadowJar"))
 }
 
 dependencies {
@@ -74,8 +56,6 @@ dependencies {
     compileOnly(projects.anvilEnvironment.provisioning.provisioningArtifact)
     compileOnly(projects.anvilEnvironment.provisioning.provisioningJava)
 
-    compileOnly(libs.mcprotocol)
-
     embedded(projects.anvilAgent.agentClient) { isTransitive = false }
     embedded(projects.anvilCapability) { isTransitive = false }
     embedded(projects.anvilEngine) { isTransitive = false }
@@ -91,6 +71,7 @@ dependencies {
     embedded(libs.commons.compress)
     embedded(libs.jackson.databind)
     embedded(libs.jackson.parameters)
+    embedded(libs.jackson.toml)
     embedded(libs.slf4j.api)
     embedded(libs.slf4j.simple)
 
@@ -122,10 +103,6 @@ toolkitPublish {
     pom {
         name.set("Anvil Launcher")
     }
-}
-
-tasks.named("build") {
-    dependsOn("shadowJar")
 }
 
 configurations.testRuntimeOnly {

@@ -14,6 +14,7 @@ import me.whereareiam.anvil.platform.api.type.ForwardingMode;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -128,8 +129,8 @@ class ForwardingNegotiatorTest {
 		}
 
 		@Override
-		public int minimumJavaVersion(@NotNull MinecraftProcess process) {
-			return 21;
+		public @NotNull URL versionData() {
+			throw new AssertionError("Negotiation must not plan Java");
 		}
 	}
 }

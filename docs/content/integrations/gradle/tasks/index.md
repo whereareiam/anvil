@@ -62,11 +62,12 @@ existing source set. See [IDE project tooling](../tooling/index.md) for declarat
 
 | Option | Meaning |
 |---|---|
-| `--login=<id>` | Sign in through the selected protocol provider and store the account |
+| `--login=<id>` | Sign in through the selected protocol library and store the account |
 | `--logout=<id>` | Remove the stored account |
 
-Use exactly one option. The task runs the provider's interactive sign-in in a separate JVM, using the
-same protocol selection and account directory as scenario runs. It prints the provider's prompts;
+Use exactly one option. The task runs the library's interactive sign-in in a separate JVM, using the
+engine's `protocolLibrary` and account directory; without a configured library, it uses the sole
+installed library that offers authentication. It prints the library's prompts;
 tokens stay in the account file and never become task inputs or arguments. The task is untracked and
 always runs. See [Authentication](../../../building-blocks/players/authentication/index.md) before
 using online players.

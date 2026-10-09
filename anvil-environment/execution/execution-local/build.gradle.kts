@@ -1,6 +1,5 @@
 plugins {
-	alias(libs.plugins.toolkit.architecture)
-	id("unit")
+	id("jvm")
 }
 
 dependencies {

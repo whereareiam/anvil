@@ -16,18 +16,19 @@ a family's API describes its services and extension points. The launcher binds t
 | Other `anvil-environment/execution` modules     | Execution-provider contracts, local processes, and Docker execution                                                 |
 | `anvil-platform/platform-planning`              | Distribution validation, effective Java/topology requirements, forwarding, and provider preparation/configuration                             |
 | Other `anvil-platform` modules                  | Platform-provider contracts, implementations, and platform-agent assemblies                                         |
-| `anvil-protocol/src`                           | Player registration, version selection, authentication compatibility, and observations                              |
-| Other `anvil-protocol` modules                  | Backend-provider contracts, the MCProtocol implementation, workers, and authentication storage                      |
+| `anvil-protocol/src`                            | Player registration, per-player library and release selection, authentication compatibility, and observations     |
+| `anvil-protocol/protocol-api`                   | Protocol library contracts, releases, players, protocol-owned channels and native worker contracts                 |
+| `anvil-protocol/protocol-mcprotocol`            | The MCProtocolLib library: release data, client port, client segments, worker host and shell, and account storage |
 | `anvil-capability/src`                          | Dependency validation, agent-provider adaptation, logical process owners, player facades, and capability cleanup                                |
 | `anvil-capability/capability-api`                | Generic composition, neutral player contracts, descriptors, exceptions, and typed requests |
 | `anvil-capability/capability-protocol-api`         | Protocol-backed player providers/contexts, channels/events, and native worker bindings |
 | `anvil-capability/capability-agent-api`          | Agent-backed process/player providers and scoped request-channel contexts |
-| `anvil-capability/capability-builtin/player`     | Player feature APIs, native implementations, and provider/worker wiring                                             |
-| `anvil-capability/capability-builtin/agent`      | Process feature APIs and agent-backed host wiring, including Console                                                     |
+| `anvil-capability/capability-builtin/player`     | Player capability families: feature APIs, library-neutral providers and bindings, and library sides with segments    |
+| `anvil-capability/capability-builtin/process`    | Process capability families with agent-backed host wiring, including Console                                        |
 | `anvil-agent/agent-api`                          | Shared operation descriptors, payloads, identities, and exceptions                                                   |
 | `anvil-agent/agent-client/client-api`            | Host clients, connections, directories, and artifact lookup                               |
 | `anvil-agent/agent-client`                       | Connections, stable process clients and sessions, directories, and observations in the Anvil JVM                    |
-| `anvil-agent/agent-server/server-api`            | Native services, operation handlers, and embedded endpoint contracts                                                 |
+| `anvil-agent/agent-server/agent-server-api`      | Native services, operation handlers, and embedded endpoint contracts                                                 |
 | `anvil-agent/agent-server`                       | Embedded native operation dispatch, transport endpoint, and external-handler loading                                |
 | `anvil-launcher`                                | Global engine builder, default scenario factory, scoped-service bindings, and shaded assembly                      |
 | `anvil-integration/integration-junit`                        | JUnit lifecycle, context injection, and outcome propagation                                                   |
@@ -43,6 +44,7 @@ a family's API describes its services and extension points. The launcher binds t
 | `anvil-testkit/fixtures`                        | Independent consumer build producing real fixture JARs                                                              |
 | `anvil-testkit/support`                         | Shared host-side artifact access and extension classloader lifetime                                                 |
 | `build-logic`                                   | Java, testing, assembly, and publication conventions                                                                |
+| `build-logic/settings`                          | Lean settings conventions: library registry, library repositories and library layout checks                         |
 
 The IntelliJ integration implements lifecycle, preparation, account storage, and command history in
 `intellij-engine`. `intellij-ui` owns catalog presentation, environment views, consoles, dialogs, navigation,
@@ -186,9 +188,21 @@ Capability ownership and transport are separate. `Capability` and `CapabilityOwn
 identity/lookup contracts. `PlayerCapability` and `ProcessCapability` constrain the types accepted
 by players and running processes. Their APIs do not require an agent transport.
 
-`capability-builtin/player` contains player features. `capability-builtin/agent` contains process
-features with agent-backed wiring, including Console; that directory describes the implementation
-source, not a separate public owner. Public feature packages and artifact IDs remain feature-specific.
+`capability-builtin/player` contains player features. `capability-builtin/process` contains process
+features with agent-backed wiring, including Console; that directory groups families by capability owner
+and is not a separate public owner. Public feature packages and artifact IDs remain feature-specific.
+
+Each built-in capability is a family folder: `<feature>-api` holds the public API (and, for packet
+capabilities, the library-neutral port in its `packet` package), `<feature>-common` holds the host provider
+and worker binding in the feature packages, and `<feature>-<library>` adapts the feature to one protocol
+library through `V*` segments. The family root applies the `capability` convention and only wires these
+members into the `builtin-<feature>` bundle. The convention publishes the members as `builtin-<member>`,
+such as `builtin-movement-api`, and refuses a child that is not a member, a `common` or `util` package, and
+code in the root of a family with common code or library sides.
+
+A process family such as console has no common code or library sides: its root holds the agent-backed
+provider. That provider binds the family API to agent operations, and only an assembly may depend on both
+the capability and the agent APIs, so the root is its owner.
 
 Capability providers share `CapabilityProvider`, `CapabilityContext`, and `CapabilityDescriptor`
 from `capability-api`. Its `RequestChannel` performs typed calls described by `ChannelOperation`, and `OperationRegistry`
@@ -224,6 +238,32 @@ The agent role APIs depend on their explicitly shared ancestor `agent-api`, but 
 one another. Neither role nor the shared agent API depends on `anvil-api`; libraries can consume
 agent transport and handler contracts independently of engine and capability contracts. The host
 implementation uses global player observations where needed without exposing them through client APIs.
+
+## Locate a protocol library
+
+A protocol library is a family under `anvil-protocol/protocol-<library>`, and its folder holds the
+library's release data, `<library>-releases.toml`. The settings plugin `library-registry` registers
+every such library. MCProtocolLib's family is laid out like this:
+
+| Module | Owns |
+|---|---|
+| `protocol-mcprotocol` | Wiring-only root: shades `mcprotocol-common`, publishes `protocol-mcprotocol`, and owns `mcprotocol-releases.toml` and its `pinLibraryReleases` task |
+| `mcprotocol-api` | The release-neutral client port `McProtocolClient<S>` that client segments implement |
+| `mcprotocol-common` | `McProtocolLibraryProvider`, the release catalog, worker host and segment selection, the worker shell, and the private account store |
+| `mcprotocol-client` | Source-free side folder whose `V*` children are the client segments |
+| `mcprotocol-client/V1_18_2` and `V1_21_11` | One client segment per range of releases; `V1_21_11` also serves `26.1.2` |
+
+The worker shell never imports MCProtocolLib. Every class that does lives in a segment: a project named
+after the release key it starts at, under a side folder named after its owner and library, such as
+`mcprotocol-client` or `movement-mcprotocol`. A segment holds only the adapters of library-neutral ports
+and their service descriptors; it never wires anything. Its package ends in the folder name in lower
+case, such as `.v1_18_2`. For a release, the worker keeps the segment of each side with the greatest
+start version that does not exceed the release key. A new segment is added only when a release breaks
+the code of the previous one, which `checkSegmentLinkage` reports; see
+[Adding a Minecraft version](../../minecraft-versions/index.md).
+
+Capability families repeat the pattern: `<feature>-api` declares the port in its `packet` package, and
+`<feature>-mcprotocol` holds the wiring extension and the `V*` segments that implement it.
 
 ## Preserve dependency direction
 
@@ -313,6 +353,12 @@ which storage implementation the resolver uses.
 Use feature-oriented packages. Keep contracts at the feature root, reusable public values under
 `model`, and enums or closed value types under `type`. Physical directories match package names.
 Small implementation-local carriers can be inner records; public models use separate top-level files.
+A package needs at least two files unless it is one of the fixed role packages `model`, `type`,
+`exception`, and `packet`. Every packet capability keeps its release port in `packet`, even when the
+port is the package's only file, so the port has the same place in every family. A segment's version
+package, such as `v1_18_2`, and a library side's wiring package, such as `movement.mcprotocol`, hold one
+class by design and are exempt as well. Avoid catch-all
+`util` or `common` packages; common code lives in the feature packages.
 
 Within workspace provisioning, `directory` owns confined file access and layout, `preparation` owns
 plan validation and prepared sessions, and `snapshot` owns snapshot identity and storage. The root

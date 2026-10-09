@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BungeeCordPlatformProviderTest {
@@ -76,6 +78,16 @@ class BungeeCordPlatformProviderTest {
 		assertEquals("Anvil: " + proxy.getName(), config.at("/listeners/0/motd").asText());
 		assertEquals("retained", config.path("custom").asText());
 		provider.configure(proxy, context);
+	}
+
+	@Test
+	void leavesBuildsUnversionedAndPackagesItsVersionData() {
+		BungeeCordPlatformProvider provider = new BungeeCordPlatformProvider();
+		MinecraftProxy proxy = MinecraftProxy.builder().name("proxy").platform(Platforms.BUNGEECORD)
+				.distribution(Distribution.remote("BungeeCord", "2085")).server("server").defaultServer("server").build();
+
+		assertNull(provider.platformVersion(proxy), "BungeeCord builds carry no release version");
+		assertNotNull(provider.versionData(), "bungeecord-versions.toml is packaged with the provider");
 	}
 
 	private PlatformArtifactSource artifactSource() {

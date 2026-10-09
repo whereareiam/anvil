@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -152,8 +153,8 @@ class ProcessDeclarationValidatorTest {
 		}
 
 		@Override
-		public int minimumJavaVersion(@NonNull MinecraftProcess process) {
-			return 21;
+		public @NotNull URL versionData() {
+			throw new AssertionError("Declaration validation must not plan Java");
 		}
 	}
 }

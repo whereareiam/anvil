@@ -11,14 +11,19 @@ import me.whereareiam.anvil.capability.protocol.api.model.ViewRotation;
 import me.whereareiam.anvil.capability.binding.JsonCapabilityCodec;
 import me.whereareiam.anvil.capability.binding.WorkerCapabilities;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolSubscription;
+import me.whereareiam.anvil.protocol.api.exception.NativeAdapterUnavailableException;
 import me.whereareiam.anvil.protocol.api.worker.NativePlayer;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,12 +38,12 @@ class CapabilityWorkerExtensionTest {
 			}
 
 			@Override
-			public @NotNull String backendId() {
-				return "external";
+			public @NotNull Optional<String> libraryId() {
+				return Optional.of("external");
 			}
 
 			@Override
-			public @NotNull Class<String> backendType() {
+			public @NotNull Class<String> nativeSessionType() {
 				return String.class;
 			}
 
@@ -51,16 +56,16 @@ class CapabilityWorkerExtensionTest {
 					player.emit(new EventDescriptor<>("external.changed", Message.class), result);
 					return result;
 				});
-				var subscription = player.bindBackend(nativeSession -> {
-					assertSame(player.backend(), nativeSession);
-					assertTrue(player.isCurrentBackend(nativeSession));
+				var subscription = player.bindNativeSession(nativeSession -> {
+					assertSame(player.nativeSession(), nativeSession);
+					assertTrue(player.isCurrentNativeSession(nativeSession));
 					return player::disconnect;
 				});
 				return subscription::close;
 			}
 		};
-		CapabilityWorkerExtension<String> bridge = new CapabilityWorkerExtension<>(
-				new WorkerCapabilities<>("external", String.class, 1, List.of(extension)));
+		CapabilityWorkerExtension bridge = new CapabilityWorkerExtension(
+				new WorkerCapabilities("external", String.class, List.of(extension)));
 		StubNativePlayer alice = new StubNativePlayer("Alice");
 		StubNativePlayer bob = new StubNativePlayer("Bob");
 		Map<String, Function<byte[], byte[]>> first = new HashMap<>();
@@ -80,12 +85,63 @@ class CapabilityWorkerExtensionTest {
 		assertEquals(1, bob.disconnections);
 	}
 
+	@Test
+	void passesTheWorkersAdaptersToBindingsAndReportsAnUnavailableAdapterAsAnUnavailableCapability() {
+		List<Runnable> received = new ArrayList<>();
+		CapabilityWorkerExtension bridge = new CapabilityWorkerExtension(new WorkerCapabilities("external", String.class, List.of(
+				extension("external.adapted", (player, operations) -> {
+					received.add(player.adapter(Runnable.class));
+					return () -> { };
+				}),
+				extension("external.missing", (player, operations) -> {
+					player.adapter(Comparable.class);
+					return () -> { };
+				})
+		)));
+		StubNativePlayer alice = new StubNativePlayer("Alice");
+
+		try (var ignored = bridge.bind(alice, (operation, handler) -> { })) {
+			assertEquals(List.of(StubNativePlayer.ADAPTER), received);
+			assertEquals(Set.of("external.adapted"), bridge.capabilities());
+			assertEquals(Map.of("external.missing", "no external segment provides java.lang.Comparable"), bridge.unavailable());
+		}
+	}
+
+	private static WorkerExtension<String> extension(
+			String id,
+			BiFunction<PlayerBindingContext<String>, OperationRegistry, WorkerBinding> binding
+	) {
+		return new WorkerExtension<>() {
+			@Override
+			public @NotNull String id() {
+				return id;
+			}
+
+			@Override
+			public @NotNull Optional<String> libraryId() {
+				return Optional.of("external");
+			}
+
+			@Override
+			public @NotNull Class<String> nativeSessionType() {
+				return String.class;
+			}
+
+			@Override
+			public @NotNull WorkerBinding bind(@NotNull PlayerBindingContext<String> player, @NotNull OperationRegistry operations) {
+				return binding.apply(player, operations);
+			}
+		};
+	}
+
 	@Value
 	private static class Message {
 		String text;
 	}
 
-	private static final class StubNativePlayer implements NativePlayer<String> {
+	private static final class StubNativePlayer implements NativePlayer<Object> {
+		private static final Runnable ADAPTER = () -> { };
+
 		private final String name;
 		private final String session;
 		private final UUID uniqueId = UUID.randomUUID();
@@ -126,17 +182,17 @@ class CapabilityWorkerExtensionTest {
 		}
 
 		@Override
-		public @NotNull String backend() {
+		public @NotNull Object nativeSession() {
 			return session;
 		}
 
 		@Override
-		public boolean isCurrentBackend(@NotNull String backend) {
-			return session == backend;
+		public boolean isCurrentNativeSession(@NotNull Object nativeSession) {
+			return session == nativeSession;
 		}
 
 		@Override
-		public @NotNull ProtocolSubscription bindBackend(@NotNull Function<String, ProtocolSubscription> listener) {
+		public @NotNull ProtocolSubscription bindNativeSession(@NotNull Function<Object, ProtocolSubscription> listener) {
 			return listener.apply(session);
 		}
 
@@ -160,6 +216,12 @@ class CapabilityWorkerExtensionTest {
 		public void emit(@NotNull String event, byte @NotNull [] payload) {
 			this.event = event;
 			this.payload = payload;
+		}
+
+		@Override
+		public <P> @NotNull P adapter(@NotNull Class<P> port) {
+			if (port == Runnable.class) return port.cast(ADAPTER);
+			throw new NativeAdapterUnavailableException("no external segment provides " + port.getName());
 		}
 	}
 }

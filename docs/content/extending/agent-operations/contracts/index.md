@@ -17,12 +17,12 @@ its descriptor types. The handler depends on `echo-operations` and uses `compile
 APIs out of the packaged handler JAR, including transitive dependencies. The server API includes
 the shared contracts and does not depend on the client API or global `api` artifact.
 
-## Define the shared channelOperation
+## Define the shared operation
 
-Place this in `echo-operations/src/main/java/com/example/echo/channelOperation/EchoOperations.java`:
+Place this in `echo-operations/src/main/java/com/example/echo/operation/EchoOperations.java`:
 
 ```java
-package com.example.echo.channelOperation;
+package com.example.echo.operation;
 
 import me.whereareiam.anvil.agent.api.model.AgentOperation;
 
@@ -52,13 +52,13 @@ Place this in `echo-agent/src/main/java/com/example/echo/agent/EchoAgentOperatio
 ```java
 package com.example.echo.agent;
 
-import com.example.echo.channelOperation.EchoOperations;
+import com.example.echo.operation.EchoOperations;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationRegistry;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Installs the echo channelOperation into a platform agent.
+ * Installs the echo operation into a platform agent.
  */
 public final class EchoAgentOperations implements AgentOperationProvider {
 	@Override
@@ -81,7 +81,7 @@ in the handler artifact containing:
 com.example.echo.agent.EchoAgentOperations
 ```
 
-Registration is limited to `install`. Duplicate provider IDs, duplicate channelOperation names, and names
+Registration is limited to `install`. Duplicate provider IDs, duplicate operation names, and names
 outside the provider's namespace fail registration. The platform's built-in operations remain
 available alongside your extension.
 
@@ -90,6 +90,12 @@ available alongside your extension.
 A native handler can resolve a service with `platform.requireService(...)`. For example, the Bukkit
 agent exposes `org.bukkit.Server`. Execute native work through `platform.call(...)` and obey any
 additional threading rules of the API you invoke. Compile platform SDKs as `compileOnly` dependencies.
+
+The handler runs in the server's or proxy's own JVM. `agent-api` and `agent-server-api` target Java
+11, the Java of the oldest supported servers, Paper and Spigot `1.16.5`. Compile `echo-operations` and
+`echo-agent` for the oldest Java of the processes you install them into, for example with
+`options.release.set(11)` on `compileJava`, and against the oldest platform API you support, such as
+`spigot-api` `1.16.5-R0.1-SNAPSHOT` for Bukkit servers. Anvil's own in-server code is built this way.
 
 Override `supports(AgentInfo)` for handlers restricted to a platform or role. Install platform-specific
 JARs only into compatible processes so their classes can link against the expected native SDK.

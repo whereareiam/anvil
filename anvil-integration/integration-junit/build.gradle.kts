@@ -1,24 +1,18 @@
 plugins {
-    alias(libs.plugins.toolkit.architecture)
-    alias(libs.plugins.toolkit.publish.maven)
-    id("unit")
+	id("assembly")
 }
 
 description = "JUnit extension integration for Anvil scenarios"
 
 toolkitPublish {
-    artifactId.set("junit")
-}
-
-architecture {
-    kind = assembly
+	artifactId.set("junit")
 }
 
 dependencies {
-    api(projects.anvilApi)
-    api(libs.junit.jupiter)
+	api(projects.anvilApi)
+	api(libs.junit.jupiter)
 
-    implementation(projects.anvilLauncher)
+	implementation(projects.anvilLauncher)
 
-    runtimeOnly(libs.junit.platform)
+	runtimeOnly(libs.junit.platform)
 }

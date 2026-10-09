@@ -48,7 +48,7 @@ whether the capability is installed, not whether its next request will succeed.
 |---|---|
 | Dispatch a command through the native platform API | The process's `Console` capability |
 | Send console input or inspect captured process output | The process's [console](../console/index.md) |
-| Read or change plugin state with a typed result | An installed process capability calling a native channelOperation |
+| Read or change plugin state with a typed result | An installed process capability calling a native operation |
 | Observe one player's identity or route through agents | The player's [Server capability](../../../players/capabilities/server/index.md) |
 | Restart one process | [Restarting processes](../restarts/index.md) |
 
@@ -74,7 +74,7 @@ assertEquals("echo:hello", lobby.capability(Echo.class).send("hello"));
 ```
 
 Success establishes that the handler in `lobby` returned `echo:hello`. Replace Echo with an
-channelOperation that returns the application state your test needs to assert. The result contains
+operation that returns the application state your test needs to assert. The result contains
 serializable values, not the platform's live objects.
 
 Process capability instances remain stable across a JVM restart. Retrieve the current process
@@ -88,7 +88,7 @@ capability instances after that cleanup.
 
 ## Add native behavior
 
-A host capability provider calls a typed channelOperation through its borrowed `RequestChannel`.
+A host capability provider calls a typed operation through its borrowed `RequestChannel`.
 Anvil connects that channel to the process's agent client. The matching `AgentOperationProvider`
 installs the handler inside the managed JVM. These are separate
 extension points: adding the host dependency does not install the native handler.
@@ -102,4 +102,4 @@ agent exposes `org.bukkit.Server`; Velocity and BungeeCord agents expose their p
 Use `platform.call(...)` and follow the native API's threading rules.
 
 If a request fails, check agent readiness, handler installation and service descriptors, matching
-channelOperation contracts, and the target process's `anvil-console.log`.
+operation contracts, and the target process's `anvil-console.log`.

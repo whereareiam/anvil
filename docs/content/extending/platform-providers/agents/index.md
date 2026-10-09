@@ -24,15 +24,22 @@ entry-point class name. The artifact locator resolves that class to the exact ru
 default workspace target is `plugins/anvil-platform-agent.jar`; override it when your platform's
 loading layout requires another path.
 
+Declare the oldest Java the agent runs on as `[agent] minimumJava` in the provider's
+[version data](../index.md#declare-java-and-version-data); planning refuses to start the platform
+without it. Compile the agent, and everything it shades, for that Java release, for example with
+`options.release` on its `compileJava` task. The `agent` runtime artifact targets Java 11. Anvil's
+own providers apply the `platform-provider` build convention, whose `checkAgentJava` task fails when a
+class the agent loads needs newer Java than declared.
+
 ## Define scheduling behavior
 
 Implement `PlatformAgent.call` according to your native API's threading rules. The bundled Bukkit
 agent schedules work onto Bukkit's main thread and waits for the result. The default implementation
 runs on the request thread, which is only suitable where the platform allows it.
 
-Document which native services your agent exposes and any additional constraints channelOperation authors
+Document which native services your agent exposes and any additional constraints operation authors
 must observe. External handlers can then use the public
-[agent-channelOperation contract](../../agent-operations/contracts/index.md) without linking against your
+[agent-operation contract](../../agent-operations/contracts/index.md) without linking against your
 agent implementation.
 
 ## Negotiate forwarding

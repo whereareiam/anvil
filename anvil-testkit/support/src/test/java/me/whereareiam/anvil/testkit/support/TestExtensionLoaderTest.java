@@ -16,7 +16,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TestExtensionLoaderTest {
-	private static final String PROTOCOL_SERVICE = "META-INF/services/me.whereareiam.anvil.protocol.api.provider.ProtocolProvider";
+	private static final String PROTOCOL_SERVICE = "META-INF/services/me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider";
 	private static final String AGENT_SERVICE = "META-INF/services/me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider";
 
 	@TempDir
@@ -67,13 +67,13 @@ class TestExtensionLoaderTest {
 		Thread.currentThread().setContextClassLoader(parent);
 		try {
 			try (var ignored = new TestExtensionLoader(FixtureArtifacts.extension(), false)) {
-				assertEquals(List.of("external.fixture.protocol.FixtureProtocolProvider"), descriptors(PROTOCOL_SERVICE));
+				assertEquals(List.of("external.fixture.protocol.FixtureLibraryProvider"), descriptors(PROTOCOL_SERVICE));
 				assertEquals(List.of("installed.Provider", "external.fixture.agent.FixtureAgentOperations"), descriptors(AGENT_SERVICE));
 			}
 			assertSame(parent, Thread.currentThread().getContextClassLoader());
 
 			try (var ignored = new TestExtensionLoader(FixtureArtifacts.extension(), true)) {
-				assertEquals(List.of("installed.Provider", "external.fixture.protocol.FixtureProtocolProvider"), descriptors(PROTOCOL_SERVICE));
+				assertEquals(List.of("installed.Provider", "external.fixture.protocol.FixtureLibraryProvider"), descriptors(PROTOCOL_SERVICE));
 			}
 		} finally {
 			Thread.currentThread().setContextClassLoader(previous);
@@ -83,10 +83,10 @@ class TestExtensionLoaderTest {
 	@Test
 	void selectsPreparedProviderVariantsWithoutRebuildingTheJar() throws Exception {
 		try (var ignored = new TestExtensionLoader(FixtureArtifacts.brokenExtension(), false)) {
-			assertEquals(List.of("external.fixture.protocol.BrokenProtocolProvider"), descriptors(PROTOCOL_SERVICE));
+			assertEquals(List.of("external.fixture.protocol.BrokenLibraryProvider"), descriptors(PROTOCOL_SERVICE));
 		}
 		try (var ignored = new TestExtensionLoader(FixtureArtifacts.observationExtension(), false)) {
-			assertEquals(List.of("external.fixture.protocol.ObservationProtocolProvider"), descriptors(PROTOCOL_SERVICE));
+			assertEquals(List.of("external.fixture.protocol.ObservationLibraryProvider"), descriptors(PROTOCOL_SERVICE));
 		}
 	}
 

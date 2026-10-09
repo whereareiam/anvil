@@ -5,12 +5,14 @@ import me.whereareiam.anvil.agent.api.model.AgentIdentity;
 import me.whereareiam.anvil.agent.client.AgentPlayerObservation;
 import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.agent.client.api.AgentDirectory;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.capability.agent.api.player.AgentPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.agent.api.player.AgentPlayerCapabilityProvider;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
+import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposerProvider;
@@ -61,10 +63,10 @@ public class PlayerCompositionTest {
 			var provider = new CapabilityPlayerComposerProvider();
 			var protocol = new StubPlayer();
 			var observation = new AgentPlayerObservation(protocol.name(), protocol::identity, Map::of, Set.of());
-			var scoped = PlayerComposition.create("selected", agents, provider).compose(protocol, observation, null, ignored -> {});
+			var scoped = PlayerComposition.create(List.of("selected"), agents, provider).compose(protocol, observation, null, ignored -> {});
 			try (AutoCloseable scopedCleanup = scoped::destroy) {
 				assertNotNull(scoped.capability(AgentFeature.class).context.channel("server"));
-				var standalone = provider.create("selected").compose(new StubPlayer(), observation, null, ignored -> {});
+				var standalone = provider.create().compose(new StubPlayer(), observation, null, ignored -> {});
 				try (AutoCloseable standaloneCleanup = standalone::destroy) {
 					var failure = assertThrows(CapabilityException.class,
 							() -> standalone.capability(AgentFeature.class).context.channel("server"));
@@ -79,7 +81,7 @@ public class PlayerCompositionTest {
 
 	@Test
 	void preservesAnExternalProtocolOnlyComposer() {
-		assertSame(COMPOSER, PlayerComposition.create("external-backend", Map::of, new ExternalComposerProvider()));
+		assertSame(COMPOSER, PlayerComposition.create(List.of("external-library"), Map::of, new ExternalComposerProvider()));
 	}
 
 	@Test
@@ -98,7 +100,7 @@ public class PlayerCompositionTest {
 			}
 		}) {
 			thread.setContextClassLoader(loader);
-			assertSame(COMPOSER, PlayerComposition.create("external-backend", Map::of));
+			assertSame(COMPOSER, PlayerComposition.create(List.of("external-library"), Map::of));
 		} finally {
 			thread.setContextClassLoader(previous);
 		}
@@ -167,6 +169,17 @@ public class PlayerCompositionTest {
 		}
 
 		@Override
+		public @NotNull String libraryId() {
+			return "selected";
+		}
+
+		@Override
+		public @NotNull ProtocolRelease release() {
+			MinecraftVersion version = MinecraftVersion.parse("1.21.11");
+			return ProtocolRelease.builder().libraryVersion("test").minecraftVersion(version).protocolNumber(774).javaVersion(21).build();
+		}
+
+		@Override
 		public @NotNull PlayerIdentity identity() {
 			throw new AssertionError("Composition must not observe identity");
 		}
@@ -194,8 +207,7 @@ public class PlayerCompositionTest {
 		}
 
 		@Override
-		public @NotNull ProtocolPlayerComposer create(@NotNull String protocolId) {
-			assertEquals("external-backend", protocolId);
+		public @NotNull ProtocolPlayerComposer create() {
 			return COMPOSER;
 		}
 	}
@@ -211,7 +223,7 @@ public class PlayerCompositionTest {
 		}
 
 		@Override
-		public @NotNull ProtocolPlayerComposer create(@NotNull String protocolId) {
+		public @NotNull ProtocolPlayerComposer create() {
 			throw new AssertionError("An unused composer must not be selected");
 		}
 	}

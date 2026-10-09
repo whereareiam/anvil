@@ -1,0 +1,8 @@
+# A server platform without an agent for planner tests that do not exercise Java selection.
+[verified]
+"1.21.11" = [17, 21, 25]
+
+[[java]]
+since = "1.16.5"
+minimum = 17
+preferred = 21

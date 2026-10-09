@@ -13,7 +13,7 @@ import me.whereareiam.anvil.launcher.assembly.execution.ProcessLauncher;
 import me.whereareiam.anvil.launcher.assembly.provisioning.ArtifactPlatformSource;
 import me.whereareiam.anvil.launcher.assembly.provisioning.ProvisioningServices;
 import me.whereareiam.anvil.platform.planning.DefaultPlatformPlanner;
-import me.whereareiam.anvil.protocol.api.provider.ProtocolProviderRegistry;
+import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.protocol.player.DefaultPlayerService;
 import org.jetbrains.annotations.NotNull;
 
@@ -44,9 +44,8 @@ public final class LauncherAssembly implements AutoCloseable {
 		ProviderDiscovery discovery = new ProviderDiscovery();
 		provisioning = new ProvisioningServices(options);
 		try {
-			var protocol = ProtocolProviderRegistry.discover().select(options.getProtocolId());
-			players = new DefaultPlayerService(protocol, options.getCacheDirectory(), options.getAccountsDirectory(), provisioning.getArtifacts()::obtain);
-			scenarioFactory = assemble(options, executions, discovery, protocol.id());
+			players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(), options, provisioning.getArtifacts()::obtain);
+			scenarioFactory = assemble(options, executions, discovery);
 		} catch (RuntimeException | Error failure) {
 			try (provisioning) {
 				throw failure;
@@ -57,8 +56,7 @@ public final class LauncherAssembly implements AutoCloseable {
 	private ScenarioFactory assemble(
 			EngineOptions options,
 			List<ExecutionProvider> executions,
-			ProviderDiscovery discovery,
-			String protocolId
+			ProviderDiscovery discovery
 	) {
 		try {
 			var locator = discovery.required(AgentArtifactLocator.class, "agent artifact locator");
@@ -75,7 +73,7 @@ public final class LauncherAssembly implements AutoCloseable {
 					.imageLocks(new CacheImageLocks(provisioning.getCache()))
 					.build();
 
-			return new DefaultScenarioFactory(platforms, execution, players, protocolId);
+			return new DefaultScenarioFactory(platforms, execution, players);
 		} catch (RuntimeException | Error failure) {
 			try (players) {
 				throw failure;

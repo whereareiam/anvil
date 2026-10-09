@@ -1,5 +1,5 @@
 plugins {
-	id("unit")
+	id("jvm")
 	id("fixtures")
 }
 

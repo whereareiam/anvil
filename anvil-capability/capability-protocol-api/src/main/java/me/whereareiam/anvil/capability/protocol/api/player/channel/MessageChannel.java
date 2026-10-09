@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.protocol.api.player.channel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -45,4 +46,14 @@ public interface MessageChannel {
 	 * @return immutable capability IDs
 	 */
 	@NotNull Set<String> installedCapabilities();
+
+	/**
+	 * Returns capabilities that the native worker could not install for this player, with the reason
+	 * for each, such as the exact class or member missing from the loaded library release.
+	 *
+	 * @return immutable reasons keyed by capability ID
+	 */
+	default @NotNull Map<String, String> unavailableCapabilities() {
+		return Map.of();
+	}
 }

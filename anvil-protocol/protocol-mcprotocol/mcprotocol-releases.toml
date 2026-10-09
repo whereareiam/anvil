@@ -1,0 +1,942 @@
+# MCProtocolLib releases supported by this Anvil version: the latest patch of each Minecraft major.
+# Each release lists every Minecraft version speaking its protocol; 'verified' versions are live-tested.
+# 'module' is the compile coordinate for version-specific segments. Each [[release.artifact]] is the
+# worker runtime closure, downloaded and checked against 'sha256'. Empty pins are filled by
+# ./gradlew :anvil-protocol:protocol-mcprotocol:pinLibraryReleases, which also refreshes the closure.
+
+[[release]]
+version = "1.18.2-1"
+module = "com.github.steveice10:mcprotocollib:1.18.2-1"
+protocol = 758
+minecraft = ["1.18.2"]
+verified = ["1.18.2"]
+java = 8
+features = ["ONLINE_AUTHENTICATION"]
+
+[[release.artifact]]
+module = "com.github.steveice10:mcprotocollib:1.18.2-1"
+url = "https://repo.opencollab.dev/main/com/github/steveice10/mcprotocollib/1.18.2-1/mcprotocollib-1.18.2-1.jar"
+sha256 = "ec729cd7e8539f157d4780e8e62fc5fcb3e063787c8e286b9529d29517afd0c8"
+
+[[release.artifact]]
+module = "com.github.GeyserMC:opennbt:1.4"
+url = "https://jitpack.io/com/github/GeyserMC/opennbt/1.4/opennbt-1.4.jar"
+sha256 = "af12ad528d45ae498e40ca5b21cf7b0fb260c16b8f2269f71fe0832ac492ac8e"
+
+[[release.artifact]]
+module = "com.github.GeyserMC:packetlib:2.1"
+url = "https://jitpack.io/com/github/GeyserMC/packetlib/2.1/packetlib-2.1.jar"
+sha256 = "5835b39827263d1d947bcd7e956a790c0a16be02c3586b8959b5e1e6ed7a804c"
+
+[[release.artifact]]
+module = "com.github.GeyserMC:mcauthlib:6f3d6aada5"
+url = "https://jitpack.io/com/github/GeyserMC/mcauthlib/6f3d6aada5/mcauthlib-6f3d6aada5.jar"
+sha256 = "434571b72384dd1264e122c56509c9209612416322d98a29a1375fcecf23481a"
+
+[[release.artifact]]
+module = "net.kyori:adventure-api:4.9.3"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-api/4.9.3/adventure-api-4.9.3.jar"
+sha256 = "ab8ed55e48cb77a99ca0d40b3c48913fe75bfa5a2c09ed11fd86c03267e18175"
+
+[[release.artifact]]
+module = "net.kyori:adventure-nbt:4.9.3"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-nbt/4.9.3/adventure-nbt-4.9.3.jar"
+sha256 = "f09c302d429d81ea38571a9f1f86b8c9bb65d8a0264acd2ea3e81250b8da3068"
+
+[[release.artifact]]
+module = "net.kyori:adventure-key:4.9.3"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-key/4.9.3/adventure-key-4.9.3.jar"
+sha256 = "7c9ad8211944a12099d5bd384078b9c0a550114eeeabf4b61d08827f3b325b3a"
+
+[[release.artifact]]
+module = "net.kyori:adventure-text-serializer-gson-legacy-impl:4.9.3"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-text-serializer-gson-legacy-impl/4.9.3/adventure-text-serializer-gson-legacy-impl-4.9.3.jar"
+sha256 = "cc1cca77938418007ca73bffa354961c5d1e09e264d1462b4bf930169af61376"
+
+[[release.artifact]]
+module = "net.kyori:adventure-text-serializer-gson:4.9.3"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-text-serializer-gson/4.9.3/adventure-text-serializer-gson-4.9.3.jar"
+sha256 = "2aa1a965349259d0d742a65b908ef4be18a535e7cf399a6ccaca7c402cfa55e4"
+
+[[release.artifact]]
+module = "io.netty:netty-all:4.1.66.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-all/4.1.66.Final/netty-all-4.1.66.Final.jar"
+sha256 = "f1faa242a5936201de12cd8845563ca27fb65ab6d2a4bf0c0c427b237fc8399d"
+
+[[release.artifact]]
+module = "io.netty.incubator:netty-incubator-transport-native-io_uring:0.0.8.Final:linux-x86_64"
+url = "https://repo1.maven.org/maven2/io/netty/incubator/netty-incubator-transport-native-io_uring/0.0.8.Final/netty-incubator-transport-native-io_uring-0.0.8.Final-linux-x86_64.jar"
+sha256 = "6e19ae43867ea2d6ef8233e9086411f84e0af1ac5d1db9452e33c85b1067cd18"
+
+[[release.artifact]]
+module = "com.github.spotbugs:spotbugs-annotations:4.3.0"
+url = "https://repo1.maven.org/maven2/com/github/spotbugs/spotbugs-annotations/4.3.0/spotbugs-annotations-4.3.0.jar"
+sha256 = "ae576422c3a090adc372a4542214a38e195f62ada906184e773a8916d83ec386"
+
+[[release.artifact]]
+module = "com.google.code.gson:gson:2.8.2"
+url = "https://repo1.maven.org/maven2/com/google/code/gson/gson/2.8.2/gson-2.8.2.jar"
+sha256 = "b7134929f7cc7c04021ec1cc27ef63ab907e410cf0588e397b8851181eb91092"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-unix-common:4.1.65.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-unix-common/4.1.65.Final/netty-transport-native-unix-common-4.1.65.Final.jar"
+sha256 = "9fd0078e3d11d6974db18238a7e5fb4e18dd656ca36b5fb1895ad6c2ab045a2c"
+
+[[release.artifact]]
+module = "io.netty:netty-transport:4.1.65.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport/4.1.65.Final/netty-transport-4.1.65.Final.jar"
+sha256 = "12ac5da4e48d8e6c132d376867e9af89aff444e7486571faf53594a2529b98fe"
+
+[[release.artifact]]
+module = "io.netty:netty-buffer:4.1.65.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-buffer/4.1.65.Final/netty-buffer-4.1.65.Final.jar"
+sha256 = "e7679ba4f3b2fbec1cd356380b056254fc4e9c0093ef7b083fbf75a79a6fe333"
+
+[[release.artifact]]
+module = "io.netty:netty-resolver:4.1.65.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-resolver/4.1.65.Final/netty-resolver-4.1.65.Final.jar"
+sha256 = "9849c2488740ac8128bd0a863362612e8e0bcc9c660fce1e95e3ff82fb5c47ef"
+
+[[release.artifact]]
+module = "io.netty:netty-common:4.1.65.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-common/4.1.65.Final/netty-common-4.1.65.Final.jar"
+sha256 = "40287020bef62e40dcc0050f3113e2beeea13d4a8138ee639b63829815f5c7e6"
+
+[[release.artifact]]
+module = "com.google.code.findbugs:jsr305:3.0.2"
+url = "https://repo1.maven.org/maven2/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar"
+sha256 = "766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7"
+
+[[release.artifact]]
+module = "net.kyori:examination-string:1.3.0"
+url = "https://repo1.maven.org/maven2/net/kyori/examination-string/1.3.0/examination-string-1.3.0.jar"
+sha256 = "7d01fc25a4bb3af0e1662685455f4541fbf4626216ea5846e455c1491e156b8c"
+
+[[release.artifact]]
+module = "net.kyori:examination-api:1.3.0"
+url = "https://repo1.maven.org/maven2/net/kyori/examination-api/1.3.0/examination-api-1.3.0.jar"
+sha256 = "c9237ffecb05428f6eff86216246ac70ce0b47b04c08ea7ca35020fde57f8492"
+
+[[release.artifact]]
+module = "org.jetbrains:annotations:22.0.0"
+url = "https://repo1.maven.org/maven2/org/jetbrains/annotations/22.0.0/annotations-22.0.0.jar"
+sha256 = "9f45f5d5184d50a777742389a7a6e6a5b0bf90b316919774d8336f94776c31b2"
+
+[[release]]
+version = "1.21.11-20260512.221357-18"
+module = "org.geysermc.mcprotocollib:protocol:1.21.11-20260512.221357-18"
+protocol = 774
+minecraft = ["1.21.11"]
+verified = ["1.21.11"]
+java = 17
+features = ["ONLINE_AUTHENTICATION"]
+
+[[release.artifact]]
+module = "org.geysermc.mcprotocollib:protocol:1.21.11-20260512.221357-18"
+url = "https://repo.opencollab.dev/main/org/geysermc/mcprotocollib/protocol/1.21.11-SNAPSHOT/protocol-1.21.11-20260512.221357-18.jar"
+sha256 = "00d9ae3464dac8dcfe861303d728cb3361a9794d8ad0455aa340229ee83ee709"
+
+[[release.artifact]]
+module = "org.cloudburstmc:nbt:3.0.4.Final"
+url = "https://repo1.maven.org/maven2/org/cloudburstmc/nbt/3.0.4.Final/nbt-3.0.4.Final.jar"
+sha256 = "1a30d7e05ad52ccbffb2016808c5dc2366147f0715c202ad375552d80a8c4c64"
+
+[[release.artifact]]
+module = "net.raphimc:MinecraftAuth:5.0.0"
+url = "https://repo1.maven.org/maven2/net/raphimc/MinecraftAuth/5.0.0/MinecraftAuth-5.0.0.jar"
+sha256 = "7a1af91e850587ce052136e3c19de2c5ce5493255371668b87c75436a798d70d"
+
+[[release.artifact]]
+module = "net.kyori:adventure-text-serializer-json-legacy-impl:4.25.0"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-text-serializer-json-legacy-impl/4.25.0/adventure-text-serializer-json-legacy-impl-4.25.0.jar"
+sha256 = "3827ea0b41ec6c373f913d824e6027612e5014b9497fbef98c4b1a1559b0fc3b"
+
+[[release.artifact]]
+module = "net.kyori:adventure-text-serializer-json:4.25.0"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-text-serializer-json/4.25.0/adventure-text-serializer-json-4.25.0.jar"
+sha256 = "482b4aa218d7c879fcf57e5d0f9cc04db4b4d4b5679eb99b727f6104ed7fb982"
+
+[[release.artifact]]
+module = "net.kyori:adventure-text-serializer-commons:4.25.0"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-text-serializer-commons/4.25.0/adventure-text-serializer-commons-4.25.0.jar"
+sha256 = "0cccad7f54db9a1ddc8164b282c1b4c49c2e9c76f682cbe2c9654161dc9ad395"
+
+[[release.artifact]]
+module = "net.kyori:adventure-api:4.25.0"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-api/4.25.0/adventure-api-4.25.0.jar"
+sha256 = "8e281bf1357ff91af9783a6c24276b483d8154a7b3cab5b04e909e6bf5e72c9d"
+
+[[release.artifact]]
+module = "net.kyori:adventure-nbt:4.25.0"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-nbt/4.25.0/adventure-nbt-4.25.0.jar"
+sha256 = "8ee6da621f496f16c619de6ec5c0b9c140ceac9b89c2a5b3377938dbd55a162e"
+
+[[release.artifact]]
+module = "net.kyori:adventure-key:4.25.0"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-key/4.25.0/adventure-key-4.25.0.jar"
+sha256 = "cec8f0abf642df0e627bf5a9fff6f17cbb620ea6fe05f2162b96cad1564d8857"
+
+[[release.artifact]]
+module = "net.kyori:adventure-text-serializer-gson:4.25.0"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-text-serializer-gson/4.25.0/adventure-text-serializer-gson-4.25.0.jar"
+sha256 = "931f67959d46e0fe55b64ab9164e31b578b79235787f69d472b62865f97b7245"
+
+[[release.artifact]]
+module = "com.google.code.gson:gson:2.13.2"
+url = "https://repo1.maven.org/maven2/com/google/code/gson/gson/2.13.2/gson-2.13.2.jar"
+sha256 = "dd0ce1b55a3ed2080cb70f9c655850cda86c206862310009dcb5e5c95265a5e0"
+
+[[release.artifact]]
+module = "org.slf4j:slf4j-api:2.0.9"
+url = "https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.9/slf4j-api-2.0.9.jar"
+sha256 = "0818930dc8d7debb403204611691da58e49d42c50b6ffcfdce02dadb7c3c2b6c"
+
+[[release.artifact]]
+module = "org.cloudburstmc.math:api:2.0"
+url = "https://repo.opencollab.dev/main/org/cloudburstmc/math/api/2.0/api-2.0.jar"
+sha256 = "4348d532b11d033f1c6e11037fe3d045223878333d9e140c4f11bb3309b72083"
+
+[[release.artifact]]
+module = "org.cloudburstmc.math:immutable:2.0"
+url = "https://repo.opencollab.dev/main/org/cloudburstmc/math/immutable/2.0/immutable-2.0.jar"
+sha256 = "6ada50be0ac66f4012b60ec9b0c7efe87f201ca989fd3d7963438a6bb6981ebf"
+
+[[release.artifact]]
+module = "com.nukkitx.fastutil:fastutil-object-int-maps:8.5.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/fastutil/fastutil-object-int-maps/8.5.3/fastutil-object-int-maps-8.5.3.jar"
+sha256 = "b8fff44de02a05a6ae2eeb28f5ed9862cbd180ea9c6c6f413962f58e331c9ca0"
+
+[[release.artifact]]
+module = "com.nukkitx.fastutil:fastutil-int-object-maps:8.5.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/fastutil/fastutil-int-object-maps/8.5.3/fastutil-int-object-maps-8.5.3.jar"
+sha256 = "67488ac5ff4e9a821c42d9aa57d2e8f59dfd5d2a415ca8cbf2d6af01d5422816"
+
+[[release.artifact]]
+module = "com.nukkitx.fastutil:fastutil-int-int-maps:8.5.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/fastutil/fastutil-int-int-maps/8.5.3/fastutil-int-int-maps-8.5.3.jar"
+sha256 = "52df12c8395db36947060efaabe7a1827d942b1e01140f2e7d7b3094522d8d5e"
+
+[[release.artifact]]
+module = "io.netty:netty-all:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-all/4.2.1.Final/netty-all-4.2.1.Final.jar"
+sha256 = "2505b821b9c0202f55ff059794ed5bcbd8ba066701d93e2e5bdb66c0b6391730"
+
+[[release.artifact]]
+module = "org.checkerframework:checker-qual:3.42.0"
+url = "https://repo1.maven.org/maven2/org/checkerframework/checker-qual/3.42.0/checker-qual-3.42.0.jar"
+sha256 = "ccaedd33af0b7894d9f2f3b644f4d19e43928e32902e61ac4d10777830f5aac7"
+
+[[release.artifact]]
+module = "com.google.errorprone:error_prone_annotations:2.41.0"
+url = "https://repo1.maven.org/maven2/com/google/errorprone/error_prone_annotations/2.41.0/error_prone_annotations-2.41.0.jar"
+sha256 = "a56e782b5b50811ac204073a355a21d915a2107fce13ec711331ad036f660fcc"
+
+[[release.artifact]]
+module = "net.lenni0451.commons:httpclient:1.9.0"
+url = "https://repo1.maven.org/maven2/net/lenni0451/commons/httpclient/1.9.0/httpclient-1.9.0.jar"
+sha256 = "c7c01c4639ee890b69a443d135c3bd55aedf24e41e19189c2ad874a0ed429c3e"
+
+[[release.artifact]]
+module = "net.lenni0451.commons:gson:1.9.0"
+url = "https://repo1.maven.org/maven2/net/lenni0451/commons/gson/1.9.0/gson-1.9.0.jar"
+sha256 = "5cb4fb360bd50ecfa595d954e27b914b64e41bc9e70c7cb9a17e84a6f1856777"
+
+[[release.artifact]]
+module = "com.nukkitx.fastutil:fastutil-object-sets:8.5.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/fastutil/fastutil-object-sets/8.5.3/fastutil-object-sets-8.5.3.jar"
+sha256 = "ba21454ed268d53c512b1f1ad52ed1e16fe28da3cea57ff0fa4ca957297a0070"
+
+[[release.artifact]]
+module = "com.nukkitx.fastutil:fastutil-int-sets:8.5.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/fastutil/fastutil-int-sets/8.5.3/fastutil-int-sets-8.5.3.jar"
+sha256 = "e1288a27842cc6a7604d8243351879778f8a736e26038edb2c946b8db559343e"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-epoll:4.2.1.Final:linux-x86_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-epoll/4.2.1.Final/netty-transport-native-epoll-4.2.1.Final-linux-x86_64.jar"
+sha256 = "d3abd3466dffa28d35102f888346ba4cef59bc1566d0084b5fac5feb2adab1fd"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-epoll:4.2.1.Final:linux-aarch_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-epoll/4.2.1.Final/netty-transport-native-epoll-4.2.1.Final-linux-aarch_64.jar"
+sha256 = "a8a56a18246d6b9377f67861dd99d544977b78228fbee783fe92b6f7591e6f0a"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-epoll:4.2.1.Final:linux-riscv64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-epoll/4.2.1.Final/netty-transport-native-epoll-4.2.1.Final-linux-riscv64.jar"
+sha256 = "c5ffe847a47aeab467547242248d710a8d96311569739d2f1978134fea1f2395"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-io_uring:4.2.1.Final:linux-x86_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-io_uring/4.2.1.Final/netty-transport-native-io_uring-4.2.1.Final-linux-x86_64.jar"
+sha256 = "89695f3d77e70b7192c289f37b32c2d3beea950461874fe6ad96533fc9b98d71"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-io_uring:4.2.1.Final:linux-aarch_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-io_uring/4.2.1.Final/netty-transport-native-io_uring-4.2.1.Final-linux-aarch_64.jar"
+sha256 = "4b3e1798a99ec688f5a7428ed17753ee68b5383637458550eca57272015adbb5"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-io_uring:4.2.1.Final:linux-riscv64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-io_uring/4.2.1.Final/netty-transport-native-io_uring-4.2.1.Final-linux-riscv64.jar"
+sha256 = "34e6a1c29187526a3d0554f81201658d26ecd6c0a6c47638d41d63070cc7f818"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-kqueue:4.2.1.Final:osx-x86_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-kqueue/4.2.1.Final/netty-transport-native-kqueue-4.2.1.Final-osx-x86_64.jar"
+sha256 = "d8a87e9c10cd9cbc51b22257ab8dc799f0b2c1bf3b578fe01f8a6175ac5fda0e"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-kqueue:4.2.1.Final:osx-aarch_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-kqueue/4.2.1.Final/netty-transport-native-kqueue-4.2.1.Final-osx-aarch_64.jar"
+sha256 = "33569fa1c79cf028ddaeb0306763e2c94271d6c8544c5917d0f99cde92e3c4a1"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-classes-epoll:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-classes-epoll/4.2.1.Final/netty-transport-classes-epoll-4.2.1.Final.jar"
+sha256 = "cc2f97afa5684f1995a5f1006b36c9ba4b233c1e68038c50e5b77b14aba4eea4"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-classes-io_uring:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-classes-io_uring/4.2.1.Final/netty-transport-classes-io_uring-4.2.1.Final.jar"
+sha256 = "c6deb8b20cf76a37e2cf6e905fd3eee4f87eed6478d4ed75c7709f40e0019156"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-classes-kqueue:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-classes-kqueue/4.2.1.Final/netty-transport-classes-kqueue-4.2.1.Final.jar"
+sha256 = "8f1d4b4c7b92edd31d19c176ab60c5e3e71e784481cc95c7fc50c74511d32d56"
+
+[[release.artifact]]
+module = "io.netty:netty-resolver-dns-native-macos:4.2.1.Final:osx-x86_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-resolver-dns-native-macos/4.2.1.Final/netty-resolver-dns-native-macos-4.2.1.Final-osx-x86_64.jar"
+sha256 = "0e128471da5221fee6e108c2b547112e2cd7b3ee91178e6e35232200eccde25b"
+
+[[release.artifact]]
+module = "io.netty:netty-resolver-dns-native-macos:4.2.1.Final:osx-aarch_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-resolver-dns-native-macos/4.2.1.Final/netty-resolver-dns-native-macos-4.2.1.Final-osx-aarch_64.jar"
+sha256 = "dc8b9425bad0b37858898cf1198414a1b27b1ae94e4a940968cae37f542012a6"
+
+[[release.artifact]]
+module = "io.netty:netty-resolver-dns-classes-macos:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-resolver-dns-classes-macos/4.2.1.Final/netty-resolver-dns-classes-macos-4.2.1.Final.jar"
+sha256 = "c8025e0f87b7b8290ddf9a1019a1e5f5e4769d79a479f2c16df48a0f51582af1"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-native-quic:4.2.1.Final:linux-x86_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-native-quic/4.2.1.Final/netty-codec-native-quic-4.2.1.Final-linux-x86_64.jar"
+sha256 = "919363b217c82e4f0b528891e834c923ad846919c91f5392cfe816c1fd22126f"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-native-quic:4.2.1.Final:linux-aarch_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-native-quic/4.2.1.Final/netty-codec-native-quic-4.2.1.Final-linux-aarch_64.jar"
+sha256 = "96a0b77ffcb1dc9082a8a94ec9c1967721ab0a0978e13819e70430355de22c7d"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-native-quic:4.2.1.Final:osx-x86_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-native-quic/4.2.1.Final/netty-codec-native-quic-4.2.1.Final-osx-x86_64.jar"
+sha256 = "ab77884b740c5c8d0f79e1775f9ca2a28dbb3d9de1ab28dd96cf16b53eb48653"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-native-quic:4.2.1.Final:osx-aarch_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-native-quic/4.2.1.Final/netty-codec-native-quic-4.2.1.Final-osx-aarch_64.jar"
+sha256 = "fe804fd621b58f76788f27e3b820470d3d95e59722ef83f4bffa2cbb42985240"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-native-quic:4.2.1.Final:windows-x86_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-native-quic/4.2.1.Final/netty-codec-native-quic-4.2.1.Final-windows-x86_64.jar"
+sha256 = "0b2456031850c5bda27f6862bb9054db00df09bba5082b6ce18a34ea1b47f370"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-classes-quic:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-classes-quic/4.2.1.Final/netty-codec-classes-quic-4.2.1.Final.jar"
+sha256 = "ff97ec2c73137922c732a2a19638912c3cab8ec7e0386a9eb0200596e0d0c002"
+
+[[release.artifact]]
+module = "io.netty:netty-resolver-dns:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-resolver-dns/4.2.1.Final/netty-resolver-dns-4.2.1.Final.jar"
+sha256 = "093523eb425a7398c4bcc6b1d5919c17d9d865816a56db4824ceb14d6da25206"
+
+[[release.artifact]]
+module = "io.netty:netty-handler:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-handler/4.2.1.Final/netty-handler-4.2.1.Final.jar"
+sha256 = "b97d057adffffb824ce6b5d9876bfe1f0bfceb24504b638d3f6c6293cfff5dc5"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-unix-common:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-unix-common/4.2.1.Final/netty-transport-native-unix-common-4.2.1.Final.jar"
+sha256 = "7f2a7746950ccb227908afe3ee21b9bcf69ccc58437bb17c1579a8d572fb38a9"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-dns:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-dns/4.2.1.Final/netty-codec-dns-4.2.1.Final.jar"
+sha256 = "dfea353a4095ebfbc7c94549904b74f7c0369f26ae5491e79bc5e47d9054ad1a"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-base:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-base/4.2.1.Final/netty-codec-base-4.2.1.Final.jar"
+sha256 = "c2a1a7af991694272f74bb7dab01059049790c14b453760009827e105530d3b7"
+
+[[release.artifact]]
+module = "io.netty:netty-transport:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport/4.2.1.Final/netty-transport-4.2.1.Final.jar"
+sha256 = "ba9fd45598fa05605d2a5014d6f47112e4392ba2b912cd1e3786e4851b397cf7"
+
+[[release.artifact]]
+module = "io.netty:netty-buffer:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-buffer/4.2.1.Final/netty-buffer-4.2.1.Final.jar"
+sha256 = "2ece8d8413d5aa35a1d1e0fe94f69f9e9edd8f7abb53f6c557a473c9fd0bfc8e"
+
+[[release.artifact]]
+module = "io.netty:netty-codec:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec/4.2.1.Final/netty-codec-4.2.1.Final.jar"
+sha256 = "eef6f18f71ac5e32dc27a8d525479146c59fec30099d431a40662aff7dbd46f1"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-haproxy:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-haproxy/4.2.1.Final/netty-codec-haproxy-4.2.1.Final.jar"
+sha256 = "f6d28d0cd45cc9984ba6286b559760f7fabd5dcf0ad178701ef0eae5299f4657"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-compression:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-compression/4.2.1.Final/netty-codec-compression-4.2.1.Final.jar"
+sha256 = "c7d51a4f69c4bfbf043f92d196f61a6df42ad29c5bd0d053d107117220a5ca46"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-http:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-http/4.2.1.Final/netty-codec-http-4.2.1.Final.jar"
+sha256 = "10e831862bf7dabceccf4fd82989c31dda39a89ed669cf7e96dee09729077541"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-http2:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-http2/4.2.1.Final/netty-codec-http2-4.2.1.Final.jar"
+sha256 = "3d9e70f1828f448e47f18810712f0efe1bcdfcf5202d13867638fbd553c49059"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-memcache:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-memcache/4.2.1.Final/netty-codec-memcache-4.2.1.Final.jar"
+sha256 = "942b43c537778d595879f28ba25879fc71cbe3b181d21b18db27edf963a72c51"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-mqtt:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-mqtt/4.2.1.Final/netty-codec-mqtt-4.2.1.Final.jar"
+sha256 = "27b4430bddb55ec17c70779f1c00ac10d8b82d70918a2f74fd838c0e85d462a8"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-redis:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-redis/4.2.1.Final/netty-codec-redis-4.2.1.Final.jar"
+sha256 = "7a3bfa6fb3eba3f6292b7aa30bc0da17bc76a2646343a05c1657a486c2381df5"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-smtp:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-smtp/4.2.1.Final/netty-codec-smtp-4.2.1.Final.jar"
+sha256 = "b556345ea8a153230ff606d06615db1cbbdcfc737aa49354eea56f66eeebbef0"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-socks:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-socks/4.2.1.Final/netty-codec-socks-4.2.1.Final.jar"
+sha256 = "4a5c557d8b1f0f364906a2cc5f1df8dd36e7b71aa4dbc4e8d7aede81d46be793"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-stomp:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-stomp/4.2.1.Final/netty-codec-stomp-4.2.1.Final.jar"
+sha256 = "401483bf766d798ff517c9a616a3dc093bb5c8bb8c17798bf81860e1be395b5c"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-xml:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-xml/4.2.1.Final/netty-codec-xml-4.2.1.Final.jar"
+sha256 = "45a4e5f728d221bde9db15b3b2cf57d8b6fd15a069e743b199c6b3fda6d2a9c7"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-protobuf:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-protobuf/4.2.1.Final/netty-codec-protobuf-4.2.1.Final.jar"
+sha256 = "c90ffb31a04a3280289da72e63aaf7a23f97c1698e2cc9b96bfa6469df82f598"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-marshalling:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-marshalling/4.2.1.Final/netty-codec-marshalling-4.2.1.Final.jar"
+sha256 = "48549989c725a7025791329ab612a1a4cbe4b10e53f4a6b13e44c9c0c542876a"
+
+[[release.artifact]]
+module = "io.netty:netty-resolver:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-resolver/4.2.1.Final/netty-resolver-4.2.1.Final.jar"
+sha256 = "fb1c5a9f1230cc558944ac633e5b64d3e4ec981d8e0d5727d5f58122008b218e"
+
+[[release.artifact]]
+module = "io.netty:netty-common:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-common/4.2.1.Final/netty-common-4.2.1.Final.jar"
+sha256 = "7eea4a96f61ace06337906374150cb73c94f248897fda3da865b5c38a710bdfd"
+
+[[release.artifact]]
+module = "io.netty:netty-handler-proxy:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-handler-proxy/4.2.1.Final/netty-handler-proxy-4.2.1.Final.jar"
+sha256 = "c92ef0552d859a736874cc6519304060afe04f8f435c4a23b22b59a525e21c4f"
+
+[[release.artifact]]
+module = "io.netty:netty-handler-ssl-ocsp:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-handler-ssl-ocsp/4.2.1.Final/netty-handler-ssl-ocsp-4.2.1.Final.jar"
+sha256 = "638d114cc19d08cb9899048219a566d29e5a7d7fa01c8e794d0d795074b52766"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-rxtx:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-rxtx/4.2.1.Final/netty-transport-rxtx-4.2.1.Final.jar"
+sha256 = "5b0096434a0c8201df0adeaae4fa8873b3c818d0dc734e92e174e4d81b4a904c"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-sctp:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-sctp/4.2.1.Final/netty-transport-sctp-4.2.1.Final.jar"
+sha256 = "ef84e2854a0eb611c6df4d91aa2c11520aa4519b4b7bc11400861b08884afbf2"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-udt:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-udt/4.2.1.Final/netty-transport-udt-4.2.1.Final.jar"
+sha256 = "bd0fccf36e9e2d45e70c87200a4c24302f5fb5427f92897ed050c8f3f145c580"
+
+[[release.artifact]]
+module = "net.kyori:option:1.1.0"
+url = "https://repo1.maven.org/maven2/net/kyori/option/1.1.0/option-1.1.0.jar"
+sha256 = "97b69b4b17dfe02217c9131ad342564cbc9aebd04c75eb689639b5f78fd4b11c"
+
+[[release.artifact]]
+module = "net.kyori:examination-string:1.3.0"
+url = "https://repo1.maven.org/maven2/net/kyori/examination-string/1.3.0/examination-string-1.3.0.jar"
+sha256 = "7d01fc25a4bb3af0e1662685455f4541fbf4626216ea5846e455c1491e156b8c"
+
+[[release.artifact]]
+module = "net.kyori:examination-api:1.3.0"
+url = "https://repo1.maven.org/maven2/net/kyori/examination-api/1.3.0/examination-api-1.3.0.jar"
+sha256 = "c9237ffecb05428f6eff86216246ac70ce0b47b04c08ea7ca35020fde57f8492"
+
+[[release.artifact]]
+module = "com.nukkitx.fastutil:fastutil-object-common:8.5.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/fastutil/fastutil-object-common/8.5.3/fastutil-object-common-8.5.3.jar"
+sha256 = "02242fa5fc72e571b8ec41b41eef173b256fc1f84867579db672e4774dab541f"
+
+[[release.artifact]]
+module = "com.nukkitx.fastutil:fastutil-int-common:8.5.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/fastutil/fastutil-int-common/8.5.3/fastutil-int-common-8.5.3.jar"
+sha256 = "843631cbd8b96b5f0a66c2e916ec8770ab15a317d79bc1a2cd79e9ed2b66648b"
+
+[[release.artifact]]
+module = "org.jetbrains:annotations:26.0.2"
+url = "https://repo1.maven.org/maven2/org/jetbrains/annotations/26.0.2/annotations-26.0.2.jar"
+sha256 = "2037be378980d3ba9333e97955f3b2cde392aa124d04ca73ce2eee6657199297"
+
+[[release.artifact]]
+module = "org.jspecify:jspecify:1.0.0"
+url = "https://repo1.maven.org/maven2/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar"
+sha256 = "1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab"
+
+[[release.artifact]]
+module = "com.nukkitx.fastutil:fastutil-common:8.5.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/fastutil/fastutil-common/8.5.3/fastutil-common-8.5.3.jar"
+sha256 = "d6f17bb3c6a2512c41ea78f533f9018b49199bae74ef9cb3d90a5e9b5801f938"
+
+[[release]]
+version = "26.1-20260708.090514-22"
+module = "org.geysermc.mcprotocollib:protocol:26.1-20260708.090514-22"
+protocol = 775
+minecraft = ["26.1", "26.1.1", "26.1.2"]
+verified = ["26.1.2"]
+java = 17
+features = ["ONLINE_AUTHENTICATION"]
+
+[[release.artifact]]
+module = "org.geysermc.mcprotocollib:protocol:26.1-20260708.090514-22"
+url = "https://repo.opencollab.dev/main/org/geysermc/mcprotocollib/protocol/26.1-SNAPSHOT/protocol-26.1-20260708.090514-22.jar"
+sha256 = "649c00934cc5a38da2256598a9d83e5c9049c7e3c327a6dc568bbb8ac818bd08"
+
+[[release.artifact]]
+module = "org.cloudburstmc:nbt:3.0.4.Final"
+url = "https://repo1.maven.org/maven2/org/cloudburstmc/nbt/3.0.4.Final/nbt-3.0.4.Final.jar"
+sha256 = "1a30d7e05ad52ccbffb2016808c5dc2366147f0715c202ad375552d80a8c4c64"
+
+[[release.artifact]]
+module = "net.raphimc:MinecraftAuth:5.0.0"
+url = "https://repo1.maven.org/maven2/net/raphimc/MinecraftAuth/5.0.0/MinecraftAuth-5.0.0.jar"
+sha256 = "7a1af91e850587ce052136e3c19de2c5ce5493255371668b87c75436a798d70d"
+
+[[release.artifact]]
+module = "net.kyori:adventure-text-serializer-json-legacy-impl:4.25.0"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-text-serializer-json-legacy-impl/4.25.0/adventure-text-serializer-json-legacy-impl-4.25.0.jar"
+sha256 = "3827ea0b41ec6c373f913d824e6027612e5014b9497fbef98c4b1a1559b0fc3b"
+
+[[release.artifact]]
+module = "net.kyori:adventure-text-serializer-json:4.25.0"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-text-serializer-json/4.25.0/adventure-text-serializer-json-4.25.0.jar"
+sha256 = "482b4aa218d7c879fcf57e5d0f9cc04db4b4d4b5679eb99b727f6104ed7fb982"
+
+[[release.artifact]]
+module = "net.kyori:adventure-text-serializer-commons:4.25.0"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-text-serializer-commons/4.25.0/adventure-text-serializer-commons-4.25.0.jar"
+sha256 = "0cccad7f54db9a1ddc8164b282c1b4c49c2e9c76f682cbe2c9654161dc9ad395"
+
+[[release.artifact]]
+module = "net.kyori:adventure-api:4.25.0"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-api/4.25.0/adventure-api-4.25.0.jar"
+sha256 = "8e281bf1357ff91af9783a6c24276b483d8154a7b3cab5b04e909e6bf5e72c9d"
+
+[[release.artifact]]
+module = "net.kyori:adventure-nbt:4.25.0"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-nbt/4.25.0/adventure-nbt-4.25.0.jar"
+sha256 = "8ee6da621f496f16c619de6ec5c0b9c140ceac9b89c2a5b3377938dbd55a162e"
+
+[[release.artifact]]
+module = "net.kyori:adventure-key:4.25.0"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-key/4.25.0/adventure-key-4.25.0.jar"
+sha256 = "cec8f0abf642df0e627bf5a9fff6f17cbb620ea6fe05f2162b96cad1564d8857"
+
+[[release.artifact]]
+module = "net.kyori:adventure-text-serializer-gson:4.25.0"
+url = "https://repo1.maven.org/maven2/net/kyori/adventure-text-serializer-gson/4.25.0/adventure-text-serializer-gson-4.25.0.jar"
+sha256 = "931f67959d46e0fe55b64ab9164e31b578b79235787f69d472b62865f97b7245"
+
+[[release.artifact]]
+module = "com.google.code.gson:gson:2.13.2"
+url = "https://repo1.maven.org/maven2/com/google/code/gson/gson/2.13.2/gson-2.13.2.jar"
+sha256 = "dd0ce1b55a3ed2080cb70f9c655850cda86c206862310009dcb5e5c95265a5e0"
+
+[[release.artifact]]
+module = "org.slf4j:slf4j-api:2.0.9"
+url = "https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.9/slf4j-api-2.0.9.jar"
+sha256 = "0818930dc8d7debb403204611691da58e49d42c50b6ffcfdce02dadb7c3c2b6c"
+
+[[release.artifact]]
+module = "org.cloudburstmc.math:api:2.0"
+url = "https://repo.opencollab.dev/main/org/cloudburstmc/math/api/2.0/api-2.0.jar"
+sha256 = "4348d532b11d033f1c6e11037fe3d045223878333d9e140c4f11bb3309b72083"
+
+[[release.artifact]]
+module = "org.cloudburstmc.math:immutable:2.0"
+url = "https://repo.opencollab.dev/main/org/cloudburstmc/math/immutable/2.0/immutable-2.0.jar"
+sha256 = "6ada50be0ac66f4012b60ec9b0c7efe87f201ca989fd3d7963438a6bb6981ebf"
+
+[[release.artifact]]
+module = "com.nukkitx.fastutil:fastutil-object-int-maps:8.5.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/fastutil/fastutil-object-int-maps/8.5.3/fastutil-object-int-maps-8.5.3.jar"
+sha256 = "b8fff44de02a05a6ae2eeb28f5ed9862cbd180ea9c6c6f413962f58e331c9ca0"
+
+[[release.artifact]]
+module = "com.nukkitx.fastutil:fastutil-int-object-maps:8.5.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/fastutil/fastutil-int-object-maps/8.5.3/fastutil-int-object-maps-8.5.3.jar"
+sha256 = "67488ac5ff4e9a821c42d9aa57d2e8f59dfd5d2a415ca8cbf2d6af01d5422816"
+
+[[release.artifact]]
+module = "com.nukkitx.fastutil:fastutil-int-int-maps:8.5.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/fastutil/fastutil-int-int-maps/8.5.3/fastutil-int-int-maps-8.5.3.jar"
+sha256 = "52df12c8395db36947060efaabe7a1827d942b1e01140f2e7d7b3094522d8d5e"
+
+[[release.artifact]]
+module = "io.netty:netty-all:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-all/4.2.1.Final/netty-all-4.2.1.Final.jar"
+sha256 = "2505b821b9c0202f55ff059794ed5bcbd8ba066701d93e2e5bdb66c0b6391730"
+
+[[release.artifact]]
+module = "org.checkerframework:checker-qual:3.42.0"
+url = "https://repo1.maven.org/maven2/org/checkerframework/checker-qual/3.42.0/checker-qual-3.42.0.jar"
+sha256 = "ccaedd33af0b7894d9f2f3b644f4d19e43928e32902e61ac4d10777830f5aac7"
+
+[[release.artifact]]
+module = "com.google.errorprone:error_prone_annotations:2.41.0"
+url = "https://repo1.maven.org/maven2/com/google/errorprone/error_prone_annotations/2.41.0/error_prone_annotations-2.41.0.jar"
+sha256 = "a56e782b5b50811ac204073a355a21d915a2107fce13ec711331ad036f660fcc"
+
+[[release.artifact]]
+module = "net.lenni0451.commons:httpclient:1.9.0"
+url = "https://repo1.maven.org/maven2/net/lenni0451/commons/httpclient/1.9.0/httpclient-1.9.0.jar"
+sha256 = "c7c01c4639ee890b69a443d135c3bd55aedf24e41e19189c2ad874a0ed429c3e"
+
+[[release.artifact]]
+module = "net.lenni0451.commons:gson:1.9.0"
+url = "https://repo1.maven.org/maven2/net/lenni0451/commons/gson/1.9.0/gson-1.9.0.jar"
+sha256 = "5cb4fb360bd50ecfa595d954e27b914b64e41bc9e70c7cb9a17e84a6f1856777"
+
+[[release.artifact]]
+module = "com.nukkitx.fastutil:fastutil-object-sets:8.5.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/fastutil/fastutil-object-sets/8.5.3/fastutil-object-sets-8.5.3.jar"
+sha256 = "ba21454ed268d53c512b1f1ad52ed1e16fe28da3cea57ff0fa4ca957297a0070"
+
+[[release.artifact]]
+module = "com.nukkitx.fastutil:fastutil-int-sets:8.5.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/fastutil/fastutil-int-sets/8.5.3/fastutil-int-sets-8.5.3.jar"
+sha256 = "e1288a27842cc6a7604d8243351879778f8a736e26038edb2c946b8db559343e"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-epoll:4.2.1.Final:linux-x86_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-epoll/4.2.1.Final/netty-transport-native-epoll-4.2.1.Final-linux-x86_64.jar"
+sha256 = "d3abd3466dffa28d35102f888346ba4cef59bc1566d0084b5fac5feb2adab1fd"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-epoll:4.2.1.Final:linux-aarch_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-epoll/4.2.1.Final/netty-transport-native-epoll-4.2.1.Final-linux-aarch_64.jar"
+sha256 = "a8a56a18246d6b9377f67861dd99d544977b78228fbee783fe92b6f7591e6f0a"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-epoll:4.2.1.Final:linux-riscv64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-epoll/4.2.1.Final/netty-transport-native-epoll-4.2.1.Final-linux-riscv64.jar"
+sha256 = "c5ffe847a47aeab467547242248d710a8d96311569739d2f1978134fea1f2395"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-io_uring:4.2.1.Final:linux-x86_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-io_uring/4.2.1.Final/netty-transport-native-io_uring-4.2.1.Final-linux-x86_64.jar"
+sha256 = "89695f3d77e70b7192c289f37b32c2d3beea950461874fe6ad96533fc9b98d71"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-io_uring:4.2.1.Final:linux-aarch_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-io_uring/4.2.1.Final/netty-transport-native-io_uring-4.2.1.Final-linux-aarch_64.jar"
+sha256 = "4b3e1798a99ec688f5a7428ed17753ee68b5383637458550eca57272015adbb5"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-io_uring:4.2.1.Final:linux-riscv64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-io_uring/4.2.1.Final/netty-transport-native-io_uring-4.2.1.Final-linux-riscv64.jar"
+sha256 = "34e6a1c29187526a3d0554f81201658d26ecd6c0a6c47638d41d63070cc7f818"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-kqueue:4.2.1.Final:osx-x86_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-kqueue/4.2.1.Final/netty-transport-native-kqueue-4.2.1.Final-osx-x86_64.jar"
+sha256 = "d8a87e9c10cd9cbc51b22257ab8dc799f0b2c1bf3b578fe01f8a6175ac5fda0e"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-kqueue:4.2.1.Final:osx-aarch_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-kqueue/4.2.1.Final/netty-transport-native-kqueue-4.2.1.Final-osx-aarch_64.jar"
+sha256 = "33569fa1c79cf028ddaeb0306763e2c94271d6c8544c5917d0f99cde92e3c4a1"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-classes-epoll:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-classes-epoll/4.2.1.Final/netty-transport-classes-epoll-4.2.1.Final.jar"
+sha256 = "cc2f97afa5684f1995a5f1006b36c9ba4b233c1e68038c50e5b77b14aba4eea4"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-classes-io_uring:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-classes-io_uring/4.2.1.Final/netty-transport-classes-io_uring-4.2.1.Final.jar"
+sha256 = "c6deb8b20cf76a37e2cf6e905fd3eee4f87eed6478d4ed75c7709f40e0019156"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-classes-kqueue:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-classes-kqueue/4.2.1.Final/netty-transport-classes-kqueue-4.2.1.Final.jar"
+sha256 = "8f1d4b4c7b92edd31d19c176ab60c5e3e71e784481cc95c7fc50c74511d32d56"
+
+[[release.artifact]]
+module = "io.netty:netty-resolver-dns-native-macos:4.2.1.Final:osx-x86_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-resolver-dns-native-macos/4.2.1.Final/netty-resolver-dns-native-macos-4.2.1.Final-osx-x86_64.jar"
+sha256 = "0e128471da5221fee6e108c2b547112e2cd7b3ee91178e6e35232200eccde25b"
+
+[[release.artifact]]
+module = "io.netty:netty-resolver-dns-native-macos:4.2.1.Final:osx-aarch_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-resolver-dns-native-macos/4.2.1.Final/netty-resolver-dns-native-macos-4.2.1.Final-osx-aarch_64.jar"
+sha256 = "dc8b9425bad0b37858898cf1198414a1b27b1ae94e4a940968cae37f542012a6"
+
+[[release.artifact]]
+module = "io.netty:netty-resolver-dns-classes-macos:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-resolver-dns-classes-macos/4.2.1.Final/netty-resolver-dns-classes-macos-4.2.1.Final.jar"
+sha256 = "c8025e0f87b7b8290ddf9a1019a1e5f5e4769d79a479f2c16df48a0f51582af1"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-native-quic:4.2.1.Final:linux-x86_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-native-quic/4.2.1.Final/netty-codec-native-quic-4.2.1.Final-linux-x86_64.jar"
+sha256 = "919363b217c82e4f0b528891e834c923ad846919c91f5392cfe816c1fd22126f"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-native-quic:4.2.1.Final:linux-aarch_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-native-quic/4.2.1.Final/netty-codec-native-quic-4.2.1.Final-linux-aarch_64.jar"
+sha256 = "96a0b77ffcb1dc9082a8a94ec9c1967721ab0a0978e13819e70430355de22c7d"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-native-quic:4.2.1.Final:osx-x86_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-native-quic/4.2.1.Final/netty-codec-native-quic-4.2.1.Final-osx-x86_64.jar"
+sha256 = "ab77884b740c5c8d0f79e1775f9ca2a28dbb3d9de1ab28dd96cf16b53eb48653"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-native-quic:4.2.1.Final:osx-aarch_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-native-quic/4.2.1.Final/netty-codec-native-quic-4.2.1.Final-osx-aarch_64.jar"
+sha256 = "fe804fd621b58f76788f27e3b820470d3d95e59722ef83f4bffa2cbb42985240"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-native-quic:4.2.1.Final:windows-x86_64"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-native-quic/4.2.1.Final/netty-codec-native-quic-4.2.1.Final-windows-x86_64.jar"
+sha256 = "0b2456031850c5bda27f6862bb9054db00df09bba5082b6ce18a34ea1b47f370"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-classes-quic:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-classes-quic/4.2.1.Final/netty-codec-classes-quic-4.2.1.Final.jar"
+sha256 = "ff97ec2c73137922c732a2a19638912c3cab8ec7e0386a9eb0200596e0d0c002"
+
+[[release.artifact]]
+module = "io.netty:netty-resolver-dns:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-resolver-dns/4.2.1.Final/netty-resolver-dns-4.2.1.Final.jar"
+sha256 = "093523eb425a7398c4bcc6b1d5919c17d9d865816a56db4824ceb14d6da25206"
+
+[[release.artifact]]
+module = "io.netty:netty-handler:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-handler/4.2.1.Final/netty-handler-4.2.1.Final.jar"
+sha256 = "b97d057adffffb824ce6b5d9876bfe1f0bfceb24504b638d3f6c6293cfff5dc5"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-unix-common:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-unix-common/4.2.1.Final/netty-transport-native-unix-common-4.2.1.Final.jar"
+sha256 = "7f2a7746950ccb227908afe3ee21b9bcf69ccc58437bb17c1579a8d572fb38a9"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-dns:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-dns/4.2.1.Final/netty-codec-dns-4.2.1.Final.jar"
+sha256 = "dfea353a4095ebfbc7c94549904b74f7c0369f26ae5491e79bc5e47d9054ad1a"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-base:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-base/4.2.1.Final/netty-codec-base-4.2.1.Final.jar"
+sha256 = "c2a1a7af991694272f74bb7dab01059049790c14b453760009827e105530d3b7"
+
+[[release.artifact]]
+module = "io.netty:netty-transport:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport/4.2.1.Final/netty-transport-4.2.1.Final.jar"
+sha256 = "ba9fd45598fa05605d2a5014d6f47112e4392ba2b912cd1e3786e4851b397cf7"
+
+[[release.artifact]]
+module = "io.netty:netty-buffer:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-buffer/4.2.1.Final/netty-buffer-4.2.1.Final.jar"
+sha256 = "2ece8d8413d5aa35a1d1e0fe94f69f9e9edd8f7abb53f6c557a473c9fd0bfc8e"
+
+[[release.artifact]]
+module = "io.netty:netty-codec:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec/4.2.1.Final/netty-codec-4.2.1.Final.jar"
+sha256 = "eef6f18f71ac5e32dc27a8d525479146c59fec30099d431a40662aff7dbd46f1"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-haproxy:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-haproxy/4.2.1.Final/netty-codec-haproxy-4.2.1.Final.jar"
+sha256 = "f6d28d0cd45cc9984ba6286b559760f7fabd5dcf0ad178701ef0eae5299f4657"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-compression:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-compression/4.2.1.Final/netty-codec-compression-4.2.1.Final.jar"
+sha256 = "c7d51a4f69c4bfbf043f92d196f61a6df42ad29c5bd0d053d107117220a5ca46"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-http:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-http/4.2.1.Final/netty-codec-http-4.2.1.Final.jar"
+sha256 = "10e831862bf7dabceccf4fd82989c31dda39a89ed669cf7e96dee09729077541"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-http2:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-http2/4.2.1.Final/netty-codec-http2-4.2.1.Final.jar"
+sha256 = "3d9e70f1828f448e47f18810712f0efe1bcdfcf5202d13867638fbd553c49059"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-memcache:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-memcache/4.2.1.Final/netty-codec-memcache-4.2.1.Final.jar"
+sha256 = "942b43c537778d595879f28ba25879fc71cbe3b181d21b18db27edf963a72c51"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-mqtt:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-mqtt/4.2.1.Final/netty-codec-mqtt-4.2.1.Final.jar"
+sha256 = "27b4430bddb55ec17c70779f1c00ac10d8b82d70918a2f74fd838c0e85d462a8"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-redis:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-redis/4.2.1.Final/netty-codec-redis-4.2.1.Final.jar"
+sha256 = "7a3bfa6fb3eba3f6292b7aa30bc0da17bc76a2646343a05c1657a486c2381df5"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-smtp:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-smtp/4.2.1.Final/netty-codec-smtp-4.2.1.Final.jar"
+sha256 = "b556345ea8a153230ff606d06615db1cbbdcfc737aa49354eea56f66eeebbef0"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-socks:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-socks/4.2.1.Final/netty-codec-socks-4.2.1.Final.jar"
+sha256 = "4a5c557d8b1f0f364906a2cc5f1df8dd36e7b71aa4dbc4e8d7aede81d46be793"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-stomp:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-stomp/4.2.1.Final/netty-codec-stomp-4.2.1.Final.jar"
+sha256 = "401483bf766d798ff517c9a616a3dc093bb5c8bb8c17798bf81860e1be395b5c"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-xml:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-xml/4.2.1.Final/netty-codec-xml-4.2.1.Final.jar"
+sha256 = "45a4e5f728d221bde9db15b3b2cf57d8b6fd15a069e743b199c6b3fda6d2a9c7"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-protobuf:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-protobuf/4.2.1.Final/netty-codec-protobuf-4.2.1.Final.jar"
+sha256 = "c90ffb31a04a3280289da72e63aaf7a23f97c1698e2cc9b96bfa6469df82f598"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-marshalling:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-marshalling/4.2.1.Final/netty-codec-marshalling-4.2.1.Final.jar"
+sha256 = "48549989c725a7025791329ab612a1a4cbe4b10e53f4a6b13e44c9c0c542876a"
+
+[[release.artifact]]
+module = "io.netty:netty-resolver:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-resolver/4.2.1.Final/netty-resolver-4.2.1.Final.jar"
+sha256 = "fb1c5a9f1230cc558944ac633e5b64d3e4ec981d8e0d5727d5f58122008b218e"
+
+[[release.artifact]]
+module = "io.netty:netty-common:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-common/4.2.1.Final/netty-common-4.2.1.Final.jar"
+sha256 = "7eea4a96f61ace06337906374150cb73c94f248897fda3da865b5c38a710bdfd"
+
+[[release.artifact]]
+module = "io.netty:netty-handler-proxy:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-handler-proxy/4.2.1.Final/netty-handler-proxy-4.2.1.Final.jar"
+sha256 = "c92ef0552d859a736874cc6519304060afe04f8f435c4a23b22b59a525e21c4f"
+
+[[release.artifact]]
+module = "io.netty:netty-handler-ssl-ocsp:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-handler-ssl-ocsp/4.2.1.Final/netty-handler-ssl-ocsp-4.2.1.Final.jar"
+sha256 = "638d114cc19d08cb9899048219a566d29e5a7d7fa01c8e794d0d795074b52766"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-rxtx:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-rxtx/4.2.1.Final/netty-transport-rxtx-4.2.1.Final.jar"
+sha256 = "5b0096434a0c8201df0adeaae4fa8873b3c818d0dc734e92e174e4d81b4a904c"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-sctp:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-sctp/4.2.1.Final/netty-transport-sctp-4.2.1.Final.jar"
+sha256 = "ef84e2854a0eb611c6df4d91aa2c11520aa4519b4b7bc11400861b08884afbf2"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-udt:4.2.1.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-udt/4.2.1.Final/netty-transport-udt-4.2.1.Final.jar"
+sha256 = "bd0fccf36e9e2d45e70c87200a4c24302f5fb5427f92897ed050c8f3f145c580"
+
+[[release.artifact]]
+module = "net.kyori:option:1.1.0"
+url = "https://repo1.maven.org/maven2/net/kyori/option/1.1.0/option-1.1.0.jar"
+sha256 = "97b69b4b17dfe02217c9131ad342564cbc9aebd04c75eb689639b5f78fd4b11c"
+
+[[release.artifact]]
+module = "net.kyori:examination-string:1.3.0"
+url = "https://repo1.maven.org/maven2/net/kyori/examination-string/1.3.0/examination-string-1.3.0.jar"
+sha256 = "7d01fc25a4bb3af0e1662685455f4541fbf4626216ea5846e455c1491e156b8c"
+
+[[release.artifact]]
+module = "net.kyori:examination-api:1.3.0"
+url = "https://repo1.maven.org/maven2/net/kyori/examination-api/1.3.0/examination-api-1.3.0.jar"
+sha256 = "c9237ffecb05428f6eff86216246ac70ce0b47b04c08ea7ca35020fde57f8492"
+
+[[release.artifact]]
+module = "com.nukkitx.fastutil:fastutil-object-common:8.5.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/fastutil/fastutil-object-common/8.5.3/fastutil-object-common-8.5.3.jar"
+sha256 = "02242fa5fc72e571b8ec41b41eef173b256fc1f84867579db672e4774dab541f"
+
+[[release.artifact]]
+module = "com.nukkitx.fastutil:fastutil-int-common:8.5.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/fastutil/fastutil-int-common/8.5.3/fastutil-int-common-8.5.3.jar"
+sha256 = "843631cbd8b96b5f0a66c2e916ec8770ab15a317d79bc1a2cd79e9ed2b66648b"
+
+[[release.artifact]]
+module = "org.jetbrains:annotations:26.0.2"
+url = "https://repo1.maven.org/maven2/org/jetbrains/annotations/26.0.2/annotations-26.0.2.jar"
+sha256 = "2037be378980d3ba9333e97955f3b2cde392aa124d04ca73ce2eee6657199297"
+
+[[release.artifact]]
+module = "org.jspecify:jspecify:1.0.0"
+url = "https://repo1.maven.org/maven2/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar"
+sha256 = "1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab"
+
+[[release.artifact]]
+module = "com.nukkitx.fastutil:fastutil-common:8.5.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/fastutil/fastutil-common/8.5.3/fastutil-common-8.5.3.jar"
+sha256 = "d6f17bb3c6a2512c41ea78f533f9018b49199bae74ef9cb3d90a5e9b5801f938"

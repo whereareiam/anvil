@@ -1,0 +1,23 @@
+# Shaped like the built-in Velocity data: the agent needs newer Java than Velocity 3.3 and 3.4.
+known = ["3.4.0", "4.0.0"]
+
+[agent]
+minimumJava = 21
+
+[verified]
+"3.5.1" = [21]
+
+[[java]]
+since = "3.3.0"
+minimum = 17
+preferred = 17
+
+[[java]]
+since = "3.5.0"
+minimum = 21
+preferred = 21
+
+[[java]]
+since = "4.0.0"
+minimum = 25
+preferred = 25

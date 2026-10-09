@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SpigotPlatformProviderTest {
@@ -76,6 +77,14 @@ class SpigotPlatformProviderTest {
 		assertEquals("retained", new YAMLMapper().readTree(work.resolve("spigot.yml").toFile()).at("/settings/sample").asText());
 		provider.configure(server, context.toBuilder().forwarding(ForwardingConfiguration.builder().build()).build());
 		assertEquals(false, new YAMLMapper().readTree(work.resolve("spigot.yml").toFile()).at("/settings/bungeecord").asBoolean());
+	}
+
+	@Test
+	void packagesItsVersionDataBesideTheProvider() {
+		var data = new SpigotPlatformProvider().versionData();
+
+		assertNotNull(data, "spigot-versions.toml is packaged with the provider");
+		assertTrue(data.getPath().endsWith("me/whereareiam/anvil/platform/spigot/spigot-versions.toml"), data.toString());
 	}
 
 	private PlatformArtifactSource artifactSource() {

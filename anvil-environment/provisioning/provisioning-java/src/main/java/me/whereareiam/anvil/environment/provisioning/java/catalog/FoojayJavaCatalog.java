@@ -45,7 +45,8 @@ public final class FoojayJavaCatalog {
 
 		JsonNode result = mapper.readTree(packages.catalog(URI.create(query))).path("result");
 		if (!result.isArray() || result.isEmpty())
-			throw new ProvisioningException("Foojay has no Java package for " + distro + " " + selectedVersion);
+			throw new ProvisioningException("Foojay has no Java package for " + distro + " " + selectedVersion
+					+ (distribution.equals("temurin") ? "" : "; distribution temurin publishes every LTS release"));
 
 		String id = result.get(0).path("id").asText();
 		JsonNode packageInfo = mapper.readTree(packages.catalog(URI.create("https://api.foojay.io/disco/v3.0/ids/" + id)))

@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -44,4 +45,7 @@ public final class TypedCapabilityChannel implements CapabilityChannel {
 
 	@Override
 	public @NotNull Set<String> installedCapabilities() { return messages.installedCapabilities(); }
+
+	@Override
+	public @NotNull Map<String, String> unavailableCapabilities() { return messages.unavailableCapabilities(); }
 }

@@ -28,7 +28,9 @@ Each capability is optional unless the test or another installed capability requ
 | [Interaction](./interaction/index.md) | Use items and interact with blocks or entities. | MCProtocol and Session |
 
 The `Server` capability does not depend on `Session`. Its observations come from the scenario's
-platform agents, while packet-backed capabilities operate through the selected protocol backend.
+platform agents, while packet-backed capabilities operate through the player's protocol library. The
+built-in capabilities are installed on every MCProtocolLib release Anvil ships, from Minecraft 1.18.2
+to 26.1.2.
 
 ## Install built-in capabilities
 
@@ -64,9 +66,11 @@ Use `hasCapability(type)` only when absence is an intentional supported branch o
 journey requires messages, let a missing `Messages` implementation fail rather than silently skipping
 the assertion.
 
-Anvil selects a protocol backend before composing capabilities. An alternative backend needs its own
-implementations of the capability APIs it supports; the bundled MCProtocol adapters are specific to
-MCProtocol.
+Anvil selects each player's protocol library before composing its capabilities. Another library needs
+its own implementations of the capability APIs it supports; the bundled MCProtocol adapters are
+specific to MCProtocolLib. When the player's worker cannot install a capability, for example because
+the release lacks a class it needs, retrieval throws `CapabilityUnavailableException` with that reason
+while the player's other capabilities keep working.
 
 ## Add an external capability
 

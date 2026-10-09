@@ -1,37 +1,27 @@
 plugins {
-    application
-    alias(libs.plugins.toolkit.architecture)
-    alias(libs.plugins.toolkit.publish.maven)
-    id("unit")
+	id("assembly")
+	id("wiring-bundle")
+	id("library-releases")
+}
+
+// Owning mcprotocol-api makes this family its own API family, so the protocol library API it implements is shared explicitly.
+architecture {
+	sharedApis = setOf(projects.anvilProtocol.protocolApi.path)
 }
 
 description = "Version-isolated MCProtocolLib clients and workers for Anvil"
 
 dependencies {
-    api(projects.anvilProtocol.protocolApi)
+	api(projects.anvilProtocol.protocolApi)
 
-    implementation(libs.adventure.plain)
-    implementation(libs.jackson.databind)
-    implementation(libs.minecraft.auth)
-    implementation(libs.slf4j.api)
+	implementation(projects.anvilProtocol.protocolMcprotocol.mcprotocolApi)
+	implementation(libs.jackson.databind)
+	implementation(libs.jackson.toml)
+	implementation(libs.minecraft.auth)
+	implementation(libs.slf4j.api)
 
-    compileOnly(libs.mcprotocol)
+	embedded(projects.anvilProtocol.protocolMcprotocol.mcprotocolCommon) { isTransitive = false }
 
-    runtimeOnly(libs.mcprotocol)
-    runtimeOnly(libs.slf4j.simple)
-
-    testImplementation(projects.anvilCapability.capabilityProtocolApi)
-    testImplementation(projects.anvilCapability)
-    testImplementation(projects.anvilCapability.capabilityBuiltin.default)
-    testImplementation(projects.anvilLauncher)
-    testImplementation(projects.anvilEnvironment.cache.cacheApi)
-    testImplementation(projects.anvilEnvironment.cache)
-    testImplementation(projects.anvilEnvironment.provisioning.provisioningArtifact)
-    testImplementation(projects.anvilEnvironment.provisioning.provisioningArtifact.artifactApi)
-
-    testCompileOnly(libs.mcprotocol)
-}
-
-application {
-    mainClass.set("me.whereareiam.anvil.protocol.mcprotocol.worker.child.McProtocolWorkerMain")
+	runtimeOnly(projects.anvilProtocol.protocolMcprotocol.mcprotocolClient)
+	runtimeOnly(libs.slf4j.simple)
 }

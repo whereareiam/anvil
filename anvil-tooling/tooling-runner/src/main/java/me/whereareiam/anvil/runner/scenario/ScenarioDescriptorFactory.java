@@ -114,7 +114,7 @@ public final class ScenarioDescriptorFactory {
 
 	private static String javaRequirement(JavaRequirement requirement) {
 		List<String> values = new ArrayList<>();
-		values.add(requirement.getFeatureVersion() == null ? "Platform Java requirement" : "Java " + requirement.getFeatureVersion());
+		values.add(requirement.getFeatureVersion() == null ? "Planned default LTS" : "Java " + requirement.getFeatureVersion());
 		if (requirement.getDistribution() != null) values.add(requirement.getDistribution());
 		if (requirement.getRelease() != null) values.add("release " + requirement.getRelease());
 

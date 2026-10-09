@@ -39,7 +39,7 @@ Close the context: release players and stop the managed processes
 
 Players are created as the test needs them. Installed capabilities provide session management,
 messages, movement, inventory, interactions, and server observations. You can add capabilities
-or implement another backend through Anvil's public extension contracts.
+or implement another protocol library through Anvil's public extension contracts.
 
 ## Follow the guide
 
@@ -62,7 +62,7 @@ A human-run scenario can help explore a behavior before you turn its checks into
 |---|---|
 | Look up engine properties and defaults | [Engine options](./building-blocks/environments/configuration/engine/index.md) |
 | Diagnose a failing run or report a defect | [Troubleshooting](./help/troubleshooting/index.md) |
-| Add a capability, agent channelOperation, backend, or platform | [Extensions](./extending/index.md) |
+| Add a capability, agent operation, protocol library, or platform | [Extensions](./extending/index.md) |
 | Change Anvil's implementation or documentation | [Contributing](./contributing/index.md) |
 
 Option tables and API links live beside the guides that use them. Extension and contributor guides
@@ -70,11 +70,13 @@ assume you already have a working consumer environment.
 
 ## Supported environment
 
-Anvil targets Java 21. Managed processes may need a newer Java runtime; the
-[Java guide](./building-blocks/environments/provisioning/java/index.md) explains selection and provisioning.
+Anvil targets Java 21. Each managed process runs on the LTS Java release its platform version
+prefers; the [Java guide](./building-blocks/environments/provisioning/java/index.md#java-per-platform-version)
+lists those versions and explains selection and provisioning.
 The bundled platforms are Paper and Spigot servers, plus Velocity and BungeeCord proxies.
-MCProtocolLib supplies the bundled native player backend. See the
-[version and route matrix](./building-blocks/environments/platforms/versions/index.md) for tested combinations.
+MCProtocolLib is the bundled protocol library for native players, from Minecraft 1.18.2 to 26.1.2.
+See the [version and route matrix](./building-blocks/environments/platforms/versions/index.md) for
+supported versions and tested combinations.
 
 Local process execution is the standard Gradle workflow. A Docker execution provider is also
 available with explicit image configuration; read its [setup and limits](./building-blocks/environments/configuration/execution/index.md)

@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.protocol.api.player.worker;
 
+import me.whereareiam.anvil.capability.protocol.api.exception.AdapterUnavailableException;
 import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
 import me.whereareiam.anvil.capability.protocol.api.model.ViewRotation;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
@@ -10,14 +11,14 @@ import java.util.UUID;
 import java.util.function.Function;
 
 /**
- * Native lifecycle controls, SDK access, rotation, and event delivery supplied to one player's binding.
- * This context remains associated with that player until destruction. SDK values returned by
- * {@link #backend()} and supplied to {@link #bindBackend(Function)} represent individual connection
- * generations; callers must not retain them across reconnects.
+ * Native lifecycle controls, session access, rotation, and event delivery supplied to one player's binding.
+ * This context remains associated with that player until destruction. Native sessions returned by
+ * {@link #nativeSession()} and supplied to {@link #bindNativeSession(Function)} represent individual
+ * connection generations; callers must not retain them across reconnects.
  *
- * @param <B> actual external SDK context type
+ * @param <S> native session type of the protocol library
  */
-public interface PlayerBindingContext<B> {
+public interface PlayerBindingContext<S> {
 	/**
 	 * Returns the authenticated player name.
 	 *
@@ -48,21 +49,21 @@ public interface PlayerBindingContext<B> {
 	void rejoin();
 
 	/**
-	 * Returns the current connected SDK context.
+	 * Returns the current connected native session.
 	 *
 	 * @return native session
 	 * @throws IllegalStateException when the player is not connected
 	 */
-	@NotNull B backend();
+	@NotNull S nativeSession();
 
 	/**
 	 * Tests whether a callback still belongs to the current native connection generation.
 	 * Listeners use this check to ignore callbacks already in flight during a reconnect.
 	 *
-	 * @param backend native context captured when the listener was installed
-	 * @return whether the context is still current
+	 * @param nativeSession native session captured when the listener was installed
+	 * @return whether the session is still current
 	 */
-	boolean isCurrentBackend(@NotNull B backend);
+	boolean isCurrentNativeSession(@NotNull S nativeSession);
 
 	/**
 	 * Binds native listeners before each session starts connecting. Previous listener bindings
@@ -72,7 +73,7 @@ public interface PlayerBindingContext<B> {
 	 * @param listener factory returning cleanup for the supplied native generation
 	 * @return owned generation-listener registration
 	 */
-	@NotNull Subscription bindBackend(@NotNull Function<B, Subscription> listener);
+	@NotNull Subscription bindNativeSession(@NotNull Function<S, Subscription> listener);
 
 	/**
 	 * Returns the latest shared yaw and pitch, including server corrections.
@@ -97,4 +98,31 @@ public interface PlayerBindingContext<B> {
 	 * @param <E> event payload type
 	 */
 	<E> void emit(@NotNull EventDescriptor<E> eventDescriptor, @Nullable E payload);
+
+	/**
+	 * Returns the adapter of a library-neutral port for this player's library release: the implementation that the
+	 * segment selected for the release provides. Capability wiring obtains every release-specific implementation
+	 * this way, never through a service lookup of its own, so the worker's segment selection and linkage self-check
+	 * decide what it receives. Call it while binding, not in the extension's constructor.
+	 *
+	 * <pre>{@code
+	 * public WorkerBinding bind(PlayerBindingContext<Object> player, OperationRegistry operations) {
+	 *     MovementPackets<?> packets = player.adapter(MovementPackets.class);
+	 *     return new MovementBinding<>(packets).bind(player, operations);
+	 * }
+	 * }</pre>
+	 *
+	 * <p>A context outside a library worker, such as a test double, provides no adapters; this default reports
+	 * that.</p>
+	 *
+	 * @param port port interface the adapter implements
+	 * @param <P> port type
+	 * @return the adapter, which is stateless and may serve other players of the same worker
+	 * @throws AdapterUnavailableException when no segment for the release provides the port, the providing segment
+	 * failed its linkage self-check, or more than one adapter is provided; the worker reports the binding's
+	 * capability as unavailable with the exception's message
+	 */
+	default <P> @NotNull P adapter(@NotNull Class<P> port) {
+		throw new AdapterUnavailableException("This player binding context provides no adapter for " + port.getName());
+	}
 }

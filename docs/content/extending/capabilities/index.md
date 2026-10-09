@@ -9,7 +9,7 @@ its owner, then choose the mechanism that supplies the behavior.
 | Behavior | Public contract | Provider |
 |---|---|---|
 | Player behavior using observations or other capabilities | `PlayerCapability` | `PlayerCapabilityProvider` |
-| Player actions through a protocol backend | `PlayerCapability` | `ProtocolPlayerCapabilityProvider` |
+| Player actions through the native protocol client | `PlayerCapability` | `ProtocolPlayerCapabilityProvider` |
 | Player observations or actions through agents | `PlayerCapability` | `AgentPlayerCapabilityProvider` |
 | Server or proxy behavior through its agent, independent of a player | `ProcessCapability` | `AgentProcessCapabilityProvider` |
 
@@ -27,11 +27,11 @@ uses shared player observations, so it needs neither a protocol channel nor dire
 
 This section builds a process-owned `Echo` capability backed by an agent. It proves that your
 packaged native handler can run in the selected process and return a result, without creating a
-simulated player. Replace its contract with a useful domain channelOperation after the installation
+simulated player. Replace its contract with a useful domain operation after the installation
 path works.
 
 1. [Define the public contract](./contracts/index.md).
-2. Define its [channelOperation contract and handler](../agent-operations/contracts/index.md), then build
+2. Define its [operation contract and handler](../agent-operations/contracts/index.md), then build
    the [agent provider](./agent-adapters/index.md).
 3. [Install the handler](../agent-operations/installation/index.md) and
    [package and test the extension](../packaging/index.md) through a consumer build.
@@ -50,7 +50,7 @@ That path does not require completing the agent example first.
 | `echo` | Consumer dependency wiring | The API and selected host implementation |
 
 Your artifacts use your own Maven group and package namespace. The host and agent artifacts share
-channelOperation contracts through `echo-operations`, which exports `agent-api` for its descriptor
+operation contracts through `echo-operations`, which exports `agent-api` for its descriptor
 types. Host wiring derives a `ChannelOperation` from those descriptors and sends it through the
 capability request channel. The host does not depend on the handler implementation. For packet behavior,
 the protocol adapter occupies the host implementation role and may also supply worker-side code.
@@ -70,9 +70,10 @@ contracts under `capability.api.player`. Use `PlayerCapabilityProvider` when the
 needs only player identity/version, observations, declared dependencies, and cleanup.
 
 Protocol-backed player providers and native worker bindings use `capability-protocol-api`.
-`ProtocolPlayerCapabilityProvider` adds `supportedProtocolIds()`; its creation context supplies the
-protocol channel and external backend services. An empty ID set allows any selected backend.
-Declare `Session` only when the implementation uses it.
+`ProtocolPlayerCapabilityProvider` adds `supportedLibraries()`; its creation context supplies the
+protocol channel and the services of the player's protocol library. An empty set accepts every
+library. When the player's worker does not install the provider's capability, composition skips the
+provider and its dependents for that player. Declare `Session` only when the implementation uses it.
 
 Agent-backed process and player providers use `capability-agent-api`, which includes the shared
 capability contracts and neutral player context. Its process/player contexts add scoped request

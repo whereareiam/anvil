@@ -35,7 +35,7 @@ public interface Echo extends ProcessCapability {
 ```
 
 The caller selects the process when retrieving `Echo`. Each instance already knows its owner,
-so the channelOperation needs only the message. The public interface does not require an agent;
+so the operation needs only the message. The public interface does not require an agent;
 that is the implementation chosen by this example.
 
 ## Make behavior explicit

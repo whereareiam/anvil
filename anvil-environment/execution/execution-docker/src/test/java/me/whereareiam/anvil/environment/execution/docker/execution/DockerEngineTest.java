@@ -62,7 +62,7 @@ class DockerEngineTest {
 				.runtimeValidator((properties, request) -> {
 					assertTrue(metadata.isHeldByCurrentThread());
 					assertTrue(properties.contains("java.specification.version = 21"));
-					assertEquals(21, request.getMinimumJavaVersion());
+					assertEquals(21, request.getJavaSelection().getRequirement().getFeatureVersion());
 					validated.set(true);
 				}).build();
 		try (var docker = new DockerEngine()) {
@@ -72,7 +72,7 @@ class DockerEngineTest {
 				Files.createDirectories(workspace);
 				Path jar = Files.copy(FixtureArtifacts.process(), workspace.resolve("process.jar"));
 				var request = ProcessRequest.builder().name("smoke").workspace(workspace)
-						.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().featureVersion(21).build()).build()).minimumJavaVersion(21).build();
+						.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().featureVersion(21).build()).build()).build();
 				try (var target = session.prepare(request)) {
 					assertTrue(validated.get());
 					assertFalse(metadata.isLocked());

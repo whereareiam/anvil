@@ -21,7 +21,7 @@ API itself exposes no agent client or native handler contracts.
 package com.example.echo.host;
 
 import com.example.echo.Echo;
-import com.example.echo.channelOperation.EchoOperations;
+import com.example.echo.operation.EchoOperations;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityContext;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider;
 import me.whereareiam.anvil.capability.api.channel.RequestChannel;

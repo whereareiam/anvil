@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.environment.provisioning.java.api;
 
+import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSource;
 import org.jetbrains.annotations.Nullable;
@@ -12,24 +13,16 @@ import java.nio.file.Path;
  */
 public interface JavaProvisioner extends JavaRuntimeValidator {
 	/**
-	 * Resolves a host executable matching the selection and the platform minimum.
+	 * Resolves a host executable of exactly the requirement's feature version. Without an explicit
+	 * source, implementations try the current JVM when its feature version is equal, then
+	 * {@code JAVA_<feature>_HOME}, then a cached installation, then a catalog download when
+	 * downloads are enabled.
 	 *
-	 * @param selection exact process requirements
-	 * @param minimumVersion platform minimum feature version
-	 * @return validated Java executable
-	 */
-	@NotNull Path resolve(@NotNull JavaRequirement selection, int minimumVersion);
-
-	/**
-	 * Resolves a requirement using an optional user-supplied installation source.
-	 *
-	 * @param selection exact process requirements
-	 * @param minimumVersion platform minimum feature version
+	 * @param requirement planned process requirement carrying an exact feature version
 	 * @param source explicit source, or null to use provider defaults
 	 * @return validated Java executable
+	 * @throws ProvisioningException when the requirement has no
+	 * feature version or no matching installation is available
 	 */
-	default @NotNull Path resolve(@NotNull JavaRequirement selection, int minimumVersion, @Nullable JavaSource source) {
-		return resolve(selection, minimumVersion);
-	}
-
+	@NotNull Path resolve(@NotNull JavaRequirement requirement, @Nullable JavaSource source);
 }

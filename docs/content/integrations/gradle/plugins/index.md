@@ -1,6 +1,6 @@
 ---
 title: Plugins and dependencies
-description: Choose the Anvil Gradle entry point and install platform, protocol, and capability artifacts.
+description: Choose the Anvil Gradle entry point and install platform, protocol library, and capability artifacts.
 ---
 
 Choose scenario execution, JUnit testing, or both. Keep all Anvil plugin and library versions
@@ -15,7 +15,7 @@ repository configuration and a complete build script.
 | `me.whereareiam.anvil.junit` | JUnit integration and `anvilTest` |
 
 Each entry point installs shared Gradle declarations, the `anvil` source set, and artifact registration.
-Neither selects platform, protocol, or capability providers. Apply both
+Neither selects platform providers, protocol libraries, or capability providers. Apply both
 plugins when the same project needs automated tests and interactive environments:
 
 ```kotlin
@@ -63,7 +63,7 @@ and observations. The `console` unit supplies the process's agent-backed
 
 ## Dependency configurations
 
-Protocol providers can be registered through the standard Anvil source-set configuration:
+Protocol libraries are installed through the standard Anvil source-set configuration:
 
 ```kotlin
 dependencies {
@@ -80,6 +80,7 @@ dependencies {
 | `anvilRuntimeClasspath` | Resolved runtime classpath for Anvil tasks |
 
 The plugins add their dependencies directly to the source-set configurations. Platform and
-capability units configure those dependencies internally. Custom protocol providers belong on
-`anvilRuntimeOnly`; `anvil { engine { protocol("mcprotocol") } }` selects one when an explicit
-choice is needed. Anvil does not need to be packaged into the plugin under test.
+capability units configure those dependencies internally. Protocol libraries, including the bundled
+`protocol-mcprotocol`, belong on `anvilRuntimeOnly`. Each player uses the installed library with the
+strongest support for its version; `anvil { engine { protocolLibrary("mcprotocol") } }` sets a default
+when an explicit choice is needed. Anvil does not need to be packaged into the plugin under test.

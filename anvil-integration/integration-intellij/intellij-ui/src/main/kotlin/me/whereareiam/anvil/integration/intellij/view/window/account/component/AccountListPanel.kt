@@ -141,7 +141,7 @@ class AccountListPanel(
 				0 -> entry.account.username ?: "Profile not available"
 				1 -> entry.account.accountId
 				2 -> entry.source.label
-				else -> entry.account.providerId
+				else -> entry.account.libraryId
 			}
 		}
 	}

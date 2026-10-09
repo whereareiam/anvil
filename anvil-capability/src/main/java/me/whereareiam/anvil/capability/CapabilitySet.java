@@ -9,6 +9,7 @@ import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ public final class CapabilitySet<C extends Capability> implements CapabilityOwne
 	private final String ownerDescription;
 
 	private final Map<Class<? extends C>, C> capabilities = new LinkedHashMap<>();
+	private final Map<Class<? extends C>, String> unavailable = new LinkedHashMap<>();
 	private final List<Runnable> cleanup = new ArrayList<>();
 	private boolean closed;
 
@@ -35,6 +37,9 @@ public final class CapabilitySet<C extends Capability> implements CapabilityOwne
 	@Override
 	public @NotNull <T extends C> T capability(@NotNull Class<T> type) {
 		C capability = capabilities.get(type);
+		String reason = unavailable.get(type);
+		if (capability == null && reason != null)
+			throw new CapabilityUnavailableException(ownerDescription + " has no capability " + type.getName() + ": " + reason);
 		if (capability == null)
 			throw new CapabilityUnavailableException(ownerDescription + " has no capability " + type.getName()
 					+ ". Available: " + capabilities.keySet().stream().map(Class::getName).toList());
@@ -47,8 +52,21 @@ public final class CapabilitySet<C extends Capability> implements CapabilityOwne
 		return capabilities.containsKey(type);
 	}
 
+	/**
+	 * Returns the capabilities skipped for this owner, with the reason for each.
+	 *
+	 * @return immutable reasons keyed by capability type, in composition order
+	 */
+	public @NotNull Map<Class<? extends C>, String> unavailable() {
+		return Collections.unmodifiableMap(new LinkedHashMap<>(unavailable));
+	}
+
 	<T extends C> void add(@NotNull Class<T> type, @NotNull T capability) {
 		capabilities.put(type, capability);
+	}
+
+	void unavailable(@NotNull Class<? extends C> type, @NotNull String reason) {
+		unavailable.put(type, reason);
 	}
 
 	@NotNull CapabilityContext<C> context(

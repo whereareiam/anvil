@@ -1,6 +1,5 @@
 plugins {
-	alias(libs.plugins.toolkit.architecture)
-	id("unit")
+	id("jvm")
 }
 
 description = "Scenario player management and protocol lifecycle ownership for Anvil"
@@ -11,11 +10,4 @@ dependencies {
 
 	testImplementation(projects.anvilApi)
 	testImplementation(projects.anvilProtocol.protocolApi)
-}
-
-tasks.named("build") {
-	dependsOn(
-		":anvil-protocol:protocol-api:build",
-		":anvil-protocol:protocol-mcprotocol:build"
-	)
 }

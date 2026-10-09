@@ -17,10 +17,10 @@ public class ProcessRequest {
 	@NotNull Path workspace;
 
 	/**
-	 * Resolved Java selection with a requirement and an optional explicit source.
+	 * Planned Java selection whose requirement carries the exact feature version to run, with an
+	 * optional explicit installation source.
 	 */
 	@NotNull JavaSelection javaSelection;
-	int minimumJavaVersion;
 
 	boolean agent;
 	@Builder.Default

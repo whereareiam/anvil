@@ -15,14 +15,22 @@ shows a small environment before adding plugin-specific assertions.
 
 ## Is a simulated player a full game client?
 
-It speaks the native protocol through the selected provider. It does not render the game or
+It speaks the native protocol through the selected protocol library. It does not render the game or
 supply autonomous movement, pathfinding, or crafting. Installed [capabilities](../../building-blocks/players/capabilities/index.md)
 provide the actions your test can request.
 
 ## Does the Anvil plugin install every runtime?
 
 The standard plugin supplies scenario execution and IDE discovery. Add the JUnit plugin for
-automated tests. Platform, capability, and protocol providers are selected explicitly. See [Plugins and dependencies](../../integrations/gradle/plugins/index.md).
+automated tests. Platform providers, capabilities, and protocol libraries are installed explicitly. See [Plugins and dependencies](../../integrations/gradle/plugins/index.md).
+
+## Which Minecraft versions can I test?
+
+Players speak Minecraft 1.18.2, 1.21.11, and 26.1.2 through
+MCProtocolLib, plus the other versions each release lists. Anvil's live matrix runs each of those
+three versions on Paper, and 1.21.11 and 26.1.2 also on Spigot and behind Velocity and BungeeCord. A
+newer version can run with your own release data. See
+[Versions and compatibility](../../building-blocks/environments/platforms/versions/index.md).
 
 ## Can one player visit servers on different native versions?
 
@@ -44,7 +52,7 @@ hosted orchestration system. Read [Execution providers](../../building-blocks/en
 ## Does a reconnect or restart prove my plugin's state survived?
 
 It proves the connection or lifecycle transition you observed. Verify the plugin's data through
-its commands, messages, or a typed agent channelOperation after that transition. See
+its commands, messages, or a typed agent operation after that transition. See
 [Restarting processes](../../building-blocks/environments/actions/restarts/index.md).
 
 ## Why did a failed test remove its workspace?
@@ -59,6 +67,6 @@ The [embedding guide](../../integrations/embedding/index.md) shows the setup.
 
 ## Do I need to fork Anvil to add player behavior?
 
-External libraries can supply capabilities, protocol backends, and agent operations. Choose the
+External libraries can supply capabilities, protocol libraries, and agent operations. Choose the
 appropriate [extension boundary](../../extending/index.md), publish its artifacts, and install them
 in the consumer runtime.

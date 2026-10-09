@@ -12,11 +12,22 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 import java.util.Map;
 
-/** Local-execution sources for explicit Java requirements. */
+/**
+ * Local-execution Java sources keyed by {@code <distribution>:<feature>}, such as
+ * {@code default:17} or {@code temurin:21}. Requirements without a distribution use the
+ * {@code default} key. A process that declares its own source ignores these settings.
+ */
 @Value
 @Builder
 public class LocalExecutionSettings {
+	/**
+	 * Java homes keyed by {@code <distribution>:<feature>}.
+	 */
 	@NotNull @Singular("javaHome") Map<String, Path> javaHomes;
+
+	/**
+	 * Verified JDK archives keyed by {@code <distribution>:<feature>}.
+	 */
 	@NotNull @Singular("javaArchive") Map<String, JavaArchive> javaArchives;
 
 	JavaSource source(@NotNull JavaRequirement requirement) {
@@ -29,6 +40,6 @@ public class LocalExecutionSettings {
 
 	private String key(JavaRequirement requirement) {
 		return (requirement.getDistribution() == null ? "default" : requirement.getDistribution())
-				+ ":" + (requirement.getFeatureVersion() == null ? "minimum" : requirement.getFeatureVersion());
+				+ ":" + requirement.getFeatureVersion();
 	}
 }

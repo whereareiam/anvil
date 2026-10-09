@@ -2,14 +2,16 @@ package me.whereareiam.anvil.protocol.api.model;
 
 import lombok.Builder;
 import lombok.Value;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.type.AuthenticationMode;
+import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.InetSocketAddress;
 
 /**
- * Connection request supplied by the engine to a protocol backend.
+ * Connection request supplied by the engine to the {@link ProtocolLibrary} selected for one player.
  */
 @Value
 @Builder
@@ -19,9 +21,13 @@ public class PlayerRequest {
 	 */
 	@NotNull String name;
 	/**
-	 * Exact native Minecraft version selected before backend creation.
+	 * Exact native Minecraft version selected before library creation.
 	 */
-	@NotNull String clientVersion;
+	@NotNull MinecraftVersion clientVersion;
+	/**
+	 * Library release listing {@link #getClientVersion() clientVersion}, selected by the engine.
+	 */
+	@NotNull ProtocolRelease release;
 	/**
 	 * Game listener of the selected server or proxy.
 	 */

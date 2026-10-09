@@ -1,8 +1,10 @@
 package me.whereareiam.anvil.testkit.tests.server.capability;
 
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
+import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
+import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.capability.interaction.Interaction;
 import me.whereareiam.anvil.capability.interaction.model.BlockPosition;
 import me.whereareiam.anvil.capability.interaction.type.BlockFace;
@@ -15,29 +17,60 @@ import me.whereareiam.anvil.capability.movement.Movement;
 import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
-import me.whereareiam.anvil.integration.junit.AnvilTest;
+import me.whereareiam.anvil.launcher.AnvilLauncher;
+import me.whereareiam.anvil.launcher.config.EngineProperties;
 import me.whereareiam.anvil.testkit.tests.server.extension.FixtureAgentProbeProvider;
-import me.whereareiam.anvil.testkit.tests.server.scenario.Paper12111SystemScenario;
-import me.whereareiam.anvil.testkit.tests.server.scenario.Paper2612SystemScenario;
-import org.junit.jupiter.api.Test;
+import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.TestFactory;
 
 import java.time.Duration;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Drives every built-in player capability through the fixture plugin on the direct Paper scenario of each Minecraft
+ * version in the live matrix, so the capability code of every protocol library release meets a real server. The
+ * {@code anvil.matrix.filter} system property, set from {@code -PanvilMatrixFilter}, selects scenarios by name. Its
+ * {@code capabilities} tag gives the journey across versions its own CI shard.
+ */
+@Tag("capabilities")
 class PlayerCapabilitiesSystemTest {
-	@Test
-	@AnvilTest(Paper12111SystemScenario.class)
-	void controlsAProtocolPlayerOnPaper12111(ScenarioContext anvil) {
-		verify(anvil);
+	@TestFactory
+	Stream<DynamicTest> controlsAProtocolPlayerOnEveryPaperRelease() {
+		String filter = System.getProperty("anvil.matrix.filter", ".*");
+
+		return CompatibilityScenarioFactory.paperReleaseScenarios().stream()
+				.filter(scenario -> scenario.getName().matches(filter))
+				.map(scenario -> DynamicTest.dynamicTest(scenario.getName(), () -> run(scenario)));
 	}
 
-	@Test
-	@AnvilTest(Paper2612SystemScenario.class)
-	void controlsAProtocolPlayerOnPaper2612(ScenarioContext anvil) {
-		verify(anvil);
+	private void run(AnvilScenario scenario) {
+		try (ScenarioEngine engine = AnvilLauncher.create(EngineProperties.fromSystemProperties());
+		     ScenarioContext anvil = engine.start(scenario)) {
+			try {
+				verify(anvil);
+			} catch (Throwable failure) {
+				finishFailed(anvil, failure);
+				throw failure;
+			}
+			anvil.finish(true);
+		}
+	}
+
+	/**
+	 * Finishes a failed run so it keeps its workspaces, without letting a cleanup failure hide the test's failure.
+	 */
+	private static void finishFailed(ScenarioContext anvil, Throwable failure) {
+		try {
+			anvil.finish(false);
+		} catch (RuntimeException cleanup) {
+			failure.addSuppressed(cleanup);
+		}
 	}
 
 	private void verify(ScenarioContext anvil) {

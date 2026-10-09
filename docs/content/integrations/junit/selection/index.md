@@ -45,7 +45,7 @@ instance lifecycle.
 
 Keep reusable assertion code in helper methods, then call those helpers from separate annotated
 methods for different definition classes. The [consumer example](https://github.com/whereareiam/anvil/tree/dev/examples/proof-of-patience)
-uses this pattern to exercise one journey on both supported versions.
+uses this pattern to exercise one journey on Paper `1.21.11` and `26.1.2`.
 
 ## Lifecycle boundaries
 

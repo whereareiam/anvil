@@ -1,6 +1,7 @@
+import me.whereareiam.anvil.buildlogic.capability.CapabilityFamiliesArgument
+
 plugins {
 	`kotlin-dsl`
-	alias(libs.plugins.toolkit.architecture)
 	id("gradle-plugin")
 }
 
@@ -8,7 +9,6 @@ description = "Gradle adapters for Anvil capability providers"
 
 dependencies {
 	implementation(projects.anvilIntegration.integrationGradle.gradleBase)
-	testImplementation(gradleTestKit())
 }
 
 gradlePlugin {
@@ -64,7 +64,10 @@ gradlePlugin {
 	}
 }
 
-toolkitPublish {
-	name.set("pluginMaven")
-	artifactId.set("gradle-capabilities")
+// Each built-in capability family publishes its bundle as builtin-<family>. The plugin test receives the family
+// names and checks that every family has a plugin installing that bundle.
+tasks.named<Test>("test") {
+	jvmArgumentProviders.add(objects.newInstance<CapabilityFamiliesArgument>().apply {
+		builtinDirectory.set(layout.settingsDirectory.dir("anvil-capability/capability-builtin"))
+	})
 }

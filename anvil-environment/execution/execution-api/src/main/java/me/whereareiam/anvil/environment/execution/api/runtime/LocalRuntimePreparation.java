@@ -15,9 +15,9 @@ public interface LocalRuntimePreparation {
 	/**
 	 * Resolves the executable used by this process, including any provider-specific source fallback.
 	 *
-	 * @param request declared Java requirement and process constraints
-	 * @param source selected explicit source or the local provider's configured fallback
-	 * @return verified local Java executable
+	 * @param request process whose planned requirement names the exact Java feature version
+	 * @param source selected explicit source or the local provider's configured source for that version
+	 * @return verified local Java executable of exactly that feature version
 	 */
 	@NotNull Path executable(@NotNull ProcessRequest request, @Nullable JavaSource source);
 }

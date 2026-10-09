@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 public interface PlayerObservationFactory {
 	/**
 	 * Opens observations for a newly created native player.
-	 * @param player backend-owned player
+	 * @param player library-owned player
 	 * @return player-scoped identity and route observations
 	 */
 	@NotNull PlayerObservation create(@NotNull ProtocolPlayer player);

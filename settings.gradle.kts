@@ -1,6 +1,9 @@
 import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
 
 pluginManagement {
+    includeBuild("build-logic/settings") {
+        name = "build-logic-settings"
+    }
     includeBuild("build-logic")
 
     repositories {
@@ -21,6 +24,19 @@ pluginManagement {
 plugins {
     id("org.jetbrains.intellij.platform.settings") version "2.18.1"
     id("me.whereareiam.toolkit.project-discovery") version "dev-757d944"
+    // Owns the protocol library repositories below and checks the conventions of library projects.
+    id("library-registry")
+    // Checks that every project shipping a platform agent's version data applies the platform provider convention.
+    id("platform-layout")
+}
+
+// Protocol library releases download from these repositories; pinLibraryReleases records the first one that serves
+// each JAR of a release closure. Maven Central keeps its repo1 host, which the release data already names.
+libraryRepositories {
+    url("https://repo1.maven.org/maven2/")
+    url("https://repo.opencollab.dev/main/")
+    url("https://repo.opencollab.dev/maven-snapshots/")
+    url("https://jitpack.io/")
 }
 
 rootProject.name = "Anvil"
@@ -49,5 +65,12 @@ dependencyResolutionManagement {
         maven("https://oss.sonatype.org/content/repositories/snapshots/")
         maven("https://repo.opencollab.dev/main/")
         maven("https://repo.opencollab.dev/maven-snapshots/")
+        // The dependencies of the MCProtocolLib release for 1.18.2 are published only here.
+        maven("https://jitpack.io") {
+            content {
+                includeGroup("com.github.GeyserMC")
+                includeGroup("com.github.steveice10")
+            }
+        }
     }
 }

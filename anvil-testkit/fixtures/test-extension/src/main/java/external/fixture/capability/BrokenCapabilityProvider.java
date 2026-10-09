@@ -21,7 +21,7 @@ public final class BrokenCapabilityProvider implements ProtocolPlayerCapabilityP
 	}
 
 	@Override
-	public @NotNull Set<String> supportedProtocolIds() {
+	public @NotNull Set<String> supportedLibraries() {
 		return Set.of("fixture-broken");
 	}
 

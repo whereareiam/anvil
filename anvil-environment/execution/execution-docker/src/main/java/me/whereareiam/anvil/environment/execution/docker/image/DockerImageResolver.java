@@ -1,7 +1,9 @@
 package me.whereareiam.anvil.environment.execution.docker.image;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.exception.JavaVersionMismatchException;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
+import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.environment.execution.api.image.ImageLease;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
@@ -23,7 +25,7 @@ public final class DockerImageResolver {
 	private final DockerExecutionSettings settings;
 
 	public String resolve(ProcessRequest request) {
-		String requested = settings.image(request.getJavaSelection().getRequirement(), request.getMinimumJavaVersion());
+		String requested = settings.image(request.getJavaSelection().getRequirement());
 		String key = UUID.nameUUIDFromBytes(requested.getBytes(StandardCharsets.UTF_8)).toString();
 		Path directory = context.getCacheDirectory().resolve("docker-images").resolve(key);
 
@@ -42,7 +44,7 @@ public final class DockerImageResolver {
 					? Files.readString(properties)
 					: docker.probeJavaRuntime(id);
 
-			context.getRuntimeValidator().validate(details, request);
+			validate(details, request, requested);
 			Files.writeString(properties, details);
 
 			String immutable = image.repoDigests().isEmpty()
@@ -54,6 +56,23 @@ public final class DockerImageResolver {
 			return id;
 		} catch (IOException failure) {
 			throw new ProvisioningException("Could not retain Docker Java selection " + requested, failure);
+		}
+	}
+
+	/**
+	 * Validates the Java an image ships. The image comes from the Docker execution settings, so an image that
+	 * ships another Java feature version names the mapping to change rather than local Java sources; any other
+	 * failure, such as probe output that cannot be read, is reported unchanged.
+	 */
+	void validate(String details, ProcessRequest request, String image) {
+		try {
+			context.getRuntimeValidator().validate(details, request);
+		} catch (JavaVersionMismatchException mismatch) {
+			JavaRequirement requirement = request.getJavaSelection().getRequirement();
+			String key = settings.key(requirement);
+			throw new ProvisioningException(mismatch.getMessage() + "; the Docker execution settings map " + key
+					+ " to image " + image + ", so map " + key + " to an image that ships Java "
+					+ requirement.getFeatureVersion(), mismatch);
 		}
 	}
 

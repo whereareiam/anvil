@@ -1,0 +1,8 @@
+# The fixture process runs on Java 21 for its one Minecraft version.
+[verified]
+"1.21.11" = [21]
+
+[[java]]
+since = "1.21.11"
+minimum = 21
+preferred = 21

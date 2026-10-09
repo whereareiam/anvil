@@ -1,6 +1,6 @@
 ---
 title: Embedding Anvil
-description: Start scenarios from a Java application with explicit provider dependencies and engine ownership.
+description: Start scenarios from a Java application with explicit runtime dependencies and engine ownership.
 ---
 
 Embed Anvil when your application owns scenario startup and cleanup rather than delegating them to
@@ -31,7 +31,7 @@ build plugins. Add the provider and matching agent artifacts for additional plat
 Use the [Gradle plugin reference](../gradle/index.md) for the unit-to-artifact mapping.
 
 The launcher supplies engine composition and execution implementations. It does not select a
-platform, native protocol provider, or capability set for your application. Preserve service
+platform, protocol library, or capability set for your application. Preserve service
 descriptors if you assemble another shaded JAR around these dependencies.
 
 ## Start a supplied scenario
@@ -55,7 +55,7 @@ public final class EmbeddedScenario {
 	public static void run(AnvilScenario scenario, Path pluginJar) {
 		var options = EngineOptions.builder()
 				.eulaAccepted(true)
-				.protocolId("mcprotocol")
+				.protocolLibrary("mcprotocol")
 				.workDirectory(Path.of("build", "anvil"))
 				.keepFailedWorkspaces(true)
 				.processTimeouts(ProcessTimeouts.builder().shutdown(Duration.ofSeconds(30)).build())
@@ -78,7 +78,7 @@ inside its open context.
 
 `start()` returns after processes and agents are ready and the setup hook has completed. Closing a
 context releases its players and processes. Closing the returned engine also releases remaining
-contexts, the shared protocol backend, and artifact acquisition resources. Unexpected exceptions
+contexts, the protocol libraries it created, and artifact acquisition resources. Unexpected exceptions
 should retain their original cause; cleanup can add suppressed failures.
 
 Use `context.finish(false)` when your application catches a failed journey and needs to report that

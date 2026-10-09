@@ -1,6 +1,9 @@
 package me.whereareiam.anvil.protocol.player;
 
 import me.whereareiam.anvil.api.exception.AnvilException;
+import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
+import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.player.PlayerState;
@@ -10,33 +13,35 @@ import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
+import me.whereareiam.anvil.api.player.account.AccountPool.AccountLease;
 import me.whereareiam.anvil.api.process.RunningProcess;
+import me.whereareiam.anvil.api.type.AuthenticationMode;
+import me.whereareiam.anvil.api.type.SupportPolicy;
+import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
-import me.whereareiam.anvil.protocol.api.model.ProtocolSupport;
+import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
-import me.whereareiam.anvil.protocol.api.provider.ProtocolBackend;
-import me.whereareiam.anvil.protocol.api.type.ProtocolCapability;
-import org.jetbrains.annotations.NotNull;
-import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
-import me.whereareiam.anvil.api.type.AuthenticationMode;
-import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.protocol.api.type.ProtocolFeature;
 import me.whereareiam.anvil.protocol.player.account.AccountReservations;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -47,13 +52,14 @@ class RunningPlayerManagerTest {
 
 	@Test
 	void createsDynamicPlayersUsingTheNativeCompatibleVersionAndAllowsNameReuse() {
-		StubBackend backend = new StubBackend();
-		RunningPlayerManager manager = manager(backend);
+		StubLibrary library = new StubLibrary();
+		RunningPlayerManager manager = manager(library);
 
 		SimulatedPlayer alice = manager.create("Alice");
 
 		assertEquals("1.21.11", alice.clientVersion());
-		assertEquals("1.21.11", backend.lastRequest.getClientVersion());
+		assertEquals(MinecraftVersion.parse("1.21.11"), library.lastRequest.getClientVersion());
+		assertEquals("test-1.21.11", library.lastRequest.getRelease().getLibraryVersion());
 		assertFalse(alice instanceof AutoCloseable);
 		assertEquals(1, manager.all().size());
 
@@ -65,7 +71,7 @@ class RunningPlayerManagerTest {
 
 	@Test
 	void supportsDynamicAmountsAndExplicitlyRejectsNativeVersionMismatch() {
-		RunningPlayerManager manager = manager(new StubBackend());
+		RunningPlayerManager manager = manager(new StubLibrary());
 		for (int index = 0; index < 25; index++)
 			manager.create("Bot-" + index);
 
@@ -80,45 +86,68 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
+	void unparseableClientAndServerVersionsAreScenarioValidationFailures() {
+		StubLibrary library = new StubLibrary();
+		RunningPlayerManager manager = manager(library);
+
+		var client = assertThrows(ScenarioValidationException.class, () -> manager.create(PlayerOptions.builder()
+				.name("Snapshot")
+				.clientVersion("1.21.11-pre1")
+				.build()));
+		assertTrue(client.getMessage().startsWith("Player 'Snapshot' declares an invalid client version"), client.getMessage());
+
+		MinecraftServer server = MinecraftServer.builder()
+				.name("server")
+				.platform("test")
+				.distribution(Distribution.remote("26.1-snapshot-1", "1"))
+				.build();
+		AnvilScenario scenario = AnvilScenario.builder().name("snapshot").entrypoint("server").server(server).build();
+		RunningPlayerManager snapshot = manager(scenario, library, new StubScenarioProcesses("server", temporary), composer(), ignored -> { });
+
+		var serverVersion = assertThrows(ScenarioValidationException.class, () -> snapshot.create("Alice"));
+		assertTrue(serverVersion.getMessage().startsWith("Server 'server' declares an invalid native Minecraft version"),
+				serverVersion.getMessage());
+		assertNull(library.lastRequest);
+	}
+
+	@Test
 	void resolvesTheCurrentProcessGenerationForEachNewPlayer() {
-		StubBackend backend = new StubBackend();
+		StubLibrary library = new StubLibrary();
 		StubScenarioProcesses processes = new StubScenarioProcesses("server", temporary.resolve("server"));
 		RunningProcess original = processes.get("server");
-		RunningPlayerManager manager = new RunningPlayerManager(scenario(), backend, processes, player -> observation(player), composer(), ignored -> { });
+		RunningPlayerManager manager = manager(scenario(), library, processes, composer(), ignored -> { });
 		manager.create("Before");
-		assertEquals(original.address(), backend.lastRequest.getAddress());
+		assertEquals(original.address(), library.lastRequest.getAddress());
 
 		RunningProcess replacement = processes.restart("server");
 		manager.create("After");
 
-		assertEquals(replacement.address(), backend.lastRequest.getAddress());
+		assertEquals(replacement.address(), library.lastRequest.getAddress());
 		assertEquals(25565, original.address().getPort());
 		assertEquals(25566, replacement.address().getPort());
 	}
 
 	@Test
-	void retainsCompositionFailureWhenBackendPlayerCleanupAlsoFails() {
-		StubBackend backend = new StubBackend();
+	void retainsCompositionFailureWhenLibraryPlayerCleanupAlsoFails() {
+		StubLibrary library = new StubLibrary();
 		IllegalStateException failure = new IllegalStateException("composition failed");
-		backend.destructionFailure = new IllegalStateException("destruction failed");
+		library.destructionFailure = new IllegalStateException("destruction failed");
 		ProtocolPlayerComposer composer = (player, observation, metadata, onDestroyed) -> { throw failure; };
-		RunningPlayerManager manager = new RunningPlayerManager(scenario(), backend,
-				new StubScenarioProcesses("server", temporary), player -> observation(player), composer, ignored -> { });
+		RunningPlayerManager manager = manager(scenario(), library, new StubScenarioProcesses("server", temporary), composer, ignored -> { });
 
 		assertSame(failure, assertThrows(IllegalStateException.class, () -> manager.create("Alice")));
 		assertEquals(1, failure.getSuppressed().length);
-		assertSame(backend.destructionFailure, failure.getSuppressed()[0]);
-		assertTrue(backend.lastPlayer.destroyed());
+		assertSame(library.destructionFailure, failure.getSuppressed()[0]);
+		assertTrue(library.lastPlayer.destroyed());
 		assertTrue(manager.all().isEmpty());
 	}
 
 	@Test
 	void releasesRegistrationAfterCleanupFailureAndOnlyOnce() {
-		StubBackend backend = new StubBackend();
-		backend.destructionFailure = new IllegalStateException("destruction failed");
+		StubLibrary library = new StubLibrary();
+		library.destructionFailure = new IllegalStateException("destruction failed");
 		AtomicInteger releases = new AtomicInteger();
-		RunningPlayerManager manager = new RunningPlayerManager(scenario(), backend,
-				new StubScenarioProcesses("server", temporary), player -> observation(player), composer(),
+		RunningPlayerManager manager = manager(scenario(), library, new StubScenarioProcesses("server", temporary), composer(),
 				closed -> {
 					assertTrue(closed.all().isEmpty());
 					assertThrows(IllegalStateException.class, () -> closed.create("late"));
@@ -126,7 +155,7 @@ class RunningPlayerManagerTest {
 				});
 		manager.create("Alice");
 
-		assertSame(backend.destructionFailure, assertThrows(IllegalStateException.class, manager::close));
+		assertSame(library.destructionFailure, assertThrows(IllegalStateException.class, manager::close));
 		manager.close();
 
 		assertEquals(1, releases.get());
@@ -134,15 +163,15 @@ class RunningPlayerManagerTest {
 
 	@Test
 	void failedOnlineCreationReleasesTheAccountForTheNextAttempt() {
-		StubBackend backend = new StubBackend();
+		StubLibrary library = new StubLibrary();
 		IllegalStateException refresh = new IllegalStateException("Token refresh failed");
-		backend.creationFailure = refresh;
+		library.creationFailure = refresh;
 		AuthenticationAccount alice = new AuthenticationAccount("alice", "test", "Alice", null);
-		RunningPlayerManager manager = onlineManager(backend, new AccountReservations(), alice);
+		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), alice);
 		PlayerOptions options = online("alice");
 
 		assertSame(refresh, assertThrows(IllegalStateException.class, () -> manager.create(options)));
-		backend.creationFailure = null;
+		library.creationFailure = null;
 
 		assertEquals("alice", manager.create(options).name());
 	}
@@ -151,8 +180,8 @@ class RunningPlayerManagerTest {
 	void scenariosOfOneEngineCannotUseTheSameAccountAtOnce() {
 		AuthenticationAccount alice = new AuthenticationAccount("alice", "test", "Alice", null);
 		AccountReservations reservations = new AccountReservations();
-		RunningPlayerManager first = onlineManager(new StubBackend(), reservations, alice);
-		RunningPlayerManager second = onlineManager(new StubBackend(), reservations, alice);
+		RunningPlayerManager first = onlineManager(new StubLibrary(), reservations, alice);
+		RunningPlayerManager second = onlineManager(new StubLibrary(), reservations, alice);
 		var player = first.create(online("alice"));
 
 		assertThrows(ScenarioValidationException.class, () -> second.create(online("alice")));
@@ -160,7 +189,93 @@ class RunningPlayerManagerTest {
 		assertEquals("alice", second.create(online("alice")).name());
 	}
 
-	private RunningPlayerManager onlineManager(StubBackend backend, AccountReservations reservations, AuthenticationAccount account) {
+	@Test
+	void onlinePlayersRequireAnAccountOwnedByTheirSelectedLibrary() {
+		StubLibrary library = new StubLibrary();
+		AuthenticationAccount foreign = new AuthenticationAccount("alice", "other", "Alice", null);
+		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), foreign);
+
+		var failure = assertThrows(ScenarioValidationException.class, () -> manager.create(online("alice")));
+
+		assertTrue(failure.getMessage().contains("is not stored by protocol library 'test'"), failure.getMessage());
+		assertTrue(failure.getMessage().endsWith("it is stored by [other]"), failure.getMessage());
+		assertNull(library.lastRequest);
+	}
+
+	@Test
+	void anAccountIdStoredBySeveralLibrariesSignsInWithTheAccountOfTheSelectedLibrary() {
+		StubLibrary library = new StubLibrary();
+		RunningPlayerManager manager = onlineManager(library, new AccountReservations(),
+				new AuthenticationAccount("alice", "other", "Alice", null),
+				new AuthenticationAccount("alice", "test", "Alice", null));
+
+		assertEquals("alice", manager.create(online("alice")).name());
+		assertEquals("alice", library.lastRequest.getAccountId());
+	}
+
+	@Test
+	void aLeasedAccountSelectsItsOwnLibraryOverTheEngineChoice() {
+		StubLibrary library = new StubLibrary();
+		AuthenticationAccount leased = new AuthenticationAccount("alice", "other", "Alice", null);
+		ProtocolLibrarySelector selector = new ProtocolLibrarySelector(List.of("test", "other"),
+				Map.of("test", library.releases(), "other", List.of(release("other-1.21.11", "1.21.11")))::get, "test",
+				SupportPolicy.LENIENT, ignored -> { });
+		RunningPlayerManager manager = onlineManager(selector, library, leased, new AuthenticationAccount("alice", "test", "Alice", null));
+		RecordingLease lease = new RecordingLease(leased);
+
+		manager.create("alice", lease);
+
+		assertEquals("other-1.21.11", library.lastRequest.getRelease().getLibraryVersion());
+		assertFalse(lease.closed);
+	}
+
+	@Test
+	void aLeasedAccountWhoseLibraryCannotServeThePlayerIsRefusedAndReturned() {
+		StubLibrary library = new StubLibrary();
+		AuthenticationAccount leased = new AuthenticationAccount("alice", "other", "Alice", null);
+		ProtocolLibrarySelector selector = new ProtocolLibrarySelector(List.of("test", "other"),
+				Map.of("test", library.releases(), "other", List.of(release("other-1.20.6", "1.20.6")))::get, null,
+				SupportPolicy.LENIENT, ignored -> { });
+		RunningPlayerManager manager = onlineManager(selector, library, leased);
+		RecordingLease lease = new RecordingLease(leased);
+
+		var failure = assertThrows(ScenarioValidationException.class, () -> manager.create("alice", lease));
+
+		assertEquals("Protocol library 'other' selected for player 'alice' does not support Minecraft 1.21.11. Supported: [1.20.6]",
+				failure.getMessage());
+		assertTrue(lease.closed);
+		assertNull(library.lastRequest);
+	}
+
+	@Test
+	void aLeasedAccountOfTheSelectedLibrarySignsInAndIsReturnedOnDestruction() {
+		StubLibrary library = new StubLibrary();
+		AuthenticationAccount leased = new AuthenticationAccount("alice", "test", "Alice", null);
+		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), leased);
+		RecordingLease lease = new RecordingLease(leased);
+
+		SimulatedPlayer player = manager.create("alice", lease);
+
+		assertEquals("alice", library.lastRequest.getAccountId());
+		assertFalse(lease.closed);
+		player.destroy();
+		assertTrue(lease.closed);
+	}
+
+	private RunningPlayerManager onlineManager(ProtocolLibrarySelector selector, StubLibrary library, AuthenticationAccount... accounts) {
+		return onlineManager(selector, library, new AccountReservations(), accounts);
+	}
+
+	private RunningPlayerManager onlineManager(StubLibrary library, AccountReservations reservations, AuthenticationAccount... accounts) {
+		return onlineManager(selector(library), library, reservations, accounts);
+	}
+
+	private RunningPlayerManager onlineManager(
+			ProtocolLibrarySelector selector,
+			StubLibrary library,
+			AccountReservations reservations,
+			AuthenticationAccount... accounts
+	) {
 		MinecraftServer server = MinecraftServer.builder()
 				.name("server")
 				.platform("test")
@@ -169,9 +284,9 @@ class RunningPlayerManagerTest {
 				.build();
 		AnvilScenario scenario = AnvilScenario.builder().name("online").entrypoint("server").server(server).build();
 
-		return new RunningPlayerManager(scenario, backend,
+		return new RunningPlayerManager(scenario, selector, ignored -> library,
 				new StubScenarioProcesses("server", temporary.resolve("server")), player -> observation(player), composer(),
-				ignored -> { }, () -> List.of(account), reservations);
+				ignored -> { }, () -> List.of(accounts), reservations);
 	}
 
 	private PlayerOptions online(String accountId) {
@@ -182,9 +297,36 @@ class RunningPlayerManagerTest {
 				.build();
 	}
 
-	private RunningPlayerManager manager(StubBackend backend) {
-		return new RunningPlayerManager(scenario(), backend,
-				new StubScenarioProcesses("server", temporary.resolve("server")), player -> observation(player), composer(), ignored -> { });
+	private RunningPlayerManager manager(StubLibrary library) {
+		return manager(scenario(), library, new StubScenarioProcesses("server", temporary.resolve("server")), composer(), ignored -> { });
+	}
+
+	private RunningPlayerManager manager(
+			AnvilScenario scenario,
+			StubLibrary library,
+			StubScenarioProcesses processes,
+			ProtocolPlayerComposer composer,
+			Consumer<RunningPlayerManager> onClosed
+	) {
+		return new RunningPlayerManager(scenario, selector(library), ignored -> library, processes,
+				player -> observation(player), composer, onClosed, List::of, new AccountReservations());
+	}
+
+	private static ProtocolRelease release(String libraryVersion, String minecraft) {
+		MinecraftVersion version = MinecraftVersion.parse(minecraft);
+		return ProtocolRelease.builder()
+				.libraryVersion(libraryVersion)
+				.minecraftVersion(version)
+				.verifiedVersion(version)
+				.protocolNumber(1)
+				.javaVersion(21)
+				.feature(ProtocolFeature.ONLINE_AUTHENTICATION)
+				.build();
+	}
+
+	private ProtocolLibrarySelector selector(StubLibrary library) {
+		return new ProtocolLibrarySelector(List.of(library.id()), Map.of(library.id(), library.releases())::get, null,
+				SupportPolicy.LENIENT, ignored -> { });
 	}
 
 	private AnvilScenario scenario() {
@@ -242,7 +384,38 @@ class RunningPlayerManagerTest {
 		};
 	}
 
-	private static final class StubBackend implements ProtocolBackend {
+	/**
+	 * Lease that can be claimed once and records being returned.
+	 */
+	private static final class RecordingLease implements AccountLease {
+		private final AuthenticationAccount account;
+		private boolean claimed;
+		private boolean closed;
+
+		private RecordingLease(AuthenticationAccount account) {
+			this.account = account;
+		}
+
+		@Override
+		public @NotNull AuthenticationAccount account() {
+			return account;
+		}
+
+		@Override
+		public boolean claim() {
+			if (claimed || closed) return false;
+
+			claimed = true;
+			return true;
+		}
+
+		@Override
+		public void close() {
+			closed = true;
+		}
+	}
+
+	private static final class StubLibrary implements ProtocolLibrary {
 		private PlayerRequest lastRequest;
 		private StubPlayer lastPlayer;
 		private RuntimeException destructionFailure;
@@ -254,14 +427,15 @@ class RunningPlayerManagerTest {
 		}
 
 		@Override
-		public @NotNull Collection<ProtocolSupport> supportedProtocols() {
-			return List.of(ProtocolSupport.builder()
-					.minecraftVersion("1.21.11")
+		public @NotNull List<ProtocolRelease> releases() {
+			MinecraftVersion version = MinecraftVersion.parse("1.21.11");
+			return List.of(ProtocolRelease.builder()
+					.libraryVersion("test-1.21.11")
+					.minecraftVersion(version)
+					.verifiedVersion(version)
 					.protocolNumber(1)
-					.libraryVersion("test")
-					.bindingFamily("test")
 					.javaVersion(21)
-					.capability(ProtocolCapability.ONLINE_AUTHENTICATION)
+					.feature(ProtocolFeature.ONLINE_AUTHENTICATION)
 					.build());
 		}
 
@@ -300,7 +474,17 @@ class RunningPlayerManagerTest {
 
 		@Override
 		public @NotNull String clientVersion() {
-			return request.getClientVersion();
+			return request.getClientVersion().toString();
+		}
+
+		@Override
+		public @NotNull String libraryId() {
+			return "test";
+		}
+
+		@Override
+		public @NotNull ProtocolRelease release() {
+			return request.getRelease();
 		}
 
 		@Override

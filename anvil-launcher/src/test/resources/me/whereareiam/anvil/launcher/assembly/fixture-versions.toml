@@ -1,0 +1,11 @@
+# Version data of the launcher tests' fixture platforms: the fixture process runs on the build's Java 21.
+[agent]
+minimumJava = 21
+
+[verified]
+"1.21.11" = [21]
+
+[[java]]
+since = "1.16.5"
+minimum = 21
+preferred = 21

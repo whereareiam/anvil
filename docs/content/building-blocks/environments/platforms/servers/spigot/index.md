@@ -53,6 +53,15 @@ and manual scenarios. Build-number and `latest` selectors are rejected.
 Use `Distribution.local(path)` or `Distribution.artifact(name)` and declare `minecraftVersion` on the
 server. See [distribution selection](../../../provisioning/platform/index.md) for registration and invocation.
 
+## Java
+
+Spigot runs on the LTS release its version prefers; see
+[Java per platform version](../../../provisioning/java/index.md#java-per-platform-version) for the
+defaults and each version's maximum. CraftBukkit refuses Java above that maximum and has no bypass,
+so Anvil refuses such a request before launch and points to Paper when Paper can run the version on
+that Java under the active support policy. See
+[Spigot above its maximum](../../../provisioning/java/index.md#spigot-above-its-maximum).
+
 ## Configure and route Spigot
 
 `.setting(...)` updates `server.properties`. Anvil manages the listener, authentication, EULA, and

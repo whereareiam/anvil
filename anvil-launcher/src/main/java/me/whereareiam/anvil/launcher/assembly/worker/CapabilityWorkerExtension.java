@@ -8,14 +8,15 @@ import me.whereareiam.anvil.protocol.api.worker.NativePlayer;
 import me.whereareiam.anvil.protocol.api.worker.NativeWorkerExtension;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
  * Transfers each typed capability binding's lifecycle to its native protocol player owner.
  */
 @RequiredArgsConstructor
-final class CapabilityWorkerExtension<B> implements NativeWorkerExtension<B> {
-	private final @NotNull WorkerCapabilities<B> capabilities;
+final class CapabilityWorkerExtension implements NativeWorkerExtension<Object> {
+	private final @NotNull WorkerCapabilities capabilities;
 
 	@Override
 	public @NotNull Set<String> capabilities() {
@@ -23,7 +24,12 @@ final class CapabilityWorkerExtension<B> implements NativeWorkerExtension<B> {
 	}
 
 	@Override
-	public @NotNull NativeBinding bind(@NotNull NativePlayer<B> player, @NotNull NativeOperations operations) {
-		return capabilities.bind(new NativePlayerBindingContext<>(player), new ProtocolOperationRegistry(operations))::close;
+	public @NotNull Map<String, String> unavailable() {
+		return capabilities.unavailable();
+	}
+
+	@Override
+	public @NotNull NativeBinding bind(@NotNull NativePlayer<Object> player, @NotNull NativeOperations operations) {
+		return capabilities.bind(new NativePlayerBindingContext(player), new ProtocolOperationRegistry(operations))::close;
 	}
 }

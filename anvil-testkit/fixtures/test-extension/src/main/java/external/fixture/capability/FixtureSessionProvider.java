@@ -21,7 +21,7 @@ public final class FixtureSessionProvider implements ProtocolPlayerCapabilityPro
 	}
 
 	@Override
-	public @NotNull Set<String> supportedProtocolIds() {
+	public @NotNull Set<String> supportedLibraries() {
 		return Set.of("fixture");
 	}
 

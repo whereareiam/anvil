@@ -19,3 +19,8 @@ dependencyResolutionManagement {
         }
     }
 }
+
+// Settings conventions build separately to keep the settings classloader lean; the project conventions use their types.
+includeBuild("settings") {
+    name = "build-logic-settings"
+}

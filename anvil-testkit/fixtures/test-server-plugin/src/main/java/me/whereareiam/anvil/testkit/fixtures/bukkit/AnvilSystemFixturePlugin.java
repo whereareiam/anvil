@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -43,13 +44,10 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 		getServer().getMessenger().registerOutgoingPluginChannel(this, CHANNEL);
 		var command = getCommand("anvil-fixture");
 		if (command != null)
-			command.setExecutor((sender, ignored, label, arguments) -> execute(sender instanceof Player player ? player : null,
-					arguments));
+			command.setExecutor((sender, ignored, label, arguments) -> execute(player(sender), arguments));
 		var auth = getCommand("auth");
 		if (auth != null)
-			auth.setExecutor((sender, ignored, label, arguments) -> authenticate(
-					sender instanceof Player player ? player : null
-			));
+			auth.setExecutor((sender, ignored, label, arguments) -> authenticate(player(sender)));
 	}
 
 	@EventHandler
@@ -102,8 +100,8 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 
 	@EventHandler
 	public void onInventoryClick(InventoryClickEvent event) {
-		if (event.getWhoClicked() instanceof Player player)
-			player.sendMessage("anvil:click:" + event.getRawSlot());
+		if (event.getWhoClicked() instanceof Player)
+			event.getWhoClicked().sendMessage("anvil:click:" + event.getRawSlot());
 	}
 
 	private boolean execute(Player player, String[] arguments) {
@@ -112,21 +110,40 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 
 		String operation = arguments.length == 0 ? "ping" : arguments[0];
 		switch (operation) {
-			case "ping" -> player.sendMessage("anvil:pong");
-			case "gui" -> openInventory(player);
-			case "item" -> {
+			case "ping":
+				player.sendMessage("anvil:pong");
+				break;
+			case "gui":
+				openInventory(player);
+				break;
+			case "item":
 				player.getInventory().setItem(0, new ItemStack(Material.DIAMOND));
 				player.getInventory().setHeldItemSlot(0);
 				player.sendMessage("anvil:item:diamond");
-			}
-			case "position" -> sendPosition(player);
-			case "block" -> createTargetBlock(player);
-			case "entity" -> spawnEntity(player);
-			case "kick" -> player.kickPlayer("anvil:requested-kick");
-			case "transfer" -> transfer(player, arguments);
-			default -> player.sendMessage("anvil:unknown:" + operation);
+				break;
+			case "position":
+				sendPosition(player);
+				break;
+			case "block":
+				createTargetBlock(player);
+				break;
+			case "entity":
+				spawnEntity(player);
+				break;
+			case "kick":
+				player.kickPlayer("anvil:requested-kick");
+				break;
+			case "transfer":
+				transfer(player, arguments);
+				break;
+			default:
+				player.sendMessage("anvil:unknown:" + operation);
 		}
 		return true;
+	}
+
+	private static Player player(CommandSender sender) {
+		return sender instanceof Player ? (Player) sender : null;
 	}
 
 	private boolean authenticate(Player player) {

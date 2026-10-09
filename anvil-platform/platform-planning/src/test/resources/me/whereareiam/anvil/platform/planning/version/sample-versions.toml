@@ -1,0 +1,25 @@
+known = ["1.16.5", "1.17.1", "1.18.2", "1.20.4", "1.20.6"]
+
+[agent]
+minimumJava = 11
+
+[verified]
+"1.16.5" = [11, 17]
+"1.20.6" = [21]
+
+[[java]]
+since = "1.18"
+minimum = 17
+preferred = 17
+
+[[java]]
+since = "1.16.5"
+minimum = 11
+maximum = 16
+preferred = 11
+maximumBypassProperty = "Sample.IgnoreJavaVersion"
+
+[[java]]
+since = "1.20.5"
+minimum = 21
+preferred = 21

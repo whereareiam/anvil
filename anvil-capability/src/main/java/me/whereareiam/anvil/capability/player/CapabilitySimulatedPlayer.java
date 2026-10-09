@@ -19,7 +19,9 @@ import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityCha
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -37,16 +39,28 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 	CapabilitySimulatedPlayer(
 			CapabilityPlayer player,
 			CapabilityRuntime<PlayerCapability, PlayerCapabilityContext> runtime,
+			Map<String, String> unavailable,
 			PlayerObservation observation,
 			Consumer<SimulatedPlayer> onDestroyed
 	) {
 		this.player = player;
 		this.observation = observation;
 		this.onDestroyed = onDestroyed;
-		this.capabilities = runtime.compose("Player '" + player.name() + "'", dependencies ->
+		this.capabilities = runtime.compose("Player '" + player.name() + "'", unavailable, dependencies ->
 				player instanceof ProtocolCapabilityPlayer protocol
 						? new ProtocolContext(dependencies, protocol)
 						: new Context(dependencies));
+		warnAboutSkippedCapabilities();
+	}
+
+	private void warnAboutSkippedCapabilities() {
+		Map<Class<? extends PlayerCapability>, String> skipped = capabilities.unavailable();
+		if (skipped.isEmpty()) return;
+
+		StringJoiner details = new StringJoiner("; ");
+		skipped.forEach((type, reason) -> details.add(type.getName() + " (" + reason + ")"));
+		System.err.println("[Anvil] Warning: player '" + player.name() + "' on Minecraft " + player.clientVersion()
+				+ " runs without these unavailable capabilities: " + details);
 	}
 
 	@Override

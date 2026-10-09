@@ -1,31 +1,25 @@
 package me.whereareiam.anvil.protocol.api.worker;
 
+import me.whereareiam.anvil.protocol.api.model.NativeWorkerContext;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Service-loaded assembly bridge installing extensions for an exact native worker runtime.
- * @param <B> actual external SDK context type
+ * Service-loaded assembly bridge installing extensions into a native worker runtime.
+ * Every provider on the worker classpath is created once per worker, before players exist.
  */
-public interface NativeWorkerProvider<B> {
+public interface NativeWorkerProvider {
 	/**
 	 * Returns the unique provider ID.
 	 * @return provider ID
 	 */
 	@NotNull String id();
+
 	/**
-	 * Returns the backend this provider targets.
-	 * @return backend ID
+	 * Prepares extension installation for one worker runtime. Native sessions passed to the returned
+	 * extension are instances of {@link NativeWorkerContext#getNativeSessionType()}.
+	 *
+	 * @param context owning library, release key version, protocol number, and native session type
+	 * @return prepared worker extension, possibly installing nothing for a library it does not target
 	 */
-	@NotNull String backendId();
-	/**
-	 * Returns the actual external SDK context class required by the provider.
-	 * @return native context class
-	 */
-	@NotNull Class<B> backendType();
-	/**
-	 * Prepares extension installation for an exact Minecraft protocol before player creation.
-	 * @param protocolNumber exact Minecraft protocol number
-	 * @return prepared worker extension
-	 */
-	@NotNull NativeWorkerExtension<B> create(int protocolNumber);
+	@NotNull NativeWorkerExtension<Object> create(@NotNull NativeWorkerContext context);
 }

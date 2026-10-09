@@ -3,6 +3,7 @@ package me.whereareiam.anvil.api.model.process;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
@@ -54,4 +55,20 @@ public class MinecraftServer implements MinecraftProcess {
 	@NotNull
 	@Singular("jvmArgument")
 	List<String> jvmArguments;
+
+	/**
+	 * Returns the Minecraft version this server speaks: the remote distribution version, or the
+	 * declared {@link #getMinecraftVersion() minecraftVersion} for local and artifact distributions.
+	 *
+	 * @return the native version, or null when a local or artifact distribution declares none
+	 * @throws IllegalArgumentException when the version is not a release version
+	 */
+	public @Nullable MinecraftVersion nativeVersion() {
+		String version = distribution.isLocal() || distribution.isArtifact()
+				? minecraftVersion
+				: distribution.getVersion();
+		if (version == null || version.isBlank()) return null;
+
+		return MinecraftVersion.parse(version);
+	}
 }

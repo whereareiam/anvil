@@ -1,17 +1,15 @@
 plugins {
-    alias(libs.plugins.toolkit.architecture)
-    alias(libs.plugins.toolkit.publish.maven)
-    id("unit")
+	id("assembly")
 }
 
-description = "Default aggregate containing built-in player and agent capabilities"
+description = "Default aggregate containing the built-in player and process capabilities"
 
 dependencies {
-    api(projects.anvilCapability.capabilityBuiltin.agent.console.builtinConsole)
-    api(projects.anvilCapability.capabilityBuiltin.player.interaction.builtinInteraction)
-    api(projects.anvilCapability.capabilityBuiltin.player.inventory.builtinInventory)
-    api(projects.anvilCapability.capabilityBuiltin.player.messages.builtinMessages)
-    api(projects.anvilCapability.capabilityBuiltin.player.movement.builtinMovement)
-    api(projects.anvilCapability.capabilityBuiltin.player.server.builtinServer)
-    api(projects.anvilCapability.capabilityBuiltin.player.session.builtinSession)
+	api(projects.anvilCapability.capabilityBuiltin.player.interaction)
+	api(projects.anvilCapability.capabilityBuiltin.player.inventory)
+	api(projects.anvilCapability.capabilityBuiltin.player.messages)
+	api(projects.anvilCapability.capabilityBuiltin.player.movement)
+	api(projects.anvilCapability.capabilityBuiltin.player.server)
+	api(projects.anvilCapability.capabilityBuiltin.player.session)
+	api(projects.anvilCapability.capabilityBuiltin.process.console)
 }

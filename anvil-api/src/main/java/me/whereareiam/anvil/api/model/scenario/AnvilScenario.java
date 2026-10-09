@@ -10,6 +10,7 @@ import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.scenario.ScenarioHook;
+import me.whereareiam.anvil.api.type.SupportPolicy;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,6 +43,16 @@ public class AnvilScenario {
 	 * Execution provider used for the whole topology: local or docker.
 	 */
 	@Nullable String executionProviderId;
+
+	/**
+	 * Default protocol library for this scenario's players, overriding the engine default.
+	 */
+	@Nullable String protocolLibrary;
+
+	/**
+	 * Support policy for this scenario, overriding the engine default.
+	 */
+	@Nullable SupportPolicy supportPolicy;
 
 	/**
 	 * Default Java selection; requirements and installation source inherit independently.

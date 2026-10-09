@@ -1,0 +1,43 @@
+# Shaped like the built-in Paper data.
+known = ["1.20.4", "26.1"]
+
+[agent]
+minimumJava = 11
+
+[verified]
+"1.16.5" = [11, 17]
+"1.17.1" = [17]
+"1.18.2" = [17]
+"1.19.4" = [17]
+"1.20.6" = [21]
+"1.21.11" = [21]
+"26.1.2" = [25]
+
+[[java]]
+since = "1.16.5"
+minimum = 11
+maximum = 16
+preferred = 11
+maximumBypassProperty = "Paper.IgnoreJavaVersion"
+
+[[java]]
+since = "1.17"
+minimum = 17
+maximum = 17
+preferred = 17
+maximumBypassProperty = "Paper.IgnoreJavaVersion"
+
+[[java]]
+since = "1.18"
+minimum = 17
+preferred = 17
+
+[[java]]
+since = "1.20.5"
+minimum = 21
+preferred = 21
+
+[[java]]
+since = "26.1"
+minimum = 25
+preferred = 25

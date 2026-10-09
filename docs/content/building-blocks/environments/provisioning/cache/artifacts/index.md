@@ -11,7 +11,9 @@ an environment offline.
 
 The acquisition cache stores downloaded artifact files and resolution metadata. A platform provider
 can first read cached build metadata, then locate and verify the selected executable. Java provisioning
-also retains downloaded archives and prepared installations.
+also retains downloaded archives and prepared installations. The MCProtocolLib library keeps the
+runtime JARs of each release its players use under `protocol/mcprotocol/<release>` in the cache root,
+checked against the release's pins.
 
 When an expected SHA-256 is supplied, Anvil verifies cached or newly downloaded artifact bytes against
 it. A missing or invalid cached artifact needs acquisition again; offline mode cannot repair it.

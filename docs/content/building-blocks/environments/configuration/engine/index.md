@@ -16,8 +16,8 @@ tasks.named<Test>("anvilTest") {
 ```
 
 This fragment belongs in the consumer `build.gradle.kts` after applying the JUnit
-plugin. It allows thirty seconds for graceful process shutdown and requires a suitable Java
-installation to be available without a download. It does not change `anvilScenario`.
+plugin. It allows thirty seconds for graceful process shutdown and requires each process's planned
+Java installation to be available without a download. It does not change `anvilScenario`.
 
 ## Which entry point reads what?
 
@@ -37,7 +37,10 @@ an embedding application, call `EngineProperties.from(properties)` or
 
 | Property                       | Value                                                | Default                                                                            |
 |--------------------------------|------------------------------------------------------|------------------------------------------------------------------------------------|
-| `anvil.protocol`               | Installed provider ID                                | Sole installed provider                                                            |
+| `anvil.protocolLibrary`        | Installed protocol library ID                        | Each player uses the installed library with the strongest support for its version |
+| `anvil.supportPolicy`          | `lenient` or `strict`, case-insensitive              | `lenient`                                                                          |
+| `anvil.protocolReleases.<id>`  | Additional release data file for library `<id>`      | No additional releases                                                             |
+| `anvil.accountsDir`            | Directory path                                       | `~/.anvil/accounts`                                                                |
 | `anvil.eula.accepted`          | `true` or `false`                                    | `false`                                                                            |
 | `anvil.cacheDir`               | Directory path                                       | `~/.anvil`                                                                         |
 | `anvil.workDir`                | Directory path                                       | `build/anvil`                                                                      |
@@ -52,7 +55,7 @@ an embedding application, call `EngineProperties.from(properties)` or
 | `anvil.startupTimeout`         | Positive ISO-8601 duration                           | `PT2M`                                                                             |
 | `anvil.stopTimeout`            | Positive ISO-8601 duration                           | `PT15S`                                                                            |
 | `anvil.java.download`          | `true` or `false`                                    | `true`                                                                             |
-| `anvil.java.version`           | Positive Java feature version                        | No exact version; reuse a compatible JVM, provision the platform minimum if needed |
+| `anvil.java.version`           | LTS Java feature version: 11, 17, 21, 25, ...        | Each platform's preferred LTS for the process version                              |
 | `anvil.java.distribution`      | Java distribution identifier                         | `temurin` when provisioning an unspecified distribution                            |
 | `anvil.java.release`           | Exact release selector                               | No exact release; provider selects one if provisioning is needed                   |
 | `anvil.java.home`              | Installed JDK directory                              | No override                                                                        |
@@ -71,7 +74,9 @@ properties explicitly set it to `false`. Direct embedding uses
 own console options; explicit JVM arguments on a server or proxy take precedence over those defaults.
 
 Java settings describe the engine default. A process declaration overrides the scenario's Java
-selection, and the scenario overrides the engine default. Execution selection can also be
+selection, and the scenario overrides the engine default. An engine Java version applies to every
+process without its own requirement; planning refuses it for a process whose platform version does
+not accept it, so give that process its own `JavaRequirement`. Execution selection can also be
 overridden by the scenario. Docker images need provider-specific configuration; there is no
 `anvil.docker.image` property. See [Execution providers](../execution/index.md).
 
@@ -116,5 +121,5 @@ finalization. See [Cleanup diagnostics](../../../../help/troubleshooting/cleanup
 retained workspaces.
 
 The shared cache can include private authentication state. Selectively cache verified artifacts in
-CI; never upload the provider's private account store or tokens. Offline mode uses previously
+CI; never upload the protocol library's private account store or tokens. Offline mode uses previously
 acquired artifacts and metadata; it is not a machine-wide network firewall for plugins or game sessions.
