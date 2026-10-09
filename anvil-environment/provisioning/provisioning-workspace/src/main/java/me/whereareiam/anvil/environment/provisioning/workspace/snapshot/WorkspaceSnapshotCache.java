@@ -50,6 +50,16 @@ public final class WorkspaceSnapshotCache {
 	}
 
 	/**
+	 * Encodes the process selection alone, for snapshots that stay compatible when assets change.
+	 *
+	 * @param process process declaration
+	 * @return compatibility identity shared by every asset set of the process
+	 */
+	public @NotNull String identity(@NotNull MinecraftProcess process) {
+		return WorkspaceSnapshotIdentity.of(process);
+	}
+
+	/**
 	 * Restores an existing snapshot through coordinated replacement of the destination.
 	 * An absent snapshot leaves the destination unchanged.
 	 *

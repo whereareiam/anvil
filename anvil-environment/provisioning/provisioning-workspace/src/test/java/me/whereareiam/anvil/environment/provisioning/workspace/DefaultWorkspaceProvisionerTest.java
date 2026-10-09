@@ -10,6 +10,7 @@ import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceCleanup;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 import me.whereareiam.anvil.api.type.AssetInstallMode;
+import me.whereareiam.anvil.api.type.CacheIdentity;
 import me.whereareiam.anvil.api.type.CachePolicy;
 import me.whereareiam.anvil.api.type.CleanupPhase;
 import me.whereareiam.anvil.api.type.WorkspaceMode;
@@ -132,6 +133,31 @@ class DefaultWorkspaceProvisionerTest {
 		try (PreparedWorkspace ignored = prepare(
 				root, root.resolve("run3/server"), disabled, List.of(defaultCache))) {
 			assertFalse(Files.exists(root.resolve("run3/server/libraries/library.jar")));
+		}
+	}
+
+	@Test
+	void keepsAProcessIdentityCacheWhenAssetsChangeAndStartsAnewOtherwise() throws Exception {
+		Path root = temporary.resolve("work");
+		Path plugin = Files.writeString(temporary.resolve("plugin.jar"), "first build");
+		WorkspacePlan plan = WorkspacePlan.builder()
+				.asset(WorkspaceAsset.builder().source(AssetSource.path(plugin)).target(Path.of("plugins/plugin.jar")).build())
+				.cache(WorkspaceCache.builder().path(Path.of("libraries")).identity(CacheIdentity.PROCESS).build())
+				.cache(WorkspaceCache.builder().path(Path.of("data")).build())
+				.build();
+		Path first = root.resolve("run/server");
+		try (PreparedWorkspace ignored = prepare(root, first, plan, List.of())) {
+			Files.createDirectories(first.resolve("libraries"));
+			Files.writeString(first.resolve("libraries/library.jar"), "downloaded");
+			Files.createDirectories(first.resolve("data"));
+			Files.writeString(first.resolve("data/state.db"), "state of the first build");
+		}
+
+		Files.writeString(plugin, "second build");
+		Path second = root.resolve("run2/server");
+		try (PreparedWorkspace ignored = prepare(root, second, plan, List.of())) {
+			assertEquals("downloaded", Files.readString(second.resolve("libraries/library.jar")));
+			assertFalse(Files.exists(second.resolve("data/state.db")), "State cached for another plugin build is not restored");
 		}
 	}
 

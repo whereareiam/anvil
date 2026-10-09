@@ -21,12 +21,14 @@ import java.util.Objects;
  */
 final class WorkspaceSnapshotIdentity {
 	static @NotNull String of(@NotNull MinecraftProcess process, @NotNull List<WorkspaceAsset> assets) {
+		return of(process) + "\nassets=" + assetFingerprint(assets);
+	}
+
+	static @NotNull String of(@NotNull MinecraftProcess process) {
 		Distribution distribution = process.getDistribution();
-		String selector = process.getName() + "|" + process.getPlatform() + "|"
+		return process.getName() + "|" + process.getPlatform() + "|"
 				+ Objects.toString(distribution.getVersion(), "") + "|" + Objects.toString(distribution.getBuild(), "") + "|"
 				+ Objects.toString(distribution.getSha256(), "") + "|" + Objects.toString(distribution.getLocalJar(), "");
-
-		return selector + "\nassets=" + assetFingerprint(assets);
 	}
 
 	static @NotNull String key(@NotNull String identity, @NotNull String key) {

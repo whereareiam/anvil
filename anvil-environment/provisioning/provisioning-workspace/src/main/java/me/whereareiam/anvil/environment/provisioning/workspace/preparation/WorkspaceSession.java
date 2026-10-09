@@ -37,6 +37,7 @@ public final class WorkspaceSession implements PreparedWorkspace {
 	private final Path workspace;
 	private final WorkspacePlan plan;
 	private final String snapshotIdentity;
+	private final String processIdentity;
 	private final WorkspaceFiles files;
 	private final WorkspaceSnapshotCache snapshots;
 
@@ -74,6 +75,7 @@ public final class WorkspaceSession implements PreparedWorkspace {
 				directory,
 				plan,
 				snapshots.identity(process, plan.getAssets()),
+				snapshots.identity(process),
 				files,
 				snapshots
 		);
@@ -161,8 +163,15 @@ public final class WorkspaceSession implements PreparedWorkspace {
 	private void saveCaches() {
 		for (WorkspaceCache cache : plan.getCaches())
 			if (cache.getPolicy() == CachePolicy.RESTORE_AND_SAVE || cache.getPolicy() == CachePolicy.SAVE_ONLY)
-				snapshots.save(snapshotIdentity, cache.effectiveKey(),
+				snapshots.save(identity(cache), cache.effectiveKey(),
 						files.resolveRelative(workspace, cache.getPath(), "Cache path"));
+	}
+
+	private String identity(WorkspaceCache cache) {
+		return switch (cache.getIdentity()) {
+			case PROCESS_AND_ASSETS -> snapshotIdentity;
+			case PROCESS -> processIdentity;
+		};
 	}
 
 	private void install() {
@@ -173,7 +182,7 @@ public final class WorkspaceSession implements PreparedWorkspace {
 		for (WorkspaceCache cache : plan.getCaches())
 			if (cache.getPolicy() == CachePolicy.RESTORE_AND_SAVE
 					|| cache.getPolicy() == CachePolicy.RESTORE_ONLY)
-				snapshots.restore(snapshotIdentity, cache.effectiveKey(),
+				snapshots.restore(identity(cache), cache.effectiveKey(),
 						files.resolveRelative(workspace, cache.getPath(), "Cache path"));
 
 		for (WorkspaceAsset asset : plan.getAssets()) {
