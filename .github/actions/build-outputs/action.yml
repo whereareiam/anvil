@@ -1,5 +1,7 @@
 name: Hand over build outputs
-description: Save the Maven artifacts and Gradle task outputs of the build job, or restore them in a later job of the same run.
+description: >-
+  Save the Maven artifacts and Gradle task outputs of the build job, or restore them in a later job of the same
+  run. They travel through the Actions cache, so they do not appear among the run's artifacts.
 
 inputs:
   mode:
@@ -9,34 +11,31 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Package build outputs
-      if: inputs.mode == 'save'
+    - name: Check mode
       shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
       run: |
         set -euo pipefail
-        mkdir -p "$RUNNER_TEMP/build-outputs" "$HOME/.gradle/caches/build-cache-1"
-        tar -czf "$RUNNER_TEMP/build-outputs/maven.tar.gz" -C "$RUNNER_TEMP/anvil-maven" .
-        tar -czf "$RUNNER_TEMP/build-outputs/task-cache.tar.gz" -C "$HOME/.gradle/caches/build-cache-1" .
+        case "$MODE" in save|restore) ;; *) echo "mode must be save or restore" >&2; exit 1 ;; esac
+        mkdir -p "$RUNNER_TEMP/anvil-maven" "$HOME/.gradle/caches/build-cache-1"
 
+    # The attempt keeps a rerun of the build job from colliding with its earlier entry.
     - if: inputs.mode == 'save'
-      uses: actions/upload-artifact@v6
+      uses: actions/cache/save@v5
       with:
-        name: build-outputs
-        path: ${{ runner.temp }}/build-outputs/*.tar.gz
-        compression-level: 0
-        retention-days: 3
+        path: |
+          ${{ runner.temp }}/anvil-maven
+          ~/.gradle/caches/build-cache-1
+        key: build-outputs-${{ github.run_id }}-${{ github.run_attempt }}
 
+    # A rerun of only this job finds the entry of the attempt that built.
     - if: inputs.mode == 'restore'
-      uses: actions/download-artifact@v6
+      uses: actions/cache/restore@v5
       with:
-        name: build-outputs
-        path: ${{ runner.temp }}/build-outputs
-
-    - name: Unpack build outputs
-      if: inputs.mode == 'restore'
-      shell: bash
-      run: |
-        set -euo pipefail
-        mkdir -p "$HOME/.gradle/caches/build-cache-1" "$RUNNER_TEMP/anvil-maven"
-        tar -xzf "$RUNNER_TEMP/build-outputs/maven.tar.gz" -C "$RUNNER_TEMP/anvil-maven"
-        tar -xzf "$RUNNER_TEMP/build-outputs/task-cache.tar.gz" -C "$HOME/.gradle/caches/build-cache-1"
+        path: |
+          ${{ runner.temp }}/anvil-maven
+          ~/.gradle/caches/build-cache-1
+        key: build-outputs-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: build-outputs-${{ github.run_id }}-
+        fail-on-cache-miss: true

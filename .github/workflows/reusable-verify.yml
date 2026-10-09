@@ -94,7 +94,7 @@ jobs:
         if: inputs.packaging
         uses: actions/upload-artifact@v6
         with:
-          name: anvil-intellij-${{ steps.identity.outputs.version }}
+          name: anvil-intellij-plugin-${{ steps.identity.outputs.version }}
           path: anvil-integration/integration-intellij/intellij/build/distributions/*.zip
           if-no-files-found: error
           compression-level: 0
@@ -118,10 +118,11 @@ jobs:
           -PanvilVersion="$ANVIL_VERSION"
           -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
 
-      - uses: whereareiam/devops/primitive/report/junit/publish@v3
+      - uses: whereareiam/devops/primitive/report/junit/publish@feature/junit-artifact-name
         if: always()
         with:
           name: Build test results
+          artifact-name: test-results
 
       - uses: ./.github/actions/build-outputs
         if: inputs.packaging

@@ -78,10 +78,11 @@ jobs:
           -PanvilVersion="$ANVIL_VERSION"
           -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
 
-      - uses: whereareiam/devops/primitive/report/junit/publish@v3
+      - uses: whereareiam/devops/primitive/report/junit/publish@feature/junit-artifact-name
         if: always()
         with:
-          name: Live test results (${{ matrix.shard }})
+          name: Live test results (${{ matrix.name }})
+          artifact-name: test-results-live-${{ matrix.shard }}
 
   consumer:
     name: Example consumer
@@ -110,9 +111,10 @@ jobs:
           -PanvilVersion="$ANVIL_VERSION"
           -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
 
-      - uses: whereareiam/devops/primitive/report/junit/publish@v3
+      - uses: whereareiam/devops/primitive/report/junit/publish@feature/junit-artifact-name
         if: always()
         with:
-          name: Live test results (consumer)
+          name: Live test results (Example consumer)
+          artifact-name: test-results-live-consumer
           results: examples/**/build/test-results/**/*.xml
           reports: examples/**/build/reports/tests/**

@@ -56,7 +56,7 @@ tests verify imported constraints from published metadata without composite subs
 
 The ZIP is written to `anvil-integration/integration-intellij/intellij/build/distributions`, and
 `verifyPlugin` checks it against the baseline and newest supported IDE builds. Development builds,
-releases and full pull request verifications retain the ZIP as an `anvil-intellij-<version>` artifact for
+releases and full pull request verifications retain the ZIP as an `anvil-intellij-plugin-<version>` artifact for
 [installation from disk](../../integrations/intellij/installation/index.md#install-a-development-build).
 
 The Marketplace listing comes from the plugin module: `plugin.xml` holds the description, and
@@ -115,6 +115,11 @@ repeats the build, verifies the IntelliJ plugin, builds the fixtures and the exa
 published artifacts, and runs direct-server and proxy compatibility, player capabilities,
 session/extension behavior, and the example's journeys. Live groups use separate runners and reuse
 the build job's published artifacts and task cache.
+
+A run keeps as artifacts only what someone downloads: the IntelliJ plugin, and the JUnit results of a
+job in which a test failed (`test-results`, or `test-results-live-<group>`). The test summary is on
+the run page either way. The build job hands its Maven artifacts and task outputs to the later jobs
+through the Actions cache, under a key of that run.
 
 The run reports a **Full verification** status on the pull request's head commit, so it appears among
 the pull request's checks and links to the run. Request a new run after the revision changes; the
