@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.binding;
 
+import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.interaction.model.BlockUse;
 import me.whereareiam.anvil.capability.interaction.model.EntityUse;
@@ -35,8 +36,8 @@ class JsonCapabilityCodecTest {
 		roundTrip(Position.builder().x(1).y(64).z(2).yaw(90).pitch(20).onGround(true).build());
 		roundTrip(InventorySnapshot.builder().containerId(2).stateId(5)
 				.item(InventoryItem.builder().slot(0).protocolId(1).amount(2).build()).build());
-		roundTrip(new PlayerConnectionEvent(true, null));
-		roundTrip(new PlayerConnectionEvent(false, "kicked"));
+		roundTrip(new PlayerConnectionEvent(true, null, null));
+		roundTrip(new PlayerConnectionEvent(false, "kicked", DisconnectCause.SERVER));
 	}
 
 	@Test

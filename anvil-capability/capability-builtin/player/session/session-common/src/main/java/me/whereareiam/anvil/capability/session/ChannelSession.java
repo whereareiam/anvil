@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.session;
 
+import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.capability.protocol.api.model.player.PlayerConnectionEvent;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
 import me.whereareiam.anvil.capability.session.model.SessionState;
@@ -18,25 +19,30 @@ final class ChannelSession implements Session {
 	private final CapabilityChannel channel;
 	private final AtomicBoolean connected = new AtomicBoolean();
 	private volatile @Nullable String kickReason;
+	private volatile @Nullable DisconnectCause disconnectCause;
 
 	ChannelSession(@NotNull CapabilityChannel channel) {
 		this.channel = channel;
 		channel.subscribe(PlayerConnectionEvent.CHANGED, event -> {
 			connected.set(event.isConnected());
-			if (!event.isConnected()) kickReason = event.getReason();
+			if (event.isConnected()) return;
+
+			disconnectCause = event.getCause();
+			kickReason = event.getReason();
 		});
 		channel.subscribe(PlayerConnectionEvent.DESTROYED, ignored -> connected.set(false));
 	}
 
 	@Override
 	public @NotNull SessionState state() {
-		return SessionState.builder().connected(connected.get()).kickReason(kickReason).build();
+		return SessionState.builder().connected(connected.get()).kickReason(kickReason).disconnectCause(disconnectCause).build();
 	}
 
 	@Override
 	public void connect() {
 		connected.set(false);
 		kickReason = null;
+		disconnectCause = null;
 		channel.request(SessionOperations.CONNECT, null);
 	}
 
@@ -49,6 +55,7 @@ final class ChannelSession implements Session {
 	public void rejoin() {
 		connected.set(false);
 		kickReason = null;
+		disconnectCause = null;
 		channel.request(SessionOperations.REJOIN, null);
 	}
 

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerEvent;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerMessage;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerReady;
@@ -91,10 +92,11 @@ public final class WorkerMessageCodec {
 		}
 	}
 
-	public byte @NotNull [] connection(boolean connected, @Nullable String reason) {
+	public byte @NotNull [] connection(boolean connected, @Nullable DisconnectCause cause, @Nullable String reason) {
 		ObjectNode state = JsonNodeFactory.instance.objectNode()
 				.put("connected", connected)
-				.put("reason", reason);
+				.put("reason", reason)
+				.put("cause", cause == null ? null : cause.name());
 
 		try {
 			return mapper.writeValueAsBytes(state);

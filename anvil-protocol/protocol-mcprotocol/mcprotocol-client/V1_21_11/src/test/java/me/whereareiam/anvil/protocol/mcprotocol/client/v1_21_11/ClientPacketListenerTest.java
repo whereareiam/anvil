@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
+import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import net.kyori.adventure.text.Component;
@@ -83,7 +84,7 @@ class ClientPacketListenerTest {
 				.append(Component.text(" by Anvil"))));
 		receive(new ClientboundLoginDisconnectPacket(Component.text("Outdated: ").append(Component.translatable("version", Component.text("1.21.11")))));
 
-		assertEquals(List.of("disconnected multiplayer.disconnect.kicked Alice by Anvil", "disconnected Outdated: version 1.21.11"), events);
+		assertEquals(List.of("disconnected SERVER multiplayer.disconnect.kicked Alice by Anvil", "disconnected SERVER Outdated: version 1.21.11"), events);
 	}
 
 	private void receive(Packet packet) {
@@ -124,8 +125,8 @@ class ClientPacketListenerTest {
 		}
 
 		@Override
-		public void disconnected(@NotNull ClientSession session, @NotNull String reason) {
-			events.add("disconnected " + reason);
+		public void disconnected(@NotNull ClientSession session, @NotNull DisconnectCause cause, @NotNull String reason) {
+			events.add("disconnected " + cause + " " + reason);
 		}
 	}
 }

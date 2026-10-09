@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.protocol.api.model.player;
 
+import me.whereareiam.anvil.api.type.DisconnectCause;
 import lombok.Value;
 import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
 import org.jetbrains.annotations.NotNull;
@@ -27,4 +28,8 @@ public class PlayerConnectionEvent {
 	 * Optional explanation supplied for a disconnect.
 	 */
 	@Nullable String reason;
+	/**
+	 * What ended the connection; null while connected and for libraries that do not report it.
+	 */
+	@Nullable DisconnectCause cause;
 }

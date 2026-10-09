@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
+import com.github.steveice10.mc.protocol.data.UnexpectedEncryptionException;
 import com.github.steveice10.mc.protocol.data.game.entity.player.HandPreference;
 import com.github.steveice10.mc.protocol.data.game.setting.ChatVisibility;
 import com.github.steveice10.mc.protocol.data.game.setting.SkinPart;
@@ -14,6 +15,7 @@ import com.github.steveice10.packetlib.event.session.DisconnectedEvent;
 import com.github.steveice10.packetlib.event.session.SessionAdapter;
 import com.github.steveice10.packetlib.packet.Packet;
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import net.kyori.adventure.text.Component;
@@ -43,14 +45,25 @@ final class ClientPacketListener extends SessionAdapter {
 			listener.teleported(session, position.getYaw(), position.getPitch());
 			session.send(new ServerboundAcceptTeleportationPacket(position.getTeleportId()));
 		}
-		if (packet instanceof ClientboundDisconnectPacket disconnect) listener.disconnected(session, plainText(disconnect.getReason()));
+		if (packet instanceof ClientboundDisconnectPacket disconnect)
+			listener.disconnected(session, DisconnectCause.SERVER, plainText(disconnect.getReason()));
 		if (packet instanceof ClientboundLoginDisconnectPacket disconnect)
-			listener.disconnected(session, plainText(disconnect.getReason()));
+			listener.disconnected(session, DisconnectCause.SERVER, plainText(disconnect.getReason()));
 	}
 
 	@Override
 	public void disconnected(DisconnectedEvent event) {
-		listener.disconnected(event.getSession(), Objects.requireNonNullElse(event.getReason(), ""));
+		listener.disconnected(event.getSession(), cause(event), Objects.requireNonNullElse(event.getReason(), ""));
+	}
+
+	/**
+	 * A close caused by the library refusing an encryption request means that the server wanted online
+	 * authentication from a client that signed in with no account.
+	 */
+	private static DisconnectCause cause(DisconnectedEvent event) {
+		return event.getCause() instanceof UnexpectedEncryptionException
+				? DisconnectCause.AUTHENTICATION_REQUIRED
+				: DisconnectCause.CONNECTION_LOST;
 	}
 
 	private static String plainText(Component component) {

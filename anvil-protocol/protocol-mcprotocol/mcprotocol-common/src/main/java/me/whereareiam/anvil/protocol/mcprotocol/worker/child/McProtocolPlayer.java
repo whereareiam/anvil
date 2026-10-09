@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
+import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolSubscription;
 import me.whereareiam.anvil.protocol.api.worker.NativePlayer;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
@@ -16,6 +17,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
@@ -30,6 +34,16 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 	private static final String CLIENT_LOCALE = "en_us";
 	private static final int VIEW_DISTANCE = 8;
 	private static final String CONNECTION_EVENT = "player.connection";
+	/**
+	 * How long a closed connection waits for the reason of its closing. Client libraries handle packets on
+	 * another thread than connection events, so the close can be reported before the server's disconnect packet.
+	 */
+	private static final long CLOSE_REASON_GRACE_MILLIS = 300;
+	private static final ScheduledExecutorService CLOSE_REPORTS = Executors.newSingleThreadScheduledExecutor(task -> {
+		Thread thread = new Thread(task, "anvil-close-reports");
+		thread.setDaemon(true);
+		return thread;
+	});
 
 	private final String id;
 	@Getter
@@ -46,6 +60,7 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 
 	private final @NotNull WorkerMessageCodec codec = new WorkerMessageCodec();
 	private final AtomicBoolean disconnectNotified = new AtomicBoolean();
+	private volatile boolean disconnecting;
 	private final NativeSessionBindings nativeBindings = new NativeSessionBindings();
 
 	private WorkerCapabilityRegistry.PlayerBindings bindings;
@@ -87,6 +102,7 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 		if (current != null && client.connected(current)) return;
 
 		disconnectNotified.set(false);
+		disconnecting = false;
 		ClientLogin login = ClientLogin.builder()
 				.name(name)
 				.uniqueId(uuid)
@@ -105,8 +121,10 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 	@Override
 	public synchronized void disconnect() {
 		Object current = session;
-		if (current != null && client.connected(current))
+		if (current != null && client.connected(current)) {
+			disconnecting = true;
 			client.disconnect(current, "Disconnected by Anvil");
+		}
 	}
 
 	@Override
@@ -177,7 +195,7 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 		@Override
 		public void loggedIn(@NotNull Object current) {
 			if (current != session) return;
-			emit(CONNECTION_EVENT, codec.connection(true, null));
+			emit(CONNECTION_EVENT, codec.connection(true, null, null));
 		}
 
 		@Override
@@ -187,10 +205,25 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 		}
 
 		@Override
-		public void disconnected(@NotNull Object current, @NotNull String reason) {
+		public void disconnected(@NotNull Object current, @NotNull DisconnectCause cause, @NotNull String reason) {
+			if (current != session) return;
+			if (disconnecting) {
+				report(current, DisconnectCause.CLIENT, reason);
+				return;
+			}
+			if (cause != DisconnectCause.CONNECTION_LOST) {
+				report(current, cause, reason);
+				return;
+			}
+
+			// The reason of this close may still be on its way; it wins when it arrives within the grace period.
+			CLOSE_REPORTS.schedule(() -> report(current, cause, reason), CLOSE_REASON_GRACE_MILLIS, TimeUnit.MILLISECONDS);
+		}
+
+		private void report(Object current, DisconnectCause cause, String reason) {
 			if (current != session) return;
 			if (!disconnectNotified.compareAndSet(false, true)) return;
-			emit(CONNECTION_EVENT, codec.connection(false, reason));
+			emit(CONNECTION_EVENT, codec.connection(false, cause, reason));
 		}
 	}
 }

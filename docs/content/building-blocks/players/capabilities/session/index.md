@@ -73,5 +73,26 @@ session.connected();
 They are useful after a wait or for diagnostics. Reading `connected()` on the snapshot directly after
 starting login may still return `false`; use the capability's wait for an asynchronous assertion.
 
+## Tell why a connection ended
+
+`session.state().disconnectCause()` says what ended the last connection:
+
+| Cause | Meaning |
+|---|---|
+| `SERVER` | The server or proxy disconnected the player and sent a reason, as a kick does. |
+| `AUTHENTICATION_REQUIRED` | The entry point required online authentication from a player that signs in with no account. |
+| `CONNECTION_LOST` | The connection closed without a reason from the server. |
+| `CLIENT` | The player disconnected itself through `disconnect()` or `rejoin()`. |
+
+```java
+String reason = session.kicked();
+assertEquals(DisconnectCause.SERVER, session.state().disconnectCause());
+```
+
+Import `me.whereareiam.anvil.api.type.DisconnectCause`. A server's reason always wins over the closed
+connection that follows it, so a kick reads as `SERVER` with its text even when the connection closes
+first. A connection that closes without a reason is reported about 300 milliseconds later, once no
+reason has followed. The cause is null while the player is connected.
+
 To permanently release the player and reuse its name, see
 [releasing and replacing players](../../connections/index.md#release-and-replace-a-player).
