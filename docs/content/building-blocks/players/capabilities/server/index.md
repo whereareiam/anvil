@@ -50,6 +50,17 @@ An authentication or forwarding plugin may change the observed identity. Assert 
 when testing that plugin, and inspect the client value separately. Use the route object for proxy and
 backend names.
 
+## Expect that the player stays
+
+`stayed(server, duration)` watches the observed route for a duration. It fails as soon as the player
+is observed on another server or on none, naming where, and returns normally otherwise:
+
+```java
+server.stayed("auth", Duration.ofSeconds(3));
+```
+
+Use it for behavior that must not move the player, such as a refused command.
+
 ## Observe a route change or reconnect
 
 After triggering your application's transfer to `lobby`, call `server.joined("lobby")`. After a kick

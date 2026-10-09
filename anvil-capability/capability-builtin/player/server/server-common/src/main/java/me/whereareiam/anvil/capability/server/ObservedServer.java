@@ -26,4 +26,19 @@ final class ObservedServer implements Server {
 				timeout
 		);
 	}
+
+	@Override
+	public void stayed(@NotNull String server, @NotNull Duration duration) {
+		PlayerIdentity elsewhere;
+		try {
+			elsewhere = observation.await(identity -> !server.equals(identity.getRoute().getServer()), duration);
+		} catch (IllegalStateException stayed) {
+			if (server.equals(observation.identity().getRoute().getServer())) return;
+
+			elsewhere = observation.identity();
+		}
+
+		throw new IllegalStateException("Player did not stay on server '" + server + "'; observed on "
+				+ (elsewhere.getRoute().getServer() == null ? "no server" : "'" + elsewhere.getRoute().getServer() + "'"));
+	}
 }

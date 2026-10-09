@@ -60,10 +60,35 @@ would add.
 message received before the current operation can satisfy the wait. The bundled implementation keeps
 that history across reconnects of the same player.
 
-Use a response token unique to the step or an application state observation when repeating an action.
-For example, have a test command echo a request identifier. The Messages API does not expose a history
-clear operation or a checkpoint parameter. For console assertions that must ignore earlier output,
-use a [console checkpoint](../../../../workflows/testing/assertions/index.md).
+When an action repeats, wait from a [checkpoint](#wait-from-a-checkpoint) so that an earlier response
+cannot satisfy the wait. For console assertions that must ignore earlier output, use a
+[console checkpoint](../../../../workflows/testing/assertions/index.md).
+
+## Wait from a checkpoint
+
+When a text repeats, such as a prompt shown again after a reconnect, start the wait from a checkpoint.
+A checkpoint is a position in the history; a wait that starts from it ignores every earlier message.
+
+```java
+int before = messages.checkpoint();
+messages.command("login secret");
+ReceivedMessage welcome = messages.received(text -> text.contains("Welcome back"), before, Duration.ofSeconds(10));
+```
+
+The condition is any predicate on the message's plain text, so one wait can require several texts in
+one message or accept alternatives. The result carries the message and the checkpoint directly after
+it, for the next wait. Import `me.whereareiam.anvil.capability.messages.model.ReceivedMessage`.
+
+## Expect that a message does not arrive
+
+`notReceived(...)` watches for a duration and fails as soon as a matching message arrives, naming it:
+
+```java
+messages.notReceived(text -> text.contains("Invalid password"), welcome.getCheckpoint(), Duration.ofSeconds(2));
+```
+
+It returns normally when the duration passes without such a message. Choose the shortest duration in
+which the server would have sent the message.
 
 ## Inspect failures
 

@@ -13,6 +13,7 @@ import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ObservedServerTest {
 	private static final Duration TIMEOUT = Duration.ofSeconds(3);
@@ -35,6 +36,20 @@ class ObservedServerTest {
 
 		assertSame(survival, joined);
 		assertEquals(TIMEOUT, observation.timeout);
+	}
+
+	@Test
+	void acceptsAPlayerThatStaysAndNamesWhereALeavingPlayerWent() {
+		PlayerIdentity lobby = identity("lobby");
+		new ObservedServer(new RecordedObservation(List.of(lobby))).stayed("lobby", TIMEOUT);
+
+		IllegalStateException moved = assertThrows(IllegalStateException.class,
+				() -> new ObservedServer(new RecordedObservation(List.of(lobby, identity("survival")))).stayed("lobby", TIMEOUT));
+		assertEquals("Player did not stay on server 'lobby'; observed on 'survival'", moved.getMessage());
+
+		IllegalStateException gone = assertThrows(IllegalStateException.class,
+				() -> new ObservedServer(new RecordedObservation(List.of(lobby, identity(null)))).stayed("lobby", TIMEOUT));
+		assertEquals("Player did not stay on server 'lobby'; observed on no server", gone.getMessage());
 	}
 
 	private static PlayerIdentity identity(String server) {
@@ -64,7 +79,8 @@ class ObservedServerTest {
 		@Override
 		public @NotNull PlayerIdentity await(@NotNull Predicate<PlayerIdentity> condition, @NotNull Duration timeout) {
 			this.timeout = timeout;
-			return identities.stream().filter(condition).findFirst().orElseThrow();
+			return identities.stream().filter(condition).findFirst()
+					.orElseThrow(() -> new IllegalStateException("Player did not satisfy the observation condition"));
 		}
 	}
 }

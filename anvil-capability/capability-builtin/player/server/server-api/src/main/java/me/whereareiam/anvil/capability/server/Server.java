@@ -36,4 +36,13 @@ public interface Server extends PlayerCapability {
 	 * @return identity observed on the server
 	 */
 	@NotNull PlayerIdentity joined(@NotNull String server, @NotNull Duration timeout);
+
+	/**
+	 * Expects the player to stay on a server for a duration. It fails as soon as the player is observed
+	 * elsewhere or nowhere, naming where, and returns normally once the duration has passed on that server.
+	 *
+	 * @param server expected current server name
+	 * @param duration how long the player must stay
+	 */
+	void stayed(@NotNull String server, @NotNull Duration duration);
 }
