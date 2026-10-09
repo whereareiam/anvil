@@ -2,6 +2,7 @@ package me.whereareiam.anvil.capability.messages;
 
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
+import me.whereareiam.anvil.capability.messages.model.ReceivedMessage;
 import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
@@ -82,6 +83,36 @@ class ChannelMessagesTest {
 		IllegalStateException failure = assertThrows(IllegalStateException.class, () -> messages.received("pong", TIMEOUT));
 
 		assertEquals("Player did not receive a message containing 'pong'", failure.getMessage());
+	}
+
+	@Test
+	void findsOnlyMessagesAfterACheckpointAndReturnsTheNextOne() {
+		RecordingChannel channel = new RecordingChannel();
+		ChannelMessages messages = new ChannelMessages(channel);
+		channel.publish(MessagesOperations.RECEIVED, new MessageText("Use /login"));
+		int afterFirstPrompt = messages.checkpoint();
+
+		assertEquals("Player did not receive a matching message after message 1", assertThrows(IllegalStateException.class,
+				() -> messages.received(text -> text.contains("/login"), afterFirstPrompt, TIMEOUT)).getMessage());
+
+		channel.publish(MessagesOperations.RECEIVED, new MessageText("Welcome back"));
+		channel.publish(MessagesOperations.RECEIVED, new MessageText("Use /login"));
+		assertEquals(new ReceivedMessage("Use /login", 3), messages.received(text -> text.contains("/login"), afterFirstPrompt, TIMEOUT));
+		assertEquals(new ReceivedMessage("Use /login", 1), messages.received(text -> text.contains("/login"), 0, TIMEOUT));
+	}
+
+	@Test
+	void failsWhenAForbiddenMessageArrivesAfterTheCheckpointOnly() {
+		RecordingChannel channel = new RecordingChannel();
+		ChannelMessages messages = new ChannelMessages(channel);
+		channel.publish(MessagesOperations.RECEIVED, new MessageText("Invalid password."));
+		int checkpoint = messages.checkpoint();
+
+		messages.notReceived(text -> text.contains("Invalid"), checkpoint, TIMEOUT);
+
+		channel.publish(MessagesOperations.RECEIVED, new MessageText("Invalid password."));
+		assertEquals("Player received a message it must not receive: Invalid password.", assertThrows(IllegalStateException.class,
+				() -> messages.notReceived(text -> text.contains("Invalid"), checkpoint, TIMEOUT)).getMessage());
 	}
 
 	/**
