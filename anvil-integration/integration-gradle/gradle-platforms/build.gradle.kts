@@ -23,6 +23,12 @@ gradlePlugin {
 			displayName = "Anvil Spigot Platform"
 			description = "Includes the Spigot platform provider and agent"
 		}
+		create("anvilPlatformNeoForge") {
+			id = "me.whereareiam.anvil.platform.neoforge"
+			implementationClass = "me.whereareiam.anvil.integration.gradle.platform.NeoForgePlugin"
+			displayName = "Anvil NeoForge Platform"
+			description = "Includes the NeoForge platform provider and agent"
+		}
 		create("anvilPlatformVelocity") {
 			id = "me.whereareiam.anvil.platform.velocity"
 			implementationClass = "me.whereareiam.anvil.integration.gradle.platform.VelocityPlugin"

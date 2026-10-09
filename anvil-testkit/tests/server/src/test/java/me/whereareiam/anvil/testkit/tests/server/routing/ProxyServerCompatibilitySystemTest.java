@@ -26,7 +26,7 @@ class ProxyServerCompatibilitySystemTest {
 	Stream<DynamicTest> runsEveryNativePlatformAndVersion() {
 		String filter = System.getProperty("anvil.matrix.filter", ".*");
 
-		return CompatibilityScenarioFactory.scenarios().stream()
+		return CompatibilityScenarioFactory.fixtureScenarios().stream()
 				.filter(scenario -> scenario.getName().matches(filter))
 				.map(scenario -> DynamicTest.dynamicTest(scenario.getName(), () -> verify(scenario)));
 	}

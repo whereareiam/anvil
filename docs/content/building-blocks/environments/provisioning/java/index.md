@@ -20,8 +20,10 @@ fails when this table and that data differ. Versions are written in their canoni
 | Paper | `1.16.5` | Java 11 to 16; newer with `-DPaper.IgnoreJavaVersion=true` | 11 | None |
 | Paper | `1.17` to `1.17.1` | Java 17; newer with `-DPaper.IgnoreJavaVersion=true` | 17 | None |
 | Paper | `1.18` to `1.20.4` | Java 17 or newer | 17 | `1.18.2` on 17 |
-| Paper | `1.20.5` to `1.21.11` | Java 21 or newer | 21 | `1.21.11` on 21 |
+| Paper | `1.20.5` to `1.21.11` | Java 21 or newer | 21 | `1.21.1` and `1.21.11` on 21 |
 | Paper | `26.1` and newer | Java 25 or newer | 25 | `26.1.2` on 25 |
+| NeoForge | `1.21.1` to `1.21.11` | Java 21 or newer | 21 | `1.21.1` and `1.21.11` on 21 |
+| NeoForge | `26.1` and newer | Java 25 or newer | 25 | `26.1.2` on 25 |
 | Spigot | `1.16.5` | Java 11 to 16 | 11 | None |
 | Spigot | `1.17` to `1.17.1` | Java 17 | 17 | None |
 | Spigot | `1.18` to `1.18.2` | Java 17 to 18 | 17 | None |

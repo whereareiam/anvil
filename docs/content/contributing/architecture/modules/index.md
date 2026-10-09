@@ -251,7 +251,7 @@ every such library. MCProtocolLib's family is laid out like this:
 | `mcprotocol-api` | The release-neutral client port `McProtocolClient<S>` that client segments implement |
 | `mcprotocol-common` | `McProtocolLibraryProvider`, the release catalog, worker host and segment selection, the worker shell, and the private account store |
 | `mcprotocol-client` | Source-free side folder whose `V*` children are the client segments |
-| `mcprotocol-client/V1_18_2` and `V1_21_11` | One client segment per range of releases; `V1_21_11` also serves `26.1.2` |
+| `mcprotocol-client/V1_18_2`, `V1_21_1` and `V1_21_11` | One client segment per range of releases; `V1_21_11` also serves `26.1.2` |
 
 The worker shell never imports MCProtocolLib. Every class that does lives in a segment: a project named
 after the release key it starts at, under a side folder named after its owner and library, such as

@@ -6,7 +6,7 @@ The Minecraft test framework that got tired of watching you test everything by h
 
 Anvil gives JUnit control over:
 
-- real Paper, Spigot, Velocity, and BungeeCord processes
+- real Paper, Spigot, NeoForge, Velocity, and BungeeCord processes
 - the packaged plugin your users will actually install
 - lightweight clients speaking the real Minecraft protocol
 - complete environments that can also stay open for a developer to join
@@ -110,7 +110,8 @@ Neither plugin installs capabilities or a protocol library. Apply capability uni
 as the bundled `protocol-mcprotocol`, to `anvilRuntimeOnly` when scenarios use simulated players.
 
 Platform units are applied separately: `me.whereareiam.anvil.platform.paper`,
-`me.whereareiam.anvil.platform.spigot`, `me.whereareiam.anvil.platform.velocity`, and
+`me.whereareiam.anvil.platform.spigot`, `me.whereareiam.anvil.platform.neoforge`,
+`me.whereareiam.anvil.platform.velocity`, and
 `me.whereareiam.anvil.platform.bungeecord`. Single capability units such as
 `me.whereareiam.anvil.capability.inventory` replace the default set when only some are wanted.
 
@@ -443,11 +444,12 @@ each process's console, commands, and players one click away. Install it from Je
 | Role                     | Platforms            |
 |--------------------------|----------------------|
 | Direct or backend server | Paper, Spigot        |
+| Direct server            | NeoForge             |
 | Proxy                    | Velocity, BungeeCord |
 
-Players speak Minecraft `1.18.2`, `1.21.11`, and `26.1.2`
-through MCProtocolLib, plus `26.1` and `26.1.1`, which share the `26.1.2` protocol. The
-live matrix runs those three versions on Paper, and verifies `1.21.11`
+Players speak Minecraft `1.18.2`, `1.21.1`, `1.21.11`, and `26.1.2`
+through MCProtocolLib, plus `1.21`, `26.1`, and `26.1.1`, which share those protocols. The
+live matrix runs those four versions on Paper and `1.21.1` and newer on NeoForge, and verifies `1.21.11`
 and `26.1.2` on Spigot and across every supported proxy/backend combination; the other supported
 versions are compatible but not live-tested. Release data you supply can add newer versions. The
 [version support page](https://anvil.whereareiam.me/docs/dev/building-blocks/environments/platforms/versions)

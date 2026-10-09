@@ -3,8 +3,8 @@ title: Platforms
 description: Choose the server and proxy implementations that your test needs.
 ---
 
-A **platform** is the implementation of a server or proxy in your environment. Paper and Spigot are
-server platforms: they run worlds and server plugins. Velocity and BungeeCord are proxy platforms:
+A **platform** is the implementation of a server or proxy in your environment. Paper, Spigot, and NeoForge are
+server platforms: they run worlds and server plugins or mods. Velocity and BungeeCord are proxy platforms:
 they accept player connections and route them to backend servers. Both roles belong to the same
 scenario and share Anvil's process lifecycle.
 

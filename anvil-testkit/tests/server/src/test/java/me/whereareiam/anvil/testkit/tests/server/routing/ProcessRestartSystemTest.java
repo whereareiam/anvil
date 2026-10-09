@@ -25,7 +25,7 @@ class ProcessRestartSystemTest {
 	@TestFactory
 	Stream<DynamicTest> restartsEverySupportedPlatformAndNativeVersion() {
 		String filter = System.getProperty("anvil.matrix.filter", ".*");
-		return CompatibilityScenarioFactory.scenarios().stream().filter(scenario -> scenario.getName().matches(filter))
+		return CompatibilityScenarioFactory.fixtureScenarios().stream().filter(scenario -> scenario.getName().matches(filter))
 				.map(scenario -> DynamicTest.dynamicTest(scenario.getName(), () -> verify(scenario)));
 	}
 

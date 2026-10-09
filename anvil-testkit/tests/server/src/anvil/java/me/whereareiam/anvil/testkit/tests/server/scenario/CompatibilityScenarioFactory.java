@@ -27,15 +27,43 @@ public final class CompatibilityScenarioFactory {
 	private static final String VELOCITY_BUILD = "615";
 	private static final String BUNGEE_BUILD = "2085";
 	private static final List<PaperBuild> DIRECT_PAPER = List.of(
-			new PaperBuild("1.18.2", "388")
+			new PaperBuild("1.18.2", "388"),
+			new PaperBuild("1.21.1", "133")
+	);
+	private static final List<NeoForgeRelease> NEOFORGE = List.of(
+			new NeoForgeRelease("1.21.1", "21.1.256"),
+			new NeoForgeRelease("1.21.11", "21.11.45"),
+			new NeoForgeRelease("26.1.2", "26.1.2.114")
 	);
 
 	/**
-	 * Returns pinned direct and routed environments used by compatibility tests.
+	 * Returns every scenario of the live matrix: the fixture scenarios and the NeoForge scenarios.
 	 *
-	 * @return all supported compatibility scenarios
+	 * @return all scenarios whose combinations the version data calls verified
 	 */
 	public static List<AnvilScenario> scenarios() {
+		List<AnvilScenario> scenarios = new ArrayList<>(fixtureScenarios());
+		scenarios.addAll(neoForgeScenarios());
+		return List.copyOf(scenarios);
+	}
+
+	/**
+	 * Returns the direct NeoForge scenario of each Minecraft version NeoForge is verified on. NeoForge loads
+	 * no Bukkit plugin, so these servers carry no fixture and their test uses vanilla commands only.
+	 *
+	 * @return one direct NeoForge scenario per verified Minecraft version
+	 */
+	public static List<AnvilScenario> neoForgeScenarios() {
+		return NEOFORGE.stream().map(release -> neoForgeScenario(release.version(), release.release())).toList();
+	}
+
+	/**
+	 * Returns pinned direct and routed environments whose servers load the fixture plugin, which compatibility
+	 * and restart tests drive through its commands and agent operations.
+	 *
+	 * @return all Paper, Spigot and proxy scenarios
+	 */
+	public static List<AnvilScenario> fixtureScenarios() {
 		List<AnvilScenario> scenarios = new ArrayList<>(paperReleaseScenarios());
 		registerVersion("1.21.11", "132",
 				"6481503fca2838776b3da5a3f1c030e1328abc2fd77d9ea1bb4814889b540dcd", scenarios);
@@ -104,6 +132,26 @@ public final class CompatibilityScenarioFactory {
 
 	static AnvilScenario paperScenario(String version, String build) {
 		return directScenario("paper-" + version, Platforms.PAPER, Distribution.remote(version, build));
+	}
+
+	private static AnvilScenario neoForgeScenario(String version, String release) {
+		MinecraftServer server = MinecraftServer.builder()
+				.name("server")
+				.metadata(serverMetadata("server"))
+				.platform(Platforms.NEOFORGE)
+				.distribution(Distribution.remote(version, release))
+				.memoryMegabytes(1536)
+				.build();
+		return AnvilScenario.builder()
+				.name("neoforge-" + version)
+				.metadata(PresentationMetadata.builder()
+						.displayName("Direct login · NeoForge " + version)
+						.description("Single NeoForge server without fixture plugins for checking native login, server-side "
+								+ "player observation and console commands through the NeoForge agent.")
+						.category("Native compatibility").tag("login").build())
+				.entrypoint(server.getName())
+				.server(server)
+				.build();
 	}
 
 	private static AnvilScenario directScenario(String name, String platform, Distribution distribution) {
@@ -216,6 +264,14 @@ public final class CompatibilityScenarioFactory {
 	 * @param build Paper build number
 	 */
 	private record PaperBuild(String version, String build) { }
+
+	/**
+	 * Pinned NeoForge release of one Minecraft version.
+	 *
+	 * @param version Minecraft version
+	 * @param release NeoForge release
+	 */
+	private record NeoForgeRelease(String version, String release) { }
 
 	private static String platformLabel(String platform) {
 		return switch (platform) {

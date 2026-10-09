@@ -23,7 +23,7 @@ class ToolingCapabilitiesSystemTest {
 	@ParameterizedTest
 	@ValueSource(strings = {"paper-1.21.11", "paper-26.1.2"})
 	void discoversBuiltinControlsAndObservesNativeConnectionChanges(String name) {
-		var scenario = CompatibilityScenarioFactory.scenarios().stream()
+		var scenario = CompatibilityScenarioFactory.fixtureScenarios().stream()
 				.filter(candidate -> candidate.getName().equals(name)).findFirst().orElseThrow();
 		AtomicReference<Session> connection = new AtomicReference<>();
 		AtomicReference<Messages> messages = new AtomicReference<>();

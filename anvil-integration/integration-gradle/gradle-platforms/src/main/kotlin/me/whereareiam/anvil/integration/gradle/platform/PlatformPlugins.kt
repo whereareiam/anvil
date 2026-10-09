@@ -22,6 +22,10 @@ class SpigotPlugin : Plugin<Project> {
 	override fun apply(project: Project) = project.installPlatform(arrayOf("platform-spigot-provider", "platform-bukkit-agent"))
 }
 
+class NeoForgePlugin : Plugin<Project> {
+	override fun apply(project: Project) = project.installPlatform(arrayOf("platform-neoforge-provider", "platform-neoforge-agent"))
+}
+
 class VelocityPlugin : Plugin<Project> {
 	override fun apply(project: Project) = project.installPlatform(arrayOf("platform-velocity-provider", "platform-velocity-agent"))
 }

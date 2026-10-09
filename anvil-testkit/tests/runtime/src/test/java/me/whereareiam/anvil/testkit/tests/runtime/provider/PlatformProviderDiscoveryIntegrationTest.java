@@ -21,6 +21,7 @@ class PlatformProviderDiscoveryIntegrationTest {
 		assertEquals(Set.of(
 				Platforms.PAPER,
 				Platforms.SPIGOT,
+				Platforms.NEOFORGE,
 				Platforms.VELOCITY,
 				Platforms.BUNGEECORD
 		), platforms);

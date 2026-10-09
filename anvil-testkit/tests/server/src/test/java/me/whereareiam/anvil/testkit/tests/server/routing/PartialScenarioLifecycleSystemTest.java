@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class PartialScenarioLifecycleSystemTest {
 	@Test
 	void controlsIndividualProcessesThenCompletesTwoProxyThreeServerEnvironment() throws Exception {
-		AnvilScenario original = CompatibilityScenarioFactory.scenarios().stream()
+		AnvilScenario original = CompatibilityScenarioFactory.fixtureScenarios().stream()
 				.filter(scenario -> scenario.getName().equals("velocity-paper-1.21.11"))
 				.findFirst().orElseThrow();
 		var auxiliary = original.getServers().getFirst().toBuilder().name("auxiliary").build();

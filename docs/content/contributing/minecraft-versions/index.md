@@ -67,7 +67,7 @@ The `check` task runs the same verification. A segment's report is
 - **Everything links:** the new release reuses the newest segment of each side; no code changes. The
   `26.1.2` release, for example, runs the `V1_21_11` client segment.
 - **A segment does not link:** the failure names the missing or changed class, field, or method. Add
-  a segment named after the new release key in that side only, such as `V1_21_11` beside `V1_18_2`.
+  a segment named after the new release key in that side only, such as `V1_21_11` beside `V1_21_1`.
   Copy the previous segment, change its package suffix to the new folder name in lower case, such as
   `.v1_21_11`, and adapt the code the failure names. The side's `module-adapter` convention adds the new
   child automatically.
@@ -101,6 +101,7 @@ Each platform provider owns its version data:
 |---|---|
 | Paper | `anvil-platform/platform-paper/platform-paper-provider/src/main/resources/me/whereareiam/anvil/platform/paper/paper-versions.toml` |
 | Spigot | `anvil-platform/platform-spigot/platform-spigot-provider/src/main/resources/me/whereareiam/anvil/platform/spigot/spigot-versions.toml` |
+| NeoForge | `anvil-platform/platform-neoforge/platform-neoforge-provider/src/main/resources/me/whereareiam/anvil/platform/neoforge/neoforge-versions.toml` |
 | Velocity | `anvil-platform/platform-velocity/platform-velocity-provider/src/main/resources/me/whereareiam/anvil/platform/velocity/velocity-versions.toml` |
 | BungeeCord | `anvil-platform/platform-bungeecord/platform-bungeecord-provider/src/main/resources/me/whereareiam/anvil/platform/bungeecord/bungeecord-versions.toml` |
 
@@ -130,6 +131,9 @@ when they differ:
 - A current version also runs on Spigot and behind Velocity and BungeeCord: register it with
   `registerVersion(...)`, which takes the Paper build and the Spigot JAR's SHA-256 and adds only the Spigot
   and proxy scenarios.
+- A version NeoForge supports also runs directly on NeoForge: add a `NeoForgeRelease` with the version and its
+  pinned NeoForge release to `NEOFORGE`. `NeoForgeServerSystemTest` runs it without the fixture plugin, which
+  NeoForge cannot load.
 
 Then list exactly the matrix's combinations as verified: the release's `verified` versions in
 `mcprotocol-releases.toml`, and each platform's `[verified]` table with the Java versions the matrix

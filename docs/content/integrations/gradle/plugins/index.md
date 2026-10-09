@@ -44,6 +44,7 @@ runtime. See [IDE project tooling](../tooling/index.md) for preparation and defi
 |---|---|
 | `me.whereareiam.anvil.platform.paper` | Paper and the Bukkit agent |
 | `me.whereareiam.anvil.platform.spigot` | Spigot and the Bukkit agent |
+| `me.whereareiam.anvil.platform.neoforge` | NeoForge and its agent |
 | `me.whereareiam.anvil.platform.velocity` | Velocity and its agent |
 | `me.whereareiam.anvil.platform.bungeecord` | BungeeCord and its agent |
 

@@ -24,6 +24,8 @@ pluginManagement {
 plugins {
     id("org.jetbrains.intellij.platform.settings") version "2.18.1"
     id("me.whereareiam.toolkit.project-discovery") version "dev-757d944"
+    // Adds the repositories from which the NeoForge agent's build resolves Minecraft and NeoForge.
+    id("net.neoforged.moddev.repositories") version "2.0.148"
     // Owns the protocol library repositories below and checks the conventions of library projects.
     id("build-libraries")
     // Checks that every project shipping a platform agent's version data applies the platform provider convention.
