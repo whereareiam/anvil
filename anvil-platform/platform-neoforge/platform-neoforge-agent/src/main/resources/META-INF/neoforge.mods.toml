@@ -1,0 +1,16 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "MIT"
+
+[[mods]]
+modId = "anvil_platform_agent"
+version = "${file.jarVersion}"
+displayName = "Anvil Platform Agent"
+description = "Loopback-only runtime agent installed by Anvil"
+
+[[dependencies.anvil_platform_agent]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1,)"
+ordering = "NONE"
+side = "SERVER"

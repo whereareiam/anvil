@@ -17,7 +17,9 @@ import org.geysermc.mcprotocollib.protocol.data.game.setting.ChatVisibility;
 import org.geysermc.mcprotocollib.protocol.data.game.setting.ParticleStatus;
 import org.geysermc.mcprotocollib.protocol.data.game.setting.SkinPart;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundDisconnectPacket;
+import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundPingPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundClientInformationPacket;
+import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundPongPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.ServerboundPlayerLoadedPacket;
@@ -48,6 +50,8 @@ final class ClientPacketListener extends SessionAdapter {
 			session.send(new ServerboundAcceptTeleportationPacket(position.getId()));
 			session.send(ServerboundPlayerLoadedPacket.INSTANCE);
 		}
+		// A vanilla client answers every ping; NeoForge waits for the answer to tell a vanilla client from a modded one.
+		if (packet instanceof ClientboundPingPacket ping) session.send(new ServerboundPongPacket(ping.getId()));
 		if (packet instanceof ClientboundDisconnectPacket disconnect) listener.disconnected(session, plainText(disconnect.getReason()));
 		if (packet instanceof ClientboundLoginDisconnectPacket disconnect)
 			listener.disconnected(session, plainText(disconnect.getReason()));

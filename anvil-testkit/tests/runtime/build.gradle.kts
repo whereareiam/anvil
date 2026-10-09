@@ -20,6 +20,7 @@ dependencies {
 
 	testRuntimeOnly(projects.anvilPlatform.platformBukkit.platformBukkitAgent)
 	testRuntimeOnly(projects.anvilPlatform.platformBungeecord.platformBungeecordProvider)
+	testRuntimeOnly(projects.anvilPlatform.platformNeoforge.platformNeoforgeProvider)
 	testRuntimeOnly(projects.anvilPlatform.platformPaper.platformPaperProvider)
 	testRuntimeOnly(projects.anvilPlatform.platformSpigot.platformSpigotProvider)
 	testRuntimeOnly(projects.anvilPlatform.platformVelocity.platformVelocityProvider)

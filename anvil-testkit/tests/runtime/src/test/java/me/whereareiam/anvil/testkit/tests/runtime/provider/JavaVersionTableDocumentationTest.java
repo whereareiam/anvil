@@ -10,6 +10,7 @@ import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.type.SupportPolicy;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
+import me.whereareiam.anvil.platform.api.type.ForwardingMode;
 import me.whereareiam.anvil.platform.planning.DefaultPlatformPlanner;
 import me.whereareiam.anvil.platform.planning.version.JavaCompatibility;
 import me.whereareiam.anvil.platform.planning.version.PlatformVersions;
@@ -146,11 +147,13 @@ class JavaVersionTableDocumentationTest {
 	}
 
 	/**
-	 * A proxy needs a backend: a server of any installed server platform on its newest known version.
+	 * A proxy needs a backend: a server of any installed server platform that accepts forwarded identities, on
+	 * its newest known version.
 	 */
 	private static MinecraftServer backend() {
 		for (PlatformProvider provider : PROVIDERS.values()) {
 			if (!MinecraftServer.class.isAssignableFrom(provider.configurationType())) continue;
+			if (provider.forwardingModes().equals(List.of(ForwardingMode.NONE))) continue;
 
 			PlatformVersions versions = new PlatformVersionsReader().read(provider.id(), provider.versionData());
 			return (MinecraftServer) process(provider, "backend", versions.newestKnownVersion().orElse(null));

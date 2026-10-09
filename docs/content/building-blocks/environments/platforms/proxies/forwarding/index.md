@@ -14,6 +14,8 @@ Velocity-to-Paper topology.
 | Velocity | Modern or legacy | Legacy |
 | BungeeCord | Legacy | Legacy |
 
+NeoForge has no identity forwarding, so a NeoForge server cannot be a backend of either proxy.
+
 Anvil chooses a common mode from the installed providers before launch. Proxies with overlapping
 backend sets belong to a connected forwarding group; they need a compatible configuration for the
 shared servers. Conflicting online-authentication settings in a modern forwarding group fail validation.

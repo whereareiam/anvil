@@ -62,8 +62,8 @@ combination.
 
 ## Keep verified data equal to the matrix
 
-`CompatibilityScenarioFactory` defines the live matrix: every release key directly on Paper, and
-`1.21.11` and `26.1.2` also on Spigot and behind Velocity and BungeeCord.
+`CompatibilityScenarioFactory` defines the live matrix: every release key directly on Paper, `1.21.1`
+and newer directly on NeoForge, and `1.21.11` and `26.1.2` also on Spigot and behind Velocity and BungeeCord.
 The `verified` data of MCProtocolLib's releases and of each platform lists exactly the combinations it
 runs. `CompatibilityScenarioFactoryTest` plans the matrix without starting a server and fails when they
 differ; every build runs it through the `matrixTest` task, without `-Panvil.testMode=full`:

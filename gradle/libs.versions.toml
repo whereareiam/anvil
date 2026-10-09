@@ -31,6 +31,8 @@ paper = "1.21.11-R0.1-SNAPSHOT"
 # The oldest Bukkit API that in-server code compiles against.
 bukkit = "1.16.5-R0.1-SNAPSHOT"
 velocity = "3.5.1"
+# The oldest NeoForge release the NeoForge agent compiles against.
+neoforge = "21.1.256"
 bungeecord = "26.1-R0.1-SNAPSHOT"
 
 # minecraft protocol

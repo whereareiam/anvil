@@ -4,7 +4,7 @@ description: Select the exact server or proxy executable used by a scenario.
 ---
 
 A **distribution** selects the executable JAR for a server or proxy. The platform tells Anvil how to
-run Paper, Spigot, Velocity, or BungeeCord; the distribution supplies the particular release and build
+run Paper, Spigot, NeoForge, Velocity, or BungeeCord; the distribution supplies the particular release and build
 or the file that should run.
 
 This matters when reproducing a bug. If a test passes on one Paper build and fails on another, the

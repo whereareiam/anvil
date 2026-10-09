@@ -49,10 +49,10 @@ class McProtocolReleaseCatalogTest {
 		McProtocolReleaseCatalog catalog = McProtocolReleaseCatalog.load(null);
 
 		Map<String, Integer> protocols = Map.of(
-				"1.18.2", 758, "1.21.11", 774, "26.1.2", 775
+				"1.18.2", 758, "1.21.1", 767, "1.21.11", 774, "26.1.2", 775
 		);
 		List<ProtocolRelease> releases = catalog.releases();
-		assertEquals(List.of("1.18.2", "1.21.11", "26.1.2"),
+		assertEquals(List.of("1.18.2", "1.21.1", "1.21.11", "26.1.2"),
 				releases.stream().map(release -> release.version().toString()).toList());
 		for (ProtocolRelease release : releases) {
 			assertEquals(protocols.get(release.version().toString()), release.getProtocolNumber());
@@ -149,7 +149,7 @@ class McProtocolReleaseCatalogTest {
 		Files.writeString(file, SNAPSHOT.replace("1.21.11", "1.21.12").replace("protocol = 774", "protocol = 776"));
 
 		McProtocolReleaseCatalog catalog = McProtocolReleaseCatalog.load(file);
-		assertEquals(4, catalog.releases().size());
+		assertEquals(5, catalog.releases().size());
 		assertTrue(catalog.releases().stream().anyMatch(release -> release.isAdditional()
 				&& release.version().equals(MinecraftVersion.parse("1.21.12"))));
 		assertThrows(IllegalArgumentException.class, () -> McProtocolReleaseCatalog.load(temporary.resolve("missing.toml")));

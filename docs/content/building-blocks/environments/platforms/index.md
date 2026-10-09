@@ -10,7 +10,7 @@ Server and proxy platforms share the same scenario lifecycle and are selected ex
 
 | Role | Available platforms | Used for |
 |---|---|---|
-| [Servers](./servers/index.md) | Paper, Spigot | Running worlds and server plugins, directly or behind a proxy |
+| [Servers](./servers/index.md) | Paper, Spigot, NeoForge | Running worlds and server plugins, directly or behind a proxy |
 | [Proxies](./proxies/index.md) | Velocity, BungeeCord | Accepting player connections and routing them to declared servers |
 
 A proxy scenario applies a unit plugin for the proxy and for every backend platform it uses.

@@ -1,0 +1,30 @@
+# NeoForge version data exposed by NeoForgePlatformProvider.versionData() and read by platform planning.
+# NeoForge is keyed by the Minecraft version of the server; the NeoForge release is the distribution's build.
+#
+# known:    Minecraft versions whose NeoForge releases load the NeoForge agent; Anvil assesses them as COMPATIBLE.
+# agent:    the oldest Java the NeoForge agent runs on. It compiles against NeoForge for Minecraft 1.21.1 for
+#           Java 21, and the provider's checkAgentJava build task fails when the agent's classes need newer Java.
+# verified: Minecraft version -> Java feature versions Anvil's live matrix (CompatibilityScenarioFactory)
+#           runs (VERIFIED); every other supported version is listed in `known` only.
+# java:     each row applies from `since` until the next row starts. Minecraft versions before the first row
+#           are unsupported: the agent does not load on their NeoForge releases.
+
+known = ["1.21.1", "1.21.11", "26.1.2"]
+
+[agent]
+minimumJava = 21
+
+[verified]
+"1.21.1" = [21]
+"1.21.11" = [21]
+"26.1.2" = [25]
+
+[[java]]
+since = "1.21.1"
+minimum = 21
+preferred = 21
+
+[[java]]
+since = "26.1"
+minimum = 25
+preferred = 25

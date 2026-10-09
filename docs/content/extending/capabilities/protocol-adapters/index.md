@@ -184,7 +184,7 @@ Anvil's own packet capabilities show the layout. The movement family declares th
 `me.whereareiam.anvil.capability.movement.packet.MovementPackets<S>` in its API artifact: a stateless
 interface whose `sessionType()` names the release's session class and whose methods take that session.
 Its library side, `movement-mcprotocol`, holds the extension and one segment per range of releases:
-`V1_18_2` and `V1_21_11`. A segment is named after the release key it starts at
+`V1_18_2`, `V1_21_1`, and `V1_21_11`. A segment is named after the release key it starts at
 and serves every later release up to the next segment. Each implements only the port:
 
 ```java

@@ -15,6 +15,10 @@ public final class Platforms {
 	 */
 	public static final @NotNull String SPIGOT = "spigot";
 	/**
+	 * NeoForge server provider identifier.
+	 */
+	public static final @NotNull String NEOFORGE = "neoforge";
+	/**
 	 * Velocity proxy provider identifier.
 	 */
 	public static final @NotNull String VELOCITY = "velocity";

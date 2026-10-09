@@ -4,8 +4,8 @@
 
 Anvil is a Java 21 testing framework for local Minecraft Java Edition processes and native-protocol
 players. Preserve reproducibility, protocol fidelity, complete cleanup, and useful failure diagnostics.
-Kubernetes, SSH/hosted orchestration, Fabric, Sponge, Bedrock, rendering, pathfinding,
-autonomous AI, and crafting automation are outside the current project scope.
+NeoForge is the supported mod loader. Kubernetes, SSH/hosted orchestration, Fabric, Sponge, Bedrock, rendering,
+pathfinding, autonomous AI, and crafting automation are outside the current project scope.
 
 ## Working in this repository
 
@@ -57,7 +57,7 @@ autonomous AI, and crafting automation are outside the current project scope.
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell                                                                                       |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-common`                | MCProtocolLib library provider, release data, worker host and segment selection, MCProtocolLib-free worker shell, and private authentication store                                  |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
-| `anvil-protocol/protocol-mcprotocol/mcprotocol-client/V*`             | Client segments `V1_18_2` and `V1_21_11`, each implementing only `McProtocolClient` from its release key on; `V1_21_11` also serves `26.1.2`                                        |
+| `anvil-protocol/protocol-mcprotocol/mcprotocol-client/V*`             | Client segments `V1_18_2`, `V1_21_1` and `V1_21_11`, each implementing only `McProtocolClient` from its release key on; `V1_21_11` also serves `26.1.2`                             |
 | `anvil-platform/platform-api`                                         | Platform-provider/planning SPI, version data contract, artifact sources, distribution validation, and configuration contracts                                                      |
 | `anvil-platform/platform-planning`                                    | Platform declaration validation, version data reading, effective Java/topology requirements, forwarding negotiation, artifact planning, and provider preparation/configuration      |
 | `anvil-platform/platform-*`                                           | Provider-specific distribution/configuration implementations and platform-agent assemblies                                                                                          |
@@ -291,6 +291,15 @@ autonomous AI, and crafting automation are outside the current project scope.
 - Automated distributions pin a build or content checksum. `latest` is manual-only.
   Spigot uses GetBukkit prebuilt JARs with `Distribution.pinned(version, sha256)`; do not restore
   BuildTools execution or silently replace a pin.
+- NeoForge selects `Distribution.remote(minecraftVersion, neoForgeRelease)`; the provider refuses a release of
+  another Minecraft version. Its installer is verified against the NeoForged Maven checksum or an explicit pin,
+  runs once per release into the cache, and publishes the installed server by an atomic move. Workspaces link
+  the installed files and start through the installer's server starter JAR. NeoForge has no identity
+  forwarding, so its only forwarding mode is `NONE` and planning refuses it behind a proxy.
+- The NeoForge agent is a mod compiled with ModDevGradle against the oldest NeoForge release in
+  `neoforge-versions.toml`; it uses only names that later releases keep, so one JAR loads on every supported
+  release. NeoForge servers load no Bukkit plugin: their live scenarios carry no fixture, and
+  `NeoForgeServerSystemTest` drives them with vanilla commands.
 - Local/named server artifacts declare `minecraftVersion`. Native clients must match every reachable
   server. Preserve explicit client overrides and deterministic native selection; no implicit ViaVersion fallback.
 - Prepare declared assets and caches before provider configuration. Runtime ports, forwarding,
