@@ -5,6 +5,7 @@ import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -51,6 +52,23 @@ public final class WorkspaceFiles {
 	 */
 	public void delete(Path workspace, Path relative) {
 		deleteAbsolute(resolveRelative(workspace, relative, "Cleanup path"));
+	}
+
+	/**
+	 * Writes text to the declared target as a UTF-8 file, replacing an existing file.
+	 *
+	 * @param text file content
+	 * @param workspace workspace root
+	 * @param relativeTarget target path relative to the workspace
+	 */
+	public void write(String text, Path workspace, Path relativeTarget) {
+		Path target = resolveRelative(workspace, relativeTarget, "Asset target");
+		try {
+			Files.createDirectories(target.getParent());
+			Files.writeString(target, text, StandardCharsets.UTF_8);
+		} catch (IOException exception) {
+			throw new ProvisioningException("Could not write workspace asset " + relativeTarget, exception);
+		}
 	}
 
 	/**

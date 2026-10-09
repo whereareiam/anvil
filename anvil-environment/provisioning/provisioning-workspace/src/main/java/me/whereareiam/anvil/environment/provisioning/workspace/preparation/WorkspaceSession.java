@@ -190,6 +190,11 @@ public final class WorkspaceSession implements PreparedWorkspace {
 			if (asset.getMode() == AssetInstallMode.SEED_ONCE && Files.exists(target))
 				continue;
 			AssetSource source = asset.getSource();
+			if (source.isText()) {
+				files.write(source.getText(), workspace, asset.getTarget());
+				continue;
+			}
+
 			Path sourcePath = source.getPath();
 			if (sourcePath == null)
 				throw new ProvisioningException("Workspace asset source must be resolved to a local path: " + source);

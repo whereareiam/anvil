@@ -73,8 +73,11 @@ public final class ScenarioArtifactResolver {
 
 	private WorkspaceAsset resolve(WorkspaceAsset asset) {
 		AssetSource source = asset.getSource();
-		if ((source.getPath() == null) == (source.getArtifactReference() == null))
+		if (source.declaredSources() != 1)
 			throw new ScenarioValidationException("Workspace asset must declare exactly one source: " + asset);
+		if (source.isText())
+			return asset;
+
 		Path path = source.isArtifact() ? requireArtifact(source.getArtifactReference()) : source.getPath();
 		return asset.toBuilder().source(AssetSource.path(path.toAbsolutePath().normalize())).build();
 	}

@@ -69,6 +69,22 @@ a directory source copies its contents into the target directory. For example, t
 configuration stored at `src/anvil/fixtures/config.yml`, use that source path and target
 `Path.of("plugins", "MyPlugin", "config.yml")` in another asset.
 
+## Write a generated file
+
+Use `AssetSource.text(content)` when the scenario builds the file itself, for example a configuration
+that depends on the scenario's settings. Anvil writes the text to the target as a UTF-8 file, so the
+scenario needs no temporary file:
+
+```java
+WorkspaceAsset.builder()
+		.source(AssetSource.text("motd: Anvil\n"))
+		.target(Path.of("plugins", "MyPlugin", "config.yml"))
+		.build();
+```
+
+Anvil writes the text as given. Produce structured formats such as YAML or JSON with a serializer
+rather than by joining strings, so that values are quoted and escaped correctly.
+
 The default `AssetInstallMode.ALWAYS` replaces the target when workspace preparation runs. For a
 directory source, replacement removes the existing target directory first, so files absent from the
 source are not preserved. Choose `SEED_ONCE` when existing generated state should survive; see

@@ -9,13 +9,14 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 /**
- * Selects the local file or named build artifact from which a workspace asset is copied.
+ * Selects what a workspace asset installs: a local file or directory, a named build artifact, or inline text.
  */
 @Value
 @Builder
 public class AssetSource {
 	@Nullable Path path;
 	@Nullable String artifactReference;
+	@Nullable String text;
 
 	/**
 	 * Creates a source backed by a local file or directory.
@@ -38,6 +39,24 @@ public class AssetSource {
 	}
 
 	/**
+	 * Creates a source whose content is written to the asset's target as a UTF-8 file. Use it for small
+	 * generated files, such as a configuration file a scenario builds from its settings.
+	 *
+	 * <pre>{@code
+	 * WorkspaceAsset.builder()
+	 *         .source(AssetSource.text("motd: Anvil\n"))
+	 *         .target(Path.of("plugins", "example", "config.yml"))
+	 *         .build();
+	 * }</pre>
+	 *
+	 * @param text file content
+	 * @return inline text source
+	 */
+	public static @NotNull AssetSource text(@NotNull String text) {
+		return builder().text(Objects.requireNonNull(text, "text")).build();
+	}
+
+	/**
 	 * Returns whether this source resolves to a local path.
 	 *
 	 * @return {@code true} for a local path source
@@ -53,5 +72,23 @@ public class AssetSource {
 	 */
 	public boolean isArtifact() {
 		return artifactReference != null;
+	}
+
+	/**
+	 * Returns whether this source carries its content inline.
+	 *
+	 * @return {@code true} for an inline text source
+	 */
+	public boolean isText() {
+		return text != null;
+	}
+
+	/**
+	 * Returns how many of the three kinds of source this value declares; a valid source declares exactly one.
+	 *
+	 * @return number of declared sources
+	 */
+	public int declaredSources() {
+		return (path == null ? 0 : 1) + (artifactReference == null ? 0 : 1) + (text == null ? 0 : 1);
 	}
 }
