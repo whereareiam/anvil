@@ -1,4 +1,4 @@
-name: Release Drafter
+name: Release drafter
 
 on:
   push:
@@ -15,11 +15,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  update-release-draft:
+  draft:
+    name: Update draft
     runs-on: ubuntu-latest
     steps:
-      - name: Update release draft
-        uses: release-drafter/release-drafter@v7
+      - uses: release-drafter/release-drafter@v7
         with:
           commitish: dev
         env:

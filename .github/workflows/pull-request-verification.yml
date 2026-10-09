@@ -1,0 +1,109 @@
+name: Pull request · Full verification
+run-name: "Full verification of #${{ inputs.pull-request }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      pull-request:
+        description: Number of the open pull request to verify
+        required: true
+        type: string
+
+concurrency:
+  group: pull-request-verification-${{ inputs.pull-request }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  STATUS_CONTEXT: Full verification
+
+jobs:
+  resolve:
+    name: Resolve pull request
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+      statuses: write
+    outputs:
+      head: ${{ steps.revision.outputs.head }}
+      merge: ${{ steps.revision.outputs.merge }}
+    steps:
+      - name: Resolve revision
+        id: revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PULL_REQUEST: ${{ inputs.pull-request }}
+        run: |
+          set -euo pipefail
+          [[ "$PULL_REQUEST" =~ ^[1-9][0-9]*$ ]] || { echo "pull-request must be a positive integer" >&2; exit 1; }
+
+          pull_request="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST")"
+          [[ "$(jq -r '.state' <<<"$pull_request")" == "open" ]] || { echo "Pull request #$PULL_REQUEST is not open" >&2; exit 1; }
+          [[ "$(jq -r '.mergeable_state' <<<"$pull_request")" != "dirty" ]] \
+            || { echo "Pull request #$PULL_REQUEST has merge conflicts" >&2; exit 1; }
+
+          head="$(jq -r '.head.sha // empty' <<<"$pull_request")"
+          merge="$(jq -r '.merge_commit_sha // empty' <<<"$pull_request")"
+          [[ -n "$head" && -n "$merge" ]] \
+            || { echo "Pull request #$PULL_REQUEST has no merge revision yet; retry in a moment" >&2; exit 1; }
+
+          echo "head=$head" >> "$GITHUB_OUTPUT"
+          echo "merge=$merge" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Full verification of #$PULL_REQUEST"
+            echo
+            echo "- Head revision: \`$head\`"
+            echo "- Verified merge revision: \`$merge\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # The run starts from the default branch, so this status is what shows it on the pull request.
+      - name: Report the run on the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD: ${{ steps.revision.outputs.head }}
+        run: >-
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$HEAD" --silent
+          -f state=pending -f context="$STATUS_CONTEXT" -f description="Running"
+          -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+  verify:
+    name: Verify
+    needs: resolve
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/reusable-verify.yml
+    with:
+      ref: ${{ needs.resolve.outputs.merge }}
+      version: pr-${{ inputs.pull-request }}
+      packaging: true
+      live: true
+      cache: read-only
+
+  report:
+    name: Report result
+    needs: [resolve, verify]
+    if: ${{ always() && needs.resolve.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      statuses: write
+    steps:
+      - name: Report the result on the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD: ${{ needs.resolve.outputs.head }}
+          RESULT: ${{ needs.verify.result }}
+        run: |
+          set -euo pipefail
+          case "$RESULT" in
+            success) state=success; description="Passed" ;;
+            cancelled) state=error; description="Cancelled" ;;
+            *) state=failure; description="Failed" ;;
+          esac
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$HEAD" --silent \
+            -f state="$state" -f context="$STATUS_CONTEXT" -f description="$description" \
+            -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

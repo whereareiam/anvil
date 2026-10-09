@@ -1,0 +1,231 @@
+name: Verify
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit, branch or tag to verify.
+        required: true
+        type: string
+      version:
+        description: Artifact version; defaults to <branch>-<short commit>.
+        required: false
+        type: string
+        default: ""
+      packaging:
+        description: Also build and verify the IntelliJ plugin and build the standalone consumers against the published artifacts.
+        required: false
+        type: boolean
+        default: false
+      live:
+        description: Also run the suites that start real servers and proxies. Requires packaging.
+        required: false
+        type: boolean
+        default: false
+      cache:
+        description: Cache policy, auto or read-only. A run of code that is not yet reviewed passes read-only.
+        required: false
+        type: string
+        default: auto
+    outputs:
+      version:
+        description: Artifact version that was verified.
+        value: ${{ jobs.build.outputs.version }}
+      commit:
+        description: Commit that was verified.
+        value: ${{ jobs.build.outputs.commit }}
+
+permissions:
+  contents: read
+  checks: write
+
+env:
+  INTELLIJ: ":anvil-integration:integration-intellij:intellij"
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.packaging && 45 || 25 }}
+    outputs:
+      version: ${{ steps.identity.outputs.version }}
+      commit: ${{ steps.identity.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: Resolve artifact identity
+        id: identity
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          set -euo pipefail
+          commit="$(git rev-parse HEAD)"
+          version="${REQUESTED_VERSION#v}"
+          [[ -n "$version" ]] || version="${BRANCH//\//-}-${commit::7}"
+          [[ "$version" =~ ^[A-Za-z0-9][A-Za-z0-9._+-]*$ ]] || { echo "Invalid artifact version: $version" >&2; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/setup
+        with:
+          cache-shard: build
+          cache: ${{ inputs.cache }}
+
+      # The server suite applies the Anvil plugin at this build's own version, so the plugin is published first.
+      - name: Publish to the run's Maven repository
+        env:
+          ANVIL_VERSION: ${{ steps.identity.outputs.version }}
+        run: >-
+          ./gradlew --no-daemon publishToMavenLocal -Panvil.bootstrap
+          -PanvilVersion="$ANVIL_VERSION"
+          -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
+
+      - name: Build and test
+        env:
+          ANVIL_VERSION: ${{ steps.identity.outputs.version }}
+          PLUGIN_TASKS: ${{ inputs.packaging && format('{0}:buildPlugin {0}:verifyPlugin', env.INTELLIJ) || '' }}
+        run: >-
+          ./gradlew --no-daemon build $PLUGIN_TASKS
+          -PanvilVersion="$ANVIL_VERSION"
+          -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
+
+      - name: Upload IntelliJ plugin
+        if: inputs.packaging
+        uses: actions/upload-artifact@v6
+        with:
+          name: anvil-intellij-${{ steps.identity.outputs.version }}
+          path: anvil-integration/integration-intellij/intellij/build/distributions/*.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      - name: Build fixtures against the published artifacts
+        if: inputs.packaging
+        env:
+          ANVIL_VERSION: ${{ steps.identity.outputs.version }}
+        run: >-
+          ./gradlew --no-daemon -p anvil-testkit/fixtures clean build
+          -PanvilVersion="$ANVIL_VERSION"
+          -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
+
+      - name: Build the example against the published artifacts
+        if: inputs.packaging
+        env:
+          ANVIL_VERSION: ${{ steps.identity.outputs.version }}
+        run: >-
+          ./gradlew --no-daemon -p examples/proof-of-patience build anvilClasses
+          -PanvilVersion="$ANVIL_VERSION"
+          -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
+
+      - uses: whereareiam/devops/primitive/report/junit/publish@feature/v3-structure
+        if: always()
+        with:
+          name: Build test results
+
+      - uses: ./.github/actions/build-outputs
+        if: inputs.packaging
+        with:
+          mode: save
+
+  live:
+    name: Live · ${{ matrix.name }}
+    needs: build
+    if: inputs.live
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Direct servers
+            shard: direct
+            tags: compatibility
+            filter: "^(?!velocity-|bungee-).*"
+          - name: Velocity
+            shard: velocity
+            tags: compatibility
+            filter: "^velocity-.*"
+          - name: BungeeCord
+            shard: bungeecord
+            tags: compatibility
+            filter: "^bungee-.*"
+          - name: Player capabilities
+            shard: capabilities
+            tags: capabilities
+            filter: ".*"
+          - name: Sessions, routing and extensions
+            shard: behavior
+            tags: "!compatibility & !capabilities"
+            filter: ".*"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.build.outputs.commit }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          cache-shard: ${{ matrix.shard }}
+          cache: ${{ inputs.cache }}
+
+      - uses: ./.github/actions/build-outputs
+        with:
+          mode: restore
+
+      - name: Run live tests
+        env:
+          ANVIL_VERSION: ${{ needs.build.outputs.version }}
+          TEST_TAGS: ${{ matrix.tags }}
+          MATRIX_FILTER: ${{ matrix.filter }}
+        run: >-
+          ./gradlew --no-daemon :anvil-testkit:tests:server:test
+          -Panvil.testMode=full
+          -PanvilTestTags="$TEST_TAGS"
+          -PanvilMatrixFilter="$MATRIX_FILTER"
+          -PanvilVersion="$ANVIL_VERSION"
+          -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
+
+      - uses: whereareiam/devops/primitive/report/junit/publish@feature/v3-structure
+        if: always()
+        with:
+          name: Live test results (${{ matrix.shard }})
+
+  consumer:
+    name: Live · Example consumer
+    needs: build
+    if: inputs.live
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.build.outputs.commit }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          cache-shard: consumer
+          cache: ${{ inputs.cache }}
+
+      - uses: ./.github/actions/build-outputs
+        with:
+          mode: restore
+
+      - name: Run the example's journeys
+        env:
+          ANVIL_VERSION: ${{ needs.build.outputs.version }}
+        run: >-
+          ./gradlew --no-daemon -p examples/proof-of-patience anvilTest
+          -PanvilVersion="$ANVIL_VERSION"
+          -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
+
+      - uses: whereareiam/devops/primitive/report/junit/publish@feature/v3-structure
+        if: always()
+        with:
+          name: Live test results (consumer)
+          results: examples/**/build/test-results/**/*.xml
+          reports: examples/**/build/reports/tests/**

@@ -45,6 +45,10 @@ rootProject.name = "Anvil"
 // Consumer examples resolve the published plugin independently of the build that produces it.
 rootProject.children.removeAll { it.name == "examples" }
 project(":anvil-testkit").children.removeAll { it.name == "fixtures" }
+// The server suite applies the Anvil plugin at this build's own version, which a clean machine has not published
+// yet. A bootstrap build leaves the suite out, so that publishToMavenLocal can publish the plugin first.
+if (providers.gradleProperty("anvil.bootstrap").isPresent)
+    project(":anvil-testkit:tests").children.removeAll { it.name == "server" }
 
 includeBuild(".")
 

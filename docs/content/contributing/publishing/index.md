@@ -55,8 +55,8 @@ tests verify imported constraints from published metadata without composite subs
 ```
 
 The ZIP is written to `anvil-integration/integration-intellij/intellij/build/distributions`, and
-`verifyPlugin` checks it against the baseline and newest supported IDE builds. Successful verification
-workflows retain the ZIP as an `anvil-intellij-<version>` artifact for
+`verifyPlugin` checks it against the baseline and newest supported IDE builds. Development builds,
+releases and full pull request verifications retain the ZIP as an `anvil-intellij-<version>` artifact for
 [installation from disk](../../integrations/intellij/installation/index.md#install-a-development-build).
 
 The Marketplace listing comes from the plugin module: `plugin.xml` holds the description, and
@@ -68,7 +68,7 @@ for every release before publishing it.
 A published GitHub release publishes the signed plugin to JetBrains Marketplace after its Maven
 publication succeeds, so the listed plugin never precedes the artifacts it needs. Versions with a
 pre-release suffix, such as `1.0.0-beta.1`, go to the `eap` channel; other versions go to the default
-stable channel. Development publication and branch-qualified builds never publish the plugin.
+stable channel. Development builds never publish the plugin.
 
 The release job reads these repository secrets:
 
@@ -89,30 +89,61 @@ the same four environment variables and run:
 ./gradlew :anvil-integration:integration-intellij:intellij:publishPlugin -PanvilVersion=<version>
 ```
 
-## Request pull request verification
+## Verify a pull request
 
-Pull request build and live verification is maintainer-requested:
+Two workflows start by themselves on a pull request:
 
-1. Open GitHub **Actions** and select **Pull request verification**.
+| Workflow | Checks |
+|---|---|
+| **Pull request · Metadata** | The `Area: Title` title and the release label |
+| **Pull request · Checks** | `./gradlew build`: architecture, segment linkage, unit and runtime tests, and the live matrix data |
+
+The checks start no server and do not verify the IntelliJ plugin. A new push cancels the run of the
+previous revision, and a draft pull request is not checked until it is ready for review.
+
+Live verification is maintainer-requested, because it starts every verified platform:
+
+1. Open GitHub **Actions** and select **Pull request · Full verification**.
 2. Run the workflow from the default branch and supply the open pull request number.
-3. Review its resolved merge revision and the build, live, and consumer results.
-4. Request a new run after changing the pull request revision.
+
+```shell
+gh workflow run pull-request-verification.yml -f pull-request=<number>
+```
 
 The workflow resolves the merge commit at dispatch time and verifies that immutable revision. It
-runs build/runtime checks, independent fixture compilation, direct-server and proxy compatibility,
-player/session/extension behavior, and standalone consumer journeys. Live groups use separate runners and reuse the build job's
-published artifacts and task cache.
+repeats the build, verifies the IntelliJ plugin, builds the fixtures and the example against the
+published artifacts, and runs direct-server and proxy compatibility, player capabilities,
+session/extension behavior, and the example's journeys. Live groups use separate runners and reuse
+the build job's published artifacts and task cache.
 
-A lightweight **Pull request metadata** workflow automatically validates the title and release labels.
-The manual verification repeats that validation. Pull request verification does not publish Maven
-artifacts.
+The run reports a **Full verification** status on the pull request's head commit, so it appears among
+the pull request's checks and links to the run. Request a new run after the revision changes; the
+status belongs to the revision it verified. Pull request workflows never publish artifacts and only
+read the shared caches.
 
 ## Publish a development build
 
-Run **Development publication** manually and select the intended branch, normally `dev`. After
-verification succeeds, it publishes a branch-qualified version such as `dev-a123bcd`; slashes in
-branch names become hyphens. Development versions do not use a `-SNAPSHOT` suffix. Pushes do not
-trigger publication.
+Run **Development build** manually and select the intended branch, normally `dev`. It verifies the
+build, the IntelliJ plugin and the standalone consumers, and then publishes a branch-qualified
+version such as `dev-a123bcd`; slashes in branch names become hyphens. Development versions do not
+use a `-SNAPSHOT` suffix. Enable **live** to also run the live suites before publication. Pushes do
+not trigger publication.
+
+```shell
+gh workflow run development.yml --ref dev -f live=true
+```
+
+## Build on a clean machine
+
+The server suite applies the Anvil Gradle plugin at the build's own version, so a machine whose Maven
+Local does not hold that version publishes it first. A bootstrap build leaves the suite out:
+
+```shell
+./gradlew publishToMavenLocal -Panvil.bootstrap
+./gradlew build
+```
+
+Every workflow does the same with a Maven repository of its own run.
 
 ## Prepare and publish a release
 
@@ -130,11 +161,9 @@ Release Drafter updates the draft on `dev` pushes or manual dispatch. Label chan
 The default bump is patch. Complete the release summary, verified Java/Minecraft/platform coverage,
 and any public API, DSL, or packaging migration notes before publishing the draft.
 
-A published GitHub release triggers **Release** verification, Maven publication, and then
+A published GitHub release triggers **Release**: full verification including the live suites, Maven publication, and then
 [IntelliJ plugin publication](#publish-the-intellij-plugin). The artifact
-version comes from the tag, with an optional leading `v` removed. For a rehearsal, run **Release**
-manually with the intended version and leave `publish` disabled. A manual run uses its selected ref;
-it does not create a release or move a tag.
+version comes from the tag, with an optional leading `v` removed. Nothing else starts the workflow.
 
 Publication runs once after successful verification against the exact verified commit. The
 publication job obtains registry credentials through the configured OIDC publishing action. Keep

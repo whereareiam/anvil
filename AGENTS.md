@@ -434,12 +434,17 @@ failures.
   cache layout, packaging, test commands, or extension behavior. Keep examples copyable and verify symbols.
 - Use relative content links. Validate navigation, local links, and Scriptorium content
   compilation after documentation changes. Generated `.scriptorium/` output is ignored.
-- Keep `LICENSE`, wrapper, POM metadata, and CI/release workflows valid. Pull request verification
-  is maintainer-requested through `workflow_dispatch` and runs the build/runtime and real-platform
-  checks for the selected revision. Development publication is manual-only (`workflow_dispatch`).
-  Release Drafter updates on `dev` pushes or manual dispatch,
+- Keep `LICENSE`, wrapper, POM metadata, and CI/release workflows valid. Entry workflows only select a trigger
+  and call `reusable-verify.yml` and `reusable-publish.yml`; shared steps come from `whereareiam/devops`, and
+  only Anvil-specific ones live in `.github/actions`. Pull requests automatically get the metadata check and
+  the quick `build` checks, which start no server. Full verification with the IntelliJ plugin, standalone
+  consumers and real platforms is maintainer-requested through `workflow_dispatch` and reports a
+  `Full verification` status on the pull request's head commit. Development builds are manual-only and
+  publish a branch-qualified version. Release Drafter updates on `dev` pushes or manual dispatch,
   using `feature`, `change`, `bug`, `dependencies`, `major`, and `skip-changelog` labels. Published
-  releases trigger release verification/publication. No scheduled nightly workflow is required.
+  releases trigger full verification, Maven publication and IntelliJ Marketplace publication. No scheduled
+  nightly workflow is required. A clean machine runs `publishToMavenLocal -Panvil.bootstrap` before any other
+  task: the bootstrap build leaves out the server suite, which applies the plugin at the build's own version.
 
 ## Integration composition
 

@@ -1,0 +1,96 @@
+name: Publish
+
+on:
+  workflow_call:
+    inputs:
+      commit:
+        description: Verified commit to publish.
+        required: true
+        type: string
+      version:
+        description: Verified artifact version.
+        required: true
+        type: string
+      marketplace:
+        description: Also sign the IntelliJ plugin and publish it to JetBrains Marketplace.
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      JETBRAINS_MARKETPLACE_TOKEN:
+        required: false
+      INTELLIJ_CERTIFICATE_CHAIN:
+        required: false
+      INTELLIJ_PRIVATE_KEY:
+        required: false
+      INTELLIJ_PRIVATE_KEY_PASSWORD:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  maven:
+    name: Maven artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.commit }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          cache-shard: build
+
+      - uses: ./.github/actions/build-outputs
+        with:
+          mode: restore
+
+      # A bootstrap build leaves out the server suite, which publishes nothing and needs the plugin resolved.
+      - name: Assemble
+        env:
+          ANVIL_VERSION: ${{ inputs.version }}
+        run: ./gradlew --no-daemon assemble -Panvil.bootstrap -PanvilVersion="$ANVIL_VERSION"
+
+      - name: Publish Maven modules and Gradle plugins
+        uses: whereareiam/devops/composite/package/maven/publish@feature/v3-structure
+        with:
+          visibility: public
+          command: ./gradlew --no-daemon publish -Panvil.bootstrap -PanvilVersion='${{ inputs.version }}'
+
+  intellij:
+    name: IntelliJ plugin
+    needs: maven
+    if: inputs.marketplace
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.commit }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          cache-shard: build
+
+      - uses: ./.github/actions/build-outputs
+        with:
+          mode: restore
+
+      - name: Sign and publish to JetBrains Marketplace
+        env:
+          ANVIL_VERSION: ${{ inputs.version }}
+          JETBRAINS_MARKETPLACE_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
+          INTELLIJ_CERTIFICATE_CHAIN: ${{ secrets.INTELLIJ_CERTIFICATE_CHAIN }}
+          INTELLIJ_PRIVATE_KEY: ${{ secrets.INTELLIJ_PRIVATE_KEY }}
+          INTELLIJ_PRIVATE_KEY_PASSWORD: ${{ secrets.INTELLIJ_PRIVATE_KEY_PASSWORD }}
+        run: >-
+          ./gradlew --no-daemon
+          :anvil-integration:integration-intellij:intellij:publishPlugin
+          -Panvil.bootstrap -PanvilVersion="$ANVIL_VERSION"
