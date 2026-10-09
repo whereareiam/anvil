@@ -79,6 +79,24 @@ Call `AuthenticatedPlayers.connect(anvil)` from a local test in the same package
 the account authenticated at the target. Check [identity and server observations](../capabilities/server/index.md)
 for assertions about what the platform sees; the authenticated identity is controlled by the account.
 
+## Authenticate on an offline-mode entrypoint
+
+Some plugins keep the proxy or server in offline mode and require online authentication themselves for
+selected connections, such as login plugins that recognize premium usernames. `AuthenticationMode.ONLINE`
+refuses an offline-mode entrypoint. Use `AuthenticationMode.ON_REQUEST` for such a player: it signs in with
+its account and authenticates when the entrypoint asks for it.
+
+```java
+var player = anvil.players().create(PlayerOptions.builder()
+		.name("OnlinePlayer")
+		.authentication(AuthenticationMode.ON_REQUEST)
+		.accountId("main")
+		.build());
+```
+
+A connection that the entrypoint does not challenge joins unauthenticated, so assert what the plugin
+and the platform report rather than relying on the mode.
+
 For several real accounts, create a pool from local account IDs. A leased or directly selected account
 is exclusive across every scenario of the engine until its player is destroyed or the lease is closed:
 

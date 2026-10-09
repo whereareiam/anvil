@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.library;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.api.type.AuthenticationMode;
 import me.whereareiam.anvil.protocol.api.library.ProtocolArtifactResolver;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
@@ -54,7 +53,7 @@ final class McProtocolClientPool implements ProtocolLibrary {
 					+ "' does not speak Minecraft " + request.getClientVersion());
 		if (!request.getRelease().isLaunchable()) throw new IllegalStateException(request.getRelease().getLaunchRefusal());
 
-		AuthenticationSession session = request.getAuthentication() == AuthenticationMode.ONLINE
+		AuthenticationSession session = request.getAuthentication().usesAccount()
 				? authentication.resolve(request.getAccountId())
 				: null;
 		ProtocolWorkerProcess worker = workers.computeIfAbsent(request.getRelease().getLibraryVersion(),
