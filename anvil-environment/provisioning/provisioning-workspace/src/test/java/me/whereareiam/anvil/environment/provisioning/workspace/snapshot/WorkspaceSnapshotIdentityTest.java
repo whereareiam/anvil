@@ -110,6 +110,17 @@ class WorkspaceSnapshotIdentityTest {
 			assertNotEquals(identity, snapshots.identity(server, List.of(alternative)));
 	}
 	@Test
+	void inlineTextSelectsDistinctSnapshots() {
+		WorkspaceAsset original = WorkspaceAsset.builder()
+				.source(AssetSource.text("level: 1"))
+				.target(Path.of("config.yml"))
+				.build();
+
+		assertEquals(snapshots.identity(server, List.of(original)), snapshots.identity(server, List.of(original)));
+		assertNotEquals(snapshots.identity(server, List.of(original)), snapshots.identity(server,
+				List.of(original.toBuilder().source(AssetSource.text("level: 2")).build())));
+	}
+	@Test
 	void changedAssetBytesDoNotReuseThePreviousSnapshot() throws Exception {
 		Path source = Files.writeString(temporary.resolve("plugin.jar"), "first build");
 		WorkspaceAsset asset = asset(source, "plugins/plugin.jar");

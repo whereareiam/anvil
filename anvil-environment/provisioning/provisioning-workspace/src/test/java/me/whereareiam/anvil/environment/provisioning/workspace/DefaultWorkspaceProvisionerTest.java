@@ -89,6 +89,35 @@ class DefaultWorkspaceProvisionerTest {
 	}
 
 	@Test
+	void writesInlineTextWithSeedAndAlwaysModes() throws Exception {
+		Path root = temporary.resolve("work");
+		Path workspace = root.resolve("scenario/run/server");
+
+		try (PreparedWorkspace ignored = prepare(root, workspace, textPlan("first"), List.of())) {
+			assertEquals("first", Files.readString(workspace.resolve("plugins/example/seeded.yml")));
+			assertEquals("first", Files.readString(workspace.resolve("plugins/example/config.yml")));
+		}
+
+		try (PreparedWorkspace ignored = prepare(root, workspace, textPlan("second"), List.of())) {
+			assertEquals("first", Files.readString(workspace.resolve("plugins/example/seeded.yml")));
+			assertEquals("second", Files.readString(workspace.resolve("plugins/example/config.yml")));
+		}
+	}
+
+	@Test
+	void rejectsAnAssetWithSeveralSources() {
+		Path root = temporary.resolve("work");
+		WorkspacePlan plan = WorkspacePlan.builder()
+				.asset(WorkspaceAsset.builder()
+						.source(AssetSource.builder().text("content").artifactReference("plugin").build())
+						.target(Path.of("config.yml"))
+						.build())
+				.build();
+
+		assertThrows(ScenarioValidationException.class, () -> prepare(root, root.resolve("run"), plan, List.of()));
+	}
+
+	@Test
 	void rejectsTraversalAndCacheCleanupOverlap() {
 		Path root = temporary.resolve("work");
 		WorkspacePlan traversal = WorkspacePlan.builder()
@@ -103,6 +132,21 @@ class DefaultWorkspaceProvisionerTest {
 				.build();
 		assertThrows(AnvilException.class, () -> prepare(
 				root, root.resolve("run"), overlap, List.of()));
+	}
+
+	private static WorkspacePlan textPlan(String text) {
+		return WorkspacePlan.builder()
+				.mode(WorkspaceMode.PERSISTENT)
+				.asset(WorkspaceAsset.builder()
+						.source(AssetSource.text(text))
+						.target(Path.of("plugins/example/seeded.yml"))
+						.mode(AssetInstallMode.SEED_ONCE)
+						.build())
+				.asset(WorkspaceAsset.builder()
+						.source(AssetSource.text(text))
+						.target(Path.of("plugins/example/config.yml"))
+						.build())
+				.build();
 	}
 
 	@Test

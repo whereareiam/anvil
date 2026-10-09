@@ -51,6 +51,9 @@ final class WorkspaceSnapshotIdentity {
 				Path source = asset.getSource().getPath();
 				if (source != null)
 					fingerprint(source.toAbsolutePath().normalize(), digest);
+				String text = asset.getSource().getText();
+				if (text != null)
+					digest.update(text.getBytes(StandardCharsets.UTF_8));
 			}
 
 			return HexFormat.of().formatHex(digest.digest());

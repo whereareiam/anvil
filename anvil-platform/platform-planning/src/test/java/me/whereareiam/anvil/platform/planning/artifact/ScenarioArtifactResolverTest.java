@@ -44,6 +44,25 @@ class ScenarioArtifactResolverTest {
 	}
 
 	@Test
+	void keepsAnInlineTextAssetUnchanged() {
+		ScenarioArtifactResolver resolver = new ScenarioArtifactResolver(Map.of(), name -> {
+			throw new AssertionError("An inline text asset needs no artifact lookup");
+		});
+		WorkspaceAsset asset = WorkspaceAsset.builder()
+				.source(AssetSource.text("level: 1")).target(Path.of("config.yml")).build();
+		MinecraftServer server = MinecraftServer.builder().name("server").platform("test")
+				.distribution(Distribution.remote("1.21.11", "1"))
+				.workspace(WorkspacePlan.builder().asset(asset).build())
+				.build();
+
+		MinecraftServer resolved = resolver
+				.resolve(AnvilScenario.builder().name("test").entrypoint("server").server(server).build())
+				.getServers().getFirst();
+
+		assertEquals(asset, resolved.getWorkspace().getAssets().getFirst());
+	}
+
+	@Test
 	void rejectsAnUnresolvedAssetBeforeAnyAgentLookup() {
 		ScenarioArtifactResolver resolver = new ScenarioArtifactResolver(Map.of(), name -> {
 			throw new AssertionError("Agent lookup must happen after artifact validation");

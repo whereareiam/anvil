@@ -65,7 +65,7 @@ final class WorkspacePlanValidator {
 					throw new ScenarioValidationException("Workspace asset targets overlap: " + previous + " and " + target);
 			targets.add(target);
 			AssetSource source = asset.getSource();
-			if (source == null || (source.getPath() == null) == (source.getArtifactReference() == null))
+			if (source == null || source.declaredSources() != 1)
 				throw new ScenarioValidationException("Workspace asset must declare exactly one source: " + asset);
 		}
 	}
