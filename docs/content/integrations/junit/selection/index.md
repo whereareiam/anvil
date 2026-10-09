@@ -47,6 +47,57 @@ Keep reusable assertion code in helper methods, then call those helpers from sep
 methods for different definition classes. The [consumer example](https://github.com/whereareiam/anvil/tree/dev/examples/proof-of-patience)
 uses this pattern to exercise one journey on Paper `1.21.11` and `26.1.2`.
 
+## Declare a parameterized environment
+
+When tests differ only in a few settings of one environment, such as a version or a plugin mode,
+declare those settings on the test instead of writing one definition class per combination. Create an
+annotation whose members are the settings, and mark it with `@AnvilEnvironment`. Place it in
+`src/anvil/java/com/example/test/Lobby.java`:
+
+```java
+package com.example.test;
+
+import me.whereareiam.anvil.integration.junit.AnvilEnvironment;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+@AnvilEnvironment(LobbyScenarios.class)
+public @interface Lobby {
+	String version() default "1.21.11";
+
+	boolean whitelist() default false;
+}
+```
+
+The factory named by `@AnvilEnvironment` builds the scenario from one declaration. Place it in
+`src/anvil/java/com/example/test/LobbyScenarios.java`; `Scenarios.lobby(...)` stands for your own
+scenario construction:
+
+```java
+package com.example.test;
+
+import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.integration.junit.AnvilScenarioFactory;
+import org.jetbrains.annotations.NotNull;
+
+public final class LobbyScenarios implements AnvilScenarioFactory<Lobby> {
+	@Override
+	public @NotNull AnvilScenario create(@NotNull Lobby lobby) {
+		return Scenarios.lobby(lobby.version(), lobby.whitelist());
+	}
+}
+```
+
+Annotate a test class or method with `@Lobby(whitelist = true)` and request `ScenarioContext` as with
+`@AnvilTest`. A method's declaration replaces its class's, and a method or class declares exactly one
+environment. Give equal declarations the same scenario name and different declarations different
+names, because the name keys the scenario's workspaces.
+
 ## Lifecycle boundaries
 
 Anvil starts the scenario in the extension's before-each callback. Request the context in the test
