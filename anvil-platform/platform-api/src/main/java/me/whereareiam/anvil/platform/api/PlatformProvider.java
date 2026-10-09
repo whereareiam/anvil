@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -171,6 +172,22 @@ public interface PlatformProvider {
 	 */
 	default @NotNull List<String> jvmArguments(@NotNull MinecraftProcess process, boolean consoleColors) {
 		return List.of();
+	}
+
+	/**
+	 * Returns the JVM arguments that make this platform verify online logins against another session server
+	 * than Mojang's. The engine places them after {@link #jvmArguments(MinecraftProcess, boolean)} and before
+	 * the declaration's explicit JVM arguments. The default refuses, because a platform that cannot be
+	 * redirected would silently ask Mojang.
+	 *
+	 * @param process server or proxy declaration
+	 * @param sessionServer base address whose {@code hasJoined} endpoint answers the verification
+	 * @return immutable ordered JVM arguments
+	 * @throws PlatformException when this platform cannot be redirected
+	 */
+	default @NotNull List<String> sessionServerArguments(@NotNull MinecraftProcess process, @NotNull URI sessionServer) {
+		throw new PlatformException("Platform '" + process.getPlatform() + "' cannot verify logins against another "
+				+ "session server; remove sessionServer from process '" + process.getName() + "'");
 	}
 
 	/**

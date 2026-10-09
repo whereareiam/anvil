@@ -7,6 +7,7 @@ import lombok.extern.jackson.Jacksonized;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.URI;
 import java.util.UUID;
 
 /**
@@ -22,4 +23,5 @@ public class WorkerPlayerOptions {
 	int port;
 	@ToString.Exclude
 	@Nullable String accessToken;
+	@Nullable URI sessionServer;
 }

@@ -1,6 +1,8 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
 import com.github.steveice10.mc.auth.data.GameProfile;
+import com.github.steveice10.mc.auth.service.SessionService;
+import com.github.steveice10.mc.protocol.MinecraftConstants;
 import com.github.steveice10.mc.protocol.MinecraftProtocol;
 import com.github.steveice10.mc.protocol.codec.MinecraftCodec;
 import com.github.steveice10.packetlib.Session;
@@ -29,6 +31,11 @@ public final class McProtocolClientAdapter implements McProtocolClient<Session> 
 	public @NotNull Session open(@NotNull ClientLogin login, @NotNull ClientListener<? super Session> listener) {
 		GameProfile profile = new GameProfile(login.getUniqueId(), login.getName());
 		Session session = new TcpClientSession(login.getHost(), login.getPort(), new MinecraftProtocol(profile, login.getAccessToken()));
+		if (login.getSessionServer() != null) {
+			SessionService sessionService = new SessionService();
+			sessionService.setBaseUri(login.getSessionServer() + "/");
+			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, sessionService);
+		}
 		session.addListener(new ClientPacketListener(login, listener));
 		return session;
 	}

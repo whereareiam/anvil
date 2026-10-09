@@ -13,6 +13,7 @@ import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
+import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import me.whereareiam.anvil.platform.api.model.PlatformRequest;
@@ -38,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DefaultPlatformPlannerTest {
@@ -208,6 +210,20 @@ class DefaultPlatformPlannerTest {
 		assertEquals(scenarioRequirement, effective.getRequirement());
 		assertSame(processSource, effective.getSource());
 		assertNull(options.getJavaSelection().getRequirement());
+	}
+
+	@Test
+	void refusesASessionServerOnAPlatformThatCannotBeRedirected() {
+		var process = MinecraftServer.builder().name("server").platform("test")
+				.distribution(Distribution.remote("1.21.11", "1"))
+				.sessionServer(URI.create("http://127.0.0.1:25580/session/minecraft"))
+				.build();
+		var scenario = AnvilScenario.builder().name("test").entrypoint("server").server(process).build();
+
+		PlatformException refused = assertThrows(PlatformException.class,
+				() -> policyPlanner(EngineOptions.builder().build()).plan(scenario));
+		assertTrue(refused.getMessage().contains("'test' cannot verify logins against another session server"),
+				refused.getMessage());
 	}
 
 	private DefaultPlatformPlanner policyPlanner(EngineOptions options) {

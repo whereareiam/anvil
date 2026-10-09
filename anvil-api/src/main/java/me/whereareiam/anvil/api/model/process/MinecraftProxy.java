@@ -9,6 +9,7 @@ import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +38,11 @@ public class MinecraftProxy implements MinecraftProcess {
 
 	@Builder.Default
 	boolean onlineMode = false;
+
+	/**
+	 * Session server that verifies online logins instead of Mojang's; see {@link MinecraftProcess#getSessionServer()}.
+	 */
+	@Nullable URI sessionServer;
 
 	@Builder.Default
 	int memoryMegabytes = 512;

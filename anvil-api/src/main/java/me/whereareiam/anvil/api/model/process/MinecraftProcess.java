@@ -6,6 +6,7 @@ import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -76,6 +77,15 @@ public interface MinecraftProcess {
 	 * @return platform settings
 	 */
 	@NotNull Map<String, String> getSettings();
+
+	/**
+	 * Returns the session server this process verifies online logins against instead of Mojang's.
+	 * It is the base address whose {@code hasJoined} endpoint answers the verification, for example
+	 * {@code http://127.0.0.1:25580/session/minecraft}. Planning refuses a platform that cannot be redirected.
+	 *
+	 * @return session server base address, or null to verify against Mojang
+	 */
+	@Nullable URI getSessionServer();
 
 	/**
 	 * Returns additional JVM arguments.

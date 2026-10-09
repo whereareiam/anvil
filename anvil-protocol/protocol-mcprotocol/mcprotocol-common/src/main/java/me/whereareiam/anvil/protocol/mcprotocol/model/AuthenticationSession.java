@@ -4,7 +4,9 @@ import lombok.Builder;
 import lombok.ToString;
 import lombok.Value;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.net.URI;
 import java.util.UUID;
 
 /**
@@ -16,4 +18,8 @@ public class AuthenticationSession {
 	@NotNull String username;
 	@NotNull UUID uuid;
 	@NotNull @ToString.Exclude String accessToken;
+	/**
+	 * Session server the login is reported to, or null for Mojang's.
+	 */
+	@Nullable URI sessionServer;
 }

@@ -191,7 +191,7 @@ class WorkerCapabilityRegistryTest {
 	}
 
 	private McProtocolPlayer player(WorkerCapabilityRegistry registry) {
-		return new McProtocolPlayer("player", "Alice", "localhost", 25565, UUID.randomUUID(), null, new RecordingClient(),
+		return new McProtocolPlayer("player", "Alice", "localhost", 25565, UUID.randomUUID(), null, null, new RecordingClient(),
 				SegmentRoots.none(), new WorkerMessageWriter(new PrintStream(OutputStream.nullOutputStream())), registry);
 	}
 

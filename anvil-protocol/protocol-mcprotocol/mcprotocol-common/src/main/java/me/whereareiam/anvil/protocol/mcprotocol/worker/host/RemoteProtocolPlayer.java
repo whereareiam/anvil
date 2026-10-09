@@ -78,6 +78,7 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 				.host(request.getAddress().getHostString())
 				.port(request.getAddress().getPort())
 				.accessToken(authentication == null ? null : authentication.getAccessToken())
+				.sessionServer(authentication == null ? null : authentication.getSessionServer())
 				.build();
 
 		JsonNode installed = worker.control(WorkerControlOperation.CREATE_PLAYER, id, options);

@@ -88,7 +88,7 @@ class McProtocolPlayerTest {
 	private McProtocolPlayer player(String accessToken) {
 		var context = NativeWorkerContext.builder().libraryId("mcprotocol").version(MinecraftVersion.parse("1.21.11"))
 				.protocolNumber(774).nativeSessionType(Object.class).build();
-		var player = new McProtocolPlayer("player", "Alice", "localhost", 25565, uuid, accessToken, client, SegmentRoots.none(),
+		var player = new McProtocolPlayer("player", "Alice", "localhost", 25565, uuid, accessToken, null, client, SegmentRoots.none(),
 				new WorkerMessageWriter(new PrintStream(output, true, StandardCharsets.UTF_8)),
 				new WorkerCapabilityRegistry(context, List.of()));
 		player.initialize();

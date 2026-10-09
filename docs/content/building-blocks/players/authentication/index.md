@@ -128,6 +128,60 @@ Each `pool.<name>` entry lists distinct account IDs separated by commas; leases 
 Resolve the pool by name with `anvil.accounts().pool("testers")`. An undeclared pool, a repeated
 account ID, or another `schemaVersion` fails the lookup.
 
+## Sign in without a real account
+
+An online-mode login needs Mojang twice: the client reports the login to Mojang's session server, and the
+proxy or server asks that session server to verify it. To test online-mode behavior without a real account,
+and in CI, point both sides at a local stand-in. The `service-mojang` artifact provides one:
+
+```kotlin
+dependencies {
+	add("anvilImplementation", "me.whereareiam.anvil:service-mojang:0.0.1")
+}
+```
+
+Start the service before declaring the scenario, declare its session server on the process that verifies
+logins, and register the accounts that exist:
+
+```java
+MojangService mojang = MojangService.start();
+
+MinecraftProxy proxy = MinecraftProxy.builder()
+		.name("proxy")
+		.platform(Platforms.VELOCITY)
+		.distribution(Distribution.remote("3.5.1", "615"))
+		.onlineMode(true)
+		.sessionServer(mojang.sessionServer())
+		.server("server")
+		.build();
+```
+
+```java
+SessionIdentity alice = mojang.register("Alice");
+var player = anvil.players().create(PlayerOptions.builder()
+		.name("Alice")
+		.authentication(AuthenticationMode.ONLINE)
+		.sessionIdentity(alice)
+		.build());
+```
+
+A session identity replaces the account ID and works with `ONLINE` and `ON_REQUEST`. Anvil refuses the
+player before it connects unless the process it joins declares the same session server, because Mojang
+would not verify it. A username that is not registered fails verification, as an unpaid account does.
+
+The service also answers the profile lookup that login plugins use to recognize paid usernames, at
+`mojang.profileLookup()` followed by the username: status 200 for a registered username and 404 otherwise.
+`mojang.available(false)` makes every request fail with status 503, as during an outage. Close the service
+when the tests that use it are done.
+
+Limitations:
+
+- Only Velocity can be redirected today. Planning refuses `sessionServer` on any other platform; BungeeCord
+  has no setting for it.
+- The service runs in the JVM that runs the tests and listens on loopback. A process in a container reaches
+  it only when you start it with `MojangService.start(address)` on an address the container can route to.
+- It signs nothing and serves no skins, so behavior that depends on signed profile properties is not covered.
+
 ## Keep the account store private
 
 Treat the authentication directory as credentials. Exclude it from source control, diagnostic uploads,
