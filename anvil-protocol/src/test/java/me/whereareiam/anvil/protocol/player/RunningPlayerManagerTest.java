@@ -73,6 +73,39 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
+	void severalPlayersShareAUsernameUnderTheirOwnNames() {
+		StubLibrary library = new StubLibrary();
+		RunningPlayerManager manager = manager(library);
+
+		manager.create("Alice");
+		assertEquals("Alice", library.lastRequest.getUsername());
+
+		SimulatedPlayer again = manager.create(PlayerOptions.builder().name("alice-again").username("Alice").build());
+
+		assertEquals("alice-again", again.name());
+		assertEquals("alice-again", library.lastRequest.getName());
+		assertEquals("Alice", library.lastRequest.getUsername());
+		assertEquals(2, manager.all().size());
+		assertSame(again, manager.get("alice-again"));
+	}
+
+	@Test
+	void aUsernameIsRefusedWhenBlankOrWhenAnAccountSuppliesIt() {
+		StubLibrary library = new StubLibrary();
+		RunningPlayerManager manager = manager(library);
+
+		var blank = assertThrows(ScenarioValidationException.class,
+				() -> manager.create(PlayerOptions.builder().name("alice").username(" ").build()));
+		assertEquals("Player 'alice' declares a blank username", blank.getMessage());
+
+		var account = assertThrows(ScenarioValidationException.class,
+				() -> manager.create(online("alice").toBuilder().username("Alice").build()));
+		assertEquals("Player 'alice' declares the username 'Alice' and ONLINE authentication, whose account supplies "
+				+ "the username", account.getMessage());
+		assertNull(library.lastRequest);
+	}
+
+	@Test
 	void supportsDynamicAmountsAndExplicitlyRejectsNativeVersionMismatch() {
 		RunningPlayerManager manager = manager(new StubLibrary());
 		for (int index = 0; index < 25; index++)
@@ -210,7 +243,7 @@ class RunningPlayerManagerTest {
 		StubLibrary library = new StubLibrary();
 		AuthenticationAccount account = new AuthenticationAccount("alice", "test", "Alice", null);
 		RunningPlayerManager manager = new RunningPlayerManager(scenario(), selector(library), ignored -> library,
-				new StubScenarioProcesses("server", temporary.resolve("server")), player -> observation(player), composer(),
+				new StubScenarioProcesses("server", temporary.resolve("server")), (player, connectedTo) -> observation(player), composer(),
 				ignored -> { }, () -> List.of(account), new AccountReservations());
 
 		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create(online("alice")));
@@ -364,7 +397,7 @@ class RunningPlayerManagerTest {
 		AnvilScenario scenario = AnvilScenario.builder().name("online").entrypoint("server").server(server).build();
 
 		return new RunningPlayerManager(scenario, selector, ignored -> library,
-				new StubScenarioProcesses("server", temporary.resolve("server")), player -> observation(player), composer(),
+				new StubScenarioProcesses("server", temporary.resolve("server")), (player, connectedTo) -> observation(player), composer(),
 				ignored -> { }, () -> List.of(accounts), reservations);
 	}
 
@@ -388,7 +421,7 @@ class RunningPlayerManagerTest {
 			Consumer<RunningPlayerManager> onClosed
 	) {
 		return new RunningPlayerManager(scenario, selector(library), ignored -> library, processes,
-				player -> observation(player), composer, onClosed, List::of, new AccountReservations());
+				(player, connectedTo) -> observation(player), composer, onClosed, List::of, new AccountReservations());
 	}
 
 	private static ProtocolRelease release(String libraryVersion, String minecraft) {

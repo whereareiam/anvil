@@ -10,8 +10,11 @@ import org.jetbrains.annotations.NotNull;
 public interface PlayerObservationFactory {
 	/**
 	 * Opens observations for a newly created native player.
+	 *
 	 * @param player library-owned player
+	 * @param connectedTo name of the server or proxy the player connects to; several players may share a
+	 * username, so observations follow this player's own connection from there
 	 * @return player-scoped identity and route observations
 	 */
-	@NotNull PlayerObservation create(@NotNull ProtocolPlayer player);
+	@NotNull PlayerObservation create(@NotNull ProtocolPlayer player, @NotNull String connectedTo);
 }

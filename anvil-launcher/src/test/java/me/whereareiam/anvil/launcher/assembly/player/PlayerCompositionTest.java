@@ -62,7 +62,7 @@ public class PlayerCompositionTest {
 			AgentDirectory agents = () -> Map.of("server", new StubAgent());
 			var provider = new CapabilityPlayerComposerProvider();
 			var protocol = new StubPlayer();
-			var observation = new AgentPlayerObservation(protocol.name(), protocol::identity, Map::of, Set.of());
+			var observation = new AgentPlayerObservation(protocol.name(), "server", protocol::identity, Map::of, Set.of());
 			var scoped = PlayerComposition.create(List.of("selected"), agents, provider).compose(protocol, observation, null, ignored -> {});
 			try (AutoCloseable scopedCleanup = scoped::destroy) {
 				assertNotNull(scoped.capability(AgentFeature.class).context.channel("server"));

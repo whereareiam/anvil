@@ -3,6 +3,7 @@ package me.whereareiam.anvil.agent.client;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.agent.api.exception.AgentException;
 import me.whereareiam.anvil.agent.api.model.AgentIdentity;
+import me.whereareiam.anvil.agent.api.model.location.ProxyLocation;
 import me.whereareiam.anvil.agent.api.model.location.ServerLocation;
 import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.agent.client.api.exception.AgentUnavailableException;
@@ -30,7 +31,7 @@ class AgentPlayerObservationTest {
 		var directory = new ScenarioAgentDirectory();
 		ProcessAgentClient lobby = directory.register("lobby");
 		directory.register("unstarted");
-		var observation = new AgentPlayerObservation("Alice", () -> initial, directory, Set.of("lobby"));
+		var observation = new AgentPlayerObservation("Alice", "lobby", () -> initial, directory, Set.of("lobby"));
 		assertEquals(initial, observation.identity());
 
 		AgentIdentity first = identity(UUID.randomUUID());
@@ -44,6 +45,39 @@ class AgentPlayerObservationTest {
 		lobby.attach(new TestAgent(() -> Optional.of(replacement)));
 		assertEquals(replacement.getUniqueId(), observation.identity().getObservedUniqueId());
 		lobby.close();
+	}
+
+	@Test
+	void followsThePlayersOwnProxyToItsBackendAndIgnoresTheSameUsernameElsewhere() {
+		UUID forwarded = UUID.randomUUID();
+		Map<String, AgentClient> agents = Map.of(
+				"proxy-a", new TestAgent(() -> Optional.of(onProxy("auth", UUID.randomUUID()))),
+				"proxy-b", new TestAgent(() -> Optional.of(onProxy("lobby", UUID.randomUUID()))),
+				"auth", new TestAgent(() -> Optional.of(identity(forwarded))),
+				"lobby", new TestAgent(() -> Optional.of(identity(UUID.randomUUID()))));
+
+		PlayerIdentity observed = new AgentPlayerObservation("alice-a", "proxy-a", () -> initial, () -> agents,
+				Set.of("auth", "lobby")).identity();
+
+		assertEquals("proxy-a", observed.getRoute().getProxy());
+		assertEquals("auth", observed.getRoute().getServer());
+		assertEquals(forwarded, observed.getObservedUniqueId());
+	}
+
+	@Test
+	void reportsTheProxysObservationWhileNoBackendIsConnected() {
+		UUID proxied = UUID.randomUUID();
+		Map<String, AgentClient> agents = Map.of(
+				"proxy", new TestAgent(() -> Optional.of(onProxy(null, proxied))),
+				"lobby", new TestAgent(() -> {
+					throw new AssertionError("A backend the proxy did not name was queried");
+				}));
+
+		PlayerIdentity observed = new AgentPlayerObservation("Alice", "proxy", () -> initial, () -> agents, Set.of("lobby")).identity();
+
+		assertEquals("proxy", observed.getRoute().getProxy());
+		assertNull(observed.getRoute().getServer());
+		assertEquals(proxied, observed.getObservedUniqueId());
 	}
 
 	@Test
@@ -88,7 +122,15 @@ class AgentPlayerObservationTest {
 	}
 
 	private AgentPlayerObservation observation(AgentClient agent) {
-		return new AgentPlayerObservation("Alice", () -> initial, () -> Map.of("lobby", agent), Set.of("lobby"));
+		return new AgentPlayerObservation("Alice", "lobby", () -> initial, () -> Map.of("lobby", agent), Set.of("lobby"));
+	}
+
+	private AgentIdentity onProxy(String connectedServer, UUID uniqueId) {
+		return AgentIdentity.builder()
+				.username("Alice")
+				.uniqueId(uniqueId)
+				.location(ProxyLocation.builder().proxy("velocity").connectedServer(connectedServer).build())
+				.build();
 	}
 
 	private AgentIdentity identity(UUID uniqueId) {

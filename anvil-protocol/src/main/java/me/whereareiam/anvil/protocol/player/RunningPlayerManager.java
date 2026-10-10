@@ -158,6 +158,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 			throw new ScenarioValidationException("Player '" + options.getName() + "' cannot connect to unknown process '"
 					+ targetName + "'. Available: " + declarations.keySet());
 
+		validateUsername(options);
 		RunningProcess runningTarget = processes.get(targetName);
 		MinecraftVersion version = selectVersion(options, target);
 		Selection selection = selector.select(options, scenario, version);
@@ -171,6 +172,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 			// Creation can fail after the account is marked in use, for example when a token refresh fails.
 			driven = library.create(PlayerRequest.builder()
 					.name(options.getName())
+					.username(options.getUsername())
 					.clientVersion(version)
 					.release(selection.release())
 					.address(runningTarget.address())
@@ -178,7 +180,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 					.accountId(options.getAccountId())
 					.sessionIdentity(options.getSessionIdentity())
 					.build());
-			PlayerObservation observation = observations.create(driven);
+			PlayerObservation observation = observations.create(driven, targetName);
 			player = playerComposer.compose(
 					driven,
 					observation,
@@ -197,6 +199,16 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 
 		players.put(options.getName(), player);
 		return player;
+	}
+
+	private void validateUsername(@NotNull PlayerOptions options) {
+		String username = options.getUsername();
+		if (username == null) return;
+		if (username.isBlank())
+			throw new ScenarioValidationException("Player '" + options.getName() + "' declares a blank username");
+		if (options.getAuthentication().usesAccount())
+			throw new ScenarioValidationException("Player '" + options.getName() + "' declares the username '" + username
+					+ "' and " + options.getAuthentication() + " authentication, whose account supplies the username");
 	}
 
 	/**

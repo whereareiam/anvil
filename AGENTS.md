@@ -226,6 +226,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   Docker image mappings belong to the Docker execution provider.
 - Execution providers own network topology and endpoint translation. A local loopback bind is host exposure
   control, not process isolation; strict proxy-only isolation is rejected unless the provider can enforce it.
+- A simulated player's name is its unique identity within the scenario; its Minecraft username defaults to
+  the name and may be shared by several players. Player observations follow the player's own connection from
+  the process it connects to and never look a username up across every agent. Routes name scenario processes.
 - `api.process.RunningProcess` exposes lifecycle, address, and console; server/proxy specializations live in
   `api.process.type`. Player identities/routes belong to
   `PlayerObservation` and the Server capability.

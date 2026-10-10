@@ -58,6 +58,30 @@ You must still connect through `Session`. `connectTo` selects an initial endpoin
 a backend transfer after login. For that, exercise your proxy plugin's routing behavior and observe
 the resulting [server route](../capabilities/server/index.md).
 
+## Connect the same username twice
+
+A player's name identifies it within the scenario and must be unique. It is also the Minecraft username,
+unless `username` declares another one. Give two players the same username to test what your plugin
+does when an account that is already online joins again, or joins through another proxy:
+
+```java
+var alice = anvil.players().create("Alice");
+var again = anvil.players().create(PlayerOptions.builder()
+		.name("alice-again")
+		.username("Alice")
+		.connectTo("secondary")
+		.build());
+```
+
+Both log in as `Alice` with the same offline UUID, and each keeps its own session, messages, and
+[server route](../capabilities/server/index.md). Retrieve the second one with
+`anvil.players().get("alice-again")`.
+
+`username` applies to offline players. A player that signs in with an account takes the account's
+username, so declaring both is refused; give such a player any unique name. A server or proxy still
+decides what happens when a username joins while it is already online there: Anvil only makes the
+second connection possible.
+
 ## Select a native version
 
 Anvil selects a supported native client compatible with every server reachable from the target.

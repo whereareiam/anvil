@@ -55,10 +55,10 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 		this.events = new PlayerEventDispatcher(request.getName(), worker::recordDiagnostic);
 		this.identity = PlayerIdentity.builder()
 				.username(authentication == null
-						? request.getName()
+						? request.getUsername()
 						: authentication.getUsername())
 				.clientUniqueId(authentication == null
-						? UUID.nameUUIDFromBytes((OFFLINE_UUID_PREFIX + request.getName()).getBytes(StandardCharsets.UTF_8))
+						? UUID.nameUUIDFromBytes((OFFLINE_UUID_PREFIX + request.getUsername()).getBytes(StandardCharsets.UTF_8))
 						: authentication.getUuid())
 				.build();
 
