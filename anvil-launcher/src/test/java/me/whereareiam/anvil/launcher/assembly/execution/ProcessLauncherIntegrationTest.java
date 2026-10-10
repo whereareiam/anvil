@@ -16,6 +16,7 @@ import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.environment.execution.local.LocalExecutionProvider;
 import me.whereareiam.anvil.environment.execution.managed.ManagedProcessService;
+import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
 import me.whereareiam.anvil.launcher.assembly.provisioning.ArtifactPlatformSource;
 import me.whereareiam.anvil.launcher.assembly.provisioning.ProvisioningServices;
 import me.whereareiam.anvil.launcher.config.EngineDefaults;
@@ -109,6 +110,7 @@ class ProcessLauncherIntegrationTest {
 					})
 					.javaRuntime(new JavaExecutionRuntime(provisioning.getJava()))
 					.imageLocks(new CacheImageLocks(provisioning.getCache()))
+					.ports(new PortSelection())
 					.build();
 			var agents = new ScenarioAgentDirectory();
 			try (var group = launcher.prepare(platforms.plan(scenario), agents, null, null)) {
