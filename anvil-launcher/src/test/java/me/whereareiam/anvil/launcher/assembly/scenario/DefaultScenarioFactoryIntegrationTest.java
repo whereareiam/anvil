@@ -433,7 +433,7 @@ class DefaultScenarioFactoryIntegrationTest {
 	}
 
 	@Test
-	void cleanupContinuesAcrossAgentErrorsAndStopsProcessesInReverseOrder() throws Exception {
+	void cleanupContinuesAcrossAgentErrorsAndStopsEveryProcess() throws Exception {
 		List<String> closed = new ArrayList<>();
 		AssertionError first = new AssertionError("first agent cleanup");
 		RuntimeException second = new IllegalStateException("second agent cleanup");
@@ -469,7 +469,8 @@ class DefaultScenarioFactoryIntegrationTest {
 		assertTrue(List.of(cleanup.getSuppressed()).contains(first) || cleanup == first);
 		assertTrue(List.of(cleanup.getSuppressed()).contains(second) || cleanup == second);
 		assertEquals(Set.of("agent-1", "agent-2"), Set.copyOf(closed));
-		assertEquals(List.of("second", "server"), Files.readAllLines(order));
+		// Independent servers stop together; managed execution covers dependents stopping first.
+		assertEquals(Set.of("second", "server"), Set.copyOf(Files.readAllLines(order)));
 		for (var process : processes) {
 			assertEquals(ProcessState.STOPPED, process.state());
 			assertFalse(Files.exists(process.workDirectory().resolve("failure-marker")));

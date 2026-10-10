@@ -6,6 +6,8 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -29,6 +31,28 @@ class ManagedProcessServiceTest {
 		assertEquals(List.of("target-close:proxy", "target-close:server", "session-close",
 				"prepared-finish:proxy:true", "prepared-finish:server:true", "finish:true"),
 				fixture.calls.subList(fixture.calls.indexOf("target-close:proxy"), fixture.calls.size()));
+	}
+
+	@Test
+	void stopsProcessesThatStartedTogetherAtOnceAndBeforeTheirDependencies() {
+		ExecutionFixture fixture = new ExecutionFixture(directory);
+		CyclicBarrier together = new CyclicBarrier(2);
+		fixture.beforeStop = name -> {
+			if (name.equals("proxy")) return;
+
+			try {
+				together.await(5, TimeUnit.SECONDS);
+			} catch (Exception alone) {
+				throw new IllegalStateException(name + " was stopped while the other server was not", alone);
+			}
+		};
+		var plan = fixture.plan(fixture.spec("proxy", true, "first", "second"), fixture.spec("first", false), fixture.spec("second", false));
+		var group = fixture.service().start(plan, fixture.preparation);
+
+		group.finish(true);
+
+		assertTrue(fixture.calls.indexOf("stop:proxy") < fixture.calls.indexOf("stop:first"));
+		assertTrue(fixture.calls.indexOf("stop:proxy") < fixture.calls.indexOf("stop:second"));
 	}
 
 	@Test
