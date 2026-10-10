@@ -10,12 +10,13 @@ import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioFactory;
 import me.whereareiam.anvil.api.scenario.ScenarioObserver;
+import me.whereareiam.anvil.engine.process.RetainedProcesses;
 import me.whereareiam.anvil.engine.scenario.RunningScenario;
 import me.whereareiam.anvil.launcher.assembly.execution.ProcessLauncher;
 import me.whereareiam.anvil.launcher.assembly.player.PlayerComposition;
 import me.whereareiam.anvil.launcher.assembly.process.ProcessComposition;
 import me.whereareiam.anvil.launcher.assembly.retention.ProcessLease;
-import me.whereareiam.anvil.launcher.assembly.retention.RetainedProcesses;
+import me.whereareiam.anvil.launcher.assembly.retention.RetainedProcessSet;
 import me.whereareiam.anvil.platform.api.PlatformPlanner;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
@@ -33,7 +34,7 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 	private final @NotNull PlatformPlanner platforms;
 	private final @NotNull ProcessLauncher execution;
 	private final @NotNull DefaultPlayerService players;
-	private final @NotNull RetainedProcesses retained;
+	private final @NotNull RetainedProcesses<RetainedProcessSet> retained;
 
 	@Override
 	public @NotNull ScenarioContext create(@NotNull AnvilScenario scenario, @Nullable ScenarioObserver observer) {
@@ -41,7 +42,7 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 		players.prepare(plan.getScenario());
 
 		// Processes with the engine lifetime already run; the scenario's own are prepared against them.
-		ProcessLease lease = retained.lease(plan);
+		ProcessLease lease = ProcessLease.take(plan, retained, execution);
 		PlatformPlan own = lease.ownPlan();
 		ScenarioAgentDirectory agents = new ScenarioAgentDirectory();
 		AgentDirectory reachable = lease.agents(agents);

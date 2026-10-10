@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.launcher.assembly.retention;
+package me.whereareiam.anvil.engine.process;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.process.ProcessGroup;
@@ -21,7 +21,7 @@ import java.util.function.Function;
  * The scenario's own processes are finalized with it; the retained ones are handed back.
  */
 @RequiredArgsConstructor
-final class JoinedProcessGroup implements ProcessGroup {
+public final class JoinedProcessGroup implements ProcessGroup {
 	private final @NotNull ProcessGroup own;
 	private final @NotNull ProcessGroup retained;
 	private final @NotNull Set<String> retainedNames;

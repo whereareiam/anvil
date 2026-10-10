@@ -3,32 +3,28 @@ package me.whereareiam.anvil.launcher.assembly.retention;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.Delegate;
 import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
 import me.whereareiam.anvil.api.process.ProcessGroup;
-import me.whereareiam.anvil.api.process.RunningProcess;
-import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.launcher.assembly.execution.ProcessLauncher;
 import me.whereareiam.anvil.launcher.assembly.process.ProcessComposition;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import org.jetbrains.annotations.NotNull;
 
-import java.net.InetSocketAddress;
-import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Owns one running set of the processes that outlive their scenario, with its agents and capabilities.
- * The set is a process group of its own, so it has its own workspaces and execution environment.
+ * Assembles the processes that outlive their scenario into a running process group of their own and
+ * carries what a scenario needs beside the processes: the plan they were started from and their agents.
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-final class RetainedProcessSet {
+public final class RetainedProcessSet implements ProcessGroup {
 	/**
 	 * Plan the set was started from; its forwarding settings are the ones every scenario using the set adopts.
 	 */
 	@Getter
 	private final @NotNull PlatformPlan plan;
-	@Getter
+	@Delegate
 	private final @NotNull ProcessGroup processes;
 	@Getter
 	private final @NotNull ScenarioAgentDirectory agents;
@@ -57,34 +53,5 @@ final class RetainedProcessSet {
 			}
 			throw failure;
 		}
-	}
-
-	/**
-	 * Returns whether every process of the set is ready to serve another scenario.
-	 */
-	boolean ready() {
-		Collection<RunningProcess> running = processes.all();
-		return running.size() == plan.getProcesses().size()
-				&& running.stream().allMatch(process -> process.state() == ProcessState.READY);
-	}
-
-	/**
-	 * Returns the game addresses a scenario's own processes connect to, by process name.
-	 */
-	@NotNull Map<String, InetSocketAddress> addresses() {
-		Map<String, InetSocketAddress> addresses = new LinkedHashMap<>();
-		for (String name : plan.getProcesses().keySet())
-			addresses.put(name, processes.get(name).address());
-
-		return addresses;
-	}
-
-	/**
-	 * Stops the processes and finalizes their workspaces.
-	 *
-	 * @param successful false keeps the workspaces for diagnosis under the engine's retention policy
-	 */
-	void stop(boolean successful) {
-		processes.finish(successful);
 	}
 }
