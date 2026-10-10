@@ -24,6 +24,9 @@ running context can create them when needed.
 The [first test](../../getting-started/first-test/index.mdx) provides a minimal Paper declaration you
 can expand. Declare only the processes and inputs relevant to the behavior you want to inspect.
 
+A process that every scenario needs but none inspects can keep running between them; see
+[Process lifetime](./lifetimes/index.md).
+
 ## Control the running processes
 
 Use [Actions](./actions/index.md) to issue console commands, call installed agent operations, and

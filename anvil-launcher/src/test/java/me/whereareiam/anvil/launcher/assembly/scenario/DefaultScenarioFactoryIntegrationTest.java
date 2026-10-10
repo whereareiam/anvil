@@ -24,10 +24,13 @@ import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceCleanup;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 import me.whereareiam.anvil.api.player.PlayerCapability;
+import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.scenario.ScenarioAccess;
+import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.api.scenario.ScenarioHook;
 import me.whereareiam.anvil.api.type.CachePolicy;
 import me.whereareiam.anvil.api.type.CleanupPhase;
+import me.whereareiam.anvil.api.type.ProcessLifetime;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.api.type.WorkspaceMode;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
@@ -46,6 +49,7 @@ import me.whereareiam.anvil.launcher.assembly.execution.JavaExecutionRuntime;
 import me.whereareiam.anvil.launcher.assembly.execution.ProcessLauncher;
 import me.whereareiam.anvil.launcher.assembly.provisioning.ArtifactPlatformSource;
 import me.whereareiam.anvil.launcher.assembly.provisioning.ProvisioningServices;
+import me.whereareiam.anvil.launcher.assembly.retention.RetainedProcesses;
 import me.whereareiam.anvil.launcher.config.EngineDefaults;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
@@ -85,6 +89,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -544,6 +549,128 @@ class DefaultScenarioFactoryIntegrationTest {
 		assertTrue(Files.exists(replacement.workDirectory()));
 	}
 
+	@Test
+	void engineProcessesServeOneScenarioAfterAnotherAndStopWithTheEngine() {
+		Map<String, PlatformContext> contexts = new LinkedHashMap<>();
+		ScenarioEngine engine = engine(forwarding(contexts));
+		UUID server;
+		UUID proxy;
+		String secret;
+		RunningProcess kept;
+		try (var first = engine.start(network(ProcessLifetime.ENGINE))) {
+			kept = first.processes().server("server");
+			server = kept.executionId();
+			proxy = first.processes().proxy("proxy").executionId();
+			secret = contexts.get("server").getForwarding().getSecret();
+			assertEquals(secret, contexts.get("proxy").getForwarding().getSecret());
+			assertEquals(kept.address(), contexts.get("proxy").getProcessAddresses().get("server"));
+			assertEquals(List.of("server", "proxy"), first.processes().all().stream().map(RunningProcess::name).toList());
+		}
+		assertEquals(ProcessState.READY, kept.state(), "An engine process outlives its scenario");
+
+		try (var second = engine.start(network(ProcessLifetime.ENGINE))) {
+			assertEquals(server, second.processes().server("server").executionId());
+			assertNotEquals(proxy, second.processes().proxy("proxy").executionId());
+			assertEquals(secret, contexts.get("proxy").getForwarding().getSecret(), "A later proxy adopts the secret its server runs with");
+		}
+
+		engine.close();
+		assertEquals(ProcessState.STOPPED, kept.state());
+	}
+
+	@Test
+	void scenariosRunningAtOnceEachGetTheirOwnEngineProcesses() {
+		ScenarioEngine engine = engine(forwarding(new LinkedHashMap<>()));
+		UUID first;
+		UUID second;
+		try (var one = engine.start(network(ProcessLifetime.ENGINE)); var other = engine.start(network(ProcessLifetime.ENGINE))) {
+			first = one.processes().server("server").executionId();
+			second = other.processes().server("server").executionId();
+			assertNotEquals(first, second);
+		}
+
+		try (var later = engine.start(network(ProcessLifetime.ENGINE))) {
+			assertTrue(Set.of(first, second).contains(later.processes().server("server").executionId()));
+		}
+	}
+
+	@Test
+	void aFailedScenarioStopsItsEngineProcessesAndKeepsTheirWorkspace() {
+		ScenarioEngine engine = engine(forwarding(new LinkedHashMap<>()));
+		var failed = engine.start(network(ProcessLifetime.ENGINE));
+		RunningProcess kept = failed.processes().server("server");
+		failed.finish(false);
+
+		assertEquals(ProcessState.STOPPED, kept.state());
+		assertTrue(Files.isDirectory(kept.workDirectory()), "The workspace of a failed run is kept for diagnosis");
+		try (var next = engine.start(network(ProcessLifetime.ENGINE))) {
+			assertNotEquals(kept.executionId(), next.processes().server("server").executionId());
+		}
+	}
+
+	@Test
+	void aChangedDeclarationStartsItsOwnEngineProcess() {
+		ScenarioEngine engine = engine(forwarding(new LinkedHashMap<>()));
+		UUID original;
+		try (var first = engine.start(network(ProcessLifetime.ENGINE))) {
+			original = first.processes().server("server").executionId();
+		}
+
+		AnvilScenario changed = network(ProcessLifetime.ENGINE);
+		changed = changed.toBuilder().clearServers()
+				.server(changed.getServers().getFirst().toBuilder().setting("difficulty", "hard").build()).build();
+		try (var second = engine.start(changed)) {
+			assertNotEquals(original, second.processes().server("server").executionId());
+		}
+	}
+
+	@Test
+	void aScenarioCannotChangeAnEngineProcessAfterItFinished() {
+		ScenarioEngine engine = engine(forwarding(new LinkedHashMap<>()));
+		var context = engine.start(network(ProcessLifetime.ENGINE));
+		context.close();
+
+		assertThrows(IllegalStateException.class, () -> context.processes().stop("server"));
+		assertThrows(IllegalStateException.class, () -> context.processes().restart("server"));
+	}
+
+	/**
+	 * A server behind a proxy, both on the test platform; only the server takes the given lifetime.
+	 */
+	private AnvilScenario network(ProcessLifetime lifetime) {
+		return AnvilScenario.builder()
+				.name("network")
+				.entrypoint("proxy")
+				.processTimeouts(ProcessTimeouts.builder().startup(Duration.ofSeconds(5)).build())
+				.server(MinecraftServer.builder().name("server").platform("test").lifetime(lifetime)
+						.distribution(Distribution.remote("1.21.11", "test")).build())
+				.proxy(MinecraftProxy.builder().name("proxy").platform("test").distribution(Distribution.remote("1", "1"))
+						.server("server").defaultServer("server").build())
+				.build();
+	}
+
+	/**
+	 * A platform for servers and proxies with modern forwarding that records what each process is configured with.
+	 */
+	private TestPlatform forwarding(Map<String, PlatformContext> contexts) {
+		return new TestPlatform() {
+			@Override
+			public @NotNull Class<? extends MinecraftProcess> configurationType() {
+				return MinecraftProcess.class;
+			}
+
+			@Override
+			public @NotNull List<ForwardingMode> forwardingModes() {
+				return List.of(ForwardingMode.MODERN);
+			}
+
+			@Override
+			public void configure(@NotNull MinecraftProcess process, @NotNull PlatformContext context) {
+				contexts.put(process.getName(), context);
+			}
+		};
+	}
+
 	private AnvilScenario withWorkspace(AnvilScenario scenario) {
 		return scenario.toBuilder().clearServers().servers(scenario.getServers().stream().map(server -> server.toBuilder()
 				.workspace(WorkspacePlan.builder()
@@ -635,6 +762,24 @@ class DefaultScenarioFactoryIntegrationTest {
 			List<ProtocolLibraryProvider> libraries,
 			AgentConnectionProvider connections
 	) {
+		return (ScenarioSession) engine(keepFailed, provider, libraries, connections).start(scenario);
+	}
+
+	/**
+	 * An engine without players or agents, for scenarios that are started one after another on it.
+	 */
+	private ScenarioEngine engine(PlatformProvider provider) {
+		return engine(true, provider, List.of(), (port, token, timeout) -> {
+			throw new AssertionError("No agent is declared");
+		});
+	}
+
+	private ScenarioEngine engine(
+			boolean keepFailed,
+			PlatformProvider provider,
+			List<ProtocolLibraryProvider> libraries,
+			AgentConnectionProvider connections
+	) {
 		EngineOptions options = EngineOptions.builder()
 				.eulaAccepted(true)
 				.workDirectory(temporary.resolve("work"))
@@ -658,13 +803,15 @@ class DefaultScenarioFactoryIntegrationTest {
 				.ports(new PortSelection())
 				.build();
 		var players = new DefaultPlayerService(new ProtocolLibraryRegistry(libraries), options, provisioning.getArtifacts()::obtain);
-		var engine = new AnvilEngineBuilder(new DefaultScenarioFactory(platforms, processes, players)).options(options).extension(registration -> {
+		var retained = new RetainedProcesses(processes);
+		var engine = new AnvilEngineBuilder(new DefaultScenarioFactory(platforms, processes, players, retained)).options(options).extension(registration -> {
 			registration.own(provisioning);
 			registration.own(players);
+			registration.own(retained);
 		}).build();
 		owned.add(engine);
 
-		return (ScenarioSession) engine.start(scenario);
+		return engine;
 	}
 
 	private AnvilScenario scenario(ScenarioHook hook) {

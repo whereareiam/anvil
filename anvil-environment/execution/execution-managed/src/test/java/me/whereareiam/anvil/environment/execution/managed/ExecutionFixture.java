@@ -101,6 +101,9 @@ final class ExecutionFixture {
 		public boolean preservesClientAddress() { return true; }
 
 		@Override
+		public boolean connectsEnvironments() { return true; }
+
+		@Override
 		public @NotNull ExecutionSession open(@NotNull ExecutionContext context) {
 			calls.add("session-open");
 			return new ExecutionSession() {

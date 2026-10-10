@@ -15,6 +15,8 @@ public interface ScenarioObserver {
 	 * for readiness or output. Retain the handle to inspect its state and console from another
 	 * thread; console history remains readable after a failed start or completed cleanup.
 	 * Each restart supplies a new handle, leaving the previous generation's identity unchanged.
+	 * A process that an earlier scenario left running is reported once, while the scenario is prepared and
+	 * in the state it is in, which is usually ready.
 	 * <p>
 	 * The callback runs inside the process start. It must not finish the scenario, close the engine,
 	 * or start, stop, or restart processes; those calls are rejected with {@link IllegalStateException}.

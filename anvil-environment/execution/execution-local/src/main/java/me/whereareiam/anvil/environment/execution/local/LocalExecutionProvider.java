@@ -44,6 +44,14 @@ public final class LocalExecutionProvider implements ExecutionProvider {
 		return true;
 	}
 
+	/**
+	 * Host processes listen on host addresses, whichever scenario started them.
+	 */
+	@Override
+	public boolean connectsEnvironments() {
+		return true;
+	}
+
 	@Override
 	public @NotNull ExecutionSession open(@NotNull ExecutionContext context) {
 		if (context.getProcessPriority() == ProcessPriority.LOW && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win"))

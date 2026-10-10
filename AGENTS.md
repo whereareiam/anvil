@@ -40,7 +40,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-environment/execution/execution-local`                         | Host process execution and local endpoints                                                                                                                                          |
 | `anvil-environment/execution/execution-docker`                        | Typed Docker Engine execution, images, networks, and container endpoints                                                                                                            |
 | `anvil-environment/yggdrasil-mock`                                    | Optional test-only Yggdrasil session server and profile lookup; one possible target of the session-server declarations, depends only on anvil-api                                   |
-| `anvil-launcher`                                                      | Public default builder, property decoding, scoped-service adapters, default ScenarioFactory/per-run assembly, native worker bridge, and shaded packaging                            |
+| `anvil-launcher`                                                      | Public default builder, property decoding, scoped-service adapters, default ScenarioFactory/per-run assembly, engine-lifetime process retention, native worker bridge, and shaded packaging |
 | `anvil-capability/capability-api`                                     | Owner-neutral composition, typed requests/handler registration, and neutral player identity/observations/dependency/lifetime contracts                                              |
 | `anvil-capability/capability-protocol-api`                            | Protocol-backed player providers/contexts, channels/events, and native worker contracts                                                                                             |
 | `anvil-capability/capability-agent-api`                               | Agent-backed process/player providers and scoped request-channel contexts; shared capability API only                                                                               |
@@ -327,6 +327,14 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   Each process execution has an opaque UUID assigned by execution. Consumers correlate that identity across snapshots and logs; it is not a restart counter.
   Use `ScenarioContext.finish(boolean)` and `ScenarioAttachment.finish(boolean)` to propagate caller
   outcomes; default `close()` means normal completion and does not erase earlier lifecycle failures.
+- A process declared with `ProcessLifetime.ENGINE` belongs to the launcher's `RetainedProcesses`, not to its
+  scenario's process group: a scenario's kept processes are planned and run as a group of their own, and
+  `ProcessLease` lends one running set to one scenario at a time. `ScenarioFactory.create` may start that set,
+  because the scenario's own processes are prepared against its addresses and adopt its forwarding settings.
+  A successful scenario returns the set; a failed one stops it and keeps its workspaces. Do not add scenario
+  state to a retained set, and do not share one between scenarios that run at once.
+- The engine prepares and starts scenarios concurrently; shared services reached from `ScenarioFactory.create`
+  or a start must be safe for that. JUnit uses one engine for the whole test run.
 - Start servers before proxies; stop processes in reverse dependency order, those of one startup layer together. Cleanup attempts every resource,
   preserves failures, and retains diagnostic workspaces and bounded output tails when a run fails.
 - Never put online access/refresh tokens in Gradle inputs, CLI arguments, environment variables,

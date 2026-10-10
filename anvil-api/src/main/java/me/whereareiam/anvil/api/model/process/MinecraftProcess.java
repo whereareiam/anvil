@@ -3,6 +3,7 @@ package me.whereareiam.anvil.api.model.process;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
+import me.whereareiam.anvil.api.type.ProcessLifetime;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,6 +57,15 @@ public interface MinecraftProcess {
 	 * @return whether online mode is enabled
 	 */
 	boolean isOnlineMode();
+
+	/**
+	 * Returns how long the process keeps running. A process with {@link ProcessLifetime#ENGINE} is started once
+	 * and serves one scenario after another, so it carries its files, its world and whatever its plugins
+	 * remember from one scenario to the next.
+	 *
+	 * @return declared lifetime
+	 */
+	@NotNull ProcessLifetime getLifetime();
 
 	/**
 	 * Returns the maximum heap size in MiB.

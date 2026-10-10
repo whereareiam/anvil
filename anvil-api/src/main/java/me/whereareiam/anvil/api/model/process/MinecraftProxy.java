@@ -6,6 +6,7 @@ import lombok.Value;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
+import me.whereareiam.anvil.api.type.ProcessLifetime;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,6 +44,13 @@ public class MinecraftProxy implements MinecraftProcess {
 	 * Session server that verifies online logins instead of Mojang's; see {@link MinecraftProcess#getSessionServer()}.
 	 */
 	@Nullable URI sessionServer;
+
+	/**
+	 * How long the process keeps running; see {@link MinecraftProcess#getLifetime()}.
+	 */
+	@NotNull
+	@Builder.Default
+	ProcessLifetime lifetime = ProcessLifetime.SCENARIO;
 
 	@Builder.Default
 	int memoryMegabytes = 512;

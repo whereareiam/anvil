@@ -24,6 +24,15 @@ public interface ExecutionProvider {
 	boolean preservesClientAddress();
 
 	/**
+	 * Returns whether a process of one execution environment can connect to a process of another environment
+	 * at that process's host listener address. Processes that keep running across scenarios live in an
+	 * environment of their own, so each scenario's processes must reach them there.
+	 *
+	 * @return true when processes of separate environments reach each other's host listener addresses
+	 */
+	boolean connectsEnvironments();
+
+	/**
 	 * Acquires a scenario execution environment, owned until all its processes are finalized.
 	 *
 	 * @param context host resources and runtime validation policy

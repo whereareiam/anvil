@@ -24,6 +24,10 @@ import me.whereareiam.anvil.platform.api.model.ProcessPlan;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.InetSocketAddress;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Launches resolved platform processes through execution-owned plans and workspace preparation.
  */
@@ -38,22 +42,6 @@ public final class ProcessLauncher {
 	private final @NotNull ImageLocks imageLocks;
 	private final @NotNull PortReservations ports;
 
-	public @NotNull ProcessGroup start(@NotNull PlatformPlan platformPlan, @NotNull ScenarioAgentDirectory agents) {
-		ProcessGroup prepared = prepare(platformPlan, agents, null, null);
-		try {
-			prepared.startAll();
-			return prepared;
-		} catch (RuntimeException | Error failure) {
-			try {
-				prepared.finish(false);
-			} catch (RuntimeException | Error cleanup) {
-				if (cleanup != failure) failure.addSuppressed(cleanup);
-			}
-
-			throw failure;
-		}
-	}
-
 	/**
 	 * Prepares platform and workspace inputs through the managed execution topology without starting JVMs.
 	 *
@@ -61,9 +49,16 @@ public final class ProcessLauncher {
 	 * @param agents       stable agent directory for later generations
 	 * @param capabilities optional logical process capability composition
 	 * @param observer     optional public generation observer
+	 * @param peers        game addresses of running processes outside the plan that its processes connect to
 	 * @return prepared resource-owning group
 	 */
-	public @NotNull ProcessGroup prepare(@NotNull PlatformPlan platformPlan, @NotNull ScenarioAgentDirectory agents, @Nullable ProcessComposition capabilities, @Nullable ScenarioObserver observer) {
+	public @NotNull ProcessGroup prepare(
+			@NotNull PlatformPlan platformPlan,
+			@NotNull ScenarioAgentDirectory agents,
+			@Nullable ProcessComposition capabilities,
+			@Nullable ScenarioObserver observer,
+			@NotNull Map<String, InetSocketAddress> peers
+	) {
 		var layout = workspaces.layout(options.getWorkDirectory(), platformPlan.getScenario());
 		var preparation = new ScenarioProcessPreparation(
 				options,
@@ -76,7 +71,7 @@ public final class ProcessLauncher {
 				capabilities
 		);
 
-		return processes.prepare(plan(platformPlan, layout), preparation, observer);
+		return processes.prepare(plan(platformPlan, layout, peers), preparation, observer);
 	}
 
 	/**
@@ -89,19 +84,34 @@ public final class ProcessLauncher {
 		return processes.preservesClientAddress(executionProviderId(platformPlan.getScenario()));
 	}
 
+	/**
+	 * Returns whether the processes of a planned scenario reach processes started for another scenario.
+	 *
+	 * @param platformPlan planned scenario
+	 * @return whether its execution provider connects separate execution environments
+	 */
+	public boolean connectsEnvironments(@NotNull PlatformPlan platformPlan) {
+		return processes.connectsEnvironments(executionProviderId(platformPlan.getScenario()));
+	}
+
 	private @NotNull String executionProviderId(@NotNull AnvilScenario scenario) {
 		return scenario.getExecutionProviderId() == null ? options.getExecutionProviderId() : scenario.getExecutionProviderId();
 	}
 
-	private @NotNull ExecutionPlan plan(@NotNull PlatformPlan platforms, @NotNull WorkspaceLayout layout) {
+	private @NotNull ExecutionPlan plan(
+			@NotNull PlatformPlan platforms,
+			@NotNull WorkspaceLayout layout,
+			@NotNull Map<String, InetSocketAddress> peers
+	) {
 		AnvilScenario scenario = platforms.getScenario();
 		var plan = ExecutionPlan.builder()
 				.executionProviderId(executionProviderId(scenario))
 				.context(context(scenario))
 				.processTimeouts(scenario.getProcessTimeouts().withDefaults(options.getProcessTimeouts()))
-				.processScheduling(options.getProcessScheduling());
+				.processScheduling(options.getProcessScheduling())
+				.peers(peers);
 		platforms.getProcesses().forEach((name, process) ->
-				plan.process(process(name, process, layout)));
+				plan.process(process(name, process, layout, platforms.getProcesses().keySet())));
 
 		return plan.build();
 	}
@@ -123,7 +133,8 @@ public final class ProcessLauncher {
 	private @NotNull ProcessSpec process(
 			@NotNull String name,
 			@NotNull ProcessPlan plan,
-			@NotNull WorkspaceLayout layout
+			@NotNull WorkspaceLayout layout,
+			@NotNull Set<String> planned
 	) {
 		MinecraftProcess declaration = plan.getDeclaration();
 		var request = ProcessRequest.builder()
@@ -137,7 +148,8 @@ public final class ProcessLauncher {
 		return ProcessSpec.builder()
 				.request(request)
 				.proxy(plan.isProxy())
-				.dependencies(plan.getDependencies())
+				// A dependency outside the plan is a peer that already runs.
+				.dependencies(plan.getDependencies().stream().filter(planned::contains).toList())
 				.readinessPattern(plan.getReadinessPattern())
 				.stopCommand(plan.getStopCommand())
 				.memoryMegabytes(declaration.getMemoryMegabytes())

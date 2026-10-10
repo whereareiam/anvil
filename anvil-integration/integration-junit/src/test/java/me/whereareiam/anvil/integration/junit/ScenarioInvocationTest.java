@@ -29,25 +29,22 @@ class ScenarioInvocationTest {
 	private final AnvilScenario definition = AnvilScenario.builder().name("invocation").entrypoint("server").build();
 
 	@Test
-	void closesEngineWhenStartupFailsAndPreservesStartupFailure() {
-		List<String> actions = new ArrayList<>();
+	void leavesTheBorrowedEngineOpenWhenPreparationFails() {
 		RuntimeException start = new IllegalStateException("start");
-		RuntimeException close = new IllegalStateException("engine close");
 		ScenarioEngine engine = new ScenarioEngine() {
 			public @NotNull ScenarioContext prepare(@NotNull AnvilScenario scenario, @Nullable ScenarioObserver observer) { throw start; }
-			public void close() { actions.add("engine"); throw close; }
+			public void close() { throw new AssertionError("The invocation borrows its engine"); }
 		};
 
 		assertSame(start, assertThrows(RuntimeException.class, () -> new ScenarioInvocation(engine, definition, () -> true)));
-		assertEquals(List.of("engine"), actions);
-		assertArrayEquals(new Throwable[]{close}, start.getSuppressed());
+		assertEquals(0, start.getSuppressed().length);
 	}
 
 	@Test
 	void transfersOpenResourcesToRegistrationUntilInvocationEnds() {
 		List<String> actions = new ArrayList<>();
 		var context = new Context(() -> actions.add("context"));
-		var invocation = new ScenarioInvocation(engine(context, () -> actions.add("engine")), definition, () -> true);
+		var invocation = new ScenarioInvocation(engine(context), definition, () -> true);
 		var registered = new AtomicReference<ScenarioInvocation>();
 
 		invocation.register(registered::set);
@@ -55,22 +52,20 @@ class ScenarioInvocationTest {
 		assertEquals(1, context.starts);
 		assertSame(context, registered.get().getContext());
 		registered.get().close();
-		assertEquals(List.of("context", "engine"), actions);
+		assertEquals(List.of("context"), actions);
 	}
 
 	@Test
-	void registrationFailureClosesBothResourcesAndPreservesAllFailures() {
+	void registrationFailureFinishesTheScenarioAndPreservesBothFailures() {
 		RuntimeException registration = new IllegalStateException("registration");
 		RuntimeException contextClose = new IllegalStateException("context close");
-		RuntimeException engineClose = new IllegalStateException("engine close");
 		var context = new Context(() -> { throw contextClose; });
-		var invocation = new ScenarioInvocation(engine(context, () -> { throw engineClose; }), definition, () -> true);
+		var invocation = new ScenarioInvocation(engine(context), definition, () -> true);
 
 		assertSame(registration, assertThrows(RuntimeException.class,
 				() -> invocation.register(ignored -> { throw registration; })));
 		assertFalse(context.successful);
 		assertArrayEquals(new Throwable[]{contextClose}, registration.getSuppressed());
-		assertArrayEquals(new Throwable[]{engineClose}, contextClose.getSuppressed());
 	}
 
 	@Test
@@ -78,37 +73,25 @@ class ScenarioInvocationTest {
 		List<String> actions = new ArrayList<>();
 		AtomicBoolean successful = new AtomicBoolean(true);
 		Context context = new Context(() -> actions.add("context"));
-		var invocation = new ScenarioInvocation(engine(context, () -> actions.add("engine")), definition, successful::get);
+		var invocation = new ScenarioInvocation(engine(context), definition, successful::get);
 		assertEquals(1, context.starts);
 		successful.set(false);
 		invocation.close();
 		invocation.close();
 		assertFalse(context.successful);
-		assertEquals(List.of("context", "engine"), actions);
+		assertEquals(List.of("context"), actions);
 	}
 
 	@Test
-	void contextCleanupFailureRemainsPrimaryWhenEngineCleanupAlsoFails() {
-		RuntimeException contextClose = new IllegalStateException("context close");
-		RuntimeException engineClose = new IllegalStateException("engine close");
-		var invocation = new ScenarioInvocation(engine(new Context(() -> { throw contextClose; }),
-				() -> { throw engineClose; }), definition, () -> true);
-
-		assertSame(contextClose, assertThrows(RuntimeException.class, invocation::close));
-		assertArrayEquals(new Throwable[]{engineClose}, contextClose.getSuppressed());
-	}
-
-	@Test
-	void closesOwnedResourcesAfterTheScenarioAndTheEngine() {
+	void closesOwnedResourcesAfterTheScenario() {
 		List<String> actions = new ArrayList<>();
 		OwnedResources resources = new OwnedResources();
 		resources.own((AutoCloseable) () -> actions.add("resource"));
-		var invocation = new ScenarioInvocation(engine(new Context(() -> actions.add("context")), () -> actions.add("engine")),
-				definition, () -> true, null, resources);
+		var invocation = new ScenarioInvocation(engine(new Context(() -> actions.add("context"))), definition, () -> true, null, resources);
 
 		assertTrue(invocation.resource(AutoCloseable.class) != null);
 		invocation.close();
-		assertEquals(List.of("context", "engine", "resource"), actions);
+		assertEquals(List.of("context", "resource"), actions);
 	}
 
 	@Test
@@ -119,24 +102,25 @@ class ScenarioInvocationTest {
 		RuntimeException start = new IllegalStateException("start");
 		ScenarioEngine engine = new ScenarioEngine() {
 			public @NotNull ScenarioContext prepare(@NotNull AnvilScenario scenario, @Nullable ScenarioObserver observer) { throw start; }
-			public void close() { actions.add("engine"); }
+			public void close() { throw new AssertionError("The invocation borrows its engine"); }
 		};
 
 		assertSame(start, assertThrows(RuntimeException.class,
 				() -> new ScenarioInvocation(engine, definition, () -> true, null, resources)));
-		assertEquals(List.of("engine", "resource"), actions);
+		assertEquals(List.of("resource"), actions);
 	}
 
 	@Test
-	void skipsBeforeStartingWhenTheMachineStoresTooFewAccounts() throws Exception {
+	void finishesThePreparedScenarioWithoutStartingItWhenTheMachineStoresTooFewAccounts() throws Exception {
 		List<String> actions = new ArrayList<>();
 		Context context = new Context(() -> actions.add("context"));
 		context.stored.add(new AuthenticationAccount("alice", "library", "Alice", null));
 
 		assertThrows(TestAbortedException.class, () -> new ScenarioInvocation(
-				engine(context, () -> actions.add("engine")), definition, () -> true, requirement("twoAccounts")));
+				engine(context), definition, () -> true, requirement("twoAccounts")));
 		assertEquals(0, context.starts);
-		assertEquals(List.of("engine"), actions);
+		assertEquals(List.of("context"), actions);
+		assertTrue(context.successful, "A scenario that was skipped did not fail");
 	}
 
 	@Test
@@ -147,7 +131,7 @@ class ScenarioInvocationTest {
 		context.stored.add(new AuthenticationAccount("shared", "library", null, null));
 		context.stored.add(new AuthenticationAccount("shared", "other-library", null, null));
 
-		var invocation = new ScenarioInvocation(engine(context, () -> { }), definition, () -> true, requirement("twoAccounts"));
+		var invocation = new ScenarioInvocation(engine(context), definition, () -> true, requirement("twoAccounts"));
 
 		assertEquals(1, context.starts);
 		assertEquals(List.of("alice", "bob"), context.pooled);
@@ -161,7 +145,7 @@ class ScenarioInvocationTest {
 		Context context = new Context(() -> { });
 
 		TestAbortedException skipped = assertThrows(TestAbortedException.class, () -> new ScenarioInvocation(
-				engine(context, () -> { }), definition, () -> true, requirement("namedPool")));
+				engine(context), definition, () -> true, requirement("namedPool")));
 		assertTrue(skipped.getMessage().contains("testers"), skipped.getMessage());
 		assertEquals(0, context.starts);
 	}
@@ -189,10 +173,13 @@ class ScenarioInvocationTest {
 		}
 	}
 
-	private ScenarioEngine engine(ScenarioContext context, Runnable close) {
+	/**
+	 * An engine that hands out one context and must stay open, as the invocation only borrows it.
+	 */
+	private ScenarioEngine engine(ScenarioContext context) {
 		return new ScenarioEngine() {
 			public @NotNull ScenarioContext prepare(@NotNull AnvilScenario scenario, @Nullable ScenarioObserver observer) { return context; }
-			public void close() { close.run(); }
+			public void close() { throw new AssertionError("The invocation borrows its engine"); }
 		};
 	}
 

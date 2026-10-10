@@ -13,7 +13,7 @@ import java.util.Map;
  * The plan contains values only and owns no running resources.
  */
 @Value
-@Builder
+@Builder(toBuilder = true)
 public class PlatformPlan {
 	@NotNull AnvilScenario scenario;
 	@NotNull

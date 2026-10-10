@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  * Forwarding settings are shared by all members of the same connected platform group.
  */
 @Value
-@Builder
+@Builder(toBuilder = true)
 public class ProcessPlan {
 	@NotNull MinecraftProcess declaration;
 	@NotNull WorkspacePlan workspace;

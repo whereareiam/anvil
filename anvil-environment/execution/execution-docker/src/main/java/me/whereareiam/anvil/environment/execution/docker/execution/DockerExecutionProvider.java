@@ -47,6 +47,14 @@ public final class DockerExecutionProvider implements ExecutionProvider {
 		return false;
 	}
 
+	/**
+	 * Each environment is a private container network, and its containers address their peers by network alias.
+	 */
+	@Override
+	public boolean connectsEnvironments() {
+		return false;
+	}
+
 	@Override
 	public @NotNull ExecutionSession open(@NotNull ExecutionContext context) {
 		if (context.getProcessPriority() == ProcessPriority.LOW)

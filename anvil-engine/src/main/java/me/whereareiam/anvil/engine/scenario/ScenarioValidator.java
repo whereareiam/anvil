@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.type.ProcessLifetime;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -79,6 +80,25 @@ public final class ScenarioValidator {
 
 		for (MinecraftProxy proxy : scenario.getProxies())
 			validateProxyRoutes(proxy, serverNames);
+		validateLifetimes(scenario);
+	}
+
+	/**
+	 * A proxy that outlives its scenario cannot route to a server that stops with it.
+	 */
+	private void validateLifetimes(@NotNull AnvilScenario scenario) {
+		Set<String> scenarioServers = new HashSet<>();
+		for (MinecraftServer server : scenario.getServers())
+			if (server.getLifetime() == ProcessLifetime.SCENARIO) scenarioServers.add(server.getName());
+
+		for (MinecraftProxy proxy : scenario.getProxies()) {
+			if (proxy.getLifetime() != ProcessLifetime.ENGINE) continue;
+
+			for (String server : proxy.getServers())
+				if (scenarioServers.contains(server))
+					throw new ScenarioValidationException("Proxy '" + proxy.getName() + "' keeps running for the engine, so its server '"
+							+ server + "' must declare the engine lifetime as well");
+		}
 	}
 
 	private void registerProcessName(@NotNull String name, @NotNull Set<String> names) {

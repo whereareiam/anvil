@@ -3,6 +3,7 @@ package me.whereareiam.anvil.environment.execution.managed;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
@@ -34,6 +35,30 @@ class ManagedProcessServiceTest {
 	}
 
 	@Test
+	void suppliesRunningPeersToPreparationWithoutStartingOrStoppingThem() {
+		ExecutionFixture fixture = new ExecutionFixture(directory);
+		InetSocketAddress lobby = new InetSocketAddress("127.0.0.1", 25001);
+		var plan = fixture.plan(fixture.spec("proxy", true)).toBuilder().peer("lobby", lobby).build();
+
+		var group = fixture.service().start(plan, fixture.preparation);
+
+		assertEquals(Set.of("lobby", "proxy"), fixture.preparation.observedPeers.get("proxy").keySet());
+		assertEquals(lobby, fixture.preparation.observedPeers.get("proxy").get("lobby"));
+		group.finish(true);
+		assertTrue(fixture.calls.stream().noneMatch(call -> call.endsWith(":lobby")), fixture.calls.toString());
+	}
+
+	@Test
+	void rejectsAProcessThatIsBothPlannedAndARunningPeer() {
+		ExecutionFixture fixture = new ExecutionFixture(directory);
+		var plan = fixture.plan(fixture.spec("server", false)).toBuilder()
+				.peer("server", new InetSocketAddress("127.0.0.1", 25001)).build();
+
+		assertThrows(IllegalArgumentException.class, () -> fixture.service().start(plan, fixture.preparation));
+		assertTrue(fixture.calls.isEmpty());
+	}
+
+	@Test
 	void stopsProcessesThatStartedTogetherAtOnceAndBeforeTheirDependencies() {
 		ExecutionFixture fixture = new ExecutionFixture(directory);
 		CyclicBarrier together = new CyclicBarrier(2);
@@ -60,6 +85,7 @@ class ManagedProcessServiceTest {
 		ManagedProcessService service = new ExecutionFixture(directory).service();
 
 		assertTrue(service.preservesClientAddress("fixture"));
+		assertTrue(service.connectsEnvironments("fixture"));
 		var unknown = assertThrows(IllegalArgumentException.class, () -> service.preservesClientAddress("docker"));
 		assertEquals("No execution provider 'docker'. Available: [fixture]", unknown.getMessage());
 	}
