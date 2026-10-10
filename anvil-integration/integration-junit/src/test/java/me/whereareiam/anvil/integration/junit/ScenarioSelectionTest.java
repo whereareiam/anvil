@@ -39,8 +39,18 @@ class ScenarioSelectionTest {
 				.endsWith("declares several Anvil environments; declare exactly one"));
 	}
 
+	@Test
+	void letsAFactoryHandObjectsToTheScenarioItBuilds() throws ReflectiveOperationException {
+		OwnedResources resources = new OwnedResources();
+
+		AnvilScenario scenario = ScenarioSelection.scenario(Stocked.class.getDeclaredMethod("stocked"), Stocked.class, resources);
+
+		assertEquals("stocked-12", scenario.getName());
+		assertEquals(new Stock(12), resources.find(Stock.class));
+	}
+
 	private static String select(Class<?> type, String method) throws ReflectiveOperationException {
-		return ScenarioSelection.scenario(type.getDeclaredMethod(method), type).getName();
+		return ScenarioSelection.scenario(type.getDeclaredMethod(method), type, new OwnedResources()).getName();
 	}
 
 	@Target({ElementType.TYPE, ElementType.METHOD})
@@ -57,6 +67,29 @@ class ScenarioSelectionTest {
 		public @NotNull AnvilScenario create(@NotNull Lobby lobby) {
 			return scenario("lobby-" + lobby.version() + (lobby.whitelist() ? "-whitelist" : "-open"));
 		}
+	}
+
+	@Target(ElementType.METHOD)
+	@Retention(RetentionPolicy.RUNTIME)
+	@AnvilEnvironment(WarehouseScenarios.class)
+	@interface Warehouse {
+		int items();
+	}
+
+	public static final class WarehouseScenarios implements AnvilScenarioFactory<Warehouse> {
+		@Override
+		public @NotNull AnvilScenario create(@NotNull Warehouse warehouse, @NotNull ScenarioResources resources) {
+			Stock stock = resources.own(new Stock(warehouse.items()));
+			return scenario("stocked-" + stock.items());
+		}
+	}
+
+	private record Stock(int items) {
+	}
+
+	private static final class Stocked {
+		@Warehouse(items = 12)
+		void stocked() { }
 	}
 
 	public static final class Fixed implements AnvilScenarioDefinition {

@@ -17,10 +17,26 @@ import java.lang.annotation.Annotation;
  */
 public interface AnvilScenarioFactory<A extends Annotation> {
 	/**
-	 * Builds the scenario for one declaration.
+	 * Builds the scenario for one declaration. Implement this method when the scenario consists of its
+	 * processes only.
 	 *
 	 * @param declaration environment annotation as written on the test method or class
 	 * @return scenario started fresh around the test
 	 */
-	@NotNull AnvilScenario create(@NotNull A declaration);
+	default @NotNull AnvilScenario create(@NotNull A declaration) {
+		throw new UnsupportedOperationException(getClass().getName() + " must implement one of the create methods");
+	}
+
+	/**
+	 * Builds the scenario for one declaration together with the objects it needs besides its processes.
+	 * Implement this method instead of {@link #create(Annotation)} to start such an object, name it in the
+	 * scenario and hand it to the test; see {@link ScenarioResources}. The default builds the scenario alone.
+	 *
+	 * @param declaration environment annotation as written on the test method or class
+	 * @param resources receives the objects the scenario owns
+	 * @return scenario started fresh around the test
+	 */
+	default @NotNull AnvilScenario create(@NotNull A declaration, @NotNull ScenarioResources resources) {
+		return create(declaration);
+	}
 }

@@ -98,6 +98,38 @@ Annotate a test class or method with `@Lobby(whitelist = true)` and request `Sce
 environment. Give equal declarations the same scenario name and different declarations different
 names, because the name keys the scenario's workspaces.
 
+## Give the test objects that belong to the scenario
+
+A scenario often needs something besides its Minecraft processes: a stand-in for a web service the plugin
+calls, a database, a temporary directory. The factory has to start it before it can name its address in the
+scenario, and the test needs the same object afterwards. Implement the factory's two-argument `create` and
+hand the object to the scenario:
+
+```java
+public final class ShopScenarios implements AnvilScenarioFactory<Shop> {
+	@Override
+	public @NotNull AnvilScenario create(@NotNull Shop shop, @NotNull ScenarioResources resources) {
+		PaymentStub payments = resources.own(PaymentStub.start());
+		return Scenarios.shop(payments.address());
+	}
+}
+```
+
+The test receives it as a parameter of its type, next to `ScenarioContext`:
+
+```java
+@Test
+@Shop
+void refundsACancelledOrder(ScenarioContext anvil, PaymentStub payments) {
+}
+```
+
+Every test gets its own objects. Anvil closes those that implement `AutoCloseable` when the scenario ends,
+after its processes have stopped and in reverse order of ownership, also when the scenario fails to start.
+A parameter type that several owned objects share is refused; request a more specific type. Anvil does not
+interpret the objects, so any type works, and a factory that owns nothing keeps implementing the
+one-argument `create`.
+
 ## Lifecycle boundaries
 
 Anvil starts the scenario in the extension's before-each callback. Request the context in the test

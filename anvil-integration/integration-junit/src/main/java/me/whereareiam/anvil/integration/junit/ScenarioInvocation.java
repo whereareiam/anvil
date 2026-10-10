@@ -21,6 +21,7 @@ final class ScenarioInvocation implements AutoCloseable {
 	private final @NotNull BooleanSupplier successful;
 	@Getter
 	private final @Nullable AccountPool accounts;
+	private final @NotNull OwnedResources resources;
 
 	private boolean registrationFailed;
 	private boolean closed;
@@ -39,15 +40,39 @@ final class ScenarioInvocation implements AutoCloseable {
 			@NotNull BooleanSupplier successful,
 			@Nullable AccountRequirement requirement
 	) {
+		this(engine, scenario, successful, requirement, new OwnedResources());
+	}
+
+	/**
+	 * Takes ownership of the objects the scenario's factory handed over as well. They outlive the scenario's
+	 * processes and are closed last, also when the scenario fails to start.
+	 */
+	ScenarioInvocation(
+			@NotNull ScenarioEngine engine,
+			@NotNull AnvilScenario scenario,
+			@NotNull BooleanSupplier successful,
+			@Nullable AccountRequirement requirement,
+			@NotNull OwnedResources resources
+	) {
 		this.engine = engine;
 		this.successful = successful;
+		this.resources = resources;
 		try {
 			context = engine.prepare(scenario);
 			accounts = requirement == null ? null : requirement.satisfy(context.accounts());
 			context.start();
 		} catch (RuntimeException | Error failure) {
-			try (engine) { throw failure; }
+			try (resources; engine) { throw failure; }
 		}
+	}
+
+	/**
+	 * Returns the object of a type that the scenario owns.
+	 *
+	 * @return the object, or null when the scenario owns none of the type
+	 */
+	@Nullable Object resource(@NotNull Class<?> type) {
+		return resources.find(type);
 	}
 
 	void register(@NotNull Consumer<ScenarioInvocation> registration) {
@@ -63,7 +88,7 @@ final class ScenarioInvocation implements AutoCloseable {
 	public void close() {
 		if (closed) return;
 		closed = true;
-		try (engine) {
+		try (resources; engine) {
 			try {
 				if (accounts != null) accounts.close();
 			} finally {
