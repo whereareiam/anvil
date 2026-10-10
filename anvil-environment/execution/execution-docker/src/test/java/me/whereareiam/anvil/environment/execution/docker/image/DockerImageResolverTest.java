@@ -7,6 +7,7 @@ import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.docker.execution.DockerExecutionSettings;
+import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -58,6 +59,7 @@ class DockerImageResolverTest {
 				.imageLocks(lockDirectory -> {
 					throw new AssertionError("Validation takes no image lock");
 				})
+				.ports(new PortSelection())
 				.build();
 		DockerExecutionSettings settings = DockerExecutionSettings.builder().image("temurin:21", "eclipse-temurin:17-jdk").build();
 

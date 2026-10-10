@@ -16,6 +16,7 @@ import me.whereareiam.anvil.environment.execution.api.preparation.PreparedLaunch
 import me.whereareiam.anvil.environment.execution.api.preparation.PreparedProcess;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
+import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayOutputStream;
@@ -76,7 +77,8 @@ final class ExecutionFixture {
 		ExecutionContext context = ExecutionContext.builder().cacheDirectory(directory)
 				.localRuntime((request, source) -> { throw new AssertionError("Not a local runtime"); })
 				.runtimeValidator((properties, request) -> { throw new AssertionError("No image probe"); })
-				.imageLocks(path -> { throw new AssertionError("No image coordination"); }).build();
+				.imageLocks(path -> { throw new AssertionError("No image coordination"); })
+				.ports(new PortSelection()).build();
 		return ExecutionPlan.builder().executionProviderId("fixture").context(context).processes(List.of(processes))
 				.processScheduling(ProcessScheduling.builder().parallelism(1).startupMemoryMegabytes(1024).build()).processTimeouts(ProcessTimeouts.builder().startup(Duration.ofSeconds(3)).shutdown(Duration.ofSeconds(1)).build()).build();
 	}

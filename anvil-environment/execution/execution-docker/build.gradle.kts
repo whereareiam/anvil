@@ -12,6 +12,7 @@ dependencies {
 	compileOnly(projects.anvilEnvironment.execution.executionApi)
 
 	testImplementation(projects.anvilEnvironment.execution.executionApi)
+	testImplementation(projects.anvilEnvironment.execution.executionManaged)
 }
 
 fixtures {
