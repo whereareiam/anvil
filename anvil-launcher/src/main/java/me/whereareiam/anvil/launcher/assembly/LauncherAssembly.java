@@ -5,6 +5,7 @@ import me.whereareiam.anvil.agent.client.api.AgentArtifactLocator;
 import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.scenario.ScenarioFactory;
+import me.whereareiam.anvil.engine.process.RetainedProcesses;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
 import me.whereareiam.anvil.environment.execution.managed.ManagedProcessService;
 import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
@@ -13,12 +14,11 @@ import me.whereareiam.anvil.launcher.assembly.execution.JavaExecutionRuntime;
 import me.whereareiam.anvil.launcher.assembly.execution.ProcessLauncher;
 import me.whereareiam.anvil.launcher.assembly.provisioning.ArtifactPlatformSource;
 import me.whereareiam.anvil.launcher.assembly.provisioning.ProvisioningServices;
-import me.whereareiam.anvil.launcher.assembly.retention.RetainedProcesses;
+import me.whereareiam.anvil.launcher.assembly.retention.RetainedProcessSet;
 import me.whereareiam.anvil.platform.planning.DefaultPlatformPlanner;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.protocol.player.DefaultPlayerService;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -28,7 +28,7 @@ import java.util.List;
 public final class LauncherAssembly implements AutoCloseable {
 	private final @NotNull ProvisioningServices provisioning;
 	private final @NotNull DefaultPlayerService players;
-	private @Nullable RetainedProcesses retained;
+	private final @NotNull RetainedProcesses<RetainedProcessSet> retained = new RetainedProcesses<>();
 
 	/**
 	 * Shared factory used to prepare contexts while this assembly remains open.
@@ -78,8 +78,6 @@ public final class LauncherAssembly implements AutoCloseable {
 					.ports(new PortSelection())
 					.build();
 
-			retained = new RetainedProcesses(execution);
-
 			return new DefaultScenarioFactory(platforms, execution, players, retained);
 		} catch (RuntimeException | Error failure) {
 			try (players) {
@@ -98,7 +96,7 @@ public final class LauncherAssembly implements AutoCloseable {
 
 		closed = true;
 		try (provisioning; players) {
-			if (retained != null) retained.close();
+			retained.close();
 		}
 	}
 }

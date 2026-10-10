@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.launcher.config;
+package me.whereareiam.anvil.engine.config;
 
 import me.whereareiam.anvil.api.model.process.lifecycle.ProcessScheduling;
 import com.sun.management.OperatingSystemMXBean;

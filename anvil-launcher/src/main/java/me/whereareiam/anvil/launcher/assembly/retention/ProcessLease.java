@@ -4,53 +4,67 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.agent.client.api.AgentDirectory;
+import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.scenario.ScenarioObserver;
-import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
+import me.whereareiam.anvil.engine.process.JoinedProcessGroup;
+import me.whereareiam.anvil.engine.process.RetainedProcesses;
+import me.whereareiam.anvil.launcher.assembly.execution.ProcessLauncher;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
+import me.whereareiam.anvil.platform.planning.topology.LifetimeSplit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.InetSocketAddress;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
- * A scenario's hold on the processes that outlive it: the running set it was lent, or nothing when the
- * scenario declares no such process. The scenario prepares its own processes against the lease and hands
- * the set back when it finishes.
+ * Connects a scenario to the processes that outlive it: planning says which they are, the engine lends a
+ * running set of them, and the scenario's own processes, agents and observer are bound to that set. A
+ * scenario that declares no such process holds an empty lease.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ProcessLease {
-	private final @NotNull PlatformPlan scenario;
+	/**
+	 * Plan of the processes the scenario starts itself.
+	 */
+	private final @NotNull PlatformPlan own;
 	private final @Nullable RetainedProcessSet set;
-	private final @NotNull RetainedProcesses owner;
+	private final @NotNull RetainedProcesses<RetainedProcessSet> retained;
 
 	/**
-	 * Returns the plan of the processes the scenario starts itself. A process that is connected to a lent
-	 * process adopts the forwarding settings that process already runs with.
+	 * Takes a lease for a planned scenario, starting the processes that outlive it when none are idle.
+	 *
+	 * @param scenario plan of the whole scenario
+	 * @param retained the engine's kept process sets
+	 * @param execution launcher that starts a new set
+	 * @return the scenario's lease, which it releases when it finishes
+	 * @throws ScenarioValidationException when the scenario's execution provider cannot keep processes
+	 */
+	public static @NotNull ProcessLease take(
+			@NotNull PlatformPlan scenario,
+			@NotNull RetainedProcesses<RetainedProcessSet> retained,
+			@NotNull ProcessLauncher execution
+	) {
+		LifetimeSplit split = LifetimeSplit.of(scenario);
+		if (split == null) return new ProcessLease(scenario, null, retained);
+		if (!execution.connectsEnvironments(scenario))
+			throw new ScenarioValidationException("Scenario '" + scenario.getScenario().getName() + "' declares processes with the engine"
+					+ " lifetime, which its execution provider cannot connect to the processes of a later scenario");
+
+		RetainedProcessSet set = retained.lease(split.identity(), () -> RetainedProcessSet.start(split.retained(), execution));
+
+		return new ProcessLease(split.own(set.getPlan()), set, retained);
+	}
+
+	/**
+	 * Returns the plan of the processes the scenario starts itself.
 	 *
 	 * @return the scenario's plan without the lent processes
 	 */
 	public @NotNull PlatformPlan ownPlan() {
-		if (set == null) return scenario;
-
-		Set<String> lent = set.getPlan().getProcesses().keySet();
-		Map<ForwardingConfiguration, ForwardingConfiguration> running = new HashMap<>();
-		set.getPlan().getProcesses().forEach((name, process) ->
-				running.put(scenario.getProcesses().get(name).getForwarding(), process.getForwarding()));
-
-		PlatformPlan.PlatformPlanBuilder own = PlatformPlan.builder().scenario(scenario.getScenario());
-		scenario.getProcesses().forEach((name, process) -> {
-			if (lent.contains(name)) return;
-
-			ForwardingConfiguration planned = process.getForwarding();
-			own.process(name, process.toBuilder().forwarding(running.getOrDefault(planned, planned)).build());
-		});
-
-		return own.build();
+		return own;
 	}
 
 	/**
@@ -59,7 +73,13 @@ public final class ProcessLease {
 	 * @return addresses the scenario's own processes connect to
 	 */
 	public @NotNull Map<String, InetSocketAddress> addresses() {
-		return set == null ? Map.of() : set.addresses();
+		Map<String, InetSocketAddress> addresses = new LinkedHashMap<>();
+		if (set == null) return addresses;
+
+		for (String name : set.getPlan().getProcesses().keySet())
+			addresses.put(name, set.get(name).address());
+
+		return addresses;
 	}
 
 	/**
@@ -88,7 +108,7 @@ public final class ProcessLease {
 	public void announce(@Nullable ScenarioObserver observer) {
 		if (set == null || observer == null) return;
 
-		set.getProcesses().all().forEach(observer::processCreated);
+		set.all().forEach(observer::processCreated);
 	}
 
 	/**
@@ -101,16 +121,15 @@ public final class ProcessLease {
 	public @NotNull ProcessGroup join(@NotNull ProcessGroup own) {
 		if (set == null) return own;
 
-		return new JoinedProcessGroup(own, set.getProcesses(), set.getPlan().getProcesses().keySet(), this::release);
+		return new JoinedProcessGroup(own, set, set.getPlan().getProcesses().keySet(), this::release);
 	}
 
 	/**
-	 * Hands the lent processes back. They serve another scenario only after a successful one; otherwise
-	 * they stop and their workspaces are kept for diagnosis.
+	 * Hands the lent processes back to the engine, which keeps them only after a successful scenario.
 	 *
 	 * @param successful whether the scenario and the cleanup of its own processes succeeded
 	 */
 	public void release(boolean successful) {
-		if (set != null) owner.release(set, successful);
+		if (set != null) retained.release(set, successful);
 	}
 }

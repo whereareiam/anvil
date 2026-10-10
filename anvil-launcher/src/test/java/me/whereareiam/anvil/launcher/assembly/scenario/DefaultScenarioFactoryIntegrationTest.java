@@ -39,6 +39,8 @@ import me.whereareiam.anvil.capability.console.Console;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
 import me.whereareiam.anvil.engine.AnvilEngineBuilder;
+import me.whereareiam.anvil.engine.config.EngineDefaults;
+import me.whereareiam.anvil.engine.process.RetainedProcesses;
 import me.whereareiam.anvil.engine.scenario.ScenarioSession;
 import me.whereareiam.anvil.environment.execution.local.LocalExecutionProvider;
 import me.whereareiam.anvil.environment.execution.managed.ManagedProcessService;
@@ -49,8 +51,7 @@ import me.whereareiam.anvil.launcher.assembly.execution.JavaExecutionRuntime;
 import me.whereareiam.anvil.launcher.assembly.execution.ProcessLauncher;
 import me.whereareiam.anvil.launcher.assembly.provisioning.ArtifactPlatformSource;
 import me.whereareiam.anvil.launcher.assembly.provisioning.ProvisioningServices;
-import me.whereareiam.anvil.launcher.assembly.retention.RetainedProcesses;
-import me.whereareiam.anvil.launcher.config.EngineDefaults;
+import me.whereareiam.anvil.launcher.assembly.retention.RetainedProcessSet;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.api.model.PlatformAgentDescriptor;
@@ -803,7 +804,7 @@ class DefaultScenarioFactoryIntegrationTest {
 				.ports(new PortSelection())
 				.build();
 		var players = new DefaultPlayerService(new ProtocolLibraryRegistry(libraries), options, provisioning.getArtifacts()::obtain);
-		var retained = new RetainedProcesses(processes);
+		var retained = new RetainedProcesses<RetainedProcessSet>();
 		var engine = new AnvilEngineBuilder(new DefaultScenarioFactory(platforms, processes, players, retained)).options(options).extension(registration -> {
 			registration.own(provisioning);
 			registration.own(players);
