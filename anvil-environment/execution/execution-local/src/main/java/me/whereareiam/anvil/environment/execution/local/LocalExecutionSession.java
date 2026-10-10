@@ -14,9 +14,7 @@ import me.whereareiam.anvil.environment.execution.api.runtime.LocalRuntimePrepar
 import me.whereareiam.anvil.environment.execution.local.process.LocalProcessTarget;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
@@ -53,22 +51,18 @@ final class LocalExecutionSession implements ExecutionSession {
 	}
 
 	private synchronized int port(String address) {
-		try {
-			for (int attempt = 0; attempt < 100; attempt++) {
-				try (ServerSocket socket = new ServerSocket()) {
-					socket.bind(new InetSocketAddress(address, 0));
-					if (ports.add(socket.getLocalPort())) return socket.getLocalPort();
-				}
-			}
+		int port = context.getPorts().reserve(address);
+		ports.add(port);
 
-			throw new ProvisioningException("Could not allocate distinct local process ports");
-		} catch (IOException failure) {
-			throw new ProvisioningException("Could not allocate local process port on " + address, failure);
-		}
+		return port;
 	}
 
+	/**
+	 * Releases the ports of this scenario's processes, whose generations their scenario has stopped.
+	 */
 	@Override
-	public void close() {
-		// All host process generations are owned by their scenario processes.
+	public synchronized void close() {
+		ports.forEach(context.getPorts()::release);
+		ports.clear();
 	}
 }

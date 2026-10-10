@@ -8,6 +8,7 @@ import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.scenario.ScenarioObserver;
+import me.whereareiam.anvil.environment.execution.api.PortReservations;
 import me.whereareiam.anvil.environment.execution.api.image.ImageLocks;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionPlan;
@@ -35,6 +36,7 @@ public final class ProcessLauncher {
 	private final @NotNull AgentConnectionProvider connections;
 	private final @NotNull JavaExecutionRuntime javaRuntime;
 	private final @NotNull ImageLocks imageLocks;
+	private final @NotNull PortReservations ports;
 
 	public @NotNull ProcessGroup start(@NotNull PlatformPlan platformPlan, @NotNull ScenarioAgentDirectory agents) {
 		ProcessGroup prepared = prepare(platformPlan, agents, null, null);
@@ -110,6 +112,7 @@ public final class ProcessLauncher {
 				.localRuntime(javaRuntime)
 				.runtimeValidator(javaRuntime)
 				.imageLocks(imageLocks)
+				.ports(ports)
 				.processPriority(options.getProcessScheduling().getPriority())
 				.offline(options.isOffline())
 				.refresh(options.isRefresh())

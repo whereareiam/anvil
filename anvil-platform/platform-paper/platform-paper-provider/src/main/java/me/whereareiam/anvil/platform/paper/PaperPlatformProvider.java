@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
+import me.whereareiam.anvil.api.type.CacheIdentity;
 import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
@@ -77,18 +78,23 @@ public final class PaperPlatformProvider implements PlatformProvider {
 	}
 
 	/**
-	 * Returns Paperclip's caches: {@code cache} holds the downloaded Mojang server, and from 1.18
-	 * Paperclip also extracts its {@code libraries}.
+	 * Returns Paperclip's caches: {@code cache} holds the downloaded Mojang server, and from 1.18 Paperclip
+	 * also extracts its {@code libraries} and keeps the patched server under {@code versions}. All of them
+	 * follow from the server distribution alone, so they belong to the process and survive a rebuilt plugin.
 	 *
 	 * @param process Paper server declaration
 	 * @return cache declarations for the server's Minecraft version
 	 */
 	@Override
 	public @NotNull List<WorkspaceCache> defaultCaches(@NotNull MinecraftProcess process) {
-		WorkspaceCache cache = WorkspaceCache.builder().group("paper").path(Path.of("cache")).build();
+		WorkspaceCache cache = paperclip("cache");
 		if (version(process).compareTo(LIBRARIES_SINCE) < 0) return List.of(cache);
 
-		return List.of(WorkspaceCache.builder().group("paper").path(Path.of("libraries")).build(), cache);
+		return List.of(paperclip("libraries"), paperclip("versions"), cache);
+	}
+
+	private static WorkspaceCache paperclip(String directory) {
+		return WorkspaceCache.builder().group("paper").path(Path.of(directory)).identity(CacheIdentity.PROCESS).build();
 	}
 
 	private MinecraftVersion version(MinecraftProcess process) {

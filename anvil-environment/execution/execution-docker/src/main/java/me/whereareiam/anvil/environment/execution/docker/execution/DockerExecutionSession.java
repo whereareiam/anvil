@@ -14,9 +14,7 @@ import me.whereareiam.anvil.environment.execution.docker.image.DockerImageResolv
 import me.whereareiam.anvil.environment.execution.docker.process.DockerProcessTarget;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -75,17 +73,10 @@ final class DockerExecutionSession implements ExecutionSession {
 	}
 
 	private int port(String address) {
-		try {
-			for (int attempt = 0; attempt < 100; attempt++) {
-				try (ServerSocket socket = new ServerSocket()) {
-					socket.bind(new InetSocketAddress(address, 0));
-					if (ports.add(socket.getLocalPort())) return socket.getLocalPort();
-				}
-			}
-			throw new ProvisioningException("Could not allocate distinct Docker published ports");
-		} catch (IOException failure) {
-			throw new ProvisioningException("Could not allocate Docker published port", failure);
-		}
+		int port = context.getPorts().reserve(address);
+		ports.add(port);
+
+		return port;
 	}
 
 	@Override
@@ -99,8 +90,14 @@ final class DockerExecutionSession implements ExecutionSession {
 
 		failure = close(dockerNetwork::close, failure);
 		failure = close(docker::close, failure);
+		failure = close(this::releasePorts, failure);
 
 		if (failure != null) throw failure;
+	}
+
+	private void releasePorts() {
+		ports.forEach(context.getPorts()::release);
+		ports.clear();
 	}
 
 	private static RuntimeException close(Runnable action, RuntimeException failure) {

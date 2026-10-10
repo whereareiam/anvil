@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Value;
 import me.whereareiam.anvil.api.model.NetworkPolicy;
 import me.whereareiam.anvil.api.type.ProcessPriority;
+import me.whereareiam.anvil.environment.execution.api.PortReservations;
 import me.whereareiam.anvil.environment.execution.api.image.ImageLocks;
 import me.whereareiam.anvil.environment.execution.api.runtime.LocalRuntimePreparation;
 import me.whereareiam.anvil.environment.execution.api.runtime.RuntimeValidator;
@@ -23,6 +24,10 @@ public class ExecutionContext {
 	@NotNull LocalRuntimePreparation localRuntime;
 	@NotNull RuntimeValidator runtimeValidator;
 	@NotNull ImageLocks imageLocks;
+	/**
+	 * Listener ports shared by every execution session of the engine.
+	 */
+	@NotNull PortReservations ports;
 	/**
 	 * Priority the processes of the environment run with. A provider that cannot lower the priority refuses
 	 * {@link ProcessPriority#LOW} when the environment is opened.

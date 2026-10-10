@@ -10,10 +10,12 @@ import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.api.type.network.NetworkServerAccess;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
+import me.whereareiam.anvil.environment.execution.api.PortReservations;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.api.runtime.LocalRuntimePreparation;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -30,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class LocalExecutionSessionTest {
 	@TempDir
 	Path directory;
+	private final RecordingPorts ports = new RecordingPorts();
 
 	@Test
 	void resolvesJavaRequirementsIndependentlyForEachProcess() {
@@ -49,6 +52,19 @@ class LocalExecutionSessionTest {
 			assertNotEquals(a.agentAddress(), b.agentAddress());
 		}
 		assertEquals(List.of(first, second), requests);
+	}
+
+	@Test
+	void releasesTheReservedPortsOfItsProcessesWhenItCloses() {
+		List<Integer> reserved = new ArrayList<>();
+		try (ExecutionSession session = new LocalExecutionProvider().open(context((request, source) -> Path.of("java")))) {
+			var target = session.prepare(request("server", JavaRequirement.builder().featureVersion(21).build(), null));
+			reserved.add(target.address().getPort());
+			reserved.add(target.agentAddress().getPort());
+			assertEquals(List.of(), ports.released);
+		}
+
+		assertEquals(reserved, ports.released);
 	}
 
 	@Test
@@ -119,10 +135,29 @@ class LocalExecutionSessionTest {
 	private ExecutionContext context(LocalRuntimePreparation runtime) {
 		return ExecutionContext.builder().cacheDirectory(directory).localRuntime(runtime)
 				.runtimeValidator((properties, request) -> { throw new AssertionError("Local execution must not inspect images"); })
-				.imageLocks(path -> { throw new AssertionError("Local execution must not access images"); }).build();
+				.imageLocks(path -> { throw new AssertionError("Local execution must not access images"); })
+				.ports(ports).build();
 	}
 
 	private ProcessRequest request(String name, JavaRequirement requirement, JavaSource source) {
 		return ProcessRequest.builder().name(name).workspace(directory.resolve(name)).javaSelection(JavaSelection.builder().requirement(requirement).source(source).build()).build();
+	}
+
+	/**
+	 * Hands out increasing ports and records the ones a session gives back.
+	 */
+	private static final class RecordingPorts implements PortReservations {
+		private final List<Integer> released = new ArrayList<>();
+		private int next = 25000;
+
+		@Override
+		public int reserve(@NotNull String bindAddress) {
+			return next++;
+		}
+
+		@Override
+		public void release(int port) {
+			released.add(port);
+		}
 	}
 }
