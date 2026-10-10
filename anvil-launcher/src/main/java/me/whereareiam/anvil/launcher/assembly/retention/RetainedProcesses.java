@@ -106,15 +106,24 @@ public final class RetainedProcesses implements AutoCloseable {
 		}
 
 		Throwable failure = null;
-		for (RetainedProcessSet set : stopping)
-			try {
-				set.stop(true);
-			} catch (RuntimeException | Error cleanup) {
-				if (failure == null) failure = cleanup;
-				else if (cleanup != failure) failure.addSuppressed(cleanup);
-			}
+		for (RetainedProcessSet set : stopping) failure = stop(set, failure);
 		if (failure instanceof Error error) throw error;
 		if (failure != null) throw (RuntimeException) failure;
+	}
+
+	/**
+	 * Stops one set and returns the first failure of the shutdown so far, with later ones suppressed in it.
+	 */
+	private static @Nullable Throwable stop(RetainedProcessSet set, @Nullable Throwable first) {
+		try {
+			set.stop(true);
+			return first;
+		} catch (RuntimeException | Error cleanup) {
+			if (first == null) return cleanup;
+			if (cleanup != first) first.addSuppressed(cleanup);
+
+			return first;
+		}
 	}
 
 	/**
