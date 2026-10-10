@@ -17,10 +17,12 @@ import java.lang.reflect.Method;
 
 /**
  * JUnit lifecycle and parameter resolver used by {@link AnvilTest} and {@link AnvilEnvironment} annotations.
+ * Every test gets its own scenario from one engine that lives for the test run.
  */
 public final class AnvilExtension implements BeforeEachCallback, ParameterResolver {
 	private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(AnvilExtension.class);
 	private static final String STATE_KEY = "state";
+	private static final String ENGINE_KEY = "engine";
 
 	@Override
 	public void beforeEach(@NotNull ExtensionContext context) {
@@ -30,8 +32,7 @@ public final class AnvilExtension implements BeforeEachCallback, ParameterResolv
 			Method method = context.getRequiredTestMethod();
 			AnvilScenario scenario = ScenarioSelection.scenario(method, context.getRequiredTestClass(), resources);
 			AccountRequirement accounts = AccountRequirement.of(method, context.getRequiredTestClass());
-			ScenarioEngine engine = AnvilLauncher.create(EngineProperties.fromSystemProperties());
-			invocation = new ScenarioInvocation(engine, scenario, () -> context.getExecutionException().isEmpty(),
+			invocation = new ScenarioInvocation(engine(context), scenario, () -> context.getExecutionException().isEmpty(),
 					accounts, resources);
 		} catch (RuntimeException | Error failure) {
 			// A failed invocation has closed the resources already; closing again finds none left.
@@ -39,6 +40,15 @@ public final class AnvilExtension implements BeforeEachCallback, ParameterResolv
 		}
 
 		invocation.register(registered -> context.getStore(NAMESPACE).put(STATE_KEY, registered));
+	}
+
+	/**
+	 * Returns the engine of the test run, created by the first Anvil test and closed by JUnit after the last
+	 * one. Sharing it lets processes with the engine lifetime serve one test after another.
+	 */
+	private static ScenarioEngine engine(ExtensionContext context) {
+		return context.getRoot().getStore(NAMESPACE).computeIfAbsent(ENGINE_KEY,
+				key -> AnvilLauncher.create(EngineProperties.fromSystemProperties()), ScenarioEngine.class);
 	}
 
 	@Override

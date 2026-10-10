@@ -3,6 +3,7 @@
   "pages": [
     "index",
     "definitions",
+    "lifetimes",
     "platforms",
     "provisioning",
     "workspaces",

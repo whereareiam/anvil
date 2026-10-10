@@ -59,7 +59,7 @@ final class ManagedProcessGroup implements ProcessGroup {
 			targets.put(process.getRequest().getName(), target);
 		});
 
-		Map<String, InetSocketAddress> addresses = new LinkedHashMap<>();
+		Map<String, InetSocketAddress> addresses = new LinkedHashMap<>(plan.getPeers());
 		for (ProcessSpec process : plan.getProcesses()) {
 			String name = process.getRequest().getName();
 			addresses.put(name, targets.get(name).peerAddress());

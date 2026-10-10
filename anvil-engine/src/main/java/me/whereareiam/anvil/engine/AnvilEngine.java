@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Owns global scenario validation, extension installation, setup, and lifecycle ordering.
@@ -32,53 +33,59 @@ public final class AnvilEngine implements ScenarioEngine {
 
 	private final ObserverGuard observers = new ObserverGuard();
 	private final List<ScenarioSession> sessions = new CopyOnWriteArrayList<>();
+	/**
+	 * Scenarios prepare and start under the read lock, so several can do so at once; closing takes the
+	 * write lock and therefore waits for them.
+	 */
+	private final ReentrantReadWriteLock lifecycle = new ReentrantReadWriteLock();
 	private boolean closed;
-	private int starting;
 
 	@Override
-	public synchronized @NotNull ScenarioContext prepare(@NotNull AnvilScenario scenario, @Nullable ScenarioObserver observer) {
-		if (closed) throw new IllegalStateException("Cannot prepare a scenario after the engine is closed");
-		starting++;
-
+	public @NotNull ScenarioContext prepare(@NotNull AnvilScenario scenario, @Nullable ScenarioObserver observer) {
+		lifecycle.readLock().lock();
 		try {
+			if (closed) throw new IllegalStateException("Cannot prepare a scenario after the engine is closed");
+
 			new ScenarioValidator().validate(scenario, options.isEulaAccepted());
 			ScenarioObserver observed = observers.wrap(observer);
-
 			ScenarioContext context = Objects.requireNonNull(scenarioFactory.create(scenario, observed), "Scenario factory returned no prepared context");
 			ScenarioSession session = ScenarioSession.prepare(context, extensions, sessions::remove, this::startPrepared, observers);
 			sessions.add(session);
 
 			return session;
 		} finally {
-			starting--;
+			lifecycle.readLock().unlock();
 		}
 	}
 
-	private synchronized void startPrepared(Runnable start) {
-		if (closed) throw new IllegalStateException("Cannot start a scenario after the engine is closed");
-		starting++;
-
+	private void startPrepared(Runnable start) {
+		lifecycle.readLock().lock();
 		try {
+			if (closed) throw new IllegalStateException("Cannot start a scenario after the engine is closed");
+
 			start.run();
 		} finally {
-			starting--;
+			lifecycle.readLock().unlock();
 		}
 	}
 
 	@Override
 	public void close() {
 		observers.reject("close the parent engine");
-		List<AutoCloseable> closing;
+		// A startup callback holds the read lock, so waiting for the write lock would wait for itself.
+		if (lifecycle.getReadHoldCount() > 0)
+			throw new IllegalStateException("Cannot close the parent engine from a scenario startup callback");
 
-		synchronized (this) {
+		List<AutoCloseable> closing;
+		lifecycle.writeLock().lock();
+		try {
 			if (closed) return;
-			if (starting > 0) {
-				throw new IllegalStateException("Cannot close the parent engine from a scenario startup callback");
-			}
 
 			closed = true;
 			closing = new ArrayList<>(sessions);
 			closing.addAll(resources.reversed());
+		} finally {
+			lifecycle.writeLock().unlock();
 		}
 
 		try {

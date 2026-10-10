@@ -38,7 +38,8 @@ preparation, agents, processes, and players.
 4. Prepare distributions and workspaces, restoring snapshots before installing assets. Independent
    preparation may run concurrently within the configured limits.
 5. Return the prepared context with reusable inputs and allocated endpoints. No launch resources
-   or generation-specific configuration are created until a process is started.
+   or generation-specific configuration are created until a process is started. Processes kept for
+   the engine are the exception; see below.
 6. Start dependencies before dependents, with servers before their proxies. Each start configures
    its process and creates fresh launch resources, then launches and awaits readiness. Independent
    starts may overlap. Attach native agents after readiness and open the scenario's player manager.
@@ -48,6 +49,25 @@ preparation, agents, processes, and players.
 The default player service creates each protocol library lazily, when the first player selects it,
 and reuses it for later scenarios until the engine closes. Library selection, the support policy,
 native-version and authentication compatibility are checked for each requested player. A failed acquisition must release resources that were not transferred to another owner.
+
+## Keep processes for the engine
+
+A process declared with `ProcessLifetime.ENGINE` is not part of its scenario's process group. The
+launcher's `RetainedProcesses` plans a scenario's kept processes as a scenario of their own and runs
+them as a separate process group, with its own workspaces, execution environment, agent directory and
+process capabilities. `ScenarioFactory.create(...)` takes a `ProcessLease` on such a set before it
+prepares the scenario's own processes: an idle set whose declarations match, or a newly started one.
+Kept processes therefore start during preparation, because the scenario's own processes are prepared
+against their addresses and adopt the forwarding settings they run with.
+
+The scenario's process group joins both: lookups and individual lifecycle operations reach either
+side, and finishing the group finalizes the scenario's own processes and releases the lease. A
+successful scenario that leaves every kept process ready returns the set for the next scenario; any
+other outcome stops it and finalizes its workspaces as failed. A lease is exclusive, so concurrent
+scenarios each hold their own set. Closing the engine stops the idle sets after the scenarios.
+
+The engine prepares and starts scenarios concurrently. Its `close()` waits for preparations and
+starts in progress, and is still rejected from a startup callback.
 
 ## Prepare an environment for individual startup
 

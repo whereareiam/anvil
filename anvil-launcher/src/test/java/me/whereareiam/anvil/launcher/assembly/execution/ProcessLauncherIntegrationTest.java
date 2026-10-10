@@ -111,7 +111,7 @@ class ProcessLauncherIntegrationTest {
 					.imageLocks(new CacheImageLocks(provisioning.getCache()))
 					.build();
 			var agents = new ScenarioAgentDirectory();
-			try (var group = launcher.prepare(platforms.plan(scenario), agents, null, null)) {
+			try (var group = launcher.prepare(platforms.plan(scenario), agents, null, null, Map.of())) {
 				assertEquals(List.of("resolve"), preparation);
 				assertTrue(tokens.isEmpty());
 				assertTrue(group.all().isEmpty());

@@ -82,6 +82,17 @@ public final class ManagedProcessService {
 		return provider(executionProviderId).preservesClientAddress();
 	}
 
+	/**
+	 * Returns whether processes of one execution provider reach processes started for another scenario.
+	 *
+	 * @param executionProviderId selected execution provider
+	 * @return whether the provider connects separate execution environments
+	 * @throws IllegalArgumentException when no such provider is installed
+	 */
+	public boolean connectsEnvironments(@NotNull String executionProviderId) {
+		return provider(executionProviderId).connectsEnvironments();
+	}
+
 	private ExecutionProvider provider(String executionProviderId) {
 		ExecutionProvider execution = executions.get(executionProviderId);
 		if (execution == null)
@@ -108,6 +119,9 @@ public final class ManagedProcessService {
 			if (process.getMemoryMegabytes() < 1)
 				throw new IllegalArgumentException("Process memory must be positive: " + name);
 		}
+		for (String peer : plan.getPeers().keySet())
+			if (remaining.containsKey(peer))
+				throw new IllegalArgumentException("Process '" + peer + "' is both planned and supplied as a running peer");
 		for (ProcessSpec process : remaining.values())
 			if (!remaining.keySet().containsAll(process.getDependencies()))
 				throw new IllegalArgumentException("Unknown startup dependency for process '" + process.getRequest().getName() + "'");

@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
 public interface ScenarioFactory {
 	/**
 	 * Validates domain-specific requirements and acquires the complete unstarted scenario topology.
+	 * Processes that outlive the scenario may already run, or start during this call, because the scenario's
+	 * own processes are prepared against them.
 	 * A failing call must release resources not transferred through its return value.
 	 *
 	 * @param scenario structurally valid declaration

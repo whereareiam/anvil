@@ -45,6 +45,11 @@ explains the runtime components for applications assembling their own classpath.
 Follow [Scenario selection and context injection](./selection/index.md) to annotate a test method or
 class. The scenario and its [workspace assets](../../building-blocks/environments/workspaces/assets/index.md) declare
 what starts; JUnit owns when it starts and closes.
+
+Every test gets its own scenario, started before the test and finished after it. All of them come from
+one engine that lives for the test run, so a process declared with the
+[engine lifetime](../../building-blocks/environments/lifetimes/index.md) is started by the first test that needs
+it and serves the following ones. Tests that JUnit runs in parallel each get their own such processes.
 A test that needs a stored online account declares it through [Accounts](./accounts/index.md).
 
 With a running context, continue to [Players](../../building-blocks/players/index.md) and

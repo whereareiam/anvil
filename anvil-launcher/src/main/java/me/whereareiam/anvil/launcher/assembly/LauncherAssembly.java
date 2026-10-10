@@ -12,10 +12,12 @@ import me.whereareiam.anvil.launcher.assembly.execution.JavaExecutionRuntime;
 import me.whereareiam.anvil.launcher.assembly.execution.ProcessLauncher;
 import me.whereareiam.anvil.launcher.assembly.provisioning.ArtifactPlatformSource;
 import me.whereareiam.anvil.launcher.assembly.provisioning.ProvisioningServices;
+import me.whereareiam.anvil.launcher.assembly.retention.RetainedProcesses;
 import me.whereareiam.anvil.platform.planning.DefaultPlatformPlanner;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.protocol.player.DefaultPlayerService;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -25,6 +27,7 @@ import java.util.List;
 public final class LauncherAssembly implements AutoCloseable {
 	private final @NotNull ProvisioningServices provisioning;
 	private final @NotNull DefaultPlayerService players;
+	private @Nullable RetainedProcesses retained;
 
 	/**
 	 * Shared factory used to prepare contexts while this assembly remains open.
@@ -73,7 +76,9 @@ public final class LauncherAssembly implements AutoCloseable {
 					.imageLocks(new CacheImageLocks(provisioning.getCache()))
 					.build();
 
-			return new DefaultScenarioFactory(platforms, execution, players);
+			retained = new RetainedProcesses(execution);
+
+			return new DefaultScenarioFactory(platforms, execution, players, retained);
 		} catch (RuntimeException | Error failure) {
 			try (players) {
 				throw failure;
@@ -82,15 +87,16 @@ public final class LauncherAssembly implements AutoCloseable {
 	}
 
 	/**
-	 * Closes players before provisioning. Repeated calls have no effect, even after cleanup fails.
+	 * Stops the processes kept for the engine, then closes players before provisioning. Repeated calls
+	 * have no effect, even after cleanup fails.
 	 */
 	@Override
 	public synchronized void close() {
 		if (closed) return;
 
 		closed = true;
-		try (provisioning) {
-			players.close();
+		try (provisioning; players) {
+			if (retained != null) retained.close();
 		}
 	}
 }

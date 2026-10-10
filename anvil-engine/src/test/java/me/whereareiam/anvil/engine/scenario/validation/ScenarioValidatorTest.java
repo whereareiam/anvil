@@ -8,6 +8,7 @@ import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.type.ProcessLifetime;
 import me.whereareiam.anvil.engine.scenario.ScenarioValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -91,6 +92,26 @@ class ScenarioValidatorTest {
 		var failure = assertThrows(ScenarioValidationException.class, () -> validator.validate(scenario, false));
 		assertEquals("Invalid scenario bind address: :::", failure.getMessage());
 		assertInstanceOf(UnknownHostException.class, failure.getCause());
+	}
+
+	@Test
+	void requiresTheServersOfAProxyThatOutlivesItsScenarioToOutliveItToo() {
+		MinecraftProxy kept = proxy().toBuilder().lifetime(ProcessLifetime.ENGINE).build();
+		var stopping = scenario().toBuilder().proxy(kept).build();
+		var failure = assertThrows(ScenarioValidationException.class, () -> validator.validate(stopping, true));
+		assertEquals("Proxy 'proxy' keeps running for the engine, so its server 'server' must declare the engine lifetime as well",
+				failure.getMessage());
+
+		var staying = scenario().toBuilder().clearServers()
+				.server(server().toBuilder().lifetime(ProcessLifetime.ENGINE).build()).proxy(kept).build();
+		assertDoesNotThrow(() -> validator.validate(staying, true));
+	}
+
+	@Test
+	void permitsAScenarioProxyInFrontOfServersThatOutliveIt() {
+		var scenario = scenario().toBuilder().clearServers()
+				.server(server().toBuilder().lifetime(ProcessLifetime.ENGINE).build()).proxy(proxy()).build();
+		assertDoesNotThrow(() -> validator.validate(scenario, true));
 	}
 
 	private static Stream<Arguments> invalidDeclarations() {

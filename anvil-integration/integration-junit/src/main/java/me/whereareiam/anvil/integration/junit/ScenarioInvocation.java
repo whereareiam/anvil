@@ -12,10 +12,10 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /**
- * Owns one JUnit invocation from engine startup until ownership transfers to its extension store.
+ * Owns one JUnit invocation's scenario from its preparation until ownership transfers to its extension store.
+ * The engine is borrowed: it serves every invocation of the test run.
  */
 final class ScenarioInvocation implements AutoCloseable {
-	private final @NotNull ScenarioEngine engine;
 	@Getter
 	private final @NotNull ScenarioContext context;
 	private final @NotNull BooleanSupplier successful;
@@ -32,7 +32,7 @@ final class ScenarioInvocation implements AutoCloseable {
 
 	/**
 	 * Prepares the scenario, checks the account requirement against the prepared context and only then
-	 * starts the processes, so a test that lacks accounts is skipped without launching anything.
+	 * starts the scenario's processes, so a test that lacks accounts is skipped without launching them.
 	 */
 	ScenarioInvocation(
 			@NotNull ScenarioEngine engine,
@@ -54,16 +54,24 @@ final class ScenarioInvocation implements AutoCloseable {
 			@Nullable AccountRequirement requirement,
 			@NotNull OwnedResources resources
 	) {
-		this.engine = engine;
 		this.successful = successful;
 		this.resources = resources;
+
+		ScenarioContext prepared;
 		try {
-			context = engine.prepare(scenario);
-			accounts = requirement == null ? null : requirement.satisfy(context.accounts());
-			context.start();
+			prepared = engine.prepare(scenario);
 		} catch (RuntimeException | Error failure) {
-			try (resources; engine) { throw failure; }
+			try (resources) { throw failure; }
 		}
+
+		try {
+			accounts = requirement == null ? null : requirement.satisfy(prepared.accounts());
+			prepared.start();
+		} catch (RuntimeException | Error failure) {
+			// A scenario that failed to start has finished itself; one that was never started ends normally.
+			try (resources; prepared) { throw failure; }
+		}
+		context = prepared;
 	}
 
 	/**
@@ -88,7 +96,7 @@ final class ScenarioInvocation implements AutoCloseable {
 	public void close() {
 		if (closed) return;
 		closed = true;
-		try (resources; engine) {
+		try (resources) {
 			try {
 				if (accounts != null) accounts.close();
 			} finally {
