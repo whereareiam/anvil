@@ -8,11 +8,14 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -172,8 +175,11 @@ public final class ProcessRegistry {
 
 	/**
 	 * Closes launch attachments and JVMs, retaining workspaces until execution resources are released.
+	 * Processes stop in reverse startup order; those that started together stop together.
+	 *
+	 * @param startupLayers names of the registered processes, grouped by the layer they start in
 	 */
-	public void stop() {
+	public void stop(@NotNull List<List<String>> startupLayers) {
 		rejectNestedChange("stop processes");
 		// Starts in progress hold the read lock until readiness; cancel them instead of waiting.
 		stopping = true;
@@ -181,7 +187,7 @@ public final class ProcessRegistry {
 		lifecycle.writeLock().lock();
 
 		try {
-			stopAll();
+			stopAll(startupLayers);
 		} finally {
 			lifecycle.writeLock().unlock();
 		}
@@ -191,16 +197,32 @@ public final class ProcessRegistry {
 		return List.copyOf(processes.values());
 	}
 
-	private void stopAll() {
+	private void stopAll(List<List<String>> startupLayers) {
 		if (closed) return;
 		recordFailures();
 		closed = true;
 
-		List<Throwable> failures = new ArrayList<>();
+		List<Throwable> failures = Collections.synchronizedList(new ArrayList<>());
 		processes.values().forEach(process -> attempt(process::closeLaunch, failures));
-		List<ProcessSlot> reverse = new ArrayList<>(processes.values()).reversed();
-		reverse.forEach(process -> attempt(process::stopProcess, failures));
+		for (List<String> layer : startupLayers.reversed())
+			// A failed preparation stops before every planned process was registered.
+			stopTogether(layer.reversed().stream().map(processes::get).filter(Objects::nonNull).toList(), failures);
 		report(failures);
+	}
+
+	/**
+	 * Stops independent processes at once and waits for all of them, so one slow shutdown does not delay the others.
+	 */
+	private void stopTogether(List<ProcessSlot> layer, List<Throwable> failures) {
+		if (layer.size() < 2) {
+			layer.forEach(process -> attempt(process::stopProcess, failures));
+			return;
+		}
+
+		try (ExecutorService executor = Executors.newFixedThreadPool(layer.size())) {
+			for (ProcessSlot process : layer)
+				executor.execute(() -> attempt(process::stopProcess, failures));
+		}
 	}
 
 	/**

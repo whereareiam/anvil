@@ -325,7 +325,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   Each process execution has an opaque UUID assigned by execution. Consumers correlate that identity across snapshots and logs; it is not a restart counter.
   Use `ScenarioContext.finish(boolean)` and `ScenarioAttachment.finish(boolean)` to propagate caller
   outcomes; default `close()` means normal completion and does not erase earlier lifecycle failures.
-- Start servers before proxies; stop processes in reverse dependency order. Cleanup attempts every resource,
+- Start servers before proxies; stop processes in reverse dependency order, those of one startup layer together. Cleanup attempts every resource,
   preserves failures, and retains diagnostic workspaces and bounded output tails when a run fails.
 - Never put online access/refresh tokens in Gradle inputs, CLI arguments, environment variables,
   system properties, logs, or project workspaces. Workers receive them only through private stdin.

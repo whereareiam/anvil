@@ -96,7 +96,8 @@ final class ManagedProcessGroup implements ProcessGroup {
 		closed = true;
 
 		List<Throwable> failures = new ArrayList<>();
-		attempt(processes::stop, failures);
+		attempt(() -> processes.stop(startupOrder.stream()
+				.map(layer -> layer.stream().map(process -> process.getRequest().getName()).toList()).toList()), failures);
 		for (ProcessSpec process : orderedProcesses().reversed()) {
 			ProcessTarget target = targets.remove(process.getRequest().getName());
 			if (target != null) attempt(target::close, failures);

@@ -43,6 +43,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 /**
@@ -63,6 +64,8 @@ final class ExecutionFixture {
 	RuntimeException sessionCleanupFailure;
 	RuntimeException attachmentCleanupFailure;
 	Runnable beforeDetach = () -> { };
+	/** Runs in the thread that stops a process, before the process is recorded as stopped. */
+	Consumer<String> beforeStop = name -> { };
 	final Set<String> silent = Collections.synchronizedSet(new HashSet<>());
 
 	ExecutionFixture(Path directory) {
@@ -203,7 +206,7 @@ final class ExecutionFixture {
 		public @NotNull ProcessExecution start(@NotNull JavaCommand command) {
 			calls.add("start:" + name);
 			commands.add(command);
-			current = new Running(name, calls, !silent.contains(name));
+			current = new Running(name, calls, !silent.contains(name), stopping -> beforeStop.accept(stopping));
 			return current;
 		}
 		@Override
@@ -216,6 +219,7 @@ final class ExecutionFixture {
 	private static final class Running implements ProcessExecution {
 		private final String name;
 		private final List<String> calls;
+		private final Consumer<String> beforeStop;
 		private final AtomicBoolean alive = new AtomicBoolean(true);
 		private final CompletableFuture<Void> exited = new CompletableFuture<>();
 		private final PipedInputStream output = new PipedInputStream();
@@ -229,7 +233,8 @@ final class ExecutionFixture {
 			}
 		};
 
-		Running(String name, List<String> calls, boolean ready) {
+		Running(String name, List<String> calls, boolean ready, Consumer<String> beforeStop) {
+			this.beforeStop = beforeStop;
 			this.name = name;
 			this.calls = calls;
 			try {
@@ -267,6 +272,7 @@ final class ExecutionFixture {
 
 		private void end() {
 			if (!alive.compareAndSet(true, false)) return;
+			beforeStop.accept(name);
 			calls.add("stop:" + name);
 			try {
 				writer.close();
