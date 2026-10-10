@@ -45,7 +45,7 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 					.map(MinecraftProcess::getName)
 					.collect(Collectors.toSet());
 			var manager = players.open(plan.getScenario(), processes,
-					player -> new AgentPlayerObservation(player.name(), player::identity, agents, serverNames),
+					(player, connectedTo) -> new AgentPlayerObservation(player.name(), connectedTo, player::identity, agents, serverNames),
 					composer);
 
 			return new RunningScenario(plan.getScenario(), processes, manager);

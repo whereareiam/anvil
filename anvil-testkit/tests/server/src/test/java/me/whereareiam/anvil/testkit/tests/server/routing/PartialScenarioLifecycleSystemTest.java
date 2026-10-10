@@ -1,6 +1,8 @@
 package me.whereareiam.anvil.testkit.tests.server.routing;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.player.PlayerIdentity;
+import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.process.RunningProcess;
@@ -32,7 +34,7 @@ class PartialScenarioLifecycleSystemTest {
 		AtomicInteger setup = new AtomicInteger();
 		AnvilScenario network = original.toBuilder().name("partial-network")
 				.processTimeouts(ProcessTimeouts.builder().startup(Duration.ofMinutes(2)).build())
-				.server(auxiliary).clearProxies().proxy(proxy).proxy(proxy.toBuilder().name("secondary").build())
+				.server(auxiliary).clearProxies().proxy(proxy).proxy(proxy.toBuilder().name("secondary").defaultServer("auxiliary").build())
 				.setupHook(context -> setup.incrementAndGet()).build();
 		List<RunningProcess> retained;
 		try (var engine = AnvilLauncher.create(EngineOptions.builder().eulaAccepted(true)
@@ -81,6 +83,17 @@ class PartialScenarioLifecycleSystemTest {
 				assertSame(alice, context.players().get("PartialAlice"));
 				assertEquals(5, context.processes().all().size());
 				assertTrue(context.processes().all().stream().allMatch(process -> process.state() == ProcessState.READY));
+				var again = context.players().create(PlayerOptions.builder()
+						.name("PartialAliceAgain").username("PartialAlice").connectTo("secondary").build());
+				again.capability(Session.class).connect();
+				again.capability(Session.class).connected(Duration.ofSeconds(30));
+				PlayerIdentity elsewhere = again.capability(Server.class).joined("auxiliary", Duration.ofSeconds(20));
+				assertEquals("PartialAlice", elsewhere.getUsername());
+				assertEquals("secondary", elsewhere.getRoute().getProxy());
+				assertEquals(observation.identity().getClientUniqueId(), elsewhere.getClientUniqueId());
+				assertEquals("proxy", observation.identity().getRoute().getProxy());
+				assertEquals("lobby", observation.identity().getRoute().getServer());
+				again.destroy();
 				var game = context.processes().get("game");
 				context.processes().stop("game");
 				context.start();

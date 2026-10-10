@@ -21,6 +21,11 @@ public class PlayerRequest {
 	 * Unique player name within its scenario.
 	 */
 	@NotNull String name;
+
+	/**
+	 * Minecraft username an offline player logs in with; {@link #getName() name} when none was declared.
+	 */
+	@Nullable String username;
 	/**
 	 * Exact native Minecraft version selected before library creation.
 	 */
@@ -48,4 +53,13 @@ public class PlayerRequest {
 	 * A library that cannot redirect its session service must refuse the request.
 	 */
 	@Nullable SessionIdentity sessionIdentity;
+
+	/**
+	 * Returns the Minecraft username an offline player logs in with.
+	 *
+	 * @return declared username, or the player name when none was declared
+	 */
+	public @NotNull String getUsername() {
+		return username == null ? name : username;
+	}
 }

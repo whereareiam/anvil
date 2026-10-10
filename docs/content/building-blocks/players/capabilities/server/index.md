@@ -26,9 +26,10 @@ assertEquals("Alice", identity.getObservedUsername());
 assertEquals("server", identity.getRoute().getServer());
 ```
 
-`joined` takes the scenario server name and waits until the aggregate route names that server. The
-route can come from either a backend agent's presence observation or a proxy agent's connected-server
-observation. It does not guarantee that the named backend's agent has independently observed the player.
+`joined` takes the scenario server name and waits until the aggregate route names that server. Anvil
+follows the player's own connection: it asks the agent of the server or proxy the player connected to,
+and a proxy's answer names the backend. Players sharing the username on another proxy or server do not
+affect the route. It does not guarantee that the named backend's agent has independently observed the player.
 When an assertion requires proof from that backend, use a backend-specific
 [agent operation](../../../../extending/agent-operations/index.md) and await the native state you need.
 
@@ -41,9 +42,9 @@ identity from what the platform observed:
 | --- | --- |
 | `getUsername()` | Configured player username. |
 | `getClientUniqueId()` | Client identity used by the player. |
-| `getObservedUsername()` | Username in the current aggregate agent observation; can be absent. |
-| `getObservedUniqueId()` | Unique ID in the current aggregate agent observation; can be absent. |
-| `getRoute().getProxy()` | Observed proxy name, when present. |
+| `getObservedUsername()` | Username the backend observed, or the proxy while no backend agent reports the player; can be absent. |
+| `getObservedUniqueId()` | Unique ID from the same observation; can be absent. |
+| `getRoute().getProxy()` | Scenario name of the proxy the player is connected through, when present. |
 | `getRoute().getServer()` | Backend name reported by a server or proxy agent, when present. |
 
 An authentication or forwarding plugin may change the observed identity. Assert the observed value

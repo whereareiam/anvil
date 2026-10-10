@@ -13,18 +13,24 @@ import me.whereareiam.anvil.api.player.PlayerObservation;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * Player-scoped identity observation assembled from every running platform agent.
+ * Player-scoped identity observation that follows one player's connection: the agent of the process the
+ * player connects to reports it first, and a proxy's report names the backend whose agent is asked next.
+ * Players sharing a username on other proxies or servers are therefore never mistaken for this one.
+ *
+ * <p>Routes name scenario processes: the proxy is the process the player connected to, whatever the agent
+ * calls its platform. The backend's report wins over the proxy's for the observed username and UUID, because the backend
+ * holds the identity the proxy forwarded.</p>
  */
 @RequiredArgsConstructor
 public final class AgentPlayerObservation implements PlayerObservation {
 	private final @NotNull String playerName;
+	private final @NotNull String connectedTo;
 	private final @NotNull Supplier<PlayerIdentity> identity;
 	private final @NotNull AgentDirectory agents;
 	private final @NotNull Set<String> serverNames;
@@ -32,34 +38,36 @@ public final class AgentPlayerObservation implements PlayerObservation {
 	@Override
 	public @NotNull PlayerIdentity identity() {
 		PlayerIdentity initial = identity.get();
-		PlayerIdentity.PlayerIdentityBuilder result = initial.toBuilder();
+		Optional<AgentIdentity> entry = observe(connectedTo, initial.getUsername());
+		if (entry.isEmpty()) return initial;
+
+		PlayerIdentity.PlayerIdentityBuilder result = observed(initial.toBuilder(), entry.get());
 		PlayerRoute.PlayerRouteBuilder route = initial.getRoute().toBuilder();
-		for (Map.Entry<String, AgentClient> entry : agents.agents().entrySet()) {
-			AgentClient agent = entry.getValue();
-			if (!agent.available()) continue;
-
-			Optional<AgentIdentity> observed;
-			try {
-				observed = agent.identity(playerName);
-			} catch (AgentUnavailableException exception) {
-				continue;
-			}
-
-			if (observed.isEmpty()) continue;
-			var observedIdentity = observed.get();
-			result.observedUsername(observedIdentity.getUsername())
-					.observedUniqueId(observedIdentity.getUniqueId());
-
-			if (observedIdentity.getLocation() instanceof ProxyLocation proxy)
-				route.proxy(proxy.getProxy());
-			if (observedIdentity.getLocation() instanceof ServerLocation server)
-				route.server(serverNames.contains(entry.getKey()) ? entry.getKey() : server.getServer());
-			if (observedIdentity.getLocation() instanceof ProxyLocation proxy
-					&& proxy.getConnectedServer() != null)
-				route.server(proxy.getConnectedServer());
+		if (entry.get().getLocation() instanceof ServerLocation server)
+			route.server(serverNames.contains(connectedTo) ? connectedTo : server.getServer());
+		if (entry.get().getLocation() instanceof ProxyLocation proxy) {
+			route.proxy(connectedTo);
+			route.server(proxy.getConnectedServer());
+			if (proxy.getConnectedServer() != null)
+				observe(proxy.getConnectedServer(), initial.getUsername()).ifPresent(backend -> observed(result, backend));
 		}
 
 		return result.route(route.build()).build();
+	}
+
+	private Optional<AgentIdentity> observe(String process, String username) {
+		AgentClient agent = agents.agents().get(process);
+		if (agent == null || !agent.available()) return Optional.empty();
+
+		try {
+			return agent.identity(username);
+		} catch (AgentUnavailableException exception) {
+			return Optional.empty();
+		}
+	}
+
+	private static PlayerIdentity.PlayerIdentityBuilder observed(PlayerIdentity.PlayerIdentityBuilder result, AgentIdentity observed) {
+		return result.observedUsername(observed.getUsername()).observedUniqueId(observed.getUniqueId());
 	}
 
 	@Override

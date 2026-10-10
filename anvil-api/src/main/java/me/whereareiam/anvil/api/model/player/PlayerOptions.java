@@ -13,10 +13,25 @@ import org.jetbrains.annotations.Nullable;
 @Value
 @Builder(toBuilder = true)
 public class PlayerOptions {
+	/**
+	 * Name that identifies the player within its scenario, unique among its players. It is also the Minecraft
+	 * username unless {@link #getUsername() username} or an account supplies another one.
+	 */
 	@NotNull String name;
 
 	/**
-	 * Optional labels for tooling; the player name remains its connection identity.
+	 * Minecraft username an offline player logs in with, when it differs from {@link #getName() name}. Several
+	 * players may share one username, so a test can connect the same username twice. It is refused for an
+	 * authentication mode that uses an account, whose account supplies the username.
+	 *
+	 * <pre>{@code
+	 * PlayerOptions.builder().name("alice-again").username("Alice").build();
+	 * }</pre>
+	 */
+	@Nullable String username;
+
+	/**
+	 * Optional labels for tooling; they never replace the player name or its username.
 	 */
 	@Nullable PresentationMetadata metadata;
 

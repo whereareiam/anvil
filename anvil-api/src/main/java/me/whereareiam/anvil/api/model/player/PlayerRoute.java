@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 @Builder(toBuilder = true)
 public class PlayerRoute {
 	/**
-	 * Proxy process through which the player is connected.
+	 * Name of the proxy process through which the player is connected.
 	 */
 	@Nullable String proxy;
 	/**
