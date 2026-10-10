@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.tooling.launcher;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
-import me.whereareiam.anvil.launcher.config.EngineProperties;
+import me.whereareiam.anvil.engine.config.EngineProperties;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;

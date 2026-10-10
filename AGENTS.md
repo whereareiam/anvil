@@ -25,7 +25,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | Area                                                                  | Responsibility                                                                                                                                                                      |
 |-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `anvil-api`                                                           | Global engine registration, scenario definitions/lifecycles, public process/player handles, and capability owner identities; no scoped services or project dependencies             |
-| `anvil-engine`                                                        | Global builder/registration, scenario structure validation, extensions, setup hooks, default ready contexts, active contexts, and owned-resource cleanup; depends only on anvil-api |
+| `anvil-engine`                                                        | Global builder/registration, the process-property contract and host defaults for engine options, scenario structure validation, extensions, setup hooks, default ready contexts, active contexts, retention of process groups that outlive a scenario, and owned-resource cleanup; depends only on anvil-api |
 | `anvil-environment`                                                   | Organizational grouping for independent cache, provisioning, and execution families                                                                                                 |
 | `anvil-environment/cache/cache-api`                                   | Independently consumable cache entry and staged-publication contracts; no anvil-api dependency                                                                                      |
 | `anvil-environment/cache`                                             | Filesystem cache locations, cross-process entry coordination, and staged publication                                                                                                |
@@ -40,7 +40,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-environment/execution/execution-local`                         | Host process execution and local endpoints                                                                                                                                          |
 | `anvil-environment/execution/execution-docker`                        | Typed Docker Engine execution, images, networks, and container endpoints                                                                                                            |
 | `anvil-environment/yggdrasil-mock`                                    | Optional test-only Yggdrasil session server and profile lookup; one possible target of the session-server declarations, depends only on anvil-api                                   |
-| `anvil-launcher`                                                      | Public default builder, property decoding, scoped-service adapters, default ScenarioFactory/per-run assembly, engine-lifetime process retention, native worker bridge, and shaded packaging |
+| `anvil-launcher`                                                      | Public default builder, scoped-service adapters, default ScenarioFactory/per-run assembly, native worker bridge, and shaded packaging; wiring only, no rules of its own |
 | `anvil-capability/capability-api`                                     | Owner-neutral composition, typed requests/handler registration, and neutral player identity/observations/dependency/lifetime contracts                                              |
 | `anvil-capability/capability-protocol-api`                            | Protocol-backed player providers/contexts, channels/events, and native worker contracts                                                                                             |
 | `anvil-capability/capability-agent-api`                               | Agent-backed process/player providers and scoped request-channel contexts; shared capability API only                                                                               |
@@ -60,7 +60,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client/V*`             | Client segments `V1_18_2`, `V1_21_1` and `V1_21_11`, each implementing only `McProtocolClient` from its release key on; `V1_21_11` also serves `26.1.2`                             |
 | `anvil-platform/platform-api`                                         | Platform-provider/planning SPI, version data contract, artifact sources, distribution validation, and configuration contracts                                                      |
-| `anvil-platform/platform-planning`                                    | Platform declaration validation, version data reading, effective Java/topology requirements, forwarding negotiation, artifact planning, and provider preparation/configuration      |
+| `anvil-platform/platform-planning`                                    | Platform declaration validation, version data reading, effective Java/topology requirements, forwarding negotiation, the split of a plan by process lifetime, artifact planning, and provider preparation/configuration      |
 | `anvil-platform/platform-*`                                           | Provider-specific distribution/configuration implementations and platform-agent assemblies                                                                                          |
 | `anvil-agent/agent-api`                                               | Shared operation descriptors, payloads, identities, types, and exceptions; no client/server contracts or core dependency                                                            |
 | `anvil-agent/agent-client/client-api`                                 | Host-side clients, directories, connections, and artifact lookup; exports shared agent contracts without core or capability APIs                                                    |
@@ -327,12 +327,18 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   Each process execution has an opaque UUID assigned by execution. Consumers correlate that identity across snapshots and logs; it is not a restart counter.
   Use `ScenarioContext.finish(boolean)` and `ScenarioAttachment.finish(boolean)` to propagate caller
   outcomes; default `close()` means normal completion and does not erase earlier lifecycle failures.
-- A process declared with `ProcessLifetime.ENGINE` belongs to the launcher's `RetainedProcesses`, not to its
-  scenario's process group: a scenario's kept processes are planned and run as a group of their own, and
-  `ProcessLease` lends one running set to one scenario at a time. `ScenarioFactory.create` may start that set,
-  because the scenario's own processes are prepared against its addresses and adopt its forwarding settings.
+- A process declared with `ProcessLifetime.ENGINE` is not part of its scenario's process group. Planning's
+  `LifetimeSplit` says which processes outlive a scenario, plans them as a scenario of their own, identifies
+  equal declarations, and gives the scenario's own processes the forwarding settings the kept ones run with.
+  The engine's `RetainedProcesses` lends one running group per identity to one scenario at a time and
+  `JoinedProcessGroup` presents it with the scenario's own. The launcher only assembles: `RetainedProcessSet`
+  starts a group with its agents and capabilities and `ProcessLease` binds a scenario to the one it is lent.
+  `ScenarioFactory.create` may start that set, because the scenario's own processes are prepared against it.
   A successful scenario returns the set; a failed one stops it and keeps its workspaces. Do not add scenario
   state to a retained set, and do not share one between scenarios that run at once.
+- The launcher holds no rules. Behaviour that needs only `anvil-api` belongs in the engine, behaviour over one
+  family's types in that family, and the launcher binds them through adapters; in-repo consumers compile
+  against its shaded JAR, which carries the embedded modules' public types such as `engine.config`.
 - The engine prepares and starts scenarios concurrently; shared services reached from `ScenarioFactory.create`
   or a start must be safe for that. JUnit uses one engine for the whole test run.
 - Start servers before proxies; stop processes in reverse dependency order, those of one startup layer together. Cleanup attempts every resource,

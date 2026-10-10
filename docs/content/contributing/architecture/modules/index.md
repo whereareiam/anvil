@@ -9,7 +9,7 @@ a family's API describes its services and extension points. The launcher binds t
 | Family or module                                | Owns                                                                                                                |
 |-------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
 | `anvil-api`                                     | Global engine registration, scenario definitions/lifecycles, public process/player handles, and capability ownership |
-| `anvil-engine`                                  | Scenario structure, setup hooks, active contexts, and overall cleanup ordering                                      |
+| `anvil-engine`                                  | Scenario structure, the process-property contract, setup hooks, active contexts, retention of process groups, and overall cleanup ordering |
 | `anvil-environment/cache`                       | Independent cache API plus filesystem entry coordination and staged publication                                     |
 | `anvil-environment/provisioning`                | Separate artifact, Java, and workspace APIs with acquisition, installation, layout, snapshots, and retention policy |
 | `anvil-environment/execution/execution-managed` | Execution plans, preparation handoff, readiness, consoles, generation replacement, and ordered finalization         |
@@ -30,7 +30,7 @@ a family's API describes its services and extension points. The launcher binds t
 | `anvil-agent/agent-client`                       | Connections, stable process clients and sessions, directories, and observations in the Anvil JVM                    |
 | `anvil-agent/agent-server/agent-server-api`      | Native services, operation handlers, and embedded endpoint contracts                                                 |
 | `anvil-agent/agent-server`                       | Embedded native operation dispatch, transport endpoint, and external-handler loading                                |
-| `anvil-launcher`                                | Global engine builder, default scenario factory, scoped-service bindings, and shaded assembly                      |
+| `anvil-launcher`                                | Global engine builder, default scenario factory, scoped-service bindings, and shaded assembly; no rules of its own |
 | `anvil-integration/integration-junit`                        | JUnit lifecycle, context injection, and outcome propagation                                                   |
 | `anvil-tooling`                                 | Neutral session contracts, extensible actions, and foreground/IDE runner              |
 | `anvil-integration/integration-gradle` | Shared Gradle declarations and explicit scenario, JUnit, and provider-selection adapters |

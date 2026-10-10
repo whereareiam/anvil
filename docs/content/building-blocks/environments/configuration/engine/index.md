@@ -31,7 +31,7 @@ Java installation to be available without a download. It does not change `anvilS
 Do not assume `./gradlew -Danvil.someProperty=... anvilTest` forwards an arbitrary property into
 the forked test JVM. Use the `Test.systemProperty` configuration above. To decode properties in
 an embedding application, call `EngineProperties.from(properties)` or
-`EngineProperties.fromSystemProperties()` from `me.whereareiam.anvil.launcher.config` explicitly.
+`EngineProperties.fromSystemProperties()` from `me.whereareiam.anvil.engine.config` explicitly.
 
 ## Properties
 
