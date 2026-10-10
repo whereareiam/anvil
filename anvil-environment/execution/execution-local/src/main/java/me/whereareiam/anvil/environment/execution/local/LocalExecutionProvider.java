@@ -1,11 +1,15 @@
 package me.whereareiam.anvil.environment.execution.local;
 
+import me.whereareiam.anvil.api.exception.ProvisioningException;
+import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.runtime.LocalRuntimePreparation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Locale;
 
 /**
  * Executes scenario workloads directly on the current host.
@@ -42,6 +46,9 @@ public final class LocalExecutionProvider implements ExecutionProvider {
 
 	@Override
 	public @NotNull ExecutionSession open(@NotNull ExecutionContext context) {
+		if (context.getProcessPriority() == ProcessPriority.LOW && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win"))
+			throw new ProvisioningException("Local execution lowers process priority through nice, which Windows does not have");
+
 		LocalRuntimePreparation selected = runtime == null ? context.getLocalRuntime() : runtime;
 		return new LocalExecutionSession(context, settings, selected);
 	}

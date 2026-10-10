@@ -51,6 +51,8 @@ an embedding application, call `EngineProperties.from(properties)` or
 | `anvil.refresh`                | `true` or `false`                                    | `false`                                                                            |
 | `anvil.parallelism`            | Positive integer                                     | Half the available processors, clamped to 1–8                                      |
 | `anvil.startupMemoryMegabytes` | Positive integer in MiB                              | Half detected host memory, clamped to 1024–8192 MiB                                |
+| `anvil.processors`             | Positive integer                                     | Each process assumes every processor of the machine                                |
+| `anvil.processPriority`        | `normal` or `low`, case-insensitive                  | `normal`                                                                           |
 | `anvil.downloadParallelism`    | Positive integer                                     | Available processors, clamped to 1–8                                               |
 | `anvil.startupTimeout`         | Positive ISO-8601 duration                           | `PT2M`                                                                             |
 | `anvil.stopTimeout`            | Positive ISO-8601 duration                           | `PT15S`                                                                            |
@@ -93,6 +95,13 @@ apply within each scenario preparation or bulk-start operation; they are not an 
 across all active scenarios. A process whose declared heap exceeds the allowance starts alone.
 Already-running processes are not counted against this startup allowance. Scenarios do not override
 scheduling limits. Artifact download concurrency remains a separate engine option.
+
+`processors` and `priority` in the same group limit how much of the machine the launched processes
+take. A server sizes its thread pools from the processors it sees, so a few servers starting at once
+ask for far more than a machine has; `processors` passes each process `-XX:ActiveProcessorCount`, and a
+process's own JVM argument of that name wins. `priority` set to `low` starts processes through `nice`,
+so they yield to other work on the machine while scenarios run. Local execution supports it on Linux
+and macOS and refuses it on Windows; Docker execution refuses it.
 
 For direct embedding, configure the groups explicitly:
 

@@ -3,6 +3,7 @@ package me.whereareiam.anvil.launcher.config;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.java.JavaArchive;
 import me.whereareiam.anvil.api.model.java.local.LocalJavaExecutable;
+import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.api.type.SupportPolicy;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -44,6 +46,30 @@ final class EnginePropertiesTest {
 		assertEquals("mcprotocol", options.getProtocolLibrary());
 		assertEquals(SupportPolicy.STRICT, options.getSupportPolicy());
 		assertEquals(Map.of("mcprotocol", Path.of("releases.toml")), options.getProtocolReleases());
+	}
+
+	@Test
+	void leavesProcessorsUnlimitedAndPriorityNormalUnlessConfigured() {
+		assertNull(EngineProperties.from(new Properties()).getProcessScheduling().getProcessors());
+		assertEquals(ProcessPriority.NORMAL, EngineProperties.from(new Properties()).getProcessScheduling().getPriority());
+
+		Properties properties = new Properties();
+		properties.setProperty(EngineProperties.PROCESSORS_PROPERTY, "4");
+		properties.setProperty(EngineProperties.PROCESS_PRIORITY_PROPERTY, "Low");
+		var scheduling = EngineProperties.from(properties).getProcessScheduling();
+		assertEquals(4, scheduling.getProcessors());
+		assertEquals(ProcessPriority.LOW, scheduling.getPriority());
+	}
+
+	@Test
+	void rejectsInvalidProcessorAndPriorityLimits() {
+		Properties processors = new Properties();
+		processors.setProperty(EngineProperties.PROCESSORS_PROPERTY, "0");
+		assertThrows(IllegalArgumentException.class, () -> EngineProperties.from(processors));
+
+		Properties priority = new Properties();
+		priority.setProperty(EngineProperties.PROCESS_PRIORITY_PROPERTY, "idle");
+		assertThrows(IllegalArgumentException.class, () -> EngineProperties.from(priority));
 	}
 
 	@Test

@@ -3,6 +3,7 @@ package me.whereareiam.anvil.environment.execution.api.model;
 import lombok.Builder;
 import lombok.Value;
 import me.whereareiam.anvil.api.model.NetworkPolicy;
+import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.environment.execution.api.image.ImageLocks;
 import me.whereareiam.anvil.environment.execution.api.runtime.LocalRuntimePreparation;
 import me.whereareiam.anvil.environment.execution.api.runtime.RuntimeValidator;
@@ -22,6 +23,13 @@ public class ExecutionContext {
 	@NotNull LocalRuntimePreparation localRuntime;
 	@NotNull RuntimeValidator runtimeValidator;
 	@NotNull ImageLocks imageLocks;
+	/**
+	 * Priority the processes of the environment run with. A provider that cannot lower the priority refuses
+	 * {@link ProcessPriority#LOW} when the environment is opened.
+	 */
+	@NotNull
+	@Builder.Default
+	ProcessPriority processPriority = ProcessPriority.NORMAL;
 	boolean offline;
 	boolean refresh;
 

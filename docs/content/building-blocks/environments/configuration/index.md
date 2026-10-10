@@ -24,6 +24,8 @@ anvil {
 		parallelism.set(2)
 		startupMemoryMegabytes.set(2048)
 		downloadParallelism.set(4)
+		processors.set(4)
+		processPriority.set("low")
 	}
 }
 ```
@@ -37,6 +39,10 @@ The concurrency limits affect independent preparation and startup work. The memo
 the sum of declared process heaps starting at once; it does not set each process's heap or cap
 all memory used by the running environment. Set `.memoryMegabytes(...)` on a server or proxy to
 change its heap allocation.
+
+`processors` limits the processors each server and proxy assumes, and `processPriority` set to `low`
+lets them yield to other work on the machine; see
+[engine options](./engine/index.md#lifetimes-and-limits).
 
 ## Choose the right configuration layer
 

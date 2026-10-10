@@ -70,7 +70,11 @@ final class ScenarioProcessPreparation implements ExecutionPreparation {
 				.build());
 		try {
 			var jar = platforms.resolve(planned, request);
-			var jvmArguments = new ArrayList<>(planned.getJvmArguments());
+			var jvmArguments = new ArrayList<String>();
+			// First, so that a planned or declared argument of the same name overrides the engine's limit.
+			Integer processors = options.getProcessScheduling().getProcessors();
+			if (processors != null) jvmArguments.add("-XX:ActiveProcessorCount=" + processors);
+			jvmArguments.addAll(planned.getJvmArguments());
 			jvmArguments.addAll(declaration.getJvmArguments());
 
 			var command = JavaCommand.builder()

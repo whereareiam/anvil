@@ -110,6 +110,7 @@ public final class ProcessLauncher {
 				.localRuntime(javaRuntime)
 				.runtimeValidator(javaRuntime)
 				.imageLocks(imageLocks)
+				.processPriority(options.getProcessScheduling().getPriority())
 				.offline(options.isOffline())
 				.refresh(options.isRefresh())
 				.networkPolicy(scenario.getNetworkPolicy())

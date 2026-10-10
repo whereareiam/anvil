@@ -47,6 +47,8 @@ class AnvilToolingTaskTest {
         assertEquals("4", properties.path("anvil.parallelism").asText())
         assertEquals("2048", properties.path("anvil.startupMemoryMegabytes").asText())
         assertEquals("2", properties.path("anvil.downloadParallelism").asText())
+        assertEquals("4", properties.path("anvil.processors").asText())
+        assertEquals("low", properties.path("anvil.processPriority").asText())
         assertEquals("true", properties.path("anvil.offline").asText())
         assertEquals("false", properties.path("anvil.console.colors").asText())
         assertEquals("PT9S", properties.path("anvil.stopTimeout").asText())
@@ -135,6 +137,8 @@ class AnvilToolingTaskTest {
                     parallelism.set(4)
                     startupMemoryMegabytes.set(2048)
                     downloadParallelism.set(2)
+                    processors.set(4)
+                    processPriority.set("LOW")
                 }
                 artifact("plugin", tasks.named("jar"))
             }
