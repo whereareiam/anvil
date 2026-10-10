@@ -333,7 +333,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   state to a retained set, and do not share one between scenarios that run at once.
 - The engine prepares and starts scenarios concurrently; shared services reached from `ScenarioFactory.create`
   or a start must be safe for that. JUnit uses one engine for the whole test run.
-- Start servers before proxies; stop processes in reverse dependency order. Cleanup attempts every resource,
+- Start servers before proxies; stop processes in reverse dependency order, those of one startup layer together. Cleanup attempts every resource,
   preserves failures, and retains diagnostic workspaces and bounded output tails when a run fails.
 - Never put online access/refresh tokens in Gradle inputs, CLI arguments, environment variables,
   system properties, logs, or project workspaces. Workers receive them only through private stdin.

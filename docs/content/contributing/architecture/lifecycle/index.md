@@ -123,7 +123,8 @@ call `context.finish(false)` before closing the engine.
 
 Global attachments finish in reverse installation order before the underlying context is released.
 Default scenario cleanup destroys players, closes process capabilities, detaches launch services,
-and stops processes in reverse dependency order. Capability cleanup retains access to borrowed
+and stops processes in reverse dependency order, stopping those that started in the same layer
+together. Capability cleanup retains access to borrowed
 agent clients until it completes. After the owner closes, capability lookup fails and
 `hasCapability(...)` returns `false`. Execution targets and sessions close before prepared workspaces
 are finalized.
