@@ -9,6 +9,7 @@ import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.model.java.local.LocalJavaExecutable;
 import me.whereareiam.anvil.api.model.java.local.LocalJavaHome;
+import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.api.type.SupportPolicy;
 import org.jetbrains.annotations.NotNull;
 
@@ -137,6 +138,16 @@ public final class EngineProperties {
 	public static final String STARTUP_MEMORY_PROPERTY = "anvil.startupMemoryMegabytes";
 
 	/**
+	 * Processors each launched process may assume; omitted, each assumes all of the machine's.
+	 */
+	public static final String PROCESSORS_PROPERTY = "anvil.processors";
+
+	/**
+	 * Priority of launched processes: {@code normal} or {@code low}, case-insensitive.
+	 */
+	public static final String PROCESS_PRIORITY_PROPERTY = "anvil.processPriority";
+
+	/**
 	 * Default process startup timeout as an ISO-8601 duration.
 	 */
 	public static final String STARTUP_TIMEOUT_PROPERTY = "anvil.startupTimeout";
@@ -189,6 +200,8 @@ public final class EngineProperties {
 				.processScheduling(ProcessScheduling.builder()
 						.parallelism(positive(properties, PARALLELISM_PROPERTY, defaults.getProcessScheduling().getParallelism()))
 						.startupMemoryMegabytes(positive(properties, STARTUP_MEMORY_PROPERTY, defaults.getProcessScheduling().getStartupMemoryMegabytes()))
+						.processors(optionalPositive(properties, PROCESSORS_PROPERTY))
+						.priority(processPriority(properties, defaults.getProcessScheduling().getPriority()))
 						.build())
 				.processTimeouts(ProcessTimeouts.builder()
 						.startup(durationValue(properties, STARTUP_TIMEOUT_PROPERTY, defaults.getProcessTimeouts().getStartup()))
@@ -239,7 +252,7 @@ public final class EngineProperties {
 	private static JavaSelection javaSelection(Properties properties) {
 		return JavaSelection.builder()
 				.requirement(JavaRequirement.builder()
-						.featureVersion(optionalPositive(properties))
+						.featureVersion(optionalPositive(properties, JAVA_VERSION_PROPERTY))
 						.distribution(properties.getProperty(JAVA_DISTRIBUTION_PROPERTY))
 						.release(properties.getProperty(JAVA_RELEASE_PROPERTY))
 						.build())
@@ -247,9 +260,9 @@ public final class EngineProperties {
 				.build();
 	}
 
-	private static Integer optionalPositive(Properties properties) {
-		if (properties.getProperty(EngineProperties.JAVA_VERSION_PROPERTY) == null) return null;
-		return positive(properties, EngineProperties.JAVA_VERSION_PROPERTY, 1);
+	private static Integer optionalPositive(Properties properties, String key) {
+		if (properties.getProperty(key) == null) return null;
+		return positive(properties, key, 1);
 	}
 
 	private static JavaSource javaSource(Properties properties) {
@@ -276,6 +289,15 @@ public final class EngineProperties {
 		for (SupportPolicy policy : SupportPolicy.values())
 			if (policy.name().equalsIgnoreCase(value)) return policy;
 		throw new IllegalArgumentException(SUPPORT_POLICY_PROPERTY + " must be lenient or strict");
+	}
+
+	private static ProcessPriority processPriority(Properties properties, ProcessPriority fallback) {
+		String value = properties.getProperty(PROCESS_PRIORITY_PROPERTY);
+		if (value == null) return fallback;
+
+		for (ProcessPriority priority : ProcessPriority.values())
+			if (priority.name().equalsIgnoreCase(value)) return priority;
+		throw new IllegalArgumentException(PROCESS_PRIORITY_PROPERTY + " must be normal or low");
 	}
 
 	private static int positive(Properties properties, String key, int fallback) {

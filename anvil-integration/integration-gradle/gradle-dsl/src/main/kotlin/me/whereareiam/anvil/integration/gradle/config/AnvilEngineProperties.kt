@@ -34,6 +34,8 @@ object AnvilEngineProperties {
         properties.putAll(engine.parallelism.map { mapOf(EngineProperties.PARALLELISM_PROPERTY to it.toString()) }.orElse(emptyMap()))
         properties.putAll(engine.startupMemoryMegabytes.map { mapOf(EngineProperties.STARTUP_MEMORY_PROPERTY to it.toString()) }.orElse(emptyMap()))
         properties.putAll(engine.downloadParallelism.map { mapOf(EngineProperties.DOWNLOAD_PARALLELISM_PROPERTY to it.toString()) }.orElse(emptyMap()))
+        properties.putAll(engine.processors.map { mapOf(EngineProperties.PROCESSORS_PROPERTY to it.toString()) }.orElse(emptyMap()))
+        properties.putAll(engine.processPriority.map { mapOf(EngineProperties.PROCESS_PRIORITY_PROPERTY to it.lowercase()) }.orElse(emptyMap()))
         properties.putAll(engine.keepFailedWorkspaces.map { mapOf(EngineProperties.KEEP_FAILED_WORKSPACES_PROPERTY to it.toString()) }.orElse(emptyMap()))
         properties.putAll(engine.offline.map { mapOf(EngineProperties.OFFLINE_PROPERTY to it.toString()) }.orElse(emptyMap()))
         properties.putAll(engine.refresh.map { mapOf(EngineProperties.REFRESH_PROPERTY to it.toString()) }.orElse(emptyMap()))
@@ -66,6 +68,8 @@ object AnvilEngineProperties {
         EngineProperties.EULA_ACCEPTED_PROPERTY,
         EngineProperties.PARALLELISM_PROPERTY,
         EngineProperties.STARTUP_MEMORY_PROPERTY,
+        EngineProperties.PROCESSORS_PROPERTY,
+        EngineProperties.PROCESS_PRIORITY_PROPERTY,
         EngineProperties.STARTUP_TIMEOUT_PROPERTY,
         EngineProperties.STOP_TIMEOUT_PROPERTY,
         EngineProperties.CONSOLE_COLORS_PROPERTY,

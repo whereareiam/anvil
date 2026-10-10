@@ -194,7 +194,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   class loader; the scenario owns host connections.
 - `executionProviderId` selects providers in declarations and execution plans; `RunningProcess.executionId()`
   identifies one execution attempt. Engine `ProcessTimeouts` defaults are overridden independently by scenario
-  startup/shutdown values. Engine `ProcessScheduling` governs each scenario operation, not aggregate engine usage.
+  startup/shutdown values. Engine `ProcessScheduling` parallelism and startup memory govern each scenario operation,
+  not aggregate engine usage; its `processors` becomes each process's `-XX:ActiveProcessorCount` and its
+  `priority` reaches the execution provider, which applies it or refuses the environment.
   Keep artifact download concurrency separate.
 - `JavaSelection` groups Java requirement and source in engine, scenario, and process declarations.
   Omitted members inherit independently; an explicit empty requirement overrides an inherited version

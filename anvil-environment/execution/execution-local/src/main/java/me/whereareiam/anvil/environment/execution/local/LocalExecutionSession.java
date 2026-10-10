@@ -3,6 +3,7 @@ package me.whereareiam.anvil.environment.execution.local;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.model.java.JavaSource;
+import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.api.type.network.NetworkServerAccess;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
@@ -16,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -23,6 +25,9 @@ import java.util.Set;
  */
 @RequiredArgsConstructor
 final class LocalExecutionSession implements ExecutionSession {
+	/** Starts a process with a lower scheduling priority that its threads and child processes inherit. */
+	private static final List<String> LOW_PRIORITY = List.of("nice", "-n", "10");
+
 	private final ExecutionContext context;
 	private final LocalExecutionSettings settings;
 	private final LocalRuntimePreparation runtime;
@@ -41,7 +46,8 @@ final class LocalExecutionSession implements ExecutionSession {
 		Path executable = runtime.executable(request, source);
 		return new LocalProcessTarget(request, executable,
 				new InetSocketAddress(context.getNetworkPolicy().getBindAddress(), port(context.getNetworkPolicy().getBindAddress())),
-				new InetSocketAddress("127.0.0.1", port("127.0.0.1")));
+				new InetSocketAddress("127.0.0.1", port("127.0.0.1")),
+				context.getProcessPriority() == ProcessPriority.LOW ? LOW_PRIORITY : List.of());
 	}
 
 	private synchronized int port(String address) {

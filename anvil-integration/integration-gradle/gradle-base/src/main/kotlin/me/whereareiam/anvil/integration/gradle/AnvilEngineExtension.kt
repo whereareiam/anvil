@@ -27,6 +27,8 @@ open class AnvilEngineExtension(
     val parallelism: Property<Int> = objects.property(Int::class.java)
     val startupMemoryMegabytes: Property<Int> = objects.property(Int::class.java)
     val downloadParallelism: Property<Int> = objects.property(Int::class.java)
+    val processors: Property<Int> = objects.property(Int::class.java)
+    val processPriority: Property<String> = objects.property(String::class.java)
     val keepFailedWorkspaces: Property<Boolean> = objects.property(Boolean::class.java)
     val offline: Property<Boolean> = objects.property(Boolean::class.java)
     val refresh: Property<Boolean> = objects.property(Boolean::class.java)

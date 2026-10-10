@@ -3,6 +3,7 @@ package me.whereareiam.anvil.launcher.config;
 import me.whereareiam.anvil.api.model.process.lifecycle.ProcessScheduling;
 import com.sun.management.OperatingSystemMXBean;
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.type.ProcessPriority;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.management.ManagementFactory;
@@ -25,10 +26,11 @@ public final class EngineDefaults {
 				.cacheDirectory(options.getCacheDirectory() == null ? cacheDirectory() : options.getCacheDirectory())
 				.accountsDirectory(options.getAccountsDirectory() == null ? accountsDirectory() : options.getAccountsDirectory())
 				.processTimeouts(options.getProcessTimeouts().withDefaults(EngineOptions.builder().build().getProcessTimeouts()))
-				.processScheduling(ProcessScheduling.builder()
+				.processScheduling(scheduling.toBuilder()
 						.parallelism(scheduling.getParallelism() == null ? detectedParallelism() : scheduling.getParallelism())
 						.startupMemoryMegabytes(scheduling.getStartupMemoryMegabytes() == null
 								? detectedStartupMemory() : scheduling.getStartupMemoryMegabytes())
+						.priority(scheduling.getPriority() == null ? ProcessPriority.NORMAL : scheduling.getPriority())
 						.build())
 				.downloadParallelism(options.getDownloadParallelism() == null
 						? detectedDownloadParallelism() : options.getDownloadParallelism())

@@ -6,18 +6,24 @@ import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.model.java.local.LocalJavaHome;
+import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.api.type.network.NetworkServerAccess;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.PortReservations;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
+import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.api.runtime.LocalRuntimePreparation;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,6 +105,31 @@ class LocalExecutionSessionTest {
 			assertEquals("127.0.0.2", target.address().getHostString());
 			assertTrue(target.agentAddress().getAddress().isLoopbackAddress());
 		}
+	}
+
+	@Test
+	@DisabledOnOs(OS.WINDOWS)
+	void startsProcessesWithALowerPriorityOnlyWhenAsked() throws Exception {
+		assertEquals(niceness(ProcessPriority.NORMAL) + 10, niceness(ProcessPriority.LOW));
+	}
+
+	/**
+	 * Starts a stand-in for the Java executable that reports the niceness it runs with.
+	 */
+	private int niceness(ProcessPriority priority) throws Exception {
+		Path executable = Files.createDirectories(directory.resolve(priority.name())).resolve("java");
+		Path report = executable.resolveSibling("niceness");
+		Files.writeString(executable, "#!/bin/sh\nnice > '" + report + "'\n");
+		assertTrue(executable.toFile().setExecutable(true));
+
+		var context = context((request, source) -> executable).toBuilder().processPriority(priority).build();
+		try (ExecutionSession session = new LocalExecutionProvider().open(context)) {
+			var target = session.prepare(request(priority.name(), JavaRequirement.builder().featureVersion(21).build(), null));
+			var process = target.start(JavaCommand.builder().jar(directory.resolve("server.jar")).memoryMegabytes(64).build());
+			assertTrue(process.await(Duration.ofSeconds(10)));
+		}
+
+		return Integer.parseInt(Files.readString(report).strip());
 	}
 
 	private ExecutionContext context(LocalRuntimePreparation runtime) {

@@ -24,10 +24,14 @@ public final class LocalProcessTarget implements ProcessTarget {
 	private final Path executable;
 	private final InetSocketAddress address;
 	private final InetSocketAddress agentAddress;
+	/**
+	 * Command the Java executable is started through, such as {@code nice}; empty to start it directly.
+	 */
+	private final List<String> wrapper;
 
 	@Override
 	public @NotNull ProcessExecution start(@NotNull JavaCommand command) {
-		List<String> arguments = new ArrayList<>();
+		List<String> arguments = new ArrayList<>(wrapper);
 		arguments.add(executable.toString());
 		arguments.add("-Xms256m");
 		arguments.add("-Xmx" + command.getMemoryMegabytes() + "m");
