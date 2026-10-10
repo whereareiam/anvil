@@ -32,6 +32,15 @@ class ManagedProcessServiceTest {
 	}
 
 	@Test
+	void reportsWhetherTheSelectedProviderPreservesClientAddresses() {
+		ManagedProcessService service = new ExecutionFixture(directory).service();
+
+		assertTrue(service.preservesClientAddress("fixture"));
+		var unknown = assertThrows(IllegalArgumentException.class, () -> service.preservesClientAddress("docker"));
+		assertEquals("No execution provider 'docker'. Available: [fixture]", unknown.getMessage());
+	}
+
+	@Test
 	void releasesAllocatedTargetsWhenLaterAllocationFailsAndPreservesCleanupFailures() {
 		ExecutionFixture fixture = new ExecutionFixture(directory);
 		fixture.failingTarget = "proxy";

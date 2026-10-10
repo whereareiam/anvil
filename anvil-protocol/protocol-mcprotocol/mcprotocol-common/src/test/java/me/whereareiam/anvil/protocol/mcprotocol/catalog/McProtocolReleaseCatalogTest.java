@@ -60,7 +60,7 @@ class McProtocolReleaseCatalogTest {
 			assertTrue(release.getFeatures().contains(ProtocolFeature.ONLINE_AUTHENTICATION));
 			assertFalse(release.isAdditional());
 
-			ReleaseDefinition definition = catalog.require(release);
+			ReleaseDefinition definition = catalog.require(release.version());
 			assertTrue(definition.getArtifacts().stream().anyMatch(artifact -> artifact.getModule().equals(definition.getModule())));
 		}
 
@@ -69,7 +69,7 @@ class McProtocolReleaseCatalogTest {
 		assertEquals(SupportLevel.COMPATIBLE, current.support(MinecraftVersion.parse("26.1")));
 		assertEquals(8, releases.getFirst().getJavaVersion());
 		assertEquals(17, current.getJavaVersion());
-		assertThrows(IllegalArgumentException.class, () -> catalog.require(current.toBuilder().libraryVersion("unknown").build()));
+		assertThrows(IllegalArgumentException.class, () -> catalog.require(MinecraftVersion.parse("1.20.4")));
 		assertThrows(UnsupportedOperationException.class, () -> catalog.releases().clear());
 	}
 
@@ -81,7 +81,7 @@ class McProtocolReleaseCatalogTest {
 
 		assertEquals(1, notices.size());
 		assertTrue(notices.getFirst().startsWith("[Anvil] Info: additional MCProtocolLib release 1.21.11-20260512.221357-18"));
-		assertSame(builtIn, catalog.require(builtIn.getRelease()));
+		assertSame(builtIn, catalog.require(builtIn.getRelease().version()));
 		assertFalse(catalog.releases().getFirst().isAdditional());
 	}
 
@@ -96,7 +96,7 @@ class McProtocolReleaseCatalogTest {
 		McProtocolReleaseCatalog catalog = new McProtocolReleaseCatalog(List.of(builtIn), copy, notices::add);
 
 		assertEquals(1, notices.size(), notices.toString());
-		assertSame(builtIn, catalog.require(builtIn.getRelease()));
+		assertSame(builtIn, catalog.require(builtIn.getRelease().version()));
 		assertTrue(catalog.releases().getFirst().getLaunchRefusal().endsWith("pinLibraryReleases`"),
 				catalog.releases().getFirst().getLaunchRefusal());
 	}

@@ -7,6 +7,7 @@ import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityCha
 import me.whereareiam.anvil.capability.protocol.api.player.channel.MessageChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.protocol.api.model.GameConnection;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
@@ -24,6 +25,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -196,8 +198,11 @@ class McProtocolWorkerContractTest {
 		return PlayerRequest.builder()
 				.name(name)
 				.clientVersion(release.version())
-				.release(release)
-				.address(new InetSocketAddress("127.0.0.1", 9))
+				.connection(GameConnection.builder()
+						.address(new InetSocketAddress("127.0.0.1", 9))
+						.virtualHost("lobby.example.test")
+						.sourceAddress(InetAddress.getLoopbackAddress())
+						.build())
 				.build();
 	}
 

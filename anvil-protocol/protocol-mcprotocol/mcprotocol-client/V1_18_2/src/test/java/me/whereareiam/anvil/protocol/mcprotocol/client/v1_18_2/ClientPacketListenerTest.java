@@ -1,9 +1,10 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
-import me.whereareiam.anvil.api.type.DisconnectCause;
 import com.github.steveice10.mc.protocol.data.game.entity.player.HandPreference;
 import com.github.steveice10.mc.protocol.data.game.setting.ChatVisibility;
 import com.github.steveice10.mc.protocol.data.game.setting.SkinPart;
+import com.github.steveice10.mc.protocol.data.handshake.HandshakeIntent;
+import com.github.steveice10.mc.protocol.packet.handshake.serverbound.ClientIntentionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundDisconnectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
@@ -11,9 +12,14 @@ import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundCl
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 import com.github.steveice10.packetlib.Session;
+import com.github.steveice10.packetlib.event.session.PacketSendingEvent;
 import com.github.steveice10.packetlib.packet.Packet;
+import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -27,15 +33,13 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 class ClientPacketListenerTest {
 	private static final ClientLogin LOGIN = ClientLogin.builder()
-			.name("Alice")
-			.uniqueId(new UUID(0, 1))
-			.host("localhost")
-			.port(25565)
-			.locale("en_us")
-			.viewDistance(8)
+			.profile(ClientProfile.builder().name("Alice").uniqueId(new UUID(0, 1)).build())
+			.settings(ClientSettings.builder().locale("en_us").viewDistance(8).build())
+			.connection(ClientConnection.builder().host("localhost").port(25565).build())
 			.build();
 
 	private final List<String> events = new ArrayList<>();
@@ -71,6 +75,33 @@ class ClientPacketListenerTest {
 		receive(new ClientboundLoginDisconnectPacket(Component.text("Outdated: ").append(Component.translatable("version", Component.text("1.18.2")))));
 
 		assertEquals(List.of("disconnected SERVER multiplayer.disconnect.kicked Alice by Anvil", "disconnected SERVER Outdated: version 1.18.2"), events);
+	}
+
+	@Test
+	void announcesTheVirtualHostInPlaceOfTheConnectedHost() {
+		ClientLogin virtual = ClientLogin.builder()
+				.profile(LOGIN.getProfile())
+				.settings(LOGIN.getSettings())
+				.connection(ClientConnection.builder().host("127.0.0.1").port(25577).virtualHost("lobby.example.test").build())
+				.build();
+		PacketSendingEvent handshake = new PacketSendingEvent(session, new ClientIntentionPacket(1, "127.0.0.1", 25577, HandshakeIntent.LOGIN));
+
+		new ClientPacketListener(virtual, new RecordingListener()).packetSending(handshake);
+
+		ClientIntentionPacket announced = assertInstanceOf(ClientIntentionPacket.class, handshake.getPacket());
+		assertEquals("lobby.example.test", announced.getHostname());
+		assertEquals(25577, announced.getPort());
+		assertEquals(HandshakeIntent.LOGIN, announced.getIntent());
+	}
+
+	@Test
+	void leavesTheHandshakeAloneWithoutAVirtualHost() {
+		ClientIntentionPacket intention = new ClientIntentionPacket(1, "localhost", 25565, HandshakeIntent.LOGIN);
+		PacketSendingEvent handshake = new PacketSendingEvent(session, intention);
+
+		listener.packetSending(handshake);
+
+		assertSame(intention, handshake.getPacket());
 	}
 
 	private void receive(Packet packet) {

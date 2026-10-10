@@ -72,15 +72,11 @@ final class McProtocolWorker implements AutoCloseable {
 		if (players.containsKey(id)) throw new IllegalArgumentException("Player already exists: " + id);
 
 		WorkerPlayerOptions options = codec.decodePayload(request.getArguments(), WorkerPlayerOptions.class);
-		if (options.getPort() < 1 || options.getPort() > 65535) throw new IllegalArgumentException("Invalid worker player options");
+		int port = options.getConnection().getPort();
+		if (port < 1 || port > 65535) throw new IllegalArgumentException("Invalid worker player options");
 		McProtocolPlayer player = new McProtocolPlayer(
 				id,
-				options.getName(),
-				options.getHost(),
-				options.getPort(),
-				options.getUuid(),
-				options.getAccessToken(),
-				options.getSessionServer(),
+				options,
 				client,
 				segments,
 				responses,

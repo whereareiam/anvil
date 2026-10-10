@@ -68,7 +68,7 @@ class ExternalProviderDiscoveryIntegrationTest {
 			try (var players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(), options(), artifacts())) {
 				AnvilScenario scenario = scenario();
 				players.prepare(scenario);
-				PlayerManager manager = players.open(scenario, new Processes(), (player, connectedTo) -> observation(player), composer(composed));
+				PlayerManager manager = players.open(scenario, new Processes(), (player, connectedTo) -> observation(player), composer(composed), true);
 
 				var tie = assertThrows(ScenarioValidationException.class, () -> manager.create("Undeclared"));
 				assertTrue(tie.getMessage().contains("[mcprotocol, fixture]"), tie.getMessage());
@@ -80,13 +80,13 @@ class ExternalProviderDiscoveryIntegrationTest {
 				assertTrue(unknown.getMessage().contains("Installed: [mcprotocol, fixture]"), unknown.getMessage());
 
 				PlayerManager scoped = players.open(scenario.toBuilder().protocolLibrary("fixture").build(), new Processes(),
-						(player, connectedTo) -> observation(player), composer(composed));
+						(player, connectedTo) -> observation(player), composer(composed), true);
 				scoped.create("ScenarioChoice");
 			}
 
 			try (var players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(),
 					options().toBuilder().protocolLibrary("fixture").build(), artifacts())) {
-				players.open(scenario(), new Processes(), (player, connectedTo) -> observation(player), composer(composed)).create("EngineChoice");
+				players.open(scenario(), new Processes(), (player, connectedTo) -> observation(player), composer(composed), true).create("EngineChoice");
 			}
 
 			assertEquals(List.of("Declared:fixture", "ScenarioChoice:fixture", "EngineChoice:fixture"), composed);

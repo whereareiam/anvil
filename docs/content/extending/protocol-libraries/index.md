@@ -81,9 +81,19 @@ for how users supply that file.
 ## Create players
 
 The engine creates one `ProtocolLibrary` per library when the first player selects it and closes it
-with the engine. `ProtocolLibrary.create(PlayerRequest)` receives the player name, the exact
-`clientVersion`, the selected `release`, the target address, the authentication mode, and the
-optional account ID. Create a disconnected client; connection behavior is supplied through the
+with the engine. `ProtocolLibrary.create(PlayerRequest)` receives who logs in, with which client, and where to:
+
+| Group | Content |
+|---|---|
+| `getName()`, `getLogin()` | The player name and its `PlayerLogin`: the authentication mode and either an offline username, an account ID, or a session identity. `getUsername()` returns the offline username, or the name when the login declares none |
+| `getClientVersion()` | The exact Minecraft version the client speaks. Each Minecraft version appears in only one of your releases, so resolve the release from it through your own release data |
+| `getConnection()` | `GameConnection`: the game listener's address, the optional virtual host the handshake announces, and the optional source address the socket binds to |
+
+A leased login never reaches the library; Anvil replaces it with the leased account first. Your library
+must honour the virtual host and source address, or refuse the player when it is created; it never ignores
+either one, just as a library that cannot redirect its session service refuses a session identity.
+
+Create a disconnected client; connection behavior is supplied through the
 appropriate capability. Destroying a player releases its client resources, and `close()` attempts
 cleanup of all clients and owned workers even after a failure.
 

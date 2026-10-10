@@ -10,7 +10,9 @@ import me.whereareiam.anvil.protocol.api.worker.NativePlayer;
 import me.whereareiam.anvil.protocol.api.worker.NativeWorkerExtension;
 import me.whereareiam.anvil.protocol.api.worker.NativeWorkerProvider;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerCapabilities;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerRequest;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerResponse;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.fixture.RecordingClient;
@@ -34,7 +36,10 @@ class McProtocolWorkerTest {
 	@Test
 	void dispatchesPlayerLifecycleAndExternalOperationsUntilShutdown() throws Exception {
 		UUID identity = UUID.randomUUID();
-		var options = WorkerPlayerOptions.builder().name("Alice").uuid(identity).host("localhost").port(25565).build();
+		var options = WorkerPlayerOptions.builder()
+				.profile(WorkerProfile.builder().name("Alice").uniqueId(identity).build())
+				.connection(WorkerConnection.builder().host("localhost").port(25565).build())
+				.build();
 		var empty = JsonNodeFactory.instance.objectNode();
 		String input = String.join("\n",
 				request(1, "create", codec.payload(options)),

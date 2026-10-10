@@ -31,13 +31,14 @@ checks the backend. The default capability unit supplies the required Session an
 a smaller installation must add both units.
 
 ```java
+import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
 
 var alice = anvil.players().create(PlayerOptions.builder()
 		.name("RouteAlice")
-		.connectTo("proxy")
+		.connection(PlayerConnection.to("proxy"))
 		.build());
 var session = alice.capability(Session.class);
 session.connect();

@@ -9,12 +9,17 @@ import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.tcp.TcpClientSession;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientCredentials;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Client of MCProtocolLib 1.18.2: packetlib 2.1 TCP sessions, the codec and clientbound/serverbound packet
- * names, plain-string disconnect events and adventure 4.9 without its plain-text serializer.
+ * names, plain-string disconnect events and adventure 4.9 without its plain-text serializer. The session binds
+ * the source address through packetlib's bind-address constructor; the handshake always announces the session
+ * host, so {@link ClientPacketListener} rewrites the handshake for a virtual host.
  */
 public final class McProtocolClientAdapter implements McProtocolClient<Session> {
 	@Override
@@ -29,11 +34,17 @@ public final class McProtocolClientAdapter implements McProtocolClient<Session> 
 
 	@Override
 	public @NotNull Session open(@NotNull ClientLogin login, @NotNull ClientListener<? super Session> listener) {
-		GameProfile profile = new GameProfile(login.getUniqueId(), login.getName());
-		Session session = new TcpClientSession(login.getHost(), login.getPort(), new MinecraftProtocol(profile, login.getAccessToken()));
-		if (login.getSessionServer() != null) {
+		ClientProfile profile = login.getProfile();
+		ClientCredentials credentials = login.getCredentials();
+		ClientConnection connection = login.getConnection();
+		MinecraftProtocol protocol = new MinecraftProtocol(new GameProfile(profile.getUniqueId(), profile.getName()),
+				credentials == null ? null : credentials.getAccessToken());
+		Session session = connection.getSourceAddress() == null
+				? new TcpClientSession(connection.getHost(), connection.getPort(), protocol)
+				: new TcpClientSession(connection.getHost(), connection.getPort(), connection.getSourceAddress(), 0, protocol);
+		if (credentials != null && credentials.getSessionServer() != null) {
 			SessionService sessionService = new SessionService();
-			sessionService.setBaseUri(login.getSessionServer() + "/");
+			sessionService.setBaseUri(credentials.getSessionServer() + "/");
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, sessionService);
 		}
 		session.addListener(new ClientPacketListener(login, listener));

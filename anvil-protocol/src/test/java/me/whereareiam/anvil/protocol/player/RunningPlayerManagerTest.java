@@ -4,10 +4,12 @@ import me.whereareiam.anvil.api.exception.AnvilException;
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
+import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
+import me.whereareiam.anvil.api.model.player.PlayerLogin;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
-import me.whereareiam.anvil.api.model.player.SessionIdentity;
 import me.whereareiam.anvil.api.model.player.PlayerState;
+import me.whereareiam.anvil.api.model.player.SessionIdentity;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
@@ -30,6 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.net.InetAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -62,7 +65,6 @@ class RunningPlayerManagerTest {
 
 		assertEquals("1.21.11", alice.clientVersion());
 		assertEquals(MinecraftVersion.parse("1.21.11"), library.lastRequest.getClientVersion());
-		assertEquals("test-1.21.11", library.lastRequest.getRelease().getLibraryVersion());
 		assertFalse(alice instanceof AutoCloseable);
 		assertEquals(1, manager.all().size());
 
@@ -80,7 +82,7 @@ class RunningPlayerManagerTest {
 		manager.create("Alice");
 		assertEquals("Alice", library.lastRequest.getUsername());
 
-		SimulatedPlayer again = manager.create(PlayerOptions.builder().name("alice-again").username("Alice").build());
+		SimulatedPlayer again = manager.create(PlayerOptions.builder().name("alice-again").login(PlayerLogin.offline("Alice")).build());
 
 		assertEquals("alice-again", again.name());
 		assertEquals("alice-again", library.lastRequest.getName());
@@ -90,18 +92,60 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
-	void aUsernameIsRefusedWhenBlankOrWhenAnAccountSuppliesIt() {
+	void aLeasedLoginIsRefusedWithoutALease() {
 		StubLibrary library = new StubLibrary();
 		RunningPlayerManager manager = manager(library);
 
-		var blank = assertThrows(ScenarioValidationException.class,
-				() -> manager.create(PlayerOptions.builder().name("alice").username(" ").build()));
-		assertEquals("Player 'alice' declares a blank username", blank.getMessage());
+		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create(PlayerOptions.builder()
+				.name("alice").login(PlayerLogin.leased(AuthenticationMode.ON_REQUEST)).build()));
 
-		var account = assertThrows(ScenarioValidationException.class,
-				() -> manager.create(online("alice").toBuilder().username("Alice").build()));
-		assertEquals("Player 'alice' declares the username 'Alice' and ONLINE authentication, whose account supplies "
-				+ "the username", account.getMessage());
+		assertEquals("Player 'alice' declares a leased login; create it with PlayerManager.create(PlayerOptions, AccountLease)",
+				refused.getMessage());
+		assertNull(library.lastRequest);
+	}
+
+	@Test
+	void passesTheTargetVirtualHostAndSourceAddressToTheLibrary() {
+		StubLibrary library = new StubLibrary();
+		RunningPlayerManager manager = manager(library);
+
+		manager.create(PlayerOptions.builder().name("alice").connection(PlayerConnection.builder()
+				.target("server").virtualHost("lobby.example.test").sourceAddress("127.0.0.1").build()).build());
+
+		assertEquals("lobby.example.test", library.lastRequest.getConnection().getVirtualHost());
+		assertEquals(InetAddress.getLoopbackAddress(), library.lastRequest.getConnection().getSourceAddress());
+		assertEquals("127.0.0.1", library.lastRequest.getConnection().getAddress().getHostString());
+
+		manager.create("bob");
+		assertNull(library.lastRequest.getConnection().getVirtualHost());
+		assertNull(library.lastRequest.getConnection().getSourceAddress());
+	}
+
+	@Test
+	void aSourceAddressIsRefusedWhenTheExecutionTranslatesConnections() {
+		StubLibrary library = new StubLibrary();
+		RunningPlayerManager manager = new RunningPlayerManager(scenario(), selector(library), ignored -> library,
+				new StubScenarioProcesses("server", temporary.resolve("server")), (player, connectedTo) -> observation(player),
+				composer(), ignored -> { }, List::of, new AccountReservations(), false);
+
+		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create(PlayerOptions.builder()
+				.name("alice").connection(PlayerConnection.builder().sourceAddress("127.0.0.2").build()).build()));
+
+		assertTrue(refused.getMessage().startsWith("Player 'alice' declares the source address 127.0.0.2, but the "
+				+ "scenario's execution provider translates game connections"), refused.getMessage());
+		assertNull(library.lastRequest);
+	}
+
+	@Test
+	void aSourceAddressIsRefusedForAListenerOfAnotherAddressFamily() {
+		StubLibrary library = new StubLibrary();
+		RunningPlayerManager manager = manager(library);
+
+		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create(PlayerOptions.builder()
+				.name("alice").connection(PlayerConnection.builder().sourceAddress("::1").build()).build()));
+
+		assertTrue(refused.getMessage().contains("a loopback source address only reaches a loopback listener of the same "
+				+ "address family"), refused.getMessage());
 		assertNull(library.lastRequest);
 	}
 
@@ -153,12 +197,12 @@ class RunningPlayerManagerTest {
 		RunningProcess original = processes.get("server");
 		RunningPlayerManager manager = manager(scenario(), library, processes, composer(), ignored -> { });
 		manager.create("Before");
-		assertEquals(original.address(), library.lastRequest.getAddress());
+		assertEquals(original.address(), library.lastRequest.getConnection().getAddress());
 
 		RunningProcess replacement = processes.restart("server");
 		manager.create("After");
 
-		assertEquals(replacement.address(), library.lastRequest.getAddress());
+		assertEquals(replacement.address(), library.lastRequest.getConnection().getAddress());
 		assertEquals(25565, original.address().getPort());
 		assertEquals(25566, replacement.address().getPort());
 	}
@@ -244,15 +288,16 @@ class RunningPlayerManagerTest {
 		AuthenticationAccount account = new AuthenticationAccount("alice", "test", "Alice", null);
 		RunningPlayerManager manager = new RunningPlayerManager(scenario(), selector(library), ignored -> library,
 				new StubScenarioProcesses("server", temporary.resolve("server")), (player, connectedTo) -> observation(player), composer(),
-				ignored -> { }, () -> List.of(account), new AccountReservations());
+				ignored -> { }, () -> List.of(account), new AccountReservations(), true);
 
 		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create(online("alice")));
 		assertEquals("Online player 'alice' requires an online-mode entrypoint; use AuthenticationMode.ON_REQUEST when a "
 				+ "plugin of an offline-mode entrypoint requests authentication itself", refused.getMessage());
 
-		assertEquals("alice", manager.create(online("alice").toBuilder().authentication(AuthenticationMode.ON_REQUEST).build()).name());
-		assertEquals(AuthenticationMode.ON_REQUEST, library.lastRequest.getAuthentication());
-		assertEquals("alice", library.lastRequest.getAccountId());
+		assertEquals("alice", manager.create(online("alice").toBuilder()
+				.login(PlayerLogin.account(AuthenticationMode.ON_REQUEST, "alice")).build()).name());
+		assertEquals(AuthenticationMode.ON_REQUEST, library.lastRequest.getLogin().getAuthentication());
+		assertEquals("alice", library.lastRequest.getLogin().getAccountId());
 	}
 
 	@Test
@@ -263,7 +308,7 @@ class RunningPlayerManagerTest {
 				new AuthenticationAccount("alice", "test", "Alice", null));
 
 		assertEquals("alice", manager.create(online("alice")).name());
-		assertEquals("alice", library.lastRequest.getAccountId());
+		assertEquals("alice", library.lastRequest.getLogin().getAccountId());
 	}
 
 	@Test
@@ -272,18 +317,15 @@ class RunningPlayerManagerTest {
 		URI sessionServer = URI.create("http://127.0.0.1:25580/session/minecraft");
 		SessionIdentity identity = SessionIdentity.builder().username("Alice").uniqueId(UUID.randomUUID())
 				.accessToken("token").sessionServer(sessionServer).build();
-		PlayerOptions options = PlayerOptions.builder().name("alice").authentication(AuthenticationMode.ONLINE)
-				.sessionIdentity(identity).build();
+		PlayerOptions options = PlayerOptions.builder().name("alice")
+				.login(PlayerLogin.session(AuthenticationMode.ONLINE, identity)).build();
 
 		onlineManager(selector(library), library, new AccountReservations(), sessionServer).create(options);
-		assertSame(identity, library.lastRequest.getSessionIdentity());
+		assertSame(identity, library.lastRequest.getLogin().getSessionIdentity());
 
 		RunningPlayerManager mojang = onlineManager(library, new AccountReservations());
 		var refused = assertThrows(ScenarioValidationException.class, () -> mojang.create(options));
 		assertTrue(refused.getMessage().contains("verifies logins against Mojang"), refused.getMessage());
-		assertThrows(ScenarioValidationException.class, () -> mojang.create(options.toBuilder().accountId("alice").build()));
-		assertThrows(ScenarioValidationException.class,
-				() -> mojang.create(options.toBuilder().authentication(AuthenticationMode.OFFLINE).build()));
 	}
 
 	@Test
@@ -298,7 +340,7 @@ class RunningPlayerManagerTest {
 
 		manager.create("alice", lease);
 
-		assertEquals("other-1.21.11", library.lastRequest.getRelease().getLibraryVersion());
+		assertEquals("other", library.lastSelectedId);
 		assertFalse(lease.closed);
 	}
 
@@ -310,15 +352,15 @@ class RunningPlayerManagerTest {
 				Map.of("test", library.releases())::get, "test", SupportPolicy.LENIENT, ignored -> { }), library, leased);
 		RecordingLease lease = new RecordingLease(leased);
 
-		manager.create(PlayerOptions.builder().name("alice").authentication(AuthenticationMode.ON_REQUEST).build(), lease);
+		manager.create(PlayerOptions.builder().name("alice").login(PlayerLogin.leased(AuthenticationMode.ON_REQUEST)).build(), lease);
 
-		assertEquals("stored", library.lastRequest.getAccountId());
-		assertEquals(AuthenticationMode.ON_REQUEST, library.lastRequest.getAuthentication());
+		assertEquals("stored", library.lastRequest.getLogin().getAccountId());
+		assertEquals(AuthenticationMode.ON_REQUEST, library.lastRequest.getLogin().getAuthentication());
 		assertFalse(lease.closed);
 	}
 
 	@Test
-	void aLeaseIsRefusedForAnOfflinePlayerWithoutBeingClaimed() {
+	void aLeaseIsRefusedForALoginThatTakesNoLeaseWithoutBeingClaimed() {
 		StubLibrary library = new StubLibrary();
 		AuthenticationAccount leased = new AuthenticationAccount("stored", "test", "Alice", null);
 		RunningPlayerManager manager = onlineManager(new ProtocolLibrarySelector(List.of("test"),
@@ -327,6 +369,7 @@ class RunningPlayerManagerTest {
 
 		assertThrows(IllegalArgumentException.class,
 				() -> manager.create(PlayerOptions.builder().name("alice").build(), lease));
+		assertThrows(IllegalArgumentException.class, () -> manager.create(online("alice"), lease));
 		assertTrue(lease.claim());
 	}
 
@@ -357,7 +400,7 @@ class RunningPlayerManagerTest {
 
 		SimulatedPlayer player = manager.create("alice", lease);
 
-		assertEquals("alice", library.lastRequest.getAccountId());
+		assertEquals("alice", library.lastRequest.getLogin().getAccountId());
 		assertFalse(lease.closed);
 		player.destroy();
 		assertTrue(lease.closed);
@@ -396,16 +439,17 @@ class RunningPlayerManagerTest {
 				.build();
 		AnvilScenario scenario = AnvilScenario.builder().name("online").entrypoint("server").server(server).build();
 
-		return new RunningPlayerManager(scenario, selector, ignored -> library,
-				new StubScenarioProcesses("server", temporary.resolve("server")), (player, connectedTo) -> observation(player), composer(),
-				ignored -> { }, () -> List.of(accounts), reservations);
+		return new RunningPlayerManager(scenario, selector, selected -> {
+			library.lastSelectedId = selected;
+			return library;
+		}, new StubScenarioProcesses("server", temporary.resolve("server")), (player, connectedTo) -> observation(player), composer(),
+				ignored -> { }, () -> List.of(accounts), reservations, true);
 	}
 
 	private PlayerOptions online(String accountId) {
 		return PlayerOptions.builder()
 				.name(accountId)
-				.authentication(AuthenticationMode.ONLINE)
-				.accountId(accountId)
+				.login(PlayerLogin.account(AuthenticationMode.ONLINE, accountId))
 				.build();
 	}
 
@@ -421,7 +465,7 @@ class RunningPlayerManagerTest {
 			Consumer<RunningPlayerManager> onClosed
 	) {
 		return new RunningPlayerManager(scenario, selector(library), ignored -> library, processes,
-				(player, connectedTo) -> observation(player), composer, onClosed, List::of, new AccountReservations());
+				(player, connectedTo) -> observation(player), composer, onClosed, List::of, new AccountReservations(), true);
 	}
 
 	private static ProtocolRelease release(String libraryVersion, String minecraft) {
@@ -528,6 +572,7 @@ class RunningPlayerManagerTest {
 	}
 
 	private static final class StubLibrary implements ProtocolLibrary {
+		private String lastSelectedId;
 		private PlayerRequest lastRequest;
 		private StubPlayer lastPlayer;
 		private RuntimeException destructionFailure;
@@ -555,7 +600,7 @@ class RunningPlayerManagerTest {
 		public @NotNull ProtocolPlayer create(@NotNull PlayerRequest request) {
 			if (creationFailure != null) throw creationFailure;
 			lastRequest = request;
-			lastPlayer = new StubPlayer(request, destructionFailure);
+			lastPlayer = new StubPlayer(request, releases().getFirst(), destructionFailure);
 			return lastPlayer;
 		}
 
@@ -565,12 +610,14 @@ class RunningPlayerManagerTest {
 
 	private static final class StubPlayer implements ProtocolPlayer {
 		private final PlayerRequest request;
+		private final ProtocolRelease release;
 		private final PlayerIdentity identity;
 		private final RuntimeException destructionFailure;
 		private boolean destroyed;
 
-		private StubPlayer(PlayerRequest request, RuntimeException destructionFailure) {
+		private StubPlayer(PlayerRequest request, ProtocolRelease release, RuntimeException destructionFailure) {
 			this.request = request;
+			this.release = release;
 			this.destructionFailure = destructionFailure;
 			this.identity = PlayerIdentity.builder()
 					.username(request.getName())
@@ -596,7 +643,7 @@ class RunningPlayerManagerTest {
 
 		@Override
 		public @NotNull ProtocolRelease release() {
-			return request.getRelease();
+			return release;
 		}
 
 		@Override

@@ -1,27 +1,20 @@
 package me.whereareiam.anvil.protocol.mcprotocol.model.worker;
 
 import lombok.Builder;
-import lombok.ToString;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.net.URI;
-import java.util.UUID;
-
 /**
- * Resolved identity and game endpoint; credentials travel only through private worker stdin.
+ * Resolved login of one worker player, grouped as the client login it becomes: who logs in and where to. The
+ * client settings are the worker's own. Credentials travel only through private worker stdin.
  */
 @Value
 @Builder
 @Jacksonized
 public class WorkerPlayerOptions {
-	@NotNull String name;
-	@NotNull UUID uuid;
-	@NotNull String host;
-	int port;
-	@ToString.Exclude
-	@Nullable String accessToken;
-	@Nullable URI sessionServer;
+	@NotNull WorkerProfile profile;
+	@Nullable WorkerCredentials credentials;
+	@NotNull WorkerConnection connection;
 }

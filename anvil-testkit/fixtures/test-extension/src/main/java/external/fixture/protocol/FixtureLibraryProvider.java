@@ -55,7 +55,11 @@ public class FixtureLibraryProvider implements ProtocolLibraryProvider {
 
 			@Override
 			public @NotNull ProtocolPlayer create(@NotNull PlayerRequest request) {
-				return player(request);
+				ProtocolRelease release = releases.stream()
+						.filter(candidate -> candidate.getMinecraftVersions().contains(request.getClientVersion()))
+						.findFirst()
+						.orElseThrow(() -> new IllegalArgumentException("No fixture release speaks Minecraft " + request.getClientVersion()));
+				return player(request, release);
 			}
 
 			@Override
@@ -65,7 +69,7 @@ public class FixtureLibraryProvider implements ProtocolLibraryProvider {
 		};
 	}
 
-	private ProtocolPlayer player(PlayerRequest request) {
+	private ProtocolPlayer player(PlayerRequest request, ProtocolRelease release) {
 		return new ProtocolPlayer() {
 			private final MemoryConnection connection = new MemoryConnection();
 			private boolean destroyed;
@@ -87,7 +91,7 @@ public class FixtureLibraryProvider implements ProtocolLibraryProvider {
 
 			@Override
 			public @NotNull ProtocolRelease release() {
-				return request.getRelease();
+				return release;
 			}
 
 			@Override

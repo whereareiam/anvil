@@ -49,6 +49,7 @@ entrypoint accepts online authentication and the Session capability is installed
 ```java
 package com.example.test;
 
+import me.whereareiam.anvil.api.model.player.PlayerLogin;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
@@ -59,8 +60,7 @@ public final class AuthenticatedPlayers {
 	public static SimulatedPlayer connect(ScenarioContext anvil) {
 		var player = anvil.players().create(PlayerOptions.builder()
 				.name("OnlinePlayer")
-				.authentication(AuthenticationMode.ONLINE)
-				.accountId("main")
+				.login(PlayerLogin.account(AuthenticationMode.ONLINE, "main"))
 				.build());
 		var session = player.capability(Session.class);
 		session.connect();
@@ -69,6 +69,20 @@ public final class AuthenticatedPlayers {
 	}
 }
 ```
+
+`PlayerLogin` groups how a player logs in, and each factory creates one valid combination:
+
+| Factory | Login |
+|---|---|
+| `PlayerLogin.offline()` | Offline, as the player's name; the default |
+| `PlayerLogin.offline(username)` | Offline, as another username that several players may share |
+| `PlayerLogin.account(mode, accountId)` | A stored account; its profile supplies the username |
+| `PlayerLogin.session(mode, identity)` | An identity verified by a session server the scenario chose |
+| `PlayerLogin.leased(mode)` | The account of a lease passed to `create(options, lease)` |
+
+The account modes are `ONLINE` and `ON_REQUEST`; the account factories refuse `OFFLINE`, and every factory
+refuses a blank value. A login therefore never carries a username next to an account, or an account ID next
+to a session identity.
 
 The account must be stored by the protocol library selected for the player, and that library's release
 for the player's Minecraft version must support online authentication; otherwise creation fails before
@@ -89,8 +103,7 @@ its account and authenticates when the entrypoint asks for it.
 ```java
 var player = anvil.players().create(PlayerOptions.builder()
 		.name("OnlinePlayer")
-		.authentication(AuthenticationMode.ON_REQUEST)
-		.accountId("main")
+		.login(PlayerLogin.account(AuthenticationMode.ON_REQUEST, "main"))
 		.build());
 ```
 
@@ -108,6 +121,18 @@ var one = anvil.players().create("player-1", first);
 var two = anvil.players().create("player-2", second);
 // The two players use different authenticated accounts. Player cleanup releases the leases.
 ```
+
+`create(name, lease)` signs in with `ONLINE`. When the player needs more than a name, for example
+`ON_REQUEST` or a connection, declare a leased login; the lease supplies its account:
+
+```java
+var premium = anvil.players().create(PlayerOptions.builder()
+		.name("premium")
+		.login(PlayerLogin.leased(AuthenticationMode.ON_REQUEST))
+		.build(), testers.lease());
+```
+
+A leased login is refused without a lease, and a lease is refused, without being claimed, for any other login.
 
 Account IDs belong to the protocol library that stores them. A pool holds one account per ID and refuses
 an ID that several libraries store, so a lease always names the account its player signs in with. A player
@@ -154,13 +179,12 @@ MinecraftProxy proxy = MinecraftProxy.builder()
 ```java
 var player = anvil.players().create(PlayerOptions.builder()
 		.name("Alice")
-		.authentication(AuthenticationMode.ONLINE)
-		.sessionIdentity(SessionIdentity.builder()
+		.login(PlayerLogin.session(AuthenticationMode.ONLINE, SessionIdentity.builder()
 				.username("Alice")
 				.uniqueId(aliceId)
 				.accessToken(aliceToken)
 				.sessionServer(sessionServer)
-				.build())
+				.build()))
 		.build());
 ```
 

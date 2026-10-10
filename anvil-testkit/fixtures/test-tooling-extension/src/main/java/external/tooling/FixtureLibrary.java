@@ -39,7 +39,7 @@ public final class FixtureLibrary implements ProtocolLibraryProvider {
 					@Override public @NotNull String name() { return request.getName(); }
 					@Override public @NotNull String clientVersion() { return request.getClientVersion().toString(); }
 					@Override public @NotNull String libraryId() { return ID; }
-					@Override public @NotNull ProtocolRelease release() { return request.getRelease(); }
+					@Override public @NotNull ProtocolRelease release() { return releases.getFirst(); }
 					@Override public @NotNull PlayerIdentity identity() { return identity; }
 					@Override public @NotNull <T> Optional<T> findService(@NotNull Class<T> type) { return Optional.empty(); }
 					@Override public boolean destroyed() { return destroyed; }

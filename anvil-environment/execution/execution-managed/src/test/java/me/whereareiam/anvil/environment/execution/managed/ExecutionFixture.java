@@ -93,6 +93,9 @@ final class ExecutionFixture {
 		public @NotNull String id() { return "fixture"; }
 
 		@Override
+		public boolean preservesClientAddress() { return true; }
+
+		@Override
 		public @NotNull ExecutionSession open(@NotNull ExecutionContext context) {
 			calls.add("session-open");
 			return new ExecutionSession() {

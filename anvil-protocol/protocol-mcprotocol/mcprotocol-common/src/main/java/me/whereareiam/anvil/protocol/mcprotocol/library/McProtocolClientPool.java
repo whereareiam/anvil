@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.library;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.model.player.PlayerLogin;
 import me.whereareiam.anvil.api.model.player.SessionIdentity;
 import me.whereareiam.anvil.protocol.api.library.ProtocolArtifactResolver;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
@@ -20,6 +21,7 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Creates protocol clients and shares one isolated worker process per selected library release.
@@ -49,14 +51,13 @@ final class McProtocolClientPool implements ProtocolLibrary {
 	public synchronized @NotNull ProtocolPlayer create(@NotNull PlayerRequest request) {
 		if (closed) throw new IllegalStateException("MCProtocol client pool is closed");
 
-		ReleaseDefinition definition = catalog.require(request.getRelease());
-		if (!request.getRelease().getMinecraftVersions().contains(request.getClientVersion()))
-			throw new IllegalArgumentException("MCProtocolLib release '" + request.getRelease().getLibraryVersion()
-					+ "' does not speak Minecraft " + request.getClientVersion());
-		if (!request.getRelease().isLaunchable()) throw new IllegalStateException(request.getRelease().getLaunchRefusal());
+		// The engine refused unlaunchable releases already; this guards the library against a request it cannot serve.
+		ReleaseDefinition definition = catalog.require(request.getClientVersion());
+		ProtocolRelease release = definition.getRelease();
+		if (!release.isLaunchable()) throw new IllegalStateException(release.getLaunchRefusal());
 
 		AuthenticationSession session = session(request);
-		ProtocolWorkerProcess worker = workers.computeIfAbsent(request.getRelease().getLibraryVersion(),
+		ProtocolWorkerProcess worker = workers.computeIfAbsent(release.getLibraryVersion(),
 				ignored -> new ProtocolWorkerProcess(definition.getRelease(), closure(definition)));
 
 		return worker.create(request, session);
@@ -67,10 +68,11 @@ final class McProtocolClientPool implements ProtocolLibrary {
 	 * one, and otherwise the stored account.
 	 */
 	private @Nullable AuthenticationSession session(PlayerRequest request) {
-		if (!request.getAuthentication().usesAccount()) return null;
+		PlayerLogin login = request.getLogin();
+		if (!login.getAuthentication().usesAccount()) return null;
 
-		SessionIdentity identity = request.getSessionIdentity();
-		if (identity == null) return authentication.resolve(request.getAccountId());
+		SessionIdentity identity = login.getSessionIdentity();
+		if (identity == null) return authentication.resolve(Objects.requireNonNull(login.getAccountId(), "accountId"));
 
 		return AuthenticationSession.builder()
 				.username(identity.getUsername())

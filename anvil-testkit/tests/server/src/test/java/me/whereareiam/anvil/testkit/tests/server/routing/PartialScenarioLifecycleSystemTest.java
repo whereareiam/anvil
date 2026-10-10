@@ -1,7 +1,9 @@
 package me.whereareiam.anvil.testkit.tests.server.routing;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
+import me.whereareiam.anvil.api.model.player.PlayerLogin;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
@@ -83,8 +85,8 @@ class PartialScenarioLifecycleSystemTest {
 				assertSame(alice, context.players().get("PartialAlice"));
 				assertEquals(5, context.processes().all().size());
 				assertTrue(context.processes().all().stream().allMatch(process -> process.state() == ProcessState.READY));
-				var again = context.players().create(PlayerOptions.builder()
-						.name("PartialAliceAgain").username("PartialAlice").connectTo("secondary").build());
+				var again = context.players().create(PlayerOptions.builder().name("PartialAliceAgain")
+						.login(PlayerLogin.offline("PartialAlice")).connection(PlayerConnection.to("secondary")).build());
 				again.capability(Session.class).connect();
 				again.capability(Session.class).connected(Duration.ofSeconds(30));
 				PlayerIdentity elsewhere = again.capability(Server.class).joined("auxiliary", Duration.ofSeconds(20));

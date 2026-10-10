@@ -126,13 +126,16 @@ public final class DefaultPlayerService implements AutoCloseable {
 	 * @param processes scenario processes resolved at player creation
 	 * @param observations scenario-bound player observations
 	 * @param composer scenario-bound player composition
+	 * @param sourceAddressesPreserved whether the scenario's processes see a game connection's own source
+	 * address, which lets players declare one; an execution that translates connections refuses it
 	 * @return scenario-owned player manager
 	 */
 	public synchronized @NotNull PlayerManager open(
 			@NotNull AnvilScenario scenario,
 			@NotNull ScenarioProcesses processes,
 			@NotNull PlayerObservationFactory observations,
-			@NotNull ProtocolPlayerComposer composer
+			@NotNull ProtocolPlayerComposer composer,
+			boolean sourceAddressesPreserved
 	) {
 		ensureOpen();
 		RunningPlayerManager manager = new RunningPlayerManager(
@@ -144,7 +147,8 @@ public final class DefaultPlayerService implements AutoCloseable {
 				composer,
 				managers::remove,
 				accounts,
-				reservations
+				reservations,
+				sourceAddressesPreserved
 		);
 		managers.add(manager);
 

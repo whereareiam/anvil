@@ -46,7 +46,7 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 					.collect(Collectors.toSet());
 			var manager = players.open(plan.getScenario(), processes,
 					(player, connectedTo) -> new AgentPlayerObservation(player.name(), connectedTo, player::identity, agents, serverNames),
-					composer);
+					composer, execution.preservesClientAddress(plan));
 
 			return new RunningScenario(plan.getScenario(), processes, manager);
 		} catch (RuntimeException | Error failure) {
