@@ -90,6 +90,15 @@ public final class ProtocolWorkerProcess implements AutoCloseable {
 	}
 
 	/**
+	 * Returns the release this worker loaded, which every player it owns speaks.
+	 *
+	 * @return the worker's release
+	 */
+	@NotNull ProtocolRelease release() {
+		return release;
+	}
+
+	/**
 	 * Returns the capabilities the ready worker cannot install, with the reason for each.
 	 *
 	 * @return immutable reasons keyed by capability ID

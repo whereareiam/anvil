@@ -6,6 +6,10 @@ import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.NativeWorkerContext;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerCredentials;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerEvent;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.fixture.RecordingClient;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
@@ -38,13 +42,15 @@ class McProtocolPlayerTest {
 
 			ClientLogin login = client.logins().getFirst();
 			assertEquals(1, client.logins().size());
-			assertEquals("Alice", login.getName());
-			assertEquals(uuid, login.getUniqueId());
-			assertEquals("localhost", login.getHost());
-			assertEquals(25565, login.getPort());
-			assertEquals("token", login.getAccessToken());
-			assertEquals("en_us", login.getLocale());
-			assertEquals(8, login.getViewDistance());
+			assertEquals("Alice", login.getProfile().getName());
+			assertEquals(uuid, login.getProfile().getUniqueId());
+			assertEquals("token", login.getCredentials().getAccessToken());
+			assertEquals("en_us", login.getSettings().getLocale());
+			assertEquals(8, login.getSettings().getViewDistance());
+			assertEquals("localhost", login.getConnection().getHost());
+			assertEquals(25565, login.getConnection().getPort());
+			assertEquals("lobby.example.test", login.getConnection().getVirtualHost());
+			assertEquals("127.0.0.2", login.getConnection().getSourceAddress());
 			assertFalse(login.toString().contains("token"));
 			assertSame(client.sessions().getFirst(), player.nativeSession());
 		}
@@ -124,7 +130,13 @@ class McProtocolPlayerTest {
 	private McProtocolPlayer player(String accessToken) {
 		var context = NativeWorkerContext.builder().libraryId("mcprotocol").version(MinecraftVersion.parse("1.21.11"))
 				.protocolNumber(774).nativeSessionType(Object.class).build();
-		var player = new McProtocolPlayer("player", "Alice", "localhost", 25565, uuid, accessToken, null, client, SegmentRoots.none(),
+		var options = WorkerPlayerOptions.builder()
+				.profile(WorkerProfile.builder().name("Alice").uniqueId(uuid).build())
+				.credentials(accessToken == null ? null : WorkerCredentials.builder().accessToken(accessToken).build())
+				.connection(WorkerConnection.builder().host("localhost").port(25565)
+						.virtualHost("lobby.example.test").sourceAddress("127.0.0.2").build())
+				.build();
+		var player = new McProtocolPlayer("player", options, client, SegmentRoots.none(),
 				new WorkerMessageWriter(new PrintStream(output, true, StandardCharsets.UTF_8)),
 				new WorkerCapabilityRegistry(context, List.of()));
 		player.initialize();

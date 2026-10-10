@@ -2,7 +2,10 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -34,12 +37,9 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class ClientPacketListenerTest {
 	private static final ClientLogin LOGIN = ClientLogin.builder()
-			.name("Alice")
-			.uniqueId(new UUID(0, 1))
-			.host("localhost")
-			.port(25565)
-			.locale("en_us")
-			.viewDistance(8)
+			.profile(ClientProfile.builder().name("Alice").uniqueId(new UUID(0, 1)).build())
+			.settings(ClientSettings.builder().locale("en_us").viewDistance(8).build())
+			.connection(ClientConnection.builder().host("localhost").port(25565).build())
 			.build();
 
 	private final List<String> events = new ArrayList<>();

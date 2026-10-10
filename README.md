@@ -125,7 +125,7 @@ authentication through both of those entry points and keeps its own account file
 Global accounts default to `~/.anvil/accounts`; project-specific account directories and account
 pools are managed from the **Accounts** action in the Anvil tool window. Named pools are declared in
 the account directory's `pools.properties`, which other machines can write by hand. Account IDs are referenced
-from `PlayerOptions`, while the library retrieves the real username and UUID.
+from a player's `PlayerLogin`, while the library retrieves the real username and UUID.
 
 Apply Anvil where the scenarios live. Capabilities, platforms, and the protocol library are always
 explicit:

@@ -1,6 +1,6 @@
 ---
 title: Management
-description: Create players with the intended target and identity, then manage their registration and lifetime.
+description: Create players with the intended target, connection and login, then manage their registration and lifetime.
 ---
 
 Use `anvil.players().create("Alice")` to create an offline player with the scenario's default
@@ -44,32 +44,82 @@ Omitting metadata keeps the ordinary `create(name)` workflow unchanged.
 
 ## Override the connection target
 
-For a scenario declaring a process named `proxy`, import
-`me.whereareiam.anvil.api.model.player.PlayerOptions` and use:
+`PlayerOptions` groups how a player logs in in its `PlayerLogin` and where it connects in its
+`PlayerConnection`; both live in `me.whereareiam.anvil.api.model.player`. For a scenario declaring a process named `proxy`,
+import `PlayerOptions` and `PlayerConnection` and use:
 
 ```java
 var alice = anvil.players().create(PlayerOptions.builder()
 		.name("Alice")
-		.connectTo("proxy")
+		.connection(PlayerConnection.to("proxy"))
 		.build());
 ```
 
-You must still connect through `Session`. `connectTo` selects an initial endpoint; it does not request
-a backend transfer after login. For that, exercise your proxy plugin's routing behavior and observe
-the resulting [server route](../capabilities/server/index.md).
+You must still connect through `Session`. The connection's `target` selects an initial endpoint; it does
+not request a backend transfer after login. For that, exercise your proxy plugin's routing behavior and
+observe the resulting [server route](../capabilities/server/index.md).
+
+## Announce a virtual host
+
+A client writes the server address it was told to join into its handshake. Proxies read that address to
+route by host, for example through Velocity's `forced-hosts`. Set `virtualHost` to test such routing: the
+player still connects to the target's real address and port, and only the announced host changes.
+
+```java
+var routed = anvil.players().create(PlayerOptions.builder()
+		.name("Routed")
+		.connection(PlayerConnection.builder()
+				.target("proxy")
+				.virtualHost("games.example.test")
+				.build())
+		.build());
+```
+
+With `forced-hosts."games.example.test" = ["game"]` in the proxy's settings, `routed` joins `game`
+instead of the proxy's first `try` server. Without `virtualHost`, the handshake announces the target's
+real host, as before. The host must not be blank, must not contain whitespace, and is at most 255
+characters long.
+
+## Connect from another loopback address
+
+`sourceAddress` binds the player's socket to a local address before it connects, so the joined process
+sees the player arrive from that address. Use it to test per-address behavior, such as connection
+limits or address bans, with several players on one machine:
+
+```java
+var second = anvil.players().create(PlayerOptions.builder()
+		.name("SecondAddress")
+		.connection(PlayerConnection.builder().sourceAddress("127.0.0.2").build())
+		.build());
+```
+
+Without `sourceAddress`, the system chooses the address, which is `127.0.0.1` for a loopback listener.
+Anvil refuses the player when it is created, before connecting, and never falls back to `127.0.0.1`
+when the address cannot be used:
+
+| Limit | Why it is refused |
+|---|---|
+| A host name or a non-loopback address | A source address is an IP literal on the loopback interface, such as `127.0.0.2` or `::1` |
+| A target that does not listen on loopback, or listens on another address family | A loopback source only reaches a loopback listener of the same family |
+| An address this machine cannot bind | Linux routes all of `127.0.0.0/8` to loopback, so `127.0.0.2` and later addresses work without setup. macOS configures only `127.0.0.1`; add an alias first, for example `sudo ifconfig lo0 alias 127.0.0.2` |
+| Docker execution | Docker forwards published ports through its own network, so the container sees the bridge gateway instead of the source address. Use local execution |
+
+A proxy sees the source address; a backend behind it sees the proxy unless the proxy forwards player
+information to it.
 
 ## Connect the same username twice
 
 A player's name identifies it within the scenario and must be unique. It is also the Minecraft username,
-unless `username` declares another one. Give two players the same username to test what your plugin
-does when an account that is already online joins again, or joins through another proxy:
+unless its login declares another one with `PlayerLogin.offline(username)`. Give two players the same
+username to test what your plugin does when an account that is already online joins again, or joins
+through another proxy:
 
 ```java
 var alice = anvil.players().create("Alice");
 var again = anvil.players().create(PlayerOptions.builder()
 		.name("alice-again")
-		.username("Alice")
-		.connectTo("secondary")
+		.login(PlayerLogin.offline("Alice"))
+		.connection(PlayerConnection.to("secondary"))
 		.build());
 ```
 
@@ -77,10 +127,10 @@ Both log in as `Alice` with the same offline UUID, and each keeps its own sessio
 [server route](../capabilities/server/index.md). Retrieve the second one with
 `anvil.players().get("alice-again")`.
 
-`username` applies to offline players. A player that signs in with an account takes the account's
-username, so declaring both is refused; give such a player any unique name. A server or proxy still
-decides what happens when a username joins while it is already online there: Anvil only makes the
-second connection possible.
+A username belongs to offline logins only. A player that signs in with an account takes the account's
+username, so `PlayerLogin` offers no username next to an account; give such a player any unique name.
+A server or proxy still decides what happens when a username joins while it is already online there:
+Anvil only makes the second connection possible.
 
 ## Select a native version
 
@@ -102,7 +152,7 @@ for the version and refuses a tie.
 
 Offline authentication is the default. An online player requires a configured private authentication
 account and a compatible online-mode topology. Follow [authentication](../authentication/index.md)
-for account creation and `PlayerOptions` setup. Keep real account credentials out of test declarations
+for account creation and the `PlayerLogin` factories. Keep real account credentials out of test declarations
 and automated CI suites.
 
 ## Release and replace a player

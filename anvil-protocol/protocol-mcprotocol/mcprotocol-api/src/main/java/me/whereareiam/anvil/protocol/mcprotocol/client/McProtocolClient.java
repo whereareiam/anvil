@@ -54,7 +54,10 @@ public interface McProtocolClient<S> {
 	 * Creates an unconnected session for one login. The listener is installed before the session connects
 	 * and receives the session it was created for, so that callers can ignore callbacks of replaced sessions.
 	 *
-	 * @param login identity, endpoint, optional access token and client settings
+	 * <p>The session announces the connection's virtual host in its handshake when one is set, and binds its
+	 * socket to the connection's source address when one is set; a segment never ignores either value.</p>
+	 *
+	 * @param login profile, optional credentials, client settings and connection
 	 * @param listener receiver of login, teleport and disconnect callbacks for this session
 	 * @return new unconnected session
 	 */

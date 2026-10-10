@@ -9,6 +9,7 @@ import me.whereareiam.anvil.capability.inventory.model.SlotSelection;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.capability.binding.TypedCapabilityChannel;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
+import me.whereareiam.anvil.protocol.api.model.GameConnection;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
@@ -185,7 +186,9 @@ class PlayerChannelEventIsolationTest {
 
 	private PlayerRequest request(String version, String name) {
 		MinecraftVersion parsed = MinecraftVersion.parse(version);
-		return PlayerRequest.builder().name(name).clientVersion(parsed).release(release(version))
-				.address(new InetSocketAddress("localhost", 9)).build();
+		return PlayerRequest.builder().name(name)
+				.clientVersion(parsed)
+				.connection(GameConnection.builder().address(new InetSocketAddress("localhost", 9)).build())
+				.build();
 	}
 }

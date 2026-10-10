@@ -55,9 +55,7 @@ public final class ManagedProcessService {
 	 * @return owned prepared process group
 	 */
 	public @NotNull ProcessGroup prepare(@NotNull ExecutionPlan plan, @NotNull ExecutionPreparation preparation, @Nullable ScenarioObserver observer) {
-		ExecutionProvider execution = executions.get(plan.getExecutionProviderId());
-		if (execution == null)
-			throw new IllegalArgumentException("No execution provider '" + plan.getExecutionProviderId() + "'. Available: " + executions.keySet());
+		ExecutionProvider execution = provider(plan.getExecutionProviderId());
 		List<List<ProcessSpec>> order = startupOrder(plan);
 		ManagedProcessGroup group = new ManagedProcessGroup(plan, execution, preparation, order, observer);
 		try {
@@ -71,6 +69,24 @@ public final class ManagedProcessService {
 			}
 			throw failure;
 		}
+	}
+
+	/**
+	 * Returns whether processes of one execution provider see a game connection's own source address.
+	 *
+	 * @param executionProviderId selected execution provider
+	 * @return whether the provider preserves client addresses
+	 * @throws IllegalArgumentException when no such provider is installed
+	 */
+	public boolean preservesClientAddress(@NotNull String executionProviderId) {
+		return provider(executionProviderId).preservesClientAddress();
+	}
+
+	private ExecutionProvider provider(String executionProviderId) {
+		ExecutionProvider execution = executions.get(executionProviderId);
+		if (execution == null)
+			throw new IllegalArgumentException("No execution provider '" + executionProviderId + "'. Available: " + executions.keySet());
+		return execution;
 	}
 
 	private List<List<ProcessSpec>> startupOrder(ExecutionPlan plan) {

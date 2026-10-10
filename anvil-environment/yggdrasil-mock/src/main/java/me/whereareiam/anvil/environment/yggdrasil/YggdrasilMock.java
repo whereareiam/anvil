@@ -44,7 +44,7 @@ import java.util.concurrent.Executors;
  *     SessionIdentity alice = yggdrasil.register("Alice");
  *     // start the scenario, then:
  *     // players.create(PlayerOptions.builder().name("Alice")
- *     //         .authentication(AuthenticationMode.ONLINE).sessionIdentity(alice).build());
+ *     //         .login(PlayerLogin.session(AuthenticationMode.ONLINE, alice)).build());
  * }
  * }</pre>
  *

@@ -4,13 +4,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolSubscription;
+import me.whereareiam.anvil.protocol.api.model.GameConnection;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.model.AuthenticationSession;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerCapabilities;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerCredentials;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerControlOperation;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import org.jetbrains.annotations.NotNull;
@@ -72,13 +76,22 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 	}
 
 	private WorkerPlayerCapabilities create(@Nullable AuthenticationSession authentication) {
+		GameConnection connection = request.getConnection();
 		WorkerPlayerOptions options = WorkerPlayerOptions.builder()
-				.name(identity.getUsername())
-				.uuid(identity.getClientUniqueId())
-				.host(request.getAddress().getHostString())
-				.port(request.getAddress().getPort())
-				.accessToken(authentication == null ? null : authentication.getAccessToken())
-				.sessionServer(authentication == null ? null : authentication.getSessionServer())
+				.profile(WorkerProfile.builder()
+						.name(identity.getUsername())
+						.uniqueId(identity.getClientUniqueId())
+						.build())
+				.credentials(authentication == null ? null : WorkerCredentials.builder()
+						.accessToken(authentication.getAccessToken())
+						.sessionServer(authentication.getSessionServer())
+						.build())
+				.connection(WorkerConnection.builder()
+						.host(connection.getAddress().getHostString())
+						.port(connection.getAddress().getPort())
+						.virtualHost(connection.getVirtualHost())
+						.sourceAddress(connection.getSourceAddress() == null ? null : connection.getSourceAddress().getHostAddress())
+						.build())
 				.build();
 
 		JsonNode installed = worker.control(WorkerControlOperation.CREATE_PLAYER, id, options);
@@ -106,7 +119,7 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 
 	@Override
 	public @NotNull ProtocolRelease release() {
-		return request.getRelease();
+		return worker.release();
 	}
 
 	@Override

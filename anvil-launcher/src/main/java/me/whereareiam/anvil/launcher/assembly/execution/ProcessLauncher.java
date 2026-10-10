@@ -77,10 +77,24 @@ public final class ProcessLauncher {
 		return processes.prepare(plan(platformPlan, layout), preparation, observer);
 	}
 
+	/**
+	 * Returns whether the processes of a planned scenario see a game connection's own source address.
+	 *
+	 * @param platformPlan planned scenario
+	 * @return whether its execution provider preserves client addresses
+	 */
+	public boolean preservesClientAddress(@NotNull PlatformPlan platformPlan) {
+		return processes.preservesClientAddress(executionProviderId(platformPlan.getScenario()));
+	}
+
+	private @NotNull String executionProviderId(@NotNull AnvilScenario scenario) {
+		return scenario.getExecutionProviderId() == null ? options.getExecutionProviderId() : scenario.getExecutionProviderId();
+	}
+
 	private @NotNull ExecutionPlan plan(@NotNull PlatformPlan platforms, @NotNull WorkspaceLayout layout) {
 		AnvilScenario scenario = platforms.getScenario();
 		var plan = ExecutionPlan.builder()
-				.executionProviderId(scenario.getExecutionProviderId() == null ? options.getExecutionProviderId() : scenario.getExecutionProviderId())
+				.executionProviderId(executionProviderId(scenario))
 				.context(context(scenario))
 				.processTimeouts(scenario.getProcessTimeouts().withDefaults(options.getProcessTimeouts()))
 				.processScheduling(options.getProcessScheduling());

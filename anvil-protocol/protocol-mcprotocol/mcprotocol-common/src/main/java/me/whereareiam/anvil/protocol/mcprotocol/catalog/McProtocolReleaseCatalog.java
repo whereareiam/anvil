@@ -29,7 +29,7 @@ import java.util.function.Consumer;
  *
  * <pre>{@code
  * McProtocolReleaseCatalog catalog = McProtocolReleaseCatalog.load(Path.of("extra-releases.toml"));
- * ReleaseDefinition definition = catalog.require(selectedRelease);
+ * ReleaseDefinition definition = catalog.require(MinecraftVersion.parse("1.21.11"));
  * }</pre>
  */
 public final class McProtocolReleaseCatalog {
@@ -116,19 +116,18 @@ public final class McProtocolReleaseCatalog {
 	}
 
 	/**
-	 * Returns the release data of one release selected from {@link #releases()}.
+	 * Returns the release data of the one release that lists a Minecraft version.
 	 *
-	 * @param release selected release
-	 * @return its definition
-	 * @throws IllegalArgumentException when this catalog does not hold the release
+	 * @param version Minecraft version a player speaks
+	 * @return definition of the release listing it
+	 * @throws IllegalArgumentException when no release of this catalog lists the version
 	 */
-	public @NotNull ReleaseDefinition require(@NotNull ProtocolRelease release) {
-		ReleaseDefinition definition = definitions.get(release.getLibraryVersion());
-		if (definition == null || !definition.getRelease().equals(release))
-			throw new IllegalArgumentException("Unknown MCProtocolLib release '" + release.getLibraryVersion()
-					+ "'. Known: " + definitions.keySet());
-
-		return definition;
+	public @NotNull ReleaseDefinition require(@NotNull MinecraftVersion version) {
+		return definitions.values().stream()
+				.filter(definition -> definition.getRelease().getMinecraftVersions().contains(version))
+				.findFirst()
+				.orElseThrow(() -> new IllegalArgumentException("No MCProtocolLib release speaks Minecraft " + version
+						+ ". Known releases: " + definitions.keySet()));
 	}
 
 	private static List<ReleaseDefinition> builtIn(McProtocolReleaseReader reader) {

@@ -15,6 +15,15 @@ public interface ExecutionProvider {
 	@NotNull String id();
 
 	/**
+	 * Returns whether a game connection reaches a process with the client's own source address. A provider that
+	 * forwards published ports through its own network, such as Docker, hands the process another address, so a
+	 * simulated player cannot choose the address the process sees.
+	 *
+	 * @return true when processes see the source address a client connected from
+	 */
+	boolean preservesClientAddress();
+
+	/**
 	 * Acquires a scenario execution environment, owned until all its processes are finalized.
 	 *
 	 * @param context host resources and runtime validation policy

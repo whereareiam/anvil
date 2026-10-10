@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import me.whereareiam.anvil.api.type.DisconnectCause;
@@ -9,14 +8,21 @@ import me.whereareiam.anvil.protocol.api.channel.ProtocolSubscription;
 import me.whereareiam.anvil.protocol.api.worker.NativePlayer;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientCredentials;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerCapabilities;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerCredentials;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageWriter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.net.URI;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -47,14 +53,7 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 	});
 
 	private final String id;
-	@Getter
-	private final @NotNull String name;
-	private final String host;
-	private final int port;
-	@Getter
-	private final @NotNull UUID uuid;
-	private final @Nullable String accessToken;
-	private final @Nullable URI sessionServer;
+	private final @NotNull WorkerPlayerOptions options;
 	private final McProtocolClient<Object> client;
 	private final WorkerSegments segments;
 	private final WorkerMessageWriter events;
@@ -95,7 +94,12 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 
 	@Override
 	public @NotNull UUID uniqueId() {
-		return uuid;
+		return options.getProfile().getUniqueId();
+	}
+
+	@Override
+	public @NotNull String name() {
+		return options.getProfile().getName();
 	}
 
 	@Override
@@ -105,20 +109,33 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 
 		disconnectNotified.set(false);
 		disconnecting = false;
-		ClientLogin login = ClientLogin.builder()
-				.name(name)
-				.uniqueId(uuid)
-				.host(host)
-				.port(port)
-				.accessToken(accessToken)
-				.sessionServer(sessionServer)
-				.locale(CLIENT_LOCALE)
-				.viewDistance(VIEW_DISTANCE)
-				.build();
-		Object created = client.open(login, new Listener());
+		Object created = client.open(login(), new Listener());
 		session = created;
 		nativeBindings.attach(created);
 		client.connect(created);
+	}
+
+	/**
+	 * Builds the client login from the resolved options, with the worker's own client settings.
+	 */
+	private ClientLogin login() {
+		WorkerProfile profile = options.getProfile();
+		WorkerCredentials credentials = options.getCredentials();
+		WorkerConnection connection = options.getConnection();
+		return ClientLogin.builder()
+				.profile(ClientProfile.builder().name(profile.getName()).uniqueId(profile.getUniqueId()).build())
+				.credentials(credentials == null ? null : ClientCredentials.builder()
+						.accessToken(credentials.getAccessToken())
+						.sessionServer(credentials.getSessionServer())
+						.build())
+				.settings(ClientSettings.builder().locale(CLIENT_LOCALE).viewDistance(VIEW_DISTANCE).build())
+				.connection(ClientConnection.builder()
+						.host(connection.getHost())
+						.port(connection.getPort())
+						.virtualHost(connection.getVirtualHost())
+						.sourceAddress(connection.getSourceAddress())
+						.build())
+				.build();
 	}
 
 	@Override
@@ -141,7 +158,7 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 	public @NotNull Object nativeSession() {
 		Object current = session;
 		if (current == null || !client.connected(current))
-			throw new IllegalStateException("Player '" + name + "' is not connected");
+			throw new IllegalStateException("Player '" + options.getProfile().getName() + "' is not connected");
 		return current;
 	}
 

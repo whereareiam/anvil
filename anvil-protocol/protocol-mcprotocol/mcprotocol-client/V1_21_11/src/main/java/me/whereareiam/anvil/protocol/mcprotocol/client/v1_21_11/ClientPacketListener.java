@@ -43,7 +43,7 @@ final class ClientPacketListener extends SessionAdapter {
 	@Override
 	public void packetReceived(Session ignored, Packet packet) {
 		if (packet instanceof ClientboundLoginPacket) {
-			session.send(new ServerboundClientInformationPacket(login.getLocale(), login.getViewDistance(), ChatVisibility.FULL,
+			session.send(new ServerboundClientInformationPacket(login.getSettings().getLocale(), login.getSettings().getViewDistance(), ChatVisibility.FULL,
 					true, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, false, true, ParticleStatus.ALL));
 			listener.loggedIn(session);
 		}

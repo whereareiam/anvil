@@ -3,16 +3,23 @@ package me.whereareiam.anvil.protocol.api.model;
 import lombok.Builder;
 import lombok.Value;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.api.model.player.SessionIdentity;
-import me.whereareiam.anvil.api.type.AuthenticationMode;
+import me.whereareiam.anvil.api.model.player.PlayerLogin;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.net.InetSocketAddress;
 
 /**
- * Connection request supplied by the engine to the {@link ProtocolLibrary} selected for one player.
+ * Connection request supplied by the engine to the {@link ProtocolLibrary} selected for one player: who logs in,
+ * with which client, and where to. The engine validates it first; the login suits the joined process, and the
+ * source address of the connection can be used.
+ *
+ * <pre>{@code
+ * PlayerRequest request = PlayerRequest.builder()
+ *         .name("alice-again")
+ *         .login(PlayerLogin.offline("Alice"))
+ *         .clientVersion(MinecraftVersion.parse("1.21.11"))
+ *         .connection(GameConnection.builder().address(new InetSocketAddress("127.0.0.1", 25565)).build())
+ *         .build();
+ * }</pre>
  */
 @Value
 @Builder
@@ -23,43 +30,32 @@ public class PlayerRequest {
 	@NotNull String name;
 
 	/**
-	 * Minecraft username an offline player logs in with; {@link #getName() name} when none was declared.
-	 */
-	@Nullable String username;
-	/**
-	 * Exact native Minecraft version selected before library creation.
-	 */
-	@NotNull MinecraftVersion clientVersion;
-	/**
-	 * Library release listing {@link #getClientVersion() clientVersion}, selected by the engine.
-	 */
-	@NotNull ProtocolRelease release;
-	/**
-	 * Game listener of the selected server or proxy.
-	 */
-	@NotNull InetSocketAddress address;
-	/**
-	 * Login mode; automated tests use offline authentication by default.
+	 * Login the player uses; never a {@link PlayerLogin#isLeased() leased} one, which the engine completes with
+	 * the leased account first. A library that cannot redirect its session service must refuse a login with a
+	 * session identity.
 	 */
 	@NotNull
 	@Builder.Default
-	AuthenticationMode authentication = AuthenticationMode.OFFLINE;
+	PlayerLogin login = PlayerLogin.offline();
+
 	/**
-	 * Local account identifier when online authentication is selected.
+	 * Exact native Minecraft version the client speaks. Within one library a Minecraft version belongs to exactly
+	 * one release, so the library resolves the release from it through its own release data.
 	 */
-	@Nullable String accountId;
+	@NotNull MinecraftVersion clientVersion;
+
 	/**
-	 * Identity verified by a session server the scenario chose, replacing {@link #getAccountId() accountId}.
-	 * A library that cannot redirect its session service must refuse the request.
+	 * Game listener the client connects to, with the host it announces and the address it connects from. A library
+	 * that cannot announce the virtual host or bind the source address must refuse the request.
 	 */
-	@Nullable SessionIdentity sessionIdentity;
+	@NotNull GameConnection connection;
 
 	/**
 	 * Returns the Minecraft username an offline player logs in with.
 	 *
-	 * @return declared username, or the player name when none was declared
+	 * @return the login's username, or the player name when the login declares none
 	 */
 	public @NotNull String getUsername() {
-		return username == null ? name : username;
+		return login.getUsername() == null ? name : login.getUsername();
 	}
 }

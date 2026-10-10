@@ -2,7 +2,10 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.transport;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerEvent;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerCredentials;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerReady;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerRequest;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerResponse;
@@ -35,8 +38,12 @@ class WorkerMessageCodecTest {
 
 	@Test
 	void carriesCredentialsPrivatelyWithoutIncludingThemInModelDiagnostics() {
-		var options = WorkerPlayerOptions.builder().name("Alice").uuid(UUID.randomUUID())
-				.host("localhost").port(25565).accessToken("private-token").build();
+		var options = WorkerPlayerOptions.builder()
+				.profile(WorkerProfile.builder().name("Alice").uniqueId(UUID.randomUUID()).build())
+				.credentials(WorkerCredentials.builder().accessToken("private-token").build())
+				.connection(WorkerConnection.builder().host("localhost").port(25565)
+						.virtualHost("lobby.example.test").sourceAddress("127.0.0.2").build())
+				.build();
 		var request = WorkerRequest.builder().id(1).operation(WorkerControlOperation.CREATE_PLAYER.getWireName())
 				.player("player").arguments(codec.payload(options)).build();
 		var decoded = codec.decodeRequest(codec.encodeRequest(request));

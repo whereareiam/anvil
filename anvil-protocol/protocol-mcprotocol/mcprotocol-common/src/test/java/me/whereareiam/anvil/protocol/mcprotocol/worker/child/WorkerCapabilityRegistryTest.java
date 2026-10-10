@@ -8,6 +8,9 @@ import me.whereareiam.anvil.protocol.api.worker.NativeOperations;
 import me.whereareiam.anvil.protocol.api.worker.NativePlayer;
 import me.whereareiam.anvil.protocol.api.worker.NativeWorkerExtension;
 import me.whereareiam.anvil.protocol.api.worker.NativeWorkerProvider;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.fixture.RecordingClient;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageWriter;
@@ -191,7 +194,11 @@ class WorkerCapabilityRegistryTest {
 	}
 
 	private McProtocolPlayer player(WorkerCapabilityRegistry registry) {
-		return new McProtocolPlayer("player", "Alice", "localhost", 25565, UUID.randomUUID(), null, null, new RecordingClient(),
+		var options = WorkerPlayerOptions.builder()
+				.profile(WorkerProfile.builder().name("Alice").uniqueId(UUID.randomUUID()).build())
+				.connection(WorkerConnection.builder().host("localhost").port(25565).build())
+				.build();
+		return new McProtocolPlayer("player", options, new RecordingClient(),
 				SegmentRoots.none(), new WorkerMessageWriter(new PrintStream(OutputStream.nullOutputStream())), registry);
 	}
 

@@ -9,14 +9,29 @@ establishes whether the expected state was observed.
 
 ## Check the connection target
 
-The player's `connectTo` selects a named server or proxy. When omitted, the scenario entrypoint is
-used. Check the names against the scenario declaration rather than a stale handle from another run.
+The `target` of the player's `PlayerConnection` selects a named server or proxy. When omitted, the
+scenario entrypoint is used. Check the names against the scenario declaration rather than a stale handle from another run.
 A native client must match every server reachable through that target. Anvil does not add
 ViaVersion or translate the client's protocol when a topology has mixed incompatible versions.
 
 Read the entry process's console first, then the target backend's console. Confirm that the proxy
 lists the intended backend and has a valid default server. See
 [forwarding](../../../building-blocks/environments/platforms/proxies/forwarding/index.md).
+
+## Check a virtual host or source address
+
+A player with a `virtualHost` still connects to the target's real address; only its handshake changes.
+When it lands on the default backend instead of a forced host, compare the host with the proxy's
+`forced-hosts` key, which Velocity matches in lower case.
+
+A `sourceAddress` is refused when the player is created, never replaced by `127.0.0.1`:
+
+| Message | Check |
+|---|---|
+| `... must be an IP address literal such as 127.0.0.2` or `... is not a loopback address` | Use a loopback literal, not a host name or LAN address |
+| `... which this machine cannot bind` | On macOS, add the address as a loopback alias, for example `sudo ifconfig lo0 alias 127.0.0.2` |
+| `... the scenario's execution provider translates game connections` | Docker execution hides the client address from the process; use local execution |
+| `... only reaches a loopback listener of the same address family` | Match the target's address family, for example `127.0.0.2` for a `127.0.0.1` listener |
 
 ## Check the protocol library
 

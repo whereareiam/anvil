@@ -1,27 +1,20 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.model;
 
 import lombok.Builder;
-import lombok.ToString;
 import lombok.Value;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.net.URI;
-import java.util.UUID;
-
 /**
- * Everything a {@link McProtocolClient} needs to log one player in: profile, game endpoint, optional online
- * credentials and the client information sent after login.
+ * Everything a {@link McProtocolClient} needs to log one player in: who logs in, with which client settings, and
+ * where to.
  *
  * <pre>{@code
  * ClientLogin login = ClientLogin.builder()
- *         .name("Alice")
- *         .uniqueId(uuid)
- *         .host("127.0.0.1")
- *         .port(25565)
- *         .locale("en_us")
- *         .viewDistance(8)
+ *         .profile(ClientProfile.builder().name("Alice").uniqueId(uuid).build())
+ *         .settings(ClientSettings.builder().locale("en_us").viewDistance(8).build())
+ *         .connection(ClientConnection.builder().host("127.0.0.1").port(25565).build())
  *         .build();
  * }</pre>
  */
@@ -29,36 +22,22 @@ import java.util.UUID;
 @Builder
 public class ClientLogin {
 	/**
-	 * Profile name sent in the login request.
+	 * Profile sent in the login request.
 	 */
-	@NotNull String name;
+	@NotNull ClientProfile profile;
+
 	/**
-	 * Profile identity sent in the login request.
+	 * Online credentials, or null for an offline login.
 	 */
-	@NotNull UUID uniqueId;
+	@Nullable ClientCredentials credentials;
+
 	/**
-	 * Host name or address of the game listener.
+	 * Client information sent after login.
 	 */
-	@NotNull String host;
+	@NotNull ClientSettings settings;
+
 	/**
-	 * Port of the game listener.
+	 * Game listener, announced host and source address of the connection.
 	 */
-	int port;
-	/**
-	 * Minecraft access token for online-mode servers, or null for offline login. Never logged.
-	 */
-	@ToString.Exclude
-	@Nullable String accessToken;
-	/**
-	 * Session server the login is reported to instead of Mojang's, or null for Mojang's.
-	 */
-	@Nullable URI sessionServer;
-	/**
-	 * Locale reported in the client information, such as {@code en_us}.
-	 */
-	@NotNull String locale;
-	/**
-	 * View distance in chunks reported in the client information.
-	 */
-	int viewDistance;
+	@NotNull ClientConnection connection;
 }

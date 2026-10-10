@@ -28,12 +28,13 @@ leases when the test ends.
 
 To create the player with options of your own, for example
 [authentication on request](../../../building-blocks/players/authentication/index.md), pass the options
-together with the lease. The leased account supplies the account ID and protocol library:
+together with the lease and declare a leased login. The leased account supplies the account and protocol
+library:
 
 ```java
 SimulatedPlayer player = anvil.players().create(PlayerOptions.builder()
 		.name("premium")
-		.authentication(AuthenticationMode.ON_REQUEST)
+		.login(PlayerLogin.leased(AuthenticationMode.ON_REQUEST))
 		.build(), accounts.lease());
 ```
 

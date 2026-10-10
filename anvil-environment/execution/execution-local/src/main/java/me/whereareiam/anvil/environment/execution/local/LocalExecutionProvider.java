@@ -32,6 +32,14 @@ public final class LocalExecutionProvider implements ExecutionProvider {
 		return "local";
 	}
 
+	/**
+	 * Host processes accept connections directly, so they see the client's own address.
+	 */
+	@Override
+	public boolean preservesClientAddress() {
+		return true;
+	}
+
 	@Override
 	public @NotNull ExecutionSession open(@NotNull ExecutionContext context) {
 		LocalRuntimePreparation selected = runtime == null ? context.getLocalRuntime() : runtime;

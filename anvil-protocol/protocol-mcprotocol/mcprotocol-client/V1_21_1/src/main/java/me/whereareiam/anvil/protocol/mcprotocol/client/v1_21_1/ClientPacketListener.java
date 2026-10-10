@@ -10,6 +10,7 @@ import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.TranslationArgument;
 import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.event.session.DisconnectedEvent;
+import org.geysermc.mcprotocollib.network.event.session.PacketSendingEvent;
 import org.geysermc.mcprotocollib.network.event.session.SessionAdapter;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.UnexpectedEncryptionException;
@@ -20,6 +21,7 @@ import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.Clientbound
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundPingPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundClientInformationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundPongPacket;
+import org.geysermc.mcprotocollib.protocol.packet.handshake.serverbound.ClientIntentionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
@@ -39,7 +41,7 @@ final class ClientPacketListener extends SessionAdapter {
 	@Override
 	public void packetReceived(Session session, Packet packet) {
 		if (packet instanceof ClientboundLoginPacket) {
-			session.send(new ServerboundClientInformationPacket(login.getLocale(), login.getViewDistance(), ChatVisibility.FULL,
+			session.send(new ServerboundClientInformationPacket(login.getSettings().getLocale(), login.getSettings().getViewDistance(), ChatVisibility.FULL,
 					true, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, false, true));
 			listener.loggedIn(session);
 		}
@@ -53,6 +55,18 @@ final class ClientPacketListener extends SessionAdapter {
 			listener.disconnected(session, DisconnectCause.SERVER, plainText(disconnect.getReason()));
 		if (packet instanceof ClientboundLoginDisconnectPacket disconnect)
 			listener.disconnected(session, DisconnectCause.SERVER, plainText(disconnect.getReason()));
+	}
+
+	/**
+	 * MCProtocolLib 1.21.1 announces the host it connects to; the network layer lets a listener replace a packet
+	 * before it is written, which announces the virtual host without changing where the session connects.
+	 */
+	@Override
+	public void packetSending(PacketSendingEvent event) {
+		Packet packet = event.getPacket();
+		String virtualHost = login.getConnection().getVirtualHost();
+		if (virtualHost != null && packet instanceof ClientIntentionPacket intention)
+			event.setPacket(intention.withHostname(virtualHost));
 	}
 
 	@Override

@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.library;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
+import me.whereareiam.anvil.protocol.api.model.GameConnection;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
@@ -46,7 +47,7 @@ class McProtocolClientPoolTest {
 				""");
 
 		try (ProtocolLibrary library = new McProtocolLibraryProvider().create(context(releases))) {
-			IllegalStateException failure = assertThrows(IllegalStateException.class, () -> library.create(request(library, "9.9.9")));
+			IllegalStateException failure = assertThrows(IllegalStateException.class, () -> library.create(request("9.9.9")));
 
 			assertEquals("MCProtocolLib release 9.9.9-test has no pinned checksum for demo:protocol:9.9.9-test; "
 					+ "set its sha256 in " + releases, failure.getMessage());
@@ -78,7 +79,7 @@ class McProtocolClientPoolTest {
 				""".formatted(PINNED));
 
 		try (ProtocolLibrary library = new McProtocolLibraryProvider().create(context(releases))) {
-			IllegalStateException stopped = assertThrows(IllegalStateException.class, () -> library.create(request(library, "9.9.9")));
+			IllegalStateException stopped = assertThrows(IllegalStateException.class, () -> library.create(request("9.9.9")));
 
 			assertEquals("stopped before launch", stopped.getMessage());
 			Path directory = temporary.resolve("cache/protocol/mcprotocol/9.9.9-test");
@@ -89,14 +90,12 @@ class McProtocolClientPoolTest {
 	}
 
 	@Test
-	void refusesNewPlayersAfterShutdownAndVersionsTheReleaseDoesNotSpeak() {
+	void refusesNewPlayersAfterShutdownAndVersionsNoReleaseSpeaks() {
 		ProtocolLibrary library = new McProtocolLibraryProvider().create(context(null));
-		PlayerRequest request = request(library, "26.1.2");
-		PlayerRequest mismatched = PlayerRequest.builder().name("Bob").clientVersion(MinecraftVersion.parse("1.21.11"))
-				.release(request.getRelease()).address(request.getAddress()).build();
+		PlayerRequest request = request("26.1.2");
 
-		IllegalArgumentException version = assertThrows(IllegalArgumentException.class, () -> library.create(mismatched));
-		assertTrue(version.getMessage().contains("does not speak Minecraft 1.21.11"), version.getMessage());
+		IllegalArgumentException version = assertThrows(IllegalArgumentException.class, () -> library.create(request("1.20.4")));
+		assertTrue(version.getMessage().startsWith("No MCProtocolLib release speaks Minecraft 1.20.4"), version.getMessage());
 		library.close();
 		library.close();
 		assertThrows(IllegalStateException.class, () -> library.create(request));
@@ -114,17 +113,11 @@ class McProtocolClientPoolTest {
 				.build();
 	}
 
-	private PlayerRequest request(ProtocolLibrary library, String version) {
-		MinecraftVersion parsed = MinecraftVersion.parse(version);
-		ProtocolRelease release = library.releases().stream()
-				.filter(candidate -> candidate.getMinecraftVersions().contains(parsed))
-				.findFirst()
-				.orElseThrow();
+	private PlayerRequest request(String version) {
 		return PlayerRequest.builder()
 				.name("Alice")
-				.clientVersion(parsed)
-				.release(release)
-				.address(new InetSocketAddress("127.0.0.1", 9))
+				.clientVersion(MinecraftVersion.parse(version))
+				.connection(GameConnection.builder().address(new InetSocketAddress("127.0.0.1", 9)).build())
 				.build();
 	}
 }

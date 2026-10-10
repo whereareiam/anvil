@@ -36,6 +36,15 @@ public final class DockerExecutionProvider implements ExecutionProvider {
 		return "docker";
 	}
 
+	/**
+	 * Docker forwards a published port through its proxy or address translation, so a container sees the bridge
+	 * gateway instead of the client's address.
+	 */
+	@Override
+	public boolean preservesClientAddress() {
+		return false;
+	}
+
 	@Override
 	public @NotNull ExecutionSession open(@NotNull ExecutionContext context) {
 		DockerEngine docker = new DockerEngine();

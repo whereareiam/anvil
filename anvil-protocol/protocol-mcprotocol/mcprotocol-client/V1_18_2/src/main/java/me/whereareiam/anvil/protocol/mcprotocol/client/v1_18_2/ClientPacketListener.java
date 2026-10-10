@@ -4,6 +4,7 @@ import com.github.steveice10.mc.protocol.data.UnexpectedEncryptionException;
 import com.github.steveice10.mc.protocol.data.game.entity.player.HandPreference;
 import com.github.steveice10.mc.protocol.data.game.setting.ChatVisibility;
 import com.github.steveice10.mc.protocol.data.game.setting.SkinPart;
+import com.github.steveice10.mc.protocol.packet.handshake.serverbound.ClientIntentionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundDisconnectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
@@ -12,6 +13,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.serverbound.level.Serverb
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.event.session.DisconnectedEvent;
+import com.github.steveice10.packetlib.event.session.PacketSendingEvent;
 import com.github.steveice10.packetlib.event.session.SessionAdapter;
 import com.github.steveice10.packetlib.packet.Packet;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +39,7 @@ final class ClientPacketListener extends SessionAdapter {
 	@Override
 	public void packetReceived(Session session, Packet packet) {
 		if (packet instanceof ClientboundLoginPacket) {
-			session.send(new ServerboundClientInformationPacket(login.getLocale(), login.getViewDistance(), ChatVisibility.FULL,
+			session.send(new ServerboundClientInformationPacket(login.getSettings().getLocale(), login.getSettings().getViewDistance(), ChatVisibility.FULL,
 					true, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, false, true));
 			listener.loggedIn(session);
 		}
@@ -49,6 +51,18 @@ final class ClientPacketListener extends SessionAdapter {
 			listener.disconnected(session, DisconnectCause.SERVER, plainText(disconnect.getReason()));
 		if (packet instanceof ClientboundLoginDisconnectPacket disconnect)
 			listener.disconnected(session, DisconnectCause.SERVER, plainText(disconnect.getReason()));
+	}
+
+	/**
+	 * MCProtocolLib 1.18.2 announces the host it connects to; packetlib lets a listener replace a packet before
+	 * it is written, which announces the virtual host without changing where the session connects.
+	 */
+	@Override
+	public void packetSending(PacketSendingEvent event) {
+		Packet packet = event.getPacket();
+		String virtualHost = login.getConnection().getVirtualHost();
+		if (virtualHost != null && packet instanceof ClientIntentionPacket intention)
+			event.setPacket(intention.withHostname(virtualHost));
 	}
 
 	@Override
