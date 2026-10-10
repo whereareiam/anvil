@@ -48,5 +48,5 @@ Velocity supports modern forwarding to Paper and legacy forwarding to Paper or S
 negotiates a compatible mode for the connected group, writes its forwarding secret, and updates backend
 configuration. See [topology and forwarding](../forwarding/index.md).
 
-The provider reuses its `libraries` cache by default. It shuts down Velocity using its native
+The provider reuses its `libraries` cache by default, also after a rebuilt plugin. It shuts down Velocity using its native
 shutdown command when the scenario closes.

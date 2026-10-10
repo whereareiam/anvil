@@ -67,7 +67,8 @@ dependency sets that must not share a snapshot.
 | `SAVE_ONLY`        | No                     | Yes                                |
 | `DISABLED`         | No                     | No                                 |
 
-Platforms can contribute defaults. Declare the same path to override a default, including
+Platforms can contribute defaults, such as Paper's and Velocity's own downloads, which they declare
+with `CacheIdentity.PROCESS`. Declare the same path to override a default, including
 `CachePolicy.DISABLED` to turn it off. Cache paths cannot overlap cleanup paths, because those policies
 would compete over the same files.
 
