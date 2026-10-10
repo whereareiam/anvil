@@ -99,6 +99,35 @@ class ScenarioInvocationTest {
 	}
 
 	@Test
+	void closesOwnedResourcesAfterTheScenarioAndTheEngine() {
+		List<String> actions = new ArrayList<>();
+		OwnedResources resources = new OwnedResources();
+		resources.own((AutoCloseable) () -> actions.add("resource"));
+		var invocation = new ScenarioInvocation(engine(new Context(() -> actions.add("context")), () -> actions.add("engine")),
+				definition, () -> true, null, resources);
+
+		assertTrue(invocation.resource(AutoCloseable.class) != null);
+		invocation.close();
+		assertEquals(List.of("context", "engine", "resource"), actions);
+	}
+
+	@Test
+	void closesOwnedResourcesWhenTheScenarioFailsToStart() {
+		List<String> actions = new ArrayList<>();
+		OwnedResources resources = new OwnedResources();
+		resources.own((AutoCloseable) () -> actions.add("resource"));
+		RuntimeException start = new IllegalStateException("start");
+		ScenarioEngine engine = new ScenarioEngine() {
+			public @NotNull ScenarioContext prepare(@NotNull AnvilScenario scenario, @Nullable ScenarioObserver observer) { throw start; }
+			public void close() { actions.add("engine"); }
+		};
+
+		assertSame(start, assertThrows(RuntimeException.class,
+				() -> new ScenarioInvocation(engine, definition, () -> true, null, resources)));
+		assertEquals(List.of("engine", "resource"), actions);
+	}
+
+	@Test
 	void skipsBeforeStartingWhenTheMachineStoresTooFewAccounts() throws Exception {
 		List<String> actions = new ArrayList<>();
 		Context context = new Context(() -> actions.add("context"));

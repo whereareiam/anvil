@@ -20,23 +20,27 @@ import java.util.function.Supplier;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 final class ScenarioSelection {
-	static @NotNull AnvilScenario scenario(@NotNull Method method, @NotNull Class<?> type) {
-		Supplier<AnvilScenario> declared = declared(method);
-		if (declared == null) declared = declared(type);
+	static @NotNull AnvilScenario scenario(
+			@NotNull Method method,
+			@NotNull Class<?> type,
+			@NotNull ScenarioResources resources
+	) {
+		Supplier<AnvilScenario> declared = declared(method, resources);
+		if (declared == null) declared = declared(type, resources);
 		if (declared == null)
 			throw new ExtensionConfigurationException("AnvilExtension requires @AnvilTest or an @AnvilEnvironment annotation");
 
 		return declared.get();
 	}
 
-	private static @Nullable Supplier<AnvilScenario> declared(AnnotatedElement element) {
+	private static @Nullable Supplier<AnvilScenario> declared(AnnotatedElement element, ScenarioResources resources) {
 		List<Supplier<AnvilScenario>> declarations = new ArrayList<>();
 		AnvilTest fixed = element.getAnnotation(AnvilTest.class);
 		if (fixed != null) declarations.add(() -> instantiate(fixed.value()).define());
 
 		for (Annotation annotation : element.getAnnotations()) {
 			AnvilEnvironment environment = annotation.annotationType().getAnnotation(AnvilEnvironment.class);
-			if (environment != null) declarations.add(() -> create(environment, annotation));
+			if (environment != null) declarations.add(() -> create(environment, annotation, resources));
 		}
 
 		if (declarations.size() > 1)
@@ -46,10 +50,10 @@ final class ScenarioSelection {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static AnvilScenario create(AnvilEnvironment environment, Annotation declaration) {
+	private static AnvilScenario create(AnvilEnvironment environment, Annotation declaration, ScenarioResources resources) {
 		AnvilScenarioFactory<Annotation> factory = (AnvilScenarioFactory<Annotation>) instantiate(environment.value());
 		try {
-			return factory.create(declaration);
+			return factory.create(declaration, resources);
 		} catch (ClassCastException mismatch) {
 			throw new ExtensionConfigurationException(environment.value().getName() + " does not build scenarios for @"
 					+ declaration.annotationType().getSimpleName(), mismatch);
