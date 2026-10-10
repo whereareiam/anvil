@@ -8,6 +8,7 @@ import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.scenario.ScenarioObserver;
+import me.whereareiam.anvil.environment.execution.api.PortReservations;
 import me.whereareiam.anvil.environment.execution.api.image.ImageLocks;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionPlan;
@@ -39,6 +40,7 @@ public final class ProcessLauncher {
 	private final @NotNull AgentConnectionProvider connections;
 	private final @NotNull JavaExecutionRuntime javaRuntime;
 	private final @NotNull ImageLocks imageLocks;
+	private final @NotNull PortReservations ports;
 
 	/**
 	 * Prepares platform and workspace inputs through the managed execution topology without starting JVMs.
@@ -120,6 +122,7 @@ public final class ProcessLauncher {
 				.localRuntime(javaRuntime)
 				.runtimeValidator(javaRuntime)
 				.imageLocks(imageLocks)
+				.ports(ports)
 				.offline(options.isOffline())
 				.refresh(options.isRefresh())
 				.networkPolicy(scenario.getNetworkPolicy())

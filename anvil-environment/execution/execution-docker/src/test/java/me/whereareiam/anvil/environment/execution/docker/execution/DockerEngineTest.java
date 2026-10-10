@@ -7,6 +7,7 @@ import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.docker.DockerEngine;
 import me.whereareiam.anvil.environment.execution.docker.DockerNetwork;
+import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
 import me.whereareiam.anvil.testkit.support.FixtureArtifacts;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -70,7 +71,8 @@ class DockerEngineTest {
 					assertTrue(properties.contains("java.specification.version = 21"));
 					assertEquals(21, request.getJavaSelection().getRequirement().getFeatureVersion());
 					validated.set(true);
-				}).build();
+				})
+				.ports(new PortSelection()).build();
 		try (var docker = new DockerEngine()) {
 			try (DockerExecutionSession session = new DockerExecutionSession(context, docker,
 					DockerExecutionSettings.builder().image("temurin:21", IMAGE).build())) {

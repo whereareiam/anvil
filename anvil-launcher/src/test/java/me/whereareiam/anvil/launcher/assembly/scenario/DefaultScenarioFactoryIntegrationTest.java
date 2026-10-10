@@ -42,6 +42,7 @@ import me.whereareiam.anvil.engine.AnvilEngineBuilder;
 import me.whereareiam.anvil.engine.scenario.ScenarioSession;
 import me.whereareiam.anvil.environment.execution.local.LocalExecutionProvider;
 import me.whereareiam.anvil.environment.execution.managed.ManagedProcessService;
+import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
 import me.whereareiam.anvil.launcher.assembly.DefaultScenarioFactory;
 import me.whereareiam.anvil.launcher.assembly.execution.CacheImageLocks;
 import me.whereareiam.anvil.launcher.assembly.execution.JavaExecutionRuntime;
@@ -798,6 +799,7 @@ class DefaultScenarioFactoryIntegrationTest {
 				.connections(connections)
 				.javaRuntime(new JavaExecutionRuntime(provisioning.getJava()))
 				.imageLocks(new CacheImageLocks(provisioning.getCache()))
+				.ports(new PortSelection())
 				.build();
 		var players = new DefaultPlayerService(new ProtocolLibraryRegistry(libraries), options, provisioning.getArtifacts()::obtain);
 		var retained = new RetainedProcesses(processes);

@@ -7,6 +7,7 @@ import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.scenario.ScenarioFactory;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
 import me.whereareiam.anvil.environment.execution.managed.ManagedProcessService;
+import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
 import me.whereareiam.anvil.launcher.assembly.execution.CacheImageLocks;
 import me.whereareiam.anvil.launcher.assembly.execution.JavaExecutionRuntime;
 import me.whereareiam.anvil.launcher.assembly.execution.ProcessLauncher;
@@ -74,6 +75,7 @@ public final class LauncherAssembly implements AutoCloseable {
 					.connections(discovery.required(AgentConnectionProvider.class, "agent connection provider"))
 					.javaRuntime(new JavaExecutionRuntime(provisioning.getJava()))
 					.imageLocks(new CacheImageLocks(provisioning.getCache()))
+					.ports(new PortSelection())
 					.build();
 
 			retained = new RetainedProcesses(execution);

@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
+import me.whereareiam.anvil.api.type.CacheIdentity;
 import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
@@ -89,9 +90,16 @@ public final class VelocityPlatformProvider implements PlatformProvider {
 		return MinecraftVersion.parse(release.group(1));
 	}
 
+	/**
+	 * Returns Velocity's downloaded {@code libraries}, which follow from the proxy distribution alone and so
+	 * belong to the process and survive a rebuilt plugin.
+	 *
+	 * @param process Velocity proxy declaration
+	 * @return cache declarations for the proxy
+	 */
 	@Override
 	public @NotNull List<WorkspaceCache> defaultCaches(@NotNull MinecraftProcess process) {
-		return List.of(WorkspaceCache.builder().group("velocity").path(Path.of("libraries")).build());
+		return List.of(WorkspaceCache.builder().group("velocity").path(Path.of("libraries")).identity(CacheIdentity.PROCESS).build());
 	}
 
 	@Override

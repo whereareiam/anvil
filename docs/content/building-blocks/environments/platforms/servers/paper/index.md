@@ -47,8 +47,9 @@ It does not create the other layout's file. Do not inject forwarding secrets or 
 fixtures. See [forwarding](../../proxies/forwarding/index.md).
 
 Paper's provider caches Paperclip's `cache` directory, which holds the downloaded Mojang server, and
-from 1.18 also its `libraries` directory. This does not preserve plugin data or world changes between
-disposable runs; declare those separately if your test requires them.
+from 1.18 also its `libraries` directory and the patched server under `versions`. They depend only on
+the server distribution, so a rebuilt plugin keeps them. This does not preserve plugin data or world
+changes between disposable runs; declare those separately if your test requires them.
 
 ## Java
 
