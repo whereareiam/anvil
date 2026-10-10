@@ -6,6 +6,7 @@ import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
+import me.whereareiam.anvil.api.type.CacheIdentity;
 import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
@@ -152,7 +153,7 @@ class PaperPlatformProviderTest {
 	}
 
 	@ParameterizedTest
-	@CsvSource({"1.16.5, cache", "1.17.1, cache", "1.18.2, libraries cache", "1.21.11, libraries cache"})
+	@CsvSource({"1.16.5, cache", "1.17.1, cache", "1.18.2, libraries versions cache", "1.21.11, libraries versions cache"})
 	void cachesPaperclipOutputsForTheServerVersion(String version, String paths) {
 		MinecraftServer server = MinecraftServer.builder().name("server").platform(Platforms.PAPER)
 				.distribution(Distribution.remote(version, "1")).build();
@@ -160,6 +161,8 @@ class PaperPlatformProviderTest {
 		List<WorkspaceCache> caches = new PaperPlatformProvider().defaultCaches(server);
 		assertEquals(Arrays.stream(paths.split(" ")).map(Path::of).toList(), caches.stream().map(WorkspaceCache::getPath).toList());
 		assertTrue(caches.stream().allMatch(cache -> cache.getGroup().equals("paper")));
+		assertTrue(caches.stream().allMatch(cache -> cache.getIdentity() == CacheIdentity.PROCESS),
+				"Paperclip's outputs follow from the distribution, so a rebuilt plugin must not start new snapshots");
 	}
 
 	private PlatformContext context(
