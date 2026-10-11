@@ -89,6 +89,20 @@ final class ManagedProcessConsole implements ProcessConsole {
 		}
 	}
 
+	/**
+	 * Records a line of Anvil's own after the output was captured, in the history and in the workspace log, so
+	 * retained diagnostics show what Anvil did to the process.
+	 */
+	void record(@NotNull String text) {
+		append(text);
+		try {
+			Files.writeString(logFile, text + System.lineSeparator(), StandardCharsets.UTF_8,
+					StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+		} catch (IOException failure) {
+			append("[Anvil] Failed to record to the console log: " + failure.getMessage());
+		}
+	}
+
 	void closeOutput() {
 		synchronized (lines) {
 			closed = true;

@@ -58,6 +58,13 @@ public final class ProcessRegistry {
 		});
 	}
 
+	public void kill(@NotNull String name) {
+		mutate(name, process -> { }, process -> {
+			if (process.currentOrNull() != null) process.killGeneration();
+			return null;
+		});
+	}
+
 	/**
 	 * Applies a lifecycle action to one process. Caller mistakes, such as an unknown name or a violated
 	 * precondition, are reported without failing the run; failures of the action itself fail it.

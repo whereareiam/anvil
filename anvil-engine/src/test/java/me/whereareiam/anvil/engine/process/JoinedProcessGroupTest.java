@@ -37,8 +37,9 @@ class JoinedProcessGroupTest {
 		joined.restart("lobby");
 		joined.stop("proxy");
 		joined.start("proxy");
+		joined.kill("lobby");
 
-		assertEquals(List.of("retained:restart:lobby", "own:stop:proxy", "own:start:proxy"), calls);
+		assertEquals(List.of("retained:restart:lobby", "own:stop:proxy", "own:start:proxy", "retained:kill:lobby"), calls);
 	}
 
 	@Test

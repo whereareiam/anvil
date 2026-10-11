@@ -67,6 +67,7 @@ final class ExecutionFixture {
 	/** Runs in the thread that stops a process, before the process is recorded as stopped. */
 	Consumer<String> beforeStop = name -> { };
 	final Set<String> silent = Collections.synchronizedSet(new HashSet<>());
+	final List<String> forcedTerminations = Collections.synchronizedList(new ArrayList<>());
 
 	ExecutionFixture(Path directory) {
 		this.directory = directory;
@@ -209,7 +210,7 @@ final class ExecutionFixture {
 		public @NotNull ProcessExecution start(@NotNull JavaCommand command) {
 			calls.add("start:" + name);
 			commands.add(command);
-			current = new Running(name, calls, !silent.contains(name), stopping -> beforeStop.accept(stopping));
+			current = new Running(name, calls, !silent.contains(name), stopping -> beforeStop.accept(stopping), forcedTerminations::add);
 			return current;
 		}
 		@Override
@@ -223,6 +224,7 @@ final class ExecutionFixture {
 		private final String name;
 		private final List<String> calls;
 		private final Consumer<String> beforeStop;
+		private final Consumer<String> forcedTermination;
 		private final AtomicBoolean alive = new AtomicBoolean(true);
 		private final CompletableFuture<Void> exited = new CompletableFuture<>();
 		private final PipedInputStream output = new PipedInputStream();
@@ -236,8 +238,9 @@ final class ExecutionFixture {
 			}
 		};
 
-		Running(String name, List<String> calls, boolean ready, Consumer<String> beforeStop) {
+		Running(String name, List<String> calls, boolean ready, Consumer<String> beforeStop, Consumer<String> forcedTermination) {
 			this.beforeStop = beforeStop;
+			this.forcedTermination = forcedTermination;
 			this.name = name;
 			this.calls = calls;
 			try {
@@ -271,7 +274,10 @@ final class ExecutionFixture {
 			}
 		}
 		@Override
-		public void terminate(boolean force) { end(); }
+		public void terminate(boolean force) {
+			if (force) forcedTermination.accept(name);
+			end();
+		}
 
 		private void end() {
 			if (!alive.compareAndSet(true, false)) return;

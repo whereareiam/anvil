@@ -4,6 +4,7 @@
     "index",
     "console",
     "agents",
-    "restarts"
+    "restarts",
+    "kills"
   ]
 }

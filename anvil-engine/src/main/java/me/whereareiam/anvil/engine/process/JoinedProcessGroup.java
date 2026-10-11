@@ -83,6 +83,14 @@ public final class JoinedProcessGroup implements ProcessGroup {
 	}
 
 	@Override
+	public void kill(@NotNull String name) {
+		change(name, (processes, process) -> {
+			processes.kill(process);
+			return null;
+		});
+	}
+
+	@Override
 	public @NotNull RunningProcess restart(@NotNull String name) {
 		return change(name, ScenarioProcesses::restart);
 	}

@@ -155,6 +155,42 @@ public abstract class ManagedProcess implements RunningProcess {
 		if (commandFailure != null) throw commandFailure;
 	}
 
+	/**
+	 * Kills the workload at once through its execution provider, without the stop command or the platform's
+	 * shutdown sequence. A deliberate kill ends the generation {@link ProcessState#STOPPED} without failing it, and
+	 * the console records it; a generation that already exited is handled as by {@link #stop(Duration)}.
+	 *
+	 * @param timeout maximum wait for the workload to exit and for its last output
+	 * @throws ProcessException when the workload does not exit after it is killed
+	 */
+	public synchronized void kill(@NotNull Duration timeout) {
+		ProcessExecution current = process;
+		if (current == null || !current.isAlive()) {
+			stop(timeout);
+			return;
+		}
+
+		ProcessState previous = state.getAndSet(ProcessState.STOPPING);
+		if (previous == ProcessState.FAILED) failed = true;
+		try {
+			terminateTree(current, true);
+			if (!current.await(timeout))
+				throw new ProcessException(name, "Process '" + name + "' did not exit within " + timeout + " after it was killed");
+			state.set(ProcessState.STOPPED);
+		} catch (InterruptedException failure) {
+			Thread.currentThread().interrupt();
+			markFailed();
+			throw new ProcessException(name, "Interrupted while killing process '" + name + "'", failure);
+		} catch (ProcessException failure) {
+			markFailed();
+			throw failure;
+		} finally {
+			console.closeInput();
+		}
+		console.awaitOutput(timeout);
+		console.record("[Anvil] Process '" + name + "' was killed on request without a clean shutdown");
+	}
+
 	private void awaitReadiness(ProcessExecution launched, Duration timeout) throws InterruptedException {
 		if (!readiness.await(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
 			markFailed();
