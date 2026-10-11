@@ -214,8 +214,19 @@ SessionIdentity alice = yggdrasil.register("Alice");
 
 A username that is not registered fails verification, as an unpaid account does. The mock also answers the
 profile lookup that login plugins use to recognize paid usernames, at `yggdrasil.profileLookup()` followed by
-the username: status 200 for a registered username and 404 otherwise. `yggdrasil.available(false)` makes
-every request fail with status 503, as during an outage. Close the mock when the tests that use it are done.
+the username: status 200 for a registered username and 404 otherwise. Usernames match whatever their letter
+case, as at Mojang.
+
+A name change keeps the account's UUID and token. `rename` returns the identity that signs in under the new
+name; from then on the lookup and login verification answer to the new name only, and the old one is free:
+
+```java
+SessionIdentity alicia = yggdrasil.rename(alice.getUniqueId(), "Alicia");
+```
+
+Renaming to a name another account holds fails; a change of letter case alone is allowed.
+
+`yggdrasil.available(false)` makes every request fail with status 503, as during an outage. Close the mock when the tests that use it are done.
 
 - The mock runs in the JVM that runs the tests and listens on loopback. A process in a container reaches it
   only when you start it with `YggdrasilMock.start(address)` on an address the container can route to.
