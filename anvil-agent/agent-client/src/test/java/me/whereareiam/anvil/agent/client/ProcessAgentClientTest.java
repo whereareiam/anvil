@@ -9,10 +9,13 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class ProcessAgentClientTest {
+	private static final UUID ALICE = UUID.randomUUID();
+
 	@Test
 	void refreshesBorrowedAgentHandlesAndClosesBothGenerationsExactlyOnce() {
 		List<String> calls = new ArrayList<>();
@@ -34,24 +37,24 @@ class ProcessAgentClientTest {
 	void distinguishesUnavailableConnectionsFromUnobservedPlayersAcrossRestarts() {
 		ProcessAgentClient client = new ProcessAgentClient();
 		assertFalse(client.available());
-		assertThrows(AgentUnavailableException.class, () -> client.identity("Alice"));
+		assertThrows(AgentUnavailableException.class, () -> client.identity(ALICE));
 
 		List<String> calls = new ArrayList<>();
 		client.attach(agent("first", calls));
 		assertTrue(client.available());
-		assertTrue(client.identity("Alice").isEmpty());
+		assertTrue(client.identity(ALICE).isEmpty());
 		client.close();
 		assertFalse(client.available());
-		assertThrows(AgentUnavailableException.class, () -> client.identity("Alice"));
+		assertThrows(AgentUnavailableException.class, () -> client.identity(ALICE));
 		assertThrows(AgentUnavailableException.class, () -> client.request("probe", null, String.class));
 		assertThrows(AgentUnavailableException.class, () -> client.executeCommand("probe"));
 
 		client.attach(agent("second", calls));
 		assertTrue(client.available());
-		assertTrue(client.identity("Alice").isEmpty());
+		assertTrue(client.identity(ALICE).isEmpty());
 		client.close();
 		assertFalse(client.available());
-		assertEquals(List.of("first:Alice", "first:close", "second:Alice", "second:close"), calls);
+		assertEquals(List.of("first:" + ALICE, "first:close", "second:" + ALICE, "second:close"), calls);
 	}
 
 	@Test

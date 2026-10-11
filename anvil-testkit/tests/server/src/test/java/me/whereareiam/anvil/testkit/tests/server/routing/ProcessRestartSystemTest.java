@@ -62,7 +62,7 @@ class ProcessRestartSystemTest {
 			session.disconnected();
 			session.rejoin();
 			session.connected(Duration.ofSeconds(30));
-			assertEquals(identity.getObservedUniqueId(), server.joined(destination).getObservedUniqueId());
+			assertEquals(identity.getObserved().getUniqueId(), server.joined(destination).getObserved().getUniqueId());
 			assertEquals("external:after", probe.echo(destination, "after"));
 
 			if (!scenario.getProxies().isEmpty()) {

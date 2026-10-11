@@ -65,7 +65,7 @@ direct-server example, the server agent supplies the observation. In a proxy top
 can also match the proxy's report of its connected backend. Use a backend-specific agent operation
 when you need independent proof from that backend.
 
-The returned identity is a snapshot. A caller can inspect `getObservedUsername()` or
+The returned identity is a snapshot. A caller can inspect `getObserved().getUsername()` or
 `getRoute().getServer()`; neither result proves that application data or permissions are correct.
 
 ## One player can have several sessions

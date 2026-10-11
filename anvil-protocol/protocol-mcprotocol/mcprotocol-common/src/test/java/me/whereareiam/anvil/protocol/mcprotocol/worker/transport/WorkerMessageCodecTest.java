@@ -1,6 +1,11 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.transport;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
+import me.whereareiam.anvil.api.type.DisconnectCause;
+import me.whereareiam.anvil.capability.binding.JsonCapabilityCodec;
+import me.whereareiam.anvil.capability.protocol.api.model.player.PlayerConnectionEvent;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerEvent;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerCredentials;
@@ -72,5 +77,21 @@ class WorkerMessageCodecTest {
 		assertEquals("Invalid worker message", failure.getMessage());
 		assertNull(failure.getCause());
 		assertThrows(IllegalArgumentException.class, () -> codec.decodeRequest("{}"));
+	}
+
+	@Test
+	void encodesConnectionsAsTheCapabilityConnectionEventWithTheGrantedProfile() {
+		UUID uniqueId = UUID.randomUUID();
+		JsonCapabilityCodec capabilities = new JsonCapabilityCodec();
+
+		byte[] connected = codec.connected(ClientProfile.builder().name("Steve_Premium").uniqueId(uniqueId).build());
+		PlayerProfile granted = new PlayerProfile("Steve_Premium", uniqueId);
+		assertEquals(new PlayerConnectionEvent(true, null, null, granted), capabilities.decode(connected, PlayerConnectionEvent.class));
+		assertEquals(granted, codec.granted(connected).orElseThrow());
+
+		byte[] disconnected = codec.disconnected(DisconnectCause.SERVER, "kicked");
+		assertEquals(new PlayerConnectionEvent(false, "kicked", DisconnectCause.SERVER, null),
+				capabilities.decode(disconnected, PlayerConnectionEvent.class));
+		assertTrue(codec.granted(disconnected).isEmpty());
 	}
 }

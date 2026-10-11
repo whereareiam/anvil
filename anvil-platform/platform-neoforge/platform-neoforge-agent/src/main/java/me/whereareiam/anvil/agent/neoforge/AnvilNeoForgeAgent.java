@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -59,9 +60,9 @@ public final class AnvilNeoForgeAgent implements PlatformAgent {
 	}
 
 	@Override
-	public @NotNull Optional<AgentIdentity> identity(@NotNull String username) {
+	public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
 		try {
-			return Optional.ofNullable(call(() -> server.getPlayerList().getPlayerByName(username)))
+			return Optional.ofNullable(call(() -> server.getPlayerList().getPlayer(uniqueId)))
 					.map(player -> AgentIdentity.builder()
 							.username(player.getScoreboardName())
 							.uniqueId(player.getUUID())

@@ -698,7 +698,7 @@ class DefaultScenarioFactoryIntegrationTest {
 			}
 
 			@Override
-			public @NotNull Optional<AgentIdentity> identity(@NotNull String username) {
+			public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
 				return Optional.empty();
 			}
 

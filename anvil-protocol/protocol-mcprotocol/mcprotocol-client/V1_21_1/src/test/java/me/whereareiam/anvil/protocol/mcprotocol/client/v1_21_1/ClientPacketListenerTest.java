@@ -7,6 +7,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
 import net.kyori.adventure.text.Component;
+import org.geysermc.mcprotocollib.auth.GameProfile;
 import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.event.session.PacketSendingEvent;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -20,6 +21,7 @@ import org.geysermc.mcprotocollib.protocol.packet.handshake.serverbound.ClientIn
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
+import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -36,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 class ClientPacketListenerTest {
+	private static final UUID GRANTED = new UUID(0, 2);
 	private static final ClientLogin LOGIN = ClientLogin.builder()
 			.profile(ClientProfile.builder().name("Alice").uniqueId(new UUID(0, 1)).build())
 			.settings(ClientSettings.builder().locale("en_us").viewDistance(8).build())
@@ -48,10 +51,11 @@ class ClientPacketListenerTest {
 	private final ClientPacketListener listener = new ClientPacketListener(LOGIN, new RecordingListener());
 
 	@Test
-	void answersTheLoginWithClientInformationBeforeReportingIt() throws Exception {
+	void answersTheLoginWithClientInformationBeforeReportingItWithTheGrantedProfile() throws Exception {
+		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed"), false));
 		receive(allocate(ClientboundLoginPacket.class));
 
-		assertEquals(List.of("sent ServerboundClientInformationPacket", "logged in"), events);
+		assertEquals(List.of("sent ServerboundClientInformationPacket", "logged in as Alice_Renamed " + GRANTED), events);
 		ServerboundClientInformationPacket information = assertInstanceOf(ServerboundClientInformationPacket.class, sent.getFirst());
 		assertEquals("en_us", information.getLocale());
 		assertEquals(8, information.getRenderDistance());
@@ -132,8 +136,8 @@ class ClientPacketListenerTest {
 
 	private final class RecordingListener implements ClientListener<Session> {
 		@Override
-		public void loggedIn(@NotNull Session session) {
-			events.add("logged in");
+		public void loggedIn(@NotNull Session session, @NotNull ClientProfile granted) {
+			events.add("logged in as " + granted.getName() + " " + granted.getUniqueId());
 		}
 
 		@Override

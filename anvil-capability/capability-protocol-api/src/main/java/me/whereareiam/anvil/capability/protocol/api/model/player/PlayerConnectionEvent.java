@@ -1,13 +1,15 @@
 package me.whereareiam.anvil.capability.protocol.api.model.player;
 
-import me.whereareiam.anvil.api.type.DisconnectCause;
 import lombok.Value;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
+import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Reports a native player's connection transition, including an optional disconnect reason.
+ * Reports a native player's connection transition: the profile granted at login, or the reason a connection
+ * ended.
  */
 @Value
 public class PlayerConnectionEvent {
@@ -32,4 +34,9 @@ public class PlayerConnectionEvent {
 	 * What ended the connection; null while connected and for libraries that do not report it.
 	 */
 	@Nullable DisconnectCause cause;
+	/**
+	 * Profile the joined server or proxy granted in its login success, which a proxy or login plugin may have
+	 * changed from the profile the client asked for; null for a disconnect.
+	 */
+	@Nullable PlayerProfile granted;
 }

@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.capability.server;
 
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.model.player.PlayerRoute;
 import me.whereareiam.anvil.api.player.PlayerObservation;
 import org.jetbrains.annotations.NotNull;
@@ -54,8 +55,7 @@ class ObservedServerTest {
 
 	private static PlayerIdentity identity(String server) {
 		return PlayerIdentity.builder()
-				.username("Alice")
-				.clientUniqueId(UUID.nameUUIDFromBytes("Alice".getBytes()))
+				.requested(new PlayerProfile("Alice", UUID.nameUUIDFromBytes("Alice".getBytes())))
 				.route(PlayerRoute.builder().server(server).build())
 				.build();
 	}

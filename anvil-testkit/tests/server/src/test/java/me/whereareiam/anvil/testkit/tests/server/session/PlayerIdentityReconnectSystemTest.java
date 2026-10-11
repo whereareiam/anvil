@@ -43,7 +43,7 @@ class PlayerIdentityReconnectSystemTest {
 		session.connect();
 		session.connected();
 
-		UUID initialUuid = server.joined("server").getObservedUniqueId();
+		UUID initialUuid = server.joined("server").getObserved().getUniqueId();
 		assertNotNull(initialUuid);
 		assertNotEquals(AUTHENTICATED_UUID, initialUuid);
 
@@ -60,11 +60,12 @@ class PlayerIdentityReconnectSystemTest {
 		session.rejoin();
 		session.connected();
 		PlayerIdentity authenticated = server.joined("server");
-		assertEquals(AUTHENTICATED_UUID, authenticated.getObservedUniqueId());
-		assertNotEquals(initialUuid, authenticated.getObservedUniqueId());
+		assertEquals(AUTHENTICATED_UUID, authenticated.getGranted().getUniqueId());
+		assertEquals(AUTHENTICATED_UUID, authenticated.getObserved().getUniqueId());
+		assertNotEquals(initialUuid, authenticated.getObserved().getUniqueId());
 
 		PlayerIdentity observedByServer = server.identity();
 		assertNotNull(observedByServer);
-		assertEquals(AUTHENTICATED_UUID, observedByServer.getObservedUniqueId());
+		assertEquals(AUTHENTICATED_UUID, observedByServer.getObserved().getUniqueId());
 	}
 }

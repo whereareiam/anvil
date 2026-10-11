@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Stable borrowed connection whose transport is replaced when its process restarts.
@@ -45,8 +46,8 @@ public final class ProcessAgentClient implements AgentClient {
 	}
 
 	@Override
-	public synchronized @NotNull Optional<AgentIdentity> identity(@NotNull String username) {
-		return connection().identity(username);
+	public synchronized @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
+		return connection().identity(uniqueId);
 	}
 
 	@Override

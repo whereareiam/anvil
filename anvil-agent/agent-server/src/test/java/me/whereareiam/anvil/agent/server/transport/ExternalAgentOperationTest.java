@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -75,7 +76,7 @@ class ExternalAgentOperationTest {
 					new PlatformAgentRequestDispatcher(new TestPlatform(), providers), ignored -> { });
 				 var client = new JsonLineAgentConnectionProvider().connect(port, "secret", Duration.ofSeconds(2))) {
 				assertEquals("echo:hello", client.request(ECHO, "hello"));
-				assertTrue(client.identity("missing").isEmpty());
+				assertTrue(client.identity(UUID.randomUUID()).isEmpty());
 			}
 		}
 	}
@@ -181,7 +182,7 @@ class ExternalAgentOperationTest {
 		}
 
 		@Override
-		public @NotNull Optional<AgentIdentity> identity(@NotNull String username) {
+		public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
 			return Optional.empty();
 		}
 

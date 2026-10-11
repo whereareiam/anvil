@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.session;
 
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
@@ -24,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ChannelSessionTest {
+	private static final PlayerProfile ALICE = new PlayerProfile("Alice", UUID.randomUUID());
 	private static final Duration TIMEOUT = Duration.ofSeconds(3);
 
 	@Test
@@ -43,11 +46,11 @@ class ChannelSessionTest {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelSession session = new ChannelSession(channel);
 
-		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(true, null, null));
+		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(true, null, null, ALICE));
 		session.connected(TIMEOUT);
 		assertEquals(SessionState.builder().connected(true).build(), session.state());
 
-		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(false, "Server closed", DisconnectCause.SERVER));
+		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(false, "Server closed", DisconnectCause.SERVER, null));
 		session.disconnected(TIMEOUT);
 		assertEquals("Server closed", session.kicked(TIMEOUT));
 		assertEquals(SessionState.builder().connected(false).kickReason("Server closed").disconnectCause(DisconnectCause.SERVER).build(),
@@ -58,7 +61,7 @@ class ChannelSessionTest {
 	void forgetsTheKickReasonWhenConnectingAgain() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelSession session = new ChannelSession(channel);
-		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(false, "Server closed", DisconnectCause.SERVER));
+		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(false, "Server closed", DisconnectCause.SERVER, null));
 
 		session.rejoin();
 
@@ -70,7 +73,7 @@ class ChannelSessionTest {
 	void reportsDisconnectedOnceThePlayerIsDestroyed() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelSession session = new ChannelSession(channel);
-		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(true, null, null));
+		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(true, null, null, ALICE));
 
 		channel.publish(PlayerConnectionEvent.DESTROYED, null);
 

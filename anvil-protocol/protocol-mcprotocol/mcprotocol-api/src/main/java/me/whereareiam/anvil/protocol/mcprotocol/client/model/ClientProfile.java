@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.UUID;
 
 /**
- * Profile a client sends in its login request.
+ * Profile a client sends in its login request, or the one the server grants it in its login success.
  *
  * <pre>{@code
  * ClientProfile profile = ClientProfile.builder().name("Alice").uniqueId(uuid).build();
@@ -17,12 +17,12 @@ import java.util.UUID;
 @Builder
 public class ClientProfile {
 	/**
-	 * Profile name sent in the login request.
+	 * Profile name.
 	 */
 	@NotNull String name;
 
 	/**
-	 * Profile identity sent in the login request.
+	 * Profile identity.
 	 */
 	@NotNull UUID uniqueId;
 }

@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.capability.server;
 
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityContext;
@@ -29,8 +30,7 @@ class ServerProviderTest {
 	@Test
 	void reportsThePlayersObservedIdentity() {
 		PlayerIdentity identity = PlayerIdentity.builder()
-				.username("Alice")
-				.clientUniqueId(UUID.nameUUIDFromBytes("Alice".getBytes()))
+				.requested(new PlayerProfile("Alice", UUID.nameUUIDFromBytes("Alice".getBytes())))
 				.build();
 
 		Server server = new ServerProvider().create(new ObservationContext(new FixedObservation(identity)));

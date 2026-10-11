@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.host;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolSubscription;
 import me.whereareiam.anvil.protocol.api.model.GameConnection;
@@ -16,6 +17,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerCredentials;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerControlOperation;
+import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerPlayerEvent;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,7 +42,7 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 
 	private final ProtocolWorkerProcess worker;
 	private final PlayerRequest request;
-	private final PlayerIdentity identity;
+	private final PlayerProfile requested;
 	private final PlayerEventDispatcher events;
 
 	private final WorkerMessageCodec codec = new WorkerMessageCodec();
@@ -48,6 +50,7 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 	private final AtomicBoolean destroying = new AtomicBoolean();
 	private final AtomicBoolean destroyed = new AtomicBoolean();
 	private final WorkerPlayerCapabilities capabilities;
+	private volatile @Nullable PlayerProfile granted;
 
 	RemoteProtocolPlayer(
 			@NotNull ProtocolWorkerProcess worker,
@@ -57,14 +60,10 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 		this.worker = worker;
 		this.request = request;
 		this.events = new PlayerEventDispatcher(request.getName(), worker::recordDiagnostic);
-		this.identity = PlayerIdentity.builder()
-				.username(authentication == null
-						? request.getUsername()
-						: authentication.getUsername())
-				.clientUniqueId(authentication == null
-						? UUID.nameUUIDFromBytes((OFFLINE_UUID_PREFIX + request.getUsername()).getBytes(StandardCharsets.UTF_8))
-						: authentication.getUuid())
-				.build();
+		this.requested = authentication == null
+				? new PlayerProfile(request.getUsername(),
+						UUID.nameUUIDFromBytes((OFFLINE_UUID_PREFIX + request.getUsername()).getBytes(StandardCharsets.UTF_8)))
+				: new PlayerProfile(authentication.getUsername(), authentication.getUuid());
 
 		worker.register(id, this);
 		try {
@@ -79,8 +78,8 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 		GameConnection connection = request.getConnection();
 		WorkerPlayerOptions options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder()
-						.name(identity.getUsername())
-						.uniqueId(identity.getClientUniqueId())
+						.name(requested.getUsername())
+						.uniqueId(requested.getUniqueId())
 						.build())
 				.credentials(authentication == null ? null : WorkerCredentials.builder()
 						.accessToken(authentication.getAccessToken())
@@ -98,7 +97,13 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 		return codec.decodePayload(installed, WorkerPlayerCapabilities.class);
 	}
 
+	/**
+	 * Records the profile a connection event grants before subscribers see the event, so that an identity read
+	 * after the session reports its connection already carries it.
+	 */
 	void event(@NotNull String type, @NotNull JsonNode payload) {
+		if (type.equals(WorkerPlayerEvent.CONNECTION.getWireName()))
+			granted = codec.granted(codec.messageBytes(payload)).orElse(null);
 		events.dispatch(type, payload);
 	}
 
@@ -124,7 +129,7 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 
 	@Override
 	public @NotNull PlayerIdentity identity() {
-		return identity;
+		return PlayerIdentity.builder().requested(requested).granted(granted).build();
 	}
 
 	@Override

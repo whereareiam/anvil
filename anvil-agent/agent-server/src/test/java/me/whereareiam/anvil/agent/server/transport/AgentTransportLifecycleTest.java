@@ -25,6 +25,9 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AgentTransportLifecycleTest {
+	private static final UUID ALICE = new UUID(0, 1);
+	private static final UUID MISSING = new UUID(0, 2);
+
 	@Test
 	void discoversThePackagedProviderWithoutTheThreadContextLoader() {
 		ClassLoader previous = Thread.currentThread().getContextClassLoader();
@@ -42,9 +45,10 @@ class AgentTransportLifecycleTest {
 		try (PlatformAgentServer ignored1 = new PlatformAgentServer(port, "token", new TestPlatform(), ignored -> {});
 		     AgentClient client = new JsonLineAgentConnectionProvider().connect(port, "token", Duration.ofSeconds(2))) {
 			assertTrue(client.available());
-			assertTrue(client.identity("missing").isEmpty());
-			AgentIdentity identity = client.identity("Alice").orElseThrow();
+			assertTrue(client.identity(MISSING).isEmpty());
+			AgentIdentity identity = client.identity(ALICE).orElseThrow();
 			assertEquals("Alice", identity.getUsername());
+			assertEquals(ALICE, identity.getUniqueId());
 			ProxyLocation location = assertInstanceOf(ProxyLocation.class, identity.getLocation());
 			assertEquals("proxy", location.getProxy());
 			assertEquals("server", location.getConnectedServer());
@@ -52,7 +56,7 @@ class AgentTransportLifecycleTest {
 			assertFalse(client.executeCommand("rejected"));
 			client.close();
 			assertFalse(client.available());
-			assertThrows(AgentUnavailableException.class, () -> client.identity("missing"));
+			assertThrows(AgentUnavailableException.class, () -> client.identity(MISSING));
 			assertThrows(AgentUnavailableException.class, () -> client.executeCommand("accepted"));
 		}
 	}
@@ -86,10 +90,10 @@ class AgentTransportLifecycleTest {
 		}
 
 		@Override
-		public @NotNull Optional<AgentIdentity> identity(@NotNull String username) {
-			if (username.equals("missing"))
+		public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
+			if (!uniqueId.equals(ALICE))
 				return Optional.empty();
-			return Optional.of(AgentIdentity.builder().username(username).uniqueId(new UUID(0, 1))
+			return Optional.of(AgentIdentity.builder().username("Alice").uniqueId(uniqueId)
 					.location(ProxyLocation.builder().proxy("proxy").connectedServer("server").build()).build());
 		}
 

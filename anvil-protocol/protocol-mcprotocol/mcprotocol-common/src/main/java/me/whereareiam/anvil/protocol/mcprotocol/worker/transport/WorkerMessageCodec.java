@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerEvent;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerMessage;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerReady;
@@ -16,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Owns JSON-lines framing and envelope validation on both sides of the private worker channel.
@@ -92,12 +95,50 @@ public final class WorkerMessageCodec {
 		}
 	}
 
-	public byte @NotNull [] connection(boolean connected, @Nullable DisconnectCause cause, @Nullable String reason) {
+	/**
+	 * Encodes a player's login with the profile the server granted it, in the shape of the capability
+	 * connection event.
+	 */
+	public byte @NotNull [] connected(@NotNull ClientProfile granted) {
 		ObjectNode state = JsonNodeFactory.instance.objectNode()
-				.put("connected", connected)
-				.put("reason", reason)
-				.put("cause", cause == null ? null : cause.name());
+				.put("connected", true)
+				.putNull("reason")
+				.putNull("cause");
+		state.putObject("granted")
+				.put("username", granted.getName())
+				.put("uniqueId", granted.getUniqueId().toString());
+		return connection(state);
+	}
 
+	/**
+	 * Encodes the end of a player's connection in the shape of the capability connection event.
+	 */
+	public byte @NotNull [] disconnected(@NotNull DisconnectCause cause, @NotNull String reason) {
+		return connection(JsonNodeFactory.instance.objectNode()
+				.put("connected", false)
+				.put("reason", reason)
+				.put("cause", cause.name())
+				.putNull("granted"));
+	}
+
+	/**
+	 * Reads the granted profile from an encoded connection event.
+	 *
+	 * @return profile granted at login, or empty for a disconnect
+	 */
+	public @NotNull Optional<PlayerProfile> granted(byte @NotNull [] connection) {
+		try {
+			JsonNode granted = mapper.readTree(connection).path("granted");
+			if (granted.isMissingNode() || granted.isNull()) return Optional.empty();
+			if (!granted.path("username").isTextual() || !granted.path("uniqueId").isTextual()) throw invalidMessage();
+
+			return Optional.of(new PlayerProfile(granted.get("username").asText(), UUID.fromString(granted.get("uniqueId").asText())));
+		} catch (IOException | IllegalArgumentException failure) {
+			throw invalidMessage();
+		}
+	}
+
+	private byte[] connection(ObjectNode state) {
 		try {
 			return mapper.writeValueAsBytes(state);
 		} catch (JsonProcessingException failure) {

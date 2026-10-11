@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 @Jacksonized
 public class AgentIdentityRequest {
 	/**
-	 * Player name to look up.
+	 * Unique identifier of the player to look up, in its external string representation.
 	 */
-	@NotNull String username;
+	@NotNull String uniqueId;
 }

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum WorkerPlayerEvent {
+	CONNECTION("player.connection"),
 	CONNECTED("session.connected"),
 	DISCONNECTED("session.disconnected"),
 	DESTROYED("player.destroyed");

@@ -90,9 +90,9 @@ class PartialScenarioLifecycleSystemTest {
 				again.capability(Session.class).connect();
 				again.capability(Session.class).connected(Duration.ofSeconds(30));
 				PlayerIdentity elsewhere = again.capability(Server.class).joined("auxiliary", Duration.ofSeconds(20));
-				assertEquals("PartialAlice", elsewhere.getUsername());
+				assertEquals("PartialAlice", elsewhere.getRequested().getUsername());
 				assertEquals("secondary", elsewhere.getRoute().getProxy());
-				assertEquals(observation.identity().getClientUniqueId(), elsewhere.getClientUniqueId());
+				assertEquals(observation.identity().getRequested().getUniqueId(), elsewhere.getRequested().getUniqueId());
 				assertEquals("proxy", observation.identity().getRoute().getProxy());
 				assertEquals("lobby", observation.identity().getRoute().getServer());
 				again.destroy();

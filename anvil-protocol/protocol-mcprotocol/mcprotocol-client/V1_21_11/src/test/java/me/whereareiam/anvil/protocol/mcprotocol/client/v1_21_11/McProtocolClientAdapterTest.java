@@ -85,7 +85,7 @@ class McProtocolClientAdapterTest {
 
 	private static final class IgnoringListener implements ClientListener<ClientSession> {
 		@Override
-		public void loggedIn(@NotNull ClientSession session) {
+		public void loggedIn(@NotNull ClientSession session, @NotNull ClientProfile granted) {
 		}
 
 		@Override

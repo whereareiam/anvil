@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AgentRpcTest {
+	private static final UUID HELLO = UUID.fromString("00000000-0000-0000-0000-000000000001");
+
 	@Test
 	void authenticatesJsonLinesRequestsOnLoopback() throws IOException {
 		int port = freePort();
@@ -32,10 +34,10 @@ class AgentRpcTest {
 			}
 
 			@Override
-			public @NotNull Optional<AgentIdentity> identity(@NotNull String username) {
+			public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
 				return Optional.of(AgentIdentity.builder()
-						.username(username)
-						.uniqueId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+						.username("hello")
+						.uniqueId(uniqueId)
 						.location(ServerLocation.builder().server("server").build())
 						.build());
 			}
@@ -46,7 +48,9 @@ class AgentRpcTest {
 			}
 		}, ignored -> {});
 		     AgentClient client = provider.connect(port, "correct", Duration.ofSeconds(2))) {
-			assertEquals("hello", client.identity("hello").orElseThrow().getUsername());
+			AgentIdentity identity = client.identity(HELLO).orElseThrow();
+			assertEquals("hello", identity.getUsername());
+			assertEquals(HELLO, identity.getUniqueId());
 		}
 
 		int deniedPort = freePort();
@@ -57,7 +61,7 @@ class AgentRpcTest {
 			}
 
 			@Override
-			public @NotNull Optional<AgentIdentity> identity(@NotNull String username) {
+			public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
 				return Optional.empty();
 			}
 

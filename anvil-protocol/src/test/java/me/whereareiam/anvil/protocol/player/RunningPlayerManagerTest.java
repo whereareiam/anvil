@@ -6,6 +6,7 @@ import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.model.player.PlayerLogin;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.player.PlayerState;
@@ -620,9 +621,8 @@ class RunningPlayerManagerTest {
 			this.release = release;
 			this.destructionFailure = destructionFailure;
 			this.identity = PlayerIdentity.builder()
-					.username(request.getName())
-					.clientUniqueId(UUID.nameUUIDFromBytes(("OfflinePlayer:" + request.getName())
-							.getBytes(StandardCharsets.UTF_8)))
+					.requested(new PlayerProfile(request.getName(), UUID.nameUUIDFromBytes(("OfflinePlayer:" + request.getName())
+							.getBytes(StandardCharsets.UTF_8))))
 					.build();
 		}
 

@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Internal Velocity plugin that exposes authenticated test observations to Anvil.
@@ -69,8 +70,8 @@ public final class AnvilVelocityAgent implements PlatformAgent {
 	}
 
 	@Override
-	public @NotNull Optional<AgentIdentity> identity(@NotNull String username) {
-		Player player = proxy.getPlayer(username).orElse(null);
+	public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
+		Player player = proxy.getPlayer(uniqueId).orElse(null);
 		if (player == null) return Optional.empty();
 
 		return Optional.of(AgentIdentity.builder()
