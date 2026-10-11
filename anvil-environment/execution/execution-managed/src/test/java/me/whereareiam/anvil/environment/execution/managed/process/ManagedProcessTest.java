@@ -116,6 +116,41 @@ class ManagedProcessTest {
 	}
 
 	@Test
+	void killsAProcessWithoutItsShutdownSequenceAndWithoutFailingIt() throws Exception {
+		ManagedServer process = process("killed");
+		start(process,
+				List.of("sh", "-c", "trap 'echo CLEAN; exit 0' TERM; echo READY; "
+						+ "while read line; do [ \"$line\" = stop ] && echo CLEAN && exit 0; done"),
+				Map.of(), Pattern.compile("READY"), Duration.ofSeconds(3)
+		);
+
+		assertTimeoutPreemptively(Duration.ofSeconds(3), () -> process.kill(Duration.ofSeconds(10)));
+
+		assertEquals(ProcessState.STOPPED, process.state());
+		assertFalse(process.failed());
+		String marker = "[Anvil] Process 'killed' was killed on request without a clean shutdown";
+		assertEquals(List.of("READY", marker), process.console().tail(10));
+		assertEquals(List.of("READY", marker), Files.readAllLines(process.workDirectory().resolve("anvil-console.log")));
+		assertThrows(ProcessException.class, () -> process.console().sendCommand("after-kill"));
+	}
+
+	@Test
+	void killingAProcessThatAlreadyExitedStillReportsTheCrash() throws Exception {
+		ManagedServer process = process("crashed");
+		start(process, List.of("sh", "-c", "echo READY; sleep 0.2; exit 3"), Map.of(), Pattern.compile("READY"),
+				Duration.ofSeconds(3));
+		assertTimeoutPreemptively(Duration.ofSeconds(3), () -> {
+			while (process.state() != ProcessState.FAILED) Thread.sleep(20);
+		});
+
+		process.kill(Duration.ofSeconds(1));
+
+		assertEquals(ProcessState.STOPPED, process.state());
+		assertTrue(process.failed());
+		assertFalse(process.console().tail(10).stream().anyMatch(line -> line.contains("killed on request")));
+	}
+
+	@Test
 	void boundsHistoryWhilePersistingAllOutputAndKeepsSnapshotsImmutable() throws Exception {
 		ManagedServer process = process("history");
 		start(process,

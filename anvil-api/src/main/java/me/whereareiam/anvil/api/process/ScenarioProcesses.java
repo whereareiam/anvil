@@ -100,6 +100,31 @@ public interface ScenarioProcesses {
 	void stop(@NotNull String name);
 
 	/**
+	 * Kills one process without its shutdown sequence, as if it had crashed: its execution provider terminates it
+	 * at once, so the platform runs no stop command, shutdown hooks or plugin disable logic. Use it to test what a
+	 * plugin does when a server or proxy dies, such as recovering state, expiring locks or reconnecting players.
+	 *
+	 * <p>Everything else matches {@link #stop(String)}: the generation ends {@code STOPPED}, its platform agent and
+	 * launch attachments are released, its workspace and address are retained, and other processes keep running.
+	 * Clients connected to it lose their connection and must explicitly reconnect after a subsequent
+	 * {@link #start(String)}, which creates a new generation. A deliberate kill does not mark the scenario
+	 * unsuccessful; the console records it with an {@code [Anvil]} line. Killing an unstarted or stopped process has
+	 * no effect.</p>
+	 *
+	 * <pre>{@code
+	 * anvil.processes().kill("proxy");
+	 * alice.capability(Session.class).disconnected();
+	 * anvil.processes().start("proxy");
+	 * }</pre>
+	 *
+	 * @param name scenario process name
+	 * @throws NoSuchElementException if the process name is unknown
+	 * @throws IllegalStateException  if the scenario is closed
+	 * @throws ProcessException       if the process does not exit after it is killed
+	 */
+	void kill(@NotNull String name);
+
+	/**
 	 * Restarts one managed process with its current workspace and listener address.
 	 * Other processes remain running. Existing players remain registered, but clients
 	 * disconnected by the restart must explicitly reconnect. The platform agent is

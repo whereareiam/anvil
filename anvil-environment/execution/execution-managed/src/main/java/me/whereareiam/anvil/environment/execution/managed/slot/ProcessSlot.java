@@ -92,8 +92,19 @@ public final class ProcessSlot {
 	}
 
 	public synchronized void stopGeneration() {
+		endGeneration(this::stopProcess);
+	}
+
+	/**
+	 * Ends the current generation like {@link #stopGeneration()}, but kills its process without a shutdown sequence.
+	 */
+	public synchronized void killGeneration() {
+		endGeneration(this::killProcess);
+	}
+
+	private void endGeneration(Runnable ending) {
 		Throwable failure = null;
-		for (Runnable action : List.<Runnable>of(this::closeLaunch, this::stopProcess)) {
+		for (Runnable action : List.<Runnable>of(this::closeLaunch, ending)) {
 			try {
 				action.run();
 			} catch (RuntimeException | Error cleanup) {
@@ -135,6 +146,17 @@ public final class ProcessSlot {
 
 		try {
 			process.stop(stopTimeout);
+		} finally {
+			failed |= process.failed();
+		}
+	}
+
+	private void killProcess() {
+		ManagedProcess process = current;
+		if (process == null) return;
+
+		try {
+			process.kill(stopTimeout);
 		} finally {
 			failed |= process.failed();
 		}

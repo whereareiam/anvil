@@ -65,6 +65,11 @@ final class StubScenarioProcesses implements ScenarioProcesses {
 	}
 
 	@Override
+	public void kill(@NotNull String name) {
+		get(name);
+	}
+
+	@Override
 	public @NotNull RunningProcess restart(@NotNull String name) {
 		RunningServer previous = server(name);
 		server = new StubServer(name, previous.workDirectory(),

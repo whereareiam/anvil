@@ -1,6 +1,6 @@
 ---
 title: Overview
-description: Find running process handles, execute commands, call agents, and restart servers or proxies.
+description: Find running process handles, execute commands, call agents, and restart or kill servers or proxies.
 ---
 
 Use `ScenarioContext.processes()` to inspect the current server and proxy processes in a running
@@ -30,6 +30,7 @@ check whether the named process has the expected role.
 | `all()` | Immutable snapshot of processes in launch order |
 | `servers()` / `proxies()` | Immutable snapshot filtered by role |
 | `restart(name)` | Replacement process after readiness |
+| `kill(name)` | Stopped process, ended without its shutdown sequence |
 
 Every handle exposes `name()`, `address()`, `workDirectory()`, `state()`, and `console()`.
 Use `capability(Type.class)` for installed process behavior, including
@@ -54,4 +55,5 @@ Choose the operation your test needs to perform against an existing server or pr
 - [Running console commands](./console/index.md) shows bounded log observations.
 - [Interacting through agents](./agents/index.md) explains typed capabilities and native work inside a server or proxy.
 - [Restarting processes](./restarts/index.md) covers workspace preservation and explicit player reconnection.
+- [Killing processes](./kills/index.md) ends a server or proxy as if it had crashed, without its shutdown.
 - [Cleanup diagnostics](../../../help/troubleshooting/cleanup/index.md) explains lifecycle failures and retention.

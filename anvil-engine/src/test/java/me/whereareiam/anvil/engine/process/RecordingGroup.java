@@ -86,6 +86,11 @@ final class RecordingGroup implements ProcessGroup {
 	}
 
 	@Override
+	public void kill(@NotNull String name) {
+		calls.add(label + ":kill:" + name);
+	}
+
+	@Override
 	public @NotNull RunningProcess restart(@NotNull String name) {
 		calls.add(label + ":restart:" + name);
 		return get(name);

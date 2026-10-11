@@ -5,6 +5,7 @@ import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
+import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import me.whereareiam.anvil.environment.execution.docker.DockerEngine;
 import me.whereareiam.anvil.environment.execution.docker.DockerNetwork;
 import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
@@ -73,6 +74,39 @@ class DockerEngineTest {
 					validated.set(true);
 				})
 				.ports(new PortSelection()).build();
+		run(context, process -> {
+			assertTrue(validated.get());
+			assertFalse(metadata.isLocked());
+			var output = new BufferedReader(new InputStreamReader(process.output(), StandardCharsets.UTF_8));
+			assertEquals("READY", output.readLine());
+			process.input().write("stop\n".getBytes(StandardCharsets.UTF_8));
+			process.input().flush();
+			assertTrue(process.await(Duration.ofSeconds(30)));
+		});
+	}
+
+	@Test
+	void killsTheContainerWithoutItsStopCommand() throws Exception {
+		ExecutionContext context = ExecutionContext.builder().cacheDirectory(directory)
+				.localRuntime((request, source) -> { throw new AssertionError("Docker must not acquire host Java"); })
+				.imageLocks(path -> () -> { })
+				.runtimeValidator((properties, request) -> { })
+				.ports(new PortSelection()).build();
+		run(context, process -> {
+			var output = new BufferedReader(new InputStreamReader(process.output(), StandardCharsets.UTF_8));
+			assertEquals("READY", output.readLine());
+
+			process.terminate(true);
+
+			assertTrue(process.await(Duration.ofSeconds(10)), "the killed container is still running");
+			assertFalse(process.isAlive());
+		});
+	}
+
+	/**
+	 * Prepares the process fixture in a container, runs the action against its execution and kills what remains.
+	 */
+	private void run(ExecutionContext context, ProcessAction action) throws Exception {
 		try (var docker = new DockerEngine()) {
 			try (DockerExecutionSession session = new DockerExecutionSession(context, docker,
 					DockerExecutionSettings.builder().image("temurin:21", IMAGE).build())) {
@@ -82,20 +116,18 @@ class DockerEngineTest {
 				var request = ProcessRequest.builder().name("smoke").workspace(workspace)
 						.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().featureVersion(21).build()).build()).build();
 				try (var target = session.prepare(request)) {
-					assertTrue(validated.get());
-					assertFalse(metadata.isLocked());
 					var process = target.start(JavaCommand.builder().jar(jar).memoryMegabytes(256).build());
 					try {
-						var output = new BufferedReader(new InputStreamReader(process.output(), StandardCharsets.UTF_8));
-						assertEquals("READY", output.readLine());
-						process.input().write("stop\n".getBytes(StandardCharsets.UTF_8));
-						process.input().flush();
-						assertTrue(process.await(Duration.ofSeconds(30)));
+						action.run(process);
 					} finally {
 						process.terminate(true);
 					}
 				}
 			}
 		}
+	}
+
+	private interface ProcessAction {
+		void run(ProcessExecution process) throws Exception;
 	}
 }

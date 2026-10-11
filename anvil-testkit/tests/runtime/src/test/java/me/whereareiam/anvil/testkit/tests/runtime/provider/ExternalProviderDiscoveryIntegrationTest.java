@@ -228,6 +228,11 @@ class ExternalProviderDiscoveryIntegrationTest {
 		}
 
 		@Override
+		public void kill(@NotNull String name) {
+			get(name);
+		}
+
+		@Override
 		public @NotNull RunningProcess restart(@NotNull String name) {
 			return get(name);
 		}
