@@ -11,6 +11,7 @@ import java.net.http.HttpResponse;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class YggdrasilMockTest {
@@ -49,6 +50,46 @@ class YggdrasilMockTest {
 		assertEquals(200, verified.statusCode());
 		assertTrue(verified.body().contains("\"name\":\"Alice\""), verified.body());
 		assertEquals(204, get(verification).statusCode());
+	}
+
+	@Test
+	void renamesAProfileKeepingItsIdentity() throws Exception {
+		UUID uniqueId = UUID.fromString("069a79f4-44e9-4726-a5be-fca90e38aaf5");
+		SessionIdentity alice = yggdrasil.register("Alice", uniqueId);
+
+		SessionIdentity alicia = yggdrasil.rename(uniqueId, "Alicia");
+
+		assertEquals("Alicia", alicia.getUsername());
+		assertEquals(uniqueId, alicia.getUniqueId());
+		assertEquals(alice.getAccessToken(), alicia.getAccessToken());
+		assertEquals(alice.getSessionServer(), alicia.getSessionServer());
+		assertEquals(404, get(yggdrasil.profileLookup() + "Alice").statusCode());
+		HttpResponse<String> found = get(yggdrasil.profileLookup() + "aLICIA");
+		assertEquals(200, found.statusCode());
+		assertEquals("{\"id\":\"069a79f444e94726a5befca90e38aaf5\",\"name\":\"Alicia\",\"properties\":[]}", found.body());
+	}
+
+	@Test
+	void verifiesALoginOnlyUnderTheProfilesCurrentName() throws Exception {
+		SessionIdentity alice = yggdrasil.register("Alice");
+		assertEquals(204, join(alice, alice.getAccessToken(), "hash").statusCode());
+
+		SessionIdentity alicia = yggdrasil.rename(alice.getUniqueId(), "Alicia");
+
+		assertEquals(204, get(alice.getSessionServer() + "/hasJoined?username=Alice&serverId=hash").statusCode());
+		HttpResponse<String> verified = get(alicia.getSessionServer() + "/hasJoined?username=ALICIA&serverId=hash");
+		assertEquals(200, verified.statusCode());
+		assertTrue(verified.body().contains("\"name\":\"Alicia\""), verified.body());
+	}
+
+	@Test
+	void renamesOnlyInLetterCaseOrToAFreeName() {
+		SessionIdentity alice = yggdrasil.register("Alice");
+		yggdrasil.register("Bob");
+
+		assertEquals("ALICE", yggdrasil.rename(alice.getUniqueId(), "ALICE").getUsername());
+		assertThrows(IllegalArgumentException.class, () -> yggdrasil.rename(alice.getUniqueId(), "bob"));
+		assertThrows(IllegalArgumentException.class, () -> yggdrasil.rename(UUID.randomUUID(), "Carol"));
 	}
 
 	@Test
