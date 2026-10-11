@@ -230,7 +230,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   control, not process isolation; strict proxy-only isolation is rejected unless the provider can enforce it.
 - Execution sessions reserve host listener ports through the engine's `PortReservations` and release them when
   they close. Managed execution's `PortSelection` picks them below the ephemeral ranges, because a process
-  binds its port seconds after preparation selected it; do not probe port 0 in a provider.
+  binds its port seconds after preparation selected it; do not probe port 0 in a provider. Each reservation
+  holds a file lock under the cache root's `ports/`, so engines in other JVMs sharing that root skip it.
 - A simulated player's name is its unique identity within the scenario; its Minecraft username defaults to
   the name and may be shared by several players. Player observations follow the player's own connection from
   the process it connects to and never look a username up across every agent. Routes name scenario processes.

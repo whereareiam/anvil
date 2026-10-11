@@ -72,7 +72,7 @@ class DockerEngineTest {
 					assertEquals(21, request.getJavaSelection().getRequirement().getFeatureVersion());
 					validated.set(true);
 				})
-				.ports(new PortSelection()).build();
+				.ports(new PortSelection(directory.resolve("ports"))).build();
 		try (var docker = new DockerEngine()) {
 			try (DockerExecutionSession session = new DockerExecutionSession(context, docker,
 					DockerExecutionSettings.builder().image("temurin:21", IMAGE).build())) {

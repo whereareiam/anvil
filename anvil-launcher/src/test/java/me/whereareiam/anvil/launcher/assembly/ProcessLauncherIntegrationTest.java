@@ -111,7 +111,7 @@ class ProcessLauncherIntegrationTest {
 						return agent(tokens.size(), calls);
 					})
 					.plans(new ExecutionPlanMapper(options, new JavaExecutionRuntime(provisioning.getJava()),
-							new CacheImageLocks(provisioning.getCache()), new PortSelection()))
+							new CacheImageLocks(provisioning.getCache()), new PortSelection(options.getCacheDirectory().resolve("ports"))))
 					.build();
 			var agents = new ScenarioAgentDirectory();
 			try (var group = launcher.prepare(platforms.plan(scenario), agents, null, null, Map.of())) {

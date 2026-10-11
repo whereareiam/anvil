@@ -81,7 +81,7 @@ final class ExecutionFixture {
 				.localRuntime((request, source) -> { throw new AssertionError("Not a local runtime"); })
 				.runtimeValidator((properties, request) -> { throw new AssertionError("No image probe"); })
 				.imageLocks(path -> { throw new AssertionError("No image coordination"); })
-				.ports(new PortSelection()).build();
+				.ports(new PortSelection(directory.resolve("ports"))).build();
 		return ExecutionPlan.builder().executionProviderId("fixture").context(context).processes(List.of(processes))
 				.processScheduling(ProcessScheduling.builder().parallelism(1).startupMemoryMegabytes(1024).build()).processTimeouts(ProcessTimeouts.builder().startup(Duration.ofSeconds(3)).shutdown(Duration.ofSeconds(1)).build()).build();
 	}

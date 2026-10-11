@@ -18,6 +18,11 @@ Both use the shared cache root, normally `~/.anvil`. Choose another location thr
 [Directories](../../configuration/directories/index.md) for the Gradle setup. Keep the same root when
 preparing an environment and later running it offline.
 
+The root also coordinates listener ports. While a process uses a port, its engine holds a lock on a file
+in the root's `ports` directory, so engines in other JVMs that share the root, such as parallel Gradle test
+tasks, never start a process on the same port. Engines with different cache roots do not see each other's
+ports and can still collide.
+
 ## Share selected data
 
 For another machine or CI run, copy only the cache data you intend to reuse. The root can also contain

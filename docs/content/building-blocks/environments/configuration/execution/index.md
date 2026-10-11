@@ -14,6 +14,11 @@ The selected provider applies to the whole scenario.
 | `local` | Compatible local or provisioned Java | Starts JVMs on the host with allocated listener ports |
 | `docker` | Local Docker daemon, accessible workspace paths, configured Java images | Starts containers on a scenario network and publishes host endpoints |
 
+Host listener ports, including Docker's published endpoints, come from 20000–32767, below the ranges the
+operating system assigns to outgoing connections. Engines that share a
+[cache root](../../provisioning/cache/index.md#configure-the-cache-location) never hand out the same port at
+once; any other program that listens in that range can still take a port before its process binds it.
+
 Set `.executionProviderId("local")` or `.executionProviderId("docker")` on an `AnvilScenario` to override the engine's
 `executionId`. Selecting Docker alone is insufficient: the service-discovered provider has no image
 mappings, and the Gradle DSL does not currently expose image configuration.

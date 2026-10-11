@@ -65,6 +65,8 @@ public final class LauncherAssembly implements AutoCloseable {
 			var platforms = new DefaultPlatformPlanner(options, discovery.platforms(),
 					new ArtifactPlatformSource(provisioning.getArtifacts()),
 					descriptor -> locator.locate(descriptor.getEntrypointClassName()));
+			// Engines that share the cache root never hand out the same listener port.
+			var ports = new PortSelection(options.getCacheDirectory().resolve("ports"));
 			var execution = ProcessLauncher.builder()
 					.options(options)
 					.processes(new ManagedProcessService(discovery.executions(executions)))
@@ -72,7 +74,7 @@ public final class LauncherAssembly implements AutoCloseable {
 					.platforms(platforms)
 					.connections(discovery.required(AgentConnectionProvider.class, "agent connection provider"))
 					.plans(new ExecutionPlanMapper(options, new JavaExecutionRuntime(provisioning.getJava()),
-							new CacheImageLocks(provisioning.getCache()), new PortSelection()))
+							new CacheImageLocks(provisioning.getCache()), ports))
 					.build();
 
 			return new DefaultScenarioFactory(platforms, execution, players, retained);

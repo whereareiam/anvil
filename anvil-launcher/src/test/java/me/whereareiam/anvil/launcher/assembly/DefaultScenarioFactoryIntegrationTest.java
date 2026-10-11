@@ -797,7 +797,7 @@ class DefaultScenarioFactoryIntegrationTest {
 				.platforms(platforms)
 				.connections(connections)
 				.plans(new ExecutionPlanMapper(options, new JavaExecutionRuntime(provisioning.getJava()),
-						new CacheImageLocks(provisioning.getCache()), new PortSelection()))
+						new CacheImageLocks(provisioning.getCache()), new PortSelection(options.getCacheDirectory().resolve("ports"))))
 				.build();
 		var players = new DefaultPlayerService(new ProtocolLibraryRegistry(libraries), options, provisioning.getArtifacts()::obtain);
 		var retained = new RetainedProcesses<RetainedProcessSet>();

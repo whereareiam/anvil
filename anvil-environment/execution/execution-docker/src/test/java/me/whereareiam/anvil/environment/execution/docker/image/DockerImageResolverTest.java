@@ -59,7 +59,7 @@ class DockerImageResolverTest {
 				.imageLocks(lockDirectory -> {
 					throw new AssertionError("Validation takes no image lock");
 				})
-				.ports(new PortSelection())
+				.ports(new PortSelection(directory.resolve("ports")))
 				.build();
 		DockerExecutionSettings settings = DockerExecutionSettings.builder().image("temurin:21", "eclipse-temurin:17-jdk").build();
 
