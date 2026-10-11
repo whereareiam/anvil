@@ -34,6 +34,7 @@ final class ManagedProcessConsole implements ProcessConsole {
 	private final Deque<Line> lines = new ArrayDeque<>();
 
 	private @Nullable BufferedWriter writer;
+	private volatile @Nullable Thread capture;
 	private final Path logFile;
 	private long sequence;
 	private boolean closed;
@@ -58,7 +59,23 @@ final class ManagedProcessConsole implements ProcessConsole {
 				"anvil-" + processName + "-output"
 		);
 		capture.setDaemon(true);
+		this.capture = capture;
 		capture.start();
+	}
+
+	/**
+	 * Waits until the output of an exited process is captured, so that nothing is written to its
+	 * workspace afterwards. Returns after the timeout when a surviving descendant keeps the output open.
+	 */
+	void awaitOutput(@NotNull Duration timeout) {
+		Thread running = capture;
+		if (running == null || running == Thread.currentThread()) return;
+
+		try {
+			running.join(timeout.toMillis());
+		} catch (InterruptedException interrupted) {
+			Thread.currentThread().interrupt();
+		}
 	}
 
 	void append(@NotNull String text) {

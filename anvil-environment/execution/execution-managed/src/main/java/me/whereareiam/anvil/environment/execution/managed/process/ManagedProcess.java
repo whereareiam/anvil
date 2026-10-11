@@ -121,7 +121,13 @@ public abstract class ManagedProcess implements RunningProcess {
 			ProcessState previous = state.getAndSet(ProcessState.STOPPED);
 			if (current != null && previous != ProcessState.STOPPING && previous != ProcessState.STOPPED) failed = true;
 			console.closeInput();
-			if (current == null) console.closeOutput();
+			if (current == null) {
+				console.closeOutput();
+				return;
+			}
+
+			// The process is gone, but its last output may still be on its way into the workspace.
+			console.awaitOutput(timeout);
 			return;
 		}
 
@@ -144,6 +150,7 @@ public abstract class ManagedProcess implements RunningProcess {
 		} finally {
 			console.closeInput();
 		}
+		console.awaitOutput(timeout);
 
 		if (commandFailure != null) throw commandFailure;
 	}
