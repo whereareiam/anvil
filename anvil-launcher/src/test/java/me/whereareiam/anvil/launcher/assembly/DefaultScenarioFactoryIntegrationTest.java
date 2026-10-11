@@ -538,7 +538,8 @@ class DefaultScenarioFactoryIntegrationTest {
 			return agent(() -> { });
 		});
 		var original = run.processes().server("server");
-		assertThrows(IllegalStateException.class, () -> run.processes().restart("server"));
+		var failure = assertThrows(ProcessException.class, () -> run.processes().restart("server"));
+		assertEquals("agent unavailable", failure.getCause().getMessage());
 		var replacement = run.processes().server("server");
 		assertNotSame(original, replacement);
 		run.close();

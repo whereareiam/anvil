@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.environment.execution.managed;
 
+import me.whereareiam.anvil.api.exception.ProcessException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -134,7 +135,12 @@ class ManagedProcessServiceTest {
 		ExecutionFixture fixture = new ExecutionFixture(directory);
 		fixture.failingAttachment = "server";
 		var plan = fixture.plan(fixture.spec("server", false), fixture.spec("proxy", true, "server"));
-		assertSame(fixture.failure, assertThrows(IllegalStateException.class, () -> fixture.service().start(plan, fixture.preparation)));
+		var failure = assertThrows(ProcessException.class, () -> fixture.service().start(plan, fixture.preparation));
+		assertSame(fixture.failure, failure.getCause());
+		assertEquals("server", failure.getProcessName());
+		assertTrue(failure.getMessage().startsWith("Process 'server' became ready, but attaching to it failed: requested failure"),
+				failure.getMessage());
+		assertTrue(failure.getMessage().contains("\nLast output:\n"), "The output records why the agent is absent");
 		assertTrue(fixture.calls.containsAll(List.of("detach:server:1", "stop:server")));
 		assertFalse(fixture.calls.contains("configure:proxy:1"));
 		assertFalse(fixture.calls.contains("start:proxy"));

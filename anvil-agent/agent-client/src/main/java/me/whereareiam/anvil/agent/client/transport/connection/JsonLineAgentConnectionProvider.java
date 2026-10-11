@@ -16,8 +16,10 @@ public final class JsonLineAgentConnectionProvider implements AgentConnectionPro
 	@Override
 	public @NotNull AgentClient connect(int port, @NotNull String token, @NotNull Duration timeout) {
 		long deadline = System.nanoTime() + timeout.toNanos();
-		Throwable latest = null;
+		RuntimeException latest = null;
+		int attempts = 0;
 		while (System.nanoTime() < deadline) {
+			attempts++;
 			JsonLineAgentConnection connection = null;
 			try {
 				connection = new JsonLineAgentConnection(port, token);
@@ -35,6 +37,7 @@ public final class JsonLineAgentConnectionProvider implements AgentConnectionPro
 				}
 			}
 		}
-		throw new AgentException("Platform agent on loopback:" + port + " did not become ready", latest);
+		throw new AgentException("Platform agent on loopback:" + port + " did not become ready within " + timeout
+				+ " (" + attempts + " attempts)" + (latest == null ? "" : "; last attempt: " + latest.getMessage()), latest);
 	}
 }
