@@ -157,21 +157,28 @@ Every workflow does the same with a Maven repository of its own run.
 
 ## Prepare and publish a release
 
-Release Drafter updates the draft on `dev` pushes or manual dispatch. Label changes before merging:
+Release Drafter updates the draft on `dev` pushes or manual dispatch. Each merged pull request appears
+as its title, sorted by the title's area, under the category of its label. Label changes before merging:
 
 | Label | Release category | Version bump |
 |---|---|---|
-| `feature` | Features | Minor |
-| `change` | Changes | Patch |
+| `feature` | What’s new | Minor |
+| `change` | Enhancements | Patch |
 | `bug` | Fixes | Patch |
 | `dependencies` | Dependencies | Patch |
 | `major` | Accompanies a category | Major |
 | `skip-changelog` | Excluded from the changelog | No category bump |
 
-The default bump is patch. Complete the release summary, verified Java/Minecraft/platform coverage,
-and any public API, DSL, or packaging migration notes before publishing the draft.
+The default bump is patch. The pull request template and "Release notes" in `AGENTS.md` list the areas
+a title may use.
 
-A published GitHub release triggers **Release**: full verification including the live suites, Maven publication, and then
+The subtitle, summary, highlights and upgrade notes come from `.github/release-notes.md`, while the
+`version` in its front matter matches the version the draft resolves to. Change that file through pull
+requests; text typed into the draft is replaced on the next `dev` push. Fix the changelog itself by
+editing titles and labels of merged pull requests, then run **Release drafter** again.
+
+A published GitHub release triggers **Release**. It stops while the release still holds the draft's
+subtitle or summary placeholder; otherwise it runs full verification including the live suites, Maven publication, and then
 [IntelliJ plugin publication](#publish-the-intellij-plugin). The artifact
 version comes from the tag, with an optional leading `v` removed. Nothing else starts the workflow.
 
