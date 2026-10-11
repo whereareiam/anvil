@@ -453,7 +453,9 @@ failures.
   compilation after documentation changes. Generated `.scriptorium/` output is ignored.
 - Keep `LICENSE`, wrapper, POM metadata, and CI/release workflows valid. Entry workflows only select a trigger
   and call `reusable-verify.yml`, `reusable-live.yml` and `reusable-publish.yml`; shared steps come from `whereareiam/devops`, and
-  only Anvil-specific ones live in `.github/actions`. Pull requests automatically get the metadata check and
+  only Anvil-specific ones live in `.github/actions`. The setup action builds the IntelliJ layout index with retries
+  before any build, because a cold scan can save an index without the Java plugin; locally, delete
+  `.intellijPlatform/layoutIndex` after "Could not find bundled plugin with ID: 'com.intellij.java'". Pull requests automatically get the metadata check and
   the quick `build` checks, which start no server. Full verification with the IntelliJ plugin, standalone
   consumers and real platforms is maintainer-requested through `workflow_dispatch` and reports a
   `Full verification` status on the pull request's head commit. Development builds are manual-only and

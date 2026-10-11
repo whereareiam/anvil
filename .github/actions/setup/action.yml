@@ -1,5 +1,7 @@
 name: Set up the Anvil build
-description: Install the JDKs and Gradle, and restore the cache of pinned server distributions, protocol artifacts and JDKs.
+description: >-
+  Install the JDKs and Gradle, restore the cache of pinned server distributions, protocol artifacts and JDKs, and
+  build the IntelliJ layout index.
 
 inputs:
   cache-shard:
@@ -63,3 +65,36 @@ runs:
         restore-keys: |
           ${{ runner.os }}-anvil-${{ inputs.cache-shard }}-
           ${{ runner.os }}-anvil-
+
+    # The IntelliJ Platform Gradle Plugin indexes the IDE's jars on first use and can close a jar it is still
+    # reading (JetBrains/intellij-platform-gradle-plugin#2192). The scan then drops the Java plugin, saves the
+    # incomplete index, and the build fails with "Could not find bundled plugin with ID: 'com.intellij.java'".
+    # A complete index is reused, so it is cached and, before the build, built with retries.
+    - name: Restore IntelliJ layout index
+      if: steps.cache.outputs.read-only == 'true'
+      uses: actions/cache/restore@v5
+      with:
+        path: .intellijPlatform/layoutIndex
+        key: ${{ runner.os }}-intellij-layout-${{ hashFiles('gradle/libs.versions.toml') }}
+
+    - name: Restore and save IntelliJ layout index
+      if: steps.cache.outputs.read-only != 'true'
+      uses: actions/cache@v5
+      with:
+        path: .intellijPlatform/layoutIndex
+        key: ${{ runner.os }}-intellij-layout-${{ hashFiles('gradle/libs.versions.toml') }}
+
+    - name: Index the IntelliJ distribution
+      shell: bash
+      run: |
+        set -euo pipefail
+        for attempt in 1 2 3; do
+          # Resolving an IntelliJ module's classpath is what reads the index; nothing is compiled.
+          if ./gradlew :anvil-integration:integration-intellij:intellij-engine:compileJava --dry-run --no-configuration-cache --quiet; then
+            exit 0
+          fi
+          echo "::warning::The IntelliJ layout index was incomplete on attempt $attempt; rebuilding it"
+          rm -rf .intellijPlatform/layoutIndex
+        done
+        echo "The IntelliJ layout index could not be built" >&2
+        exit 1
