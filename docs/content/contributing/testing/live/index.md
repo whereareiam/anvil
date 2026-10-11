@@ -20,6 +20,7 @@ real online-account authentication to this suite.
 |---|---|
 | `PlayerCapabilitiesSystemTest` | Actions and observations of every built-in player capability on the direct Paper server of each matrix version |
 | `PlayerIdentityReconnectSystemTest` | Kicks, reconnects, and observed identity replacement on Paper `1.21.11` and `26.1.2` |
+| `GrantedProfileObservationSystemTest` | Players whose usernames differ only in letter case, each observed by the profile the server granted it |
 | `ProxyServerCompatibilitySystemTest` | Login, commands, and routes for every scenario of the live matrix |
 | `ProcessRestartSystemTest` | Restarting the processes of every scenario of the live matrix |
 | `ExternalExtensionSystemTest` | Externally packaged capabilities and platform-agent operations |

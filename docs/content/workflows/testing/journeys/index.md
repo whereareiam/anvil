@@ -59,7 +59,7 @@ class AnnouncementJourneyTest {
 		session.connect();
 		session.connected();
 		var identity = player.capability(Server.class).joined("server");
-		assertEquals(playerName, identity.getObservedUsername());
+		assertEquals(playerName, identity.getObserved().getUsername());
 
 		String marker = "announcement-for-" + playerName;
 		anvil.processes().server("server").console().sendCommand("say " + marker);

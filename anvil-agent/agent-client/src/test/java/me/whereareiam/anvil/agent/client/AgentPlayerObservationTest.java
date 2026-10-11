@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.agent.client;
 
-import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.agent.api.exception.AgentException;
 import me.whereareiam.anvil.agent.api.model.AgentIdentity;
 import me.whereareiam.anvil.agent.api.model.location.ProxyLocation;
@@ -8,23 +7,69 @@ import me.whereareiam.anvil.agent.api.model.location.ServerLocation;
 import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.agent.client.api.exception.AgentUnavailableException;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class AgentPlayerObservationTest {
-	private final PlayerIdentity initial = PlayerIdentity.builder()
-			.username("Alice")
-			.clientUniqueId(UUID.randomUUID())
-			.build();
+	private final PlayerProfile alice = new PlayerProfile("Alice", UUID.randomUUID());
+	private final PlayerIdentity initial = PlayerIdentity.builder().requested(alice).granted(alice).build();
+
+	@Test
+	void findsAPlayerTheProxyRenamedByTheUniqueIdItGranted() {
+		PlayerProfile requested = new PlayerProfile("Steve", UUID.randomUUID());
+		PlayerProfile granted = new PlayerProfile("Steve_Premium", UUID.randomUUID());
+		Map<String, AgentClient> agents = Map.of(
+				"proxy", new TestAgent(Map.of(granted.getUniqueId(), onProxy("lobby", granted))),
+				"lobby", new TestAgent(Map.of(granted.getUniqueId(), onServer(granted))));
+		PlayerIdentity client = PlayerIdentity.builder().requested(requested).granted(granted).build();
+
+		PlayerIdentity observed = new AgentPlayerObservation("steve", "proxy", () -> client, () -> agents, Set.of("lobby"))
+				.identity();
+
+		assertEquals(requested, observed.getRequested());
+		assertEquals(granted, observed.getObserved());
+		assertEquals("lobby", observed.getRoute().getServer());
+	}
+
+	@Test
+	void observesPlayersWhoseNamesDifferOnlyInLetterCaseAsThemselves() {
+		PlayerProfile lower = new PlayerProfile("steve", UUID.randomUUID());
+		PlayerProfile upper = new PlayerProfile("Steve", UUID.randomUUID());
+		Map<String, AgentClient> agents = Map.of("lobby", new TestAgent(Map.of(
+				lower.getUniqueId(), onServer(lower),
+				upper.getUniqueId(), onServer(upper))));
+
+		for (PlayerProfile profile : List.of(lower, upper)) {
+			PlayerIdentity client = PlayerIdentity.builder().requested(profile).granted(profile).build();
+			PlayerIdentity observed = new AgentPlayerObservation(profile.getUsername(), "lobby", () -> client, () -> agents,
+					Set.of("lobby")).identity();
+
+			assertEquals(profile, observed.getObserved());
+		}
+	}
+
+	@Test
+	void asksNoAgentBeforeThePlayerIsGrantedAProfile() {
+		PlayerIdentity connecting = PlayerIdentity.builder().requested(alice).build();
+		var agent = new TestAgent(() -> {
+			throw new AssertionError("An agent was asked before the player was granted a profile");
+		});
+
+		assertEquals(connecting, new AgentPlayerObservation("Alice", "lobby", () -> connecting, () -> Map.of("lobby", agent),
+				Set.of("lobby")).identity());
+	}
 
 	@Test
 	void observesOnlyConnectedProcessesAndFollowsReplacementConnections() {
@@ -36,14 +81,14 @@ class AgentPlayerObservationTest {
 
 		AgentIdentity first = identity(UUID.randomUUID());
 		lobby.attach(new TestAgent(() -> Optional.of(first)));
-		assertEquals(first.getUniqueId(), observation.identity().getObservedUniqueId());
+		assertEquals(first.getUniqueId(), observation.identity().getObserved().getUniqueId());
 		assertEquals("lobby", observation.identity().getRoute().getServer());
 		lobby.close();
 		assertEquals(initial, observation.identity());
 
 		AgentIdentity replacement = identity(UUID.randomUUID());
 		lobby.attach(new TestAgent(() -> Optional.of(replacement)));
-		assertEquals(replacement.getUniqueId(), observation.identity().getObservedUniqueId());
+		assertEquals(replacement.getUniqueId(), observation.identity().getObserved().getUniqueId());
 		lobby.close();
 	}
 
@@ -61,7 +106,7 @@ class AgentPlayerObservationTest {
 
 		assertEquals("proxy-a", observed.getRoute().getProxy());
 		assertEquals("auth", observed.getRoute().getServer());
-		assertEquals(forwarded, observed.getObservedUniqueId());
+		assertEquals(forwarded, observed.getObserved().getUniqueId());
 	}
 
 	@Test
@@ -77,7 +122,7 @@ class AgentPlayerObservationTest {
 
 		assertEquals("proxy", observed.getRoute().getProxy());
 		assertNull(observed.getRoute().getServer());
-		assertEquals(proxied, observed.getObservedUniqueId());
+		assertEquals(proxied, observed.getObserved().getUniqueId());
 	}
 
 	@Test
@@ -108,7 +153,7 @@ class AgentPlayerObservationTest {
 
 		assertEquals(initial, observation(client).identity());
 		assertFalse(client.available());
-		assertThrows(AgentUnavailableException.class, () -> client.identity("Alice"));
+		assertThrows(AgentUnavailableException.class, () -> client.identity(alice.getUniqueId()));
 	}
 
 	@Test
@@ -123,6 +168,22 @@ class AgentPlayerObservationTest {
 
 	private AgentPlayerObservation observation(AgentClient agent) {
 		return new AgentPlayerObservation("Alice", "lobby", () -> initial, () -> Map.of("lobby", agent), Set.of("lobby"));
+	}
+
+	private static AgentIdentity onProxy(String connectedServer, PlayerProfile profile) {
+		return AgentIdentity.builder()
+				.username(profile.getUsername())
+				.uniqueId(profile.getUniqueId())
+				.location(ProxyLocation.builder().proxy("velocity").connectedServer(connectedServer).build())
+				.build();
+	}
+
+	private static AgentIdentity onServer(PlayerProfile profile) {
+		return AgentIdentity.builder()
+				.username(profile.getUsername())
+				.uniqueId(profile.getUniqueId())
+				.location(ServerLocation.builder().server("native-server").build())
+				.build();
 	}
 
 	private AgentIdentity onProxy(String connectedServer, UUID uniqueId) {
@@ -141,10 +202,20 @@ class AgentPlayerObservationTest {
 				.build();
 	}
 
-	@RequiredArgsConstructor
 	private static class TestAgent implements AgentClient {
-		private final Supplier<Optional<AgentIdentity>> observation;
+		private final Function<UUID, Optional<AgentIdentity>> observation;
 		private boolean closed;
+
+		private TestAgent(Supplier<Optional<AgentIdentity>> observation) {
+			this.observation = ignored -> observation.get();
+		}
+
+		/**
+		 * Agent of a platform that knows its players by the UUID they were granted.
+		 */
+		private TestAgent(Map<UUID, AgentIdentity> players) {
+			this.observation = uniqueId -> Optional.ofNullable(players.get(uniqueId));
+		}
 
 		@Override
 		public boolean available() {
@@ -152,10 +223,10 @@ class AgentPlayerObservationTest {
 		}
 
 		@Override
-		public @NotNull Optional<AgentIdentity> identity(@NotNull String username) {
+		public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
 			if (closed) throw new AgentUnavailableException("Test connection is closed");
 
-			return observation.get();
+			return observation.apply(uniqueId);
 		}
 
 		@Override

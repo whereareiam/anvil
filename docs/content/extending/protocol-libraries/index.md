@@ -94,7 +94,9 @@ must honour the virtual host and source address, or refuse the player when it is
 either one, just as a library that cannot redirect its session service refuses a session identity.
 
 Create a disconnected client; connection behavior is supplied through the
-appropriate capability. Destroying a player releases its client resources, and `close()` attempts
+appropriate capability. `ProtocolPlayer.identity()` returns the profile the client requests and, while it is
+connected, the profile the server or proxy granted in its login success. Anvil asks platform agents for the
+player by the granted UUID, so a library that never reports a granted profile is never observed on a server. Destroying a player releases its client resources, and `close()` attempts
 cleanup of all clients and owned workers even after a failure.
 
 ## Understand library selection

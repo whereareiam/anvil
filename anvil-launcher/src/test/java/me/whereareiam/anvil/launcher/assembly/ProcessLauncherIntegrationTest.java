@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -150,7 +151,7 @@ class ProcessLauncherIntegrationTest {
 			@Override
 			public <T> T request(@NotNull String operation, @NotNull Object args, @NotNull Class<T> response) { throw new UnsupportedOperationException(); }
 			@Override
-			public @NotNull Optional<AgentIdentity> identity(@NotNull String username) { return Optional.empty(); }
+			public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) { return Optional.empty(); }
 			@Override
 			public boolean executeCommand(@NotNull String command) { calls.add(generation + ":" + command); return true; }
 			@Override

@@ -94,9 +94,9 @@ class PlayerCapabilitiesSystemTest {
 		messages.received("hello-from-anvil", Duration.ofSeconds(10));
 
 		PlayerIdentity identity = server.joined("server", Duration.ofSeconds(10));
-		assertEquals("Alice", identity.getUsername());
+		assertEquals("Alice", identity.getRequested().getUsername());
 		assertEquals("server", identity.getRoute().getServer());
-		assertEquals("Alice", identity.getObservedUsername());
+		assertEquals("Alice", identity.getObserved().getUsername());
 		assertNotNull(server.identity());
 
 		messages.command("anvil-fixture position");

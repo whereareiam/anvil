@@ -9,7 +9,9 @@ platform supports and verify them through real server/proxy behavior.
 ## Supply a platform agent
 
 Implement `PlatformAgent` in an artifact packaged as a plugin for the target platform. Its required
-baseline reports `AgentInfo`, looks up observed identities, and executes console commands. Native
+baseline reports `AgentInfo`, looks up observed identities, and executes console commands. Look a player
+up by the UUID that `identity(UUID)` receives, never by name: it is the UUID the player was granted at
+login, and platforms match names without regard to letter case. Native
 services are exposed through `findService`; `requireService` provides a diagnostic when unavailable.
 
 Compile the platform plugin against `agent-server-api` and package the `agent` runtime artifact.

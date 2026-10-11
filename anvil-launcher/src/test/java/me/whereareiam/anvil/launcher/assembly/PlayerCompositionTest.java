@@ -32,6 +32,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -141,7 +142,7 @@ public class PlayerCompositionTest {
 		}
 
 		@Override
-		public @NotNull Optional<AgentIdentity> identity(@NotNull String username) {
+		public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
 			return Optional.empty();
 		}
 

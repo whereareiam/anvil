@@ -31,6 +31,7 @@ run with ordinary `test` and `build`.
 `tests/server` groups tests by behavior:
 
 - `session/PlayerIdentityReconnectSystemTest`: kicks, reconnects, and identity replacement.
+- `session/GrantedProfileObservationSystemTest`: players observed by the profile they were granted at login.
 - `capability/PlayerCapabilitiesSystemTest`: protocol capability actions observed by a real server.
 - `routing/ProxyServerCompatibilitySystemTest`: direct and proxy routes across the supported versions.
 - `extension/ExternalExtensionSystemTest`: an external backend and capability adapter calling a real agent.

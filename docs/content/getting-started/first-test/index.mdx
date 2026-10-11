@@ -73,7 +73,7 @@ class PlayerJoinTest {
 		session.connected();
 
 		var identity = alice.capability(Server.class).joined("server");
-		assertEquals("Alice", identity.getObservedUsername());
+		assertEquals("Alice", identity.getObserved().getUsername());
 
 		anvil.processes().server("server").console()
 				.sendCommand("say anvil-first-test");

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TranslatableComponent;
@@ -25,25 +26,31 @@ import org.geysermc.mcprotocollib.protocol.packet.handshake.serverbound.ClientIn
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
+import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Answers the packets an MCProtocolLib 1.21.1 client must answer on its own and reports login, teleports and
- * disconnects with their reason flattened to plain text.
+ * disconnects with their reason flattened to plain text. The login reports the profile the server granted in its
+ * login success, which arrives before the game starts.
  */
 @RequiredArgsConstructor
 final class ClientPacketListener extends SessionAdapter {
 	private final ClientLogin login;
 	private final ClientListener<? super Session> listener;
+	private volatile ClientProfile granted;
 
 	@Override
 	public void packetReceived(Session session, Packet packet) {
+		if (packet instanceof ClientboundGameProfilePacket success)
+			granted = ClientProfile.builder().name(success.getProfile().getName()).uniqueId(success.getProfile().getId()).build();
 		if (packet instanceof ClientboundLoginPacket) {
 			session.send(new ServerboundClientInformationPacket(login.getSettings().getLocale(), login.getSettings().getViewDistance(), ChatVisibility.FULL,
 					true, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, false, true));
-			listener.loggedIn(session);
+			listener.loggedIn(session, Objects.requireNonNull(granted, "The server started the game before it granted a profile"));
 		}
 		if (packet instanceof ClientboundPlayerPositionPacket position) {
 			listener.teleported(session, position.getYaw(), position.getPitch());

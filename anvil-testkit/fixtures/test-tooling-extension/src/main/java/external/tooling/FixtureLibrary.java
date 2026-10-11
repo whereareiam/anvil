@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
@@ -34,7 +35,8 @@ public final class FixtureLibrary implements ProtocolLibraryProvider {
 			@Override public @NotNull List<ProtocolRelease> releases() { return releases; }
 			@Override public @NotNull ProtocolPlayer create(@NotNull PlayerRequest request) {
 				return new ProtocolPlayer() {
-					private final PlayerIdentity identity = PlayerIdentity.builder().username(request.getName()).clientUniqueId(UUID.randomUUID()).build();
+					private final PlayerIdentity identity = PlayerIdentity.builder()
+							.requested(new PlayerProfile(request.getName(), UUID.randomUUID())).build();
 					private boolean destroyed;
 					@Override public @NotNull String name() { return request.getName(); }
 					@Override public @NotNull String clientVersion() { return request.getClientVersion().toString(); }

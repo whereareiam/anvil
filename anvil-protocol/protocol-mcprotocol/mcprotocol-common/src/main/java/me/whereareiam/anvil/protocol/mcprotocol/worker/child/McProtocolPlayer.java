@@ -18,6 +18,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerCredentials;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerProfile;
+import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerPlayerEvent;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageWriter;
 import org.jetbrains.annotations.NotNull;
@@ -40,7 +41,6 @@ import java.util.function.Function;
 final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 	private static final String CLIENT_LOCALE = "en_us";
 	private static final int VIEW_DISTANCE = 8;
-	private static final String CONNECTION_EVENT = "player.connection";
 	/**
 	 * How long a closed connection waits for the reason of its closing. Client libraries handle packets on
 	 * another thread than connection events, so the close can be reported before the server's disconnect packet.
@@ -213,9 +213,9 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 	 */
 	private final class Listener implements ClientListener<Object> {
 		@Override
-		public void loggedIn(@NotNull Object current) {
+		public void loggedIn(@NotNull Object current, @NotNull ClientProfile granted) {
 			if (current != session) return;
-			emit(CONNECTION_EVENT, codec.connection(true, null, null));
+			emit(WorkerPlayerEvent.CONNECTION.getWireName(), codec.connected(granted));
 		}
 
 		@Override
@@ -243,7 +243,7 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 		private void report(Object current, DisconnectCause cause, String reason) {
 			if (current != session) return;
 			if (!disconnectNotified.compareAndSet(false, true)) return;
-			emit(CONNECTION_EVENT, codec.connection(false, cause, reason));
+			emit(WorkerPlayerEvent.CONNECTION.getWireName(), codec.disconnected(cause, reason));
 		}
 	}
 }

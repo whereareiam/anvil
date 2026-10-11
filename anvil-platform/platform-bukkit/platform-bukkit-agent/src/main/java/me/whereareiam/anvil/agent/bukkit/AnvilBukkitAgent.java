@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
@@ -43,9 +44,9 @@ public final class AnvilBukkitAgent extends JavaPlugin implements PlatformAgent 
 	}
 
 	@Override
-	public @NotNull Optional<AgentIdentity> identity(@NotNull String username) {
+	public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
 		try {
-			return Optional.ofNullable(call(() -> Bukkit.getPlayerExact(username)))
+			return Optional.ofNullable(call(() -> Bukkit.getPlayer(uniqueId)))
 					.map(player -> AgentIdentity.builder()
 							.username(player.getName())
 							.uniqueId(player.getUniqueId())

@@ -2,6 +2,7 @@ package me.whereareiam.anvil.capability.player;
 
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
@@ -254,7 +255,7 @@ class PlayerCapabilityRuntimeTest {
 			assertEquals("test", context.clientVersion());
 			assertSame(observation, context.observation());
 			context.onClose(() -> released.add("shared"));
-			return () -> context.observation().identity().getUsername();
+			return () -> context.observation().identity().getRequested().getUsername();
 		});
 		var plain = new PlainPlayer();
 		SimulatedPlayer player = new PlayerCapabilityRuntime(List.of(provider))
@@ -394,8 +395,8 @@ class PlayerCapabilityRuntimeTest {
 	}
 
 	private static PlayerObservation observation() {
-		PlayerIdentity identity = PlayerIdentity.builder().username("Alice")
-				.clientUniqueId(UUID.nameUUIDFromBytes("Alice".getBytes(StandardCharsets.UTF_8))).build();
+		PlayerIdentity identity = PlayerIdentity.builder()
+				.requested(new PlayerProfile("Alice", UUID.nameUUIDFromBytes("Alice".getBytes(StandardCharsets.UTF_8)))).build();
 		return new PlayerObservation() {
 			@Override
 			public PlayerIdentity identity() { return identity; }

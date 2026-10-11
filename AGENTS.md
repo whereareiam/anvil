@@ -232,8 +232,10 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   they close. Managed execution's `PortSelection` picks them below the ephemeral ranges, because a process
   binds its port seconds after preparation selected it; do not probe port 0 in a provider.
 - A simulated player's name is its unique identity within the scenario; its Minecraft username defaults to
-  the name and may be shared by several players. Player observations follow the player's own connection from
-  the process it connects to and never look a username up across every agent. Routes name scenario processes.
+  the name and may be shared by several players. The client records the profile its login success granted,
+  which a proxy or login plugin may have renamed. Player observations follow the player's own connection from
+  the process it connects to, ask each agent for that granted UUID, and never look a player up by username,
+  which platforms match without regard to letter case. Routes name scenario processes.
 - `api.process.RunningProcess` exposes lifecycle, address, and console; server/proxy specializations live in
   `api.process.type`. Player identities/routes belong to
   `PlayerObservation` and the Server capability.

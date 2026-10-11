@@ -75,7 +75,7 @@ class ExternalExtensionSystemTest {
 				assertEquals("Observer@1.21.11", probe(fixture, player, "label", new Class<?>[0]));
 				assertEquals("Observer@1.21.11", probe(fixture, player, "agentLabel", new Class<?>[0]));
 				assertFalse(player.hasCapability(Session.class));
-				assertEquals("Observer", player.capability(Server.class).identity().getUsername());
+				assertEquals("Observer", player.capability(Server.class).identity().getRequested().getUsername());
 				assertEquals("fixture:agent-only", probe(fixture, player, "echo", new Class<?>[] {String.class, String.class}, "server", "agent-only"));
 			}
 		}

@@ -12,13 +12,15 @@ import me.whereareiam.anvil.agent.api.type.AgentLocationType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.UUID;
+
 /**
  * Reads the platform's observed identity and encodes its shared location payload.
  */
 public final class IdentityHandler implements AgentOperationHandler<AgentIdentityRequest, AgentIdentityResponse> {
 	@Override
 	public @Nullable AgentIdentityResponse execute(@NotNull PlatformAgent platform, @NotNull AgentIdentityRequest request) {
-		var identity = platform.identity(request.getUsername());
+		var identity = platform.identity(UUID.fromString(request.getUniqueId()));
 		if (identity.isEmpty()) return null;
 
 		var value = identity.get();

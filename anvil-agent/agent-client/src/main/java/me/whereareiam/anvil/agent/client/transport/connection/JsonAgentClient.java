@@ -34,8 +34,8 @@ final class JsonAgentClient implements AgentClient {
 	}
 
 	@Override
-	public @NotNull Optional<AgentIdentity> identity(@NotNull String username) {
-		var request = AgentIdentityRequest.builder().username(username).build();
+	public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
+		var request = AgentIdentityRequest.builder().uniqueId(uniqueId.toString()).build();
 		return Optional.ofNullable(connection.request(AgentOperations.IDENTITY, request)).map(this::identity);
 	}
 

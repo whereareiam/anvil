@@ -50,7 +50,7 @@ class ProofOfPatienceJourneyTest {
 		session.connected();
 
 		PlayerIdentity initialIdentity = server.joined("authentication");
-		UUID initialUuid = initialIdentity.getObservedUniqueId();
+		UUID initialUuid = initialIdentity.getObserved().getUniqueId();
 		assertNotNull(initialUuid);
 		assertNotEquals(AUTHENTICATED_UUID, initialUuid);
 
@@ -68,12 +68,12 @@ class ProofOfPatienceJourneyTest {
 		session.connected();
 		PlayerIdentity authenticatedIdentity = server.joined("authentication");
 		assertEquals("authentication", authenticatedIdentity.getRoute().getServer());
-		assertEquals(AUTHENTICATED_UUID, authenticatedIdentity.getObservedUniqueId());
-		assertNotEquals(initialUuid, authenticatedIdentity.getObservedUniqueId());
+		assertEquals(AUTHENTICATED_UUID, authenticatedIdentity.getObserved().getUniqueId());
+		assertNotEquals(initialUuid, authenticatedIdentity.getObserved().getUniqueId());
 
 		PlayerIdentity observedByPlugin = server.identity();
 		assertNotNull(observedByPlugin);
-		assertEquals(AUTHENTICATED_UUID, observedByPlugin.getObservedUniqueId());
+		assertEquals(AUTHENTICATED_UUID, observedByPlugin.getObserved().getUniqueId());
 
 		alice.destroy();
 	}

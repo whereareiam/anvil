@@ -13,6 +13,7 @@ import net.md_5.bungee.api.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Internal BungeeCord plugin that exposes authenticated test observations to Anvil.
@@ -38,8 +39,8 @@ public final class AnvilBungeeCordAgent extends Plugin implements PlatformAgent 
 	}
 
 	@Override
-	public @NotNull Optional<AgentIdentity> identity(@NotNull String username) {
-		ProxiedPlayer player = getProxy().getPlayer(username);
+	public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
+		ProxiedPlayer player = getProxy().getPlayer(uniqueId);
 		if (player == null) return Optional.empty();
 
 		return Optional.of(AgentIdentity.builder()

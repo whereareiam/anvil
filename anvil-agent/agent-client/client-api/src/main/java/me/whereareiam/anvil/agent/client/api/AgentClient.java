@@ -7,20 +7,23 @@ import me.whereareiam.anvil.agent.client.api.exception.AgentUnavailableException
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Typed host-side contract for a running platform agent.
  */
 public interface AgentClient extends AgentConnection {
 	/**
-	 * Observes a player through this process's native platform API.
+	 * Observes a player through this process's native platform API by the UUID the player was granted at
+	 * login. A proxy forwards that UUID to its backends, so it identifies the player on every process of its
+	 * connection, while a name lookup would ignore letter case and miss a player a proxy renamed.
 	 *
-	 * @param username player name
+	 * @param uniqueId UUID the player was granted at login
 	 * @return identity observed by the platform, or empty when the platform does not observe the player
 	 * @throws AgentUnavailableException when no open connection is available before the request
 	 * @throws AgentException when communication or the remote operation fails
 	 */
-	@NotNull Optional<AgentIdentity> identity(@NotNull String username);
+	@NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId);
 
 	/**
 	 * Executes a command through this process's platform console.

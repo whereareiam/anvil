@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client;
 
 import me.whereareiam.anvil.api.type.DisconnectCause;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -17,8 +18,10 @@ public interface ClientListener<S> {
 	 * Reports that the server accepted the login and the client sent its client information.
 	 *
 	 * @param session session that logged in
+	 * @param granted profile the server or proxy granted in its login success, which a proxy or login plugin
+	 * may have changed from the profile the client asked for
 	 */
-	void loggedIn(@NotNull S session);
+	void loggedIn(@NotNull S session, @NotNull ClientProfile granted);
 
 	/**
 	 * Reports a server-set position and view before the client accepts the teleport, so that whoever observes the

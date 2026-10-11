@@ -41,9 +41,10 @@ public interface ProtocolPlayer {
 	@NotNull ProtocolRelease release();
 
 	/**
-	 * Returns the client identity established by the protocol library.
+	 * Returns the identity the protocol library knows: the profile its client requested and, while connected,
+	 * the profile the joined process granted at login. Observations add what servers report.
 	 *
-	 * @return immutable client identity
+	 * @return current client identity snapshot
 	 */
 	@NotNull PlayerIdentity identity();
 

@@ -169,7 +169,8 @@ created by `bind`, so different players cannot share it.
 An `EventDescriptor<E>` declares the event ID and payload class shared by the worker and host.
 Send a value with `player.emit(eventDescriptor, payload)` and receive that value through
 `channel.subscribe(eventDescriptor, listener)`. For example, a connection event carries a
-`PlayerConnectionEvent` value; the descriptor identifies how to deliver and decode it. Use `Void`
+`PlayerConnectionEvent` value with the profile the joined process granted at login, or the reason the
+connection ended; the descriptor identifies how to deliver and decode it. Use `Void`
 with a `null` payload when an event carries no value.
 
 Register host subscription cleanup with `context.onDestroy(...)`. `player.viewRotation()`
