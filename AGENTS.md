@@ -477,6 +477,48 @@ failures.
   build passes `-Panvil.intellij=false`, because the IntelliJ Platform Gradle Plugin's IDE indexing fails now and
   then on a fresh machine. A development build does not wait for the IntelliJ run; a release does.
 
+## Pull requests and releases
+
+Build each change in its own `feature/...` branch and merge it into `dev` through a pull request.
+Publishing a release draft tags `dev`, verifies it with the live suites, publishes the Maven artifacts and
+Gradle plugins, and then the IntelliJ plugin. Development builds keep their `<branch>-<short commit>`
+version, such as `dev-a123bcd`, because consumers resolve them by that version.
+
+### Release notes
+
+A merged pull request lands in the release draft as `* <title> ([#<number>](<url>))`, under the
+category of its label. Readers are developers who test with Anvil or extend it.
+
+- Titles use `Area: Description`, with a past-tense description of what changed for them:
+  `Introduced`, `Changed`, `Fixed`, `Removed`. Describe the effect, not the implementation.
+- The draft sorts by the exact area, so spell an area exactly as listed: `Engine`, `Environments`,
+  `Workspaces`, `Execution`, `Processes`, `Platforms`, `Players`, `Capabilities`, `Protocol`, `Yggdrasil`,
+  `JUnit`, `Gradle`, `IntelliJ`, `Launcher`. A change to one platform only may use its name: `Paper`,
+  `Spigot`, `NeoForge`, `Velocity`, `BungeeCord`. Add an area only for something readers recognise by that
+  name, such as a new platform, protocol library or integration, and add it to this list in the same
+  pull request. Never use module or package names such as `Architecture` or `Integration`.
+- A `skip-changelog` pull request still needs a title in that format; `CI`, `Build`, `Docs` and `Tests`
+  are fine there.
+
+| Label | Use for |
+| --- | --- |
+| `feature` | something new for tests, build scripts or extensions |
+| `change` | changed behavior, DSL, tasks or API |
+| `bug` | a fix for a bug that shipped in a release |
+| `dependencies` | a library update |
+| `skip-changelog` | refactors, build, CI, tests and documentation, and fixes of bugs that never shipped |
+
+A fix for a bug introduced after the last release belongs to the work that introduced it, so it is
+`skip-changelog`; compare against the last release tag (`git log <tag>..HEAD -- <path>`) to decide. Add
+`major` next to the category when projects must change their tests, build scripts or extensions on upgrade.
+
+Text written by hand, the subtitle, the summary, highlights and upgrade notes, lives in
+`.github/release-notes.md`; it replaces the draft's placeholders while its `version` matches the drafted
+version, so notes of a published release never reach the next draft. When the file names an already
+published version, start the next release's notes by replacing the whole file. The release workflow stops
+while a placeholder is left. Fix the changelog part by editing titles and labels of merged pull requests,
+then rerun the `Release drafter` workflow; text typed into the draft is lost on the next push to `dev`.
+
 ## Integration composition
 
 - External integrations live under `anvil-integration`; editor-independent session tooling stays in `anvil-tooling`.

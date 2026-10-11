@@ -13,26 +13,49 @@ permissions:
   contents: read
 
 jobs:
+  resolve:
+    name: Resolve release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - name: Read release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          release="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG")"
+          if jq -e '(.body // "") | contains("[Short subtitle]") or contains("[1-2 sentence summary")' <<<"$release" >/dev/null; then
+            echo "::error::Release $TAG still has the subtitle or summary placeholder of the draft; fill in .github/release-notes.md or edit the release, then publish again."
+            exit 1
+          fi
+          echo "tag=$(jq -r '.tag_name' <<<"$release")" >> "$GITHUB_OUTPUT"
+
   verify:
     name: Verify
+    needs: resolve
     permissions:
       contents: read
       checks: write
     uses: ./.github/workflows/reusable-verify.yml
     with:
-      ref: ${{ github.event.release.tag_name }}
-      version: ${{ github.event.release.tag_name }}
+      ref: ${{ needs.resolve.outputs.tag }}
+      version: ${{ needs.resolve.outputs.tag }}
       packaging: true
 
   intellij:
     name: IntelliJ
+    needs: resolve
     permissions:
       contents: read
       checks: write
     uses: ./.github/workflows/reusable-intellij.yml
     with:
-      ref: ${{ github.event.release.tag_name }}
-      version: ${{ github.event.release.tag_name }}
+      ref: ${{ needs.resolve.outputs.tag }}
+      version: ${{ needs.resolve.outputs.tag }}
       packaging: true
 
   live:
