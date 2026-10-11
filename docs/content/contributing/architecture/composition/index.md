@@ -67,7 +67,8 @@ families expose the other's services, and assembly performs their typed binding.
 directly from the process without creating a player. Global process contracts do not require agent
 APIs. A custom process implementation can supply capabilities through the same lookup contract.
 
-Launcher `ProcessComposition` selects agent-backed factories and supplies their request channels.
+`ProcessCapabilityRuntime.discover` selects the agent-backed factories that support each process's platform; the
+launcher's `ProcessComposition` only tells it which planned processes run an agent and supplies their request channels.
 Capability-owned adapters feed `ProcessCapabilityRuntime`, which validates each process graph and
 retains one logical `ProcessCapabilities` owner. Launcher assembly supplies that core `CapabilityOwner`
 as an execution input. Managed process handles delegate capability lookup to the owner directly;

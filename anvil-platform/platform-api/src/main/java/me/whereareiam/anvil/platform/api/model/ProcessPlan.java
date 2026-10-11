@@ -51,8 +51,9 @@ public class ProcessPlan {
 	@NotNull Pattern readinessPattern;
 	@NotNull String stopCommand;
 	/**
-	 * JVM arguments selected during planning, before explicit declaration arguments: the platform's
-	 * Java maximum bypass property when the requested Java version needs it, then platform defaults.
+	 * Every JVM argument of the process in its effective order, in which a later argument overrides an
+	 * earlier one of the same name: the engine's processor limit, the platform's Java maximum bypass property
+	 * when the requested Java version needs it, platform defaults, and last the declaration's own arguments.
 	 */
 	@NotNull
 	@Singular

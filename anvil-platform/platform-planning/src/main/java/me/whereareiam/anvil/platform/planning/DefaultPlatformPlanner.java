@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -80,17 +81,32 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 					.agent(agent != null)
 					.readinessPattern(provider.readinessPattern())
 					.stopCommand(provider.stopCommand())
-					.jvmArguments(planned.jvmArguments())
-					.jvmArguments(provider.jvmArguments(declaration, options.isConsoleColors()))
-					.jvmArguments(declaration.getSessionServer() == null
-							? List.of()
-							: provider.sessionServerArguments(declaration, declaration.getSessionServer()))
+					.jvmArguments(jvmArguments(declaration, provider, planned))
 					.programArguments(provider.programArguments(declaration))
 					.defaultCaches(provider.defaultCaches(declaration))
 					.build());
 		});
 
 		return plan.build();
+	}
+
+	/**
+	 * Orders a process's JVM arguments so that a later one overrides an earlier one of the same name: the
+	 * engine's processor limit, the Java planning arguments, the platform's defaults and session server, and
+	 * last the arguments the declaration supplies itself.
+	 */
+	private List<String> jvmArguments(MinecraftProcess declaration, PlatformProvider provider, JavaRequirementPlanner.PlannedJava planned) {
+		List<String> arguments = new ArrayList<>();
+		Integer processors = options.getProcessScheduling().getProcessors();
+		if (processors != null) arguments.add("-XX:ActiveProcessorCount=" + processors);
+
+		arguments.addAll(planned.jvmArguments());
+		arguments.addAll(provider.jvmArguments(declaration, options.isConsoleColors()));
+		if (declaration.getSessionServer() != null)
+			arguments.addAll(provider.sessionServerArguments(declaration, declaration.getSessionServer()));
+		arguments.addAll(declaration.getJvmArguments());
+
+		return arguments;
 	}
 
 	@Override

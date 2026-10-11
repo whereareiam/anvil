@@ -25,8 +25,10 @@ plugins {
 description = "Anvil's executable scenario launcher distribution"
 
 // Consumers also compile against the shaded JAR, which carries the embedded implementations' API types.
+// Without the classes variant, projects of this build compile against it too, like consumers of the publication.
 configurations.named("apiElements") {
     outgoing.artifacts.clear()
+    outgoing.variants.clear()
     outgoing.artifact(tasks.named("shadowJar"))
 }
 
