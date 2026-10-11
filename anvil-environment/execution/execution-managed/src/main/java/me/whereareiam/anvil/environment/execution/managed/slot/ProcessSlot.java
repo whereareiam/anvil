@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.environment.execution.managed.slot;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.exception.ProcessException;
 import me.whereareiam.anvil.api.scenario.ScenarioObserver;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessSpec;
@@ -72,7 +73,7 @@ public final class ProcessSlot {
 					spec.getStopCommand(),
 					startupTimeout
 			);
-			preparedLaunch.started();
+			attach(preparedLaunch, current);
 
 			return current;
 		} catch (RuntimeException | Error failure) {
@@ -82,6 +83,20 @@ public final class ProcessSlot {
 				if (cleanup != failure) failure.addSuppressed(cleanup);
 			}
 			throw failure;
+		}
+	}
+
+	/**
+	 * Attaches the ready generation, such as its platform agent connection. The process printed its readiness
+	 * line, so a failure here names the process and keeps its output, which records why its agent is absent.
+	 */
+	private void attach(PreparedLaunch preparedLaunch, ManagedProcess process) {
+		try {
+			preparedLaunch.started();
+		} catch (RuntimeException failure) {
+			List<String> tail = process.console().tail(30);
+			throw new ProcessException(name(), "Process '" + name() + "' became ready, but attaching to it failed: "
+					+ failure.getMessage() + (tail.isEmpty() ? "" : "\nLast output:\n" + String.join("\n", tail)), failure);
 		}
 	}
 
