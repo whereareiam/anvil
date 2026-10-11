@@ -4,8 +4,10 @@ import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.capability.CapabilityRuntime;
+import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider;
 import me.whereareiam.anvil.capability.api.CapabilityContext;
 import me.whereareiam.anvil.capability.api.CapabilityProvider;
+import me.whereareiam.anvil.capability.api.channel.RequestChannel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,7 +15,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.function.Function;
 
 /**
@@ -35,6 +39,69 @@ public final class ProcessCapabilityRuntime {
 			var runtime = new CapabilityRuntime<ProcessCapability, CapabilityContext<ProcessCapability>>(ProcessCapability.class, supplied);
 			owners.put(name, new ProcessCapabilities(name, () -> runtime.compose("Process '" + name + "'", Function.identity())));
 		});
+	}
+
+	/**
+	 * Discovers the installed agent-backed process capability providers and validates the capability graph of
+	 * every process. No capability is created and no connection is opened.
+	 *
+	 * @param platforms platform identifier of every process that runs an agent, by process name
+	 * @param channels supplies the request channel of a process's agent, by process name
+	 * @return validated runtime, ready to bind after process startup
+	 */
+	public static @NotNull ProcessCapabilityRuntime discover(
+			@NotNull Map<String, String> platforms,
+			@NotNull Function<String, RequestChannel> channels
+	) {
+		if (platforms.isEmpty()) return new ProcessCapabilityRuntime(Map.of());
+
+		return of(platforms, channels, installed());
+	}
+
+	/**
+	 * Validates the capability graph of every process from the given providers, of which each process takes
+	 * those that support its platform.
+	 *
+	 * @param platforms platform identifier of every process that runs an agent, by process name
+	 * @param channels supplies the request channel of a process's agent, by process name
+	 * @param providers agent-backed process capability providers to choose from
+	 * @return validated runtime, ready to bind after process startup
+	 */
+	public static @NotNull ProcessCapabilityRuntime of(
+			@NotNull Map<String, String> platforms,
+			@NotNull Function<String, RequestChannel> channels,
+			@NotNull Collection<AgentProcessCapabilityProvider<?>> providers
+	) {
+		Map<String, List<CapabilityProvider<? extends ProcessCapability, CapabilityContext<ProcessCapability>>>> owners = new LinkedHashMap<>();
+		platforms.forEach((name, platform) -> {
+			RequestChannel channel = channels.apply(name);
+			List<CapabilityProvider<? extends ProcessCapability, CapabilityContext<ProcessCapability>>> supported = new ArrayList<>();
+			for (AgentProcessCapabilityProvider<?> provider : providers)
+				if (provider.supportsPlatform(platform))
+					supported.add(new AgentProcessCapabilityProviderAdapter<>(provider, name, platform, channel));
+			owners.put(name, supported);
+		});
+
+		return new ProcessCapabilityRuntime(owners);
+	}
+
+	/**
+	 * Loads the providers the caller's class loader installs, or else those packaged with this module.
+	 */
+	private static @NotNull List<AgentProcessCapabilityProvider<?>> installed() {
+		ClassLoader context = Thread.currentThread().getContextClassLoader();
+		List<AgentProcessCapabilityProvider<?>> providers = context == null ? List.of() : load(context);
+		if (!providers.isEmpty()) return providers;
+
+		return load(ProcessCapabilityRuntime.class.getClassLoader());
+	}
+
+	private static @NotNull List<AgentProcessCapabilityProvider<?>> load(@NotNull ClassLoader loader) {
+		List<AgentProcessCapabilityProvider<?>> providers = new ArrayList<>();
+		for (AgentProcessCapabilityProvider<?> provider : ServiceLoader.load(AgentProcessCapabilityProvider.class, loader))
+			providers.add(provider);
+
+		return providers;
 	}
 
 	/**

@@ -9,8 +9,6 @@ import me.whereareiam.anvil.api.process.type.RunningServer;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityContext;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider;
-import me.whereareiam.anvil.capability.api.CapabilityContext;
-import me.whereareiam.anvil.capability.api.CapabilityProvider;
 import me.whereareiam.anvil.capability.api.channel.RequestChannel;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
@@ -28,6 +26,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -92,7 +91,42 @@ class ProcessCapabilityRuntimeTest {
 		}
 	}
 
+	@Test
+	void takesOnlyProvidersOfTheProcessPlatformAndRejectsMissingDependenciesWithoutCreatingCapabilities() {
+		AtomicInteger created = new AtomicInteger();
+		var dependent = provider("dependent", Dependent.class, context -> {
+			created.incrementAndGet();
+			return () -> context.requireCapability(OwnerIdentity.class);
+		}, Set.of(OwnerIdentity.class));
+		AgentProcessCapabilityProvider<OwnerIdentity> unsupported = new AgentProcessCapabilityProvider<>() {
+			@Override
+			public @NotNull CapabilityDescriptor descriptor() { return CapabilityDescriptor.builder().id("other-platform").build(); }
 
+			@Override
+			public @NotNull Class<OwnerIdentity> capability() { return OwnerIdentity.class; }
+
+			@Override
+			public boolean supportsPlatform(@NotNull String platform) { return false; }
+
+			@Override
+			public @NotNull OwnerIdentity create(@NotNull AgentProcessCapabilityContext context) {
+				throw new AssertionError("Unsupported provider must not be created");
+			}
+		};
+
+		var failure = assertThrows(CapabilityException.class, () -> composition(List.of("first"), List.of(dependent, unsupported)));
+		assertTrue(failure.getMessage().contains("requires missing capabilities"));
+		assertEquals(0, created.get());
+	}
+
+	@Test
+	void discoversNothingAndAsksForNoChannelWithoutProcessesThatRunAnAgent() {
+		ProcessCapabilityRuntime runtime = ProcessCapabilityRuntime.discover(Map.of(), name -> {
+			throw new AssertionError("No process runs an agent");
+		});
+
+		assertNull(runtime.owner("first"));
+	}
 
 	@Test
 	void emptyProcessOwnersRejectCapabilityLookup() {
@@ -227,29 +261,24 @@ class ProcessCapabilityRuntimeTest {
 			@Override
 			public @NotNull Class<C> capability() { return capability; }
 
-
 			@Override
 			public @NotNull C create(@NotNull AgentProcessCapabilityContext context) { return factory.apply(context); }
 		};
 	}
 
 	private ProcessCapabilityRuntime composition(List<String> names, List<AgentProcessCapabilityProvider<?>> providers) {
-		Map<String, List<CapabilityProvider<? extends ProcessCapability, CapabilityContext<ProcessCapability>>>> owners = new LinkedHashMap<>();
-		RequestChannel channel = new RequestChannel() {
-			@Override
-			public @Nullable <Q, R> R request(@NotNull ChannelOperation<Q, R> operation, @Nullable Q request) {
-				throw new AssertionError("Composition must not send requests");
-			}
-		};
-		for (String name : names) {
-			List<CapabilityProvider<? extends ProcessCapability, CapabilityContext<ProcessCapability>>> adapted = new ArrayList<>();
-			for (AgentProcessCapabilityProvider<?> provider : providers)
-				adapted.add(new AgentProcessCapabilityProviderAdapter<>(provider, name, "test", channel));
-			owners.put(name, adapted);
-		}
+		Map<String, String> platforms = new LinkedHashMap<>();
+		names.forEach(name -> platforms.put(name, "test"));
 
-		return new ProcessCapabilityRuntime(owners);
+		return ProcessCapabilityRuntime.of(platforms, name -> SILENT, providers);
 	}
+
+	private static final RequestChannel SILENT = new RequestChannel() {
+		@Override
+		public @Nullable <Q, R> R request(@NotNull ChannelOperation<Q, R> operation, @Nullable Q request) {
+			throw new AssertionError("Composition must not send requests");
+		}
+	};
 
 	private ProcessGroup group(ProcessCapabilityRuntime composition, List<String> names, Consumer<Boolean> finish) {
 		Map<String, RunningProcess> servers = new LinkedHashMap<>();

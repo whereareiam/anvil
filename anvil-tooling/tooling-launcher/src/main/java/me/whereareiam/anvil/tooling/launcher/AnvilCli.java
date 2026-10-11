@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.tooling.launcher;
 
+import me.whereareiam.anvil.engine.config.EngineProperties;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
-import me.whereareiam.anvil.launcher.config.EngineProperties;
 import me.whereareiam.anvil.runner.AnvilRunner;
 import org.jetbrains.annotations.NotNull;
 

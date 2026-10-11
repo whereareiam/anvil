@@ -52,10 +52,12 @@ native-version and authentication compatibility are checked for each requested p
 
 ## Keep processes for the engine
 
-A process declared with `ProcessLifetime.ENGINE` is not part of its scenario's process group. The
-launcher's `RetainedProcesses` plans a scenario's kept processes as a scenario of their own and runs
-them as a separate process group, with its own workspaces, execution environment, agent directory and
-process capabilities. `ScenarioFactory.create(...)` takes a `ProcessLease` on such a set before it
+A process declared with `ProcessLifetime.ENGINE` is not part of its scenario's process group. Platform
+planning's `LifetimeSplit` plans a scenario's kept processes as a scenario of their own and identifies
+declarations of the same running processes. They run as a separate process group, with its own
+workspaces, execution environment, agent directory and process capabilities, which the launcher
+assembles as a `RetainedProcessSet`. The engine's `RetainedProcesses` keeps those groups and lends each
+to one scenario at a time. `ScenarioFactory.create(...)` takes a `ProcessLease` on such a set before it
 prepares the scenario's own processes: an idle set whose declarations match, or a newly started one.
 Kept processes therefore start during preparation, because the scenario's own processes are prepared
 against their addresses and adopt the forwarding settings they run with.

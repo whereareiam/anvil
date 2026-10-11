@@ -9,6 +9,7 @@ import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessScheduling;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import me.whereareiam.anvil.api.type.SupportPolicy;
@@ -273,7 +274,7 @@ class JavaRequirementPlannerTest {
 	}
 
 	@Test
-	void placesTheBypassBeforePlatformDefaultsInTheProcessPlan() {
+	void ordersProcessArgumentsFromTheEngineLimitToTheDeclarationsOwn() {
 		PlatformArtifactSource artifacts = new PlatformArtifactSource() {
 			@Override
 			public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, @Nullable String checksum) {
@@ -285,12 +286,14 @@ class JavaRequirementPlannerTest {
 				throw new AssertionError("Planning must not download metadata");
 			}
 		};
-		var planner = new DefaultPlatformPlanner(EngineOptions.builder().consoleColors(true).build(), PROVIDERS, artifacts,
-				agent -> Path.of("agent.jar"));
+		var options = EngineOptions.builder().consoleColors(true)
+				.processScheduling(ProcessScheduling.builder().processors(4).build()).build();
+		var planner = new DefaultPlatformPlanner(options, PROVIDERS, artifacts, agent -> Path.of("agent.jar"));
 		var server = server("paper", "1.16.5", 17).toBuilder().jvmArgument("-Ddeclared=true").build();
 
 		ProcessPlan plan = planner.plan(scenario(server)).getProcesses().get("paper");
-		assertEquals(List.of(BYPASS, "-Dplatform.colors=true"), plan.getJvmArguments());
+		assertEquals(List.of("-XX:ActiveProcessorCount=4", BYPASS, "-Dplatform.colors=true", "-Ddeclared=true"), plan.getJvmArguments(),
+				"A later argument overrides an earlier one, so the declaration's own come last and the engine's limit first");
 		assertEquals(17, plan.getJavaSelection().getRequirement().getFeatureVersion());
 	}
 

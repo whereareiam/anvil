@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.integration.gradle.config
 
 import me.whereareiam.anvil.integration.gradle.AnvilExtension
-import me.whereareiam.anvil.launcher.config.EngineProperties
+import me.whereareiam.anvil.engine.config.EngineProperties
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
