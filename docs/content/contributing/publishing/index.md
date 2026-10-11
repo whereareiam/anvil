@@ -96,9 +96,14 @@ Two workflows start by themselves on a pull request:
 | Workflow | Checks |
 |---|---|
 | **Pull request · Metadata** | The `Area: Title` title and the release label |
-| **Pull request · Checks** | `./gradlew build`: architecture, segment linkage, unit and runtime tests, and the live matrix data |
+| **Pull request · Checks** | `./gradlew build -Panvil.intellij=false`: architecture, segment linkage, unit and runtime tests, and the live matrix data |
+| **Pull request · Checks**, IntelliJ | The IntelliJ integration's build and tests, in a run of its own |
 
-The checks start no server and do not verify the IntelliJ plugin. A new push cancels the run of the
+The checks start no server and do not verify the IntelliJ plugin distribution. The IntelliJ integration
+builds separately because the IntelliJ Platform Gradle Plugin's indexing of the IDE fails now and then on a
+fresh machine (JetBrains/intellij-platform-gradle-plugin#2192); such a failure fails only the IntelliJ run,
+which can be rerun alone. Every other CI build passes `-Panvil.intellij=false`, which leaves the IntelliJ
+modules out of the build. A new push cancels the run of the
 previous revision, and a draft pull request is not checked until it is ready for review.
 
 Live verification is maintainer-requested, because it starts every verified platform:
@@ -129,10 +134,10 @@ read the shared caches.
 ## Publish a development build
 
 Run **Development build** manually and select the intended branch, normally `dev`. It verifies the
-build, the IntelliJ plugin and the standalone consumers, and then publishes a branch-qualified
-version such as `dev-a123bcd`; slashes in branch names become hyphens. Development versions do not
-use a `-SNAPSHOT` suffix. Enable **live** to also run the live suites before publication. Pushes do
-not trigger publication.
+build and the standalone consumers, and then publishes a branch-qualified version such as `dev-a123bcd`;
+slashes in branch names become hyphens. Development versions do not use a `-SNAPSHOT` suffix. The IntelliJ
+plugin is verified beside it and does not hold the publication back. Enable **live** to also run the live
+suites before publication. Pushes do not trigger publication.
 
 ```shell
 gh workflow run development.yml --ref dev -f live=true

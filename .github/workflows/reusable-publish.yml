@@ -55,13 +55,13 @@ jobs:
       - name: Assemble
         env:
           ANVIL_VERSION: ${{ inputs.version }}
-        run: ./gradlew --no-daemon assemble -Panvil.bootstrap -PanvilVersion="$ANVIL_VERSION"
+        run: ./gradlew --no-daemon assemble -Panvil.bootstrap -Panvil.intellij=false -PanvilVersion="$ANVIL_VERSION"
 
       - name: Publish Maven modules and Gradle plugins
         uses: whereareiam/devops/composite/package/maven/publish@v3
         with:
           visibility: public
-          command: ./gradlew --no-daemon publish -Panvil.bootstrap -PanvilVersion='${{ inputs.version }}'
+          command: ./gradlew --no-daemon publish -Panvil.bootstrap -Panvil.intellij=false -PanvilVersion='${{ inputs.version }}'
 
   intellij:
     name: IntelliJ plugin

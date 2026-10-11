@@ -82,6 +82,19 @@ jobs:
       packaging: true
       cache: read-only
 
+  intellij:
+    name: IntelliJ
+    needs: resolve
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/reusable-intellij.yml
+    with:
+      ref: ${{ needs.resolve.outputs.merge }}
+      version: pr-${{ inputs.pull-request }}
+      packaging: true
+      cache: read-only
+
   live:
     name: Live
     needs: verify
@@ -96,7 +109,7 @@ jobs:
 
   report:
     name: Report result
-    needs: [resolve, verify, live]
+    needs: [resolve, verify, live, intellij]
     if: ${{ always() && needs.resolve.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -107,11 +120,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           HEAD: ${{ needs.resolve.outputs.head }}
-          RESULTS: ${{ needs.verify.result }} ${{ needs.live.result }}
+          RESULTS: ${{ needs.verify.result }} ${{ needs.live.result }} ${{ needs.intellij.result }}
         run: |
           set -euo pipefail
           case "$RESULTS" in
-            "success success") state=success; description="Passed" ;;
+            "success success success") state=success; description="Passed" ;;
             *cancelled*) state=error; description="Cancelled" ;;
             *) state=failure; description="Failed" ;;
           esac

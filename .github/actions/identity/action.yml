@@ -1,0 +1,33 @@
+name: Resolve artifact identity
+description: Resolve the artifact version of the checked-out commit, so that every job of a run builds the same one.
+
+inputs:
+  version:
+    description: Requested artifact version; defaults to <branch>-<short commit>.
+    required: false
+    default: ""
+
+outputs:
+  version:
+    description: Artifact version.
+    value: ${{ steps.identity.outputs.version }}
+  commit:
+    description: Checked-out commit.
+    value: ${{ steps.identity.outputs.commit }}
+
+runs:
+  using: composite
+  steps:
+    - id: identity
+      shell: bash
+      env:
+        REQUESTED_VERSION: ${{ inputs.version }}
+        BRANCH: ${{ github.head_ref || github.ref_name }}
+      run: |
+        set -euo pipefail
+        commit="$(git rev-parse HEAD)"
+        version="${REQUESTED_VERSION#v}"
+        [[ -n "$version" ]] || version="${BRANCH//\//-}-${commit::7}"
+        [[ "$version" =~ ^[A-Za-z0-9][A-Za-z0-9._+-]*$ ]] || { echo "Invalid artifact version: $version" >&2; exit 1; }
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+        echo "commit=$commit" >> "$GITHUB_OUTPUT"

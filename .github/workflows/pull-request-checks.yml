@@ -21,3 +21,12 @@ jobs:
       ref: ${{ github.sha }}
       version: pr-${{ github.event.pull_request.number }}
       cache: read-only
+
+  intellij:
+    name: IntelliJ
+    if: ${{ !github.event.pull_request.draft }}
+    uses: ./.github/workflows/reusable-intellij.yml
+    with:
+      ref: ${{ github.sha }}
+      version: pr-${{ github.event.pull_request.number }}
+      cache: read-only
