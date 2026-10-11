@@ -1,0 +1,81 @@
+name: IntelliJ
+
+# The IntelliJ Platform Gradle Plugin indexes the IDE distribution on a fresh machine and now and then saves an
+# incomplete index (JetBrains/intellij-platform-gradle-plugin#2192). Only this workflow resolves the IntelliJ
+# modules; every other build passes -Panvil.intellij=false, so such a failure stops nothing but this run.
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit, branch or tag to build.
+        required: true
+        type: string
+      version:
+        description: Artifact version; defaults to <branch>-<short commit>.
+        required: false
+        type: string
+        default: ""
+      packaging:
+        description: Also build and verify the plugin distribution and upload it.
+        required: false
+        type: boolean
+        default: false
+      cache:
+        description: Cache policy, auto or read-only. A run of code that is not yet reviewed passes read-only.
+        required: false
+        type: string
+        default: auto
+
+permissions:
+  contents: read
+  checks: write
+
+env:
+  INTELLIJ: ":anvil-integration:integration-intellij:intellij"
+
+jobs:
+  intellij:
+    name: IntelliJ plugin
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: Resolve artifact identity
+        id: identity
+        uses: ./.github/actions/identity
+        with:
+          version: ${{ inputs.version }}
+
+      - uses: ./.github/actions/setup
+        with:
+          cache-shard: intellij
+          cache: ${{ inputs.cache }}
+
+      - name: Build and test
+        env:
+          ANVIL_VERSION: ${{ steps.identity.outputs.version }}
+          PLUGIN_TASKS: ${{ inputs.packaging && format('{0}:buildPlugin {0}:verifyPlugin', env.INTELLIJ) || '' }}
+        run: >-
+          ./gradlew --no-daemon -p anvil-integration/integration-intellij build $PLUGIN_TASKS
+          -Panvil.bootstrap -PanvilVersion="$ANVIL_VERSION"
+
+      - name: Upload IntelliJ plugin
+        if: inputs.packaging
+        uses: actions/upload-artifact@v6
+        with:
+          name: anvil-intellij-plugin-${{ steps.identity.outputs.version }}
+          path: anvil-integration/integration-intellij/intellij/build/distributions/*.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      - uses: whereareiam/devops/primitive/report/junit/publish@v3
+        if: always()
+        with:
+          name: IntelliJ test results
+          artifact-name: intellij-test-results

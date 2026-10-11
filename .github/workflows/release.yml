@@ -24,6 +24,17 @@ jobs:
       version: ${{ github.event.release.tag_name }}
       packaging: true
 
+  intellij:
+    name: IntelliJ
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/reusable-intellij.yml
+    with:
+      ref: ${{ github.event.release.tag_name }}
+      version: ${{ github.event.release.tag_name }}
+      packaging: true
+
   live:
     name: Live
     needs: verify
@@ -35,9 +46,10 @@ jobs:
       commit: ${{ needs.verify.outputs.commit }}
       version: ${{ needs.verify.outputs.version }}
 
+  # A release also publishes the IntelliJ plugin, so it waits for the plugin's verification as well.
   publish:
     name: Publish
-    needs: [verify, live]
+    needs: [verify, live, intellij]
     permissions:
       contents: read
       id-token: write

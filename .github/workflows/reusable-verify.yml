@@ -14,8 +14,8 @@ on:
         default: ""
       packaging:
         description: >-
-          Also build and verify the IntelliJ plugin, build the standalone consumers against the published artifacts,
-          and hand the build outputs over to the jobs that follow.
+          Also build the standalone consumers against the published artifacts and hand the build outputs over to the
+          jobs that follow.
         required: false
         type: boolean
         default: false
@@ -36,9 +36,6 @@ permissions:
   contents: read
   checks: write
 
-env:
-  INTELLIJ: ":anvil-integration:integration-intellij:intellij"
-
 jobs:
   build:
     name: Build and test
@@ -55,17 +52,9 @@ jobs:
 
       - name: Resolve artifact identity
         id: identity
-        env:
-          REQUESTED_VERSION: ${{ inputs.version }}
-          BRANCH: ${{ github.head_ref || github.ref_name }}
-        run: |
-          set -euo pipefail
-          commit="$(git rev-parse HEAD)"
-          version="${REQUESTED_VERSION#v}"
-          [[ -n "$version" ]] || version="${BRANCH//\//-}-${commit::7}"
-          [[ "$version" =~ ^[A-Za-z0-9][A-Za-z0-9._+-]*$ ]] || { echo "Invalid artifact version: $version" >&2; exit 1; }
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+        uses: ./.github/actions/identity
+        with:
+          version: ${{ inputs.version }}
 
       - uses: ./.github/actions/setup
         with:
@@ -77,28 +66,18 @@ jobs:
         env:
           ANVIL_VERSION: ${{ steps.identity.outputs.version }}
         run: >-
-          ./gradlew --no-daemon publishToMavenLocal -Panvil.bootstrap
+          ./gradlew --no-daemon publishToMavenLocal -Panvil.bootstrap -Panvil.intellij=false
           -PanvilVersion="$ANVIL_VERSION"
           -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
 
+      # reusable-intellij.yml builds the IntelliJ plugin, so that a failure of its IDE indexing fails only that run.
       - name: Build and test
         env:
           ANVIL_VERSION: ${{ steps.identity.outputs.version }}
-          PLUGIN_TASKS: ${{ inputs.packaging && format('{0}:buildPlugin {0}:verifyPlugin', env.INTELLIJ) || '' }}
         run: >-
-          ./gradlew --no-daemon build $PLUGIN_TASKS
+          ./gradlew --no-daemon build -Panvil.intellij=false
           -PanvilVersion="$ANVIL_VERSION"
           -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
-
-      - name: Upload IntelliJ plugin
-        if: inputs.packaging
-        uses: actions/upload-artifact@v6
-        with:
-          name: anvil-intellij-plugin-${{ steps.identity.outputs.version }}
-          path: anvil-integration/integration-intellij/intellij/build/distributions/*.zip
-          if-no-files-found: error
-          compression-level: 0
-          retention-days: 14
 
       - name: Build fixtures against the published artifacts
         if: inputs.packaging

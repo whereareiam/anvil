@@ -49,6 +49,11 @@ project(":anvil-testkit").children.removeAll { it.name == "fixtures" }
 // yet. A bootstrap build leaves the suite out, so that publishToMavenLocal can publish the plugin first.
 if (providers.gradleProperty("anvil.bootstrap").isPresent)
     project(":anvil-testkit:tests").children.removeAll { it.name == "server" }
+// Resolving the IntelliJ plugin's IDE distribution indexes it, which fails now and then on a fresh machine
+// (JetBrains/intellij-platform-gradle-plugin#2192). CI builds the plugin in a job of its own and leaves it out of the
+// others with -Panvil.intellij=false.
+if (providers.gradleProperty("anvil.intellij").orNull == "false")
+    project(":anvil-integration").children.removeAll { it.name == "integration-intellij" }
 
 includeBuild(".")
 

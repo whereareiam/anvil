@@ -72,7 +72,7 @@ jobs:
           MATRIX_FILTER: ${{ matrix.filter }}
         run: >-
           ./gradlew --no-daemon :anvil-testkit:tests:server:test
-          -Panvil.testMode=full
+          -Panvil.testMode=full -Panvil.intellij=false
           -PanvilTestTags="$TEST_TAGS"
           -PanvilMatrixFilter="$MATRIX_FILTER"
           -PanvilVersion="$ANVIL_VERSION"

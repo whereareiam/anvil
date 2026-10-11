@@ -463,7 +463,7 @@ failures.
 - Use relative content links. Validate navigation, local links, and Scriptorium content
   compilation after documentation changes. Generated `.scriptorium/` output is ignored.
 - Keep `LICENSE`, wrapper, POM metadata, and CI/release workflows valid. Entry workflows only select a trigger
-  and call `reusable-verify.yml`, `reusable-live.yml` and `reusable-publish.yml`; shared steps come from `whereareiam/devops`, and
+  and call `reusable-verify.yml`, `reusable-intellij.yml`, `reusable-live.yml` and `reusable-publish.yml`; shared steps come from `whereareiam/devops`, and
   only Anvil-specific ones live in `.github/actions`. Pull requests automatically get the metadata check and
   the quick `build` checks, which start no server. Full verification with the IntelliJ plugin, standalone
   consumers and real platforms is maintainer-requested through `workflow_dispatch` and reports a
@@ -473,6 +473,9 @@ failures.
   releases trigger full verification, Maven publication and IntelliJ Marketplace publication. No scheduled
   nightly workflow is required. A clean machine runs `publishToMavenLocal -Panvil.bootstrap` before any other
   task: the bootstrap build leaves out the server suite, which applies the plugin at the build's own version.
+  Only `reusable-intellij.yml` and the Marketplace publication resolve the IntelliJ modules; every other CI
+  build passes `-Panvil.intellij=false`, because the IntelliJ Platform Gradle Plugin's IDE indexing fails now and
+  then on a fresh machine. A development build does not wait for the IntelliJ run; a release does.
 
 ## Integration composition
 

@@ -52,3 +52,13 @@ jobs:
     with:
       commit: ${{ needs.verify.outputs.commit }}
       version: ${{ needs.verify.outputs.version }}
+
+  intellij:
+    name: IntelliJ
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/reusable-intellij.yml
+    with:
+      ref: ${{ github.sha }}
+      packaging: true
