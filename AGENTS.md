@@ -578,6 +578,10 @@ then rerun the `Release drafter` workflow; text typed into the draft is lost on 
   returns an `EnvironmentSession.Availability` whose reason the action shows; `run` applies the same rule.
   A failed request or a failed environment out of view becomes a notification in the `Anvil` group, never a
   replacement of the catalog.
+- The console classifies output with `console.ConsoleLevel`: a line's declared level, its continuation lines
+  inherit the previous level, and standard error counts as an error. `ConsoleBuffer` keeps each entry's level,
+  so `ConsolePresentation` replays the retained tail when the level filter changes and navigates between
+  error lines; `ConsoleActions` builds the console's toolbar. Filtering never drops retained output.
 - `intellij-scenario` groups packages by what they own, with a `view` subpackage for Swing screens:
   `tooling` (`ToolingHost`, `ToolingLaunch`, `ToolingConnection`, and `tooling.protocol`), `catalog`
   (`ScenarioCatalog`, `catalog.source.SourceDiscovery` with `ImportRefreshPolicy`, `catalog.view` with the
