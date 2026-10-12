@@ -50,10 +50,12 @@ class BedrockPlayerCapabilitiesSystemTest {
 	private static final int FIRST_HOTBAR_SLOT = 36;
 	private static final int MAIN_INVENTORY_SLOT = 9;
 	/**
-	 * The player stands on a three-block stone platform high above the terrain, so nothing of the generated world
-	 * is in its way: at x {@code 0.5}, y {@code 200} and z {@code 0.5}, with the platform's east end at x {@code 2}.
+	 * The player stands on a three-block stone platform at x {@code 0.5}, y {@code 200} and z {@code 0.5}, with the
+	 * platform's east end at x {@code 2}. Lumi seeds every new world differently, and some worlds reach this height
+	 * there, with mountains or trees, so the console clears the space above the platform up to the build limit.
 	 */
 	private static final int FLOOR = 199;
+	private static final int BUILD_LIMIT = 319;
 
 	@TestFactory
 	Stream<DynamicTest> controlsABedrockPlayerOnEveryLumiVersion() {
@@ -126,14 +128,15 @@ class BedrockPlayerCapabilitiesSystemTest {
 	}
 
 	/**
-	 * The console teleports the player onto the platform; the server then sees each move at the position the player
-	 * sent. Lumi ignores moves until it completed the teleport. Under server authority the player repeats its
+	 * The console teleports the player onto the platform it builds and clears; the server then sees each move at the
+	 * position the player sent. Lumi ignores moves until it completed the teleport. Under server authority the player repeats its
 	 * position in the input it sends on every tick, so one move takes effect once Lumi completed the teleport; under
 	 * client authority a player sends a position only when it moves, so the player moves again until Lumi takes it.
 	 */
 	private void movesOnAPlatform(Console console, Movement movement, boolean clientMovement) {
 		assertTrue(console.execute("tp Alice 0.5 200 0.5"));
 		assertTrue(console.execute("fill 0 " + FLOOR + " 0 2 " + FLOOR + " 0 stone"));
+		assertTrue(console.execute("fill 0 " + (FLOOR + 1) + " 0 2 " + BUILD_LIMIT + " 0 air"));
 		awaitCommand(console, "testfor @a[name=Alice,x=0.5,y=200,z=0.5,r=0.1]");
 
 		move(console, movement, 0.75D, clientMovement);
