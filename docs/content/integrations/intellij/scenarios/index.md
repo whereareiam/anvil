@@ -81,6 +81,20 @@ environment tab shows the scenario's servers and proxies once its runtime has be
 
 Abstract classes and classes outside an imported Anvil source get no icon.
 
+## Run the tests that use a scenario
+
+To run the JUnit tests written against a scenario, choose **Run Tests Using Scenario** from the gutter
+icon of its definition class, or from a scenario's context menu in the tool window. Anvil finds the
+test classes and methods in the project's sources whose `@AnvilTest` names that definition class, for
+example `@AnvilTest(RegistrationScenario.class)`. IntelliJ runs them as if you had selected them
+together and chosen **Run**, with the test runner the project uses for its other tests. Results appear
+in the usual test runner, and the configuration is kept as a temporary run configuration.
+
+If no test names the scenario, a notification says so. Only the scenario class in `@AnvilTest` is
+read, so tests that start a scenario another way, such as through a custom annotation that uses
+`@AnvilEnvironment`, are not found. See [selecting tests](../../junit/selection/index.md) for the
+Gradle tasks that run them.
+
 ## Save a run configuration
 
 Running from the tool window does not create a run configuration. Choose **Save as Run Configuration**
