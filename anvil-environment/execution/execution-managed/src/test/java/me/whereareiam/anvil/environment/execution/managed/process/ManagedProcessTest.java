@@ -2,6 +2,7 @@ package me.whereareiam.anvil.environment.execution.managed.process;
 
 import me.whereareiam.anvil.api.exception.ProcessException;
 import me.whereareiam.anvil.api.type.ProcessState;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.environment.execution.local.process.LocalProcess;
 import me.whereareiam.anvil.environment.execution.managed.process.type.ManagedServer;
 import org.junit.jupiter.api.Test;
@@ -192,7 +193,7 @@ class ManagedProcessTest {
 	}
 
 	private ManagedServer process(String name) {
-		return new ManagedServer(name, new InetSocketAddress("127.0.0.1", 25565), temporary.resolve(name), null);
+		return new ManagedServer(name, new InetSocketAddress("127.0.0.1", 25565), ListenerTransport.TCP, temporary.resolve(name), null);
 	}
 
 	@Test

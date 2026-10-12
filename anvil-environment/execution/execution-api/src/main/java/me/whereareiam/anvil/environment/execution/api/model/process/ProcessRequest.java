@@ -3,6 +3,7 @@ package me.whereareiam.anvil.environment.execution.api.model.process;
 import lombok.Builder;
 import lombok.Value;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -25,4 +26,11 @@ public class ProcessRequest {
 	boolean agent;
 	@Builder.Default
 	boolean publishGame = true;
+
+	/**
+	 * Transport the game port is reserved, bound and published with; TCP unless set. The agent port is always TCP.
+	 */
+	@NotNull
+	@Builder.Default
+	ListenerTransport gameTransport = ListenerTransport.TCP;
 }

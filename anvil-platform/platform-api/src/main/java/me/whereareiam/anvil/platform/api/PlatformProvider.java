@@ -6,6 +6,7 @@ import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
 import me.whereareiam.anvil.api.type.CachePolicy;
 import me.whereareiam.anvil.api.type.SupportLevel;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.api.model.PlatformAgentDescriptor;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
@@ -63,6 +64,17 @@ public interface PlatformProvider {
 	 */
 	default @NotNull List<ForwardingMode> forwardingModes() {
 		return List.of(ForwardingMode.NONE);
+	}
+
+	/**
+	 * Returns the transport this platform's game listener accepts players on. Execution reserves, binds and
+	 * publishes the game port with it, while the platform agent always listens on TCP. Planning refuses a proxy
+	 * whose backend servers listen on another transport than the proxy itself. The default is TCP.
+	 *
+	 * @return game listener transport
+	 */
+	default @NotNull ListenerTransport gameTransport() {
+		return ListenerTransport.TCP;
 	}
 
 	/**

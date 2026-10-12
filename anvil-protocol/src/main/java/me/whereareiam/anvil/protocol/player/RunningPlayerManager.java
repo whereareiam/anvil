@@ -20,6 +20,7 @@ import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.type.AuthenticationMode;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.model.GameConnection;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
@@ -33,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -418,8 +420,8 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 			throw new ScenarioValidationException(player + ", but process '" + target.name() + "' listens on "
 					+ target.address() + "; a loopback source address only reaches a loopback listener of the same address family");
 
-		try (Socket socket = new Socket()) {
-			socket.bind(new InetSocketAddress(address, 0));
+		try {
+			bindSource(address, target.transport());
 		} catch (IOException unavailable) {
 			throw new ScenarioValidationException(player + ", which this machine cannot bind (" + unavailable.getMessage()
 					+ "). Linux routes all of 127.0.0.0/8 to loopback; macOS configures only 127.0.0.1 unless an alias "
@@ -427,6 +429,21 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		}
 
 		return address;
+	}
+
+	/**
+	 * Binds and closes an ephemeral local socket on the address with the transport the player connects over.
+	 */
+	private static void bindSource(InetAddress address, ListenerTransport transport) throws IOException {
+		InetSocketAddress local = new InetSocketAddress(address, 0);
+		if (transport == ListenerTransport.UDP) {
+			new DatagramSocket(local).close();
+			return;
+		}
+
+		try (Socket socket = new Socket()) {
+			socket.bind(local);
+		}
 	}
 
 	private static InetAddress parseLiteral(String literal) {

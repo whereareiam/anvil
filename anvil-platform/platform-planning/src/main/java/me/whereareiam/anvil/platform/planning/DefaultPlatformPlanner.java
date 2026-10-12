@@ -20,6 +20,7 @@ import me.whereareiam.anvil.platform.planning.artifact.ScenarioArtifactResolver;
 import me.whereareiam.anvil.platform.planning.topology.ForwardingNegotiator;
 import me.whereareiam.anvil.platform.planning.topology.ForwardingPlan;
 import me.whereareiam.anvil.platform.planning.topology.ProcessTopology;
+import me.whereareiam.anvil.platform.planning.validation.ListenerTransportValidator;
 import me.whereareiam.anvil.platform.planning.validation.ProcessDeclarationValidator;
 import org.jetbrains.annotations.NotNull;
 
@@ -60,6 +61,7 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 	public @NotNull PlatformPlan plan(@NotNull AnvilScenario scenario) {
 		AnvilScenario resolved = artifacts.resolve(scenario);
 		var declarations = new ProcessDeclarationValidator().validate(resolved, providers);
+		new ListenerTransportValidator().validate(declarations, providers);
 		ForwardingPlan topology = new ForwardingNegotiator().negotiate(ProcessTopology.from(resolved), providers);
 		Map<String, ForwardingConfiguration> forwarding = forwarding(topology);
 
@@ -75,6 +77,7 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 					.javaSelection(planned.selection())
 					.proxy(proxy)
 					.publishGame(proxy || resolved.getNetworkPolicy().getBackendNetworkExposure() != NetworkExposure.PRIVATE)
+					.gameTransport(provider.gameTransport())
 					.dependencies(proxy ? servers : List.of())
 					.workspace(artifacts.installAgent(declaration.getWorkspace(), agent))
 					.forwarding(forwarding.get(name))

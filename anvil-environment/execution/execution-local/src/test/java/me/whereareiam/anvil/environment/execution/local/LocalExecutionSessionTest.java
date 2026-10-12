@@ -7,6 +7,7 @@ import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.model.java.local.LocalJavaHome;
 import me.whereareiam.anvil.api.type.ProcessPriority;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.api.type.network.NetworkServerAccess;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
@@ -108,6 +109,19 @@ class LocalExecutionSessionTest {
 	}
 
 	@Test
+	void reservesTheGamePortWithTheRequestedTransportAndTheAgentPortOverTcp() {
+		try (ExecutionSession session = new LocalExecutionProvider().open(context((request, source) -> Path.of("java")))) {
+			var request = request("server", JavaRequirement.builder().featureVersion(21).build(), null).toBuilder()
+					.gameTransport(ListenerTransport.UDP)
+					.build();
+			var target = session.prepare(request);
+
+			assertEquals(ListenerTransport.UDP, target.gameTransport());
+			assertEquals(List.of(ListenerTransport.UDP, ListenerTransport.TCP), ports.transports);
+		}
+	}
+
+	@Test
 	@DisabledOnOs(OS.WINDOWS)
 	void startsProcessesWithALowerPriorityOnlyWhenAsked() throws Exception {
 		assertEquals(niceness(ProcessPriority.NORMAL) + 10, niceness(ProcessPriority.LOW));
@@ -148,10 +162,12 @@ class LocalExecutionSessionTest {
 	 */
 	private static final class RecordingPorts implements PortReservations {
 		private final List<Integer> released = new ArrayList<>();
+		private final List<ListenerTransport> transports = new ArrayList<>();
 		private int next = 25000;
 
 		@Override
-		public int reserve(@NotNull String bindAddress) {
+		public int reserve(@NotNull String bindAddress, @NotNull ListenerTransport transport) {
+			transports.add(transport);
 			return next++;
 		}
 

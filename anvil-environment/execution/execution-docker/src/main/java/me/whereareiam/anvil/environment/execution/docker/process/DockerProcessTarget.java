@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.environment.execution.docker.process;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
@@ -40,6 +41,7 @@ public final class DockerProcessTarget implements ProcessTarget {
 		PortBindings ports = PortBindings.builder()
 				.game(request.isPublishGame() ? address : null)
 				.agent(request.isAgent() ? agentAddress : null)
+				.gameTransport(request.getGameTransport())
 				.build();
 
 		Container created = docker.create(ContainerConfiguration.builder()
@@ -77,7 +79,12 @@ public final class DockerProcessTarget implements ProcessTarget {
 
 	@Override
 	public @NotNull InetSocketAddress peerAddress() {
-		return InetSocketAddress.createUnresolved(alias, 25565);
+		return InetSocketAddress.createUnresolved(alias, DockerContainerFactory.GAME_PORT);
+	}
+
+	@Override
+	public @NotNull ListenerTransport gameTransport() {
+		return request.getGameTransport();
 	}
 
 	@Override
@@ -92,7 +99,7 @@ public final class DockerProcessTarget implements ProcessTarget {
 
 	@Override
 	public int agentPort() {
-		return 25566;
+		return DockerContainerFactory.AGENT_PORT;
 	}
 
 	@Override

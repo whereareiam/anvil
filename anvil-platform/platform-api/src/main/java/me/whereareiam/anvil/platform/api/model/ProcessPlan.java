@@ -7,6 +7,7 @@ import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -39,6 +40,13 @@ public class ProcessPlan {
 	 * Whether execution should publish the game endpoint under the scenario network policy.
 	 */
 	boolean publishGame;
+
+	/**
+	 * Transport of the game listener, as the process's platform declares it; TCP unless set.
+	 */
+	@NotNull
+	@Builder.Default
+	ListenerTransport gameTransport = ListenerTransport.TCP;
 
 	/**
 	 * Process names that must become ready before this process can start, in declaration order.
