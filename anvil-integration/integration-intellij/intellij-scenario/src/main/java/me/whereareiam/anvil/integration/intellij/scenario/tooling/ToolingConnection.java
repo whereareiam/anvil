@@ -30,6 +30,7 @@ public final class ToolingConnection implements AutoCloseable {
 	// Separate from the monitor: a write blocked on a hung runner must not prevent its termination.
 	private final ReentrantLock writes = new ReentrantLock();
 	private volatile @Nullable Process child;
+	private volatile @Nullable Process rebuild;
 	private volatile @Nullable BufferedWriter input;
 	private volatile @Nullable StreamReader errors;
 
@@ -46,6 +47,22 @@ public final class ToolingConnection implements AutoCloseable {
 			forceTermination(process);
 			throw new IOException("Anvil launch cancelled.");
 		}
+
+		return process;
+	}
+
+	/**
+	 * Starts a rebuild beside the running runner. Stopping the connection terminates it too.
+	 *
+	 * @throws IOException if the connection is stopping, a rebuild is already running, or the process cannot start
+	 */
+	public synchronized @NotNull Process startRebuild(@NotNull ProcessBuilder builder) throws IOException {
+		if (isStopping()) throw new IOException("Anvil launch cancelled.");
+		Process running = rebuild;
+		if (running != null && running.isAlive()) throw new IOException("The project is already being rebuilt.");
+
+		Process process = starter.start(builder);
+		rebuild = process;
 
 		return process;
 	}
@@ -166,6 +183,9 @@ public final class ToolingConnection implements AutoCloseable {
 	}
 
 	private void terminate() {
+		Process building = rebuild;
+		if (building != null && building.isAlive()) forceTermination(building);
+
 		Process process = child;
 		BufferedWriter writer = input;
 		if (process == null) return;
