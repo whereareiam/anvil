@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.cloudburst.client.v1_26_60;
 
+import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.cloudburst.client.ClientListener;
@@ -23,18 +24,22 @@ import org.cloudburstmc.protocol.bedrock.data.definitions.SimpleItemDefinition;
 import org.cloudburstmc.protocol.bedrock.netty.codec.packet.BedrockPacketCodec_v3;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ItemComponentPacket;
+import org.cloudburstmc.protocol.bedrock.packet.LevelChunkPacket;
 import org.cloudburstmc.protocol.bedrock.packet.SetMovementAuthorityPacket;
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket;
+import org.cloudburstmc.protocol.bedrock.packet.SubChunkRequestPacket;
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -153,6 +158,30 @@ class ConnectionSessionTest {
 
 		assertEquals(List.of("minecraft:stone", "minecraft:empty"), identifiers(older.session.itemDefinitions()));
 		assertEquals(List.of("minecraft:stone", "minecraft:empty"), identifiers(newer.session.itemDefinitions()));
+	}
+
+	@Test
+	void tracksTheBlocksOfItsChunksAndRequestsSubChunksThroughItsConnection() throws Exception {
+		Connection connection = connection(Bedrock_v2193.CODEC);
+		connection.session.subscribe(LevelChunkPacket.class, packet -> received.add("chunk " + connection.session.blockAt(0, -64, 0)));
+		connection.handler.handlePacket(start(List.of()));
+
+		// One version 8 sub-chunk whose single storage gives every block the runtime id 5, as a zigzag varint.
+		LevelChunkPacket chunk = new LevelChunkPacket();
+		chunk.setSubChunksLength(1);
+		chunk.setData(Unpooled.wrappedBuffer(new byte[]{8, 1, 1, 10}));
+		connection.handler.handlePacket(chunk);
+		LevelChunkPacket requested = new LevelChunkPacket();
+		requested.setChunkX(1);
+		requested.setRequestSubChunks(true);
+		requested.setSubChunkLimit(2);
+		requested.setData(Unpooled.EMPTY_BUFFER);
+		connection.handler.handlePacket(requested);
+
+		assertEquals(OptionalInt.of(5), connection.session.blockAt(15, -49, 15));
+		assertEquals(List.of("chunk OptionalInt[5]", "chunk OptionalInt[5]"), received);
+		SubChunkRequestPacket request = assertInstanceOf(SubChunkRequestPacket.class, connection.client.sent.getLast());
+		assertEquals(2, request.getPositionOffsets().size());
 	}
 
 	private static List<String> identifiers(List<ItemDefinition> definitions) {

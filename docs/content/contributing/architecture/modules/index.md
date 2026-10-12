@@ -289,7 +289,7 @@ CloudburstMC Protocol's family for Bedrock players has the same shape:
 | `cloudburst-api` | The release-neutral client port `CloudburstClient<S>`, the `CloudburstSession<P, I>` that capability bindings receive as the native session, and the `ClientIdentity` a login proves itself with |
 | `cloudburst-common` | `CloudburstWorkerLibrary`, the `WorkerClient` that drives `CloudburstClient`, the offline and Xbox login identities, and the Xbox sign-in `XboxAuthentication` |
 | `cloudburst-client` | Source-free side folder whose `V*` children are the client segments |
-| `cloudburst-client/V1_26_60` | The one client segment of the release; it selects each player's codec by the player's protocol number |
+| `cloudburst-client/V1_26_60` | The one client segment of the release; it selects each player's codec by the player's protocol number, and its `WorldTracker` keeps the blocks of the chunks the server sends that `CloudburstSession.blockAt` reads |
 
 The messages, movement and inventory families each add a `<feature>-cloudburst` side whose one segment,
 `V1_26_60`, implements the feature's port against `CloudburstSession` for every codec of the release.
