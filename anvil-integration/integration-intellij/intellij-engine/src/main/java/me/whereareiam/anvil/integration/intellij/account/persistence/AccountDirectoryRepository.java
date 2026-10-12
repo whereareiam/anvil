@@ -12,6 +12,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -20,9 +21,11 @@ import java.util.regex.Pattern;
 import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.integration.intellij.model.account.AvailableAccount;
 import me.whereareiam.anvil.integration.intellij.type.AccountSource;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Persists and reads account JSON files in one account directory.
@@ -61,11 +64,12 @@ final class AccountDirectoryRepository {
 					.toList())
 			{
 				try {
-					AuthenticationAccount account = readMetadata(file);
+					JsonNode document = readDocument(file);
+					AuthenticationAccount account = metadata(document);
 					if (!file.getFileName().toString().equals(account.getAccountId() + ".json"))
 						throw new IOException("File name must match the account ID.");
 
-					accounts.add(new AvailableAccount(account, file, source));
+					accounts.add(new AvailableAccount(account, libraryProfiles(document), file, source));
 				} catch (IOException failure) {
 					problems.add(
 							source.getLabel()
@@ -134,17 +138,22 @@ final class AccountDirectoryRepository {
 	 * Reads what an account file tells about the account without its credentials and without any protocol library:
 	 * what was recorded for each Minecraft edition. Files of schema 1 and 2 recorded availability per protocol library,
 	 * which only the runtime maps to editions, so they show every edition as not yet checked until the runtime next
-	 * writes the file.
+	 * writes the file; their profiles are read by {@link #libraryProfiles(JsonNode)}.
 	 */
 	@NotNull AuthenticationAccount readMetadata(@NotNull Path source) throws IOException {
-		JsonNode root;
+		return metadata(readDocument(source));
+	}
+
+	private static JsonNode readDocument(Path source) throws IOException {
 		try (var input = Files.newInputStream(source)) {
-			root = JSON.readTree(input);
+			return JSON.readTree(input);
 		} catch (IOException failure) {
 			// Parser exceptions may include credential values from the document.
 			throw new IOException("Cannot read this account file.");
 		}
+	}
 
+	private AuthenticationAccount metadata(JsonNode root) throws IOException {
 		if (root == null || !isSafeAccountId(root.path("accountId").asText()))
 			throw new IOException("This is not a supported Anvil account file.");
 
@@ -158,6 +167,36 @@ final class AccountDirectoryRepository {
 			return new AuthenticationAccount(accountId, editions(root.path("editions")));
 
 		throw new IOException("This is not a supported Anvil account file.");
+	}
+
+	/**
+	 * Reads the profiles a file of schema 1 or 2 recorded for its protocol libraries: the {@code username} and
+	 * {@code uuid} beside the {@code provider} of schema 1, and those of each available library of schema 2, without
+	 * repeating one profile. A file of the current schema records its profiles per edition and has none here.
+	 */
+	private static List<PlayerProfile> libraryProfiles(JsonNode root) throws IOException {
+		int schema = root.path("schemaVersion").asInt();
+		if (schema == 1) {
+			PlayerProfile profile = profile(root);
+			return profile == null ? List.of() : List.of(profile);
+		}
+		if (schema != 2) return List.of();
+
+		Set<PlayerProfile> profiles = new LinkedHashSet<>();
+		for (JsonNode recorded : root.path("libraries")) {
+			if (!recorded.path("availability").asText().equals("AVAILABLE")) continue;
+
+			PlayerProfile profile = profile(recorded);
+			if (profile != null) profiles.add(profile);
+		}
+
+		return List.copyOf(profiles);
+	}
+
+	private static @Nullable PlayerProfile profile(JsonNode recorded) throws IOException {
+		if (!recorded.path("username").isTextual() || !recorded.path("uuid").isTextual()) return null;
+
+		return new PlayerProfile(recorded.get("username").asText(), uniqueId(recorded.get("uuid").asText()));
 	}
 
 	private static List<AccountAccess> editions(JsonNode editions) throws IOException {

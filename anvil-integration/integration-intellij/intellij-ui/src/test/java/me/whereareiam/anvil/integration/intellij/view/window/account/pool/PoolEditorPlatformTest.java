@@ -26,7 +26,7 @@ public class PoolEditorPlatformTest extends UiPlatformTestCase {
 		try {
 			library.setDirectory(directory);
 			library.savePool(null, "Players", List.of("missing"));
-			var entry = new AvailableAccount(new AuthenticationAccount("alice", List.of(AccountAccess.available(MinecraftEdition.of("java"), "Alice", UUID.randomUUID()))),
+			var entry = new AvailableAccount(new AuthenticationAccount("alice", List.of(AccountAccess.available(MinecraftEdition.of("java"), "Alice", UUID.randomUUID()))), List.of(),
 					directory.resolve("alice.json"), AccountSource.PROJECT);
 			var dialog = new PoolEditorDialog(getProject(), library, "Players", library.catalog().getPools(), List.of(entry));
 			Disposer.register(getTestRootDisposable(), dialog.getDisposable());

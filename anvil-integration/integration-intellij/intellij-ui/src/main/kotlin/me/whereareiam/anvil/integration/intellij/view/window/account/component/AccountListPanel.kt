@@ -5,7 +5,6 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
-import me.whereareiam.anvil.api.model.player.AuthenticationAccount
 import me.whereareiam.anvil.integration.intellij.model.account.AvailableAccount
 import me.whereareiam.anvil.integration.intellij.type.AccountSource
 import java.awt.BorderLayout
@@ -139,7 +138,7 @@ class AccountListPanel(
 		override fun getValueAt(row: Int, column: Int): Any {
 			val entry = accounts[row]
 			return when (column) {
-				0 -> entry.account.profileNames() ?: "Profile not available"
+				0 -> entry.profileNames() ?: "Profile not available"
 				1 -> entry.account.accountId
 				2 -> entry.source.label
 				else -> entry.account.access.takeIf { it.isNotEmpty() }
@@ -151,9 +150,10 @@ class AccountListPanel(
 }
 
 /**
- * The distinct profile names the account signs in as in the editions it is available for, or null when none is
- * known yet.
+ * The distinct profile names the account signs in as in the editions it is available for, or those its file recorded
+ * per protocol library before the runtime records editions, or null when none is known yet.
  */
-internal fun AuthenticationAccount.profileNames(): String? = access.mapNotNull { it.username }.distinct()
+internal fun AvailableAccount.profileNames(): String? = (account.access.mapNotNull { it.username } + libraryProfiles.map { it.username })
+	.distinct()
 	.takeIf { it.isNotEmpty() }
 	?.joinToString(" / ")
