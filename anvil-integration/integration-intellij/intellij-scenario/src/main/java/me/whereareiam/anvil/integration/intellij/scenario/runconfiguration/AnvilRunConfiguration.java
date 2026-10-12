@@ -8,6 +8,7 @@ import com.intellij.execution.configurations.RunConfigurationOptions;
 import com.intellij.execution.configurations.RunConfigurationWithSuppressedDefaultDebugAction;
 import com.intellij.execution.configurations.RunProfileState;
 import com.intellij.execution.configurations.RuntimeConfigurationError;
+import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.openapi.options.SettingsEditor;
 import com.intellij.openapi.project.Project;
@@ -49,7 +50,8 @@ public final class AnvilRunConfiguration extends RunConfigurationBase<RunConfigu
 	@Override
 	public @NotNull RunProfileState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment environment) {
 		return (selectedExecutor, runner) -> {
-			var session = RunConfigurationService.getInstance(getProject()).launch(this);
+			boolean debug = DefaultDebugExecutor.EXECUTOR_ID.equals(executor.getId());
+			var session = RunConfigurationService.getInstance(getProject()).launch(this, debug);
 			// The Run window owns this console and disposes it with its tab. The presentation prints output itself,
 			// so the console is not attached to the handler, which would print it again.
 			var presentation = new ConsolePresentation(getProject(), session.getLog(), session::stop, getProject());

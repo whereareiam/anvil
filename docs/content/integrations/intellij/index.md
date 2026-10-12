@@ -33,4 +33,5 @@ project model and runtime preparation work.
 - One environment runs per IntelliJ project at a time.
 - Running an environment does not execute its JUnit journey or report a test result. Use the
   [testing workflow](../../workflows/testing/index.md) for automated assertions.
-- Debugger attachment, Gradle DSL inspections, and log severity filters are not available.
+- Gradle DSL inspections and log severity filters are not available.
+- The debugger attaches only to processes that run on this machine with the local execution provider.

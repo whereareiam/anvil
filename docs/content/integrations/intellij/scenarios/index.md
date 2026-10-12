@@ -90,4 +90,19 @@ the definition class, and an optional process. Leave **Process** blank in the co
 run the whole scenario. If a saved scenario source is removed or renamed, choose its replacement in
 the configuration editor.
 
-Run configurations offer only Run: processes cannot be debugged from the IDE.
+## Debug servers and proxies
+
+To step through a plugin while it runs in a server, choose **Debug Scenario** in the tool window,
+or the Debug icon of a run configuration or of a definition class's gutter icon. With a server or
+proxy selected, or saved as the configuration's process, only that process is debugged and only it
+starts. Otherwise every server and proxy of the scenario is debugged.
+
+Debugging always starts a new environment. Each debugged process starts with a JDWP agent on a free
+loopback port, and IntelliJ opens a **Remote JVM Debug** session for it, named after the process,
+as soon as the JVM announces the port in its console. Breakpoints in the project's plugin sources
+and in its dependencies apply as usual, and the JVM does not wait for the debugger before it starts.
+
+When you restart a debugged process, its debug session ends with the old JVM and a new session opens
+for the new one. Stopping the environment ends every debug session. The debugger attaches only to
+processes started by the local execution provider. A process in a Docker container announces a port
+inside the container, which the IDE cannot reach.
