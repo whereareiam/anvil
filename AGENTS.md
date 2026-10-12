@@ -595,8 +595,8 @@ then rerun the `Release drafter` workflow; text typed into the draft is lost on 
 - A run configuration stores a source, a definition class, and an optional process; one definition class
   declares exactly one scenario, so the class is the scenario's identity throughout the plugin.
   `RunConfigurationService` saves, validates, and launches configurations; `AnvilRunConfiguration` gives the
-  Run tab its own console presentation, and `AnvilDebugRunner` runs it under the Debug executor. Running from the catalog does not
-  create a configuration.
+  Run tab its own console presentation, and `AnvilDebugRunner` runs it under the Debug executor. Running from
+  the catalog does not create a configuration.
 - `intellij-account` keeps `AccountLibrary` (the project and global directories it reads), `storage`
   (account and pool files, `StagedAccountDirectory`, `ProjectAccountStaging`), `AccountSignIn` (one browser
   sign-in with its processes and manifest), `settings` (`AccountSettings` and the Accounts settings page,
