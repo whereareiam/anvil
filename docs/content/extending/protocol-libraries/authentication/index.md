@@ -56,10 +56,6 @@ created from an account pool lease uses the library that stores the leased accou
 account ID that several libraries store; libraries in the native worker share one store, so their IDs never
 collide.
 
-Tooling lists the installed libraries whose `authentication(...)` is present so a user can choose one,
-showing each by `ProtocolLibraryProvider.displayName()`. Override it with your library's name; it defaults
-to the library ID. A library in the native worker shows its `WorkerLibrary` name.
-
 The IntelliJ account manager and the Gradle `anvilLogin` and `anvilLogout` tasks share one entry point,
 `AnvilAuthentication`. It delegates `login` and `logout` to the library named by its `--library`
 option, else by `anvil.protocolLibrary`, else to the sole installed library that offers

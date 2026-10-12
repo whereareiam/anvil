@@ -38,7 +38,6 @@ import me.whereareiam.anvil.integration.intellij.tooling.process.ToolingConnecti
 import me.whereareiam.anvil.integration.intellij.type.source.ProjectChange;
 import me.whereareiam.anvil.integration.intellij.type.source.SourceListingStatus;
 import me.whereareiam.anvil.tooling.api.ToolingSession;
-import me.whereareiam.anvil.tooling.api.model.AuthenticationLibrary;
 import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
 import me.whereareiam.anvil.tooling.api.type.SessionState;
 import org.jetbrains.annotations.NotNull;
@@ -333,7 +332,7 @@ public class ToolingLaunchPlatformTest extends EnginePlatformTestCase {
 		assertEquals(1, result.exitCode());
 	}
 
-	public void testDiscoveryOfScenariosAndSignInLibrariesIsRequestedOnceAndOnlyWhenAsked() throws Exception {
+	public void testDiscoveryIsRequestedOnceAndOnlyWhenAsked() throws Exception {
 		ControlledToolingProcess runner = startedRunner();
 		var launch = launch(runnerStarter(runner));
 		launch.startAfter(null);
@@ -343,12 +342,9 @@ public class ToolingLaunchPlatformTest extends EnginePlatformTestCase {
 		var first = launch.discover();
 		var second = launch.discover();
 
-		assertEquals("example", first.get(5, TimeUnit.SECONDS).scenarios().getFirst().getName());
-		assertEquals(List.of(AuthenticationLibrary.builder().id("mcprotocol").displayName("MCProtocolLib").build()),
-				first.get().authenticationLibraries());
+		assertEquals("example", first.get(5, TimeUnit.SECONDS).getFirst().getName());
 		assertEquals(first.get(), second.get(5, TimeUnit.SECONDS));
-		assertEquals(List.of("scenarios", "authenticationLibraries"),
-				runner.getRequests().stream().map(request -> request.path("operation").asText()).toList());
+		assertEquals(1, runner.getRequests().size());
 	}
 
 	public void testFinishedLaunchReleasesItsListenersFromALongLivedOwner() throws Exception {

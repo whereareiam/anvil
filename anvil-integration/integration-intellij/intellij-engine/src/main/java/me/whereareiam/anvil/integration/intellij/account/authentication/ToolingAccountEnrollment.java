@@ -24,7 +24,6 @@ public final class ToolingAccountEnrollment implements AccountEnrollment {
 	private final @NotNull Callable<ScenarioPreparation> planner;
 	private final @NotNull Path accountsDirectory;
 	private final @NotNull String accountId;
-	private final @Nullable String libraryId;
 	private final @NotNull Consumer<String> output;
 	private final @NotNull ProcessLauncher processLauncher;
 	private final @NotNull CompletableFuture<Void> completion = new CompletableFuture<>();
@@ -35,35 +34,26 @@ public final class ToolingAccountEnrollment implements AccountEnrollment {
 
 	/**
 	 * Creates an enrollment operation that launches processes with the host JVM's process builder.
-	 *
-	 * @param planner prepares the source's runtime
-	 * @param accountsDirectory account directory the signed-in account is stored in
-	 * @param accountId project-local account identifier
-	 * @param libraryId protocol library that signs the account in, or null for the runtime's own choice
-	 * @param output user-facing authentication instructions and progress
 	 */
 	public ToolingAccountEnrollment(
 			@NotNull Callable<ScenarioPreparation> planner,
 			@NotNull Path accountsDirectory,
 			@NotNull String accountId,
-			@Nullable String libraryId,
 			@NotNull Consumer<String> output
 	) {
-		this(planner, accountsDirectory, accountId, libraryId, output, ProcessBuilder::start);
+		this(planner, accountsDirectory, accountId, output, ProcessBuilder::start);
 	}
 
 	ToolingAccountEnrollment(
 			@NotNull Callable<ScenarioPreparation> planner,
 			@NotNull Path accountsDirectory,
 			@NotNull String accountId,
-			@Nullable String libraryId,
 			@NotNull Consumer<String> output,
 			@NotNull ProcessLauncher processLauncher
 	) {
 		this.planner = planner;
 		this.accountsDirectory = accountsDirectory;
 		this.accountId = accountId;
-		this.libraryId = libraryId;
 		this.output = output;
 		this.processLauncher = processLauncher;
 	}
@@ -137,7 +127,7 @@ public final class ToolingAccountEnrollment implements AccountEnrollment {
 		runCommand(
 				new ProcessBuilder(
 						ToolingCommandReader.authenticationCommand(
-								manifest, accountsDirectory, accountId, libraryId))
+								manifest, accountsDirectory, accountId, null))
 						.directory(preparation.getWorkingDirectory().toFile()),
 				"Sign-in failed"
 		);

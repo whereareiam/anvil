@@ -6,14 +6,12 @@ import me.whereareiam.anvil.engine.config.EngineProperties;
 import me.whereareiam.anvil.protocol.api.library.ProtocolAuthentication;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
-import me.whereareiam.anvil.tooling.api.model.AuthenticationLibrary;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -99,28 +97,6 @@ public final class AnvilAuthentication {
 					+ "select one with --library or anvil.protocolLibrary");
 
 		return candidates.getFirst();
-	}
-
-	/**
-	 * Lists the installed libraries offering authentication, for a user choosing which library signs an
-	 * account in. Asking a library creates neither the library nor a player.
-	 *
-	 * @param libraries installed protocol libraries
-	 * @param accountsDirectory account store directory the libraries would sign accounts into
-	 * @return identifier and display name of each library offering authentication, ordered by identifier
-	 */
-	static @NotNull List<AuthenticationLibrary> libraries(
-			@NotNull ProtocolLibraryRegistry libraries,
-			@NotNull Path accountsDirectory
-	) {
-		return libraries.all().stream()
-				.filter(library -> library.authentication(accountsDirectory).isPresent())
-				.sorted(Comparator.comparing(ProtocolLibraryProvider::id))
-				.map(library -> AuthenticationLibrary.builder()
-						.id(library.id())
-						.displayName(library.displayName())
-						.build())
-				.toList();
 	}
 
 	private static @NotNull String required(String[] arguments, String option) {

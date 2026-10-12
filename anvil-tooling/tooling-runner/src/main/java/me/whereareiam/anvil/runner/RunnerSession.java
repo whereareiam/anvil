@@ -14,7 +14,6 @@ import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.tooling.api.ToolingSession;
-import me.whereareiam.anvil.tooling.api.model.AuthenticationLibrary;
 import me.whereareiam.anvil.tooling.api.model.LogEvent;
 import me.whereareiam.anvil.tooling.api.model.PlayerDescriptor;
 import me.whereareiam.anvil.tooling.api.model.process.ProcessSnapshot;
@@ -45,7 +44,6 @@ public final class RunnerSession implements ToolingSession {
 
 	private final Supplier<ScenarioEngine> engineFactory;
 	private final ToolingRegistry extensions;
-	private final Supplier<List<AuthenticationLibrary>> authenticationLibraries;
 	private @Nullable ScenarioEngine engine;
 	private final ScenarioRepository scenarios;
 	private final ReentrantLock lifecycle = new ReentrantLock();
@@ -93,40 +91,15 @@ public final class RunnerSession implements ToolingSession {
 			@NotNull ScenarioRepository scenarios,
 			@NotNull ToolingRegistry extensions
 	) {
-		this(engineFactory, scenarios, extensions, List::of);
-	}
-
-	/**
-	 * Creates a session that also reports the protocol libraries offering sign-in. The runner has no protocol
-	 * dependency, so the host that installs the libraries supplies them; the sessions created by the other
-	 * constructors offer no sign-in.
-	 *
-	 * @param engineFactory creates the owned engine on first start
-	 * @param scenarios evaluated definition repository
-	 * @param extensions registry resolving actions and observations for active contexts
-	 * @param authenticationLibraries lists the installed libraries offering sign-in each time a client asks
-	 */
-	public RunnerSession(
-			@NotNull Supplier<ScenarioEngine> engineFactory,
-			@NotNull ScenarioRepository scenarios,
-			@NotNull ToolingRegistry extensions,
-			@NotNull Supplier<List<AuthenticationLibrary>> authenticationLibraries
-	) {
 		this.engineFactory = engineFactory;
 		this.scenarios = scenarios;
 		this.extensions = extensions;
-		this.authenticationLibraries = authenticationLibraries;
 		this.consoleOutput = new SessionConsole(() -> latest.getSessionId());
 	}
 
 	@Override
 	public @NotNull List<ScenarioDescriptor> scenarios() {
 		return scenarios.scenarios();
-	}
-
-	@Override
-	public @NotNull List<AuthenticationLibrary> authenticationLibraries() {
-		return List.copyOf(authenticationLibraries.get());
 	}
 
 	@Override

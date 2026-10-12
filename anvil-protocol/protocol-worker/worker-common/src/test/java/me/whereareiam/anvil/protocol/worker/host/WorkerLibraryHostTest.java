@@ -24,7 +24,6 @@ class WorkerLibraryHostTest {
 
 		assertEquals(List.of("probelib"), libraries.stream().map(ProtocolLibraryProvider::id).toList());
 		assertEquals(List.of("probelib"), List.copyOf(ProtocolLibraryRegistry.discover().ids()));
-		assertEquals("ProbeLib", libraries.getFirst().displayName());
 	}
 
 	@Test

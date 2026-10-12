@@ -124,7 +124,7 @@ class ToolingClientTest {
 		private Fixture(java.util.concurrent.Executor executor) throws IOException {
 			connection.startRunner(new ProcessBuilder("unused"));
 			client = new ToolingClient(connection, executor, snapshot -> {}, output -> {}, failures::add);
-			client.receive("{\"type\":\"ready\",\"protocolVersion\":8}");
+			client.receive("{\"type\":\"ready\",\"protocolVersion\":7}");
 		}
 
 		private void reply(int index, String payload) {

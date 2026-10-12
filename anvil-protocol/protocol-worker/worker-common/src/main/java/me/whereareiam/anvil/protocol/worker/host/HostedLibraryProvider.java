@@ -40,11 +40,6 @@ final class HostedLibraryProvider implements ProtocolLibraryProvider {
 		return provider.library().getId();
 	}
 
-	@Override
-	public @NotNull String displayName() {
-		return provider.library().getName();
-	}
-
 	/**
 	 * Returns the built-in releases and the additional releases of {@link ProtocolLibraryContext#getAdditionalReleases()}.
 	 *

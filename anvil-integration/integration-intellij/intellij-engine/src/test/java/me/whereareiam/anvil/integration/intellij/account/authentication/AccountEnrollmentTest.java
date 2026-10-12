@@ -30,7 +30,7 @@ class AccountEnrollmentTest {
 		var processes = new ArrayDeque<>(List.of(build, login));
 		var received = new CountDownLatch(1);
 		var output = new CopyOnWriteArrayList<String>();
-		var enrollment = new ToolingAccountEnrollment(() -> plan(manifest), directory, "test", null, line -> {
+		var enrollment = new ToolingAccountEnrollment(() -> plan(manifest), directory, "test", line -> {
 			output.add(line);
 			if (line.startsWith("Open https")) received.countDown();
 		}, builder -> processes.removeFirst());
@@ -47,38 +47,13 @@ class AccountEnrollmentTest {
 		} finally { enrollment.dispose(); }
 	}
 
-	@Test void signsInWithTheChosenLibrary() throws Exception {
-		Path manifest = manifest();
-		var build = new ControlledToolingProcess(false);
-		build.complete(0);
-		var login = new ControlledToolingProcess(false);
-		login.complete(0);
-		var processes = new ArrayDeque<>(List.of(build, login));
-		var commands = new CopyOnWriteArrayList<List<String>>();
-		var enrollment = new ToolingAccountEnrollment(
-				() -> plan(manifest),
-				directory,
-				"test",
-				"cloudburst",
-				ignored -> {},
-				builder -> {
-					commands.add(List.copyOf(builder.command()));
-					return processes.removeFirst();
-				});
-
-		enrollment.start(Runnable::run).get(5, TimeUnit.SECONDS);
-
-		List<String> signIn = commands.getLast();
-		assertEquals("cloudburst", signIn.get(signIn.indexOf("--library") + 1));
-	}
-
 	@Test void removesManifestWhenPreparationFails() throws Exception {
 		Path manifest = manifest();
 		var build = new ControlledToolingProcess(false);
 		build.complete(1);
 		var enrollment =
 				new ToolingAccountEnrollment(
-						() -> plan(manifest), directory, "test", null, ignored -> {}, builder -> build);
+						() -> plan(manifest), directory, "test", ignored -> {}, builder -> build);
 		var completion = enrollment.start(Runnable::run);
 		assertTrue(completion.isCompletedExceptionally());
 		assertFalse(Files.exists(manifest));
@@ -95,7 +70,6 @@ class AccountEnrollmentTest {
 				() -> plan(manifest),
 				directory,
 				"test",
-				null,
 				ignored -> {},
 				ignored -> processes.removeFirst());
 
@@ -109,7 +83,7 @@ class AccountEnrollmentTest {
 	}
 
 	@Test void disposingBeforeStartCompletesWithCancellation() throws Exception {
-		var enrollment = new ToolingAccountEnrollment(() -> plan(manifest()), directory, "test", null, ignored -> {});
+		var enrollment = new ToolingAccountEnrollment(() -> plan(manifest()), directory, "test", ignored -> {});
 		enrollment.dispose();
 
 		assertThrows(
@@ -131,7 +105,6 @@ class AccountEnrollmentTest {
 						},
 						directory,
 						"test",
-						null,
 						ignored -> {},
 						builder -> {
 							launchAttempted.set(true);

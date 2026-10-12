@@ -33,19 +33,7 @@ class AccountTaskTest {
         assertTrue(result.output.contains("Authentication account 'ci-player' did not exist."), result.output)
     }
 
-    @Test
-    fun `signs out through the selected library when several offer accounts`() {
-        project("protocol-mcprotocol", "protocol-cloudburst")
-
-        val ambiguous = runner("anvilLogout", "--account=ci-player").buildAndFail()
-        assertTrue(ambiguous.output.contains("select one with --library or anvil.protocolLibrary"), ambiguous.output)
-
-        val result = runner("anvilLogout", "--account=ci-player", "--library=cloudburst").build()
-        assertTrue(result.output.contains("Authentication account 'ci-player' did not exist."), result.output)
-    }
-
-    private fun project(vararg libraries: String = arrayOf("protocol-mcprotocol")) {
-        val dependencies = libraries.joinToString("; ") { "add(\"anvilRuntimeOnly\", \"me.whereareiam.anvil:$it:$testedVersion\")" }
+    private fun project() {
         write("settings.gradle.kts", "rootProject.name = \"account-fixture\"")
         write("build.gradle.kts", """
             plugins { id("me.whereareiam.anvil") }
@@ -55,7 +43,7 @@ class AccountTaskTest {
                 maven("https://repo.opencollab.dev/main/")
                 maven("https://repo.opencollab.dev/maven-snapshots/")
             }
-            dependencies { $dependencies }
+            dependencies { add("anvilRuntimeOnly", "me.whereareiam.anvil:protocol-mcprotocol:$testedVersion") }
             anvil { engine { accountsDirectory.set(layout.projectDirectory.dir("accounts")) } }
         """.trimIndent())
     }
