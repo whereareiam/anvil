@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.player;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,9 +26,10 @@ import java.util.function.Function;
 /**
  * Selects the protocol library and exact release for each simulated player.
  *
- * <p>A player uses its own {@code protocolLibrary}, else the scenario's, else the engine's. Without a
- * declaration, every installed library whose release lists the player's Minecraft version is ranked by
- * {@link SupportLevel}; the strongest wins and a tie is refused. The selected release is then checked
+ * <p>A player's servers decide its Minecraft edition and version, and only a release of that edition listing that
+ * version serves it, so two editions that number a version alike never share a release. A player uses its own
+ * {@code protocolLibrary}, else the scenario's, else the engine's. Without a declaration, every installed library
+ * with such a release is ranked by {@link SupportLevel}; the strongest wins and a tie is refused. The selected release is then checked
  * against the scenario's support policy, falling back to the engine's, and must be
  * {@link ProtocolRelease#isLaunchable() launchable}; a release that is not only produces a warning while the
  * scenario is prepared and refuses the player that selects it.</p>
@@ -70,9 +73,10 @@ final class ProtocolLibrarySelector {
 	 * another library, so creating a player that selects the release is what fails.
 	 *
 	 * @param scenario scenario about to be prepared
+	 * @param editions Minecraft edition of each of the scenario's processes, keyed by process name
 	 * @throws ScenarioValidationException when the scenario names a library that is not installed
 	 */
-	void validate(@NotNull AnvilScenario scenario) {
+	void validate(@NotNull AnvilScenario scenario, @NotNull Map<String, MinecraftEdition> editions) {
 		if (scenario.getProtocolLibrary() != null)
 			requireInstalled(scenario.getProtocolLibrary(), "Scenario '" + scenario.getName() + "'");
 
@@ -80,7 +84,7 @@ final class ProtocolLibrarySelector {
 			Optional<MinecraftVersion> version = nativeVersion(server);
 			if (version.isEmpty()) continue;
 
-			Optional<Selection> selection = defaultSelection(scenario, version.get());
+			Optional<Selection> selection = defaultSelection(scenario, edition(editions, server), version.get());
 			if (selection.isEmpty() || selection.get().release().isLaunchable()) continue;
 
 			notices.accept("[Anvil] Warning: scenario '" + scenario.getName() + "' cannot create players for server '"
@@ -100,9 +104,10 @@ final class ProtocolLibrarySelector {
 	 * be read fails the scenario here, even before any player exists.</p>
 	 *
 	 * @param scenario validated scenario
+	 * @param editions Minecraft edition of each of the scenario's processes, keyed by process name
 	 * @return distinct library identifiers, ranked libraries in the order of the servers
 	 */
-	@NotNull List<String> scenarioLibraries(@NotNull AnvilScenario scenario) {
+	@NotNull List<String> scenarioLibraries(@NotNull AnvilScenario scenario, @NotNull Map<String, MinecraftEdition> editions) {
 		if (scenario.getProtocolLibrary() != null) return List.of(scenario.getProtocolLibrary());
 		if (engineLibrary != null) return List.of(engineLibrary);
 
@@ -112,7 +117,7 @@ final class ProtocolLibrarySelector {
 			Optional<MinecraftVersion> version = nativeVersion(server);
 			if (version.isEmpty()) continue;
 
-			List<Selection> strongest = strongest(version.get());
+			List<Selection> strongest = strongest(edition(editions, server), version.get());
 			if (strongest.size() != 1 || !policy.permits(strongest.getFirst().level())) continue;
 
 			ranked.add(strongest.getFirst().library());
@@ -126,14 +131,20 @@ final class ProtocolLibrarySelector {
 	 *
 	 * @param options player declaration, possibly naming a library
 	 * @param scenario owning scenario, possibly naming a library and a support policy
+	 * @param edition Minecraft edition of the servers the player reaches
 	 * @param version the player's exact Minecraft version
-	 * @return the selected library and release, permitted by the effective support policy
-	 * @throws ScenarioValidationException when no permitted, launchable release can be selected
+	 * @return the selected library and a release of the edition, permitted by the effective support policy
+	 * @throws ScenarioValidationException when no permitted, launchable release of the edition can be selected
 	 */
-	@NotNull Selection select(@NotNull PlayerOptions options, @NotNull AnvilScenario scenario, @NotNull MinecraftVersion version) {
+	@NotNull Selection select(
+			@NotNull PlayerOptions options,
+			@NotNull AnvilScenario scenario,
+			@NotNull MinecraftEdition edition,
+			@NotNull MinecraftVersion version
+	) {
 		String player = "player '" + options.getName() + "'";
 		String declared = declared(options, scenario);
-		Selection selection = declared == null ? rank(player, version) : declared(player, declared, version);
+		Selection selection = declared == null ? rank(player, edition, version) : declared(player, declared, edition, version);
 
 		apply(policy(scenario), selection, version);
 		if (!selection.release().isLaunchable())
@@ -142,12 +153,12 @@ final class ProtocolLibrarySelector {
 		return selection;
 	}
 
-	private Optional<Selection> defaultSelection(AnvilScenario scenario, MinecraftVersion version) {
+	private Optional<Selection> defaultSelection(AnvilScenario scenario, MinecraftEdition edition, MinecraftVersion version) {
 		String declared = scenario.getProtocolLibrary() == null ? engineLibrary : scenario.getProtocolLibrary();
 		if (declared != null)
-			return release(declared, version).map(release -> new Selection(declared, release, release.support(version)));
+			return release(declared, edition, version).map(release -> new Selection(declared, release, release.support(version)));
 
-		List<Selection> strongest = strongest(version);
+		List<Selection> strongest = strongest(edition, version);
 		return strongest.size() == 1 ? Optional.of(strongest.getFirst()) : Optional.empty();
 	}
 
@@ -162,33 +173,49 @@ final class ProtocolLibrarySelector {
 		return engineLibrary;
 	}
 
-	private Selection declared(String player, String library, MinecraftVersion version) {
+	private Selection declared(String player, String library, MinecraftEdition edition, MinecraftVersion version) {
 		requireInstalled(library, "Simulated " + player);
 
-		ProtocolRelease release = release(library, version).orElseThrow(() -> new ScenarioValidationException(
-				"Protocol library '" + library + "' selected for " + player + " does not support Minecraft " + version
-						+ ". Supported: " + versions(library)));
+		ProtocolRelease release = release(library, edition, version).orElseThrow(() -> new ScenarioValidationException(
+				"Protocol library '" + library + "' selected for " + player + " does not support " + edition + " Minecraft "
+						+ version + otherEditions(List.of(library), version, edition) + ". Supported " + edition + " versions: "
+						+ versions(library, edition)));
 
 		return new Selection(library, release, release.support(version));
 	}
 
-	private Selection rank(String player, MinecraftVersion version) {
-		List<Selection> strongest = strongest(version);
+	private Selection rank(String player, MinecraftEdition edition, MinecraftVersion version) {
+		List<Selection> strongest = strongest(edition, version);
 		if (strongest.isEmpty())
-			throw new ScenarioValidationException("No installed protocol library supports Minecraft " + version
-					+ " for " + player + ". Installed: " + libraries);
+			throw new ScenarioValidationException("No installed protocol library supports " + edition + " Minecraft " + version
+					+ " for " + player + otherEditions(libraries, version, edition) + ". Installed: " + libraries);
 		if (strongest.size() > 1)
 			throw new ScenarioValidationException("Protocol libraries " + strongest.stream().map(Selection::library).toList()
-					+ " support Minecraft " + version + " equally (" + strongest.getFirst().level() + ") for " + player
-					+ "; set protocolLibrary on the player, scenario, or engine to choose one");
+					+ " support " + edition + " Minecraft " + version + " equally (" + strongest.getFirst().level() + ") for "
+					+ player + "; set protocolLibrary on the player, scenario, or engine to choose one");
 
 		return strongest.getFirst();
 	}
 
-	private List<Selection> strongest(MinecraftVersion version) {
+	/**
+	 * Explains that releases list the version for other editions only, which never serve the player's servers.
+	 */
+	private String otherEditions(Collection<String> candidates, MinecraftVersion version, MinecraftEdition edition) {
+		Set<MinecraftEdition> others = new LinkedHashSet<>();
+		for (String library : candidates)
+			for (ProtocolRelease release : releases.apply(library))
+				if (!release.getEdition().equals(edition) && release.getMinecraftVersions().contains(version))
+					others.add(release.getEdition());
+
+		if (others.isEmpty()) return "";
+		return " (releases list Minecraft " + version + " only for the editions " + others + ", which never reach "
+				+ edition + " servers)";
+	}
+
+	private List<Selection> strongest(MinecraftEdition edition, MinecraftVersion version) {
 		List<Selection> strongest = new ArrayList<>();
 		for (String library : libraries) {
-			Optional<ProtocolRelease> release = release(library, version);
+			Optional<ProtocolRelease> release = release(library, edition, version);
 			if (release.isEmpty()) continue;
 
 			Selection candidate = new Selection(library, release.get(), release.get().support(version));
@@ -223,19 +250,27 @@ final class ProtocolLibrarySelector {
 					+ " support policy runs it anyway.");
 	}
 
-	private Optional<ProtocolRelease> release(String library, MinecraftVersion version) {
+	private Optional<ProtocolRelease> release(String library, MinecraftEdition edition, MinecraftVersion version) {
 		for (ProtocolRelease release : releases.apply(library))
-			if (release.getMinecraftVersions().contains(version)) return Optional.of(release);
+			if (release.serves(edition, version)) return Optional.of(release);
 
 		return Optional.empty();
 	}
 
-	private List<String> versions(String library) {
+	private List<String> versions(String library, MinecraftEdition edition) {
 		List<String> versions = new ArrayList<>();
 		for (ProtocolRelease release : releases.apply(library))
-			release.getMinecraftVersions().forEach(version -> versions.add(version.toString()));
+			if (release.getEdition().equals(edition))
+				release.getMinecraftVersions().forEach(version -> versions.add(version.toString()));
 
 		return versions;
+	}
+
+	private static MinecraftEdition edition(Map<String, MinecraftEdition> editions, MinecraftServer server) {
+		MinecraftEdition edition = editions.get(server.getName());
+		if (edition == null) throw new IllegalArgumentException("No Minecraft edition is known for server '" + server.getName() + "'");
+
+		return edition;
 	}
 
 	private void requireInstalled(String library, String owner) {

@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.player;
 
 import me.whereareiam.anvil.api.exception.AnvilException;
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
@@ -12,6 +13,7 @@ import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.player.PlayerState;
 import me.whereareiam.anvil.api.model.player.SessionIdentity;
 import me.whereareiam.anvil.api.model.process.Distribution;
+import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerCapability;
@@ -39,6 +41,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,6 +58,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RunningPlayerManagerTest {
+	private static final MinecraftEdition JAVA = MinecraftEdition.of("java");
+	private static final MinecraftEdition OTHER = MinecraftEdition.of("other");
+
 	@TempDir
 	Path temporary;
 
@@ -124,9 +130,63 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
+	void passesTheEditionOfTheReachedServersToTheLibrary() {
+		StubLibrary library = new StubLibrary();
+
+		manager(library).create("alice");
+
+		assertEquals(JAVA, library.lastRequest.getEdition());
+		assertEquals(MinecraftVersion.parse("1.21.11"), library.lastRequest.getClientVersion());
+	}
+
+	@Test
+	void aServerNeverSelectsAReleaseOfAnotherEditionThatListsItsVersion() {
+		StubLibrary library = new StubLibrary();
+		ProtocolRelease other = release("other-1.21.11", "1.21.11").toBuilder().edition(OTHER).build();
+		ProtocolLibrarySelector selector = new ProtocolLibrarySelector(List.of("other"), Map.of("other", List.of(other))::get,
+				null, SupportPolicy.LENIENT, ignored -> { });
+		AnvilScenario scenario = scenario();
+		StubScenarioProcesses processes = new StubScenarioProcesses("server", temporary.resolve("server"));
+		RunningPlayerManager java = new RunningPlayerManager(scenario, editions(scenario), selector, ignored -> library, processes,
+				(player, connectedTo) -> observation(player), composer(), ignored -> { }, List::of, new AccountReservations(), true);
+
+		var refused = assertThrows(ScenarioValidationException.class, () -> java.create("alice"));
+		assertTrue(refused.getMessage().startsWith("No installed protocol library supports java Minecraft 1.21.11 for player "
+				+ "'alice' (releases list Minecraft 1.21.11 only for the editions [other], which never reach java servers)"),
+				refused.getMessage());
+		assertNull(library.lastRequest);
+
+		RunningPlayerManager matching = new RunningPlayerManager(scenario, Map.of("server", OTHER), selector, ignored -> library,
+				processes, (player, connectedTo) -> observation(player), composer(), ignored -> { }, List::of,
+				new AccountReservations(), true);
+		matching.create("bob");
+		assertEquals(OTHER, library.lastRequest.getEdition());
+	}
+
+	@Test
+	void refusesATargetThatReachesServersOfDifferentEditions() {
+		StubLibrary library = new StubLibrary();
+		MinecraftServer first = MinecraftServer.builder().name("first").platform("test")
+				.distribution(Distribution.remote("1.21.11", "1")).build();
+		MinecraftServer second = first.toBuilder().name("second").build();
+		MinecraftProxy proxy = MinecraftProxy.builder().name("proxy").platform("test")
+				.distribution(Distribution.remote("1.21.11", "1")).server("first").server("second").defaultServer("first").build();
+		AnvilScenario scenario = AnvilScenario.builder().name("editions").entrypoint("proxy")
+				.server(first).server(second).proxy(proxy).build();
+		RunningPlayerManager manager = new RunningPlayerManager(scenario, Map.of("first", JAVA, "second", OTHER, "proxy", JAVA),
+				selector(library), ignored -> library, new StubScenarioProcesses("first", temporary.resolve("first")),
+				(player, connectedTo) -> observation(player), composer(), ignored -> { }, List::of, new AccountReservations(), true);
+
+		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create("alice"));
+		assertEquals("Connection target 'proxy' reaches servers of different Minecraft editions [java, other]; no client speaks "
+				+ "more than one edition", refused.getMessage());
+		assertNull(library.lastRequest);
+	}
+
+	@Test
 	void probesTheSourceAddressWithTheTransportOfTheTarget() {
 		StubLibrary library = new StubLibrary();
-		RunningPlayerManager manager = new RunningPlayerManager(scenario(), selector(library), ignored -> library,
+		RunningPlayerManager manager = new RunningPlayerManager(scenario(), editions(scenario()), selector(library), ignored -> library,
 				new StubScenarioProcesses("server", temporary.resolve("server"), ListenerTransport.UDP),
 				(player, connectedTo) -> observation(player), composer(), ignored -> { }, List::of, new AccountReservations(), true);
 
@@ -139,7 +199,7 @@ class RunningPlayerManagerTest {
 	@Test
 	void aSourceAddressIsRefusedWhenTheExecutionTranslatesConnections() {
 		StubLibrary library = new StubLibrary();
-		RunningPlayerManager manager = new RunningPlayerManager(scenario(), selector(library), ignored -> library,
+		RunningPlayerManager manager = new RunningPlayerManager(scenario(), editions(scenario()), selector(library), ignored -> library,
 				new StubScenarioProcesses("server", temporary.resolve("server")), (player, connectedTo) -> observation(player),
 				composer(), ignored -> { }, List::of, new AccountReservations(), false);
 
@@ -301,7 +361,7 @@ class RunningPlayerManagerTest {
 	void onRequestPlayersSignInOnAnOfflineEntrypointThatOnlinePlayersCannotJoin() {
 		StubLibrary library = new StubLibrary();
 		AuthenticationAccount account = new AuthenticationAccount("alice", "test", "Alice", null);
-		RunningPlayerManager manager = new RunningPlayerManager(scenario(), selector(library), ignored -> library,
+		RunningPlayerManager manager = new RunningPlayerManager(scenario(), editions(scenario()), selector(library), ignored -> library,
 				new StubScenarioProcesses("server", temporary.resolve("server")), (player, connectedTo) -> observation(player), composer(),
 				ignored -> { }, () -> List.of(account), new AccountReservations(), true);
 
@@ -400,7 +460,8 @@ class RunningPlayerManagerTest {
 
 		var failure = assertThrows(ScenarioValidationException.class, () -> manager.create("alice", lease));
 
-		assertEquals("Protocol library 'other' selected for player 'alice' does not support Minecraft 1.21.11. Supported: [1.20.6]",
+		assertEquals("Protocol library 'other' selected for player 'alice' does not support java Minecraft 1.21.11. Supported java "
+				+ "versions: [1.20.6]",
 				failure.getMessage());
 		assertTrue(lease.closed);
 		assertNull(library.lastRequest);
@@ -454,7 +515,7 @@ class RunningPlayerManagerTest {
 				.build();
 		AnvilScenario scenario = AnvilScenario.builder().name("online").entrypoint("server").server(server).build();
 
-		return new RunningPlayerManager(scenario, selector, selected -> {
+		return new RunningPlayerManager(scenario, editions(scenario), selector, selected -> {
 			library.lastSelectedId = selected;
 			return library;
 		}, new StubScenarioProcesses("server", temporary.resolve("server")), (player, connectedTo) -> observation(player), composer(),
@@ -479,7 +540,7 @@ class RunningPlayerManagerTest {
 			ProtocolPlayerComposer composer,
 			Consumer<RunningPlayerManager> onClosed
 	) {
-		return new RunningPlayerManager(scenario, selector(library), ignored -> library, processes,
+		return new RunningPlayerManager(scenario, editions(scenario), selector(library), ignored -> library, processes,
 				(player, connectedTo) -> observation(player), composer, onClosed, List::of, new AccountReservations(), true);
 	}
 
@@ -487,9 +548,10 @@ class RunningPlayerManagerTest {
 		MinecraftVersion version = MinecraftVersion.parse(minecraft);
 		return ProtocolRelease.builder()
 				.libraryVersion(libraryVersion)
+				.edition(JAVA)
 				.minecraftVersion(version)
 				.verifiedVersion(version)
-				.protocolNumber(1)
+				.protocolNumber(version, 1)
 				.javaVersion(21)
 				.feature(ProtocolFeature.ONLINE_AUTHENTICATION)
 				.build();
@@ -498,6 +560,14 @@ class RunningPlayerManagerTest {
 	private ProtocolLibrarySelector selector(StubLibrary library) {
 		return new ProtocolLibrarySelector(List.of(library.id()), Map.of(library.id(), library.releases())::get, null,
 				SupportPolicy.LENIENT, ignored -> { });
+	}
+
+	private static Map<String, MinecraftEdition> editions(AnvilScenario scenario) {
+		Map<String, MinecraftEdition> editions = new LinkedHashMap<>();
+		scenario.getServers().forEach(server -> editions.put(server.getName(), JAVA));
+		scenario.getProxies().forEach(proxy -> editions.put(proxy.getName(), JAVA));
+
+		return editions;
 	}
 
 	private AnvilScenario scenario() {
@@ -603,9 +673,10 @@ class RunningPlayerManagerTest {
 			MinecraftVersion version = MinecraftVersion.parse("1.21.11");
 			return List.of(ProtocolRelease.builder()
 					.libraryVersion("test-1.21.11")
+					.edition(JAVA)
 					.minecraftVersion(version)
-					.verifiedVersion(version)
-					.protocolNumber(1)
+				.verifiedVersion(version)
+					.protocolNumber(version, 1)
 					.javaVersion(21)
 					.feature(ProtocolFeature.ONLINE_AUTHENTICATION)
 					.build());

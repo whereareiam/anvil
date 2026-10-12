@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.worker.child;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.NativeWorkerContext;
 import me.whereareiam.anvil.protocol.worker.model.WorkerLibrary;
@@ -52,7 +53,8 @@ public final class ProtocolWorker implements AutoCloseable {
 	 * Runs the worker of one release in this JVM: verifies the segments and the loaded release's protocol before
 	 * constructing or announcing the worker, then serves requests from standard input until shutdown.
 	 *
-	 * @param arguments release key version and expected native protocol number, as the host passes them
+	 * @param arguments release key version, the release's edition and the native protocol number of the key version,
+	 * as the host passes them
 	 * @param library library whose release, client segment and capability segments are on the class path
 	 * @param clients creates the library's native client from the verified segments
 	 * @throws Exception when the loaded runtime does not match or the worker fails
@@ -62,11 +64,12 @@ public final class ProtocolWorker implements AutoCloseable {
 			@NotNull WorkerLibrary library,
 			@NotNull Function<WorkerSegments, WorkerClient> clients
 	) throws Exception {
-		if (arguments.length != 2)
-			throw new IllegalArgumentException("Expected the release key version and the native protocol number");
+		if (arguments.length != 3)
+			throw new IllegalArgumentException("Expected the release key version, its edition and its native protocol number");
 
 		MinecraftVersion version = MinecraftVersion.parse(arguments[0]);
-		int expected = Integer.parseInt(arguments[1]);
+		MinecraftEdition edition = MinecraftEdition.of(arguments[1]);
+		int expected = Integer.parseInt(arguments[2]);
 		WorkerSegments segments = WorkerSegments.verify(ProtocolWorker.class.getClassLoader(), library, version, System.err::println);
 		WorkerClient client = clients.apply(segments);
 		int actual = client.protocolNumber();
@@ -74,6 +77,7 @@ public final class ProtocolWorker implements AutoCloseable {
 
 		NativeWorkerContext context = NativeWorkerContext.builder()
 				.libraryId(library.getId())
+				.edition(edition)
 				.version(version)
 				.protocolNumber(actual)
 				.nativeSessionType(client.sessionType())

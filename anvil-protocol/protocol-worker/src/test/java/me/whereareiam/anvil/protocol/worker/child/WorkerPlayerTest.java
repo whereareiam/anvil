@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.worker.child;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
@@ -126,8 +127,8 @@ class WorkerPlayerTest {
 	}
 
 	private WorkerPlayer player(String accessToken) {
-		var context = NativeWorkerContext.builder().libraryId("probelib").version(MinecraftVersion.parse("1.21.11"))
-				.protocolNumber(774).nativeSessionType(Object.class).build();
+		var context = NativeWorkerContext.builder().libraryId("probelib").edition(MinecraftEdition.of("java"))
+				.version(MinecraftVersion.parse("1.21.11")).protocolNumber(774).nativeSessionType(Object.class).build();
 		var options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder().name("Alice").uniqueId(uuid).build())
 				.credentials(accessToken == null ? null : WorkerCredentials.builder().accessToken(accessToken).build())

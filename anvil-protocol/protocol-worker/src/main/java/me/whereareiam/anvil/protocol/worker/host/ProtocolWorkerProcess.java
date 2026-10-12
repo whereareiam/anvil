@@ -179,7 +179,8 @@ public final class ProtocolWorkerProcess implements AutoCloseable {
 				"-cp", String.join(File.pathSeparator, classpath.stream().map(Path::toString).toList()),
 				library.getMainClass(),
 				release.version().toString(),
-				Integer.toString(release.getProtocolNumber())
+				release.getEdition().getId(),
+				Integer.toString(keyProtocol())
 		));
 
 		try {
@@ -232,9 +233,9 @@ public final class ProtocolWorkerProcess implements AutoCloseable {
 
 	private void acceptReady(WorkerReady message) {
 		int actual = message.getProtocol();
-		if (actual != release.getProtocolNumber()) {
+		if (actual != keyProtocol()) {
 			ready.completeExceptionally(new IllegalStateException("Resolved worker protocol " + actual
-					+ " but expected " + release.getProtocolNumber()));
+					+ " but expected " + keyProtocol()));
 			return;
 		}
 
@@ -250,6 +251,13 @@ public final class ProtocolWorkerProcess implements AutoCloseable {
 				+ new TreeMap<>(message.getSegments()));
 		unavailableCapabilities = Map.copyOf(message.getUnavailable());
 		ready.complete(null);
+	}
+
+	/**
+	 * Returns the protocol number of the release's key version, which the worker verifies against the loaded client.
+	 */
+	private int keyProtocol() {
+		return release.protocolNumber(release.version());
 	}
 
 	private void fail(Throwable failure) {

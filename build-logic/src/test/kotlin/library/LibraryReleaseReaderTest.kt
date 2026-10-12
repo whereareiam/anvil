@@ -19,7 +19,8 @@ class LibraryReleaseReaderTest {
 		assertEquals(listOf("1.16.5-2", "1.20.6-1"), releases.map(LibraryRelease::version))
 		val modern = releases.last()
 		assertEquals(MinecraftVersion.parse("1.20.6"), modern.key)
-		assertEquals(766, modern.protocol)
+		assertEquals("java", modern.edition)
+		assertEquals(mapOf(MinecraftVersion.parse("1.20.5") to 766, MinecraftVersion.parse("1.20.6") to 766), modern.protocols)
 		assertEquals(listOf(MinecraftVersion.parse("1.20.5"), MinecraftVersion.parse("1.20.6")), modern.minecraft)
 		assertEquals(listOf(MinecraftVersion.parse("1.20.6")), modern.verified)
 		assertEquals(17, modern.java)
@@ -52,7 +53,35 @@ class LibraryReleaseReaderTest {
 
 	@Test
 	fun `rejects a Minecraft version served by two releases`() {
-		assertFailure("assigns Minecraft 1.20.5 to more than one release", release("1.20.5-1", "1.20.5") + release("1.20.6-1", "1.20.5\", \"1.20.6"))
+		assertFailure("assigns java Minecraft 1.20.5 to more than one release", release("1.20.5-1", "1.20.5") + release("1.20.6-1", "1.20.5\", \"1.20.6"))
+	}
+
+	@Test
+	fun `maps each listed version to its own protocol through a protocol table`() {
+		val table = "[release.protocol]\n\"1.20.0\" = 589\n\"1.20.10\" = 594\n\n[[release.artifact]]"
+		val release = read(release("2.0.0", "1.20.0\", \"1.20.10", edition = "other").replace("protocol = 758\n", "")
+			.replace("[[release.artifact]]", table)).single()
+
+		assertEquals("other", release.edition)
+		assertEquals(mapOf(MinecraftVersion.parse("1.20") to 589, MinecraftVersion.parse("1.20.10") to 594), release.protocols)
+		assertFailure("maps no protocol for Minecraft 1.20.10", release("2.0.0", "1.20.0\", \"1.20.10").replace("protocol = 758\n", "")
+			.replace("[[release.artifact]]", "[release.protocol]\n\"1.20.0\" = 589\n\n[[release.artifact]]"))
+		assertFailure("maps protocol of Minecraft 1.21, which it does not list", release("2.0.0", "1.20.0").replace("protocol = 758\n", "")
+			.replace("[[release.artifact]]", "[release.protocol]\n\"1.20.0\" = 589\n\"1.21.0\" = 685\n\n[[release.artifact]]"))
+	}
+
+	@Test
+	fun `lets releases of different editions list the same version but not share a key`() {
+		val releases = read(release("1.20.6-1", "1.20.5\", \"1.20.6") + release("2.0.0", "1.20.5\", \"1.20.7", edition = "other"))
+
+		assertEquals(listOf("java", "other"), releases.map(LibraryRelease::edition))
+		assertFailure("keys more than one release by Minecraft 1.20.6", release("1.20.6-1", "1.20.6") + release("2.0.0", "1.20.6", edition = "other"))
+	}
+
+	@Test
+	fun `requires an edition identifier`() {
+		assertFailure("must declare a non-blank edition", release("1.18.2-1", "1.18.2").replace("edition = \"java\"\n", ""))
+		assertFailure("edition 'Java Edition' must be one lower-case identifier", release("1.18.2-1", "1.18.2", edition = "Java Edition"))
 	}
 
 	@Test
@@ -112,12 +141,14 @@ class LibraryReleaseReaderTest {
 		version: String,
 		minecraft: String,
 		protocol: Int = 758,
+		edition: String = "java",
 		verified: String = minecraft.substringAfterLast('"'),
 		sha256: String = "",
 		artifactModule: String = "demo:protocol:$version",
 	): String = """
 		[[release]]
 		version = "$version"
+		edition = "$edition"
 		module = "demo:protocol:$version"
 		protocol = $protocol
 		minecraft = ["$minecraft"]

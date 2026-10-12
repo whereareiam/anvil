@@ -7,7 +7,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Game listener of a worker player, the host its handshake announces and the address literal it binds to.
+ * Game listener of a worker player, the host its handshake announces, the address literal it binds to and the
+ * native wire-protocol number it speaks there. A release that maps its versions to several protocol numbers selects
+ * the player's protocol by that number.
  */
 @Value
 @Builder
@@ -17,4 +19,5 @@ public class WorkerConnection {
 	int port;
 	@Nullable String virtualHost;
 	@Nullable String sourceAddress;
+	int protocol;
 }

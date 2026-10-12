@@ -1,11 +1,13 @@
 # MCProtocolLib releases supported by this Anvil version: the latest patch of each Minecraft major.
-# Each release lists every Minecraft version speaking its protocol; 'verified' versions are live-tested.
+# Each release names the Minecraft edition it implements and lists every version of it speaking its
+# protocol; 'verified' versions are live-tested.
 # 'module' is the compile coordinate for version-specific segments. Each [[release.artifact]] is the
 # worker runtime closure, downloaded and checked against 'sha256'. Empty pins are filled by
 # ./gradlew :anvil-protocol:protocol-mcprotocol:pinLibraryReleases, which also refreshes the closure.
 
 [[release]]
 version = "1.18.2-1"
+edition = "java"
 module = "com.github.steveice10:mcprotocollib:1.18.2-1"
 protocol = 758
 minecraft = ["1.18.2"]
@@ -120,6 +122,7 @@ sha256 = "c9237ffecb05428f6eff86216246ac70ce0b47b04c08ea7ca35020fde57f8492"
 
 [[release]]
 version = "1.21-20241010.155958-24"
+edition = "java"
 module = "org.geysermc.mcprotocollib:protocol:1.21-20241010.155958-24"
 protocol = 767
 minecraft = ["1.21", "1.21.1"]
@@ -464,6 +467,7 @@ sha256 = "d6f17bb3c6a2512c41ea78f533f9018b49199bae74ef9cb3d90a5e9b5801f938"
 
 [[release]]
 version = "1.21.11-20260512.221357-18"
+edition = "java"
 module = "org.geysermc.mcprotocollib:protocol:1.21.11-20260512.221357-18"
 protocol = 774
 minecraft = ["1.21.11"]
@@ -863,6 +867,7 @@ sha256 = "d6f17bb3c6a2512c41ea78f533f9018b49199bae74ef9cb3d90a5e9b5801f938"
 
 [[release]]
 version = "26.1-20260708.090514-22"
+edition = "java"
 module = "org.geysermc.mcprotocollib:protocol:26.1-20260708.090514-22"
 protocol = 775
 minecraft = ["26.1", "26.1.1", "26.1.2"]

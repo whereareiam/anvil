@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.launcher.adapter.player;
 
 import lombok.Value;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
@@ -108,7 +109,8 @@ class ProtocolPlayerAdapterTest {
 		@Override
 		public @NotNull ProtocolRelease release() {
 			MinecraftVersion version = MinecraftVersion.parse("1.21.11");
-			return ProtocolRelease.builder().libraryVersion("test").minecraftVersion(version).protocolNumber(774).javaVersion(21).build();
+			return ProtocolRelease.builder().libraryVersion("test").edition(MinecraftEdition.of("java"))
+					.minecraftVersion(version).protocolNumber(version, 774).javaVersion(21).build();
 		}
 
 		@Override

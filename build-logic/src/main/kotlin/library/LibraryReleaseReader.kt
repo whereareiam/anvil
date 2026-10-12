@@ -9,19 +9,23 @@ import java.io.File
 /**
  * Reads and validates a protocol library's releases file (`<library>-releases.toml`).
  *
- * Each `[[release]]` row declares `version`, `module`, `protocol`, `minecraft`, `verified`, `java`, `features`
- * and a non-empty `[[release.artifact]]` closure of `module`, `url` and `sha256`. Release versions and Minecraft
- * versions are unique across rows, verified versions are listed in `minecraft`, the release's own module is
- * part of its closure, and a checksum is either empty (not pinned yet) or 64 lower-case hex digits. A release
+ * Each `[[release]]` row declares `version`, `edition`, `module`, `protocol`, `minecraft`, `verified`, `java`,
+ * `features` and a non-empty `[[release.artifact]]` closure of `module`, `url` and `sha256`. `edition` is an opaque
+ * lower-case identifier; `protocol` is either one number every listed version speaks or a `[release.protocol]`
+ * table mapping each listed version to its own number. Release versions and release keys are unique across rows, a
+ * Minecraft version belongs to at most one release of its edition, verified versions are listed in `minecraft`, the
+ * release's own module is part of its closure, and a checksum is either empty (not pinned yet) or 64 lower-case hex
+ * digits. A release
  * module is a `group:name:version` coordinate; an artifact module may add a classifier, as native transport
  * JARs do.
  */
 object LibraryReleaseReader {
-	private val rowFields = setOf("version", "module", "protocol", "minecraft", "verified", "java", "features", "artifact")
+	private val rowFields = setOf("version", "edition", "module", "protocol", "minecraft", "verified", "java", "features", "artifact")
 	private val artifactFields = setOf("module", "url", "sha256")
 	private val coordinate = Regex("""[^:\s]+:[^:\s]+:[^:\s]+""")
 	private val classifiedCoordinate = Regex("""[^:\s]+:[^:\s]+:[^:\s]+(:[^:\s]+)?""")
 	private val checksum = Regex("""[0-9a-f]{64}""")
+	private val edition = Regex("""[a-z][a-z0-9-]*""")
 	private const val minimumJava = 8
 
 	/**
@@ -46,7 +50,10 @@ object LibraryReleaseReader {
 
 			val releases = rows.mapIndexed { index, row -> release(row, "release #${index + 1}") }
 			duplicates(releases.map(LibraryRelease::version)).forEach { fail(source, "declares release $it more than once") }
-			duplicates(releases.flatMap(LibraryRelease::minecraft)).forEach { fail(source, "assigns Minecraft $it to more than one release") }
+			duplicates(releases.flatMap { release -> release.minecraft.map { release.edition to it } }).forEach { (edition, version) ->
+				fail(source, "assigns $edition Minecraft $version to more than one release")
+			}
+			duplicates(releases.map(LibraryRelease::key)).forEach { fail(source, "keys more than one release by Minecraft $it") }
 			return releases.sortedBy(LibraryRelease::key)
 		}
 
@@ -67,14 +74,43 @@ object LibraryReleaseReader {
 
 			return LibraryRelease(
 				version = version,
+				edition = edition(row, context),
 				module = module,
-				protocol = number(row, "protocol", context, minimum = 1),
+				protocols = protocols(row, minecraft, context),
 				minecraft = minecraft,
 				verified = verified,
 				java = number(row, "java", context, minimum = minimumJava),
 				features = strings(row, "features", context, required = false),
 				artifacts = artifacts,
 			)
+		}
+
+		private fun edition(row: JsonNode, context: String): String {
+			val value = text(row, "edition", context)
+			if (!edition.matches(value)) fail(source, "$context edition '$value' must be one lower-case identifier")
+			return value
+		}
+
+		/**
+		 * Reads the protocol number of every listed version: one number shared by all of them, or a table with one
+		 * number per listed version.
+		 */
+		private fun protocols(row: JsonNode, minecraft: List<MinecraftVersion>, context: String): Map<MinecraftVersion, Int> {
+			val protocol = row.path("protocol")
+			if (!protocol.isObject) {
+				val shared = number(row, "protocol", context, minimum = 1)
+				return minecraft.associateWith { shared }
+			}
+
+			val protocols = linkedMapOf<MinecraftVersion, Int>()
+			protocol.fieldNames().forEach { key ->
+				val version = version(key, "$context protocol")
+				if (version !in minecraft) fail(source, "$context maps protocol of Minecraft $version, which it does not list")
+				if (version in protocols) fail(source, "$context maps protocol of Minecraft $version more than once")
+				protocols[version] = number(protocol, key, "$context protocol", minimum = 1)
+			}
+			minecraft.filterNot(protocols::containsKey).forEach { fail(source, "$context maps no protocol for Minecraft $it") }
+			return protocols
 		}
 
 		private fun artifacts(rows: JsonNode, context: String): List<ReleaseArtifact> {
@@ -115,16 +151,17 @@ object LibraryReleaseReader {
 		}
 
 		private fun versions(row: JsonNode, field: String, context: String): List<MinecraftVersion> {
-			val versions = strings(row, field, context, required = true).map { text ->
-				try {
-					MinecraftVersion.parse(text)
-				} catch (exception: IllegalArgumentException) {
-					fail(source, "$context $field: ${exception.message}")
-				}
-			}
+			val versions = strings(row, field, context, required = true).map { version(it, "$context $field") }
 			duplicates(versions).forEach { fail(source, "$context lists $field $it more than once") }
 			return versions
 		}
+
+		private fun version(text: String, context: String): MinecraftVersion =
+			try {
+				MinecraftVersion.parse(text)
+			} catch (exception: IllegalArgumentException) {
+				fail(source, "$context: ${exception.message}")
+			}
 
 		private fun strings(row: JsonNode, field: String, context: String, required: Boolean): List<String> {
 			val value = row.path(field)

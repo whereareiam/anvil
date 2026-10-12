@@ -38,30 +38,41 @@ source Javadocs. These links use `dev`; select your release tag when checking a 
 
 `releases(context)` returns every release your library can run as `ProtocolRelease` values. Anvil
 reads it to select a library before any library exists, so keep it cheap and free of side effects. A
-release speaks exactly one wire protocol and lists every Minecraft version that speaks it:
+release names the Minecraft edition it implements, lists every version of that edition it speaks, and
+maps each listed version to its wire protocol number:
 
 ```java
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.type.ProtocolFeature;
 
+MinecraftVersion older = MinecraftVersion.parse("1.20.5");
+MinecraftVersion newer = MinecraftVersion.parse("1.20.6");
 ProtocolRelease release = ProtocolRelease.builder()
 		.libraryVersion("2.4.0")
-		.minecraftVersion(MinecraftVersion.parse("1.20.5"))
-		.minecraftVersion(MinecraftVersion.parse("1.20.6"))
-		.verifiedVersion(MinecraftVersion.parse("1.20.6"))
-		.protocolNumber(766)
+		.edition(MinecraftEdition.of("java"))
+		.minecraftVersion(older)
+		.minecraftVersion(newer)
+		.verifiedVersion(newer)
+		.protocolNumber(older, 766)
+		.protocolNumber(newer, 766)
 		.javaVersion(17)
 		.feature(ProtocolFeature.ONLINE_AUTHENTICATION)
 		.build();
 ```
+
+The edition is an opaque identifier that Anvil compares with the edition the servers' platforms
+declare in their version data; a release never serves a server of another edition, even when both
+number a version alike. A release may map its versions to one protocol number or to several, and
+`protocolNumber(version)` returns the number of one listed version.
 
 The library version is your release identifier, such as the client library version. The highest
 listed Minecraft version is the release key returned by `version()`. List a version under
 `verifiedVersion` only when your own live tests run it. `javaVersion` is the minimum Java feature
 version of your client runtime. `ONLINE_AUTHENTICATION` declares that clients of the release can log
 in to online-mode servers; features describe the client and never select capability providers. Each
-Minecraft version may appear in only one of your releases.
+Minecraft version of an edition may appear in only one of your releases.
 
 `release.support(version)` assesses one version: `UNSUPPORTED` when the release does not list it,
 `UNTESTED` for a user-supplied release, `VERIFIED` for a verified version, and `COMPATIBLE`
@@ -86,7 +97,7 @@ with the engine. `ProtocolLibrary.create(PlayerRequest)` receives who logs in, w
 | Group | Content |
 |---|---|
 | `getName()`, `getLogin()` | The player name and its `PlayerLogin`: the authentication mode and either an offline username, an account ID, or a session identity. `getUsername()` returns the offline username, or the name when the login declares none |
-| `getClientVersion()` | The exact Minecraft version the client speaks. Each Minecraft version appears in only one of your releases, so resolve the release from it through your own release data |
+| `getEdition()`, `getClientVersion()` | The edition of the servers the client reaches and the exact Minecraft version it speaks. Each version of an edition appears in only one of your releases, so resolve the release from both through your own release data |
 | `getConnection()` | `GameConnection`: the game listener's address, the optional virtual host the handshake announces, and the optional source address the socket binds to |
 
 A leased login never reaches the library; Anvil replaces it with the leased account first. Your library
@@ -105,10 +116,12 @@ Anvil selects a library and an exact release for each player:
 
 1. The player's `protocolLibrary`, else the scenario's, else the engine's. A player created from an
    account lease uses the library that stores the leased account.
-2. Without a declaration, every installed library that lists the player's Minecraft version is ranked
-   by support level, and the strongest one wins. A tie at the strongest level is refused with a
-   message naming the tied libraries and asking for `protocolLibrary`.
-3. The release is the one that lists the exact version; a neighboring release is never used.
+2. Without a declaration, every installed library with a release of the servers' edition that lists the
+   player's Minecraft version is ranked by support level, and the strongest one wins. A tie at the
+   strongest level is refused with a message naming the tied libraries and asking for `protocolLibrary`.
+3. The release is the one of that edition that lists the exact version; a neighboring release, or a
+   release of another edition listing the same version, is never used. A refusal names the edition
+   and any other editions whose releases list the version.
 4. The support policy applies to that release's level, and the release must be launchable.
 
 An unknown library ID is refused with the installed IDs. The engine checks its own library ID, and
@@ -127,7 +140,9 @@ The channel's `installedCapabilities()` and `unavailableCapabilities()` report w
 native worker installs and why the rest is missing. Composition skips every protocol-backed provider
 whose capability the worker does not install, together with the providers that depend on it, and
 reports the worker's reason, or `not installed by the <library> worker`, when the capability is
-requested. A player without a channel composes every provider that accepts its library.
+requested. A player without a channel composes every provider that accepts its library. Requesting a
+capability whose providers all exclude the player's library through `supportedLibraries()` reports the
+libraries that provide it.
 
 A native worker loads `NativeWorkerProvider` implementations through `ServiceLoader` and calls
 `create(NativeWorkerContext)` once per worker, with the library ID, the release key version, the

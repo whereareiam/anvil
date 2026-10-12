@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.worker.child;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.NativeWorkerContext;
 import me.whereareiam.anvil.protocol.api.worker.NativeBinding;
@@ -34,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class WorkerCapabilityRegistryTest {
 	private static final NativeWorkerContext CONTEXT = NativeWorkerContext.builder()
 			.libraryId("probelib")
+			.edition(MinecraftEdition.of("java"))
 			.version(MinecraftVersion.parse("1.21.11"))
 			.protocolNumber(774)
 			.nativeSessionType(Object.class)

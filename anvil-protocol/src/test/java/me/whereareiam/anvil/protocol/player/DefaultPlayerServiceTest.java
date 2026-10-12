@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.player;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.process.Distribution;
@@ -25,6 +26,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,6 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DefaultPlayerServiceTest {
+	private static final Map<String, MinecraftEdition> EDITIONS = Map.of("server", MinecraftEdition.of("java"));
+
 	@TempDir
 	Path directory;
 
@@ -49,8 +53,8 @@ class DefaultPlayerServiceTest {
 		DefaultPlayerService service = service(options(), first, second);
 		AnvilScenario scenario = scenario();
 
-		service.prepare(scenario);
-		PlayerManager manager = service.open(scenario, new StubScenarioProcesses("server", directory), (player, connectedTo) -> { throw new AssertionError(); }, composer(), true);
+		service.prepare(scenario, EDITIONS);
+		PlayerManager manager = service.open(scenario, EDITIONS, new StubScenarioProcesses("server", directory), (player, connectedTo) -> { throw new AssertionError(); }, composer(), true);
 		assertEquals(0, first.created + second.created, "Preparation must not create libraries");
 
 		create(manager, "Alice", "first");
@@ -67,9 +71,9 @@ class DefaultPlayerServiceTest {
 
 		assertEquals(1, first.closed);
 		assertEquals(1, second.closed);
-		assertThrows(IllegalStateException.class, () -> service.prepare(scenario));
+		assertThrows(IllegalStateException.class, () -> service.prepare(scenario, EDITIONS));
 		assertThrows(IllegalStateException.class,
-				() -> service.open(scenario, new StubScenarioProcesses("server", directory), (player, connectedTo) -> { throw new AssertionError(); }, composer(), true));
+				() -> service.open(scenario, EDITIONS, new StubScenarioProcesses("server", directory), (player, connectedTo) -> { throw new AssertionError(); }, composer(), true));
 	}
 
 	@Test
@@ -80,14 +84,14 @@ class DefaultPlayerServiceTest {
 		DefaultPlayerService tied = service(options(), first, second);
 		DefaultPlayerService engine = service(options().toBuilder().protocolLibrary("second").build(), first, second);
 
-		assertEquals(List.of("first"), sole.scenarioLibraries(scenario()));
-		assertEquals(List.of(), tied.scenarioLibraries(scenario()), "Tied libraries are selectable only by declaration");
-		assertEquals(List.of("first"), tied.scenarioLibraries(scenario().toBuilder().protocolLibrary("first").build()));
-		assertEquals(List.of("second"), engine.scenarioLibraries(scenario()));
+		assertEquals(List.of("first"), sole.scenarioLibraries(scenario(), EDITIONS));
+		assertEquals(List.of(), tied.scenarioLibraries(scenario(), EDITIONS), "Tied libraries are selectable only by declaration");
+		assertEquals(List.of("first"), tied.scenarioLibraries(scenario().toBuilder().protocolLibrary("first").build(), EDITIONS));
+		assertEquals(List.of("second"), engine.scenarioLibraries(scenario(), EDITIONS));
 		assertEquals(0, first.created + second.created, "Ranking libraries must not create them");
 
 		tied.close();
-		assertThrows(IllegalStateException.class, () -> tied.scenarioLibraries(scenario()));
+		assertThrows(IllegalStateException.class, () -> tied.scenarioLibraries(scenario(), EDITIONS));
 		sole.close();
 		engine.close();
 	}
@@ -96,7 +100,7 @@ class DefaultPlayerServiceTest {
 	void closingWhilePlayerCreationHoldsItsManagerNeitherDeadlocksNorLeaksTheLibrary() throws Exception {
 		StubProvider provider = new StubProvider("test");
 		DefaultPlayerService service = service(options(), provider);
-		PlayerManager manager = service.open(scenario(), new StubScenarioProcesses("server", directory), (player, connectedTo) -> { throw new AssertionError(); }, composer(), true);
+		PlayerManager manager = service.open(scenario(), EDITIONS, new StubScenarioProcesses("server", directory), (player, connectedTo) -> { throw new AssertionError(); }, composer(), true);
 		AtomicReference<Thread> closer = new AtomicReference<>();
 		CountDownLatch selecting = new CountDownLatch(1);
 		// Release selection runs while creation holds the manager lock; it waits until close() holds the
@@ -132,7 +136,7 @@ class DefaultPlayerServiceTest {
 
 		assertEquals(0, provider.created);
 		assertEquals(0, provider.closed);
-		assertThrows(IllegalStateException.class, () -> service.prepare(scenario()));
+		assertThrows(IllegalStateException.class, () -> service.prepare(scenario(), EDITIONS));
 	}
 
 	@Test
@@ -141,7 +145,7 @@ class DefaultPlayerServiceTest {
 		IllegalStateException failure = new IllegalStateException("library cleanup failed");
 		provider.onClose = () -> { throw failure; };
 		DefaultPlayerService service = service(options(), provider);
-		PlayerManager manager = service.open(scenario(), new StubScenarioProcesses("server", directory), (player, connectedTo) -> { throw new AssertionError(); }, composer(), true);
+		PlayerManager manager = service.open(scenario(), EDITIONS, new StubScenarioProcesses("server", directory), (player, connectedTo) -> { throw new AssertionError(); }, composer(), true);
 		create(manager, "Alice", null);
 
 		assertSame(failure, assertThrows(IllegalStateException.class, service::close));
@@ -160,7 +164,7 @@ class DefaultPlayerServiceTest {
 		var releases = assertThrows(IllegalArgumentException.class,
 				() -> service(options().toBuilder().protocolRelease("missing", directory.resolve("releases.toml")).build(), provider));
 		var declared = assertThrows(ScenarioValidationException.class,
-				() -> service(options(), provider).prepare(scenario.toBuilder().protocolLibrary("missing").build()));
+				() -> service(options(), provider).prepare(scenario.toBuilder().protocolLibrary("missing").build(), EDITIONS));
 
 		for (var failure : List.of(engine, releases, declared)) {
 			assertTrue(failure.getMessage().contains("'missing'"), failure.getMessage());
@@ -174,7 +178,7 @@ class DefaultPlayerServiceTest {
 		Path releases = directory.resolve("releases.toml");
 		StubProvider provider = new StubProvider("test");
 		DefaultPlayerService service = service(options().toBuilder().protocolRelease("test", releases).build(), provider);
-		PlayerManager manager = service.open(scenario(), new StubScenarioProcesses("server", directory), (player, connectedTo) -> { throw new AssertionError(); }, composer(), true);
+		PlayerManager manager = service.open(scenario(), EDITIONS, new StubScenarioProcesses("server", directory), (player, connectedTo) -> { throw new AssertionError(); }, composer(), true);
 
 		create(manager, "Alice", null);
 
@@ -260,8 +264,9 @@ class DefaultPlayerServiceTest {
 		public @NotNull List<ProtocolRelease> releases(@NotNull ProtocolLibraryContext context) {
 			onReleases.run();
 			MinecraftVersion version = MinecraftVersion.parse("1.21.11");
-			return List.of(ProtocolRelease.builder().libraryVersion(id).minecraftVersion(version).verifiedVersion(version)
-					.protocolNumber(774).javaVersion(21).build());
+			return List.of(ProtocolRelease.builder().libraryVersion(id).edition(MinecraftEdition.of("java"))
+					.minecraftVersion(version).verifiedVersion(version)
+					.protocolNumber(version, 774).javaVersion(21).build());
 		}
 
 		@Override

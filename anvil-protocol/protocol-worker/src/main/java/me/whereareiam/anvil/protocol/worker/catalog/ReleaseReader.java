@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.type.ProtocolFeature;
@@ -20,24 +21,44 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
  * Reads and validates one release data file of a protocol library in the schema of {@code <id>-releases.toml}.
  *
- * <p>Each {@code [[release]]} row declares {@code version}, {@code module}, {@code protocol}, {@code minecraft},
- * {@code verified}, {@code java}, optional {@code features} and a non-empty {@code [[release.artifact]]} closure
- * of {@code module}, {@code url} and {@code sha256}. Within one file, release versions and Minecraft versions are
- * unique, verified versions are listed in {@code minecraft}, the closure includes the release module and has
- * unique modules and file names, and a pin is empty or 64 lower-case hexadecimal digits. A release with an empty
+ * <p>Each {@code [[release]]} row declares {@code version}, {@code edition}, {@code module}, {@code protocol},
+ * {@code minecraft}, {@code verified}, {@code java}, optional {@code features} and a non-empty
+ * {@code [[release.artifact]]} closure of {@code module}, {@code url} and {@code sha256}. The edition is an opaque
+ * identifier that selection only compares with a server's. {@code protocol} is either one number that every listed
+ * version speaks or a {@code [release.protocol]} table that maps each listed version to its own number:</p>
+ *
+ * <pre>{@code
+ * [[release]]
+ * version = "2.0.0"
+ * edition = "example"
+ * module = "org.example:client:2.0.0"
+ * minecraft = ["1.20.0", "1.20.10"]
+ * verified = []
+ * java = 8
+ *
+ * [release.protocol]
+ * "1.20.0" = 589
+ * "1.20.10" = 594
+ * }</pre>
+ *
+ * <p>Within one file, release versions and release keys are unique, a Minecraft version belongs to at most one
+ * release of its edition, verified versions are listed in {@code minecraft}, the closure includes the release module
+ * and has unique modules and file names, and a pin is empty or 64 lower-case hexadecimal digits. A release with an empty
  * pin is listed but cannot be launched until it is pinned. Build-logic reads the same schema when it compiles and
  * checks segments.</p>
  */
 @RequiredArgsConstructor
 final class ReleaseReader {
-	private static final Set<String> RELEASE_FIELDS = Set.of("version", "module", "protocol", "minecraft", "verified", "java", "features", "artifact");
+	private static final Set<String> RELEASE_FIELDS = Set.of("version", "edition", "module", "protocol", "minecraft", "verified", "java", "features", "artifact");
 	private static final Set<String> ARTIFACT_FIELDS = Set.of("module", "url", "sha256");
 	private static final Pattern MODULE = Pattern.compile("[^:\\s]+:[^:\\s]+:[^:\\s]+");
 	private static final Pattern ARTIFACT_MODULE = Pattern.compile("[^:\\s]+:[^:\\s]+:[^:\\s]+(:[^:\\s]+)?");
@@ -83,13 +104,17 @@ final class ReleaseReader {
 
 			List<ReleaseDefinition> releases = new ArrayList<>();
 			Set<String> versions = new HashSet<>();
-			Set<MinecraftVersion> minecraft = new HashSet<>();
+			Set<MinecraftVersion> keys = new HashSet<>();
+			Set<String> minecraft = new HashSet<>();
 			for (int index = 0; index < rows.size(); index++) {
 				ReleaseDefinition definition = release(rows.get(index), "release #" + (index + 1));
 				ProtocolRelease release = definition.getRelease();
 				if (!versions.add(release.getLibraryVersion())) fail("declares release " + release.getLibraryVersion() + " more than once");
 				for (MinecraftVersion version : release.getMinecraftVersions())
-					if (!minecraft.add(version)) fail("assigns Minecraft " + version + " to more than one release");
+					if (!minecraft.add(release.getEdition() + " " + version))
+						fail("assigns " + release.getEdition() + " Minecraft " + version + " to more than one release");
+				// Segments name a release by its key alone, whatever its edition.
+				if (!keys.add(release.version())) fail("keys more than one release by Minecraft " + release.version());
 
 				releases.add(definition);
 			}
@@ -116,15 +141,51 @@ final class ReleaseReader {
 
 			ProtocolRelease release = ProtocolRelease.builder()
 					.libraryVersion(version)
+					.edition(edition(row, context))
 					.minecraftVersions(minecraft)
 					.verifiedVersions(verified)
-					.protocolNumber(number(row, "protocol", context, 1))
+					.protocolNumbers(protocols(row, minecraft, context))
 					.javaVersion(number(row, "java", context, MINIMUM_JAVA))
 					.features(features(row, context))
 					.additional(additional)
 					.launchRefusal(launchRefusal(version, artifacts))
 					.build();
 			return ReleaseDefinition.builder().release(release).module(module).artifacts(artifacts).build();
+		}
+
+		private MinecraftEdition edition(JsonNode row, String context) {
+			String edition = text(row, "edition", context);
+			try {
+				return MinecraftEdition.of(edition);
+			} catch (IllegalArgumentException exception) {
+				throw new IllegalArgumentException(source + ": " + context + " edition: " + exception.getMessage(), exception);
+			}
+		}
+
+		/**
+		 * Reads the protocol number of every listed version: one number shared by all of them, or a table with one
+		 * number per listed version.
+		 */
+		private Map<MinecraftVersion, Integer> protocols(JsonNode row, List<MinecraftVersion> minecraft, String context) {
+			JsonNode protocol = row.path("protocol");
+			Map<MinecraftVersion, Integer> protocols = new LinkedHashMap<>();
+			if (!protocol.isObject()) {
+				int shared = number(row, "protocol", context, 1);
+				minecraft.forEach(version -> protocols.put(version, shared));
+				return protocols;
+			}
+
+			for (var entry : protocol.properties()) {
+				MinecraftVersion version = version(entry.getKey(), context + " protocol");
+				if (!minecraft.contains(version)) fail(context + " maps protocol of Minecraft " + version + ", which it does not list");
+				if (protocols.containsKey(version)) fail(context + " maps protocol of Minecraft " + version + " more than once");
+
+				protocols.put(version, number(protocol, entry.getKey(), context + " protocol", 1));
+			}
+			for (MinecraftVersion version : minecraft)
+				if (!protocols.containsKey(version)) fail(context + " maps no protocol for Minecraft " + version);
+
+			return protocols;
 		}
 
 		private @Nullable String launchRefusal(String version, List<ReleaseArtifact> artifacts) {
@@ -220,18 +281,21 @@ final class ReleaseReader {
 		private List<MinecraftVersion> versions(JsonNode row, String field, String context) {
 			List<MinecraftVersion> versions = new ArrayList<>();
 			for (String text : strings(row, field, context, true)) {
-				MinecraftVersion version;
-				try {
-					version = MinecraftVersion.parse(text);
-				} catch (IllegalArgumentException exception) {
-					throw new IllegalArgumentException(source + ": " + context + " " + field + ": " + exception.getMessage(), exception);
-				}
+				MinecraftVersion version = version(text, context + " " + field);
 				if (versions.contains(version)) fail(context + " lists " + field + " " + version + " more than once");
 
 				versions.add(version);
 			}
 
 			return versions;
+		}
+
+		private MinecraftVersion version(String text, String context) {
+			try {
+				return MinecraftVersion.parse(text);
+			} catch (IllegalArgumentException exception) {
+				throw new IllegalArgumentException(source + ": " + context + ": " + exception.getMessage(), exception);
+			}
 		}
 
 		private List<String> strings(JsonNode row, String field, String context, boolean required) {

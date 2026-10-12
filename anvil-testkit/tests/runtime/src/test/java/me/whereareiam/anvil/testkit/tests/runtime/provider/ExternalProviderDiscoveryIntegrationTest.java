@@ -2,6 +2,7 @@ package me.whereareiam.anvil.testkit.tests.runtime.provider;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.player.PlayerState;
@@ -40,6 +41,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -50,6 +52,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * Verifies external protocol-library selection and capability validation without launching Minecraft.
  */
 class ExternalProviderDiscoveryIntegrationTest {
+	private static final Map<String, MinecraftEdition> EDITIONS = Map.of("server", MinecraftEdition.of("java"));
+
 	@TempDir
 	Path temporary;
 
@@ -68,8 +72,8 @@ class ExternalProviderDiscoveryIntegrationTest {
 			List<String> composed = new ArrayList<>();
 			try (var players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(), options(), artifacts())) {
 				AnvilScenario scenario = scenario();
-				players.prepare(scenario);
-				PlayerManager manager = players.open(scenario, new Processes(), (player, connectedTo) -> observation(player), composer(composed), true);
+				players.prepare(scenario, EDITIONS);
+				PlayerManager manager = players.open(scenario, EDITIONS, new Processes(), (player, connectedTo) -> observation(player), composer(composed), true);
 
 				var tie = assertThrows(ScenarioValidationException.class, () -> manager.create("Undeclared"));
 				assertTrue(tie.getMessage().contains("[mcprotocol, fixture]"), tie.getMessage());
@@ -80,14 +84,15 @@ class ExternalProviderDiscoveryIntegrationTest {
 						() -> manager.create(PlayerOptions.builder().name("Unknown").protocolLibrary("missing").build()));
 				assertTrue(unknown.getMessage().contains("Installed: [mcprotocol, fixture]"), unknown.getMessage());
 
-				PlayerManager scoped = players.open(scenario.toBuilder().protocolLibrary("fixture").build(), new Processes(),
+				PlayerManager scoped = players.open(scenario.toBuilder().protocolLibrary("fixture").build(), EDITIONS, new Processes(),
 						(player, connectedTo) -> observation(player), composer(composed), true);
 				scoped.create("ScenarioChoice");
 			}
 
 			try (var players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(),
 					options().toBuilder().protocolLibrary("fixture").build(), artifacts())) {
-				players.open(scenario(), new Processes(), (player, connectedTo) -> observation(player), composer(composed), true).create("EngineChoice");
+				players.open(scenario(), EDITIONS, new Processes(), (player, connectedTo) -> observation(player), composer(composed), true)
+						.create("EngineChoice");
 			}
 
 			assertEquals(List.of("Declared:fixture", "ScenarioChoice:fixture", "EngineChoice:fixture"), composed);

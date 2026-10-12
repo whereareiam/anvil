@@ -16,9 +16,10 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface WorkerClient {
 	/**
-	 * Returns the wire-protocol number of the loaded release, read from the release at run time.
+	 * Returns the wire-protocol number of the loaded release's key version, read from the release at run time. The
+	 * worker refuses to start unless it equals the number the release data maps the key version to.
 	 *
-	 * @return native protocol number
+	 * @return native protocol number of the release key
 	 */
 	int protocolNumber();
 

@@ -121,6 +121,15 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   else the one installed library whose release supports its Minecraft version most strongly; a tie requires an
   explicit choice. A player created from a lease uses the leased account's library instead. Launcher composition
   creates one capability runtime per selected library.
+- Editions are platform-agnostic: `api.model.MinecraftEdition` is an opaque identifier compared only for equality,
+  with no constants or default, and Java code never names an edition; the identifiers appear only in each family's
+  data files. A platform declares `edition` in its version data; planning records it in `ProcessPlan` and the
+  launcher passes `PlatformPlan.editions()` to the player service. Each protocol release row declares its own
+  `edition` (a library is not single-edition) and maps its versions to protocol numbers, `protocol = N` or a
+  `[release.protocol]` table, read by `ProtocolRelease.protocolNumber(MinecraftVersion)`. Selection compares
+  (edition, version): only releases of the reachable servers' edition match, across all installed libraries;
+  release keys stay unique within a library because segments name them. A protocol-backed capability whose
+  providers all exclude the player's library reports the libraries that provide it.
 - Public capabilities extend `PlayerCapability` or `ProcessCapability`, both rooted in the neutral
   `Capability` contract. Dependencies remain within the same owner. Neutral player providers use
   shared observations and dependencies. Protocol-backed providers declare library support through
@@ -212,7 +221,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   an exact feature version. Scenario listener binding and LAN permission belong to `NetworkPolicy`,
   alongside exposure and access policy.
 - Processes run on LTS releases only (11, 17, 21, 25, then every fourth); Java 8 is not one of them.
-  Each provider owns `<platform>-versions.toml` (Java rows, `[agent] minimumJava`, verified and known
+  Each provider owns `<platform>-versions.toml` (`edition`, Java rows, `[agent] minimumJava`, verified and known
   versions) and exposes it through `PlatformProvider.versionData()`; platform-planning reads it, so
   platform-api carries no parser. The agent minimum raises the effective minimum and the default LTS;
   a default it pushes above the row maximum is refused. A maximum is refused unless the row names a
@@ -399,7 +408,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   settings control personal IDE behavior, while runtime options stay in project/scenario definitions.
 - Adding a Minecraft version follows the contributing guide `docs/content/contributing/minecraft-versions`.
   Add the version to the `mcprotocol-releases.toml` release that speaks its protocol, or a `[[release]]` row
-  for a new protocol (version, module, protocol, Minecraft versions, verified versions, Java, features), and
+  for a new protocol (version, edition, module, protocol, Minecraft versions, verified versions, Java, features), and
   pin its closure with `pinLibraryReleases`. Add a segment only to a side whose newest segment fails
   `checkSegmentLinkage` against the new closure, named after the new release key; a segment folder must name
   a release key, so raising a key renames that segment. Add the release to `McProtocolWorkerContractTest`,

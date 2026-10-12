@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.worker.catalog;
 
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
@@ -23,9 +24,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ReleaseCatalogTest {
+	private static final MinecraftEdition JAVA = MinecraftEdition.of("java");
 	private static final String SNAPSHOT = """
 			[[release]]
 			version = "1.21.11-20260512.221357-18"
+			edition = "java"
 			module = "example.probe:protocol:1.21.11-20260512.221357-18"
 			protocol = 774
 			minecraft = ["1.21.11"]
@@ -51,8 +54,8 @@ class ReleaseCatalogTest {
 		assertTrue(releases.stream().noneMatch(ProtocolRelease::isAdditional));
 		assertEquals("ProbeLib release 1.20.4-1 has no pinned checksum for example.probe:protocol:1.20.4-1; run `./gradlew pinProbeReleases`",
 				releases.getFirst().getLaunchRefusal());
-		IllegalArgumentException missing = assertThrows(IllegalArgumentException.class, () -> catalog.require(MinecraftVersion.parse("1.19.4")));
-		assertTrue(missing.getMessage().startsWith("No ProbeLib release speaks Minecraft 1.19.4"), missing.getMessage());
+		IllegalArgumentException missing = assertThrows(IllegalArgumentException.class, () -> catalog.require(JAVA, MinecraftVersion.parse("1.19.4")));
+		assertTrue(missing.getMessage().startsWith("No ProbeLib release speaks java Minecraft 1.19.4"), missing.getMessage());
 		assertThrows(UnsupportedOperationException.class, () -> catalog.releases().clear());
 	}
 
@@ -64,7 +67,7 @@ class ReleaseCatalogTest {
 
 		assertEquals(1, notices.size());
 		assertTrue(notices.getFirst().startsWith("[Anvil] Info: additional ProbeLib release 1.21.11-20260512.221357-18"));
-		assertSame(builtIn, catalog.require(builtIn.getRelease().version()));
+		assertSame(builtIn, catalog.require(JAVA, builtIn.getRelease().version()));
 		assertFalse(catalog.releases().getFirst().isAdditional());
 	}
 
@@ -79,7 +82,7 @@ class ReleaseCatalogTest {
 		ReleaseCatalog catalog = new ReleaseCatalog(ProbeLibrary.LIBRARY, List.of(builtIn), copy, notices::add);
 
 		assertEquals(1, notices.size(), notices.toString());
-		assertSame(builtIn, catalog.require(builtIn.getRelease().version()));
+		assertSame(builtIn, catalog.require(JAVA, builtIn.getRelease().version()));
 		assertTrue(catalog.releases().getFirst().getLaunchRefusal().endsWith("pinProbeReleases`"),
 				catalog.releases().getFirst().getLaunchRefusal());
 	}
@@ -108,7 +111,26 @@ class ReleaseCatalogTest {
 		String overlapping = SNAPSHOT.replace("version = \"1.21.11-20260512.221357-18\"", "version = \"1.21.11-other\"");
 		IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
 				() -> new ReleaseCatalog(ProbeLibrary.LIBRARY, List.of(builtIn), read(overlapping, true), ignored -> { }));
-		assertTrue(failure.getMessage().contains("both list Minecraft 1.21.11"), failure.getMessage());
+		assertTrue(failure.getMessage().contains("both list java Minecraft 1.21.11"), failure.getMessage());
+	}
+
+	@Test
+	void resolvesAVersionThroughTheReleaseOfTheRequestedEdition() {
+		ReleaseDefinition java = read(SNAPSHOT, false).getFirst();
+		String otherEdition = SNAPSHOT.replace("version = \"1.21.11-20260512.221357-18\"", "version = \"2.0.0\"")
+				.replace("edition = \"java\"", "edition = \"other\"")
+				.replace("minecraft = [\"1.21.11\"]", "minecraft = [\"1.21.11\", \"1.21.12\"]");
+		ReleaseDefinition other = read(otherEdition, false).getFirst();
+		ReleaseCatalog catalog = new ReleaseCatalog(ProbeLibrary.LIBRARY, List.of(java, other), List.of(), ignored -> { });
+
+		assertSame(java, catalog.require(JAVA, MinecraftVersion.parse("1.21.11")));
+		assertSame(other, catalog.require(MinecraftEdition.of("other"), MinecraftVersion.parse("1.21.11")));
+		assertThrows(IllegalArgumentException.class, () -> catalog.require(JAVA, MinecraftVersion.parse("1.21.12")));
+
+		String sameKey = otherEdition.replace(", \"1.21.12\"", "");
+		IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> new ReleaseCatalog(
+				ProbeLibrary.LIBRARY, List.of(java, read(sameKey, false).getFirst()), List.of(), ignored -> { }));
+		assertTrue(failure.getMessage().contains("are both keyed by Minecraft 1.21.11"), failure.getMessage());
 	}
 
 	@Test

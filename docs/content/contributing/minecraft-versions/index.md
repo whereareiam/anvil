@@ -16,8 +16,9 @@ One `[[release]]` row describes one MCProtocolLib build, which speaks one wire p
 | Field | Content |
 |---|---|
 | `version` | MCProtocolLib release identifier; for a snapshot build, its unique timestamped version, such as `1.21.11-20260512.221357-18` |
+| `edition` | Minecraft edition the release implements; `java` on every MCProtocolLib row |
 | `module` | The release's `group:name:version` coordinate, against which segments compile |
-| `protocol` | Wire protocol number |
+| `protocol` | Wire protocol number of every listed version, or a `[release.protocol]` table before the artifacts that maps each listed version to its own number |
 | `minecraft` | Every Minecraft version speaking that protocol; the highest is the release key |
 | `verified` | The versions the live matrix runs; nothing else |
 | `java` | Minimum Java feature version of the release's runtime, at least 8 |
@@ -25,7 +26,7 @@ One `[[release]]` row describes one MCProtocolLib build, which speaks one wire p
 
 When the new Minecraft version speaks the protocol of an existing release and that build already
 supports it, add the version to the release's `minecraft` list instead of adding a row. Each Minecraft
-version belongs to exactly one release. Adding a version above a release's key changes the key; a
+version of an edition belongs to exactly one release, and each release key to one release. Adding a version above a release's key changes the key; a
 segment named after the old key must then be renamed, folder and package, because every segment
 names a release key.
 

@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.player;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.process.Distribution;
@@ -25,6 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProtocolLibrarySelectorTest {
 	private static final MinecraftVersion VERSION = MinecraftVersion.parse("1.21.11");
+	private static final MinecraftEdition JAVA = MinecraftEdition.of("java");
+	private static final MinecraftEdition OTHER = MinecraftEdition.of("other");
 
 	private final Map<String, List<ProtocolRelease>> releases = new LinkedHashMap<>();
 	private final List<String> notices = new ArrayList<>();
@@ -36,9 +39,9 @@ class ProtocolLibrarySelectorTest {
 		library("engine", verified());
 		ProtocolLibrarySelector selector = selector("engine", SupportPolicy.LENIENT);
 
-		assertEquals("player", selector.select(player("player"), scenario("scenario", null), VERSION).library());
-		assertEquals("scenario", selector.select(player(null), scenario("scenario", null), VERSION).library());
-		assertEquals("engine", selector.select(player(null), scenario(null, null), VERSION).library());
+		assertEquals("player", selector.select(player("player"), scenario("scenario", null), JAVA, VERSION).library());
+		assertEquals("scenario", selector.select(player(null), scenario("scenario", null), JAVA, VERSION).library());
+		assertEquals("engine", selector.select(player(null), scenario(null, null), JAVA, VERSION).library());
 	}
 
 	@Test
@@ -46,7 +49,8 @@ class ProtocolLibrarySelectorTest {
 		library("verified", verified());
 		library("compatible", compatible());
 
-		Selection selection = selector(null, SupportPolicy.LENIENT).select(player("compatible"), scenario(null, null), VERSION);
+		Selection selection = selector(null, SupportPolicy.LENIENT)
+				.select(player("compatible"), scenario(null, null), JAVA, VERSION);
 
 		assertEquals("compatible", selection.library());
 		assertEquals(SupportLevel.COMPATIBLE, selection.level());
@@ -59,7 +63,7 @@ class ProtocolLibrarySelectorTest {
 		ProtocolLibrarySelector selector = selector(null, SupportPolicy.LENIENT);
 
 		var failure = assertThrows(ScenarioValidationException.class,
-				() -> selector.select(player("missing"), scenario(null, null), VERSION));
+				() -> selector.select(player("missing"), scenario(null, null), JAVA, VERSION));
 
 		assertTrue(failure.getMessage().contains("unknown protocol library 'missing'"), failure.getMessage());
 		assertTrue(failure.getMessage().contains("Installed: [first, second]"), failure.getMessage());
@@ -70,11 +74,11 @@ class ProtocolLibrarySelectorTest {
 		library("installed", verified());
 
 		var scenario = assertThrows(ScenarioValidationException.class,
-				() -> selector(null, SupportPolicy.LENIENT).validate(scenario("missing", null)));
+				() -> selector(null, SupportPolicy.LENIENT).validate(scenario("missing", null), Map.of()));
 
 		assertTrue(scenario.getMessage().startsWith("Scenario 'versions' selects unknown protocol library 'missing'"));
 		assertTrue(scenario.getMessage().endsWith("Installed: [installed]"));
-		selector(null, SupportPolicy.LENIENT).validate(scenario("installed", null));
+		selector(null, SupportPolicy.LENIENT).validate(scenario("installed", null), Map.of());
 	}
 
 	@Test
@@ -84,7 +88,7 @@ class ProtocolLibrarySelectorTest {
 		library("verified", verified());
 		library("other-version", release("other", "1.20.6", false, false));
 
-		Selection selection = selector(null, SupportPolicy.LENIENT).select(player(null), scenario(null, null), VERSION);
+		Selection selection = selector(null, SupportPolicy.LENIENT).select(player(null), scenario(null, null), JAVA, VERSION);
 
 		assertEquals("verified", selection.library());
 		assertEquals(SupportLevel.VERIFIED, selection.level());
@@ -99,7 +103,7 @@ class ProtocolLibrarySelectorTest {
 		library("weaker", untested());
 
 		var failure = assertThrows(ScenarioValidationException.class,
-				() -> selector(null, SupportPolicy.LENIENT).select(player(null), scenario(null, null), VERSION));
+				() -> selector(null, SupportPolicy.LENIENT).select(player(null), scenario(null, null), JAVA, VERSION));
 
 		assertTrue(failure.getMessage().contains("[first, second]"), failure.getMessage());
 		assertTrue(failure.getMessage().contains("COMPATIBLE"), failure.getMessage());
@@ -112,12 +116,53 @@ class ProtocolLibrarySelectorTest {
 		ProtocolLibrarySelector selector = selector(null, SupportPolicy.LENIENT);
 
 		var automatic = assertThrows(ScenarioValidationException.class,
-				() -> selector.select(player(null), scenario(null, null), VERSION));
+				() -> selector.select(player(null), scenario(null, null), JAVA, VERSION));
 		var explicit = assertThrows(ScenarioValidationException.class,
-				() -> selector.select(player("old"), scenario(null, null), VERSION));
+				() -> selector.select(player("old"), scenario(null, null), JAVA, VERSION));
 
-		assertTrue(automatic.getMessage().startsWith("No installed protocol library supports Minecraft 1.21.11"));
-		assertTrue(explicit.getMessage().contains("does not support Minecraft 1.21.11. Supported: [1.20.6]"));
+		assertTrue(automatic.getMessage().startsWith("No installed protocol library supports java Minecraft 1.21.11"));
+		assertTrue(explicit.getMessage().contains("does not support java Minecraft 1.21.11. Supported java versions: [1.20.6]"),
+				explicit.getMessage());
+	}
+
+	@Test
+	void aServerNeverSelectsAReleaseOfAnotherEditionThatListsItsVersion() {
+		library("other", release("other", OTHER, "1.21", true, false));
+		library("java", release("java", "1.21", false, false));
+		ProtocolLibrarySelector selector = selector(null, SupportPolicy.LENIENT);
+		MinecraftVersion version = MinecraftVersion.parse("1.21");
+
+		Selection selection = selector.select(player(null), scenario(null, null), JAVA, version);
+		assertEquals("java", selection.library());
+		assertEquals(JAVA, selection.release().getEdition());
+		assertEquals("other", selector.select(player(null), scenario(null, null), OTHER, version).library());
+
+		var declared = assertThrows(ScenarioValidationException.class,
+				() -> selector.select(player("other"), scenario(null, null), JAVA, version));
+		assertEquals("Protocol library 'other' selected for player 'Alice' does not support java Minecraft 1.21 (releases list "
+				+ "Minecraft 1.21 only for the editions [other], which never reach java servers). Supported java versions: []",
+				declared.getMessage());
+
+		releases.remove("java");
+		var ranked = assertThrows(ScenarioValidationException.class,
+				() -> selector(null, SupportPolicy.LENIENT).select(player(null), scenario(null, null), JAVA, version));
+		assertTrue(ranked.getMessage().startsWith("No installed protocol library supports java Minecraft 1.21 for player 'Alice' "
+				+ "(releases list Minecraft 1.21 only for the editions [other]"), ranked.getMessage());
+	}
+
+	@Test
+	void scenarioLibrariesRankOnlyReleasesOfEachServersEdition() {
+		library("other", release("other", OTHER, "1.21.11", true, false));
+		library("java", compatible());
+		AnvilScenario scenario = scenario(null, null).toBuilder()
+				.server(server("java-server", Distribution.remote("1.21.11", "1")))
+				.server(server("other-server", Distribution.remote("1.21.11", "1")))
+				.build();
+		ProtocolLibrarySelector selector = selector(null, SupportPolicy.LENIENT);
+
+		assertEquals(List.of("java", "other"),
+				selector.scenarioLibraries(scenario, Map.of("java-server", JAVA, "other-server", OTHER)));
+		assertEquals(List.of("java"), selector.scenarioLibraries(scenario, Map.of("java-server", JAVA, "other-server", JAVA)));
 	}
 
 	@Test
@@ -125,14 +170,15 @@ class ProtocolLibrarySelectorTest {
 		library("untested", untested());
 
 		var engine = assertThrows(ScenarioValidationException.class,
-				() -> selector(null, SupportPolicy.STRICT).select(player(null), scenario(null, null), VERSION));
+				() -> selector(null, SupportPolicy.STRICT).select(player(null), scenario(null, null), JAVA, VERSION));
 		var scenario = assertThrows(ScenarioValidationException.class,
-				() -> selector(null, SupportPolicy.LENIENT).select(player(null), scenario(null, SupportPolicy.STRICT), VERSION));
+				() -> selector(null, SupportPolicy.LENIENT)
+						.select(player(null), scenario(null, SupportPolicy.STRICT), JAVA, VERSION));
 
 		for (var failure : List.of(engine, scenario))
 			assertTrue(failure.getMessage().contains("STRICT support policy refuses protocol library 'untested'"), failure.getMessage());
 		assertEquals("untested",
-				selector(null, SupportPolicy.STRICT).select(player(null), scenario(null, SupportPolicy.LENIENT), VERSION).library());
+				selector(null, SupportPolicy.STRICT).select(player(null), scenario(null, SupportPolicy.LENIENT), JAVA, VERSION).library());
 	}
 
 	@Test
@@ -141,9 +187,9 @@ class ProtocolLibrarySelectorTest {
 		library("compatible", compatible());
 		ProtocolLibrarySelector selector = selector(null, SupportPolicy.LENIENT);
 
-		selector.select(player("untested"), scenario(null, null), VERSION);
-		selector.select(player("untested"), scenario(null, null), VERSION);
-		selector.select(player("compatible"), scenario(null, null), VERSION);
+		selector.select(player("untested"), scenario(null, null), JAVA, VERSION);
+		selector.select(player("untested"), scenario(null, null), JAVA, VERSION);
+		selector.select(player("compatible"), scenario(null, null), JAVA, VERSION);
 
 		assertEquals(2, notices.size(), notices.toString());
 		assertTrue(notices.getFirst().startsWith("[Anvil] Warning: protocol library 'untested' release 'untested-release'"));
@@ -167,14 +213,15 @@ class ProtocolLibrarySelectorTest {
 				.build();
 
 		// Tied libraries and releases the policy refuses are selectable only by declaration.
-		assertEquals(List.of("verified", "additional"), selector(null, SupportPolicy.LENIENT).scenarioLibraries(scenario));
-		assertEquals(List.of("verified"), selector(null, SupportPolicy.STRICT).scenarioLibraries(scenario));
+		Map<String, MinecraftEdition> editions = editions(scenario);
+		assertEquals(List.of("verified", "additional"), selector(null, SupportPolicy.LENIENT).scenarioLibraries(scenario, editions));
+		assertEquals(List.of("verified"), selector(null, SupportPolicy.STRICT).scenarioLibraries(scenario, editions));
 		assertEquals(List.of("verified"), selector(null, SupportPolicy.LENIENT)
-				.scenarioLibraries(scenario.toBuilder().supportPolicy(SupportPolicy.STRICT).build()));
-		assertEquals(List.of("compatible"), selector("compatible", SupportPolicy.LENIENT).scenarioLibraries(scenario));
+				.scenarioLibraries(scenario.toBuilder().supportPolicy(SupportPolicy.STRICT).build(), editions));
+		assertEquals(List.of("compatible"), selector("compatible", SupportPolicy.LENIENT).scenarioLibraries(scenario, editions));
 		assertEquals(List.of("unreached"), selector("compatible", SupportPolicy.LENIENT)
-				.scenarioLibraries(scenario.toBuilder().protocolLibrary("unreached").build()));
-		assertTrue(selector(null, SupportPolicy.LENIENT).scenarioLibraries(scenario(null, null)).isEmpty());
+				.scenarioLibraries(scenario.toBuilder().protocolLibrary("unreached").build(), editions));
+		assertTrue(selector(null, SupportPolicy.LENIENT).scenarioLibraries(scenario(null, null), Map.of()).isEmpty());
 	}
 
 	@Test
@@ -186,14 +233,14 @@ class ProtocolLibrarySelectorTest {
 				.build();
 		ProtocolLibrarySelector selector = selector(null, SupportPolicy.LENIENT);
 
-		selector.validate(scenario);
-		var selected = assertThrows(ScenarioValidationException.class, () -> selector.select(player(null), scenario, VERSION));
+		selector.validate(scenario, editions(scenario));
+		var selected = assertThrows(ScenarioValidationException.class, () -> selector.select(player(null), scenario, JAVA, VERSION));
 
 		assertEquals(List.of("[Anvil] Warning: scenario 'versions' cannot create players for server 'current' unless they "
 				+ "declare another protocol library: " + refusal), notices);
 		assertEquals("Cannot create player 'Alice': " + refusal, selected.getMessage());
 		notices.clear();
-		selector.validate(scenario.toBuilder().protocolLibrary("pinned").build());
+		selector.validate(scenario.toBuilder().protocolLibrary("pinned").build(), editions(scenario));
 		assertTrue(notices.isEmpty(), notices.toString());
 	}
 
@@ -205,7 +252,7 @@ class ProtocolLibrarySelectorTest {
 				.server(server("game", Distribution.remote("1.21.11", "1")))
 				.build();
 
-		selector(null, SupportPolicy.LENIENT).validate(serversOnly);
+		selector(null, SupportPolicy.LENIENT).validate(serversOnly, editions(serversOnly));
 
 		assertEquals(2, notices.size(), notices.toString());
 		assertTrue(notices.stream().allMatch(notice -> notice.startsWith("[Anvil] Warning: ")), notices.toString());
@@ -219,9 +266,10 @@ class ProtocolLibrarySelectorTest {
 				.build();
 		ProtocolLibrarySelector selector = selector(null, SupportPolicy.LENIENT);
 
-		selector.validate(scenario);
-		Selection first = selector.select(player("pinned"), scenario, VERSION);
-		Selection second = selector.select(PlayerOptions.builder().name("Bob").protocolLibrary("pinned").build(), scenario, VERSION);
+		selector.validate(scenario, editions(scenario));
+		Selection first = selector.select(player("pinned"), scenario, JAVA, VERSION);
+		Selection second = selector.select(PlayerOptions.builder().name("Bob").protocolLibrary("pinned").build(), scenario,
+				JAVA, VERSION);
 
 		assertEquals("pinned", first.library());
 		assertEquals("pinned", second.library());
@@ -262,11 +310,16 @@ class ProtocolLibrarySelectorTest {
 	}
 
 	private ProtocolRelease release(String name, String version, boolean verified, boolean additional) {
+		return release(name, JAVA, version, verified, additional);
+	}
+
+	private ProtocolRelease release(String name, MinecraftEdition edition, String version, boolean verified, boolean additional) {
 		MinecraftVersion parsed = MinecraftVersion.parse(version);
 		var builder = ProtocolRelease.builder()
 				.libraryVersion(name + "-release")
+				.edition(edition)
 				.minecraftVersion(parsed)
-				.protocolNumber(774)
+				.protocolNumber(parsed, 774)
 				.javaVersion(21)
 				.additional(additional);
 		if (verified) builder.verifiedVersion(parsed);
@@ -280,6 +333,13 @@ class ProtocolLibrarySelectorTest {
 
 	private MinecraftServer server(String name, Distribution distribution) {
 		return MinecraftServer.builder().name(name).platform("test").distribution(distribution).build();
+	}
+
+	private static Map<String, MinecraftEdition> editions(AnvilScenario scenario) {
+		Map<String, MinecraftEdition> editions = new LinkedHashMap<>();
+		scenario.getServers().forEach(server -> editions.put(server.getName(), JAVA));
+
+		return editions;
 	}
 
 	private AnvilScenario scenario(@Nullable String library, @Nullable SupportPolicy policy) {

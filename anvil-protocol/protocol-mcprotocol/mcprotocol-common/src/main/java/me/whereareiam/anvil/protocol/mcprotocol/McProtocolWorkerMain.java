@@ -35,7 +35,7 @@ public final class McProtocolWorkerMain {
 	/**
 	 * Verifies the segments and the loaded release's protocol before constructing or announcing the worker.
 	 *
-	 * @param arguments release key version and expected native protocol number
+	 * @param arguments release key version, the release's edition and the native protocol number of the key version
 	 * @throws Exception when the loaded runtime does not match or the worker fails
 	 */
 	@SuppressWarnings("unchecked")

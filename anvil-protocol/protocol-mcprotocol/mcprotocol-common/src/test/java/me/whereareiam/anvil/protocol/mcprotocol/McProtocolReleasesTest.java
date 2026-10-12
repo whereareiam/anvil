@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol;
 
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
@@ -22,9 +23,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class McProtocolReleasesTest {
+	private static final MinecraftEdition JAVA = MinecraftEdition.of("java");
+
 	private static final String SNAPSHOT = """
 			[[release]]
 			version = "1.21.11-20260512.221357-18"
+			edition = "java"
 			module = "org.geysermc.mcprotocollib:protocol:1.21.11-20260512.221357-18"
 			protocol = 774
 			minecraft = ["1.21.11"]
@@ -52,12 +56,14 @@ class McProtocolReleasesTest {
 		assertEquals(List.of("1.18.2", "1.21.1", "1.21.11", "26.1.2"),
 				releases.stream().map(release -> release.version().toString()).toList());
 		for (ProtocolRelease release : releases) {
-			assertEquals(protocols.get(release.version().toString()), release.getProtocolNumber());
+			assertEquals(JAVA, release.getEdition());
+			for (MinecraftVersion version : release.getMinecraftVersions())
+				assertEquals(protocols.get(release.version().toString()), release.protocolNumber(version));
 			assertEquals(SupportLevel.VERIFIED, release.support(release.version()));
 			assertTrue(release.getFeatures().contains(ProtocolFeature.ONLINE_AUTHENTICATION));
 			assertFalse(release.isAdditional());
 
-			ReleaseDefinition definition = catalog.require(release.version());
+			ReleaseDefinition definition = catalog.require(JAVA, release.version());
 			assertTrue(definition.getArtifacts().stream().anyMatch(artifact -> artifact.getModule().equals(definition.getModule())));
 		}
 
@@ -66,7 +72,7 @@ class McProtocolReleasesTest {
 		assertEquals(SupportLevel.COMPATIBLE, current.support(MinecraftVersion.parse("26.1")));
 		assertEquals(8, releases.getFirst().getJavaVersion());
 		assertEquals(17, current.getJavaVersion());
-		assertThrows(IllegalArgumentException.class, () -> catalog.require(MinecraftVersion.parse("1.20.4")));
+		assertThrows(IllegalArgumentException.class, () -> catalog.require(JAVA, MinecraftVersion.parse("1.20.4")));
 		assertThrows(UnsupportedOperationException.class, () -> catalog.releases().clear());
 	}
 

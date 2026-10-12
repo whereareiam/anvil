@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.player;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
@@ -65,6 +66,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	private final PlayerObservationFactory observations;
 	private final Map<String, MinecraftProcess> declarations;
 	private final Map<String, MinecraftServer> servers;
+	private final Map<String, MinecraftEdition> editions;
 	private final ProtocolPlayerComposer playerComposer;
 	private final Consumer<RunningPlayerManager> onClosed;
 	private final AccountManager accounts;
@@ -80,6 +82,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 
 	RunningPlayerManager(
 			@NotNull AnvilScenario scenario,
+			@NotNull Map<String, MinecraftEdition> editions,
 			@NotNull ProtocolLibrarySelector selector,
 			@NotNull Function<String, ProtocolLibrary> libraries,
 			@NotNull ScenarioProcesses processes,
@@ -91,6 +94,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 			boolean sourceAddressesPreserved
 	) {
 		this.scenario = scenario;
+		this.editions = Map.copyOf(editions);
 		this.selector = selector;
 		this.libraries = libraries;
 		this.processes = processes;
@@ -177,10 +181,11 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 			throw new ScenarioValidationException("Player '" + options.getName() + "' declares a leased login; create it "
 					+ "with PlayerManager.create(PlayerOptions, AccountLease)");
 
-		RunningProcess runningTarget = processes.get(targetName);
-		MinecraftVersion version = selectVersion(options, target);
-		Selection selection = selector.select(options, scenario, version);
+		Reach reach = reach(options, target);
+		MinecraftVersion version = reach.version();
+		Selection selection = selector.select(options, scenario, reach.edition(), version);
 		validateAuthentication(options, target, selection, version);
+		RunningProcess runningTarget = processes.get(targetName);
 		InetAddress sourceAddress = sourceAddress(options, runningTarget);
 		ProtocolLibrary library = libraries.apply(selection.library());
 		Runnable directReturn = reserveDirectly(options);
@@ -192,6 +197,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 			driven = library.create(PlayerRequest.builder()
 					.name(options.getName())
 					.login(options.getLogin())
+					.edition(reach.edition())
 					.clientVersion(version)
 					.connection(GameConnection.builder()
 							.address(runningTarget.address())
@@ -297,25 +303,46 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		}
 	}
 
-	private MinecraftVersion selectVersion(PlayerOptions options, MinecraftProcess target) {
-		Set<MinecraftVersion> nativeVersions = reachableServers(target).stream()
+	/**
+	 * Selects the edition and exact version of the client from the servers the target reaches: they must all speak
+	 * one edition and one native version, because the client keeps its protocol across server switches.
+	 */
+	private Reach reach(PlayerOptions options, MinecraftProcess target) {
+		Collection<MinecraftServer> reachable = reachableServers(target);
+		if (reachable.isEmpty())
+			throw new ScenarioValidationException("Connection target '" + target.getName() + "' reaches no Minecraft servers");
+
+		Set<MinecraftEdition> reachableEditions = reachable.stream()
+				.map(server -> edition(server.getName()))
+				.collect(Collectors.toCollection(LinkedHashSet::new));
+		if (reachableEditions.size() > 1)
+			throw new ScenarioValidationException("Connection target '" + target.getName()
+					+ "' reaches servers of different Minecraft editions " + reachableEditions
+					+ "; no client speaks more than one edition");
+
+		Set<MinecraftVersion> nativeVersions = reachable.stream()
 				.map(this::nativeVersion)
 				.collect(Collectors.toCollection(LinkedHashSet::new));
-		if (nativeVersions.isEmpty())
-			throw new ScenarioValidationException("Connection target '" + target.getName() + "' reaches no Minecraft servers");
 		if (nativeVersions.size() > 1)
 			throw new ScenarioValidationException("Connection target '" + target.getName()
 					+ "' reaches servers with different native versions " + nativeVersions
 					+ "; no exact-fidelity client can traverse all of them");
 
+		MinecraftEdition edition = reachableEditions.iterator().next();
 		MinecraftVersion compatible = nativeVersions.iterator().next();
-		if (options.getClientVersion() == null)
-			return compatible;
-		if (!compatible.equals(clientVersion(options)))
+		if (options.getClientVersion() != null && !compatible.equals(clientVersion(options)))
 			throw new ScenarioValidationException("Native client version '" + options.getClientVersion()
 					+ "' does not match servers reachable through '" + target.getName()
 					+ "' using version '" + compatible + "'");
-		return compatible;
+
+		return new Reach(edition, compatible);
+	}
+
+	private MinecraftEdition edition(String server) {
+		MinecraftEdition edition = editions.get(server);
+		if (edition == null) throw new IllegalStateException("No Minecraft edition is known for server '" + server + "'");
+
+		return edition;
 	}
 
 	private Collection<MinecraftServer> reachableServers(MinecraftProcess target) {
@@ -466,4 +493,9 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		if (closed)
 			throw new IllegalStateException("Anvil scenario '" + scenario.getName() + "' is closed");
 	}
+
+	/**
+	 * Edition and exact native version of the servers a player reaches.
+	 */
+	private record Reach(@NotNull MinecraftEdition edition, @NotNull MinecraftVersion version) { }
 }

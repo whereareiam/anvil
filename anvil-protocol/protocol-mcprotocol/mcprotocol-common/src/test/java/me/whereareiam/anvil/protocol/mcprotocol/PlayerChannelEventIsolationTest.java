@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol;
 
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.capability.binding.TypedCapabilityChannel;
 import me.whereareiam.anvil.capability.inventory.model.SlotSelection;
@@ -188,6 +189,7 @@ class PlayerChannelEventIsolationTest {
 	private PlayerRequest request(String version, String name) {
 		MinecraftVersion parsed = MinecraftVersion.parse(version);
 		return PlayerRequest.builder().name(name)
+				.edition(MinecraftEdition.of("java"))
 				.clientVersion(parsed)
 				.connection(GameConnection.builder().address(new InetSocketAddress("localhost", 9)).build())
 				.build();

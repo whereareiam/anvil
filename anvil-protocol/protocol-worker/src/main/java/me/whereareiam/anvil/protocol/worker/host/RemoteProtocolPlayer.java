@@ -89,6 +89,7 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 						.port(connection.getAddress().getPort())
 						.virtualHost(connection.getVirtualHost())
 						.sourceAddress(connection.getSourceAddress() == null ? null : connection.getSourceAddress().getHostAddress())
+						.protocol(worker.release().protocolNumber(request.getClientVersion()))
 						.build())
 				.build();
 

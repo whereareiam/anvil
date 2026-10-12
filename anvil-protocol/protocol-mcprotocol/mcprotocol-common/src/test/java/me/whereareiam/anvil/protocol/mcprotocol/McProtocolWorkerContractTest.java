@@ -95,7 +95,7 @@ class McProtocolWorkerContractTest {
 			TestReporter reporter
 	) {
 		ProtocolRelease release = release(version);
-		assertEquals(protocol, release.getProtocolNumber());
+		assertEquals(protocol, release.protocolNumber(release.version()));
 
 		try (ProtocolWorkerProcess worker = new ProtocolWorkerProcess(McProtocolWorkerMain.LIBRARY, release, GradleReleaseClosures.of(release))) {
 			assertTrue(worker.diagnosticTail().contains("mcprotocol-client=" + clientSegment), worker.diagnosticTail());
@@ -198,6 +198,7 @@ class McProtocolWorkerContractTest {
 	private PlayerRequest request(ProtocolRelease release, String name) {
 		return PlayerRequest.builder()
 				.name(name)
+				.edition(release.getEdition())
 				.clientVersion(release.version())
 				.connection(GameConnection.builder()
 						.address(new InetSocketAddress("127.0.0.1", 9))

@@ -6,16 +6,17 @@ description: Find the Minecraft versions each protocol library and platform supp
 Choose one native Minecraft version for every server reachable by a player. A proxy has its own
 release version; that version does not select the simulated player's protocol.
 
-Anvil assesses players and processes separately. A player speaks one Minecraft version through a
-release of a protocol library. A server or proxy runs one platform version on one Java version.
+Anvil assesses players and processes separately. A player speaks one Minecraft version of one edition
+through a release of a protocol library. A server or proxy runs one platform version on one Java version.
 Each assessment has a [support level](#support-levels-and-policies), and the support policy decides
 which levels run.
 
 ## Players through MCProtocolLib
 
 MCProtocolLib is the bundled protocol library, with the ID `mcprotocol`. Its releases are data:
-`mcprotocol-releases.toml`, shipped inside `protocol-mcprotocol`. Each release speaks one wire
-protocol and lists every Minecraft version that speaks it; its highest version is the release key.
+`mcprotocol-releases.toml`, shipped inside `protocol-mcprotocol`. Each release names the Minecraft
+edition it implements (`java` for every MCProtocolLib release), speaks one wire protocol, and lists
+every Minecraft version that speaks it; its highest version is the release key.
 
 | Release key | MCProtocolLib release | Protocol | Minecraft versions | Verified by the live matrix |
 |---|---|---|---|---|
@@ -44,8 +45,9 @@ it is refused with the reason.
 | Velocity | `3.3.0` and newer | `3.5.1` |
 | BungeeCord | Every build, assessed by Java range only | None; the matrix runs build `2085` |
 
-Each platform provider ships its known versions, its Java rows, its agent's minimum Java, and the
-combinations Anvil's live matrix verifies as data. Planning picks one exact LTS release per process.
+Each platform provider ships its Minecraft edition, its known versions, its Java rows, its agent's
+minimum Java, and the combinations Anvil's live matrix verifies as data. Every platform in the table
+declares the `java` edition. Planning picks one exact LTS release per process.
 See [Java per platform version](../../provisioning/java/index.md#java-per-platform-version) for the
 rows, the defaults, and the Java version of each verified combination.
 
@@ -128,6 +130,7 @@ release; replace every value in angle brackets:
 ```toml
 [[release]]
 version = "<MCProtocolLib release>"
+edition = "java"
 module = "<group>:<name>:<version>"
 protocol = <protocol number>
 minecraft = ["<Minecraft version>"]
@@ -141,10 +144,19 @@ url = "<URL of the JAR>"
 sha256 = "<SHA-256 of the JAR>"
 ```
 
+`edition` names the edition of the servers the release reaches. When the listed versions speak
+different protocol numbers, replace `protocol` with a `[release.protocol]` table that maps each listed
+version to its number, placed before the artifact tables:
+
+```toml
+[release.protocol]
+"<Minecraft version>" = <protocol number>
+```
+
 List the release module and every JAR of its runtime in `[[release.artifact]]` tables, in class path
 order. Your releases are assessed as `UNTESTED`, so `STRICT` refuses them. The engine reads the file
-when it starts and refuses invalid data, an unknown library ID, and a Minecraft version that another
-release already lists. A release with an empty `sha256` is listed, but players that select it are
+when it starts and refuses invalid data, an unknown library ID, a Minecraft version that another
+release of the same edition already lists, and a release key that another release already has. A release with an empty `sha256` is listed, but players that select it are
 refused until you set the checksum. A built-in release cannot be changed: a release with a built-in
 release's version is ignored when its content is identical and refused otherwise.
 
@@ -156,14 +168,16 @@ the player. A release older than `1.18.2` has no segments and cannot start.
 ## Native client selection
 
 Without a `PlayerOptions.clientVersion` override, Anvil derives the native version from the player's
-connection target and its reachable servers. An explicit override must still be listed by a release
-of the selected protocol library and match the reachable servers.
+connection target and its reachable servers. Their platforms decide the edition: only a release of
+the same edition serves them, so a release of another edition that lists the same version number is
+never selected. An explicit override must still be listed by a release of that edition in the
+selected protocol library and match the reachable servers.
 
 For an executable supplied through `Distribution.local(...)` or `Distribution.artifact(...)`, set
 `.minecraftVersion("1.21.11")` on the server declaration, changing the value to match that JAR.
 Anvil cannot determine the required native client solely from an arbitrary artifact filename.
 
-A mixed topology with incompatible reachable server versions fails validation. Anvil does not insert
+A mixed topology with reachable servers of different editions or versions fails validation. Anvil does not insert
 a protocol translator or silently fall back to ViaVersion. If you test several versions, define separate
 scenarios or separate [scenario definitions](../../index.md).
 

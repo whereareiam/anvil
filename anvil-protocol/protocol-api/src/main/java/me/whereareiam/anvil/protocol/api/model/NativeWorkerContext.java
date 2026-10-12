@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.api.model;
 
 import lombok.Builder;
 import lombok.Value;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.worker.NativeWorkerProvider;
 import org.jetbrains.annotations.NotNull;
@@ -17,11 +18,16 @@ public class NativeWorkerContext {
 	 */
 	@NotNull String libraryId;
 	/**
+	 * Minecraft edition of the release loaded by the worker.
+	 */
+	@NotNull MinecraftEdition edition;
+	/**
 	 * Release key version loaded by the worker.
 	 */
 	@NotNull MinecraftVersion version;
 	/**
-	 * Native wire-protocol number verified by the worker.
+	 * Native wire-protocol number of the release key version, verified by the worker. A release may map its other
+	 * versions to other numbers; each player's own number travels with its connection.
 	 */
 	int protocolNumber;
 	/**

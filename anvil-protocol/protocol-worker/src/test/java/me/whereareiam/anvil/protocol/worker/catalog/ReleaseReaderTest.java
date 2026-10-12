@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.worker.catalog;
 
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.worker.fixture.ProbeLibrary;
 import me.whereareiam.anvil.protocol.worker.model.ReleaseArtifact;
@@ -29,7 +30,9 @@ class ReleaseReaderTest {
 		assertEquals("demo:protocol:1.16.5-2", definition.getModule());
 		assertEquals(List.of(MinecraftVersion.parse("1.16.4"), MinecraftVersion.parse("1.16.5")), definition.getRelease().getMinecraftVersions());
 		assertEquals(Set.of(MinecraftVersion.parse("1.16.5")), definition.getRelease().getVerifiedVersions());
-		assertEquals(754, definition.getRelease().getProtocolNumber());
+		assertEquals(MinecraftEdition.of("java"), definition.getRelease().getEdition());
+		assertEquals(754, definition.getRelease().protocolNumber(MinecraftVersion.parse("1.16.4")));
+		assertEquals(754, definition.getRelease().protocolNumber(MinecraftVersion.parse("1.16.5")));
 		assertEquals(17, definition.getRelease().getJavaVersion());
 		assertEquals(List.of("demo:protocol:1.16.5-2", "demo:transport:1.0:linux-x86_64"),
 				definition.getArtifacts().stream().map(ReleaseArtifact::getModule).toList());
@@ -42,6 +45,26 @@ class ReleaseReaderTest {
 	}
 
 	@Test
+	void readsOneProtocolNumberPerVersionFromAProtocolTable() {
+		String text = release("2.0.0", "\"1.20.0\", \"1.20.10\"", "1.20.10")
+				.replace("protocol = 754\n", "")
+				.replace("[[release.artifact]]", "[release.protocol]\n\"1.20.0\" = 589\n\"1.20.10\" = 594\n\n[[release.artifact]]");
+
+		var release = read(text).getFirst().getRelease();
+		assertEquals(589, release.protocolNumber(MinecraftVersion.parse("1.20")));
+		assertEquals(594, release.protocolNumber(MinecraftVersion.parse("1.20.10")));
+	}
+
+	@Test
+	void letsReleasesOfAnotherEditionListTheSameVersion() {
+		String other = release("2.0.0", "\"1.18.2\", \"1.18.3\"", "1.18.2").replace("edition = \"java\"", "edition = \"other\"");
+
+		List<ReleaseDefinition> releases = read(release("1.18.2-1", "\"1.18.2\"", "1.18.2") + other);
+		assertEquals(List.of(MinecraftEdition.of("java"), MinecraftEdition.of("other")),
+				releases.stream().map(definition -> definition.getRelease().getEdition()).toList());
+	}
+
+	@Test
 	void readsReleasesWithoutFeatures() {
 		String text = release("1.18.2-1", "\"1.18.2\"", "1.18.2").replace("features = [\"ONLINE_AUTHENTICATION\"]\n", "");
 
@@ -51,7 +74,12 @@ class ReleaseReaderTest {
 	@ParameterizedTest(name = "{0}")
 	@CsvSource(delimiter = '|', value = {
 			"duplicate version | declares release 1.18.2-1 more than once",
-			"shared Minecraft version | assigns Minecraft 1.18.2 to more than one release",
+			"shared Minecraft version | assigns java Minecraft 1.18.2 to more than one release",
+			"shared release key | keys more than one release by Minecraft 1.18.2",
+			"missing edition | must declare a non-blank edition",
+			"invalid edition | edition: Not a Minecraft edition identifier",
+			"protocol table missing a version | maps no protocol for Minecraft 1.18.1",
+			"protocol table with an unlisted version | maps protocol of Minecraft 1.18.3, which it does not list",
 			"unlisted verified version | verifies Minecraft 1.18.1, which it does not list",
 			"missing closure | must declare its runtime closure",
 			"closure without module | must include its module demo:protocol:1.18.2-1",
@@ -71,6 +99,15 @@ class ReleaseReaderTest {
 		String text = switch (violation) {
 			case "duplicate version" -> release + release.replace("\"1.18.2\"]", "\"1.18.1\"]").replace("verified = [\"1.18.1\"]", "verified = []");
 			case "shared Minecraft version" -> release + release.replace("version = \"1.18.2-1\"", "version = \"1.18.2-2\"");
+			case "shared release key" -> release + release.replace("version = \"1.18.2-1\"", "version = \"1.18.2-2\"")
+					.replace("edition = \"java\"", "edition = \"other\"");
+			case "missing edition" -> release.replace("edition = \"java\"\n", "");
+			case "invalid edition" -> release.replace("edition = \"java\"", "edition = \"Java\"");
+			case "protocol table missing a version" -> release.replace("protocol = 754\n", "")
+					.replace("[\"1.18.2\"]\nverified", "[\"1.18.1\", \"1.18.2\"]\nverified")
+					.replace("[[release.artifact]]", "[release.protocol]\n\"1.18.2\" = 758\n\n[[release.artifact]]");
+			case "protocol table with an unlisted version" -> release.replace("protocol = 754\n", "")
+					.replace("[[release.artifact]]", "[release.protocol]\n\"1.18.2\" = 758\n\"1.18.3\" = 758\n\n[[release.artifact]]");
 			case "unlisted verified version" -> release.replace("verified = [\"1.18.2\"]", "verified = [\"1.18.1\"]");
 			case "missing closure" -> release.substring(0, release.indexOf("[[release.artifact]]"));
 			case "closure without module" -> release.replace("module = \"demo:protocol:1.18.2-1\"\nurl", "module = \"demo:other:1.0\"\nurl");
@@ -100,6 +137,7 @@ class ReleaseReaderTest {
 		return """
 				[[release]]
 				version = "%s"
+				edition = "java"
 				module = "demo:protocol:%s"
 				protocol = 754
 				minecraft = [%s]

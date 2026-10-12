@@ -62,7 +62,7 @@ public final class ProtocolWorkerPool implements ProtocolLibrary {
 		if (closed) throw new IllegalStateException(library.getName() + " worker pool is closed");
 
 		// The engine refused unlaunchable releases already; this guards the library against a request it cannot serve.
-		ReleaseDefinition definition = catalog.require(request.getClientVersion());
+		ReleaseDefinition definition = catalog.require(request.getEdition(), request.getClientVersion());
 		ProtocolRelease release = definition.getRelease();
 		if (!release.isLaunchable()) throw new IllegalStateException(release.getLaunchRefusal());
 

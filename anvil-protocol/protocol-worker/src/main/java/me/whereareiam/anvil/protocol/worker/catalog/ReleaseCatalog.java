@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.worker.catalog;
 
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.worker.model.ReleaseDefinition;
@@ -25,12 +26,12 @@ import java.util.function.Consumer;
  *
  * <p>User-supplied releases are {@link ProtocolRelease#isAdditional() additional} and therefore untested. A
  * user-supplied release whose version equals a built-in release with identical content is ignored with an
- * info line; one with different content is refused. Each Minecraft version belongs to at most one release
- * across both sources.</p>
+ * info line; one with different content is refused. Across both sources, each Minecraft version belongs to at most
+ * one release of its edition, and each release key to one release.</p>
  *
  * <pre>{@code
  * ReleaseCatalog catalog = ReleaseCatalog.load(library, Path.of("extra-releases.toml"));
- * ReleaseDefinition definition = catalog.require(MinecraftVersion.parse("1.21.11"));
+ * ReleaseDefinition definition = catalog.require(MinecraftEdition.of("example"), MinecraftVersion.parse("1.21.11"));
  * }</pre>
  */
 public final class ReleaseCatalog {
@@ -44,8 +45,8 @@ public final class ReleaseCatalog {
 	 * @param builtIn releases shipped with Anvil
 	 * @param additional user-supplied releases, each marked additional
 	 * @param notices receiver of info lines about ignored duplicates
-	 * @throws IllegalArgumentException when a user-supplied release conflicts with a built-in release or two
-	 * releases list the same Minecraft version
+	 * @throws IllegalArgumentException when a user-supplied release conflicts with a built-in release, two
+	 * releases list the same Minecraft version of one edition, or two releases share a key
 	 */
 	ReleaseCatalog(
 			@NotNull WorkerLibrary library,
@@ -70,14 +71,23 @@ public final class ReleaseCatalog {
 					+ " is identical to the built-in release and is ignored.");
 		}
 
-		Map<MinecraftVersion, String> owners = new LinkedHashMap<>();
-		for (ReleaseDefinition definition : combined.values())
-			for (MinecraftVersion minecraft : definition.getRelease().getMinecraftVersions()) {
-				String previous = owners.putIfAbsent(minecraft, definition.getRelease().getLibraryVersion());
+		Map<String, String> owners = new LinkedHashMap<>();
+		Map<MinecraftVersion, String> keys = new LinkedHashMap<>();
+		for (ReleaseDefinition definition : combined.values()) {
+			ProtocolRelease release = definition.getRelease();
+			for (MinecraftVersion minecraft : release.getMinecraftVersions()) {
+				String previous = owners.putIfAbsent(release.getEdition() + " " + minecraft, release.getLibraryVersion());
 				if (previous != null)
 					throw new IllegalArgumentException(library.getName() + " releases " + previous + " and "
-							+ definition.getRelease().getLibraryVersion() + " both list Minecraft " + minecraft);
+							+ release.getLibraryVersion() + " both list " + release.getEdition() + " Minecraft " + minecraft);
 			}
+
+			// Segments name a release by its key alone, whatever its edition.
+			String key = keys.putIfAbsent(release.version(), release.getLibraryVersion());
+			if (key != null)
+				throw new IllegalArgumentException(library.getName() + " releases " + key + " and "
+						+ release.getLibraryVersion() + " are both keyed by Minecraft " + release.version());
+		}
 
 		this.library = library;
 		combined.values().stream()
@@ -117,18 +127,19 @@ public final class ReleaseCatalog {
 	}
 
 	/**
-	 * Returns the release data of the one release that lists a Minecraft version.
+	 * Returns the release data of the one release that serves a Minecraft edition and version.
 	 *
+	 * @param edition Minecraft edition of the server a player joins
 	 * @param version Minecraft version a player speaks
-	 * @return definition of the release listing it
-	 * @throws IllegalArgumentException when no release of this catalog lists the version
+	 * @return definition of the release of that edition listing the version
+	 * @throws IllegalArgumentException when no release of this catalog serves the edition and version
 	 */
-	public @NotNull ReleaseDefinition require(@NotNull MinecraftVersion version) {
+	public @NotNull ReleaseDefinition require(@NotNull MinecraftEdition edition, @NotNull MinecraftVersion version) {
 		return definitions.values().stream()
-				.filter(definition -> definition.getRelease().getMinecraftVersions().contains(version))
+				.filter(definition -> definition.getRelease().serves(edition, version))
 				.findFirst()
-				.orElseThrow(() -> new IllegalArgumentException("No " + library.getName() + " release speaks Minecraft " + version
-						+ ". Known releases: " + definitions.keySet()));
+				.orElseThrow(() -> new IllegalArgumentException("No " + library.getName() + " release speaks " + edition
+						+ " Minecraft " + version + ". Known releases: " + definitions.keySet()));
 	}
 
 	private static List<ReleaseDefinition> builtIn(WorkerLibrary library, ReleaseReader reader) {

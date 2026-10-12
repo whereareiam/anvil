@@ -35,7 +35,8 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 	@Override
 	public @NotNull ScenarioContext create(@NotNull AnvilScenario scenario, @Nullable ScenarioObserver observer) {
 		var plan = platforms.plan(scenario);
-		players.prepare(plan.getScenario());
+		var editions = plan.editions();
+		players.prepare(plan.getScenario(), editions);
 
 		// Processes with the engine lifetime already run; the scenario's own are prepared against them.
 		ProcessLease lease = ProcessLease.take(plan, retained, execution);
@@ -47,7 +48,7 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 		ProcessGroup processes;
 		try {
 			capabilities = ProcessComposition.discover(own, agents);
-			composer = PlayerComposition.create(players.scenarioLibraries(plan.getScenario()), reachable);
+			composer = PlayerComposition.create(players.scenarioLibraries(plan.getScenario(), editions), reachable);
 			processes = lease.join(execution.prepare(own, agents, capabilities, observer, lease.addresses()));
 		} catch (RuntimeException | Error failure) {
 			try {
@@ -64,7 +65,7 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 			var serverNames = plan.getScenario().getServers().stream()
 					.map(MinecraftProcess::getName)
 					.collect(Collectors.toSet());
-			var manager = players.open(plan.getScenario(), processes,
+			var manager = players.open(plan.getScenario(), editions, processes,
 					(player, connectedTo) -> new AgentPlayerObservation(player.name(), connectedTo, player::identity, reachable, serverNames),
 					composer, execution.preservesClientAddress(plan));
 

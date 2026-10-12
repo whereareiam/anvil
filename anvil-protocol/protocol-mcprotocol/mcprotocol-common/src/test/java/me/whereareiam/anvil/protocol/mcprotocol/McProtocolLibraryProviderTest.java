@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol;
 
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.model.GameConnection;
@@ -34,6 +35,7 @@ class McProtocolLibraryProviderTest {
 		Files.writeString(releases, """
 				[[release]]
 				version = "9.9.9-test"
+				edition = "java"
 				module = "demo:protocol:9.9.9-test"
 				protocol = 999
 				minecraft = ["9.9.9"]
@@ -61,6 +63,7 @@ class McProtocolLibraryProviderTest {
 		Files.writeString(releases, """
 				[[release]]
 				version = "9.9.9-test"
+				edition = "java"
 				module = "demo:protocol:9.9.9-test"
 				protocol = 999
 				minecraft = ["9.9.9"]
@@ -95,7 +98,7 @@ class McProtocolLibraryProviderTest {
 		PlayerRequest request = request("26.1.2");
 
 		IllegalArgumentException version = assertThrows(IllegalArgumentException.class, () -> library.create(request("1.20.4")));
-		assertTrue(version.getMessage().startsWith("No MCProtocolLib release speaks Minecraft 1.20.4"), version.getMessage());
+		assertTrue(version.getMessage().startsWith("No MCProtocolLib release speaks java Minecraft 1.20.4"), version.getMessage());
 		library.close();
 		library.close();
 		assertThrows(IllegalStateException.class, () -> library.create(request));
@@ -116,6 +119,7 @@ class McProtocolLibraryProviderTest {
 	private PlayerRequest request(String version) {
 		return PlayerRequest.builder()
 				.name("Alice")
+				.edition(MinecraftEdition.of("java"))
 				.clientVersion(MinecraftVersion.parse(version))
 				.connection(GameConnection.builder().address(new InetSocketAddress("127.0.0.1", 9)).build())
 				.build();
