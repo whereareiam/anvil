@@ -51,6 +51,19 @@ The JAR is cached under `<cacheDirectory>/distributions/lumi/<release>`.
 Lumi can accept several Bedrock protocols at once. Anvil allows exactly the protocol of the declared
 version, so the server is the version you declared and a player of another version is refused at login.
 
+Anvil knows a Lumi version only when Lumi and the CloudburstMC Protocol library speak it with the same
+protocol, so a player can join every Lumi server Anvil runs. Bedrock `1.26.45` is not one of them: Lumi
+1.6.9 speaks it as protocol 2170 and accepts 2169 only as its own `1.26.44`, while CloudburstMC Protocol
+speaks `1.26.45` as 2169. Declare `1.26.40` or `1.26.50` instead.
+
+## Player identity
+
+Lumi shows a player to clients under the UUID its login named, and that is the UUID the player is
+granted. For a player that logs in offline, Lumi keeps a UUID of its own, derived from the name or taken
+from a name it has seen before; with Xbox authentication the two are the same. The Lumi agent finds the
+player by the granted UUID and reports Lumi's own, so the Server capability's observed profile carries
+Lumi's UUID while the granted profile carries the one the client sees.
+
 ## Configure the server
 
 Lumi keeps its settings in `settings.yml`. A server's `.setting(key, value)` entries name a dotted path
@@ -89,10 +102,10 @@ Lumi runs on Java 21; see
 ## Limitations
 
 - Simulated players join Lumi through the
-  [CloudburstMC Protocol library](../versions/index.md#bedrock-players-through-cloudburstmc-protocol),
-  whose only built-in player capability so far is Session. The live matrix drives Lumi through the
-  [process console](../../../actions/console/index.md) and the [agent](../../../actions/agents/index.md)'s
-  command execution, without players.
+  [CloudburstMC Protocol library](../../versions/index.md#bedrock-players-through-cloudburstmc-protocol),
+  whose built-in player capabilities so far are Session and Server. The live matrix drives Lumi through
+  the [process console](../../../actions/console/index.md) and the [agent](../../../actions/agents/index.md)'s
+  command execution, and observes a Bedrock player through Session and Server.
 - Lumi's game listener is UDP. Local and Docker execution reserve and publish it as UDP; the agent
   connection stays TCP.
 - Lumi has no identity forwarding and Anvil ships no Bedrock proxy, so a Lumi server cannot be a proxy

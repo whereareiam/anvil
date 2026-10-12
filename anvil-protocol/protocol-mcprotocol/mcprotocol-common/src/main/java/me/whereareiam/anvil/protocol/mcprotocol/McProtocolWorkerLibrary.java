@@ -23,6 +23,8 @@ public final class McProtocolWorkerLibrary implements WorkerLibraryProvider {
 			.clientPort(McProtocolClient.class)
 			.releases("me/whereareiam/anvil/protocol/mcprotocol/mcprotocol-releases.toml")
 			.pinTask("./gradlew :anvil-protocol:protocol-mcprotocol:pinLibraryReleases")
+			// Offline players claim the UUID a Java Edition server derives for their name.
+			.offlineUniqueIdPrefix("OfflinePlayer:")
 			// Every release brings its own copy of these in its closure.
 			.ownedPackage("io/netty/")
 			.ownedPackage("org/geysermc/mcprotocollib/")

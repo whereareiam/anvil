@@ -64,7 +64,8 @@ public final class CompatibilityScenarioFactory {
 
 	/**
 	 * Returns the direct Lumi scenario of each Minecraft version Lumi is verified on. Lumi loads no Bukkit plugin,
-	 * so these servers carry no fixture, and their test drives the console and the Lumi agent without players.
+	 * so these servers carry no fixture: their test drives the console and the Lumi agent, and observes a Bedrock
+	 * player of the CloudburstMC Protocol library through its Session and Server capabilities.
 	 *
 	 * @return one direct Lumi scenario per verified Minecraft version
 	 */
@@ -184,9 +185,9 @@ public final class CompatibilityScenarioFactory {
 				.name("lumi-" + version)
 				.metadata(PresentationMetadata.builder()
 						.displayName("Direct server · Lumi " + version)
-						.description("Single Lumi server without fixture plugins for checking startup, console commands and "
-								+ "agent operations through the Lumi agent.")
-						.category("Native compatibility").tag("console").build())
+						.description("Single Lumi server without fixture plugins for checking startup, console commands, "
+								+ "agent operations and Bedrock player observation through the Lumi agent.")
+						.category("Native compatibility").tag("console").tag("login").build())
 				.entrypoint(server.getName())
 				.server(server)
 				.build();

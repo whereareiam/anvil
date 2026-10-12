@@ -140,6 +140,7 @@ class AccountStoreTest {
 				.clientPort(Runnable.class)
 				.releases("unused.toml")
 				.pinTask("unused")
+				.offlineUniqueIdPrefix("ProbePlayer:")
 				.readsUnlabelledAccounts(readsUnlabelled)
 				.build();
 	}

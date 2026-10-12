@@ -13,11 +13,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -36,6 +39,15 @@ class CloudburstWorkerLibraryTest {
 		assertTrue(installed.authentication(temporary.resolve("accounts")).isPresent());
 		assertInstanceOf(XboxAuthentication.class, new CloudburstWorkerLibrary().authentication().orElseThrow());
 		assertFalse(CloudburstWorkerLibrary.LIBRARY.isReadsUnlabelledAccounts());
+	}
+
+	@Test
+	void derivesAnOfflineUniqueIdOfItsOwnPerUsername() {
+		UUID alice = CloudburstWorkerLibrary.LIBRARY.offlineUniqueId("Alice");
+
+		assertEquals(UUID.nameUUIDFromBytes("BedrockPlayer:Alice".getBytes(StandardCharsets.UTF_8)), alice);
+		assertEquals(alice, CloudburstWorkerLibrary.LIBRARY.offlineUniqueId("Alice"));
+		assertNotEquals(UUID.nameUUIDFromBytes("OfflinePlayer:Alice".getBytes(StandardCharsets.UTF_8)), alice);
 	}
 
 	@Test

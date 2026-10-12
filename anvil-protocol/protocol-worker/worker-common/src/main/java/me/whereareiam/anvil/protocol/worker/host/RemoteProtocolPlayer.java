@@ -21,7 +21,6 @@ import me.whereareiam.anvil.protocol.worker.type.WorkerPlayerEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -37,7 +36,6 @@ import java.util.function.Consumer;
  */
 final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 	private static final Duration OBSERVATION_INTERVAL = Duration.ofMillis(25);
-	private static final String OFFLINE_UUID_PREFIX = "OfflinePlayer:";
 
 	private final ProtocolWorkerProcess worker;
 	private final PlayerRequest request;
@@ -60,8 +58,7 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 		this.request = request;
 		this.events = new PlayerEventDispatcher(request.getName(), worker::recordDiagnostic);
 		this.requested = authentication == null
-				? new PlayerProfile(request.getUsername(),
-						UUID.nameUUIDFromBytes((OFFLINE_UUID_PREFIX + request.getUsername()).getBytes(StandardCharsets.UTF_8)))
+				? new PlayerProfile(request.getUsername(), worker.library().offlineUniqueId(request.getUsername()))
 				: new PlayerProfile(authentication.getUsername(), authentication.getUuid());
 
 		worker.register(id, this);

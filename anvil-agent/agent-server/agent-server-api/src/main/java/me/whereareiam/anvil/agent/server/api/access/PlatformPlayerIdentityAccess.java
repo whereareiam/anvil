@@ -15,11 +15,12 @@ import java.util.UUID;
  */
 public interface PlatformPlayerIdentityAccess {
 	/**
-	 * Looks up a player known by the platform by its UUID, never by its name: platforms match names without
-	 * regard to letter case.
+	 * Looks up a player known by the platform by the UUID its client was granted at login, never by its name:
+	 * platforms match names without regard to letter case. A platform that keeps another UUID for the player than
+	 * the one it shows to the player's client matches the client's UUID and reports its own in the identity.
 	 *
-	 * @param uniqueId player UUID
-	 * @return observed identity, or empty when the player is absent
+	 * @param uniqueId UUID the player's client was granted
+	 * @return observed identity carrying the platform's own UUID, or empty when the player is absent
 	 */
 	@NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId);
 }

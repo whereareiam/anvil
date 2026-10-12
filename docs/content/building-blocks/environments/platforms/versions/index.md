@@ -47,7 +47,7 @@ such as Lumi share: Bedrock 26.x is written `1.26.x`.
 
 | Release key | CloudburstMC Protocol release | Verified by the live matrix |
 |---|---|---|
-| `1.26.60` | `3.0.0.Beta14-20261009.172637-6` | None yet |
+| `1.26.60` | `3.0.0.Beta14-20261009.172637-6` | `1.26.50` |
 
 | Minecraft versions | Protocols |
 |---|---|
@@ -56,7 +56,7 @@ such as Lumi share: Bedrock 26.x is written `1.26.x`.
 | `1.21.90`, `1.21.93`, `1.21.100`, `1.21.111`, `1.21.120`, `1.21.124`, `1.21.130` | 818, 819, 827, 844, 859, 860, 898 |
 | `1.26.0`, `1.26.10`, `1.26.20`, `1.26.30`, `1.26.40`, `1.26.45`, `1.26.50`, `1.26.60` | 924, 944, 975, 1001, 2168, 2169, 2193, 2225 |
 
-Every listed version is `COMPATIBLE`. The release is a CloudburstMC Protocol snapshot build, pinned to
+`1.26.50` is `VERIFIED` against Lumi; every other listed version is `COMPATIBLE`. The release is a CloudburstMC Protocol snapshot build, pinned to
 an exact timestamp like the MCProtocolLib snapshots. Its players log in offline with a self-signed
 identity, which a server accepts only with Xbox authentication turned off, or online with an
 [Xbox account](../../../players/authentication/index.md). Bedrock has no handshake host, so a Bedrock
@@ -88,11 +88,13 @@ rows, the defaults, and the Java version of each verified combination.
 Lumi serves Bedrock Edition. Lumi names every Bedrock version `1.x.y`, so Bedrock `26.10` is `1.26.10`,
 and Anvil follows that naming. Each version below is the first of its protocol: a patch release that
 speaks the same protocol, such as `1.20.1`, is declared as the version that names it, `1.20.0`. A Lumi
-server allows exactly the protocol of its version.
+server allows exactly the protocol of its version. Lumi's versions are exactly those whose protocol Lumi and
+CloudburstMC Protocol agree on, so every Lumi server has players: `1.26.45` is left out because Lumi speaks it
+as protocol 2170 and CloudburstMC Protocol as 2169.
 
 | Lumi release | Bedrock versions (protocol) | Verified by the live matrix |
 |---|---|---|
-| `1.6.9` | `1.20.0` (589), `1.20.10` (594), `1.20.30` (618), `1.20.40` (622), `1.20.50` (630), `1.20.60` (649), `1.20.70` (662), `1.20.80` (671), `1.21.0` (685), `1.21.2` (686), `1.21.20` (712), `1.21.30` (729), `1.21.40` (748), `1.21.50` (766), `1.21.60` (776), `1.21.70` (786), `1.21.80` (800), `1.21.90` (818), `1.21.93` (819), `1.21.100` (827), `1.21.111` (844), `1.21.120` (859), `1.21.124` (860), `1.21.130` (898), `1.26.0` (924), `1.26.10` (944), `1.26.20` (975), `1.26.30` (1001), `1.26.40` (2168), `1.26.45` (2170), `1.26.50` (2193) | `1.26.50` on Java 21 |
+| `1.6.9` | `1.20.0` (589), `1.20.10` (594), `1.20.30` (618), `1.20.40` (622), `1.20.50` (630), `1.20.60` (649), `1.20.70` (662), `1.20.80` (671), `1.21.0` (685), `1.21.2` (686), `1.21.20` (712), `1.21.30` (729), `1.21.40` (748), `1.21.50` (766), `1.21.60` (776), `1.21.70` (786), `1.21.80` (800), `1.21.90` (818), `1.21.93` (819), `1.21.100` (827), `1.21.111` (844), `1.21.120` (859), `1.21.124` (860), `1.21.130` (898), `1.26.0` (924), `1.26.10` (944), `1.26.20` (975), `1.26.30` (1001), `1.26.40` (2168), `1.26.50` (2193) | `1.26.50` on Java 21 |
 
 Bedrock players connect to Lumi through [CloudburstMC Protocol](#bedrock-players-through-cloudburstmc-protocol);
 see the [Lumi guide](../servers/lumi/index.md).

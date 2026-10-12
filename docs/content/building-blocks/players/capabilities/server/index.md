@@ -50,8 +50,10 @@ UUID, from the client's request to the server the player is on:
 
 A proxy or login plugin may grant a profile that differs from the requested one, for example by renaming
 `Steve` to `Steve_Premium` or by replacing an offline UUID with a premium one, and the backend reports what
-the proxy forwarded. Assert the granted or observed profile when testing that plugin, and inspect the
-requested profile separately. Use the route object for proxy and backend names.
+the proxy forwarded. A server that keeps another UUID for the player than the one it shows the client reports
+its own: Lumi lists an offline Bedrock player under the UUID its login named, which the player is granted, and
+reports the UUID it derives from the name as the observed profile. Assert the granted or observed profile when
+testing that plugin, and inspect the requested profile separately. Use the route object for proxy and backend names.
 
 ## Expect that the player stays
 

@@ -5,7 +5,9 @@ import lombok.Singular;
 import lombok.Value;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * What the native worker needs to know about one protocol library it hosts. A library returns it from
@@ -20,6 +22,7 @@ import java.util.List;
  *         .releases("me/whereareiam/anvil/protocol/mcprotocol/mcprotocol-releases.toml")
  *         .pinTask("./gradlew :anvil-protocol:protocol-mcprotocol:pinLibraryReleases")
  *         .ownedPackage("io/netty/")
+ *         .offlineUniqueIdPrefix("OfflinePlayer:")
  *         .build();
  * }</pre>
  */
@@ -50,6 +53,13 @@ public class WorkerLibrary {
 	 */
 	@NotNull String pinTask;
 	/**
+	 * Text the worker puts before a username to derive the UUID of an offline profile, as a name-based UUID of
+	 * {@code prefix + username}, such as {@code OfflinePlayer:}, the prefix the servers a library speaks to use for
+	 * their own offline players. The library chooses it, so a username maps to the same UUID in every run and on
+	 * every worker of the library.
+	 */
+	@NotNull String offlineUniqueIdPrefix;
+	/**
 	 * Resource prefixes of the packages a release's runtime closure owns, such as {@code io/netty/}. Their classes
 	 * come only from the closure: a host class path entry that contains any of them is refused for the worker.
 	 */
@@ -66,6 +76,16 @@ public class WorkerLibrary {
 	 * files keeps the default {@code false}.
 	 */
 	boolean readsUnlabelledAccounts;
+
+	/**
+	 * Derives the UUID a player of this library claims when it logs in offline with a username.
+	 *
+	 * @param username username the player logs in with
+	 * @return name-based UUID of {@link #getOfflineUniqueIdPrefix()} followed by the username
+	 */
+	public @NotNull UUID offlineUniqueId(@NotNull String username) {
+		return UUID.nameUUIDFromBytes((offlineUniqueIdPrefix + username).getBytes(StandardCharsets.UTF_8));
+	}
 
 	/**
 	 * Returns the file name of the built-in release data, used in messages.

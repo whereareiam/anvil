@@ -25,6 +25,9 @@ public final class CloudburstWorkerLibrary implements WorkerLibraryProvider {
 			.clientPort(CloudburstClient.class)
 			.releases("me/whereareiam/anvil/protocol/cloudburst/cloudburst-releases.toml")
 			.pinTask("./gradlew :anvil-protocol:protocol-cloudburst:pinLibraryReleases")
+			// Bedrock has no offline UUID convention: an offline client's login names any identity. The library's own
+			// prefix keeps a name's UUID stable and distinct from the offline UUIDs of other libraries.
+			.offlineUniqueIdPrefix("BedrockPlayer:")
 			// Every release brings its own copy of these in its closure.
 			.ownedPackage("io/netty/")
 			.ownedPackage("org/cloudburstmc/")
