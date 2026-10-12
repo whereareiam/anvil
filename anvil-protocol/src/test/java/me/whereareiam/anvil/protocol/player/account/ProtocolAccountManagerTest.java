@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.player.account;
 
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.player.account.AccountPool;
@@ -10,8 +11,11 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -21,9 +25,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProtocolAccountManagerTest {
+	private static final MinecraftEdition JAVA = MinecraftEdition.of("java");
+	private static final MinecraftEdition BEDROCK = MinecraftEdition.of("bedrock");
 	private static final List<AuthenticationAccount> ACCOUNTS = List.of(
-			new AuthenticationAccount("alice", List.of(AccountAccess.available("fixture", "Alice", UUID.randomUUID()))),
-			new AuthenticationAccount("bob", List.of(AccountAccess.available("fixture", "Bob", UUID.randomUUID())))
+			new AuthenticationAccount("alice", List.of(AccountAccess.available(JAVA, "Alice", UUID.randomUUID()))),
+			new AuthenticationAccount("bob", List.of(AccountAccess.available(JAVA, "Bob", UUID.randomUUID())))
 	);
 
 	@TempDir
@@ -45,22 +51,48 @@ class ProtocolAccountManagerTest {
 	}
 
 	@Test
-	void leasesForALibraryOnlyAccountsItRecordedAsAvailableReadingTheCurrentRecord() {
+	void leasesForAnEditionOnlyAccountsRecordedAsAvailableReadingTheCurrentRecord() {
 		StoredAccounts stored = new StoredAccounts(List.of(
-				new AuthenticationAccount("alice", List.of(AccountAccess.unavailable("java", "Account 'alice' owns no Java profile"))),
-				new AuthenticationAccount("bob", List.of(AccountAccess.available("bedrock", "Bob", UUID.randomUUID()))),
-				new AuthenticationAccount("carol", List.of(AccountAccess.available("java", "Carol", UUID.randomUUID())))
+				new AuthenticationAccount("alice", List.of(AccountAccess.unavailable(JAVA, "Account 'alice' owns no Java profile"))),
+				new AuthenticationAccount("bob", List.of(AccountAccess.available(BEDROCK, "Bob", UUID.randomUUID()),
+						AccountAccess.unavailable(JAVA, "Account 'bob' owns no Java profile"))),
+				new AuthenticationAccount("carol", List.of(AccountAccess.available(JAVA, "Carol", UUID.randomUUID())))
 		));
 		AccountPool pool = new ProtocolAccountManager(stored, directory, new AccountReservations()).pool(List.of("alice", "bob", "carol"));
 
-		assertEquals("carol", pool.lease("java").account().getAccountId());
-		assertEquals("bob", pool.lease("bedrock").account().getAccountId());
-		var none = assertThrows(IllegalStateException.class, () -> pool.lease("java"));
-		assertEquals("No account of the pool is available to protocol library 'java': alice (java: unavailable, Account 'alice' "
-				+ "owns no Java profile), bob (java: unknown), carol (in use)", none.getMessage());
+		assertEquals("carol", pool.lease(JAVA).account().getAccountId());
+		assertEquals("bob", pool.lease(BEDROCK).account().getAccountId());
+		var none = assertThrows(IllegalStateException.class, () -> pool.lease(JAVA));
+		assertEquals("No account of the pool is available for edition 'java': alice (java: unavailable, Account 'alice' "
+				+ "owns no Java profile), bob (java: unavailable, Account 'bob' owns no Java profile), carol (in use)", none.getMessage());
 
-		stored.accounts = List.of(new AuthenticationAccount("alice", List.of(AccountAccess.available("java", "Alice", UUID.randomUUID()))));
-		assertEquals("alice", pool.lease("java").account().getAccountId());
+		stored.accounts = List.of(new AuthenticationAccount("alice", List.of(AccountAccess.available(JAVA, "Alice", UUID.randomUUID()))));
+		assertEquals("alice", pool.lease(JAVA).account().getAccountId());
+		assertEquals(List.of(), stored.checks);
+	}
+
+	@Test
+	void checksAccountsOfUnknownAvailabilityOnlyWhenNoneIsAvailableAndLendsTheFirstThatIs() {
+		UUID carol = UUID.randomUUID();
+		StoredAccounts stored = new StoredAccounts(List.of(
+				new AuthenticationAccount("alice", List.of()),
+				new AuthenticationAccount("bob", List.of()),
+				new AuthenticationAccount("carol", List.of(AccountAccess.unknown(BEDROCK, "Could not reach the services")))
+		));
+		stored.results.put("alice", AccountAccess.unavailable(BEDROCK, "Account 'alice' owns no Bedrock profile"));
+		stored.results.put("carol", AccountAccess.available(BEDROCK, "Carol", carol));
+		AccountReservations reservations = new AccountReservations();
+		assertTrue(reservations.reserve("bob"));
+		AccountPool pool = new ProtocolAccountManager(stored, directory, reservations).pool(List.of("alice", "bob", "carol"));
+
+		AccountPool.AccountLease lease = pool.lease(BEDROCK);
+
+		assertEquals("carol", lease.account().getAccountId());
+		assertEquals(AccountAccess.available(BEDROCK, "Carol", carol), lease.account().access(BEDROCK));
+		assertEquals(List.of("alice bedrock", "carol bedrock"), stored.checks);
+		var none = assertThrows(IllegalStateException.class, () -> pool.lease(BEDROCK));
+		assertEquals("No account of the pool is available for edition 'bedrock': alice (bedrock: unavailable, Account 'alice' "
+				+ "owns no Bedrock profile), bob (in use), carol (in use)", none.getMessage());
 	}
 
 	@Test
@@ -151,9 +183,12 @@ class ProtocolAccountManagerTest {
 	}
 
 	/**
-	 * Stored accounts without files, as the libraries' account workflow lists them now.
+	 * Stored accounts without files, as the libraries' account workflow lists them now; a check records the result
+	 * the test prepared for the account.
 	 */
 	private static final class StoredAccounts implements ProtocolAuthentication {
+		private final Map<String, AccountAccess> results = new HashMap<>();
+		private final List<String> checks = new ArrayList<>();
 		private List<AuthenticationAccount> accounts;
 
 		private StoredAccounts(List<AuthenticationAccount> accounts) {
@@ -168,6 +203,17 @@ class ProtocolAccountManagerTest {
 		@Override
 		public void login(@NotNull String accountId, @NotNull Consumer<String> output) {
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public @NotNull AccountAccess check(@NotNull String accountId, @NotNull MinecraftEdition edition) {
+			checks.add(accountId + " " + edition);
+			AccountAccess result = results.get(accountId);
+			accounts = accounts.stream()
+					.map(account -> account.getAccountId().equals(accountId) ? new AuthenticationAccount(accountId, List.of(result)) : account)
+					.toList();
+
+			return result;
 		}
 
 		@Override

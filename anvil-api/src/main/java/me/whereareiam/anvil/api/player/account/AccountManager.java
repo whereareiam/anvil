@@ -20,8 +20,9 @@ public interface AccountManager {
 	 * Creates a pool over the supplied local account IDs.
 	 *
 	 * <p>Every protocol library can use a stored account, so the pool holds every listed account; when it lends
-	 * one for a player, it lends only an account the player's library recorded as
-	 * {@link me.whereareiam.anvil.api.type.AccountAvailability#AVAILABLE available}.</p>
+	 * one for a player, it lends only an account that is
+	 * {@link me.whereareiam.anvil.api.type.AccountAvailability#AVAILABLE available} for the edition of the servers the
+	 * player reaches.</p>
 	 *
 	 * @param accountIds distinct account IDs eligible for allocation, in lease order
 	 * @return account pool owned by the caller

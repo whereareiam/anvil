@@ -2,7 +2,9 @@ package me.whereareiam.anvil.integration.intellij.account.persistence;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.type.AccountAvailability;
 import me.whereareiam.anvil.integration.intellij.type.AccountSource;
 import org.junit.jupiter.api.Test;
@@ -47,25 +49,32 @@ class AccountDirectoryRepositoryTest {
 		assertEquals(1, repository.readAccounts(project, AccountSource.PROJECT).accounts().size());
 	}
 
-	@Test void readsWhatEachLibraryRecordedWithoutAnyLibraryAndAccountsStoredForOneLibrary() throws Exception {
-		Path current = Files.writeString(directory.resolve("alice.json"), "{\"schemaVersion\":2,\"accountId\":\"alice\","
-				+ "\"microsoft\":{\"accessToken\":\"fixture-secret\"},\"libraries\":{"
-				+ "\"mcprotocol\":{\"availability\":\"AVAILABLE\",\"username\":\"Alice\","
-				+ "\"uuid\":\"5f8eb73b-25be-4c5a-a50f-d27d65e30ca0\",\"session\":\"fixture-secret\"},"
-				+ "\"cloudburst\":{\"availability\":\"UNAVAILABLE\",\"reason\":\"Account 'alice' owns no game\"}}}");
-		Path legacy = Files.writeString(directory.resolve("bob.json"), account("bob", "Bob").replace("\"credentials\"",
-				"\"uuid\":\"5f8eb73b-25be-4c5a-a50f-d27d65e30ca1\",\"credentials\""));
+	@Test void readsWhatWasRecordedForEachEditionWithoutAnyLibrary() throws Exception {
+		Path current = Files.writeString(directory.resolve("alice.json"), "{\"schemaVersion\":3,\"accountId\":\"alice\","
+				+ "\"microsoft\":{\"accessToken\":\"fixture-secret\"},\"editions\":{"
+				+ "\"java\":{\"availability\":\"AVAILABLE\",\"username\":\"Alice\",\"uuid\":\"5f8eb73b-25be-4c5a-a50f-d27d65e30ca0\"},"
+				+ "\"bedrock\":{\"availability\":\"UNAVAILABLE\",\"reason\":\"Account 'alice' owns no game\"}},"
+				+ "\"sessions\":{\"mcprotocol\":\"fixture-secret\"}}");
 		var repository = new AccountDirectoryRepository();
 
 		var alice = repository.readMetadata(current);
-		var bob = repository.readMetadata(legacy);
 
-		assertEquals(AccountAvailability.AVAILABLE, alice.access("mcprotocol").getAvailability());
-		assertEquals("Alice", alice.access("mcprotocol").getUsername());
-		assertEquals("Account 'alice' owns no game", alice.access("cloudburst").getReason());
-		assertEquals(AccountAvailability.UNKNOWN, alice.access("other").getAvailability());
-		assertEquals(AccountAvailability.AVAILABLE, bob.access("mcprotocol").getAvailability());
-		assertEquals(AccountAvailability.UNKNOWN, bob.access("cloudburst").getAvailability());
+		assertEquals(AccountAvailability.AVAILABLE, alice.access(MinecraftEdition.of("java")).getAvailability());
+		assertEquals("Alice", alice.access(MinecraftEdition.of("java")).getUsername());
+		assertEquals("Account 'alice' owns no game", alice.access(MinecraftEdition.of("bedrock")).getReason());
+		assertEquals(AccountAvailability.UNKNOWN, alice.access(MinecraftEdition.of("other")).getAvailability());
+	}
+
+	@Test void showsAccountsOfSchemasThatRecordedLibrariesAsNotYetChecked() throws Exception {
+		Path perLibrary = Files.writeString(directory.resolve("alice.json"), "{\"schemaVersion\":2,\"accountId\":\"alice\","
+				+ "\"microsoft\":{\"accessToken\":\"fixture-secret\"},\"libraries\":{"
+				+ "\"mcprotocol\":{\"availability\":\"AVAILABLE\",\"username\":\"Alice\","
+				+ "\"uuid\":\"5f8eb73b-25be-4c5a-a50f-d27d65e30ca0\",\"session\":\"fixture-secret\"}}}");
+		Path legacy = Files.writeString(directory.resolve("bob.json"), account("bob", "Bob"));
+		var repository = new AccountDirectoryRepository();
+
+		assertEquals(List.of(), repository.readMetadata(perLibrary).getAccess());
+		assertEquals(List.of(), repository.readMetadata(legacy).getAccess());
 	}
 
 	private String account(String id, String user) {

@@ -1,9 +1,12 @@
 package me.whereareiam.anvil.protocol.worker.account;
 
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.type.AccountAvailability;
+import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
+import me.whereareiam.anvil.protocol.api.type.ProtocolFeature;
 import me.whereareiam.anvil.protocol.api.worker.WorkerAuthentication;
 import me.whereareiam.anvil.protocol.api.worker.model.AccountCredentials;
 import me.whereareiam.anvil.protocol.api.worker.model.AuthenticationSession;
@@ -14,100 +17,138 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static me.whereareiam.anvil.protocol.worker.account.AccountStoreTest.BEDROCK;
+import static me.whereareiam.anvil.protocol.worker.account.AccountStoreTest.JAVA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HostedAccountsTest {
-	private static final MinecraftVersion NEWEST = MinecraftVersion.parse("1.26.60");
-	private static final UUID JAVA_PROFILE = UUID.fromString("00000000-0000-0000-0000-00000000000a");
+	private static final MinecraftVersion JAVA_NEWEST = MinecraftVersion.parse("1.21.11");
+	private static final MinecraftVersion BEDROCK_NEWEST = MinecraftVersion.parse("1.26.60");
+	private static final UUID PROFILE = UUID.fromString("00000000-0000-0000-0000-00000000000a");
 
 	@TempDir
 	Path temporary;
 
 	@Test
-	void signsInOnceAndRecordsWhatEveryLibraryCanDoWithTheAccount() {
+	void signsInOnceAndChecksEachEditionWithItsFirstLibrary() {
 		RecordingDerivation java = new RecordingDerivation("Alice", null);
+		RecordingDerivation otherJava = new RecordingDerivation("Alice", null);
 		RecordingDerivation bedrock = new RecordingDerivation(null, "Account 'alice' owns no Bedrock profile");
 		List<String> signIns = new ArrayList<>();
-		HostedAccounts accounts = accounts(signIns, library("javalib", java), library("bedrocklib", bedrock));
+		HostedAccounts accounts = accounts(signIns,
+				library("javalib", java, JAVA, JAVA_NEWEST),
+				library("otherjavalib", otherJava, JAVA, JAVA_NEWEST),
+				library("bedrocklib", bedrock, BEDROCK, BEDROCK_NEWEST));
 		List<String> output = new ArrayList<>();
 
 		accounts.login("alice", output::add);
 
 		assertEquals(List.of("alice"), signIns);
-		assertEquals(List.of("derive 1.26.60 refresh-0 null"), java.calls);
+		assertEquals(List.of("derive 1.21.11 refresh-0 null"), java.calls);
+		assertEquals(List.of(), otherJava.calls);
 		assertEquals(List.of("derive 1.26.60 refresh-1 null"), bedrock.calls);
 		assertEquals(List.of(
 				"Open https://example.invalid/device",
 				"Signed in account 'alice'.",
-				"javalib: available as Alice (" + JAVA_PROFILE + ")",
-				"bedrocklib: unavailable, Account 'alice' owns no Bedrock profile"
+				"java: available as Alice (" + PROFILE + ")",
+				"bedrock: unavailable, Account 'alice' owns no Bedrock profile"
 		), output);
 		AuthenticationAccount account = accounts.accounts().iterator().next();
-		assertEquals(AccountAvailability.AVAILABLE, account.access("javalib").getAvailability());
-		assertEquals(AccountAvailability.UNAVAILABLE, account.access("bedrocklib").getAvailability());
+		assertEquals(AccountAvailability.AVAILABLE, account.access(JAVA).getAvailability());
+		assertEquals(AccountAvailability.UNAVAILABLE, account.access(BEDROCK).getAvailability());
 	}
 
 	@Test
-	void derivesAPlayersSessionWithTheCachedSessionAndKeepsTheRefreshedToken() {
+	void derivesAPlayersSessionWithItsLibrarysCachedSessionAndRecordsItForTheEdition() {
 		RecordingDerivation java = new RecordingDerivation("Alice", null);
-		RecordingDerivation bedrock = new RecordingDerivation("AliceXbox", null);
-		HostedAccounts accounts = accounts(new ArrayList<>(), library("javalib", java), library("bedrocklib", bedrock));
+		RecordingDerivation otherJava = new RecordingDerivation("AliceToo", null);
+		HostedAccounts accounts = accounts(new ArrayList<>(),
+				library("javalib", java, JAVA, JAVA_NEWEST),
+				library("otherjavalib", otherJava, JAVA, JAVA_NEWEST));
 		accounts.login("alice", ignored -> { });
 
-		AuthenticationSession session = accounts.resolve("javalib", "alice", MinecraftVersion.parse("1.21.11"));
-		accounts.resolve("bedrocklib", "alice", MinecraftVersion.parse("1.21.50"));
+		AuthenticationSession session = accounts.resolve("javalib", JAVA, "alice", MinecraftVersion.parse("1.20.4"));
+		accounts.resolve("otherjavalib", JAVA, "alice", MinecraftVersion.parse("1.21.4"));
 
 		assertEquals("Alice", session.getUsername());
-		assertEquals("derive 1.21.11 refresh-2 cache-1", java.calls.getLast());
-		assertEquals("derive 1.21.50 refresh-3 cache-1", bedrock.calls.getLast());
+		assertEquals("derive 1.20.4 refresh-1 cache-1", java.calls.getLast());
+		assertEquals("derive 1.21.4 refresh-2 null", otherJava.calls.getLast());
+		assertEquals("AliceToo", accounts.accounts().iterator().next().access(JAVA).getUsername());
 	}
 
 	@Test
-	void refusesAPlayerWhoseLibraryRefusesTheAccountWithTheLibrarysReasonAndRecordsIt() {
+	void refusesAPlayerWhoseEditionRefusesTheAccountWithTheLibrarysReasonAndRecordsIt() {
 		RecordingDerivation java = new RecordingDerivation("Alice", null);
-		HostedAccounts accounts = accounts(new ArrayList<>(), library("javalib", java));
+		HostedAccounts accounts = accounts(new ArrayList<>(), library("javalib", java, JAVA, JAVA_NEWEST));
 		accounts.login("alice", ignored -> { });
 		java.refusal = "Account 'alice' has no profile any more";
 
-		var failure = assertThrows(IllegalStateException.class, () -> accounts.resolve("javalib", "alice", NEWEST));
+		var failure = assertThrows(IllegalStateException.class, () -> accounts.resolve("javalib", JAVA, "alice", JAVA_NEWEST));
 
 		assertEquals("Account 'alice' has no profile any more", failure.getMessage());
-		AccountAccess access = accounts.accounts().iterator().next().access("javalib");
-		assertEquals(AccountAccess.unavailable("javalib", "Account 'alice' has no profile any more"), access);
+		AccountAccess access = accounts.accounts().iterator().next().access(JAVA);
+		assertEquals(AccountAccess.unavailable(JAVA, "Account 'alice' has no profile any more"), access);
 	}
 
 	@Test
 	void recordsUnknownAvailabilityWhenALibraryCannotTellAtSignIn() {
 		RecordingDerivation java = new RecordingDerivation("Alice", null);
 		java.failure = "Could not reach the services for account 'alice'";
-		HostedAccounts accounts = accounts(new ArrayList<>(), library("javalib", java));
+		HostedAccounts accounts = accounts(new ArrayList<>(), library("javalib", java, JAVA, JAVA_NEWEST));
 		List<String> output = new ArrayList<>();
 
 		accounts.login("alice", output::add);
 
-		assertEquals("javalib: unknown, Could not reach the services for account 'alice'", output.getLast());
-		assertEquals(AccountAvailability.UNKNOWN, accounts.accounts().iterator().next().access("javalib").getAvailability());
+		assertEquals("java: unknown, Could not reach the services for account 'alice'", output.getLast());
+		assertEquals(AccountAvailability.UNKNOWN, accounts.accounts().iterator().next().access(JAVA).getAvailability());
+	}
+
+	@Test
+	void checksAnAccountForOneEditionAndRecordsTheResult() {
+		RecordingDerivation java = new RecordingDerivation("Alice", null);
+		java.failure = "Could not reach the services for account 'alice'";
+		HostedAccounts accounts = accounts(new ArrayList<>(), library("javalib", java, JAVA, JAVA_NEWEST));
+		accounts.login("alice", ignored -> { });
+		java.failure = null;
+
+		AccountAccess checked = accounts.check("alice", JAVA);
+		AccountAccess other = accounts.check("alice", MinecraftEdition.of("other"));
+
+		assertEquals(AccountAccess.available(JAVA, "Alice", PROFILE), checked);
+		assertEquals(checked, accounts.accounts().iterator().next().access(JAVA));
+		assertEquals(AccountAccess.unknown(MinecraftEdition.of("other"), "no installed protocol library of edition 'other' plays online"), other);
+	}
+
+	@Test
+	void readsAnAccountOfTheSchemaThatRecordedLibrariesAsTheEditionsOfTheInstalledLibraries() throws Exception {
+		Files.writeString(temporary.resolve("alice.json"), "{\"schemaVersion\":2,\"accountId\":\"alice\","
+				+ "\"microsoft\":{\"clientId\":\"client\",\"scope\":\"scope\",\"accessToken\":\"a\",\"refreshToken\":\"r\",\"expiresAt\":1000},"
+				+ "\"libraries\":{\"javalib\":{\"availability\":\"AVAILABLE\",\"username\":\"Alice\",\"uuid\":\"" + PROFILE + "\"}}}");
+		HostedAccounts accounts = accounts(new ArrayList<>(), library("javalib", new RecordingDerivation("Alice", null), JAVA, JAVA_NEWEST));
+
+		assertEquals(AccountAccess.available(JAVA, "Alice", PROFILE), accounts.accounts().iterator().next().access(JAVA));
 	}
 
 	@Test
 	void refusesALibraryThatDerivesNoSessions() {
-		HostedAccounts accounts = accounts(new ArrayList<>(), library("javalib", new RecordingDerivation("Alice", null)));
+		HostedAccounts accounts = accounts(new ArrayList<>(), library("javalib", new RecordingDerivation("Alice", null), JAVA, JAVA_NEWEST));
 
-		var failure = assertThrows(IllegalArgumentException.class, () -> accounts.resolve("other", "alice", NEWEST));
+		var failure = assertThrows(IllegalArgumentException.class, () -> accounts.resolve("other", JAVA, "alice", JAVA_NEWEST));
 
 		assertTrue(failure.getMessage().contains("'other'"), failure.getMessage());
 	}
 
 	@Test
 	void reportsRemovedAndUnknownAccountsOnLogout() {
-		HostedAccounts accounts = accounts(new ArrayList<>(), library("javalib", new RecordingDerivation("Alice", null)));
+		HostedAccounts accounts = accounts(new ArrayList<>(), library("javalib", new RecordingDerivation("Alice", null), JAVA, JAVA_NEWEST));
 		accounts.login("alice", ignored -> { });
 		List<String> output = new ArrayList<>();
 
@@ -125,7 +166,12 @@ class HostedAccountsTest {
 		});
 	}
 
-	private static HostedAccounts.Library library(String id, WorkerAuthentication derivation) {
+	private static HostedAccounts.Library library(
+			String id,
+			WorkerAuthentication derivation,
+			MinecraftEdition edition,
+			MinecraftVersion newest
+	) {
 		WorkerLibrary library = WorkerLibrary.builder()
 				.id(id)
 				.name(id)
@@ -134,7 +180,25 @@ class HostedAccountsTest {
 				.pinTask("pin")
 				.offlineUniqueIdPrefix("Offline:")
 				.build();
-		return new HostedAccounts.Library(library, derivation, () -> NEWEST);
+		MinecraftVersion older = MinecraftVersion.parse("1.20.4");
+		ProtocolRelease release = ProtocolRelease.builder()
+				.libraryVersion(id + "-1")
+				.edition(edition)
+				.minecraftVersion(older)
+				.minecraftVersion(newest)
+				.protocolNumber(older, 1)
+				.protocolNumber(newest, 2)
+				.javaVersion(21)
+				.feature(ProtocolFeature.ONLINE_AUTHENTICATION)
+				.build();
+		ProtocolRelease offline = ProtocolRelease.builder()
+				.libraryVersion(id + "-offline")
+				.edition(MinecraftEdition.of("offline"))
+				.minecraftVersion(newest)
+				.protocolNumber(newest, 3)
+				.javaVersion(21)
+				.build();
+		return new HostedAccounts.Library(library, derivation, () -> List.of(release, offline));
 	}
 
 	/**
@@ -163,7 +227,7 @@ class HostedAccountsTest {
 
 			return DerivedSession.available(AuthenticationSession.builder()
 					.username(username)
-					.uuid(JAVA_PROFILE)
+					.uuid(PROFILE)
 					.accessToken("game-" + generation)
 					.build(), "cache-1", refreshed);
 		}

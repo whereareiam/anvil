@@ -4,9 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import lombok.Builder;
-import lombok.Singular;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Value;
+import lombok.With;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.type.AccountAvailability;
@@ -23,38 +25,47 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
  * The account files of the native worker: one private JSON file per account ID, holding one Microsoft account's
- * token and, for each library that used the account, what it recorded and the session it cached.
+ * token, what was recorded about the account for each Minecraft edition, and the session each library cached.
  *
  * <pre>{@code
  * {
- *   "schemaVersion": 2,
+ *   "schemaVersion": 3,
  *   "accountId": "alice",
  *   "microsoft": { "clientId": "...", "scope": "...", "accessToken": "...", "refreshToken": "...", "expiresAt": 0 },
- *   "libraries": {
- *     "mcprotocol": { "availability": "AVAILABLE", "username": "Alice", "uuid": "...", "session": "..." }
- *   }
+ *   "editions": {
+ *     "example": { "availability": "AVAILABLE", "username": "Alice", "uuid": "..." }
+ *   },
+ *   "sessions": { "examplelib": "..." }
  * }
  * }</pre>
  *
- * <p>Files of schema version 1, which Anvil wrote while an account belonged to one library, are read into this
- * shape: their {@code credentials} are the library's saved MinecraftAuth session, whose Microsoft application and
- * token become the account's token, and which stays the cached session of the library their {@code provider} key
- * names. Writing such an account stores it in the current schema.</p>
+ * <p>Files of earlier schema versions recorded availability per library: version 2 under {@code libraries}, each
+ * entry with the library's cached {@code session}, and version 1 for the one library its {@code provider} key names,
+ * whose {@code credentials} are that library's saved MinecraftAuth session and hold the Microsoft token. They are read
+ * into this shape: each library's cached session stays its own, and its record becomes the record of the edition the
+ * store's {@code libraryEditions} maps it to, preferring an available record when two libraries share an edition.
+ * The record of a library that maps to no edition is left out, so the edition is checked again. Writing such an
+ * account stores it in the current schema.</p>
  */
 final class AccountStore {
-	private static final int SCHEMA_VERSION = 2;
+	private static final int SCHEMA_VERSION = 3;
 	private static final int ACCOUNT_PER_LIBRARY_SCHEMA_VERSION = 1;
+	private static final int AVAILABILITY_PER_LIBRARY_SCHEMA_VERSION = 2;
 	private static final String SUFFIX = ".json";
 	private static final Pattern ACCOUNT_ID = Pattern.compile("[A-Za-z0-9_.-]+");
 	private static final ObjectMapper JSON = new ObjectMapper();
@@ -70,9 +81,19 @@ final class AccountStore {
 	);
 
 	private final Path directory;
+	private final Function<String, Optional<MinecraftEdition>> libraryEditions;
 
-	AccountStore(@NotNull Path accountsDirectory) {
+	/**
+	 * Creates the store of an accounts directory.
+	 *
+	 * @param accountsDirectory directory of the account files
+	 * @param libraryEditions maps a library ID to the one edition its releases speak, which the record a file of an
+	 * earlier schema keeps for the library becomes the record of; empty for a library that is not installed or speaks
+	 * several editions
+	 */
+	AccountStore(@NotNull Path accountsDirectory, @NotNull Function<String, Optional<MinecraftEdition>> libraryEditions) {
 		directory = accountsDirectory.toAbsolutePath().normalize();
+		this.libraryEditions = libraryEditions;
 	}
 
 	/**
@@ -103,7 +124,7 @@ final class AccountStore {
 	}
 
 	/**
-	 * Reads a stored account, reading a file of the previous schema into the current shape.
+	 * Reads a stored account, reading a file of an earlier schema into the current shape.
 	 *
 	 * @param accountId owner-local account ID
 	 * @return the stored account
@@ -130,9 +151,10 @@ final class AccountStore {
 		if (version == null || !version.isInt())
 			throw new IllegalStateException("Stored account '" + accountId + "' has no schema version");
 		if (version.asInt() == ACCOUNT_PER_LIBRARY_SCHEMA_VERSION) return readAccountPerLibrary(accountId, object);
+		if (version.asInt() == AVAILABILITY_PER_LIBRARY_SCHEMA_VERSION) return readAvailabilityPerLibrary(accountId, object);
 		if (version.asInt() != SCHEMA_VERSION)
 			throw new IllegalStateException("Stored account '" + accountId + "' uses schema version " + version.asInt()
-					+ "; this Anvil version reads versions " + ACCOUNT_PER_LIBRARY_SCHEMA_VERSION + " and " + SCHEMA_VERSION);
+					+ "; this Anvil version reads versions " + ACCOUNT_PER_LIBRARY_SCHEMA_VERSION + " to " + SCHEMA_VERSION);
 
 		return readCurrent(accountId, object);
 	}
@@ -152,8 +174,10 @@ final class AccountStore {
 		document.put("schemaVersion", SCHEMA_VERSION);
 		document.put("accountId", accountId);
 		document.set("microsoft", token(account.getToken()));
-		ObjectNode libraries = document.putObject("libraries");
-		account.getLibraries().forEach((libraryId, entry) -> libraries.set(libraryId, library(entry)));
+		ObjectNode editions = document.putObject("editions");
+		account.getEditions().forEach((edition, access) -> editions.set(edition.getId(), access(access)));
+		ObjectNode sessions = document.putObject("sessions");
+		account.getSessions().forEach(sessions::put);
 
 		Files.createDirectories(directory);
 		applyPermissions(directory, DIRECTORY_PERMISSIONS);
@@ -213,19 +237,38 @@ final class AccountStore {
 	}
 
 	private StoredAccount readCurrent(String accountId, ObjectNode document) {
-		JsonNode microsoft = document.path("microsoft");
-		if (!microsoft.isObject()) throw new IllegalStateException("Stored account '" + accountId + "' has no Microsoft token");
+		StoredAccount account = StoredAccount.of(accountId, microsoft(accountId, document));
+		Iterator<Map.Entry<String, JsonNode>> editions = document.path("editions").fields();
+		while (editions.hasNext()) {
+			Map.Entry<String, JsonNode> edition = editions.next();
+			account = account.withAccess(access(accountId, editionOf(accountId, edition.getKey()), edition.getValue()));
+		}
 
-		StoredAccount.StoredAccountBuilder account = StoredAccount.builder()
-				.accountId(accountId)
-				.token(token(accountId, microsoft));
+		Iterator<Map.Entry<String, JsonNode>> sessions = document.path("sessions").fields();
+		while (sessions.hasNext()) {
+			Map.Entry<String, JsonNode> session = sessions.next();
+			if (session.getValue().isTextual()) account = account.withSession(session.getKey(), session.getValue().asText());
+		}
+
+		return account;
+	}
+
+	/**
+	 * Reads a file of the schema that recorded availability per library, with each library's cached session.
+	 */
+	private StoredAccount readAvailabilityPerLibrary(String accountId, ObjectNode document) {
+		StoredAccount account = StoredAccount.of(accountId, microsoft(accountId, document));
 		Iterator<Map.Entry<String, JsonNode>> libraries = document.path("libraries").fields();
 		while (libraries.hasNext()) {
 			Map.Entry<String, JsonNode> library = libraries.next();
-			account.library(library.getKey(), library(accountId, library.getKey(), library.getValue()));
+			JsonNode recorded = library.getValue();
+			if (recorded.path("session").isTextual()) account = account.withSession(library.getKey(), recorded.get("session").asText());
+
+			Optional<MinecraftEdition> edition = libraryEditions.apply(library.getKey());
+			if (edition.isPresent()) account = account.withEarlierRecord(access(accountId, edition.get(), recorded));
 		}
 
-		return account.build();
+		return account;
 	}
 
 	/**
@@ -249,26 +292,38 @@ final class AccountStore {
 			throw new IllegalStateException("Stored account '" + accountId + "' was signed in through a Microsoft application "
 					+ "this Anvil version cannot refresh; sign it in again");
 
-		AccountAccess access = AccountAccess.unknown(provider.asText(), null);
-		try {
-			if (document.path("username").isTextual() && document.path("uuid").isTextual())
-				access = AccountAccess.available(provider.asText(), document.get("username").asText(),
-						UUID.fromString(document.get("uuid").asText()));
-		} catch (IllegalArgumentException invalid) {
-			throw new IllegalStateException("Stored account '" + accountId + "' has an invalid profile UUID");
-		}
-
-		return StoredAccount.builder()
-				.accountId(accountId)
-				.token(MicrosoftToken.builder()
+		StoredAccount account = StoredAccount.of(accountId, MicrosoftToken.builder()
 						.clientId(application.get("clientId").asText())
 						.scope(application.get("scope").asText())
 						.accessToken(token.get("accessToken").asText())
 						.refreshToken(token.path("refreshToken").isTextual() ? token.get("refreshToken").asText() : null)
 						.expiresAt(Instant.ofEpochMilli(token.get("expireTimeMs").asLong()))
 						.build())
-				.library(provider.asText(), new LibraryEntry(access, credentials.toString()))
-				.build();
+				.withSession(provider.asText(), credentials.toString());
+		Optional<MinecraftEdition> edition = libraryEditions.apply(provider.asText());
+		if (edition.isEmpty() || !document.path("username").isTextual() || !document.path("uuid").isTextual()) return account;
+
+		try {
+			return account.withAccess(AccountAccess.available(edition.get(), document.get("username").asText(),
+					UUID.fromString(document.get("uuid").asText())));
+		} catch (IllegalArgumentException invalid) {
+			throw new IllegalStateException("Stored account '" + accountId + "' has an invalid profile UUID");
+		}
+	}
+
+	private static MicrosoftToken microsoft(String accountId, ObjectNode document) {
+		JsonNode microsoft = document.path("microsoft");
+		if (!microsoft.isObject()) throw new IllegalStateException("Stored account '" + accountId + "' has no Microsoft token");
+
+		return token(accountId, microsoft);
+	}
+
+	private static MinecraftEdition editionOf(String accountId, String id) {
+		try {
+			return MinecraftEdition.of(id);
+		} catch (IllegalArgumentException invalid) {
+			throw new IllegalStateException("Stored account '" + accountId + "' records an invalid edition");
+		}
 	}
 
 	private static MicrosoftToken token(String accountId, JsonNode microsoft) {
@@ -296,34 +351,28 @@ final class AccountStore {
 		return microsoft;
 	}
 
-	private static LibraryEntry library(String accountId, String libraryId, JsonNode library) {
-		String availability = library.path("availability").asText();
-		String reason = library.path("reason").isTextual() ? library.get("reason").asText() : null;
-		AccountAccess access;
+	private static AccountAccess access(String accountId, MinecraftEdition edition, JsonNode recorded) {
+		String reason = recorded.path("reason").isTextual() ? recorded.get("reason").asText() : null;
 		try {
-			access = switch (AccountAvailability.valueOf(availability)) {
-				case AVAILABLE -> AccountAccess.available(libraryId, library.path("username").asText(),
-						UUID.fromString(library.path("uuid").asText()));
-				case UNAVAILABLE -> AccountAccess.unavailable(libraryId, reason == null ? "" : reason);
-				case UNKNOWN -> AccountAccess.unknown(libraryId, reason);
+			return switch (AccountAvailability.valueOf(recorded.path("availability").asText())) {
+				case AVAILABLE -> AccountAccess.available(edition, recorded.path("username").asText(),
+						UUID.fromString(recorded.path("uuid").asText()));
+				case UNAVAILABLE -> AccountAccess.unavailable(edition, reason == null ? "" : reason);
+				case UNKNOWN -> AccountAccess.unknown(edition, reason);
 			};
 		} catch (IllegalArgumentException invalid) {
-			throw new IllegalStateException("Stored account '" + accountId + "' records library '" + libraryId + "' invalidly");
+			throw new IllegalStateException("Stored account '" + accountId + "' records edition '" + edition + "' invalidly");
 		}
-
-		return new LibraryEntry(access, library.path("session").isTextual() ? library.get("session").asText() : null);
 	}
 
-	private static ObjectNode library(LibraryEntry entry) {
-		AccountAccess access = entry.access();
-		ObjectNode library = JSON.createObjectNode();
-		library.put("availability", access.getAvailability().name());
-		if (access.getUsername() != null) library.put("username", access.getUsername());
-		if (access.getUniqueId() != null) library.put("uuid", access.getUniqueId().toString());
-		if (access.getReason() != null) library.put("reason", access.getReason());
-		if (entry.cachedSession() != null) library.put("session", entry.cachedSession());
+	private static ObjectNode access(AccountAccess access) {
+		ObjectNode recorded = JSON.createObjectNode();
+		recorded.put("availability", access.getAvailability().name());
+		if (access.getUsername() != null) recorded.put("username", access.getUsername());
+		if (access.getUniqueId() != null) recorded.put("uuid", access.getUniqueId().toString());
+		if (access.getReason() != null) recorded.put("reason", access.getReason());
 
-		return library;
+		return recorded;
 	}
 
 	private static void applyPermissions(Path path, Set<PosixFilePermission> permissions) throws IOException {
@@ -332,28 +381,70 @@ final class AccountStore {
 	}
 
 	/**
-	 * One stored account: its Microsoft token and, for each library that used it, what the library recorded.
+	 * One stored account: its Microsoft token, what was recorded for each edition, and each library's cached session.
 	 */
 	@Value
-	@Builder(toBuilder = true)
+	@With
+	@AllArgsConstructor(access = AccessLevel.PRIVATE)
 	static class StoredAccount {
 		@NotNull String accountId;
 		@NotNull MicrosoftToken token;
-		@Singular
-		@NotNull Map<String, LibraryEntry> libraries;
+		@NotNull Map<MinecraftEdition, AccountAccess> editions;
+		@NotNull Map<String, String> sessions;
+
+		static @NotNull StoredAccount of(@NotNull String accountId, @NotNull MicrosoftToken token) {
+			return new StoredAccount(accountId, token, Map.of(), Map.of());
+		}
 
 		@NotNull AuthenticationAccount metadata() {
-			return new AuthenticationAccount(accountId, libraries.values().stream().map(LibraryEntry::access).toList());
+			return new AuthenticationAccount(accountId, editions.values());
+		}
+
+		@NotNull AccountAccess access(@NotNull MinecraftEdition edition) {
+			AccountAccess access = editions.get(edition);
+			return access == null ? AccountAccess.unknown(edition, null) : access;
 		}
 
 		@Nullable String cachedSession(@NotNull String libraryId) {
-			LibraryEntry entry = libraries.get(libraryId);
-			return entry == null ? null : entry.cachedSession();
+			return sessions.get(libraryId);
+		}
+
+		/**
+		 * Records what was determined for an edition, replacing the edition's earlier record.
+		 */
+		@NotNull StoredAccount withAccess(@NotNull AccountAccess access) {
+			Map<MinecraftEdition, AccountAccess> changed = new LinkedHashMap<>(editions);
+			changed.put(access.getEdition(), access);
+			return withEditions(Collections.unmodifiableMap(changed));
+		}
+
+		/**
+		 * Keeps a library's cached session, or drops it when the session is null.
+		 */
+		@NotNull StoredAccount withSession(@NotNull String libraryId, @Nullable String session) {
+			Map<String, String> changed = new LinkedHashMap<>(sessions);
+			if (session == null) changed.remove(libraryId);
+			else changed.put(libraryId, session);
+			return withSessions(Collections.unmodifiableMap(changed));
+		}
+
+		/**
+		 * Merges a record a file of an earlier schema kept for a library of the edition, preferring an available
+		 * record over an unavailable one and either over an unknown one.
+		 */
+		private @NotNull StoredAccount withEarlierRecord(@NotNull AccountAccess access) {
+			AccountAccess recorded = editions.get(access.getEdition());
+			if (recorded != null && rank(recorded) >= rank(access)) return this;
+
+			return withAccess(access);
+		}
+
+		private static int rank(AccountAccess access) {
+			return switch (access.getAvailability()) {
+				case AVAILABLE -> 2;
+				case UNAVAILABLE -> 1;
+				case UNKNOWN -> 0;
+			};
 		}
 	}
-
-	/**
-	 * What one library recorded about an account, and the session it cached for the next derivation.
-	 */
-	record LibraryEntry(@NotNull AccountAccess access, @Nullable String cachedSession) { }
 }

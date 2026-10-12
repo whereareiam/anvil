@@ -131,13 +131,19 @@ current project scope.
 - An Anvil account is one Microsoft account. `worker-common`'s `HostedAccounts` owns the one device-code sign-in
   (`MicrosoftSignIn`, the Minecraft Launcher's Xbox title `00000000402b5328` with scope
   `service::user.auth.xboxlive.com::MBI_SSL`, the application of the account files Anvil 1.0 stored) and the account
-  files: one `<accountId>.json` (schema 2) holding the `MicrosoftToken` and, per library ID, the recorded
-  `AccountAvailability` with profile or reason and the library's cached session. Sign-in chooses no library. A
-  library's `WorkerAuthentication` only derives its session from the token (`derive(credentials, version)`), returns
-  the token as it left it, and refuses an account its services refuse with a reason it words itself, naming the
-  account; neutral code names no edition. Every derivation, at sign-in and for each player, records the library's
-  result. Schema 1 files (one library's serialized MinecraftAuth session under `credentials`, named by `provider`)
-  are read into that shape without a new sign-in. `ProtocolLibraryHost.authentication(...)` offers the workflow
+  files: one `<accountId>.json` (schema 3) holding the `MicrosoftToken`, per `MinecraftEdition` id the recorded
+  `AccountAccess` (`AccountAvailability` with profile or reason) and per library ID its cached session. Availability
+  belongs to the edition, not the library: a result counts for every installed library of the edition. Sign-in
+  chooses no library and checks each edition that the hosted libraries' online releases speak once, with the first
+  library of the edition and the newest version of its releases of that edition. A library's `WorkerAuthentication`
+  only derives its session from the token (`derive(credentials, version)`), returns the token as it left it, and
+  refuses an account its edition's services refuse with a reason it words itself, naming the account; neutral code
+  names no edition. Every derivation, at sign-in, for each player (under the edition of the player's release) and
+  for `ProtocolAuthentication.check(accountId, edition)`, records the result for its edition. Schema 1 files (one
+  library's serialized MinecraftAuth session under `credentials`, named by `provider`) and schema 2 files (results
+  per library ID) are read into that shape without a new sign-in: a library's record becomes the record of the one
+  edition its online releases speak, an available record winning, and a library that is not installed or speaks
+  several editions leaves its edition unknown. The IDE, which knows no library, shows those files as not checked. `ProtocolLibraryHost.authentication(...)` offers the workflow
   and `ProtocolLibraryRegistry.authentication(...)` returns it; there is no per-library authentication.
 - A CloudburstMC Protocol client segment hands bindings a `CloudburstSession<P, I, T>` as the native session: `send`,
   typed `subscribe` dispatched from the session's one packet handler, the `GameStart`, the item definitions and the
@@ -250,11 +256,15 @@ current project scope.
 - Tooling signs in through `ProtocolLibraryRegistry.authentication(...)`, not the worker's account files, and never
   chooses a library. Account files are managed outside project configuration. The IntelliJ account manager and
   Gradle `anvilLogin`/`anvilLogout` share the `AnvilAuthentication` entry point; the IDE reads account files
-  without any library. An online player whose library recorded its account as unavailable is refused before it
-  connects, naming the account and giving the library's reason. Named pools live in the account directory's
+  without any library. An online player whose account is recorded as unavailable for the edition of the servers it
+  reaches is refused before it connects, naming the account and giving the recorded reason. Named pools live in the account directory's
   versioned `pools.properties`, documented on `AccountManager.pool(String)`; the runtime reads it and the IDE writes
-  it, with the same rules. A pool lends a library's player only an account that library recorded as available
-  (`AccountPool.lease(libraryId)`, `PlayerManager.create(options, pool)`).
+  it, with the same rules. A pool lends a player only an account available for the edition of the servers it reaches
+  (`AccountPool.lease(MinecraftEdition)`, `PlayerManager.create(options, pool)`); when it has none, it checks its
+  free accounts of unknown availability in order through `ProtocolAuthentication.check`, one network derivation
+  each while the account is reserved, records each result and lends the first that becomes available, and otherwise
+  fails listing each account and why. JUnit's `@AnvilAccounts(edition = "...")` counts, and pools, only accounts
+  available for that edition; without it, every stored account counts.
 - External embedded-agent handlers implement `agent.server.api.operation.AgentOperationProvider`
   and own their operation namespace.
   Install their JARs under `plugins/anvil-agent-extensions`; do not bundle Anvil agent APIs or

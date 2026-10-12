@@ -14,8 +14,9 @@ import java.util.List;
 
 /**
  * Signs a Microsoft account in and stores it, or removes a stored account. The account is not tied to a protocol
- * library: after the sign-in, every installed library that plays online checks what it can do with the account and
- * the result is printed per library.
+ * library: after the sign-in, one installed library of each Minecraft edition the installed libraries speak checks
+ * what that edition's players can do with the account, and the result is printed per edition, such as
+ * {@code example: available as Alice (<uuid>)}, with the checking library's reason when the account is unavailable.
  * <p>
  * Shared by the IntelliJ account manager and the Gradle {@code anvilLogin} and {@code anvilLogout} tasks. Options:
  * <pre>{@code

@@ -78,7 +78,9 @@ existing source set. See [IDE project tooling](../tooling/index.md) for declarat
 | `anvilLogout --account=<id>` | Remove the stored account |
 
 Both tasks require `--account`. `anvilLogin` runs the Microsoft device-code sign-in in a separate JVM and stores
-the account in the engine's account directory. It chooses no protocol library: afterwards every installed library
-that plays online checks what it can do with the account, and the task prints one line per library. Tokens stay in the account file and never become task inputs or arguments. Both tasks are untracked and
+the account in the engine's account directory. It chooses no protocol library: afterwards one installed library of
+each Minecraft edition checks what that edition's players can do with the account, and the task prints one line
+per edition, such as `java: available as Steve (<uuid>)` or `bedrock: unavailable, ` followed by the checking
+library's reason. Tokens stay in the account file and never become task inputs or arguments. Both tasks are untracked and
 always run. See [Authentication](../../../building-blocks/players/authentication/index.md) before
 using online players.

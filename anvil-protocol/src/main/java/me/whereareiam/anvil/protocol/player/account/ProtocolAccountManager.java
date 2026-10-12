@@ -1,10 +1,12 @@
 package me.whereareiam.anvil.protocol.player.account;
 
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.player.account.AccountManager;
 import me.whereareiam.anvil.api.player.account.AccountPool;
 import me.whereareiam.anvil.api.player.account.AccountPool.AccountLease;
+import me.whereareiam.anvil.api.type.AccountAvailability;
 import me.whereareiam.anvil.protocol.api.library.ProtocolAuthentication;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,8 +24,8 @@ import java.util.stream.Collectors;
 
 /**
  * Lists the stored accounts of one engine and creates exclusive pools over them. An account is one Microsoft
- * account that every protocol library can derive a session from; what each library recorded about it decides
- * whether a pool lends it to that library's players.
+ * account that every protocol library can derive a session from; what was recorded about it for a Minecraft edition
+ * decides whether a pool lends it to players of that edition.
  * <p>
  * Pools and reservations work on account IDs, and an ID stays reserved until its lease closes. Named pools are
  * declared in the account directory's {@value AccountPoolFile#FILE_NAME} file.
@@ -51,7 +53,7 @@ public final class ProtocolAccountManager implements AccountManager {
 	}
 
 	/**
-	 * Lists the stored accounts with what each library recorded about them.
+	 * Lists the stored accounts with what was recorded about them for each edition.
 	 *
 	 * @return account metadata without credential material, ordered by account ID
 	 */
@@ -128,31 +130,38 @@ public final class ProtocolAccountManager implements AccountManager {
 		}
 
 		/**
-		 * Leases the first free account the library recorded as available, reading what the libraries recorded now,
-		 * so an account a library refused earlier in the run is skipped.
+		 * Leases the first free account recorded as available for the edition, reading the records now, so an account
+		 * refused earlier in the run is skipped. When there is none, checks each free account of unknown availability
+		 * in turn, reserved while a library of the edition checks it, and lends the first that turns out available.
 		 */
 		@Override
-		public synchronized @NotNull AccountLease lease(@NotNull String libraryId) {
+		public synchronized @NotNull AccountLease lease(@NotNull MinecraftEdition edition) {
 			if (closed) throw new IllegalStateException("Account pool is closed");
 
 			Map<String, AuthenticationAccount> stored = stored();
-			List<String> skipped = new ArrayList<>();
+			Map<String, String> skipped = new LinkedHashMap<>();
+			List<AuthenticationAccount> unknown = new ArrayList<>();
 			for (AuthenticationAccount pooled : accounts) {
 				AuthenticationAccount account = stored.get(pooled.getAccountId());
 				if (account == null) {
-					skipped.add(pooled.getAccountId() + " (no longer stored)");
+					skipped.put(pooled.getAccountId(), "no longer stored");
 					continue;
 				}
 
-				AccountAccess access = account.access(libraryId);
+				AccountAccess access = account.access(edition);
+				if (access.getAvailability() == AccountAvailability.UNKNOWN) {
+					unknown.add(account);
+					skipped.put(account.getAccountId(), access.describe());
+					continue;
+				}
 				if (!access.isAvailable()) {
-					skipped.add(account.getAccountId() + " (" + access.describe() + ")");
+					skipped.put(account.getAccountId(), access.describe());
 					continue;
 				}
 
 				AccountLease lease = reservations.lease(account, this::forget);
 				if (lease == null) {
-					skipped.add(account.getAccountId() + " (in use)");
+					skipped.put(account.getAccountId(), "in use");
 					continue;
 				}
 
@@ -160,8 +169,62 @@ public final class ProtocolAccountManager implements AccountManager {
 				return lease;
 			}
 
-			throw new IllegalStateException("No account of the pool is available to protocol library '" + libraryId + "': "
-					+ String.join(", ", skipped));
+			for (AuthenticationAccount account : unknown) {
+				AccountLease lease = checkedLease(account, edition, skipped);
+				if (lease == null) continue;
+
+				unclaimed.add(lease);
+				return lease;
+			}
+
+			List<String> reasons = new ArrayList<>();
+			skipped.forEach((accountId, reason) -> reasons.add(accountId + " (" + reason + ")"));
+			throw new IllegalStateException("No account of the pool is available for edition '" + edition + "': "
+					+ String.join(", ", reasons));
+		}
+
+		/**
+		 * Lets a library of the edition check a free account whose availability is unknown, which records the result,
+		 * holding the account's reservation while it checks, and leases it when it turns out available.
+		 *
+		 * @return the lease, or null after recording in {@code skipped} why the account cannot be lent
+		 */
+		private @Nullable AccountLease checkedLease(AuthenticationAccount account, MinecraftEdition edition, Map<String, String> skipped) {
+			String accountId = account.getAccountId();
+			if (!reservations.reserve(accountId)) {
+				skipped.put(accountId, "in use");
+				return null;
+			}
+
+			AccountAccess checked;
+			try {
+				checked = check(account, edition);
+			} finally {
+				reservations.unreserve(accountId);
+			}
+			if (!checked.isAvailable()) {
+				skipped.put(accountId, checked.describe());
+				return null;
+			}
+
+			List<AccountAccess> access = new ArrayList<>(account.getAccess());
+			access.removeIf(entry -> entry.getEdition().equals(edition));
+			access.add(checked);
+			AccountLease lease = reservations.lease(new AuthenticationAccount(accountId, access), this::forget);
+			if (lease == null) skipped.put(accountId, "in use");
+
+			return lease;
+		}
+
+		private AccountAccess check(AuthenticationAccount account, MinecraftEdition edition) {
+			if (authentication == null) return account.access(edition);
+
+			try {
+				return authentication.check(account.getAccountId(), edition);
+			} catch (RuntimeException failure) {
+				String reason = failure.getMessage() == null ? failure.getClass().getSimpleName() : failure.getMessage();
+				return AccountAccess.unknown(edition, reason);
+			}
 		}
 
 		@Override

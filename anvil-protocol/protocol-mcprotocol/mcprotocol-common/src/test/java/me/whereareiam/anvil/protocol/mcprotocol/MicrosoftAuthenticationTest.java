@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol;
 
 import com.google.gson.JsonObject;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.protocol.api.worker.model.AccountCredentials;
@@ -8,6 +9,7 @@ import me.whereareiam.anvil.protocol.api.worker.model.AuthenticationSession;
 import me.whereareiam.anvil.protocol.api.worker.model.DerivedSession;
 import me.whereareiam.anvil.protocol.api.worker.model.MicrosoftToken;
 import me.whereareiam.anvil.protocol.worker.account.HostedAccounts;
+import me.whereareiam.anvil.protocol.worker.catalog.ReleaseCatalog;
 import net.lenni0451.commons.httpclient.HttpClient;
 import net.lenni0451.commons.httpclient.HttpResponse;
 import net.lenni0451.commons.httpclient.executor.RequestExecutor;
@@ -47,21 +49,27 @@ class MicrosoftAuthenticationTest {
 		try (InputStream legacy = getClass().getResourceAsStream("legacy-account.json")) {
 			Files.write(temporary.resolve("legacy.json"), legacy.readAllBytes());
 		}
+		ReleaseCatalog releases = ReleaseCatalog.load(McProtocolWorkerLibrary.LIBRARY, null);
 		HostedAccounts accounts = new HostedAccounts(List.of(new HostedAccounts.Library(
 				McProtocolWorkerLibrary.LIBRARY,
 				new MicrosoftAuthentication(),
-				() -> MinecraftVersion.parse("26.1.2")
+				releases::releases
 		)), temporary);
+		MinecraftVersion version = MinecraftVersion.parse("1.21.11");
+		MinecraftEdition edition = releases.releases().stream()
+				.filter(release -> release.getMinecraftVersions().contains(version))
+				.findFirst()
+				.orElseThrow()
+				.getEdition();
 
-		AuthenticationSession session = accounts.resolve(McProtocolWorkerLibrary.LIBRARY.getId(), "legacy", MinecraftVersion.parse("1.21.11"));
+		AuthenticationSession session = accounts.resolve(McProtocolWorkerLibrary.LIBRARY.getId(), edition, "legacy", version);
 
 		assertEquals("Fixture", session.getUsername());
 		assertEquals(PROFILE, session.getUuid());
 		assertEquals("fixture-minecraft-access-token", session.getAccessToken());
-		assertEquals(AccountAccess.available("mcprotocol", "Fixture", PROFILE),
-				accounts.accounts().iterator().next().access("mcprotocol"));
+		assertEquals(AccountAccess.available(edition, "Fixture", PROFILE), accounts.accounts().iterator().next().access(edition));
 		String stored = Files.readString(temporary.resolve("legacy.json"));
-		assertTrue(stored.startsWith("{\"schemaVersion\":2,"), stored);
+		assertTrue(stored.startsWith("{\"schemaVersion\":3,"), stored);
 		assertTrue(stored.contains("\"refreshToken\":\"fixture-msa-refresh-token\""), stored);
 	}
 

@@ -264,7 +264,8 @@ library as a `WorkerLibrary`: its ID and name, its client port, its built-in rel
 packages its release closures own, and the arguments of its worker JVM. It builds the `WorkerClient` that
 drives its client port for the worker's players and may supply a `WorkerAuthentication`, which derives the
 library's session from a stored account's Microsoft token. The worker owns the sign-in and the account files: one
-file per Microsoft account, holding its token and, per library, the recorded availability and cached session. It
+file per Microsoft account, holding its token, the availability recorded per Minecraft edition, which counts for
+every library of the edition, and each library's cached session. It
 offers them to tooling as `WorkerLibraryHost.authentication(...)`. The worker names no library; a class path entry of the host that contains a package the closure
 owns is refused for that library's workers only.
 

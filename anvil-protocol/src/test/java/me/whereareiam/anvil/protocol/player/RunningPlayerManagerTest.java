@@ -350,17 +350,17 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
-	void anOnlinePlayerIsRefusedBeforeConnectingWhenItsLibraryRecordedTheAccountAsUnavailable() {
+	void anOnlinePlayerIsRefusedBeforeConnectingWhenTheAccountIsRecordedAsUnavailableForItsEdition() {
 		StubLibrary library = new StubLibrary();
 		AuthenticationAccount refused = new AuthenticationAccount("alice", List.of(
-				AccountAccess.available("other", "Alice", UUID.randomUUID()),
-				AccountAccess.unavailable("test", "Account 'alice' owns no test game")
+				AccountAccess.available(OTHER, "Alice", UUID.randomUUID()),
+				AccountAccess.unavailable(JAVA, "Account 'alice' owns no test game")
 		));
 		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), refused);
 
 		var failure = assertThrows(ScenarioValidationException.class, () -> manager.create(online("alice")));
 
-		assertEquals("Player 'alice' cannot sign in with account 'alice' through protocol library 'test': Account 'alice' "
+		assertEquals("Player 'alice' cannot sign in with account 'alice' on servers of edition 'java': Account 'alice' "
 				+ "owns no test game", failure.getMessage());
 		assertNull(library.lastRequest);
 	}
@@ -384,9 +384,9 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
-	void anAccountTheSelectedLibraryHasNotCheckedLetsTheLibraryDetermineItWhenThePlayerSignsIn() {
+	void anAccountNotCheckedForThePlayersEditionLetsTheLibraryDetermineItWhenThePlayerSignsIn() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount unchecked = new AuthenticationAccount("alice", List.of(AccountAccess.available("other", "Alice", UUID.randomUUID())));
+		AuthenticationAccount unchecked = new AuthenticationAccount("alice", List.of(AccountAccess.available(OTHER, "Alice", UUID.randomUUID())));
 		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), unchecked);
 
 		assertEquals("alice", manager.create(online("alice")).name());
@@ -413,10 +413,7 @@ class RunningPlayerManagerTest {
 	@Test
 	void aLeasedAccountKeepsTheLibraryThePlayerSelects() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount leased = new AuthenticationAccount("alice", List.of(
-				AccountAccess.available("other", "Alice", UUID.randomUUID()),
-				AccountAccess.available("test", "Alice", UUID.randomUUID())
-		));
+		AuthenticationAccount leased = new AuthenticationAccount("alice", List.of(AccountAccess.available(JAVA, "Alice", UUID.randomUUID())));
 		ProtocolLibrarySelector selector = new ProtocolLibrarySelector(List.of("test", "other"),
 				Map.of("test", library.releases(), "other", List.of(release("other-1.21.11", "1.21.11")))::get, "test",
 				SupportPolicy.LENIENT, ignored -> { });
@@ -430,9 +427,9 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
-	void aPoolLendsThePlayerTheFirstAccountItsLibraryCanUse() {
+	void aPoolLendsThePlayerTheFirstAccountItsEditionCanUse() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount refused = new AuthenticationAccount("alice", List.of(AccountAccess.unavailable("test", "Account 'alice' owns no test game")));
+		AuthenticationAccount refused = new AuthenticationAccount("alice", List.of(AccountAccess.unavailable(JAVA, "Account 'alice' owns no test game")));
 		AuthenticationAccount unchecked = new AuthenticationAccount("bob", List.of());
 		AccountReservations reservations = new AccountReservations();
 		ProtocolAccountManager accounts = new ProtocolAccountManager(new StoredAccounts(refused, unchecked, usable("carol")),
@@ -446,8 +443,8 @@ class RunningPlayerManagerTest {
 		assertEquals("carol", library.lastRequest.getLogin().getAccountId());
 		var exhausted = assertThrows(IllegalStateException.class,
 				() -> manager.create(leased.toBuilder().name("second").build(), pool));
-		assertEquals("No account of the pool is available to protocol library 'test': alice (test: unavailable, Account 'alice' "
-				+ "owns no test game), bob (test: unknown), carol (in use)", exhausted.getMessage());
+		assertEquals("No account of the pool is available for edition 'java': alice (java: unavailable, Account 'alice' "
+				+ "owns no test game), bob (java: unknown, the test checks no account), carol (in use)", exhausted.getMessage());
 		player.destroy();
 		manager.create(leased.toBuilder().name("third").build(), pool);
 		assertEquals("carol", library.lastRequest.getLogin().getAccountId());
@@ -522,22 +519,22 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
-	void aLeasedAccountTheSelectedLibraryRecordedAsUnavailableIsRefusedBeforeConnectingAndReturned() {
+	void aLeasedAccountRecordedAsUnavailableForThePlayersEditionIsRefusedBeforeConnectingAndReturned() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount leased = new AuthenticationAccount("alice", List.of(AccountAccess.unavailable("test", "Account 'alice' owns no test game")));
+		AuthenticationAccount leased = new AuthenticationAccount("alice", List.of(AccountAccess.unavailable(JAVA, "Account 'alice' owns no test game")));
 		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), leased);
 		RecordingLease lease = new RecordingLease(leased);
 
 		var failure = assertThrows(ScenarioValidationException.class, () -> manager.create("alice", lease));
 
-		assertTrue(failure.getMessage().endsWith("through protocol library 'test': Account 'alice' owns no test game"),
+		assertTrue(failure.getMessage().endsWith("on servers of edition 'java': Account 'alice' owns no test game"),
 				failure.getMessage());
 		assertTrue(lease.closed);
 		assertNull(library.lastRequest);
 	}
 
 	private static AuthenticationAccount usable(String accountId) {
-		return new AuthenticationAccount(accountId, List.of(AccountAccess.available("test", "Alice", UUID.randomUUID())));
+		return new AuthenticationAccount(accountId, List.of(AccountAccess.available(JAVA, "Alice", UUID.randomUUID())));
 	}
 
 	private RunningPlayerManager onlineManager(ProtocolLibrarySelector selector, StubLibrary library, AuthenticationAccount... accounts) {
@@ -684,7 +681,8 @@ class RunningPlayerManagerTest {
 	}
 
 	/**
-	 * Stored accounts without files, as the libraries' account workflow lists them.
+	 * Stored accounts without files, as the libraries' account workflow lists them; checking an account determines
+	 * nothing.
 	 */
 	private static final class StoredAccounts implements ProtocolAuthentication {
 		private final List<AuthenticationAccount> accounts;
@@ -701,6 +699,11 @@ class RunningPlayerManagerTest {
 		@Override
 		public void login(@NotNull String accountId, @NotNull Consumer<String> output) {
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public @NotNull AccountAccess check(@NotNull String accountId, @NotNull MinecraftEdition edition) {
+			return AccountAccess.unknown(edition, "the test checks no account");
 		}
 
 		@Override

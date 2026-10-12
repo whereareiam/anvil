@@ -5,8 +5,11 @@ description: Add project accounts, choose global account availability, and manag
 
 Select **Accounts…** in the Anvil tool window toolbar to manage accounts available to the current
 IntelliJ project. The **Accounts** tab shows each account's profile names, local ID, source (**Project** or
-**Global**), and, under **Libraries**, what each protocol library recorded about the account: `available`,
-`unavailable` or `unknown`. An account is one Microsoft account that every library derives its own session from;
+**Global**), and, under **Editions**, what was recorded about the account for each Minecraft edition, such as
+`java: available, bedrock: unavailable`; each result is `available`, `unavailable` or `unknown`. An account file
+that Anvil has not rewritten since it recorded results per protocol library shows **Not checked** until a sign-in
+or a player that uses the account records them again. An account is one Microsoft account that every library
+derives its own session from;
 see [Authentication](../../../building-blocks/players/authentication/index.md). Account and pool operations are saved immediately; **Close** finishes the manager.
 
 ## Add an account

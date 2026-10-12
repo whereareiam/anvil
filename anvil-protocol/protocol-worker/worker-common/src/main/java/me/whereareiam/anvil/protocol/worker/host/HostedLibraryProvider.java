@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.protocol.worker.host;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
 import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
@@ -14,11 +13,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 /**
  * Installs one library the worker hosts as a protocol library: its releases come from its release data, its players
@@ -31,6 +30,11 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 final class HostedLibraryProvider implements ProtocolLibraryProvider {
 	private final @NotNull WorkerLibraryProvider provider;
+	/**
+	 * Every hosted library that derives sessions from stored accounts, this one included, so the accounts its players
+	 * use read the per-library records of an account file of an earlier schema into the editions of all of them.
+	 */
+	private final @NotNull Supplier<List<HostedAccounts.Library>> accountLibraries;
 
 	private final Map<Path, ReleaseCatalog> withAdditionalReleases = new ConcurrentHashMap<>();
 	private @Nullable ReleaseCatalog builtIn;
@@ -58,7 +62,7 @@ final class HostedLibraryProvider implements ProtocolLibraryProvider {
 				provider.library(),
 				context.getCacheDirectory(),
 				catalog(context.getAdditionalReleases()),
-				accountLibrary().map(library -> new HostedAccounts(List.of(library), context.getAccountsDirectory())).orElse(null),
+				accountLibrary().map(ignored -> new HostedAccounts(accountLibraries.get(), context.getAccountsDirectory())).orElse(null),
 				context.getArtifacts()
 		);
 	}
@@ -70,14 +74,7 @@ final class HostedLibraryProvider implements ProtocolLibraryProvider {
 	 */
 	@NotNull Optional<HostedAccounts.Library> accountLibrary() {
 		return provider.authentication()
-				.map(authentication -> new HostedAccounts.Library(provider.library(), authentication, this::newestVersion));
-	}
-
-	private MinecraftVersion newestVersion() {
-		return catalog(null).releases().stream()
-				.flatMap(release -> release.getMinecraftVersions().stream())
-				.max(Comparator.naturalOrder())
-				.orElseThrow(() -> new IllegalStateException(provider.library().getName() + " lists no release"));
+				.map(authentication -> new HostedAccounts.Library(provider.library(), authentication, () -> catalog(null).releases()));
 	}
 
 	private ReleaseCatalog catalog(@Nullable Path additionalReleases) {

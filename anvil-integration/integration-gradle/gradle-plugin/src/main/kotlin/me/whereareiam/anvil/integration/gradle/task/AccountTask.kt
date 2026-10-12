@@ -20,7 +20,8 @@ import javax.inject.Inject
  *
  * Runs the same authentication entry point as the IntelliJ account manager in a separate JVM, so
  * prompts reach the console and credentials stay in the account file. [AccountLoginTask]
- * signs the account in and prints what each library can do with it, and [AccountLogoutTask] removes it.
+ * signs the account in and prints, for each Minecraft edition the installed libraries speak, whether the edition's
+ * players can use it, and [AccountLogoutTask] removes it.
  */
 @UntrackedTask(because = "Interactive sign-in changes the local account store outside the build")
 abstract class AccountTask : DefaultTask() {

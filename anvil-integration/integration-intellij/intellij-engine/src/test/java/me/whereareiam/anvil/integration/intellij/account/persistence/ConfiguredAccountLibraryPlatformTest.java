@@ -76,8 +76,8 @@ public class ConfiguredAccountLibraryPlatformTest extends EnginePlatformTestCase
 	}
 
 	private String account(String id, String user) {
-		return "{\"schemaVersion\":2,\"accountId\":\"" + id + "\",\"microsoft\":{},\"libraries\":{\"mcprotocol\":"
-				+ "{\"availability\":\"AVAILABLE\",\"username\":\"" + user + "\",\"uuid\":\"" + UUID.randomUUID() + "\"}}}";
+		return "{\"schemaVersion\":3,\"accountId\":\"" + id + "\",\"microsoft\":{},\"editions\":{\"java\":"
+				+ "{\"availability\":\"AVAILABLE\",\"username\":\"" + user + "\",\"uuid\":\"" + UUID.randomUUID() + "\"}},\"sessions\":{}}";
 	}
 
 }

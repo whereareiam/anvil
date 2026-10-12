@@ -21,29 +21,31 @@ the project that applies the Anvil plugin:
 ./gradlew anvilLogin --account=main
 ```
 
-Follow the device-code instructions in your browser. After the sign-in, each installed library checks what it
-can do with the account, and the task prints one line per library:
+Follow the device-code instructions in your browser. After the sign-in, one installed library of each Minecraft
+edition checks what that edition's players can do with the account, and the task prints one line per edition,
+named as the platforms' version data name it:
 
 ```text
 Signed in account 'main'.
-mcprotocol: available as Steve (069a79f4-44e9-4726-a5be-fca90e38aaf5)
-cloudburst: unavailable, Account 'main' was refused by Minecraft's multiplayer service (HTTP 401), ...
+java: available as Steve (069a79f4-44e9-4726-a5be-fca90e38aaf5)
+bedrock: unavailable, Account 'main' was refused by Minecraft's multiplayer service (HTTP 401), ...
 ```
 
-A Microsoft account can own Java Edition and not Bedrock Edition, or the other way round. The account file
-records each library's result: available with the profile its players sign in as, unavailable with the
-library's reason, or unknown when the library could not tell, for example because its service was unreachable
-or the library was installed after the sign-in. Each library checks again whenever one of its players uses
-the account and records the new result. To check an account again after buying the other edition, sign it in
-again under the same ID.
+A Microsoft account can own Java Edition and not Bedrock Edition, or the other way round. Whether an account
+can be used depends on the edition, not on the protocol library, so the account file records one result per
+edition, and it counts for every installed library of that edition: available with the profile the edition's
+players sign in as, unavailable with the checking library's reason, or unknown when no library could tell, for
+example because the edition's service was unreachable or no library of the edition was installed at the
+sign-in. A library checks again whenever one of its players uses the account and records the new result for its
+edition. To check an account again after buying the other edition, sign it in again under the same ID.
 
 The task stores the account in the directory configured by `anvil { engine { accountsDirectory } }`, which
 defaults to `~/.anvil/accounts`, as one JSON file named after the account ID, restricted to the owner on
 filesystems supporting POSIX permissions. Remove an account with `./gradlew anvilLogout --account=main`. You
 can also import an account file signed in elsewhere. Account files written by Anvil 1.0, which belonged to
-MCProtocolLib, keep working without a new sign-in; MCProtocolLib keeps its result for them, and the other
-libraries check them the first time one of their players uses them. Sign in on developer machines only; the
-stored file holds refresh tokens.
+MCProtocolLib, keep working without a new sign-in: their profile becomes the result of the Java edition, and the
+Bedrock edition is checked the first time a Bedrock player or pool needs it. Sign in on developer machines only;
+the stored file holds refresh tokens.
 
 When a scenario references an account that is not stored, the run fails with the account ID and the
 directory that was searched.
@@ -99,11 +101,11 @@ The account modes are `ONLINE` and `ON_REQUEST`; the account factories refuse `O
 refuses a blank value. A login therefore never carries a username next to an account, or an account ID next
 to a session identity.
 
-The protocol library selected for the player must not have recorded the account as unavailable, and that
-library's release for the player's Minecraft version must support online authentication; otherwise creation
-fails before the player connects, naming the account and giving the library's reason. When the library has
-not checked the account yet, it checks it while the player is created and refuses the player with its reason
-if it cannot use the account.
+The account must not be recorded as unavailable for the edition of the servers the player reaches, and the
+release of the player's protocol library for its Minecraft version must support online authentication;
+otherwise creation fails before the player connects, naming the account and giving the recorded reason. When
+the account's result for the edition is unknown, the player's library checks it while the player is created and
+refuses the player with its reason if the edition cannot use the account.
 
 Call `AuthenticatedPlayers.connect(anvil)` from a local test in the same package and run that class with
 `./gradlew anvilTest --tests 'your.package.YourOnlineTest'`. A connected session establishes that
@@ -112,8 +114,9 @@ for assertions about what the platform sees; the authenticated identity is contr
 
 ## Sign in a Bedrock player with Xbox
 
-A Bedrock Edition player signs in with a stored account whose `cloudburst` result is available. Any account
-signed in with `anvilLogin` or the IntelliJ **Accounts** action can be one; the sign-in prints whether it is.
+A Bedrock Edition player signs in with a stored account that is available for the `bedrock` edition. Any
+account signed in with `anvilLogin` or the IntelliJ **Accounts** action can be one; the sign-in prints whether
+it is.
 
 Then turn on Xbox authentication on the Lumi server with `.onlineMode(true)`, which sets Lumi's
 `network.xbox-auth`, and create the player with the account:
@@ -149,8 +152,8 @@ A connection that the entrypoint does not challenge joins unauthenticated, so as
 and the platform report rather than relying on the mode.
 
 For several real accounts, create a pool from local account IDs and create each player from the pool. The
-player selects its protocol library as usual and leases the first free account that library recorded as
-available, so a Java Edition player never receives a Bedrock-only account. A leased or directly selected
+player leases the first free account available for the edition of the servers it reaches, so a Java Edition
+player never receives a Bedrock-only account. A leased or directly selected
 account is exclusive across every scenario of the engine until its player is destroyed or the lease is closed:
 
 ```java
@@ -158,23 +161,25 @@ var testers = anvil.accounts().pool(java.util.List.of("alice", "bob", "charlie")
 var login = PlayerLogin.leased(AuthenticationMode.ONLINE);
 var one = anvil.players().create(PlayerOptions.builder().name("player-1").login(login).build(), testers);
 var two = anvil.players().create(PlayerOptions.builder().name("player-2").login(login).build(), testers);
-// The two players use different accounts their library can use. Player cleanup releases the leases.
+// The two players use different accounts their edition can use. Player cleanup releases the leases.
 ```
 
-When no free account of the pool is available to the player's library, creation fails before anything
-connects, listing each account and why it was skipped: unavailable with the library's reason, unknown, or in
-use. An account whose result is unknown is never lent; sign it in again, or let a player name it directly so
-the library checks it.
+When no free account of the pool is available for the edition, the pool checks the free accounts whose result
+for the edition is unknown, in pool order: an installed library of the edition derives a session from each, over
+the network, records the result, and the first account that turns out available is lent. When none is,
+creation fails before anything connects, listing each account and why it was skipped: unavailable with the
+recorded reason, unknown with the failure that kept the check from telling, or in use.
 
-To pick the account yourself, lease it and pass the lease. `testers.lease("mcprotocol")` leases for one
-library; `testers.lease()` leases the next free account whatever the libraries recorded, and the player is
-refused before it connects when its library recorded that account as unavailable:
+To pick the account yourself, lease it and pass the lease. `testers.lease(edition)` leases for one edition, the
+`MinecraftEdition` of the servers the player reaches, such as `MinecraftEdition.of("java")`;
+`testers.lease()` leases the next free account whatever was recorded, and the player is refused before it
+connects when the account is recorded as unavailable for its edition:
 
 ```java
 var premium = anvil.players().create(PlayerOptions.builder()
 		.name("premium")
 		.login(PlayerLogin.leased(AuthenticationMode.ON_REQUEST))
-		.build(), testers.lease("mcprotocol"));
+		.build(), testers.lease(MinecraftEdition.of("java")));
 ```
 
 `create(name, lease)` signs in with `ONLINE`. A leased login is refused without a lease or pool, and a lease

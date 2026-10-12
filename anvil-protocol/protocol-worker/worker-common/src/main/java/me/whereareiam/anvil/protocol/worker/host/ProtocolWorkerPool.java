@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.protocol.worker.host;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerLogin;
 import me.whereareiam.anvil.api.model.player.SessionIdentity;
 import me.whereareiam.anvil.protocol.api.library.ProtocolArtifactResolver;
@@ -88,7 +87,7 @@ public final class ProtocolWorkerPool implements ProtocolLibrary {
 		if (!login.getAuthentication().usesAccount()) return null;
 
 		SessionIdentity identity = login.getSessionIdentity();
-		if (identity == null) return account(Objects.requireNonNull(login.getAccountId(), "accountId"), request.getClientVersion());
+		if (identity == null) return account(Objects.requireNonNull(login.getAccountId(), "accountId"), request);
 
 		return AuthenticationSession.builder()
 				.username(identity.getUsername())
@@ -98,11 +97,11 @@ public final class ProtocolWorkerPool implements ProtocolLibrary {
 				.build();
 	}
 
-	private AuthenticationSession account(String accountId, MinecraftVersion version) {
+	private AuthenticationSession account(String accountId, PlayerRequest request) {
 		if (accounts == null)
 			throw new IllegalStateException(library.getName() + " plays offline only, so it cannot sign in account '" + accountId + "'");
 
-		return accounts.resolve(library.getId(), accountId, version);
+		return accounts.resolve(library.getId(), request.getEdition(), accountId, request.getClientVersion());
 	}
 
 	private List<Path> closure(ReleaseDefinition definition) {

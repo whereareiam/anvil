@@ -30,7 +30,7 @@ class AccountTaskTest {
     @Test
     fun `signs out in the configured account directory without choosing a library`() {
         project("protocol-mcprotocol", "protocol-cloudburst")
-        write("accounts/stored.json", "{\"schemaVersion\":2,\"accountId\":\"stored\",\"microsoft\":{},\"libraries\":{}}")
+        write("accounts/stored.json", "{\"schemaVersion\":3,\"accountId\":\"stored\",\"microsoft\":{},\"editions\":{},\"sessions\":{}}")
 
         val missing = runner("anvilLogout", "--account=ci-player").build()
         val removed = runner("anvilLogout", "--account=stored").build()

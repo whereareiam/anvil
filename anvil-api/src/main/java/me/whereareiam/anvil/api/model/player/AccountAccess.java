@@ -3,6 +3,7 @@ package me.whereareiam.anvil.api.model.player;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.type.AccountAvailability;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,12 +11,13 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * What one protocol library can do with a stored account: whether its players can sign in with it, the profile
- * they sign in as, and the library's reason when they cannot. The library words the reason; it names the account
- * and never quotes credentials.
+ * What players of one Minecraft edition can do with a stored account: whether they can sign in with it, the profile
+ * they sign in as, and the reason when they cannot. A protocol library of the edition checks the account and words
+ * the reason; the result counts for every installed library of that edition. The reason names the account and never
+ * quotes credentials.
  *
  * <pre>{@code
- * AccountAccess access = account.access("mcprotocol");
+ * AccountAccess access = account.access(server.edition());
  * if (access.getAvailability() == AccountAvailability.UNAVAILABLE)
  *     System.out.println(access.getReason());
  * }</pre>
@@ -24,66 +26,63 @@ import java.util.UUID;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class AccountAccess {
 	/**
-	 * Identifier of the protocol library this access describes.
+	 * Edition whose players this access describes.
 	 */
-	@NotNull String libraryId;
+	@NotNull MinecraftEdition edition;
 	/**
-	 * Whether the library's players can use the account.
+	 * Whether the edition's players can use the account.
 	 */
 	@NotNull AccountAvailability availability;
 	/**
-	 * Profile name the library's players sign in as, when the account is available to it.
+	 * Profile name the edition's players sign in as, when the account is available to them.
 	 */
 	@Nullable String username;
 	/**
-	 * Profile UUID the library's players sign in as, when the account is available to it.
+	 * Profile UUID the edition's players sign in as, when the account is available to them.
 	 */
 	@Nullable UUID uniqueId;
 	/**
-	 * The library's explanation when the account is unavailable or its availability is unknown, or null.
+	 * The checking library's explanation when the account is unavailable or its availability is unknown, or null.
 	 */
 	@Nullable String reason;
 
 	/**
-	 * Describes an account the library's players can sign in with.
+	 * Describes an account the edition's players can sign in with.
 	 *
-	 * @param libraryId protocol library identifier
-	 * @param username profile name the library's players sign in as
-	 * @param uniqueId profile UUID the library's players sign in as
+	 * @param edition edition of the players
+	 * @param username profile name the players sign in as
+	 * @param uniqueId profile UUID the players sign in as
 	 * @return available access
-	 * @throws IllegalArgumentException when the library identifier is blank
 	 */
-	public static @NotNull AccountAccess available(@NotNull String libraryId, @NotNull String username, @NotNull UUID uniqueId) {
-		return new AccountAccess(requireLibrary(libraryId), AccountAvailability.AVAILABLE, username, uniqueId, null);
+	public static @NotNull AccountAccess available(@NotNull MinecraftEdition edition, @NotNull String username, @NotNull UUID uniqueId) {
+		return new AccountAccess(edition, AccountAvailability.AVAILABLE, username, uniqueId, null);
 	}
 
 	/**
-	 * Describes an account the library's services refused.
+	 * Describes an account the services of the edition refused.
 	 *
-	 * @param libraryId protocol library identifier
-	 * @param reason the library's explanation, naming the account
+	 * @param edition edition of the players
+	 * @param reason the checking library's explanation, naming the account
 	 * @return unavailable access
-	 * @throws IllegalArgumentException when the library identifier is blank
 	 */
-	public static @NotNull AccountAccess unavailable(@NotNull String libraryId, @NotNull String reason) {
-		return new AccountAccess(requireLibrary(libraryId), AccountAvailability.UNAVAILABLE, null, null, reason);
+	public static @NotNull AccountAccess unavailable(@NotNull MinecraftEdition edition, @NotNull String reason) {
+		return new AccountAccess(edition, AccountAvailability.UNAVAILABLE, null, null, reason);
 	}
 
 	/**
-	 * Describes an account whose availability the library has not determined.
+	 * Describes an account whose availability for the edition is not determined.
 	 *
-	 * @param libraryId protocol library identifier
-	 * @param reason why it is unknown, such as the failure that prevented the check, or null when the library never
-	 * checked
+	 * @param edition edition of the players
+	 * @param reason why it is unknown, such as the failure that prevented the check, or null when no library of the
+	 * edition checked the account
 	 * @return access of unknown availability
-	 * @throws IllegalArgumentException when the library identifier is blank
 	 */
-	public static @NotNull AccountAccess unknown(@NotNull String libraryId, @Nullable String reason) {
-		return new AccountAccess(requireLibrary(libraryId), AccountAvailability.UNKNOWN, null, null, reason);
+	public static @NotNull AccountAccess unknown(@NotNull MinecraftEdition edition, @Nullable String reason) {
+		return new AccountAccess(edition, AccountAvailability.UNKNOWN, null, null, reason);
 	}
 
 	/**
-	 * Returns whether the library's players can sign in with the account.
+	 * Returns whether the edition's players can sign in with the account.
 	 *
 	 * @return true when the availability is {@link AccountAvailability#AVAILABLE}
 	 */
@@ -92,21 +91,15 @@ public class AccountAccess {
 	}
 
 	/**
-	 * Describes the access in one line for people, such as {@code mcprotocol: available as Alice}.
+	 * Describes the access in one line for people, such as {@code example: available as Alice (<uuid>)}.
 	 *
-	 * @return the library, its availability, and the profile or reason
+	 * @return the edition, its availability, and the profile or reason
 	 */
 	public @NotNull String describe() {
 		return switch (availability) {
-			case AVAILABLE -> libraryId + ": available as " + username + " (" + uniqueId + ")";
-			case UNAVAILABLE -> libraryId + ": unavailable, " + reason;
-			case UNKNOWN -> libraryId + ": unknown" + (reason == null ? "" : ", " + reason);
+			case AVAILABLE -> edition + ": available as " + username + " (" + uniqueId + ")";
+			case UNAVAILABLE -> edition + ": unavailable, " + reason;
+			case UNKNOWN -> edition + ": unknown" + (reason == null ? "" : ", " + reason);
 		};
-	}
-
-	private static String requireLibrary(String libraryId) {
-		if (libraryId.isBlank()) throw new IllegalArgumentException("Library ID must not be blank");
-
-		return libraryId;
 	}
 }

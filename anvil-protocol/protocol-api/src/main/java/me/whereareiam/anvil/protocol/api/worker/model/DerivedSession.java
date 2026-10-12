@@ -10,8 +10,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * What {@link WorkerAuthentication#derive} made of a stored account: either a session its players sign in with, or
- * the library's refusal when its services refuse the account, such as one that does not own the game the library
- * speaks to. Both carry the account's Microsoft token as the library left it, which the native worker stores in
+ * the library's refusal when the services of its edition refuse the account, such as one that does not own that
+ * edition of the game. The native worker records either for the edition the library checked. Both carry the account's Microsoft token as the library left it, which the native worker stores in
  * place of the one it handed over when the library refreshed it.
  *
  * <pre>{@code

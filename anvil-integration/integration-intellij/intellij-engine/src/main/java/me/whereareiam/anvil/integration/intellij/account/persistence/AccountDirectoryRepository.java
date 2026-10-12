@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.integration.intellij.model.account.AvailableAccount;
@@ -131,8 +132,9 @@ final class AccountDirectoryRepository {
 
 	/**
 	 * Reads what an account file tells about the account without its credentials and without any protocol library:
-	 * the libraries the file records and what each recorded. A file of schema 1, stored while an account belonged to
-	 * the one library its {@code provider} key names, records that library.
+	 * what was recorded for each Minecraft edition. Files of schema 1 and 2 recorded availability per protocol library,
+	 * which only the runtime maps to editions, so they show every edition as not yet checked until the runtime next
+	 * writes the file.
 	 */
 	@NotNull AuthenticationAccount readMetadata(@NotNull Path source) throws IOException {
 		JsonNode root;
@@ -149,38 +151,41 @@ final class AccountDirectoryRepository {
 		String accountId = root.path("accountId").asText();
 		int schema = root.path("schemaVersion").asInt();
 		if (schema == 1 && !root.path("provider").asText().isBlank() && root.path("credentials").isObject())
-			return new AuthenticationAccount(accountId, List.of(accountPerLibrary(root)));
+			return new AuthenticationAccount(accountId, List.of());
 		if (schema == 2 && root.path("microsoft").isObject())
-			return new AuthenticationAccount(accountId, libraries(root.path("libraries")));
+			return new AuthenticationAccount(accountId, List.of());
+		if (schema == 3 && root.path("microsoft").isObject())
+			return new AuthenticationAccount(accountId, editions(root.path("editions")));
 
 		throw new IOException("This is not a supported Anvil account file.");
 	}
 
-	private static AccountAccess accountPerLibrary(JsonNode root) throws IOException {
-		String library = root.path("provider").asText();
-		if (!root.path("username").isTextual() || !root.path("uuid").isTextual()) return AccountAccess.unknown(library, null);
-
-		return AccountAccess.available(library, root.path("username").asText(), uniqueId(root.path("uuid").asText()));
-	}
-
-	private static List<AccountAccess> libraries(JsonNode libraries) throws IOException {
+	private static List<AccountAccess> editions(JsonNode editions) throws IOException {
 		List<AccountAccess> access = new ArrayList<>();
-		var entries = libraries.fields();
+		var entries = editions.fields();
 		while (entries.hasNext()) {
 			var entry = entries.next();
-			String library = entry.getKey();
+			MinecraftEdition edition = edition(entry.getKey());
 			JsonNode recorded = entry.getValue();
 			String reason = recorded.path("reason").isTextual() ? recorded.path("reason").asText() : null;
 			switch (recorded.path("availability").asText()) {
-				case "AVAILABLE" -> access.add(AccountAccess.available(library, recorded.path("username").asText(),
+				case "AVAILABLE" -> access.add(AccountAccess.available(edition, recorded.path("username").asText(),
 						uniqueId(recorded.path("uuid").asText())));
-				case "UNAVAILABLE" -> access.add(AccountAccess.unavailable(library, reason == null ? "" : reason));
-				case "UNKNOWN" -> access.add(AccountAccess.unknown(library, reason));
-				default -> throw new IOException("The account records library '" + library + "' invalidly.");
+				case "UNAVAILABLE" -> access.add(AccountAccess.unavailable(edition, reason == null ? "" : reason));
+				case "UNKNOWN" -> access.add(AccountAccess.unknown(edition, reason));
+				default -> throw new IOException("The account records edition '" + edition + "' invalidly.");
 			}
 		}
 
 		return access;
+	}
+
+	private static MinecraftEdition edition(String id) throws IOException {
+		try {
+			return MinecraftEdition.of(id);
+		} catch (IllegalArgumentException failure) {
+			throw new IOException("The account records an invalid edition.");
+		}
 	}
 
 	private static UUID uniqueId(String text) throws IOException {

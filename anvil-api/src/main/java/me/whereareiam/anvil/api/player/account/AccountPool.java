@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.api.player.account;
 
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,10 +14,10 @@ import java.util.Collection;
  */
 public interface AccountPool extends AutoCloseable {
 	/**
-	 * Reserves the first account that is not reserved anywhere in the engine, whatever the protocol libraries
-	 * recorded about it. A player created with the lease is refused before it connects when its library recorded
-	 * the account as unavailable; prefer {@link #lease(String)} or
-	 * {@code PlayerManager.create(PlayerOptions, AccountPool)}, which lend only an account the player's library can
+	 * Reserves the first account that is not reserved anywhere in the engine, whatever was recorded about it. A
+	 * player created with the lease is refused before it connects when the account was recorded as unavailable for
+	 * the edition of the servers the player reaches; prefer {@link #lease(MinecraftEdition)} or
+	 * {@code PlayerManager.create(PlayerOptions, AccountPool)}, which lend only an account the player's edition can
 	 * use.
 	 *
 	 * @return account lease, held until a player claims it or it is closed
@@ -25,26 +26,30 @@ public interface AccountPool extends AutoCloseable {
 	@NotNull AccountLease lease();
 
 	/**
-	 * Reserves the first account that is not reserved anywhere in the engine and that a protocol library recorded
-	 * as {@link me.whereareiam.anvil.api.type.AccountAvailability#AVAILABLE available}. The pool reads what the
-	 * libraries recorded when it leases, so an account a library refused earlier in the run is skipped.
+	 * Reserves the first account that is not reserved anywhere in the engine and that was recorded as
+	 * {@link me.whereareiam.anvil.api.type.AccountAvailability#AVAILABLE available} for an edition. The pool reads the
+	 * records when it leases, so an account refused earlier in the run is skipped.
+	 *
+	 * <p>When no free account is recorded as available, the pool checks each free account whose availability for the
+	 * edition is {@link me.whereareiam.anvil.api.type.AccountAvailability#UNKNOWN unknown} in lease order: an installed
+	 * protocol library of the edition derives a session from it once, over the network, the result is recorded, and
+	 * the first account that turns out available is lent.</p>
 	 *
 	 * <pre>{@code
 	 * try (AccountPool pool = accounts.pool("testers")) {
-	 *     AccountPool.AccountLease lease = pool.lease("mcprotocol");
+	 *     AccountPool.AccountLease lease = pool.lease(MinecraftEdition.of("example"));
 	 * }
 	 * }</pre>
 	 *
-	 * @param libraryId protocol library whose players will use the account
+	 * @param edition edition of the servers the players that use the account reach
 	 * @return account lease, held until a player claims it or it is closed
-	 * @throws IllegalStateException when the pool is closed or holds no free account available to the library;
+	 * @throws IllegalStateException when the pool is closed or holds no free account available for the edition;
 	 * the message names each account and why it was skipped
 	 */
-	@NotNull AccountLease lease(@NotNull String libraryId);
+	@NotNull AccountLease lease(@NotNull MinecraftEdition edition);
 
 	/**
-	 * Returns the accounts this pool may lease, in lease order, as the libraries recorded them when the pool was
-	 * created.
+	 * Returns the accounts this pool may lease, in lease order, as they were recorded when the pool was created.
 	 *
 	 * @return accounts eligible for this pool
 	 */

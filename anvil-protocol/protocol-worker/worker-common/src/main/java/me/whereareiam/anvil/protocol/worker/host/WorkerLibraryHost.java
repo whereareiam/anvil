@@ -8,9 +8,11 @@ import me.whereareiam.anvil.protocol.worker.account.HostedAccounts;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.function.Supplier;
 
 /**
  * Installs every library that plugs into the native worker: the worker's one protocol library registration, which
@@ -40,9 +42,17 @@ public final class WorkerLibraryHost implements ProtocolLibraryHost {
 		return Optional.of(new HostedAccounts(libraries, accountsDirectory));
 	}
 
+	/**
+	 * Wraps every installed library; each knows all libraries that use stored accounts, which share the account files.
+	 */
 	private static List<HostedLibraryProvider> hosted(ClassLoader loader) {
-		return ServiceLoader.load(WorkerLibraryProvider.class, loader).stream()
-				.map(provider -> new HostedLibraryProvider(provider.get()))
+		List<HostedLibraryProvider> hosted = new ArrayList<>();
+		Supplier<List<HostedAccounts.Library>> accountLibraries = () -> hosted.stream()
+				.flatMap(library -> library.accountLibrary().stream())
 				.toList();
+		for (WorkerLibraryProvider provider : ServiceLoader.load(WorkerLibraryProvider.class, loader))
+			hosted.add(new HostedLibraryProvider(provider, accountLibraries));
+
+		return List.copyOf(hosted);
 	}
 }

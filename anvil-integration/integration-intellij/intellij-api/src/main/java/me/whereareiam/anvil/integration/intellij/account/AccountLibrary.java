@@ -84,7 +84,7 @@ public interface AccountLibrary {
 
 	/**
 	 * Creates or renames a project pool as a stable list of account IDs. When a player leases from the pool,
-	 * the runtime lends only an account the player's protocol library recorded as available.
+	 * the runtime lends only an account available for the edition of the servers the player reaches.
 	 *
 	 * @param previous original pool name, or null for a new pool
 	 * @throws IOException if the pool is invalid, conflicts, or cannot be written

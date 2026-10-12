@@ -132,7 +132,7 @@ class AccountListPanel(
 
 	private class AccountsModel : AbstractTableModel() {
 		var accounts: List<AvailableAccount> = emptyList()
-		private val columns = listOf("Account", "Local ID", "Source", "Libraries")
+		private val columns = listOf("Account", "Local ID", "Source", "Editions")
 		override fun getRowCount() = accounts.size
 		override fun getColumnCount() = columns.size
 		override fun getColumnName(column: Int) = columns[column]
@@ -142,14 +142,17 @@ class AccountListPanel(
 				0 -> entry.account.profileNames() ?: "Profile not available"
 				1 -> entry.account.accountId
 				2 -> entry.source.label
-				else -> entry.account.access.joinToString(", ") { "${it.libraryId}: ${it.availability.name.lowercase()}" }
+				else -> entry.account.access.takeIf { it.isNotEmpty() }
+					?.joinToString(", ") { "${it.edition}: ${it.availability.name.lowercase()}" }
+					?: "Not checked"
 			}
 		}
 	}
 }
 
 /**
- * The distinct profile names the libraries that can use the account sign in as, or null when none can yet.
+ * The distinct profile names the account signs in as in the editions it is available for, or null when none is
+ * known yet.
  */
 internal fun AuthenticationAccount.profileNames(): String? = access.mapNotNull { it.username }.distinct()
 	.takeIf { it.isNotEmpty() }

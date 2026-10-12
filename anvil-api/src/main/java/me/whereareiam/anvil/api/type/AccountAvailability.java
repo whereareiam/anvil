@@ -1,23 +1,26 @@
 package me.whereareiam.anvil.api.type;
 
 /**
- * Whether a protocol library can sign a player in with a stored account. Each library determines it for itself
- * when the account signs in and whenever it derives a session for a player, and the account file records it.
+ * Whether players of one Minecraft edition can sign in with a stored account. A protocol library of the edition
+ * determines it when the account signs in, whenever it derives a session for a player, and when a pool checks an
+ * account it has no record for; the account file records it for the edition, so it counts for every library of
+ * that edition.
  */
 public enum AccountAvailability {
 	/**
-	 * The library derived a session from the account the last time it tried, so its players can use the account.
+	 * A library of the edition derived a session from the account the last time it tried, so the edition's players
+	 * can use the account.
 	 */
 	AVAILABLE,
 	/**
-	 * The library's services refused the account, for example because it does not own the game the library
-	 * speaks to. The library's reason says why; signing the account in again checks it anew.
+	 * The edition's services refused the account, for example because it does not own that edition of the game. The
+	 * checking library's reason says why; signing the account in again checks it anew.
 	 */
 	UNAVAILABLE,
 	/**
-	 * The library has not determined it yet, for example because the account was stored before the library was
-	 * installed, or because its services could not be reached. A player that names the account lets the library
-	 * determine it; a pool does not lend such an account.
+	 * No library of the edition has determined it, for example because none was installed when the account signed
+	 * in, or because the edition's services could not be reached. A player that names the account lets its library
+	 * determine it, and a pool that has no available account for the edition checks such an account while leasing.
 	 */
 	UNKNOWN
 }

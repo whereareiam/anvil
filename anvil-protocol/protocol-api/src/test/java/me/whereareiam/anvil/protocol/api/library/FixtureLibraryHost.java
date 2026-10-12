@@ -1,5 +1,7 @@
 package me.whereareiam.anvil.protocol.api.library;
 
+import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
@@ -37,6 +39,11 @@ public final class FixtureLibraryHost implements ProtocolLibraryHost {
 
 		@Override
 		public void login(@NotNull String accountId, @NotNull Consumer<String> output) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public @NotNull AccountAccess check(@NotNull String accountId, @NotNull MinecraftEdition edition) {
 			throw new UnsupportedOperationException();
 		}
 

@@ -127,14 +127,14 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 
 	/**
 	 * Creates a player signed in with a leased account. The player selects its protocol library as any other player
-	 * does, and is refused before it connects when that library recorded the account as unavailable.
+	 * does, and is refused before it connects when the account was recorded as unavailable for its edition.
 	 *
 	 * @param options player options with a leased login
 	 * @param lease unclaimed lease whose account the player signs in with
 	 * @return created player, which returns the lease when it is destroyed
 	 * @throws ScenarioValidationException when the player cannot be created, for example because its library has no
-	 * permitted, launchable release for the player's Minecraft version or recorded the account as unavailable; the
-	 * lease is returned
+	 * permitted, launchable release for the player's Minecraft version or the account was recorded as unavailable for
+	 * the player's edition; the lease is returned
 	 */
 	@Override
 	public synchronized @NotNull SimulatedPlayer create(@NotNull PlayerOptions options, @NotNull AccountLease lease) {
@@ -162,23 +162,22 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	}
 
 	/**
-	 * Creates a player with an account leased for its protocol library: the player selects its library first, then
-	 * leases the first free account of the pool that the library recorded as available.
+	 * Creates a player with an account leased for the edition of the servers it reaches: the first free account of
+	 * the pool available for that edition, after checking accounts of unknown availability when none is.
 	 *
 	 * @param options player options with a leased login
 	 * @param pool pool to lease the account from
 	 * @return created player, which returns the lease when it is destroyed
-	 * @throws IllegalStateException when the pool holds no free account available to the player's library
+	 * @throws IllegalStateException when the pool holds no free account available for the player's edition
 	 * @throws ScenarioValidationException when the player cannot be created as declared
 	 */
 	@Override
 	public synchronized @NotNull SimulatedPlayer create(@NotNull PlayerOptions options, @NotNull AccountPool pool) {
 		requireLeased(options);
 		ensureOpen();
-		Target target = target(options);
-		String library = selector.select(options, scenario, target.reach().edition(), target.reach().version()).library();
+		MinecraftEdition edition = target(options).reach().edition();
 
-		return create(options, pool.lease(library));
+		return create(options, pool.lease(edition));
 	}
 
 	@Override
@@ -448,16 +447,17 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 			return;
 		}
 
-		// Every library derives its own session from an account; the selected library's record decides before connecting.
+		// Every library derives its own session from an account; the record of the edition decides before connecting.
 		String accountId = login.getAccountId();
 		AuthenticationAccount account = accounts.list().stream()
 				.filter(candidate -> candidate.getAccountId().equals(accountId))
 				.findFirst()
 				.orElseThrow(() -> new ScenarioValidationException("Authenticated account '" + accountId + "' is not available"));
-		AccountAccess access = account.access(selection.library());
+		MinecraftEdition edition = selection.release().getEdition();
+		AccountAccess access = account.access(edition);
 		if (access.getAvailability() == AccountAvailability.UNAVAILABLE)
 			throw new ScenarioValidationException("Player '" + options.getName() + "' cannot sign in with account '" + accountId
-					+ "' through protocol library '" + selection.library() + "': " + access.getReason());
+					+ "' on servers of edition '" + edition + "': " + access.getReason());
 		if (!selection.release().getFeatures().contains(ProtocolFeature.ONLINE_AUTHENTICATION))
 			throw new ScenarioValidationException("Protocol library '" + selection.library()
 					+ "' does not support online authentication for client version '" + version + "'");
