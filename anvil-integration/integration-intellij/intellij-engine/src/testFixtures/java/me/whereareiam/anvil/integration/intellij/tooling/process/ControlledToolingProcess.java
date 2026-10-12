@@ -39,6 +39,9 @@ public final class ControlledToolingProcess extends Process {
 	private String scenariosJson =
 			"[{\"definition\":\"fixture.Definition\",\"name\":\"example\",\"displayName\":\"Example\",\"entrypoint\":\"server\",\"processes\":[]}]";
 
+	@Setter
+	private String authenticationLibrariesJson = "[{\"id\":\"mcprotocol\",\"displayName\":\"MCProtocolLib\"}]";
+
 	private volatile CountDownLatch heldFlush = new CountDownLatch(0);
 	private volatile CountDownLatch flushEntered = new CountDownLatch(1);
 	private volatile int exitCode;
@@ -103,6 +106,13 @@ public final class ControlledToolingProcess extends Process {
 									+ request.path("id").asText()
 									+ "\",\"success\":true,\"result\":"
 									+ scenariosJson
+									+ "}");
+				else if (operation.equals("authenticationLibraries"))
+					emit(
+							"{\"type\":\"response\",\"id\":\""
+									+ request.path("id").asText()
+									+ "\",\"success\":true,\"result\":"
+									+ authenticationLibrariesJson
 									+ "}");
 				else if (operation.equals("start")) {
 					starts.incrementAndGet();

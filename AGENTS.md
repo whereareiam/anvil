@@ -698,11 +698,12 @@ then rerun the `Release drafter` workflow; text typed into the draft is lost on 
   `ToolingMessageCodec` owns typed JSON binding and version checks; transport frames stay internal.
   Portable `tooling-api` payloads use Jackson-compatible Lombok builders and are reused by both peers;
   do not recreate their fields in a manual JSON model reader. `ScenarioOperations`, `EnvironmentOperations`,
-  and `ProcessOperations` declare predefined `ToolingOperation<Q, R>` schemas at the `tooling-api` root.
+  `ProcessOperations` and `AccountOperations` declare predefined `ToolingOperation<Q, R>` schemas at the `tooling-api` root.
   `ToolingClient.request` retains the declared response type, including collection element types.
   `ToolingOperationRegistry` binds typed runner handlers and cancellation policy; `ToolingRequestReader`
   decodes registered payload types generically. Do not add per-operation codec factories or duplicate
-  operation enums. `ToolingProtocolWriter` emits typed envelopes. Protocol 7 uses nested action targets.
+  operation enums. `ToolingProtocolWriter` emits typed envelopes. Protocol 8 uses nested action targets and lists
+  the protocol libraries offering sign-in.
   Environment contracts expose explicit controls, never string protocol operation names. Response IDs
   correlate requests and must not be overloaded with operation names.
   `ConfiguredAccountLibrary` owns the project-facing account contract while

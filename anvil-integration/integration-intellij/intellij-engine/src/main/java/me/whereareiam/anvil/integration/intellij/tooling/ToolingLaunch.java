@@ -28,7 +28,9 @@ import me.whereareiam.anvil.integration.intellij.source.BuildIntegrations;
 import me.whereareiam.anvil.integration.intellij.tooling.process.ToolingCommandReader;
 import me.whereareiam.anvil.integration.intellij.tooling.process.ToolingConnection;
 import me.whereareiam.anvil.integration.intellij.tooling.protocol.ToolingClient;
+import me.whereareiam.anvil.tooling.api.AccountOperations;
 import me.whereareiam.anvil.tooling.api.ScenarioOperations;
+import me.whereareiam.anvil.tooling.api.model.AuthenticationLibrary;
 import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
 import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
 import org.jetbrains.annotations.NotNull;
@@ -50,7 +52,7 @@ public final class ToolingLaunch {
 	private final @NotNull List<Listener> listeners = new CopyOnWriteArrayList<>();
 	private final @NotNull List<Disposable> subscriptions = new CopyOnWriteArrayList<>();
 	private final @NotNull CompletableFuture<ToolingClient> ready = new CompletableFuture<>();
-	private final @NotNull CompletableFuture<List<ScenarioDescriptor>> scenarios = new CompletableFuture<>();
+	private final @NotNull CompletableFuture<Discovery> discovery = new CompletableFuture<>();
 	private final @NotNull CompletableFuture<Outcome> outcome = new CompletableFuture<>();
 
 	private volatile @NotNull State state = State.NEW;
@@ -103,16 +105,17 @@ public final class ToolingLaunch {
 	}
 
 	/**
-	 * Requests the prepared runtime's scenario descriptors once and returns the shared result.
+	 * Requests the prepared runtime's scenario descriptors and the protocol libraries it can sign accounts in
+	 * with once, and returns the shared result.
 	 * <p>
-	 * Discovery runs only when requested, as the first request after the handshake. A discovery failure
+	 * Discovery runs only when requested, as the first requests after the handshake. A discovery failure
 	 * fails the launch; stopping the launch completes the result exceptionally.
 	 */
-	public @NotNull CompletableFuture<List<ScenarioDescriptor>> discover() {
+	public @NotNull CompletableFuture<Discovery> discover() {
 		discoveryRequested.set(true);
 		if (ready.isDone() && !ready.isCompletedExceptionally()) requestDiscovery();
 
-		return scenarios.copy();
+		return discovery.copy();
 	}
 
 	/**
@@ -185,7 +188,7 @@ public final class ToolingLaunch {
 
 	private void connected(@Nullable Void ignored, @Nullable Throwable error) {
 		if (error != null) {
-			scenarios.completeExceptionally(error);
+			discovery.completeExceptionally(error);
 			ready.completeExceptionally(error);
 			return;
 		}
@@ -199,14 +202,17 @@ public final class ToolingLaunch {
 
 	private void requestDiscovery() {
 		if (!discoveryStarted.compareAndSet(false, true)) return;
-		client.request(ScenarioOperations.DISCOVER, null).result().whenComplete((definitions, error) -> {
+		var scenarios = client.request(ScenarioOperations.DISCOVER, null).result();
+		var libraries = client.request(AccountOperations.AUTHENTICATION_LIBRARIES, null).result();
+		scenarios.thenCombine(libraries, Discovery::new).whenComplete((discovered, error) -> {
 			if (error == null) {
-				scenarios.complete(definitions);
+				discovery.complete(discovered);
 				return;
 			}
 
-			scenarios.completeExceptionally(error);
-			if (!isStopping()) fail(error);
+			Throwable cause = unwrap(error);
+			discovery.completeExceptionally(cause);
+			if (!isStopping()) fail(cause);
 		});
 	}
 
@@ -322,7 +328,7 @@ public final class ToolingLaunch {
 	private void closeClient(@NotNull Throwable cause) {
 		client.close(cause);
 		ready.completeExceptionally(cause);
-		scenarios.completeExceptionally(cause);
+		discovery.completeExceptionally(cause);
 	}
 
 	private void diagnostic(@NotNull String line, boolean error) {
@@ -369,6 +375,17 @@ public final class ToolingLaunch {
 			Files.deleteIfExists(path);
 		}
 	}
+
+	/**
+	 * What a prepared runtime offers for its source.
+	 *
+	 * @param scenarios scenario descriptors of the source
+	 * @param authenticationLibraries installed protocol libraries that can sign accounts in, ordered by identifier
+	 */
+	public record Discovery(
+			@NotNull List<ScenarioDescriptor> scenarios,
+			@NotNull List<AuthenticationLibrary> authenticationLibraries
+	) {}
 
 	/**
 	 * Receives runner snapshots, output, and the first failure. Callbacks may run on any thread.

@@ -45,7 +45,7 @@ class ToolingMessageCodecTest {
 	void handshakeRequiresAnExplicitSupportedIntegerVersion() throws Exception {
 		assertInstanceOf(ToolingMessageCodec.Ready.class,
 				codec.read("{\"type\":\"ready\",\"protocolVersion\":" + ToolingSession.PROTOCOL_VERSION + "}"));
-		for (String value : List.of("null", "\"7\"", "7.0", "6", "true", "0", "99999999999999999"))
+		for (String value : List.of("null", "\"8\"", "8.0", "7", "6", "true", "0", "99999999999999999"))
 			assertThrows(IOException.class, () -> codec.read("{\"type\":\"ready\",\"protocolVersion\":" + value + "}"));
 		assertThrows(IOException.class, () -> codec.read("{\"type\":\"ready\"}"));
 	}

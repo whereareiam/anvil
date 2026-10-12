@@ -1,16 +1,21 @@
 package me.whereareiam.anvil.tooling.launcher;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.engine.config.EngineDefaults;
 import me.whereareiam.anvil.engine.config.EngineProperties;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
+import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.runner.RunnerSession;
+import me.whereareiam.anvil.runner.extension.ToolingExtensionRegistry;
 import me.whereareiam.anvil.runner.protocol.ToolingProtocol;
 import me.whereareiam.anvil.runner.scenario.ScenarioRepository;
+import me.whereareiam.anvil.tooling.api.model.AuthenticationLibrary;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
 
@@ -34,10 +39,17 @@ public final class AnvilTooling {
 
 		try (RunnerSession session = new RunnerSession(
 				() -> AnvilLauncher.create(engineOptions(System.getProperties())),
-				repository
+				repository,
+				ToolingExtensionRegistry.discover(),
+				AnvilTooling::authenticationLibraries
 		)) {
 			new ToolingProtocol(session, new InputStreamReader(System.in, StandardCharsets.UTF_8), protocolOutput).run();
 		}
+	}
+
+	private static @NotNull List<AuthenticationLibrary> authenticationLibraries() {
+		Path accounts = EngineDefaults.resolve(engineOptions(System.getProperties())).getAccountsDirectory();
+		return AnvilAuthentication.libraries(ProtocolLibraryRegistry.discover(), accounts);
 	}
 
 	static @NotNull EngineOptions engineOptions(@NotNull Properties properties) {

@@ -12,7 +12,17 @@ import org.jetbrains.annotations.NotNull;
  */
 @Value
 public class AvailableAccount {
+	/**
+	 * Account identity and profile, including the protocol library that owns the account
+	 * ({@link AuthenticationAccount#getLibraryId()}, the file's {@code provider} key).
+	 */
 	@NotNull AuthenticationAccount account;
+	/**
+	 * Account file in its directory.
+	 */
 	@NotNull Path file;
+	/**
+	 * Store the account was read from.
+	 */
 	@NotNull AccountSource source;
 }

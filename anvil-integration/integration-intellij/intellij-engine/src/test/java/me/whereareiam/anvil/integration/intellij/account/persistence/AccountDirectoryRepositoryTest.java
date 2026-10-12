@@ -2,6 +2,7 @@ package me.whereareiam.anvil.integration.intellij.account.persistence;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import me.whereareiam.anvil.integration.intellij.type.AccountSource;
 import org.junit.jupiter.api.Test;
@@ -46,8 +47,22 @@ class AccountDirectoryRepositoryTest {
 		assertEquals(1, repository.readAccounts(project, AccountSource.PROJECT).accounts().size());
 	}
 
+	@Test void readsTheLibraryThatOwnsEachAccount() throws Exception {
+		Files.writeString(directory.resolve("java.json"), account("java", "JavaUser"));
+		Files.writeString(directory.resolve("bedrock.json"), account("bedrock", "BedrockUser", "cloudburst"));
+
+		var accounts = new AccountDirectoryRepository().readAccounts(directory, AccountSource.PROJECT).accounts();
+
+		assertEquals(List.of("cloudburst", "mcprotocol"),
+				accounts.stream().map(account -> account.getAccount().getLibraryId()).toList());
+	}
+
 	private String account(String id, String user) {
-		return "{\"schemaVersion\":1,\"accountId\":\"" + id + "\",\"provider\":\"mcprotocol\",\"username\":\""
+		return account(id, user, "mcprotocol");
+	}
+
+	private String account(String id, String user, String library) {
+		return "{\"schemaVersion\":1,\"accountId\":\"" + id + "\",\"provider\":\"" + library + "\",\"username\":\""
 				+ user + "\",\"credentials\":{\"test\":\"fixture-secret\"}}";
 	}
 }

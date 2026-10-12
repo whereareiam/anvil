@@ -68,7 +68,7 @@ public class ProjectEnvironmentLifecyclePlatformTest extends EnginePlatformTestC
 		assertTrue(build.started.await(5, TimeUnit.SECONDS));
 		build.complete(0);
 		assertTrue(runtime.started.await(5, TimeUnit.SECONDS));
-		runtime.emit("{\"type\":\"ready\",\"protocolVersion\":7}");
+		runtime.emit("{\"type\":\"ready\",\"protocolVersion\":8}");
 		JsonNode scenarios = runtime.nextRequest();
 		assertEquals("scenarios", scenarios.path("operation").asText());
 		runtime.emit(success(scenarios, "[{\"definition\":\"example.Definition\",\"name\":\"registration\",\"displayName\":\"Registration\"}]"));
@@ -138,7 +138,7 @@ public class ProjectEnvironmentLifecyclePlatformTest extends EnginePlatformTestC
 		assertTrue(build.started.await(5, TimeUnit.SECONDS));
 		build.complete(0);
 		assertTrue(runtime.started.await(5, TimeUnit.SECONDS));
-		runtime.emit("{\"type\":\"ready\",\"protocolVersion\":7}");
+		runtime.emit("{\"type\":\"ready\",\"protocolVersion\":8}");
 		assertEquals("scenarios", runtime.nextRequest().path("operation").asText());
 		assertEquals("start", runtime.nextRequest().path("operation").asText());
 		return run;
@@ -305,8 +305,15 @@ public class ProjectEnvironmentLifecyclePlatformTest extends EnginePlatformTestC
 						line.write(value);
 						return;
 					}
-					requests.add(JSON.readTree(line.toByteArray()));
+					JsonNode request = JSON.readTree(line.toByteArray());
 					line.reset();
+					// Discovery also lists the libraries offering sign-in; these tests drive the other requests.
+					if (request.path("operation").asText().equals("authenticationLibraries")) {
+						emit(success(request, "[]"));
+						return;
+					}
+
+					requests.add(request);
 				}
 
 				@Override

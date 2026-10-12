@@ -59,7 +59,7 @@ public class EnvironmentExecutionPlatformTest extends EnginePlatformTestCase {
 
 		export.complete(0);
 		assertTrue(runner.started.await(5, TimeUnit.SECONDS));
-		runner.emit("{\"type\":\"ready\",\"protocolVersion\":7}");
+		runner.emit("{\"type\":\"ready\",\"protocolVersion\":8}");
 
 		JsonNode scenarios = runner.nextRequest();
 		assertEquals("scenarios", scenarios.path("operation").asText());
@@ -87,7 +87,7 @@ public class EnvironmentExecutionPlatformTest extends EnginePlatformTestCase {
 		assertTrue(export.started.await(5, TimeUnit.SECONDS));
 		export.complete(0);
 		assertTrue(runner.started.await(5, TimeUnit.SECONDS));
-		runner.emit("{\"type\":\"ready\",\"protocolVersion\":7}");
+		runner.emit("{\"type\":\"ready\",\"protocolVersion\":8}");
 		runner.nextRequest();
 		runner.nextRequest();
 
@@ -126,7 +126,7 @@ public class EnvironmentExecutionPlatformTest extends EnginePlatformTestCase {
 		assertTrue(firstBuild.started.await(5, TimeUnit.SECONDS));
 		firstBuild.complete(0);
 		assertTrue(firstRuntime.started.await(5, TimeUnit.SECONDS));
-		firstRuntime.emit("{\"type\":\"ready\",\"protocolVersion\":7}");
+		firstRuntime.emit("{\"type\":\"ready\",\"protocolVersion\":8}");
 		JsonNode scenarios = firstRuntime.nextRequest();
 		assertEquals("scenarios", scenarios.path("operation").asText());
 		firstRuntime.emit(success(scenarios, "[]"));
@@ -140,7 +140,7 @@ public class EnvironmentExecutionPlatformTest extends EnginePlatformTestCase {
 		assertEquals(CatalogState.LOADING, catalog().snapshot().getState());
 		secondBuild.complete(0);
 		assertTrue(secondRuntime.started.await(5, TimeUnit.SECONDS));
-		secondRuntime.emit("{\"type\":\"ready\",\"protocolVersion\":7}");
+		secondRuntime.emit("{\"type\":\"ready\",\"protocolVersion\":8}");
 		assertEquals("scenarios", secondRuntime.nextRequest().path("operation").asText());
 		catalog().cancel();
 		await(() -> getProject().getService(ProjectToolingHost.class).current().isFinished());
@@ -221,7 +221,7 @@ public class EnvironmentExecutionPlatformTest extends EnginePlatformTestCase {
 		assertTrue(build.started.await(5, TimeUnit.SECONDS));
 		build.complete(0);
 		assertTrue(runtime.started.await(5, TimeUnit.SECONDS));
-		runtime.emit("{\"type\":\"ready\",\"protocolVersion\":7}");
+		runtime.emit("{\"type\":\"ready\",\"protocolVersion\":8}");
 		assertEquals("scenarios", runtime.nextRequest().path("operation").asText());
 		JsonNode start = runtime.nextRequest();
 		assertEquals("start", start.path("operation").asText());
@@ -247,7 +247,7 @@ public class EnvironmentExecutionPlatformTest extends EnginePlatformTestCase {
 		assertTrue(build.started.await(5, TimeUnit.SECONDS));
 		build.complete(0);
 		assertTrue(runner.started.await(5, TimeUnit.SECONDS));
-		runner.emit("{\"type\":\"ready\",\"protocolVersion\":7}");
+		runner.emit("{\"type\":\"ready\",\"protocolVersion\":8}");
 		runner.emit(success(runner.nextRequest(), "[{\"definition\":\"example.Definition\",\"name\":\"registration\",\"displayName\":\"Registration\"}]"));
 		await(() -> catalog().snapshot().getState() == CatalogState.READY);
 
@@ -314,7 +314,7 @@ public class EnvironmentExecutionPlatformTest extends EnginePlatformTestCase {
 		assertTrue(firstBuild.started.await(5, TimeUnit.SECONDS));
 		firstBuild.complete(0);
 		assertTrue(firstRunner.started.await(5, TimeUnit.SECONDS));
-		firstRunner.emit("{\"type\":\"ready\",\"protocolVersion\":7}");
+		firstRunner.emit("{\"type\":\"ready\",\"protocolVersion\":8}");
 		JsonNode oldRequest = firstRunner.nextRequest();
 		firstRunner.holdCleanup = true;
 
@@ -329,7 +329,7 @@ public class EnvironmentExecutionPlatformTest extends EnginePlatformTestCase {
 		assertTrue(secondBuild.started.await(5, TimeUnit.SECONDS));
 		secondBuild.complete(0);
 		assertTrue(secondRunner.started.await(5, TimeUnit.SECONDS));
-		secondRunner.emit("{\"type\":\"ready\",\"protocolVersion\":7}");
+		secondRunner.emit("{\"type\":\"ready\",\"protocolVersion\":8}");
 		secondRunner.emit(success(secondRunner.nextRequest(), "[]"));
 		await(() -> catalog().snapshot().getState() == CatalogState.READY);
 		assertTrue(catalog().snapshot().getScenarios().isEmpty());
@@ -348,7 +348,7 @@ public class EnvironmentExecutionPlatformTest extends EnginePlatformTestCase {
 		assertTrue(build.started.await(5, TimeUnit.SECONDS));
 		build.complete(0);
 		assertTrue(runtime.started.await(5, TimeUnit.SECONDS));
-		runtime.emit("{\"type\":\"ready\",\"protocolVersion\":7}");
+		runtime.emit("{\"type\":\"ready\",\"protocolVersion\":8}");
 		JsonNode scenarios = runtime.nextRequest();
 		assertEquals("scenarios", scenarios.path("operation").asText());
 		lastStartRequest = runtime.nextRequest();
@@ -527,8 +527,15 @@ public class EnvironmentExecutionPlatformTest extends EnginePlatformTestCase {
 						line.write(value);
 						return;
 					}
-					requests.add(JSON.readTree(line.toByteArray()));
+					JsonNode request = JSON.readTree(line.toByteArray());
 					line.reset();
+					// Discovery also lists the libraries offering sign-in; these tests drive the other requests.
+					if (request.path("operation").asText().equals("authenticationLibraries")) {
+						emit(success(request, "[]"));
+						return;
+					}
+
+					requests.add(request);
 				}
 
 				@Override

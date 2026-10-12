@@ -6,6 +6,7 @@ import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
+import me.whereareiam.anvil.tooling.api.model.AuthenticationLibrary;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -52,6 +54,17 @@ class AnvilAuthenticationTest {
 		assertTrue(ambiguous.getMessage().contains("--library"));
 	}
 
+	@Test
+	void listsOnlyLibrariesOfferingAuthenticationByIdentifier() {
+		Library second = new Library("second", true);
+		Library first = new Library("first", true);
+
+		assertEquals(List.of(
+						AuthenticationLibrary.builder().id("first").displayName("First").build(),
+						AuthenticationLibrary.builder().id("second").displayName("Second").build()),
+				AnvilAuthentication.libraries(registry(second, new Library("offline", false), first), ACCOUNTS));
+	}
+
 	private ProtocolLibraryRegistry registry(Library... libraries) {
 		return new ProtocolLibraryRegistry(List.of(libraries));
 	}
@@ -74,6 +87,11 @@ class AnvilAuthenticationTest {
 		@Override
 		public @NotNull String id() {
 			return id;
+		}
+
+		@Override
+		public @NotNull String displayName() {
+			return Character.toUpperCase(id.charAt(0)) + id.substring(1);
 		}
 
 		@Override

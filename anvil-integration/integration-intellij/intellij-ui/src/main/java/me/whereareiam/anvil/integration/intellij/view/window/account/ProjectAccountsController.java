@@ -151,7 +151,8 @@ final class ProjectAccountsController {
 				});
 
 		if (id == null) return;
-		new AuthenticationDialog(project, source, id, this::refresh).show();
+		// The dialog does not offer a library choice yet, so the runtime chooses as anvilLogin does.
+		new AuthenticationDialog(project, source, id, null, this::refresh).show();
 	}
 
 	private void importAccount() {

@@ -97,10 +97,10 @@ contract bindings, and API contract tests live in `intellij-engine`.
 
 ## Exchange protocol messages
 
-The runner and IDE use protocol version **7**. The ready message advertises the runner's version;
+The runner and IDE use protocol version **8**. The ready message advertises the runner's version;
 the IDE requires an exact match before submitting requests. Update the project's Anvil artifacts and
-the IDE plugin together when this version changes. Version 6 peers use a different action-target shape
-and are rejected by the version check.
+the IDE plugin together when this version changes. Version 7 peers lack the account operation, and
+version 6 peers use a different action-target shape; the version check rejects both.
 
 Portable payloads such as `ScenarioDescriptor`, `SessionSnapshot`, `LogEvent`, `ActionRequest`, and
 `ActionResult` live in `tooling-api`. Their immutable Lombok builders carry Jackson binding metadata,
@@ -118,6 +118,14 @@ to the transport envelope.
 | `ScenarioOperations` | Discover definitions and start a selected scenario. |
 | `EnvironmentOperations` | Read snapshots, start remaining processes, stop the environment, and invoke contributed actions. |
 | `ProcessOperations` | Start, stop, or restart a process, and submit console commands. |
+| `AccountOperations` | List the installed protocol libraries that offer sign-in, by ID and display name. |
+
+The runner has no protocol dependency, so the assembly that installs the libraries hands `RunnerSession` a
+supplier of them: `AnvilTooling` lists every `ProtocolLibraryProvider` whose `authentication(...)` is present,
+with its `displayName()`. IntelliJ discovery requests the libraries right after the scenarios, and the loaded
+`CatalogSnapshot` carries them as `authenticationLibraries`. A sign-in names one of them through
+`AccountAuthenticator.create(source, accountId, libraryId, output)`, which reaches `AnvilAuthentication` as
+`--library`; a null library leaves the choice to `AnvilAuthentication`.
 
 For a connected IntelliJ tooling client, discovery returns its declared collection type:
 

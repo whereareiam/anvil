@@ -16,7 +16,6 @@ import me.whereareiam.anvil.integration.intellij.model.source.ScenarioSource;
 import me.whereareiam.anvil.integration.intellij.tooling.ProjectToolingHost;
 import me.whereareiam.anvil.integration.intellij.tooling.ToolingLaunch;
 import me.whereareiam.anvil.integration.intellij.type.CatalogState;
-import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -83,15 +82,18 @@ public final class ProjectScenarioCatalog implements ScenarioCatalog, Disposable
 				append(current, entry);
 			}
 		}, this);
-		current.discover().whenComplete((definitions, failure) -> complete(current, definitions, failure));
+		current.discover().whenComplete((discovery, failure) -> complete(current, discovery, failure));
 	}
 
 	private synchronized void complete(
-			ToolingLaunch current, @Nullable List<ScenarioDescriptor> definitions, @Nullable Throwable failure
+			ToolingLaunch current, @Nullable ToolingLaunch.Discovery discovery, @Nullable Throwable failure
 	) {
 		if (disposed || launch != current) return;
 		if (failure == null) {
-			catalog = loadState(current, CatalogState.READY).toBuilder().scenarios(List.copyOf(definitions)).build();
+			catalog = loadState(current, CatalogState.READY).toBuilder()
+					.scenarios(List.copyOf(discovery.scenarios()))
+					.authenticationLibraries(List.copyOf(discovery.authenticationLibraries()))
+					.build();
 			changed();
 			return;
 		}

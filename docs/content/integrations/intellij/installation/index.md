@@ -26,7 +26,7 @@ does not change project dependencies.
 
 After changing the project's Anvil version, sync the Gradle project so IntelliJ imports the current
 tooling model. If Anvil reports an unsupported tooling protocol, update both the IDE plugin and the
-project's Anvil artifacts to matching versions, then sync again. This plugin uses tooling protocol 7.
+project's Anvil artifacts to matching versions, then sync again. This plugin uses tooling protocol 8.
 
 The [scenario running guide](../scenarios/index.md) continues from here.
 

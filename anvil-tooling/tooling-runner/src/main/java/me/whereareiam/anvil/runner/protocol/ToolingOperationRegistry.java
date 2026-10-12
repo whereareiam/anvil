@@ -10,6 +10,7 @@ import lombok.AccessLevel;
 import me.whereareiam.anvil.tooling.api.ToolingSession;
 import me.whereareiam.anvil.tooling.api.model.ToolingOperation;
 import me.whereareiam.anvil.tooling.api.model.process.console.ConsoleCommandResult;
+import me.whereareiam.anvil.tooling.api.AccountOperations;
 import me.whereareiam.anvil.tooling.api.EnvironmentOperations;
 import me.whereareiam.anvil.tooling.api.ProcessOperations;
 import me.whereareiam.anvil.tooling.api.ScenarioOperations;
@@ -25,6 +26,7 @@ final class ToolingOperationRegistry {
 
 	ToolingOperationRegistry(@NotNull ToolingSession session) {
 		register(ScenarioOperations.DISCOVER, ignored -> session.scenarios());
+		register(AccountOperations.AUTHENTICATION_LIBRARIES, ignored -> session.authenticationLibraries());
 		register(EnvironmentOperations.SNAPSHOT, ignored -> session.snapshot());
 		register(ScenarioOperations.START, Policy.CANCELLABLE, request -> {
 			String definition = request.getDefinition() == null ? request.getScenario() : request.getDefinition();

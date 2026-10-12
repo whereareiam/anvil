@@ -37,6 +37,17 @@ public interface ProtocolLibraryProvider {
 	@NotNull String id();
 
 	/**
+	 * Returns the library's name for people, such as {@code MCProtocolLib}, shown by tooling that lets a user
+	 * choose a library, for example the IntelliJ account manager. A provider that does not name itself is shown
+	 * by its {@link #id() identifier}.
+	 *
+	 * @return non-blank name for presentation only; never used to select the library
+	 */
+	default @NotNull String displayName() {
+		return id();
+	}
+
+	/**
 	 * Returns every release this library can run, including additional user-supplied releases named by
 	 * {@link ProtocolLibraryContext#getAdditionalReleases()}.
 	 *

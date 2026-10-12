@@ -32,6 +32,7 @@ import me.whereareiam.anvil.integration.intellij.type.CatalogState;
 import me.whereareiam.anvil.integration.intellij.type.source.DiscoveryState;
 import me.whereareiam.anvil.integration.intellij.type.source.ProjectChange;
 import me.whereareiam.anvil.integration.intellij.type.source.SourceListingStatus;
+import me.whereareiam.anvil.tooling.api.model.AuthenticationLibrary;
 import me.whereareiam.anvil.tooling.api.type.SessionState;
 import org.jetbrains.annotations.NotNull;
 
@@ -79,11 +80,20 @@ public class ProjectSourceDiscoveryPlatformTest extends EnginePlatformTestCase {
 								if (finishExports) process.complete(0);
 							} else {
 								runners.add(process);
-								process.emit("{\"type\":\"ready\",\"protocolVersion\":7}");
+								process.emit("{\"type\":\"ready\",\"protocolVersion\":8}");
 							}
 							return process;
 						});
 		Disposer.register(getTestRootDisposable(), session);
+	}
+
+	public void testLoadedCatalogListsTheLibrariesOfferingSignIn() throws Exception {
+		discovery();
+		awaitLoaded(1);
+
+		assertEquals(
+				List.of(AuthenticationLibrary.builder().id("mcprotocol").displayName("MCProtocolLib").build()),
+				getProject().getService(ScenarioCatalog.class).snapshot().getAuthenticationLibraries());
 	}
 
 	public void testSuccessfulImportRefreshesIdleCatalogOnceAndDoesNotSyncAgain()
