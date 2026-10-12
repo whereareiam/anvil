@@ -558,6 +558,9 @@ then rerun the `Release drafter` workflow; text typed into the draft is lost on 
   gutter (`ScenarioLineMarker` with `ScenarioConfigurationProducer`), run configurations, and environment
   tabs, which act on their own `EnvironmentSession` when it already runs the scenario. `availability`
   returns an `EnvironmentSession.Availability` whose reason the action shows; `run` applies the same rule.
+  `debug` always starts a new environment whose `ScenarioLaunchRequest` asks the runner for JDWP agents on
+  free loopback ports; `EnvironmentDebugger` attaches a Remote JVM Debug session when each process
+  generation announces its port. Only local execution can be debugged.
   A failed request or a failed environment out of view becomes a notification in the `Anvil` group, never a
   replacement of the catalog.
 - `intellij-scenario` groups packages by what they own, with a `view` subpackage for Swing screens:
@@ -591,8 +594,8 @@ then rerun the `Release drafter` workflow; text typed into the draft is lost on 
   protocol operation names. Response IDs correlate requests and must not be overloaded with operation names.
 - A run configuration stores a source, a definition class, and an optional process; one definition class
   declares exactly one scenario, so the class is the scenario's identity throughout the plugin.
-  `RunConfigurationService` saves, validates, and launches configurations; `AnvilRunConfiguration` suppresses
-  the debug executor and gives the Run tab its own console presentation. Running from the catalog does not
+  `RunConfigurationService` saves, validates, and launches configurations; `AnvilRunConfiguration` gives the
+  Run tab its own console presentation, and `AnvilDebugRunner` runs it under the Debug executor. Running from the catalog does not
   create a configuration.
 - `intellij-account` keeps `AccountLibrary` (the project and global directories it reads), `storage`
   (account and pool files, `StagedAccountDirectory`, `ProjectAccountStaging`), `AccountSignIn` (one browser
