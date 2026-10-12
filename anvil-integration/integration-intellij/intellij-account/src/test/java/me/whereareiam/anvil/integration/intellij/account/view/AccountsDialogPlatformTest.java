@@ -32,6 +32,10 @@ public class AccountsDialogPlatformTest extends AccountPlatformTestCase {
 		AccountSettings.getInstance().setDirectory(global);
 		Files.writeString(project.resolve("alice.json"), account("alice", "Alice"));
 		Files.writeString(global.resolve("bob.json"), account("bob", "Bob"));
+		library.setIncludesGlobal(false);
+		var single = dialog(project);
+		SwingTestSupport.await(() -> SwingTestSupport.text(single).contains("1 account available to this project."));
+		library.setIncludesGlobal(true);
 
 		var view = dialog(project);
 		var table = SwingTestSupport.find(SwingTestSupport.find(view, AccountListPanel.class), JBTable.class);

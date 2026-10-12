@@ -69,7 +69,7 @@ class AccountListPanel(
 			})
 			.addExtraAction(button("Refresh", AllIcons.Actions.Refresh, { !busy }) { refresh.run() })
 			.createPanel()
-		border = JBUI.Borders.empty(8)
+		border = JBUI.Borders.emptyTop(8)
 		add(decorated, BorderLayout.CENTER)
 	}
 
