@@ -579,7 +579,10 @@ then rerun the `Release drafter` workflow; text typed into the draft is lost on 
   another cleanup step fails. `ToolingConnection` drains diagnostic delivery before file cleanup.
   `ToolingLaunch` publishes one typed `ToolingLaunch.Outcome` after cleanup and requests scenario
   discovery only when asked; listener failures cannot skip resource release or pending-future completion.
-  A replacement waits for the previous launch's cleanup. An `EnvironmentSession` stays bound to its
+  A replacement waits for the previous launch's cleanup. `ToolingLaunch.rebuild` reruns the source's preparation
+  beside a ready runner so its artifacts are rebuilt, and `ToolingConnection` owns that one rebuild process
+  and terminates it on stop; `EnvironmentSession.rebuildAndRestart` restarts the process only after the
+  build succeeded. An `EnvironmentSession` stays bound to its
   execution; commands never look up a replacement through a project service. `SourceDiscovery`, once
   initialized, observes the project independently of open views, and reloads wait for environment cleanup.
 - `ToolingClient` owns handshake, ordered request submission, response correlation, and pending-result
