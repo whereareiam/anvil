@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -194,6 +195,61 @@ class CapabilityRuntimeTest {
 				.getMessage().contains("Duplicate Anvil provider ID"));
 		assertTrue(assertThrows(CapabilityException.class, () -> runtime(List.of(status, duplicate)))
 				.getMessage().contains("provided by both"));
+	}
+
+	@Test
+	void createsOptionalDependenciesFirstWhenPresentAndTheProviderWithoutThem() {
+		var status = provider("status", Status.class, Set.of(), context -> () -> 7);
+		var command = optional("command", Command.class, Status.class, context -> {
+			int identity = context.findCapability(Status.class).map(Status::identity).orElse(0);
+			return () -> identity;
+		});
+		var withStatus = runtime(List.of(command, status));
+
+		assertEquals(List.of("status", "command"), withStatus.providers().stream().map(CapabilityDescriptor::getId).toList());
+		try (var capabilities = withStatus.compose("Agent 'lobby'", Function.identity())) {
+			assertEquals(7, capabilities.capability(Command.class).execute());
+		}
+		try (var capabilities = runtime(List.of(command)).compose("Agent 'lobby'", Function.identity())) {
+			assertEquals(0, capabilities.capability(Command.class).execute());
+		}
+		try (var capabilities = withStatus.compose("Agent 'lobby'", Map.of("status", "no segment"), Function.identity())) {
+			assertEquals(0, capabilities.capability(Command.class).execute());
+			assertFalse(capabilities.hasCapability(Status.class));
+		}
+	}
+
+	@Test
+	void rejectsOptionalDependenciesBelongingToAnotherOwner() {
+		var provider = optional("status", Status.class, PlayerOnly.class, context -> () -> 1);
+
+		CapabilityException failure = assertThrows(CapabilityException.class, () -> runtime(List.of(provider)));
+
+		assertTrue(failure.getMessage().contains(PlayerOnly.class.getName()));
+	}
+
+	private <C extends DeviceCapability> CapabilityProvider<C, CapabilityContext<DeviceCapability>> optional(
+			String id,
+			Class<C> type,
+			Class<? extends Capability> dependency,
+			Function<CapabilityContext<DeviceCapability>, C> factory
+	) {
+		return new CapabilityProvider<>() {
+			@Override
+			public @NotNull CapabilityDescriptor descriptor() {
+				return CapabilityDescriptor.builder().id(id).optionalCapability(dependency).build();
+			}
+
+			@Override
+			public @NotNull Class<C> capability() {
+				return type;
+			}
+
+			@Override
+			public @NotNull C create(@NotNull CapabilityContext<DeviceCapability> context) {
+				return factory.apply(context);
+			}
+		};
 	}
 
 	private CapabilityRuntime<DeviceCapability, CapabilityContext<DeviceCapability>> runtime(
