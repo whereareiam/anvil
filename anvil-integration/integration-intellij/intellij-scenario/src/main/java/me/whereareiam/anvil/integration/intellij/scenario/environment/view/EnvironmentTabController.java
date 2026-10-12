@@ -2,7 +2,6 @@ package me.whereareiam.anvil.integration.intellij.scenario.environment.view;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Disposer;
 
 import java.util.List;
 
@@ -13,7 +12,8 @@ import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Owns an environment tab's session subscription, its remembered section, and disposal of the session.
+ * Owns an environment tab's session subscription and its remembered section. The tab shows the session; whoever
+ * created the tab decides when the session ends.
  */
 final class EnvironmentTabController implements Disposable {
 	private static final @NotNull List<ScenarioSettings.Section> SECTIONS = List.of(
@@ -89,8 +89,6 @@ final class EnvironmentTabController implements Disposable {
 
 	@Override
 	public void dispose() {
-		if (disposed) return;
 		disposed = true;
-		Disposer.dispose(session);
 	}
 }

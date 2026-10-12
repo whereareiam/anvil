@@ -147,7 +147,10 @@ public final class ToolWindowController implements Disposable {
 
 		Content content = contents.getFactory().createContent(panel, title(session, count), false);
 		content.setCloseable(true);
-		content.setDisposer(panel);
+		// The tab owns the session: closing it disposes the view first, then releases the session.
+		Disposable tab = () -> Disposer.dispose(session);
+		Disposer.register(tab, panel);
+		content.setDisposer(tab);
 
 		SessionTab entry = new SessionTab(session, panel, content);
 		tabs.put(session.getId(), entry);

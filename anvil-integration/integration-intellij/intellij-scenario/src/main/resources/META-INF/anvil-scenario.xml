@@ -7,6 +7,7 @@
 		<runLineMarkerContributor language="JAVA" implementationClass="me.whereareiam.anvil.integration.intellij.scenario.editor.ScenarioLineMarker"/>
 		<toolWindow id="Anvil" anchor="bottom" icon="/icons/anvil.svg" canCloseContents="true"
 				factoryClass="me.whereareiam.anvil.integration.intellij.scenario.window.AnvilToolWindowFactory"/>
+		<serviceViewContributor implementation="me.whereareiam.anvil.integration.intellij.scenario.environment.view.services.EnvironmentServiceContributor"/>
 		<notificationGroup id="Anvil" displayType="BALLOON"/>
 	</extensions>
 	<actions>
