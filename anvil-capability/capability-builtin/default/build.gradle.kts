@@ -5,6 +5,8 @@ plugins {
 description = "Default aggregate containing the built-in player and process capabilities"
 
 dependencies {
+	api(projects.anvilCapability.capabilityBuiltin.player.commands)
+	api(projects.anvilCapability.capabilityBuiltin.player.dialogs)
 	api(projects.anvilCapability.capabilityBuiltin.player.interaction)
 	api(projects.anvilCapability.capabilityBuiltin.player.inventory)
 	api(projects.anvilCapability.capabilityBuiltin.player.messages)

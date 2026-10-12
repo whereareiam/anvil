@@ -61,6 +61,18 @@ gradlePlugin {
 			displayName = "Anvil Interaction Capability"
 			description = "Includes the built-in Interaction capability"
 		}
+		create("anvilCapabilityCommands") {
+			id = "me.whereareiam.anvil.capability.commands"
+			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.CommandsPlugin"
+			displayName = "Anvil Commands Capability"
+			description = "Includes the built-in Commands capability"
+		}
+		create("anvilCapabilityDialogs") {
+			id = "me.whereareiam.anvil.capability.dialogs"
+			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.DialogsPlugin"
+			displayName = "Anvil Dialogs Capability"
+			description = "Includes the built-in Dialogs capability"
+		}
 	}
 }
 

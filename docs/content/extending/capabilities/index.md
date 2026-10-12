@@ -63,8 +63,14 @@ restricted to those dependencies, within the same owner. A player capability can
 and obtain it through `context.requireCapability(Messages.class)`. A process capability backed by
 an agent can declare `Console` and obtain it through its provider context.
 
+A required dependency the owner lacks keeps the capability from being created, and retrieving it
+then names the missing dependency. A capability that only uses another when it is there declares it
+as optional instead, with `.optionalCapability(Type.class)`: it is created after that capability when
+the owner has it, and `context.findCapability(Type.class)` is empty when the owner does not. The
+built-in `Dialogs` uses `Commands` this way.
+
 All capability providers return a `CapabilityDescriptor` from `descriptor()`. It contains provider
-identity, contract version, and required capability types. The shared `capability-api` owns this
+identity, contract version, and required and optional capability types. The shared `capability-api` owns this
 contract, generic provider/context interfaces, typed request descriptors/channels, and neutral player
 contracts under `capability.api.player`. Use `PlayerCapabilityProvider` when the implementation
 needs only player identity/version, observations, declared dependencies, and cleanup.

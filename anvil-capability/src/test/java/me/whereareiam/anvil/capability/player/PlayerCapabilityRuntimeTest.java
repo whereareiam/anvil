@@ -60,7 +60,9 @@ class PlayerCapabilityRuntimeTest {
 				"me.whereareiam.anvil.messages",
 				"me.whereareiam.anvil.movement",
 				"me.whereareiam.anvil.inventory",
-				"me.whereareiam.anvil.interaction"
+				"me.whereareiam.anvil.interaction",
+				"me.whereareiam.anvil.commands",
+				"me.whereareiam.anvil.dialogs"
 		), PlayerCapabilityRuntime.discover().providers().stream()
 				.map(CapabilityDescriptor::getId)
 				.collect(Collectors.toSet()));
