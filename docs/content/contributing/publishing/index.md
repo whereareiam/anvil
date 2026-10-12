@@ -50,11 +50,11 @@ tests verify imported constraints from published metadata without composite subs
 ## Package the IntelliJ plugin
 
 ```shell
-./gradlew :anvil-integration:integration-intellij:intellij:buildPlugin
-./gradlew :anvil-integration:integration-intellij:intellij:verifyPlugin
+./gradlew :anvil-integration:integration-intellij:buildPlugin
+./gradlew :anvil-integration:integration-intellij:verifyPlugin
 ```
 
-The ZIP is written to `anvil-integration/integration-intellij/intellij/build/distributions`, and
+The ZIP is written to `anvil-integration/integration-intellij/build/distributions`, and
 `verifyPlugin` checks it against the baseline and newest supported IDE builds. Development builds,
 releases and full pull request verifications retain the ZIP as an `anvil-intellij-plugin-<version>` artifact for
 [installation from disk](../../integrations/intellij/installation/index.md#install-a-development-build).
@@ -86,7 +86,7 @@ the Marketplace website, then let releases publish later versions. To sign and p
 the same four environment variables and run:
 
 ```shell
-./gradlew :anvil-integration:integration-intellij:intellij:publishPlugin -PanvilVersion=<version>
+./gradlew :anvil-integration:integration-intellij:publishPlugin -PanvilVersion=<version>
 ```
 
 ## Verify a pull request

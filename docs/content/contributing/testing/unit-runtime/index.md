@@ -36,10 +36,11 @@ TestKit without starting Minecraft. Its location follows the owner of the behavi
 | Root build discovery and fixture publication                  | `./gradlew help`                                    |
 | Foreground sessions and structured protocol              | `:anvil-tooling:tooling-runner:test`                          |
 | Default tooling entry points and property parsing | `:anvil-tooling:tooling-launcher:test` |
-| IntelliJ API contracts, sessions, discovery, persistence, and account operations | `:anvil-integration:integration-intellij:intellij-engine:test` |
-| IntelliJ panels, dialogs, configuration editors, and console rendering | `:anvil-integration:integration-intellij:intellij-ui:test` |
+| IntelliJ build-integration aggregation and launch manifests | `:anvil-integration:integration-intellij:intellij-common:test` |
+| IntelliJ catalog, launches, environments, consoles, actions, editor, and run configurations | `:anvil-integration:integration-intellij:intellij-scenario:test` |
+| IntelliJ accounts, pools, sign-in, and account settings | `:anvil-integration:integration-intellij:intellij-account:test` |
 | IntelliJ native Gradle import | `:anvil-integration:integration-intellij:intellij-gradle:test` |
-| Installed plugin registration and composition | `:anvil-integration:integration-intellij:intellij:test` |
+| Installed plugin registration and composition | `:anvil-integration:integration-intellij:test` (also runs every module above) |
 | Gradle tooling producer                                  | `:anvil-integration:integration-gradle:gradle-tooling:test`                |
 | Build conventions: release data, segments, linkage, legacy Java release, and library layout | `:build-logic:check` and `:build-logic-settings:check`, which the root `check` runs |
 
@@ -69,13 +70,13 @@ by testing the installed composition rather than manually assembled implementati
 
 ## Check the IntelliJ package
 
-Tests live with their implementation modules. API contract tests live in `intellij-engine`;
-`intellij-api` has no test sources. Engine tests subscribe a recording listener to `SessionLog` and
-run without the UI module. UI tests bind native presentation collaborators locally and run without
-the packaging module. Mixed settings and account tests separate persistence from form behavior.
-The controlled process fixture is shared through `intellij-engine/src/testFixtures`; it is never
-packaged in the plugin. `intellij` retains only smoke tests for the production descriptor's settings,
-run configuration, output factory, and optional Gradle registration.
+Tests live with the module that owns the behaviour; `intellij-api` has no test sources. Each feature
+module's tests load its real descriptor fragment through a test-only `META-INF/plugin.xml`, which adds
+the shared services and a stand-in for any contract another module implements, so actions, settings
+pages, and extensions are registered exactly as in the plugin. Test fixtures shared by several modules,
+such as `SwingTestSupport` and the controlled tooling process, live in `intellij-common/src/testFixtures`
+and are never packaged in the plugin. The plugin's own tests check how the fragments compose: service
+bindings, the settings tree, cross-module action groups, editor extensions, and the tool window.
 
 Run all module tests together:
 
@@ -85,7 +86,7 @@ Run all module tests together:
 
 
 ```shell
-./gradlew :anvil-integration:integration-intellij:intellij:buildPlugin :anvil-integration:integration-intellij:intellij:verifyPlugin
+./gradlew :anvil-integration:integration-intellij:buildPlugin :anvil-integration:integration-intellij:verifyPlugin
 ```
 
 The verifier checks the declared IDE baselines. To verify against an installed IDE, pass
@@ -97,7 +98,7 @@ the ZIP workflow.
 Validate UI changes against the current IDE as well as the compilation baseline:
 
 ```shell
-./gradlew :anvil-integration:integration-intellij:intellij-ui:testCurrentIde --tests '*EnvironmentSectionTabsPlatformTest' -Panvil.intellijVerificationPath=/absolute/path/to/idea
+./gradlew :anvil-integration:integration-intellij:intellij-scenario:testCurrentIde --tests '*SectionTabsPlatformTest' -Panvil.intellijVerificationPath=/absolute/path/to/idea
 ```
 
 This separate test task keeps baseline compilation intact while using the selected IDE's runtime,
@@ -112,10 +113,10 @@ API usage. The remaining findings are experimental APIs the Gradle adapter and s
 (`ExternalSystemBuildEvent` and `TrustedProjectsListener`); recheck them when raising the baseline.
 
 UI tests lay out and paint their screens offscreen on every run. To inspect the renders, add
-`-Panvil.uiCaptures`; the images are written to `intellij-ui/build/reports/ui-captures`:
+`-Panvil.uiCaptures`; the images are written to `intellij-scenario/build/reports/ui-captures`:
 
 ```shell
-./gradlew :anvil-integration:integration-intellij:intellij-ui:test -Panvil.uiCaptures
+./gradlew :anvil-integration:integration-intellij:intellij-scenario:test -Panvil.uiCaptures
 ```
 
 ## Finish with the build

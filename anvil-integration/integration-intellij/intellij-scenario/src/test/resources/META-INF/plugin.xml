@@ -1,0 +1,16 @@
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+	<id>me.whereareiam.anvil.scenario.test</id>
+	<name>Anvil Scenarios (tests)</name>
+	<vendor>whereareiam</vendor>
+	<depends>com.intellij.modules.platform</depends>
+	<depends>com.intellij.java</depends>
+
+	<!-- The module's own descriptor, with the shared services it relies on and a stand-in for accounts. -->
+	<xi:include href="/META-INF/anvil-common.xml" xpointer="xpointer(/idea-plugin/*)"/>
+	<xi:include href="/META-INF/anvil-scenario.xml" xpointer="xpointer(/idea-plugin/*)"/>
+	<extensions defaultExtensionNs="com.intellij">
+		<groupConfigurable id="me.whereareiam.anvil" parentId="tools" bundle="messages.AnvilTestSettings" displayNameKey="anvil" descriptionKey="anvil"/>
+		<projectService serviceInterface="me.whereareiam.anvil.integration.intellij.account.AccountStaging"
+				serviceImplementation="me.whereareiam.anvil.integration.intellij.StubAccountStaging"/>
+	</extensions>
+</idea-plugin>

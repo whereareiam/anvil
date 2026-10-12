@@ -92,5 +92,5 @@ jobs:
           INTELLIJ_PRIVATE_KEY_PASSWORD: ${{ secrets.INTELLIJ_PRIVATE_KEY_PASSWORD }}
         run: >-
           ./gradlew --no-daemon
-          :anvil-integration:integration-intellij:intellij:publishPlugin
+          :anvil-integration:integration-intellij:publishPlugin
           -Panvil.bootstrap -PanvilVersion="$ANVIL_VERSION"

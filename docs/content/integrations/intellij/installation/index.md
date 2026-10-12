@@ -39,10 +39,10 @@ Anvil's own checkout uses project dependencies and needs no publication.
 Build the plugin ZIP from an Anvil checkout:
 
 ```shell
-./gradlew :anvil-integration:integration-intellij:intellij:buildPlugin
+./gradlew :anvil-integration:integration-intellij:buildPlugin
 ```
 
-The ZIP appears under `anvil-integration/integration-intellij/intellij/build/distributions`.
+The ZIP appears under `anvil-integration/integration-intellij/build/distributions`.
 Completed [verification runs](https://github.com/whereareiam/anvil/actions) also retain it as an
 `anvil-intellij-plugin-<version>` artifact; extract that download and use the plugin ZIP inside it.
 

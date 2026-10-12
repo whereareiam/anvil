@@ -1,0 +1,56 @@
+<idea-plugin url="https://anvil.whereareiam.me" xmlns:xi="http://www.w3.org/2001/XInclude">
+	<name>Anvil</name>
+	<description><![CDATA[
+		<p>Run and inspect Minecraft server test environments defined with
+		<a href="https://anvil.whereareiam.me">Anvil</a>, a testing framework for Minecraft Java Edition
+		servers, proxies, and simulated players.</p>
+
+		<p>Anvil finds the scenario definitions in your Gradle project and lists them in the <b>Anvil</b>
+		tool window. Run a scenario from there, from the gutter beside its definition class, or from a run
+		configuration, and follow it in an environment tab:</p>
+		<ul>
+			<li><b>Environment</b>: live status, join address, workspaces, and per-process start, stop, and restart</li>
+			<li><b>Console</b>: merged or per-process output with ANSI colors, and commands sent to one process</li>
+			<li><b>Players</b>: simulated players with actions and observations contributed by their capabilities</li>
+		</ul>
+		<p>The plugin also manages project and global accounts and account pools, including browser sign-in,
+		and can save a scenario or a single process as a Run Configuration.</p>
+
+		<h3>Requirements</h3>
+		<ul>
+			<li>A Gradle project that applies the <code>me.whereareiam.anvil</code> Gradle plugin, at an Anvil
+			version matching this plugin</li>
+			<li>Java 21 or newer for the project runtime</li>
+		</ul>
+		<p>Open <b>View | Tool Windows | Anvil</b> to begin, and configure preferences in
+		<b>Settings | Tools | Anvil</b>. See the
+		<a href="https://anvil.whereareiam.me/docs/dev/integrations/intellij">IntelliJ IDEA guide</a> for setup
+		and usage.</p>
+
+		<h3>Limitations</h3>
+		<p>Only Gradle projects are supported. One environment runs per IntelliJ project at a time, and
+		processes cannot be debugged from the IDE.</p>
+
+		<p><i>Anvil is not an official Minecraft product and is not approved by or associated with Mojang or
+		Microsoft.</i></p>
+	]]></description>
+	<depends>com.intellij.modules.platform</depends>
+	<depends>com.intellij.java</depends>
+	<depends optional="true" config-file="anvil-gradle.xml">org.jetbrains.plugins.gradle</depends>
+	<depends optional="true" config-file="anvil-scenario-kotlin.xml">org.jetbrains.kotlin</depends>
+
+	<!-- Each feature module registers its own services, actions, and extensions. -->
+	<xi:include href="/META-INF/anvil-common.xml" xpointer="xpointer(/idea-plugin/*)"/>
+	<xi:include href="/META-INF/anvil-scenario.xml" xpointer="xpointer(/idea-plugin/*)"/>
+	<xi:include href="/META-INF/anvil-account.xml" xpointer="xpointer(/idea-plugin/*)"/>
+
+	<extensions defaultExtensionNs="org.jetbrains.kotlin">
+		<!-- Scenario definitions written in Kotlin are recognised through UAST, which works in both compiler modes. -->
+		<supportsKotlinPluginMode supportsK1="true" supportsK2="true"/>
+	</extensions>
+	<extensions defaultExtensionNs="com.intellij">
+		<!-- Settings | Tools | Anvil groups the pages the feature modules contribute. -->
+		<groupConfigurable id="me.whereareiam.anvil" parentId="tools" bundle="messages.AnvilSettings"
+				displayNameKey="anvil.settings" descriptionKey="anvil.settings.description"/>
+	</extensions>
+</idea-plugin>

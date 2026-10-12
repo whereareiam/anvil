@@ -46,3 +46,11 @@ intellijPlatformTesting.testIde.register("testCurrentIde") {
 		classpath += sourceSets.test.get().output
 	}
 }
+
+// Screenshot capture is opt-in: -Panvil.uiCaptures writes the renders of view tests under build/reports.
+if (providers.gradleProperty("anvil.uiCaptures").isPresent) {
+	val captures = layout.buildDirectory.dir("reports/ui-captures").get().asFile.path
+	tasks.named<Test>("test") {
+		systemProperty("anvil.uiCaptures", captures)
+	}
+}
