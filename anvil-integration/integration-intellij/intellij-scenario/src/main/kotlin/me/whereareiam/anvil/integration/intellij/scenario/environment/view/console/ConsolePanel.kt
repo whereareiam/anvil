@@ -1,7 +1,9 @@
 package me.whereareiam.anvil.integration.intellij.scenario.environment.view.console
 
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.ui.components.JBList
 import com.intellij.util.ui.JBUI
+import me.whereareiam.anvil.integration.intellij.scenario.console.ConsoleActions
 import me.whereareiam.anvil.integration.intellij.scenario.environment.EnvironmentSession
 import me.whereareiam.anvil.integration.intellij.scenario.window.component.ToolWindowPanel
 import me.whereareiam.anvil.integration.intellij.scenario.window.component.ToolWindowScrollPane
@@ -15,7 +17,7 @@ import javax.swing.ScrollPaneConstants
 import javax.swing.UIManager
 
 /**
- * Console page of an environment tab: output source list, native console, and command input.
+ * Console page of an environment tab: output source list, console toolbar, native console, and command input.
  * [ConsoleController] owns filtering, targeting, and the console presentation.
  */
 class ConsolePanel(session: EnvironmentSession) : ToolWindowPanel(BorderLayout()) {
@@ -42,7 +44,10 @@ class ConsolePanel(session: EnvironmentSession) : ToolWindowPanel(BorderLayout()
 			add(command, BorderLayout.CENTER)
 			add(send, BorderLayout.EAST)
 		}
+		val toolbar = ActionManager.getInstance().createActionToolbar("Anvil.Console", ConsoleActions.create(controller.presentation), false)
 		val editor = ToolWindowPanel(BorderLayout()).apply {
+			toolbar.targetComponent = controller.presentation.console.component
+			add(toolbar.component, BorderLayout.WEST)
 			add(controller.presentation.console.component, BorderLayout.CENTER)
 			add(input, BorderLayout.SOUTH)
 		}
