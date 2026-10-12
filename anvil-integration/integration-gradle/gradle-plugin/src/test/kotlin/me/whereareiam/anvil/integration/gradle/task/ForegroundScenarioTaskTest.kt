@@ -25,7 +25,7 @@ class ForegroundScenarioTaskTest {
             repositories { maven { url = uri("$repository") }; mavenCentral() }
             anvil { }
             tasks.register("verifyDaemon") {
-                mustRunAfter("anvilScenario")
+                mustRunAfter("anvilScenarios")
                 doLast {
                     check(System.getProperty("fixture.selection") == null) {
                         "Scenario properties must remain in the child JVM"
@@ -69,7 +69,7 @@ class ForegroundScenarioTaskTest {
         write("src/anvil/java/example/Catalog.java", definition("Catalog", "anvil-scenario"))
         write("src/test/java/example/TestOnly.java", definition("TestOnly", "test-only-scenario"))
 
-        val result = selection("--list").build()
+        val result = listing().build()
 
         assertTrue(result.output.contains("anvil-scenario"), result.output)
         assertFalse(result.output.contains("test-only-scenario"), result.output)
@@ -90,8 +90,8 @@ class ForegroundScenarioTaskTest {
         val both = selection("--scenario=one", "--definition=example.Two").buildAndFail()
         assertTrue(both.output.contains("Select exactly one of --scenario=<name> or --definition=<class>"), both.output)
 
-        val listing = selection("--list", "--scenario=one").buildAndFail()
-        assertTrue(listing.output.contains("Select --list or exactly one of"), listing.output)
+        val listing = listing("--scenario=one").buildAndFail()
+        assertTrue(listing.output.contains("Unknown command-line option '--scenario'"), listing.output)
     }
 
     private fun definition(name: String, scenario: String) = """
@@ -108,12 +108,17 @@ class ForegroundScenarioTaskTest {
     private fun selection(vararg options: String): GradleRunner = GradleRunner.create()
         .withProjectDir(directory.toFile())
         .withPluginClasspath()
-        .withArguments("anvilScenario", *options, "-PanvilVersion=$testedVersion", "--stacktrace")
+        .withArguments("anvilRun", *options, "-PanvilVersion=$testedVersion", "--stacktrace")
+
+    private fun listing(vararg options: String): GradleRunner = GradleRunner.create()
+        .withProjectDir(directory.toFile())
+        .withPluginClasspath()
+        .withArguments("anvilScenarios", *options, "-PanvilVersion=$testedVersion", "--stacktrace")
 
     private fun runner(): GradleRunner = GradleRunner.create()
         .withProjectDir(directory.toFile())
         .withPluginClasspath()
-        .withArguments("anvilScenario", "--list", "verifyDaemon", "-PanvilVersion=$testedVersion", "--configuration-cache", "--stacktrace")
+        .withArguments("anvilScenarios", "verifyDaemon", "-PanvilVersion=$testedVersion", "--configuration-cache", "--stacktrace")
 
     private fun write(file: String, content: String) {
         directory.resolve(file).also { it.parent.createDirectories() }.writeText(content)

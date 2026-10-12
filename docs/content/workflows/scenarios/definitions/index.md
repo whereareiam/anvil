@@ -50,9 +50,9 @@ These values affect presentation and filtering only; technical names remain the 
 Inspect and start definitions with:
 
 ```shell
-./gradlew anvilScenario --list
-./gradlew anvilScenario --scenario=local-paper
-./gradlew anvilScenario --definition=com.example.test.LocalPaperScenario
+./gradlew anvilScenarios
+./gradlew anvilRun --scenario=local-paper
+./gradlew anvilRun --definition=com.example.test.LocalPaperScenario
 ```
 
 Use `--definition` when two definitions return the same scenario name. A full scenario start

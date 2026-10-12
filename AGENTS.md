@@ -68,7 +68,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-agent/agent-client`                                            | Host connections, stable process clients/directories, agent sessions, player observations, and artifact location                                                                    |
 | `anvil-agent/agent-server`                                            | Embedded authenticated endpoint, native operation dispatch, extension loading, and the shaded agent artifact used by platform agents                                         |
 | `anvil-integration/integration-junit`                                             | JUnit annotations, context injection, and lifecycle integration                                                                                                                     |
-| `anvil-integration/integration-gradle/gradle-junit`                                      | Optional anvilTest task and JUnit dependency wiring                                                                                                                                 |
+| `anvil-integration/integration-gradle/gradle-junit`                                      | Optional `AnvilTest` tasks (`anvilTest` and one per suite) and JUnit dependency wiring                                                                                             |
 | `anvil-tooling/tooling-api`                                           | Editor-independent scenario, session, target, and log contracts                                                                                                                     |
 | `anvil-integration/integration-gradle/gradle-tooling`                             | Gradle task discovery, definition indexing, source-set preparation, and tooling runtime                                                                                             |
 | `anvil-tooling/tooling-runner`                                        | Reusable sessions, direct scenario-definition discovery, terminal commands, and structured protocol; supplied engine factory, no default launcher dependency                      |
@@ -182,7 +182,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `findService` or a fake universal packet abstraction.
 - Authentication is an optional `ProtocolLibraryProvider` service. Tooling depends on that API, not
   MCProtocol's account-store implementation. Account files are managed outside project configuration.
-  The IntelliJ account manager and Gradle `anvilAccount` share the `AnvilAuthentication` entry point.
+  The IntelliJ account manager and Gradle `anvilLogin`/`anvilLogout` share the `AnvilAuthentication` entry point.
   Named pools live in the account directory's versioned `pools.properties`, documented on
   `AccountManager.pool(String)`; the runtime reads it and the IDE writes it, with the same rules.
 - External embedded-agent handlers implement `agent.server.api.operation.AgentOperationProvider`
@@ -287,6 +287,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   sort within groups, and separate nonempty groups with a blank line.
 - Plugin blocks put built-ins first, catalog aliases second, local conventions last.
 - Consumer live scenarios and journeys live in `src/anvil`; ordinary plugin tests remain in `src/test`.
+- Every public consumer task is in the `anvil` group: `anvil` (all live tests), `anvilTest`, `anvil<Name>Test`
+  per suite, `anvilScenarios`, `anvilRun`, `anvilLogin` and `anvilLogout`. `anvilTooling` has no group because
+  editors run it. Ordinary `test` and `check` never depend on a live-test task.
 - Examples are standalone consumer builds, excluded from root project discovery. Publish Anvil to
   Maven Local first, then run `./gradlew -p examples/proof-of-patience build anvilTest` with the same version.
 - Preserve configuration-cache behavior when changing task inputs or plugin wiring.

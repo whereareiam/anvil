@@ -10,13 +10,13 @@ after the tooling JVM is ready.
 ## List and start a scenario
 
 ```shell
-./gradlew anvilScenario --list --console=plain
-./gradlew anvilScenario --scenario=local-paper --console=plain
-./gradlew anvilScenario --definition=com.example.test.LocalPaperScenario --console=plain
+./gradlew anvilScenarios --console=plain
+./gradlew anvilRun --scenario=local-paper --console=plain
+./gradlew anvilRun --definition=com.example.test.LocalPaperScenario --console=plain
 ```
 
-`--list` evaluates the indexed definitions without starting Minecraft. Select exactly one of
-`--scenario` and `--definition` when starting. A scenario name must be unique within its module;
+`anvilScenarios` evaluates the indexed definitions without starting Minecraft. Give `anvilRun` exactly one
+of `--scenario` and `--definition`. A scenario name must be unique within its module;
 the fully qualified definition class is always unambiguous.
 
 Anvil prepares the declared inputs, starts every server and proxy in dependency order, and runs the

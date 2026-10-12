@@ -34,7 +34,7 @@ an account stored by the library selected for it, and the selected release must 
 created from an account pool lease uses the library that stores the leased account. A pool refuses an
 account ID that several libraries store.
 
-The IntelliJ account manager and the Gradle `anvilAccount` task share one entry point,
+The IntelliJ account manager and the Gradle `anvilLogin` and `anvilLogout` tasks share one entry point,
 `AnvilAuthentication`. It delegates `login` and `logout` to the library named by its `--library`
 option, else by `anvil.protocolLibrary`, else to the sole installed library that offers
 authentication. Scenario requests carry only the local account ID; your library resolves credentials

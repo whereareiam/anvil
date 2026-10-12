@@ -22,12 +22,12 @@ the owner on filesystems supporting POSIX permissions.
 Without IntelliJ IDEA, sign in from the project that applies the Anvil plugin:
 
 ```shell
-./gradlew anvilAccount --login=main
+./gradlew anvilLogin --account=main
 ```
 
 The task runs the same library workflow in a separate JVM and prints the device-code instructions.
 It stores the account in the directory configured by `anvil { engine { accountsDirectory } }`, which
-defaults to `~/.anvil/accounts`. Remove an account with `./gradlew anvilAccount --logout=main`. Sign in
+defaults to `~/.anvil/accounts`. Remove an account with `./gradlew anvilLogout --account=main`. Sign in
 on developer machines only; the stored file holds refresh tokens.
 
 When a scenario references an account that is not stored, the run fails with the account ID and the

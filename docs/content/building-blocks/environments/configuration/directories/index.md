@@ -55,7 +55,7 @@ tasks.named<Test>("anvilTest") {
 
 `PT30S` means thirty seconds. The default is fifteen seconds; Anvil escalates termination when the
 process has not exited during that grace period. This `Test` task setting applies to `anvilTest`.
-It does not configure `anvilScenario`; the runner reads its host JVM's properties and the `anvil` block.
+It does not configure `anvilRun`; the runner reads its host JVM's properties and the `anvil` block.
 See [engine options](../engine/index.md) for each entry point's configuration.
 
 ## Retain useful diagnostics

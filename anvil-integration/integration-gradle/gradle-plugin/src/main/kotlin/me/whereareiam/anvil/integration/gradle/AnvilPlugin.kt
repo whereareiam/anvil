@@ -2,7 +2,11 @@ package me.whereareiam.anvil.integration.gradle
 
 import me.whereareiam.anvil.integration.gradle.artifact.provider.ArtifactJvmArgumentProvider
 import me.whereareiam.anvil.integration.gradle.config.AnvilEngineProperties
+import me.whereareiam.anvil.integration.gradle.task.AccountLoginTask
+import me.whereareiam.anvil.integration.gradle.task.AccountLogoutTask
 import me.whereareiam.anvil.integration.gradle.task.AccountTask
+import me.whereareiam.anvil.integration.gradle.task.ScenarioListTask
+import me.whereareiam.anvil.integration.gradle.task.ScenarioRunTask
 import me.whereareiam.anvil.integration.gradle.task.ScenarioRunnerTask
 import me.whereareiam.anvil.tooling.gradle.ToolingPreparationTask
 import org.gradle.api.Plugin
@@ -42,13 +46,15 @@ class AnvilPlugin : Plugin<Project> {
 		}
 
 		registerPreparation(project, inputs)
-		registerRunner(project, inputs)
-		registerAccount(project, inputs)
+		registerRunner(project, inputs, "anvilScenarios", ScenarioListTask::class.java, "Lists the scenarios discovered in the anvil source set.")
+		registerRunner(project, inputs, "anvilRun", ScenarioRunTask::class.java, "Starts one scenario in the foreground with --scenario=<name> or --definition=<class>.")
+		registerAccount(project, inputs, "anvilLogin", AccountLoginTask::class.java, "Signs an account in with --account=<id>.")
+		registerAccount(project, inputs, "anvilLogout", AccountLogoutTask::class.java, "Removes a stored account with --account=<id>.")
 	}
 
 	private fun registerPreparation(project: Project, inputs: ScenarioInputs) {
+		// Editors run this task; it has no group, so `gradle tasks` leaves it out.
 		project.tasks.register("anvilTooling", ToolingPreparationTask::class.java) {
-			group = "anvil"
 			description = "Compiles Anvil scenarios and prepares their tooling runtime."
 			runtimeClasspath.from(inputs.runtimeClasspath)
 			scenarioClasses.from(inputs.classes)
@@ -62,10 +68,16 @@ class AnvilPlugin : Plugin<Project> {
 		}
 	}
 
-	private fun registerRunner(project: Project, inputs: ScenarioInputs) {
-		project.tasks.register("anvilScenario", ScenarioRunnerTask::class.java) {
-			group = "anvil"
-			description = "Lists discovered scenarios or starts one foreground scenario."
+	private fun <T : ScenarioRunnerTask> registerRunner(
+		project: Project,
+		inputs: ScenarioInputs,
+		name: String,
+		type: Class<T>,
+		summary: String,
+	) {
+		project.tasks.register(name, type) {
+			group = TASK_GROUP
+			description = summary
 			javaLauncher.set(launcher(project))
 			runtimeClasspath.from(inputs.runtimeClasspath)
 			scenarioClasses.from(inputs.classes)
@@ -76,10 +88,16 @@ class AnvilPlugin : Plugin<Project> {
 		}
 	}
 
-	private fun registerAccount(project: Project, inputs: ScenarioInputs) {
-		project.tasks.register("anvilAccount", AccountTask::class.java) {
-			group = "anvil"
-			description = "Signs an account in with --login=<id> or removes it with --logout=<id>."
+	private fun <T : AccountTask> registerAccount(
+		project: Project,
+		inputs: ScenarioInputs,
+		name: String,
+		type: Class<T>,
+		summary: String,
+	) {
+		project.tasks.register(name, type) {
+			group = TASK_GROUP
+			description = summary
 			javaLauncher.set(launcher(project))
 			runtimeClasspath.from(inputs.runtimeClasspath)
 			engineProperties.set(inputs.properties)
@@ -99,6 +117,10 @@ class AnvilPlugin : Plugin<Project> {
 			dependencies.add(project.dependencies.create("me.whereareiam.anvil:tooling-launcher:$version"))
 			dependencies.add(project.dependencies.create("me.whereareiam.anvil:tooling-builtin:$version"))
 		}
+
+	private companion object {
+		const val TASK_GROUP = "anvil"
+	}
 
 	/**
 	 * Inputs shared by the scenario tasks of one project.

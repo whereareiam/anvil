@@ -20,25 +20,65 @@ workflow stays useful without launching Minecraft.
 classes or methods; it does not select a scenario by name. The test's annotation supplies the
 definition class.
 
-## Run the suite
+## Run the live tests
 
 ```shell
 ./gradlew anvilTest
 ```
 
-To make the ordinary `test` task also run `anvilTest`, use:
+`anvilTest` runs every live test that belongs to no [suite](#split-the-live-tests-into-suites). To run all
+live tests, including every suite, run the `anvil` task:
 
 ```shell
-./gradlew test -Panvil.testMode=full
+./gradlew anvil
 ```
 
-Without that project property, running `test` does not add the live Anvil task. Explicitly running
-`anvilTest` starts the selected live tests regardless of the property.
+Ordinary `test`, `check` and `build` never start Minecraft; only these tasks do.
+
+## Split the live tests into suites
+
+Some live tests should not run with the rest, for example slow ones that run only before a release. Tag
+them with JUnit's `@Tag` and register a suite for the tag:
+
+```kotlin
+anvil {
+	suites {
+		register("upgrade") { includeTags("upgrade") }
+	}
+}
+```
+
+```java
+@Tag("upgrade")
+class DatabaseUpgradeTest {
+	// ...
+}
+```
+
+Each suite gets its own task, named `anvil<Name>Test`: here `anvilUpgradeTest`, which runs only the tests
+tagged `upgrade`. `anvilTest` leaves out every tag a suite includes. A suite name starts with a letter and
+holds only letters and digits, and a suite must include at least one tag.
+
+A suite task is wired exactly like `anvilTest`: the same classes and classpath from the `anvil` source set,
+the same engine settings and artifacts, its own reports. Both are `AnvilTest` tasks, so configure settings
+they share, such as JUnit's parallel execution, once for all of them:
+
+```kotlin
+import me.whereareiam.anvil.integration.junit.gradle.AnvilTest
+
+tasks.withType<AnvilTest>().configureEach {
+	systemProperty("junit.jupiter.execution.parallel.enabled", "true")
+}
+```
+
+Use `tasks.named<AnvilTest>("anvilUpgradeTest")` for a setting of one suite only. `./gradlew anvil`
+runs `anvilTest` and every suite.
 
 ## Read the report
 
 Gradle writes the HTML report to `build/reports/tests/anvilTest/index.html` and XML results to
-`build/test-results/anvilTest`. A failure before the journey begins usually points to scenario
+`build/test-results/anvilTest`; a suite's task writes under its own name, such as
+`build/reports/tests/anvilUpgradeTest`. A failure before the journey begins usually points to scenario
 validation, provisioning, or process startup. A timeout inside the journey needs the relevant player
 or process observation checked.
 
