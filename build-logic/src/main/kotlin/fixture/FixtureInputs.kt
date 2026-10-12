@@ -16,6 +16,7 @@ open class FixtureInputs(private val project: Project) {
 	fun toolingExtension() = register("tooling-extension", "test-tooling-extension")
 	fun process() = register("process", "test-process")
 	fun serverPlugin() = register("server-plugin", "test-server-plugin")
+	fun lumiPlugin() = register("lumi-plugin", "test-lumi-plugin")
 	fun extension() = register("extension-normal", "test-extension", "normal")
 	fun brokenExtension() = register("extension-broken", "test-extension", "broken")
 	fun observationExtension() = register("extension-observation", "test-extension", "observation")

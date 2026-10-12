@@ -286,7 +286,7 @@ current project scope.
   `CompatibilityScenarioFactoryTest` through the server suite's `matrixTest`), and every other supported
   version is only known (COMPATIBLE). Docs keep one Java-per-version table in the Java provisioning guide,
   which `JavaVersionTableDocumentationTest` compares with the installed providers' version data and the
-  planner's defaults.
+  planner's defaults, spelling each version as that data writes it (`1.20.0` stays `1.20.0`).
 - Java requirements are execution-agnostic. Local homes and verified archives belong to Java provisioning;
   Docker image mappings belong to the Docker execution provider.
 - Execution providers own network topology and endpoint translation. A local loopback bind is host exposure
@@ -395,10 +395,12 @@ current project scope.
   the version's protocol and `xbox-auth` = online mode; Lumi has no identity forwarding and no Yggdrasil, so
   its only forwarding mode is `NONE` and `sessionServer` is refused. The Lumi agent is a Lumi plugin compiled
   against the release in the catalog; it relocates its embedded Jackson because Lumi ships an older one and
-  loads plugin classes parent first. Lumi servers load no Bukkit plugin: their live scenarios carry no
-  fixture: `LumiServerSystemTest` drives them through the console and the agent, and
-  `BedrockPlayerCapabilitiesSystemTest` and `BedrockPlayerSessionSystemTest` check each Bedrock player action with
-  vanilla commands (`testfor`, `testforblock`, `clear`) through the agent's console execution. The matrix runs
+  loads plugin classes parent first. Lumi servers load no Bukkit plugin, so their live scenarios carry the Lumi
+  fixture plugin `test-lumi-plugin` instead of `test-server-plugin`: `LumiServerSystemTest` drives them through
+  the console and the agent, and `BedrockPlayerCapabilitiesSystemTest` and `BedrockPlayerSessionSystemTest` check
+  each Bedrock player action with vanilla commands (`testfor`, `testforblock`, `clear`) through the agent's console
+  execution, except what no vanilla command shows: the fixture spawns an entity, reports its runtime ID and reports
+  the player's interaction with and attack on it. The matrix runs
   Lumi's oldest and newest version and both sides of the 1.21.90 movement-authority boundary (`1.21.80` with
   `client-auth`). `known` lists exactly the versions whose protocol Lumi and the cloudburst row agree on,
   spelled the same on both sides; `1.26.45` is left out (Lumi 2170, CloudburstMC Protocol 2169).
@@ -503,7 +505,7 @@ current project scope.
   grouped by behavior. The whole task requires `-Panvil.testMode=full`; only its `matrixTest` task, which
   checks `CompatibilityScenarioFactoryTest` without starting a server, runs in every build.
 - The independent `anvil-test-fixtures` consumer build under `anvil-testkit/fixtures` contains
-  `test-process`, `test-server-plugin`, and `test-extension`. They use `src/main`; dependencies on Anvil
+  `test-process`, `test-server-plugin`, `test-lumi-plugin`, and `test-extension`. They use `src/main`; dependencies on Anvil
   use public artifact aliases, with current source projects substituted in the root composite build.
   Gradle produces fixture variants and supplies their exact artifacts to tests. Keep JAR construction
   out of Java test helpers; `TestExtensionLoader` owns discovery isolation and classloader cleanup.

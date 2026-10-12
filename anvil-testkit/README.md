@@ -8,6 +8,7 @@ Choose the module by what the test exercises:
 | `tests/server`                | Real servers/proxies: player sessions, capabilities, routing, and external agent operations | `src/test/java`                       |
 | `fixtures/test-process`       | Small executable used to observe process startup and lifecycle                              | `src/main/java`                       |
 | `fixtures/test-server-plugin` | Plugin and native agent operations installed into test servers                              | `src/main/java`, `src/main/resources` |
+| `fixtures/test-lumi-plugin`   | Lumi plugin installed into Lumi test servers, which load no Bukkit plugin                   | `src/main/java`, `src/main/resources` |
 | `fixtures/test-extension`     | External backend, capabilities, and agent handlers loaded from real JARs                    | `src/main/java`, `src/main/resources` |
 | `support`                     | Artifact access and extension classloader lifetime for host-side tests                      | `src/main/java`                       |
 
@@ -51,7 +52,7 @@ The whole test task requires full mode. There are no mixed live/non-live methods
 ## Fixture artifacts
 
 Fixture modules produce ordinary JARs and are not published. `test-server-plugin` owns the
-test server's commands and native observations. `test-extension` compiles against
+test server's commands and native observations; `test-lumi-plugin` owns those of Lumi servers. `test-extension` compiles against
 public Anvil APIs only; its in-process backend is a conformance example, not a second Minecraft
 packet implementation.
 

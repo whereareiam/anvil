@@ -20,7 +20,7 @@ import java.util.List;
  * combination these scenarios run is what the platforms' and protocol libraries' version data call
  * verified. Every Minecraft version runs direct on Paper, one release key of each MCProtocolLib release, and
  * player capability tests run their full journey on those servers; current versions also run on Spigot and behind
- * both proxies. NeoForge and Lumi servers run direct, without the fixture plugin.
+ * both proxies. NeoForge and Lumi servers run direct: NeoForge without a fixture, Lumi with the Lumi fixture plugin.
  */
 public final class CompatibilityScenarioFactory {
 	private static final String VELOCITY_VERSION = "3.5.1";
@@ -71,8 +71,9 @@ public final class CompatibilityScenarioFactory {
 
 	/**
 	 * Returns the direct Lumi scenario of each Minecraft version Lumi is verified on, oldest first. Lumi loads no
-	 * Bukkit plugin, so these servers carry no fixture: their tests drive the console and the Lumi agent, and observe
-	 * through them what a Bedrock player of the CloudburstMC Protocol library does with its capabilities.
+	 * Bukkit plugin, so these servers carry the Lumi fixture plugin instead: their tests drive the console, the Lumi
+	 * agent and that plugin, and observe through them what a Bedrock player of the CloudburstMC Protocol library does
+	 * with its capabilities.
 	 *
 	 * @return one direct Lumi scenario per verified Minecraft version
 	 */
@@ -178,14 +179,23 @@ public final class CompatibilityScenarioFactory {
 	}
 
 	private static AnvilScenario lumiScenario(LumiRelease release) {
+		Path fixture = FixtureArtifacts.lumiPlugin();
 		MinecraftServer.MinecraftServerBuilder server = MinecraftServer.builder()
 				.name("server")
 				.metadata(PresentationMetadata.builder()
 						.displayName("Test server")
-						.description("Lumi server driven through its console and the Lumi agent; no fixture plugin is installed.")
+						.description("Lumi server driven through its console, the Lumi agent and the Lumi fixture plugin, "
+								+ "which spawns entities and reports what the player does to them.")
 						.build())
 				.platform(Platforms.LUMI)
 				.distribution(Distribution.remote(release.version(), release.release()))
+				.workspace(WorkspacePlan.builder()
+						.asset(WorkspaceAsset.builder()
+								.group("fixture")
+								.source(AssetSource.path(fixture))
+								.target(Path.of("plugins", fixture.getFileName().toString()))
+								.build())
+						.build())
 				.memoryMegabytes(1024);
 		if (release.clientMovement())
 			server.setting("general.server-authoritative-movement", "client-auth");
@@ -195,8 +205,8 @@ public final class CompatibilityScenarioFactory {
 				.name("lumi-" + release.version())
 				.metadata(PresentationMetadata.builder()
 						.displayName("Direct server · Lumi " + release.version())
-						.description("Single Lumi server" + authority + " without fixture plugins for checking startup, console "
-								+ "commands, agent operations and the player capabilities of a Bedrock player.")
+						.description("Single Lumi server" + authority + " with the Lumi fixture plugin for checking startup, "
+								+ "console commands, agent operations and the player capabilities of a Bedrock player.")
 						.category("Native compatibility").tag("console").tag("login").tag("capabilities").build())
 				.entrypoint("server")
 				.server(server.build())

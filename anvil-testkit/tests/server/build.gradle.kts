@@ -73,6 +73,7 @@ tasks.check {
 
 fixtures {
 	serverPlugin()
+	lumiPlugin()
 	extension()
 	observationExtension()
 }

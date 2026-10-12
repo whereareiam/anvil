@@ -21,6 +21,10 @@ public final class FixtureArtifacts {
 		return artifact("server-plugin");
 	}
 
+	public static @NotNull Path lumiPlugin() {
+		return artifact("lumi-plugin");
+	}
+
 	public static @NotNull Path extension() {
 		return artifact("extension-normal");
 	}

@@ -82,7 +82,9 @@ differ; every build runs it through the `matrixTest` task, without `-Panvil.test
 `PlayerCapabilitiesSystemTest`, which starts a Paper server for every Minecraft version, and
 `BedrockPlayerCapabilitiesSystemTest`, which starts a Lumi server for every Bedrock version of the matrix,
 are tagged `capabilities`. Lumi loads no Bukkit plugin, so the Bedrock tests set up the world and check
-each effect through the console with vanilla commands such as `testfor`, `testforblock` and `clear`:
+each effect through the console with vanilla commands such as `testfor`, `testforblock` and `clear`; the
+`test-lumi-plugin` fixture reports what no vanilla command shows, an entity's runtime ID and the player's
+interaction with and attack on it:
 
 ```shell
 ./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full -PanvilTestTags=compatibility

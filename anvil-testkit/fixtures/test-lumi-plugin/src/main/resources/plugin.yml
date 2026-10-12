@@ -1,0 +1,9 @@
+name: AnvilLumiFixture
+version: '${version}'
+main: me.whereareiam.anvil.testkit.fixtures.lumi.AnvilLumiFixturePlugin
+api: ['1.0.0']
+description: Internal behavior fixture for Anvil's live Bedrock system tests
+commands:
+  anvil-fixture:
+    description: Exposes behavior observed by Anvil's simulated Bedrock player
+    usage: /anvil-fixture [entity]

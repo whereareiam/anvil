@@ -132,7 +132,9 @@ Lumi runs on Java 21; see
   The live matrix runs Lumi `1.20.0`, `1.21.80`, `1.21.90` and `1.26.50`: it drives the server through the
   [process console](../../../actions/console/index.md) and the [agent](../../../actions/agents/index.md)'s
   command execution, and checks what a Bedrock player does with vanilla commands such as `testfor`,
-  `testforblock` and `clear`, because Lumi loads no Bukkit plugin.
+  `testforblock` and `clear`, because Lumi loads no Bukkit plugin. A small Lumi plugin of Anvil's own tests
+  reports what no vanilla command shows: an entity's runtime ID and the player's interaction with and attack
+  on it.
 - Lumi's game listener is UDP. Local and Docker execution reserve and publish it as UDP; the agent
   connection stays TCP.
 - Lumi has no identity forwarding and Anvil ships no Bedrock proxy, so a Lumi server cannot be a proxy

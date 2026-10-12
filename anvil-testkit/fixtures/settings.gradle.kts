@@ -12,7 +12,7 @@ pluginManagement {
 
 rootProject.name = "anvil-test-fixtures"
 
-include("test-extension", "test-process", "test-server-plugin", "test-tooling-extension")
+include("test-extension", "test-lumi-plugin", "test-process", "test-server-plugin", "test-tooling-extension")
 
 val repositoryVersion = providers.fileContents(layout.settingsDirectory.file("../../gradle.properties"))
     .asText.map { text -> Properties().apply { load(text.reader()) }.getProperty("anvilVersion") }
@@ -26,6 +26,12 @@ dependencyResolutionManagement {
         mavenCentral()
         maven("https://registry.whereareiam.me/maven/packages")
         maven("https://repo.papermc.io/repository/maven-public/")
+        // The Lumi fixture plugin compiles against the Lumi server published here.
+        maven("https://repo.lumi.su/releases") {
+            content {
+                includeGroup("com.koshakmine")
+            }
+        }
     }
 
     versionCatalogs {

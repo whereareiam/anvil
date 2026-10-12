@@ -8,6 +8,7 @@ import me.whereareiam.anvil.capability.console.Console;
 import me.whereareiam.anvil.capability.interaction.Interaction;
 import me.whereareiam.anvil.capability.interaction.model.BlockPosition;
 import me.whereareiam.anvil.capability.interaction.type.BlockFace;
+import me.whereareiam.anvil.capability.interaction.type.EntityInteraction;
 import me.whereareiam.anvil.capability.interaction.type.Hand;
 import me.whereareiam.anvil.capability.inventory.Inventory;
 import me.whereareiam.anvil.capability.inventory.model.InventoryItem;
@@ -36,11 +37,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Drives the Messages, Movement, Inventory and Interaction capabilities of a Bedrock player on the direct Lumi
- * scenario of each Bedrock version in the live matrix. Lumi loads no fixture plugin, so the server's console sets the
- * scene and observes each effect through the Lumi agent: a console command reports whether it succeeded, which turns
- * the vanilla {@code testfor}, {@code testforblock} and {@code clear} commands into assertions on the server's own
- * state. The {@code anvil.matrix.filter} system property, set from {@code -PanvilMatrixFilter}, selects scenarios by
- * name; the {@code capabilities} tag shares the Java journey's CI shard.
+ * scenario of each Bedrock version in the live matrix. The server's console sets the scene and observes most effects
+ * through the Lumi agent: a console command reports whether it succeeded, which turns the vanilla {@code testfor},
+ * {@code testforblock} and {@code clear} commands into assertions on the server's own state. What no vanilla command
+ * shows, an entity's runtime ID and what the player did to the entity, the Lumi fixture plugin reports to the player.
+ * The {@code anvil.matrix.filter} system property, set from {@code -PanvilMatrixFilter}, selects scenarios by name;
+ * the {@code capabilities} tag shares the Java journey's CI shard.
  */
 @Tag("capabilities")
 class BedrockPlayerCapabilitiesSystemTest {
@@ -105,6 +107,7 @@ class BedrockPlayerCapabilitiesSystemTest {
 		movesOnAPlatform(console, alice.capability(Movement.class), clientMovement);
 		selectsAndClicksItems(console, alice.capability(Inventory.class));
 		usesItemsAndBlocks(console, alice.capability(Inventory.class), alice.capability(Interaction.class));
+		interactsWithAnEntity(alice.capability(Messages.class), alice.capability(Interaction.class));
 	}
 
 	/**
@@ -194,6 +197,22 @@ class BedrockPlayerCapabilitiesSystemTest {
 		interaction.block(BlockPosition.builder().x(2).y(FLOOR).z(0).build(), BlockFace.UP, Hand.MAIN);
 		awaitCommand(console, "testforblock 2 " + (FLOOR + 1) + " 0 dirt");
 		assertFalse(console.execute("clear Alice dirt 0 0"), "placing the dirt used it up");
+	}
+
+	/**
+	 * The fixture plugin spawns an armor stand where the player stands and reports its runtime ID; the server then
+	 * reports the interaction and the attack the player sends at it, the attack last, as it breaks the armor stand.
+	 */
+	private void interactsWithAnEntity(Messages messages, Interaction interaction) {
+		messages.command("anvil-fixture entity");
+		String reported = messages.received("anvil:entity-id:", TIMEOUT);
+		int entityId = Integer.parseInt(reported.substring(reported.indexOf("anvil:entity-id:") + "anvil:entity-id:".length()));
+
+		interaction.entity(entityId, EntityInteraction.INTERACT, Hand.MAIN);
+		messages.received("anvil:entity:" + entityId, TIMEOUT);
+
+		interaction.entity(entityId, EntityInteraction.ATTACK, Hand.MAIN);
+		messages.received("anvil:attack:" + entityId, TIMEOUT);
 	}
 
 	private static InventoryItem item(Inventory inventory, String identifier) {

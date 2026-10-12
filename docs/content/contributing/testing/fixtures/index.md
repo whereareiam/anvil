@@ -10,6 +10,7 @@ compiling and loading a real JAR is part of the behavior being verified.
 |---|---|
 | `test-process` | A small executable for process startup, output, and lifecycle assertions |
 | `test-server-plugin` | Commands and native observations installed in real servers |
+| `test-lumi-plugin` | Commands and observations installed in Lumi servers, which load no Bukkit plugin |
 | `test-extension` | External protocol library, capabilities, and agent operations loaded from real JARs |
 
 These projects belong to the independent `anvil-test-fixtures` consumer build. They use ordinary
