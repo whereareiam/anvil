@@ -3,7 +3,7 @@ package me.whereareiam.anvil.protocol.worker.host;
 import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
-import me.whereareiam.anvil.protocol.worker.WorkerClient;
+import me.whereareiam.anvil.protocol.api.worker.WorkerClient;
 import me.whereareiam.anvil.protocol.worker.fixture.ProbeLibrary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -1,16 +1,15 @@
-package me.whereareiam.anvil.protocol.worker;
+package me.whereareiam.anvil.protocol.api.worker;
 
-import me.whereareiam.anvil.protocol.worker.model.WorkerLibrary;
+import me.whereareiam.anvil.protocol.api.worker.model.WorkerLibrary;
 import org.jetbrains.annotations.NotNull;
 
-import java.nio.file.Path;
 import java.util.Optional;
 import java.util.ServiceLoader;
 
 /**
  * Service-provider interface of a protocol library that the native worker hosts. The worker finds every
  * implementation through {@link ServiceLoader} from
- * {@code META-INF/services/me.whereareiam.anvil.protocol.worker.WorkerLibraryProvider} and installs each as a
+ * {@code META-INF/services/me.whereareiam.anvil.protocol.api.worker.WorkerLibraryProvider} and installs each as a
  * protocol library of its own: on the host it reads the library's release data, selects the worker class path and
  * starts one worker JVM per release; in that JVM it loads the same provider again and drives the client that the
  * library builds from its client segment.
@@ -44,13 +43,12 @@ public interface WorkerLibraryProvider {
 	@NotNull WorkerClient client(@NotNull Object adapter);
 
 	/**
-	 * Provides the library's optional account workflow, used by login and logout and to sign in players that use a
-	 * stored account. Offline-only libraries keep the empty default.
+	 * Provides the library's optional online sign-in, used by login and to sign in players that use a stored
+	 * account. The worker owns the account files around it. Offline-only libraries keep the empty default.
 	 *
-	 * @param accountsDirectory local account store directory
-	 * @return the library's account workflow, when it has one
+	 * @return the library's online sign-in, when it has one
 	 */
-	default @NotNull Optional<WorkerAuthentication> authentication(@NotNull Path accountsDirectory) {
+	default @NotNull Optional<WorkerAuthentication> authentication() {
 		return Optional.empty();
 	}
 }

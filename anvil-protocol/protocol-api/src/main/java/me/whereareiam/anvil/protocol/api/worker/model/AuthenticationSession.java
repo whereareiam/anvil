@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.protocol.worker.model;
+package me.whereareiam.anvil.protocol.api.worker.model;
 
 import lombok.Builder;
 import lombok.ToString;
@@ -10,12 +10,12 @@ import java.net.URI;
 import java.util.UUID;
 
 /**
- * Decrypted authentication details of one account, which {@link me.whereareiam.anvil.protocol.worker.WorkerAuthentication}
+ * Decrypted authentication details of one account, which {@link me.whereareiam.anvil.protocol.api.worker.WorkerAuthentication}
  * resolves and the worker passes to its child JVM only over that JVM's private standard input.
  *
  * <p>The worker reads the profile and nothing else: the access token and the library credentials reach the
- * library's own {@link me.whereareiam.anvil.protocol.worker.WorkerClient} unchanged, as
- * {@link me.whereareiam.anvil.protocol.worker.model.message.WorkerCredentials}.</p>
+ * library's own {@link me.whereareiam.anvil.protocol.api.worker.WorkerClient} unchanged, as
+ * {@link me.whereareiam.anvil.protocol.api.worker.model.message.WorkerCredentials}.</p>
  *
  * <pre>{@code
  * AuthenticationSession session = AuthenticationSession.builder()

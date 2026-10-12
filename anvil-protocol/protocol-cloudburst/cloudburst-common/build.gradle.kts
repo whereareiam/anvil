@@ -13,7 +13,6 @@ dependencies {
 	compileOnly(projects.anvilApi)
 	compileOnly(projects.anvilProtocol.protocolApi)
 	compileOnly(projects.anvilProtocol.protocolCloudburst.cloudburstApi)
-	compileOnly(projects.anvilProtocol.protocolWorker.workerApi)
 
 	testImplementation(projects.anvilApi)
 	testImplementation(projects.anvilCapability)
@@ -23,7 +22,6 @@ dependencies {
 	testImplementation(projects.anvilLauncher)
 	testImplementation(projects.anvilProtocol.protocolApi)
 	testImplementation(projects.anvilProtocol.protocolCloudburst.cloudburstApi)
-	testImplementation(projects.anvilProtocol.protocolWorker.workerApi)
 	// Worker contract tests start real workers through the worker host that the family root depends on.
 	testImplementation(projects.anvilProtocol.protocolWorker.workerCommon)
 

@@ -3,7 +3,7 @@ package me.whereareiam.anvil.protocol.worker.host;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
-import me.whereareiam.anvil.protocol.worker.model.WorkerLibrary;
+import me.whereareiam.anvil.protocol.api.worker.model.WorkerLibrary;
 import me.whereareiam.anvil.protocol.worker.segment.SegmentDescriptor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

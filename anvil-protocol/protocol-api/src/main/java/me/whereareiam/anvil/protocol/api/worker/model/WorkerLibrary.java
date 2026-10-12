@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.protocol.worker.model;
+package me.whereareiam.anvil.protocol.api.worker.model;
 
 import lombok.Builder;
 import lombok.Singular;
@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * What the native worker needs to know about one protocol library it hosts. A library returns it from
- * {@link me.whereareiam.anvil.protocol.worker.WorkerLibraryProvider#library()}; the worker reads the release
+ * {@link me.whereareiam.anvil.protocol.api.worker.WorkerLibraryProvider#library()}; the worker reads the release
  * catalog, selects the worker class path and verifies the segments with it, so that the worker names no library.
  *
  * <pre>{@code
@@ -60,6 +60,12 @@ public class WorkerLibrary {
 	 */
 	@Singular
 	@NotNull List<String> jvmArguments;
+	/**
+	 * Whether the library claims stored accounts whose file names no library, the files written before account
+	 * files recorded their owner. At most one installed library should claim them; a library that never wrote such
+	 * files keeps the default {@code false}.
+	 */
+	boolean readsUnlabelledAccounts;
 
 	/**
 	 * Returns the file name of the built-in release data, used in messages.

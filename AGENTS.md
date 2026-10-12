@@ -53,19 +53,18 @@ current project scope.
 | `anvil-capability/capability-builtin/player/<feature>/<feature>-<library>/V*` | Segments that implement only the feature's port for the library releases from their key on                                                                                 |
 | `anvil-capability/capability-builtin/process/<feature>`               | Process capability family: `<feature>-api` and a root holding the agent-backed provider, independent of simulated players                                                           |
 | `anvil-capability/capability-builtin/default`                         | Aggregate of every built-in player and process capability                                                                                                                           |
-| `anvil-protocol/protocol-api`                                         | Protocol library providers, library hosts and releases, player creation/composition, protocol-owned channels/workers, pinned runtime resolution, and optional authentication                       |
+| `anvil-protocol/protocol-api`                                         | Protocol library providers, library hosts and releases, player creation/composition, protocol-owned channels/workers, pinned runtime resolution, optional authentication, and under `.worker` the contracts of a library the native worker hosts (`WorkerLibraryProvider`, `WorkerLibrary`, `WorkerClient`, `WorkerAuthentication`, account records, worker messages)                       |
 | `anvil-protocol`                                                      | Player registration, version selection, authentication compatibility, composition, and observations                                                                                 |
-| `anvil-protocol/protocol-worker`                                      | Wiring bundle publishing the native player worker once as the shaded `protocol-worker`: embeds `worker-common` and exports `worker-api`; every library family depends on it |
-| `anvil-protocol/protocol-worker/worker-api`                           | `protocol-worker-api`: the `WorkerLibraryProvider` SPI a hosted library implements, its `WorkerLibrary` description, `WorkerClient` and `WorkerAuthentication`, and the worker messages a client reads |
-| `anvil-protocol/protocol-worker/worker-common`                        | Embedded, unpublished worker host and shell: `WorkerLibraryHost` (the worker's one `ProtocolLibraryHost` registration), worker process, RPC client, class path, transport, `ProtocolWorker` entry point, capability registry, segment verification, session bindings, release reader/catalog and `ProtocolWorkerPool` |
+| `anvil-protocol/protocol-worker`                                      | Wiring bundle publishing the native player worker once as the shaded `protocol-worker`: embeds `worker-common` and exports `protocol-api`; every library family depends on it |
+| `anvil-protocol/protocol-worker/worker-common`                        | Embedded, unpublished worker host and shell: `WorkerLibraryHost` (the worker's one `ProtocolLibraryHost` registration), worker process, RPC client, class path, transport, `ProtocolWorker` entry point, capability registry, segment verification, session bindings, release reader/catalog, `ProtocolWorkerPool` and the one account store of every hosted library (`HostedAuthentication`) |
 | `anvil-protocol/protocol-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port, the client segments and a dependency on the `protocol-worker` bundle; owns `mcprotocol-releases.toml` and `pinLibraryReleases` |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell                                                                                       |
-| `anvil-protocol/protocol-mcprotocol/mcprotocol-common`                | `McProtocolWorkerLibrary`, the library's `WorkerLibraryProvider`, the `WorkerClient` driving `McProtocolClient`, and the private authentication store; depends only on `protocol-api` and `protocol-worker-api` |
+| `anvil-protocol/protocol-mcprotocol/mcprotocol-common`                | `McProtocolWorkerLibrary`, the library's `WorkerLibraryProvider`, the `WorkerClient` driving `McProtocolClient`, and the Microsoft sign-in `MicrosoftAuthentication`; claims unlabelled account files; depends only on `protocol-api` |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client/V*`             | Client segments `V1_18_2`, `V1_21_1` and `V1_21_11`, each implementing only `McProtocolClient` from its release key on; `V1_21_11` also serves `26.1.2`                             |
 | `anvil-protocol/protocol-cloudburst`                                  | Wiring bundle publishing the CloudburstMC Protocol library for Bedrock players: shaded `cloudburst-common`, the client port, the client segment and a dependency on the `protocol-worker` bundle; owns `cloudburst-releases.toml` and `pinLibraryReleases` |
-| `anvil-protocol/protocol-cloudburst/cloudburst-api`                   | Release-neutral CloudburstMC Protocol client port `CloudburstClient` and the `ClientIdentity` a Bedrock login proves itself with                                              |
-| `anvil-protocol/protocol-cloudburst/cloudburst-common`                | `CloudburstWorkerLibrary`, the `WorkerClient` driving `CloudburstClient`, offline and Xbox login identities, and the private Xbox account store; depends only on `protocol-api` and `protocol-worker-api` |
+| `anvil-protocol/protocol-cloudburst/cloudburst-api`                   | Release-neutral CloudburstMC Protocol client port `CloudburstClient`, the native session `CloudburstSession<P, I>` that bindings receive, and the `ClientIdentity` a Bedrock login proves itself with                                              |
+| `anvil-protocol/protocol-cloudburst/cloudburst-common`                | `CloudburstWorkerLibrary`, the `WorkerClient` driving `CloudburstClient`, offline and Xbox login identities, and the Xbox sign-in `XboxAuthentication`; depends only on `protocol-api` |
 | `anvil-protocol/protocol-cloudburst/cloudburst-client`                | Source-free side folder exporting the CloudburstMC Protocol client segment                                                                                                         |
 | `anvil-protocol/protocol-cloudburst/cloudburst-client/V*`             | Client segment `V1_26_60`, implementing only `CloudburstClient` for the whole release and selecting each player's codec by its protocol number                                  |
 | `anvil-platform/platform-api`                                         | Platform-provider/planning SPI, version data contract, artifact sources, distribution validation, and configuration contracts                                                      |
@@ -116,14 +115,26 @@ current project scope.
   Do not disguise source dependencies as external Maven coordinates or classify implementations as
   assemblies to evade verification. The launcher owns internal composition and packaging;
   `anvil-integration` is reserved for external integrations.
-- The native worker hosts libraries and names none. A library plugs in by implementing `worker-api`'s
-  `WorkerLibraryProvider`, registered through `ServiceLoader`: it describes itself as a `WorkerLibrary` (id, name,
-  client port, release data, pin task, the packages its closures own, worker JVM arguments), builds the
-  `WorkerClient` that drives its client port, and may supply a `WorkerAuthentication`. Its family compiles against
-  `protocol-worker-api` through `architecture.sharedApis`, and its wiring root depends on the `protocol-worker`
-  bundle instead of embedding it. The worker's `WorkerLibraryHost` is the one `ProtocolLibraryHost` registration
-  that installs every hosted library as a protocol library, and the worker JVM starts `ProtocolWorker`, which loads
-  the library's provider by id. Never put a library ID, package ban or client type into `protocol-worker`.
+- The native worker hosts libraries and names none. A library plugs in by implementing `protocol-api`'s
+  `WorkerLibraryProvider` (package `protocol.api.worker`), registered through `ServiceLoader`: it describes itself as
+  a `WorkerLibrary` (id, name, client port, release data, pin task, the packages its closures own, worker JVM
+  arguments, whether it claims unlabelled account files), builds the `WorkerClient` that drives its client port, and
+  may supply a `WorkerAuthentication`. Its family shares `protocol-api` through `architecture.sharedApis`, and its
+  wiring root depends on the `protocol-worker` bundle instead of embedding it. The worker's `WorkerLibraryHost` is
+  the one `ProtocolLibraryHost` registration that installs every hosted library as a protocol library, and the
+  worker JVM starts `ProtocolWorker`, which loads the library's provider by id. Never put a library ID, package ban
+  or client type into `protocol-worker`.
+- `worker-common` owns the one account store of every hosted library: one `<accountId>.json` per account in the
+  account directory, whose `provider` key names the library that stored it. `HostedAuthentication` wraps a library's
+  `WorkerAuthentication`, which only signs in (`login(accountId, newest version, output)`) and refreshes
+  (`resolve(record, player version)`) `AccountRecord`s, and refuses to log in, log out or resolve another library's
+  account before the library is called. A file without `provider` belongs to the library whose `WorkerLibrary`
+  sets `readsUnlabelledAccounts` (MCProtocolLib); neutral code names no library.
+- A CloudburstMC Protocol client segment hands bindings a `CloudburstSession<P, I>` as the native session: `send`,
+  typed `subscribe` dispatched from the session's one packet handler, the `GameStart`, the item definitions and the
+  client tick. Each session is one connection generation, and closing its connection ends its subscriptions, so a
+  reconnect never reaches them. CloudburstMC types reach feature segments only through the type parameters; host
+  code and `cloudburst-common` never see them. The session capability serves `mcprotocol` and `cloudburst`.
 - Use `ServiceLoader` for the existing provider SPIs. Preserve service descriptors and merge them
   when shading. Do not add broad reflection scanning as an alternative discovery path.
 - Each player selects its protocol library: its own `protocolLibrary`, else the scenario's, else the engine's,

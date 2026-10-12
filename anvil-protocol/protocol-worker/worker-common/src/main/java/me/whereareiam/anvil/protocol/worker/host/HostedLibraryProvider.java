@@ -1,18 +1,21 @@
 package me.whereareiam.anvil.protocol.worker.host;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.library.ProtocolAuthentication;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
 import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
-import me.whereareiam.anvil.protocol.worker.WorkerLibraryProvider;
+import me.whereareiam.anvil.protocol.api.worker.WorkerLibraryProvider;
+import me.whereareiam.anvil.protocol.api.worker.model.WorkerLibrary;
+import me.whereareiam.anvil.protocol.worker.account.HostedAuthentication;
 import me.whereareiam.anvil.protocol.worker.catalog.ReleaseCatalog;
-import me.whereareiam.anvil.protocol.worker.model.WorkerLibrary;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Installs one library the worker hosts as a protocol library: its releases come from its release data, its players
- * run in a {@link ProtocolWorkerPool}, and its account workflow is the library's own.
+ * run in a {@link ProtocolWorkerPool}, and its accounts are stored by the worker around the library's online sign-in.
  *
  * <p>Release data is read once per additional release file: listing the releases for selection and creating the
  * library share one catalog, so a notice about the user's data is printed once.</p>
@@ -55,14 +58,27 @@ final class HostedLibraryProvider implements ProtocolLibraryProvider {
 				provider.library(),
 				context.getCacheDirectory(),
 				catalog(context.getAdditionalReleases()),
-				provider.authentication(context.getAccountsDirectory()).orElse(null),
+				hostedAuthentication(context.getAccountsDirectory()).orElse(null),
 				context.getArtifacts()
 		);
 	}
 
 	@Override
 	public @NotNull Optional<ProtocolAuthentication> authentication(@NotNull Path accountsDirectory) {
-		return provider.authentication(accountsDirectory).map(ProtocolAuthentication.class::cast);
+		return hostedAuthentication(accountsDirectory).map(ProtocolAuthentication.class::cast);
+	}
+
+	private Optional<HostedAuthentication> hostedAuthentication(Path accountsDirectory) {
+		WorkerLibrary library = provider.library();
+		return provider.authentication().map(authentication -> new HostedAuthentication(library, authentication, accountsDirectory,
+				this::newestVersion));
+	}
+
+	private MinecraftVersion newestVersion() {
+		return catalog(null).releases().stream()
+				.flatMap(release -> release.getMinecraftVersions().stream())
+				.max(Comparator.naturalOrder())
+				.orElseThrow(() -> new IllegalStateException(provider.library().getName() + " lists no release"));
 	}
 
 	private ReleaseCatalog catalog(@Nullable Path additionalReleases) {

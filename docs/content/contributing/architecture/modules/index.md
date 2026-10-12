@@ -249,22 +249,27 @@ that hosts every library plugged into it:
 
 | Module | Owns |
 |---|---|
-| `protocol-worker` | Wiring-only root: shades `worker-common`, exports `worker-api`, and publishes `protocol-worker` once for every library |
-| `worker-api` | Published as `protocol-worker-api`: the `WorkerLibraryProvider` SPI, the `WorkerLibrary` description, `WorkerClient`, `WorkerAuthentication`, and the worker messages a client reads |
-| `worker-common` | The worker process and its RPC client, segment selection on the worker class path, the JSON-lines transport, the `ProtocolWorker` entry point with its capability registry, segment verification and session bindings, the release data reader and catalog, `ProtocolWorkerPool`, a `ProtocolLibrary` that shares one worker per release, and `WorkerLibraryHost` |
+| `protocol-worker` | Wiring-only root: shades `worker-common` and publishes `protocol-worker` once for every library |
+| `worker-common` | The worker process and its RPC client, segment selection on the worker class path, the JSON-lines transport, the `ProtocolWorker` entry point with its capability registry, segment verification and session bindings, the release data reader and catalog, `ProtocolWorkerPool`, a `ProtocolLibrary` that shares one worker per release, the one account store of every hosted library, and `WorkerLibraryHost` |
+
+The contracts a hosted library implements live in `protocol-api`, under `me.whereareiam.anvil.protocol.api.worker`:
+the `WorkerLibraryProvider` SPI, the `WorkerLibrary` description, `WorkerClient`, `WorkerAuthentication`, the
+account records it signs in, and the worker messages a client reads. A library family therefore shares one API,
+`protocol-api`, with every other protocol family.
 
 A library plugs into the worker by implementing `WorkerLibraryProvider` and registering it in
-`META-INF/services/me.whereareiam.anvil.protocol.worker.WorkerLibraryProvider`. The provider describes the
+`META-INF/services/me.whereareiam.anvil.protocol.api.worker.WorkerLibraryProvider`. The provider describes the
 library as a `WorkerLibrary`: its ID and name, its client port, its built-in release data and pin task, the
 packages its release closures own, and the arguments of its worker JVM. It builds the `WorkerClient` that
-drives its client port for the worker's players and may supply a `WorkerAuthentication` for stored
-accounts. The worker names no library; a class path entry of the host that contains a package the closure
+drives its client port for the worker's players and may supply a `WorkerAuthentication`, the online sign-in
+of stored accounts. The worker owns the account files around it: each file names the library that stored it, and
+the worker refuses another library's account. The worker names no library; a class path entry of the host that contains a package the closure
 owns is refused for that library's workers only.
 
 `WorkerLibraryHost` is the worker's one registration, as a `ProtocolLibraryHost`: protocol library
 discovery asks it for the hosted libraries, and it installs each `WorkerLibraryProvider` it finds as a
 protocol library of its own. A worker JVM starts `ProtocolWorker` with the library's ID and loads that
-library's provider again. A library family compiles against `protocol-worker-api` only, and its wiring root
+library's provider again. A library family compiles against `protocol-api` only, and its wiring root
 depends on the `protocol-worker` bundle, so every installation holds one copy of the worker.
 MCProtocolLib's family is laid out like this:
 
@@ -272,7 +277,7 @@ MCProtocolLib's family is laid out like this:
 |---|---|
 | `protocol-mcprotocol` | Wiring-only root: shades `mcprotocol-common`, depends on `protocol-worker`, publishes `protocol-mcprotocol`, and owns `mcprotocol-releases.toml` and its `pinLibraryReleases` task |
 | `mcprotocol-api` | The release-neutral client port `McProtocolClient<S>` that client segments implement |
-| `mcprotocol-common` | `McProtocolWorkerLibrary`, the library's `WorkerLibraryProvider`, the `WorkerClient` that drives `McProtocolClient`, and the private account store |
+| `mcprotocol-common` | `McProtocolWorkerLibrary`, the library's `WorkerLibraryProvider`, the `WorkerClient` that drives `McProtocolClient`, and the Microsoft sign-in `MicrosoftAuthentication`; it claims account files that name no library |
 | `mcprotocol-client` | Source-free side folder whose `V*` children are the client segments |
 | `mcprotocol-client/V1_18_2`, `V1_21_1` and `V1_21_11` | One client segment per range of releases; `V1_21_11` also serves `26.1.2` |
 
@@ -281,8 +286,8 @@ CloudburstMC Protocol's family for Bedrock players has the same shape:
 | Module | Owns |
 |---|---|
 | `protocol-cloudburst` | Wiring-only root: shades `cloudburst-common`, depends on `protocol-worker`, publishes `protocol-cloudburst`, and owns `cloudburst-releases.toml` and its `pinLibraryReleases` task |
-| `cloudburst-api` | The release-neutral client port `CloudburstClient<S>` and the `ClientIdentity` a login proves itself with |
-| `cloudburst-common` | `CloudburstWorkerLibrary`, the `WorkerClient` that drives `CloudburstClient`, the offline and Xbox login identities, and the private Xbox account store |
+| `cloudburst-api` | The release-neutral client port `CloudburstClient<S>`, the `CloudburstSession<P, I>` that capability bindings receive as the native session, and the `ClientIdentity` a login proves itself with |
+| `cloudburst-common` | `CloudburstWorkerLibrary`, the `WorkerClient` that drives `CloudburstClient`, the offline and Xbox login identities, and the Xbox sign-in `XboxAuthentication` |
 | `cloudburst-client` | Source-free side folder whose `V*` children are the client segments |
 | `cloudburst-client/V1_26_60` | The one client segment of the release; it selects each player's codec by the player's protocol number |
 

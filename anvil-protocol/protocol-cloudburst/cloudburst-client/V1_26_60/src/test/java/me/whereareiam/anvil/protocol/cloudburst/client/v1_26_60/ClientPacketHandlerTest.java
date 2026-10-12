@@ -7,6 +7,7 @@ import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientProfile;
 import org.cloudburstmc.math.vector.Vector2f;
+import org.cloudburstmc.math.vector.Vector3f;
 import org.cloudburstmc.protocol.bedrock.BedrockClientSession;
 import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
@@ -40,6 +41,7 @@ class ClientPacketHandlerTest {
 	private static final UUID LISTED = new UUID(0, 2);
 
 	private final List<String> callbacks = new ArrayList<>();
+	private ConnectionSession connection;
 
 	@Test
 	void logsInOfflineWithASelfSignedChainAndTheClientDataOfItsCodec() throws Exception {
@@ -83,6 +85,7 @@ class ClientPacketHandlerTest {
 		start.setRuntimeEntityId(7);
 		start.setUniqueEntityId(70);
 		start.setRotation(Vector2f.from(10, 90));
+		start.setPlayerPosition(Vector3f.from(1, 2, 3));
 		handler.handle(start);
 		PlayerListPacket list = new PlayerListPacket();
 		PlayerListPacket.Entry entry = new PlayerListPacket.Entry(LISTED);
@@ -125,7 +128,9 @@ class ClientPacketHandlerTest {
 				.identity(identity)
 				.connection(ClientConnection.builder().host("127.0.0.1").port(19132).protocol(codec.getProtocolVersion()).build())
 				.build();
-		return new ClientPacketHandler(session, codec, login, new Recorder());
+		connection = new ConnectionSession(session.getPeer(), codec);
+		connection.attach(session);
+		return new ClientPacketHandler(session, connection, codec, login, new Recorder());
 	}
 
 	private static RecordingSession session(BedrockCodec codec) {
@@ -137,19 +142,19 @@ class ClientPacketHandlerTest {
 	/**
 	 * Records what the handler reports.
 	 */
-	private final class Recorder implements ClientListener<BedrockPeer> {
+	private final class Recorder implements ClientListener<ConnectionSession> {
 		@Override
-		public void loggedIn(@NotNull BedrockPeer session, @NotNull ClientProfile granted) {
+		public void loggedIn(@NotNull ConnectionSession session, @NotNull ClientProfile granted) {
 			callbacks.add("login " + granted.getName() + " " + granted.getUniqueId());
 		}
 
 		@Override
-		public void teleported(@NotNull BedrockPeer session, float yaw, float pitch) {
+		public void teleported(@NotNull ConnectionSession session, float yaw, float pitch) {
 			callbacks.add("view " + yaw + " " + pitch);
 		}
 
 		@Override
-		public void disconnected(@NotNull BedrockPeer session, @NotNull DisconnectCause cause, @NotNull String reason) {
+		public void disconnected(@NotNull ConnectionSession session, @NotNull DisconnectCause cause, @NotNull String reason) {
 			callbacks.add("disconnect " + cause + " " + reason);
 		}
 	}

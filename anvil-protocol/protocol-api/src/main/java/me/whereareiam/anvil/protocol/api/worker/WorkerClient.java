@@ -1,8 +1,8 @@
-package me.whereareiam.anvil.protocol.worker;
+package me.whereareiam.anvil.protocol.api.worker;
 
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
-import me.whereareiam.anvil.protocol.worker.model.message.WorkerPlayerOptions;
+import me.whereareiam.anvil.protocol.api.worker.model.message.WorkerPlayerOptions;
 import org.jetbrains.annotations.NotNull;
 
 /**

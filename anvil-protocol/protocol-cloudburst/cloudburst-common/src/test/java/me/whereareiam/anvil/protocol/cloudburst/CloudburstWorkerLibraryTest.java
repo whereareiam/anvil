@@ -8,7 +8,6 @@ import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.protocol.api.model.GameConnection;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
-import me.whereareiam.anvil.protocol.cloudburst.authentication.XboxAuthentication;
 import me.whereareiam.anvil.protocol.cloudburst.client.CloudburstClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -17,6 +16,7 @@ import java.net.InetSocketAddress;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,7 +33,9 @@ class CloudburstWorkerLibraryTest {
 		ProtocolLibraryProvider installed = installed();
 
 		assertEquals(CloudburstClient.LIBRARY_ID, installed.id());
-		assertInstanceOf(XboxAuthentication.class, installed.authentication(temporary.resolve("accounts")).orElseThrow());
+		assertTrue(installed.authentication(temporary.resolve("accounts")).isPresent());
+		assertInstanceOf(XboxAuthentication.class, new CloudburstWorkerLibrary().authentication().orElseThrow());
+		assertFalse(CloudburstWorkerLibrary.LIBRARY.isReadsUnlabelledAccounts());
 	}
 
 	@Test

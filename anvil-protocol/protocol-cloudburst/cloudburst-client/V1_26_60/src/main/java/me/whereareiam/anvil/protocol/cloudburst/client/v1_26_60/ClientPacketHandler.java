@@ -6,6 +6,7 @@ import me.whereareiam.anvil.protocol.cloudburst.client.ClientListener;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientProfile;
+import me.whereareiam.anvil.protocol.cloudburst.client.model.GameStart;
 import org.cloudburstmc.protocol.bedrock.BedrockClientSession;
 import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
@@ -17,6 +18,7 @@ import org.cloudburstmc.protocol.bedrock.data.auth.TokenPayload;
 import org.cloudburstmc.protocol.bedrock.data.definitions.BlockDefinition;
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition;
 import org.cloudburstmc.protocol.bedrock.data.definitions.SimpleItemDefinition;
+import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacketHandler;
 import org.cloudburstmc.protocol.bedrock.packet.ClientCacheStatusPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ClientToServerHandshakePacket;
@@ -43,6 +45,7 @@ import org.jose4j.json.JsonUtil;
 import org.jose4j.jws.JsonWebSignature;
 
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +57,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Performs the login of one session and keeps it in game: requests the network settings, logs in with the
  * identity, completes the encryption handshake, accepts the server's resource packs without downloading any,
  * registers the item and block definitions the codec needs, requests its chunk radius and announces that the player
- * is initialized once the server spawned it. Reports the login, server-set views and disconnects to the listener.
+ * is initialized once the server spawned it. Reports the login, server-set views and disconnects to the listener,
+ * and hands every packet to the {@link ConnectionSession}'s subscriptions before handling it.
  *
  * <p>The granted profile is the player list entry of the player's own entity; when the server lists none shortly
  * after the spawn, it is the profile the identity claimed.</p>
@@ -73,10 +77,11 @@ final class ClientPacketHandler implements BedrockPacketHandler {
 	private static final DefinitionRegistry<BlockDefinition> UNKNOWN_BLOCKS = new UnknownBlocks();
 
 	private final BedrockClientSession session;
+	private final ConnectionSession connection;
 	private final BedrockPeer peer;
 	private final BedrockCodec codec;
 	private final ClientLogin login;
-	private final ClientListener<? super BedrockPeer> listener;
+	private final ClientListener<? super ConnectionSession> listener;
 	private final Map<Long, ClientProfile> listed = new ConcurrentHashMap<>();
 	private final AtomicBoolean reported = new AtomicBoolean();
 
@@ -84,12 +89,28 @@ final class ClientPacketHandler implements BedrockPacketHandler {
 	private volatile long uniqueEntityId;
 	private volatile boolean spawned;
 
-	ClientPacketHandler(BedrockClientSession session, BedrockCodec codec, ClientLogin login, ClientListener<? super BedrockPeer> listener) {
+	ClientPacketHandler(
+			BedrockClientSession session,
+			ConnectionSession connection,
+			BedrockCodec codec,
+			ClientLogin login,
+			ClientListener<? super ConnectionSession> listener
+	) {
 		this.session = session;
+		this.connection = connection;
 		this.peer = session.getPeer();
 		this.codec = codec;
 		this.login = login;
 		this.listener = listener;
+	}
+
+	/**
+	 * Hands every packet to the connection's subscriptions before handling it.
+	 */
+	@Override
+	public PacketSignal handlePacket(BedrockPacket packet) {
+		connection.dispatch(packet);
+		return BedrockPacketHandler.super.handlePacket(packet);
 	}
 
 	@Override
@@ -149,7 +170,17 @@ final class ClientPacketHandler implements BedrockPacketHandler {
 		if (codec.getProtocolVersion() < ITEM_REGISTRY_PROTOCOL) items(packet.getItemDefinitions());
 		peer.getCodecHelper().setBlockDefinitions(UNKNOWN_BLOCKS);
 		// The game start rotation is the pitch followed by the yaw.
-		listener.teleported(peer, packet.getRotation().getY(), packet.getRotation().getX());
+		connection.started(GameStart.builder()
+				.runtimeEntityId(packet.getRuntimeEntityId())
+				.uniqueEntityId(packet.getUniqueEntityId())
+				.x(packet.getPlayerPosition().getX())
+				.y(packet.getPlayerPosition().getY())
+				.z(packet.getPlayerPosition().getZ())
+				.yaw(packet.getRotation().getY())
+				.pitch(packet.getRotation().getX())
+				.tick(packet.getCurrentTick())
+				.build());
+		listener.teleported(connection, packet.getRotation().getY(), packet.getRotation().getX());
 
 		RequestChunkRadiusPacket radius = new RequestChunkRadiusPacket();
 		radius.setRadius(CHUNK_RADIUS);
@@ -183,7 +214,7 @@ final class ClientPacketHandler implements BedrockPacketHandler {
 		if (packet.getRuntimeEntityId() != runtimeEntityId) return PacketSignal.UNHANDLED;
 
 		// A player's rotation is its pitch, yaw and head yaw.
-		listener.teleported(peer, packet.getRotation().getY(), packet.getRotation().getX());
+		listener.teleported(connection, packet.getRotation().getY(), packet.getRotation().getX());
 		return PacketSignal.HANDLED;
 	}
 
@@ -202,13 +233,14 @@ final class ClientPacketHandler implements BedrockPacketHandler {
 	public PacketSignal handle(DisconnectPacket packet) {
 		String reason = packet.isMessageSkipped() || packet.getKickMessage() == null ? "disconnected" : packet.getKickMessage().toString();
 		DisconnectCause cause = reason.contains("notAuthenticated") ? DisconnectCause.AUTHENTICATION_REQUIRED : DisconnectCause.SERVER;
-		listener.disconnected(peer, cause, reason);
+		listener.disconnected(connection, cause, reason);
 		return PacketSignal.HANDLED;
 	}
 
 	@Override
 	public void onDisconnect(CharSequence reason) {
-		listener.disconnected(peer, DisconnectCause.CONNECTION_LOST, String.valueOf(reason));
+		connection.close();
+		listener.disconnected(connection, DisconnectCause.CONNECTION_LOST, String.valueOf(reason));
 	}
 
 	private LoginPacket loginPacket() {
@@ -240,7 +272,7 @@ final class ClientPacketHandler implements BedrockPacketHandler {
 	private void report() {
 		if (!reported.compareAndSet(false, true) || !session.isConnected()) return;
 
-		listener.loggedIn(peer, listed.getOrDefault(uniqueEntityId, login.getProfile()));
+		listener.loggedIn(connection, listed.getOrDefault(uniqueEntityId, login.getProfile()));
 	}
 
 	private void respond(ResourcePackClientResponsePacket.Status status) {
@@ -250,14 +282,14 @@ final class ClientPacketHandler implements BedrockPacketHandler {
 	}
 
 	private void items(List<ItemDefinition> definitions) {
-		peer.getCodecHelper().setItemDefinitions(SimpleDefinitionRegistry.<ItemDefinition>builder()
-				.addAll(definitions)
-				.add(new SimpleItemDefinition("minecraft:empty", 0, false))
-				.build());
+		List<ItemDefinition> registered = new ArrayList<>(definitions);
+		registered.add(new SimpleItemDefinition("minecraft:empty", 0, false));
+		peer.getCodecHelper().setItemDefinitions(SimpleDefinitionRegistry.<ItemDefinition>builder().addAll(registered).build());
+		connection.registered(registered);
 	}
 
 	private void fail(DisconnectCause cause, String reason) {
-		listener.disconnected(peer, cause, reason);
+		listener.disconnected(connection, cause, reason);
 		session.disconnect(reason);
 	}
 

@@ -3,8 +3,8 @@ package me.whereareiam.anvil.protocol.worker.catalog;
 import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
+import me.whereareiam.anvil.protocol.api.worker.model.WorkerLibrary;
 import me.whereareiam.anvil.protocol.worker.model.ReleaseDefinition;
-import me.whereareiam.anvil.protocol.worker.model.WorkerLibrary;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -33,7 +33,7 @@ qualified implementation class names, one per line.
 | Native worker extension | `me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerExtension` |
 | Protocol library | `me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider` |
 | Protocol library host, which installs several libraries | `me.whereareiam.anvil.protocol.api.library.ProtocolLibraryHost` |
-| Protocol library that runs in Anvil's native worker | `me.whereareiam.anvil.protocol.worker.WorkerLibraryProvider` |
+| Protocol library that runs in Anvil's native worker | `me.whereareiam.anvil.protocol.api.worker.WorkerLibraryProvider` |
 | Platform provider | `me.whereareiam.anvil.platform.api.PlatformProvider` |
 | Agent operation provider | `me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider` |
 

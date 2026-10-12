@@ -1,14 +1,12 @@
 package me.whereareiam.anvil.protocol.mcprotocol;
 
-import me.whereareiam.anvil.protocol.mcprotocol.authentication.MicrosoftAuthentication;
+import me.whereareiam.anvil.protocol.api.worker.WorkerAuthentication;
+import me.whereareiam.anvil.protocol.api.worker.WorkerClient;
+import me.whereareiam.anvil.protocol.api.worker.WorkerLibraryProvider;
+import me.whereareiam.anvil.protocol.api.worker.model.WorkerLibrary;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
-import me.whereareiam.anvil.protocol.worker.WorkerAuthentication;
-import me.whereareiam.anvil.protocol.worker.WorkerClient;
-import me.whereareiam.anvil.protocol.worker.WorkerLibraryProvider;
-import me.whereareiam.anvil.protocol.worker.model.WorkerLibrary;
 import org.jetbrains.annotations.NotNull;
 
-import java.nio.file.Path;
 import java.util.Optional;
 
 /**
@@ -34,6 +32,8 @@ public final class McProtocolWorkerLibrary implements WorkerLibraryProvider {
 			// Netty defaults to two event loops per processor. Older MCProtocolLib releases open one io_uring ring per
 			// loop, which exhausts the locked-memory limit on machines with many processors.
 			.jvmArgument("-Dio.netty.eventLoopThreads=4")
+			// Account files written before they named their library are Microsoft accounts of this library.
+			.readsUnlabelledAccounts(true)
 			.build();
 
 	@Override
@@ -48,7 +48,7 @@ public final class McProtocolWorkerLibrary implements WorkerLibraryProvider {
 	}
 
 	@Override
-	public @NotNull Optional<WorkerAuthentication> authentication(@NotNull Path accountsDirectory) {
-		return Optional.of(new MicrosoftAuthentication(accountsDirectory));
+	public @NotNull Optional<WorkerAuthentication> authentication() {
+		return Optional.of(new MicrosoftAuthentication());
 	}
 }

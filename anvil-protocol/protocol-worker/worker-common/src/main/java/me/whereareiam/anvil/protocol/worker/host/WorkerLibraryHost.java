@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.worker.host;
 
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryHost;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
-import me.whereareiam.anvil.protocol.worker.WorkerLibraryProvider;
+import me.whereareiam.anvil.protocol.api.worker.WorkerLibraryProvider;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

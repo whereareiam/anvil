@@ -67,12 +67,12 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * Bedrock client of CloudburstMC Protocol for every codec of the release, over RakNet.
  *
- * <p>A session is the {@link BedrockPeer} of one RakNet connection: {@link #open(ClientLogin, ClientListener)}
+ * <p>A session is the {@link ConnectionSession} of one RakNet connection: {@link #open(ClientLogin, ClientListener)}
  * registers the connection's channel with the codec its protocol selects and the login it performs, and
- * {@link #connect(BedrockPeer)} binds it to the source address and connects it. Capability bindings receive the
- * peer; it reaches the channel, its pipeline and the codec helper of the connection.</p>
+ * {@link #connect(ConnectionSession)} binds it to the source address and connects it. Capability bindings receive the
+ * connection session; feature segments of this release send and subscribe to its packets through it.</p>
  */
-public final class CloudburstClientAdapter implements CloudburstClient<BedrockPeer> {
+public final class CloudburstClientAdapter implements CloudburstClient<ConnectionSession> {
 	private static final List<BedrockCodec> CODECS = List.of(
 			Bedrock_v589.CODEC,
 			Bedrock_v594.CODEC,
@@ -110,6 +110,7 @@ public final class CloudburstClientAdapter implements CloudburstClient<BedrockPe
 	private static final Map<Integer, BedrockCodec> BY_PROTOCOL = byProtocol();
 	private static final AttributeKey<InetSocketAddress[]> ADDRESSES = AttributeKey.valueOf("anvil-cloudburst-addresses");
 	private static final AttributeKey<Runnable> CONNECT_FAILED = AttributeKey.valueOf("anvil-cloudburst-connect-failed");
+	private static final AttributeKey<ConnectionSession> SESSION = AttributeKey.valueOf("anvil-cloudburst-session");
 	private static final EventLoopGroup EVENT_LOOPS = new NioEventLoopGroup(0, new DefaultThreadFactory("anvil-cloudburst", true));
 
 	@Override
@@ -118,12 +119,12 @@ public final class CloudburstClientAdapter implements CloudburstClient<BedrockPe
 	}
 
 	@Override
-	public @NotNull Class<BedrockPeer> sessionType() {
-		return BedrockPeer.class;
+	public @NotNull Class<ConnectionSession> sessionType() {
+		return ConnectionSession.class;
 	}
 
 	@Override
-	public @NotNull BedrockPeer open(@NotNull ClientLogin login, @NotNull ClientListener<? super BedrockPeer> listener) {
+	public @NotNull ConnectionSession open(@NotNull ClientLogin login, @NotNull ClientListener<? super ConnectionSession> listener) {
 		ClientConnection connection = login.getConnection();
 		BedrockCodec codec = BY_PROTOCOL.get(connection.getProtocol());
 		if (codec == null)
@@ -144,18 +145,24 @@ public final class CloudburstClientAdapter implements CloudburstClient<BedrockPe
 		Channel channel = registered.channel();
 		BedrockPeer peer = channel.eventLoop().submit(() -> channel.pipeline().get(BedrockPeer.class)).syncUninterruptibly().getNow();
 		if (peer == null) throw new IllegalStateException("The RakNet channel did not initialize its Bedrock peer");
+
+		ConnectionSession session = new ConnectionSession(peer, codec);
+		channel.attr(SESSION).set(session);
 		channel.attr(ADDRESSES).set(new InetSocketAddress[]{
 				new InetSocketAddress(connection.getHost(), connection.getPort()),
 				local(connection.getSourceAddress())
 		});
-		channel.attr(CONNECT_FAILED).set(() -> listener.disconnected(peer, DisconnectCause.CONNECTION_LOST,
-				"Could not connect to " + connection.getHost() + ":" + connection.getPort()));
-		return peer;
+		channel.attr(CONNECT_FAILED).set(() -> {
+			session.close();
+			listener.disconnected(session, DisconnectCause.CONNECTION_LOST,
+					"Could not connect to " + connection.getHost() + ":" + connection.getPort());
+		});
+		return session;
 	}
 
 	@Override
-	public void connect(@NotNull BedrockPeer session) {
-		Channel channel = session.getChannel();
+	public void connect(@NotNull ConnectionSession session) {
+		Channel channel = session.peer().getChannel();
 		InetSocketAddress[] addresses = channel.attr(ADDRESSES).get();
 		ChannelFuture connecting = addresses[1] == null ? channel.connect(addresses[0]) : channel.connect(addresses[0], addresses[1]);
 		connecting.addListener(future -> {
@@ -167,14 +174,15 @@ public final class CloudburstClientAdapter implements CloudburstClient<BedrockPe
 	}
 
 	@Override
-	public boolean connected(@NotNull BedrockPeer session) {
-		return session.isConnected();
+	public boolean connected(@NotNull ConnectionSession session) {
+		return session.connected();
 	}
 
 	@Override
-	public void disconnect(@NotNull BedrockPeer session, @NotNull String reason) {
-		if (session.getChannel().isActive()) session.close(reason);
-		else session.getChannel().close();
+	public void disconnect(@NotNull ConnectionSession session, @NotNull String reason) {
+		BedrockPeer peer = session.peer();
+		if (peer.getChannel().isActive()) peer.close(reason);
+		else peer.getChannel().close();
 	}
 
 	private static @Nullable InetSocketAddress local(@Nullable String sourceAddress) {
@@ -199,9 +207,9 @@ public final class CloudburstClientAdapter implements CloudburstClient<BedrockPe
 	private static final class Initializer extends BedrockClientInitializer {
 		private final BedrockCodec codec;
 		private final ClientLogin login;
-		private final ClientListener<? super BedrockPeer> listener;
+		private final ClientListener<? super ConnectionSession> listener;
 
-		private Initializer(BedrockCodec codec, ClientLogin login, ClientListener<? super BedrockPeer> listener) {
+		private Initializer(BedrockCodec codec, ClientLogin login, ClientListener<? super ConnectionSession> listener) {
 			this.codec = codec;
 			this.login = login;
 			this.listener = listener;
@@ -212,7 +220,9 @@ public final class CloudburstClientAdapter implements CloudburstClient<BedrockPe
 			session.setCodec(codec);
 			// A client receives the server's whole item, creative and recipe lists, which exceed the default limits.
 			session.getPeer().getCodecHelper().setEncodingSettings(EncodingSettings.CLIENT);
-			session.setPacketHandler(new ClientPacketHandler(session, codec, login, listener));
+			ConnectionSession connection = session.getPeer().getChannel().attr(SESSION).get();
+			connection.attach(session);
+			session.setPacketHandler(new ClientPacketHandler(session, connection, codec, login, listener));
 
 			RequestNetworkSettingsPacket request = new RequestNetworkSettingsPacket();
 			request.setProtocolVersion(codec.getProtocolVersion());

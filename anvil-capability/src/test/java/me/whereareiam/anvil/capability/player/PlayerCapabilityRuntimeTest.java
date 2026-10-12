@@ -7,6 +7,7 @@ import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.api.player.CapabilityPlayer;
+import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityContext;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityProvider;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolCapabilityPlayer;
@@ -14,6 +15,7 @@ import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabil
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
+import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
@@ -87,6 +89,29 @@ class PlayerCapabilityRuntimeTest {
 			tested++;
 		}
 		assertEquals(4, tested);
+	}
+
+	@Test
+	void composesTheSessionCapabilityForABedrockPlayerOfTheCloudburstWorker() {
+		StubPlayer bedrock = new StubPlayer();
+		bedrock.libraryId = "cloudburst";
+		bedrock.channel = channel(Set.of("me.whereareiam.anvil.session"), Map.of());
+		var previous = System.err;
+
+		SimulatedPlayer player;
+		System.setErr(new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
+		try {
+			player = PlayerCapabilityRuntime.discover("cloudburst").compose(bedrock, observation(), ignored -> { });
+		} finally {
+			System.setErr(previous);
+		}
+
+		assertTrue(player.hasCapability(Session.class));
+		assertFalse(player.hasCapability(Messages.class));
+		var missing = assertThrows(CapabilityUnavailableException.class, () -> player.capability(Messages.class));
+		assertTrue(missing.getMessage().endsWith("no provider supports protocol library 'cloudburst' that the player uses; "
+				+ "it is provided only for the protocol libraries [mcprotocol]"), missing.getMessage());
+		player.destroy();
 	}
 
 	@Test
@@ -577,6 +602,7 @@ class PlayerCapabilityRuntimeTest {
 		private boolean destroyed;
 		private CapabilityChannel channel;
 		private Error destroyFailure;
+		private String libraryId = "stub";
 
 		@Override
 		public @NotNull String name() {
@@ -585,7 +611,7 @@ class PlayerCapabilityRuntimeTest {
 
 		@Override
 		public @NotNull String libraryId() {
-			return "stub";
+			return libraryId;
 		}
 
 		@Override

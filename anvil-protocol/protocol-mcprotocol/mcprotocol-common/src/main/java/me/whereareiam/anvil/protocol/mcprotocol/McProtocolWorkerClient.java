@@ -3,6 +3,11 @@ package me.whereareiam.anvil.protocol.mcprotocol;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
+import me.whereareiam.anvil.protocol.api.worker.WorkerClient;
+import me.whereareiam.anvil.protocol.api.worker.model.message.WorkerConnection;
+import me.whereareiam.anvil.protocol.api.worker.model.message.WorkerCredentials;
+import me.whereareiam.anvil.protocol.api.worker.model.message.WorkerPlayerOptions;
+import me.whereareiam.anvil.protocol.api.worker.model.message.WorkerProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
@@ -10,11 +15,6 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientCredentials;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
-import me.whereareiam.anvil.protocol.worker.WorkerClient;
-import me.whereareiam.anvil.protocol.worker.model.message.WorkerConnection;
-import me.whereareiam.anvil.protocol.worker.model.message.WorkerCredentials;
-import me.whereareiam.anvil.protocol.worker.model.message.WorkerPlayerOptions;
-import me.whereareiam.anvil.protocol.worker.model.message.WorkerProfile;
 import org.jetbrains.annotations.NotNull;
 
 /**

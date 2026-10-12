@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.worker.fixture;
 
-import me.whereareiam.anvil.protocol.worker.WorkerClient;
-import me.whereareiam.anvil.protocol.worker.model.message.WorkerPlayerOptions;
+import me.whereareiam.anvil.protocol.api.worker.WorkerClient;
+import me.whereareiam.anvil.protocol.api.worker.model.message.WorkerPlayerOptions;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

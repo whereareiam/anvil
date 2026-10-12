@@ -1,14 +1,13 @@
 package me.whereareiam.anvil.protocol.cloudburst;
 
-import me.whereareiam.anvil.protocol.cloudburst.authentication.XboxAuthentication;
+import me.whereareiam.anvil.protocol.api.worker.WorkerAuthentication;
+import me.whereareiam.anvil.protocol.api.worker.WorkerClient;
+import me.whereareiam.anvil.protocol.api.worker.WorkerLibraryProvider;
+import me.whereareiam.anvil.protocol.api.worker.model.WorkerLibrary;
 import me.whereareiam.anvil.protocol.cloudburst.client.CloudburstClient;
-import me.whereareiam.anvil.protocol.worker.WorkerAuthentication;
-import me.whereareiam.anvil.protocol.worker.WorkerClient;
-import me.whereareiam.anvil.protocol.worker.WorkerLibraryProvider;
-import me.whereareiam.anvil.protocol.worker.model.WorkerLibrary;
+import me.whereareiam.anvil.protocol.cloudburst.client.CloudburstSession;
 import org.jetbrains.annotations.NotNull;
 
-import java.nio.file.Path;
 import java.util.Optional;
 
 /**
@@ -40,11 +39,11 @@ public final class CloudburstWorkerLibrary implements WorkerLibraryProvider {
 	@Override
 	@SuppressWarnings("unchecked")
 	public @NotNull WorkerClient client(@NotNull Object adapter) {
-		return new CloudburstWorkerClient((CloudburstClient<Object>) adapter);
+		return new CloudburstWorkerClient((CloudburstClient<CloudburstSession<?, ?>>) adapter);
 	}
 
 	@Override
-	public @NotNull Optional<WorkerAuthentication> authentication(@NotNull Path accountsDirectory) {
-		return Optional.of(new XboxAuthentication(accountsDirectory));
+	public @NotNull Optional<WorkerAuthentication> authentication() {
+		return Optional.of(new XboxAuthentication());
 	}
 }

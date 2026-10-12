@@ -39,21 +39,28 @@ source Javadocs. These links use `dev`; select your release tag when checking a 
 
 Instead of implementing these contracts yourself, a library can plug into Anvil's native worker, which
 runs each release of the library in a version-isolated JVM, reads the library's release data and pins,
-and installs it as a protocol library. Depend on `me.whereareiam.anvil:protocol-worker-api` at compile
-time and implement `WorkerLibraryProvider` from `me.whereareiam.anvil.protocol.worker`:
+and installs it as a protocol library. Depend on `me.whereareiam.anvil:protocol-api` at compile time and
+implement `WorkerLibraryProvider` from `me.whereareiam.anvil.protocol.api.worker`:
 
 | Method | Supplies |
 |---|---|
 | `library()` | The `WorkerLibrary` description: ID, name, client port, release data, pin task, the packages the release closures own, and worker JVM arguments |
 | `client(adapter)` | The `WorkerClient` that drives your client segment's implementation of the client port |
-| `authentication(accountsDirectory)` | An optional `WorkerAuthentication`, which also resolves a stored account into the session a player signs in with |
+| `authentication()` | An optional `WorkerAuthentication`: the online sign-in of an account and its refresh into the session a player signs in with |
+
+The worker owns the account files. A login stores the `AccountRecord` your sign-in returns, profile and
+credentials, in the account's file and labels it with your library's ID; a player that uses the account
+has the worker read the record back and pass it to `resolve` with the player's Minecraft version, and the
+worker stores the refreshed record that comes back. Another library's account is refused before your
+sign-in is called. Set `readsUnlabelledAccounts` on your `WorkerLibrary` only if your library wrote account
+files before they named their library.
 
 A resolved `AuthenticationSession` carries the account's profile, its access token and, when the
 token alone cannot sign a login, `libraryCredentials`: further secrets in a text form your library
 defines, such as the key pair and certificate chain of a Bedrock login. The worker never reads them; it
 hands both to your `WorkerClient` as `WorkerCredentials`, only over the worker's private standard input.
 
-Register the provider in `META-INF/services/me.whereareiam.anvil.protocol.worker.WorkerLibraryProvider`
+Register the provider in `META-INF/services/me.whereareiam.anvil.protocol.api.worker.WorkerLibraryProvider`
 and give your published library a runtime dependency on `me.whereareiam.anvil:protocol-worker`, which
 registers itself as the `ProtocolLibraryHost` that installs every such library. Do not also register a
 `ProtocolLibraryProvider` for the same library.

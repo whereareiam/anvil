@@ -60,9 +60,10 @@ Every listed version is `COMPATIBLE`. The release is a CloudburstMC Protocol sna
 an exact timestamp like the MCProtocolLib snapshots. Its players log in offline with a self-signed
 identity, which a server accepts only with Xbox authentication turned off, or online with an
 [Xbox account](../../../players/authentication/index.md). Bedrock has no handshake host, so a Bedrock
-player that declares a virtual host is refused when it connects. Session is the only built-in player
-capability with a CloudburstMC Protocol side so far; requesting another built-in protocol capability
-on a Bedrock player reports the libraries that provide it.
+player that declares a virtual host is refused when it connects. Bedrock players have the Session and
+Server capabilities, which need no packets of their own; messages, movement, inventory and interaction have
+no CloudburstMC Protocol side yet, and requesting one of them on a Bedrock player reports the libraries that
+provide it.
 
 ## Servers and proxies
 

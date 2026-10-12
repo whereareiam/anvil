@@ -3,18 +3,19 @@ package me.whereareiam.anvil.protocol.cloudburst;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
+import me.whereareiam.anvil.protocol.api.worker.WorkerClient;
+import me.whereareiam.anvil.protocol.api.worker.model.message.WorkerConnection;
+import me.whereareiam.anvil.protocol.api.worker.model.message.WorkerCredentials;
+import me.whereareiam.anvil.protocol.api.worker.model.message.WorkerPlayerOptions;
+import me.whereareiam.anvil.protocol.api.worker.model.message.WorkerProfile;
 import me.whereareiam.anvil.protocol.cloudburst.client.ClientIdentity;
 import me.whereareiam.anvil.protocol.cloudburst.client.ClientListener;
 import me.whereareiam.anvil.protocol.cloudburst.client.CloudburstClient;
+import me.whereareiam.anvil.protocol.cloudburst.client.CloudburstSession;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.cloudburst.identity.LoginIdentity;
-import me.whereareiam.anvil.protocol.worker.WorkerClient;
-import me.whereareiam.anvil.protocol.worker.model.message.WorkerConnection;
-import me.whereareiam.anvil.protocol.worker.model.message.WorkerCredentials;
-import me.whereareiam.anvil.protocol.worker.model.message.WorkerPlayerOptions;
-import me.whereareiam.anvil.protocol.worker.model.message.WorkerProfile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
  */
 @RequiredArgsConstructor
 final class CloudburstWorkerClient implements WorkerClient {
-	private final @NotNull CloudburstClient<Object> client;
+	private final @NotNull CloudburstClient<CloudburstSession<?, ?>> client;
 
 	@Override
 	public int protocolNumber() {
@@ -50,17 +51,17 @@ final class CloudburstWorkerClient implements WorkerClient {
 
 	@Override
 	public void connect(@NotNull Object session) {
-		client.connect(session);
+		client.connect((CloudburstSession<?, ?>) session);
 	}
 
 	@Override
 	public boolean connected(@NotNull Object session) {
-		return client.connected(session);
+		return client.connected((CloudburstSession<?, ?>) session);
 	}
 
 	@Override
 	public void disconnect(@NotNull Object session, @NotNull String reason) {
-		client.disconnect(session, reason);
+		client.disconnect((CloudburstSession<?, ?>) session, reason);
 	}
 
 	private ClientLogin login(WorkerPlayerOptions options) {
@@ -98,21 +99,21 @@ final class CloudburstWorkerClient implements WorkerClient {
 	 * Forwards the client's callbacks of one session to the worker player's listener.
 	 */
 	@RequiredArgsConstructor
-	private static final class Listener implements ClientListener<Object> {
+	private static final class Listener implements ClientListener<CloudburstSession<?, ?>> {
 		private final SessionListener listener;
 
 		@Override
-		public void loggedIn(@NotNull Object session, @NotNull ClientProfile granted) {
+		public void loggedIn(@NotNull CloudburstSession<?, ?> session, @NotNull ClientProfile granted) {
 			listener.loggedIn(session, new PlayerProfile(granted.getName(), granted.getUniqueId()));
 		}
 
 		@Override
-		public void teleported(@NotNull Object session, float yaw, float pitch) {
+		public void teleported(@NotNull CloudburstSession<?, ?> session, float yaw, float pitch) {
 			listener.teleported(session, yaw, pitch);
 		}
 
 		@Override
-		public void disconnected(@NotNull Object session, @NotNull DisconnectCause cause, @NotNull String reason) {
+		public void disconnected(@NotNull CloudburstSession<?, ?> session, @NotNull DisconnectCause cause, @NotNull String reason) {
 			listener.disconnected(session, cause, reason);
 		}
 	}

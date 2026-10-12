@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.worker.child;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.exception.NativeAdapterUnavailableException;
-import me.whereareiam.anvil.protocol.worker.WorkerClient;
+import me.whereareiam.anvil.protocol.api.worker.WorkerClient;
 import me.whereareiam.anvil.protocol.worker.fixture.ProbeLibrary;
 import me.whereareiam.anvil.protocol.worker.fixture.ProbePackets;
 import me.whereareiam.anvil.protocol.worker.fixture.ProbePacketsAdapter;

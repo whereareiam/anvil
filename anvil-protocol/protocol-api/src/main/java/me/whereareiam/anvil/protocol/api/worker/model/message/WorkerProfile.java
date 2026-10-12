@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.protocol.worker.model.message;
+package me.whereareiam.anvil.protocol.api.worker.model.message;
 
 import lombok.Builder;
 import lombok.Value;

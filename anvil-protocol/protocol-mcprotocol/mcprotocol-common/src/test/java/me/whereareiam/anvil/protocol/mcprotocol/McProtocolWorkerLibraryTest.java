@@ -9,7 +9,6 @@ import me.whereareiam.anvil.protocol.api.model.GameConnection;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
-import me.whereareiam.anvil.protocol.mcprotocol.authentication.MicrosoftAuthentication;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -117,7 +116,9 @@ class McProtocolWorkerLibraryTest {
 		ProtocolLibraryProvider installed = installed();
 
 		assertEquals(McProtocolClient.LIBRARY_ID, installed.id());
-		assertInstanceOf(MicrosoftAuthentication.class, installed.authentication(temporary.resolve("accounts")).orElseThrow());
+		assertTrue(installed.authentication(temporary.resolve("accounts")).isPresent());
+		assertInstanceOf(MicrosoftAuthentication.class, new McProtocolWorkerLibrary().authentication().orElseThrow());
+		assertTrue(McProtocolWorkerLibrary.LIBRARY.isReadsUnlabelledAccounts());
 	}
 
 	private static ProtocolLibraryProvider installed() {

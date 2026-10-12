@@ -4,13 +4,10 @@ plugins {
 	id("module-library")
 }
 
-// Owning mcprotocol-api makes this family its own API family, so the protocol library API and the worker API it
-// implements are shared explicitly.
+// Owning mcprotocol-api makes this family its own API family, so the protocol library API it
+// implements, worker contracts included, is shared explicitly.
 architecture {
-	sharedApis = setOf(
-		projects.anvilProtocol.protocolApi.path,
-		projects.anvilProtocol.protocolWorker.workerApi.path,
-	)
+	sharedApis = setOf(projects.anvilProtocol.protocolApi.path)
 }
 
 description = "Version-isolated MCProtocolLib clients and workers for Anvil"

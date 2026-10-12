@@ -10,11 +10,9 @@ dependencies {
 
 	compileOnly(projects.anvilApi)
 	compileOnly(projects.anvilProtocol.protocolApi)
-	compileOnly(projects.anvilProtocol.protocolWorker.workerApi)
 
 	testImplementation(projects.anvilApi)
 	testImplementation(projects.anvilCapability)
 	testImplementation(projects.anvilCapability.capabilityProtocolApi)
 	testImplementation(projects.anvilProtocol.protocolApi)
-	testImplementation(projects.anvilProtocol.protocolWorker.workerApi)
 }

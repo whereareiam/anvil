@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.worker.host;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerLogin;
 import me.whereareiam.anvil.api.model.player.SessionIdentity;
 import me.whereareiam.anvil.protocol.api.library.ProtocolArtifactResolver;
@@ -8,11 +9,11 @@ import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
-import me.whereareiam.anvil.protocol.worker.WorkerAuthentication;
+import me.whereareiam.anvil.protocol.api.worker.model.AuthenticationSession;
+import me.whereareiam.anvil.protocol.api.worker.model.WorkerLibrary;
+import me.whereareiam.anvil.protocol.worker.account.HostedAuthentication;
 import me.whereareiam.anvil.protocol.worker.catalog.ReleaseCatalog;
-import me.whereareiam.anvil.protocol.worker.model.AuthenticationSession;
 import me.whereareiam.anvil.protocol.worker.model.ReleaseDefinition;
-import me.whereareiam.anvil.protocol.worker.model.WorkerLibrary;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -46,7 +47,7 @@ public final class ProtocolWorkerPool implements ProtocolLibrary {
 	 * The library's account workflow, which signs in a player that uses a stored account without a scenario session
 	 * identity, or null when the library has none.
 	 */
-	private final @Nullable WorkerAuthentication authentication;
+	private final @Nullable HostedAuthentication authentication;
 	private final @NotNull ProtocolArtifactResolver artifacts;
 
 	private final Map<String, ProtocolWorkerProcess> workers = new LinkedHashMap<>();
@@ -87,7 +88,7 @@ public final class ProtocolWorkerPool implements ProtocolLibrary {
 		if (!login.getAuthentication().usesAccount()) return null;
 
 		SessionIdentity identity = login.getSessionIdentity();
-		if (identity == null) return account(Objects.requireNonNull(login.getAccountId(), "accountId"));
+		if (identity == null) return account(Objects.requireNonNull(login.getAccountId(), "accountId"), request.getClientVersion());
 
 		return AuthenticationSession.builder()
 				.username(identity.getUsername())
@@ -97,12 +98,12 @@ public final class ProtocolWorkerPool implements ProtocolLibrary {
 				.build();
 	}
 
-	private AuthenticationSession account(String accountId) {
+	private AuthenticationSession account(String accountId, MinecraftVersion version) {
 		if (authentication == null)
 			throw new IllegalStateException(library.getName() + " has no account authentication, so it cannot sign in account '"
 					+ accountId + "'");
 
-		return authentication.resolve(accountId);
+		return authentication.resolve(accountId, version);
 	}
 
 	private List<Path> closure(ReleaseDefinition definition) {

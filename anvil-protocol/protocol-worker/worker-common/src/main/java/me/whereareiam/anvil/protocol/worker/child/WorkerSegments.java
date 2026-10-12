@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.worker.child;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.exception.NativeAdapterUnavailableException;
-import me.whereareiam.anvil.protocol.worker.model.WorkerLibrary;
+import me.whereareiam.anvil.protocol.api.worker.model.WorkerLibrary;
 import me.whereareiam.anvil.protocol.worker.segment.SegmentDescriptor;
 import me.whereareiam.anvil.protocol.worker.segment.SegmentLinkage;
 import org.jetbrains.annotations.NotNull;

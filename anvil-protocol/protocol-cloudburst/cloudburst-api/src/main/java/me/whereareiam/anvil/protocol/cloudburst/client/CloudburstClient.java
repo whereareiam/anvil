@@ -12,23 +12,24 @@ import org.jetbrains.annotations.NotNull;
  * by its connection's protocol number. A segment owns every packet the client must answer on its own, from the
  * network settings request through the login, encryption handshake, resource pack responses and chunk radius
  * request to announcing that the player is initialized, and reports the resulting state through
- * {@link ClientListener}. Sessions are opaque to the shell and are passed back to the segment that created them.</p>
+ * {@link ClientListener}. Its sessions are {@link CloudburstSession}s, which the worker hands to capability bindings as
+ * the player's native session; the shell passes them back to the segment that created them and never reads them.</p>
  *
  * <p>Segments register their implementation in
  * {@code META-INF/services/me.whereareiam.anvil.protocol.cloudburst.client.CloudburstClient}:</p>
  *
  * <pre>{@code
- * public final class CloudburstClientAdapter implements CloudburstClient<BedrockSession> {
+ * public final class CloudburstClientAdapter implements CloudburstClient<ConnectionSession> {
  *     public int protocolNumber() { return NEWEST.getProtocolVersion(); }
- *     public Class<BedrockSession> sessionType() { return BedrockSession.class; }
- *     public BedrockSession open(ClientLogin login, ClientListener<? super BedrockSession> listener) { ... }
+ *     public Class<ConnectionSession> sessionType() { return ConnectionSession.class; }
+ *     public ConnectionSession open(ClientLogin login, ClientListener<? super ConnectionSession> listener) { ... }
  *     ...
  * }
  * }</pre>
  *
  * @param <S> native session type of the release
  */
-public interface CloudburstClient<S> {
+public interface CloudburstClient<S extends CloudburstSession<?, ?>> {
 	/**
 	 * Identifier of the CloudburstMC Protocol library: scenario and player declarations select it, stored accounts
 	 * and segment descriptors name it, and its release cache lies below it.
@@ -44,7 +45,8 @@ public interface CloudburstClient<S> {
 	int protocolNumber();
 
 	/**
-	 * Returns the class of the sessions this client opens; capability bindings receive sessions of this type.
+	 * Returns the class of the sessions this client opens; capability bindings receive sessions of this type, which
+	 * implements {@link CloudburstSession}.
 	 *
 	 * @return native session class
 	 */

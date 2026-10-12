@@ -18,8 +18,11 @@ authentication.
 Use the Anvil IntelliJ panel's **Accounts** action to authenticate. Follow the library's device-code
 instructions in your browser; Anvil retrieves the Minecraft username and UUID and stores the account
 file under the configured account directory. You can also import an account file that the library
-generated elsewhere. Each library stores one account per JSON file and restricts files to the owner on
-filesystems supporting POSIX permissions.
+generated elsewhere. Anvil stores one account per JSON file, named after the account ID, and restricts files
+to the owner on filesystems supporting POSIX permissions. Each file names the library that signed it in, so an
+account ID belongs to one library: signing in, signing out or using an ID that another library stores fails
+with the name of that library. A file that names no library, written by an earlier Anvil version, belongs to
+MCProtocolLib, which names it on its next refresh.
 
 Without IntelliJ IDEA, sign in from the project that applies the Anvil plugin:
 
@@ -137,8 +140,8 @@ var premium = anvil.players().create(PlayerOptions.builder()
 
 A leased login is refused without a lease, and a lease is refused, without being claimed, for any other login.
 
-Account IDs belong to the protocol library that stores them. A pool holds one account per ID and refuses
-an ID that several libraries store, so a lease always names the account its player signs in with. A player
+Account IDs belong to the protocol library that stores them, so a lease always names the account its player
+signs in with. A player
 created from a lease uses that account's library, whatever `protocolLibrary` the scenario or engine selects.
 Creation fails before the player connects when that library cannot serve the player's Minecraft version, and
 the lease returns to the pool.

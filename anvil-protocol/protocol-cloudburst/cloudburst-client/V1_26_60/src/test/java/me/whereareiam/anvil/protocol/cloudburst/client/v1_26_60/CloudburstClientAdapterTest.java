@@ -5,7 +5,6 @@ import me.whereareiam.anvil.protocol.cloudburst.client.ClientListener;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientProfile;
-import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -27,9 +26,9 @@ class CloudburstClientAdapterTest {
 	private final CloudburstClientAdapter client = new CloudburstClientAdapter();
 
 	@Test
-	void speaksTheNewestCodecAsTheReleaseKeyAndHandsOutPeers() {
+	void speaksTheNewestCodecAsTheReleaseKeyAndHandsOutConnectionSessions() {
 		assertEquals(2225, client.protocolNumber());
-		assertEquals(BedrockPeer.class, client.sessionType());
+		assertEquals(ConnectionSession.class, client.sessionType());
 	}
 
 	@Test
@@ -49,7 +48,7 @@ class CloudburstClientAdapterTest {
 
 		try (DatagramSocket server = new DatagramSocket(0, InetAddress.getLoopbackAddress())) {
 			server.setSoTimeout(TIMEOUT_MILLIS);
-			BedrockPeer session = client.open(login("127.0.0.1", server.getLocalPort(), source.getHostAddress(), 2193), new IgnoringListener());
+			ConnectionSession session = client.open(login("127.0.0.1", server.getLocalPort(), source.getHostAddress(), 2193), new IgnoringListener());
 			assertTrue(client.connected(session));
 			client.connect(session);
 
@@ -83,17 +82,17 @@ class CloudburstClientAdapterTest {
 	/**
 	 * Ignores every callback.
 	 */
-	private static final class IgnoringListener implements ClientListener<BedrockPeer> {
+	private static final class IgnoringListener implements ClientListener<ConnectionSession> {
 		@Override
-		public void loggedIn(@NotNull BedrockPeer session, @NotNull ClientProfile granted) {
+		public void loggedIn(@NotNull ConnectionSession session, @NotNull ClientProfile granted) {
 		}
 
 		@Override
-		public void teleported(@NotNull BedrockPeer session, float yaw, float pitch) {
+		public void teleported(@NotNull ConnectionSession session, float yaw, float pitch) {
 		}
 
 		@Override
-		public void disconnected(@NotNull BedrockPeer session, @NotNull DisconnectCause cause, @NotNull String reason) {
+		public void disconnected(@NotNull ConnectionSession session, @NotNull DisconnectCause cause, @NotNull String reason) {
 		}
 	}
 }
