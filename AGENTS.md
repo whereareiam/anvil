@@ -2,10 +2,10 @@
 
 ## Purpose and scope
 
-Anvil is a Java 21 testing framework for local Minecraft Java Edition processes and native-protocol
-players. Preserve reproducibility, protocol fidelity, complete cleanup, and useful failure diagnostics.
-NeoForge is the supported mod loader. Kubernetes, SSH/hosted orchestration, Fabric, Sponge, Bedrock, rendering,
-pathfinding, autonomous AI, and crafting automation are outside the current project scope.
+Anvil is a Java 21 testing framework for local Minecraft processes and native-protocol players, of the
+Java Edition and of the Bedrock Edition. Preserve reproducibility, protocol fidelity, complete cleanup, and
+useful failure diagnostics. NeoForge is the supported mod loader. Kubernetes, SSH/hosted orchestration, Fabric,
+Sponge, rendering, pathfinding, autonomous AI, and crafting automation are outside the current project scope.
 
 ## Working in this repository
 
@@ -62,6 +62,11 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-common`                | `McProtocolWorkerLibrary`, the library's `WorkerLibraryProvider`, the `WorkerClient` driving `McProtocolClient`, and the private authentication store; depends only on `protocol-api` and `protocol-worker-api` |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client/V*`             | Client segments `V1_18_2`, `V1_21_1` and `V1_21_11`, each implementing only `McProtocolClient` from its release key on; `V1_21_11` also serves `26.1.2`                             |
+| `anvil-protocol/protocol-cloudburst`                                  | Wiring bundle publishing the CloudburstMC Protocol library for Bedrock players: shaded `cloudburst-common`, the client port, the client segment and a dependency on the `protocol-worker` bundle; owns `cloudburst-releases.toml` and `pinLibraryReleases` |
+| `anvil-protocol/protocol-cloudburst/cloudburst-api`                   | Release-neutral CloudburstMC Protocol client port `CloudburstClient` and the `ClientIdentity` a Bedrock login proves itself with                                              |
+| `anvil-protocol/protocol-cloudburst/cloudburst-common`                | `CloudburstWorkerLibrary`, the `WorkerClient` driving `CloudburstClient`, offline and Xbox login identities, and the private Xbox account store; depends only on `protocol-api` and `protocol-worker-api` |
+| `anvil-protocol/protocol-cloudburst/cloudburst-client`                | Source-free side folder exporting the CloudburstMC Protocol client segment                                                                                                         |
+| `anvil-protocol/protocol-cloudburst/cloudburst-client/V*`             | Client segment `V1_26_60`, implementing only `CloudburstClient` for the whole release and selecting each player's codec by its protocol number                                  |
 | `anvil-platform/platform-api`                                         | Platform-provider/planning SPI, version data contract, artifact sources, distribution validation, and configuration contracts                                                      |
 | `anvil-platform/platform-planning`                                    | Platform declaration validation, version data reading, effective Java/topology requirements, forwarding negotiation, the split of a plan by process lifetime, artifact planning, and provider preparation/configuration      |
 | `anvil-platform/platform-*`                                           | Provider-specific distribution/configuration implementations and platform-agent assemblies                                                                                          |
@@ -420,7 +425,10 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `CompatibilityScenarioFactory` runs; every other listed version is COMPATIBLE, and user-supplied release
   data is UNTESTED. Update the versions page, the Java table, the README, and the FAQ. Neither `protocol-worker` nor
   `McProtocolWorkerLibrary` imports MCProtocolLib; release-specific client code lives only in `mcprotocol-client` segments, whose
-  `linkage.txt` requirement keywords the worker's self-check enforces. A release with an unpinned closure is
+  `linkage.txt` requirement keywords the worker's self-check enforces. A Bedrock version extends CloudburstMC
+  Protocol's one `cloudburst-releases.toml` row: the newer snapshot build, the version in `minecraft` and its number
+  in `[release.protocol]`, written `1.26.x` for Bedrock 26.x as the library and Bedrock servers write it, its codec
+  in the client segment, and the segment renamed to the new key. A release with an unpinned closure is
   listed but cannot be launched: preparing a scenario whose servers would use it by default prints a warning,
   and creating a player that selects it is refused.
 
@@ -463,6 +471,7 @@ Run the nearest relevant test first, then architecture/build checks:
 ./gradlew :anvil-capability:test
 ./gradlew :anvil-protocol:protocol-worker:worker-common:test
 ./gradlew :anvil-protocol:protocol-mcprotocol:mcprotocol-common:test
+./gradlew :anvil-protocol:protocol-cloudburst:cloudburst-common:test
 ./gradlew :anvil-integration:integration-gradle:gradle-plugin:test :anvil-integration:integration-gradle:gradle-capabilities:test :anvil-integration:integration-gradle:gradle-platforms:test
 ./gradlew :anvil-testkit:tests:runtime:test
 ./gradlew :anvil-testkit:tests:server:matrixTest

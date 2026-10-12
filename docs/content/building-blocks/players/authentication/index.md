@@ -9,20 +9,23 @@ Keep real account sign-in out of CI.
 
 ## Add a local account
 
-Use the [installed MCProtocolLib library](../../../getting-started/installation/index.md), whose ID is
-`mcprotocol`. Accounts are signed in through one library: the engine's
-`anvil { engine { protocolLibrary("mcprotocol") } }`, or the sole installed library that offers
+Use the [installed protocol library](../../../getting-started/installation/index.md) of your players:
+MCProtocolLib, whose ID is `mcprotocol`, signs in Microsoft accounts for Java Edition players, and
+CloudburstMC Protocol, whose ID is `cloudburst`, signs in Xbox accounts for Bedrock Edition players.
+Accounts are signed in through one library: the one named by `--library`, else the engine's
+`anvil { engine { protocolLibrary("mcprotocol") } }`, else the sole installed library that offers
 authentication.
 Use the Anvil IntelliJ panel's **Accounts** action to authenticate. Follow the library's device-code
 instructions in your browser; Anvil retrieves the Minecraft username and UUID and stores the account
 file under the configured account directory. You can also import an account file that the library
-generated elsewhere. MCProtocolLib's library stores one account per JSON file and restricts files to
-the owner on filesystems supporting POSIX permissions.
+generated elsewhere. Each library stores one account per JSON file and restricts files to the owner on
+filesystems supporting POSIX permissions.
 
 Without IntelliJ IDEA, sign in from the project that applies the Anvil plugin:
 
 ```shell
 ./gradlew anvilLogin --account=main
+./gradlew anvilLogin --account=bedrock-main --library=cloudburst
 ```
 
 The task runs the same library workflow in a separate JVM and prints the device-code instructions.

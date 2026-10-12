@@ -44,7 +44,7 @@ class WorkerMessageCodecTest {
 	void carriesCredentialsPrivatelyWithoutIncludingThemInModelDiagnostics() {
 		var options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder().name("Alice").uniqueId(UUID.randomUUID()).build())
-				.credentials(WorkerCredentials.builder().accessToken("private-token").build())
+				.credentials(WorkerCredentials.builder().accessToken("private-token").libraryCredentials("private-keys").build())
 				.connection(WorkerConnection.builder().host("localhost").port(25565)
 						.virtualHost("lobby.example.test").sourceAddress("127.0.0.2").build())
 				.build();
@@ -53,7 +53,9 @@ class WorkerMessageCodecTest {
 		var decoded = codec.decodeRequest(codec.encodeRequest(request));
 		assertEquals(options, codec.decodePayload(decoded.getArguments(), WorkerPlayerOptions.class));
 		assertFalse(options.toString().contains("private-token"));
+		assertFalse(options.toString().contains("private-keys"));
 		assertFalse(request.toString().contains("private-token"));
+		assertFalse(request.toString().contains("private-keys"));
 	}
 
 	@ParameterizedTest

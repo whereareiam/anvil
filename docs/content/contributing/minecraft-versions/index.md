@@ -35,6 +35,18 @@ URL, and `sha256 = ""`. The file keeps the latest patch of each Minecraft major.
 served by a repository that `settings.gradle.kts` does not list yet, add it to both
 `libraryRepositories { url(...) }` and `dependencyResolutionManagement`.
 
+### Bedrock versions
+
+CloudburstMC Protocol's one release in `anvil-protocol/protocol-cloudburst/cloudburst-releases.toml`
+speaks every Bedrock version it has a codec for, each through its own protocol number in the
+`[release.protocol]` table. A new Bedrock version arrives with a new CloudburstMC Protocol build: move the
+row's `version` and `module` to that build's unique snapshot version, add the version to `minecraft` and
+its number to `[release.protocol]`, using the version string CloudburstMC Protocol's codec names
+(`1.26.x` for Bedrock 26.x), and pin the closure with
+`./gradlew :anvil-protocol:protocol-cloudburst:pinLibraryReleases`. Add the new codec to the client
+segment's codec list. A newer version raises the release key, so rename the client segment
+`cloudburst-client/V<key>`, folder and package, to the new key.
+
 ## Pin the runtime closure
 
 ```shell

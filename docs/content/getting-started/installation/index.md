@@ -69,7 +69,7 @@ Calling `acceptEula()` records your acceptance of the [Minecraft EULA](https://w
 Review it before using this configuration.
 
 The standard Anvil plugin adds foreground scenarios and IDE discovery. The JUnit plugin adds
-automated tests, and the explicitly selected default capability unit supplies the built-in capabilities. The Paper unit adds Paper provisioning and its platform agent. Add a protocol library to `anvilRuntimeOnly` when using simulated players; `protocolLibrary("mcprotocol")` makes MCProtocolLib the default for every player. See [Versions and compatibility](../../building-blocks/environments/platforms/versions/index.md) for the Minecraft versions it supports. Applying Anvil does not package your plugin into a server automatically;
+automated tests, and the explicitly selected default capability unit supplies the built-in capabilities. The Paper unit adds Paper provisioning and its platform agent. Add a protocol library to `anvilRuntimeOnly` when using simulated players; `protocolLibrary("mcprotocol")` makes MCProtocolLib the default for every player. For Bedrock Edition players, add `me.whereareiam.anvil:protocol-cloudburst` as well; each player then uses the library of its servers' edition. See [Versions and compatibility](../../building-blocks/environments/platforms/versions/index.md) for the Minecraft versions it supports. Applying Anvil does not package your plugin into a server automatically;
 [register its built JAR as an asset](../../building-blocks/environments/workspaces/assets/index.md) when you are ready
 to test its behavior.
 

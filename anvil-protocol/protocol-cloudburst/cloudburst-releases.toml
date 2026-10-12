@@ -1,0 +1,205 @@
+# CloudburstMC Protocol releases supported by this Anvil version. One release speaks every Bedrock version it has a
+# codec for, each with its own protocol number; the worker selects a player's codec by that number.
+# Versions use the numbering both CloudburstMC Protocol and Bedrock servers such as Lumi use: Bedrock 26.x is
+# written 1.26.x. 'verified' versions are live-tested.
+# 'module' is the compile coordinate for version-specific segments. Each [[release.artifact]] is the worker runtime
+# closure, downloaded and checked against 'sha256'. Empty pins are filled by
+# ./gradlew :anvil-protocol:protocol-cloudburst:pinLibraryReleases, which also refreshes the closure.
+
+[[release]]
+version = "3.0.0.Beta14-20261009.172637-6"
+edition = "bedrock"
+module = "org.cloudburstmc.protocol:bedrock-connection:3.0.0.Beta14-20261009.172637-6"
+minecraft = [
+	"1.20.0", "1.20.10", "1.20.30", "1.20.40", "1.20.50", "1.20.60", "1.20.70", "1.20.80",
+	"1.21.0", "1.21.2", "1.21.20", "1.21.30", "1.21.40", "1.21.50", "1.21.60", "1.21.70", "1.21.80", "1.21.90",
+	"1.21.93", "1.21.100", "1.21.111", "1.21.120", "1.21.124", "1.21.130",
+	"1.26.0", "1.26.10", "1.26.20", "1.26.30", "1.26.40", "1.26.45", "1.26.50", "1.26.60",
+]
+verified = []
+java = 8
+features = ["ONLINE_AUTHENTICATION"]
+
+[release.protocol]
+"1.20.0" = 589
+"1.20.10" = 594
+"1.20.30" = 618
+"1.20.40" = 622
+"1.20.50" = 630
+"1.20.60" = 649
+"1.20.70" = 662
+"1.20.80" = 671
+"1.21.0" = 685
+"1.21.2" = 686
+"1.21.20" = 712
+"1.21.30" = 729
+"1.21.40" = 748
+"1.21.50" = 766
+"1.21.60" = 776
+"1.21.70" = 786
+"1.21.80" = 800
+"1.21.90" = 818
+"1.21.93" = 819
+"1.21.100" = 827
+"1.21.111" = 844
+"1.21.120" = 859
+"1.21.124" = 860
+"1.21.130" = 898
+"1.26.0" = 924
+"1.26.10" = 944
+"1.26.20" = 975
+"1.26.30" = 1001
+"1.26.40" = 2168
+"1.26.45" = 2169
+"1.26.50" = 2193
+"1.26.60" = 2225
+
+[[release.artifact]]
+module = "org.cloudburstmc.protocol:bedrock-connection:3.0.0.Beta14-20261009.172637-6"
+url = "https://repo.opencollab.dev/main/org/cloudburstmc/protocol/bedrock-connection/3.0.0.Beta14-SNAPSHOT/bedrock-connection-3.0.0.Beta14-20261009.172637-6.jar"
+sha256 = "9137e250e18c4bb1fdd78d7734d6d1047b976a99def7a4827651ede38e14b6fe"
+
+[[release.artifact]]
+module = "org.cloudburstmc.protocol:bedrock-codec:3.0.0.Beta14-20261009.172637-6"
+url = "https://repo.opencollab.dev/main/org/cloudburstmc/protocol/bedrock-codec/3.0.0.Beta14-SNAPSHOT/bedrock-codec-3.0.0.Beta14-20261009.172637-6.jar"
+sha256 = "107406f37522d044f6ec9a5d47685d195bf96d596023e3895a1b5e0a1f83edac"
+
+[[release.artifact]]
+module = "org.cloudburstmc.netty:netty-transport-raknet:1.1.0.CR2-20261009.154359-1"
+url = "https://repo.opencollab.dev/main/org/cloudburstmc/netty/netty-transport-raknet/1.1.0.CR2-SNAPSHOT/netty-transport-raknet-1.1.0.CR2-20261009.154359-1.jar"
+sha256 = "c18eb6c264b8f11ba0d1370473f433ce9e310012f3e133a846346006f79c25e2"
+
+[[release.artifact]]
+module = "io.airlift:aircompressor:0.27"
+url = "https://repo1.maven.org/maven2/io/airlift/aircompressor/0.27/aircompressor-0.27.jar"
+sha256 = "fdbef3137a28f63bb0cb93487803080ede746a4ec3d421e36c6f0c305c35e5e4"
+
+[[release.artifact]]
+module = "com.fasterxml.jackson.core:jackson-annotations:2.18.0"
+url = "https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.18.0/jackson-annotations-2.18.0.jar"
+sha256 = "a09367d2eeb526873abf737ff754c5085f82073a382ee72c3bbe15412217671f"
+
+[[release.artifact]]
+module = "org.cloudburstmc.protocol:common:3.0.0.Beta14-20261009.172637-6"
+url = "https://repo.opencollab.dev/main/org/cloudburstmc/protocol/common/3.0.0.Beta14-SNAPSHOT/common-3.0.0.Beta14-20261009.172637-6.jar"
+sha256 = "35416d2a9a8b1795731e20529ec3449ffb2a2a4fe4ab5fcb44a1d627a3528677"
+
+[[release.artifact]]
+module = "io.netty:netty-codec-haproxy:4.1.101.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec-haproxy/4.1.101.Final/netty-codec-haproxy-4.1.101.Final.jar"
+sha256 = "c1cf61a69bf2e32ce9a67cbb06f61b731b76f4abcf3d13b4f1443ee650fe3d46"
+
+[[release.artifact]]
+module = "io.netty:netty-codec:4.1.101.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-codec/4.1.101.Final/netty-codec-4.1.101.Final.jar"
+sha256 = "982ebe55d12e5ba1a9f37a0d16d30a0baed22b9f67268fbeead3c23093864c81"
+
+[[release.artifact]]
+module = "org.cloudburstmc.netty:netty-transport-common:1.1.0.CR2-20261009.154359-1"
+url = "https://repo.opencollab.dev/main/org/cloudburstmc/netty/netty-transport-common/1.1.0.CR2-SNAPSHOT/netty-transport-common-1.1.0.CR2-20261009.154359-1.jar"
+sha256 = "761f15993d922b9d3796e25c652e520454d95bba0fc7e3020488cd664bfe61b7"
+
+[[release.artifact]]
+module = "io.netty:netty-transport-native-unix-common:4.1.101.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport-native-unix-common/4.1.101.Final/netty-transport-native-unix-common-4.1.101.Final.jar"
+sha256 = "d2165ec2544411d451a57e0dc269692deec2a56bd7f57a38705dbf276b3a6752"
+
+[[release.artifact]]
+module = "io.netty:netty-transport:4.1.101.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-transport/4.1.101.Final/netty-transport-4.1.101.Final.jar"
+sha256 = "5bf8f47b3d4612dbb1e94bcabcad92d7b37b8be64bfe744cddc790a1f7278c74"
+
+[[release.artifact]]
+module = "io.netty:netty-buffer:4.1.101.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-buffer/4.1.101.Final/netty-buffer-4.1.101.Final.jar"
+sha256 = "d8fb397501ed59b046f69123c6d12a656066c534c564f7ba8fc3389497521c93"
+
+[[release.artifact]]
+module = "org.cloudburstmc.fastutil.maps:long-object-maps:8.5.15"
+url = "https://repo1.maven.org/maven2/org/cloudburstmc/fastutil/maps/long-object-maps/8.5.15/long-object-maps-8.5.15.jar"
+sha256 = "778e354b463167986897140ffa49892eebbbc171e93810028da2f5d0ce7cba26"
+
+[[release.artifact]]
+module = "org.cloudburstmc.fastutil.sets:long-sets:8.5.15"
+url = "https://repo1.maven.org/maven2/org/cloudburstmc/fastutil/sets/long-sets/8.5.15/long-sets-8.5.15.jar"
+sha256 = "0d352d02875f40610b943f64456276975cd3e7a89746772f279a0887dec58370"
+
+[[release.artifact]]
+module = "org.cloudburstmc.fastutil.commons:long-common:8.5.15"
+url = "https://repo1.maven.org/maven2/org/cloudburstmc/fastutil/commons/long-common/8.5.15/long-common-8.5.15.jar"
+sha256 = "0655ec4614d991ef55a023ad7a85de3a6b037d85386c297fc385caa59dca5986"
+
+[[release.artifact]]
+module = "org.bitbucket.b_c:jose4j:0.9.6"
+url = "https://repo1.maven.org/maven2/org/bitbucket/b_c/jose4j/0.9.6/jose4j-0.9.6.jar"
+sha256 = "7314af50cde9c99e8eaf43eee617a23edcc6bb43036221064355094999d837ef"
+
+[[release.artifact]]
+module = "org.cloudburstmc:nbt:3.1.0.Final"
+url = "https://repo1.maven.org/maven2/org/cloudburstmc/nbt/3.1.0.Final/nbt-3.1.0.Final.jar"
+sha256 = "0c5a2be402bd09ab2a246ee478e3100027bacf7e948812378f291e81c6e48f6d"
+
+[[release.artifact]]
+module = "io.netty:netty-resolver:4.1.101.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-resolver/4.1.101.Final/netty-resolver-4.1.101.Final.jar"
+sha256 = "75af5bfa8d582962d66dabbc2e71abfa0cb1d3e7a3b06e252bbe560d4f2ec063"
+
+[[release.artifact]]
+module = "io.netty:netty-common:4.1.101.Final"
+url = "https://repo1.maven.org/maven2/io/netty/netty-common/4.1.101.Final/netty-common-4.1.101.Final.jar"
+sha256 = "aa8d1d5187d17cfbe1b668a3f3f9f6740c6fa5c96ae3bbabced4ca16b1ca14eb"
+
+[[release.artifact]]
+module = "net.jodah:expiringmap:0.5.10"
+url = "https://repo1.maven.org/maven2/net/jodah/expiringmap/0.5.10/expiringmap-0.5.10.jar"
+sha256 = "24c47d056e6c29ceb591cb6f54187668951ab695a0e14e19ab25ac1d9308f194"
+
+[[release.artifact]]
+module = "org.cloudburstmc.fastutil.maps:int-object-maps:8.5.15"
+url = "https://repo1.maven.org/maven2/org/cloudburstmc/fastutil/maps/int-object-maps/8.5.15/int-object-maps-8.5.15.jar"
+sha256 = "64465da2514b1eb7b19bbd7b03b1c72774f86a6b2e4f0cf39838d1d8041f16f1"
+
+[[release.artifact]]
+module = "org.cloudburstmc.fastutil.maps:object-int-maps:8.5.15"
+url = "https://repo1.maven.org/maven2/org/cloudburstmc/fastutil/maps/object-int-maps/8.5.15/object-int-maps-8.5.15.jar"
+sha256 = "d646613c2cfe972f227873d1168fe9f8ada42bac1743ec0e7355ed683153267f"
+
+[[release.artifact]]
+module = "org.cloudburstmc.math:immutable:2.0-20220327.162752-1"
+url = "https://repo.opencollab.dev/main/org/cloudburstmc/math/immutable/2.0-SNAPSHOT/immutable-2.0-20220327.162752-1.jar"
+sha256 = "7ba952e43a003dbfc6cc3da8d826d22f2798e8c03e20c0274a23825b57265bbc"
+
+[[release.artifact]]
+module = "com.nukkitx:natives:1.0.3"
+url = "https://repo.opencollab.dev/main/com/nukkitx/natives/1.0.3/natives-1.0.3.jar"
+sha256 = "bb86e95520a7877e602797f74ecbe9318228500d4f5ee380ecba43f54df888e2"
+
+[[release.artifact]]
+module = "org.cloudburstmc.fastutil.sets:object-sets:8.5.15"
+url = "https://repo1.maven.org/maven2/org/cloudburstmc/fastutil/sets/object-sets/8.5.15/object-sets-8.5.15.jar"
+sha256 = "f25a0b237e8335441748ac6783d949954a62fd0be7924106c6be7bda2c249431"
+
+[[release.artifact]]
+module = "org.cloudburstmc.fastutil.commons:object-common:8.5.15"
+url = "https://repo1.maven.org/maven2/org/cloudburstmc/fastutil/commons/object-common/8.5.15/object-common-8.5.15.jar"
+sha256 = "87b0010b07f26aad9668922bd818a3c09d625e7905871c92c1263ff3cda42515"
+
+[[release.artifact]]
+module = "org.cloudburstmc.fastutil.sets:int-sets:8.5.15"
+url = "https://repo1.maven.org/maven2/org/cloudburstmc/fastutil/sets/int-sets/8.5.15/int-sets-8.5.15.jar"
+sha256 = "ec39b2c9aa76fddf856da1aef800b03cb1540b17c3f2c0cd28cdf520bed90da7"
+
+[[release.artifact]]
+module = "org.cloudburstmc.fastutil.commons:int-common:8.5.15"
+url = "https://repo1.maven.org/maven2/org/cloudburstmc/fastutil/commons/int-common/8.5.15/int-common-8.5.15.jar"
+sha256 = "c4ad0f7723e886022029de4702336a3b41618b946d6194e8fa63790cbc2204fc"
+
+[[release.artifact]]
+module = "org.cloudburstmc.fastutil:core:8.5.15"
+url = "https://repo1.maven.org/maven2/org/cloudburstmc/fastutil/core/8.5.15/core-8.5.15.jar"
+sha256 = "daf6276eb4c0667fc5b5f6070ae08e9e48cc90a1c59d91fc76ebf726ff7970b3"
+
+[[release.artifact]]
+module = "org.slf4j:slf4j-api:1.7.36"
+url = "https://repo1.maven.org/maven2/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.jar"
+sha256 = "d3ef575e3e4979678dc01bf1dcce51021493b4d11fb7f1be8ad982877c16a1c0"

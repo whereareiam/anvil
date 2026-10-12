@@ -99,6 +99,7 @@ dependencies {
     testRuntimeOnly(projects.anvilPlatform.platformSpigot.platformSpigotProvider)
     testRuntimeOnly(projects.anvilPlatform.platformVelocity.platformVelocityAgent)
     testRuntimeOnly(projects.anvilPlatform.platformVelocity.platformVelocityProvider)
+    testRuntimeOnly(projects.anvilProtocol.protocolCloudburst)
     testRuntimeOnly(projects.anvilProtocol.protocolMcprotocol)
 }
 

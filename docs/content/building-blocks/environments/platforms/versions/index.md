@@ -13,7 +13,9 @@ which levels run.
 
 ## Players through MCProtocolLib
 
-MCProtocolLib is the bundled protocol library, with the ID `mcprotocol`. Its releases are data:
+Anvil bundles two protocol libraries: MCProtocolLib for Java Edition servers and
+[CloudburstMC Protocol](#bedrock-players-through-cloudburstmc-protocol) for Bedrock Edition servers.
+MCProtocolLib has the ID `mcprotocol`. Its releases are data:
 `mcprotocol-releases.toml`, shipped inside `protocol-mcprotocol`. Each release names the Minecraft
 edition it implements (`java` for every MCProtocolLib release), speaks one wire protocol, and lists
 every Minecraft version that speaks it; its highest version is the release key.
@@ -34,6 +36,33 @@ Each player's worker downloads its release's runtime JARs and checks them agains
 SHA-256 pins. A release with an artifact that has no pin is listed but cannot be launched: preparing a
 scenario whose servers would use it by default prints a warning, and creating a player that selects
 it is refused with the reason.
+
+## Bedrock players through CloudburstMC Protocol
+
+CloudburstMC Protocol has the ID `cloudburst`, and its releases are data too:
+`cloudburst-releases.toml`, shipped inside `protocol-cloudburst`. Its one release names the `bedrock`
+edition and speaks every listed Bedrock version through that version's own codec, so it maps each
+version to its own protocol number. Versions use the numbering CloudburstMC Protocol and Bedrock servers
+such as Lumi share: Bedrock 26.x is written `1.26.x`.
+
+| Release key | CloudburstMC Protocol release | Verified by the live matrix |
+|---|---|---|
+| `1.26.60` | `3.0.0.Beta14-20261009.172637-6` | None yet |
+
+| Minecraft versions | Protocols |
+|---|---|
+| `1.20.0`, `1.20.10`, `1.20.30`, `1.20.40`, `1.20.50`, `1.20.60`, `1.20.70`, `1.20.80` | 589, 594, 618, 622, 630, 649, 662, 671 |
+| `1.21.0`, `1.21.2`, `1.21.20`, `1.21.30`, `1.21.40`, `1.21.50`, `1.21.60`, `1.21.70`, `1.21.80` | 685, 686, 712, 729, 748, 766, 776, 786, 800 |
+| `1.21.90`, `1.21.93`, `1.21.100`, `1.21.111`, `1.21.120`, `1.21.124`, `1.21.130` | 818, 819, 827, 844, 859, 860, 898 |
+| `1.26.0`, `1.26.10`, `1.26.20`, `1.26.30`, `1.26.40`, `1.26.45`, `1.26.50`, `1.26.60` | 924, 944, 975, 1001, 2168, 2169, 2193, 2225 |
+
+Every listed version is `COMPATIBLE`. The release is a CloudburstMC Protocol snapshot build, pinned to
+an exact timestamp like the MCProtocolLib snapshots. Its players log in offline with a self-signed
+identity, which a server accepts only with Xbox authentication turned off, or online with an
+[Xbox account](../../../players/authentication/index.md). Bedrock has no handshake host, so a Bedrock
+player that declares a virtual host is refused when it connects. Session is the only built-in player
+capability with a CloudburstMC Protocol side so far; requesting another built-in protocol capability
+on a Bedrock player reports the libraries that provide it.
 
 ## Servers and proxies
 
@@ -107,7 +136,8 @@ account, whatever the scenario or engine declares. Every other player selects:
    by support level, and the strongest one wins. A tie at the strongest level is refused with the
    tied library IDs; set `protocolLibrary` to choose one.
 
-With MCProtocolLib as the only installed library, every player uses it without a declaration.
+Each bundled library serves the servers of its own edition, so with MCProtocolLib and CloudburstMC
+Protocol installed, every player uses the library of its servers' edition without a declaration.
 
 ## Add release data
 

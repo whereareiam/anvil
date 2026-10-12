@@ -4,8 +4,9 @@ description: Integrate another native client library as a protocol library with 
 ---
 
 A protocol library owns native client creation, the releases it can run, client identity, and client
-cleanup. MCProtocolLib is the bundled library, with the ID `mcprotocol`. Use this extension point to
-integrate another client library. A packet-backed capability alone belongs under
+cleanup. Anvil bundles two libraries: MCProtocolLib, with the ID `mcprotocol`, for Java Edition
+servers, and CloudburstMC Protocol, with the ID `cloudburst`, for Bedrock Edition servers. Both run
+in Anvil's native worker. Use this extension point to integrate another client library. A packet-backed capability alone belongs under
 [Protocol adapters](../capabilities/protocol-adapters/index.md).
 
 Several libraries can be installed at once; Anvil selects one for each player. Create a Java library
@@ -46,6 +47,11 @@ time and implement `WorkerLibraryProvider` from `me.whereareiam.anvil.protocol.w
 | `library()` | The `WorkerLibrary` description: ID, name, client port, release data, pin task, the packages the release closures own, and worker JVM arguments |
 | `client(adapter)` | The `WorkerClient` that drives your client segment's implementation of the client port |
 | `authentication(accountsDirectory)` | An optional `WorkerAuthentication`, which also resolves a stored account into the session a player signs in with |
+
+A resolved `AuthenticationSession` carries the account's profile, its access token and, when the
+token alone cannot sign a login, `libraryCredentials`: further secrets in a text form your library
+defines, such as the key pair and certificate chain of a Bedrock login. The worker never reads them; it
+hands both to your `WorkerClient` as `WorkerCredentials`, only over the worker's private standard input.
 
 Register the provider in `META-INF/services/me.whereareiam.anvil.protocol.worker.WorkerLibraryProvider`
 and give your published library a runtime dependency on `me.whereareiam.anvil:protocol-worker`, which
@@ -240,7 +246,7 @@ empty set accepts every library.
 
 ## Verify selection and cleanup
 
-Exercise automatic selection alone and alongside MCProtocol, an explicit choice, a tie, an unknown
+Exercise automatic selection alone and alongside the bundled libraries, an explicit choice, a tie, an unknown
 ID, missing execution services, unsupported versions, and a release that cannot be launched.
 Destroying a player must release its client resources; closing the library must attempt cleanup of
 all clients and any owned workers after failures.

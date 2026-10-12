@@ -19,6 +19,7 @@ a family's API describes its services and extension points. The launcher binds t
 | `anvil-protocol/src`                            | Player registration, per-player library and release selection, authentication compatibility, and observations     |
 | `anvil-protocol/protocol-api`                   | Protocol library contracts, releases, players, protocol-owned channels and native worker contracts                 |
 | `anvil-protocol/protocol-mcprotocol`            | The MCProtocolLib library: release data, client port, client segments, worker host and shell, and account storage |
+| `anvil-protocol/protocol-cloudburst`            | The CloudburstMC Protocol library for Bedrock players: release data, client port, client segment, Bedrock login identities, and Xbox account storage |
 | `anvil-capability/src`                          | Dependency validation, agent-provider adaptation, logical process owners, player facades, and capability cleanup                                |
 | `anvil-capability/capability-api`                | Generic composition, neutral player contracts, descriptors, exceptions, and typed requests |
 | `anvil-capability/capability-protocol-api`         | Protocol-backed player providers/contexts, channels/events, and native worker bindings |
@@ -274,6 +275,16 @@ MCProtocolLib's family is laid out like this:
 | `mcprotocol-common` | `McProtocolWorkerLibrary`, the library's `WorkerLibraryProvider`, the `WorkerClient` that drives `McProtocolClient`, and the private account store |
 | `mcprotocol-client` | Source-free side folder whose `V*` children are the client segments |
 | `mcprotocol-client/V1_18_2`, `V1_21_1` and `V1_21_11` | One client segment per range of releases; `V1_21_11` also serves `26.1.2` |
+
+CloudburstMC Protocol's family for Bedrock players has the same shape:
+
+| Module | Owns |
+|---|---|
+| `protocol-cloudburst` | Wiring-only root: shades `cloudburst-common`, depends on `protocol-worker`, publishes `protocol-cloudburst`, and owns `cloudburst-releases.toml` and its `pinLibraryReleases` task |
+| `cloudburst-api` | The release-neutral client port `CloudburstClient<S>` and the `ClientIdentity` a login proves itself with |
+| `cloudburst-common` | `CloudburstWorkerLibrary`, the `WorkerClient` that drives `CloudburstClient`, the offline and Xbox login identities, and the private Xbox account store |
+| `cloudburst-client` | Source-free side folder whose `V*` children are the client segments |
+| `cloudburst-client/V1_26_60` | The one client segment of the release; it selects each player's codec by the player's protocol number |
 
 The worker shell never imports MCProtocolLib. Every class that does lives in a segment: a project named
 after the release key it starts at, under a side folder named after its owner and library, such as

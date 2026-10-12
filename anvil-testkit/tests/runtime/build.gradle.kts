@@ -24,6 +24,7 @@ dependencies {
 	testRuntimeOnly(projects.anvilPlatform.platformPaper.platformPaperProvider)
 	testRuntimeOnly(projects.anvilPlatform.platformSpigot.platformSpigotProvider)
 	testRuntimeOnly(projects.anvilPlatform.platformVelocity.platformVelocityProvider)
+	testRuntimeOnly(projects.anvilProtocol.protocolCloudburst)
 	testRuntimeOnly(projects.anvilProtocol.protocolMcprotocol)
 }
 
