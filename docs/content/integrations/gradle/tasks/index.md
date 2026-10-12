@@ -76,10 +76,12 @@ existing source set. See [IDE project tooling](../tooling/index.md) for declarat
 |---|---|
 | `anvilLogin --account=<id>` | Sign in through the selected protocol library and store the account |
 | `anvilLogout --account=<id>` | Remove the stored account |
+| `--library=<id>` | Select the protocol library of either task, such as `cloudburst` for an Xbox account |
 
 Both tasks require `--account`. `anvilLogin` runs the library's interactive sign-in in a separate JVM, using the
-engine's `protocolLibrary` and account directory; without a configured library, it uses the sole
-installed library that offers authentication. It prints the library's prompts;
+library named by `--library`, else the engine's `protocolLibrary`, and the engine's account directory;
+without either, it uses the sole installed library that offers authentication. With MCProtocolLib and
+CloudburstMC Protocol both installed, name one of them. It prints the library's prompts;
 tokens stay in the account file and never become task inputs or arguments. Both tasks are untracked and
 always run. See [Authentication](../../../building-blocks/players/authentication/index.md) before
 using online players.
