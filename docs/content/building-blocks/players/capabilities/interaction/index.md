@@ -40,7 +40,7 @@ face; `Hand` selects `MAIN` or `OFF`. Set up the player's position so the server
 
 ## Target an entity
 
-For an `int entityId` supplied by your fixture for an entity visible to this player:
+For a `long entityId` supplied by your fixture for an entity visible to this player:
 
 ```java
 interaction.entity(entityId, EntityInteraction.INTERACT, Hand.MAIN);
@@ -48,7 +48,9 @@ interaction.entity(entityId, EntityInteraction.INTERACT, Hand.MAIN);
 
 Import `me.whereareiam.anvil.capability.interaction.type.EntityInteraction`. Use `ATTACK` for an attack
 action. The identifier is the protocol entity ID, not a UUID, and must refer to the current entity
-instance. This capability does not discover nearby entities or choose targets automatically.
+instance. A Java Edition entity ID is an `int`, so a Java Edition player refuses an identifier outside the
+`int` range with an `IllegalArgumentException`; a Bedrock runtime entity ID uses the whole `long`. This
+capability does not discover nearby entities or choose targets automatically.
 
 Use [messages](../messages/index.md), [inventory observations](../inventory/index.md), or a custom
 [agent operation](../../../../extending/agent-operations/index.md) to verify the application result.

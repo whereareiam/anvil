@@ -141,7 +141,7 @@ public final class CloudburstInteractionPackets implements InteractionPackets<Cl
 	@Override
 	public void entity(
 			@NotNull CloudburstSession<BedrockPacket, ItemDefinition, ItemData> session,
-			int entityId,
+			long entityId,
 			@NotNull EntityInteraction kind,
 			@NotNull Hand hand
 	) {

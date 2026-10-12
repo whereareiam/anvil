@@ -206,7 +206,7 @@ class BedrockPlayerCapabilitiesSystemTest {
 	private void interactsWithAnEntity(Messages messages, Interaction interaction) {
 		messages.command("anvil-fixture entity");
 		String reported = messages.received("anvil:entity-id:", TIMEOUT);
-		int entityId = Integer.parseInt(reported.substring(reported.indexOf("anvil:entity-id:") + "anvil:entity-id:".length()));
+		long entityId = Long.parseLong(reported.substring(reported.indexOf("anvil:entity-id:") + "anvil:entity-id:".length()));
 
 		interaction.entity(entityId, EntityInteraction.INTERACT, Hand.MAIN);
 		messages.received("anvil:entity:" + entityId, TIMEOUT);

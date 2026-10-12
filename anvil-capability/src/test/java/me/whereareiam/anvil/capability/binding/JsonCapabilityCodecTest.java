@@ -33,6 +33,7 @@ class JsonCapabilityCodecTest {
 		roundTrip(new ItemUse(Hand.MAIN));
 		roundTrip(new BlockUse(1, 2, 3, BlockFace.UP, Hand.MAIN));
 		roundTrip(new EntityUse(12, EntityInteraction.ATTACK, Hand.MAIN));
+		roundTrip(new EntityUse(5_000_000_000L, EntityInteraction.INTERACT, Hand.MAIN));
 		roundTrip(new SlotSelection(1));
 		roundTrip(new InventoryAction(2, InventoryClick.LEFT, 0));
 		roundTrip(Position.builder().x(1).y(64).z(2).yaw(90).pitch(20).onGround(true).build());

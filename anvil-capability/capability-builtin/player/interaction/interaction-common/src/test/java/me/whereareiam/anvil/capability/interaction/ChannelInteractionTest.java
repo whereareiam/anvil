@@ -49,11 +49,11 @@ class ChannelInteractionTest {
 		ChannelInteraction interaction = new ChannelInteraction(channel);
 
 		interaction.entity(42, EntityInteraction.ATTACK, Hand.MAIN);
-		interaction.entity(43, EntityInteraction.INTERACT, Hand.OFF);
+		interaction.entity(5_000_000_000L, EntityInteraction.INTERACT, Hand.OFF);
 
 		assertEquals(List.of(
 				new Request("interaction.entity", new EntityUse(42, EntityInteraction.ATTACK, Hand.MAIN)),
-				new Request("interaction.entity", new EntityUse(43, EntityInteraction.INTERACT, Hand.OFF))
+				new Request("interaction.entity", new EntityUse(5_000_000_000L, EntityInteraction.INTERACT, Hand.OFF))
 		), channel.requests);
 	}
 

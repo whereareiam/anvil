@@ -14,6 +14,7 @@ import me.whereareiam.anvil.capability.interaction.type.Hand;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
@@ -25,6 +26,8 @@ import static com.github.steveice10.mc.protocol.data.game.entity.player.Hand.OFF
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class McProtocolInteractionPacketsTest {
 	private static final BlockPosition POSITION = BlockPosition.builder().x(4).y(-60).z(-7).build();
@@ -67,6 +70,16 @@ class McProtocolInteractionPacketsTest {
 		assertEquals(0.5F, packet.getCursorY());
 		assertEquals(0.5F, packet.getCursorZ());
 		assertFalse(packet.isInsideBlock());
+	}
+
+	@ParameterizedTest
+	@ValueSource(longs = {Integer.MAX_VALUE + 1L, Integer.MIN_VALUE - 1L})
+	void refusesAnEntityIdOutsideTheJavaIntRange(long entityId) {
+		var refused = assertThrows(IllegalArgumentException.class,
+				() -> packets.entity(session, entityId, EntityInteraction.ATTACK, Hand.MAIN));
+
+		assertEquals("Java Edition entity IDs are int values; " + entityId + " is outside their range", refused.getMessage());
+		assertTrue(sent.isEmpty());
 	}
 
 	@Test

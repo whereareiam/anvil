@@ -78,6 +78,8 @@ public interface InteractionPackets<S> {
 	 * @param entityId protocol identifier of the targeted entity
 	 * @param kind whether the player interacts with or attacks the entity
 	 * @param hand hand used to interact, ignored by releases whose attack carries no hand
+	 * @throws IllegalArgumentException when the release's packet cannot carry the identifier, such as a Java Edition
+	 *                                  release given an identifier outside the {@code int} range
 	 */
-	void entity(@NotNull S session, int entityId, @NotNull EntityInteraction kind, @NotNull Hand hand);
+	void entity(@NotNull S session, long entityId, @NotNull EntityInteraction kind, @NotNull Hand hand);
 }

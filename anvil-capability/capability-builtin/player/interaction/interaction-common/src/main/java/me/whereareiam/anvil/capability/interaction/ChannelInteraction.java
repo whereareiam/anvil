@@ -30,7 +30,7 @@ final class ChannelInteraction implements Interaction {
 	}
 
 	@Override
-	public void entity(int entityId, @NotNull EntityInteraction interaction, @NotNull Hand hand) {
+	public void entity(long entityId, @NotNull EntityInteraction interaction, @NotNull Hand hand) {
 		channel.request(InteractionOperations.ENTITY, new EntityUse(entityId, interaction, hand));
 	}
 }

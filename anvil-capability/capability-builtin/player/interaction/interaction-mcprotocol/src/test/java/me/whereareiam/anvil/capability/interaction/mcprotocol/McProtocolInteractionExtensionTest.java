@@ -101,7 +101,7 @@ class McProtocolInteractionExtensionTest {
 		}
 
 		@Override
-		public void entity(@NotNull String session, int entityId, @NotNull EntityInteraction kind, @NotNull Hand hand) {
+		public void entity(@NotNull String session, long entityId, @NotNull EntityInteraction kind, @NotNull Hand hand) {
 			sent.add("entity " + session);
 		}
 	}

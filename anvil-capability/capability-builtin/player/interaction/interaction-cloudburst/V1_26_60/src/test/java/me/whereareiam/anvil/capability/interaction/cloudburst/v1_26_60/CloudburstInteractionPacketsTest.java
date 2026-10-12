@@ -140,6 +140,15 @@ class CloudburstInteractionPacketsTest {
 	}
 
 	@Test
+	void targetsARuntimeEntityIdBeyondTheIntRange() {
+		long entityId = Integer.MAX_VALUE + 5L;
+
+		packets.entity(session, entityId, EntityInteraction.ATTACK, Hand.MAIN);
+
+		assertEquals(entityId, ((InventoryTransactionPacket) session.sent.getFirst()).getRuntimeEntityId());
+	}
+
+	@Test
 	void refusesTheOffHandWhereThePlayersProtocolActsWithTheMainHandOnly() {
 		session.protocol = 2169;
 

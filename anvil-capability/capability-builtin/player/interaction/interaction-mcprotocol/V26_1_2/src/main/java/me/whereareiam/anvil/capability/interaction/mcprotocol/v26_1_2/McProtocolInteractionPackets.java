@@ -46,13 +46,20 @@ public final class McProtocolInteractionPackets implements InteractionPackets<Se
 	}
 
 	@Override
-	public void entity(@NotNull Session session, int entityId, @NotNull EntityInteraction kind, @NotNull Hand hand) {
+	public void entity(@NotNull Session session, long entityId, @NotNull EntityInteraction kind, @NotNull Hand hand) {
 		if (kind == EntityInteraction.ATTACK) {
-			session.send(new ServerboundAttackPacket(entityId));
+			session.send(new ServerboundAttackPacket(javaEntityId(entityId)));
 			return;
 		}
 
-		session.send(new ServerboundInteractPacket(entityId, nativeHand(hand), Vector3d.ZERO, false));
+		session.send(new ServerboundInteractPacket(javaEntityId(entityId), nativeHand(hand), Vector3d.ZERO, false));
+	}
+
+	private static int javaEntityId(long entityId) {
+		if (entityId < Integer.MIN_VALUE || entityId > Integer.MAX_VALUE)
+			throw new IllegalArgumentException("Java Edition entity IDs are int values; " + entityId + " is outside their range");
+
+		return (int) entityId;
 	}
 
 	private static org.geysermc.mcprotocollib.protocol.data.game.entity.player.Hand nativeHand(Hand hand) {

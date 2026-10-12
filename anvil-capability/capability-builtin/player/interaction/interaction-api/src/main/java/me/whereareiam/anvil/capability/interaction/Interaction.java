@@ -33,11 +33,20 @@ public interface Interaction extends PlayerCapability {
 	void block(@NotNull BlockPosition position, @NotNull BlockFace face, @NotNull Hand hand);
 
 	/**
-	 * Interacts with a known protocol entity identifier.
+	 * Interacts with or attacks an entity by the identifier the protocol gives it.
 	 *
-	 * @param entityId protocol entity identifier
-	 * @param interaction interaction kind
+	 * <p>The identifier is the one the server sent this player: a Java Edition entity ID, which is an {@code int},
+	 * or a Bedrock Edition runtime entity ID, which is a {@code long}. A Java Edition player refuses an identifier
+	 * outside the {@code int} range.</p>
+	 *
+	 * <pre>{@code
+	 * interaction.entity(entityId, EntityInteraction.ATTACK, Hand.MAIN);
+	 * }</pre>
+	 *
+	 * @param entityId protocol identifier of the targeted entity
+	 * @param interaction whether the player interacts with or attacks the entity
 	 * @param hand hand used for normal interaction
+	 * @throws IllegalArgumentException when the player's protocol cannot carry the identifier
 	 */
-	void entity(int entityId, @NotNull EntityInteraction interaction, @NotNull Hand hand);
+	void entity(long entityId, @NotNull EntityInteraction interaction, @NotNull Hand hand);
 }
