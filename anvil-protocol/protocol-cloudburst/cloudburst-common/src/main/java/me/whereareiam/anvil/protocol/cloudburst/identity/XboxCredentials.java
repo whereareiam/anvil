@@ -16,7 +16,8 @@ import java.util.Base64;
 
 /**
  * The Xbox secrets a Bedrock login needs besides its multiplayer token: the session key pair that Xbox services
- * certified, the certificate chain they issued for it and the device the account signed in on. The account workflow
+ * certified, the certificate chain they issued for it, the account's XUID that chain names and the device the account
+ * signed in on. The account workflow
  * writes them as the library credentials of a resolved session, which reach the worker only over its private
  * standard input, and the worker reads them back into a login identity.
  */
@@ -42,6 +43,11 @@ public class XboxCredentials {
 	@NotNull String identityJwt;
 
 	/**
+	 * XUID of the account, as the identity link names it.
+	 */
+	@NotNull String xuid;
+
+	/**
 	 * Device id the account signed in with, without dashes.
 	 */
 	@NotNull String deviceId;
@@ -57,6 +63,7 @@ public class XboxCredentials {
 		json.addProperty("privateKey", Base64.getEncoder().encodeToString(sessionKeys.getPrivate().getEncoded()));
 		json.addProperty("mojangJwt", mojangJwt);
 		json.addProperty("identityJwt", identityJwt);
+		json.addProperty("xuid", xuid);
 		json.addProperty("deviceId", deviceId);
 		return json.toString();
 	}
@@ -80,6 +87,7 @@ public class XboxCredentials {
 					.sessionKeys(sessionKeys)
 					.mojangJwt(json.get("mojangJwt").getAsString())
 					.identityJwt(json.get("identityJwt").getAsString())
+					.xuid(json.get("xuid").getAsString())
 					.deviceId(json.get("deviceId").getAsString())
 					.build();
 		} catch (RuntimeException | GeneralSecurityException exception) {

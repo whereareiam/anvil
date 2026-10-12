@@ -229,7 +229,7 @@ class ConnectionSessionTest {
 	}
 
 	@Test
-	void knowsTheInventoryAuthorityFromTheGameStartAndNoBlocksOfTheWorld() throws Exception {
+	void knowsTheInventoryAuthorityOnlyOnceTheGameStartsAndNoBlockBeforeAChunkArrives() throws Exception {
 		Connection connection = connection(Bedrock_v2193.CODEC);
 		assertThrows(IllegalStateException.class, connection.session::serverAuthoritativeInventory);
 		StartGamePacket start = start(List.of());

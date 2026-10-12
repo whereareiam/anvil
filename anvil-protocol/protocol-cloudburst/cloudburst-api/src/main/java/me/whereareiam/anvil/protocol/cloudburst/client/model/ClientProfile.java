@@ -7,10 +7,13 @@ import org.jetbrains.annotations.NotNull;
 import java.util.UUID;
 
 /**
- * Profile a Bedrock client logs in as, or the one the server grants it after login.
+ * Profile a Bedrock client logs in as, or the one the server grants it after login. A profile of an Xbox account
+ * carries the account's XUID, which a Bedrock client names itself by in the packets that carry its own XUID, such as
+ * chat; an offline profile and a granted profile carry none.
  *
  * <pre>{@code
- * ClientProfile profile = ClientProfile.builder().name("Alice").uniqueId(uuid).build();
+ * ClientProfile offline = ClientProfile.builder().name("Alice").uniqueId(uuid).build();
+ * ClientProfile xbox = ClientProfile.builder().name("Alice").uniqueId(uuid).xuid("2535400000000000").build();
  * }</pre>
  */
 @Value
@@ -25,4 +28,11 @@ public class ClientProfile {
 	 * Profile identity.
 	 */
 	@NotNull UUID uniqueId;
+
+	/**
+	 * XUID of the Xbox account the profile belongs to, or an empty string for an offline profile and for a profile the
+	 * server granted.
+	 */
+	@Builder.Default
+	@NotNull String xuid = "";
 }

@@ -12,6 +12,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class XboxAuthenticationTest {
 	@Test
+	void reportsTheGameVersionWithAllThreePartsAsBedrockSpellsIt() {
+		assertEquals("1.21.0", XboxAuthentication.gameVersion(MinecraftVersion.parse("1.21.0")));
+		assertEquals("1.20.0", XboxAuthentication.gameVersion(MinecraftVersion.parse("1.20")));
+		assertEquals("1.26.50", XboxAuthentication.gameVersion(MinecraftVersion.parse("1.26.50")));
+	}
+
+	@Test
 	void refusesStoredCredentialsThatAreNoBedrockSessionWithoutQuotingThem() {
 		AccountRecord account = AccountRecord.builder()
 				.accountId("player")

@@ -80,6 +80,8 @@ class CloudburstMessagesPacketsTest {
 			Bedrock_v2193.CODEC, Bedrock_v2225.CODEC
 	);
 
+	private static final String XUID = "2535400000000000";
+
 	private final CloudburstMessagesPackets packets = new CloudburstMessagesPackets();
 
 	@Test
@@ -100,7 +102,19 @@ class CloudburstMessagesPacketsTest {
 			assertEquals(TextPacket.Type.CHAT, chat.getType(), codec.getMinecraftVersion());
 			assertEquals("Alice", chat.getSourceName());
 			assertEquals("hello there", chat.getMessage());
+			assertEquals("", chat.getXuid());
 			assertFalse(chat.isNeedsTranslation());
+		}
+	}
+
+	@Test
+	void sendsTheChatOfAnXboxPlayerWithItsXuidThatEveryCodecWrites() throws Exception {
+		for (BedrockCodec codec : CODECS) {
+			RecordingSession session = new RecordingSession(XUID);
+			packets.chat(session, "hello there");
+
+			TextPacket chat = roundTrip(codec, assertInstanceOf(TextPacket.class, session.sent.getFirst()));
+			assertEquals(XUID, chat.getXuid(), codec.getMinecraftVersion());
 		}
 	}
 
@@ -222,7 +236,16 @@ class CloudburstMessagesPacketsTest {
 	private static final class RecordingSession implements CloudburstSession<BedrockPacket, ItemDefinition, ItemData> {
 		private final List<BedrockPacket> sent = new ArrayList<>();
 		private final List<Subscription<?>> subscriptions = new ArrayList<>();
+		private final String xuid;
 		private GameStart start;
+
+		private RecordingSession() {
+			this("");
+		}
+
+		private RecordingSession(String xuid) {
+			this.xuid = xuid;
+		}
 
 		@Override
 		public int protocol() {
@@ -236,7 +259,7 @@ class CloudburstMessagesPacketsTest {
 
 		@Override
 		public @NotNull ClientProfile profile() {
-			return ClientProfile.builder().name("Alice").uniqueId(new UUID(0, 1)).build();
+			return ClientProfile.builder().name("Alice").uniqueId(new UUID(0, 1)).xuid(xuid).build();
 		}
 
 		@Override

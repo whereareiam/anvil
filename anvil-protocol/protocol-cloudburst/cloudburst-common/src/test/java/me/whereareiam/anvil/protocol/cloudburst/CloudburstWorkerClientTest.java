@@ -15,10 +15,15 @@ import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientPosition;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.GameStart;
+import me.whereareiam.anvil.protocol.cloudburst.identity.XboxCredentials;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+import java.security.KeyPairGenerator;
+import java.security.spec.ECGenParameterSpec;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -57,6 +62,30 @@ class CloudburstWorkerClientTest {
 
 		worker.disconnect(session, "done");
 		assertFalse(worker.connected(session));
+	}
+
+	@Test
+	void claimsTheXuidOfAnXboxAccountAndNoneOffline() throws Exception {
+		KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
+		generator.initialize(new ECGenParameterSpec("secp384r1"));
+		String header = Base64.getEncoder().withoutPadding()
+				.encodeToString("{\"alg\":\"ES384\",\"x5u\":\"mojang-key\"}".getBytes(StandardCharsets.UTF_8));
+		String xbox = XboxCredentials.builder()
+				.sessionKeys(generator.generateKeyPair())
+				.mojangJwt(header + ".e30.signature")
+				.identityJwt(header + ".e30.signature")
+				.xuid("2535400000000000")
+				.deviceId("0123456789abcdef")
+				.build()
+				.toText();
+		WorkerCredentials credentials = WorkerCredentials.builder().accessToken("multiplayer-token").libraryCredentials(xbox).build();
+
+		worker.open(options(credentials, null), new Recorder());
+		worker.open(options(null, null), new Recorder());
+
+		assertEquals("2535400000000000", client.logins.getFirst().getProfile().getXuid());
+		assertTrue(client.logins.getFirst().getIdentity().authenticated());
+		assertEquals("", client.logins.get(1).getProfile().getXuid());
 	}
 
 	@Test

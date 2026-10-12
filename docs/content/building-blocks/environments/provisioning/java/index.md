@@ -12,8 +12,8 @@ process needs newer Java.
 
 This is the one table of Java versions per platform version; the platform pages link here. Each
 provider ships the same data in its `<platform>-versions.toml`, and a test of the runtime test suite
-fails when this table and that data differ. Versions are written in their canonical form, so Velocity
-`3.3` is release `3.3.0`.
+fails when this table and that data differ. Versions are written as the provider's data writes them, so
+Velocity's first row starts at `3.3.0` and Lumi's at Bedrock `1.20.0`.
 
 | Platform | Versions | Range | Default | Verified by the live matrix |
 |---|---|---|---|---|
@@ -24,7 +24,7 @@ fails when this table and that data differ. Versions are written in their canoni
 | Paper | `26.1` and newer | Java 25 or newer | 25 | `26.1.2` on 25 |
 | NeoForge | `1.21.1` to `1.21.11` | Java 21 or newer | 21 | `1.21.1` and `1.21.11` on 21 |
 | NeoForge | `26.1` and newer | Java 25 or newer | 25 | `26.1.2` on 25 |
-| Lumi | `1.20` and newer | Java 21 or newer | 21 | `1.20`, `1.21.80`, `1.21.90` and `1.26.50` on 21 |
+| Lumi | `1.20.0` and newer | Java 21 or newer | 21 | `1.20.0`, `1.21.80`, `1.21.90` and `1.26.50` on 21 |
 | Spigot | `1.16.5` | Java 11 to 16 | 11 | None |
 | Spigot | `1.17` to `1.17.1` | Java 17 | 17 | None |
 | Spigot | `1.18` to `1.18.2` | Java 17 to 18 | 17 | None |
@@ -32,9 +32,9 @@ fails when this table and that data differ. Versions are written in their canoni
 | Spigot | `1.20.5` to `1.20.6` | Java 21 to 22 | 21 | None |
 | Spigot | `1.21` to `1.21.11` | Java 21 or newer | 21 | `1.21.11` on 21 |
 | Spigot | `26.1` and newer | Java 25 or newer | 25 | `26.1.2` on 25 |
-| Velocity | `3.3` to `3.4` | Java 17 or newer; the Anvil agent needs 21 | 21 | None |
-| Velocity | `3.5` to `3.5.1` | Java 21 or newer | 21 | `3.5.1` on 21 |
-| Velocity | `4.0` and newer | Java 25 or newer | 25 | None |
+| Velocity | `3.3.0` to `3.4.0` | Java 17 or newer; the Anvil agent needs 21 | 21 | None |
+| Velocity | `3.5.0` to `3.5.1` | Java 21 or newer | 21 | `3.5.1` on 21 |
+| Velocity | `4.0.0` and newer | Java 25 or newer | 25 | None |
 | BungeeCord | every build | Java 17 or newer; the Anvil agent needs 21 | 21 | None |
 
 Lumi is a Bedrock Edition server, so its versions are Bedrock versions, which Lumi names `1.x.y`; Lumi

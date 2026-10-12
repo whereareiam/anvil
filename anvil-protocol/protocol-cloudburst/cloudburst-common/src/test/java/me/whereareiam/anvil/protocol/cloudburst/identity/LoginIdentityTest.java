@@ -82,15 +82,15 @@ class LoginIdentityTest {
 		identityClaims.addProperty("identityPublicKey", LoginSigner.publicKey(session));
 		String mojangJwt = LoginSigner.sign(new JsonObject(), mojang);
 		String identityJwt = LoginSigner.sign(identityClaims, mojang);
-		String credentials = XboxCredentials.builder()
+		XboxCredentials credentials = XboxCredentials.builder()
 				.sessionKeys(session)
 				.mojangJwt(mojangJwt)
 				.identityJwt(identityJwt)
+				.xuid("2535400000000000")
 				.deviceId("0123456789abcdef")
-				.build()
-				.toText();
+				.build();
 
-		LoginIdentity identity = LoginIdentity.xbox(profile, "multiplayer-token", credentials);
+		LoginIdentity identity = LoginIdentity.xbox(profile, "multiplayer-token", XboxCredentials.parse(credentials.toText()));
 
 		assertTrue(identity.authenticated());
 		assertEquals("multiplayer-token", identity.token());
@@ -105,7 +105,7 @@ class LoginIdentityTest {
 
 	@Test
 	void refusesMalformedXboxCredentialsWithoutQuotingThem() {
-		var failure = assertThrows(IllegalArgumentException.class, () -> LoginIdentity.xbox(profile, "token", "{\"privateKey\":\"secret\""));
+		var failure = assertThrows(IllegalArgumentException.class, () -> XboxCredentials.parse("{\"privateKey\":\"secret\""));
 
 		assertEquals("The Xbox credentials of a Bedrock login are malformed", failure.getMessage());
 	}

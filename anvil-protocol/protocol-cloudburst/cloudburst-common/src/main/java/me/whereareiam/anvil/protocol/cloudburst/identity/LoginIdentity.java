@@ -25,7 +25,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * <pre>{@code
  * ClientIdentity offline = LoginIdentity.offline(profile);
- * ClientIdentity online = LoginIdentity.xbox(profile, multiplayerToken, credentials.toText());
+ * ClientIdentity online = LoginIdentity.xbox(profile, multiplayerToken, XboxCredentials.parse(libraryCredentials));
  * }</pre>
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -67,12 +67,10 @@ public final class LoginIdentity implements ClientIdentity {
 	 *
 	 * @param profile profile of the account
 	 * @param token the account's multiplayer token
-	 * @param credentials text of the account's {@link XboxCredentials}
+	 * @param xbox the account's Xbox credentials
 	 * @return Xbox identity
-	 * @throws IllegalArgumentException when the credentials are malformed
 	 */
-	public static @NotNull LoginIdentity xbox(@NotNull ClientProfile profile, @NotNull String token, @NotNull String credentials) {
-		XboxCredentials xbox = XboxCredentials.parse(credentials);
+	public static @NotNull LoginIdentity xbox(@NotNull ClientProfile profile, @NotNull String token, @NotNull XboxCredentials xbox) {
 		KeyPair keys = xbox.getSessionKeys();
 
 		// The first link hands the key Mojang certified to the session key that signs everything else.

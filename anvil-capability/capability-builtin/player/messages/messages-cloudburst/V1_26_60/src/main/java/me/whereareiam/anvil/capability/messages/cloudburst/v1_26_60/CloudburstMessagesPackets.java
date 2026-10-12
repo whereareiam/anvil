@@ -26,7 +26,8 @@ import java.util.regex.Pattern;
 
 /**
  * Messages packets of the CloudburstMC Protocol release for every Bedrock codec it has. Chat is a text packet of the
- * chat type named after the profile the login claimed; commands are command requests from the player, carrying the
+ * chat type named after the profile the login claimed and carrying its XUID, which is empty for an offline player;
+ * commands are command requests from the player, carrying the
  * leading slash a Bedrock client sends. The packets' codec, chosen per player by its protocol, writes the fields its
  * protocol has.
  *
@@ -61,7 +62,7 @@ public final class CloudburstMessagesPackets implements MessagesPackets<Cloudbur
 		packet.setNeedsTranslation(false);
 		packet.setSourceName(session.profile().getName());
 		packet.setMessage(text);
-		packet.setXuid("");
+		packet.setXuid(session.profile().getXuid());
 		session.send(packet);
 	}
 

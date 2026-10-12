@@ -16,6 +16,7 @@ import net.raphimc.minecraftauth.msa.service.impl.DeviceCodeMsaAuthService;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
@@ -24,16 +25,19 @@ import java.util.function.Consumer;
  * the serialized {@link BedrockAuthManager}; the native worker stores them.
  *
  * <p>Xbox services start a session for a game version: a login reports the newest version of the built-in
- * releases, and a refresh the version of the player that signs in. A resolved session carries the account's
- * multiplayer token as its access token and the session key pair, certificate chain and device id as
+ * releases, and a refresh the version of the player that signs in, each spelled as Bedrock spells its versions, with
+ * all three parts ({@code 1.21.0}, not {@code 1.21}). A resolved session carries the account's
+ * multiplayer token as its access token and the session key pair, certificate chain, XUID and device id as
  * {@link XboxCredentials}; the worker receives both only over its private standard input.</p>
  */
 public final class XboxAuthentication implements WorkerAuthentication {
+	private static final int BEDROCK_VERSION_PARTS = 3;
+
 	@Override
 	public @NotNull AccountRecord login(@NotNull String accountId, @NotNull MinecraftVersion version, @NotNull Consumer<String> output) {
 		try {
 			Consumer<MsaDeviceCode> prompt = code -> output.accept("Open " + code.getDirectVerificationUri());
-			BedrockAuthManager manager = BedrockAuthManager.create(MinecraftAuth.createHttpClient(), version.toString())
+			BedrockAuthManager manager = BedrockAuthManager.create(MinecraftAuth.createHttpClient(), gameVersion(version))
 					.login(DeviceCodeMsaAuthService::new, prompt);
 			return refresh(accountId, manager).getAccount();
 		} catch (IOException exception) {
@@ -61,12 +65,27 @@ public final class XboxAuthentication implements WorkerAuthentication {
 
 	private BedrockAuthManager decode(AccountRecord account, MinecraftVersion version) {
 		try {
-			return BedrockAuthManager.fromJson(MinecraftAuth.createHttpClient(), version.toString(),
+			return BedrockAuthManager.fromJson(MinecraftAuth.createHttpClient(), gameVersion(version),
 					JsonParser.parseString(account.getCredentials()).getAsJsonObject());
 		} catch (RuntimeException exception) {
 			// Parser exceptions may include the stored document, including refresh tokens.
 			throw new IllegalStateException("Invalid stored authentication account '" + account.getAccountId() + "'");
 		}
+	}
+
+	/**
+	 * Spells a Bedrock version with its three parts, as Bedrock clients report it: a parsed version drops a trailing
+	 * zero, which {@link MinecraftVersion#toString()} does not restore beyond two parts.
+	 */
+	static String gameVersion(MinecraftVersion version) {
+		List<Integer> components = version.getComponents();
+		StringBuilder text = new StringBuilder();
+		for (int index = 0; index < Math.max(BEDROCK_VERSION_PARTS, components.size()); index++) {
+			if (index > 0) text.append('.');
+			text.append(index < components.size() ? components.get(index) : 0);
+		}
+
+		return text.toString();
 	}
 
 	private ResolvedAccount refresh(String accountId, BedrockAuthManager manager) throws IOException {
@@ -79,6 +98,7 @@ public final class XboxAuthentication implements WorkerAuthentication {
 				.sessionKeys(manager.getSessionKeyPair())
 				.mojangJwt(chain.getMojangJwt())
 				.identityJwt(chain.getIdentityJwt())
+				.xuid(chain.getIdentityXuid())
 				.deviceId(manager.getDeviceId().toString().replace("-", ""))
 				.build();
 		return ResolvedAccount.builder()

@@ -8,7 +8,6 @@ import me.whereareiam.anvil.protocol.api.worker.model.message.WorkerConnection;
 import me.whereareiam.anvil.protocol.api.worker.model.message.WorkerCredentials;
 import me.whereareiam.anvil.protocol.api.worker.model.message.WorkerPlayerOptions;
 import me.whereareiam.anvil.protocol.api.worker.model.message.WorkerProfile;
-import me.whereareiam.anvil.protocol.cloudburst.client.ClientIdentity;
 import me.whereareiam.anvil.protocol.cloudburst.client.ClientListener;
 import me.whereareiam.anvil.protocol.cloudburst.client.CloudburstClient;
 import me.whereareiam.anvil.protocol.cloudburst.client.CloudburstSession;
@@ -16,6 +15,7 @@ import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.cloudburst.identity.LoginIdentity;
+import me.whereareiam.anvil.protocol.cloudburst.identity.XboxCredentials;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -71,10 +71,16 @@ final class CloudburstWorkerClient implements WorkerClient {
 					+ connection.getVirtualHost() + "'; connect without one");
 
 		WorkerProfile profile = options.getProfile();
-		ClientProfile claimed = ClientProfile.builder().name(profile.getName()).uniqueId(profile.getUniqueId()).build();
+		WorkerCredentials credentials = options.getCredentials();
+		XboxCredentials xbox = xbox(credentials);
+		ClientProfile claimed = ClientProfile.builder()
+				.name(profile.getName())
+				.uniqueId(profile.getUniqueId())
+				.xuid(xbox == null ? "" : xbox.getXuid())
+				.build();
 		return ClientLogin.builder()
 				.profile(claimed)
-				.identity(identity(claimed, options.getCredentials()))
+				.identity(xbox == null ? LoginIdentity.offline(claimed) : LoginIdentity.xbox(claimed, credentials.getAccessToken(), xbox))
 				.connection(ClientConnection.builder()
 						.host(connection.getHost())
 						.port(connection.getPort())
@@ -84,15 +90,20 @@ final class CloudburstWorkerClient implements WorkerClient {
 				.build();
 	}
 
-	private static ClientIdentity identity(ClientProfile profile, @Nullable WorkerCredentials credentials) {
-		if (credentials == null) return LoginIdentity.offline(profile);
+	/**
+	 * Reads the Xbox credentials of an online login, or none for an offline one.
+	 *
+	 * @throws IllegalArgumentException when online credentials carry no Xbox identity or a malformed one
+	 */
+	private static @Nullable XboxCredentials xbox(@Nullable WorkerCredentials credentials) {
+		if (credentials == null) return null;
 
 		String xbox = credentials.getLibraryCredentials();
 		if (xbox == null)
 			throw new IllegalArgumentException("A Bedrock player signs in online only with a stored Xbox account; "
 					+ "a session identity without one cannot sign a Bedrock login");
 
-		return LoginIdentity.xbox(profile, credentials.getAccessToken(), xbox);
+		return XboxCredentials.parse(xbox);
 	}
 
 	/**
