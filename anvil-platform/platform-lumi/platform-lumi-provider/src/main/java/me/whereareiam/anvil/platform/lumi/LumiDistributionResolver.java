@@ -28,8 +28,10 @@ final class LumiDistributionResolver {
 
 	void validate(@NotNull MinecraftServer server) {
 		Distribution distribution = server.getDistribution();
-		if (distribution.isLocal() || distribution.isArtifact())
+		if (distribution.isLocal() || distribution.isArtifact()) {
+			validateDeclaredVersion(server);
 			return;
+		}
 
 		String version = distribution.getVersion();
 		if (version == null || !version.matches("[0-9]+(?:\\.[0-9]+){1,2}"))
@@ -45,6 +47,11 @@ final class LumiDistributionResolver {
 		String checksum = distribution.getSha256();
 		if (checksum != null && !checksum.matches(CHECKSUM))
 			throw new PlatformException("Lumi JAR pin must be a 64-digit SHA-256");
+	}
+
+	private void validateDeclaredVersion(MinecraftServer server) {
+		MinecraftVersion version = server.nativeVersion();
+		if (version != null) releases.protocol(version);
 	}
 
 	@NotNull ResolvedDistribution resolve(@NotNull MinecraftServer server, @NotNull PlatformContext context) throws IOException {

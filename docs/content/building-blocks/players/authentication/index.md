@@ -15,7 +15,9 @@ CloudburstMC Protocol, whose ID is `cloudburst`, signs in Xbox accounts for Bedr
 Accounts are signed in through one library: the one named by `--library`, else the engine's
 `anvil { engine { protocolLibrary("mcprotocol") } }`, else the sole installed library that offers
 authentication.
-Use the Anvil IntelliJ panel's **Accounts** action to authenticate. Follow the library's device-code
+Use the Anvil IntelliJ panel's **Accounts** action to authenticate. It has no library choice, so it signs
+in through the engine's library or the sole installed one; sign in an account of another library, such as
+an Xbox account while the engine names `mcprotocol`, with `anvilLogin --library=<id>`. Follow the library's device-code
 instructions in your browser; Anvil retrieves the Minecraft username and UUID and stores the account
 file under the configured account directory. You can also import an account file that the library
 generated elsewhere. Anvil stores one account per JSON file, named after the account ID, and restricts files
@@ -101,8 +103,9 @@ for assertions about what the platform sees; the authenticated identity is contr
 
 ## Sign in a Bedrock player with Xbox
 
-A Bedrock Edition player signs in with an Xbox account stored by CloudburstMC Protocol. Sign it in once,
-with the IntelliJ **Accounts** action or from Gradle:
+A Bedrock Edition player signs in with an Xbox account stored by CloudburstMC Protocol. Sign it in once
+from Gradle. The IntelliJ **Accounts** action signs it in only when CloudburstMC Protocol is the engine's
+library or the only installed library with authentication, because it cannot choose a library:
 
 ```shell
 ./gradlew anvilLogin --account=bedrock-main --library=cloudburst

@@ -29,9 +29,15 @@ import java.util.concurrent.CompletableFuture;
  */
 @RequiredArgsConstructor
 public final class DockerContainerFactory {
-	/** Port the game listener binds inside every container, whichever host port publishes it. */
+	/**
+	 * Port the game listener binds inside every container, whichever host port publishes it. Other containers on
+	 * the scenario network reach the game listener through the container's alias and this port.
+	 */
 	public static final int GAME_PORT = 25565;
-	/** Port the platform agent binds inside every container, whichever host port publishes it. */
+
+	/**
+	 * Port the platform agent binds inside every container, whichever host port publishes it.
+	 */
 	public static final int AGENT_PORT = 25566;
 
 	private final DockerClient client;

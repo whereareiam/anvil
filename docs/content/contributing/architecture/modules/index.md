@@ -18,8 +18,9 @@ a family's API describes its services and extension points. The launcher binds t
 | Other `anvil-platform` modules                  | Platform-provider contracts, implementations, and platform-agent assemblies                                         |
 | `anvil-protocol/src`                            | Player registration, per-player library and release selection, authentication compatibility, and observations     |
 | `anvil-protocol/protocol-api`                   | Protocol library contracts, releases, players, protocol-owned channels and native worker contracts                 |
-| `anvil-protocol/protocol-mcprotocol`            | The MCProtocolLib library: release data, client port, client segments, worker host and shell, and account storage |
-| `anvil-protocol/protocol-cloudburst`            | The CloudburstMC Protocol library for Bedrock players: release data, client port, client segment, Bedrock login identities, and Xbox account storage |
+| `anvil-protocol/protocol-worker`                | Native worker JVMs of every hosted library: worker host and shell, release data reader and catalog, and the shared account store |
+| `anvil-protocol/protocol-mcprotocol`            | The MCProtocolLib library: release data, client port, client segments, and the Microsoft sign-in `MicrosoftAuthentication` |
+| `anvil-protocol/protocol-cloudburst`            | The CloudburstMC Protocol library for Bedrock players: release data, client port, client segment, Bedrock login identities, and the Xbox sign-in `XboxAuthentication` |
 | `anvil-capability/src`                          | Dependency validation, agent-provider adaptation, logical process owners, player facades, and capability cleanup                                |
 | `anvil-capability/capability-api`                | Generic composition, neutral player contracts, descriptors, exceptions, and typed requests |
 | `anvil-capability/capability-protocol-api`         | Protocol-backed player providers/contexts, channels/events, and native worker bindings |

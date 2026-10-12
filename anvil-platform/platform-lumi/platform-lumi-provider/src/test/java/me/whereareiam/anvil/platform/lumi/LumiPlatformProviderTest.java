@@ -67,6 +67,26 @@ class LumiPlatformProviderTest {
 	}
 
 	@Test
+	void refusesALocalJarDeclaringAVersionLumiHasNoProtocolFor() {
+		MinecraftServer local = MinecraftServer.builder()
+				.name("server")
+				.platform(Platforms.LUMI)
+				.distribution(Distribution.local(temporary.resolve("Lumi.jar")))
+				.minecraftVersion("1.20.1")
+				.build();
+		PlatformException refusal = assertThrows(PlatformException.class, () -> provider.validateDistribution(local));
+		assertTrue(refusal.getMessage().startsWith("Lumi knows no protocol of Minecraft 1.20.1"), refusal.getMessage());
+
+		MinecraftServer supported = MinecraftServer.builder()
+				.name("server")
+				.platform(Platforms.LUMI)
+				.distribution(Distribution.local(temporary.resolve("Lumi.jar")))
+				.minecraftVersion("1.26.50")
+				.build();
+		assertDoesNotThrow(() -> provider.validateDistribution(supported));
+	}
+
+	@Test
 	void downloadsTheReleaseFromLumisMavenRepositoryVerifiedAgainstItsChecksum() throws IOException {
 		MinecraftServer server = server(Distribution.remote("1.26.50", "1.6.9"));
 
@@ -160,6 +180,17 @@ class LumiPlatformProviderTest {
 		assertEquals("Lumi setting 'general.multiversion.max-protocol' is owned by Anvil runtime configuration",
 				setting.getMessage());
 
+		MinecraftServer language = MinecraftServer.builder()
+				.name("server")
+				.platform(Platforms.LUMI)
+				.distribution(Distribution.remote("1.26.50", "1.6.9"))
+				.setting("general.language", "rus")
+				.build();
+		PlatformException languageSetting = assertThrows(PlatformException.class,
+				() -> provider.configure(language, context(language, ForwardingMode.NONE)));
+		assertEquals("Lumi setting 'general.language' is owned by Anvil runtime configuration",
+				languageSetting.getMessage());
+
 		MinecraftServer server = server(Distribution.remote("1.26.50", "1.6.9"));
 		PlatformException forwarding = assertThrows(PlatformException.class,
 				() -> provider.configure(server, context(server, ForwardingMode.MODERN)));
@@ -167,6 +198,18 @@ class LumiPlatformProviderTest {
 		assertEquals(List.of(ForwardingMode.NONE), provider.forwardingModes());
 		assertThrows(PlatformException.class,
 				() -> provider.sessionServerArguments(server, URI.create("http://127.0.0.1:1")));
+	}
+
+	@Test
+	void refusesAWorkspaceHoldingAServerPropertiesFileLumiWouldConvertOverTheRuntimeValues() throws IOException {
+		MinecraftServer server = server(Distribution.remote("1.26.50", "1.6.9"));
+		PlatformContext context = context(server, ForwardingMode.NONE);
+		Files.writeString(context.getWorkDirectory().resolve("server.properties"), "server-port=19132\n");
+
+		PlatformException refusal = assertThrows(PlatformException.class, () -> provider.configure(server, context));
+
+		assertTrue(refusal.getMessage().startsWith("Lumi server 'server' has a server.properties"), refusal.getMessage());
+		assertTrue(Files.notExists(context.getWorkDirectory().resolve("settings.yml")));
 	}
 
 	@Test

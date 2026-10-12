@@ -22,16 +22,21 @@ import java.util.Set;
 
 /**
  * Writes Lumi's {@code settings.yml} structurally before each start. Unrelated values in the file are kept,
- * Anvil's defaults apply unless a server setting replaces them, and the listener, the accepted protocol and the
- * authentication mode always come from the scenario. A server setting names a dotted path into the file, such as
- * {@code world.spawn-protection}, and gives a YAML value.
+ * Anvil's defaults apply unless a server setting replaces them, and the listener, the accepted protocol, the
+ * authentication mode and the console language, which readiness matches, always come from the scenario. A workspace
+ * holding a {@code server.properties} is refused, because Lumi converts that file over {@code settings.yml}. A server
+ * setting names a dotted path into the file, such as {@code world.spawn-protection}, and gives a YAML value.
  */
 @RequiredArgsConstructor
 final class LumiConfiguration {
 	private static final String FILE = "settings.yml";
+	private static final String LEGACY_FILE = "server.properties";
+	// The readiness pattern matches the English start message.
+	private static final String LANGUAGE = "eng";
 	private static final Set<String> OWNED = Set.of(
 			"general.server-ip",
 			"general.server-port",
+			"general.language",
 			"general.multiversion.min-protocol",
 			"general.multiversion.max-protocol",
 			"network.xbox-auth",
@@ -53,10 +58,15 @@ final class LumiConfiguration {
 			throw new PlatformException("Lumi server '" + server.getName() + "' must declare its Minecraft version");
 		int protocol = releases.protocol(version);
 
+		Path legacy = context.getWorkDirectory().resolve(LEGACY_FILE);
+		if (Files.exists(legacy))
+			throw new PlatformException("Lumi server '" + server.getName() + "' has a " + LEGACY_FILE + ", which Lumi "
+					+ "converts over the listener, protocol and authentication Anvil writes; remove it and give its "
+					+ "values as " + FILE + " server settings instead: " + legacy);
+
 		Path file = context.getWorkDirectory().resolve(FILE);
 		ObjectNode settings = read(file);
 		set(settings, "general.motd", yaml.getNodeFactory().textNode("Anvil: " + server.getName()));
-		set(settings, "general.language", yaml.getNodeFactory().textNode("eng"));
 		set(settings, "world.spawn-protection", yaml.getNodeFactory().numberNode(0));
 		set(settings, "network.enable-query", yaml.getNodeFactory().booleanNode(false));
 		set(settings, "bstats.enable", yaml.getNodeFactory().booleanNode(false));
@@ -64,6 +74,7 @@ final class LumiConfiguration {
 			apply(settings, setting.getKey(), setting.getValue());
 
 		set(settings, "general.server-ip", yaml.getNodeFactory().textNode(context.getBindAddress()));
+		set(settings, "general.language", yaml.getNodeFactory().textNode(LANGUAGE));
 		set(settings, "general.server-port", yaml.getNodeFactory().numberNode(context.getPort()));
 		set(settings, "general.multiversion.min-protocol", yaml.getNodeFactory().numberNode(protocol));
 		set(settings, "general.multiversion.max-protocol", yaml.getNodeFactory().numberNode(protocol));

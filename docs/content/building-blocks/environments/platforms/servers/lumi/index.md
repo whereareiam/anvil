@@ -85,13 +85,15 @@ hands movement to the client; Anvil's players then send player moves instead of 
 client sends on every tick.
 
 Anvil writes the file before every start and keeps values it does not manage. Unless a setting replaces
-them, it sets `general.motd`, `general.language` to `eng`, `world.spawn-protection` to `0`,
-`network.enable-query` and `bstats.enable` to `false`. It always sets `general.server-ip`,
-`general.server-port`, `general.multiversion.min-protocol` and `max-protocol`, `network.xbox-auth` from
-`.onlineMode(...)`, and `network.rcon.enable` to `false`; a setting for one of these is refused.
+them, it sets `general.motd`, `world.spawn-protection` to `0`, `network.enable-query` and
+`bstats.enable` to `false`. It always sets `general.server-ip`, `general.server-port`,
+`general.multiversion.min-protocol` and `max-protocol`, `network.xbox-auth` from `.onlineMode(...)`,
+`network.rcon.enable` to `false`, and `general.language` to `eng`, because Anvil recognises a started
+server by Lumi's English start message; a setting for one of these is refused.
 
 Install plugins into `plugins/` with [workspace assets](../../../workspaces/index.md). Lumi converts an
-old `server.properties` into `settings.yml` and deletes it, so configure Lumi through settings only.
+old `server.properties` into `settings.yml` over the values Anvil writes, so Anvil refuses to start a
+Lumi server whose workspace holds one; give its values as settings instead.
 
 ## Check what a player did
 

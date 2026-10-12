@@ -12,10 +12,11 @@ import java.util.function.Predicate;
 /**
  * Observes and interacts with a simulated player's inventory and open container.
  *
- * <p>Bedrock players, which use the CloudburstMC Protocol library, observe their inventory but cannot yet select a
- * hotbar slot or click: a Bedrock client sends its own copy of the item stacks involved, which the library's session
- * does not keep. Their snapshots have the state ID {@code 0}, and their own inventory appears as container
- * {@code 0} in the slot layout Java Edition players see.</p>
+ * <p>Bedrock players, which use the CloudburstMC Protocol library, observe their inventory, select hotbar slots and
+ * click like Java Edition players. Their session keeps the item stacks the server sent, because a Bedrock client
+ * sends its own copy of the stacks a selection or click involves. Their snapshots have the state ID {@code 0}, and
+ * their own inventory appears as container {@code 0} in the slot layout Java Edition players see. The clicks a
+ * Bedrock player refuses are listed on {@link #click(int, InventoryClick, int)}.</p>
  */
 public interface Inventory extends PlayerCapability {
 	/**
