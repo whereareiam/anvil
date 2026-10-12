@@ -1,0 +1,13 @@
+<html>
+<body>
+Reports a Gradle build script that applies the <code>me.whereareiam.anvil</code> or <code>me.whereareiam.anvil.junit</code>
+plugin without accepting the Minecraft EULA.
+<p>
+Anvil refuses to start servers until the build accepts the EULA, in Gradle tasks and in the IDE alike. The quick fix
+adds <code>acceptEula()</code> to the script's <code>anvil</code> block, or adds the block.
+</p>
+<pre><code>anvil {
+    acceptEula()
+}</code></pre>
+</body>
+</html>

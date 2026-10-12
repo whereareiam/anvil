@@ -81,6 +81,25 @@ environment tab shows the scenario's servers and proxies once its runtime has be
 
 Abstract classes and classes outside an imported Anvil source get no icon.
 
+## Catch mistakes while editing
+
+The editor checks scenario definitions written in Java before you run them:
+
+| Check | Reported when | What to do |
+|---|---|---|
+| **Latest build in an automated scenario** | `Distribution.remote(version, "latest")` in a method that does not call `manual(true)` on its scenario | Pin a build, or mark the scenario manual |
+| **Version unknown to the platform provider** | A `remote` or `pinned` version that the server's or proxy's platform provider does not list | Fix the version, or use one the project's Anvil release knows |
+| **Minecraft EULA not accepted** | A `build.gradle.kts` or `build.gradle` applies `me.whereareiam.anvil` or `me.whereareiam.anvil.junit` without `acceptEula()` | Press Alt+Enter and choose **Accept the Minecraft EULA** |
+
+Process names complete as you type: inside the quotes of `entrypoint("…")`, or of a proxy's `server("…")`
+and `defaultServer("…")`, press Ctrl+Space to list the servers and proxies the file names. Ctrl+click
+a name to jump to the process that declares it.
+
+These checks read only values written as literals or constants. Values computed at run time, such as
+a helper method's parameters, are left to the validation that runs before the processes start. The
+known versions come from the platform provider on the project's classpath, so they match the Anvil
+release the project uses. Turn the checks on or off under **Settings | Editor | Inspections | Anvil**.
+
 ## Save a run configuration
 
 Running from the tool window does not create a run configuration. Choose **Save as Run Configuration**
