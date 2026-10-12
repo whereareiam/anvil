@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 
 /**
@@ -34,10 +35,15 @@ import java.util.function.Consumer;
  * worker's reason, such as the member missing from the loaded release, or that the library's worker does not
  * install it at all; one warning line per player lists what was skipped. A player without a native worker,
  * such as one whose library works only through its own services, is composed with every provider.</p>
+ *
+ * <p>A protocol-backed provider whose {@link ProtocolPlayerCapabilityProvider#supportedLibraries() supported
+ * libraries} exclude the runtime's library is not discovered. Requesting its capability from such a player
+ * reports which libraries provide it, unless another discovered provider contributes the capability.</p>
  */
 public final class PlayerCapabilityRuntime {
 	private final CapabilityRuntime<PlayerCapability, PlayerCapabilityContext> runtime;
 	private final Set<String> protocolProviders;
+	private final Map<Class<? extends PlayerCapability>, String> unsupported;
 
 	/**
 	 * Discovers every provider from the current thread context class loader.
@@ -100,8 +106,34 @@ public final class PlayerCapabilityRuntime {
 	) {
 		List<PlayerCapabilityProvider<?>> combined = loadProviders(loader);
 		combined.addAll(additional);
+		List<ProtocolPlayerCapabilityProvider<?>> supported = new ArrayList<>();
+		List<ProtocolPlayerCapabilityProvider<?>> excluded = new ArrayList<>();
+		for (ProtocolPlayerCapabilityProvider<?> provider : ServiceLoader.load(ProtocolPlayerCapabilityProvider.class, loader))
+			(supports(provider, libraryId) ? supported : excluded).add(provider);
 
-		return new PlayerCapabilityRuntime(combined, loadProtocolProviders(loader, libraryId));
+		return new PlayerCapabilityRuntime(combined, supported, unsupported(libraryId, excluded));
+	}
+
+	private static boolean supports(ProtocolPlayerCapabilityProvider<?> provider, @Nullable String libraryId) {
+		return libraryId == null || provider.supportedLibraries().isEmpty() || provider.supportedLibraries().contains(libraryId);
+	}
+
+	/**
+	 * Explains, for each capability only excluded providers contribute, which libraries provide it instead.
+	 */
+	private static Map<Class<? extends PlayerCapability>, String> unsupported(
+			@Nullable String libraryId,
+			List<ProtocolPlayerCapabilityProvider<?>> excluded
+	) {
+		Map<Class<? extends PlayerCapability>, Set<String>> libraries = new LinkedHashMap<>();
+		for (ProtocolPlayerCapabilityProvider<?> provider : excluded)
+			libraries.computeIfAbsent(provider.capability(), ignored -> new TreeSet<>()).addAll(provider.supportedLibraries());
+
+		Map<Class<? extends PlayerCapability>, String> reasons = new LinkedHashMap<>();
+		libraries.forEach((type, supporting) -> reasons.put(type, "no provider supports protocol library '" + libraryId
+				+ "' that the player uses; it is provided only for the protocol libraries " + supporting));
+
+		return reasons;
 	}
 
 	private static ClassLoader contextLoader() {
@@ -113,19 +145,6 @@ public final class PlayerCapabilityRuntime {
 		List<PlayerCapabilityProvider<?>> providers = new ArrayList<>();
 		for (PlayerCapabilityProvider<?> provider : ServiceLoader.load(PlayerCapabilityProvider.class, loader))
 			providers.add(provider);
-
-		return providers;
-	}
-
-	private static @NotNull List<ProtocolPlayerCapabilityProvider<?>> loadProtocolProviders(
-			@NotNull ClassLoader loader,
-			@Nullable String libraryId
-	) {
-		List<ProtocolPlayerCapabilityProvider<?>> providers = new ArrayList<>();
-		for (ProtocolPlayerCapabilityProvider<?> provider : ServiceLoader.load(ProtocolPlayerCapabilityProvider.class, loader))
-			if (libraryId == null || provider.supportedLibraries().isEmpty()
-					|| provider.supportedLibraries().contains(libraryId))
-				providers.add(provider);
 
 		return providers;
 	}
@@ -150,6 +169,14 @@ public final class PlayerCapabilityRuntime {
 			@NotNull Collection<? extends PlayerCapabilityProvider<?>> providers,
 			@NotNull Collection<? extends ProtocolPlayerCapabilityProvider<?>> protocolProviders
 	) {
+		this(providers, protocolProviders, Map.of());
+	}
+
+	private PlayerCapabilityRuntime(
+			Collection<? extends PlayerCapabilityProvider<?>> providers,
+			Collection<? extends ProtocolPlayerCapabilityProvider<?>> protocolProviders,
+			Map<Class<? extends PlayerCapability>, String> unsupported
+	) {
 		List<PlayerCapabilityProvider<?>> combined = new ArrayList<>(providers);
 		Set<String> protocol = new LinkedHashSet<>();
 		for (ProtocolPlayerCapabilityProvider<?> provider : protocolProviders) {
@@ -159,6 +186,7 @@ public final class PlayerCapabilityRuntime {
 
 		this.runtime = new CapabilityRuntime<>(PlayerCapability.class, combined);
 		this.protocolProviders = Set.copyOf(protocol);
+		this.unsupported = Map.copyOf(unsupported);
 	}
 
 	/**
@@ -188,7 +216,7 @@ public final class PlayerCapabilityRuntime {
 			@NotNull PlayerObservation observation,
 			@NotNull Consumer<SimulatedPlayer> onDestroyed
 	) {
-		return new CapabilitySimulatedPlayer(player, runtime, unavailable(player), observation, onDestroyed);
+		return new CapabilitySimulatedPlayer(player, runtime, unavailable(player), unsupported, observation, onDestroyed);
 	}
 
 	private Map<String, String> unavailable(CapabilityPlayer player) {

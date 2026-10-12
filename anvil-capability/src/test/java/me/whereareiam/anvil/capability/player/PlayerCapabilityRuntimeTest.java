@@ -117,6 +117,41 @@ class PlayerCapabilityRuntimeTest {
 	}
 
 	@Test
+	void reportsACapabilityProvidedOnlyForOtherLibrariesWithTheLibrariesThatProvideIt(@TempDir Path directory) throws Exception {
+		Path service = directory.resolve("META-INF/services/" + ProtocolPlayerCapabilityProvider.class.getName());
+		Files.createDirectories(service.getParent());
+		Files.writeString(service, OtherLibraryProvider.class.getName());
+		ClassLoader original = Thread.currentThread().getContextClassLoader();
+		try (var loader = new URLClassLoader(new java.net.URL[]{directory.toUri().toURL()}, original)) {
+			SimulatedPlayer player = PlayerCapabilityRuntime.discover(loader, "stub", List.of())
+					.compose(new StubPlayer(), observation(), ignored -> { });
+
+			assertFalse(player.hasCapability(DependentCapability.class));
+			var missing = assertThrows(CapabilityUnavailableException.class, () -> player.capability(DependentCapability.class));
+			assertEquals("Player 'Alice' has no capability " + DependentCapability.class.getName() + ": no provider supports "
+					+ "protocol library 'stub' that the player uses; it is provided only for the protocol libraries [other-library]",
+					missing.getMessage());
+			player.destroy();
+
+			SimulatedPlayer supported = PlayerCapabilityRuntime.discover(loader, "other-library", List.of())
+					.compose(new StubPlayer(), observation(), ignored -> { });
+			assertEquals("other-library", supported.capability(DependentCapability.class).value());
+			supported.destroy();
+		}
+	}
+
+	public static final class OtherLibraryProvider implements ProtocolPlayerCapabilityProvider<DependentCapability> {
+		public @NotNull Set<String> supportedLibraries() {
+			return Set.of("other-library");
+		}
+		public @NotNull CapabilityDescriptor descriptor() {
+			return CapabilityDescriptor.builder().id("other-library-only").build();
+		}
+		public @NotNull Class<DependentCapability> capability() { return DependentCapability.class; }
+		public @NotNull DependentCapability create(@NotNull ProtocolPlayerCapabilityContext context) { return () -> "other-library"; }
+	}
+
+	@Test
 	void skipsProtocolFactoriesTheWorkerDidNotInstallTogetherWithTheirDependents() {
 		AtomicInteger created = new AtomicInteger();
 		var installed = provider("installed", BaseCapability.class, Set.of(), context -> {
