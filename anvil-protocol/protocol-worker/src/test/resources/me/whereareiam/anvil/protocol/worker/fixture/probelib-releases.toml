@@ -1,0 +1,27 @@
+# Release data of the probe library, a protocol library that exists only in the worker's tests.
+
+[[release]]
+version = "1.20.4-1"
+module = "example.probe:protocol:1.20.4-1"
+protocol = 765
+minecraft = ["1.20.3", "1.20.4"]
+verified = ["1.20.4"]
+java = 17
+
+[[release.artifact]]
+module = "example.probe:protocol:1.20.4-1"
+url = "https://repository.example/example/probe/protocol/1.20.4-1/protocol-1.20.4-1.jar"
+sha256 = ""
+
+[[release]]
+version = "1.21.11-1"
+module = "example.probe:protocol:1.21.11-1"
+protocol = 774
+minecraft = ["1.21.11"]
+verified = ["1.21.11"]
+java = 21
+
+[[release.artifact]]
+module = "example.probe:protocol:1.21.11-1"
+url = "https://repository.example/example/probe/protocol/1.21.11-1/protocol-1.21.11-1.jar"
+sha256 = "00d9ae3464dac8dcfe861303d728cb3361a9794d8ad0455aa340229ee83ee709"

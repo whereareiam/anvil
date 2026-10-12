@@ -21,6 +21,7 @@ dependencies {
 	implementation(libs.slf4j.api)
 
 	embedded(projects.anvilProtocol.protocolMcprotocol.mcprotocolCommon) { isTransitive = false }
+	embedded(projects.anvilProtocol.protocolWorker) { isTransitive = false }
 
 	runtimeOnly(projects.anvilProtocol.protocolMcprotocol.mcprotocolClient)
 	runtimeOnly(libs.slf4j.simple)

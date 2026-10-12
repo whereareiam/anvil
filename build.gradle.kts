@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.toolkit.architecture)
     alias(libs.plugins.toolkit.versioning)
     alias(libs.plugins.toolkit.publish.maven) apply false
+    id("architecture-shared-implementations")
 }
 
 val projectVersion = extensions.getByType<ToolkitVersioningExtension>().apply {
