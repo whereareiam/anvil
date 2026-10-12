@@ -29,13 +29,14 @@ public final class ModuleImportExtension extends AbstractProjectResolverExtensio
 				.findFirst()
 				.orElse(null);
 
-		boolean scenarioTask = project.getTasks().stream()
+		// Anvil 0.0.1 ran scenarios through anvilScenario and had no preparation task for the IDE.
+		boolean legacyScenarioTask = project.getTasks().stream()
 				.anyMatch(task -> "anvilScenario".equals(task.getName()));
 		String buildRoot = project.getProjectIdentifier().getBuildIdentifier().getRootDir().getAbsolutePath();
 
 		return ImportedModule.builder()
 				.enabled(preparation != null)
-				.incompatible(scenarioTask && preparation == null)
+				.incompatible(legacyScenarioTask && preparation == null)
 				.moduleDirectory(project.getProjectDirectory().getAbsolutePath())
 				.buildRootDirectory(buildRoot)
 				.projectPath(project.getPath())

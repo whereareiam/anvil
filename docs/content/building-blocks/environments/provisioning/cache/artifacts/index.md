@@ -41,7 +41,7 @@ tasks.named<Test>("anvilTest") {
 
 Run the prepared test with `./gradlew anvilTest --tests 'com.example.test.PlayerJoinTest'`, replacing
 the class name with your own. The settings apply to the **Anvil test JVM**. They do not configure the
-managed server JVM or the foreground `anvilScenario` task. For other entry points, use the
+managed server JVM or the foreground `anvilRun` task. For other entry points, use the
 [engine options reference](../../../configuration/engine/index.md).
 
 The example requires already available software. If an acquisition input or its metadata is missing,

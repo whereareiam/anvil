@@ -89,7 +89,7 @@ configurations.configureEach {
 	}
 }
 
-// Scenario definitions live in src/anvil, where the IDE and anvilScenario discover them; the system
+// Scenario definitions live in src/anvil, where the IDE and anvilScenarios discover them; the system
 // tests drive the same definitions.
 sourceSets.test {
 	val scenarios = sourceSets["anvil"].output

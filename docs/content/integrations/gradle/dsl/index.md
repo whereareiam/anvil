@@ -38,6 +38,7 @@ running processes or a JVM heap setting.
 | `engine.parallelism` | Concurrent independent preparation/start operations | Engine detects from CPU count |
 | `engine.startupMemoryMegabytes` | Combined declared heaps permitted to start together | Engine detects from host memory |
 | `engine.downloadParallelism` | Concurrent artifact transfers | Engine detects from CPU count |
+| `suites { register(name) { includeTags(...) } }` | With the JUnit plugin: run the tests carrying those JUnit tags in their own task, `anvil<Name>Test`, instead of `anvilTest`; see [suites](../testing/index.md#split-the-live-tests-into-suites) | No suites |
 | `module(artifact)` | Coordinate of one Anvil module at the plugin's version, such as `module("protocol-mcprotocol")` | Not applicable |
 
 JUnit, foreground runs, and IDE preparation use the same lazy mapping of these settings. Task
@@ -48,7 +49,8 @@ conventions take precedence over those JVM properties; a configured protocol lib
 policy, and concurrency values also take precedence. An `-Danvil.protocolReleases.<library>=<file>`
 property replaces the DSL file for that library. Unrelated JVM properties are not forwarded.
 
-Additional JUnit test JVM properties belong in `tasks.named<Test>("anvilTest")`; see
+Additional JUnit test JVM properties belong in `tasks.withType<AnvilTest>().configureEach`, which reaches
+`anvilTest` and every [suite](../testing/index.md#split-the-live-tests-into-suites); see
 [Engine options](../../../building-blocks/environments/configuration/engine/index.md) for that distinction.
 
 ## Register artifacts

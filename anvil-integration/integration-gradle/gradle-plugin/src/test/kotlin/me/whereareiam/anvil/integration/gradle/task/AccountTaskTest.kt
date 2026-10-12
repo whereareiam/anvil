@@ -16,18 +16,20 @@ class AccountTaskTest {
     private val repository = Path.of(requireNotNull(System.getProperty("anvil.test.repository"))).toUri()
 
     @Test
-    fun `requires exactly one account operation`() {
+    fun `requires an account`() {
         project()
 
-        val result = runner("anvilAccount").buildAndFail()
-        assertTrue(result.output.contains("Select exactly one of --login=<account> or --logout=<account>"), result.output)
+        for (task in listOf("anvilLogin", "anvilLogout")) {
+            val result = runner(task).buildAndFail()
+            assertTrue(result.output.contains("Select an account with --account=<id>"), result.output)
+        }
     }
 
     @Test
     fun `signs out through the sole library in the configured account directory`() {
         project()
 
-        val result = runner("anvilAccount", "--logout=ci-player").build()
+        val result = runner("anvilLogout", "--account=ci-player").build()
         assertTrue(result.output.contains("Authentication account 'ci-player' did not exist."), result.output)
     }
 

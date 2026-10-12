@@ -7,24 +7,24 @@ Engine options configure Anvil itself. A managed server's JVM arguments configur
 process separately. For a JUnit run, put additional engine properties on the test JVM:
 
 ```kotlin
-import org.gradle.api.tasks.testing.Test
+import me.whereareiam.anvil.integration.junit.gradle.AnvilTest
 
-tasks.named<Test>("anvilTest") {
+tasks.withType<AnvilTest>().configureEach {
 	systemProperty("anvil.stopTimeout", "PT30S")
 	systemProperty("anvil.java.download", "false")
 }
 ```
 
 This fragment belongs in the consumer `build.gradle.kts` after applying the JUnit
-plugin. It allows thirty seconds for graceful process shutdown and requires each process's planned
-Java installation to be available without a download. It does not change `anvilScenario`.
+plugin. It configures `anvilTest` and the task of every [suite](../../../../integrations/gradle/testing/index.md#split-the-live-tests-into-suites). It allows thirty seconds for graceful process shutdown and requires each process's planned
+Java installation to be available without a download. It does not change `anvilRun`.
 
 ## Which entry point reads what?
 
 | Entry point | Configuration path |
 |---|---|
 | JUnit extension | Decodes properties in the test JVM. The Gradle integration supplies shared DSL settings and artifact paths. |
-| Gradle `anvilScenario` | Runs in a separate JVM with the declared project properties. The consumer integration supplies supported Gradle JVM properties, DSL settings, and artifacts. |
+| Gradle `anvilScenarios` and `anvilRun` | Runs in a separate JVM with the declared project properties. The consumer integration supplies supported Gradle JVM properties, DSL settings, and artifacts. |
 | IDE session | Uses the prepared project runtime and its explicit launch properties; it does not inherit a JUnit test JVM's properties. |
 | Direct engine/runner embedding | Uses the supplied `EngineOptions`. It does not implicitly merge system properties. |
 

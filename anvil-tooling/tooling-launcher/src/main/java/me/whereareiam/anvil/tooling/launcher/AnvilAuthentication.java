@@ -18,7 +18,7 @@ import java.util.Optional;
 /**
  * Signs a stored account in or out through a protocol library.
  * <p>
- * Shared by the IntelliJ account manager and the Gradle {@code anvilAccount} task. Options:
+ * Shared by the IntelliJ account manager and the Gradle {@code anvilLogin} and {@code anvilLogout} tasks. Options:
  * <pre>{@code
  * --account-id <id>      account to store or remove (required)
  * --accounts-dir <path>  account directory; defaults to anvil.accountsDir, then ~/.anvil/accounts

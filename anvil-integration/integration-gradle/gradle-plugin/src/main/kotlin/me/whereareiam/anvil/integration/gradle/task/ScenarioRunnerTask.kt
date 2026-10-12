@@ -6,24 +6,22 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
-import org.gradle.api.tasks.Classpath
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Nested
+import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.jvm.toolchain.JavaLauncher
 import org.gradle.process.ExecOperations
-import javax.inject.Inject
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.TaskAction
-import org.gradle.api.tasks.options.Option
 import org.gradle.work.DisableCachingByDefault
-
+import javax.inject.Inject
 
 /**
- * Lists discovered scenarios or runs one foreground scenario.
+ * Runs the scenario runner over the project's scenario definitions in a separate JVM.
+ *
+ * [ScenarioListTask] lists the definitions and [ScenarioRunTask] starts one of them in the foreground.
  */
 @DisableCachingByDefault(because = "The task intentionally starts long-running external server processes")
 abstract class ScenarioRunnerTask : DefaultTask() {
@@ -64,64 +62,9 @@ abstract class ScenarioRunnerTask : DefaultTask() {
     protected abstract val processes: ExecOperations
 
     /**
-     * Scenario selected at the command line.
+     * Runs the scenario runner with the given command-line arguments.
      */
-    @get:Input
-    @get:Optional
-    abstract val scenario: Property<String>
-
-    /** Whether to list discovered scenarios instead of starting one. */
-    @get:Input
-    @get:Optional
-    abstract val list: Property<Boolean>
-
-    /** Optional definition class selected at the command line. */
-    @get:Input
-    @get:Optional
-    abstract val definition: Property<String>
-
-    /**
-     * Selects a scenario with --scenario=name.
-     */
-    @Option(option = "scenario", description = "Named scenario to start")
-    fun selectScenario(value: String) {
-        scenario.set(value)
-    }
-
-    /** Lists discovered scenarios with --list. */
-    @Option(option = "list", description = "Lists discovered scenarios")
-    fun selectList(value: Boolean) {
-        list.set(value)
-    }
-
-    /** Selects a definition class with --definition=class.name. */
-    @Option(option = "definition", description = "Scenario definition class")
-    fun selectDefinition(value: String) {
-        definition.set(value)
-    }
-
-    /**
-     * Lists or starts scenarios using the project runtime classpath.
-     */
-    @TaskAction
-    fun runScenario() {
-        if (list.orNull == true) {
-            if (scenario.isPresent || definition.isPresent)
-                error("Select --list or exactly one of --scenario=<name> or --definition=<class>")
-            invokeRunner(listOf("--list"))
-            return
-        }
-
-        if (scenario.isPresent == definition.isPresent)
-            error("Select exactly one of --scenario=<name> or --definition=<class>")
-
-        val arguments = mutableListOf<String>()
-        scenario.orNull?.let { arguments += "--scenario=$it" }
-        definition.orNull?.let { arguments += "--definition=$it" }
-        invokeRunner(arguments)
-    }
-
-    private fun invokeRunner(arguments: List<String>) {
+    protected fun invokeRunner(arguments: List<String>) {
         val index = temporaryDir.toPath().resolve("scenario-index")
         val definitions = ScenarioDefinitionScanner.scan(scenarioClasses, scenarioResources)
 
