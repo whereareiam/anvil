@@ -2,10 +2,11 @@
 
 ## Purpose and scope
 
-Anvil is a Java 21 testing framework for local Minecraft Java Edition processes and native-protocol
-players. Preserve reproducibility, protocol fidelity, complete cleanup, and useful failure diagnostics.
-NeoForge is the supported mod loader. Kubernetes, SSH/hosted orchestration, Fabric, Sponge, Bedrock, rendering,
-pathfinding, autonomous AI, and crafting automation are outside the current project scope.
+Anvil is a Java 21 testing framework for local Minecraft Java Edition and Bedrock Edition processes and
+native-protocol players. Preserve reproducibility, protocol fidelity, complete cleanup, and useful failure
+diagnostics. NeoForge is the supported mod loader and Lumi the supported Bedrock server. Kubernetes, SSH/hosted
+orchestration, Fabric, Sponge, rendering, pathfinding, autonomous AI, and crafting automation are outside the
+current project scope.
 
 ## Working in this repository
 
@@ -223,7 +224,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 - Processes run on LTS releases only (11, 17, 21, 25, then every fourth); Java 8 is not one of them.
   Each provider owns `<platform>-versions.toml` (`edition`, Java rows, `[agent] minimumJava`, verified and known
   versions) and exposes it through `PlatformProvider.versionData()`; platform-planning reads it, so
-  platform-api carries no parser. The agent minimum raises the effective minimum and the default LTS;
+  platform-api carries no parser. A table named after the platform ID holds data only the provider reads;
+  planning skips it and refuses every other unknown key. The agent minimum raises the effective minimum and the default LTS;
   a default it pushes above the row maximum is refused. A maximum is refused unless the row names a
   bypass property; planning then adds `-D<property>=true` before provider defaults for explicit requests
   only, never for the default. Version and Java assessments follow `SupportLevel`/`SupportPolicy` and
@@ -336,6 +338,17 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `neoforge-versions.toml`; it uses only names that later releases keep, so one JAR loads on every supported
   release. NeoForge servers load no Bukkit plugin: their live scenarios carry no fixture, and
   `NeoForgeServerSystemTest` drives them with vanilla commands.
+- Lumi, a Bedrock Edition server, selects `Distribution.remote(bedrockVersion, lumiRelease)`, with versions named
+  as Lumi names them (`1.26.50`). `lumi-versions.toml` declares the `bedrock` edition and, in its provider-owned
+  `[lumi]` table, the protocol of each version and the versions each release accepts; the provider refuses an
+  unlisted release, a release that does not accept the version, and `latest`. The JAR `com.koshakmine:Lumi` comes
+  from `https://repo.lumi.su/releases`, verified against the repository's SHA-256 or an explicit pin. The game
+  listener is UDP. `settings.yml` is written structurally before each start with `min-protocol` = `max-protocol` =
+  the version's protocol and `xbox-auth` = online mode; Lumi has no identity forwarding and no Yggdrasil, so
+  its only forwarding mode is `NONE` and `sessionServer` is refused. The Lumi agent is a Lumi plugin compiled
+  against the release in the catalog; it relocates its embedded Jackson because Lumi ships an older one and
+  loads plugin classes parent first. Lumi servers load no Bukkit plugin: their live scenarios carry no
+  fixture, and `LumiServerSystemTest` drives them through the console and the agent.
 - Local/named server artifacts declare `minecraftVersion`. Native clients must match every reachable
   server. Preserve explicit client overrides and deterministic native selection; no implicit ViaVersion fallback.
 - Prepare declared assets and caches before provider configuration. Runtime ports, forwarding,
@@ -522,7 +535,7 @@ category of its label. Readers are developers who test with Anvil or extend it.
 - The draft sorts by the exact area, so spell an area exactly as listed: `Engine`, `Environments`,
   `Workspaces`, `Execution`, `Processes`, `Platforms`, `Players`, `Capabilities`, `Protocol`, `Yggdrasil`,
   `JUnit`, `Gradle`, `IntelliJ`, `Launcher`. A change to one platform only may use its name: `Paper`,
-  `Spigot`, `NeoForge`, `Velocity`, `BungeeCord`. Add an area only for something readers recognise by that
+  `Spigot`, `NeoForge`, `Lumi`, `Velocity`, `BungeeCord`. Add an area only for something readers recognise by that
   name, such as a new platform, protocol library or integration, and add it to this list in the same
   pull request. Never use module or package names such as `Architecture` or `Integration`.
 - A `skip-changelog` pull request still needs a title in that format; `CI`, `Build`, `Docs` and `Tests`

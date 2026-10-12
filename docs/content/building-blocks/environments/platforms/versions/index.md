@@ -42,14 +42,29 @@ it is refused with the reason.
 | Paper | `1.16.5` and newer | `1.18.2`, `1.21.1`, `1.21.11`, and `26.1.2` |
 | Spigot | `1.16.5` and newer | `1.21.11` and `26.1.2` |
 | NeoForge | `1.21.1` and newer | `1.21.1`, `1.21.11`, and `26.1.2` |
+| Lumi | Bedrock `1.20.0` to `1.26.50`, as listed [below](#bedrock-edition) | `1.26.50` |
 | Velocity | `3.3.0` and newer | `3.5.1` |
 | BungeeCord | Every build, assessed by Java range only | None; the matrix runs build `2085` |
 
 Each platform provider ships its Minecraft edition, its known versions, its Java rows, its agent's
-minimum Java, and the combinations Anvil's live matrix verifies as data. Every platform in the table
-declares the `java` edition. Planning picks one exact LTS release per process.
+minimum Java, and the combinations Anvil's live matrix verifies as data. Lumi declares the `bedrock`
+edition and every other platform in the table the `java` edition. Planning picks one exact LTS release
+per process.
 See [Java per platform version](../../provisioning/java/index.md#java-per-platform-version) for the
 rows, the defaults, and the Java version of each verified combination.
+
+### Bedrock Edition
+
+Lumi serves Bedrock Edition. Lumi names every Bedrock version `1.x.y`, so Bedrock `26.10` is `1.26.10`,
+and Anvil follows that naming. Each version below is the first of its protocol: a patch release that
+speaks the same protocol, such as `1.20.1`, is declared as the version that names it, `1.20.0`. A Lumi
+server allows exactly the protocol of its version.
+
+| Lumi release | Bedrock versions (protocol) | Verified by the live matrix |
+|---|---|---|
+| `1.6.9` | `1.20.0` (589), `1.20.10` (594), `1.20.30` (618), `1.20.40` (622), `1.20.50` (630), `1.20.60` (649), `1.20.70` (662), `1.20.80` (671), `1.21.0` (685), `1.21.2` (686), `1.21.20` (712), `1.21.30` (729), `1.21.40` (748), `1.21.50` (766), `1.21.60` (776), `1.21.70` (786), `1.21.80` (800), `1.21.90` (818), `1.21.93` (819), `1.21.100` (827), `1.21.111` (844), `1.21.120` (859), `1.21.124` (860), `1.21.130` (898), `1.26.0` (924), `1.26.10` (944), `1.26.20` (975), `1.26.30` (1001), `1.26.40` (2168), `1.26.45` (2170), `1.26.50` (2193) | `1.26.50` on Java 21 |
+
+Anvil cannot connect simulated players to a Bedrock server yet; see the [Lumi guide](../servers/lumi/index.md).
 
 ## Support levels and policies
 
@@ -193,6 +208,8 @@ current versions also run directly on Spigot and behind Velocity and BungeeCord,
 | `1.21.1` | `133` | Not in the live matrix | `21.1.256` |
 | `1.21.11` | `132` | [Pinned GetBukkit JAR](../servers/spigot/index.md#recorded-content-pins) | `21.11.45` |
 | `26.1.2` | `74` | [Pinned GetBukkit JAR](../servers/spigot/index.md#recorded-content-pins) | `26.1.2.114` |
+
+The live matrix also runs Lumi `1.6.9` on Bedrock `1.26.50` directly, through its console and agent.
 
 The proxy selections in that matrix are Velocity `3.5.1` build `615` and BungeeCord Jenkins build
 `2085`. These are the repository's pinned compatibility selections, not moving recommendations to use

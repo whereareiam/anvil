@@ -13,18 +13,27 @@ class PlatformPluginTest {
 
     @Test
     fun `paper plugin adds platform dependencies to the anvil source set`() {
+        assertPlatformDependencies("paper", "platform-paper-provider", "platform-bukkit-agent")
+    }
+
+    @Test
+    fun `lumi plugin adds platform dependencies to the anvil source set`() {
+        assertPlatformDependencies("lumi", "platform-lumi-provider", "platform-lumi-agent")
+    }
+
+    private fun assertPlatformDependencies(platform: String, provider: String, agent: String) {
         projectDirectory.resolve("settings.gradle.kts").writeText("rootProject.name = \"platform-fixture\"")
         projectDirectory.resolve("build.gradle.kts").writeText("""
             plugins {
-                id("me.whereareiam.anvil.platform.paper")
+                id("me.whereareiam.anvil.platform.$platform")
             }
             check(configurations.names.none { it in setOf("anvilPlatforms", "anvilUnits") })
             tasks.register("verify") {
                 doLast {
                     val dependencies = configurations.getByName("anvilImplementation").allDependencies
                         .map { it.name }
-                    check("platform-paper-provider" in dependencies)
-                    check("platform-bukkit-agent" in dependencies)
+                    check("$provider" in dependencies)
+                    check("$agent" in dependencies)
                 }
             }
         """.trimIndent())

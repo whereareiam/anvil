@@ -10,7 +10,7 @@ content checksum in automated scenarios so another machine resolves the same int
 
 | Source | Declaration | Required context |
 |---|---|---|
-| Remote build | `Distribution.remote(version, build)` | Provider-specific immutable build selector, such as a Paper build or a NeoForge release |
+| Remote build | `Distribution.remote(version, build)` | Provider-specific immutable build selector, such as a Paper build, a NeoForge release or a Lumi release |
 | Remote content | `Distribution.pinned(version, sha256)` | A provider supporting checksums, including Spigot |
 | Local JAR | `Distribution.local(path)` | Existing executable file on the Anvil host; for NeoForge, its installer JAR |
 | Named artifact | `Distribution.artifact(name)` | Artifact registered in Gradle or `EngineOptions` |

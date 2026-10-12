@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.testkit.tests.server.scenario;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
@@ -36,7 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Keeps the verified data of the bundled platforms and of MCProtocolLib equal to the live matrix these
- * scenarios define: a combination is VERIFIED exactly when a matrix scenario runs it. It also keeps one direct
+ * scenarios define: a combination is VERIFIED exactly when a matrix scenario runs it. MCProtocolLib is compared
+ * with the servers of the editions its releases implement only. It also keeps one direct
  * Paper scenario, which player capability tests run their full journey on, for every MCProtocolLib release. The
  * test plans the scenarios without starting any process.
  */
@@ -68,13 +70,19 @@ class CompatibilityScenarioFactoryTest {
 	}
 
 	@Test
-	void mcprotocolVerifiedVersionsAreExactlyTheMatrixServerVersions() {
+	void mcprotocolVerifiedVersionsAreExactlyTheMatrixVersionsOfServersOfItsEditions() {
+		List<ProtocolRelease> releases = mcprotocolReleases();
+		Set<MinecraftEdition> editions = releases.stream()
+				.map(ProtocolRelease::getEdition)
+				.collect(Collectors.toSet());
 		Set<MinecraftVersion> servers = CompatibilityScenarioFactory.scenarios().stream()
-				.flatMap(scenario -> scenario.getServers().stream())
-				.map(MinecraftServer::nativeVersion)
+				.flatMap(scenario -> planner().plan(scenario).getProcesses().values().stream())
+				.filter(plan -> plan.getDeclaration() instanceof MinecraftServer)
+				.filter(plan -> editions.contains(plan.getEdition()))
+				.map(plan -> ((MinecraftServer) plan.getDeclaration()).nativeVersion())
 				.collect(Collectors.toCollection(TreeSet::new));
 
-		Set<MinecraftVersion> verified = mcprotocolReleases().stream()
+		Set<MinecraftVersion> verified = releases.stream()
 				.map(ProtocolRelease::getVerifiedVersions)
 				.flatMap(Set::stream)
 				.collect(Collectors.toCollection(TreeSet::new));

@@ -34,6 +34,8 @@ velocity = "3.5.1"
 # The oldest NeoForge release the NeoForge agent compiles against.
 neoforge = "21.1.256"
 bungeecord = "26.1-R0.1-SNAPSHOT"
+# The Lumi release the Lumi agent compiles against.
+lumi = "1.6.9"
 
 # minecraft protocol
 mcprotocol = "26.1-SNAPSHOT"
@@ -75,6 +77,7 @@ bukkit-spigot = { group = "org.spigotmc", name = "spigot-api", version.ref = "bu
 bukkit-paper = { group = "com.destroystokyo.paper", name = "paper-api", version.ref = "bukkit" }
 velocity = { group = "com.velocitypowered", name = "velocity-api", version.ref = "velocity" }
 bungeecord = { group = "net.md-5", name = "bungeecord-api", version.ref = "bungeecord" }
+lumi = { group = "com.koshakmine", name = "Lumi", version.ref = "lumi" }
 
 # minecraft protocol
 mcprotocol = { group = "org.geysermc.mcprotocollib", name = "protocol", version.ref = "mcprotocol" }

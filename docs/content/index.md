@@ -73,13 +73,14 @@ assume you already have a working consumer environment.
 Anvil targets Java 21. Each managed process runs on the LTS Java release its platform version
 prefers; the [Java guide](./building-blocks/environments/provisioning/java/index.md#java-per-platform-version)
 lists those versions and explains selection and provisioning.
-The bundled platforms are Paper, Spigot, and NeoForge servers, plus Velocity and BungeeCord proxies.
+The bundled platforms are Paper, Spigot, and NeoForge Java Edition servers, the Lumi Bedrock Edition
+server, plus Velocity and BungeeCord proxies.
 MCProtocolLib is the bundled protocol library for native players, from Minecraft 1.18.2 to 26.1.2.
 See the [version and route matrix](./building-blocks/environments/platforms/versions/index.md) for
 supported versions and tested combinations.
 
 Local process execution is the standard Gradle workflow. A Docker execution provider is also
 available with explicit image configuration; read its [setup and limits](./building-blocks/environments/configuration/execution/index.md)
-before selecting it. Kubernetes, SSH/hosted orchestration, Fabric, Sponge, and Bedrock are outside
+before selecting it. Kubernetes, SSH/hosted orchestration, Fabric, and Sponge are outside
 the current scope. Protocol players do not render the game or provide autonomous AI, pathfinding,
 or crafting automation.

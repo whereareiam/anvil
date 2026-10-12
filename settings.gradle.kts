@@ -76,6 +76,12 @@ dependencyResolutionManagement {
         maven("https://oss.sonatype.org/content/repositories/snapshots/")
         maven("https://repo.opencollab.dev/main/")
         maven("https://repo.opencollab.dev/maven-snapshots/")
+        // The Lumi agent compiles against the Lumi server published here.
+        maven("https://repo.lumi.su/releases") {
+            content {
+                includeGroup("com.koshakmine")
+            }
+        }
         // The dependencies of the MCProtocolLib release for 1.18.2 are published only here.
         maven("https://jitpack.io") {
             content {

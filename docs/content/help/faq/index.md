@@ -30,7 +30,8 @@ Players speak Minecraft 1.18.2, 1.21.1, 1.21.11, and 26.1.2 through
 MCProtocolLib, plus the other versions each release lists. Anvil's live matrix runs each of those
 four versions on Paper, 1.21.1 and newer on NeoForge, and 1.21.11 and 26.1.2 also on Spigot and behind
 Velocity and BungeeCord. A
-newer version can run with your own release data. See
+newer version can run with your own release data. Lumi runs Bedrock Edition servers from 1.20.0 to
+1.26.50, and the live matrix runs Bedrock 1.26.50; Anvil cannot connect simulated players to them yet. See
 [Versions and compatibility](../../building-blocks/environments/platforms/versions/index.md).
 
 ## Can one player visit servers on different native versions?
