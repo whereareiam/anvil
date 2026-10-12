@@ -99,6 +99,31 @@ Call `AuthenticatedPlayers.connect(anvil)` from a local test in the same package
 the account authenticated at the target. Check [identity and server observations](../capabilities/server/index.md)
 for assertions about what the platform sees; the authenticated identity is controlled by the account.
 
+## Sign in a Bedrock player with Xbox
+
+A Bedrock Edition player signs in with an Xbox account stored by CloudburstMC Protocol. Sign it in once,
+with the IntelliJ **Accounts** action or from Gradle:
+
+```shell
+./gradlew anvilLogin --account=bedrock-main --library=cloudburst
+```
+
+Then turn on Xbox authentication on the Lumi server with `.onlineMode(true)`, which sets Lumi's
+`network.xbox-auth`, and create the player with the account:
+
+```java
+var player = anvil.players().create(PlayerOptions.builder()
+		.name("BedrockPlayer")
+		.login(PlayerLogin.account(AuthenticationMode.ONLINE, "bedrock-main"))
+		.build());
+```
+
+The player logs in with the Xbox identity of the account, so Lumi grants and observes the same UUID and
+username, unlike an offline Bedrock player. While Xbox authentication is on, Lumi refuses offline Bedrock
+players. A Bedrock login is signed with the account's Xbox credentials, so `PlayerLogin.session(...)` is
+refused for a Bedrock player, and Lumi refuses `sessionServer`. As for Java accounts, the worker receives
+the tokens only on its private standard input.
+
 ## Authenticate on an offline-mode entrypoint
 
 Some plugins keep the proxy or server in offline mode and require online authentication themselves for

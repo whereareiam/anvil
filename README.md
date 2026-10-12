@@ -338,6 +338,12 @@ Run it:
 Anvil provisions the server, installs the asset, restores declared caches, waits until everything is ready, connects
 Alice, runs the test, and cleans up afterward. Alice never asks whether this can wait until tomorrow.
 
+Bedrock Edition works the same way. Apply `me.whereareiam.anvil.platform.lumi`, add
+`me.whereareiam.anvil:protocol-cloudburst` to `anvilRuntimeOnly`, declare a server with `Platforms.LUMI`
+and `Distribution.remote("1.26.50", "1.6.9")`, and set `.protocolLibrary("cloudburst")` on the scenario.
+Alice then joins Lumi as a Bedrock player with the same capabilities and the same test code. The
+[first test](https://anvil.whereareiam.me/docs/dev/getting-started/first-test) shows the complete example.
+
 Assets, caches, and cleanup are separate declarations. Asset targets are process-workspace-relative:
 file sources are copied to the target file and directory sources copy their contents into the target
 directory. `SEED_ONCE` only installs into an empty persistent target; `ALWAYS` refreshes it on every
@@ -453,14 +459,13 @@ each process's console, commands, and players one click away. Install it from Je
 Players speak Minecraft `1.18.2`, `1.21.1`, `1.21.11`, and `26.1.2`
 through MCProtocolLib, plus `1.21`, `26.1`, and `26.1.1`, which share those protocols. Bedrock
 players speak `1.20.0` through `1.26.60` through CloudburstMC Protocol, offline or with an Xbox
-account; the live matrix does not run them yet. The
-live matrix runs those four versions on Paper and `1.21.1` and newer on NeoForge, and verifies `1.21.11`
-and `26.1.2` on Spigot and across every supported proxy/backend combination; the other supported
+account. The live matrix runs those four Java versions on Paper and `1.21.1` and newer on NeoForge,
+verifies `1.21.11` and `26.1.2` on Spigot and across every supported proxy/backend combination, and
+runs Bedrock players on Lumi `1.20.0`, `1.21.80`, `1.21.90`, and `1.26.50`; the other supported
 versions are compatible but not live-tested. Release data you supply can add newer versions. The
 [version support page](https://anvil.whereareiam.me/docs/dev/building-blocks/environments/platforms/versions)
 lists every release, platform range, and support level. Lumi runs Bedrock Edition servers from
-`1.20.0` to `1.26.50`, and the live matrix runs Bedrock `1.26.50` through its console and agent.
-Distributions may come from pinned remote
+`1.20.0` to `1.26.50`. Distributions may come from pinned remote
 builds, local JARs, Maven artifacts, or Gradle project artifacts.
 
 Anvil uses native protocol clients. Local JVM execution is the standard workflow; an embedded

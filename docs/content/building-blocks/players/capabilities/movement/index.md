@@ -40,13 +40,18 @@ Bedrock positions a player by its eyes, so a Bedrock player sends the position 1
 feet the `Position` names; pass the same feet position as for a Java player. Under server
 authoritative movement, which every Bedrock version from 1.21.90 uses and which Lumi turns on by
 default, the update is an authoritative input of the player's current tick that presses no movement
-key. The server decides whether the player stands on the ground, so `onGround` has no effect there.
-When an older server grants the client authority over movement, the update is a player move that
-carries `onGround`.
+key. Like a Bedrock client, the player also sends such an input on every tick from its spawn on, at the
+last position it sent or the server set, so the position stays in effect. The server decides whether
+the player stands on the ground, so `onGround` has no effect there. When an older server grants the
+client authority over movement, the update is a player move that carries `onGround`, sent once.
 
 After a teleport, Lumi accepts the next update only within about 0.3 blocks of the position it set
-and resets the player otherwise, and it ignores updates for the half second after a teleport. Start
-from a position you know exactly, such as one your test set with `tp`, and move in small steps.
+and resets the player otherwise. It ignores updates until it has sent the chunks around the new position
+and for half a second after the teleport. Under server authority the input of the following ticks
+repeats the position, so the move takes effect once Lumi accepts updates again; under client authority
+an ignored move is lost, so send it again until the server reports the new position. Start from a
+position you know exactly, such as one your test set with `tp`, and move in small steps. A console
+`testfor @a[name=Alice,x=0.75,y=200,z=0.5,r=0.1]` succeeds once Lumi has the player there.
 
 ## Assert the effect you need
 

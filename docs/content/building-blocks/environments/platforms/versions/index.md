@@ -47,7 +47,7 @@ such as Lumi share: Bedrock 26.x is written `1.26.x`.
 
 | Release key | CloudburstMC Protocol release | Verified by the live matrix |
 |---|---|---|
-| `1.26.60` | `3.0.0.Beta14-20261009.172637-6` | `1.26.50` |
+| `1.26.60` | `3.0.0.Beta14-20261009.172637-6` | `1.20.0`, `1.21.80`, `1.21.90`, `1.26.50` |
 
 | Minecraft versions | Protocols |
 |---|---|
@@ -56,13 +56,16 @@ such as Lumi share: Bedrock 26.x is written `1.26.x`.
 | `1.21.90`, `1.21.93`, `1.21.100`, `1.21.111`, `1.21.120`, `1.21.124`, `1.21.130` | 818, 819, 827, 844, 859, 860, 898 |
 | `1.26.0`, `1.26.10`, `1.26.20`, `1.26.30`, `1.26.40`, `1.26.45`, `1.26.50`, `1.26.60` | 924, 944, 975, 1001, 2168, 2169, 2193, 2225 |
 
-`1.26.50` is `VERIFIED` against Lumi; every other listed version is `COMPATIBLE`. The release is a CloudburstMC Protocol snapshot build, pinned to
+`1.20.0`, `1.21.80`, `1.21.90` and `1.26.50` are `VERIFIED` against Lumi: the oldest and newest
+version and both sides of `1.21.90`, from which Bedrock moves a player only by the server's authority.
+Every other listed version is `COMPATIBLE`. The release is a CloudburstMC Protocol snapshot build, pinned to
 an exact timestamp like the MCProtocolLib snapshots. Its players log in offline with a self-signed
 identity, which a server accepts only with Xbox authentication turned off, or online with an
 [Xbox account](../../../players/authentication/index.md). Bedrock has no handshake host, so a Bedrock
-player that declares a virtual host is refused when it connects. Bedrock players have the Session,
-Server, Messages, Movement, [Inventory](../../../players/capabilities/inventory/index.md#bedrock-players)
-and [Interaction](../../../players/capabilities/interaction/index.md#bedrock-players) capabilities.
+player that declares a virtual host is refused when it connects. Bedrock players have all six built-in
+capabilities; [Movement](../../../players/capabilities/movement/index.md#bedrock-players),
+[Inventory](../../../players/capabilities/inventory/index.md#bedrock-players) and
+[Interaction](../../../players/capabilities/interaction/index.md#bedrock-players) describe what differs.
 
 ## Servers and proxies
 
@@ -71,7 +74,7 @@ and [Interaction](../../../players/capabilities/interaction/index.md#bedrock-pla
 | Paper | `1.16.5` and newer | `1.18.2`, `1.21.1`, `1.21.11`, and `26.1.2` |
 | Spigot | `1.16.5` and newer | `1.21.11` and `26.1.2` |
 | NeoForge | `1.21.1` and newer | `1.21.1`, `1.21.11`, and `26.1.2` |
-| Lumi | Bedrock `1.20.0` to `1.26.50`, as listed [below](#bedrock-edition) | `1.26.50` |
+| Lumi | Bedrock `1.20.0` to `1.26.50`, as listed [below](#bedrock-edition) | `1.20.0`, `1.21.80`, `1.21.90`, and `1.26.50` |
 | Velocity | `3.3.0` and newer | `3.5.1` |
 | BungeeCord | Every build, assessed by Java range only | None; the matrix runs build `2085` |
 
@@ -93,7 +96,7 @@ as protocol 2170 and CloudburstMC Protocol as 2169.
 
 | Lumi release | Bedrock versions (protocol) | Verified by the live matrix |
 |---|---|---|
-| `1.6.9` | `1.20.0` (589), `1.20.10` (594), `1.20.30` (618), `1.20.40` (622), `1.20.50` (630), `1.20.60` (649), `1.20.70` (662), `1.20.80` (671), `1.21.0` (685), `1.21.2` (686), `1.21.20` (712), `1.21.30` (729), `1.21.40` (748), `1.21.50` (766), `1.21.60` (776), `1.21.70` (786), `1.21.80` (800), `1.21.90` (818), `1.21.93` (819), `1.21.100` (827), `1.21.111` (844), `1.21.120` (859), `1.21.124` (860), `1.21.130` (898), `1.26.0` (924), `1.26.10` (944), `1.26.20` (975), `1.26.30` (1001), `1.26.40` (2168), `1.26.50` (2193) | `1.26.50` on Java 21 |
+| `1.6.9` | `1.20.0` (589), `1.20.10` (594), `1.20.30` (618), `1.20.40` (622), `1.20.50` (630), `1.20.60` (649), `1.20.70` (662), `1.20.80` (671), `1.21.0` (685), `1.21.2` (686), `1.21.20` (712), `1.21.30` (729), `1.21.40` (748), `1.21.50` (766), `1.21.60` (776), `1.21.70` (786), `1.21.80` (800), `1.21.90` (818), `1.21.93` (819), `1.21.100` (827), `1.21.111` (844), `1.21.120` (859), `1.21.124` (860), `1.21.130` (898), `1.26.0` (924), `1.26.10` (944), `1.26.20` (975), `1.26.30` (1001), `1.26.40` (2168), `1.26.50` (2193) | `1.20.0`, `1.21.80`, `1.21.90` and `1.26.50` on Java 21 |
 
 Bedrock players connect to Lumi through [CloudburstMC Protocol](#bedrock-players-through-cloudburstmc-protocol);
 see the [Lumi guide](../servers/lumi/index.md).
@@ -242,7 +245,9 @@ current versions also run directly on Spigot and behind Velocity and BungeeCord,
 | `1.21.11` | `132` | [Pinned GetBukkit JAR](../servers/spigot/index.md#recorded-content-pins) | `21.11.45` |
 | `26.1.2` | `74` | [Pinned GetBukkit JAR](../servers/spigot/index.md#recorded-content-pins) | `26.1.2.114` |
 
-The live matrix also runs Lumi `1.6.9` on Bedrock `1.26.50` directly, through its console and agent.
+The live matrix also runs Lumi `1.6.9` directly on Bedrock `1.20.0`, `1.21.80` (with client movement
+authority), `1.21.90` and `1.26.50`, and drives a Bedrock player's capabilities on each through the
+server's console and agent.
 
 The proxy selections in that matrix are Velocity `3.5.1` build `615` and BungeeCord Jenkins build
 `2085`. These are the repository's pinned compatibility selections, not moving recommendations to use

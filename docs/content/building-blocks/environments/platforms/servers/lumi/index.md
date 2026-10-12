@@ -79,6 +79,11 @@ MinecraftServer server = MinecraftServer.builder()
 		.build();
 ```
 
+Lumi keeps movement authority on the server by default. Bedrock versions before `1.21.90` still let a
+client move its own player: for them, `.setting("general.server-authoritative-movement", "client-auth")`
+hands movement to the client; Anvil's players then send player moves instead of the input a
+client sends on every tick.
+
 Anvil writes the file before every start and keeps values it does not manage. Unless a setting replaces
 them, it sets `general.motd`, `general.language` to `eng`, `world.spawn-protection` to `0`,
 `network.enable-query` and `bstats.enable` to `false`. It always sets `general.server-ip`,
@@ -87,6 +92,25 @@ them, it sets `general.motd`, `general.language` to `eng`, `world.spawn-protecti
 
 Install plugins into `plugins/` with [workspace assets](../../../workspaces/index.md). Lumi converts an
 old `server.properties` into `settings.yml` and deletes it, so configure Lumi through settings only.
+
+## Check what a player did
+
+Lumi loads no Bukkit plugin, so a test without its own Lumi plugin checks the server's state with vanilla
+commands. The Lumi agent runs `Console.execute` on the server thread and returns `true` only when the
+command succeeded, which makes `testfor`, `testforblock` and `clear <player> <item> 0 0`, which counts
+without removing, assertions:
+
+```java
+import me.whereareiam.anvil.capability.console.Console;
+
+Console console = anvil.processes().server("server").capability(Console.class);
+console.execute("fill 0 199 0 2 199 0 stone");
+// ... the player places dirt on top of (2, 199, 0) ...
+boolean placed = console.execute("testforblock 2 200 0 dirt");
+```
+
+Lumi applies a player's action on a later tick, so repeat such a check until it succeeds or a timeout
+passes rather than running it once.
 
 ## Use your own JAR
 
@@ -103,10 +127,12 @@ Lumi runs on Java 21; see
 
 - Simulated players join Lumi through the
   [CloudburstMC Protocol library](../../versions/index.md#bedrock-players-through-cloudburstmc-protocol),
-  whose built-in player capabilities so far are Session, Server, Messages, Movement and Inventory, which
-  only observes. The live matrix drives Lumi through the
+  which offers all six built-in player capabilities. Each
+  [capability page](../../../../players/capabilities/index.md) notes what a Bedrock player does differently.
+  The live matrix runs Lumi `1.20.0`, `1.21.80`, `1.21.90` and `1.26.50`: it drives the server through the
   [process console](../../../actions/console/index.md) and the [agent](../../../actions/agents/index.md)'s
-  command execution, and observes a Bedrock player through Session and Server.
+  command execution, and checks what a Bedrock player does with vanilla commands such as `testfor`,
+  `testforblock` and `clear`, because Lumi loads no Bukkit plugin.
 - Lumi's game listener is UDP. Local and Docker execution reserve and publish it as UDP; the agent
   connection stays TCP.
 - Lumi has no identity forwarding and Anvil ships no Bedrock proxy, so a Lumi server cannot be a proxy

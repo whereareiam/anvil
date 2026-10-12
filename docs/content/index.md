@@ -5,7 +5,7 @@ description: Write repeatable tests for packaged plugins using real servers, pro
 
 Anvil is a Java testing framework for developers building Minecraft plugins and integrations.
 It starts the servers and proxies your test needs, installs your packaged artifacts, and gives
-your code control of players that speak the native Java Edition protocol.
+your code control of players that speak the native Java Edition or Bedrock Edition protocol.
 
 A scenario describes the environment once. Use it in a JUnit test to verify behavior after a
 change, or run it in the foreground when you need to join and inspect the environment yourself.

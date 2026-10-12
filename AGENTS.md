@@ -396,8 +396,11 @@ current project scope.
   its only forwarding mode is `NONE` and `sessionServer` is refused. The Lumi agent is a Lumi plugin compiled
   against the release in the catalog; it relocates its embedded Jackson because Lumi ships an older one and
   loads plugin classes parent first. Lumi servers load no Bukkit plugin: their live scenarios carry no
-  fixture, and `LumiServerSystemTest` drives them through the console and the agent and observes a Bedrock player
-  through Session and Server. `known` lists exactly the versions whose protocol Lumi and the cloudburst row agree on,
+  fixture: `LumiServerSystemTest` drives them through the console and the agent, and
+  `BedrockPlayerCapabilitiesSystemTest` and `BedrockPlayerSessionSystemTest` check each Bedrock player action with
+  vanilla commands (`testfor`, `testforblock`, `clear`) through the agent's console execution. The matrix runs
+  Lumi's oldest and newest version and both sides of the 1.21.90 movement-authority boundary (`1.21.80` with
+  `client-auth`). `known` lists exactly the versions whose protocol Lumi and the cloudburst row agree on,
   spelled the same on both sides; `1.26.45` is left out (Lumi 2170, CloudburstMC Protocol 2169).
 - Local/named server artifacts declare `minecraftVersion`. Native clients must match every reachable
   server. Preserve explicit client overrides and deterministic native selection; no implicit ViaVersion fallback.
@@ -589,7 +592,8 @@ category of its label. Readers are developers who test with Anvil or extend it.
 - The draft sorts by the exact area, so spell an area exactly as listed: `Engine`, `Environments`,
   `Workspaces`, `Execution`, `Processes`, `Platforms`, `Players`, `Capabilities`, `Protocol`, `Yggdrasil`,
   `JUnit`, `Gradle`, `IntelliJ`, `Launcher`. A change to one platform only may use its name: `Paper`,
-  `Spigot`, `NeoForge`, `Lumi`, `Velocity`, `BungeeCord`. Add an area only for something readers recognise by that
+  `Spigot`, `NeoForge`, `Lumi`, `Velocity`, `BungeeCord`. A change to one protocol library, MCProtocolLib or
+  CloudburstMC Protocol, uses `Protocol`, which readers know both libraries by. Add an area only for something readers recognise by that
   name, such as a new platform, protocol library or integration, and add it to this list in the same
   pull request. Never use module or package names such as `Architecture` or `Integration`.
 - A `skip-changelog` pull request still needs a title in that format; `CI`, `Build`, `Docs` and `Tests`

@@ -32,6 +32,7 @@ platform agents, while packet-backed capabilities operate through the player's p
 built-in capabilities are installed on every MCProtocolLib release Anvil ships, from Minecraft 1.18.2
 to 26.1.2. Bedrock players, which connect through CloudburstMC Protocol, have Session, Server, Messages,
 Movement, Inventory and Interaction on every Bedrock version it speaks, from 1.20.0 to 1.26.60; the
+[Messages](./messages/index.md#bedrock-players), [Movement](./movement/index.md#bedrock-players),
 [Inventory](./inventory/index.md#bedrock-players) and [Interaction](./interaction/index.md#bedrock-players)
 pages describe how their actions differ.
 

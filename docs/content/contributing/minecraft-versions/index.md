@@ -37,15 +37,41 @@ served by a repository that `settings.gradle.kts` does not list yet, add it to b
 
 ### Bedrock versions
 
-CloudburstMC Protocol's one release in `anvil-protocol/protocol-cloudburst/cloudburst-releases.toml`
-speaks every Bedrock version it has a codec for, each through its own protocol number in the
-`[release.protocol]` table. A new Bedrock version arrives with a new CloudburstMC Protocol build: move the
-row's `version` and `module` to that build's unique snapshot version, add the version to `minecraft` and
-its number to `[release.protocol]`, using the version string CloudburstMC Protocol's codec names
-(`1.26.x` for Bedrock 26.x), and pin the closure with
-`./gradlew :anvil-protocol:protocol-cloudburst:pinLibraryReleases`. Add the new codec to the client
-segment's codec list. A newer version raises the release key, so rename the client segment
-`cloudburst-client/V<key>`, folder and package, to the new key.
+A Bedrock version needs both sides: a CloudburstMC Protocol codec that speaks it, and Lumi data that
+accepts the same protocol. Work through them in this order:
+
+1. **Release row.** CloudburstMC Protocol's one release in
+   `anvil-protocol/protocol-cloudburst/cloudburst-releases.toml` speaks every Bedrock version it has a
+   codec for. A new Bedrock version arrives with a new CloudburstMC Protocol build: move the row's
+   `version` and `module` to that build's unique snapshot version, add the version to `minecraft`, and add
+   its number to the `[release.protocol]` table. Use the version string the codec names (`1.26.x` for
+   Bedrock 26.x), the first version of its protocol.
+2. **Pin.** Run `./gradlew :anvil-protocol:protocol-cloudburst:pinLibraryReleases` and review the
+   rewritten closure.
+3. **Client segment.** Add the new `Bedrock_v<protocol>.CODEC` to the codec list of
+   `CloudburstClientAdapter`. A newer version raises the release key, so rename the client segment
+   `cloudburst-client/V<key>`, folder and package, and the `V<key>` segments of the messages, movement,
+   inventory and interaction families, to the new key. `CloudburstWorkerContractTest` checks that the
+   worker speaks every protocol of the release data:
+
+   ```shell
+   ./gradlew :anvil-protocol:protocol-cloudburst:cloudburst-common:test
+   ```
+
+4. **Packet differences.** Read the codec's changes to the packets the client and the capability
+   segments send, such as the player authoritative input, inventory transactions and the game start.
+   A field a newer protocol adds gets a protocol constant in the segment that writes it, like the off
+   hand of item uses from protocol 2193 in `CloudburstInteractionPackets`.
+5. **Lumi data.** In `lumi-versions.toml`, add the version to `known` and its protocol to
+   `[lumi.protocol]`, both spelled as CloudburstMC Protocol spells them, and widen the
+   `[lumi.release."<release>"]` range when a new Lumi release accepts it; a new Lumi release gets its own
+   `[lumi.release]` row with the oldest and newest version it accepts. List a version only when Lumi
+   accepts the protocol CloudburstMC Protocol speaks for it. `LumiVersionAlignmentIntegrationTest`
+   fails when a known Lumi version is missing from the release row or has another protocol there:
+
+   ```shell
+   ./gradlew :anvil-testkit:tests:runtime:test --tests '*LumiVersionAlignmentIntegrationTest'
+   ```
 
 ## Pin the runtime closure
 
@@ -149,13 +175,15 @@ when they differ:
   pinned NeoForge release to `NEOFORGE`. `NeoForgeServerSystemTest` runs it without the fixture plugin, which
   NeoForge cannot load.
 - A Bedrock version runs directly on Lumi: add a `LumiRelease` with the version and its Lumi release to `LUMI`.
-  `LumiServerSystemTest` runs it through the console and the Lumi agent. A new Bedrock version also needs its
-  protocol in the `[lumi.protocol]` table of `lumi-versions.toml`, and a new Lumi release a `[lumi.release]`
-  row with the oldest and newest version it accepts.
+  The matrix keeps Lumi's oldest and newest version and both sides of `1.21.90`, the first version without
+  client movement authority; move the newest entry rather than adding one for each release.
+  `LumiServerSystemTest` runs the server through the console and the Lumi agent, and
+  `BedrockPlayerCapabilitiesSystemTest` and `BedrockPlayerSessionSystemTest` run a Bedrock player's
+  capabilities, identity and reconnects on it.
 
 Then list exactly the matrix's combinations as verified: the release's `verified` versions in
-`mcprotocol-releases.toml`, and each platform's `[verified]` table with the Java versions the matrix
-plans. `CompatibilityScenarioFactoryTest` plans the matrix without starting a server and fails when
+`mcprotocol-releases.toml` or `cloudburst-releases.toml`, and each platform's `[verified]` table with the
+Java versions the matrix plans. `CompatibilityScenarioFactoryTest` plans the matrix without starting a server and fails when
 the data and the matrix differ; every build runs it through the server suite's `matrixTest` task:
 
 ```shell
@@ -168,6 +196,7 @@ them:
 ```shell
 ./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*ProxyServerCompatibilitySystemTest' -PanvilMatrixFilter='.*-1\.21\.11'
 ./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*PlayerCapabilitiesSystemTest' -PanvilMatrixFilter='paper-1\.21\.11'
+./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*Lumi*' --tests '*Bedrock*' -PanvilMatrixFilter='lumi-1\.26\.50'
 ```
 
 Replace `1\.21\.11` with the new version. Read [Live tests](../testing/live/index.md) for the other

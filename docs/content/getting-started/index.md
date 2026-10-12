@@ -10,7 +10,8 @@ Follow these three stages:
 
 1. [Concepts](./concepts/index.md) — explore each part of the environment through focused explanations, examples, and use cases.
 2. [Installation](./installation/index.md) — configure Gradle and install the components for the example.
-3. [First test](./first-test/index.mdx) — start Paper, connect a player, and assert a received message.
+3. [First test](./first-test/index.mdx) — start Paper, connect a player, and assert a received message, then
+   run the same test on a Lumi Bedrock Edition server.
 
 After the first test passes, use [Building blocks](../building-blocks/index.md) to prepare your own
 environment and players. Then choose a [workflow](../workflows/index.md): automated Testing or a

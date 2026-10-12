@@ -235,7 +235,10 @@ position. Its `blockAt(x, y, z)` returns the runtime id of a block in the player
 server's chunks and block updates last sent it, which is the id an interaction with that block carries; it
 is empty for a block the client never received or that lies in a sub-chunk the server sent as air only. A
 packet your segment sends updates that state as the client's prediction, so build packets from it rather
-than keeping state in the segment. One segment serves every Bedrock codec of the release, so it sets every
+than keeping state in the segment. Under server movement authority the session also sends a player
+authoritative input on every tick that repeats the player's last position, so a segment that moves the
+player sends one input for the move and does not keep the player ticking itself. One segment serves every
+Bedrock codec of the release, so it sets every
 field a packet has in any codec; the player's codec writes those its protocol knows.
 
 ## Package a segment
