@@ -60,6 +60,8 @@ class LumiPlatformProviderTest {
 				refusal(Distribution.remote("1.26.50", "1.0.0")));
 		assertTrue(refusal(Distribution.remote("1.19.80", "1.6.9")).startsWith("Lumi knows no protocol of Minecraft 1.19.80"));
 		assertTrue(refusal(Distribution.remote("1.26.60", "1.6.9")).startsWith("Lumi knows no protocol of Minecraft 1.26.60"));
+		// Lumi and CloudburstMC Protocol disagree on the protocol of 1.26.45, so no player could join it.
+		assertTrue(refusal(Distribution.remote("1.26.45", "1.6.9")).startsWith("Lumi knows no protocol of Minecraft 1.26.45"));
 		assertEquals("Lumi JAR pin must be a 64-digit SHA-256",
 				refusal(Distribution.builder().version("1.26.50").build("1.6.9").sha256("abc").build()));
 	}
