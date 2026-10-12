@@ -6,6 +6,7 @@ import me.whereareiam.anvil.capability.inventory.packet.model.ContainerClick;
 import me.whereareiam.anvil.capability.inventory.type.InventoryClick;
 import me.whereareiam.anvil.protocol.cloudburst.client.CloudburstSession;
 import me.whereareiam.anvil.protocol.cloudburst.client.PacketSubscription;
+import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.GameStart;
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition;
 import org.cloudburstmc.protocol.bedrock.data.definitions.SimpleItemDefinition;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -191,6 +193,11 @@ class CloudburstInventoryPacketsTest {
 		}
 
 		@Override
+		public @NotNull ClientProfile profile() {
+			return ClientProfile.builder().name("Alice").uniqueId(new UUID(0, 1)).build();
+		}
+
+		@Override
 		public void send(@NotNull BedrockPacket packet) {
 			sent.add(packet);
 		}
@@ -205,6 +212,11 @@ class CloudburstInventoryPacketsTest {
 		@Override
 		public @NotNull Optional<GameStart> start() {
 			return Optional.empty();
+		}
+
+		@Override
+		public boolean serverAuthoritativeMovement() {
+			throw new IllegalStateException("not started");
 		}
 
 		@Override
