@@ -32,8 +32,9 @@ Preparation validates and provisions the complete topology, preserving its ports
 forwarding configuration. Starting a component starts only that process, so a proxy may have
 configured routes to backends that are not running yet. Collections contain processes that have
 had a generation; looking up a known but never-started process reports that it has not started.
-Start is idempotent for a ready process. Stop retains its address, installed assets, and workspace;
-starting it again creates a fresh generation and reconnects its platform agent. Closing the context
+Start is idempotent for a ready process. Stop retains its address and workspace; starting it again
+installs its `ALWAYS` assets from their current sources, creates a fresh generation, and reconnects
+its platform agent. Closing the context
 also releases prepared components that were never started.
 
 `ScenarioContext` owns the topology from preparation through startup and finalization.
@@ -113,7 +114,9 @@ A successful reconnection alone does not prove that plugin data survived.
 | Workspace | Same directory and data already written to disk |
 | Game listener | Same address and port |
 | Other processes | Continue running |
-| Installed assets | Remain in place; initial asset installation and cache restoration do not repeat |
+| `ALWAYS` assets | Installed again from their current sources, so a rebuilt plugin JAR takes effect |
+| `SEED_ONCE` assets | Remain in place; installed again only if the target was deleted |
+| Caches | Not restored again; restoration happens once, when the scenario is prepared |
 | Platform configuration | Reapplied before launch |
 | Agent connection | Reestablished with fresh credentials |
 | Process capability instances | Retained for the logical process; agent-backed operations may be unavailable during replacement |
@@ -131,5 +134,5 @@ A `ProcessException` exposes its name through `getProcessName()`.
 A failed restart marks the scenario lifecycle unsuccessful even if your test catches the exception;
 success-only caches are not finalized as a successful run.
 
-For newly installed assets or cache restoration, start a new scenario.
+To restore caches again or apply changed scenario declarations, start a new scenario.
 For data shared across separate runs, declare a [workspace policy](../../workspaces/index.md).

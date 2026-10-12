@@ -20,7 +20,8 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 
 /**
- * Retains prepared workspace ownership while creating fresh platform configuration for each generation.
+ * Retains prepared workspace ownership while refreshing its assets and creating fresh platform configuration for
+ * each generation.
  */
 @RequiredArgsConstructor
 final class PreparedPlatformProcess implements PreparedProcess {
@@ -37,6 +38,7 @@ final class PreparedPlatformProcess implements PreparedProcess {
 
 	@Override
 	public @NotNull PreparedLaunch launch() {
+		workspace.beforeStart();
 		try {
 			platforms.configure(plan, request);
 		} catch (IOException failure) {
