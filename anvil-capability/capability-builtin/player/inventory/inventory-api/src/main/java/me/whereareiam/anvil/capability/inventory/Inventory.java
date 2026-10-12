@@ -48,7 +48,7 @@ public interface Inventory extends PlayerCapability {
 	);
 
 	/**
-	 * Changes the selected hotbar slot. The request fails for Bedrock players.
+	 * Changes the selected hotbar slot. A Bedrock player announces the slot together with the item it holds.
 	 *
 	 * @param slot zero-based slot in the range {@code 0..8}
 	 */
@@ -58,7 +58,12 @@ public interface Inventory extends PlayerCapability {
 	 * Clicks an inventory slot using the latest received container state. A hotbar swap takes the hotbar slot
 	 * {@code 0..8} as its button, or {@code 40} to swap with the off hand. The request fails for any other button,
 	 * and for the off-hand swap when the player's protocol library cannot send it, as MCProtocolLib cannot for
-	 * Minecraft 1.16.5 and 1.17.1. Every click fails for Bedrock players.
+	 * Minecraft 1.16.5 and 1.17.1.
+	 *
+	 * <p>A Bedrock player computes the click from the item stacks its client keeps for the slot and the cursor and
+	 * sends nothing when the click changes nothing. It refuses {@link InventoryClick#SHIFT_LEFT}, a click that would
+	 * stack the cursor onto the same item, the crafting slots {@code 0..4} of its inventory container, and clicks on
+	 * an opened container while the server is authoritative over inventories.</p>
 	 *
 	 * <pre>{@code
 	 * inventory.click(36, InventoryClick.HOTBAR_SWAP, 40);

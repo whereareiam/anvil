@@ -10,7 +10,9 @@ import org.jetbrains.annotations.Nullable;
 /**
  * One click on a container slot as the inventory binding hands it to a release's packets. It carries every value
  * a release's click packet may need; each release sends the ones its protocol has: releases from Minecraft 1.17
- * send the state ID, older releases the action ID and the clicked item instead.
+ * send the state ID, older releases the action ID and the clicked item instead. Bedrock releases send none of the
+ * three: they compute the click from the item stacks their client keeps and ignore the state ID, the action ID and
+ * the clicked item.
  *
  * <pre>{@code
  * ContainerClick click = ContainerClick.builder()
@@ -33,11 +35,12 @@ public class ContainerClick {
 	 */
 	int containerId;
 	/**
-	 * State ID of the container as last received, or {@code 0} for releases without state IDs.
+	 * State ID of the container as last received, or {@code 0} for releases without state IDs; Bedrock releases
+	 * ignore it.
 	 */
 	int stateId;
 	/**
-	 * Positive ID of this click, which a server before Minecraft 1.17 confirms or rejects.
+	 * Positive ID of this click, which a server before Minecraft 1.17 confirms or rejects; other releases ignore it.
 	 */
 	int actionId;
 	/**
@@ -56,7 +59,8 @@ public class ContainerClick {
 	int button;
 	/**
 	 * Item the click picks up as last received in the slot, which a server before Minecraft 1.17 compares with
-	 * its own result, or {@code null} when the slot is empty or the click mode picks nothing up.
+	 * its own result, or {@code null} when the slot is empty or the click mode picks nothing up. Bedrock releases
+	 * ignore it and name the item stack their client keeps for the slot instead.
 	 */
 	@Nullable InventoryItem clickedItem;
 }

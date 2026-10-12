@@ -10,6 +10,7 @@ import org.cloudburstmc.protocol.bedrock.data.ClientPlayMode;
 import org.cloudburstmc.protocol.bedrock.data.InputInteractionModel;
 import org.cloudburstmc.protocol.bedrock.data.InputMode;
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition;
+import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket;
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket;
@@ -27,19 +28,19 @@ import org.jetbrains.annotations.NotNull;
  * zero, and its camera looks where the view does. Under server authority the server decides whether the player
  * stands on the ground, so only a player move carries the position's ground state.</p>
  */
-public final class CloudburstMovementPackets implements MovementPackets<CloudburstSession<BedrockPacket, ItemDefinition>> {
+public final class CloudburstMovementPackets implements MovementPackets<CloudburstSession<BedrockPacket, ItemDefinition, ItemData>> {
 	@SuppressWarnings("unchecked")
-	private static final Class<CloudburstSession<BedrockPacket, ItemDefinition>> SESSION =
-			(Class<CloudburstSession<BedrockPacket, ItemDefinition>>) (Class<?>) CloudburstSession.class;
+	private static final Class<CloudburstSession<BedrockPacket, ItemDefinition, ItemData>> SESSION =
+			(Class<CloudburstSession<BedrockPacket, ItemDefinition, ItemData>>) (Class<?>) CloudburstSession.class;
 	private static final float EYE_HEIGHT = 1.62F;
 
 	@Override
-	public @NotNull Class<CloudburstSession<BedrockPacket, ItemDefinition>> sessionType() {
+	public @NotNull Class<CloudburstSession<BedrockPacket, ItemDefinition, ItemData>> sessionType() {
 		return SESSION;
 	}
 
 	@Override
-	public void move(@NotNull CloudburstSession<BedrockPacket, ItemDefinition> session, @NotNull Position position) {
+	public void move(@NotNull CloudburstSession<BedrockPacket, ItemDefinition, ItemData> session, @NotNull Position position) {
 		GameStart start = session.start()
 				.orElseThrow(() -> new IllegalStateException("A Bedrock player moves only after its game started"));
 		Vector3f eyes = Vector3f.from(position.getX(), position.getY() + EYE_HEIGHT, position.getZ());

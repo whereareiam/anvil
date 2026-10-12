@@ -84,7 +84,22 @@ hotbar in `36` to `44` and the off hand in `45`. A container the server opens ke
 container's own slots, not the player's inventory below them. Each item carries its Bedrock runtime ID as the
 protocol ID and its textual identifier, such as `minecraft:stone`.
 
-`selectSlot` and `click` fail for Bedrock players. A Bedrock client selects a slot with a packet carrying
-its own copy of the slot's item, and moves items with item stack requests that name each stack by the
-network ID the server gave it. The CloudburstMC Protocol session does not keep the player's item stacks
-yet, so Anvil refuses these actions instead of sending packets the server would not accept.
+The Bedrock session keeps the player's item stacks as a Bedrock client does, so `selectSlot` and `click`
+send what such a client sends. `selectSlot` announces the slot together with the item it holds. A click
+moves stacks between the clicked slot and the cursor and is sent the way the server's game start asks
+for: as an item stack request that names each stack by its network ID when the server is authoritative
+over inventories, otherwise as an inventory transaction that lists each changed slot, as Lumi expects.
+
+| Click | Bedrock player |
+|---|---|
+| `LEFT` | Takes the stack to an empty cursor, places the cursor into an empty slot, or swaps different items |
+| `RIGHT` | Takes half the stack, rounded up, to an empty cursor, places one item into an empty slot, or swaps different items |
+| `DROP_ONE`, `DROP_STACK` | Drops one item or the whole stack of the slot |
+| `HOTBAR_SWAP` | Swaps with the hotbar slot `0..8` or off hand `40`, or moves the stack when one side is empty |
+| `SHIFT_LEFT` | Refused: a Bedrock client chooses where a shift-clicked stack goes from the screen it shows |
+
+A click that would change nothing, such as `LEFT` on an empty slot with an empty cursor, sends nothing.
+Clicks are refused when they would stack the cursor onto the same item, because the session does not know
+an item's maximum stack size, on the crafting slots `0` to `4`, which a Bedrock inventory does not have,
+and on an opened container while the server is authoritative over inventories, because an item stack
+request names that container by a type the server's open packet does not give.

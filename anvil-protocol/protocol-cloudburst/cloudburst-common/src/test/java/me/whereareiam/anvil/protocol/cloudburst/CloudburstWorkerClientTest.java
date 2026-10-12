@@ -12,6 +12,7 @@ import me.whereareiam.anvil.protocol.cloudburst.client.CloudburstClient;
 import me.whereareiam.anvil.protocol.cloudburst.client.CloudburstSession;
 import me.whereareiam.anvil.protocol.cloudburst.client.PacketSubscription;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientLogin;
+import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientPosition;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.GameStart;
 import org.jetbrains.annotations.NotNull;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -81,8 +83,8 @@ class CloudburstWorkerClientTest {
 	@Test
 	void forwardsTheClientsCallbacksWithTheSessionTheyName() {
 		Object session = worker.open(options(null, null), new Recorder());
-		ClientListener<CloudburstSession<?, ?>> listener = client.listeners.getFirst();
-		CloudburstSession<?, ?> opened = (CloudburstSession<?, ?>) session;
+		ClientListener<CloudburstSession<?, ?, ?>> listener = client.listeners.getFirst();
+		CloudburstSession<?, ?, ?> opened = (CloudburstSession<?, ?, ?>) session;
 
 		listener.teleported(opened, 90, 10);
 		listener.loggedIn(opened, ClientProfile.builder().name("Renamed").uniqueId(uuid).build());
@@ -128,10 +130,10 @@ class CloudburstWorkerClientTest {
 	/**
 	 * A client segment that records logins and keeps sessions in memory.
 	 */
-	private static final class RecordingClient implements CloudburstClient<CloudburstSession<?, ?>> {
+	private static final class RecordingClient implements CloudburstClient<CloudburstSession<?, ?, ?>> {
 		private final List<ClientLogin> logins = new ArrayList<>();
-		private final List<ClientListener<CloudburstSession<?, ?>>> listeners = new ArrayList<>();
-		private final List<CloudburstSession<?, ?>> connected = new ArrayList<>();
+		private final List<ClientListener<CloudburstSession<?, ?, ?>>> listeners = new ArrayList<>();
+		private final List<CloudburstSession<?, ?, ?>> connected = new ArrayList<>();
 
 		@Override
 		public int protocolNumber() {
@@ -140,33 +142,33 @@ class CloudburstWorkerClientTest {
 
 		@Override
 		@SuppressWarnings({"unchecked", "rawtypes"})
-		public @NotNull Class<CloudburstSession<?, ?>> sessionType() {
+		public @NotNull Class<CloudburstSession<?, ?, ?>> sessionType() {
 			return (Class) CloudburstSession.class;
 		}
 
 		@Override
 		@SuppressWarnings("unchecked")
-		public @NotNull CloudburstSession<?, ?> open(
+		public @NotNull CloudburstSession<?, ?, ?> open(
 				@NotNull ClientLogin login,
-				@NotNull ClientListener<? super CloudburstSession<?, ?>> listener
+				@NotNull ClientListener<? super CloudburstSession<?, ?, ?>> listener
 		) {
 			logins.add(login);
-			listeners.add((ClientListener<CloudburstSession<?, ?>>) listener);
+			listeners.add((ClientListener<CloudburstSession<?, ?, ?>>) listener);
 			return new IdleSession();
 		}
 
 		@Override
-		public void connect(@NotNull CloudburstSession<?, ?> session) {
+		public void connect(@NotNull CloudburstSession<?, ?, ?> session) {
 			connected.add(session);
 		}
 
 		@Override
-		public boolean connected(@NotNull CloudburstSession<?, ?> session) {
+		public boolean connected(@NotNull CloudburstSession<?, ?, ?> session) {
 			return connected.contains(session);
 		}
 
 		@Override
-		public void disconnect(@NotNull CloudburstSession<?, ?> session, @NotNull String reason) {
+		public void disconnect(@NotNull CloudburstSession<?, ?, ?> session, @NotNull String reason) {
 			assertSame(session, connected.remove(connected.indexOf(session)));
 		}
 	}
@@ -174,7 +176,7 @@ class CloudburstWorkerClientTest {
 	/**
 	 * A session the worker client only passes around.
 	 */
-	private static final class IdleSession implements CloudburstSession<Object, Object> {
+	private static final class IdleSession implements CloudburstSession<Object, Object, Object> {
 		@Override
 		public int protocol() {
 			return 2193;
@@ -218,6 +220,41 @@ class CloudburstWorkerClientTest {
 		@Override
 		public long tick() {
 			throw new IllegalStateException("not started");
+		}
+
+		@Override
+		public boolean serverAuthoritativeInventory() {
+			throw new IllegalStateException("not started");
+		}
+
+		@Override
+		public int nextItemStackRequestId() {
+			return -1;
+		}
+
+		@Override
+		public int selectedSlot() {
+			return 0;
+		}
+
+		@Override
+		public @NotNull Optional<Object> item(int containerId, int slot) {
+			return Optional.empty();
+		}
+
+		@Override
+		public void select(int slot) {
+			throw new AssertionError("The worker client selects no slot");
+		}
+
+		@Override
+		public @NotNull ClientPosition position() {
+			throw new IllegalStateException("not started");
+		}
+
+		@Override
+		public @NotNull OptionalInt blockAt(int x, int y, int z) {
+			return OptionalInt.empty();
 		}
 	}
 }

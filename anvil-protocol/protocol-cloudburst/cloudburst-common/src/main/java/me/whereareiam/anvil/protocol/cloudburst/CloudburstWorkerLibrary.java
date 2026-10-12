@@ -42,7 +42,7 @@ public final class CloudburstWorkerLibrary implements WorkerLibraryProvider {
 	@Override
 	@SuppressWarnings("unchecked")
 	public @NotNull WorkerClient client(@NotNull Object adapter) {
-		return new CloudburstWorkerClient((CloudburstClient<CloudburstSession<?, ?>>) adapter);
+		return new CloudburstWorkerClient((CloudburstClient<CloudburstSession<?, ?, ?>>) adapter);
 	}
 
 	@Override

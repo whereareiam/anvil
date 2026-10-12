@@ -6,6 +6,7 @@ import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.capability.movement.packet.MovementPackets;
 import me.whereareiam.anvil.protocol.cloudburst.client.CloudburstSession;
 import me.whereareiam.anvil.protocol.cloudburst.client.PacketSubscription;
+import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientPosition;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.GameStart;
 import org.cloudburstmc.math.vector.Vector3f;
@@ -46,6 +47,7 @@ import org.cloudburstmc.protocol.bedrock.codec.v975.Bedrock_v975;
 import org.cloudburstmc.protocol.bedrock.data.ClientPlayMode;
 import org.cloudburstmc.protocol.bedrock.data.InputMode;
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition;
+import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket;
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket;
@@ -55,6 +57,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.ServiceLoader;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -150,7 +153,7 @@ class CloudburstMovementPacketsTest {
 	/**
 	 * A started session of the given movement authority that records what is sent.
 	 */
-	private static final class RecordingSession implements CloudburstSession<BedrockPacket, ItemDefinition> {
+	private static final class RecordingSession implements CloudburstSession<BedrockPacket, ItemDefinition, ItemData> {
 		private final List<BedrockPacket> sent = new ArrayList<>();
 		private final boolean serverMovement;
 		private GameStart start = GameStart.builder().runtimeEntityId(7).uniqueEntityId(70).build();
@@ -202,6 +205,41 @@ class CloudburstMovementPacketsTest {
 		@Override
 		public long tick() {
 			return 1234;
+		}
+
+		@Override
+		public boolean serverAuthoritativeInventory() {
+			return false;
+		}
+
+		@Override
+		public int nextItemStackRequestId() {
+			return -1;
+		}
+
+		@Override
+		public int selectedSlot() {
+			return 0;
+		}
+
+		@Override
+		public @NotNull Optional<ItemData> item(int containerId, int slot) {
+			return Optional.empty();
+		}
+
+		@Override
+		public void select(int slot) {
+			throw new AssertionError("Movement selects no slot");
+		}
+
+		@Override
+		public @NotNull ClientPosition position() {
+			throw new AssertionError("Movement reads no position");
+		}
+
+		@Override
+		public @NotNull OptionalInt blockAt(int x, int y, int z) {
+			return OptionalInt.empty();
 		}
 	}
 }

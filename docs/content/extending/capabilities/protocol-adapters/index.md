@@ -224,12 +224,15 @@ segment does not link, or more than one adapter is declared, `adapter` throws
 while the player keeps its other capabilities.
 
 A CloudburstMC Protocol segment for Bedrock players implements the same port against
-`me.whereareiam.anvil.protocol.cloudburst.client.CloudburstSession<P, I>` from `cloudburst-api`, the
-session the Bedrock worker hands to bindings. Its type parameters name the release's packet and item
-definition types, so the movement segment `movement-cloudburst/V1_26_60` implements
-`MovementPackets<CloudburstSession<BedrockPacket, ItemDefinition>>`. The session sends packets, delivers
-received packets to typed subscriptions, and reports the game start, the client tick and whether the server
-is authoritative over movement. One segment serves every Bedrock codec of the release, so it sets every
+`me.whereareiam.anvil.protocol.cloudburst.client.CloudburstSession<P, I, T>` from `cloudburst-api`, the
+session the Bedrock worker hands to bindings. Its type parameters name the release's packet, item
+definition and item stack types, so the movement segment `movement-cloudburst/V1_26_60` implements
+`MovementPackets<CloudburstSession<BedrockPacket, ItemDefinition, ItemData>>`. The session sends packets,
+delivers received packets to typed subscriptions, and reports the game start, the client tick and whether
+the server is authoritative over movement and inventories. Like a real client it also keeps what it knows
+about its own player: the item stacks of its containers and the cursor, the selected hotbar slot, its
+position and, through `blockAt`, the blocks of the world it received. A packet your segment sends updates that state as the client's
+prediction, so build packets from it rather than keeping state in the segment. One segment serves every Bedrock codec of the release, so it sets every
 field a packet has in any codec; the player's codec writes those its protocol knows.
 
 ## Package a segment
