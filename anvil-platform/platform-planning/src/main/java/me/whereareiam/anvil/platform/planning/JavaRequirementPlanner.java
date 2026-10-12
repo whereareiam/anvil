@@ -2,6 +2,7 @@ package me.whereareiam.anvil.platform.planning;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
@@ -14,7 +15,7 @@ import me.whereareiam.anvil.platform.api.PlatformProvider;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.planning.version.JavaCompatibility;
 import me.whereareiam.anvil.platform.planning.version.PlatformVersions;
-import me.whereareiam.anvil.platform.planning.version.PlatformVersionsReader;
+import me.whereareiam.anvil.platform.planning.version.ProviderVersions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -49,20 +49,21 @@ final class JavaRequirementPlanner {
 	private final EngineOptions options;
 	private final JavaSelection defaults;
 	private final Map<String, PlatformProvider> providers;
+	private final ProviderVersions versions;
 	private final PrintStream diagnostics;
-	private final PlatformVersionsReader reader = new PlatformVersionsReader();
-	private final Map<String, PlatformVersions> versionsByPlatform = new ConcurrentHashMap<>();
 
 	/**
 	 * Creates a planner for one engine's providers.
 	 *
 	 * @param options engine options supplying the default Java selection and support policy
 	 * @param providers installed platform providers keyed by platform identifier
+	 * @param versions version data of the installed providers
 	 * @param diagnostics stream receiving information and warning lines
 	 */
 	JavaRequirementPlanner(
 			@NotNull EngineOptions options,
 			@NotNull Map<String, PlatformProvider> providers,
+			@NotNull ProviderVersions versions,
 			@NotNull PrintStream diagnostics
 	) {
 		this.options = options;
@@ -70,6 +71,7 @@ final class JavaRequirementPlanner {
 				.requirement(JavaRequirement.builder().build())
 				.build());
 		this.providers = new TreeMap<>(providers);
+		this.versions = versions;
 		this.diagnostics = diagnostics;
 	}
 
@@ -119,15 +121,11 @@ final class JavaRequirementPlanner {
 
 	private Subject subject(AnvilScenario scenario, MinecraftProcess declaration, PlatformProvider provider) {
 		try {
-			return new Subject(declaration, provider, versions(provider), provider.platformVersion(declaration),
+			return new Subject(declaration, provider, versions.of(provider), provider.platformVersion(declaration),
 					origin(scenario, declaration), declaration.getJavaSelection().getRequirement() != null);
 		} catch (PlatformException invalid) {
 			throw new ScenarioValidationException("Process '" + declaration.getName() + "': " + invalid.getMessage(), invalid);
 		}
-	}
-
-	private PlatformVersions versions(PlatformProvider provider) {
-		return versionsByPlatform.computeIfAbsent(provider.id(), id -> reader.read(id, provider.versionData()));
 	}
 
 	private JavaRange range(Subject subject) {
@@ -217,22 +215,31 @@ final class JavaRequirementPlanner {
 		for (PlatformProvider other : providers.values()) {
 			if (other == subject.provider() || !other.configurationType().isInstance(server)) continue;
 
-			String alternative = alternative(other, server, java, policy);
+			String alternative = alternative(other, server, subject.versions().getEdition(), java, policy);
 			if (alternative != null) platforms.add(alternative);
 		}
 
 		return platforms;
 	}
 
-	private @Nullable String alternative(PlatformProvider other, MinecraftServer server, int java, SupportPolicy policy) {
+	private @Nullable String alternative(
+			PlatformProvider other,
+			MinecraftServer server,
+			MinecraftEdition edition,
+			int java,
+			SupportPolicy policy
+	) {
 		MinecraftVersion version;
 		PlatformVersions data;
 		try {
 			version = other.platformVersion(server);
-			data = versions(other);
+			data = versions.of(other);
 		} catch (PlatformException invalid) {
 			return null;
 		}
+
+		// A platform of another edition runs another game, whatever version number it shares.
+		if (!data.getEdition().equals(edition)) return null;
 
 		JavaCompatibility row = version == null ? null : data.javaCompatibility(version).orElse(null);
 		if (row == null) return null;

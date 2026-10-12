@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.platform.planning.topology;
 
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
@@ -92,6 +93,7 @@ class LifetimeSplitTest {
 					.forwarding(forwarding)
 					.javaSelection(JavaSelection.builder().build())
 					.proxy(process instanceof MinecraftProxy)
+					.edition(MinecraftEdition.of("java"))
 					.readinessPattern(Pattern.compile("READY"))
 					.stopCommand("stop")
 					.build());

@@ -2,6 +2,7 @@ package me.whereareiam.anvil.platform.planning.version;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import org.jetbrains.annotations.NotNull;
@@ -19,6 +20,7 @@ import java.util.Set;
  * into {@link PlatformVersions}.
  *
  * <pre>{@code
+ * edition = "example"
  * known = ["1.16.5", "1.17.1"]
  *
  * [agent]
@@ -35,12 +37,13 @@ import java.util.Set;
  * maximumBypassProperty = "Paper.IgnoreJavaVersion"
  * }</pre>
  *
- * <p>Every key is optional except the {@code [[java]]} rows and their {@code minimum} and
- * {@code preferred}; only the first row may omit {@code since}. Unknown keys are refused, so a
+ * <p>Every key is optional except {@code edition}, the {@code [[java]]} rows and their {@code minimum} and
+ * {@code preferred}; only the first row may omit {@code since}. The edition is an opaque
+ * {@link MinecraftEdition} identifier that planning only compares. Unknown keys are refused, so a
  * misspelt key cannot silently drop a rule.</p>
  */
 public final class PlatformVersionsReader {
-	private static final Set<String> DOCUMENT_KEYS = Set.of("known", "agent", "verified", "java");
+	private static final Set<String> DOCUMENT_KEYS = Set.of("edition", "known", "agent", "verified", "java");
 	private static final Set<String> AGENT_KEYS = Set.of("minimumJava");
 	private static final Set<String> ROW_KEYS = Set.of("since", "minimum", "maximum", "preferred", "maximumBypassProperty");
 
@@ -67,7 +70,8 @@ public final class PlatformVersionsReader {
 
 	private PlatformVersions versions(JsonNode document) {
 		refuseUnknownKeys(document, DOCUMENT_KEYS, "the document");
-		PlatformVersions.PlatformVersionsBuilder versions = PlatformVersions.builder();
+		PlatformVersions.PlatformVersionsBuilder versions = PlatformVersions.builder()
+				.edition(edition(document));
 		for (JsonNode version : array(document, "known"))
 			versions.knownVersion(MinecraftVersion.parse(version.asText()));
 
@@ -95,6 +99,13 @@ public final class PlatformVersionsReader {
 		}
 
 		return versions.build();
+	}
+
+	private static MinecraftEdition edition(JsonNode document) {
+		if (!document.has("edition"))
+			throw new IllegalArgumentException("'edition' is missing; declare the Minecraft edition the platform's processes speak");
+
+		return MinecraftEdition.of(text(document, "edition"));
 	}
 
 	private static void refuseUnknownKeys(JsonNode node, Set<String> keys, String location) {

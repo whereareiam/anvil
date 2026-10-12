@@ -13,7 +13,9 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 /**
- * Release version of Minecraft: Java Edition, compared component by component.
+ * Release version of Minecraft, compared component by component. A version names no edition: two editions
+ * may number different releases alike, so a version identifies a release only together with its
+ * {@link MinecraftEdition}.
  *
  * <p>Both numbering schemes order naturally: {@code 1.16.5 < 1.21.11 < 26.1 < 26.1.2}. Trailing zero
  * components are insignificant, so {@code 1.20} equals {@code 1.20.0}. Snapshots, pre-releases and

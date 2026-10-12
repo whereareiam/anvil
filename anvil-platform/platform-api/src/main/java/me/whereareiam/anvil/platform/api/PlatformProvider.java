@@ -115,6 +115,9 @@ public interface PlatformProvider {
 	 * {@link SupportLevel} before anything is downloaded or launched.
 	 *
 	 * <pre>{@code
+	 * # Minecraft edition the platform's processes speak; an opaque identifier planning only compares.
+	 * edition = "example"
+	 *
 	 * # Platform versions the data declares as supported (COMPATIBLE).
 	 * known = ["1.16.5", "1.17.1", "1.18.2"]
 	 *
@@ -140,7 +143,10 @@ public interface PlatformProvider {
 	 * <p>Platform versions are the values {@link #platformVersion(MinecraftProcess)} returns; a process
 	 * without a version uses the newest row. Each preferred version is an LTS release (11, 17, 21, 25,
 	 * then every fourth release) inside its row. A bypass property needs a maximum, and planning sets
-	 * it only for an explicitly requested Java version above that maximum. Unknown keys are refused.</p>
+	 * it only for an explicitly requested Java version above that maximum. The edition is required:
+	 * planning records it in each {@code ProcessPlan}, a player
+	 * reaches the process only with a protocol release of the same edition, and Java planning suggests
+	 * only platforms of the same edition. Unknown keys are refused.</p>
 	 *
 	 * <pre>{@code
 	 * public @NotNull URL versionData() {

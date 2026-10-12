@@ -44,6 +44,9 @@ public @NotNull URL versionData() {
 ```
 
 ```toml
+# Minecraft edition your platform's processes speak. Required.
+edition = "java"
+
 # Versions your data supports; Anvil assesses them as COMPATIBLE.
 known = ["1.20.4", "1.20.6", "1.21.11"]
 
@@ -67,6 +70,11 @@ since = "1.20.5"
 minimum = 21
 preferred = 21
 ```
+
+`edition` is an opaque identifier that Anvil only compares: a simulated player reaches your servers
+only with a protocol release of the same edition, and Java planning suggests alternative platforms
+only of the same edition. Use the identifier the protocol libraries for that game declare in their
+release data.
 
 `preferred` must be an LTS release inside `[minimum, maximum]`; planning uses it when no declaration
 requests a version. `maximum` is optional and models the platform's own refusal of newer Java. Add

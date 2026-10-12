@@ -3,6 +3,8 @@
 # such as 3.5.0-SNAPSHOT is ignored. A local or artifact JAR carries no release, so it uses the
 # newest row.
 #
+# edition:  the Minecraft edition the platform's processes speak; players reach them only with
+#           a protocol release of the same edition.
 # known:    Velocity releases Anvil's data supports; Anvil assesses them as COMPATIBLE.
 # agent:    the oldest Java the Velocity agent runs on. It compiles against the current Velocity API
 #           for Java 21, so planning raises Velocity 3.3.x and 3.4.x (which run on Java 17) to Java 21,
@@ -11,6 +13,7 @@
 #           runs (VERIFIED); every other supported release is listed in `known` only.
 # java:     each row applies from `since` until the next row starts.
 
+edition = "java"
 known = ["3.3.0", "3.4.0", "3.5.0", "3.5.1"]
 
 [agent]

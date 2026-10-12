@@ -1,5 +1,7 @@
 # Paper version data exposed by PaperPlatformProvider.versionData() and read by platform planning.
 #
+# edition:  the Minecraft edition the platform's processes speak; players reach them only with
+#           a protocol release of the same edition.
 # known:    Minecraft versions Paper publishes builds for; Anvil assesses them as COMPATIBLE.
 # agent:    the oldest Java the Bukkit agent installed into Paper runs on. Planning never selects
 #           older Java, and the provider's checkAgentJava build task fails when the agent's classes
@@ -10,6 +12,7 @@
 #           startup refusal; `maximumBypassProperty` lifts it when a scenario explicitly requests
 #           a newer LTS release (Paper 1.16.5 and 1.17.x check `Paper.IgnoreJavaVersion`).
 
+edition = "java"
 known = [
 	"1.16.5",
 	"1.17", "1.17.1",

@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.platform.planning.version;
 
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
@@ -73,6 +74,8 @@ class PlatformVersionsTest {
 	@Test
 	void appliesAFirstRowWithoutStartToEveryVersion() throws IOException {
 		PlatformVersions unversioned = read("""
+				edition = "sample"
+
 				[[java]]
 				minimum = 17
 				preferred = 21
@@ -175,6 +178,8 @@ class PlatformVersionsTest {
 		assertTrue(invalid.getMessage().startsWith("Platform 'sample' has invalid version data "), invalid.getMessage());
 		assertTrue(invalid.getMessage().contains("java.minimum"), invalid.getMessage());
 		PlatformException misspelt = assertThrows(PlatformException.class, () -> read("""
+				edition = "sample"
+
 				[agent]
 				minimumjava = 11
 
@@ -184,12 +189,42 @@ class PlatformVersionsTest {
 				"""));
 		assertTrue(misspelt.getMessage().contains("unknown key 'minimumjava' in [agent]"), misspelt.getMessage());
 		PlatformException row = assertThrows(PlatformException.class, () -> read("""
+				edition = "sample"
+
 				[[java]]
 				since = "1.18"
 				minimum = 17
 				prefered = 17
 				"""));
 		assertTrue(row.getMessage().contains("unknown key 'prefered' in a [[java]] row"), row.getMessage());
+	}
+
+	@Test
+	void readsTheRequiredEditionAsAnOpaqueIdentifier() throws IOException {
+		assertEquals(MinecraftEdition.of("java"), SAMPLE.getEdition());
+		PlatformVersions other = read("""
+				edition = "other"
+
+				[[java]]
+				minimum = 17
+				preferred = 17
+				""");
+		assertEquals(MinecraftEdition.of("other"), other.getEdition());
+
+		PlatformException missing = assertThrows(PlatformException.class, () -> read("""
+				[[java]]
+				minimum = 17
+				preferred = 17
+				"""));
+		assertTrue(missing.getMessage().contains("'edition' is missing"), missing.getMessage());
+		PlatformException invalid = assertThrows(PlatformException.class, () -> read("""
+				edition = "Other Edition"
+
+				[[java]]
+				minimum = 17
+				preferred = 17
+				"""));
+		assertTrue(invalid.getMessage().contains("Not a Minecraft edition identifier"), invalid.getMessage());
 	}
 
 	private PlatformVersions read(String document) throws IOException {

@@ -22,6 +22,7 @@ import me.whereareiam.anvil.platform.planning.topology.ForwardingPlan;
 import me.whereareiam.anvil.platform.planning.topology.ProcessTopology;
 import me.whereareiam.anvil.platform.planning.validation.ListenerTransportValidator;
 import me.whereareiam.anvil.platform.planning.validation.ProcessDeclarationValidator;
+import me.whereareiam.anvil.platform.planning.version.ProviderVersions;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -39,6 +40,7 @@ import java.util.Map;
  */
 public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPreparer {
 	private final EngineOptions options;
+	private final ProviderVersions versions = new ProviderVersions();
 	private final JavaRequirementPlanner javaPlanner;
 	private final Map<String, PlatformProvider> providers;
 	private final PlatformArtifactSource downloads;
@@ -51,7 +53,7 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 			@NotNull PlatformAgentSource agents
 	) {
 		this.options = options;
-		this.javaPlanner = new JavaRequirementPlanner(options, providers, System.err);
+		this.javaPlanner = new JavaRequirementPlanner(options, providers, versions, System.err);
 		this.providers = Map.copyOf(providers);
 		this.downloads = downloads;
 		this.artifacts = new ScenarioArtifactResolver(options.getArtifacts(), agents);
@@ -78,6 +80,7 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 					.proxy(proxy)
 					.publishGame(proxy || resolved.getNetworkPolicy().getBackendNetworkExposure() != NetworkExposure.PRIVATE)
 					.gameTransport(provider.gameTransport())
+					.edition(versions.of(provider).getEdition())
 					.dependencies(proxy ? servers : List.of())
 					.workspace(artifacts.installAgent(declaration.getWorkspace(), agent))
 					.forwarding(forwarding.get(name))

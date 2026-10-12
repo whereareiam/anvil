@@ -1,4 +1,5 @@
 # Shaped like the built-in Velocity data: the agent needs newer Java than Velocity 3.3 and 3.4.
+edition = "java"
 known = ["3.4.0", "4.0.0"]
 
 [agent]

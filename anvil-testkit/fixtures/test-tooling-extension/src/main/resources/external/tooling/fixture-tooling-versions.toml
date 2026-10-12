@@ -1,4 +1,6 @@
 # The fixture process runs on Java 21 for its one Minecraft version.
+edition = "java"
+
 [verified]
 "1.21.11" = [21]
 

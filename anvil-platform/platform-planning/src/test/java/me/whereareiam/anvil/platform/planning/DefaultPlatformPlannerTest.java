@@ -2,6 +2,7 @@ package me.whereareiam.anvil.platform.planning;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.NetworkPolicy;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
@@ -239,6 +240,17 @@ class DefaultPlatformPlannerTest {
 		assertEquals(ListenerTransport.UDP, planned.getGameTransport());
 		assertEquals(ListenerTransport.TCP, policyPlanner(EngineOptions.builder().build())
 				.plan(withPlatform(scenario, "test")).getProcesses().get("server").getGameTransport());
+	}
+
+	@Test
+	void carriesTheEditionOfThePlatformsVersionDataIntoTheProcessPlan() {
+		var server = MinecraftServer.builder().name("server").platform("test")
+				.distribution(Distribution.remote("1.21.11", "1")).build();
+		var scenario = AnvilScenario.builder().name("test").entrypoint("server").server(server).build();
+
+		var planned = policyPlanner(EngineOptions.builder().build()).plan(scenario).getProcesses().get("server");
+
+		assertEquals(MinecraftEdition.of("java"), planned.getEdition());
 	}
 
 	@Test

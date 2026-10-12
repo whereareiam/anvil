@@ -1,3 +1,5 @@
+edition = "java"
+
 [[java]]
 since = "1.16.5"
 minimum = "eleven"

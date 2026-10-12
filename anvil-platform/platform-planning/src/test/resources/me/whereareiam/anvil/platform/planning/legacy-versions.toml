@@ -1,4 +1,6 @@
 # A server whose agent needs newer Java than the version's maximum.
+edition = "java"
+
 [agent]
 minimumJava = 17
 
