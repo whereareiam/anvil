@@ -2,6 +2,7 @@ package me.whereareiam.anvil.environment.execution.local.process;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.exception.ProcessException;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
@@ -61,6 +62,11 @@ public final class LocalProcessTarget implements ProcessTarget {
 	@Override
 	public @NotNull InetSocketAddress peerAddress() {
 		return address;
+	}
+
+	@Override
+	public @NotNull ListenerTransport gameTransport() {
+		return request.getGameTransport();
 	}
 
 	@Override

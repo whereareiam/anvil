@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.environment.execution.docker.execution;
 
 import me.whereareiam.anvil.api.exception.ProvisioningException;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.api.type.network.NetworkServerAccess;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
@@ -61,19 +62,20 @@ final class DockerExecutionSession implements ExecutionSession {
 
 		String image = images.resolve(request);
 		String alias = "p-" + UUID.nameUUIDFromBytes(request.getName().getBytes(StandardCharsets.UTF_8));
+		String bindAddress = context.getNetworkPolicy().getBindAddress();
 		synchronized (this) {
 			if (closed) throw new IllegalStateException("Docker environment is closed");
 
 			DockerProcessTarget target = new DockerProcessTarget(containers, dockerNetwork.id(), alias, image, request,
-					new InetSocketAddress(context.getNetworkPolicy().getBindAddress(), port(context.getNetworkPolicy().getBindAddress())),
-					new InetSocketAddress("127.0.0.1", port("127.0.0.1")));
+					new InetSocketAddress(bindAddress, port(bindAddress, request.getGameTransport())),
+					new InetSocketAddress("127.0.0.1", port("127.0.0.1", ListenerTransport.TCP)));
 			targets.add(target);
 			return target;
 		}
 	}
 
-	private int port(String address) {
-		int port = context.getPorts().reserve(address);
+	private int port(String address, ListenerTransport transport) {
+		int port = context.getPorts().reserve(address, transport);
 		ports.add(port);
 
 		return port;

@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.environment.execution.api;
 
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -9,18 +10,20 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface PortReservations {
 	/**
-	 * Reserves a TCP port that is free on the address now and that no other reservation holds.
+	 * Reserves a port that is free for the transport on the address now and that no other reservation holds.
+	 * Reserved numbers stay distinct across transports, so a released TCP port and a UDP port never share one.
 	 *
 	 * @param bindAddress local address the port will be bound on
+	 * @param transport transport the port will be bound with
 	 * @return reserved port
 	 */
-	int reserve(@NotNull String bindAddress);
+	int reserve(@NotNull String bindAddress, @NotNull ListenerTransport transport);
 
 	/**
 	 * Makes a reserved port available again after its process has stopped for good.
 	 * Releasing a port that is not reserved has no effect.
 	 *
-	 * @param port port returned by {@link #reserve(String)}
+	 * @param port port returned by {@link #reserve(String, ListenerTransport)}
 	 */
 	void release(int port);
 }

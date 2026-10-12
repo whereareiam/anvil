@@ -32,7 +32,8 @@ check whether the named process has the expected role.
 | `restart(name)` | Replacement process after readiness |
 | `kill(name)` | Stopped process, ended without its shutdown sequence |
 
-Every handle exposes `name()`, `address()`, `workDirectory()`, `state()`, and `console()`.
+Every handle exposes `name()`, `address()`, `transport()`, `workDirectory()`, `state()`, and `console()`.
+`transport()` names the `ListenerTransport` (TCP or UDP) that the listener at `address()` accepts players on.
 Use `capability(Type.class)` for installed process behavior, including
 [capabilities backed by agents](./agents/index.md).
 After a restart, request a fresh lookup or use the returned replacement handle.

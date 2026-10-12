@@ -21,6 +21,7 @@ import me.whereareiam.anvil.api.player.account.AccountPool.AccountLease;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.type.AuthenticationMode;
 import me.whereareiam.anvil.api.type.SupportPolicy;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
@@ -120,6 +121,19 @@ class RunningPlayerManagerTest {
 		manager.create("bob");
 		assertNull(library.lastRequest.getConnection().getVirtualHost());
 		assertNull(library.lastRequest.getConnection().getSourceAddress());
+	}
+
+	@Test
+	void probesTheSourceAddressWithTheTransportOfTheTarget() {
+		StubLibrary library = new StubLibrary();
+		RunningPlayerManager manager = new RunningPlayerManager(scenario(), selector(library), ignored -> library,
+				new StubScenarioProcesses("server", temporary.resolve("server"), ListenerTransport.UDP),
+				(player, connectedTo) -> observation(player), composer(), ignored -> { }, List::of, new AccountReservations(), true);
+
+		manager.create(PlayerOptions.builder().name("alice").connection(PlayerConnection.builder()
+				.sourceAddress("127.0.0.1").build()).build());
+
+		assertEquals(InetAddress.getLoopbackAddress(), library.lastRequest.getConnection().getSourceAddress());
 	}
 
 	@Test

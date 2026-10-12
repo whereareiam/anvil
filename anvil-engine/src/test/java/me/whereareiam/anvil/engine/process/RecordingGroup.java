@@ -6,6 +6,7 @@ import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.type.RunningProxy;
 import me.whereareiam.anvil.api.process.type.RunningServer;
 import me.whereareiam.anvil.api.type.ProcessState;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
@@ -106,6 +107,9 @@ final class RecordingGroup implements ProcessGroup {
 
 			@Override
 			public @NotNull InetSocketAddress address() { return new InetSocketAddress("127.0.0.1", 25565); }
+
+			@Override
+			public @NotNull ListenerTransport transport() { return ListenerTransport.TCP; }
 
 			@Override
 			public @NotNull Path workDirectory() { return Path.of(label, name); }

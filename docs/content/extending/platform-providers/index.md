@@ -26,6 +26,10 @@ Implement `me.whereareiam.anvil.platform.api.PlatformProvider` and register its 
 Override `jvmArguments`, `programArguments`, `stopCommand`, and `defaultCaches` where the defaults do not fit your
 platform. Add `forwardingModes` and `platformAgent` when your platform supports those features.
 
+Override `gameTransport()` when your platform's game listener accepts players over UDP instead of the default
+TCP. Execution then reserves, binds, and publishes the game port over UDP, while the platform agent keeps
+listening on TCP. Planning refuses a proxy whose backend servers listen on another transport than the proxy.
+
 ## Declare Java and version data
 
 Keep version data in a `<platform>-versions.toml` resource beside the provider class and return its

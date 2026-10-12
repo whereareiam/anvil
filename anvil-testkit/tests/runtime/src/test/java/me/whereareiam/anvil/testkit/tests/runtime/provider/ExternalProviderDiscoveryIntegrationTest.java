@@ -19,6 +19,7 @@ import me.whereareiam.anvil.api.process.type.RunningProxy;
 import me.whereareiam.anvil.api.process.type.RunningServer;
 import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.api.type.ProcessState;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
 import me.whereareiam.anvil.protocol.api.library.ProtocolArtifactResolver;
@@ -254,6 +255,11 @@ class ExternalProviderDiscoveryIntegrationTest {
 		@Override
 		public @NotNull InetSocketAddress address() {
 			return new InetSocketAddress("127.0.0.1", 25565);
+		}
+
+		@Override
+		public @NotNull ListenerTransport transport() {
+			return ListenerTransport.TCP;
 		}
 
 		@Override

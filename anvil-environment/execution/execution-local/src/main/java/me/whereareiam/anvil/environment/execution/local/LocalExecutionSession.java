@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.type.ProcessPriority;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.api.type.network.NetworkServerAccess;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
@@ -44,14 +45,15 @@ final class LocalExecutionSession implements ExecutionSession {
 				: request.getJavaSelection().getSource();
 
 		Path executable = runtime.executable(request, source);
+		String bindAddress = context.getNetworkPolicy().getBindAddress();
 		return new LocalProcessTarget(request, executable,
-				new InetSocketAddress(context.getNetworkPolicy().getBindAddress(), port(context.getNetworkPolicy().getBindAddress())),
-				new InetSocketAddress("127.0.0.1", port("127.0.0.1")),
+				new InetSocketAddress(bindAddress, port(bindAddress, request.getGameTransport())),
+				new InetSocketAddress("127.0.0.1", port("127.0.0.1", ListenerTransport.TCP)),
 				context.getProcessPriority() == ProcessPriority.LOW ? LOW_PRIORITY : List.of());
 	}
 
-	private synchronized int port(String address) {
-		int port = context.getPorts().reserve(address);
+	private synchronized int port(String address, ListenerTransport transport) {
+		int port = context.getPorts().reserve(address, transport);
 		ports.add(port);
 
 		return port;

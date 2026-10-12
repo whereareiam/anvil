@@ -231,6 +231,11 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 - Execution sessions reserve host listener ports through the engine's `PortReservations` and release them when
   they close. Managed execution's `PortSelection` picks them below the ephemeral ranges, because a process
   binds its port seconds after preparation selected it; do not probe port 0 in a provider.
+- A platform's `PlatformProvider.gameTransport()` (`api.type.network.ListenerTransport`, TCP by default) travels
+  through `ProcessPlan`, `ProcessRequest` and `ProcessTarget` to `RunningProcess.transport()`. Ports are reserved,
+  probed and published with that transport while agent ports stay TCP; reserved numbers stay distinct across
+  transports. Planning refuses a proxy whose backends use another transport, and a player's source-address probe
+  binds with the transport of its target.
 - A simulated player's name is its unique identity within the scenario; its Minecraft username defaults to
   the name and may be shared by several players. The client records the profile its login success granted,
   which a proxy or login plugin may have renamed. Player observations follow the player's own connection from

@@ -3,6 +3,7 @@ package me.whereareiam.anvil.environment.execution.managed.process.type;
 import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.api.process.type.RunningProxy;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.environment.execution.managed.process.ManagedProcess;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,9 +21,10 @@ public final class ManagedProxy extends ManagedProcess implements RunningProxy {
 	public ManagedProxy(
 			@NotNull String name,
 			@NotNull InetSocketAddress address,
+			@NotNull ListenerTransport transport,
 			@NotNull Path workDirectory,
 			@Nullable CapabilityOwner<ProcessCapability> capabilities
 	) {
-		super(name, address, workDirectory, capabilities);
+		super(name, address, transport, workDirectory, capabilities);
 	}
 }
