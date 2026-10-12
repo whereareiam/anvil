@@ -73,7 +73,8 @@ preferred = 21
 
 `edition` is an opaque identifier that Anvil only compares: a simulated player reaches your servers
 only with a protocol release of the same edition, and Java planning suggests alternative platforms
-only of the same edition. Use the identifier the protocol libraries for that game declare in their
+only of the same edition. Planning refuses a proxy whose backend servers speak different editions, because a
+player reaches all of them with one client. Use the identifier the protocol libraries for that game declare in their
 release data.
 
 `preferred` must be an LTS release inside `[minimum, maximum]`; planning uses it when no declaration

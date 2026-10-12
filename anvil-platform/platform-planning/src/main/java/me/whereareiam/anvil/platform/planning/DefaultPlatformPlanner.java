@@ -20,6 +20,7 @@ import me.whereareiam.anvil.platform.planning.artifact.ScenarioArtifactResolver;
 import me.whereareiam.anvil.platform.planning.topology.ForwardingNegotiator;
 import me.whereareiam.anvil.platform.planning.topology.ForwardingPlan;
 import me.whereareiam.anvil.platform.planning.topology.ProcessTopology;
+import me.whereareiam.anvil.platform.planning.validation.BackendEditionValidator;
 import me.whereareiam.anvil.platform.planning.validation.ListenerTransportValidator;
 import me.whereareiam.anvil.platform.planning.validation.ProcessDeclarationValidator;
 import me.whereareiam.anvil.platform.planning.version.ProviderVersions;
@@ -64,6 +65,7 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 		AnvilScenario resolved = artifacts.resolve(scenario);
 		var declarations = new ProcessDeclarationValidator().validate(resolved, providers);
 		new ListenerTransportValidator().validate(declarations, providers);
+		new BackendEditionValidator(versions).validate(declarations, providers);
 		ForwardingPlan topology = new ForwardingNegotiator().negotiate(ProcessTopology.from(resolved), providers);
 		Map<String, ForwardingConfiguration> forwarding = forwarding(topology);
 

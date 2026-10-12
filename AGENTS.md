@@ -123,7 +123,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   creates one capability runtime per selected library.
 - Editions are platform-agnostic: `api.model.MinecraftEdition` is an opaque identifier compared only for equality,
   with no constants or default, and Java code never names an edition; the identifiers appear only in each family's
-  data files. A platform declares `edition` in its version data; planning records it in `ProcessPlan` and the
+  data files. A platform declares `edition` in its version data; planning records it in `ProcessPlan`, refuses a
+  proxy whose backend servers speak different editions (`BackendEditionValidator`), and the
   launcher passes `PlatformPlan.editions()` to the player service. Each protocol release row declares its own
   `edition` (a library is not single-edition) and maps its versions to protocol numbers, `protocol = N` or a
   `[release.protocol]` table, read by `ProtocolRelease.protocolNumber(MinecraftVersion)`. Selection compares
