@@ -4,6 +4,7 @@ import me.whereareiam.anvil.protocol.cloudburst.client.CloudburstSession;
 import me.whereareiam.anvil.protocol.cloudburst.client.PacketSubscription;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.GameStart;
+import me.whereareiam.anvil.protocol.cloudburst.client.world.v1_26_60.WorldTracker;
 import org.cloudburstmc.protocol.bedrock.BedrockClientSession;
 import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
@@ -14,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -21,8 +23,9 @@ import java.util.function.Consumer;
 /**
  * One RakNet connection of the release: its {@link BedrockPeer}, the client session the peer creates once RakNet
  * connected, and the subscriptions made on it. The packet handler dispatches every received packet here before
- * handling it, and records the game start and item definitions as they arrive. Closing the connection ends every
- * subscription, so a reconnect, which opens a new connection session, never reaches them.
+ * handling it, and records the game start and item definitions as they arrive. Its {@link WorldTracker} sees every
+ * packet before the subscriptions do, so a subscription reads the world as the packet left it. Closing the connection
+ * ends every subscription, so a reconnect, which opens a new connection session, never reaches them.
  */
 final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDefinition> {
 	private static final long TICK_NANOS = TimeUnit.MILLISECONDS.toNanos(50);
@@ -31,6 +34,7 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 	private final BedrockCodec codec;
 	private final ClientProfile profile;
 	private final List<Subscription<?>> subscriptions = new CopyOnWriteArrayList<>();
+	private final WorldTracker world;
 
 	private volatile @Nullable BedrockClientSession session;
 	private volatile @Nullable GameStart start;
@@ -43,6 +47,7 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 		this.peer = peer;
 		this.codec = codec;
 		this.profile = profile;
+		this.world = new WorldTracker(codec.getProtocolVersion(), this::send);
 	}
 
 	@Override
@@ -104,6 +109,11 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 		return current.getTick() + (System.nanoTime() - startNanos) / TICK_NANOS;
 	}
 
+	@Override
+	public @NotNull OptionalInt blockAt(int x, int y, int z) {
+		return world.blockAt(x, y, z);
+	}
+
 	/**
 	 * Returns the peer of the connection.
 	 *
@@ -123,12 +133,14 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 	}
 
 	/**
-	 * Delivers a received packet to the subscriptions of its type in subscription order.
+	 * Hands a received packet to the world tracker, then to the subscriptions of its type in subscription order.
 	 *
 	 * @param packet received packet
 	 */
 	void dispatch(@NotNull BedrockPacket packet) {
 		if (closed) return;
+
+		packet.handle(world);
 
 		for (Subscription<?> subscription : subscriptions)
 			subscription.deliver(packet);

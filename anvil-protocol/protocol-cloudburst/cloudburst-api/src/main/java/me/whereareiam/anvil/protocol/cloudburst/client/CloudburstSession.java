@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 
 /**
@@ -106,4 +107,29 @@ public interface CloudburstSession<P, I> {
 	 * @throws IllegalStateException before the game start arrived
 	 */
 	long tick();
+
+	/**
+	 * Returns the runtime id of the block at a position of the dimension the player is in, as the server's chunks and
+	 * block updates last told the client. The id is the one the server sends on the wire: a palette index, or the
+	 * block state hash when the game start says block network ids are hashed. It is the block of the first layer,
+	 * the one an interaction targets; the waterlogging layer is not tracked.
+	 *
+	 * <p>The client keeps the chunks the server sent until the server unloads them for it, moves it to another
+	 * dimension or its chunk publisher no longer covers them. A block is unknown when its chunk was never received or
+	 * was dropped, when it lies outside the dimension's height, or when the server sent its sub-chunk without block
+	 * storage, as it does for sub-chunks that hold only air: the client knows no block names, so it cannot tell
+	 * which runtime id air has.</p>
+	 *
+	 * <pre>{@code
+	 * // transaction is the InventoryTransactionPacket of a click on that block
+	 * OptionalInt block = session.blockAt(10, 64, -3);
+	 * block.ifPresent(runtimeId -> transaction.setBlockDefinition(() -> runtimeId));
+	 * }</pre>
+	 *
+	 * @param x block x coordinate
+	 * @param y block y coordinate
+	 * @param z block z coordinate
+	 * @return the block's runtime id, or empty when the client does not know the block
+	 */
+	@NotNull OptionalInt blockAt(int x, int y, int z);
 }

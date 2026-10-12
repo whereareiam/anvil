@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -227,6 +228,11 @@ class CloudburstInventoryPacketsTest {
 		@Override
 		public long tick() {
 			throw new IllegalStateException("not started");
+		}
+
+		@Override
+		public @NotNull OptionalInt blockAt(int x, int y, int z) {
+			return OptionalInt.empty();
 		}
 
 		private void receive(BedrockPacket packet) {

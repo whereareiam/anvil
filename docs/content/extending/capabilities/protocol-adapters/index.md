@@ -229,7 +229,10 @@ session the Bedrock worker hands to bindings. Its type parameters name the relea
 definition types, so the movement segment `movement-cloudburst/V1_26_60` implements
 `MovementPackets<CloudburstSession<BedrockPacket, ItemDefinition>>`. The session sends packets, delivers
 received packets to typed subscriptions, and reports the game start, the client tick and whether the server
-is authoritative over movement. One segment serves every Bedrock codec of the release, so it sets every
+is authoritative over movement. Its `blockAt(x, y, z)` returns the runtime id of a block in the player's
+dimension as the server's chunks and block updates last sent it, which is the id an interaction with that
+block carries; it is empty for a block the client never received or that lies in a sub-chunk the server sent
+as air only. One segment serves every Bedrock codec of the release, so it sets every
 field a packet has in any codec; the player's codec writes those its protocol knows.
 
 ## Package a segment

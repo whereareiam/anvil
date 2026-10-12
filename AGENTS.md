@@ -138,8 +138,11 @@ current project scope.
   client tick. Each session is one connection generation, and closing its connection ends its subscriptions, so a
   reconnect never reaches them. The session also names the profile its login claimed and whether the server is
   authoritative over movement: always from protocol 818 on, before that as the game start or a later movement
-  authority packet says. CloudburstMC types reach feature segments only through the type parameters; host
-  code and `cloudburst-common` never see them. The session, messages, movement and inventory capabilities serve
+  authority packet says. Its `blockAt(x, y, z)` returns the first-layer runtime id the server sent for a block, as
+  the segment's `WorldTracker` (package `client.world.v1_26_60`) keeps the chunks of the player's dimension like a
+  client: full level chunks, sub-chunks it requests in request mode, block and sub-chunk updates, dropped on a
+  dimension change or outside the chunk publisher; air-only and never-received blocks are unknown. CloudburstMC
+  types reach feature segments only through the type parameters; host code and `cloudburst-common` never see them. The session, messages, movement and inventory capabilities serve
   `mcprotocol` and `cloudburst`; their `<feature>-cloudburst/V1_26_60` segment serves every codec of the release.
   The inventory capability's `cloudburst` side observes the player's own containers by inventory index and opened
   containers as received, and refuses hotbar selection and clicks, which need the client's item stacks.
