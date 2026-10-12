@@ -10,6 +10,7 @@ dependencies {
 
 	implementation(libs.jackson.databind)
 	implementation(libs.jackson.toml)
+	implementation(libs.minecraft.auth)
 
 	embedded(projects.anvilProtocol.protocolWorker.workerCommon) { isTransitive = false }
 }

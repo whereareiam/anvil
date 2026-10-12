@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.exception.AnvilException;
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
+import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
@@ -19,11 +20,13 @@ import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
+import me.whereareiam.anvil.api.player.account.AccountPool;
 import me.whereareiam.anvil.api.player.account.AccountPool.AccountLease;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.type.AuthenticationMode;
 import me.whereareiam.anvil.api.type.SupportPolicy;
 import me.whereareiam.anvil.api.type.network.ListenerTransport;
+import me.whereareiam.anvil.protocol.api.library.ProtocolAuthentication;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
@@ -31,6 +34,7 @@ import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.api.type.ProtocolFeature;
 import me.whereareiam.anvil.protocol.player.account.AccountReservations;
+import me.whereareiam.anvil.protocol.player.account.ProtocolAccountManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -41,6 +45,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,8 +112,8 @@ class RunningPlayerManagerTest {
 		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create(PlayerOptions.builder()
 				.name("alice").login(PlayerLogin.leased(AuthenticationMode.ON_REQUEST)).build()));
 
-		assertEquals("Player 'alice' declares a leased login; create it with PlayerManager.create(PlayerOptions, AccountLease)",
-				refused.getMessage());
+		assertEquals("Player 'alice' declares a leased login; create it with PlayerManager.create(PlayerOptions, AccountPool) "
+				+ "or PlayerManager.create(PlayerOptions, AccountLease)", refused.getMessage());
 		assertNull(library.lastRequest);
 	}
 
@@ -321,7 +326,7 @@ class RunningPlayerManagerTest {
 		StubLibrary library = new StubLibrary();
 		IllegalStateException refresh = new IllegalStateException("Token refresh failed");
 		library.creationFailure = refresh;
-		AuthenticationAccount alice = new AuthenticationAccount("alice", "test", "Alice", null);
+		AuthenticationAccount alice = usable("alice");
 		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), alice);
 		PlayerOptions options = online("alice");
 
@@ -333,7 +338,7 @@ class RunningPlayerManagerTest {
 
 	@Test
 	void scenariosOfOneEngineCannotUseTheSameAccountAtOnce() {
-		AuthenticationAccount alice = new AuthenticationAccount("alice", "test", "Alice", null);
+		AuthenticationAccount alice = usable("alice");
 		AccountReservations reservations = new AccountReservations();
 		RunningPlayerManager first = onlineManager(new StubLibrary(), reservations, alice);
 		RunningPlayerManager second = onlineManager(new StubLibrary(), reservations, alice);
@@ -345,22 +350,25 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
-	void onlinePlayersRequireAnAccountOwnedByTheirSelectedLibrary() {
+	void anOnlinePlayerIsRefusedBeforeConnectingWhenItsLibraryRecordedTheAccountAsUnavailable() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount foreign = new AuthenticationAccount("alice", "other", "Alice", null);
-		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), foreign);
+		AuthenticationAccount refused = new AuthenticationAccount("alice", List.of(
+				AccountAccess.available("other", "Alice", UUID.randomUUID()),
+				AccountAccess.unavailable("test", "Account 'alice' owns no test game")
+		));
+		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), refused);
 
 		var failure = assertThrows(ScenarioValidationException.class, () -> manager.create(online("alice")));
 
-		assertTrue(failure.getMessage().contains("is not stored by protocol library 'test'"), failure.getMessage());
-		assertTrue(failure.getMessage().endsWith("it is stored by [other]"), failure.getMessage());
+		assertEquals("Player 'alice' cannot sign in with account 'alice' through protocol library 'test': Account 'alice' "
+				+ "owns no test game", failure.getMessage());
 		assertNull(library.lastRequest);
 	}
 
 	@Test
 	void onRequestPlayersSignInOnAnOfflineEntrypointThatOnlinePlayersCannotJoin() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount account = new AuthenticationAccount("alice", "test", "Alice", null);
+		AuthenticationAccount account = usable("alice");
 		RunningPlayerManager manager = new RunningPlayerManager(scenario(), editions(scenario()), selector(library), ignored -> library,
 				new StubScenarioProcesses("server", temporary.resolve("server")), (player, connectedTo) -> observation(player), composer(),
 				ignored -> { }, () -> List.of(account), new AccountReservations(), true);
@@ -376,11 +384,10 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
-	void anAccountIdStoredBySeveralLibrariesSignsInWithTheAccountOfTheSelectedLibrary() {
+	void anAccountTheSelectedLibraryHasNotCheckedLetsTheLibraryDetermineItWhenThePlayerSignsIn() {
 		StubLibrary library = new StubLibrary();
-		RunningPlayerManager manager = onlineManager(library, new AccountReservations(),
-				new AuthenticationAccount("alice", "other", "Alice", null),
-				new AuthenticationAccount("alice", "test", "Alice", null));
+		AuthenticationAccount unchecked = new AuthenticationAccount("alice", List.of(AccountAccess.available("other", "Alice", UUID.randomUUID())));
+		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), unchecked);
 
 		assertEquals("alice", manager.create(online("alice")).name());
 		assertEquals("alice", library.lastRequest.getLogin().getAccountId());
@@ -404,25 +411,52 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
-	void aLeasedAccountSelectsItsOwnLibraryOverTheEngineChoice() {
+	void aLeasedAccountKeepsTheLibraryThePlayerSelects() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount leased = new AuthenticationAccount("alice", "other", "Alice", null);
+		AuthenticationAccount leased = new AuthenticationAccount("alice", List.of(
+				AccountAccess.available("other", "Alice", UUID.randomUUID()),
+				AccountAccess.available("test", "Alice", UUID.randomUUID())
+		));
 		ProtocolLibrarySelector selector = new ProtocolLibrarySelector(List.of("test", "other"),
 				Map.of("test", library.releases(), "other", List.of(release("other-1.21.11", "1.21.11")))::get, "test",
 				SupportPolicy.LENIENT, ignored -> { });
-		RunningPlayerManager manager = onlineManager(selector, library, leased, new AuthenticationAccount("alice", "test", "Alice", null));
+		RunningPlayerManager manager = onlineManager(selector, library, leased);
 		RecordingLease lease = new RecordingLease(leased);
 
 		manager.create("alice", lease);
 
-		assertEquals("other", library.lastSelectedId);
+		assertEquals("test", library.lastSelectedId);
 		assertFalse(lease.closed);
+	}
+
+	@Test
+	void aPoolLendsThePlayerTheFirstAccountItsLibraryCanUse() {
+		StubLibrary library = new StubLibrary();
+		AuthenticationAccount refused = new AuthenticationAccount("alice", List.of(AccountAccess.unavailable("test", "Account 'alice' owns no test game")));
+		AuthenticationAccount unchecked = new AuthenticationAccount("bob", List.of());
+		AccountReservations reservations = new AccountReservations();
+		ProtocolAccountManager accounts = new ProtocolAccountManager(new StoredAccounts(refused, unchecked, usable("carol")),
+				temporary, reservations);
+		RunningPlayerManager manager = onlineManager(library, reservations, refused, unchecked, usable("carol"));
+		AccountPool pool = accounts.pool(List.of("alice", "bob", "carol"));
+		PlayerOptions leased = PlayerOptions.builder().name("player").login(PlayerLogin.leased(AuthenticationMode.ONLINE)).build();
+
+		SimulatedPlayer player = manager.create(leased, pool);
+
+		assertEquals("carol", library.lastRequest.getLogin().getAccountId());
+		var exhausted = assertThrows(IllegalStateException.class,
+				() -> manager.create(leased.toBuilder().name("second").build(), pool));
+		assertEquals("No account of the pool is available to protocol library 'test': alice (test: unavailable, Account 'alice' "
+				+ "owns no test game), bob (test: unknown), carol (in use)", exhausted.getMessage());
+		player.destroy();
+		manager.create(leased.toBuilder().name("third").build(), pool);
+		assertEquals("carol", library.lastRequest.getLogin().getAccountId());
 	}
 
 	@Test
 	void aLeaseKeepsThePlayerOptionsAndSuppliesItsAccount() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount leased = new AuthenticationAccount("stored", "test", "Alice", null);
+		AuthenticationAccount leased = usable("stored");
 		RunningPlayerManager manager = onlineManager(new ProtocolLibrarySelector(List.of("test"),
 				Map.of("test", library.releases())::get, "test", SupportPolicy.LENIENT, ignored -> { }), library, leased);
 		RecordingLease lease = new RecordingLease(leased);
@@ -437,7 +471,7 @@ class RunningPlayerManagerTest {
 	@Test
 	void aLeaseIsRefusedForALoginThatTakesNoLeaseWithoutBeingClaimed() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount leased = new AuthenticationAccount("stored", "test", "Alice", null);
+		AuthenticationAccount leased = usable("stored");
 		RunningPlayerManager manager = onlineManager(new ProtocolLibrarySelector(List.of("test"),
 				Map.of("test", library.releases())::get, "test", SupportPolicy.LENIENT, ignored -> { }), library, leased);
 		RecordingLease lease = new RecordingLease(leased);
@@ -451,14 +485,19 @@ class RunningPlayerManagerTest {
 	@Test
 	void aLeasedAccountWhoseLibraryCannotServeThePlayerIsRefusedAndReturned() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount leased = new AuthenticationAccount("alice", "other", "Alice", null);
+		AuthenticationAccount leased = usable("alice");
 		ProtocolLibrarySelector selector = new ProtocolLibrarySelector(List.of("test", "other"),
 				Map.of("test", library.releases(), "other", List.of(release("other-1.20.6", "1.20.6")))::get, null,
 				SupportPolicy.LENIENT, ignored -> { });
 		RunningPlayerManager manager = onlineManager(selector, library, leased);
 		RecordingLease lease = new RecordingLease(leased);
+		PlayerOptions options = PlayerOptions.builder()
+				.name("alice")
+				.protocolLibrary("other")
+				.login(PlayerLogin.leased(AuthenticationMode.ONLINE))
+				.build();
 
-		var failure = assertThrows(ScenarioValidationException.class, () -> manager.create("alice", lease));
+		var failure = assertThrows(ScenarioValidationException.class, () -> manager.create(options, lease));
 
 		assertEquals("Protocol library 'other' selected for player 'alice' does not support java Minecraft 1.21.11. Supported java "
 				+ "versions: [1.20.6]",
@@ -470,7 +509,7 @@ class RunningPlayerManagerTest {
 	@Test
 	void aLeasedAccountOfTheSelectedLibrarySignsInAndIsReturnedOnDestruction() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount leased = new AuthenticationAccount("alice", "test", "Alice", null);
+		AuthenticationAccount leased = usable("alice");
 		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), leased);
 		RecordingLease lease = new RecordingLease(leased);
 
@@ -480,6 +519,25 @@ class RunningPlayerManagerTest {
 		assertFalse(lease.closed);
 		player.destroy();
 		assertTrue(lease.closed);
+	}
+
+	@Test
+	void aLeasedAccountTheSelectedLibraryRecordedAsUnavailableIsRefusedBeforeConnectingAndReturned() {
+		StubLibrary library = new StubLibrary();
+		AuthenticationAccount leased = new AuthenticationAccount("alice", List.of(AccountAccess.unavailable("test", "Account 'alice' owns no test game")));
+		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), leased);
+		RecordingLease lease = new RecordingLease(leased);
+
+		var failure = assertThrows(ScenarioValidationException.class, () -> manager.create("alice", lease));
+
+		assertTrue(failure.getMessage().endsWith("through protocol library 'test': Account 'alice' owns no test game"),
+				failure.getMessage());
+		assertTrue(lease.closed);
+		assertNull(library.lastRequest);
+	}
+
+	private static AuthenticationAccount usable(String accountId) {
+		return new AuthenticationAccount(accountId, List.of(AccountAccess.available("test", "Alice", UUID.randomUUID())));
 	}
 
 	private RunningPlayerManager onlineManager(ProtocolLibrarySelector selector, StubLibrary library, AuthenticationAccount... accounts) {
@@ -623,6 +681,32 @@ class RunningPlayerManagerTest {
 				onDestroyed.accept(this);
 			}
 		};
+	}
+
+	/**
+	 * Stored accounts without files, as the libraries' account workflow lists them.
+	 */
+	private static final class StoredAccounts implements ProtocolAuthentication {
+		private final List<AuthenticationAccount> accounts;
+
+		private StoredAccounts(AuthenticationAccount... accounts) {
+			this.accounts = List.of(accounts);
+		}
+
+		@Override
+		public @NotNull Collection<AuthenticationAccount> accounts() {
+			return accounts;
+		}
+
+		@Override
+		public void login(@NotNull String accountId, @NotNull Consumer<String> output) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public void logout(@NotNull String accountId, @NotNull Consumer<String> output) {
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	/**

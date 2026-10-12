@@ -30,8 +30,8 @@ import java.util.UUID;
 @Builder
 public class WorkerLibrary {
 	/**
-	 * Registered library id: declarations select it, segment descriptors and stored accounts name it, and its
-	 * release cache lies below it.
+	 * Registered library id: declarations select it, segment descriptors and what stored accounts record about
+	 * the library name it, and its release cache lies below it.
 	 */
 	@NotNull String id;
 	/**
@@ -70,12 +70,6 @@ public class WorkerLibrary {
 	 */
 	@Singular
 	@NotNull List<String> jvmArguments;
-	/**
-	 * Whether the library claims stored accounts whose file names no library, the files written before account
-	 * files recorded their owner. At most one installed library should claim them; a library that never wrote such
-	 * files keeps the default {@code false}.
-	 */
-	boolean readsUnlabelledAccounts;
 
 	/**
 	 * Derives the UUID a player of this library claims when it logs in offline with a username.

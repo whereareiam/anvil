@@ -2,21 +2,20 @@ package me.whereareiam.anvil.protocol.api.worker;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.library.ProtocolAuthentication;
-import me.whereareiam.anvil.protocol.api.worker.model.AccountRecord;
-import me.whereareiam.anvil.protocol.api.worker.model.AuthenticationSession;
-import me.whereareiam.anvil.protocol.api.worker.model.ResolvedAccount;
+import me.whereareiam.anvil.protocol.api.worker.model.AccountCredentials;
+import me.whereareiam.anvil.protocol.api.worker.model.DerivedSession;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Consumer;
-
 /**
- * The online sign-in of a library the native worker hosts. The worker owns the account store: it writes the record
- * a login returns into the account's file, labelled with the library's id, reads it back to sign a player in, saves
- * the refreshed record, removes it on logout, and refuses an account another library stores. The library only talks
- * to its online services and never touches an account file.
+ * How a library the native worker hosts derives its own game session from a stored account. An account is one
+ * Microsoft account: the worker signs it in once, without a library, and stores its Microsoft token. The library has
+ * no sign-in of its own; it turns the token into what its players sign in with, such as a game access token, and
+ * tells the worker when its services refuse the account.
  *
- * <p>The worker exposes the workflow as the library's {@link ProtocolAuthentication}, and delivers a resolved
- * session to its child JVM only over the child's private standard input.</p>
+ * <p>The worker owns the account files and the shared {@link ProtocolAuthentication}. It asks every library to
+ * derive a session right after a sign-in, recording what each can do with the account, and again for each player
+ * that uses the account; it then stores the refreshed Microsoft token, the library's cached session and its
+ * result, and delivers the session to the player's worker JVM only over that JVM's private standard input.</p>
  *
  * <pre>{@code
  * public Optional<WorkerAuthentication> authentication() {
@@ -26,28 +25,19 @@ import java.util.function.Consumer;
  */
 public interface WorkerAuthentication {
 	/**
-	 * Signs an account in interactively, such as through a device-code flow, and returns what the worker stores of
-	 * it. The worker has already made sure that no other library stores the account ID.
+	 * Derives the session a player of the given version signs in with from the account's Microsoft token, reusing
+	 * the library's cached session while it is valid. Never log the returned session's tokens or credentials.
 	 *
-	 * @param accountId owner-local account ID the record is stored under
-	 * @param version newest Minecraft version of the library's built-in releases, for services that want a game
-	 * version
-	 * @param output user-facing prompts and status; never access or refresh tokens
-	 * @return the signed-in account with its credentials
-	 * @throws IllegalStateException when the sign-in fails or is interrupted
-	 */
-	@NotNull AccountRecord login(@NotNull String accountId, @NotNull MinecraftVersion version, @NotNull Consumer<String> output);
-
-	/**
-	 * Resolves a stored account into the session a player of the given version signs in with, refreshing the
-	 * credentials when needed. The worker stores the returned record in place of the given one. Never log the
-	 * returned session's access token or credentials.
+	 * <p>When the library's services refuse the account, such as one that owns no profile of the game the library
+	 * speaks to, return {@link DerivedSession#unavailable} with a reason that names the account. Throw only when the
+	 * library cannot tell, for example because a service cannot be reached.</p>
 	 *
-	 * @param account the account the library stored, read back by the worker
-	 * @param version Minecraft version of the player that signs in, for services that want a game version
-	 * @return the session to sign in with and the record to keep
-	 * @throws IllegalStateException when the stored credentials are invalid or cannot be refreshed; the message
-	 * never quotes them
+	 * @param account the account's Microsoft token and this library's cached session
+	 * @param version Minecraft version of the player that signs in, or the newest version of the library's built-in
+	 * releases when the worker checks a freshly signed-in account; for services that want a game version
+	 * @return the session to sign in with, or the library's refusal, with the token as the library left it
+	 * @throws IllegalStateException when the library cannot tell whether the account is usable, such as when its
+	 * cached session is invalid or a service fails; the message names the account and never quotes credentials
 	 */
-	@NotNull ResolvedAccount resolve(@NotNull AccountRecord account, @NotNull MinecraftVersion version);
+	@NotNull DerivedSession derive(@NotNull AccountCredentials account, @NotNull MinecraftVersion version);
 }

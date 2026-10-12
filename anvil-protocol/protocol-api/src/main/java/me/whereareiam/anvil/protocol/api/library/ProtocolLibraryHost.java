@@ -2,7 +2,9 @@ package me.whereareiam.anvil.protocol.api.library;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.ServiceLoader;
 
 /**
@@ -32,4 +34,17 @@ public interface ProtocolLibraryHost {
 	 * @return providers of the hosted libraries, in discovery order
 	 */
 	@NotNull List<ProtocolLibraryProvider> libraries(@NotNull ClassLoader loader);
+
+	/**
+	 * Provides the account workflow that the host's libraries share: an account is one Microsoft account, signed in
+	 * once, from which each of the libraries derives its own session. Creates neither a library nor a player.
+	 * A host whose libraries play offline only keeps the empty default.
+	 *
+	 * @param loader class loader the registry discovers libraries from
+	 * @param accountsDirectory directory of the stored account files
+	 * @return the shared account workflow, when the host's libraries use online accounts
+	 */
+	default @NotNull Optional<ProtocolAuthentication> authentication(@NotNull ClassLoader loader, @NotNull Path accountsDirectory) {
+		return Optional.empty();
+	}
 }

@@ -2,11 +2,12 @@ plugins {
 	id("module-java")
 }
 
-description = "Native worker host, worker shell, transport, segment verification and release catalog"
+description = "Native worker host, worker shell, transport, segment verification, release catalog and stored accounts"
 
 dependencies {
 	implementation(libs.jackson.databind)
 	implementation(libs.jackson.toml)
+	implementation(libs.minecraft.auth)
 
 	compileOnly(projects.anvilApi)
 	compileOnly(projects.anvilProtocol.protocolApi)

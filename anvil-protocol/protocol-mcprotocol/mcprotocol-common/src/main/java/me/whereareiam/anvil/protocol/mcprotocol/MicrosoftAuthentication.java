@@ -1,87 +1,118 @@
 package me.whereareiam.anvil.protocol.mcprotocol;
 
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.worker.WorkerAuthentication;
-import me.whereareiam.anvil.protocol.api.worker.model.AccountRecord;
+import me.whereareiam.anvil.protocol.api.worker.model.AccountCredentials;
 import me.whereareiam.anvil.protocol.api.worker.model.AuthenticationSession;
-import me.whereareiam.anvil.protocol.api.worker.model.ResolvedAccount;
+import me.whereareiam.anvil.protocol.api.worker.model.DerivedSession;
+import me.whereareiam.anvil.protocol.api.worker.model.MicrosoftToken;
+import net.lenni0451.commons.httpclient.HttpClient;
 import net.raphimc.minecraftauth.MinecraftAuth;
 import net.raphimc.minecraftauth.java.JavaAuthManager;
+import net.raphimc.minecraftauth.java.exception.MinecraftProfileNotFoundException;
 import net.raphimc.minecraftauth.java.model.MinecraftProfile;
 import net.raphimc.minecraftauth.java.model.MinecraftToken;
-import net.raphimc.minecraftauth.msa.model.MsaDeviceCode;
-import net.raphimc.minecraftauth.msa.service.impl.DeviceCodeMsaAuthService;
+import net.raphimc.minecraftauth.msa.model.MsaApplicationConfig;
+import net.raphimc.minecraftauth.msa.model.MsaToken;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
+import java.time.Instant;
 
 /**
- * Microsoft device-code login of Java Edition accounts, and their refresh. The stored credentials are the
- * serialized {@link JavaAuthManager}; the native worker stores them.
+ * Derives the Java Edition session of an account's Microsoft token: Xbox Live and Minecraft services sign the token
+ * in, and the account's Java Edition profile names the player. The cached session is the serialized
+ * {@link JavaAuthManager}, whose game token is reused until it expires. An account without a Java Edition profile is
+ * refused.
  */
 public final class MicrosoftAuthentication implements WorkerAuthentication {
+	/**
+	 * Derives the session of a player; Java Edition sessions do not depend on the game version. Never log the
+	 * returned token.
+	 */
 	@Override
-	public @NotNull AccountRecord login(@NotNull String accountId, @NotNull MinecraftVersion version, @NotNull Consumer<String> output) {
+	public @NotNull DerivedSession derive(@NotNull AccountCredentials account, @NotNull MinecraftVersion version) {
+		return derive(account, version, MinecraftAuth.createHttpClient());
+	}
+
+	/**
+	 * Derives the session through the given HTTP client, which tests replace to answer for the services.
+	 */
+	static DerivedSession derive(AccountCredentials account, MinecraftVersion version, HttpClient http) {
+		JavaAuthManager manager = manager(account, http);
 		try {
-			Consumer<MsaDeviceCode> prompt = code -> output.accept("Open " + code.getDirectVerificationUri());
-			JavaAuthManager manager = JavaAuthManager.create(MinecraftAuth.createHttpClient()).login(
-					DeviceCodeMsaAuthService::new,
-					prompt
+			MinecraftProfile profile;
+			try {
+				profile = manager.getMinecraftProfile().getUpToDate();
+			} catch (MinecraftProfileNotFoundException missing) {
+				return DerivedSession.unavailable("Account '" + account.getAccountId() + "' has no Minecraft: Java Edition "
+						+ "profile, so MCProtocolLib players cannot sign in with it", token(account.getToken(), manager));
+			}
+
+			MinecraftToken token = manager.getMinecraftToken().getUpToDate();
+			return DerivedSession.available(
+					AuthenticationSession.builder()
+							.username(profile.getName())
+							.uuid(profile.getId())
+							.accessToken(token.getToken())
+							.build(),
+					JavaAuthManager.toJson(manager).toString(),
+					token(account.getToken(), manager)
 			);
-			return refresh(accountId, manager).getAccount();
 		} catch (IOException exception) {
-			throw new IllegalStateException("Microsoft authentication failed for account '" + accountId + "'", exception);
-		} catch (InterruptedException exception) {
-			Thread.currentThread().interrupt();
-			throw new IllegalStateException("Microsoft authentication was interrupted for account '" + accountId + "'", exception);
-		} catch (TimeoutException exception) {
-			throw new IllegalStateException("Microsoft device-code authentication timed out for account '" + accountId + "'", exception);
+			throw new IllegalStateException("Could not derive the Java Edition session of account '" + account.getAccountId() + "'",
+					exception);
 		}
 	}
 
 	/**
-	 * Refreshes a stored account for private delivery to a worker; Java Edition sessions do not depend on the game
-	 * version. Never log the returned token.
+	 * Restores the cached session with the account's current Microsoft token, which another library may have
+	 * refreshed since, or signs the token in afresh when there is no usable cache.
 	 */
-	@Override
-	public @NotNull ResolvedAccount resolve(@NotNull AccountRecord account, @NotNull MinecraftVersion version) {
+	static JavaAuthManager manager(AccountCredentials account, HttpClient http) {
+		JsonObject cached = cached(account.getCachedSession());
+		if (cached != null) {
+			cached.add("msaApplicationConfig", MsaApplicationConfig.toJson(application(account.getToken())));
+			cached.add("msaToken", MsaToken.toJson(msaToken(account.getToken())));
+			try {
+				return JavaAuthManager.fromJson(http, cached);
+			} catch (RuntimeException invalid) {
+				// An unusable cache is signed in afresh; the parser's message may quote tokens, so it is dropped.
+			}
+		}
+
+		return JavaAuthManager.create(http)
+				.msaApplicationConfig(application(account.getToken()))
+				.login(msaToken(account.getToken()));
+	}
+
+	private static @Nullable JsonObject cached(@Nullable String session) {
+		if (session == null) return null;
+
 		try {
-			return refresh(account.getAccountId(), decode(account));
-		} catch (IOException exception) {
-			throw new IllegalStateException("Could not refresh authentication account '" + account.getAccountId() + "'", exception);
+			return JsonParser.parseString(session).getAsJsonObject();
+		} catch (RuntimeException invalid) {
+			return null;
 		}
 	}
 
-	private JavaAuthManager decode(AccountRecord account) {
-		try {
-			return JavaAuthManager.fromJson(MinecraftAuth.createHttpClient(), JsonParser.parseString(account.getCredentials()).getAsJsonObject());
-		} catch (RuntimeException exception) {
-			// Parser exceptions may include the stored document, including refresh tokens.
-			throw new IllegalStateException("Invalid stored authentication account '" + account.getAccountId() + "'");
-		}
+	private static MsaApplicationConfig application(MicrosoftToken token) {
+		return new MsaApplicationConfig(token.getClientId(), token.getScope());
 	}
 
-	private ResolvedAccount refresh(String accountId, JavaAuthManager manager) throws IOException {
-		MinecraftProfile profile = manager.getMinecraftProfile().getUpToDate();
-		MinecraftToken token = manager.getMinecraftToken().getUpToDate();
-		if (profile == null || token == null)
-			throw new IllegalStateException("Microsoft account has no licensed Minecraft Java profile");
+	private static MsaToken msaToken(MicrosoftToken token) {
+		return new MsaToken(token.getExpiresAt().toEpochMilli(), token.getAccessToken(), token.getRefreshToken());
+	}
 
-		return ResolvedAccount.builder()
-				.account(AccountRecord.builder()
-						.accountId(accountId)
-						.username(profile.getName())
-						.uniqueId(profile.getId())
-						.credentials(JavaAuthManager.toJson(manager).toString())
-						.build())
-				.session(AuthenticationSession.builder()
-						.username(profile.getName())
-						.uuid(profile.getId())
-						.accessToken(token.getToken())
-						.build())
+	private static MicrosoftToken token(MicrosoftToken previous, JavaAuthManager manager) {
+		MsaToken current = manager.getMsaToken().getCached();
+		return previous.toBuilder()
+				.accessToken(current.getAccessToken())
+				.refreshToken(current.getRefreshToken())
+				.expiresAt(Instant.ofEpochMilli(current.getExpireTimeMs()))
 				.build();
 	}
 }

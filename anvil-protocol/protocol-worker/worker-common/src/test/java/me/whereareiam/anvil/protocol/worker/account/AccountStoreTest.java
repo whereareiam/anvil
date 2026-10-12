@@ -1,14 +1,20 @@
 package me.whereareiam.anvil.protocol.worker.account;
 
+import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
-import me.whereareiam.anvil.protocol.api.worker.model.AccountRecord;
-import me.whereareiam.anvil.protocol.api.worker.model.WorkerLibrary;
+import me.whereareiam.anvil.api.type.AccountAvailability;
+import me.whereareiam.anvil.protocol.api.worker.model.MicrosoftToken;
+import me.whereareiam.anvil.protocol.worker.account.AccountStore.LibraryEntry;
+import me.whereareiam.anvil.protocol.worker.account.AccountStore.StoredAccount;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -20,128 +26,122 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AccountStoreTest {
-	static final WorkerLibrary JAVA = library("javalib", "JavaLib", true);
-	static final WorkerLibrary BEDROCK = library("bedrocklib", "BedrockLib", false);
+	static final MicrosoftToken TOKEN = MicrosoftToken.builder()
+			.clientId("client")
+			.scope("scope")
+			.accessToken("secret-access")
+			.refreshToken("secret-refresh")
+			.expiresAt(Instant.ofEpochMilli(1_000))
+			.build();
 
 	@TempDir
 	Path temporary;
 
 	@Test
-	void writesLabelledAccountsWithOwnerOnlyPermissionsAndReadsThemBack() throws Exception {
-		AccountStore store = new AccountStore(JAVA, temporary);
+	void writesAccountsWithOwnerOnlyPermissionsAndReadsThemBack() throws Exception {
+		AccountStore store = new AccountStore(temporary);
 		UUID uuid = UUID.randomUUID();
-		store.write(record("developer", uuid, "{\"refresh\":\"secret\"}"));
+		store.write(StoredAccount.builder()
+				.accountId("developer")
+				.token(TOKEN)
+				.library("javalib", new LibraryEntry(AccountAccess.available("javalib", "Developer", uuid), "{\"chain\":1}"))
+				.library("bedrocklib", new LibraryEntry(AccountAccess.unavailable("bedrocklib", "Account 'developer' owns no game"), null))
+				.build());
 		Path account = store.accountFile("developer");
 
 		if (Files.getFileStore(account).supportsFileAttributeView("posix"))
 			assertEquals(Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE), Files.getPosixFilePermissions(account));
-		assertTrue(Files.readString(account).contains("\"provider\":\"javalib\""));
-		AccountRecord read = store.read("developer");
-		assertEquals("{\"refresh\":\"secret\"}", read.getCredentials());
-		assertEquals("Developer", read.getUsername());
-		assertEquals(uuid, read.getUniqueId());
+		StoredAccount read = store.read("developer");
+		assertEquals(TOKEN, read.getToken());
+		assertEquals("{\"chain\":1}", read.cachedSession("javalib"));
+		assertNull(read.cachedSession("bedrocklib"));
+		assertEquals(AccountAccess.available("javalib", "Developer", uuid), read.getLibraries().get("javalib").access());
+		assertEquals("Account 'developer' owns no game", read.getLibraries().get("bedrocklib").access().getReason());
 		assertTrue(store.delete("developer"));
 		assertFalse(store.delete("developer"));
 		assertFalse(Files.exists(account));
 	}
 
 	@Test
-	void rejectsPathTraversalAccountNamesAndCredentialsThatAreNoObject() {
-		AccountStore store = new AccountStore(JAVA, temporary);
+	void rejectsPathTraversalAccountNames() {
+		AccountStore store = new AccountStore(temporary);
 
 		assertThrows(IllegalArgumentException.class, () -> store.accountFile("../credentials"));
-		var credentials = assertThrows(IllegalArgumentException.class, () -> store.write(record("developer", UUID.randomUUID(), "[\"secret\"]")));
-		assertFalse(credentials.getMessage().contains("secret"));
 	}
 
 	@Test
-	void listsOnlyTheLibrarysAccountsWithoutCredentials() throws Exception {
+	void listsEveryAccountWithWhatEachLibraryRecordedAndNoCredentials() throws Exception {
+		AccountStore store = new AccountStore(temporary);
 		UUID uuid = UUID.randomUUID();
-		new AccountStore(JAVA, temporary).write(record("java", uuid, "{}"));
-		new AccountStore(BEDROCK, temporary).write(record("bedrock", UUID.randomUUID(), "{}"));
-		Files.writeString(temporary.resolve("corrupt.json"), "{BROKEN");
+		store.write(StoredAccount.builder()
+				.accountId("alice")
+				.token(TOKEN)
+				.library("javalib", new LibraryEntry(AccountAccess.available("javalib", "Alice", uuid), null))
+				.build());
+		store.write(StoredAccount.builder().accountId("bob").token(TOKEN).build());
+		Files.writeString(temporary.resolve("broken.json"), "{not json");
 
-		List<AuthenticationAccount> accounts = new AccountStore(JAVA, temporary).accounts();
+		List<AuthenticationAccount> accounts = store.accounts();
 
-		assertEquals(List.of("java"), accounts.stream().map(AuthenticationAccount::getAccountId).toList());
-		assertEquals("javalib", accounts.getFirst().getLibraryId());
-		assertEquals("Developer", accounts.getFirst().getUsername());
-		assertEquals(uuid, accounts.getFirst().getUniqueId());
-		assertEquals(List.of("bedrock"), new AccountStore(BEDROCK, temporary).accounts().stream().map(AuthenticationAccount::getAccountId).toList());
+		assertEquals(List.of("alice", "bob"), accounts.stream().map(AuthenticationAccount::getAccountId).toList());
+		assertEquals(AccountAvailability.AVAILABLE, accounts.getFirst().access("javalib").getAvailability());
+		assertEquals("Alice", accounts.getFirst().access("javalib").getUsername());
+		assertEquals(AccountAvailability.UNKNOWN, accounts.getFirst().access("bedrocklib").getAvailability());
+		assertEquals(List.of(), accounts.getLast().getAccess());
 	}
 
 	@Test
-	void refusesToReadReplaceOrRemoveAnotherLibrarysAccount() throws Exception {
-		new AccountStore(BEDROCK, temporary).write(record("shared", UUID.randomUUID(), "{}"));
-		AccountStore java = new AccountStore(JAVA, temporary);
+	void readsAnAccountStoredForOneLibraryIntoTheMicrosoftAccountWithoutANewSignIn() throws Exception {
+		try (InputStream legacy = getClass().getResourceAsStream("legacy.json")) {
+			Files.write(temporary.resolve("legacy.json"), legacy.readAllBytes());
+		}
+		AccountStore store = new AccountStore(temporary);
 
-		var read = assertThrows(IllegalStateException.class, () -> java.read("shared"));
-		assertEquals("Account 'shared' belongs to protocol library 'bedrocklib', so JavaLib ('javalib') cannot use it; "
-				+ "log in or out with 'bedrocklib', or choose another account ID", read.getMessage());
-		assertThrows(IllegalStateException.class, () -> java.requireAvailable("shared"));
-		assertThrows(IllegalStateException.class, () -> java.delete("shared"));
-		assertTrue(Files.exists(java.accountFile("shared")));
-		java.requireAvailable("unused");
+		StoredAccount account = store.read("legacy");
+
+		assertEquals("00000000402b5328", account.getToken().getClientId());
+		assertEquals("service::user.auth.xboxlive.com::MBI_SSL", account.getToken().getScope());
+		assertEquals("fixture-msa-access-token", account.getToken().getAccessToken());
+		assertEquals("fixture-msa-refresh-token", account.getToken().getRefreshToken());
+		assertEquals(Instant.ofEpochMilli(32_503_680_000_000L), account.getToken().getExpiresAt());
+		AccountAccess access = account.getLibraries().get("mcprotocol").access();
+		assertEquals(AccountAccess.available("mcprotocol", "Fixture", UUID.fromString("5f8eb73b-25be-4c5a-a50f-d27d65e30ca0")), access);
+		assertTrue(account.cachedSession("mcprotocol").contains("\"minecraftProfile\""));
+
+		store.write(account);
+
+		assertTrue(Files.readString(temporary.resolve("legacy.json")).startsWith("{\"schemaVersion\":2,"));
+		assertEquals(account, store.read("legacy"));
 	}
 
 	@Test
-	void givesUnlabelledAccountsToTheLibraryThatClaimsThemAndLabelsThemOnTheNextWrite() throws Exception {
-		Files.writeString(temporary.resolve("legacy.json"), """
-				{"schemaVersion":1,"accountId":"legacy","username":"Legacy","uuid":"%s","credentials":{"refresh":"secret"}}
-				""".formatted(UUID.randomUUID()));
-		AccountStore java = new AccountStore(JAVA, temporary);
-		AccountStore bedrock = new AccountStore(BEDROCK, temporary);
+	void refusesAnAccountStoredForOneLibraryThatHoldsNoMicrosoftTokenWithoutQuotingIt() throws Exception {
+		Files.writeString(temporary.resolve("old.json"), "{\"schemaVersion\":1,\"accountId\":\"old\",\"provider\":\"javalib\","
+				+ "\"credentials\":{\"refresh\":\"secret\"}}");
 
-		assertEquals(List.of("legacy"), java.accounts().stream().map(AuthenticationAccount::getAccountId).toList());
-		assertTrue(bedrock.accounts().isEmpty());
-		var refused = assertThrows(IllegalStateException.class, () -> bedrock.read("legacy"));
-		assertTrue(refused.getMessage().startsWith("Stored account 'legacy' names no protocol library, and BedrockLib does not read"),
-				refused.getMessage());
+		var failure = assertThrows(IllegalStateException.class, () -> new AccountStore(temporary).read("old"));
 
-		java.write(java.read("legacy"));
-
-		assertTrue(Files.readString(java.accountFile("legacy")).contains("\"provider\":\"javalib\""));
+		assertEquals("Stored account 'old' holds no Microsoft token; sign it in again", failure.getMessage());
 	}
 
 	@Test
-	void namesTheAccountAndDirectoryForMissingAccounts() {
-		var failure = assertThrows(IllegalStateException.class, () -> new AccountStore(JAVA, temporary).read("missing"));
+	void namesTheAccountAndDirectoryForMissingAccountsAndReportsAnUnknownSchema() throws IOException {
+		Files.writeString(temporary.resolve("future.json"), "{\"schemaVersion\":3}");
+		AccountStore store = new AccountStore(temporary);
 
-		assertEquals("No stored account 'missing' in " + temporary.toAbsolutePath().normalize(), failure.getMessage());
+		var missing = assertThrows(IllegalStateException.class, () -> store.read("missing"));
+		var future = assertThrows(IllegalStateException.class, () -> store.read("future"));
+
+		assertEquals("No stored account 'missing' in " + temporary.toAbsolutePath().normalize(), missing.getMessage());
+		assertEquals("Stored account 'future' uses schema version 3; this Anvil version reads versions 1 and 2", future.getMessage());
 	}
 
 	@Test
-	void reportsAnUnsupportedSchemaInsteadOfCallingTheFileInvalid() throws Exception {
-		Files.writeString(temporary.resolve("future.json"), "{\"schemaVersion\":2,\"credentials\":{}}");
+	void reportsMalformedFilesWithoutQuotingThem() throws IOException {
+		Files.writeString(temporary.resolve("broken.json"), "{\"secret\":");
 
-		var failure = assertThrows(IllegalStateException.class, () -> new AccountStore(JAVA, temporary).read("future"));
+		var failure = assertThrows(IllegalStateException.class, () -> new AccountStore(temporary).read("broken"));
 
-		assertEquals("Stored account 'future' uses schema version 2; this Anvil version reads version 1", failure.getMessage());
-	}
-
-	@Test
-	void doesNotExposeCorruptAccountContentsInFailures() throws Exception {
-		Files.writeString(temporary.resolve("corrupt.json"), "{\"token\":\"private-token\",BROKEN");
-
-		var failure = assertThrows(IllegalStateException.class, () -> new AccountStore(JAVA, temporary).read("corrupt"));
-
-		assertEquals("Stored account 'corrupt' is not a valid JSON object", failure.getMessage());
-		assertNull(failure.getCause());
-	}
-
-	static AccountRecord record(String accountId, UUID uuid, String credentials) {
-		return AccountRecord.builder().accountId(accountId).username("Developer").uniqueId(uuid).credentials(credentials).build();
-	}
-
-	private static WorkerLibrary library(String id, String name, boolean readsUnlabelled) {
-		return WorkerLibrary.builder()
-				.id(id)
-				.name(name)
-				.clientPort(Runnable.class)
-				.releases("unused.toml")
-				.pinTask("unused")
-				.offlineUniqueIdPrefix("ProbePlayer:")
-				.readsUnlabelledAccounts(readsUnlabelled)
-				.build();
+		assertEquals("Stored account 'broken' is not a valid JSON object", failure.getMessage());
 	}
 }

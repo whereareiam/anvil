@@ -11,7 +11,7 @@ import java.util.UUID;
 
 /**
  * Decrypted authentication details of one account, which {@link me.whereareiam.anvil.protocol.api.worker.WorkerAuthentication}
- * resolves and the worker passes to its child JVM only over that JVM's private standard input.
+ * derives and the worker passes to its child JVM only over that JVM's private standard input.
  *
  * <p>The worker reads the profile and nothing else: the access token and the library credentials reach the
  * library's own {@link me.whereareiam.anvil.protocol.api.worker.WorkerClient} unchanged, as

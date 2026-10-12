@@ -74,13 +74,14 @@ public final class DefaultPlayerService implements AutoCloseable {
 		this.artifacts = artifacts;
 		this.selector = new ProtocolLibrarySelector(libraries.ids(), this::releases, options.getProtocolLibrary(),
 				options.getSupportPolicy(), System.err::println);
-		this.accounts = new ProtocolAccountManager(libraries, accountsDirectory, reservations);
+		this.accounts = new ProtocolAccountManager(libraries.authentication(accountsDirectory).orElse(null), accountsDirectory,
+				reservations);
 		// User-supplied release data is read now, so invalid files fail the engine instead of a later player.
 		for (String library : options.getProtocolReleases().keySet()) releases(library);
 	}
 
 	/**
-	 * Returns the engine-wide account manager aggregating every installed library's accounts.
+	 * Returns the engine-wide account manager over the stored accounts that the installed libraries share.
 	 *
 	 * @return account manager
 	 */

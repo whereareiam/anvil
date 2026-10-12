@@ -2,14 +2,13 @@ package me.whereareiam.anvil.protocol.worker.host;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.protocol.api.library.ProtocolAuthentication;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
 import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.worker.WorkerLibraryProvider;
 import me.whereareiam.anvil.protocol.api.worker.model.WorkerLibrary;
-import me.whereareiam.anvil.protocol.worker.account.HostedAuthentication;
+import me.whereareiam.anvil.protocol.worker.account.HostedAccounts;
 import me.whereareiam.anvil.protocol.worker.catalog.ReleaseCatalog;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,7 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Installs one library the worker hosts as a protocol library: its releases come from its release data, its players
- * run in a {@link ProtocolWorkerPool}, and its accounts are stored by the worker around the library's online sign-in.
+ * run in a {@link ProtocolWorkerPool}, and its players that use a stored account sign in with the session the library
+ * derives from it.
  *
  * <p>Release data is read once per additional release file: listing the releases for selection and creating the
  * library share one catalog, so a notice about the user's data is printed once.</p>
@@ -58,20 +58,19 @@ final class HostedLibraryProvider implements ProtocolLibraryProvider {
 				provider.library(),
 				context.getCacheDirectory(),
 				catalog(context.getAdditionalReleases()),
-				hostedAuthentication(context.getAccountsDirectory()).orElse(null),
+				accountLibrary().map(library -> new HostedAccounts(List.of(library), context.getAccountsDirectory())).orElse(null),
 				context.getArtifacts()
 		);
 	}
 
-	@Override
-	public @NotNull Optional<ProtocolAuthentication> authentication(@NotNull Path accountsDirectory) {
-		return hostedAuthentication(accountsDirectory).map(ProtocolAuthentication.class::cast);
-	}
-
-	private Optional<HostedAuthentication> hostedAuthentication(Path accountsDirectory) {
-		WorkerLibrary library = provider.library();
-		return provider.authentication().map(authentication -> new HostedAuthentication(library, authentication, accountsDirectory,
-				this::newestVersion));
+	/**
+	 * Describes how the library derives sessions from stored accounts, when it plays online.
+	 *
+	 * @return the library as the shared accounts know it, or empty for an offline-only library
+	 */
+	@NotNull Optional<HostedAccounts.Library> accountLibrary() {
+		return provider.authentication()
+				.map(authentication -> new HostedAccounts.Library(provider.library(), authentication, this::newestVersion));
 	}
 
 	private MinecraftVersion newestVersion() {

@@ -12,8 +12,8 @@ import java.util.Optional;
 
 /**
  * The CloudburstMC Protocol library as the native worker hosts it: version-isolated workers for the Bedrock releases
- * in its release data, driven through the client segment's {@link CloudburstClient}, with offline logins and Xbox
- * account authentication.
+ * in its release data, driven through the client segment's {@link CloudburstClient}, with offline logins and the
+ * Bedrock Edition sessions of stored accounts.
  */
 public final class CloudburstWorkerLibrary implements WorkerLibraryProvider {
 	/**

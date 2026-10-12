@@ -120,13 +120,12 @@ class McProtocolWorkerLibraryTest {
 	}
 
 	@Test
-	void installsTheLibraryWithItsAccountWorkflowThroughTheWorkerHost() {
+	void installsTheLibraryWithItsSessionDerivationThroughTheWorkerHost() {
 		ProtocolLibraryProvider installed = installed();
 
 		assertEquals(McProtocolClient.LIBRARY_ID, installed.id());
-		assertTrue(installed.authentication(temporary.resolve("accounts")).isPresent());
+		assertTrue(ProtocolLibraryRegistry.discover().authentication(temporary.resolve("accounts")).isPresent());
 		assertInstanceOf(MicrosoftAuthentication.class, new McProtocolWorkerLibrary().authentication().orElseThrow());
-		assertTrue(McProtocolWorkerLibrary.LIBRARY.isReadsUnlabelledAccounts());
 	}
 
 	private static ProtocolLibraryProvider installed() {

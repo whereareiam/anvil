@@ -18,7 +18,6 @@ import java.nio.file.Path;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -32,13 +31,12 @@ class CloudburstWorkerLibraryTest {
 	Path temporary;
 
 	@Test
-	void installsTheLibraryWithItsXboxAccountWorkflowThroughTheWorkerHost() {
+	void installsTheLibraryWithItsSessionDerivationThroughTheWorkerHost() {
 		ProtocolLibraryProvider installed = installed();
 
 		assertEquals(CloudburstClient.LIBRARY_ID, installed.id());
-		assertTrue(installed.authentication(temporary.resolve("accounts")).isPresent());
+		assertTrue(ProtocolLibraryRegistry.discover().authentication(temporary.resolve("accounts")).isPresent());
 		assertInstanceOf(XboxAuthentication.class, new CloudburstWorkerLibrary().authentication().orElseThrow());
-		assertFalse(CloudburstWorkerLibrary.LIBRARY.isReadsUnlabelledAccounts());
 	}
 
 	@Test

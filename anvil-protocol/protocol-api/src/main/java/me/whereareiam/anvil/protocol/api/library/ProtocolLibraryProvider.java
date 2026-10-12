@@ -5,9 +5,7 @@ import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import org.jetbrains.annotations.NotNull;
 
-import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 import java.util.ServiceLoader;
 
 /**
@@ -30,7 +28,8 @@ import java.util.ServiceLoader;
  */
 public interface ProtocolLibraryProvider {
 	/**
-	 * Returns the stable library identifier used by {@code protocolLibrary} declarations and stored accounts.
+	 * Returns the stable library identifier used by {@code protocolLibrary} declarations and by what stored
+	 * accounts record about the library.
 	 *
 	 * @return non-blank library identifier
 	 */
@@ -54,15 +53,4 @@ public interface ProtocolLibraryProvider {
 	 * @return library instance closed by the engine
 	 */
 	@NotNull ProtocolLibrary create(@NotNull ProtocolLibraryContext context);
-
-	/**
-	 * Provides an optional login/logout workflow without creating the library or a player.
-	 * Offline-only libraries keep the empty default implementation.
-	 *
-	 * @param accountsDirectory local account store directory
-	 * @return library-owned authentication service, when supported
-	 */
-	default @NotNull Optional<ProtocolAuthentication> authentication(@NotNull Path accountsDirectory) {
-		return Optional.empty();
-	}
 }
