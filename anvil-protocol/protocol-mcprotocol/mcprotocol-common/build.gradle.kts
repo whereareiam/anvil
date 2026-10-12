@@ -4,17 +4,18 @@ plugins {
 	id("test-library-closures")
 }
 
-description = "MCProtocolLib library provider, release data, worker host and the MCProtocolLib-free worker shell"
+description = "MCProtocolLib library provider, release data, worker entry point and client, and private authentication store"
 
 dependencies {
-	implementation(libs.jackson.databind)
-	implementation(libs.jackson.toml)
 	implementation(libs.minecraft.auth)
 	implementation(libs.slf4j.api)
 
 	compileOnly(projects.anvilApi)
 	compileOnly(projects.anvilProtocol.protocolApi)
 	compileOnly(projects.anvilProtocol.protocolMcprotocol.mcprotocolApi)
+
+	// The library-neutral worker host and shell, which the family root embeds next to this project.
+	sharedImplementation(projects.anvilProtocol.protocolWorker)
 
 	testImplementation(projects.anvilApi)
 	testImplementation(projects.anvilCapability)
