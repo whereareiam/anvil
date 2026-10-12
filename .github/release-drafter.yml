@@ -19,10 +19,6 @@ template: |
 
   **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG
 
-  # Installation
-
-  Anvil needs Java 21 or newer to build and run tests. See the [documentation](https://anvil.whereareiam.me) for installation, and its Versions and compatibility page for the Minecraft versions and platforms this release verifies.
-
 categories:
   - type: pre-exclude
     when:
