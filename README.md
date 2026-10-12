@@ -6,7 +6,7 @@ The Minecraft test framework that got tired of watching you test everything by h
 
 Anvil gives JUnit control over:
 
-- real Paper, Spigot, NeoForge, Velocity, and BungeeCord processes
+- real Paper, Spigot, NeoForge, Lumi, Velocity, and BungeeCord processes
 - the packaged plugin your users will actually install
 - lightweight clients speaking the real Minecraft protocol
 - complete environments that can also stay open for a developer to join
@@ -112,7 +112,7 @@ Edition servers, to `anvilRuntimeOnly` when scenarios use simulated players.
 
 Platform units are applied separately: `me.whereareiam.anvil.platform.paper`,
 `me.whereareiam.anvil.platform.spigot`, `me.whereareiam.anvil.platform.neoforge`,
-`me.whereareiam.anvil.platform.velocity`, and
+`me.whereareiam.anvil.platform.lumi`, `me.whereareiam.anvil.platform.velocity`, and
 `me.whereareiam.anvil.platform.bungeecord`. Single capability units such as
 `me.whereareiam.anvil.capability.inventory` replace the default set when only some are wanted.
 
@@ -447,6 +447,7 @@ each process's console, commands, and players one click away. Install it from Je
 |--------------------------|----------------------|
 | Direct or backend server | Paper, Spigot        |
 | Direct server            | NeoForge             |
+| Direct Bedrock server    | Lumi                 |
 | Proxy                    | Velocity, BungeeCord |
 
 Players speak Minecraft `1.18.2`, `1.21.1`, `1.21.11`, and `26.1.2`
@@ -457,7 +458,9 @@ live matrix runs those four versions on Paper and `1.21.1` and newer on NeoForge
 and `26.1.2` on Spigot and across every supported proxy/backend combination; the other supported
 versions are compatible but not live-tested. Release data you supply can add newer versions. The
 [version support page](https://anvil.whereareiam.me/docs/dev/building-blocks/environments/platforms/versions)
-lists every release, platform range, and support level. Distributions may come from pinned remote
+lists every release, platform range, and support level. Lumi runs Bedrock Edition servers from
+`1.20.0` to `1.26.50`, and the live matrix runs Bedrock `1.26.50` through its console and agent.
+Distributions may come from pinned remote
 builds, local JARs, Maven artifacts, or Gradle project artifacts.
 
 Anvil uses native protocol clients. Local JVM execution is the standard workflow; an embedded

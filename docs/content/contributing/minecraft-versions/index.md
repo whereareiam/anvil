@@ -115,6 +115,7 @@ Each platform provider owns its version data:
 | Paper | `anvil-platform/platform-paper/platform-paper-provider/src/main/resources/me/whereareiam/anvil/platform/paper/paper-versions.toml` |
 | Spigot | `anvil-platform/platform-spigot/platform-spigot-provider/src/main/resources/me/whereareiam/anvil/platform/spigot/spigot-versions.toml` |
 | NeoForge | `anvil-platform/platform-neoforge/platform-neoforge-provider/src/main/resources/me/whereareiam/anvil/platform/neoforge/neoforge-versions.toml` |
+| Lumi | `anvil-platform/platform-lumi/platform-lumi-provider/src/main/resources/me/whereareiam/anvil/platform/lumi/lumi-versions.toml` |
 | Velocity | `anvil-platform/platform-velocity/platform-velocity-provider/src/main/resources/me/whereareiam/anvil/platform/velocity/velocity-versions.toml` |
 | BungeeCord | `anvil-platform/platform-bungeecord/platform-bungeecord-provider/src/main/resources/me/whereareiam/anvil/platform/bungeecord/bungeecord-versions.toml` |
 
@@ -147,6 +148,10 @@ when they differ:
 - A version NeoForge supports also runs directly on NeoForge: add a `NeoForgeRelease` with the version and its
   pinned NeoForge release to `NEOFORGE`. `NeoForgeServerSystemTest` runs it without the fixture plugin, which
   NeoForge cannot load.
+- A Bedrock version runs directly on Lumi: add a `LumiRelease` with the version and its Lumi release to `LUMI`.
+  `LumiServerSystemTest` runs it through the console and the Lumi agent. A new Bedrock version also needs its
+  protocol in the `[lumi.protocol]` table of `lumi-versions.toml`, and a new Lumi release a `[lumi.release]`
+  row with the oldest and newest version it accepts.
 
 Then list exactly the matrix's combinations as verified: the release's `verified` versions in
 `mcprotocol-releases.toml`, and each platform's `[verified]` table with the Java versions the matrix

@@ -4,7 +4,8 @@ description: Choose the server and proxy implementations that your test needs.
 ---
 
 A **platform** is the implementation of a server or proxy in your environment. Paper, Spigot, and NeoForge are
-server platforms: they run worlds and server plugins or mods. Velocity and BungeeCord are proxy platforms:
+Java Edition server platforms and Lumi is a Bedrock Edition server platform: they run worlds and server plugins
+or mods. Velocity and BungeeCord are proxy platforms:
 they accept player connections and route them to backend servers. Both roles belong to the same
 scenario and share Anvil's process lifecycle.
 

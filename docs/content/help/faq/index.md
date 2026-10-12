@@ -28,10 +28,11 @@ automated tests. Platform providers, capabilities, and protocol libraries are in
 
 Java Edition players speak Minecraft 1.18.2, 1.21.1, 1.21.11, and 26.1.2 through
 MCProtocolLib, plus the other versions each release lists. Bedrock Edition players speak 1.20.0
-through 1.26.60 through CloudburstMC Protocol; the live matrix does not run Bedrock yet. Anvil's live matrix runs each of those
+through 1.26.60 through CloudburstMC Protocol; the live matrix runs no Bedrock players yet. Anvil's live matrix runs each of those
 four versions on Paper, 1.21.1 and newer on NeoForge, and 1.21.11 and 26.1.2 also on Spigot and behind
 Velocity and BungeeCord. A
-newer version can run with your own release data. See
+newer version can run with your own release data. Lumi runs Bedrock Edition servers from 1.20.0 to
+1.26.50, and the live matrix runs Bedrock 1.26.50 through its console and agent. See
 [Versions and compatibility](../../building-blocks/environments/platforms/versions/index.md).
 
 ## Can one player visit servers on different native versions?

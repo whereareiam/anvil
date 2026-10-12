@@ -200,6 +200,45 @@ class PlatformVersionsTest {
 	}
 
 	@Test
+	void leavesTheTableNamedAfterThePlatformToItsProvider() throws IOException {
+		PlatformVersions versions = read("""
+				edition = "sample"
+
+				[[java]]
+				minimum = 17
+				preferred = 17
+
+				[sample]
+				anything = ["the provider", "reads"]
+
+				[sample.nested]
+				"1.0" = 1
+				""");
+		assertEquals(MinecraftEdition.of("sample"), versions.getEdition());
+
+		PlatformException scalar = assertThrows(PlatformException.class, () -> read("""
+				edition = "sample"
+				sample = 1
+
+				[[java]]
+				minimum = 17
+				preferred = 17
+				"""));
+		assertTrue(scalar.getMessage().contains("'sample' must be a table"), scalar.getMessage());
+		PlatformException other = assertThrows(PlatformException.class, () -> read("""
+				edition = "sample"
+
+				[[java]]
+				minimum = 17
+				preferred = 17
+
+				[other]
+				anything = 1
+				"""));
+		assertTrue(other.getMessage().contains("unknown key 'other' in the document"), other.getMessage());
+	}
+
+	@Test
 	void readsTheRequiredEditionAsAnOpaqueIdentifier() throws IOException {
 		assertEquals(MinecraftEdition.of("java"), SAMPLE.getEdition());
 		PlatformVersions other = read("""

@@ -20,7 +20,7 @@ import java.util.List;
  * combination these scenarios run is what the platforms' and protocol libraries' version data call
  * verified. Every Minecraft version runs direct on Paper, one release key of each MCProtocolLib release, and
  * player capability tests run their full journey on those servers; current versions also run on Spigot and behind
- * both proxies.
+ * both proxies. NeoForge and Lumi servers run direct, without the fixture plugin.
  */
 public final class CompatibilityScenarioFactory {
 	private static final String VELOCITY_VERSION = "3.5.1";
@@ -35,15 +35,20 @@ public final class CompatibilityScenarioFactory {
 			new NeoForgeRelease("1.21.11", "21.11.45"),
 			new NeoForgeRelease("26.1.2", "26.1.2.114")
 	);
+	private static final List<LumiRelease> LUMI = List.of(
+			new LumiRelease("1.26.50", "1.6.9")
+	);
 
 	/**
-	 * Returns every scenario of the live matrix: the fixture scenarios and the NeoForge scenarios.
+	 * Returns every scenario of the live matrix: the fixture scenarios, the NeoForge scenarios and the Lumi
+	 * scenarios.
 	 *
 	 * @return all scenarios whose combinations the version data calls verified
 	 */
 	public static List<AnvilScenario> scenarios() {
 		List<AnvilScenario> scenarios = new ArrayList<>(fixtureScenarios());
 		scenarios.addAll(neoForgeScenarios());
+		scenarios.addAll(lumiScenarios());
 		return List.copyOf(scenarios);
 	}
 
@@ -55,6 +60,16 @@ public final class CompatibilityScenarioFactory {
 	 */
 	public static List<AnvilScenario> neoForgeScenarios() {
 		return NEOFORGE.stream().map(release -> neoForgeScenario(release.version(), release.release())).toList();
+	}
+
+	/**
+	 * Returns the direct Lumi scenario of each Minecraft version Lumi is verified on. Lumi loads no Bukkit plugin,
+	 * so these servers carry no fixture, and their test drives the console and the Lumi agent without players.
+	 *
+	 * @return one direct Lumi scenario per verified Minecraft version
+	 */
+	public static List<AnvilScenario> lumiScenarios() {
+		return LUMI.stream().map(release -> lumiScenario(release.version(), release.release())).toList();
 	}
 
 	/**
@@ -149,6 +164,29 @@ public final class CompatibilityScenarioFactory {
 						.description("Single NeoForge server without fixture plugins for checking native login, server-side "
 								+ "player observation and console commands through the NeoForge agent.")
 						.category("Native compatibility").tag("login").build())
+				.entrypoint(server.getName())
+				.server(server)
+				.build();
+	}
+
+	private static AnvilScenario lumiScenario(String version, String release) {
+		MinecraftServer server = MinecraftServer.builder()
+				.name("server")
+				.metadata(PresentationMetadata.builder()
+						.displayName("Test server")
+						.description("Lumi server driven through its console and the Lumi agent; no fixture plugin is installed.")
+						.build())
+				.platform(Platforms.LUMI)
+				.distribution(Distribution.remote(version, release))
+				.memoryMegabytes(1024)
+				.build();
+		return AnvilScenario.builder()
+				.name("lumi-" + version)
+				.metadata(PresentationMetadata.builder()
+						.displayName("Direct server · Lumi " + version)
+						.description("Single Lumi server without fixture plugins for checking startup, console commands and "
+								+ "agent operations through the Lumi agent.")
+						.category("Native compatibility").tag("console").build())
 				.entrypoint(server.getName())
 				.server(server)
 				.build();
@@ -272,6 +310,14 @@ public final class CompatibilityScenarioFactory {
 	 * @param release NeoForge release
 	 */
 	private record NeoForgeRelease(String version, String release) { }
+
+	/**
+	 * Pinned Lumi release of one Minecraft version.
+	 *
+	 * @param version Minecraft version
+	 * @param release Lumi release
+	 */
+	private record LumiRelease(String version, String release) { }
 
 	private static String platformLabel(String platform) {
 		return switch (platform) {

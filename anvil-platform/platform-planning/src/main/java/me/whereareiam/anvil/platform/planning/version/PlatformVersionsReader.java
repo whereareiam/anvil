@@ -35,12 +35,17 @@ import java.util.Set;
  * maximum = 16
  * preferred = 11
  * maximumBypassProperty = "Paper.IgnoreJavaVersion"
+ *
+ * # Read by the provider of platform "example" only; planning skips it.
+ * [example]
+ * release = "data only the provider understands"
  * }</pre>
  *
  * <p>Every key is optional except {@code edition}, the {@code [[java]]} rows and their {@code minimum} and
  * {@code preferred}; only the first row may omit {@code since}. The edition is an opaque
- * {@link MinecraftEdition} identifier that planning only compares. Unknown keys are refused, so a
- * misspelt key cannot silently drop a rule.</p>
+ * {@link MinecraftEdition} identifier that planning only compares. A table named after the platform
+ * identifier belongs to the provider, which reads its own data from it; planning skips it. Other unknown keys
+ * are refused, so a misspelt key cannot silently drop a rule.</p>
  */
 public final class PlatformVersionsReader {
 	private static final Set<String> DOCUMENT_KEYS = Set.of("edition", "known", "agent", "verified", "java");
@@ -61,15 +66,20 @@ public final class PlatformVersionsReader {
 		if (resource == null) throw new PlatformException("Platform '" + platform + "' supplies no version data");
 
 		try (InputStream input = resource.openStream()) {
-			return versions(mapper.readTree(input));
+			return versions(platform, mapper.readTree(input));
 		} catch (IOException | IllegalArgumentException failure) {
 			throw new PlatformException("Platform '" + platform + "' has invalid version data " + resource + ": "
 					+ failure.getMessage(), failure);
 		}
 	}
 
-	private PlatformVersions versions(JsonNode document) {
-		refuseUnknownKeys(document, DOCUMENT_KEYS, "the document");
+	private PlatformVersions versions(String platform, JsonNode document) {
+		Set<String> documentKeys = new LinkedHashSet<>(DOCUMENT_KEYS);
+		documentKeys.add(platform);
+		refuseUnknownKeys(document, documentKeys, "the document");
+		// The provider reads its own table; planning only requires it to be one.
+		table(document, platform);
+
 		PlatformVersions.PlatformVersionsBuilder versions = PlatformVersions.builder()
 				.edition(edition(document));
 		for (JsonNode version : array(document, "known"))

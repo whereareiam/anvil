@@ -1,0 +1,6 @@
+name: AnvilPlatformAgent
+version: '${version}'
+main: me.whereareiam.anvil.agent.lumi.AnvilLumiAgent
+api: ['1.0.0']
+load: STARTUP
+description: Loopback-only runtime agent installed by Anvil

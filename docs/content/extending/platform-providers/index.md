@@ -82,7 +82,10 @@ requests a version. `maximum` is optional and models the platform's own refusal 
 `maximumBypassProperty` only when the platform offers a system property that lifts that refusal;
 planning then adds `-D<property>=true` for an explicitly requested newer LTS. Without it, planning
 refuses such a request. Only the first row may omit `since`; it then applies from the oldest version,
-which suits a platform whose builds carry no version. Unknown keys are refused.
+which suits a platform whose builds carry no version. Unknown keys are refused, except a table named
+after your platform ID, such as `[example]`: it holds data only your provider reads, for example which of
+its releases support which version, and planning skips it. The Lumi provider keeps the protocol of each
+version and the versions of each Lumi release there.
 
 `[agent] minimumJava` raises every row: planning never selects older Java for the platform, raises a
 preferred version below it to the next LTS release, and refuses a version whose maximum leaves no LTS

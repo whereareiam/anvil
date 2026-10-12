@@ -19,6 +19,10 @@ public final class Platforms {
 	 */
 	public static final @NotNull String NEOFORGE = "neoforge";
 	/**
+	 * Lumi server provider identifier.
+	 */
+	public static final @NotNull String LUMI = "lumi";
+	/**
 	 * Velocity proxy provider identifier.
 	 */
 	public static final @NotNull String VELOCITY = "velocity";

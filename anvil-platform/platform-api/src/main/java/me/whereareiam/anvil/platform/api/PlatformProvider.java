@@ -138,6 +138,10 @@ public interface PlatformProvider {
 	 * maximum = 16
 	 * preferred = 11
 	 * maximumBypassProperty = "Paper.IgnoreJavaVersion"
+	 *
+	 * # Optional table named after id(): the provider's own data, which planning skips.
+	 * [example]
+	 * releases = ["1.0.0"]
 	 * }</pre>
 	 *
 	 * <p>Platform versions are the values {@link #platformVersion(MinecraftProcess)} returns; a process
@@ -146,7 +150,9 @@ public interface PlatformProvider {
 	 * it only for an explicitly requested Java version above that maximum. The edition is required:
 	 * planning records it in each {@code ProcessPlan}, a player
 	 * reaches the process only with a protocol release of the same edition, and Java planning suggests
-	 * only platforms of the same edition. Unknown keys are refused.</p>
+	 * only platforms of the same edition. A table named after the platform {@link #id() identifier} holds data
+	 * only the provider reads, such as which of its releases support which version. Other unknown keys are
+	 * refused.</p>
 	 *
 	 * <pre>{@code
 	 * public @NotNull URL versionData() {

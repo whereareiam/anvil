@@ -14,7 +14,8 @@ Velocity-to-Paper topology.
 | Velocity | Modern or legacy | Legacy |
 | BungeeCord | Legacy | Legacy |
 
-NeoForge has no identity forwarding, so a NeoForge server cannot be a backend of either proxy.
+NeoForge has no identity forwarding, so a NeoForge server cannot be a backend of either proxy. Lumi
+has no identity forwarding either, and its UDP listener cannot be a backend of a TCP proxy.
 
 Anvil chooses a common mode from the installed providers before launch. Proxies with overlapping
 backend sets belong to a connected forwarding group; they need a compatible configuration for the
