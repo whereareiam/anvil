@@ -30,7 +30,7 @@ class MovementProviderTest {
 
 		assertEquals(MovementProvider.ID, provider.descriptor().getId());
 		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
-		assertEquals(Set.of("mcprotocol"), provider.supportedLibraries());
+		assertEquals(Set.of("mcprotocol", "cloudburst"), provider.supportedLibraries());
 		assertEquals(Movement.class, provider.capability());
 	}
 

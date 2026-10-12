@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.cloudburst.client.v1_26_60;
 
 import me.whereareiam.anvil.protocol.cloudburst.client.CloudburstSession;
 import me.whereareiam.anvil.protocol.cloudburst.client.PacketSubscription;
+import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.GameStart;
 import org.cloudburstmc.protocol.bedrock.BedrockClientSession;
 import org.cloudburstmc.protocol.bedrock.BedrockPeer;
@@ -28,17 +29,20 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 
 	private final BedrockPeer peer;
 	private final BedrockCodec codec;
+	private final ClientProfile profile;
 	private final List<Subscription<?>> subscriptions = new CopyOnWriteArrayList<>();
 
 	private volatile @Nullable BedrockClientSession session;
 	private volatile @Nullable GameStart start;
 	private volatile long startNanos;
+	private volatile boolean serverMovement;
 	private volatile List<ItemDefinition> items = List.of();
 	private volatile boolean closed;
 
-	ConnectionSession(@NotNull BedrockPeer peer, @NotNull BedrockCodec codec) {
+	ConnectionSession(@NotNull BedrockPeer peer, @NotNull BedrockCodec codec, @NotNull ClientProfile profile) {
 		this.peer = peer;
 		this.codec = codec;
+		this.profile = profile;
 	}
 
 	@Override
@@ -49,6 +53,11 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 	@Override
 	public boolean connected() {
 		return !closed && peer.isConnected();
+	}
+
+	@Override
+	public @NotNull ClientProfile profile() {
+		return profile;
 	}
 
 	@Override
@@ -73,6 +82,13 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 	@Override
 	public @NotNull Optional<GameStart> start() {
 		return Optional.ofNullable(start);
+	}
+
+	@Override
+	public boolean serverAuthoritativeMovement() {
+		if (start == null) throw new IllegalStateException("The Bedrock session has not started its game yet");
+
+		return serverMovement;
 	}
 
 	@Override
@@ -122,10 +138,21 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 	 * Records the game start.
 	 *
 	 * @param started what the game start told the client
+	 * @param serverMovement whether the game start made the server authoritative over the player's movement
 	 */
-	void started(@NotNull GameStart started) {
+	void started(@NotNull GameStart started, boolean serverMovement) {
+		this.serverMovement = serverMovement;
 		startNanos = System.nanoTime();
 		start = started;
+	}
+
+	/**
+	 * Records the movement authority a server's later movement authority packet set.
+	 *
+	 * @param serverMovement whether the server is authoritative over the player's movement
+	 */
+	void movementAuthority(boolean serverMovement) {
+		this.serverMovement = serverMovement;
 	}
 
 	/**

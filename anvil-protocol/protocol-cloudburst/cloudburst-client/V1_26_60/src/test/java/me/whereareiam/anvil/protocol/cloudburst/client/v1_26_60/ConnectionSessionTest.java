@@ -15,11 +15,15 @@ import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
 import org.cloudburstmc.protocol.bedrock.codec.v2193.Bedrock_v2193;
 import org.cloudburstmc.protocol.bedrock.codec.v766.Bedrock_v766;
+import org.cloudburstmc.protocol.bedrock.codec.v800.Bedrock_v800;
+import org.cloudburstmc.protocol.bedrock.codec.v818.Bedrock_v818;
+import org.cloudburstmc.protocol.bedrock.data.AuthoritativeMovementMode;
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition;
 import org.cloudburstmc.protocol.bedrock.data.definitions.SimpleItemDefinition;
 import org.cloudburstmc.protocol.bedrock.netty.codec.packet.BedrockPacketCodec_v3;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ItemComponentPacket;
+import org.cloudburstmc.protocol.bedrock.packet.SetMovementAuthorityPacket;
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket;
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket;
 import org.jetbrains.annotations.NotNull;
@@ -113,6 +117,26 @@ class ConnectionSessionTest {
 		assertEquals(1000, start.getTick());
 		assertTrue(connection.session.tick() >= 1000, String.valueOf(connection.session.tick()));
 		assertEquals(2193, connection.session.protocol());
+		assertEquals("Alice", connection.session.profile().getName());
+	}
+
+	@Test
+	@SuppressWarnings("deprecation")
+	void takesTheMovementAuthorityOfOlderProtocolsFromTheServerAndKnowsOnlyServerAuthorityFromProtocol818() throws Exception {
+		Connection older = connection(Bedrock_v800.CODEC);
+		assertThrows(IllegalStateException.class, older.session::serverAuthoritativeMovement);
+		StartGamePacket clientMovement = start(List.of());
+		clientMovement.setAuthoritativeMovementMode(AuthoritativeMovementMode.CLIENT);
+		older.handler.handle(clientMovement);
+		assertFalse(older.session.serverAuthoritativeMovement());
+		SetMovementAuthorityPacket authority = new SetMovementAuthorityPacket();
+		authority.setMovementMode(AuthoritativeMovementMode.SERVER);
+		older.handler.handle(authority);
+		assertTrue(older.session.serverAuthoritativeMovement());
+
+		Connection newer = connection(Bedrock_v818.CODEC);
+		newer.handler.handle(start(List.of()));
+		assertTrue(newer.session.serverAuthoritativeMovement());
 	}
 
 	@Test
@@ -157,13 +181,13 @@ class ConnectionSessionTest {
 		BedrockPacketCodec_v3 packets = new BedrockPacketCodec_v3();
 		packets.setCodec(codec);
 		RecordingSession client = new RecordingSession(new BedrockPeer(new EmbeddedChannel(packets), (peer, subClientId) -> null));
-		ConnectionSession session = new ConnectionSession(client.getPeer(), codec);
-		session.attach(client);
 		ClientLogin login = ClientLogin.builder()
 				.profile(ClientProfile.builder().name("Alice").uniqueId(new UUID(0, 1)).build())
 				.identity(new TestIdentity(null))
 				.connection(ClientConnection.builder().host("127.0.0.1").port(19132).protocol(codec.getProtocolVersion()).build())
 				.build();
+		ConnectionSession session = new ConnectionSession(client.getPeer(), codec, login.getProfile());
+		session.attach(client);
 
 		return new Connection(client, session, new ClientPacketHandler(client, session, codec, login, new IgnoringListener()));
 	}

@@ -28,7 +28,7 @@ public final class MovementProvider implements ProtocolPlayerCapabilityProvider<
 
 	@Override
 	public @NotNull Set<String> supportedLibraries() {
-		return Set.of("mcprotocol");
+		return Set.of("mcprotocol", "cloudburst");
 	}
 
 	@Override

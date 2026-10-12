@@ -186,6 +186,11 @@ class CloudburstWorkerClientTest {
 		}
 
 		@Override
+		public @NotNull ClientProfile profile() {
+			throw new AssertionError("The worker client reads no profile from its session");
+		}
+
+		@Override
 		public void send(@NotNull Object packet) {
 			throw new AssertionError("The worker client sends no packet");
 		}
@@ -198,6 +203,11 @@ class CloudburstWorkerClientTest {
 		@Override
 		public @NotNull Optional<GameStart> start() {
 			return Optional.empty();
+		}
+
+		@Override
+		public boolean serverAuthoritativeMovement() {
+			throw new IllegalStateException("not started");
 		}
 
 		@Override

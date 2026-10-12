@@ -34,6 +34,20 @@ Replace the fixture coordinates with a known position supplied by your applicati
 Anvil sends the requested update; the server decides whether to accept it. An invalid position or a
 large jump can cause a correction or kick.
 
+## Bedrock players
+
+Bedrock positions a player by its eyes, so a Bedrock player sends the position 1.62 blocks above the
+feet the `Position` names; pass the same feet position as for a Java player. Under server
+authoritative movement, which every Bedrock version from 1.21.90 uses and which Lumi turns on by
+default, the update is an authoritative input of the player's current tick that presses no movement
+key. The server decides whether the player stands on the ground, so `onGround` has no effect there.
+When an older server grants the client authority over movement, the update is a player move that
+carries `onGround`.
+
+After a teleport, Lumi accepts the next update only within about 0.3 blocks of the position it set
+and resets the player otherwise, and it ignores updates for the half second after a teleport. Start
+from a position you know exactly, such as one your test set with `tp`, and move in small steps.
+
 ## Assert the effect you need
 
 After the update, wait for the behavior under test: a region-entry message, a movement restriction

@@ -291,6 +291,11 @@ CloudburstMC Protocol's family for Bedrock players has the same shape:
 | `cloudburst-client` | Source-free side folder whose `V*` children are the client segments |
 | `cloudburst-client/V1_26_60` | The one client segment of the release; it selects each player's codec by the player's protocol number |
 
+The messages and movement families each add a `<feature>-cloudburst` side whose one segment,
+`V1_26_60`, implements the feature's port against `CloudburstSession` for every codec of the release.
+Because `cloudburst-api` belongs to another API family, those family roots declare it through
+`architecture.dependsOnApis`.
+
 The worker shell never imports MCProtocolLib. Every class that does lives in a segment: a project named
 after the release key it starts at, under a side folder named after its owner and library, such as
 `mcprotocol-client` or `movement-mcprotocol`. A segment holds only the adapters of library-neutral ports
