@@ -560,6 +560,10 @@ then rerun the `Release drafter` workflow; text typed into the draft is lost on 
   returns an `EnvironmentSession.Availability` whose reason the action shows; `run` applies the same rule.
   A failed request or a failed environment out of view becomes a notification in the `Anvil` group, never a
   replacement of the catalog.
+- The Anvil tool-window tab owns its `EnvironmentSession`: closing the tab disposes the session, while the
+  `EnvironmentTab` it shows only observes it. `environment.view.services` lists retained sessions in the IDE's
+  Services view through `EnvironmentServiceContributor`; `EnvironmentServices` creates one view per session,
+  released with the session, and closing a Services view never ends the environment.
 - `intellij-scenario` groups packages by what they own, with a `view` subpackage for Swing screens:
   `tooling` (`ToolingHost`, `ToolingLaunch`, `ToolingConnection`, and `tooling.protocol`), `catalog`
   (`ScenarioCatalog`, `catalog.source.SourceDiscovery` with `ImportRefreshPolicy`, `catalog.view` with the
