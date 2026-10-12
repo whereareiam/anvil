@@ -168,6 +168,26 @@ public final class ToolingLaunch {
 	}
 
 	/**
+	 * Runs the source's preparation again while the runner keeps running, so the build rebuilds the artifacts
+	 * that processes install as workspace assets. The build's output appears as diagnostics. Classes the runner
+	 * has already loaded, such as the scenario definitions, are not replaced.
+	 *
+	 * @return completes when the build succeeded, or exceptionally when it failed or the launch stopped
+	 */
+	public @NotNull CompletableFuture<Void> rebuild() {
+		return CompletableFuture.runAsync(() -> {
+			try {
+				runPreparation();
+			} catch (InterruptedException interrupted) {
+				Thread.currentThread().interrupt();
+				throw new CompletionException(interrupted);
+			} catch (IOException failure) {
+				throw new CompletionException(failure);
+			}
+		}, executor);
+	}
+
+	/**
 	 * Requests shutdown. Pending requests fail with the recorded failure, or with a cancellation.
 	 */
 	public void stop() {
@@ -235,16 +255,33 @@ public final class ToolingLaunch {
 		advance(State.PREPARING);
 		var preparation = inputs.prepare(source);
 		resources.manifest = new Manifest(preparation.getManifestPath());
-		ProcessBuilder command = new ProcessBuilder(preparation.getCommand())
-				.directory(preparation.getWorkingDirectory().toFile())
-				.redirectErrorStream(true);
-		command.environment().putAll(preparation.getEnvironment());
-		Process build = connection.start(command);
+		Process build = connection.start(command(preparation));
 		int result = connection.readPreparation(build, line -> diagnostic(line, false));
 		if (result != 0 && !isStopping())
 			throw new IOException("Could not prepare scenarios. Open the console for build details.");
 
 		return preparation.getManifestPath();
+	}
+
+	private void runPreparation() throws IOException, InterruptedException {
+		if (state != State.READY) throw new IOException("The environment is not running.");
+
+		var preparation = inputs.prepare(source);
+		try (var ignored = new Manifest(preparation.getManifestPath())) {
+			Process build = connection.startRebuild(command(preparation));
+			int result = connection.readPreparation(build, line -> diagnostic(line, false));
+			if (isStopping()) throw new IOException("Anvil launch cancelled.");
+			if (result != 0) throw new IOException("Could not rebuild the project. Open the console for build details.");
+		}
+	}
+
+	private static @NotNull ProcessBuilder command(@NotNull ScenarioPreparation preparation) {
+		ProcessBuilder command = new ProcessBuilder(preparation.getCommand())
+				.directory(preparation.getWorkingDirectory().toFile())
+				.redirectErrorStream(true);
+		command.environment().putAll(preparation.getEnvironment());
+
+		return command;
 	}
 
 	private void run(@NotNull LaunchResources resources, @NotNull Path manifest) throws IOException, InterruptedException {

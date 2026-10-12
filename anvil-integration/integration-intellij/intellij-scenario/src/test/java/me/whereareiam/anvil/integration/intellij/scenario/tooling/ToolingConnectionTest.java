@@ -37,6 +37,22 @@ class ToolingConnectionTest {
 	}
 
 	@Test
+	void stopTerminatesARebuildBesideTheRunnerAndOnlyOneRebuildRuns() throws Exception {
+		ControlledToolingProcess runner = new ControlledToolingProcess(true);
+		ControlledToolingProcess rebuild = new ControlledToolingProcess(false);
+		var connection = new ToolingConnection(builder -> builder.command().getFirst().equals("runner") ? runner : rebuild, Runnable::run);
+		connection.startRunner(new ProcessBuilder("runner"));
+		connection.startRebuild(new ProcessBuilder("prepare"));
+
+		assertThrows(IOException.class, () -> connection.startRebuild(new ProcessBuilder("prepare")));
+		connection.stop();
+
+		assertTrue(rebuild.waitFor(5, TimeUnit.SECONDS));
+		assertTrue(runner.waitFor(5, TimeUnit.SECONDS));
+		assertThrows(IOException.class, () -> connection.startRebuild(new ProcessBuilder("prepare")));
+	}
+
+	@Test
 	void stopTerminatesARunnerWhoseCommandWriteIsBlocked() throws Exception {
 		ControlledToolingProcess child = new ControlledToolingProcess(true);
 		child.holdCommandFlush();

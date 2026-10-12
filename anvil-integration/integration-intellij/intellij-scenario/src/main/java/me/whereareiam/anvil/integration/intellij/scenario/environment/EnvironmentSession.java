@@ -63,6 +63,7 @@ public final class EnvironmentSession implements Disposable {
 	@Getter
 	private volatile @NotNull ScenarioDescriptor scenario;
 
+	private volatile boolean rebuilding;
 	private volatile boolean disposed;
 
 	EnvironmentSession(
@@ -230,6 +231,34 @@ public final class EnvironmentSession implements Disposable {
 	 */
 	public @NotNull CompletableFuture<Boolean> restartProcess(@NotNull String process) {
 		return disposed ? CompletableFuture.completedFuture(false) : execution.restartProcess(process);
+	}
+
+	/**
+	 * Rebuilds the project's artifacts, then restarts one process, which installs its assets again from the
+	 * rebuilt files. Only one rebuild runs at a time.
+	 *
+	 * @param process declared process name
+	 * @return whether the transport accepted the restart; completes exceptionally when the rebuild failed
+	 */
+	public @NotNull CompletableFuture<Boolean> rebuildAndRestart(@NotNull String process) {
+		if (disposed) return CompletableFuture.completedFuture(false);
+		if (rebuilding) return CompletableFuture.failedFuture(new IllegalStateException("The project is already being rebuilt."));
+
+		rebuilding = true;
+		changed();
+		return execution.rebuild()
+				.whenComplete((ignored, failure) -> {
+					rebuilding = false;
+					changed();
+				})
+				.thenCompose(ignored -> restartProcess(process));
+	}
+
+	/**
+	 * Reports whether a {@link #rebuildAndRestart rebuild} is running.
+	 */
+	public boolean isRebuilding() {
+		return rebuilding;
 	}
 
 	/**

@@ -314,6 +314,56 @@ public class ToolingLaunchPlatformTest extends ScenarioPlatformTestCase {
 		assertFalse(Files.exists(manifest));
 	}
 
+	public void testRebuildRunsThePreparationBesideTheRunner() throws Exception {
+		ControlledToolingProcess runner = startedRunner();
+		ControlledToolingProcess rebuild = process(false);
+		rebuild.emit("BUILD SUCCESSFUL");
+		var launch = launch(rebuildStarter(runner, rebuild));
+		List<String> output = new CopyOnWriteArrayList<>();
+		launch.subscribe(new ToolingLaunch.Listener() {
+			@Override
+			public void output(@NotNull SessionLogEntry entry) {
+				output.add(entry.getText());
+			}
+		}, getTestRootDisposable());
+		launch.startAfter(null);
+		launch.ready().get(5, TimeUnit.SECONDS);
+
+		var rebuilt = launch.rebuild();
+		rebuild.complete(0);
+		rebuilt.get(5, TimeUnit.SECONDS);
+
+		assertTrue(output.contains("BUILD SUCCESSFUL\n"));
+		assertFalse("The rebuild releases its manifest", Files.exists(manifest));
+		assertEquals(ToolingLaunch.State.READY, launch.state());
+		launch.stop();
+		assertInstanceOf(completed(launch), ToolingLaunch.Outcome.Stopped.class);
+	}
+
+	public void testFailedRebuildKeepsTheEnvironmentRunning() throws Exception {
+		ControlledToolingProcess runner = startedRunner();
+		ControlledToolingProcess rebuild = process(false);
+		rebuild.complete(1);
+		var launch = launch(rebuildStarter(runner, rebuild));
+		launch.startAfter(null);
+		launch.ready().get(5, TimeUnit.SECONDS);
+
+		var failure = Assertions.assertThrows(ExecutionException.class, () -> launch.rebuild().get(5, TimeUnit.SECONDS));
+
+		assertInstanceOf(failure.getCause(), IOException.class);
+		assertTrue(failure.getCause().getMessage().contains("Could not rebuild"));
+		assertEquals(ToolingLaunch.State.READY, launch.state());
+		assertTrue(runner.isAlive());
+	}
+
+	public void testRebuildIsRefusedBeforeTheRunnerIsReady() {
+		var launch = launch(builder -> { throw new AssertionError("Nothing may start"); });
+
+		var failure = Assertions.assertThrows(ExecutionException.class, () -> launch.rebuild().get(5, TimeUnit.SECONDS));
+
+		assertTrue(failure.getCause().getMessage().contains("not running"));
+	}
+
 	public void testRunnerExitingWithAnErrorCodeFailsTheLaunch() throws Exception {
 		ControlledToolingProcess runner = startedRunner();
 		var launch = launch(runnerStarter(runner));
@@ -409,6 +459,17 @@ public class ToolingLaunchPlatformTest extends ScenarioPlatformTestCase {
 		build.complete(0);
 
 		return builder -> builder.command().getFirst().equals("prepare") ? build : runner;
+	}
+
+	private ToolingConnection.Starter rebuildStarter(ControlledToolingProcess runner, ControlledToolingProcess rebuild) {
+		ControlledToolingProcess build = process(false);
+		build.complete(0);
+		AtomicInteger builds = new AtomicInteger();
+
+		return builder -> {
+			if (!builder.command().getFirst().equals("prepare")) return runner;
+			return builds.getAndIncrement() == 0 ? build : rebuild;
+		};
 	}
 
 	private static int children(Disposable owner) {
