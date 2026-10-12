@@ -12,6 +12,7 @@ import me.whereareiam.anvil.platform.api.model.ProcessPlan;
 import me.whereareiam.anvil.platform.planning.DefaultPlatformPlanner;
 import me.whereareiam.anvil.platform.planning.version.PlatformVersionsReader;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
+import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import org.jetbrains.annotations.NotNull;
@@ -108,10 +109,7 @@ class CompatibilityScenarioFactoryTest {
 	}
 
 	private List<ProtocolRelease> mcprotocolReleases() {
-		ProtocolLibraryProvider mcprotocol = ServiceLoader.load(ProtocolLibraryProvider.class).stream()
-				.map(ServiceLoader.Provider::get)
-				.filter(library -> library.id().equals("mcprotocol"))
-				.findFirst().orElseThrow();
+		ProtocolLibraryProvider mcprotocol = ProtocolLibraryRegistry.discover().require("mcprotocol");
 		ProtocolLibraryContext context = ProtocolLibraryContext.builder()
 				.cacheDirectory(directory)
 				.accountsDirectory(directory.resolve("accounts"))

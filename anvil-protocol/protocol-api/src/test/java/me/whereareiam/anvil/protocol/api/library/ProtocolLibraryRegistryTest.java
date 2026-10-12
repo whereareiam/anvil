@@ -29,6 +29,13 @@ class ProtocolLibraryRegistryTest {
 	}
 
 	@Test
+	void discoversTheLibrariesOfEveryHost() {
+		ProtocolLibraryRegistry registry = ProtocolLibraryRegistry.discover();
+
+		assertEquals(List.of("hosted-first", "hosted-second"), List.copyOf(registry.ids()));
+	}
+
+	@Test
 	void unknownLibrariesNameTheInstalledOnes() {
 		ProtocolLibraryRegistry registry = new ProtocolLibraryRegistry(List.of(new StubProvider("first"), new StubProvider("second")));
 

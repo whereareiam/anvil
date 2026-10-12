@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TestExtensionLoaderTest {
 	private static final String PROTOCOL_SERVICE = "META-INF/services/me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider";
+	private static final String HOST_SERVICE = "META-INF/services/me.whereareiam.anvil.protocol.api.library.ProtocolLibraryHost";
 	private static final String AGENT_SERVICE = "META-INF/services/me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider";
 
 	@TempDir
@@ -58,7 +59,7 @@ class TestExtensionLoaderTest {
 		ClassLoader parent = new ClassLoader(previous) {
 			@Override
 			public Enumeration<URL> getResources(String name) throws IOException {
-				if (name.equals(PROTOCOL_SERVICE) || name.equals(AGENT_SERVICE))
+				if (name.equals(PROTOCOL_SERVICE) || name.equals(HOST_SERVICE) || name.equals(AGENT_SERVICE))
 					return Collections.enumeration(List.of(installed));
 
 				return super.getResources(name);
@@ -68,12 +69,14 @@ class TestExtensionLoaderTest {
 		try {
 			try (var ignored = new TestExtensionLoader(FixtureArtifacts.extension(), false)) {
 				assertEquals(List.of("external.fixture.protocol.FixtureLibraryProvider"), descriptors(PROTOCOL_SERVICE));
+				assertEquals(List.of(), descriptors(HOST_SERVICE));
 				assertEquals(List.of("installed.Provider", "external.fixture.agent.FixtureAgentOperations"), descriptors(AGENT_SERVICE));
 			}
 			assertSame(parent, Thread.currentThread().getContextClassLoader());
 
 			try (var ignored = new TestExtensionLoader(FixtureArtifacts.extension(), true)) {
 				assertEquals(List.of("installed.Provider", "external.fixture.protocol.FixtureLibraryProvider"), descriptors(PROTOCOL_SERVICE));
+				assertEquals(List.of("installed.Provider"), descriptors(HOST_SERVICE));
 			}
 		} finally {
 			Thread.currentThread().setContextClassLoader(previous);

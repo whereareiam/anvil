@@ -1,18 +1,21 @@
 plugins {
-	id("module-shared-implementation")
+	id("module-assembly")
+	id("packaging-shaded-root")
 }
 
-description = "Library-neutral native player worker that protocol library families embed: worker process, transport, worker shell, segments and release data"
+// Owning worker-api makes this family its own API family, so the protocol library API it hosts libraries behind is
+// shared explicitly.
+architecture {
+	sharedApis = setOf(projects.anvilProtocol.protocolApi.path)
+}
+
+description = "Native player worker that hosts protocol libraries in version-isolated JVMs"
 
 dependencies {
+	api(projects.anvilProtocol.protocolWorker.workerApi)
+
 	implementation(libs.jackson.databind)
 	implementation(libs.jackson.toml)
 
-	compileOnly(projects.anvilApi)
-	compileOnly(projects.anvilProtocol.protocolApi)
-
-	testImplementation(projects.anvilApi)
-	testImplementation(projects.anvilCapability)
-	testImplementation(projects.anvilCapability.capabilityProtocolApi)
-	testImplementation(projects.anvilProtocol.protocolApi)
+	embedded(projects.anvilProtocol.protocolWorker.workerCommon) { isTransitive = false }
 }

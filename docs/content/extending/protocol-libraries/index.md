@@ -34,6 +34,24 @@ For the exact contracts, read the
 [ProtocolPlayer](https://github.com/whereareiam/anvil/blob/dev/anvil-protocol/protocol-api/src/main/java/me/whereareiam/anvil/protocol/api/player/ProtocolPlayer.java)
 source Javadocs. These links use `dev`; select your release tag when checking a released version.
 
+## Run your players in Anvil's native worker
+
+Instead of implementing these contracts yourself, a library can plug into Anvil's native worker, which
+runs each release of the library in a version-isolated JVM, reads the library's release data and pins,
+and installs it as a protocol library. Depend on `me.whereareiam.anvil:protocol-worker-api` at compile
+time and implement `WorkerLibraryProvider` from `me.whereareiam.anvil.protocol.worker`:
+
+| Method | Supplies |
+|---|---|
+| `library()` | The `WorkerLibrary` description: ID, name, client port, release data, pin task, the packages the release closures own, and worker JVM arguments |
+| `client(adapter)` | The `WorkerClient` that drives your client segment's implementation of the client port |
+| `authentication(accountsDirectory)` | An optional `WorkerAuthentication`, which also resolves a stored account into the session a player signs in with |
+
+Register the provider in `META-INF/services/me.whereareiam.anvil.protocol.worker.WorkerLibraryProvider`
+and give your published library a runtime dependency on `me.whereareiam.anvil:protocol-worker`, which
+registers itself as the `ProtocolLibraryHost` that installs every such library. Do not also register a
+`ProtocolLibraryProvider` for the same library.
+
 ## Describe the releases
 
 `releases(context)` returns every release your library can run as `ProtocolRelease` values. Anvil

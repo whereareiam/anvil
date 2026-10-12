@@ -8,13 +8,17 @@ import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Set;
 
 /**
  * Loads a prepared extension JAR while preserving the host's shared API classes.
  * The creating thread owns the loader and must close it after discovery and extension use finish.
  */
 public final class TestExtensionLoader implements AutoCloseable {
-	private static final String PROTOCOL_SERVICE = "META-INF/services/me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider";
+	private static final Set<String> PROTOCOL_SERVICES = Set.of(
+			"META-INF/services/me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider",
+			"META-INF/services/me.whereareiam.anvil.protocol.api.library.ProtocolLibraryHost"
+	);
 
 	private final Path artifact;
 	private final ClassLoader previous;
@@ -32,7 +36,7 @@ public final class TestExtensionLoader implements AutoCloseable {
 		ClassLoader parent = new ClassLoader(previous) {
 			@Override
 			public Enumeration<URL> getResources(String name) throws IOException {
-				if (name.equals(PROTOCOL_SERVICE) && !includeInstalledProtocols)
+				if (PROTOCOL_SERVICES.contains(name) && !includeInstalledProtocols)
 					return Collections.emptyEnumeration();
 
 				return super.getResources(name);

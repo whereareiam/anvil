@@ -39,7 +39,7 @@ class ClientSegmentLinkageTest {
 		Map<MinecraftVersion, String> segments = clientSegments();
 		assertEquals(List.of("1.18.2", "1.21.1", "1.21.11"), segments.keySet().stream().map(MinecraftVersion::toString).toList());
 
-		for (ProtocolRelease release : ReleaseCatalog.load(McProtocolWorkerMain.LIBRARY, null).releases()) {
+		for (ProtocolRelease release : ReleaseCatalog.load(McProtocolWorkerLibrary.LIBRARY, null).releases()) {
 			MinecraftVersion since = MinecraftVersion.floor(segments.keySet(), version -> version, release.version()).orElseThrow();
 			String manifest = text(segments.get(since) + SegmentDescriptor.LINKAGE);
 			assertTrue(manifest.lines().allMatch(ClientSegmentLinkageTest::recordsRequirements),
@@ -55,7 +55,7 @@ class ClientSegmentLinkageTest {
 	@Test
 	void refusesAClientSegmentOnAReleaseItDoesNotServe() throws Exception {
 		Map<MinecraftVersion, String> segments = clientSegments();
-		ProtocolRelease modern = ReleaseCatalog.load(McProtocolWorkerMain.LIBRARY, null).releases().stream()
+		ProtocolRelease modern = ReleaseCatalog.load(McProtocolWorkerLibrary.LIBRARY, null).releases().stream()
 				.max(Comparator.comparing(ProtocolRelease::version))
 				.orElseThrow();
 

@@ -5,7 +5,7 @@ import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.fixture.RecordingClient;
-import me.whereareiam.anvil.protocol.worker.child.WorkerClient;
+import me.whereareiam.anvil.protocol.worker.WorkerClient;
 import me.whereareiam.anvil.protocol.worker.model.message.WorkerConnection;
 import me.whereareiam.anvil.protocol.worker.model.message.WorkerCredentials;
 import me.whereareiam.anvil.protocol.worker.model.message.WorkerPlayerOptions;

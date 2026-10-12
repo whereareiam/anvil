@@ -79,7 +79,7 @@ class McProtocolWorkerContractTest {
 		Set<MinecraftVersion> expected = RELEASES.stream()
 				.map(release -> MinecraftVersion.parse(release.version()))
 				.collect(Collectors.toSet());
-		Set<MinecraftVersion> released = ReleaseCatalog.load(McProtocolWorkerMain.LIBRARY, null).releases().stream()
+		Set<MinecraftVersion> released = ReleaseCatalog.load(McProtocolWorkerLibrary.LIBRARY, null).releases().stream()
 				.map(ProtocolRelease::version)
 				.collect(Collectors.toSet());
 
@@ -97,7 +97,7 @@ class McProtocolWorkerContractTest {
 		ProtocolRelease release = release(version);
 		assertEquals(protocol, release.protocolNumber(release.version()));
 
-		try (ProtocolWorkerProcess worker = new ProtocolWorkerProcess(McProtocolWorkerMain.LIBRARY, release, GradleReleaseClosures.of(release))) {
+		try (ProtocolWorkerProcess worker = new ProtocolWorkerProcess(McProtocolWorkerLibrary.LIBRARY, release, GradleReleaseClosures.of(release))) {
 			assertTrue(worker.diagnosticTail().contains("mcprotocol-client=" + clientSegment), worker.diagnosticTail());
 
 			ProtocolPlayer player = worker.create(request(release, "Alice"), null);
@@ -173,7 +173,7 @@ class McProtocolWorkerContractTest {
 		ClassLoader previous = thread.getContextClassLoader();
 		try (URLClassLoader withProbe = new URLClassLoader(new URL[]{probe.toUri().toURL()}, previous)) {
 			thread.setContextClassLoader(withProbe);
-			return new ProtocolWorkerProcess(McProtocolWorkerMain.LIBRARY, release, GradleReleaseClosures.of(release));
+			return new ProtocolWorkerProcess(McProtocolWorkerLibrary.LIBRARY, release, GradleReleaseClosures.of(release));
 		} finally {
 			thread.setContextClassLoader(previous);
 		}
@@ -189,7 +189,7 @@ class McProtocolWorkerContractTest {
 
 	private ProtocolRelease release(String version) {
 		MinecraftVersion key = MinecraftVersion.parse(version);
-		return ReleaseCatalog.load(McProtocolWorkerMain.LIBRARY, null).releases().stream()
+		return ReleaseCatalog.load(McProtocolWorkerLibrary.LIBRARY, null).releases().stream()
 				.filter(release -> release.version().equals(key))
 				.findFirst()
 				.orElseThrow();

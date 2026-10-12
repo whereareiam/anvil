@@ -243,25 +243,35 @@ implementation uses global player observations where needed without exposing the
 
 A protocol library is a family under `anvil-protocol/protocol-<library>`, and its folder holds the
 library's release data, `<library>-releases.toml`. The settings plugin `build-libraries` registers
-every such library. Its players run in native worker JVMs that `anvil-protocol/protocol-worker` provides
-for every library:
+every such library. Its players run in native worker JVMs of `anvil-protocol/protocol-worker`, a family
+that hosts every library plugged into it:
 
 | Module | Owns |
 |---|---|
-| `protocol-worker` | The library-neutral native worker: the worker process and its RPC client, segment selection on the worker class path, the JSON-lines transport, the worker shell with its capability registry, segment verification and session bindings, the release data reader and catalog, and `ProtocolWorkerPool`, a `ProtocolLibrary` that shares one worker per release |
+| `protocol-worker` | Wiring-only root: shades `worker-common`, exports `worker-api`, and publishes `protocol-worker` once for every library |
+| `worker-api` | Published as `protocol-worker-api`: the `WorkerLibraryProvider` SPI, the `WorkerLibrary` description, `WorkerClient`, `WorkerAuthentication`, and the worker messages a client reads |
+| `worker-common` | The worker process and its RPC client, segment selection on the worker class path, the JSON-lines transport, the `ProtocolWorker` entry point with its capability registry, segment verification and session bindings, the release data reader and catalog, `ProtocolWorkerPool`, a `ProtocolLibrary` that shares one worker per release, and `WorkerLibraryHost` |
 
-A library describes itself to the worker once, as a `WorkerLibrary`: its ID and name, its client port,
-its worker entry point, its built-in release data and pin task, the packages its release closures own,
-and the arguments of its worker JVM. The worker names no library; a class path entry of the host that
-contains a package the closure owns is refused for that library's workers only. The library supplies a
-`WorkerClient` that drives its client port for the worker's players, and its entry point hands both to
-`ProtocolWorker.main`. MCProtocolLib's family is laid out like this:
+A library plugs into the worker by implementing `WorkerLibraryProvider` and registering it in
+`META-INF/services/me.whereareiam.anvil.protocol.worker.WorkerLibraryProvider`. The provider describes the
+library as a `WorkerLibrary`: its ID and name, its client port, its built-in release data and pin task, the
+packages its release closures own, and the arguments of its worker JVM. It builds the `WorkerClient` that
+drives its client port for the worker's players and may supply a `WorkerAuthentication` for stored
+accounts. The worker names no library; a class path entry of the host that contains a package the closure
+owns is refused for that library's workers only.
+
+`WorkerLibraryHost` is the worker's one registration, as a `ProtocolLibraryHost`: protocol library
+discovery asks it for the hosted libraries, and it installs each `WorkerLibraryProvider` it finds as a
+protocol library of its own. A worker JVM starts `ProtocolWorker` with the library's ID and loads that
+library's provider again. A library family compiles against `protocol-worker-api` only, and its wiring root
+depends on the `protocol-worker` bundle, so every installation holds one copy of the worker.
+MCProtocolLib's family is laid out like this:
 
 | Module | Owns |
 |---|---|
-| `protocol-mcprotocol` | Wiring-only root: shades `mcprotocol-common` and `protocol-worker`, publishes `protocol-mcprotocol`, and owns `mcprotocol-releases.toml` and its `pinLibraryReleases` task |
+| `protocol-mcprotocol` | Wiring-only root: shades `mcprotocol-common`, depends on `protocol-worker`, publishes `protocol-mcprotocol`, and owns `mcprotocol-releases.toml` and its `pinLibraryReleases` task |
 | `mcprotocol-api` | The release-neutral client port `McProtocolClient<S>` that client segments implement |
-| `mcprotocol-common` | `McProtocolLibraryProvider`, the library's `WorkerLibrary` and worker entry point `McProtocolWorkerMain`, the `WorkerClient` that drives `McProtocolClient`, and the private account store |
+| `mcprotocol-common` | `McProtocolWorkerLibrary`, the library's `WorkerLibraryProvider`, the `WorkerClient` that drives `McProtocolClient`, and the private account store |
 | `mcprotocol-client` | Source-free side folder whose `V*` children are the client segments |
 | `mcprotocol-client/V1_18_2`, `V1_21_1` and `V1_21_11` | One client segment per range of releases; `V1_21_11` also serves `26.1.2` |
 
@@ -297,23 +307,6 @@ cache APIs. Docker keeps its image selection, cache layout, and validation order
 Implementations depend on APIs and external libraries, not sibling implementations. Introduce a
 shared API only for a real extension or module boundary. Ordinary collaborators such as a
 configuration writer and a distribution resolver remain concrete within their owning implementation.
-
-The one exception is a shared implementation: a project that applies `module-shared-implementation`,
-such as `protocol-worker`, holds code that the sibling families of its parent embed. An implementation
-below that parent compiles against it through its `sharedImplementation` configuration, and the family's
-wiring root embeds it next to the family's own code:
-
-```kotlin
-dependencies {
-	sharedImplementation(projects.anvilProtocol.protocolWorker)
-}
-```
-
-`verifyArchitecture` runs `verifySharedImplementations`, which refuses a `sharedImplementation`
-dependency declared by an API, by a project outside the shared implementation's parent, or on a project
-that does not apply the convention, and a shared implementation that is an API, sits at the root, or
-declares such a dependency itself. The shared implementation remains an ordinary implementation, which
-depends only on APIs.
 
 Assembly modules can bind and package implementations. Keep service construction in the launcher and
 external integrations in `anvil-integration`. Classifying an ordinary implementation as an assembly

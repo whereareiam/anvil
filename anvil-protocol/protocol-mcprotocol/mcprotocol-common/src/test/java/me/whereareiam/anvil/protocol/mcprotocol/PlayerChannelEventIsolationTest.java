@@ -175,12 +175,12 @@ class PlayerChannelEventIsolationTest {
 
 	private ProtocolWorkerProcess worker(String version) {
 		ProtocolRelease release = release(version);
-		return new ProtocolWorkerProcess(McProtocolWorkerMain.LIBRARY, release, GradleReleaseClosures.of(release));
+		return new ProtocolWorkerProcess(McProtocolWorkerLibrary.LIBRARY, release, GradleReleaseClosures.of(release));
 	}
 
 	private ProtocolRelease release(String version) {
 		MinecraftVersion parsed = MinecraftVersion.parse(version);
-		return ReleaseCatalog.load(McProtocolWorkerMain.LIBRARY, null).releases().stream()
+		return ReleaseCatalog.load(McProtocolWorkerLibrary.LIBRARY, null).releases().stream()
 				.filter(candidate -> candidate.getMinecraftVersions().contains(parsed))
 				.findFirst()
 				.orElseThrow();

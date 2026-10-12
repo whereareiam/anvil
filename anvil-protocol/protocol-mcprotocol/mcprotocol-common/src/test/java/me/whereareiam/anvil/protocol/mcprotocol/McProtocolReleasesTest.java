@@ -47,7 +47,7 @@ class McProtocolReleasesTest {
 
 	@Test
 	void loadsOneReleasePerMajorFromTheBuiltInData() {
-		ReleaseCatalog catalog = ReleaseCatalog.load(McProtocolWorkerMain.LIBRARY, null);
+		ReleaseCatalog catalog = ReleaseCatalog.load(McProtocolWorkerLibrary.LIBRARY, null);
 
 		Map<String, Integer> protocols = Map.of(
 				"1.18.2", 758, "1.21.1", 767, "1.21.11", 774, "26.1.2", 775
@@ -79,16 +79,16 @@ class McProtocolReleasesTest {
 	@Test
 	void loadsAFileCopyingABuiltInReleaseUnchanged() throws Exception {
 		String builtIn;
-		try (InputStream input = McProtocolReleasesTest.class.getClassLoader().getResourceAsStream(McProtocolWorkerMain.LIBRARY.getReleases())) {
+		try (InputStream input = McProtocolReleasesTest.class.getClassLoader().getResourceAsStream(McProtocolWorkerLibrary.LIBRARY.getReleases())) {
 			builtIn = new String(input.readAllBytes(), StandardCharsets.UTF_8);
 		}
 		int first = builtIn.indexOf("[[release]]");
 		Path file = temporary.resolve("copied-releases.toml");
 		Files.writeString(file, builtIn.substring(first, builtIn.indexOf("[[release]]", first + 1)));
 
-		ReleaseCatalog catalog = ReleaseCatalog.load(McProtocolWorkerMain.LIBRARY, file);
+		ReleaseCatalog catalog = ReleaseCatalog.load(McProtocolWorkerLibrary.LIBRARY, file);
 
-		assertEquals(ReleaseCatalog.load(McProtocolWorkerMain.LIBRARY, null).releases(), catalog.releases());
+		assertEquals(ReleaseCatalog.load(McProtocolWorkerLibrary.LIBRARY, null).releases(), catalog.releases());
 		assertTrue(catalog.releases().stream().noneMatch(ProtocolRelease::isAdditional));
 	}
 
@@ -97,10 +97,10 @@ class McProtocolReleasesTest {
 		Path file = temporary.resolve("extra-releases.toml");
 		Files.writeString(file, SNAPSHOT.replace("1.21.11", "1.21.12").replace("protocol = 774", "protocol = 776"));
 
-		ReleaseCatalog catalog = ReleaseCatalog.load(McProtocolWorkerMain.LIBRARY, file);
+		ReleaseCatalog catalog = ReleaseCatalog.load(McProtocolWorkerLibrary.LIBRARY, file);
 		assertEquals(5, catalog.releases().size());
 		assertTrue(catalog.releases().stream().anyMatch(release -> release.isAdditional()
 				&& release.version().equals(MinecraftVersion.parse("1.21.12"))));
-		assertThrows(IllegalArgumentException.class, () -> ReleaseCatalog.load(McProtocolWorkerMain.LIBRARY, temporary.resolve("missing.toml")));
+		assertThrows(IllegalArgumentException.class, () -> ReleaseCatalog.load(McProtocolWorkerLibrary.LIBRARY, temporary.resolve("missing.toml")));
 	}
 }

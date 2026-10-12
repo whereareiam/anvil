@@ -4,7 +4,7 @@ plugins {
 	id("test-library-closures")
 }
 
-description = "MCProtocolLib library provider, release data, worker entry point and client, and private authentication store"
+description = "MCProtocolLib worker library, its worker client and release data, and private authentication store"
 
 dependencies {
 	implementation(libs.minecraft.auth)
@@ -13,9 +13,7 @@ dependencies {
 	compileOnly(projects.anvilApi)
 	compileOnly(projects.anvilProtocol.protocolApi)
 	compileOnly(projects.anvilProtocol.protocolMcprotocol.mcprotocolApi)
-
-	// The library-neutral worker host and shell, which the family root embeds next to this project.
-	sharedImplementation(projects.anvilProtocol.protocolWorker)
+	compileOnly(projects.anvilProtocol.protocolWorker.workerApi)
 
 	testImplementation(projects.anvilApi)
 	testImplementation(projects.anvilCapability)
@@ -24,6 +22,9 @@ dependencies {
 	testImplementation(projects.anvilLauncher)
 	testImplementation(projects.anvilProtocol.protocolApi)
 	testImplementation(projects.anvilProtocol.protocolMcprotocol.mcprotocolApi)
+	testImplementation(projects.anvilProtocol.protocolWorker.workerApi)
+	// Worker contract tests start real workers through the worker host that the family root depends on.
+	testImplementation(projects.anvilProtocol.protocolWorker.workerCommon)
 
 	testRuntimeOnly(projects.anvilProtocol.protocolMcprotocol.mcprotocolClient)
 	testRuntimeOnly(libs.slf4j.simple)

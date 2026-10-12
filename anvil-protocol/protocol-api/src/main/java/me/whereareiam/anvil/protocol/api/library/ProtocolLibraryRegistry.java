@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.api.library;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -48,7 +49,8 @@ public final class ProtocolLibraryRegistry {
 
 	/**
 	 * Discovers libraries from the current context class loader, falling back to this class's loader
-	 * when the context loader provides none.
+	 * when the context loader provides none. Both the directly registered {@link ProtocolLibraryProvider}
+	 * implementations and the libraries of every {@link ProtocolLibraryHost} are installed.
 	 *
 	 * @return validated library registry
 	 */
@@ -101,8 +103,10 @@ public final class ProtocolLibraryRegistry {
 	}
 
 	private static List<ProtocolLibraryProvider> load(ClassLoader loader) {
-		return ServiceLoader.load(ProtocolLibraryProvider.class, loader).stream()
-				.map(ServiceLoader.Provider::get)
-				.toList();
+		List<ProtocolLibraryProvider> providers = new ArrayList<>();
+		ServiceLoader.load(ProtocolLibraryProvider.class, loader).forEach(providers::add);
+		ServiceLoader.load(ProtocolLibraryHost.class, loader).forEach(host -> providers.addAll(host.libraries(loader)));
+
+		return providers;
 	}
 }

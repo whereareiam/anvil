@@ -61,7 +61,7 @@ class ExternalProviderDiscoveryIntegrationTest {
 	void installsSeveralLibrariesWithoutCreatingThem() throws Exception {
 		try (var ignored = new TestExtensionLoader(FixtureArtifacts.extension(), true);
 		     var ignored1 = AnvilLauncher.create(options())) {
-			assertEquals(List.of("mcprotocol", "fixture"), List.copyOf(ProtocolLibraryRegistry.discover().ids()));
+			assertEquals(List.of("fixture", "mcprotocol"), List.copyOf(ProtocolLibraryRegistry.discover().ids()));
 		}
 		assertFalse(Files.exists(temporary.resolve("cache/fixture.lifecycle")));
 	}
@@ -76,13 +76,13 @@ class ExternalProviderDiscoveryIntegrationTest {
 				PlayerManager manager = players.open(scenario, EDITIONS, new Processes(), (player, connectedTo) -> observation(player), composer(composed), true);
 
 				var tie = assertThrows(ScenarioValidationException.class, () -> manager.create("Undeclared"));
-				assertTrue(tie.getMessage().contains("[mcprotocol, fixture]"), tie.getMessage());
+				assertTrue(tie.getMessage().contains("[fixture, mcprotocol]"), tie.getMessage());
 				assertTrue(tie.getMessage().contains("set protocolLibrary"), tie.getMessage());
 
 				manager.create(PlayerOptions.builder().name("Declared").protocolLibrary("fixture").build());
 				var unknown = assertThrows(ScenarioValidationException.class,
 						() -> manager.create(PlayerOptions.builder().name("Unknown").protocolLibrary("missing").build()));
-				assertTrue(unknown.getMessage().contains("Installed: [mcprotocol, fixture]"), unknown.getMessage());
+				assertTrue(unknown.getMessage().contains("Installed: [fixture, mcprotocol]"), unknown.getMessage());
 
 				PlayerManager scoped = players.open(scenario.toBuilder().protocolLibrary("fixture").build(), EDITIONS, new Processes(),
 						(player, connectedTo) -> observation(player), composer(composed), true);

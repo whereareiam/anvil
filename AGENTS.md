@@ -52,12 +52,14 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-capability/capability-builtin/player/<feature>/<feature>-<library>/V*` | Segments that implement only the feature's port for the library releases from their key on                                                                                 |
 | `anvil-capability/capability-builtin/process/<feature>`               | Process capability family: `<feature>-api` and a root holding the agent-backed provider, independent of simulated players                                                           |
 | `anvil-capability/capability-builtin/default`                         | Aggregate of every built-in player and process capability                                                                                                                           |
-| `anvil-protocol/protocol-api`                                         | Protocol library providers and releases, player creation/composition, protocol-owned channels/workers, pinned runtime resolution, and optional authentication                       |
+| `anvil-protocol/protocol-api`                                         | Protocol library providers, library hosts and releases, player creation/composition, protocol-owned channels/workers, pinned runtime resolution, and optional authentication                       |
 | `anvil-protocol`                                                      | Player registration, version selection, authentication compatibility, composition, and observations                                                                                 |
-| `anvil-protocol/protocol-worker`                                      | Shared implementation embedded by every library family: library-neutral worker process, RPC client, worker class path, transport, worker shell, capability registry, segment verification, session bindings, release reader/catalog and `ProtocolWorkerPool`; each library supplies a `WorkerLibrary` and a `WorkerClient` |
-| `anvil-protocol/protocol-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common` and `protocol-worker`, the client port and the client segments; owns `mcprotocol-releases.toml` and `pinLibraryReleases` |
+| `anvil-protocol/protocol-worker`                                      | Wiring bundle publishing the native player worker once as the shaded `protocol-worker`: embeds `worker-common` and exports `worker-api`; every library family depends on it |
+| `anvil-protocol/protocol-worker/worker-api`                           | `protocol-worker-api`: the `WorkerLibraryProvider` SPI a hosted library implements, its `WorkerLibrary` description, `WorkerClient` and `WorkerAuthentication`, and the worker messages a client reads |
+| `anvil-protocol/protocol-worker/worker-common`                        | Embedded, unpublished worker host and shell: `WorkerLibraryHost` (the worker's one `ProtocolLibraryHost` registration), worker process, RPC client, class path, transport, `ProtocolWorker` entry point, capability registry, segment verification, session bindings, release reader/catalog and `ProtocolWorkerPool` |
+| `anvil-protocol/protocol-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port, the client segments and a dependency on the `protocol-worker` bundle; owns `mcprotocol-releases.toml` and `pinLibraryReleases` |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell                                                                                       |
-| `anvil-protocol/protocol-mcprotocol/mcprotocol-common`                | MCProtocolLib library provider, the library's `WorkerLibrary` and worker entry point, the `WorkerClient` driving `McProtocolClient`, and private authentication store |
+| `anvil-protocol/protocol-mcprotocol/mcprotocol-common`                | `McProtocolWorkerLibrary`, the library's `WorkerLibraryProvider`, the `WorkerClient` driving `McProtocolClient`, and the private authentication store; depends only on `protocol-api` and `protocol-worker-api` |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client/V*`             | Client segments `V1_18_2`, `V1_21_1` and `V1_21_11`, each implementing only `McProtocolClient` from its release key on; `V1_21_11` also serves `26.1.2`                             |
 | `anvil-platform/platform-api`                                         | Platform-provider/planning SPI, version data contract, artifact sources, distribution validation, and configuration contracts                                                      |
@@ -108,13 +110,14 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   Do not disguise source dependencies as external Maven coordinates or classify implementations as
   assemblies to evade verification. The launcher owns internal composition and packaging;
   `anvil-integration` is reserved for external integrations.
-- The one exception is a shared implementation, a project applying `module-shared-implementation`, such as
-  `protocol-worker`: implementations below its parent compile against it through `sharedImplementation`, and
-  their wiring roots embed it. `verifyArchitecture` runs `verifySharedImplementations`, which confines that
-  configuration to implementations of the shared implementation's group; do not use it for anything else.
-- The native worker names no library. A library describes itself as a `WorkerLibrary` (id, name, client port,
-  entry point, release data, pin task, the packages its closures own, worker JVM arguments) and drives its client
-  port through a `WorkerClient`; never put a library ID, package ban or client type into `protocol-worker`.
+- The native worker hosts libraries and names none. A library plugs in by implementing `worker-api`'s
+  `WorkerLibraryProvider`, registered through `ServiceLoader`: it describes itself as a `WorkerLibrary` (id, name,
+  client port, release data, pin task, the packages its closures own, worker JVM arguments), builds the
+  `WorkerClient` that drives its client port, and may supply a `WorkerAuthentication`. Its family compiles against
+  `protocol-worker-api` through `architecture.sharedApis`, and its wiring root depends on the `protocol-worker`
+  bundle instead of embedding it. The worker's `WorkerLibraryHost` is the one `ProtocolLibraryHost` registration
+  that installs every hosted library as a protocol library, and the worker JVM starts `ProtocolWorker`, which loads
+  the library's provider by id. Never put a library ID, package ban or client type into `protocol-worker`.
 - Use `ServiceLoader` for the existing provider SPIs. Preserve service descriptors and merge them
   when shading. Do not add broad reflection scanning as an alternative discovery path.
 - Each player selects its protocol library: its own `protocolLibrary`, else the scenario's, else the engine's,
@@ -416,7 +419,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   platform `known` versions and `[[java]]` rows only where Java changes, and mark as verified exactly what
   `CompatibilityScenarioFactory` runs; every other listed version is COMPATIBLE, and user-supplied release
   data is UNTESTED. Update the versions page, the Java table, the README, and the FAQ. Neither `protocol-worker` nor
-  the MCProtocolLib worker entry point imports MCProtocolLib; release-specific client code lives only in `mcprotocol-client` segments, whose
+  `McProtocolWorkerLibrary` imports MCProtocolLib; release-specific client code lives only in `mcprotocol-client` segments, whose
   `linkage.txt` requirement keywords the worker's self-check enforces. A release with an unpinned closure is
   listed but cannot be launched: preparing a scenario whose servers would use it by default prints a warning,
   and creating a player that selects it is refused.
@@ -458,7 +461,7 @@ Run the nearest relevant test first, then architecture/build checks:
 ./gradlew :anvil-agent:agent-client:test
 ./gradlew :anvil-agent:agent-server:test
 ./gradlew :anvil-capability:test
-./gradlew :anvil-protocol:protocol-worker:test
+./gradlew :anvil-protocol:protocol-worker:worker-common:test
 ./gradlew :anvil-protocol:protocol-mcprotocol:mcprotocol-common:test
 ./gradlew :anvil-integration:integration-gradle:gradle-plugin:test :anvil-integration:integration-gradle:gradle-capabilities:test :anvil-integration:integration-gradle:gradle-platforms:test
 ./gradlew :anvil-testkit:tests:runtime:test

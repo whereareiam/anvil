@@ -2,8 +2,8 @@ package me.whereareiam.anvil.protocol.mcprotocol.authentication;
 
 import com.google.gson.JsonParser;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
-import me.whereareiam.anvil.protocol.api.library.ProtocolAuthentication;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
+import me.whereareiam.anvil.protocol.worker.WorkerAuthentication;
 import me.whereareiam.anvil.protocol.worker.model.AuthenticationSession;
 import net.raphimc.minecraftauth.MinecraftAuth;
 import net.raphimc.minecraftauth.java.JavaAuthManager;
@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 /**
  * Microsoft device-code login and refresh workflow backed by private account persistence.
  */
-public final class MicrosoftAuthentication implements ProtocolAuthentication {
+public final class MicrosoftAuthentication implements WorkerAuthentication {
 	private final AuthenticationAccountStore accounts;
 
 	public MicrosoftAuthentication(@NotNull Path accountsDirectory) {
@@ -54,6 +54,7 @@ public final class MicrosoftAuthentication implements ProtocolAuthentication {
 	/**
 	 * Refreshes a saved account for private delivery to a worker; never log the returned token.
 	 */
+	@Override
 	public @NotNull AuthenticationSession resolve(@NotNull String accountId) {
 		try {
 			String json = accounts.credentials(accountId);

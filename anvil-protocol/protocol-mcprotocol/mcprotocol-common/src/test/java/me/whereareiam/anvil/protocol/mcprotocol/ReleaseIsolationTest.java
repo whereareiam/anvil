@@ -20,18 +20,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The worker shell, the library provider and the worker host, both this library's and the library-neutral worker it
- * runs, must not link against MCProtocolLib or the libraries whose versions each release pins, because every release
- * brings its own copy in its closure.
+ * This library's provider and worker client, and the native worker that hosts it, must not link against
+ * MCProtocolLib or the libraries whose versions each release pins, because every release brings its own copy in its
+ * closure.
  */
 class ReleaseIsolationTest {
 	@Test
 	void mainClassesReferenceNoPackageTheClosureOwns() throws Exception {
 		List<String> violations = new ArrayList<>();
 		int scanned = 0;
-		for (Class<?> owner : List.of(McProtocolWorkerMain.class, ProtocolWorker.class)) {
+		for (Class<?> owner : List.of(McProtocolWorkerLibrary.class, ProtocolWorker.class)) {
 			Path location = Path.of(owner.getProtectionDomain().getCodeSource().getLocation().toURI());
-			// Tests see this project's classes as a directory and the shared worker's as a JAR.
+			// Tests see this project's classes as a directory and the worker's as a directory or a JAR.
 			try (FileSystem jar = Files.isDirectory(location) ? null : FileSystems.newFileSystem(location)) {
 				Path classes = jar == null ? location : jar.getPath("/");
 				try (Stream<Path> files = Files.walk(classes)) {
@@ -39,7 +39,7 @@ class ReleaseIsolationTest {
 						scanned++;
 						try (InputStream input = Files.newInputStream(file)) {
 							for (String type : referencedTypes(input))
-								if (McProtocolWorkerMain.LIBRARY.getOwnedPackages().stream().anyMatch(type::contains))
+								if (McProtocolWorkerLibrary.LIBRARY.getOwnedPackages().stream().anyMatch(type::contains))
 									violations.add(location.getFileName() + "/" + classes.relativize(file) + " -> " + type);
 						}
 					}
