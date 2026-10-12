@@ -1,6 +1,9 @@
 package me.whereareiam.anvil.buildlogic.library
 
 import org.gradle.api.GradleException
+import org.gradle.api.internal.artifacts.DefaultModuleIdentifier
+import org.gradle.api.internal.artifacts.repositories.resolver.MavenUniqueSnapshotComponentIdentifier
+import org.gradle.internal.component.external.model.DefaultModuleComponentIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -39,6 +42,30 @@ class ArtifactCoordinateTest {
 				coordinate.repositoryPath,
 			)
 		}
+	}
+
+	@Test
+	fun `pins a transitive changing snapshot to the unique snapshot it resolved to`() {
+		val component = MavenUniqueSnapshotComponentIdentifier(
+			DefaultModuleIdentifier.newId("org.cloudburstmc.protocol", "bedrock-codec"), "3.0.0.Beta14-SNAPSHOT", "20261009.172637-6"
+		)
+		listOf("bedrock-codec-3.0.0.Beta14-20261009.172637-6.jar", "bedrock-codec-3.0.0.Beta14-SNAPSHOT.jar").forEach { fileName ->
+			val coordinate = ArtifactCoordinate.of(component, fileName)
+
+			assertEquals("org.cloudburstmc.protocol:bedrock-codec:3.0.0.Beta14-20261009.172637-6", coordinate.module)
+			assertEquals(
+				"org/cloudburstmc/protocol/bedrock-codec/3.0.0.Beta14-SNAPSHOT/bedrock-codec-3.0.0.Beta14-20261009.172637-6.jar",
+				coordinate.repositoryPath,
+			)
+		}
+	}
+
+	@Test
+	fun `refuses a changing snapshot that did not resolve to a unique snapshot`() {
+		val component = DefaultModuleComponentIdentifier.newId(DefaultModuleIdentifier.newId("demo", "lib"), "1.0-SNAPSHOT")
+
+		val failure = assertThrows<GradleException> { ArtifactCoordinate.of(component, "lib-1.0-SNAPSHOT.jar") }
+		assertTrue(failure.message!!.contains("changing snapshot"), failure.message)
 	}
 
 	@Test

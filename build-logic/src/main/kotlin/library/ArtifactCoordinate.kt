@@ -1,6 +1,8 @@
 package me.whereareiam.anvil.buildlogic.library
 
 import org.gradle.api.GradleException
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.internal.artifacts.repositories.resolver.MavenUniqueSnapshotComponentIdentifier
 
 /**
  * The Maven coordinate of one resolved JAR of a release closure, as release data records it and as a Maven
@@ -29,6 +31,19 @@ data class ArtifactCoordinate(val group: String, val name: String, val version: 
 
 	companion object {
 		private val uniqueSnapshot = Regex("""(.+)-\d{8}\.\d{6}-\d+""")
+
+		/**
+		 * Describes the JAR [fileName] that Gradle resolved for [component]. A transitive dependency on a changing
+		 * `-SNAPSHOT` version resolves to one unique snapshot of a Maven repository, whose timestamped version, such as
+		 * `3.0.0.Beta14-20261009.172637-6`, is what release data pins.
+		 *
+		 * @throws GradleException for a changing `-SNAPSHOT` version that did not resolve to a unique snapshot, and for
+		 * a file that is not a JAR of the module
+		 */
+		fun of(component: ModuleComponentIdentifier, fileName: String): ArtifactCoordinate {
+			val version = (component as? MavenUniqueSnapshotComponentIdentifier)?.timestampedVersion ?: component.version
+			return of(component.group, component.module, version, fileName)
+		}
 
 		/**
 		 * Describes the JAR [fileName] that Gradle resolved for the module `group:name:version`. Gradle may cache a
