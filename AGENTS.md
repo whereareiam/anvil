@@ -322,6 +322,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   concurrently within configured limits. Configure each process during its start, including the first
   start and every restart; independent configurations may overlap and must use the supplied process
   workspace and planned shared values. Preparation owns reusable inputs, not launch resources.
+  `PreparedWorkspace.beforeStart` runs before every start: preparation installed the assets for the first one,
+  and each later start installs them again, so `ALWAYS` assets come from their current sources and a missing
+  `SEED_ONCE` asset is reseeded. Caches restore and cleanups run only at preparation and finalization.
 - Agents bind to loopback and authenticate with per-run random tokens. Non-loopback game listeners
   require a manual scenario and explicit LAN opt-in.
 - Global `ScenarioFactory.create` acquires a context without starting processes. The core engine builder
