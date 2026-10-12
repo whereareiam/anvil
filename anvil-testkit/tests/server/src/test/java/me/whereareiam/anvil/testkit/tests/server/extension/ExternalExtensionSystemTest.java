@@ -98,7 +98,8 @@ class ExternalExtensionSystemTest {
 	}
 
 	/**
-	 * Runs on Paper and on Lumi, whose agent loads extensions next to the Jackson it relocates.
+	 * Runs on Paper and on Lumi, whose agent loads extensions in a class loader apart from Lumi's own Jackson, so the
+	 * annotated greeting payload binds there as well.
 	 */
 	@ParameterizedTest(name = "{0}")
 	@MethodSource("processScenarios")
@@ -115,6 +116,7 @@ class ExternalExtensionSystemTest {
 				var console = process.capability(Console.class);
 				assertTrue(console.execute("list"));
 				assertEquals("fixture:before", echoType.getMethod("echo", String.class).invoke(echo, "before"));
+				assertEquals("fixture:Alice#2", echoType.getMethod("greet", String.class, int.class).invoke(echo, "Alice", 1));
 				echoType.getMethod("prefix", String.class).invoke(echo, "first-generation");
 				assertEquals("first-generation", echoType.getMethod("prefix").invoke(echo));
 				assertEquals("first-generation:changed", echoType.getMethod("echo", String.class).invoke(echo, "changed"));

@@ -8,15 +8,35 @@ plugins {
 
 description = "Anvil platform agent for Lumi"
 
+// Lumi ships its own, older Jackson, and its plugin class loader asks the server's class loader first, so the
+// Jackson the agent embeds would never load. The plugin is therefore only a bootstrap: the agent itself, from the
+// agent source set, and the agent server it embeds form a nested JAR that the bootstrap loads child first.
+val agent = sourceSets.create("agent")
+
 dependencies {
-	compileOnly(projects.anvilAgent.agentServer.agentServerApi)
 	compileOnly(libs.lumi)
+
+	"agentCompileOnly"(projects.anvilAgent.agentServer.agentServerApi)
+	"agentCompileOnly"(libs.lumi)
 
 	embedded(projects.anvilAgent.agentServer) { isTransitive = false }
 }
 
-// Lumi ships its own, older Jackson, and its plugin class loader asks the server's class loader first, so the
-// Jackson the agent embeds would never load. The agent carries its Jackson under its own package instead.
+val agentJar = tasks.register<ShadowJar>("agentJar") {
+	description = "Assembles the agent and the agent server it embeds into the JAR the Lumi plugin loads."
+	archiveClassifier.set("agent")
+	from(agent.output)
+	configurations.set(project.configurations.named("embeddedClasspath").map { setOf<Configuration>(it) })
+	filesMatching("META-INF/services/**") {
+		duplicatesStrategy = DuplicatesStrategy.INCLUDE
+	}
+	mergeServiceFiles()
+}
+
 tasks.named<ShadowJar>("shadowJar") {
-	relocate("com.fasterxml.jackson", "me.whereareiam.anvil.agent.lumi.jackson")
+	configurations.set(emptySet())
+	from(agentJar) {
+		into("META-INF/anvil")
+		rename { "agent.jar" }
+	}
 }

@@ -394,8 +394,11 @@ current project scope.
   listener is UDP. `settings.yml` is written structurally before each start with `min-protocol` = `max-protocol` =
   the version's protocol and `xbox-auth` = online mode; Lumi has no identity forwarding and no Yggdrasil, so
   its only forwarding mode is `NONE` and `sessionServer` is refused. The Lumi agent is a Lumi plugin compiled
-  against the release in the catalog; it relocates its embedded Jackson because Lumi ships an older one and
-  loads plugin classes parent first. Lumi servers load no Bukkit plugin, so their live scenarios carry the Lumi
+  against the release in the catalog. Lumi ships an older Jackson and loads plugin classes parent first, so the
+  plugin is only a bootstrap: the agent (its `agent` source set) and the agent server with its own Jackson form a
+  nested JAR that the plugin loads in a child-first `AgentClassLoader` sharing only the JDK and `cn.nukkit`, and
+  closes on disable; extensions load beneath it and see the agent's Jackson, as on Paper. `checkAgentJava` checks
+  nested JARs too. Lumi servers load no Bukkit plugin, so their live scenarios carry the Lumi
   fixture plugin `test-lumi-plugin` instead of `test-server-plugin`: `LumiServerSystemTest` drives them through
   the console and the agent, and `BedrockPlayerCapabilitiesSystemTest` and `BedrockPlayerSessionSystemTest` check
   each Bedrock player action with vanilla commands (`testfor`, `testforblock`, `clear`) through the agent's console

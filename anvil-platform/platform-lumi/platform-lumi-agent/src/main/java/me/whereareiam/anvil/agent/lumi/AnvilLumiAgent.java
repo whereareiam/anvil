@@ -1,102 +1,85 @@
 package me.whereareiam.anvil.agent.lumi;
 
-import cn.nukkit.Server;
+import cn.nukkit.plugin.Plugin;
 import cn.nukkit.plugin.PluginBase;
-import me.whereareiam.anvil.agent.api.model.AgentIdentity;
-import me.whereareiam.anvil.agent.api.model.AgentInfo;
-import me.whereareiam.anvil.agent.api.model.location.ServerLocation;
-import me.whereareiam.anvil.agent.api.type.AgentRole;
-import me.whereareiam.anvil.agent.server.api.PlatformAgent;
-import me.whereareiam.anvil.agent.server.api.transport.AgentServer;
-import me.whereareiam.anvil.agent.server.api.transport.AgentServerProvider;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 /**
- * Internal Lumi plugin that exposes authenticated test observations to Anvil.
+ * Internal Lumi plugin that starts the Anvil agent in a class loader of its own.
+ *
+ * <p>Lumi ships an older Jackson and its plugin class loader asks the server first, so the agent would see that
+ * Jackson if it ran in the plugin's class loader. The plugin therefore only carries the agent, the agent server and
+ * its Jackson as a nested JAR: it copies that JAR into its data folder, loads it through an
+ * {@link AgentClassLoader}, and removes both again when Lumi disables it.
  */
-public final class AnvilLumiAgent extends PluginBase implements PlatformAgent {
-	private AgentServer agent;
+public final class AnvilLumiAgent extends PluginBase {
+	private static final String AGENT_JAR = "/META-INF/anvil/agent.jar";
+	private static final String AGENT_CLASS = "me.whereareiam.anvil.agent.lumi.LumiPlatformAgent";
+
+	private Path jar;
+	private AgentClassLoader loader;
+	private AutoCloseable agent;
 
 	@Override
 	public void onEnable() {
-		agent = AgentServerProvider.discover().start(this, message -> getLogger().info(message));
+		try {
+			jar = extract();
+			loader = new AgentClassLoader(jar, AnvilLumiAgent.class.getClassLoader());
+			agent = loader.loadClass(AGENT_CLASS).asSubclass(AutoCloseable.class)
+					.getConstructor(Plugin.class)
+					.newInstance(this);
+		} catch (Exception | LinkageError failure) {
+			Throwable cause = failure instanceof InvocationTargetException invocation ? invocation.getCause() : failure;
+			try {
+				stop();
+			} catch (RuntimeException cleanup) {
+				cause.addSuppressed(cleanup);
+			}
+			throw new IllegalStateException("Could not start the Anvil agent", cause);
+		}
 	}
 
 	@Override
 	public void onDisable() {
-		if (agent != null)
-			agent.close();
+		stop();
 	}
 
-	@Override
-	public @NotNull AgentInfo info() {
-		Server server = getServer();
-		return AgentInfo.builder()
-				.platform(server.getName())
-				.version(server.getNukkitVersion() + " (Minecraft " + server.getVersion() + ")")
-				.role(AgentRole.SERVER)
-				.build();
+	private Path extract() throws IOException {
+		Path target = getDataFolder().toPath().resolve("agent.jar");
+		Files.createDirectories(target.getParent());
+		try (InputStream source = AnvilLumiAgent.class.getResourceAsStream(AGENT_JAR)) {
+			if (source == null)
+				throw new IOException("The plugin JAR does not contain " + AGENT_JAR);
+			Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+		}
+
+		return target;
 	}
 
 	/**
-	 * Finds the player whose client logged in with the UUID, the one Lumi lists it under for clients, and reports
-	 * Lumi's own UUID of the player: Lumi keeps another one for a player that logged in offline, derived from its
-	 * name or taken from the names it has seen before.
+	 * Stops the agent, then closes its class loader, then removes its JAR, attempting each even when an earlier
+	 * one fails.
 	 */
-	@Override
-	public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
-		try {
-			return call(() -> getServer().getOnlinePlayers().values().stream()
-					.filter(player -> uniqueId.equals(player.getLoginUuid()))
-					.findFirst())
-					.map(player -> AgentIdentity.builder()
-							.username(player.getName())
-							.uniqueId(player.getUniqueId())
-							.location(ServerLocation.builder().server(getServer().getName()).build())
-							.build());
+	private void stop() {
+		Path removed = jar;
+		AgentClassLoader closed = loader;
+		AutoCloseable stopped = agent;
+		jar = null;
+		loader = null;
+		agent = null;
+		try (AutoCloseable file = () -> {
+			if (removed != null)
+				Files.deleteIfExists(removed);
+		}; AutoCloseable classes = closed; AutoCloseable server = stopped) {
+			// Resources close in reverse order: the agent, its class loader, then its JAR.
 		} catch (Exception exception) {
-			throw new IllegalStateException("Could not read Lumi player identity", exception);
+			throw new IllegalStateException("Could not stop the Anvil agent", exception);
 		}
-	}
-
-	@Override
-	public boolean executeCommand(@NotNull String command) {
-		try {
-			return call(() -> getServer().dispatchCommand(getServer().getConsoleSender(), command));
-		} catch (Exception exception) {
-			throw new IllegalStateException("Could not execute Lumi command", exception);
-		}
-	}
-
-	@Override
-	public <T> @NotNull Optional<T> findService(@NotNull Class<T> type) {
-		if (type.isInstance(getServer()))
-			return Optional.of(type.cast(getServer()));
-		if (type.isInstance(this))
-			return Optional.of(type.cast(this));
-		return Optional.empty();
-	}
-
-	@Override
-	public <T> T call(@NotNull Supplier<T> supplier) throws Exception {
-		if (getServer().isPrimaryThread())
-			return supplier.get();
-
-		CompletableFuture<T> result = new CompletableFuture<>();
-		getServer().getScheduler().scheduleTask(this, () -> {
-			try {
-				result.complete(supplier.get());
-			} catch (Throwable failure) {
-				result.completeExceptionally(failure);
-			}
-		});
-
-		return result.get(5, TimeUnit.SECONDS);
 	}
 }
