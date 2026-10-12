@@ -56,6 +56,54 @@ public class ConsolePresentationPlatformTest extends ScenarioPlatformTestCase {
 		EnvironmentSessionFixture.finish(run, 0);
 	}
 
+	public void testLevelFilterHidesQuieterLinesAndKeepsStackTracesWithTheirError() {
+		EnvironmentSession run = session();
+		var presentation = EnvironmentSessionFixture.presentation(run);
+		var console = (ConsoleViewImpl) presentation.getConsole();
+		console.getComponent();
+		run.getLog().append("lobby", null, 0, "[12:00:00 INFO]: Done (1.2s)!\n", false);
+		run.getLog().append("lobby", null, 0, "[12:00:01 WARN]: Can't keep up!\n", false);
+		run.getLog().append("lobby", null, 0, "[12:00:02 ERROR]: Could not pass event\n", false);
+		run.getLog().append("lobby", null, 0, "	at example.Listener.onJoin(Listener.java:12)\n", false);
+
+		presentation.setLevelFilter(ConsoleLevel.ERROR);
+		assertFalse(text(console).contains("Done"));
+		assertFalse(text(console).contains("keep up"));
+		assertTrue(text(console).contains("Could not pass event"));
+		assertTrue(text(console).contains("Listener.java:12"));
+
+		run.getLog().append("lobby", null, 0, "[12:00:03 INFO]: Player joined\n", false);
+		assertFalse("Live lines follow the filter", text(console).contains("Player joined"));
+
+		presentation.setLevelFilter(ConsoleLevel.WARNING);
+		assertTrue(text(console).contains("keep up"));
+		presentation.setLevelFilter(ConsoleLevel.INFO);
+		assertTrue(text(console).contains("Player joined"));
+		EnvironmentSessionFixture.finish(run, 0);
+	}
+
+	public void testErrorNavigationMovesBetweenErrorLines() {
+		EnvironmentSession run = session();
+		var presentation = EnvironmentSessionFixture.presentation(run);
+		var console = (ConsoleViewImpl) presentation.getConsole();
+		console.getComponent();
+		run.getLog().append(null, null, 0, "[12:00:00 INFO]: Starting\n", false);
+		run.getLog().append(null, null, 0, "[12:00:01 ERROR]: First failure\n", false);
+		run.getLog().append(null, null, 0, "[12:00:02 INFO]: Continuing\n", false);
+		run.getLog().append(null, null, 0, "[12:00:03 ERROR]: Second failure\n", false);
+		console.flushDeferredText();
+		console.getEditor().getCaretModel().moveToOffset(0);
+
+		assertTrue(presentation.navigateToError(true));
+		assertEquals(1, line(console));
+		assertTrue(presentation.navigateToError(true));
+		assertEquals(3, line(console));
+		assertFalse(presentation.navigateToError(true));
+		assertTrue(presentation.navigateToError(false));
+		assertEquals(1, line(console));
+		EnvironmentSessionFixture.finish(run, 0);
+	}
+
 	public void testNativeExecutionViewPublishesOneStartNotification() {
 		EnvironmentSession session = session(false);
 		var handler = EnvironmentSessionFixture.presentation(session).getProcessHandler();
@@ -92,5 +140,10 @@ public class ConsolePresentationPlatformTest extends ScenarioPlatformTestCase {
 	private static String text(ConsoleViewImpl console) {
 		console.waitAllRequests();
 		return console.getEditor().getDocument().getText();
+	}
+
+	private static int line(ConsoleViewImpl console) {
+		var editor = console.getEditor();
+		return editor.getDocument().getLineNumber(editor.getCaretModel().getOffset());
 	}
 }

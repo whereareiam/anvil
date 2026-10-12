@@ -36,8 +36,13 @@ final class ConsoleBuffer {
 	private int characters;
 	private boolean truncated;
 
+	/**
+	 * Decodes and retains one output entry.
+	 *
+	 * @return the styled chunks to print and the entry's level
+	 */
 	@NotNull
-	synchronized List<Chunk> append(
+	synchronized Appended append(
 			@Nullable String process,
 			@Nullable UUID executionId,
 			long sequence,
@@ -55,7 +60,7 @@ final class ConsoleBuffer {
 			prune(removed.state);
 			truncated = true;
 		}
-		return entry.chunks;
+		return new Appended(entry.chunks, entry.level);
 	}
 
 	private Entry decodeEntry(
@@ -112,10 +117,16 @@ final class ConsoleBuffer {
 				+ (process == null ? 0 : process.length() + 3)
 				+ (retainedLength < text.length() ? ENTRY_TRUNCATED.length() : 0);
 
-		return new Entry(state, List.copyOf(chunks), retainedCharacters);
+		ConsoleLevel level = ConsoleLevel.of(text.substring(0, retainedLength), state.level, error);
+		state.level = level;
+
+		return new Entry(state, List.copyOf(chunks), retainedCharacters, level);
 	}
 
-	synchronized void replay(@Nullable String process, @NotNull Consumer<Chunk> output) {
+	/**
+	 * Replays retained entries of one process, or of all processes when it is null, at or above a level.
+	 */
+	synchronized void replay(@Nullable String process, @NotNull ConsoleLevel minimum, @NotNull Consumer<Chunk> output) {
 		if (truncated) {
 			output.accept(new Chunk(
 					"Earlier output is no longer retained.\n", ProcessOutputTypes.SYSTEM)
@@ -123,6 +134,7 @@ final class ConsoleBuffer {
 		}
 
 		for (Entry entry : entries) {
+			if (!entry.level.shownAt(minimum)) continue;
 			if (process == null
 					|| entry.state.channel.process == null
 					|| process.equals(entry.state.channel.process))
@@ -169,7 +181,10 @@ final class ConsoleBuffer {
 	private record Channel(@Nullable String process, @Nullable UUID executionId) {
 	}
 
-	private record Entry(DecoderState state, List<Chunk> chunks, int characters) {
+	record Appended(@NotNull List<Chunk> chunks, @NotNull ConsoleLevel level) {
+	}
+
+	private record Entry(DecoderState state, List<Chunk> chunks, int characters, ConsoleLevel level) {
 	}
 
 	@RequiredArgsConstructor
@@ -178,5 +193,6 @@ final class ConsoleBuffer {
 		private AnsiEscapeDecoder decoder = new AnsiEscapeDecoder();
 		private long sequence;
 		private int retainedEntries;
+		private @Nullable ConsoleLevel level;
 	}
 }

@@ -52,6 +52,18 @@ the output to it and makes it the command target; with **All processes**, choose
 command bar first. Type a command and press Enter or select **Send**. Preparation messages and
 diagnostics stay visible under every filter, and Java exception links navigate to project sources.
 
+The toolbar beside the output narrows and navigates it:
+
+| Action | Effect |
+|---|---|
+| **Show Levels** | Show all output, only warnings and errors, or only errors. Stack traces stay with the error they belong to. |
+| **Previous Error** / **Next Error** | Move to the previous or next error line. |
+| **Soft-Wrap**, **Scroll to the End**, and the other console actions | Behave as in IntelliJ's Run window. |
+
+Press Ctrl+F (⌘F on macOS) in the output to search it. Anvil reads a line's level from the level the
+server or proxy prints, such as `[12:00:00 WARN]`; a line without one, such as a stack frame, belongs to
+the line before it, and other output written to standard error counts as an error.
+
 The console keeps a bounded tail of recent output. IDE runs request ANSI colors from the platforms:
 Paper and Velocity through TerminalConsoleAppender, and Spigot and BungeeCord through JLine. To keep
 each platform's own color detection, set `anvil.console.colors` to `false` in the project's

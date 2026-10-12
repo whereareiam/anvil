@@ -5,8 +5,8 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
-import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.PsiIdentifier;
+import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.testFramework.ExtensionTestUtil;
 

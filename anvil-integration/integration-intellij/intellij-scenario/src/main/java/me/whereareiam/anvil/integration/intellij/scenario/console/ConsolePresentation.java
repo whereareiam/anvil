@@ -2,13 +2,18 @@ package me.whereareiam.anvil.integration.intellij.scenario.console;
 
 import com.intellij.execution.filters.ExceptionFilter;
 import com.intellij.execution.filters.TextConsoleBuilderFactory;
+import com.intellij.execution.impl.ConsoleViewImpl;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.ScrollType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.concurrency.annotations.RequiresEdt;
 
@@ -37,6 +42,7 @@ public final class ConsolePresentation implements SessionLogListener, Disposable
 
 	private @NotNull ConsoleBuffer buffer = new ConsoleBuffer();
 	private @Nullable String processFilter;
+	private @NotNull ConsoleLevel levelFilter = ConsoleLevel.INFO;
 	private boolean disposed;
 	private boolean finished;
 
@@ -81,14 +87,70 @@ public final class ConsolePresentation implements SessionLogListener, Disposable
 	 */
 	@RequiresEdt
 	public synchronized void setProcessFilter(@Nullable String processName) {
+		processFilter = processName;
+		replay();
+	}
+
+	/**
+	 * Shows only lines at or above the given level, replaying retained output.
+	 */
+	@RequiresEdt
+	public synchronized void setLevelFilter(@NotNull ConsoleLevel minimum) {
+		levelFilter = minimum;
+		replay();
+	}
+
+	/**
+	 * Returns the lowest level the console shows.
+	 */
+	public synchronized @NotNull ConsoleLevel getLevelFilter() {
+		return levelFilter;
+	}
+
+	/**
+	 * Moves the caret to the next or previous error line and scrolls to it.
+	 *
+	 * @param forward whether to search below the caret rather than above it
+	 * @return false when no error line lies in that direction
+	 */
+	@RequiresEdt
+	public boolean navigateToError(boolean forward) {
+		if (disposed || !(console instanceof ConsoleViewImpl view)) return false;
+
+		view.flushDeferredText();
+		Editor editor = view.getEditor();
+		if (editor == null) return false;
+
+		Document document = editor.getDocument();
+		int current = document.getLineNumber(editor.getCaretModel().getOffset());
+		int step = forward ? 1 : -1;
+		for (int line = current + step; line >= 0 && line < document.getLineCount(); line += step) {
+			String text = document.getText(new TextRange(document.getLineStartOffset(line), document.getLineEndOffset(line)));
+			if (ConsoleLevel.declared(stripProcess(text)) != ConsoleLevel.ERROR) continue;
+
+			editor.getCaretModel().moveToOffset(document.getLineStartOffset(line));
+			editor.getScrollingModel().scrollToCaret(ScrollType.CENTER);
+			return true;
+		}
+
+		return false;
+	}
+
+	private void replay() {
 		if (disposed) return;
 
 		ApplicationManager.getApplication().assertIsDispatchThread();
 		// Clearing and replaying require the lazily created console editor.
 		console.getComponent();
-		processFilter = processName;
 		console.clear();
-		buffer.replay(processName, this::print);
+		buffer.replay(processFilter, levelFilter, this::print);
+	}
+
+	private static @NotNull String stripProcess(@NotNull String line) {
+		if (!line.startsWith("[")) return line;
+
+		int end = line.indexOf("] ");
+		return end > 0 && line.indexOf('[', 1) > end ? line.substring(end + 2) : line;
 	}
 
 	@Override
@@ -103,15 +165,16 @@ public final class ConsolePresentation implements SessionLogListener, Disposable
 	public synchronized void appended(@NotNull SessionLogEntry entry) {
 		if (disposed || finished) return;
 
-		var chunks = buffer.append(
+		var appended = buffer.append(
 				entry.getProcess(),
 				entry.getExecutionId(),
 				entry.getSequence(),
 				entry.getText(),
 				entry.isError());
-		for (var chunk : chunks) {
+		boolean shown = visible(entry.getProcess()) && appended.level().shownAt(levelFilter);
+		for (var chunk : appended.chunks()) {
 			handler.notifyTextAvailable(chunk.text(), chunk.attributes());
-			if (visible(entry.getProcess())) print(chunk);
+			if (shown) print(chunk);
 		}
 	}
 
