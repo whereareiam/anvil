@@ -10,6 +10,7 @@ import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.InputValidatorEx;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.text.StringUtil;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -119,9 +120,10 @@ final class AccountsController {
 		pools.setPools(poolMembers, !loaded.getAccounts().isEmpty());
 		updateBusy();
 
+		int count = loaded.getAccounts().size();
 		form.showFeedback(
 				loaded.getProblems().isEmpty()
-						? loaded.getAccounts().size() + " accounts available to this project."
+						? count + " " + StringUtil.pluralize("account", count) + " available to this project."
 						: String.join("\n", loaded.getProblems())
 		);
 	}

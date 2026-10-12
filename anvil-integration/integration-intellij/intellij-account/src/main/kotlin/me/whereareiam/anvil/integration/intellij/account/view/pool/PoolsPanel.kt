@@ -36,7 +36,7 @@ class PoolsPanel(addPool: Runnable, editPool: Consumer<String>, removePool: Cons
 			.setRemoveActionUpdater { !busy && selected() != null }
 			.disableUpDownActions()
 			.createPanel()
-		border = JBUI.Borders.empty(8)
+		border = JBUI.Borders.emptyTop(8)
 		add(decorated, BorderLayout.CENTER)
 		setPools(emptyMap(), false)
 	}
