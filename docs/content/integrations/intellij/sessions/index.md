@@ -28,6 +28,7 @@ menu:
 | **Start Server** / **Start Proxy** | Process | Starts that process in the prepared environment |
 | **Stop Server** / **Stop Proxy** | Running process | Stops that process and keeps its address and workspace |
 | **Restart Server** / **Restart Proxy** | Running process | Restarts the process with its workspace; other processes keep running |
+| **Rebuild and Restart Server** / **Proxy** | Running process | Rebuilds the project, then restarts the process so it installs the rebuilt artifacts |
 | **Stop “*scenario*”** | Scenario root | Stops every process and cleans up the environment, keeping its output |
 
 Double-click the scenario root or press F4 to open its definition class.
@@ -36,6 +37,13 @@ Starting a single process prepares the complete environment, including listener 
 routes, but leaves the other processes stopped. A proxy can start while its backends are stopped,
 but cannot route players to them until they start. Stopping a process and starting it again does not
 rerun setup.
+
+**Rebuild and Restart** runs the same build preparation as a new run, for example Gradle's
+`anvilTooling` task, with its output in the console. That rebuilds the JARs registered with
+`artifact(...)`. The restart then installs every `ALWAYS` workspace asset again, so a server runs
+the plugin you just changed without losing its world. If the build fails, the process keeps running
+and a notification says so. Changes to scenario definitions, such as a new process or setting, still
+need a new run.
 
 Players may need to reconnect after a restart, and restarting does not rerun setup; see
 [process restarts](../../../building-blocks/environments/actions/restarts/index.md). If a process fails
@@ -87,5 +95,6 @@ action inputs are excluded from history and saved drafts.
 
 Completed tabs keep their output and details until you close them. By default the five most recent
 successful tabs are kept and failed runs stay until closed. Closing an active tab stops its
-environment, and an old tab cannot control a newer run. After changing scenarios, dependencies, or
-artifacts, stop the run and refresh the scenarios to prepare the updated runtime.
+environment, and an old tab cannot control a newer run. After changing a plugin, use **Rebuild and
+Restart** on its server. After changing scenarios or dependencies, stop the run and refresh the
+scenarios to prepare the updated runtime.

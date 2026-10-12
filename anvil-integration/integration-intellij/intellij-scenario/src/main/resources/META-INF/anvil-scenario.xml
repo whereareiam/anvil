@@ -16,6 +16,9 @@
 				description="Stop the selected process, or the whole environment" icon="AllIcons.Actions.Suspend"/>
 		<action id="Anvil.RestartProcess" class="me.whereareiam.anvil.integration.intellij.scenario.action.RestartProcessAction" text="Restart Process"
 				description="Restart the selected server or proxy with its workspace" icon="AllIcons.Actions.Restart"/>
+		<action id="Anvil.RebuildRestartProcess" class="me.whereareiam.anvil.integration.intellij.scenario.action.RebuildRestartAction"
+				text="Rebuild and Restart" description="Rebuild the project, then restart the selected server or proxy with the rebuilt artifacts"
+				icon="AllIcons.Actions.ForceRefresh"/>
 		<action id="Anvil.SaveRunConfiguration" class="me.whereareiam.anvil.integration.intellij.scenario.action.SaveRunConfigurationAction" text="Save as Run Configuration"
 				description="Save the selection as a run configuration" icon="AllIcons.Actions.MenuSaveall"/>
 		<action id="Anvil.RefreshScenarios" class="me.whereareiam.anvil.integration.intellij.scenario.action.RefreshScenariosAction" text="Reload Scenarios"
@@ -37,6 +40,7 @@
 			<reference ref="Anvil.Run"/>
 			<reference ref="Anvil.Stop"/>
 			<reference ref="Anvil.RestartProcess"/>
+			<reference ref="Anvil.RebuildRestartProcess"/>
 			<separator/>
 			<reference ref="EditSource"/>
 			<reference ref="Anvil.SaveRunConfiguration"/>
@@ -45,11 +49,13 @@
 			<reference ref="Anvil.Run"/>
 			<reference ref="Anvil.Stop"/>
 			<reference ref="Anvil.RestartProcess"/>
+			<reference ref="Anvil.RebuildRestartProcess"/>
 		</group>
 		<group id="Anvil.Environment.Popup">
 			<reference ref="Anvil.Run"/>
 			<reference ref="Anvil.Stop"/>
 			<reference ref="Anvil.RestartProcess"/>
+			<reference ref="Anvil.RebuildRestartProcess"/>
 			<separator/>
 			<reference ref="EditSource"/>
 			<reference ref="Anvil.SaveRunConfiguration"/>
