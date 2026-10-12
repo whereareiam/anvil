@@ -20,17 +20,19 @@ Each capability is optional unless the test or another installed capability requ
 
 | Capability | Use it to | Bundled requirement |
 | --- | --- | --- |
-| [Session](./session/index.md) | Connect, disconnect, rejoin, and observe kicks. | MCProtocol |
+| [Session](./session/index.md) | Connect, disconnect, rejoin, and observe kicks. | MCProtocol or CloudburstMC Protocol |
 | [Server](./server/index.md) | Inspect agent-observed routes, presence, and identity. | Platform agents |
 | [Messages](./messages/index.md) | Send chat and commands; await received text. | MCProtocol and Session |
 | [Movement](./movement/index.md) | Send absolute position and view changes. | MCProtocol and Session |
-| [Inventory](./inventory/index.md) | Observe inventory or containers and perform clicks. | MCProtocol and Session |
+| [Inventory](./inventory/index.md) | Observe inventory or containers and perform clicks. | MCProtocol or CloudburstMC Protocol, and Session |
 | [Interaction](./interaction/index.md) | Use items and interact with blocks or entities. | MCProtocol and Session |
 
 The `Server` capability does not depend on `Session`. Its observations come from the scenario's
 platform agents, while packet-backed capabilities operate through the player's protocol library. The
 built-in capabilities are installed on every MCProtocolLib release Anvil ships, from Minecraft 1.18.2
-to 26.1.2.
+to 26.1.2. Bedrock players, which use CloudburstMC Protocol, have Session, Server, and Inventory; their
+inventory is observed but cannot yet select a hotbar slot or click, as the
+[Inventory](./inventory/index.md#bedrock-players) page describes.
 
 ## Install built-in capabilities
 

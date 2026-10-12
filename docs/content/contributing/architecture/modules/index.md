@@ -301,7 +301,10 @@ the code of the previous one, which `checkSegmentLinkage` reports; see
 [Adding a Minecraft version](../../minecraft-versions/index.md).
 
 Capability families repeat the pattern: `<feature>-api` declares the port in its `packet` package, and
-`<feature>-mcprotocol` holds the wiring extension and the `V*` segments that implement it.
+`<feature>-mcprotocol` holds the wiring extension and the `V*` segments that implement it. A
+`<feature>-cloudburst` side, such as `inventory-cloudburst`, does the same for CloudburstMC Protocol; its
+segments compile against `cloudburst-api` only for the `CloudburstSession` that the worker supplies with its
+client segment.
 
 ## Preserve dependency direction
 

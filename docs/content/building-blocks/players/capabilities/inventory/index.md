@@ -73,3 +73,18 @@ container (ID `0`) is the observed one, at that index's slot in the container.
 ## Behavior across Minecraft versions
 
 Inventory works on every Minecraft version the MCProtocol library supports.
+
+## Bedrock players
+
+Bedrock players, which use the CloudburstMC Protocol library, observe their inventory on every Bedrock
+version that library supports. Bedrock has no state IDs, so `getStateId()` is always `0`. The player's own
+inventory is container `0` in the layout Java Edition players see, filled from Bedrock's inventory, armor
+and off-hand containers: armor from head to feet in slots `5` to `8`, the main inventory in `9` to `35`, the
+hotbar in `36` to `44` and the off hand in `45`. A container the server opens keeps the ID and the slots Bedrock gives it: Bedrock lists only the
+container's own slots, not the player's inventory below them. Each item carries its Bedrock runtime ID as the
+protocol ID and its textual identifier, such as `minecraft:stone`.
+
+`selectSlot` and `click` fail for Bedrock players. A Bedrock client selects a slot with a packet carrying
+its own copy of the slot's item, and moves items with item stack requests that name each stack by the
+network ID the server gave it. The CloudburstMC Protocol session does not keep the player's item stacks
+yet, so Anvil refuses these actions instead of sending packets the server would not accept.

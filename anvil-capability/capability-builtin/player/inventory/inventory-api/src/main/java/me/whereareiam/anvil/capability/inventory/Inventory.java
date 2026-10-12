@@ -11,6 +11,11 @@ import java.util.function.Predicate;
 
 /**
  * Observes and interacts with a simulated player's inventory and open container.
+ *
+ * <p>Bedrock players, which use the CloudburstMC Protocol library, observe their inventory but cannot yet select a
+ * hotbar slot or click: a Bedrock client sends its own copy of the item stacks involved, which the library's session
+ * does not keep. Their snapshots have the state ID {@code 0}, and their own inventory appears as container
+ * {@code 0} in the slot layout Java Edition players see.</p>
  */
 public interface Inventory extends PlayerCapability {
 	/**
@@ -43,7 +48,7 @@ public interface Inventory extends PlayerCapability {
 	);
 
 	/**
-	 * Changes the selected hotbar slot.
+	 * Changes the selected hotbar slot. The request fails for Bedrock players.
 	 *
 	 * @param slot zero-based slot in the range {@code 0..8}
 	 */
@@ -53,7 +58,7 @@ public interface Inventory extends PlayerCapability {
 	 * Clicks an inventory slot using the latest received container state. A hotbar swap takes the hotbar slot
 	 * {@code 0..8} as its button, or {@code 40} to swap with the off hand. The request fails for any other button,
 	 * and for the off-hand swap when the player's protocol library cannot send it, as MCProtocolLib cannot for
-	 * Minecraft 1.16.5 and 1.17.1.
+	 * Minecraft 1.16.5 and 1.17.1. Every click fails for Bedrock players.
 	 *
 	 * <pre>{@code
 	 * inventory.click(36, InventoryClick.HOTBAR_SWAP, 40);

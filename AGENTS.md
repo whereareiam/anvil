@@ -135,6 +135,8 @@ current project scope.
   client tick. Each session is one connection generation, and closing its connection ends its subscriptions, so a
   reconnect never reaches them. CloudburstMC types reach feature segments only through the type parameters; host
   code and `cloudburst-common` never see them. The session capability serves `mcprotocol` and `cloudburst`.
+  The inventory capability's `cloudburst` side observes the player's own containers by inventory index and opened
+  containers as received, and refuses hotbar selection and clicks, which need the client's item stacks.
 - Use `ServiceLoader` for the existing provider SPIs. Preserve service descriptors and merge them
   when shading. Do not add broad reflection scanning as an alternative discovery path.
 - Each player selects its protocol library: its own `protocolLibrary`, else the scenario's, else the engine's,
