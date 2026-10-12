@@ -130,7 +130,7 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 	) {
 		CapabilityDescriptor descriptor = provider.descriptor();
 		try {
-			X context = contextFactory.apply(capabilities.context(descriptor.getId(), descriptor.getRequiredCapabilities()));
+			X context = contextFactory.apply(capabilities.context(descriptor.getId(), dependencies(descriptor)));
 			T capability = provider.create(context);
 			if (!provider.capability().isInstance(capability))
 				throw new CapabilityException("Provider '" + descriptor.getId() + "' for " + ownerDescription
@@ -159,7 +159,7 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 				throw new CapabilityException("Provider '" + descriptor.getId() + "' targets API "
 						+ descriptor.getApiVersion() + " but Anvil supports " + CapabilityDescriptor.CURRENT_API_VERSION);
 			validateOwnerType(ownerType, provider.capability(), descriptor.getId());
-			for (Class<? extends Capability> dependency : descriptor.getRequiredCapabilities())
+			for (Class<? extends Capability> dependency : dependencies(descriptor))
 				validateOwnerType(ownerType, dependency, descriptor.getId());
 
 			CapabilityProvider<? extends C, X> duplicate = byId.putIfAbsent(descriptor.getId(), provider);
@@ -190,6 +190,16 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 		return List.copyOf(ordered);
 	}
 
+	/**
+	 * Returns the capabilities a provider is created after and may retrieve: its required ones, then its optional
+	 * ones.
+	 */
+	private static Set<Class<? extends Capability>> dependencies(CapabilityDescriptor descriptor) {
+		Set<Class<? extends Capability>> dependencies = new LinkedHashSet<>(descriptor.getRequiredCapabilities());
+		dependencies.addAll(descriptor.getOptionalCapabilities());
+		return dependencies;
+	}
+
 	private void validateOwnerType(Class<C> ownerType, Class<? extends Capability> type, String providerId) {
 		if (!ownerType.isAssignableFrom(type))
 			throw new CapabilityException("Provider '" + providerId + "' declares capability " + type.getName()
@@ -213,8 +223,10 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 
 		path.addLast(id);
 		CapabilityProvider<? extends C, X> provider = providers.get(id);
-		for (Class<? extends Capability> dependency : provider.descriptor().getRequiredCapabilities())
-			visit(capabilityOwners.get(dependency), providers, capabilityOwners, complete, active, path, ordered);
+		for (Class<? extends Capability> dependency : dependencies(provider.descriptor())) {
+			String owner = capabilityOwners.get(dependency);
+			if (owner != null) visit(owner, providers, capabilityOwners, complete, active, path, ordered);
+		}
 
 		path.removeLast();
 		active.remove(id);
