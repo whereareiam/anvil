@@ -19,6 +19,17 @@ public interface PreparedWorkspace extends AutoCloseable {
 	@NotNull Path workspace();
 
 	/**
+	 * Brings the workspace up to date for a process start. Preparation already installed the assets for the
+	 * first start; each later start, such as a restart, installs them again, so an
+	 * {@link me.whereareiam.anvil.api.type.AssetInstallMode#ALWAYS ALWAYS} asset is replaced from its current
+	 * source, for example a rebuilt plugin JAR, and a missing {@code SEED_ONCE} asset is seeded again. Caches and
+	 * cleanups apply only at preparation and finalization.
+	 *
+	 * @throws IllegalStateException if the workspace was finalized
+	 */
+	void beforeStart();
+
+	/**
 	 * Saves enabled snapshots for successful runs, applies cleanup, and releases directory ownership.
 	 * All cleanup is attempted, with later failures suppressed on the first. Repeated calls do nothing.
 	 *

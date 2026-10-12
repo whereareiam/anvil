@@ -45,6 +45,7 @@ public final class WorkspaceSession implements PreparedWorkspace {
 
 	private @Nullable FileChannel lockChannel;
 	private boolean ownsWorkspace;
+	private boolean started;
 	private boolean finalized;
 
 	/**
@@ -104,6 +105,20 @@ public final class WorkspaceSession implements PreparedWorkspace {
 	@Override
 	public @NotNull Path workspace() {
 		return workspace;
+	}
+
+	/**
+	 * Installs the assets again before every start but the first, which preparation already installed for.
+	 */
+	@Override
+	public synchronized void beforeStart() {
+		if (finalized) throw new IllegalStateException("Workspace is finalized: " + workspace);
+		if (!started) {
+			started = true;
+			return;
+		}
+
+		installAssets();
 	}
 
 	/**
@@ -190,6 +205,10 @@ public final class WorkspaceSession implements PreparedWorkspace {
 				snapshots.restore(identity(cache), cache.effectiveKey(),
 						files.resolveRelative(workspace, cache.getPath(), "Cache path"));
 
+		installAssets();
+	}
+
+	private void installAssets() {
 		for (WorkspaceAsset asset : plan.getAssets()) {
 			Path target = files.resolveRelative(workspace, asset.getTarget(), "Asset target");
 			if (asset.getMode() == AssetInstallMode.SEED_ONCE && Files.exists(target))
