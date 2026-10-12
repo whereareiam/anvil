@@ -560,6 +560,10 @@ then rerun the `Release drafter` workflow; text typed into the draft is lost on 
   returns an `EnvironmentSession.Availability` whose reason the action shows; `run` applies the same rule.
   A failed request or a failed environment out of view becomes a notification in the `Anvil` group, never a
   replacement of the catalog.
+- `editor.ScenarioTests` finds the test classes and methods whose `@AnvilTest` names a definition class, by
+  the annotation's class literal only. `RunScenarioTestsAction` hands them to the IDE's configuration producers
+  as one multiple selection (`Location.DATA_KEYS`), so the project's own test runner, JUnit or Gradle, runs them;
+  the plugin never builds a test configuration or depends on a test-runner plugin itself.
 - `intellij-scenario` groups packages by what they own, with a `view` subpackage for Swing screens:
   `tooling` (`ToolingHost`, `ToolingLaunch`, `ToolingConnection`, and `tooling.protocol`), `catalog`
   (`ScenarioCatalog`, `catalog.source.SourceDiscovery` with `ImportRefreshPolicy`, `catalog.view` with the
