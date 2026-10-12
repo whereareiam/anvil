@@ -25,12 +25,13 @@ import java.util.function.Consumer;
 /**
  * One RakNet connection of the release: its {@link BedrockPeer}, the client session the peer creates once RakNet
  * connected, the subscriptions made on it and the trackers of what the client knows about its own player and its
- * world. The packet handler dispatches every received packet here before handling it, and records the game start and
- * item definitions as they arrive. Each received packet reaches the trackers, the {@link WorldTracker} among them,
- * before the subscriptions, so a subscription already reads the state the packet set, and each sent packet reaches the
- * player's trackers before it leaves, so an answer never overtakes the prediction it settles. Closing the connection
- * ends every subscription, so a reconnect, which opens a new connection session with trackers of its own, never
- * reaches them.
+ * world, and the {@link InputTicker} that sends the player's input on every tick from its spawn on. The packet handler
+ * dispatches every received packet here before handling it, and records the game start and item definitions as they
+ * arrive. Each received packet reaches the trackers, the {@link WorldTracker} among them, before the subscriptions,
+ * so a subscription already reads the state the packet set, and each sent packet reaches the player's trackers before
+ * it leaves, so an answer never overtakes the prediction it settles. Closing the connection stops the inputs and ends
+ * every subscription, so a reconnect, which opens a new connection session with trackers of its own, never reaches
+ * them.
  */
 final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDefinition, ItemData> {
 	private static final long TICK_NANOS = TimeUnit.MILLISECONDS.toNanos(50);
@@ -41,6 +42,7 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 	private final List<Subscription<?>> subscriptions = new CopyOnWriteArrayList<>();
 	private final InventoryTracker inventory = new InventoryTracker();
 	private final PositionTracker position = new PositionTracker();
+	private final InputTicker input;
 	private final WorldTracker world;
 
 	private volatile @Nullable BedrockClientSession session;
@@ -54,6 +56,7 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 		this.peer = peer;
 		this.codec = codec;
 		this.profile = profile;
+		this.input = new InputTicker(position, this::tick, () -> serverMovement, this::send);
 		this.world = new WorldTracker(codec.getProtocolVersion(), this::send);
 	}
 
@@ -79,6 +82,7 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 
 		inventory.sent(packet);
 		position.sent(packet);
+		input.sent(packet);
 		current.sendPacket(packet);
 	}
 
@@ -182,6 +186,7 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 
 		inventory.received(packet);
 		position.received(packet);
+		input.received(packet);
 		packet.handle(world);
 
 		for (Subscription<?> subscription : subscriptions)
@@ -198,6 +203,13 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 		this.serverMovement = serverMovement;
 		startNanos = System.nanoTime();
 		start = started;
+	}
+
+	/**
+	 * Starts the inputs a client sends on every tick once the server spawned its player.
+	 */
+	void spawned() {
+		input.start(peer.getChannel().eventLoop());
 	}
 
 	/**
@@ -219,10 +231,11 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 	}
 
 	/**
-	 * Ends every subscription once the connection closed.
+	 * Stops the inputs and ends every subscription once the connection closed.
 	 */
 	void close() {
 		closed = true;
+		input.stop();
 		subscriptions.clear();
 	}
 

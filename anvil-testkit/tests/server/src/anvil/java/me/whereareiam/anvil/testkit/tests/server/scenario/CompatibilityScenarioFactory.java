@@ -35,8 +35,15 @@ public final class CompatibilityScenarioFactory {
 			new NeoForgeRelease("1.21.11", "21.11.45"),
 			new NeoForgeRelease("26.1.2", "26.1.2.114")
 	);
+	/**
+	 * Lumi's oldest and newest Bedrock version, and both sides of 1.21.90, from which Bedrock has no client movement
+	 * authority: the scenario below it lets the client move its player, as older Bedrock servers may.
+	 */
 	private static final List<LumiRelease> LUMI = List.of(
-			new LumiRelease("1.26.50", "1.6.9")
+			new LumiRelease("1.20.0", "1.6.9", false),
+			new LumiRelease("1.21.80", "1.6.9", true),
+			new LumiRelease("1.21.90", "1.6.9", false),
+			new LumiRelease("1.26.50", "1.6.9", false)
 	);
 
 	/**
@@ -63,14 +70,14 @@ public final class CompatibilityScenarioFactory {
 	}
 
 	/**
-	 * Returns the direct Lumi scenario of each Minecraft version Lumi is verified on. Lumi loads no Bukkit plugin,
-	 * so these servers carry no fixture: their test drives the console and the Lumi agent, and observes a Bedrock
-	 * player of the CloudburstMC Protocol library through its Session and Server capabilities.
+	 * Returns the direct Lumi scenario of each Minecraft version Lumi is verified on, oldest first. Lumi loads no
+	 * Bukkit plugin, so these servers carry no fixture: their tests drive the console and the Lumi agent, and observe
+	 * through them what a Bedrock player of the CloudburstMC Protocol library does with its capabilities.
 	 *
 	 * @return one direct Lumi scenario per verified Minecraft version
 	 */
 	public static List<AnvilScenario> lumiScenarios() {
-		return LUMI.stream().map(release -> lumiScenario(release.version(), release.release())).toList();
+		return LUMI.stream().map(CompatibilityScenarioFactory::lumiScenario).toList();
 	}
 
 	/**
@@ -170,26 +177,29 @@ public final class CompatibilityScenarioFactory {
 				.build();
 	}
 
-	private static AnvilScenario lumiScenario(String version, String release) {
-		MinecraftServer server = MinecraftServer.builder()
+	private static AnvilScenario lumiScenario(LumiRelease release) {
+		MinecraftServer.MinecraftServerBuilder server = MinecraftServer.builder()
 				.name("server")
 				.metadata(PresentationMetadata.builder()
 						.displayName("Test server")
 						.description("Lumi server driven through its console and the Lumi agent; no fixture plugin is installed.")
 						.build())
 				.platform(Platforms.LUMI)
-				.distribution(Distribution.remote(version, release))
-				.memoryMegabytes(1024)
-				.build();
+				.distribution(Distribution.remote(release.version(), release.release()))
+				.memoryMegabytes(1024);
+		if (release.clientMovement())
+			server.setting("general.server-authoritative-movement", "client-auth");
+
+		String authority = release.clientMovement() ? " with client movement authority" : "";
 		return AnvilScenario.builder()
-				.name("lumi-" + version)
+				.name("lumi-" + release.version())
 				.metadata(PresentationMetadata.builder()
-						.displayName("Direct server · Lumi " + version)
-						.description("Single Lumi server without fixture plugins for checking startup, console commands, "
-								+ "agent operations and Bedrock player observation through the Lumi agent.")
-						.category("Native compatibility").tag("console").tag("login").build())
-				.entrypoint(server.getName())
-				.server(server)
+						.displayName("Direct server · Lumi " + release.version())
+						.description("Single Lumi server" + authority + " without fixture plugins for checking startup, console "
+								+ "commands, agent operations and the player capabilities of a Bedrock player.")
+						.category("Native compatibility").tag("console").tag("login").tag("capabilities").build())
+				.entrypoint("server")
+				.server(server.build())
 				.build();
 	}
 
@@ -317,8 +327,9 @@ public final class CompatibilityScenarioFactory {
 	 *
 	 * @param version Minecraft version
 	 * @param release Lumi release
+	 * @param clientMovement whether the server lets the client move its player instead of keeping movement authority
 	 */
-	private record LumiRelease(String version, String release) { }
+	private record LumiRelease(String version, String release, boolean clientMovement) { }
 
 	private static String platformLabel(String platform) {
 		return switch (platform) {

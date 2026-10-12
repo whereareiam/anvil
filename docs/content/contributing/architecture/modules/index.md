@@ -293,7 +293,8 @@ CloudburstMC Protocol's family for Bedrock players has the same shape:
 
 The client segment keeps what a Bedrock client knows about its own player in one tracker class per subject,
 such as `InventoryTracker` for item stacks and the selected hotbar slot, `PositionTracker` for the position and
-`WorldTracker` for the blocks of the dimension;
+rotation, and `WorldTracker` for the blocks of the dimension. `InputTicker` sends the player authoritative input a
+Bedrock client sends on every tick under server movement authority, repeating the tracked position.
 `ConnectionSession` only wires them into the session's received and sent packets.
 
 The messages, movement, inventory and interaction families each add a `<feature>-cloudburst` side whose one segment,

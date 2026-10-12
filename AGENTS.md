@@ -145,9 +145,11 @@ current project scope.
   of the release.
 - Like a real client, a Bedrock session tracks its own player and world per connection generation: item stacks of
   the player's containers (inventory, off hand, armor, user interface with the cursor) and of opened containers, the
-  selected hotbar slot, the position at the eyes, and the blocks of the player's dimension. Trackers live in their
-  own classes in the client segment (`InventoryTracker`, `PositionTracker`, and `WorldTracker` in package
-  `client.world.v1_26_60`); `ConnectionSession` only wires them. They see each received packet before subscriptions
+  selected hotbar slot, the position and rotation at the eyes, and the blocks of the player's dimension. Under server
+  movement authority it also sends a player authoritative input on every tick from its spawn on, repeating the tracked
+  position, so one move stays in effect after a server ignored it while completing a teleport. Trackers and that
+  `InputTicker` live in their own classes in the client segment (`InventoryTracker`, `PositionTracker`,
+  `InputTicker`, and `WorldTracker` in package `client.world.v1_26_60`); `ConnectionSession` only wires them. They see each received packet before subscriptions
   and the player's trackers see each sent packet before it leaves, so a feature's own send is the client's
   prediction, settled by item stack responses or the server's corrections. `blockAt(x, y, z)` returns the
   first-layer runtime id the server sent for a block, as `WorldTracker` keeps the chunks like a client: full level

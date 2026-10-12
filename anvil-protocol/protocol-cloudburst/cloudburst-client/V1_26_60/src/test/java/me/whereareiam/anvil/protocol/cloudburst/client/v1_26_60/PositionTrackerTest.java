@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.cloudburst.client.v1_26_60;
 
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientPosition;
+import org.cloudburstmc.math.vector.Vector2f;
 import org.cloudburstmc.math.vector.Vector3f;
 import org.cloudburstmc.protocol.bedrock.data.PredictionType;
 import org.cloudburstmc.protocol.bedrock.packet.CorrectPlayerMovePredictionPacket;
@@ -16,12 +17,14 @@ class PositionTrackerTest {
 	private final PositionTracker tracker = new PositionTracker();
 
 	@Test
-	void startsAtTheGameStartsPosition() {
+	void startsAtTheGameStartsPositionAndRotation() {
 		assertThrows(IllegalStateException.class, tracker::position);
+		assertThrows(IllegalStateException.class, tracker::pose);
 
 		tracker.received(start());
 
 		assertEquals(position(1, 2, 3), tracker.position());
+		assertEquals(new PositionTracker.Pose(Vector3f.from(1, 2, 3), Vector3f.from(4, 5, 5)), tracker.pose());
 	}
 
 	@Test
@@ -30,13 +33,16 @@ class PositionTrackerTest {
 
 		PlayerAuthInputPacket input = new PlayerAuthInputPacket();
 		input.setPosition(Vector3f.from(4, 5, 6));
+		input.setRotation(Vector3f.from(1, 2, 3));
 		tracker.sent(input);
 		assertEquals(position(4, 5, 6), tracker.position());
+		assertEquals(Vector3f.from(1, 2, 3), tracker.pose().rotation());
 
 		tracker.received(move(8, 9, 9, 9));
 		assertEquals(position(4, 5, 6), tracker.position());
 		tracker.received(move(7, 10, 11, 12));
 		assertEquals(position(10, 11, 12), tracker.position());
+		assertEquals(Vector3f.from(7, 8, 9), tracker.pose().rotation());
 
 		CorrectPlayerMovePredictionPacket vehicle = correction(PredictionType.VEHICLE, 0, 0, 0);
 		tracker.received(vehicle);
@@ -52,6 +58,7 @@ class PositionTrackerTest {
 		StartGamePacket start = new StartGamePacket();
 		start.setRuntimeEntityId(7);
 		start.setPlayerPosition(Vector3f.from(1, 2, 3));
+		start.setRotation(Vector2f.from(4, 5));
 		return start;
 	}
 
@@ -59,6 +66,7 @@ class PositionTrackerTest {
 		MovePlayerPacket move = new MovePlayerPacket();
 		move.setRuntimeEntityId(runtimeEntityId);
 		move.setPosition(Vector3f.from(x, y, z));
+		move.setRotation(Vector3f.from(7, 8, 9));
 		return move;
 	}
 

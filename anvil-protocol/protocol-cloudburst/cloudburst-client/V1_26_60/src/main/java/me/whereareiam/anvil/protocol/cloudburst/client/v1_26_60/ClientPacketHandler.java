@@ -58,9 +58,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Performs the login of one session and keeps it in game: requests the network settings, logs in with the
  * identity, completes the encryption handshake, accepts the server's resource packs without downloading any,
- * registers the item and block definitions the codec needs, requests its chunk radius and announces that the player
- * is initialized once the server spawned it. Reports the login, server-set views and disconnects to the listener,
- * and hands every packet to the {@link ConnectionSession}'s subscriptions before handling it.
+ * registers the item and block definitions the codec needs, requests its chunk radius, and announces that the player
+ * is initialized and starts its inputs once the server spawned it. Reports the login, server-set views and
+ * disconnects to the listener, and hands every packet to the {@link ConnectionSession}'s subscriptions before handling
+ * it.
  *
  * <p>The granted profile is the player list entry of the player's own entity; when the server lists none shortly
  * after the spawn, it is the profile the identity claimed.</p>
@@ -276,6 +277,7 @@ final class ClientPacketHandler implements BedrockPacketHandler {
 		initialized.setRuntimeEntityId(runtimeEntityId);
 		session.sendPacket(initialized);
 		spawned = true;
+		connection.spawned();
 
 		if (listed.containsKey(uniqueEntityId)) report();
 		else peer.getChannel().eventLoop().schedule(this::report, LIST_ENTRY_GRACE_MILLIS, TimeUnit.MILLISECONDS);
