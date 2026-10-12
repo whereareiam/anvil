@@ -1,0 +1,15 @@
+<idea-plugin>
+	<extensions defaultExtensionNs="com.intellij">
+		<projectService serviceInterface="me.whereareiam.anvil.integration.intellij.account.AccountStaging"
+				serviceImplementation="me.whereareiam.anvil.integration.intellij.account.storage.ProjectAccountStaging"/>
+		<projectConfigurable parentId="me.whereareiam.anvil" id="me.whereareiam.anvil.accounts" displayName="Accounts"
+				instance="me.whereareiam.anvil.integration.intellij.account.settings.AccountSettingsPage"/>
+	</extensions>
+	<actions>
+		<action id="Anvil.ManageAccounts" class="me.whereareiam.anvil.integration.intellij.account.view.ManageAccountsAction"
+				text="Anvil Accounts…" description="Manage the accounts and pools simulated players can sign in with"
+				icon="AllIcons.General.User">
+			<add-to-group group-id="Anvil.Catalog.Toolbar" anchor="last"/>
+		</action>
+	</actions>
+</idea-plugin>

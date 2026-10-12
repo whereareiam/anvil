@@ -3,14 +3,9 @@ plugins {
 	id("module-intellij")
 }
 
-description = "Contracts and immutable values for the IntelliJ integration"
+description = "Contracts shared by the IntelliJ integration's features and build integrations"
 
 // Contracts compile against the platform alone, without bundled IDE plugins.
 intellijPlatformModule {
 	bundledPlugins.empty()
-}
-
-dependencies {
-	api(projects.anvilApi)
-	api(projects.anvilTooling.toolingApi)
 }

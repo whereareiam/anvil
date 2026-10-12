@@ -1,0 +1,12 @@
+<idea-plugin>
+	<extensionPoints>
+		<extensionPoint qualifiedName="me.whereareiam.anvil.buildIntegration"
+			interface="me.whereareiam.anvil.integration.intellij.source.BuildIntegration" dynamic="true"/>
+	</extensionPoints>
+	<extensions defaultExtensionNs="com.intellij">
+		<projectService serviceInterface="me.whereareiam.anvil.integration.intellij.source.BuildIntegrations"
+				serviceImplementation="me.whereareiam.anvil.integration.intellij.source.ProjectBuildIntegrations"/>
+		<applicationService serviceInterface="me.whereareiam.anvil.integration.intellij.source.ToolingCommands"
+				serviceImplementation="me.whereareiam.anvil.integration.intellij.source.ManifestToolingCommands"/>
+	</extensions>
+</idea-plugin>

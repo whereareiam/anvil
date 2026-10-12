@@ -19,15 +19,18 @@ switches to its Console.
 
 ## Control processes
 
-Select the scenario root or a process in the **Environment** sidebar and use its toolbar:
+Select the scenario root or a process in the **Environment** sidebar and use its toolbar or context
+menu:
 
 | Action | Selection | Effect |
 |---|---|---|
-| **Start scenario** | Scenario root | Starts the remaining processes and runs setup if it has not run yet |
-| **Start server** / **Start proxy** | Process | Starts that process in the prepared environment |
-| **Stop process** | Process | Stops that process and keeps its address and workspace |
-| **Restart process** | Running process | Restarts the process with its workspace; other processes keep running |
-| **Stop scenario** | Scenario root | Stops every process and cleans up the environment, keeping its output |
+| **Run Scenario** | Scenario root | Starts the remaining processes and runs setup if it has not run yet |
+| **Start Server** / **Start Proxy** | Process | Starts that process in the prepared environment |
+| **Stop Server** / **Stop Proxy** | Running process | Stops that process and keeps its address and workspace |
+| **Restart Server** / **Restart Proxy** | Running process | Restarts the process with its workspace; other processes keep running |
+| **Stop “*scenario*”** | Scenario root | Stops every process and cleans up the environment, keeping its output |
+
+Double-click the scenario root or press F4 to open its definition class.
 
 Starting a single process prepares the complete environment, including listener addresses and
 routes, but leaves the other processes stopped. A proxy can start while its backends are stopped,

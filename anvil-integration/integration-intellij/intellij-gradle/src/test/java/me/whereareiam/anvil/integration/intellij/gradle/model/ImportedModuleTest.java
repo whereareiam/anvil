@@ -2,6 +2,7 @@ package me.whereareiam.anvil.integration.intellij.gradle.model;
 
 import com.intellij.serialization.ObjectSerializer;
 import com.intellij.serialization.ReadConfiguration;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

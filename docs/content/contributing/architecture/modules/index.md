@@ -34,22 +34,18 @@ a family's API describes its services and extension points. The launcher binds t
 | `anvil-integration/integration-junit`                        | JUnit lifecycle, context injection, and outcome propagation                                                   |
 | `anvil-tooling`                                 | Neutral session contracts, extensible actions, and foreground/IDE runner              |
 | `anvil-integration/integration-gradle` | Shared Gradle declarations and explicit scenario, JUnit, and provider-selection adapters |
-| `anvil-integration/integration-intellij/intellij-api` | IntelliJ integration contracts |
-| `anvil-integration/integration-intellij/intellij-engine` | IntelliJ integration lifecycle and tooling logic |
+| `anvil-integration/integration-intellij` | IntelliJ plugin assembly: descriptor composing the feature modules, settings group, branding, and packaging |
+| `anvil-integration/integration-intellij/intellij-api` | Contracts the IntelliJ features and build integrations share |
+| `anvil-integration/integration-intellij/intellij-common` | Standard implementations of the shared IntelliJ services, and shared test fixtures |
+| `anvil-integration/integration-intellij/intellij-scenario` | Scenario catalog, environments, consoles, run configurations, and editor run actions |
+| `anvil-integration/integration-intellij/intellij-account` | Project and global accounts, pools, sign-in, and account directories |
 | `anvil-integration/integration-intellij/intellij-gradle` | Native Gradle adapter |
-| `anvil-integration/integration-intellij/intellij-ui` | IntelliJ SDK UI and presentation |
-| `anvil-integration/integration-intellij/intellij` | Plugin descriptor and packaged assembly |
 | `anvil-integration/integration-gradle/gradle-tooling` | Native Gradle task discovery, definition scanning, artifact binding, and prepared-launch production |
 | `anvil-testkit/tests`                           | Cross-module runtime and live assertions                                                                            |
 | `anvil-testkit/fixtures`                        | Independent consumer build producing real fixture JARs                                                              |
 | `anvil-testkit/support`                         | Shared host-side artifact access and extension classloader lifetime                                                 |
 | `build-logic`                                   | Java, testing, assembly, and publication conventions                                                                |
 | `build-logic/settings`                          | Lean settings conventions: library registry, library repositories and library layout checks                         |
-
-The IntelliJ integration implements lifecycle, preparation, account storage, and command history in
-`intellij-engine`. `intellij-ui` owns catalog presentation, environment views, consoles, dialogs, navigation,
-and tool windows. `intellij-gradle` implements the build-system discovery and preparation contract.
-Both UI and Gradle production code depend on `intellij-api`; they do not import engine classes.
 
 The tooling API exposes predefined wire operation contracts at its root:
 `ScenarioOperations`, `EnvironmentOperations`, and `ProcessOperations`. `model.ToolingOperation`
@@ -58,126 +54,78 @@ runner binds these contracts to behavior through `ToolingOperationRegistry`; its
 operation-specific decoding methods.
 
 IntelliJ is a frontend in the logical tooling API family. The `integration-intellij` project declares
-`architecture.family = projects.anvilTooling.path`, which its API and implementation modules inherit.
-Its physical location remains under `anvil-integration`. `intellij-api` reuses the portable models
-from `anvil-tooling/tooling-api` and adds IDE-specific contracts. Implementation dependencies remain
-restricted to assembly modules; the runner executes in a separate project JVM.
+`architecture.family = projects.anvilTooling.path`, which its modules inherit. Its physical location
+remains under `anvil-integration`. The tooling runner executes in a separate project JVM; the plugin
+never depends on its implementation.
 
-The API groups contracts by feature below `me.whereareiam.anvil.integration.intellij`: build-system
-discovery uses `source`, running environments use `environment`, retained output uses `log`, IDE
-preferences and command history use `settings`, and account behavior uses `account`. `ScenarioCatalog`
-remains at the root as the only scenario contract. Reusable values are grouped under `model`, closed types under `type`, and failures under `exception`;
-model and type subpackages exist only when multiple files share one feature. Contracts may use native
-IntelliJ project and disposal types. Persistence beans and runner mutations remain in the engine;
-views receive immutable preference snapshots and retained `EnvironmentSession` handles. Catalog
-state is read as one `CatalogSnapshot` whose lifecycle is a `CatalogState`; environment labels are derived from
-the typed `EnvironmentState` exposed by `EnvironmentSession`; UI rendering only adds labels,
-tones, and icons at the final presentation boundary.
+### IntelliJ plugin modules
 
-Within `intellij-engine`, packages follow the behavior they own:
+The plugin is split by feature. The family root is the plugin itself and holds no logic: its
+`plugin.xml` includes one descriptor fragment per module and declares the **Settings → Tools → Anvil**
+group, and its build packages the modules with the plugin icons.
+
+```text
+integration-intellij/
+  src/                plugin.xml (includes the fragments below), settings group, branding
+  intellij-api/       contracts the features and build integrations share
+  intellij-common/    anvil-common.xml: their standard implementations; shared test fixtures
+  intellij-scenario/  anvil-scenario.xml: catalog, environments, consoles, run configurations, editor
+  intellij-account/   anvil-account.xml: accounts, pools, sign-in, account directories
+  intellij-gradle/    anvil-gradle.xml: the Gradle build integration, loaded only with the Gradle plugin
+```
+
+Feature modules are implementations, so the architecture verifier lets them depend only on APIs. A
+feature reaches shared behaviour through a service interface in `intellij-api`, bound by the module that
+implements it; it never imports another feature. `intellij-api` holds:
+
+| Contract | Implemented by | Used for |
+|---|---|---|
+| `BuildIntegration` extension point | `intellij-gradle` | Discovering, syncing, and preparing scenario sources of one build system |
+| `BuildIntegrations` | `intellij-common` (`ProjectBuildIntegrations`) | All installed integrations as one project service |
+| `ToolingCommands` | `intellij-common` (`ManifestToolingCommands`) | Reading a prepared launch manifest into runner and sign-in commands |
+| `AccountStaging`, `StagedAccounts` | `intellij-account` (`ProjectAccountStaging`) | Giving a scenario run a private copy of the project's accounts |
+| `ScenarioSource.DATA_KEY` | Scenario views | Telling actions contributed by other features which source a view shows |
+
+Features also meet through the IDE's action system rather than through code. The scenario module
+registers its actions and the groups that show them (`Anvil.Catalog.Toolbar`, `Anvil.Catalog.Popup`,
+`Anvil.Environment.Toolbar`, `Anvil.Environment.Popup`); the account module adds **Anvil Accounts…** to the
+catalog toolbar from its own fragment. The root `plugin.xml` includes the scenario fragment before the
+account fragment, so the group exists when the account action joins it.
+
+### Scenario module
+
+`intellij-scenario` groups its packages by what they own, each with a `view` subpackage where it has
+Swing screens. Concrete classes are project or application services (`@Service`); only the shared
+contracts above are interfaces.
 
 | Package | Responsibility |
 |---------|----------------|
-| `source` | `ProjectBuildIntegrations` coordinates build integrations; `SourceSelection` resolves saved source identities; `ProjectSourceDiscovery` owns detection, selection, and sync, delegating refresh-after-import decisions to `ImportRefreshPolicy`. |
-| `scenario` | `ProjectScenarioCatalog` owns discovered definitions, loading state, and output. |
-| (root) | `ChangeListeners` holds owner-scoped `subscribe(Runnable, Disposable)` registrations and their event-thread delivery. |
-| `scenario.execution` | `ProjectEnvironmentLifecycle` owns active and retained environments; each `EnvironmentExecution` owns one snapshot and lifecycle, exposed by its permanently bound `RetainedEnvironmentSession`. |
-| `log` | `StoredSessionLog` retains neutral output for catalog and environment views. |
-| `tooling` | `ProjectToolingHost` arbitrates reuse and replacement, tracking each launch's `ProjectToolingHost.Purpose`; `ToolingLaunch` owns preparation, the runner, temporary files, and cleanup, advances through `ToolingLaunch.State`, and publishes one typed `ToolingLaunch.Outcome`. `ToolingLaunch.Inputs` supplies the preparation and account workspace. |
-| `settings` | `PersistentPreferences` and `StoredCommandHistory` persist IDE preferences and accepted command history. |
-| `account.authentication` | `BuildAccountAuthenticator` creates cancellable `ToolingAccountEnrollment` operations. |
-| `account.persistence` | `ConfiguredAccountLibrary` applies source configuration; `AccountDirectoryRepository`, `AccountPoolRepository`, and `AccountWorkspace` own filesystem persistence and temporary runtime materialization. |
-| `tooling.process` | `ToolingCommandReader` reads launch commands; `ToolingConnection` owns child processes, command input, output readers, and termination with diagnostic draining. |
-| `tooling.protocol` | `ToolingClient` owns readiness, ordered requests, correlation, and terminal completion. `ToolingMessageCodec` maps typed envelopes and payloads generically using shared operation schemas from `tooling-api`. |
+| `tooling` | `ToolingHost` arbitrates the project's single tooling launch and its `Purpose`; `ToolingLaunch` owns preparation, the runner, staged accounts, and cleanup and publishes one `Outcome`; `ToolingConnection` owns the child processes. `tooling.protocol` holds `ToolingClient` and `ToolingMessageCodec`. |
+| `catalog` | `ScenarioCatalog` loads the selected source's scenarios into one `ScenarioCatalog.Snapshot`. `catalog.source.SourceDiscovery` owns detection, selection, and sync, delegating reload-after-import decisions to `ImportRefreshPolicy`. `catalog.view` holds `CatalogPanel`, its `CatalogController`, and the scenario tree. |
+| `environment` | `EnvironmentLifecycle` owns the active environment and the retained sessions, and decides through `availability` whether a scenario or process can run and why not. Each `EnvironmentSession` is bound to one launch through `EnvironmentExecution` and reports an `EnvironmentSession.Status`. `environment.view` holds the session tab with its `overview`, `console`, `players`, and `contribution` pages. |
+| `action` | The registered actions: run, stop, restart, save as run configuration, reload, and sync. They read `ScenarioDataKeys` and `ScenarioSource.DATA_KEY` from the invoking view and describe why they are unavailable. |
+| `editor` | `ScenarioLineMarker` puts a Run icon beside definition classes recognised through UAST by `ScenarioDefinitions`. |
+| `runconfiguration` | `AnvilRunConfiguration` stores a source, a definition class, and an optional process; `ScenarioConfigurationProducer` creates one from a class; `RunConfigurationService` saves, validates, and launches them through `EnvironmentLifecycle`. |
+| `log`, `console` | `SessionLog` retains neutral output; each `ConsolePresentation` renders it in one native console. `CommandHistory` keeps accepted commands per `CommandHistory.Scope`. |
+| `navigation` | `DefinitionNavigator` and `WorkspaceNavigator` open definition sources and process directories. |
+| `settings` | `ScenarioSettings` and its **Scenarios** settings page. |
+| `window` | The tool-window factory, `ToolWindowController` for its tabs, retention, and failure notifications, `ScenarioPresentation`, and shared view components. |
 
-Within `intellij-ui`, locate a screen through its UI area, then its scoped components:
+Views offer their selection through `UiDataProvider` and show registered action groups; they never
+decide what a command does. Every entry point to running — the catalog, the editor gutter, run
+configurations, and environment tabs — goes through `EnvironmentLifecycle.run`, or through the tab's own
+`EnvironmentSession` when it already runs the scenario, so all of them follow the one-environment rule
+and give the same reasons.
 
-| Package | Responsibility |
-|---------|----------------|
-| `view.settings` | `AnvilSettingsConfigurable` integrates Apply/Reset; `SettingsForm` owns editable form values. |
-| `view.window.main` | The native tool-window factory; `MainWindowController`, which owns content tabs and retention; and `ScenarioPresentation`, whose scenario identity, topology, and command rules are shared by every screen. |
-| `view.window.main.catalog` | `CatalogController` composes discovery, execution, and command owners, which reach the screen through `CatalogView`; Kotlin owns screen and dialog presentation. |
-| `view.window.main.catalog.tree` | `ScenarioTreeView` hosts the tree; `ScenarioTreeModel`, `ScenarioTreeExpansion`, and `ScenarioTreeRenderer` own projection, expansion memory, and rendering. |
-| `view.window.main.environment` | Session tabs, section selection, and remembered view state; `overview`, `console`, and `players` hold its pages, and `action` their contributed actions. |
-| `view.window.main.component` | Shared tool-window controls, the `details` inspector, and `status` presentation. |
-| `view.window.account` | Project accounts and authentication dialogs, with scoped account components and pool editors. |
-| `component.console` | `ConsolePresentation` renders one session log in one native console for one view, with its own process-handler adapter; tool-window tabs, Run tabs, and dialogs each create their own. |
-| `runconfiguration` | `RunConfigurationService` resolves, validates, saves, and launches saved configurations; native type/configuration/editor adapters retain their IntelliJ callbacks. |
-| `view.window.main.navigation` | `DefinitionNavigator` finds indexed definitions and opens the editor; `WorkspaceNavigator` opens process directories in the Project view or file manager. |
+The account module follows the same split: `AccountLibrary` reads the project and global directories,
+`storage` owns the account and pool files and staged copies, `AccountSignIn` runs one browser sign-in,
+`settings` holds `AccountSettings` and the **Accounts** settings page, and `view` holds the account window.
 
-`RunConfigurationService` is registered per project by the assembly. Saving matches the source,
-definition, scenario, and optional process identifiers, preserves an existing configuration's name,
-and selects the saved configuration without starting an environment. The editor obtains source choices
-through the same source resolver used for validation and launch. Launch revalidates saved identifiers,
-uses a loaded descriptor only from the matching source, and delegates execution to `EnvironmentLifecycle`.
-A source whose catalog has not been loaded can still launch its saved scenario through cold discovery.
-`AnvilRunConfiguration` retains XML persistence and attaches the returned session's native console.
-Running directly from the catalog does not create a saved configuration.
-
-Panel and dialog definitions live in `intellij-ui/src/main/kotlin`: settings and dialog forms use Kotlin UI DSL,
-while tool-window screens use Swing composition to preserve their specialized layouts. Java platform adapters
-and controllers live in the matching packages under `src/main/java`. Keep layout, editable values,
-presentation validation, and local control interactions in the form. Keep persistence, service calls,
-subscriptions, history policy, and cancellation in Java. The boundary uses ordinary methods, existing
-models, and Java callbacks such as `Runnable` and `Consumer`; it does not require a new API module.
-
-For example, `SettingsForm` binds controls to a local draft, and `AnvilSettingsConfigurable` validates
-and saves one immutable preference snapshot on Apply. Reset reloads saved preferences; closing without
-Apply does not persist edits. `ActionInvocationForm` owns generated input widgets and result presentation, while the Kotlin
-`ActionInvocationDialog` delegates session availability, invocation, and command history to its Java
-controller. Kotlin account dialogs delegate account loading, enrollment, and pool persistence to Java
-controllers. Account forms emit requests to those controllers. `EnvironmentSessionController` owns session
-subscriptions and disposal. Environment, players, target-contributions, and console controllers own their
-interactions; Kotlin panels compose controls and render display state. Tree/list renderers and visual Swing components live in Kotlin. Java remains appropriate for platform
-console adapters such as `ConsolePresentation`, controllers, and lifecycle owners.
-
-Both languages target Java 21; Kotlin uses the API level supported by the baseline IDE and its bundled
-standard library. The UI module applies Kotlin's Lombok compiler plugin in addition to Java annotation
-processing. This allows Kotlin views to consume Lombok-generated members from Java controllers in the
-same module. Keep its version aligned with the Kotlin JVM plugin in the version catalog.
-
-`CatalogController` composes three concrete collaborators for one catalog view. The discovery
-controller observes source/catalog/preferences and owns the screen's source controls and status
-messages. The execution controller owns the current session subscription and projects its snapshot
-into the tree and inspector, matching source, definition, and scenario identities. Replacing that
-subscription rejects notifications queued by an older session. The command controller captures the
-current selection, rechecks availability, and delegates launch, save, and navigation requests. It
-reports launch failures to the discovery controller for display; refresh, sync, or source selection
-clear that feedback. Closing the view releases all three owners and their observers without stopping
-the environment or project discovery.
-
-Status values are also split from rendering. `ProcessSnapshot.state` and `SessionSnapshot.state`
-remain the shared `ProcessState` and `SessionState` enums in `tooling-api`; unknown process wire values
-map to `UNKNOWN`. The engine calculates the aggregate `EnvironmentState` exposed by
-`EnvironmentSession`. Kotlin `StatusPresentation` supplies only final UI labels, descriptions, and
-semantic tones, while `StatusIcon` and `StatusBadge` own Swing colors, overlays, accessibility, and
-badge painting.
-
-The catalog tree is intentionally split by responsibility. `ScenarioTreeModel` turns descriptors into typed
-scenario/process nodes and restores stable selection. `ScenarioTreeExpansion` retains manual expansion
-choices by source/definition/scenario identity while honoring the automatic expansion preference.
-`ScenarioTreeRenderer` renders display text, platform labels, status overlays, tooltips, and accessibility
-metadata. `ScenarioTreeView` only coordinates the Swing tree and delegates to those collaborators.
-
-A component belongs at the narrowest scope containing its consumers. View controllers consume API
-contracts; shared components do not depend on views. One-off layout helpers remain inner types.
-Definition navigation waits for indexing and prefers the selected source directory before offering
-a chooser for duplicate declarations. Workspace lookup refreshes files on a worker and delivers its
-result on the IDE event thread. Both navigators stop delivering navigation after their view owner closes.
-The engine publishes a read-only `SessionLog`; each `ConsolePresentation` subscribes for one view and
-receives the retained entries first. Views share only the log, so closing a tool-window tab never disposes
-the console a Run tab shows. The presentation prints output itself; Run configurations therefore do not
-attach the console to its process handler, which would print every line twice. Tests mirror their owners:
-import-refresh policy tests live in engine, while rendering and interaction tests live in UI.
-
-`AccountWorkspace` instances are closed after the tooling process terminates, and cleanup failures are
-reported. Persistent component names remain stable independently of Java implementation names so
-saved settings survive refactoring.
-
-`intellij` composes the plugin through service-interface bindings and extension registrations in
-`META-INF/plugin.xml`. IntelliJ creates and disposes the registered services at application or
-project scope. The assembly also supplies branding and packages the implementation modules.
-Descriptor composition does not require a Java startup class.
+Panels and dialogs are written in Kotlin, with Kotlin UI DSL for forms; controllers, services, and
+platform adapters are Java in the matching packages. Kotlin targets the API level of the baseline IDE's
+bundled standard library, which the `module-intellij` convention sets for every module that applies the
+Kotlin plugin. The feature modules apply Kotlin's Lombok plugin so views can use members Lombok
+generates for Java classes.
 
 `examples/proof-of-patience` is a standalone consumer build. It consumes published artifacts and stays
 outside root project discovery. Framework system assertions belong in `anvil-testkit`.
