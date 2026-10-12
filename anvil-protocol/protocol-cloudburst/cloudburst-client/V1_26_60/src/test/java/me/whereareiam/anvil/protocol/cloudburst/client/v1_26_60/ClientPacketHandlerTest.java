@@ -128,7 +128,7 @@ class ClientPacketHandlerTest {
 				.identity(identity)
 				.connection(ClientConnection.builder().host("127.0.0.1").port(19132).protocol(codec.getProtocolVersion()).build())
 				.build();
-		connection = new ConnectionSession(session.getPeer(), codec);
+		connection = new ConnectionSession(session.getPeer(), codec, login.getProfile());
 		connection.attach(session);
 		return new ClientPacketHandler(session, connection, codec, login, new Recorder());
 	}

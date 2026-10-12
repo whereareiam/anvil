@@ -8,6 +8,7 @@ import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.api.player.CapabilityPlayer;
 import me.whereareiam.anvil.capability.messages.Messages;
+import me.whereareiam.anvil.capability.movement.Movement;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityContext;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityProvider;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolCapabilityPlayer;
@@ -92,10 +93,10 @@ class PlayerCapabilityRuntimeTest {
 	}
 
 	@Test
-	void composesTheSessionCapabilityForABedrockPlayerOfTheCloudburstWorker() {
+	void composesTheCapabilitiesTheCloudburstWorkerInstalledForABedrockPlayer() {
 		StubPlayer bedrock = new StubPlayer();
 		bedrock.libraryId = "cloudburst";
-		bedrock.channel = channel(Set.of("me.whereareiam.anvil.session"), Map.of());
+		bedrock.channel = channel(Set.of("me.whereareiam.anvil.session", "me.whereareiam.anvil.messages"), Map.of());
 		var previous = System.err;
 
 		SimulatedPlayer player;
@@ -107,10 +108,10 @@ class PlayerCapabilityRuntimeTest {
 		}
 
 		assertTrue(player.hasCapability(Session.class));
-		assertFalse(player.hasCapability(Messages.class));
-		var missing = assertThrows(CapabilityUnavailableException.class, () -> player.capability(Messages.class));
-		assertTrue(missing.getMessage().endsWith("no provider supports protocol library 'cloudburst' that the player uses; "
-				+ "it is provided only for the protocol libraries [mcprotocol]"), missing.getMessage());
+		assertTrue(player.hasCapability(Messages.class));
+		assertFalse(player.hasCapability(Movement.class));
+		var missing = assertThrows(CapabilityUnavailableException.class, () -> player.capability(Movement.class));
+		assertTrue(missing.getMessage().endsWith("not installed by the cloudburst worker"), missing.getMessage());
 		player.destroy();
 	}
 

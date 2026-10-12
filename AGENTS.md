@@ -103,6 +103,9 @@ current project scope.
   Ordinary implementations and API modules consume only their own family's APIs and `anvil-api`;
   foreign API dependencies and re-exports are forbidden unless an ancestor-owned contract API is
   explicitly declared through `architecture.sharedApis`. Each exposed API needs permission independently.
+  The one other-family API a family may consume is a protocol library's native-session API that its
+  library-side segments implement a port against, declared through `architecture.dependsOnApis` on the
+  family root: the messages and movement families declare `cloudburst-api` for their cloudburst segments.
   Organizational grouping does not merge families. Agent client/server families share only `agent-api`;
   they must not depend on or re-export each other's API or implementation.
 - Keep concrete platform SDKs, MCProtocolLib, serialization, transport implementations, and assembly
@@ -133,8 +136,11 @@ current project scope.
 - A CloudburstMC Protocol client segment hands bindings a `CloudburstSession<P, I>` as the native session: `send`,
   typed `subscribe` dispatched from the session's one packet handler, the `GameStart`, the item definitions and the
   client tick. Each session is one connection generation, and closing its connection ends its subscriptions, so a
-  reconnect never reaches them. CloudburstMC types reach feature segments only through the type parameters; host
-  code and `cloudburst-common` never see them. The session capability serves `mcprotocol` and `cloudburst`.
+  reconnect never reaches them. The session also names the profile its login claimed and whether the server is
+  authoritative over movement: always from protocol 818 on, before that as the game start or a later movement
+  authority packet says. CloudburstMC types reach feature segments only through the type parameters; host
+  code and `cloudburst-common` never see them. The session, messages and movement capabilities serve
+  `mcprotocol` and `cloudburst`; their `<feature>-cloudburst/V1_26_60` segment serves every codec of the release.
 - Use `ServiceLoader` for the existing provider SPIs. Preserve service descriptors and merge them
   when shading. Do not add broad reflection scanning as an alternative discovery path.
 - Each player selects its protocol library: its own `protocolLibrary`, else the scenario's, else the engine's,

@@ -10,6 +10,7 @@ import me.whereareiam.anvil.protocol.cloudburst.client.model.GameStart;
 import org.cloudburstmc.protocol.bedrock.BedrockClientSession;
 import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
+import org.cloudburstmc.protocol.bedrock.data.AuthoritativeMovementMode;
 import org.cloudburstmc.protocol.bedrock.data.PacketCompressionAlgorithm;
 import org.cloudburstmc.protocol.bedrock.data.auth.AuthPayload;
 import org.cloudburstmc.protocol.bedrock.data.auth.AuthType;
@@ -36,6 +37,7 @@ import org.cloudburstmc.protocol.bedrock.packet.ResourcePackStackPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ResourcePacksInfoPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ServerToClientHandshakePacket;
 import org.cloudburstmc.protocol.bedrock.packet.SetLocalPlayerAsInitializedPacket;
+import org.cloudburstmc.protocol.bedrock.packet.SetMovementAuthorityPacket;
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket;
 import org.cloudburstmc.protocol.bedrock.util.EncryptionUtils;
 import org.cloudburstmc.protocol.common.DefinitionRegistry;
@@ -72,6 +74,10 @@ final class ClientPacketHandler implements BedrockPacketHandler {
 	 * Codecs from this protocol on send a multiplayer token instead of the certificate chain of an Xbox login.
 	 */
 	private static final int TOKEN_LOGIN_PROTOCOL = 818;
+	/**
+	 * Codecs from this protocol on know only server authoritative movement, so their game start no longer names it.
+	 */
+	private static final int SERVER_MOVEMENT_PROTOCOL = 818;
 	private static final int CHUNK_RADIUS = 4;
 	private static final long LIST_ENTRY_GRACE_MILLIS = 2000;
 	private static final DefinitionRegistry<BlockDefinition> UNKNOWN_BLOCKS = new UnknownBlocks();
@@ -179,13 +185,19 @@ final class ClientPacketHandler implements BedrockPacketHandler {
 				.yaw(packet.getRotation().getY())
 				.pitch(packet.getRotation().getX())
 				.tick(packet.getCurrentTick())
-				.build());
+				.build(), serverMovement(packet.getAuthoritativeMovementMode()));
 		listener.teleported(connection, packet.getRotation().getY(), packet.getRotation().getX());
 
 		RequestChunkRadiusPacket radius = new RequestChunkRadiusPacket();
 		radius.setRadius(CHUNK_RADIUS);
 		radius.setMaxRadius(CHUNK_RADIUS);
 		session.sendPacket(radius);
+		return PacketSignal.HANDLED;
+	}
+
+	@Override
+	public PacketSignal handle(SetMovementAuthorityPacket packet) {
+		connection.movementAuthority(serverMovement(packet.getMovementMode()));
 		return PacketSignal.HANDLED;
 	}
 
@@ -286,6 +298,15 @@ final class ClientPacketHandler implements BedrockPacketHandler {
 		registered.add(new SimpleItemDefinition("minecraft:empty", 0, false));
 		peer.getCodecHelper().setItemDefinitions(SimpleDefinitionRegistry.<ItemDefinition>builder().addAll(registered).build());
 		connection.registered(registered);
+	}
+
+	/**
+	 * Tells whether a movement mode the server named makes it authoritative; codecs that no longer name one know
+	 * only server authority.
+	 */
+	@SuppressWarnings("deprecation")
+	private boolean serverMovement(AuthoritativeMovementMode mode) {
+		return codec.getProtocolVersion() >= SERVER_MOVEMENT_PROTOCOL || mode != AuthoritativeMovementMode.CLIENT;
 	}
 
 	private void fail(DisconnectCause cause, String reason) {

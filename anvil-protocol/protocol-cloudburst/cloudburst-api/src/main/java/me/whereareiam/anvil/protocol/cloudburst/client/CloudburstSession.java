@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.cloudburst.client;
 
+import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.GameStart;
 import org.jetbrains.annotations.NotNull;
 
@@ -44,6 +45,14 @@ public interface CloudburstSession<P, I> {
 	boolean connected();
 
 	/**
+	 * Returns the profile the session's login claimed. The client names itself by it where a packet carries its own
+	 * name, such as the source of a chat message it sends.
+	 *
+	 * @return claimed profile
+	 */
+	@NotNull ClientProfile profile();
+
+	/**
 	 * Sends a packet on the session's connection.
 	 *
 	 * @param packet packet of the session's codec
@@ -69,6 +78,17 @@ public interface CloudburstSession<P, I> {
 	 * @return the game start, or empty before it arrived
 	 */
 	@NotNull Optional<GameStart> start();
+
+	/**
+	 * Tests whether the server is authoritative over the player's movement, in which case the client reports its
+	 * position and input in player authoritative input packets instead of moving by player move packets. Protocols
+	 * from 818 on know only server authority; older protocols take it from the game start, and a movement authority
+	 * packet the server sends later replaces it.
+	 *
+	 * @return whether the client reports movement as authoritative input
+	 * @throws IllegalStateException before the game start arrived
+	 */
+	boolean serverAuthoritativeMovement();
 
 	/**
 	 * Returns the item definitions the server registered for this session: those of the game start for older

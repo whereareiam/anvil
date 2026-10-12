@@ -146,7 +146,7 @@ public final class CloudburstClientAdapter implements CloudburstClient<Connectio
 		BedrockPeer peer = channel.eventLoop().submit(() -> channel.pipeline().get(BedrockPeer.class)).syncUninterruptibly().getNow();
 		if (peer == null) throw new IllegalStateException("The RakNet channel did not initialize its Bedrock peer");
 
-		ConnectionSession session = new ConnectionSession(peer, codec);
+		ConnectionSession session = new ConnectionSession(peer, codec, login.getProfile());
 		channel.attr(SESSION).set(session);
 		channel.attr(ADDRESSES).set(new InetSocketAddress[]{
 				new InetSocketAddress(connection.getHost(), connection.getPort()),

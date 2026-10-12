@@ -90,7 +90,8 @@ Lumi runs on Java 21; see
 
 - Simulated players join Lumi through the
   [CloudburstMC Protocol library](../versions/index.md#bedrock-players-through-cloudburstmc-protocol),
-  whose only built-in player capability so far is Session. The live matrix drives Lumi through the
+  whose built-in packet capabilities so far are Session, Messages and Movement. The live matrix drives
+  Lumi through the
   [process console](../../../actions/console/index.md) and the [agent](../../../actions/agents/index.md)'s
   command execution, without players.
 - Lumi's game listener is UDP. Local and Docker execution reserve and publish it as UDP; the agent
