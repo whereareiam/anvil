@@ -32,7 +32,7 @@ class InventoryProviderTest {
 
 		assertEquals("me.whereareiam.anvil.inventory", provider.descriptor().getId());
 		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
-		assertEquals(Set.of("mcprotocol"), provider.supportedLibraries());
+		assertEquals(Set.of("mcprotocol", "cloudburst"), provider.supportedLibraries());
 		assertEquals(Inventory.class, provider.capability());
 	}
 

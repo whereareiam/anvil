@@ -105,7 +105,7 @@ current project scope.
   explicitly declared through `architecture.sharedApis`. Each exposed API needs permission independently.
   The one other-family API a family may consume is a protocol library's native-session API that its
   library-side segments implement a port against, declared through `architecture.dependsOnApis` on the
-  family root: the messages and movement families declare `cloudburst-api` for their cloudburst segments.
+  family root: the messages, movement and inventory families declare `cloudburst-api` for their cloudburst segments.
   Organizational grouping does not merge families. Agent client/server families share only `agent-api`;
   they must not depend on or re-export each other's API or implementation.
 - Keep concrete platform SDKs, MCProtocolLib, serialization, transport implementations, and assembly
@@ -139,8 +139,10 @@ current project scope.
   reconnect never reaches them. The session also names the profile its login claimed and whether the server is
   authoritative over movement: always from protocol 818 on, before that as the game start or a later movement
   authority packet says. CloudburstMC types reach feature segments only through the type parameters; host
-  code and `cloudburst-common` never see them. The session, messages and movement capabilities serve
+  code and `cloudburst-common` never see them. The session, messages, movement and inventory capabilities serve
   `mcprotocol` and `cloudburst`; their `<feature>-cloudburst/V1_26_60` segment serves every codec of the release.
+  The inventory capability's `cloudburst` side observes the player's own containers by inventory index and opened
+  containers as received, and refuses hotbar selection and clicks, which need the client's item stacks.
 - Use `ServiceLoader` for the existing provider SPIs. Preserve service descriptors and merge them
   when shading. Do not add broad reflection scanning as an alternative discovery path.
 - Each player selects its protocol library: its own `protocolLibrary`, else the scenario's, else the engine's,

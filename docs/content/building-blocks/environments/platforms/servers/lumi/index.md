@@ -90,7 +90,8 @@ Lumi runs on Java 21; see
 
 - Simulated players join Lumi through the
   [CloudburstMC Protocol library](../versions/index.md#bedrock-players-through-cloudburstmc-protocol),
-  whose built-in packet capabilities so far are Session, Messages and Movement. The live matrix drives
+  whose built-in packet capabilities so far are Session, Messages, Movement and Inventory, which only
+  observes. The live matrix drives
   Lumi through the
   [process console](../../../actions/console/index.md) and the [agent](../../../actions/agents/index.md)'s
   command execution, without players.

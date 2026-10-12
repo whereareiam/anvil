@@ -291,7 +291,7 @@ CloudburstMC Protocol's family for Bedrock players has the same shape:
 | `cloudburst-client` | Source-free side folder whose `V*` children are the client segments |
 | `cloudburst-client/V1_26_60` | The one client segment of the release; it selects each player's codec by the player's protocol number |
 
-The messages and movement families each add a `<feature>-cloudburst` side whose one segment,
+The messages, movement and inventory families each add a `<feature>-cloudburst` side whose one segment,
 `V1_26_60`, implements the feature's port against `CloudburstSession` for every codec of the release.
 Because `cloudburst-api` belongs to another API family, those family roots declare it through
 `architecture.dependsOnApis`.
@@ -306,7 +306,10 @@ the code of the previous one, which `checkSegmentLinkage` reports; see
 [Adding a Minecraft version](../../minecraft-versions/index.md).
 
 Capability families repeat the pattern: `<feature>-api` declares the port in its `packet` package, and
-`<feature>-mcprotocol` holds the wiring extension and the `V*` segments that implement it.
+`<feature>-mcprotocol` holds the wiring extension and the `V*` segments that implement it. A
+`<feature>-cloudburst` side, such as `inventory-cloudburst`, does the same for CloudburstMC Protocol; its
+segments compile against `cloudburst-api` only for the `CloudburstSession` that the worker supplies with its
+client segment.
 
 ## Preserve dependency direction
 
