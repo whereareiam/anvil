@@ -44,10 +44,17 @@ public final class AnvilLumiAgent extends PluginBase implements PlatformAgent {
 				.build();
 	}
 
+	/**
+	 * Finds the player whose client logged in with the UUID, the one Lumi lists it under for clients, and reports
+	 * Lumi's own UUID of the player: Lumi keeps another one for a player that logged in offline, derived from its
+	 * name or taken from the names it has seen before.
+	 */
 	@Override
 	public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
 		try {
-			return call(() -> getServer().getPlayer(uniqueId))
+			return call(() -> getServer().getOnlinePlayers().values().stream()
+					.filter(player -> uniqueId.equals(player.getLoginUuid()))
+					.findFirst())
 					.map(player -> AgentIdentity.builder()
 							.username(player.getName())
 							.uniqueId(player.getUniqueId())

@@ -44,7 +44,7 @@ implement `WorkerLibraryProvider` from `me.whereareiam.anvil.protocol.api.worker
 
 | Method | Supplies |
 |---|---|
-| `library()` | The `WorkerLibrary` description: ID, name, client port, release data, pin task, the packages the release closures own, and worker JVM arguments |
+| `library()` | The `WorkerLibrary` description: ID, name, client port, release data, pin task, the offline UUID prefix, the packages the release closures own, and worker JVM arguments |
 | `client(adapter)` | The `WorkerClient` that drives your client segment's implementation of the client port |
 | `authentication()` | An optional `WorkerAuthentication`: the online sign-in of an account and its refresh into the session a player signs in with |
 
@@ -54,6 +54,11 @@ has the worker read the record back and pass it to `resolve` with the player's M
 worker stores the refreshed record that comes back. Another library's account is refused before your
 sign-in is called. Set `readsUnlabelledAccounts` on your `WorkerLibrary` only if your library wrote account
 files before they named their library.
+
+A player without an account logs in offline with a UUID the worker derives from its username and your
+library's `offlineUniqueIdPrefix`: the name-based UUID of the prefix followed by the username. MCProtocolLib
+uses `OfflinePlayer:`, the UUID a Java Edition server assigns offline players; CloudburstMC Protocol uses
+`BedrockPlayer:`, because Bedrock has no such convention.
 
 A resolved `AuthenticationSession` carries the account's profile, its access token and, when the
 token alone cannot sign a login, `libraryCredentials`: further secrets in a text form your library
@@ -138,7 +143,9 @@ either one, just as a library that cannot redirect its session service refuses a
 Create a disconnected client; connection behavior is supplied through the
 appropriate capability. `ProtocolPlayer.identity()` returns the profile the client requests and, while it is
 connected, the profile the server or proxy granted in its login success. Anvil asks platform agents for the
-player by the granted UUID, so a library that never reports a granted profile is never observed on a server. Destroying a player releases its client resources, and `close()` attempts
+player by the granted UUID, so a library that never reports a granted profile is never observed on a server.
+Report the UUID the server shows your client: an agent finds the player by it and reports the platform's own
+UUID, which may differ, as the observed profile. Destroying a player releases its client resources, and `close()` attempts
 cleanup of all clients and owned workers even after a failure.
 
 ## Understand library selection

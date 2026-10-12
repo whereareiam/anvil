@@ -20,6 +20,7 @@ public final class ProbeLibrary implements WorkerLibraryProvider {
 			.clientPort(WorkerClient.class)
 			.releases("me/whereareiam/anvil/protocol/worker/fixture/probelib-releases.toml")
 			.pinTask("./gradlew pinProbeReleases")
+			.offlineUniqueIdPrefix("ProbePlayer:")
 			.ownedPackage("io/netty/")
 			.ownedPackage("example/probe/")
 			.jvmArgument("-Dexample.probe=true")

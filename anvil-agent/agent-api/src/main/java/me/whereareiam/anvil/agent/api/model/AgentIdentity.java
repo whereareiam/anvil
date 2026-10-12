@@ -18,7 +18,8 @@ public class AgentIdentity {
      */
     @NotNull String username;
     /**
-     * Player UUID reported by the platform.
+     * The platform's own UUID of the player. It may differ from the UUID the player was looked up by, the one its
+     * client was granted, when the platform keeps another UUID for the player than it shows to clients.
      */
     @NotNull UUID uniqueId;
     /**

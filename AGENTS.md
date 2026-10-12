@@ -120,8 +120,8 @@ current project scope.
   `anvil-integration` is reserved for external integrations.
 - The native worker hosts libraries and names none. A library plugs in by implementing `protocol-api`'s
   `WorkerLibraryProvider` (package `protocol.api.worker`), registered through `ServiceLoader`: it describes itself as
-  a `WorkerLibrary` (id, name, client port, release data, pin task, the packages its closures own, worker JVM
-  arguments, whether it claims unlabelled account files), builds the `WorkerClient` that drives its client port, and
+  a `WorkerLibrary` (id, name, client port, release data, pin task, the offline UUID prefix, the packages its closures
+  own, worker JVM arguments, whether it claims unlabelled account files), builds the `WorkerClient` that drives its client port, and
   may supply a `WorkerAuthentication`. Its family shares `protocol-api` through `architecture.sharedApis`, and its
   wiring root depends on the `protocol-worker` bundle instead of embedding it. The worker's `WorkerLibraryHost` is
   the one `ProtocolLibraryHost` registration that installs every hosted library as a protocol library, and the
@@ -287,7 +287,11 @@ current project scope.
   the name and may be shared by several players. The client records the profile its login success granted,
   which a proxy or login plugin may have renamed. Player observations follow the player's own connection from
   the process it connects to, ask each agent for that granted UUID, and never look a player up by username,
-  which platforms match without regard to letter case. Routes name scenario processes.
+  which platforms match without regard to letter case. Routes name scenario processes. A client reports as granted
+  the UUID the server shows it; an agent whose platform keeps another UUID for the player matches the shown one and
+  reports the platform's own in `AgentIdentity`, which becomes the observed profile (the Lumi agent matches
+  `getLoginUuid()`). An offline player's requested UUID is the name-based UUID of its library's
+  `offlineUniqueIdPrefix` and username: `OfflinePlayer:` for MCProtocolLib, `BedrockPlayer:` for CloudburstMC Protocol.
 - `api.process.RunningProcess` exposes lifecycle, address, and console; server/proxy specializations live in
   `api.process.type`. Player identities/routes belong to
   `PlayerObservation` and the Server capability.
@@ -376,7 +380,9 @@ current project scope.
   its only forwarding mode is `NONE` and `sessionServer` is refused. The Lumi agent is a Lumi plugin compiled
   against the release in the catalog; it relocates its embedded Jackson because Lumi ships an older one and
   loads plugin classes parent first. Lumi servers load no Bukkit plugin: their live scenarios carry no
-  fixture, and `LumiServerSystemTest` drives them through the console and the agent.
+  fixture, and `LumiServerSystemTest` drives them through the console and the agent and observes a Bedrock player
+  through Session and Server. `known` lists exactly the versions whose protocol Lumi and the cloudburst row agree on,
+  spelled the same on both sides; `1.26.45` is left out (Lumi 2170, CloudburstMC Protocol 2169).
 - Local/named server artifacts declare `minecraftVersion`. Native clients must match every reachable
   server. Preserve explicit client overrides and deterministic native selection; no implicit ViaVersion fallback.
 - Prepare declared assets and caches before provider configuration. Runtime ports, forwarding,

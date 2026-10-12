@@ -14,6 +14,7 @@ dependencies {
 	testImplementation(projects.anvilPlatform.platformApi)
 	testImplementation(projects.anvilProtocol)
 	testImplementation(projects.anvilProtocol.protocolApi)
+	testImplementation(libs.jackson.toml)
 
 	// The launcher's shaded JAR carries the planner at runtime; tests only compile against it.
 	testCompileOnly(projects.anvilPlatform.platformPlanning)

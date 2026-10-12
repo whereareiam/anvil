@@ -15,10 +15,12 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -35,6 +37,12 @@ class McProtocolWorkerLibraryTest {
 	Path temporary;
 
 	private final List<String> resolved = new ArrayList<>();
+
+	@Test
+	void claimsTheOfflineUniqueIdOfJavaEditionServers() {
+		assertEquals(UUID.nameUUIDFromBytes("OfflinePlayer:Alice".getBytes(StandardCharsets.UTF_8)),
+				McProtocolWorkerLibrary.LIBRARY.offlineUniqueId("Alice"));
+	}
 
 	@Test
 	void refusesAReleaseWithAnUnpinnedArtifactBeforeLaunchingItsWorker() throws Exception {

@@ -20,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.URI;
 import java.nio.file.Path;
@@ -37,8 +39,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Keeps the verified data of the bundled platforms and of MCProtocolLib equal to the live matrix these
- * scenarios define: a combination is VERIFIED exactly when a matrix scenario runs it. MCProtocolLib is compared
+ * Keeps the verified data of the bundled platforms and protocol libraries equal to the live matrix these
+ * scenarios define: a combination is VERIFIED exactly when a matrix scenario runs it. A protocol library is compared
  * with the servers of the editions its releases implement only. It also keeps one direct
  * Paper scenario, which player capability tests run their full journey on, for every MCProtocolLib release. The
  * test plans the scenarios without starting any process.
@@ -70,9 +72,10 @@ class CompatibilityScenarioFactoryTest {
 				"Verified data of " + id));
 	}
 
-	@Test
-	void mcprotocolVerifiedVersionsAreExactlyTheMatrixVersionsOfServersOfItsEditions() {
-		List<ProtocolRelease> releases = mcprotocolReleases();
+	@ParameterizedTest
+	@ValueSource(strings = {"mcprotocol", "cloudburst"})
+	void protocolLibraryVerifiedVersionsAreExactlyTheMatrixVersionsOfServersOfItsEditions(String library) {
+		List<ProtocolRelease> releases = releases(library);
 		Set<MinecraftEdition> editions = releases.stream()
 				.map(ProtocolRelease::getEdition)
 				.collect(Collectors.toSet());
@@ -88,7 +91,7 @@ class CompatibilityScenarioFactoryTest {
 				.flatMap(Set::stream)
 				.collect(Collectors.toCollection(TreeSet::new));
 
-		assertEquals(servers, verified);
+		assertEquals(servers, verified, "Verified data of " + library);
 	}
 
 	@Test
@@ -108,7 +111,7 @@ class CompatibilityScenarioFactoryTest {
 				.map(scenario -> scenario.getServers().getFirst().nativeVersion())
 				.sorted()
 				.toList();
-		List<MinecraftVersion> releaseKeys = mcprotocolReleases().stream()
+		List<MinecraftVersion> releaseKeys = releases("mcprotocol").stream()
 				.map(ProtocolRelease::version)
 				.sorted()
 				.toList();
@@ -116,8 +119,8 @@ class CompatibilityScenarioFactoryTest {
 		assertEquals(releaseKeys, versions, "Minecraft versions of the direct Paper scenarios");
 	}
 
-	private List<ProtocolRelease> mcprotocolReleases() {
-		ProtocolLibraryProvider mcprotocol = ProtocolLibraryRegistry.discover().require("mcprotocol");
+	private List<ProtocolRelease> releases(String library) {
+		ProtocolLibraryProvider provider = ProtocolLibraryRegistry.discover().require(library);
 		ProtocolLibraryContext context = ProtocolLibraryContext.builder()
 				.cacheDirectory(directory)
 				.accountsDirectory(directory.resolve("accounts"))
@@ -126,7 +129,7 @@ class CompatibilityScenarioFactoryTest {
 				})
 				.build();
 
-		return mcprotocol.releases(context);
+		return provider.releases(context);
 	}
 
 	private static Optional<MinecraftVersion> version(MinecraftProcess process) {
