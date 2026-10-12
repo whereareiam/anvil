@@ -19,12 +19,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import me.whereareiam.anvil.runner.protocol.ToolingProtocol;
-import me.whereareiam.anvil.tooling.api.AccountOperations;
 import me.whereareiam.anvil.tooling.api.EnvironmentOperations;
 import me.whereareiam.anvil.tooling.api.ProcessOperations;
 import me.whereareiam.anvil.tooling.api.ScenarioOperations;
 import me.whereareiam.anvil.tooling.api.ToolingSession;
-import me.whereareiam.anvil.tooling.api.model.AuthenticationLibrary;
 import me.whereareiam.anvil.tooling.api.model.LogEvent;
 import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
 import me.whereareiam.anvil.tooling.api.model.ToolingOperation;
@@ -55,8 +53,6 @@ class ToolingProtocolRoundTripTest {
 			.definition(ActionDefinition.builder().id("example.inspect").displayName("Inspect").build())
 			.target(ActionTarget.builder().type(ActionTargetType.PROCESS).name("lobby").build())
 			.availability(ActionAvailability.builder().enabled(true).build()).build();
-	private final AuthenticationLibrary library =
-			AuthenticationLibrary.builder().id("cloudburst").displayName("CloudburstMC Protocol").build();
 	private final UUID executionId = UUID.fromString("00000000-0000-0000-0000-000000000123");
 	private final SessionSnapshot snapshot = SessionSnapshot.builder().sessionId("session-1")
 			.definition(scenario.getDefinition()).scenario(scenario.getName()).state(SessionState.RUNNING)
@@ -71,7 +67,6 @@ class ToolingProtocolRoundTripTest {
 		ActionResult outcome = ActionResult.builder().message("Done").column("name").row(List.of("value")).build();
 		try (var peer = new Peer((proxy, method, arguments) -> switch (method.getName()) {
 			case "scenarios" -> List.of(scenario);
-			case "authenticationLibraries" -> List.of(library);
 			case "snapshot" -> snapshot;
 			case "drainLogs" -> List.of();
 			case "invoke" -> { invoked.set((ActionRequest) arguments[0]); yield outcome; }
@@ -79,7 +74,6 @@ class ToolingProtocolRoundTripTest {
 			default -> null;
 		})) {
 			assertEquals(List.of(scenario), peer.request(peer.encode(ScenarioOperations.DISCOVER, null)));
-			assertEquals(List.of(library), peer.request(peer.encode(AccountOperations.AUTHENTICATION_LIBRARIES, null)));
 			assertEquals(snapshot, peer.request(peer.encode(ScenarioOperations.START, ScenarioLaunchRequest.builder()
 					.definition(scenario.getDefinition()).scenario(scenario.getName()).target("lobby").build())));
 

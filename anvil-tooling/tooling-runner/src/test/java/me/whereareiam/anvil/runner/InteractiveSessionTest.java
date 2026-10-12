@@ -6,7 +6,6 @@ import me.whereareiam.anvil.runner.scenario.ScenarioRepository;
 import me.whereareiam.anvil.runner.command.InteractiveSession;
 import me.whereareiam.anvil.runner.command.RunnerTerminal;
 import me.whereareiam.anvil.tooling.api.ToolingSession;
-import me.whereareiam.anvil.tooling.api.model.AuthenticationLibrary;
 import me.whereareiam.anvil.tooling.api.model.LogEvent;
 import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
 import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
@@ -86,11 +85,6 @@ class InteractiveSessionTest {
 
 		@Override
 		public @NotNull List<ScenarioDescriptor> scenarios() {
-			return List.of();
-		}
-
-		@Override
-		public @NotNull List<AuthenticationLibrary> authenticationLibraries() {
 			return List.of();
 		}
 

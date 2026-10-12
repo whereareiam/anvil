@@ -43,10 +43,11 @@ public interface WorkerLibraryProvider {
 	@NotNull WorkerClient client(@NotNull Object adapter);
 
 	/**
-	 * Provides the library's optional online sign-in, used by login and to sign in players that use a stored
-	 * account. The worker owns the account files around it. Offline-only libraries keep the empty default.
+	 * Provides how the library derives its session from a stored account, which its players that use an account
+	 * sign in with. The worker owns the account files and the sign-in around it, and asks the library what it can do
+	 * with each freshly signed-in account. Offline-only libraries keep the empty default.
 	 *
-	 * @return the library's online sign-in, when it has one
+	 * @return the library's session derivation, when it plays online
 	 */
 	default @NotNull Optional<WorkerAuthentication> authentication() {
 		return Optional.empty();

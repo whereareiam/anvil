@@ -11,7 +11,7 @@ import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.api.worker.model.AuthenticationSession;
 import me.whereareiam.anvil.protocol.api.worker.model.WorkerLibrary;
-import me.whereareiam.anvil.protocol.worker.account.HostedAuthentication;
+import me.whereareiam.anvil.protocol.worker.account.HostedAccounts;
 import me.whereareiam.anvil.protocol.worker.catalog.ReleaseCatalog;
 import me.whereareiam.anvil.protocol.worker.model.ReleaseDefinition;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +33,7 @@ import java.util.Objects;
  *         workerLibrary,
  *         context.getCacheDirectory(),
  *         ReleaseCatalog.load(workerLibrary, context.getAdditionalReleases()),
- *         authentication,
+ *         accounts,
  *         context.getArtifacts()
  * );
  * }</pre>
@@ -44,10 +44,10 @@ public final class ProtocolWorkerPool implements ProtocolLibrary {
 	private final @NotNull Path cacheDirectory;
 	private final @NotNull ReleaseCatalog catalog;
 	/**
-	 * The library's account workflow, which signs in a player that uses a stored account without a scenario session
-	 * identity, or null when the library has none.
+	 * The stored accounts this library derives sessions from, which sign in a player that uses a stored account
+	 * without a scenario session identity, or null when the library plays offline only.
 	 */
-	private final @Nullable HostedAuthentication authentication;
+	private final @Nullable HostedAccounts accounts;
 	private final @NotNull ProtocolArtifactResolver artifacts;
 
 	private final Map<String, ProtocolWorkerProcess> workers = new LinkedHashMap<>();
@@ -99,11 +99,10 @@ public final class ProtocolWorkerPool implements ProtocolLibrary {
 	}
 
 	private AuthenticationSession account(String accountId, MinecraftVersion version) {
-		if (authentication == null)
-			throw new IllegalStateException(library.getName() + " has no account authentication, so it cannot sign in account '"
-					+ accountId + "'");
+		if (accounts == null)
+			throw new IllegalStateException(library.getName() + " plays offline only, so it cannot sign in account '" + accountId + "'");
 
-		return authentication.resolve(accountId, version);
+		return accounts.resolve(library.getId(), accountId, version);
 	}
 
 	private List<Path> closure(ReleaseDefinition definition) {

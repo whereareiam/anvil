@@ -5,6 +5,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
+import me.whereareiam.anvil.api.model.player.AuthenticationAccount
 import me.whereareiam.anvil.integration.intellij.model.account.AvailableAccount
 import me.whereareiam.anvil.integration.intellij.type.AccountSource
 import java.awt.BorderLayout
@@ -131,18 +132,25 @@ class AccountListPanel(
 
 	private class AccountsModel : AbstractTableModel() {
 		var accounts: List<AvailableAccount> = emptyList()
-		private val columns = listOf("Account", "Local ID", "Source", "Provider")
+		private val columns = listOf("Account", "Local ID", "Source", "Libraries")
 		override fun getRowCount() = accounts.size
 		override fun getColumnCount() = columns.size
 		override fun getColumnName(column: Int) = columns[column]
 		override fun getValueAt(row: Int, column: Int): Any {
 			val entry = accounts[row]
 			return when (column) {
-				0 -> entry.account.username ?: "Profile not available"
+				0 -> entry.account.profileNames() ?: "Profile not available"
 				1 -> entry.account.accountId
 				2 -> entry.source.label
-				else -> entry.account.libraryId
+				else -> entry.account.access.joinToString(", ") { "${it.libraryId}: ${it.availability.name.lowercase()}" }
 			}
 		}
 	}
 }
+
+/**
+ * The distinct profile names the libraries that can use the account sign in as, or null when none can yet.
+ */
+internal fun AuthenticationAccount.profileNames(): String? = access.mapNotNull { it.username }.distinct()
+	.takeIf { it.isNotEmpty() }
+	?.joinToString(" / ")

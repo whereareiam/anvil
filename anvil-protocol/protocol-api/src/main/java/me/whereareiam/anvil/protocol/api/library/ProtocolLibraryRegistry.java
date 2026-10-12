@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.api.library;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -25,14 +26,20 @@ import java.util.ServiceLoader;
  */
 public final class ProtocolLibraryRegistry {
 	private final Map<String, ProtocolLibraryProvider> providers;
+	private final List<HostBinding> hosts;
 
 	/**
-	 * Creates a registry from explicit providers, primarily for embedding and contract tests.
+	 * Creates a registry from explicit providers, primarily for embedding and contract tests. It has no
+	 * {@link #authentication(Path) account workflow}.
 	 *
 	 * @param providers provider implementations
 	 * @throws IllegalArgumentException when an identifier is blank or duplicated
 	 */
 	public ProtocolLibraryRegistry(@NotNull Collection<? extends ProtocolLibraryProvider> providers) {
+		this(providers, List.of());
+	}
+
+	private ProtocolLibraryRegistry(@NotNull Collection<? extends ProtocolLibraryProvider> providers, @NotNull List<HostBinding> hosts) {
 		Map<String, ProtocolLibraryProvider> indexed = new LinkedHashMap<>();
 		for (ProtocolLibraryProvider provider : providers) {
 			if (provider.id().isBlank())
@@ -45,6 +52,7 @@ public final class ProtocolLibraryRegistry {
 		}
 
 		this.providers = Collections.unmodifiableMap(indexed);
+		this.hosts = List.copyOf(hosts);
 	}
 
 	/**
@@ -56,10 +64,36 @@ public final class ProtocolLibraryRegistry {
 	 */
 	public static @NotNull ProtocolLibraryRegistry discover() {
 		ClassLoader loader = Thread.currentThread().getContextClassLoader();
-		List<ProtocolLibraryProvider> providers = loader == null ? List.of() : load(loader);
-		if (providers.isEmpty()) providers = load(ProtocolLibraryRegistry.class.getClassLoader());
+		ProtocolLibraryRegistry discovered = loader == null ? null : load(loader);
+		if (discovered == null || discovered.providers.isEmpty()) discovered = load(ProtocolLibraryRegistry.class.getClassLoader());
 
-		return new ProtocolLibraryRegistry(providers);
+		return discovered;
+	}
+
+	/**
+	 * Returns the account workflow of the installed libraries: the one a {@link ProtocolLibraryHost} offers for the
+	 * libraries it runs. Creates neither a library nor a player.
+	 *
+	 * @param accountsDirectory directory of the stored account files
+	 * @return the account workflow, or empty when no installed host offers one
+	 * @throws IllegalStateException when several installed hosts offer an account workflow, which would store
+	 * accounts the others cannot read
+	 */
+	public @NotNull Optional<ProtocolAuthentication> authentication(@NotNull Path accountsDirectory) {
+		List<ProtocolAuthentication> offered = new ArrayList<>();
+		List<String> owners = new ArrayList<>();
+		for (HostBinding binding : hosts) {
+			Optional<ProtocolAuthentication> authentication = binding.host().authentication(binding.loader(), accountsDirectory);
+			if (authentication.isEmpty()) continue;
+
+			offered.add(authentication.get());
+			owners.add(binding.host().getClass().getName());
+		}
+
+		if (offered.size() > 1)
+			throw new IllegalStateException("Several installed protocol library hosts offer an account workflow: " + owners);
+
+		return offered.stream().findFirst();
 	}
 
 	/**
@@ -102,11 +136,17 @@ public final class ProtocolLibraryRegistry {
 				+ "'. Installed: " + providers.keySet()));
 	}
 
-	private static List<ProtocolLibraryProvider> load(ClassLoader loader) {
+	private static ProtocolLibraryRegistry load(ClassLoader loader) {
 		List<ProtocolLibraryProvider> providers = new ArrayList<>();
+		List<HostBinding> hosts = new ArrayList<>();
 		ServiceLoader.load(ProtocolLibraryProvider.class, loader).forEach(providers::add);
-		ServiceLoader.load(ProtocolLibraryHost.class, loader).forEach(host -> providers.addAll(host.libraries(loader)));
+		for (ProtocolLibraryHost host : ServiceLoader.load(ProtocolLibraryHost.class, loader)) {
+			hosts.add(new HostBinding(host, loader));
+			providers.addAll(host.libraries(loader));
+		}
 
-		return providers;
+		return new ProtocolLibraryRegistry(providers, hosts);
 	}
+
+	private record HostBinding(@NotNull ProtocolLibraryHost host, @NotNull ClassLoader loader) { }
 }

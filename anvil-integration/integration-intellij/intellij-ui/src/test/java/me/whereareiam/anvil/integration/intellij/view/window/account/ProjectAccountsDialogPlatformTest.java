@@ -10,6 +10,7 @@ import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 import javax.swing.JButton;
 import javax.swing.JToggleButton;
 
@@ -45,6 +46,8 @@ public class ProjectAccountsDialogPlatformTest extends UiPlatformTestCase {
 			assertTrue(WindowTestSupport.button(panel, "Export…").isEnabled());
 			assertFalse(WindowTestSupport.button(panel, "Remove").isEnabled());
 			assertEquals("Global", table.getValueAt(1, 2));
+			assertEquals("Bob", table.getValueAt(1, 0));
+			assertEquals("mcprotocol: available, cloudburst: unavailable", table.getValueAt(1, 3));
 			var toggle = WindowTestSupport.find(panel, JBCheckBox.class);
 			toggle.doClick();
 			WindowTestSupport.await(() -> table.getRowCount() == 1);
@@ -139,7 +142,8 @@ public class ProjectAccountsDialogPlatformTest extends UiPlatformTestCase {
 	private record View(ProjectAccountsDialog dialog, javax.swing.JComponent panel) {}
 
 	private String account(String id, String user) {
-		return "{\"schemaVersion\":1,\"accountId\":\"" + id + "\",\"provider\":\"mcprotocol\",\"username\":\""
-				+ user + "\",\"credentials\":{}}";
+		return "{\"schemaVersion\":2,\"accountId\":\"" + id + "\",\"microsoft\":{},\"libraries\":{"
+				+ "\"mcprotocol\":{\"availability\":\"AVAILABLE\",\"username\":\"" + user + "\",\"uuid\":\"" + UUID.randomUUID() + "\"},"
+				+ "\"cloudburst\":{\"availability\":\"UNAVAILABLE\",\"reason\":\"Account '" + id + "' owns no game\"}}}";
 	}
 }

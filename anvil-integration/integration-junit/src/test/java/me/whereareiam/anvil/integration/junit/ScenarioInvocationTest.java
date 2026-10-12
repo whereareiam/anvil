@@ -114,7 +114,7 @@ class ScenarioInvocationTest {
 	void finishesThePreparedScenarioWithoutStartingItWhenTheMachineStoresTooFewAccounts() throws Exception {
 		List<String> actions = new ArrayList<>();
 		Context context = new Context(() -> actions.add("context"));
-		context.stored.add(new AuthenticationAccount("alice", "library", "Alice", null));
+		context.stored.add(new AuthenticationAccount("alice", List.of()));
 
 		assertThrows(TestAbortedException.class, () -> new ScenarioInvocation(
 				engine(context), definition, () -> true, requirement("twoAccounts")));
@@ -124,12 +124,10 @@ class ScenarioInvocationTest {
 	}
 
 	@Test
-	void poolsEveryUnambiguousStoredAccountAndReleasesThePoolWithTheInvocation() throws Exception {
+	void poolsEveryStoredAccountAndReleasesThePoolWithTheInvocation() throws Exception {
 		Context context = new Context(() -> { });
-		context.stored.add(new AuthenticationAccount("alice", "library", "Alice", null));
-		context.stored.add(new AuthenticationAccount("bob", "library", "Bob", null));
-		context.stored.add(new AuthenticationAccount("shared", "library", null, null));
-		context.stored.add(new AuthenticationAccount("shared", "other-library", null, null));
+		context.stored.add(new AuthenticationAccount("alice", List.of()));
+		context.stored.add(new AuthenticationAccount("bob", List.of()));
 
 		var invocation = new ScenarioInvocation(engine(context), definition, () -> true, requirement("twoAccounts"));
 
@@ -207,6 +205,7 @@ class ScenarioInvocationTest {
 					pooled.addAll(accountIds);
 					return new AccountPool() {
 						public @NonNull AccountLease lease() { throw new AssertionError("No lease expected"); }
+						public @NonNull AccountLease lease(@NonNull String libraryId) { throw new AssertionError("No lease expected"); }
 						public @NonNull Collection<AuthenticationAccount> accounts() {
 							return stored.stream().filter(account -> pooled.contains(account.getAccountId())).toList();
 						}

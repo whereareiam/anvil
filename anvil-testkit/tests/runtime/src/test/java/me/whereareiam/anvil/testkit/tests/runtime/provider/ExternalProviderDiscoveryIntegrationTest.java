@@ -114,7 +114,10 @@ class ExternalProviderDiscoveryIntegrationTest {
 	@Test
 	void offlineLibraryHasNoAuthenticationRequirement() throws Exception {
 		try (var ignored = new TestExtensionLoader(FixtureArtifacts.extension(), false)) {
-			assertTrue(ProtocolLibraryRegistry.discover().require("fixture").authentication(temporary).isEmpty());
+			ProtocolLibraryRegistry libraries = ProtocolLibraryRegistry.discover();
+
+			assertEquals(List.of("fixture"), List.copyOf(libraries.ids()));
+			assertTrue(libraries.authentication(temporary).isEmpty());
 		}
 	}
 

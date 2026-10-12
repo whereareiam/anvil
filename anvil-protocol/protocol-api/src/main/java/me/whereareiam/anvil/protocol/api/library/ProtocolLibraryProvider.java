@@ -5,9 +5,7 @@ import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import org.jetbrains.annotations.NotNull;
 
-import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 import java.util.ServiceLoader;
 
 /**
@@ -30,22 +28,12 @@ import java.util.ServiceLoader;
  */
 public interface ProtocolLibraryProvider {
 	/**
-	 * Returns the stable library identifier used by {@code protocolLibrary} declarations and stored accounts.
+	 * Returns the stable library identifier used by {@code protocolLibrary} declarations and by what stored
+	 * accounts record about the library.
 	 *
 	 * @return non-blank library identifier
 	 */
 	@NotNull String id();
-
-	/**
-	 * Returns the library's name for people, such as {@code MCProtocolLib}, shown by tooling that lets a user
-	 * choose a library, for example the IntelliJ account manager. A provider that does not name itself is shown
-	 * by its {@link #id() identifier}.
-	 *
-	 * @return non-blank name for presentation only; never used to select the library
-	 */
-	default @NotNull String displayName() {
-		return id();
-	}
 
 	/**
 	 * Returns every release this library can run, including additional user-supplied releases named by
@@ -65,15 +53,4 @@ public interface ProtocolLibraryProvider {
 	 * @return library instance closed by the engine
 	 */
 	@NotNull ProtocolLibrary create(@NotNull ProtocolLibraryContext context);
-
-	/**
-	 * Provides an optional login/logout workflow without creating the library or a player.
-	 * Offline-only libraries keep the empty default implementation.
-	 *
-	 * @param accountsDirectory local account store directory
-	 * @return library-owned authentication service, when supported
-	 */
-	default @NotNull Optional<ProtocolAuthentication> authentication(@NotNull Path accountsDirectory) {
-		return Optional.empty();
-	}
 }

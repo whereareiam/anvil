@@ -43,7 +43,7 @@ class ToolingCommandReaderTest {
 	}
 
 	@Test
-	void forwardsTheProjectProtocolLibraryToAccountSignIn() throws Exception {
+	void signsInWithoutChoosingAProtocolLibrary() throws Exception {
 		Path manifest = directory.resolve("tooling.json");
 		new ObjectMapper()
 				.writeValue(
@@ -56,7 +56,7 @@ class ToolingCommandReaderTest {
 								"definitions", List.of()));
 		Path accounts = directory.resolve("accounts");
 
-		List<String> command = ToolingCommandReader.authenticationCommand(manifest, accounts, "alice", null);
+		List<String> command = ToolingCommandReader.authenticationCommand(manifest, accounts, "alice");
 
 		assertEquals(
 				List.of(
@@ -67,11 +67,8 @@ class ToolingCommandReaderTest {
 						"--accounts-dir",
 						accounts.toAbsolutePath().toString(),
 						"--account-id",
-						"alice",
-						"--library",
-						"mcprotocol"),
+						"alice"),
 				command);
-		assertEquals("other", ToolingCommandReader.authenticationCommand(manifest, accounts, "alice", "other").getLast());
 	}
 
 	@Test

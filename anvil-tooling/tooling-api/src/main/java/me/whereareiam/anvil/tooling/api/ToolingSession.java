@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.tooling.api;
 
-import me.whereareiam.anvil.tooling.api.model.AuthenticationLibrary;
 import me.whereareiam.anvil.tooling.api.model.LogEvent;
 import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionRequest;
 import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionResult;
@@ -19,8 +18,7 @@ import java.util.List;
 public interface ToolingSession extends AutoCloseable {
 	/**
 	 * Version of the framed local session protocol. Version 7 maps shared immutable payload models
-	 * directly and represents an action target as an object containing its type and name; version 8 adds
-	 * {@link AccountOperations#AUTHENTICATION_LIBRARIES}.
+	 * directly and represents an action target as an object containing its type and name.
 	 * Both peers must use this version before submitting component or scenario actions.
 	 * <p>
 	 * A failed request is answered by a failed response carrying the request ID. An {@code error} frame
@@ -28,7 +26,7 @@ public interface ToolingSession extends AutoCloseable {
 	 * clients close the connection when they receive one. Transient problems, such as one failed snapshot
 	 * poll, are reported as diagnostics on the runner's standard error instead.
 	 */
-	int PROTOCOL_VERSION = 8;
+	int PROTOCOL_VERSION = 7;
 
 	/**
 	 * Lists discovered scenarios and their declared process topology without creating an engine,
@@ -37,14 +35,6 @@ public interface ToolingSession extends AutoCloseable {
 	 * @return descriptors with definition-class identities
 	 */
 	@NotNull List<ScenarioDescriptor> scenarios();
-
-	/**
-	 * Lists the installed protocol libraries that offer interactive sign-in, so a client can let the user
-	 * choose the library an account belongs to. Listing creates no engine and signs nothing in.
-	 *
-	 * @return libraries ordered by identifier; empty when none offers sign-in
-	 */
-	@NotNull List<AuthenticationLibrary> authenticationLibraries();
 
 	/**
 	 * Replaces the current environment after complete cleanup. The selection is the fully qualified

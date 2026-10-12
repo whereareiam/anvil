@@ -24,7 +24,6 @@ class WorkerLibraryHostTest {
 
 		assertEquals(List.of("probelib"), libraries.stream().map(ProtocolLibraryProvider::id).toList());
 		assertEquals(List.of("probelib"), List.copyOf(ProtocolLibraryRegistry.discover().ids()));
-		assertEquals("ProbeLib", libraries.getFirst().displayName());
 	}
 
 	@Test
@@ -33,11 +32,16 @@ class WorkerLibraryHostTest {
 
 		assertEquals(List.of("1.20.4-1", "1.21.11-1"),
 				probe.releases(context()).stream().map(ProtocolRelease::getLibraryVersion).toList());
-		assertTrue(probe.authentication(temporary).isEmpty());
 		try (ProtocolLibrary library = probe.create(context())) {
 			assertEquals("probelib", library.id());
 			assertEquals(probe.releases(context()), library.releases());
 		}
+	}
+
+	@Test
+	void offersNoAccountsWhenNoHostedLibraryPlaysOnline() {
+		assertTrue(new WorkerLibraryHost().authentication(WorkerLibraryHostTest.class.getClassLoader(), temporary).isEmpty());
+		assertTrue(ProtocolLibraryRegistry.discover().authentication(temporary).isEmpty());
 	}
 
 	private ProtocolLibraryContext context() {

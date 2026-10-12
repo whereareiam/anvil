@@ -183,8 +183,7 @@ public final class ConfiguredAccountLibrary implements AccountLibrary, Persisten
 			@NotNull String name,
 			@NotNull List<String> accountIds
 	) throws IOException {
-		List<AuthenticationAccount> accounts = catalog().getAccounts().stream().map(AvailableAccount::getAccount).toList();
-		new AccountPoolRepository(directory()).save(previous, name, accountIds, accounts);
+		new AccountPoolRepository(directory()).save(previous, name, accountIds);
 	}
 
 	@Override

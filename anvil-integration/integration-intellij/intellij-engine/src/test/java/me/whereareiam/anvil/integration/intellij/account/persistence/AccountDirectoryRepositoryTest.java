@@ -2,8 +2,8 @@ package me.whereareiam.anvil.integration.intellij.account.persistence;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
+import me.whereareiam.anvil.api.type.AccountAvailability;
 import me.whereareiam.anvil.integration.intellij.type.AccountSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -47,22 +47,29 @@ class AccountDirectoryRepositoryTest {
 		assertEquals(1, repository.readAccounts(project, AccountSource.PROJECT).accounts().size());
 	}
 
-	@Test void readsTheLibraryThatOwnsEachAccount() throws Exception {
-		Files.writeString(directory.resolve("java.json"), account("java", "JavaUser"));
-		Files.writeString(directory.resolve("bedrock.json"), account("bedrock", "BedrockUser", "cloudburst"));
+	@Test void readsWhatEachLibraryRecordedWithoutAnyLibraryAndAccountsStoredForOneLibrary() throws Exception {
+		Path current = Files.writeString(directory.resolve("alice.json"), "{\"schemaVersion\":2,\"accountId\":\"alice\","
+				+ "\"microsoft\":{\"accessToken\":\"fixture-secret\"},\"libraries\":{"
+				+ "\"mcprotocol\":{\"availability\":\"AVAILABLE\",\"username\":\"Alice\","
+				+ "\"uuid\":\"5f8eb73b-25be-4c5a-a50f-d27d65e30ca0\",\"session\":\"fixture-secret\"},"
+				+ "\"cloudburst\":{\"availability\":\"UNAVAILABLE\",\"reason\":\"Account 'alice' owns no game\"}}}");
+		Path legacy = Files.writeString(directory.resolve("bob.json"), account("bob", "Bob").replace("\"credentials\"",
+				"\"uuid\":\"5f8eb73b-25be-4c5a-a50f-d27d65e30ca1\",\"credentials\""));
+		var repository = new AccountDirectoryRepository();
 
-		var accounts = new AccountDirectoryRepository().readAccounts(directory, AccountSource.PROJECT).accounts();
+		var alice = repository.readMetadata(current);
+		var bob = repository.readMetadata(legacy);
 
-		assertEquals(List.of("cloudburst", "mcprotocol"),
-				accounts.stream().map(account -> account.getAccount().getLibraryId()).toList());
+		assertEquals(AccountAvailability.AVAILABLE, alice.access("mcprotocol").getAvailability());
+		assertEquals("Alice", alice.access("mcprotocol").getUsername());
+		assertEquals("Account 'alice' owns no game", alice.access("cloudburst").getReason());
+		assertEquals(AccountAvailability.UNKNOWN, alice.access("other").getAvailability());
+		assertEquals(AccountAvailability.AVAILABLE, bob.access("mcprotocol").getAvailability());
+		assertEquals(AccountAvailability.UNKNOWN, bob.access("cloudburst").getAvailability());
 	}
 
 	private String account(String id, String user) {
-		return account(id, user, "mcprotocol");
-	}
-
-	private String account(String id, String user, String library) {
-		return "{\"schemaVersion\":1,\"accountId\":\"" + id + "\",\"provider\":\"" + library + "\",\"username\":\""
+		return "{\"schemaVersion\":1,\"accountId\":\"" + id + "\",\"provider\":\"mcprotocol\",\"username\":\""
 				+ user + "\",\"credentials\":{\"test\":\"fixture-secret\"}}";
 	}
 }

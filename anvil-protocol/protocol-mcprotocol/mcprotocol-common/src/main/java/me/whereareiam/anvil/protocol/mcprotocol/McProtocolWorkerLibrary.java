@@ -11,7 +11,7 @@ import java.util.Optional;
 
 /**
  * The MCProtocolLib library as the native worker hosts it: version-isolated workers for the releases in its
- * release data, driven through the client segment's {@link McProtocolClient}, and Microsoft account authentication.
+ * release data, driven through the client segment's {@link McProtocolClient}, and the Java Edition sessions of stored accounts.
  */
 public final class McProtocolWorkerLibrary implements WorkerLibraryProvider {
 	/**
@@ -34,8 +34,6 @@ public final class McProtocolWorkerLibrary implements WorkerLibraryProvider {
 			// Netty defaults to two event loops per processor. Older MCProtocolLib releases open one io_uring ring per
 			// loop, which exhausts the locked-memory limit on machines with many processors.
 			.jvmArgument("-Dio.netty.eventLoopThreads=4")
-			// Account files written before they named their library are Microsoft accounts of this library.
-			.readsUnlabelledAccounts(true)
 			.build();
 
 	@Override

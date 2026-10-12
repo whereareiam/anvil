@@ -53,18 +53,18 @@ current project scope.
 | `anvil-capability/capability-builtin/player/<feature>/<feature>-<library>/V*` | Segments that implement only the feature's port for the library releases from their key on                                                                                 |
 | `anvil-capability/capability-builtin/process/<feature>`               | Process capability family: `<feature>-api` and a root holding the agent-backed provider, independent of simulated players                                                           |
 | `anvil-capability/capability-builtin/default`                         | Aggregate of every built-in player and process capability                                                                                                                           |
-| `anvil-protocol/protocol-api`                                         | Protocol library providers, library hosts and releases, player creation/composition, protocol-owned channels/workers, pinned runtime resolution, optional authentication, and under `.worker` the contracts of a library the native worker hosts (`WorkerLibraryProvider`, `WorkerLibrary`, `WorkerClient`, `WorkerAuthentication`, account records, worker messages)                       |
+| `anvil-protocol/protocol-api`                                         | Protocol library providers, library hosts and releases, player creation/composition, protocol-owned channels/workers, pinned runtime resolution, the account workflow a library host offers, and under `.worker` the contracts of a library the native worker hosts (`WorkerLibraryProvider`, `WorkerLibrary`, `WorkerClient`, `WorkerAuthentication` with the Microsoft token it derives from, worker messages)                       |
 | `anvil-protocol`                                                      | Player registration, version selection, authentication compatibility, composition, and observations                                                                                 |
 | `anvil-protocol/protocol-worker`                                      | Wiring bundle publishing the native player worker once as the shaded `protocol-worker`: embeds `worker-common` and exports `protocol-api`; every library family depends on it |
-| `anvil-protocol/protocol-worker/worker-common`                        | Embedded, unpublished worker host and shell: `WorkerLibraryHost` (the worker's one `ProtocolLibraryHost` registration), worker process, RPC client, class path, transport, `ProtocolWorker` entry point, capability registry, segment verification, session bindings, release reader/catalog, `ProtocolWorkerPool` and the one account store of every hosted library (`HostedAuthentication`) |
+| `anvil-protocol/protocol-worker/worker-common`                        | Embedded, unpublished worker host and shell: `WorkerLibraryHost` (the worker's one `ProtocolLibraryHost` registration), worker process, RPC client, class path, transport, `ProtocolWorker` entry point, capability registry, segment verification, session bindings, release reader/catalog, `ProtocolWorkerPool`, and the stored Microsoft accounts with their device-code sign-in (`HostedAccounts`) |
 | `anvil-protocol/protocol-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port, the client segments and a dependency on the `protocol-worker` bundle; owns `mcprotocol-releases.toml` and `pinLibraryReleases` |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell                                                                                       |
-| `anvil-protocol/protocol-mcprotocol/mcprotocol-common`                | `McProtocolWorkerLibrary`, the library's `WorkerLibraryProvider`, the `WorkerClient` driving `McProtocolClient`, and the Microsoft sign-in `MicrosoftAuthentication`; claims unlabelled account files; depends only on `protocol-api` |
+| `anvil-protocol/protocol-mcprotocol/mcprotocol-common`                | `McProtocolWorkerLibrary`, the library's `WorkerLibraryProvider`, the `WorkerClient` driving `McProtocolClient`, and `MicrosoftAuthentication`, which derives a stored account's Java Edition session; depends only on `protocol-api` |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client/V*`             | Client segments `V1_18_2`, `V1_21_1` and `V1_21_11`, each implementing only `McProtocolClient` from its release key on; `V1_21_11` also serves `26.1.2`                             |
 | `anvil-protocol/protocol-cloudburst`                                  | Wiring bundle publishing the CloudburstMC Protocol library for Bedrock players: shaded `cloudburst-common`, the client port, the client segment and a dependency on the `protocol-worker` bundle; owns `cloudburst-releases.toml` and `pinLibraryReleases` |
 | `anvil-protocol/protocol-cloudburst/cloudburst-api`                   | Release-neutral CloudburstMC Protocol client port `CloudburstClient`, the native session `CloudburstSession<P, I, T>` that bindings receive, and the `ClientIdentity` a Bedrock login proves itself with                                           |
-| `anvil-protocol/protocol-cloudburst/cloudburst-common`                | `CloudburstWorkerLibrary`, the `WorkerClient` driving `CloudburstClient`, offline and Xbox login identities, and the Xbox sign-in `XboxAuthentication`; depends only on `protocol-api` |
+| `anvil-protocol/protocol-cloudburst/cloudburst-common`                | `CloudburstWorkerLibrary`, the `WorkerClient` driving `CloudburstClient`, offline and Xbox login identities, and `XboxAuthentication`, which derives a stored account's Bedrock Edition session; depends only on `protocol-api` |
 | `anvil-protocol/protocol-cloudburst/cloudburst-client`                | Source-free side folder exporting the CloudburstMC Protocol client segment                                                                                                         |
 | `anvil-protocol/protocol-cloudburst/cloudburst-client/V*`             | Client segment `V1_26_60`, implementing only `CloudburstClient` for the whole release and selecting each player's codec by its protocol number                                  |
 | `anvil-platform/platform-api`                                         | Platform-provider/planning SPI, version data contract, artifact sources, distribution validation, and configuration contracts                                                      |
@@ -122,18 +122,23 @@ current project scope.
 - The native worker hosts libraries and names none. A library plugs in by implementing `protocol-api`'s
   `WorkerLibraryProvider` (package `protocol.api.worker`), registered through `ServiceLoader`: it describes itself as
   a `WorkerLibrary` (id, name, client port, release data, pin task, the offline UUID prefix, the packages its closures
-  own, worker JVM arguments, whether it claims unlabelled account files), builds the `WorkerClient` that drives its client port, and
+  own, worker JVM arguments), builds the `WorkerClient` that drives its client port, and
   may supply a `WorkerAuthentication`. Its family shares `protocol-api` through `architecture.sharedApis`, and its
   wiring root depends on the `protocol-worker` bundle instead of embedding it. The worker's `WorkerLibraryHost` is
   the one `ProtocolLibraryHost` registration that installs every hosted library as a protocol library, and the
   worker JVM starts `ProtocolWorker`, which loads the library's provider by id. Never put a library ID, package ban
   or client type into `protocol-worker`.
-- `worker-common` owns the one account store of every hosted library: one `<accountId>.json` per account in the
-  account directory, whose `provider` key names the library that stored it. `HostedAuthentication` wraps a library's
-  `WorkerAuthentication`, which only signs in (`login(accountId, newest version, output)`) and refreshes
-  (`resolve(record, player version)`) `AccountRecord`s, and refuses to log in, log out or resolve another library's
-  account before the library is called. A file without `provider` belongs to the library whose `WorkerLibrary`
-  sets `readsUnlabelledAccounts` (MCProtocolLib); neutral code names no library.
+- An Anvil account is one Microsoft account. `worker-common`'s `HostedAccounts` owns the one device-code sign-in
+  (`MicrosoftSignIn`, the Minecraft Launcher's Xbox title `00000000402b5328` with scope
+  `service::user.auth.xboxlive.com::MBI_SSL`, the application of the account files Anvil 1.0 stored) and the account
+  files: one `<accountId>.json` (schema 2) holding the `MicrosoftToken` and, per library ID, the recorded
+  `AccountAvailability` with profile or reason and the library's cached session. Sign-in chooses no library. A
+  library's `WorkerAuthentication` only derives its session from the token (`derive(credentials, version)`), returns
+  the token as it left it, and refuses an account its services refuse with a reason it words itself, naming the
+  account; neutral code names no edition. Every derivation, at sign-in and for each player, records the library's
+  result. Schema 1 files (one library's serialized MinecraftAuth session under `credentials`, named by `provider`)
+  are read into that shape without a new sign-in. `ProtocolLibraryHost.authentication(...)` offers the workflow
+  and `ProtocolLibraryRegistry.authentication(...)` returns it; there is no per-library authentication.
 - A CloudburstMC Protocol client segment hands bindings a `CloudburstSession<P, I, T>` as the native session: `send`,
   typed `subscribe` dispatched from the session's one packet handler, the `GameStart`, the item definitions and the
   client tick. Each session is one connection generation, and closing its connection ends its subscriptions, so a
@@ -163,7 +168,7 @@ current project scope.
   when shading. Do not add broad reflection scanning as an alternative discovery path.
 - Each player selects its protocol library: its own `protocolLibrary`, else the scenario's, else the engine's,
   else the one installed library whose release supports its Minecraft version most strongly; a tie requires an
-  explicit choice. A player created from a lease uses the leased account's library instead. Launcher composition
+  explicit choice. A stored or leased account never changes the library. Launcher composition
   creates one capability runtime per selected library.
 - Editions are platform-agnostic: `api.model.MinecraftEdition` is an opaque identifier compared only for equality,
   with no constants or default, and Java code never names an edition; the identifiers appear only in each family's
@@ -242,11 +247,14 @@ current project scope.
 - A protocol library may expose its own stable services through `ProtocolPlayer.findService`.
   Anvil protocol/capability services cross their boundary through explicit assembly bridges, not
   `findService` or a fake universal packet abstraction.
-- Authentication is an optional `ProtocolLibraryProvider` service. Tooling depends on that API, not
-  MCProtocol's account-store implementation. Account files are managed outside project configuration.
-  The IntelliJ account manager and Gradle `anvilLogin`/`anvilLogout` share the `AnvilAuthentication` entry point.
-  Named pools live in the account directory's versioned `pools.properties`, documented on
-  `AccountManager.pool(String)`; the runtime reads it and the IDE writes it, with the same rules.
+- Tooling signs in through `ProtocolLibraryRegistry.authentication(...)`, not the worker's account files, and never
+  chooses a library. Account files are managed outside project configuration. The IntelliJ account manager and
+  Gradle `anvilLogin`/`anvilLogout` share the `AnvilAuthentication` entry point; the IDE reads account files
+  without any library. An online player whose library recorded its account as unavailable is refused before it
+  connects, naming the account and giving the library's reason. Named pools live in the account directory's
+  versioned `pools.properties`, documented on `AccountManager.pool(String)`; the runtime reads it and the IDE writes
+  it, with the same rules. A pool lends a library's player only an account that library recorded as available
+  (`AccountPool.lease(libraryId)`, `PlayerManager.create(options, pool)`).
 - External embedded-agent handlers implement `agent.server.api.operation.AgentOperationProvider`
   and own their operation namespace.
   Install their JARs under `plugins/anvil-agent-extensions`; do not bundle Anvil agent APIs or
@@ -701,12 +709,11 @@ then rerun the `Release drafter` workflow; text typed into the draft is lost on 
   `ToolingMessageCodec` owns typed JSON binding and version checks; transport frames stay internal.
   Portable `tooling-api` payloads use Jackson-compatible Lombok builders and are reused by both peers;
   do not recreate their fields in a manual JSON model reader. `ScenarioOperations`, `EnvironmentOperations`,
-  `ProcessOperations` and `AccountOperations` declare predefined `ToolingOperation<Q, R>` schemas at the `tooling-api` root.
+  and `ProcessOperations` declare predefined `ToolingOperation<Q, R>` schemas at the `tooling-api` root.
   `ToolingClient.request` retains the declared response type, including collection element types.
   `ToolingOperationRegistry` binds typed runner handlers and cancellation policy; `ToolingRequestReader`
   decodes registered payload types generically. Do not add per-operation codec factories or duplicate
-  operation enums. `ToolingProtocolWriter` emits typed envelopes. Protocol 8 uses nested action targets and lists
-  the protocol libraries offering sign-in.
+  operation enums. `ToolingProtocolWriter` emits typed envelopes. Protocol 7 uses nested action targets.
   Environment contracts expose explicit controls, never string protocol operation names. Response IDs
   correlate requests and must not be overloaded with operation names.
   `ConfiguredAccountLibrary` owns the project-facing account contract while

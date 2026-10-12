@@ -22,12 +22,10 @@ class AuthenticationDialog(
 	private val form = AuthenticationForm()
 	private val controller: AuthenticationController
 
-	constructor(project: Project, source: ScenarioSource, accountId: String, libraryId: String?, changed: Runnable) : this(
+	constructor(project: Project, source: ScenarioSource, accountId: String, changed: Runnable) : this(
 		project,
 		accountId,
-		Function { output ->
-			project.getService(AccountAuthenticator::class.java).create(source, accountId, libraryId, output)
-		},
+		Function { output -> project.getService(AccountAuthenticator::class.java).create(source, accountId, output) },
 		changed
 	)
 

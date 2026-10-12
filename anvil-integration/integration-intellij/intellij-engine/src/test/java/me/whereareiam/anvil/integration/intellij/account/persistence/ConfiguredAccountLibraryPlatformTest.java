@@ -2,10 +2,10 @@ package me.whereareiam.anvil.integration.intellij.account.persistence;
 
 import com.intellij.openapi.util.Disposer;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 
 import me.whereareiam.anvil.integration.intellij.EnginePlatformTestCase;
 import me.whereareiam.anvil.integration.intellij.settings.PersistentPreferences;
@@ -26,38 +26,6 @@ public class ConfiguredAccountLibraryPlatformTest extends EnginePlatformTestCase
 			library.removePool("players");
 			assertEquals(1, library.catalog().getPools().size());
 		} finally { library.loadState(previous); }
-	}
-
-	public void testPoolsRefuseAnAccountIdThatSeveralLibrariesStore() throws Exception {
-		var library = ConfiguredAccountLibrary.getInstance(getProject());
-		var preferences = PersistentPreferences.getInstance();
-		var previousLibrary = library.getState();
-		var previousPreferences = preferences.getState();
-		Path project = temporary("project-pool-accounts");
-		Path global = temporary("global-pool-accounts");
-		try {
-			library.setDirectory(project);
-			library.setIncludesGlobal(true);
-			preferences.setAccountsDirectory(global);
-			Files.writeString(project.resolve("shared.json"), account("shared", "Project", "mcprotocol"));
-			Files.writeString(global.resolve("shared.json"), account("shared", "Global", "fixture"));
-			Files.writeString(project.resolve("alice.json"), account("alice", "Alice", "mcprotocol"));
-
-			try {
-				library.savePool(null, "testers", List.of("alice", "shared"));
-				fail("A pool must not list an account ID that several protocol libraries store");
-			} catch (IOException failure) {
-				assertTrue(failure.getMessage(),
-						failure.getMessage().contains("Account 'shared' is stored by several protocol libraries [fixture, mcprotocol]"));
-			}
-			assertFalse(library.catalog().getPools().containsKey("testers"));
-
-			library.savePool(null, "testers", List.of("alice"));
-			assertEquals(List.of("alice"), library.catalog().getPools().get("testers"));
-		} finally {
-			library.loadState(previousLibrary);
-			preferences.loadState(previousPreferences);
-		}
 	}
 
 	public void testDefaultDirectoryIsOutsideTheProjectAndApplyingItClearsTheOverride() throws Exception {
@@ -108,17 +76,8 @@ public class ConfiguredAccountLibraryPlatformTest extends EnginePlatformTestCase
 	}
 
 	private String account(String id, String user) {
-		return account(id, user, "mcprotocol");
-	}
-
-	private String account(String id, String user, String library) {
-		return "{\"schemaVersion\":1,\"accountId\":\""
-				+ id
-				+ "\",\"provider\":\""
-				+ library
-				+ "\",\"username\":\""
-				+ user
-				+ "\",\"credentials\":{}}";
+		return "{\"schemaVersion\":2,\"accountId\":\"" + id + "\",\"microsoft\":{},\"libraries\":{\"mcprotocol\":"
+				+ "{\"availability\":\"AVAILABLE\",\"username\":\"" + user + "\",\"uuid\":\"" + UUID.randomUUID() + "\"}}}";
 	}
 
 }

@@ -1,75 +1,68 @@
 ---
 title: Authentication
-description: Provide account discovery and authentication without exposing credentials to Gradle or scenario code.
+description: Derive your library's session from a stored Microsoft account without exposing credentials to Gradle or scenario code.
 ---
 
-Authentication is an optional service of a protocol library. Offline-only libraries inherit
-`Optional.empty()` from `ProtocolLibraryProvider.authentication(accountsDirectory)` and need no
-account subsystem.
+An Anvil account is one Microsoft account. The user signs it in once, without choosing a library, and every
+installed library that plays online derives its own session from it. Offline-only libraries need no account
+code at all.
 
-For an online-capable library, return a `ProtocolAuthentication` from that method. It must work
-without creating the library or a player. The service receives a local account ID and a callback for
-prompts and status:
+## Derive a session in the native worker
 
-| Method | Responsibility |
-|---|---|
-| `accounts()` | List the accounts your library stores, with their resolved public identity metadata |
-| `login(accountId, output)` | Complete your library's account workflow and persist its private account file |
-| `logout(accountId, output)` | Remove the named account from the private store |
-
-Each `AuthenticationAccount` that `accounts()` returns names your library ID as its
-`getLibraryId()`. A library with its own store keeps its account IDs local to it; the account manager still
-refuses to pool an ID that several libraries store.
-
-The `accountsDirectory` argument is the configured local account root. Put credential documents in a
-library-owned private location. Access and refresh tokens stay inside your library; never return them
-to tooling, include them in status output, or place them in Gradle inputs, CLI arguments, environment
-variables, system properties, logs, or project workspaces. If you use an isolated worker, transfer the
-needed credential only through its private stdin channel.
-
-## Let the native worker store your accounts
-
-A library that plugs into Anvil's native worker does not implement `ProtocolAuthentication` itself. Its
-`WorkerLibraryProvider.authentication()` returns a `WorkerAuthentication`, which only talks to the online
-services:
+A library that plugs into Anvil's native worker returns a `WorkerAuthentication` from
+`WorkerLibraryProvider.authentication()`. It has one method:
 
 | Method | Responsibility |
 |---|---|
-| `login(accountId, version, output)` | Sign the account in interactively and return its `AccountRecord`: username, profile UUID and your credentials as the text of a JSON object |
-| `resolve(account, version)` | Refresh a stored record into the `AuthenticationSession` a player of that Minecraft version signs in with, and return the record to keep |
+| `derive(account, version)` | Turn the account's Microsoft token into the `AuthenticationSession` a player of that Minecraft version signs in with, or refuse the account |
 
-The worker turns that into the library's `ProtocolAuthentication`. It keeps one store for every hosted
-library: one private `<accountId>.json` file per account in the account directory, whose `provider` key
-names the library that stored it. Listing returns only your library's files. Login, logout and a player's
-sign-in refuse an ID another library stores, naming that library, before your sign-in runs, and an
-unreadable file is refused rather than replaced. A login receives the newest Minecraft version of your
-built-in releases and a refresh the version of the player, for services such as Xbox Live that start a
-session for a game version. A file without a `provider` key belongs to the one library that sets
-`readsUnlabelledAccounts` on its `WorkerLibrary`; MCProtocolLib does, because it wrote such files.
+`AccountCredentials` carries the account ID, its `MicrosoftToken` (the access and refresh token, their expiry,
+and the client ID and scope of the Microsoft application that issued them) and the session your library
+cached in the account file last time. Return a `DerivedSession`:
 
-## Integrate with the account manager
+- `DerivedSession.available(session, cachedSession, token)` when your services accept the account. The worker
+  stores `cachedSession`, a text of your choice such as a serialized token chain, for your next derivation, and
+  records the session's username and UUID as the account's profile for your library.
+- `DerivedSession.unavailable(reason, token)` when your services refuse the account, for example because it
+  does not own the edition your library speaks. Word the reason for people: name the account and what it lacks,
+  never credentials. The worker records it and refuses the player with it.
+- Throw `IllegalStateException` when you cannot tell, for example because a service is unreachable. A sign-in
+  then records the account's availability for your library as unknown.
 
-The engine's account manager lists the accounts of every installed library. An online player must use
-an account stored by the library selected for it, and the selected release must declare the
-`ONLINE_AUTHENTICATION` feature; otherwise player creation is refused before connecting. A player
-created from an account pool lease uses the library that stores the leased account. A pool refuses an
-account ID that several libraries store; libraries in the native worker share one store, so their IDs never
-collide.
+Either result returns the Microsoft token as your derivation left it. Refresh it with the application it names;
+the worker stores the refreshed token in place of the old one, so the next library derives from the newest
+token. Restore your cached session with the token you are given rather than the copy inside the cache, which
+another library's refresh may have made stale. MCProtocolLib and CloudburstMC Protocol both build a
+MinecraftAuth manager with `login(MsaToken)` from the account's token and reuse their cached manager.
 
-Tooling lists the installed libraries whose `authentication(...)` is present so a user can choose one,
-showing each by `ProtocolLibraryProvider.displayName()`. Override it with your library's name; it defaults
-to the library ID. A library in the native worker shows its `WorkerLibrary` name.
+The worker owns everything around it: the device-code sign-in, the account files, and the
+`ProtocolAuthentication` that tooling and the account manager use. Right after a sign-in it calls `derive` with
+the newest Minecraft version of your built-in releases; for a player, with the player's version, for services
+such as Xbox Live that start a session for a game version. It delivers the session to the player's worker JVM
+only over its private standard input.
+
+## Where accounts are listed and pooled
+
+`ProtocolLibraryHost.authentication(loader, accountsDirectory)` offers the account workflow of the libraries a
+host runs; the native worker's host offers it as soon as one of its libraries has a `WorkerAuthentication`.
+`ProtocolLibraryRegistry.authentication(accountsDirectory)` returns it for the installed libraries, creating
+neither a library nor a player.
+
+Each `AuthenticationAccount` lists its `AccountAccess` per library: `AVAILABLE` with the profile, `UNAVAILABLE`
+with your reason, or `UNKNOWN`. The engine's account manager refuses an online player before it connects when
+its library recorded the account as unavailable, and a pool lends a player only an account its library
+recorded as available. The selected release must also declare the `ONLINE_AUTHENTICATION` feature.
 
 The IntelliJ account manager and the Gradle `anvilLogin` and `anvilLogout` tasks share one entry point,
-`AnvilAuthentication`. It delegates `login` and `logout` to the library named by its `--library`
-option, else by `anvil.protocolLibrary`, else to the sole installed library that offers
-authentication. Scenario requests carry only the local account ID; your library resolves credentials
-when it creates an online client.
+`AnvilAuthentication`, which signs in through that workflow. Scenario requests carry only the local account ID.
+
+Access and refresh tokens never go to tooling, status output, Gradle inputs, CLI arguments, environment
+variables, system properties, logs, or project workspaces.
 
 ## Test without a real account
 
-Use a fake authentication service to verify library selection, account IDs, account listing,
-status callbacks, and account-store behavior with synthetic credentials, including missing accounts
-and interrupted writes. Do not add real online-account authentication to CI. The consumer-facing
-workflow is documented under
+Call your `WorkerAuthentication` with a synthetic `MicrosoftToken` and a cached session whose game tokens never
+expire, so no service is contacted, and answer the one request you want to test, such as a refusal, through
+MinecraftAuth's `HttpClient` with a request executor of your own. Do not add real online-account
+authentication to CI. The consumer-facing workflow is documented under
 [Building blocks → Players → Authentication](../../../building-blocks/players/authentication/index.md).

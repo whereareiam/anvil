@@ -87,7 +87,7 @@ final class EnvironmentExecution {
 		}, owner);
 
 		launch.outcome().thenAccept(this::complete);
-		launch.discover().thenAccept(discovery -> discovery.scenarios().stream()
+		launch.discover().thenAccept(definitions -> definitions.stream()
 				.filter(candidate -> candidate.getDefinition().equals(selection.getDefinition())
 						&& candidate.getName().equals(selection.getName()))
 				.findFirst().ifPresent(discovered));

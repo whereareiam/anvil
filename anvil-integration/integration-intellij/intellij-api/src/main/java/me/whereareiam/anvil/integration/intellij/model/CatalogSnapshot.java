@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Value;
 import me.whereareiam.anvil.integration.intellij.model.source.ScenarioSource;
 import me.whereareiam.anvil.integration.intellij.type.CatalogState;
-import me.whereareiam.anvil.tooling.api.model.AuthenticationLibrary;
 import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Immutable state of one scenario catalog load, read atomically by the IDE.
  * <p>
- * The source, scenarios, authentication libraries, state, and failure always describe the same load, so a reader never combines
+ * The source, scenarios, state, and failure always describe the same load, so a reader never combines
  * one source with another source's scenarios.
  */
 @Value
@@ -30,13 +29,6 @@ public class CatalogSnapshot {
 	@NotNull
 	@Builder.Default
 	List<ScenarioDescriptor> scenarios = List.of();
-	/**
-	 * Installed protocol libraries the source's runtime can sign accounts in with, ordered by identifier;
-	 * empty until a load succeeds. An account sign-in names one of them.
-	 */
-	@NotNull
-	@Builder.Default
-	List<AuthenticationLibrary> authenticationLibraries = List.of();
 	/**
 	 * Lifecycle of the latest load.
 	 */

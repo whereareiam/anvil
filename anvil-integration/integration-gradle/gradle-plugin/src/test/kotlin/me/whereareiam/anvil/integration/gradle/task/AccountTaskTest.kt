@@ -1,11 +1,13 @@
 package me.whereareiam.anvil.integration.gradle.task
 
 import org.gradle.testkit.runner.GradleRunner
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
 import kotlin.io.path.writeText
 
 class AccountTaskTest {
@@ -26,22 +28,16 @@ class AccountTaskTest {
     }
 
     @Test
-    fun `signs out through the sole library in the configured account directory`() {
-        project()
-
-        val result = runner("anvilLogout", "--account=ci-player").build()
-        assertTrue(result.output.contains("Authentication account 'ci-player' did not exist."), result.output)
-    }
-
-    @Test
-    fun `signs out through the selected library when several offer accounts`() {
+    fun `signs out in the configured account directory without choosing a library`() {
         project("protocol-mcprotocol", "protocol-cloudburst")
+        write("accounts/stored.json", "{\"schemaVersion\":2,\"accountId\":\"stored\",\"microsoft\":{},\"libraries\":{}}")
 
-        val ambiguous = runner("anvilLogout", "--account=ci-player").buildAndFail()
-        assertTrue(ambiguous.output.contains("select one with --library or anvil.protocolLibrary"), ambiguous.output)
+        val missing = runner("anvilLogout", "--account=ci-player").build()
+        val removed = runner("anvilLogout", "--account=stored").build()
 
-        val result = runner("anvilLogout", "--account=ci-player", "--library=cloudburst").build()
-        assertTrue(result.output.contains("Authentication account 'ci-player' did not exist."), result.output)
+        assertTrue(missing.output.contains("Account 'ci-player' did not exist."), missing.output)
+        assertTrue(removed.output.contains("Removed account 'stored'."), removed.output)
+        assertFalse(directory.resolve("accounts/stored.json").exists())
     }
 
     private fun project(vararg libraries: String = arrayOf("protocol-mcprotocol")) {

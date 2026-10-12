@@ -122,7 +122,7 @@ public class CommandInputPlatformTest extends UiPlatformTestCase {
 							if (preparation) process.complete(0);
 							else {
 								process.setScenariosJson(catalog);
-								process.emit("{\"type\":\"ready\",\"protocolVersion\":8}");
+								process.emit("{\"type\":\"ready\",\"protocolVersion\":7}");
 							}
 							return process;
 						});

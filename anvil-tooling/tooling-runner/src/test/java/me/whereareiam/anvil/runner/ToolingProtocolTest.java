@@ -3,10 +3,7 @@ import me.whereareiam.anvil.runner.protocol.ToolingProtocol;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.type.TypeReference;
-import me.whereareiam.anvil.tooling.api.AccountOperations;
 import me.whereareiam.anvil.tooling.api.ToolingSession;
-import me.whereareiam.anvil.tooling.api.model.AuthenticationLibrary;
 import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
 import me.whereareiam.anvil.tooling.api.type.SessionState;
 import org.junit.jupiter.api.Test;
@@ -48,24 +45,6 @@ class ToolingProtocolTest {
 			assertTrue(client.response("scenarios").path("success").asBoolean());
 		}
 		assertEquals(1, closes.get());
-	}
-
-	@Test
-	void listsTheLibrariesOfferingSignInByIdAndName() throws Exception {
-		AuthenticationLibrary library = AuthenticationLibrary.builder().id("cloudburst").displayName("CloudburstMC Protocol").build();
-		try (Client client = new Client((ignored, method, arguments) -> switch (method.getName()) {
-			case "snapshot" -> SessionSnapshot.builder().state(SessionState.IDLE).build();
-			case "drainLogs" -> List.of();
-			case "authenticationLibraries" -> List.of(library);
-			default -> null;
-		})) {
-			client.send("libraries", AccountOperations.AUTHENTICATION_LIBRARIES.getName(), Map.of());
-			JsonNode response = client.response("libraries");
-
-			assertTrue(response.path("success").asBoolean(), response.toString());
-			assertEquals(List.of(library), client.mapper.convertValue(response.path("result"),
-					new TypeReference<List<AuthenticationLibrary>>() {}));
-		}
 	}
 
 	@Test
