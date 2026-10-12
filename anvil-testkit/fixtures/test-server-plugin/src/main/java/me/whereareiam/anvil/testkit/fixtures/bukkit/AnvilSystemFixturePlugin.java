@@ -25,6 +25,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -136,6 +137,18 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 			case "transfer":
 				transfer(player, arguments);
 				break;
+			case "dialog":
+				showDialog(player);
+				break;
+			case "dialog-echo":
+				player.sendMessage("anvil:dialog-echo:" + String.join(":", Arrays.copyOfRange(arguments, 1, arguments.length)));
+				break;
+			case "op":
+				grantOperator(player);
+				break;
+			case "dialog-clear":
+				Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "dialog clear " + player.getName());
+				break;
 			default:
 				player.sendMessage("anvil:unknown:" + operation);
 		}
@@ -179,6 +192,34 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 		Block block = player.getLocation().getBlock().getRelative(BlockFace.EAST);
 		block.setType(Material.DIAMOND_BLOCK);
 		player.sendMessage("anvil:block-position:" + block.getX() + ":" + block.getY() + ":" + block.getZ());
+	}
+
+	/**
+	 * Shows a dialog through the vanilla command, which servers from Minecraft 1.21.6 have. It stays open after a
+	 * button: Echo echoes the inputs through a command template, Nested opens another dialog, Unknown, Signed and Seed
+	 * run commands the client asks about first, and Clear asks the server to clear the dialog.
+	 */
+	private void showDialog(Player player) {
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "dialog show " + player.getName() + " {type:\"minecraft:multi_action\","
+				+ "title:\"anvil:dialog\",body:{type:\"minecraft:plain_message\",contents:\"anvil:dialog-body\"},"
+				+ "inputs:[{type:\"minecraft:text\",key:\"word\",label:\"Word\"},"
+				+ "{type:\"minecraft:boolean\",key:\"flag\",label:\"Flag\",on_true:\"on\",on_false:\"off\"}],"
+				+ "can_close_with_escape:false,pause:false,after_action:\"none\",actions:["
+				+ "{label:\"Echo\",action:{type:\"minecraft:dynamic/run_command\",template:\"anvil-fixture dialog-echo $(word) $(flag)\"}},"
+				+ "{label:\"Nested\",action:{type:\"minecraft:show_dialog\",dialog:{type:\"minecraft:notice\",title:\"anvil:nested\"}}},"
+				+ "{label:\"Unknown\",action:{type:\"minecraft:run_command\",command:\"/anvil-unknown-command\"}},"
+				+ "{label:\"Signed\",action:{type:\"minecraft:run_command\",command:\"/msg @s anvil:signed\"}},"
+				+ "{label:\"Seed\",action:{type:\"minecraft:run_command\",command:\"/seed\"}},"
+				+ "{label:\"Clear\",action:{type:\"minecraft:run_command\",command:\"/anvil-fixture dialog-clear\"}}]}");
+	}
+
+	/**
+	 * Makes the player an operator, so the server sends it the commands that need permissions, marked as such.
+	 */
+	private static void grantOperator(Player player) {
+		player.setOp(true);
+		player.updateCommands();
+		player.sendMessage("anvil:op");
 	}
 
 	private void transfer(Player player, String[] arguments) {

@@ -15,7 +15,7 @@ by its [agent](../../environments/actions/agents/index.md), such as `Console`.
 ## Choose the behavior
 
 For the first journey, use Session to connect, Server to observe arrival, and Messages to trigger
-commands and check replies. Movement, Inventory, and Interaction cover additional game actions.
+commands and check replies. Movement, Inventory, Interaction, Commands, and Dialogs cover additional game actions.
 Each capability is optional unless the test or another installed capability requires it.
 
 | Capability | Use it to | Bundled requirement |
@@ -26,11 +26,13 @@ Each capability is optional unless the test or another installed capability requ
 | [Movement](./movement/index.md) | Send absolute position and view changes. | MCProtocol and Session |
 | [Inventory](./inventory/index.md) | Observe inventory or containers and perform clicks. | MCProtocol and Session |
 | [Interaction](./interaction/index.md) | Use items and interact with blocks or entities. | MCProtocol and Session |
+| [Commands](./commands/index.md) | Read the command tree and check commands as the client does. | MCProtocol and Session |
+| [Dialogs](./dialogs/index.md) | Observe dialogs, fill their inputs, and press their buttons. | MCProtocol and Session, Minecraft 1.21.6+; Commands for buttons that run commands |
 
 The `Server` capability does not depend on `Session`. Its observations come from the scenario's
 platform agents, while packet-backed capabilities operate through the player's protocol library. The
 built-in capabilities are installed on every MCProtocolLib release Anvil ships, from Minecraft 1.18.2
-to 26.1.2.
+to 26.1.2, except Dialogs, which needs a release with dialogs: 1.21.11 and 26.1.2.
 
 ## Install built-in capabilities
 
@@ -50,7 +52,7 @@ plugins {
 
 Keep the repositories, protocol dependency, and `anvil` configuration from
 [installation](../../../getting-started/installation/index.md). The remaining unit suffixes are
-`movement`, `inventory`, and `interaction`. Keep unit versions aligned with Anvil.
+`movement`, `inventory`, `interaction`, `commands`, and `dialogs`. Keep unit versions aligned with Anvil.
 
 ## Retrieve a capability
 
