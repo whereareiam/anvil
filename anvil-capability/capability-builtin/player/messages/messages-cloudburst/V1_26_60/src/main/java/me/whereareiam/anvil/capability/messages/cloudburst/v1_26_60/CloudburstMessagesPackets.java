@@ -8,6 +8,7 @@ import org.cloudburstmc.protocol.bedrock.data.command.CommandOriginData;
 import org.cloudburstmc.protocol.bedrock.data.command.CommandOriginType;
 import org.cloudburstmc.protocol.bedrock.data.command.CommandOutputMessage;
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition;
+import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.CommandOutputPacket;
 import org.cloudburstmc.protocol.bedrock.packet.CommandRequestPacket;
@@ -37,10 +38,10 @@ import java.util.regex.Pattern;
  * text parts, the key and then each argument of translated parts, and selector patterns, while score parts contribute
  * nothing.</p>
  */
-public final class CloudburstMessagesPackets implements MessagesPackets<CloudburstSession<BedrockPacket, ItemDefinition>> {
+public final class CloudburstMessagesPackets implements MessagesPackets<CloudburstSession<BedrockPacket, ItemDefinition, ItemData>> {
 	@SuppressWarnings("unchecked")
-	private static final Class<CloudburstSession<BedrockPacket, ItemDefinition>> SESSION =
-			(Class<CloudburstSession<BedrockPacket, ItemDefinition>>) (Class<?>) CloudburstSession.class;
+	private static final Class<CloudburstSession<BedrockPacket, ItemDefinition, ItemData>> SESSION =
+			(Class<CloudburstSession<BedrockPacket, ItemDefinition, ItemData>>) (Class<?>) CloudburstSession.class;
 	/**
 	 * Command version that codecs before protocol 898 write as a number. CloudburstMC Protocol reads the
 	 * {@code latest} version that newer codecs write as this number.
@@ -49,12 +50,12 @@ public final class CloudburstMessagesPackets implements MessagesPackets<Cloudbur
 	private static final Pattern FORMATTING = Pattern.compile("§.?");
 
 	@Override
-	public @NotNull Class<CloudburstSession<BedrockPacket, ItemDefinition>> sessionType() {
+	public @NotNull Class<CloudburstSession<BedrockPacket, ItemDefinition, ItemData>> sessionType() {
 		return SESSION;
 	}
 
 	@Override
-	public void chat(@NotNull CloudburstSession<BedrockPacket, ItemDefinition> session, @NotNull String text) {
+	public void chat(@NotNull CloudburstSession<BedrockPacket, ItemDefinition, ItemData> session, @NotNull String text) {
 		TextPacket packet = new TextPacket();
 		packet.setType(TextPacket.Type.CHAT);
 		packet.setNeedsTranslation(false);
@@ -65,7 +66,7 @@ public final class CloudburstMessagesPackets implements MessagesPackets<Cloudbur
 	}
 
 	@Override
-	public void command(@NotNull CloudburstSession<BedrockPacket, ItemDefinition> session, @NotNull String commandWithoutSlash) {
+	public void command(@NotNull CloudburstSession<BedrockPacket, ItemDefinition, ItemData> session, @NotNull String commandWithoutSlash) {
 		GameStart start = session.start()
 				.orElseThrow(() -> new IllegalStateException("A Bedrock player sends commands only after its game started"));
 
@@ -78,7 +79,7 @@ public final class CloudburstMessagesPackets implements MessagesPackets<Cloudbur
 	}
 
 	@Override
-	public @NotNull Runnable listen(@NotNull CloudburstSession<BedrockPacket, ItemDefinition> session, @NotNull Consumer<String> plainText) {
+	public @NotNull Runnable listen(@NotNull CloudburstSession<BedrockPacket, ItemDefinition, ItemData> session, @NotNull Consumer<String> plainText) {
 		PacketSubscription texts = session.subscribe(TextPacket.class, packet -> plainText.accept(text(packet)));
 		PacketSubscription outputs = session.subscribe(CommandOutputPacket.class, packet -> {
 			for (CommandOutputMessage message : packet.getMessages())

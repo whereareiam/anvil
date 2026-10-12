@@ -61,10 +61,8 @@ an exact timestamp like the MCProtocolLib snapshots. Its players log in offline 
 identity, which a server accepts only with Xbox authentication turned off, or online with an
 [Xbox account](../../../players/authentication/index.md). Bedrock has no handshake host, so a Bedrock
 player that declares a virtual host is refused when it connects. Bedrock players have the Session,
-Server, Messages and Movement capabilities, and observe their inventory through
-[Inventory](../../../players/capabilities/inventory/index.md#bedrock-players), which cannot yet select a slot
-or click. Interaction has no CloudburstMC Protocol side yet, and requesting it on a Bedrock player reports
-the libraries that provide it.
+Server, Messages, Movement, [Inventory](../../../players/capabilities/inventory/index.md#bedrock-players)
+and [Interaction](../../../players/capabilities/interaction/index.md#bedrock-players) capabilities.
 
 ## Servers and proxies
 

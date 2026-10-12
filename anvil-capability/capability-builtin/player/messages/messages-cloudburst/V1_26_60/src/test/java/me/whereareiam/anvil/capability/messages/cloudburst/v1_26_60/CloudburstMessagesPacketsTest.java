@@ -5,6 +5,7 @@ import io.netty.buffer.Unpooled;
 import me.whereareiam.anvil.capability.messages.packet.MessagesPackets;
 import me.whereareiam.anvil.protocol.cloudburst.client.CloudburstSession;
 import me.whereareiam.anvil.protocol.cloudburst.client.PacketSubscription;
+import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientPosition;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.GameStart;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
@@ -46,6 +47,7 @@ import org.cloudburstmc.protocol.bedrock.data.command.CommandOriginType;
 import org.cloudburstmc.protocol.bedrock.data.command.CommandOutputMessage;
 import org.cloudburstmc.protocol.bedrock.data.command.CommandOutputType;
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition;
+import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.CommandOutputPacket;
 import org.cloudburstmc.protocol.bedrock.packet.CommandRequestPacket;
@@ -217,7 +219,7 @@ class CloudburstMessagesPacketsTest {
 	/**
 	 * A session that records what is sent and delivers received packets to its subscriptions.
 	 */
-	private static final class RecordingSession implements CloudburstSession<BedrockPacket, ItemDefinition> {
+	private static final class RecordingSession implements CloudburstSession<BedrockPacket, ItemDefinition, ItemData> {
 		private final List<BedrockPacket> sent = new ArrayList<>();
 		private final List<Subscription<?>> subscriptions = new ArrayList<>();
 		private GameStart start;
@@ -267,6 +269,36 @@ class CloudburstMessagesPacketsTest {
 		@Override
 		public long tick() {
 			return 0;
+		}
+
+		@Override
+		public boolean serverAuthoritativeInventory() {
+			return false;
+		}
+
+		@Override
+		public int nextItemStackRequestId() {
+			return -1;
+		}
+
+		@Override
+		public int selectedSlot() {
+			return 0;
+		}
+
+		@Override
+		public @NotNull Optional<ItemData> item(int containerId, int slot) {
+			return Optional.empty();
+		}
+
+		@Override
+		public void select(int slot) {
+			throw new AssertionError("Messages selects no slot");
+		}
+
+		@Override
+		public @NotNull ClientPosition position() {
+			throw new AssertionError("Messages reads no position");
 		}
 
 		@Override

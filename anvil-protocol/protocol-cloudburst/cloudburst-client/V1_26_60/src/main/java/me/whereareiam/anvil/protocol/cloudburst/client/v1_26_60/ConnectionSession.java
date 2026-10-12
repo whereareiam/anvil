@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.cloudburst.client.v1_26_60;
 
 import me.whereareiam.anvil.protocol.cloudburst.client.CloudburstSession;
 import me.whereareiam.anvil.protocol.cloudburst.client.PacketSubscription;
+import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientPosition;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.GameStart;
 import me.whereareiam.anvil.protocol.cloudburst.client.world.v1_26_60.WorldTracker;
@@ -9,6 +10,7 @@ import org.cloudburstmc.protocol.bedrock.BedrockClientSession;
 import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition;
+import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,18 +24,23 @@ import java.util.function.Consumer;
 
 /**
  * One RakNet connection of the release: its {@link BedrockPeer}, the client session the peer creates once RakNet
- * connected, and the subscriptions made on it. The packet handler dispatches every received packet here before
- * handling it, and records the game start and item definitions as they arrive. Its {@link WorldTracker} sees every
- * packet before the subscriptions do, so a subscription reads the world as the packet left it. Closing the connection
- * ends every subscription, so a reconnect, which opens a new connection session, never reaches them.
+ * connected, the subscriptions made on it and the trackers of what the client knows about its own player and its
+ * world. The packet handler dispatches every received packet here before handling it, and records the game start and
+ * item definitions as they arrive. Each received packet reaches the trackers, the {@link WorldTracker} among them,
+ * before the subscriptions, so a subscription already reads the state the packet set, and each sent packet reaches the
+ * player's trackers before it leaves, so an answer never overtakes the prediction it settles. Closing the connection
+ * ends every subscription, so a reconnect, which opens a new connection session with trackers of its own, never
+ * reaches them.
  */
-final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDefinition> {
+final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDefinition, ItemData> {
 	private static final long TICK_NANOS = TimeUnit.MILLISECONDS.toNanos(50);
 
 	private final BedrockPeer peer;
 	private final BedrockCodec codec;
 	private final ClientProfile profile;
 	private final List<Subscription<?>> subscriptions = new CopyOnWriteArrayList<>();
+	private final InventoryTracker inventory = new InventoryTracker();
+	private final PositionTracker position = new PositionTracker();
 	private final WorldTracker world;
 
 	private volatile @Nullable BedrockClientSession session;
@@ -70,6 +77,8 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 		BedrockClientSession current = session;
 		if (current == null || !connected()) throw new IllegalStateException("The Bedrock session is not connected");
 
+		inventory.sent(packet);
+		position.sent(packet);
 		current.sendPacket(packet);
 	}
 
@@ -110,6 +119,36 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 	}
 
 	@Override
+	public boolean serverAuthoritativeInventory() {
+		return inventory.serverAuthoritative();
+	}
+
+	@Override
+	public int nextItemStackRequestId() {
+		return inventory.nextRequestId();
+	}
+
+	@Override
+	public int selectedSlot() {
+		return inventory.selectedSlot();
+	}
+
+	@Override
+	public @NotNull Optional<ItemData> item(int containerId, int slot) {
+		return inventory.item(containerId, slot);
+	}
+
+	@Override
+	public void select(int slot) {
+		send(inventory.equip(slot));
+	}
+
+	@Override
+	public @NotNull ClientPosition position() {
+		return position.position();
+	}
+
+	@Override
 	public @NotNull OptionalInt blockAt(int x, int y, int z) {
 		return world.blockAt(x, y, z);
 	}
@@ -133,13 +172,16 @@ final class ConnectionSession implements CloudburstSession<BedrockPacket, ItemDe
 	}
 
 	/**
-	 * Hands a received packet to the world tracker, then to the subscriptions of its type in subscription order.
+	 * Applies a received packet to the trackers, then delivers it to the subscriptions of its type in subscription
+	 * order.
 	 *
 	 * @param packet received packet
 	 */
 	void dispatch(@NotNull BedrockPacket packet) {
 		if (closed) return;
 
+		inventory.received(packet);
+		position.received(packet);
 		packet.handle(world);
 
 		for (Subscription<?> subscription : subscriptions)

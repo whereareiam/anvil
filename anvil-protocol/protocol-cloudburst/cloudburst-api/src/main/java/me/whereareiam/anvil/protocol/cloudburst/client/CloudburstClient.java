@@ -29,7 +29,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @param <S> native session type of the release
  */
-public interface CloudburstClient<S extends CloudburstSession<?, ?>> {
+public interface CloudburstClient<S extends CloudburstSession<?, ?, ?>> {
 	/**
 	 * Identifier of the CloudburstMC Protocol library: scenario and player declarations select it, stored accounts
 	 * and segment descriptors name it, and its release cache lies below it.

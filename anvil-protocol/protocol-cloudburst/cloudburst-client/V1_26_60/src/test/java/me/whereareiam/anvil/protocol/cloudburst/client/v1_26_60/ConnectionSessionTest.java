@@ -7,6 +7,7 @@ import me.whereareiam.anvil.protocol.cloudburst.client.ClientListener;
 import me.whereareiam.anvil.protocol.cloudburst.client.PacketSubscription;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientLogin;
+import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientPosition;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.cloudburst.client.model.GameStart;
 import org.cloudburstmc.math.vector.Vector2f;
@@ -21,10 +22,15 @@ import org.cloudburstmc.protocol.bedrock.codec.v818.Bedrock_v818;
 import org.cloudburstmc.protocol.bedrock.data.AuthoritativeMovementMode;
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition;
 import org.cloudburstmc.protocol.bedrock.data.definitions.SimpleItemDefinition;
+import org.cloudburstmc.protocol.bedrock.data.inventory.ContainerId;
+import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.cloudburstmc.protocol.bedrock.netty.codec.packet.BedrockPacketCodec_v3;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
+import org.cloudburstmc.protocol.bedrock.packet.InventorySlotPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ItemComponentPacket;
 import org.cloudburstmc.protocol.bedrock.packet.LevelChunkPacket;
+import org.cloudburstmc.protocol.bedrock.packet.MobEquipmentPacket;
+import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket;
 import org.cloudburstmc.protocol.bedrock.packet.SetMovementAuthorityPacket;
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket;
 import org.cloudburstmc.protocol.bedrock.packet.SubChunkRequestPacket;
@@ -182,6 +188,56 @@ class ConnectionSessionTest {
 		assertEquals(List.of("chunk OptionalInt[5]", "chunk OptionalInt[5]"), received);
 		SubChunkRequestPacket request = assertInstanceOf(SubChunkRequestPacket.class, connection.client.sent.getLast());
 		assertEquals(2, request.getPositionOffsets().size());
+	}
+
+	@Test
+	void followsItsPlayersItemsBeforeSubscriptionsSeeThePacketAndSelectsASlotWithItsItem() throws Exception {
+		Connection connection = connection(Bedrock_v2193.CODEC);
+		ItemData stone = ItemData.builder().definition(new SimpleItemDefinition("minecraft:stone", 1, false)).count(5).build();
+		connection.session.subscribe(InventorySlotPacket.class, packet ->
+				received.add(connection.session.item(packet.getContainerId(), packet.getSlot()).orElseThrow().getDefinition().getIdentifier()));
+		connection.handler.handlePacket(start(List.of()));
+		InventorySlotPacket slot = new InventorySlotPacket();
+		slot.setContainerId(ContainerId.INVENTORY);
+		slot.setSlot(3);
+		slot.setItem(stone);
+		connection.handler.handlePacket(slot);
+
+		connection.session.select(3);
+
+		assertEquals(List.of("minecraft:stone"), received);
+		MobEquipmentPacket equipment = (MobEquipmentPacket) connection.client.sent.getLast();
+		assertEquals(7, equipment.getRuntimeEntityId());
+		assertEquals(3, equipment.getHotbarSlot());
+		assertEquals(3, equipment.getInventorySlot());
+		assertSame(stone, equipment.getItem());
+		assertEquals(3, connection.session.selectedSlot());
+	}
+
+	@Test
+	void followsItsPlayersPositionFromTheGameStartAndItsOwnMoves() throws Exception {
+		Connection connection = connection(Bedrock_v2193.CODEC);
+		assertThrows(IllegalStateException.class, connection.session::position);
+		connection.handler.handlePacket(start(List.of()));
+		assertEquals(ClientPosition.builder().x(1).y(2).z(3).build(), connection.session.position());
+
+		PlayerAuthInputPacket input = new PlayerAuthInputPacket();
+		input.setPosition(Vector3f.from(4, 5, 6));
+		connection.session.send(input);
+
+		assertEquals(ClientPosition.builder().x(4).y(5).z(6).build(), connection.session.position());
+	}
+
+	@Test
+	void knowsTheInventoryAuthorityFromTheGameStartAndNoBlocksOfTheWorld() throws Exception {
+		Connection connection = connection(Bedrock_v2193.CODEC);
+		assertThrows(IllegalStateException.class, connection.session::serverAuthoritativeInventory);
+		StartGamePacket start = start(List.of());
+		start.setInventoriesServerAuthoritative(true);
+		connection.handler.handlePacket(start);
+
+		assertTrue(connection.session.serverAuthoritativeInventory());
+		assertTrue(connection.session.blockAt(0, 64, 0).isEmpty());
 	}
 
 	private static List<String> identifiers(List<ItemDefinition> definitions) {

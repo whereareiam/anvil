@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
  */
 @RequiredArgsConstructor
 final class CloudburstWorkerClient implements WorkerClient {
-	private final @NotNull CloudburstClient<CloudburstSession<?, ?>> client;
+	private final @NotNull CloudburstClient<CloudburstSession<?, ?, ?>> client;
 
 	@Override
 	public int protocolNumber() {
@@ -51,17 +51,17 @@ final class CloudburstWorkerClient implements WorkerClient {
 
 	@Override
 	public void connect(@NotNull Object session) {
-		client.connect((CloudburstSession<?, ?>) session);
+		client.connect((CloudburstSession<?, ?, ?>) session);
 	}
 
 	@Override
 	public boolean connected(@NotNull Object session) {
-		return client.connected((CloudburstSession<?, ?>) session);
+		return client.connected((CloudburstSession<?, ?, ?>) session);
 	}
 
 	@Override
 	public void disconnect(@NotNull Object session, @NotNull String reason) {
-		client.disconnect((CloudburstSession<?, ?>) session, reason);
+		client.disconnect((CloudburstSession<?, ?, ?>) session, reason);
 	}
 
 	private ClientLogin login(WorkerPlayerOptions options) {
@@ -99,21 +99,21 @@ final class CloudburstWorkerClient implements WorkerClient {
 	 * Forwards the client's callbacks of one session to the worker player's listener.
 	 */
 	@RequiredArgsConstructor
-	private static final class Listener implements ClientListener<CloudburstSession<?, ?>> {
+	private static final class Listener implements ClientListener<CloudburstSession<?, ?, ?>> {
 		private final SessionListener listener;
 
 		@Override
-		public void loggedIn(@NotNull CloudburstSession<?, ?> session, @NotNull ClientProfile granted) {
+		public void loggedIn(@NotNull CloudburstSession<?, ?, ?> session, @NotNull ClientProfile granted) {
 			listener.loggedIn(session, new PlayerProfile(granted.getName(), granted.getUniqueId()));
 		}
 
 		@Override
-		public void teleported(@NotNull CloudburstSession<?, ?> session, float yaw, float pitch) {
+		public void teleported(@NotNull CloudburstSession<?, ?, ?> session, float yaw, float pitch) {
 			listener.teleported(session, yaw, pitch);
 		}
 
 		@Override
-		public void disconnected(@NotNull CloudburstSession<?, ?> session, @NotNull DisconnectCause cause, @NotNull String reason) {
+		public void disconnected(@NotNull CloudburstSession<?, ?, ?> session, @NotNull DisconnectCause cause, @NotNull String reason) {
 			listener.disconnected(session, cause, reason);
 		}
 	}
