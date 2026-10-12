@@ -52,3 +52,18 @@ instance. This capability does not discover nearby entities or choose targets au
 
 Use [messages](../messages/index.md), [inventory observations](../inventory/index.md), or a custom
 [agent operation](../../../../extending/agent-operations/index.md) to verify the application result.
+
+## Bedrock players
+
+A Bedrock player sends each use as an item use transaction from the hotbar slot it holds, with the item
+that slot or the off hand holds and its position at the eyes, and swings its arm with an animate packet.
+`useItem` uses the item in the air. `entity` sends `INTERACT` or `ATTACK`, the two entity actions Bedrock
+has, for the entity's runtime ID.
+
+`block` names the block it targets by the block's runtime ID, which the player knows only from the world
+the server sent it. Until the player has received the targeted block, `block` fails with a message that
+says so.
+
+The off hand is part of Bedrock's item use from Bedrock 1.26.50 and of its arm swing and entity
+interaction from 1.26.60. On older versions an action with `Hand.OFF` fails instead of acting with the
+main hand; `useItem` swings the arm first, so it needs 1.26.60 for the off hand as well.

@@ -9,6 +9,11 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Sends item, block, and entity interactions as a simulated player.
+ *
+ * <p>A Bedrock player uses the item of the hotbar slot it holds, or of its off hand, from its current position. It
+ * targets a block by the block's runtime ID from the world the server sent it, so a block use fails until the player
+ * has received the block. Bedrock versions before 1.26.60 act with the main hand only and refuse
+ * {@link Hand#OFF}.</p>
  */
 public interface Interaction extends PlayerCapability {
 	/**

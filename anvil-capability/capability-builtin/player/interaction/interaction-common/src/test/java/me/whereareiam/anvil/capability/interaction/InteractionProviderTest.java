@@ -32,7 +32,7 @@ class InteractionProviderTest {
 		assertEquals("me.whereareiam.anvil.interaction", InteractionProvider.ID);
 		assertEquals(InteractionProvider.ID, provider.descriptor().getId());
 		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
-		assertEquals(Set.of("mcprotocol"), provider.supportedLibraries());
+		assertEquals(Set.of("mcprotocol", "cloudburst"), provider.supportedLibraries());
 		assertEquals(Interaction.class, provider.capability());
 	}
 

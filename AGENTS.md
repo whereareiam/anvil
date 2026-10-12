@@ -63,7 +63,7 @@ current project scope.
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client/V*`             | Client segments `V1_18_2`, `V1_21_1` and `V1_21_11`, each implementing only `McProtocolClient` from its release key on; `V1_21_11` also serves `26.1.2`                             |
 | `anvil-protocol/protocol-cloudburst`                                  | Wiring bundle publishing the CloudburstMC Protocol library for Bedrock players: shaded `cloudburst-common`, the client port, the client segment and a dependency on the `protocol-worker` bundle; owns `cloudburst-releases.toml` and `pinLibraryReleases` |
-| `anvil-protocol/protocol-cloudburst/cloudburst-api`                   | Release-neutral CloudburstMC Protocol client port `CloudburstClient`, the native session `CloudburstSession<P, I>` that bindings receive, and the `ClientIdentity` a Bedrock login proves itself with                                              |
+| `anvil-protocol/protocol-cloudburst/cloudburst-api`                   | Release-neutral CloudburstMC Protocol client port `CloudburstClient`, the native session `CloudburstSession<P, I, T>` that bindings receive, and the `ClientIdentity` a Bedrock login proves itself with                                           |
 | `anvil-protocol/protocol-cloudburst/cloudburst-common`                | `CloudburstWorkerLibrary`, the `WorkerClient` driving `CloudburstClient`, offline and Xbox login identities, and the Xbox sign-in `XboxAuthentication`; depends only on `protocol-api` |
 | `anvil-protocol/protocol-cloudburst/cloudburst-client`                | Source-free side folder exporting the CloudburstMC Protocol client segment                                                                                                         |
 | `anvil-protocol/protocol-cloudburst/cloudburst-client/V*`             | Client segment `V1_26_60`, implementing only `CloudburstClient` for the whole release and selecting each player's codec by its protocol number                                  |
@@ -105,7 +105,8 @@ current project scope.
   explicitly declared through `architecture.sharedApis`. Each exposed API needs permission independently.
   The one other-family API a family may consume is a protocol library's native-session API that its
   library-side segments implement a port against, declared through `architecture.dependsOnApis` on the
-  family root: the messages, movement and inventory families declare `cloudburst-api` for their cloudburst segments.
+  family root: the messages, movement, inventory and interaction families declare `cloudburst-api` for their
+  cloudburst segments.
   Organizational grouping does not merge families. Agent client/server families share only `agent-api`;
   they must not depend on or re-export each other's API or implementation.
 - Keep concrete platform SDKs, MCProtocolLib, serialization, transport implementations, and assembly
@@ -133,16 +134,26 @@ current project scope.
   (`resolve(record, player version)`) `AccountRecord`s, and refuses to log in, log out or resolve another library's
   account before the library is called. A file without `provider` belongs to the library whose `WorkerLibrary`
   sets `readsUnlabelledAccounts` (MCProtocolLib); neutral code names no library.
-- A CloudburstMC Protocol client segment hands bindings a `CloudburstSession<P, I>` as the native session: `send`,
+- A CloudburstMC Protocol client segment hands bindings a `CloudburstSession<P, I, T>` as the native session: `send`,
   typed `subscribe` dispatched from the session's one packet handler, the `GameStart`, the item definitions and the
   client tick. Each session is one connection generation, and closing its connection ends its subscriptions, so a
   reconnect never reaches them. The session also names the profile its login claimed and whether the server is
   authoritative over movement: always from protocol 818 on, before that as the game start or a later movement
   authority packet says. CloudburstMC types reach feature segments only through the type parameters; host
-  code and `cloudburst-common` never see them. The session, messages, movement and inventory capabilities serve
-  `mcprotocol` and `cloudburst`; their `<feature>-cloudburst/V1_26_60` segment serves every codec of the release.
-  The inventory capability's `cloudburst` side observes the player's own containers by inventory index and opened
-  containers as received, and refuses hotbar selection and clicks, which need the client's item stacks.
+  code and `cloudburst-common` never see them. The session, messages, movement, inventory and interaction
+  capabilities serve `mcprotocol` and `cloudburst`; their `<feature>-cloudburst/V1_26_60` segment serves every codec
+  of the release.
+- Like a real client, a Bedrock session tracks its own player per connection generation: item stacks of the
+  player's containers (inventory, off hand, armor, user interface with the cursor) and of opened containers, the
+  selected hotbar slot, and the position at the eyes. Trackers live in their own classes in the client segment
+  (`InventoryTracker`, `PositionTracker`; `blockAt` belongs to a world tracker and is empty while none is wired);
+  `ConnectionSession` only wires them. They see each received packet before subscriptions and each sent packet
+  before it leaves, so a feature's own send is the client's prediction, settled by item stack responses or the
+  server's corrections. Inventory clicks follow the
+  game start: item stack requests under server inventory authority, otherwise normal inventory transactions, which
+  Lumi expects. Feature segments refuse what the session cannot send faithfully (shift clicks, stacking onto the
+  same item, opened containers under server authority, the off hand where the codec has no hand, a block use
+  whose block the session has not received) and ignore Java-only port values such as state IDs and sequences.
 - Use `ServiceLoader` for the existing provider SPIs. Preserve service descriptors and merge them
   when shading. Do not add broad reflection scanning as an alternative discovery path.
 - Each player selects its protocol library: its own `protocolLibrary`, else the scenario's, else the engine's,
