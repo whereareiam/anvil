@@ -10,32 +10,36 @@ of failing. See [Authentication](../../../building-blocks/players/authentication
 ## Require accounts by count
 
 The requirement counts accounts; it does not name one. The test then runs with whichever accounts the
-developer has signed in, whatever their local IDs are. Request an `AccountPool` parameter and lease
-from it:
+developer has signed in, whatever their local IDs are. Request an `AccountPool` parameter and create
+each player from it with a leased login; the player leases an account its protocol library can use:
 
 ```java
 @AnvilTest(LobbyScenario.class)
 @AnvilAccounts(2)
 void tradesBetweenTwoAccounts(ScenarioContext anvil, AccountPool accounts) {
-	SimulatedPlayer seller = anvil.players().create("seller", accounts.lease());
-	SimulatedPlayer buyer = anvil.players().create("buyer", accounts.lease());
+	PlayerLogin login = PlayerLogin.leased(AuthenticationMode.ONLINE);
+	SimulatedPlayer seller = anvil.players().create(PlayerOptions.builder().name("seller").login(login).build(), accounts);
+	SimulatedPlayer buyer = anvil.players().create(PlayerOptions.builder().name("buyer").login(login).build(), accounts);
 }
 ```
+
+The requirement counts every stored account, also one the players' library cannot use, because it does not
+know their library. When the pool holds no free account the player's library recorded as available, creating
+the player fails and names each skipped account with the reason.
 
 `@AnvilAccounts` without a value requires one account. An annotation on the method replaces the one
 on its class. A lease reserves its account for the whole engine, and the pool releases unclaimed
 leases when the test ends.
 
-To create the player with options of your own, for example
-[authentication on request](../../../building-blocks/players/authentication/index.md), pass the options
-together with the lease and declare a leased login. The leased account supplies the account and protocol
-library:
+Any options work the same way, for example
+[authentication on request](../../../building-blocks/players/authentication/index.md); the pool supplies the
+account:
 
 ```java
 SimulatedPlayer player = anvil.players().create(PlayerOptions.builder()
 		.name("premium")
 		.login(PlayerLogin.leased(AuthenticationMode.ON_REQUEST))
-		.build(), accounts.lease());
+		.build(), accounts);
 ```
 
 ## Restrict the accounts to a pool
@@ -49,5 +53,4 @@ that is not stored.
 
 Anvil checks the requirement after the scenario is prepared and before any process starts, so a
 skipped test launches no server. It is reported as aborted with the number of accounts that were
-required and available. An account ID that several installed protocol libraries store cannot be
-pooled and does not count.
+required and available.

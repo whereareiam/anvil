@@ -10,15 +10,19 @@ import java.lang.annotation.Target;
  * skipped, before any process starts, when the machine stores fewer accounts than required; a
  * continuous-integration machine without accounts therefore skips it instead of failing.
  *
- * <p>The requirement counts accounts rather than naming one, so the test runs with whichever accounts
- * a developer has signed in. Declare an {@code AccountPool} parameter to lease them:</p>
+ * <p>The requirement counts stored accounts rather than naming one, so the test runs with whichever accounts
+ * a developer has signed in. It does not know the players' protocol libraries, so it counts every stored account,
+ * also one a library cannot use. Declare an {@code AccountPool} parameter and create each player from it: the
+ * player leases an account its library recorded as available, and fails with the reason of every skipped account
+ * when the pool holds none:</p>
  *
  * <pre>{@code
  * @AnvilTest(LobbyScenario.class)
  * @AnvilAccounts(2)
  * void tradesBetweenTwoAccounts(ScenarioContext anvil, AccountPool accounts) {
- *     SimulatedPlayer seller = anvil.players().create("seller", accounts.lease());
- *     SimulatedPlayer buyer = anvil.players().create("buyer", accounts.lease());
+ *     PlayerLogin login = PlayerLogin.leased(AuthenticationMode.ONLINE);
+ *     SimulatedPlayer seller = anvil.players().create(PlayerOptions.builder().name("seller").login(login).build(), accounts);
+ *     SimulatedPlayer buyer = anvil.players().create(PlayerOptions.builder().name("buyer").login(login).build(), accounts);
  * }
  * }</pre>
  *

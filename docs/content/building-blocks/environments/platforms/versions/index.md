@@ -61,7 +61,7 @@ version and both sides of `1.21.90`, from which Bedrock moves a player only by t
 Every other listed version is `COMPATIBLE`. The release is a CloudburstMC Protocol snapshot build, pinned to
 an exact timestamp like the MCProtocolLib snapshots. Its players log in offline with a self-signed
 identity, which a server accepts only with Xbox authentication turned off, or online with an
-[Xbox account](../../../players/authentication/index.md). Bedrock has no handshake host, so a Bedrock
+[account](../../../players/authentication/index.md) that owns Bedrock Edition. Bedrock has no handshake host, so a Bedrock
 player that declares a virtual host is refused when it connects. Bedrock players have all six built-in
 capabilities; [Movement](../../../players/capabilities/movement/index.md#bedrock-players),
 [Inventory](../../../players/capabilities/inventory/index.md#bedrock-players) and
@@ -146,9 +146,8 @@ This fragment assumes an existing `AnvilScenario scenario`, such as the one your
 
 ## Select a protocol library
 
-Each player selects a library and its exact release when it is created. A player created from an
-[account lease](../../../players/authentication/index.md) always uses the library that stores the leased
-account, whatever the scenario or engine declares. Every other player selects:
+Each player selects a library and its exact release when it is created, also one that signs in with a
+[stored account](../../../players/authentication/index.md), which every library can use. Each player selects:
 
 1. `PlayerOptions.protocolLibrary(...)`, else `AnvilScenario.protocolLibrary(...)`, else the engine's
    `protocolLibrary`, set through `EngineOptions`, `anvil { engine { protocolLibrary("mcprotocol") } }`,

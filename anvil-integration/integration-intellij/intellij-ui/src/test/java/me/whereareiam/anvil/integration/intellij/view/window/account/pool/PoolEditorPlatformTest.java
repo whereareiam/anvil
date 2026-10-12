@@ -6,7 +6,9 @@ import com.intellij.ui.components.JBTextField;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 
+import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.integration.intellij.UiPlatformTestCase;
 import me.whereareiam.anvil.integration.intellij.WindowTestSupport;
@@ -23,7 +25,7 @@ public class PoolEditorPlatformTest extends UiPlatformTestCase {
 		try {
 			library.setDirectory(directory);
 			library.savePool(null, "Players", List.of("missing"));
-			var entry = new AvailableAccount(new AuthenticationAccount("alice", "mcprotocol", "Alice", null),
+			var entry = new AvailableAccount(new AuthenticationAccount("alice", List.of(AccountAccess.available("mcprotocol", "Alice", UUID.randomUUID()))),
 					directory.resolve("alice.json"), AccountSource.PROJECT);
 			var dialog = new PoolEditorDialog(getProject(), library, "Players", library.catalog().getPools(), List.of(entry));
 			Disposer.register(getTestRootDisposable(), dialog.getDisposable());

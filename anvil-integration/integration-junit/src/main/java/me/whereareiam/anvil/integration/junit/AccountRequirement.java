@@ -11,10 +11,7 @@ import org.junit.jupiter.api.extension.ExtensionConfigurationException;
 import org.opentest4j.TestAbortedException;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The accounts a test declares through {@link AnvilAccounts}, checked against the machine's stored
@@ -58,18 +55,10 @@ final class AccountRequirement {
 	}
 
 	/**
-	 * Pools every stored account whose ID one library stores; a pool cannot lease an ID that several
-	 * libraries store.
+	 * Pools every stored account; a lease for a player's library lends only an account that library can use.
 	 */
 	private AccountPool anyStored(AccountManager accounts) {
-		Map<String, Integer> owners = new LinkedHashMap<>();
-		for (AuthenticationAccount account : accounts.list())
-			owners.merge(account.getAccountId(), 1, Integer::sum);
-
-		List<String> accountIds = new ArrayList<>();
-		owners.forEach((accountId, libraries) -> {
-			if (libraries == 1) accountIds.add(accountId);
-		});
+		List<String> accountIds = accounts.list().stream().map(AuthenticationAccount::getAccountId).toList();
 		if (accountIds.isEmpty())
 			throw new TestAbortedException(describe() + ", but none is stored on this machine");
 

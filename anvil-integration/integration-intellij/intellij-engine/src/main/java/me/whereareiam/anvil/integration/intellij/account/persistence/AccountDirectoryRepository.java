@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.integration.intellij.model.account.AvailableAccount;
 import me.whereareiam.anvil.integration.intellij.type.AccountSource;
@@ -128,6 +129,11 @@ final class AccountDirectoryRepository {
 		}
 	}
 
+	/**
+	 * Reads what an account file tells about the account without its credentials and without any protocol library:
+	 * the libraries the file records and what each recorded. A file of schema 1, stored while an account belonged to
+	 * the one library its {@code provider} key names, records that library.
+	 */
 	@NotNull AuthenticationAccount readMetadata(@NotNull Path source) throws IOException {
 		JsonNode root;
 		try (var input = Files.newInputStream(source)) {
@@ -137,25 +143,52 @@ final class AccountDirectoryRepository {
 			throw new IOException("Cannot read this account file.");
 		}
 
-		if (root == null
-				|| root.path("schemaVersion").asInt() != 1
-				|| !isSafeAccountId(root.path("accountId").asText())
-				|| root.path("provider").asText().isBlank()
-				|| !root.path("credentials").isObject())
+		if (root == null || !isSafeAccountId(root.path("accountId").asText()))
 			throw new IOException("This is not a supported Anvil account file.");
 
-		UUID uuid = null;
+		String accountId = root.path("accountId").asText();
+		int schema = root.path("schemaVersion").asInt();
+		if (schema == 1 && !root.path("provider").asText().isBlank() && root.path("credentials").isObject())
+			return new AuthenticationAccount(accountId, List.of(accountPerLibrary(root)));
+		if (schema == 2 && root.path("microsoft").isObject())
+			return new AuthenticationAccount(accountId, libraries(root.path("libraries")));
+
+		throw new IOException("This is not a supported Anvil account file.");
+	}
+
+	private static AccountAccess accountPerLibrary(JsonNode root) throws IOException {
+		String library = root.path("provider").asText();
+		if (!root.path("username").isTextual() || !root.path("uuid").isTextual()) return AccountAccess.unknown(library, null);
+
+		return AccountAccess.available(library, root.path("username").asText(), uniqueId(root.path("uuid").asText()));
+	}
+
+	private static List<AccountAccess> libraries(JsonNode libraries) throws IOException {
+		List<AccountAccess> access = new ArrayList<>();
+		var entries = libraries.fields();
+		while (entries.hasNext()) {
+			var entry = entries.next();
+			String library = entry.getKey();
+			JsonNode recorded = entry.getValue();
+			String reason = recorded.path("reason").isTextual() ? recorded.path("reason").asText() : null;
+			switch (recorded.path("availability").asText()) {
+				case "AVAILABLE" -> access.add(AccountAccess.available(library, recorded.path("username").asText(),
+						uniqueId(recorded.path("uuid").asText())));
+				case "UNAVAILABLE" -> access.add(AccountAccess.unavailable(library, reason == null ? "" : reason));
+				case "UNKNOWN" -> access.add(AccountAccess.unknown(library, reason));
+				default -> throw new IOException("The account records library '" + library + "' invalidly.");
+			}
+		}
+
+		return access;
+	}
+
+	private static UUID uniqueId(String text) throws IOException {
 		try {
-			if (root.path("uuid").isTextual()) uuid = UUID.fromString(root.path("uuid").asText());
+			return UUID.fromString(text);
 		} catch (IllegalArgumentException failure) {
 			throw new IOException("The account contains an invalid profile UUID.");
 		}
-
-		return new AuthenticationAccount(
-				root.path("accountId").asText(),
-				root.path("provider").asText(),
-				root.path("username").isTextual() ? root.path("username").asText() : null,
-				uuid);
 	}
 
 	boolean isSafeAccountId(@NotNull String id) {

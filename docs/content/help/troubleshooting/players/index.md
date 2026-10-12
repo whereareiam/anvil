@@ -46,7 +46,8 @@ version of the servers it reaches, and applies the support policy before the pla
 | `Connection target '<name>' reaches servers of different Minecraft editions [...]` | Route the player only to servers whose platforms declare one edition |
 | `The STRICT support policy refuses ...` | The release is `UNTESTED`; use the default `LENIENT` policy or a version Anvil's data lists |
 | `MCProtocolLib release <version> has no pinned checksum for <module>` | Run the named pin task, or set the `sha256` in your own release data |
-| `Authenticated account '<id>' is not stored by protocol library '<library>'` | Sign the account in through that library, or select the library that stores it |
+| `Player '<name>' cannot sign in with account '<id>' through protocol library '<library>': <reason>` | The library's services refused the account, for example because it does not own that edition. Use another account, or sign this one in again after fixing the reason |
+| `No account of the pool is available to protocol library '<library>': ...` | Every pooled account is unavailable to the player's library, unknown, or in use; the message lists each. Sign in an account that owns the edition, or sign unknown ones in again |
 
 The [versions page](../../../building-blocks/environments/platforms/versions/index.md) lists the
 releases and support levels.

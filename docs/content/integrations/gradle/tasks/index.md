@@ -74,12 +74,11 @@ existing source set. See [IDE project tooling](../tooling/index.md) for declarat
 
 | Task | Meaning |
 |---|---|
-| `anvilLogin --account=<id>` | Sign in through the selected protocol library and store the account |
+| `anvilLogin --account=<id>` | Sign a Microsoft account in and store it |
 | `anvilLogout --account=<id>` | Remove the stored account |
 
-Both tasks require `--account`. `anvilLogin` runs the library's interactive sign-in in a separate JVM, using the
-engine's `protocolLibrary` and account directory; without a configured library, it uses the sole
-installed library that offers authentication. It prints the library's prompts;
-tokens stay in the account file and never become task inputs or arguments. Both tasks are untracked and
+Both tasks require `--account`. `anvilLogin` runs the Microsoft device-code sign-in in a separate JVM and stores
+the account in the engine's account directory. It chooses no protocol library: afterwards every installed library
+that plays online checks what it can do with the account, and the task prints one line per library. Tokens stay in the account file and never become task inputs or arguments. Both tasks are untracked and
 always run. See [Authentication](../../../building-blocks/players/authentication/index.md) before
 using online players.

@@ -127,7 +127,7 @@ public final class ToolingAccountEnrollment implements AccountEnrollment {
 		runCommand(
 				new ProcessBuilder(
 						ToolingCommandReader.authenticationCommand(
-								manifest, accountsDirectory, accountId, null))
+								manifest, accountsDirectory, accountId))
 						.directory(preparation.getWorkingDirectory().toFile()),
 				"Sign-in failed"
 		);

@@ -83,13 +83,11 @@ public interface AccountLibrary {
 	boolean isValidAccountId(@NotNull String id);
 
 	/**
-	 * Creates or renames a project pool as a stable list of account IDs. Like the runtime, it refuses an
-	 * account ID that several protocol libraries store among the configured accounts, because a pool leases
-	 * one account per ID.
+	 * Creates or renames a project pool as a stable list of account IDs. When a player leases from the pool,
+	 * the runtime lends only an account the player's protocol library recorded as available.
 	 *
 	 * @param previous original pool name, or null for a new pool
-	 * @throws IOException if the pool is invalid, lists an account ID that several protocol libraries store,
-	 * conflicts, or cannot be written
+	 * @throws IOException if the pool is invalid, conflicts, or cannot be written
 	 */
 	void savePool(
 			@Nullable String previous,

@@ -8,6 +8,7 @@ import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.panel as formPanel
 import com.intellij.util.ui.JBUI
 import me.whereareiam.anvil.integration.intellij.model.account.AvailableAccount
+import me.whereareiam.anvil.integration.intellij.view.window.account.component.profileNames
 
 internal class PoolEditorForm(
 	original: String?,
@@ -27,7 +28,7 @@ internal class PoolEditorForm(
 				val account = entry.account
 				val id = account.accountId
 				if (members.containsKey(id)) continue
-				val username = account.username?.let { " · $it" }.orEmpty()
+				val username = account.profileNames()?.let { " · $it" }.orEmpty()
 				row {
 					members[id] = checkBox("$id · ${entry.source.label}$username")
 						.applyToComponent { isSelected = id in selected }.component

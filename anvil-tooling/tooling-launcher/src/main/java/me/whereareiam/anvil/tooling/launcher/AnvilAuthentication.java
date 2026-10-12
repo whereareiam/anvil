@@ -4,29 +4,26 @@ import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.engine.config.EngineDefaults;
 import me.whereareiam.anvil.engine.config.EngineProperties;
 import me.whereareiam.anvil.protocol.api.library.ProtocolAuthentication;
-import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 /**
- * Signs a stored account in or out through a protocol library.
+ * Signs a Microsoft account in and stores it, or removes a stored account. The account is not tied to a protocol
+ * library: after the sign-in, every installed library that plays online checks what it can do with the account and
+ * the result is printed per library.
  * <p>
  * Shared by the IntelliJ account manager and the Gradle {@code anvilLogin} and {@code anvilLogout} tasks. Options:
  * <pre>{@code
  * --account-id <id>      account to store or remove (required)
  * --accounts-dir <path>  account directory; defaults to anvil.accountsDir, then ~/.anvil/accounts
- * --library <id>         protocol library; defaults to anvil.protocolLibrary, then the sole installed
- *                        library offering authentication
  * --logout               removes the account instead of signing in
  * }</pre>
- * Prompts and status go to standard output. Credentials stay in the library's store and are never
+ * Prompts and status go to standard output. Credentials stay in the account file and are never
  * printed or accepted as arguments.
  */
 public final class AnvilAuthentication {
@@ -34,22 +31,17 @@ public final class AnvilAuthentication {
 	 * Runs one interactive sign-in, or one sign-out with {@code --logout}.
 	 *
 	 * @param arguments options described on this class
-	 * @throws IllegalArgumentException when a required option is missing or the library is not installed
-	 * @throws IllegalStateException when no single library offering authentication can be selected
+	 * @throws IllegalArgumentException when a required option is missing
+	 * @throws IllegalStateException when no installed protocol library plays online
 	 */
 	public static void main(@NotNull String[] arguments) {
 		List<String> options = Arrays.asList(arguments);
 		EngineOptions defaults = EngineDefaults.resolve(EngineProperties.fromSystemProperties());
 		String accountId = required(arguments, "--account-id");
 		String accounts = optional(arguments, "--accounts-dir");
-		String library = optional(arguments, "--library");
 		Path directory = accounts == null ? defaults.getAccountsDirectory() : Path.of(accounts);
 
-		ProtocolAuthentication authentication = authentication(
-				ProtocolLibraryRegistry.discover(),
-				library == null ? defaults.getProtocolLibrary() : library,
-				directory
-		);
+		ProtocolAuthentication authentication = authentication(ProtocolLibraryRegistry.discover(), directory);
 		if (options.contains("--logout")) {
 			authentication.logout(accountId, System.out::println);
 			return;
@@ -59,44 +51,17 @@ public final class AnvilAuthentication {
 	}
 
 	/**
-	 * Selects the authentication workflow of the named library, or of the sole installed library
-	 * offering authentication when no library is named.
+	 * Returns the account workflow of the installed protocol libraries.
 	 *
 	 * @param libraries installed protocol libraries
-	 * @param library selected library identifier, or null for automatic selection
-	 * @param accountsDirectory account store directory
-	 * @return selected library's authentication workflow
-	 * @throws IllegalArgumentException when the named library is not installed
-	 * @throws IllegalStateException when the named library has no authentication, or automatic selection is empty or ambiguous
+	 * @param accountsDirectory account directory
+	 * @return the account workflow
+	 * @throws IllegalStateException when no installed library plays online
 	 */
-	static @NotNull ProtocolAuthentication authentication(
-			@NotNull ProtocolLibraryRegistry libraries,
-			@Nullable String library,
-			@NotNull Path accountsDirectory
-	) {
-		if (library != null)
-			return libraries.require(library).authentication(accountsDirectory)
-					.orElseThrow(() -> new IllegalStateException("Protocol library '" + library
-							+ "' does not support interactive authentication"));
-
-		List<ProtocolAuthentication> candidates = new ArrayList<>();
-		List<String> owners = new ArrayList<>();
-		for (ProtocolLibraryProvider candidate : libraries.all()) {
-			Optional<ProtocolAuthentication> offered = candidate.authentication(accountsDirectory);
-			if (offered.isEmpty()) continue;
-
-			candidates.add(offered.get());
-			owners.add(candidate.id());
-		}
-
-		if (candidates.isEmpty())
-			throw new IllegalStateException("No installed protocol library supports interactive authentication. Installed: "
-					+ libraries.ids());
-		if (candidates.size() > 1)
-			throw new IllegalStateException("Protocol libraries " + owners + " support interactive authentication; "
-					+ "select one with --library or anvil.protocolLibrary");
-
-		return candidates.getFirst();
+	static @NotNull ProtocolAuthentication authentication(@NotNull ProtocolLibraryRegistry libraries, @NotNull Path accountsDirectory) {
+		return libraries.authentication(accountsDirectory)
+				.orElseThrow(() -> new IllegalStateException("No installed protocol library signs in with Microsoft accounts. "
+						+ "Installed: " + libraries.ids()));
 	}
 
 	private static @NotNull String required(String[] arguments, String option) {

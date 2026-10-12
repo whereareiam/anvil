@@ -46,14 +46,10 @@ implement `WorkerLibraryProvider` from `me.whereareiam.anvil.protocol.api.worker
 |---|---|
 | `library()` | The `WorkerLibrary` description: ID, name, client port, release data, pin task, the offline UUID prefix, the packages the release closures own, and worker JVM arguments |
 | `client(adapter)` | The `WorkerClient` that drives your client segment's implementation of the client port |
-| `authentication()` | An optional `WorkerAuthentication`: the online sign-in of an account and its refresh into the session a player signs in with |
+| `authentication()` | An optional `WorkerAuthentication`, which derives the session a player signs in with from a stored account's Microsoft token |
 
-The worker owns the account files. A login stores the `AccountRecord` your sign-in returns, profile and
-credentials, in the account's file and labels it with your library's ID; a player that uses the account
-has the worker read the record back and pass it to `resolve` with the player's Minecraft version, and the
-worker stores the refreshed record that comes back. Another library's account is refused before your
-sign-in is called. Set `readsUnlabelledAccounts` on your `WorkerLibrary` only if your library wrote account
-files before they named their library.
+The worker owns the Microsoft sign-in and the account files; your library only derives its session from an
+account and says when its services refuse it. See [Authentication](authentication/index.md).
 
 A player without an account logs in offline with a UUID the worker derives from its username and your
 library's `offlineUniqueIdPrefix`: the name-based UUID of the prefix followed by the username. MCProtocolLib
@@ -152,8 +148,7 @@ cleanup of all clients and owned workers even after a failure.
 
 Anvil selects a library and an exact release for each player:
 
-1. The player's `protocolLibrary`, else the scenario's, else the engine's. A player created from an
-   account lease uses the library that stores the leased account.
+1. The player's `protocolLibrary`, else the scenario's, else the engine's.
 2. Without a declaration, every installed library with a release of the servers' edition that lists the
    player's Minecraft version is ranked by support level, and the strongest one wins. A tie at the
    strongest level is refused with a message naming the tied libraries and asking for `protocolLibrary`.

@@ -15,11 +15,12 @@ import org.gradle.process.ExecOperations
 import javax.inject.Inject
 
 /**
- * Changes one stored account, selected with `--account=<id>`, through the project's protocol library.
+ * Changes one stored Microsoft account, selected with `--account=<id>`. The account is not tied to a protocol
+ * library: every installed library that plays online derives its own session from it.
  *
  * Runs the same authentication entry point as the IntelliJ account manager in a separate JVM, so
- * prompts reach the console and credentials stay in the library's account store. [AccountLoginTask]
- * signs the account in and [AccountLogoutTask] removes it.
+ * prompts reach the console and credentials stay in the account file. [AccountLoginTask]
+ * signs the account in and prints what each library can do with it, and [AccountLogoutTask] removes it.
  */
 @UntrackedTask(because = "Interactive sign-in changes the local account store outside the build")
 abstract class AccountTask : DefaultTask() {
@@ -30,7 +31,7 @@ abstract class AccountTask : DefaultTask() {
     abstract val runtimeClasspath: ConfigurableFileCollection
 
     /**
-     * Engine properties that select the account directory and protocol library.
+     * Engine properties that select the account directory.
      */
     @get:Input
     abstract val engineProperties: MapProperty<String, String>
