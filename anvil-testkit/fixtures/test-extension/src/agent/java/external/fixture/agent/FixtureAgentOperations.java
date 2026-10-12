@@ -24,5 +24,9 @@ public final class FixtureAgentOperations implements AgentOperationProvider {
 			return null;
 		});
 		registry.register(FixtureOperations.GET_PREFIX, (platform, request) -> prefix.get());
+		registry.register(FixtureOperations.GREET, (platform, request) -> FixtureGreeting.builder()
+				.name(prefix.get() + ":" + request.getName())
+				.count(request.getCount() + 1)
+				.build());
 	}
 }

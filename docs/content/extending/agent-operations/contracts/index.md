@@ -45,6 +45,11 @@ Use a name beginning with the provider ID followed by a dot. Request and respons
 supported by the selected transport. The bundled transport uses Jackson; immutable custom models
 can use Lombok `@Builder` with `@Jacksonized`. Keep platform types out of serialized models.
 
+The Lumi agent carries its Jackson under its own package, because Lumi ships an older one, so it does not see
+the Jackson annotations of your models, including those `@Jacksonized` generates. On Lumi, a request model
+annotated that way fails with `Cannot construct instance ... (no Creators, like default constructor, exist)`;
+string payloads, as in this example, work on every agent.
+
 ## Register a handler
 
 Place this in `echo-agent/src/main/java/com/example/echo/agent/EchoAgentOperations.java`:

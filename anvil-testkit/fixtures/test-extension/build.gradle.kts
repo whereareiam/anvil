@@ -28,6 +28,7 @@ dependencies {
 
 	"agentCompileOnly"(anvil.agent.server.api)
 	"agentCompileOnly"(libs.annotations)
+	"agentCompileOnly"(libs.jackson.databind)
 }
 
 val fixtureVariant = Attribute.of("me.whereareiam.anvil.testkit.variant", String::class.java)

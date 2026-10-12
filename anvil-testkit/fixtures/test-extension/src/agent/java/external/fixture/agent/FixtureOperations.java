@@ -12,4 +12,6 @@ public final class FixtureOperations {
 			.name("external.fixture.set-prefix").requestType(String.class).responseType(Void.class).build();
 	public static final AgentOperation<Void, String> GET_PREFIX = AgentOperation.<Void, String>builder()
 			.name("external.fixture.get-prefix").requestType(Void.class).responseType(String.class).build();
+	public static final AgentOperation<FixtureGreeting, FixtureGreeting> GREET = AgentOperation.<FixtureGreeting, FixtureGreeting>builder()
+			.name("external.fixture.greet").requestType(FixtureGreeting.class).responseType(FixtureGreeting.class).build();
 }
