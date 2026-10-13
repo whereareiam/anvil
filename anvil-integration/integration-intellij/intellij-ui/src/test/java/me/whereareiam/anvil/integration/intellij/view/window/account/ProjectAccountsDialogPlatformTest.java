@@ -6,9 +6,11 @@ import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.table.JBTable;
 
+import java.awt.Container;
 import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import javax.swing.JButton;
@@ -22,6 +24,7 @@ import me.whereareiam.anvil.integration.intellij.model.source.ScenarioSource;
 import me.whereareiam.anvil.integration.intellij.settings.PersistentPreferences;
 import me.whereareiam.anvil.integration.intellij.view.window.account.component.AccountListPanel;
 import me.whereareiam.anvil.integration.intellij.view.window.account.component.AccountStoragePanel;
+import me.whereareiam.anvil.integration.intellij.view.window.account.component.EditionChip;
 
 public class ProjectAccountsDialogPlatformTest extends UiPlatformTestCase {
 	public void testAccountSourcesRefreshImmediatelyAndClosePreservesChanges() throws Exception {
@@ -47,7 +50,10 @@ public class ProjectAccountsDialogPlatformTest extends UiPlatformTestCase {
 			assertFalse(WindowTestSupport.button(panel, "Remove").isEnabled());
 			assertEquals("Global", table.getValueAt(1, 2));
 			assertEquals("Bob", table.getValueAt(1, 0));
-			assertEquals("java: available, bedrock: unavailable", table.getValueAt(1, 3));
+			assertEquals(3, table.getColumnCount());
+			var cell = (Container) table.prepareRenderer(table.getCellRenderer(1, 0), 1, 0);
+			assertEquals("Bob, available for Java", cell.getAccessibleContext().getAccessibleName());
+			assertEquals(List.of("Java"), chips(cell));
 			var toggle = WindowTestSupport.find(panel, JBCheckBox.class);
 			toggle.doClick();
 			WindowTestSupport.await(() -> table.getRowCount() == 1);
@@ -117,6 +123,13 @@ public class ProjectAccountsDialogPlatformTest extends UiPlatformTestCase {
 		WindowTestSupport.await(() -> WindowTestSupport.text(dialog.panel())
 				.contains("Could not load project accounts: Account directory unavailable"));
 		assertTrue(WindowTestSupport.button(accounts, "Import…").isEnabled());
+	}
+
+	private List<String> chips(Container cell) {
+		return Arrays.stream(cell.getComponents())
+				.filter(EditionChip.class::isInstance)
+				.map(chip -> ((EditionChip) chip).getText())
+				.toList();
 	}
 
 	private View dialog(Path directory) {

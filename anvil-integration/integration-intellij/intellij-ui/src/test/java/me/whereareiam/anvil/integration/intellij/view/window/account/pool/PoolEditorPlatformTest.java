@@ -16,6 +16,7 @@ import me.whereareiam.anvil.integration.intellij.WindowTestSupport;
 import me.whereareiam.anvil.integration.intellij.account.persistence.ConfiguredAccountLibrary;
 import me.whereareiam.anvil.integration.intellij.model.account.AvailableAccount;
 import me.whereareiam.anvil.integration.intellij.type.AccountSource;
+import me.whereareiam.anvil.integration.intellij.view.window.account.component.EditionChip;
 
 public class PoolEditorPlatformTest extends UiPlatformTestCase {
 	public void testMembershipSelectionAndRenameAreCommittedOnlyOnSave() throws Exception {
@@ -35,7 +36,10 @@ public class PoolEditorPlatformTest extends UiPlatformTestCase {
 			assertTrue(missing.isSelected());
 			missing.doClick();
 			assertNotNull(dialog.doValidate());
-			WindowTestSupport.button(panel, "alice · Project · Alice").doClick();
+			var alice = WindowTestSupport.button(panel, "alice · Project · Alice");
+			assertEquals("alice · Project · Alice, available for Java", alice.getAccessibleContext().getAccessibleName());
+			assertEquals("Java", WindowTestSupport.find(alice.getParent(), EditionChip.class).getText());
+			alice.doClick();
 			WindowTestSupport.find(panel, JBTextField.class).setText("Test players");
 			assertNull(dialog.doValidate());
 			assertEquals(List.of("missing"), library.catalog().getPools().get("Players"));

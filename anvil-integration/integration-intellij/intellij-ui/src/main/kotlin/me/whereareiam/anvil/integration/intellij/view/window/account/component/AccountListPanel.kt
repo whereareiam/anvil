@@ -9,6 +9,7 @@ import me.whereareiam.anvil.integration.intellij.model.account.AvailableAccount
 import me.whereareiam.anvil.integration.intellij.type.AccountSource
 import java.awt.BorderLayout
 import java.awt.CardLayout
+import java.awt.Component
 import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.Font
@@ -16,9 +17,13 @@ import java.util.function.Consumer
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
+import javax.swing.JComponent
 import javax.swing.JPanel
+import javax.swing.JTable
 import javax.swing.ListSelectionModel
 import javax.swing.table.AbstractTableModel
+import javax.swing.table.DefaultTableCellRenderer
+import javax.swing.table.TableCellRenderer
 
 /**
  * Lists accounts available to the project and emits account requests to the accounts controller.
@@ -57,6 +62,7 @@ class AccountListPanel(
 			autoCreateRowSorter = true
 			selectionModel.addListSelectionListener { updateActions() }
 			accessibleContext.accessibleName = "Accounts available to this project"
+			columnModel.getColumn(0).cellRenderer = AccountRenderer(this@AccountListPanel.model)
 		}
 		content.add(JBScrollPane(table).apply { setColumnHeaderView(table.tableHeader) }, "accounts")
 		content.add(emptyState(), "empty")
@@ -131,7 +137,7 @@ class AccountListPanel(
 
 	private class AccountsModel : AbstractTableModel() {
 		var accounts: List<AvailableAccount> = emptyList()
-		private val columns = listOf("Account", "Local ID", "Source", "Editions")
+		private val columns = listOf("Account", "Local ID", "Source")
 		override fun getRowCount() = accounts.size
 		override fun getColumnCount() = columns.size
 		override fun getColumnName(column: Int) = columns[column]
@@ -140,11 +146,39 @@ class AccountListPanel(
 			return when (column) {
 				0 -> entry.profileNames() ?: "Profile not available"
 				1 -> entry.account.accountId
-				2 -> entry.source.label
-				else -> entry.account.access.takeIf { it.isNotEmpty() }
-					?.joinToString(", ") { "${it.edition}: ${it.availability.name.lowercase()}" }
-					?: "Not checked"
+				else -> entry.source.label
 			}
+		}
+	}
+
+	/**
+	 * Shows the account's profile names followed by a chip for each edition it is available for.
+	 */
+	private class AccountRenderer(private val model: AccountsModel) : TableCellRenderer {
+		private val name = DefaultTableCellRenderer()
+
+		override fun getTableCellRendererComponent(
+			table: JTable,
+			value: Any?,
+			selected: Boolean,
+			focused: Boolean,
+			row: Int,
+			column: Int
+		): Component {
+			val label = name.getTableCellRendererComponent(table, value, selected, focused, row, column) as JComponent
+			val editions = model.accounts[table.convertRowIndexToModel(row)].availableEditions()
+			val cell = withEditionChips(label, editions)
+			cell.isOpaque = true
+			cell.background = label.background
+			cell.border = label.border
+			label.border = null
+			label.isOpaque = false
+			cell.accessibleContext.accessibleName = accessibleAccountName(value.toString(), editions)
+			// A renderer pane validates only while the table is displayable, so offscreen painting needs the layout now.
+			cell.size = table.getCellRect(row, column, false).size
+			cell.doLayout()
+
+			return cell
 		}
 	}
 }
