@@ -365,8 +365,8 @@ its implementation. Anvil ships a useful starting set:
 | `Movement`          | Send position, rotation, and on-ground state                                   |
 | `Inventory`         | Inspect containers, select held slots, and click inventory slots               |
 | `Interaction`       | Use held items and interact with blocks or entities                            |
-| `Commands`          | Read the command tree and check commands as the client does                    |
-| `Dialogs`           | Observe dialogs, fill their inputs, and press their buttons (1.21.6+)          |
+| `Commands`          | Read the command tree and check commands as the client does (Java Edition)     |
+| `Dialogs`           | Observe dialogs, fill their inputs, and press their buttons (Java 1.21.6+)     |
 
 That table describes what Anvil includes, not everything Alice will ever be allowed to learn. An
 external library can ship another capability wiring bundle as a normal dependency. Anvil discovers
