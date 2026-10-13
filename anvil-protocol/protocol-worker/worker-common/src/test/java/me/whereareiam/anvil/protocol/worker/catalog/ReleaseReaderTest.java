@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.worker.catalog;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.worker.fixture.ProbeLibrary;
 import me.whereareiam.anvil.protocol.worker.model.ReleaseArtifact;
@@ -30,7 +30,7 @@ class ReleaseReaderTest {
 		assertEquals("demo:protocol:1.16.5-2", definition.getModule());
 		assertEquals(List.of(MinecraftVersion.parse("1.16.4"), MinecraftVersion.parse("1.16.5")), definition.getRelease().getMinecraftVersions());
 		assertEquals(Set.of(MinecraftVersion.parse("1.16.5")), definition.getRelease().getVerifiedVersions());
-		assertEquals(MinecraftEdition.of("java"), definition.getRelease().getEdition());
+		assertEquals(Edition.of("java"), definition.getRelease().getEdition());
 		assertEquals(754, definition.getRelease().protocolNumber(MinecraftVersion.parse("1.16.4")));
 		assertEquals(754, definition.getRelease().protocolNumber(MinecraftVersion.parse("1.16.5")));
 		assertEquals(17, definition.getRelease().getJavaVersion());
@@ -60,7 +60,7 @@ class ReleaseReaderTest {
 		String other = release("2.0.0", "\"1.18.2\", \"1.18.3\"", "1.18.2").replace("edition = \"java\"", "edition = \"other\"");
 
 		List<ReleaseDefinition> releases = read(release("1.18.2-1", "\"1.18.2\"", "1.18.2") + other);
-		assertEquals(List.of(MinecraftEdition.of("java"), MinecraftEdition.of("other")),
+		assertEquals(List.of(Edition.of("java"), Edition.of("other")),
 				releases.stream().map(definition -> definition.getRelease().getEdition()).toList());
 	}
 

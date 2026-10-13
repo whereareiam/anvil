@@ -3,7 +3,7 @@ package me.whereareiam.anvil.api.model.player;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.type.AccountAvailability;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,7 +28,7 @@ public class AccountAccess {
 	/**
 	 * Edition whose players this access describes.
 	 */
-	@NotNull MinecraftEdition edition;
+	@NotNull Edition edition;
 	/**
 	 * Whether the edition's players can use the account.
 	 */
@@ -54,7 +54,7 @@ public class AccountAccess {
 	 * @param uniqueId profile UUID the players sign in as
 	 * @return available access
 	 */
-	public static @NotNull AccountAccess available(@NotNull MinecraftEdition edition, @NotNull String username, @NotNull UUID uniqueId) {
+	public static @NotNull AccountAccess available(@NotNull Edition edition, @NotNull String username, @NotNull UUID uniqueId) {
 		return new AccountAccess(edition, AccountAvailability.AVAILABLE, username, uniqueId, null);
 	}
 
@@ -65,7 +65,7 @@ public class AccountAccess {
 	 * @param reason the checking library's explanation, naming the account
 	 * @return unavailable access
 	 */
-	public static @NotNull AccountAccess unavailable(@NotNull MinecraftEdition edition, @NotNull String reason) {
+	public static @NotNull AccountAccess unavailable(@NotNull Edition edition, @NotNull String reason) {
 		return new AccountAccess(edition, AccountAvailability.UNAVAILABLE, null, null, reason);
 	}
 
@@ -77,7 +77,7 @@ public class AccountAccess {
 	 * edition checked the account
 	 * @return access of unknown availability
 	 */
-	public static @NotNull AccountAccess unknown(@NotNull MinecraftEdition edition, @Nullable String reason) {
+	public static @NotNull AccountAccess unknown(@NotNull Edition edition, @Nullable String reason) {
 		return new AccountAccess(edition, AccountAvailability.UNKNOWN, null, null, reason);
 	}
 

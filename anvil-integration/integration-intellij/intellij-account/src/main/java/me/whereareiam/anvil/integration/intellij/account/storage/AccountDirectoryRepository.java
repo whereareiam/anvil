@@ -18,7 +18,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
@@ -205,7 +205,7 @@ public final class AccountDirectoryRepository {
 		var entries = editions.fields();
 		while (entries.hasNext()) {
 			var entry = entries.next();
-			MinecraftEdition edition = edition(entry.getKey());
+			Edition edition = edition(entry.getKey());
 			JsonNode recorded = entry.getValue();
 			String reason = recorded.path("reason").isTextual() ? recorded.path("reason").asText() : null;
 			switch (recorded.path("availability").asText()) {
@@ -220,9 +220,9 @@ public final class AccountDirectoryRepository {
 		return access;
 	}
 
-	private static MinecraftEdition edition(String id) throws IOException {
+	private static Edition edition(String id) throws IOException {
 		try {
-			return MinecraftEdition.of(id);
+			return Edition.of(id);
 		} catch (IllegalArgumentException failure) {
 			throw new IOException("The account records an invalid edition.");
 		}

@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.protocol.player;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.EngineOptions;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.process.Distribution;
@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DefaultPlayerServiceTest {
-	private static final Map<String, MinecraftEdition> EDITIONS = Map.of("server", MinecraftEdition.of("java"));
+	private static final Map<String, Edition> EDITIONS = Map.of("server", Edition.of("java"));
 
 	@TempDir
 	Path directory;
@@ -264,7 +264,7 @@ class DefaultPlayerServiceTest {
 		public @NotNull List<ProtocolRelease> releases(@NotNull ProtocolLibraryContext context) {
 			onReleases.run();
 			MinecraftVersion version = MinecraftVersion.parse("1.21.11");
-			return List.of(ProtocolRelease.builder().libraryVersion(id).edition(MinecraftEdition.of("java"))
+			return List.of(ProtocolRelease.builder().libraryVersion(id).edition(Edition.of("java"))
 					.minecraftVersion(version).verifiedVersion(version)
 					.protocolNumber(version, 774).javaVersion(21).build());
 		}

@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.worker.catalog;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ReleaseCatalogTest {
-	private static final MinecraftEdition JAVA = MinecraftEdition.of("java");
+	private static final Edition JAVA = Edition.of("java");
 	private static final String SNAPSHOT = """
 			[[release]]
 			version = "1.21.11-20260512.221357-18"
@@ -124,7 +124,7 @@ class ReleaseCatalogTest {
 		ReleaseCatalog catalog = new ReleaseCatalog(ProbeLibrary.LIBRARY, List.of(java, other), List.of(), ignored -> { });
 
 		assertSame(java, catalog.require(JAVA, MinecraftVersion.parse("1.21.11")));
-		assertSame(other, catalog.require(MinecraftEdition.of("other"), MinecraftVersion.parse("1.21.11")));
+		assertSame(other, catalog.require(Edition.of("other"), MinecraftVersion.parse("1.21.11")));
 		assertThrows(IllegalArgumentException.class, () -> catalog.require(JAVA, MinecraftVersion.parse("1.21.12")));
 
 		String sameKey = otherEdition.replace(", \"1.21.12\"", "");

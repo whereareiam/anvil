@@ -2,7 +2,7 @@ package me.whereareiam.anvil.platform.planning.validation;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
@@ -37,10 +37,10 @@ public final class BackendEditionValidator {
 			if (!(process instanceof MinecraftProxy proxy)) continue;
 
 			MinecraftProcess first = null;
-			MinecraftEdition expected = null;
+			Edition expected = null;
 			for (String name : proxy.getServers()) {
 				MinecraftProcess server = processes.get(name);
-				MinecraftEdition edition = versions.of(providers.get(server.getPlatform())).getEdition();
+				Edition edition = versions.of(providers.get(server.getPlatform())).getEdition();
 				if (expected == null) {
 					first = server;
 					expected = edition;

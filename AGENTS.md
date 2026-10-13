@@ -133,7 +133,7 @@ current project scope.
 - An Anvil account is one Microsoft account. `worker-common`'s `HostedAccounts` owns the one device-code sign-in
   (`MicrosoftSignIn`, the Minecraft Launcher's Xbox title `00000000402b5328` with scope
   `service::user.auth.xboxlive.com::MBI_SSL`, the application of the account files Anvil 1.0 stored) and the account
-  files: one `<accountId>.json` (schema 3) holding the `MicrosoftToken`, per `MinecraftEdition` id the recorded
+  files: one `<accountId>.json` (schema 3) holding the `MicrosoftToken`, per `Edition` id the recorded
   `AccountAccess` (`AccountAvailability` with profile or reason) and per library ID its cached session. Availability
   belongs to the edition, not the library: a result counts for every installed library of the edition. Sign-in
   chooses no library and checks each edition that the hosted libraries' online releases speak once, with the first
@@ -179,7 +179,7 @@ current project scope.
   else the one installed library whose release supports its Minecraft version most strongly; a tie requires an
   explicit choice. A stored or leased account never changes the library. Launcher composition
   creates one capability runtime per selected library.
-- Editions are platform-agnostic: `api.model.MinecraftEdition` is an opaque identifier compared only for equality,
+- Editions are platform-agnostic: `api.model.Edition` is an opaque identifier compared only for equality,
   with no constants or default, and Java code never names an edition; the identifiers appear only in each family's
   data files. A platform declares `edition` in its version data; planning records it in `ProcessPlan`, refuses a
   proxy whose backend servers speak different editions (`BackendEditionValidator`), and the
@@ -265,7 +265,7 @@ current project scope.
   reaches is refused before it connects, naming the account and giving the recorded reason. Named pools live in the account directory's
   versioned `pools.properties`, documented on `AccountManager.pool(String)`; the runtime reads it and the IDE writes
   it, with the same rules. A pool lends a player only an account available for the edition of the servers it reaches
-  (`AccountPool.lease(MinecraftEdition)`, `PlayerManager.create(options, pool)`); when it has none, it checks its
+  (`AccountPool.lease(Edition)`, `PlayerManager.create(options, pool)`); when it has none, it checks its
   free accounts of unknown availability in order through `ProtocolAuthentication.check`, one network derivation
   each while the account is reserved, records each result and lends the first that becomes available, and otherwise
   fails listing each account and why. JUnit's `@AnvilAccounts(edition = "...")` counts, and pools, only accounts

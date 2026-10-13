@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.worker.child;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.NativeWorkerContext;
 import me.whereareiam.anvil.protocol.api.worker.NativeBinding;
@@ -61,7 +61,7 @@ class ProtocolWorkerTest {
 		);
 		var output = new ByteArrayOutputStream();
 		var writer = new WorkerMessageWriter(new PrintStream(output, true, StandardCharsets.UTF_8));
-		var context = NativeWorkerContext.builder().libraryId("probelib").edition(MinecraftEdition.of("java"))
+		var context = NativeWorkerContext.builder().libraryId("probelib").edition(Edition.of("java"))
 				.version(MinecraftVersion.parse("1.21.11")).protocolNumber(774).nativeSessionType(Object.class).build();
 		var registry = new WorkerCapabilityRegistry(context, List.of(identityAdapter()));
 		try (var worker = new ProtocolWorker(new RecordingClient(), SegmentRoots.none(), registry, writer)) {

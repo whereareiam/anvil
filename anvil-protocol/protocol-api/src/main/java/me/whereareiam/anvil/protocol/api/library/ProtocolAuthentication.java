@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.api.library;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import org.jetbrains.annotations.NotNull;
@@ -55,7 +55,7 @@ public interface ProtocolAuthentication {
 	 * @throws IllegalArgumentException when the account ID is not a valid file name
 	 * @throws IllegalStateException when no account is stored under the ID, or its file is invalid or cannot be written
 	 */
-	@NotNull AccountAccess check(@NotNull String accountId, @NotNull MinecraftEdition edition);
+	@NotNull AccountAccess check(@NotNull String accountId, @NotNull Edition edition);
 
 	/**
 	 * Removes the named account and every session the libraries derived from it.

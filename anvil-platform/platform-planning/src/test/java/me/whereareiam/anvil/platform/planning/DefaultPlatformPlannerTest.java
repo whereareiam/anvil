@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.platform.planning;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.EngineOptions;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.NetworkPolicy;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
@@ -250,7 +250,7 @@ class DefaultPlatformPlannerTest {
 
 		var planned = policyPlanner(EngineOptions.builder().build()).plan(scenario).getProcesses().get("server");
 
-		assertEquals(MinecraftEdition.of("java"), planned.getEdition());
+		assertEquals(Edition.of("java"), planned.getEdition());
 	}
 
 	@Test

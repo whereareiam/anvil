@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class McProtocolReleasesTest {
-	private static final MinecraftEdition JAVA = MinecraftEdition.of("java");
+	private static final Edition JAVA = Edition.of("java");
 
 	private static final String SNAPSHOT = """
 			[[release]]

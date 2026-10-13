@@ -2,7 +2,7 @@ package me.whereareiam.anvil.integration.junit;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.player.account.AccountManager;
 import me.whereareiam.anvil.api.player.account.AccountPool;
@@ -22,7 +22,7 @@ import java.util.List;
 final class AccountRequirement {
 	private final int count;
 	private final @NotNull String poolName;
-	private final @Nullable MinecraftEdition edition;
+	private final @Nullable Edition edition;
 
 	static @Nullable AccountRequirement of(@NotNull Method method, @NotNull Class<?> type) {
 		AnvilAccounts declared = method.getAnnotation(AnvilAccounts.class);
@@ -49,11 +49,11 @@ final class AccountRequirement {
 		throw new TestAbortedException(describe() + ", but " + available + " available");
 	}
 
-	private static @Nullable MinecraftEdition edition(String declared) {
+	private static @Nullable Edition edition(String declared) {
 		if (declared.isEmpty()) return null;
 
 		try {
-			return MinecraftEdition.of(declared);
+			return Edition.of(declared);
 		} catch (IllegalArgumentException invalid) {
 			throw new ExtensionConfigurationException("@AnvilAccounts names an invalid edition: " + invalid.getMessage(), invalid);
 		}

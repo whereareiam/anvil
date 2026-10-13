@@ -3,7 +3,7 @@ package me.whereareiam.anvil.platform.api.model;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
@@ -53,7 +53,7 @@ public class ProcessPlan {
 	 * Minecraft edition the process speaks, as its platform's version data declares it. Players reach the process
 	 * only with a protocol release of this edition.
 	 */
-	@NotNull MinecraftEdition edition;
+	@NotNull Edition edition;
 
 	/**
 	 * Process names that must become ready before this process can start, in declaration order.

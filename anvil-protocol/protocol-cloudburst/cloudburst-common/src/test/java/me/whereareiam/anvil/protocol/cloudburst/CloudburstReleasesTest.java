@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.cloudburst;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CloudburstReleasesTest {
-	private static final MinecraftEdition BEDROCK = MinecraftEdition.of("bedrock");
+	private static final Edition BEDROCK = Edition.of("bedrock");
 
 	@Test
 	void loadsOneBedrockReleaseThatMapsEachVersionToItsOwnProtocol() {
@@ -47,6 +47,6 @@ class CloudburstReleasesTest {
 	void servesNoJavaServerThatNumbersAVersionAlike() {
 		ReleaseCatalog catalog = ReleaseCatalog.load(CloudburstWorkerLibrary.LIBRARY, null);
 
-		assertThrows(IllegalArgumentException.class, () -> catalog.require(MinecraftEdition.of("java"), MinecraftVersion.parse("1.21.0")));
+		assertThrows(IllegalArgumentException.class, () -> catalog.require(Edition.of("java"), MinecraftVersion.parse("1.21.0")));
 	}
 }

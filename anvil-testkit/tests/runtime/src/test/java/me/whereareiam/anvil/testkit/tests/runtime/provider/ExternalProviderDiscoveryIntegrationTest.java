@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.testkit.tests.runtime.provider;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.EngineOptions;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.player.PlayerState;
@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Verifies external protocol-library selection and capability validation without launching Minecraft.
  */
 class ExternalProviderDiscoveryIntegrationTest {
-	private static final Map<String, MinecraftEdition> EDITIONS = Map.of("server", MinecraftEdition.of("java"));
+	private static final Map<String, Edition> EDITIONS = Map.of("server", Edition.of("java"));
 
 	@TempDir
 	Path temporary;

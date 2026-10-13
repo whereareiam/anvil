@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.player;
 
 import me.whereareiam.anvil.api.exception.AnvilException;
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
@@ -63,8 +63,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RunningPlayerManagerTest {
-	private static final MinecraftEdition JAVA = MinecraftEdition.of("java");
-	private static final MinecraftEdition OTHER = MinecraftEdition.of("other");
+	private static final Edition JAVA = Edition.of("java");
+	private static final Edition OTHER = Edition.of("other");
 
 	@TempDir
 	Path temporary;
@@ -617,8 +617,8 @@ class RunningPlayerManagerTest {
 				SupportPolicy.LENIENT, ignored -> { });
 	}
 
-	private static Map<String, MinecraftEdition> editions(AnvilScenario scenario) {
-		Map<String, MinecraftEdition> editions = new LinkedHashMap<>();
+	private static Map<String, Edition> editions(AnvilScenario scenario) {
+		Map<String, Edition> editions = new LinkedHashMap<>();
 		scenario.getServers().forEach(server -> editions.put(server.getName(), JAVA));
 		scenario.getProxies().forEach(proxy -> editions.put(proxy.getName(), JAVA));
 
@@ -702,7 +702,7 @@ class RunningPlayerManagerTest {
 		}
 
 		@Override
-		public @NotNull AccountAccess check(@NotNull String accountId, @NotNull MinecraftEdition edition) {
+		public @NotNull AccountAccess check(@NotNull String accountId, @NotNull Edition edition) {
 			return AccountAccess.unknown(edition, "the test checks no account");
 		}
 

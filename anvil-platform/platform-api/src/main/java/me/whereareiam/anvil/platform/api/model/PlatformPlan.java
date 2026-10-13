@@ -3,7 +3,7 @@ package me.whereareiam.anvil.platform.api.model;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,8 +28,8 @@ public class PlatformPlan {
 	 *
 	 * @return immutable editions keyed by process name
 	 */
-	public @NotNull Map<String, MinecraftEdition> editions() {
-		Map<String, MinecraftEdition> editions = new LinkedHashMap<>();
+	public @NotNull Map<String, Edition> editions() {
+		Map<String, Edition> editions = new LinkedHashMap<>();
 		processes.forEach((name, process) -> editions.put(name, process.getEdition()));
 
 		return Collections.unmodifiableMap(editions);

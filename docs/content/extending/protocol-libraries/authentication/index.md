@@ -52,7 +52,7 @@ host runs; the native worker's host offers it as soon as one of its libraries ha
 `ProtocolLibraryRegistry.authentication(accountsDirectory)` returns it for the installed libraries, creating
 neither a library nor a player.
 
-Each `AuthenticationAccount` lists its `AccountAccess` per `MinecraftEdition`: `AVAILABLE` with the profile,
+Each `AuthenticationAccount` lists its `AccountAccess` per `Edition`: `AVAILABLE` with the profile,
 `UNAVAILABLE` with the checking library's reason, or `UNKNOWN`. `ProtocolAuthentication.check(accountId,
 edition)` checks one edition again and records the result. The engine refuses an online player before it
 connects when the account is recorded as unavailable for the edition of the servers the player reaches, and a

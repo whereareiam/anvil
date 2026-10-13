@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.player.account;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.player.account.AccountManager;
@@ -135,7 +135,7 @@ public final class ProtocolAccountManager implements AccountManager {
 		 * in turn, reserved while a library of the edition checks it, and lends the first that turns out available.
 		 */
 		@Override
-		public synchronized @NotNull AccountLease lease(@NotNull MinecraftEdition edition) {
+		public synchronized @NotNull AccountLease lease(@NotNull Edition edition) {
 			if (closed) throw new IllegalStateException("Account pool is closed");
 
 			Map<String, AuthenticationAccount> stored = stored();
@@ -189,7 +189,7 @@ public final class ProtocolAccountManager implements AccountManager {
 		 *
 		 * @return the lease, or null after recording in {@code skipped} why the account cannot be lent
 		 */
-		private @Nullable AccountLease checkedLease(AuthenticationAccount account, MinecraftEdition edition, Map<String, String> skipped) {
+		private @Nullable AccountLease checkedLease(AuthenticationAccount account, Edition edition, Map<String, String> skipped) {
 			String accountId = account.getAccountId();
 			if (!reservations.reserve(accountId)) {
 				skipped.put(accountId, "in use");
@@ -216,7 +216,7 @@ public final class ProtocolAccountManager implements AccountManager {
 			return lease;
 		}
 
-		private AccountAccess check(AuthenticationAccount account, MinecraftEdition edition) {
+		private AccountAccess check(AuthenticationAccount account, Edition edition) {
 			if (authentication == null) return account.access(edition);
 
 			try {

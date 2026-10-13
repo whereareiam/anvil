@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
@@ -147,7 +147,7 @@ class McProtocolWorkerLibraryTest {
 	private PlayerRequest request(String version) {
 		return PlayerRequest.builder()
 				.name("Alice")
-				.edition(MinecraftEdition.of("java"))
+				.edition(Edition.of("java"))
 				.clientVersion(MinecraftVersion.parse(version))
 				.connection(GameConnection.builder().address(new InetSocketAddress("127.0.0.1", 9)).build())
 				.build();

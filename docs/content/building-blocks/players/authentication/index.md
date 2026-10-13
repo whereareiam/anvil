@@ -171,7 +171,7 @@ creation fails before anything connects, listing each account and why it was ski
 recorded reason, unknown with the failure that kept the check from telling, or in use.
 
 To pick the account yourself, lease it and pass the lease. `testers.lease(edition)` leases for one edition, the
-`MinecraftEdition` of the servers the player reaches, such as `MinecraftEdition.of("java")`;
+`Edition` of the servers the player reaches, such as `Edition.of("java")`;
 `testers.lease()` leases the next free account whatever was recorded, and the player is refused before it
 connects when the account is recorded as unavailable for its edition:
 
@@ -179,7 +179,7 @@ connects when the account is recorded as unavailable for its edition:
 var premium = anvil.players().create(PlayerOptions.builder()
 		.name("premium")
 		.login(PlayerLogin.leased(AuthenticationMode.ON_REQUEST))
-		.build(), testers.lease(MinecraftEdition.of("java")));
+		.build(), testers.lease(Edition.of("java")));
 ```
 
 `create(name, lease)` signs in with `ONLINE`. A leased login is refused without a lease or pool, and a lease

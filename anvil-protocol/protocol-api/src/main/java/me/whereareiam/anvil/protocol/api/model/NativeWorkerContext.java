@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.api.model;
 
 import lombok.Builder;
 import lombok.Value;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.worker.NativeWorkerProvider;
 import org.jetbrains.annotations.NotNull;
@@ -20,7 +20,7 @@ public class NativeWorkerContext {
 	/**
 	 * Minecraft edition of the release loaded by the worker.
 	 */
-	@NotNull MinecraftEdition edition;
+	@NotNull Edition edition;
 	/**
 	 * Release key version loaded by the worker.
 	 */

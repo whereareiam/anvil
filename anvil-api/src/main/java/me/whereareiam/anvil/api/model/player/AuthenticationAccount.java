@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.api.model.player;
 
 import lombok.Getter;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -41,7 +41,7 @@ public final class AuthenticationAccount {
 	public AuthenticationAccount(@NotNull String accountId, @NotNull Collection<AccountAccess> access) {
 		if (accountId.isBlank()) throw new IllegalArgumentException("Account ID must not be blank");
 
-		Map<MinecraftEdition, AccountAccess> indexed = new LinkedHashMap<>();
+		Map<Edition, AccountAccess> indexed = new LinkedHashMap<>();
 		for (AccountAccess entry : access)
 			if (indexed.putIfAbsent(entry.getEdition(), entry) != null)
 				throw new IllegalArgumentException("Account '" + accountId + "' records edition '" + entry.getEdition() + "' twice");
@@ -57,7 +57,7 @@ public final class AuthenticationAccount {
 	 * @return the recorded access, or {@link AccountAccess#unknown unknown} access when nothing was recorded for the
 	 * edition
 	 */
-	public @NotNull AccountAccess access(@NotNull MinecraftEdition edition) {
+	public @NotNull AccountAccess access(@NotNull Edition edition) {
 		return access.stream()
 				.filter(entry -> entry.getEdition().equals(edition))
 				.findFirst()

@@ -2,7 +2,7 @@ package me.whereareiam.anvil.launcher.assembly;
 
 import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.process.Distribution;
@@ -50,7 +50,7 @@ class ProcessCompositionTest {
 			scenario.server(server);
 			plan.process(name, ProcessPlan.builder().declaration(server).agent(agents).javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().featureVersion(21).build()).build())
 					.workspace(WorkspacePlan.builder().build())
-					.edition(MinecraftEdition.of("java"))
+					.edition(Edition.of("java"))
 					.forwarding(ForwardingConfiguration.builder().build())
 					.readinessPattern(Pattern.compile("READY")).stopCommand("stop").build());
 		}

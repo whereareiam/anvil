@@ -3,7 +3,7 @@ package me.whereareiam.anvil.protocol.worker.child;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.NativeWorkerContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerClient;
@@ -63,7 +63,7 @@ public final class ProtocolWorker implements AutoCloseable {
 		WorkerLibraryProvider provider = provider(arguments[0]);
 		WorkerLibrary library = provider.library();
 		MinecraftVersion version = MinecraftVersion.parse(arguments[1]);
-		MinecraftEdition edition = MinecraftEdition.of(arguments[2]);
+		Edition edition = Edition.of(arguments[2]);
 		int expected = Integer.parseInt(arguments[3]);
 		WorkerSegments segments = WorkerSegments.verify(ProtocolWorker.class.getClassLoader(), library, version, System.err::println);
 		WorkerClient client = provider.client(segments.client(library.getClientPort()));

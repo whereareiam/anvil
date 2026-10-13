@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.worker.account;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
@@ -105,7 +105,7 @@ public final class HostedAccounts implements ProtocolAuthentication {
 				StoredAccount account = StoredAccount.of(accountId, token);
 				accounts.write(account);
 				output.accept("Signed in account '" + accountId + "'.");
-				for (Map.Entry<MinecraftEdition, Library> checker : checkers().entrySet()) {
+				for (Map.Entry<Edition, Library> checker : checkers().entrySet()) {
 					account = check(account, checker.getValue(), checker.getKey());
 					accounts.write(account);
 					output.accept(account.access(checker.getKey()).describe());
@@ -126,7 +126,7 @@ public final class HostedAccounts implements ProtocolAuthentication {
 	 * @throws IllegalStateException when the account is not stored, its file is invalid, or it cannot be stored
 	 */
 	@Override
-	public @NotNull AccountAccess check(@NotNull String accountId, @NotNull MinecraftEdition edition) {
+	public @NotNull AccountAccess check(@NotNull String accountId, @NotNull Edition edition) {
 		Library library = checkers().get(edition);
 		if (library == null)
 			return AccountAccess.unknown(edition, "no installed protocol library of edition '" + edition + "' plays online");
@@ -181,7 +181,7 @@ public final class HostedAccounts implements ProtocolAuthentication {
 	 */
 	public @NotNull AuthenticationSession resolve(
 			@NotNull String libraryId,
-			@NotNull MinecraftEdition edition,
+			@NotNull Edition edition,
 			@NotNull String accountId,
 			@NotNull MinecraftVersion version
 	) {
@@ -207,10 +207,10 @@ public final class HostedAccounts implements ProtocolAuthentication {
 	 * Returns the library that checks each edition: the first library, in installation order, whose releases of the
 	 * edition sign players in online.
 	 */
-	private Map<MinecraftEdition, Library> checkers() {
-		Map<MinecraftEdition, Library> checkers = new LinkedHashMap<>();
+	private Map<Edition, Library> checkers() {
+		Map<Edition, Library> checkers = new LinkedHashMap<>();
 		for (Library library : libraries.values())
-			for (MinecraftEdition edition : library.editions()) checkers.putIfAbsent(edition, library);
+			for (Edition edition : library.editions()) checkers.putIfAbsent(edition, library);
 
 		return checkers;
 	}
@@ -219,11 +219,11 @@ public final class HostedAccounts implements ProtocolAuthentication {
 	 * Maps a library to the one edition its online releases speak, which the per-library record of an account file of
 	 * an earlier schema becomes the record of.
 	 */
-	private Optional<MinecraftEdition> soleEdition(String libraryId) {
+	private Optional<Edition> soleEdition(String libraryId) {
 		Library library = libraries.get(libraryId);
 		if (library == null) return Optional.empty();
 
-		Set<MinecraftEdition> editions = library.editions();
+		Set<Edition> editions = library.editions();
 		return editions.size() == 1 ? Optional.of(editions.iterator().next()) : Optional.empty();
 	}
 
@@ -231,7 +231,7 @@ public final class HostedAccounts implements ProtocolAuthentication {
 	 * Lets a library check an account for an edition with the newest version of its releases of the edition. A library
 	 * that cannot tell records unknown availability with its failure.
 	 */
-	private static StoredAccount check(StoredAccount account, Library library, MinecraftEdition edition) {
+	private static StoredAccount check(StoredAccount account, Library library, Edition edition) {
 		try {
 			return record(account, library, edition, derive(account, library, library.newestVersion(edition)));
 		} catch (RuntimeException failure) {
@@ -248,7 +248,7 @@ public final class HostedAccounts implements ProtocolAuthentication {
 				.build(), version);
 	}
 
-	private static StoredAccount record(StoredAccount account, Library library, MinecraftEdition edition, DerivedSession derived) {
+	private static StoredAccount record(StoredAccount account, Library library, Edition edition, DerivedSession derived) {
 		String libraryId = library.library().getId();
 		AuthenticationSession session = derived.getSession();
 		AccountAccess access = session == null
@@ -278,14 +278,14 @@ public final class HostedAccounts implements ProtocolAuthentication {
 		 *
 		 * @return editions the library checks accounts for
 		 */
-		@NotNull Set<MinecraftEdition> editions() {
-			Set<MinecraftEdition> editions = new LinkedHashSet<>();
+		@NotNull Set<Edition> editions() {
+			Set<Edition> editions = new LinkedHashSet<>();
 			for (ProtocolRelease release : online()) editions.add(release.getEdition());
 
 			return editions;
 		}
 
-		private @NotNull MinecraftVersion newestVersion(@NotNull MinecraftEdition edition) {
+		private @NotNull MinecraftVersion newestVersion(@NotNull Edition edition) {
 			return online().stream()
 					.filter(release -> release.getEdition().equals(edition))
 					.flatMap(release -> release.getMinecraftVersions().stream())

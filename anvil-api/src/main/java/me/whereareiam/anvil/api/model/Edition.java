@@ -16,13 +16,13 @@ import java.util.regex.Pattern;
  * of each of its releases, both in their own data files.</p>
  *
  * <pre>{@code
- * MinecraftEdition server = MinecraftEdition.of("example");
+ * Edition server = Edition.of("example");
  * boolean reachable = server.equals(release.getEdition());
  * }</pre>
  */
 @Value
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class MinecraftEdition {
+public class Edition {
 	private static final Pattern IDENTIFIER = Pattern.compile("[a-z][a-z0-9-]*");
 
 	/**
@@ -37,11 +37,11 @@ public class MinecraftEdition {
 	 * @return the edition, equal to every other edition with the same identifier
 	 * @throws IllegalArgumentException when the identifier is not of that form
 	 */
-	public static @NotNull MinecraftEdition of(@NotNull String id) {
+	public static @NotNull Edition of(@NotNull String id) {
 		if (!IDENTIFIER.matcher(id).matches())
 			throw new IllegalArgumentException("Not a Minecraft edition identifier: '" + id + "'");
 
-		return new MinecraftEdition(id);
+		return new Edition(id);
 	}
 
 	/**

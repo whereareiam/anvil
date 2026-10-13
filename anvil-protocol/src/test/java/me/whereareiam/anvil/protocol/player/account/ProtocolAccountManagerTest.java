@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.player.account;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.player.account.AccountPool;
@@ -25,8 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProtocolAccountManagerTest {
-	private static final MinecraftEdition JAVA = MinecraftEdition.of("java");
-	private static final MinecraftEdition BEDROCK = MinecraftEdition.of("bedrock");
+	private static final Edition JAVA = Edition.of("java");
+	private static final Edition BEDROCK = Edition.of("bedrock");
 	private static final List<AuthenticationAccount> ACCOUNTS = List.of(
 			new AuthenticationAccount("alice", List.of(AccountAccess.available(JAVA, "Alice", UUID.randomUUID()))),
 			new AuthenticationAccount("bob", List.of(AccountAccess.available(JAVA, "Bob", UUID.randomUUID())))
@@ -206,7 +206,7 @@ class ProtocolAccountManagerTest {
 		}
 
 		@Override
-		public @NotNull AccountAccess check(@NotNull String accountId, @NotNull MinecraftEdition edition) {
+		public @NotNull AccountAccess check(@NotNull String accountId, @NotNull Edition edition) {
 			checks.add(accountId + " " + edition);
 			AccountAccess result = results.get(accountId);
 			accounts = accounts.stream()

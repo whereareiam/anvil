@@ -8,7 +8,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import lombok.With;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.type.AccountAvailability;
@@ -81,7 +81,7 @@ final class AccountStore {
 	);
 
 	private final Path directory;
-	private final Function<String, Optional<MinecraftEdition>> libraryEditions;
+	private final Function<String, Optional<Edition>> libraryEditions;
 
 	/**
 	 * Creates the store of an accounts directory.
@@ -91,7 +91,7 @@ final class AccountStore {
 	 * earlier schema keeps for the library becomes the record of; empty for a library that is not installed or speaks
 	 * several editions
 	 */
-	AccountStore(@NotNull Path accountsDirectory, @NotNull Function<String, Optional<MinecraftEdition>> libraryEditions) {
+	AccountStore(@NotNull Path accountsDirectory, @NotNull Function<String, Optional<Edition>> libraryEditions) {
 		directory = accountsDirectory.toAbsolutePath().normalize();
 		this.libraryEditions = libraryEditions;
 	}
@@ -264,7 +264,7 @@ final class AccountStore {
 			JsonNode recorded = library.getValue();
 			if (recorded.path("session").isTextual()) account = account.withSession(library.getKey(), recorded.get("session").asText());
 
-			Optional<MinecraftEdition> edition = libraryEditions.apply(library.getKey());
+			Optional<Edition> edition = libraryEditions.apply(library.getKey());
 			if (edition.isPresent()) account = account.withEarlierRecord(access(accountId, edition.get(), recorded));
 		}
 
@@ -300,7 +300,7 @@ final class AccountStore {
 						.expiresAt(Instant.ofEpochMilli(token.get("expireTimeMs").asLong()))
 						.build())
 				.withSession(provider.asText(), credentials.toString());
-		Optional<MinecraftEdition> edition = libraryEditions.apply(provider.asText());
+		Optional<Edition> edition = libraryEditions.apply(provider.asText());
 		if (edition.isEmpty() || !document.path("username").isTextual() || !document.path("uuid").isTextual()) return account;
 
 		try {
@@ -318,9 +318,9 @@ final class AccountStore {
 		return token(accountId, microsoft);
 	}
 
-	private static MinecraftEdition editionOf(String accountId, String id) {
+	private static Edition editionOf(String accountId, String id) {
 		try {
-			return MinecraftEdition.of(id);
+			return Edition.of(id);
 		} catch (IllegalArgumentException invalid) {
 			throw new IllegalStateException("Stored account '" + accountId + "' records an invalid edition");
 		}
@@ -351,7 +351,7 @@ final class AccountStore {
 		return microsoft;
 	}
 
-	private static AccountAccess access(String accountId, MinecraftEdition edition, JsonNode recorded) {
+	private static AccountAccess access(String accountId, Edition edition, JsonNode recorded) {
 		String reason = recorded.path("reason").isTextual() ? recorded.get("reason").asText() : null;
 		try {
 			return switch (AccountAvailability.valueOf(recorded.path("availability").asText())) {
@@ -389,7 +389,7 @@ final class AccountStore {
 	static class StoredAccount {
 		@NotNull String accountId;
 		@NotNull MicrosoftToken token;
-		@NotNull Map<MinecraftEdition, AccountAccess> editions;
+		@NotNull Map<Edition, AccountAccess> editions;
 		@NotNull Map<String, String> sessions;
 
 		static @NotNull StoredAccount of(@NotNull String accountId, @NotNull MicrosoftToken token) {
@@ -400,7 +400,7 @@ final class AccountStore {
 			return new AuthenticationAccount(accountId, editions.values());
 		}
 
-		@NotNull AccountAccess access(@NotNull MinecraftEdition edition) {
+		@NotNull AccountAccess access(@NotNull Edition edition) {
 			AccountAccess access = editions.get(edition);
 			return access == null ? AccountAccess.unknown(edition, null) : access;
 		}
@@ -413,7 +413,7 @@ final class AccountStore {
 		 * Records what was determined for an edition, replacing the edition's earlier record.
 		 */
 		@NotNull StoredAccount withAccess(@NotNull AccountAccess access) {
-			Map<MinecraftEdition, AccountAccess> changed = new LinkedHashMap<>(editions);
+			Map<Edition, AccountAccess> changed = new LinkedHashMap<>(editions);
 			changed.put(access.getEdition(), access);
 			return withEditions(Collections.unmodifiableMap(changed));
 		}

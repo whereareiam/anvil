@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.platform.planning;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.EngineOptions;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
@@ -225,7 +225,7 @@ final class JavaRequirementPlanner {
 	private @Nullable String alternative(
 			PlatformProvider other,
 			MinecraftServer server,
-			MinecraftEdition edition,
+			Edition edition,
 			int java,
 			SupportPolicy policy
 	) {

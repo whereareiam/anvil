@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.api.player.account;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,7 +16,7 @@ public interface AccountPool extends AutoCloseable {
 	/**
 	 * Reserves the first account that is not reserved anywhere in the engine, whatever was recorded about it. A
 	 * player created with the lease is refused before it connects when the account was recorded as unavailable for
-	 * the edition of the servers the player reaches; prefer {@link #lease(MinecraftEdition)} or
+	 * the edition of the servers the player reaches; prefer {@link #lease(Edition)} or
 	 * {@code PlayerManager.create(PlayerOptions, AccountPool)}, which lend only an account the player's edition can
 	 * use.
 	 *
@@ -37,7 +37,7 @@ public interface AccountPool extends AutoCloseable {
 	 *
 	 * <pre>{@code
 	 * try (AccountPool pool = accounts.pool("testers")) {
-	 *     AccountPool.AccountLease lease = pool.lease(MinecraftEdition.of("example"));
+	 *     AccountPool.AccountLease lease = pool.lease(Edition.of("example"));
 	 * }
 	 * }</pre>
 	 *
@@ -46,7 +46,7 @@ public interface AccountPool extends AutoCloseable {
 	 * @throws IllegalStateException when the pool is closed or holds no free account available for the edition;
 	 * the message names each account and why it was skipped
 	 */
-	@NotNull AccountLease lease(@NotNull MinecraftEdition edition);
+	@NotNull AccountLease lease(@NotNull Edition edition);
 
 	/**
 	 * Returns the accounts this pool may lease, in lease order, as they were recorded when the pool was created.

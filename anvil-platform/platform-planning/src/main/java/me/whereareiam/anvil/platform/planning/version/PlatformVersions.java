@@ -3,7 +3,7 @@ package me.whereareiam.anvil.platform.planning.version;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +34,7 @@ public class PlatformVersions {
 	/**
 	 * Minecraft edition the platform's processes speak; players reach them only with a protocol release of it.
 	 */
-	@NotNull MinecraftEdition edition;
+	@NotNull Edition edition;
 
 	/**
 	 * Java compatibility rows ordered by their start version.
@@ -59,7 +59,7 @@ public class PlatformVersions {
 
 	@Builder
 	private PlatformVersions(
-			@NotNull MinecraftEdition edition,
+			@NotNull Edition edition,
 			@NotNull @Singular List<JavaCompatibility> javaCompatibilities,
 			@Nullable Integer agentMinimumJava,
 			@NotNull @Singular Map<MinecraftVersion, Set<Integer>> verifiedJavaVersions,

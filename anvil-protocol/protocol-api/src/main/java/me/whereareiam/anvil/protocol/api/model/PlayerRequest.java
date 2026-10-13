@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.api.model;
 
 import lombok.Builder;
 import lombok.Value;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerLogin;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
  * PlayerRequest request = PlayerRequest.builder()
  *         .name("alice-again")
  *         .login(PlayerLogin.offline("Alice"))
- *         .edition(MinecraftEdition.of("example"))
+ *         .edition(Edition.of("example"))
  *         .clientVersion(MinecraftVersion.parse("1.21.11"))
  *         .connection(GameConnection.builder().address(new InetSocketAddress("127.0.0.1", 25565)).build())
  *         .build();
@@ -43,7 +43,7 @@ public class PlayerRequest {
 	/**
 	 * Minecraft edition of the servers the client reaches, as their platform declares it.
 	 */
-	@NotNull MinecraftEdition edition;
+	@NotNull Edition edition;
 
 	/**
 	 * Exact native Minecraft version the client speaks. Within one library a version of an edition belongs to

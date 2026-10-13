@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.testkit.tests.server.scenario;
 
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.EngineOptions;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
@@ -76,7 +76,7 @@ class CompatibilityScenarioFactoryTest {
 	@ValueSource(strings = {"mcprotocol", "cloudburst"})
 	void protocolLibraryVerifiedVersionsAreExactlyTheMatrixVersionsOfServersOfItsEditions(String library) {
 		List<ProtocolRelease> releases = releases(library);
-		Set<MinecraftEdition> editions = releases.stream()
+		Set<Edition> editions = releases.stream()
 				.map(ProtocolRelease::getEdition)
 				.collect(Collectors.toSet());
 		Set<MinecraftVersion> servers = CompatibilityScenarioFactory.scenarios().stream()

@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.worker.host;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.worker.WorkerClient;
@@ -106,7 +106,7 @@ class WorkerClasspathTest {
 	private List<Path> resolve(String version, List<Path> host) {
 		ProtocolRelease release = ProtocolRelease.builder()
 				.libraryVersion("release-" + version)
-				.edition(MinecraftEdition.of("java"))
+				.edition(Edition.of("java"))
 				.minecraftVersion(MinecraftVersion.parse(version))
 				.protocolNumber(MinecraftVersion.parse(version), 1)
 				.javaVersion(17)

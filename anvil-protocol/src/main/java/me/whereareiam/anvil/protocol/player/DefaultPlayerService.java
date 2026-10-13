@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.protocol.player;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.EngineOptions;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerManager;
 import me.whereareiam.anvil.api.player.account.AccountManager;
@@ -101,7 +101,7 @@ public final class DefaultPlayerService implements AutoCloseable {
 	 * process name
 	 * @return distinct library identifiers, without creating any library
 	 */
-	public @NotNull List<String> scenarioLibraries(@NotNull AnvilScenario scenario, @NotNull Map<String, MinecraftEdition> editions) {
+	public @NotNull List<String> scenarioLibraries(@NotNull AnvilScenario scenario, @NotNull Map<String, Edition> editions) {
 		synchronized (this) {
 			ensureOpen();
 		}
@@ -120,7 +120,7 @@ public final class DefaultPlayerService implements AutoCloseable {
 	 * process name; a player reaches a server only with a protocol release of the server's edition
 	 * @throws ScenarioValidationException when the scenario names a library that is not installed
 	 */
-	public synchronized void prepare(@NotNull AnvilScenario scenario, @NotNull Map<String, MinecraftEdition> editions) {
+	public synchronized void prepare(@NotNull AnvilScenario scenario, @NotNull Map<String, Edition> editions) {
 		ensureOpen();
 		selector.validate(scenario, editions);
 	}
@@ -140,7 +140,7 @@ public final class DefaultPlayerService implements AutoCloseable {
 	 */
 	public synchronized @NotNull PlayerManager open(
 			@NotNull AnvilScenario scenario,
-			@NotNull Map<String, MinecraftEdition> editions,
+			@NotNull Map<String, Edition> editions,
 			@NotNull ScenarioProcesses processes,
 			@NotNull PlayerObservationFactory observations,
 			@NotNull ProtocolPlayerComposer composer,

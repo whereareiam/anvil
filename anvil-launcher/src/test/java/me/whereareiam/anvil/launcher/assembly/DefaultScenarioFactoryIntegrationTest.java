@@ -10,8 +10,8 @@ import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
 import me.whereareiam.anvil.api.exception.ProcessException;
 import me.whereareiam.anvil.api.exception.scenario.ScenarioStartupException;
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.EngineOptions;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
@@ -853,7 +853,7 @@ class DefaultScenarioFactoryIntegrationTest {
 
 	private ProtocolLibraryProvider releasedLibrary(String id, String version) {
 		MinecraftVersion parsed = MinecraftVersion.parse(version);
-		ProtocolRelease release = ProtocolRelease.builder().libraryVersion(id + "-" + version).edition(MinecraftEdition.of("java"))
+		ProtocolRelease release = ProtocolRelease.builder().libraryVersion(id + "-" + version).edition(Edition.of("java"))
 				.minecraftVersion(parsed).verifiedVersion(parsed).protocolNumber(parsed, 774).javaVersion(21).build();
 		return new ProtocolLibraryProvider() {
 			@Override

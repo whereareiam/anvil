@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.worker.account;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
@@ -120,11 +120,11 @@ class HostedAccountsTest {
 		java.failure = null;
 
 		AccountAccess checked = accounts.check("alice", JAVA);
-		AccountAccess other = accounts.check("alice", MinecraftEdition.of("other"));
+		AccountAccess other = accounts.check("alice", Edition.of("other"));
 
 		assertEquals(AccountAccess.available(JAVA, "Alice", PROFILE), checked);
 		assertEquals(checked, accounts.accounts().iterator().next().access(JAVA));
-		assertEquals(AccountAccess.unknown(MinecraftEdition.of("other"), "no installed protocol library of edition 'other' plays online"), other);
+		assertEquals(AccountAccess.unknown(Edition.of("other"), "no installed protocol library of edition 'other' plays online"), other);
 	}
 
 	@Test
@@ -169,7 +169,7 @@ class HostedAccountsTest {
 	private static HostedAccounts.Library library(
 			String id,
 			WorkerAuthentication derivation,
-			MinecraftEdition edition,
+			Edition edition,
 			MinecraftVersion newest
 	) {
 		WorkerLibrary library = WorkerLibrary.builder()
@@ -193,7 +193,7 @@ class HostedAccountsTest {
 				.build();
 		ProtocolRelease offline = ProtocolRelease.builder()
 				.libraryVersion(id + "-offline")
-				.edition(MinecraftEdition.of("offline"))
+				.edition(Edition.of("offline"))
 				.minecraftVersion(newest)
 				.protocolNumber(newest, 3)
 				.javaVersion(21)

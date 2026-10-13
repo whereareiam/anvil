@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.integration.junit;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
@@ -143,7 +143,7 @@ class ScenarioInvocationTest {
 
 	@Test
 	void poolsAndCountsOnlyAccountsAvailableForTheDeclaredEdition() throws Exception {
-		MinecraftEdition bedrock = MinecraftEdition.of("bedrock");
+		Edition bedrock = Edition.of("bedrock");
 		Context context = new Context(() -> { });
 		context.stored.add(new AuthenticationAccount("alice", List.of(AccountAccess.available(bedrock, "Alice", UUID.randomUUID()))));
 		context.stored.add(new AuthenticationAccount("bob", List.of(AccountAccess.unavailable(bedrock, "Account 'bob' owns no game"))));
@@ -159,7 +159,7 @@ class ScenarioInvocationTest {
 	@Test
 	void skipsWhenTooFewAccountsAreAvailableForTheDeclaredEdition() throws Exception {
 		Context context = new Context(() -> { });
-		context.stored.add(new AuthenticationAccount("alice", List.of(AccountAccess.available(MinecraftEdition.of("bedrock"), "Alice",
+		context.stored.add(new AuthenticationAccount("alice", List.of(AccountAccess.available(Edition.of("bedrock"), "Alice",
 				UUID.randomUUID()))));
 		context.stored.add(new AuthenticationAccount("bob", List.of()));
 
@@ -249,7 +249,7 @@ class ScenarioInvocationTest {
 					pooled.addAll(accountIds);
 					return new AccountPool() {
 						public @NonNull AccountLease lease() { throw new AssertionError("No lease expected"); }
-						public @NonNull AccountLease lease(@NonNull MinecraftEdition edition) { throw new AssertionError("No lease expected"); }
+						public @NonNull AccountLease lease(@NonNull Edition edition) { throw new AssertionError("No lease expected"); }
 						public @NonNull Collection<AuthenticationAccount> accounts() {
 							return stored.stream().filter(account -> pooled.contains(account.getAccountId())).toList();
 						}

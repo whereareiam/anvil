@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.player;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
@@ -68,7 +68,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	private final PlayerObservationFactory observations;
 	private final Map<String, MinecraftProcess> declarations;
 	private final Map<String, MinecraftServer> servers;
-	private final Map<String, MinecraftEdition> editions;
+	private final Map<String, Edition> editions;
 	private final ProtocolPlayerComposer playerComposer;
 	private final Consumer<RunningPlayerManager> onClosed;
 	private final AccountManager accounts;
@@ -84,7 +84,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 
 	RunningPlayerManager(
 			@NotNull AnvilScenario scenario,
-			@NotNull Map<String, MinecraftEdition> editions,
+			@NotNull Map<String, Edition> editions,
 			@NotNull ProtocolLibrarySelector selector,
 			@NotNull Function<String, ProtocolLibrary> libraries,
 			@NotNull ScenarioProcesses processes,
@@ -175,7 +175,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	public synchronized @NotNull SimulatedPlayer create(@NotNull PlayerOptions options, @NotNull AccountPool pool) {
 		requireLeased(options);
 		ensureOpen();
-		MinecraftEdition edition = target(options).reach().edition();
+		Edition edition = target(options).reach().edition();
 
 		return create(options, pool.lease(edition));
 	}
@@ -350,7 +350,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		if (reachable.isEmpty())
 			throw new ScenarioValidationException("Connection target '" + target.getName() + "' reaches no Minecraft servers");
 
-		Set<MinecraftEdition> reachableEditions = reachable.stream()
+		Set<Edition> reachableEditions = reachable.stream()
 				.map(server -> edition(server.getName()))
 				.collect(Collectors.toCollection(LinkedHashSet::new));
 		if (reachableEditions.size() > 1)
@@ -366,7 +366,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 					+ "' reaches servers with different native versions " + nativeVersions
 					+ "; no exact-fidelity client can traverse all of them");
 
-		MinecraftEdition edition = reachableEditions.iterator().next();
+		Edition edition = reachableEditions.iterator().next();
 		MinecraftVersion compatible = nativeVersions.iterator().next();
 		if (options.getClientVersion() != null && !compatible.equals(clientVersion(options)))
 			throw new ScenarioValidationException("Native client version '" + options.getClientVersion()
@@ -376,8 +376,8 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		return new Reach(edition, compatible);
 	}
 
-	private MinecraftEdition edition(String server) {
-		MinecraftEdition edition = editions.get(server);
+	private Edition edition(String server) {
+		Edition edition = editions.get(server);
 		if (edition == null) throw new IllegalStateException("No Minecraft edition is known for server '" + server + "'");
 
 		return edition;
@@ -453,7 +453,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 				.filter(candidate -> candidate.getAccountId().equals(accountId))
 				.findFirst()
 				.orElseThrow(() -> new ScenarioValidationException("Authenticated account '" + accountId + "' is not available"));
-		MinecraftEdition edition = selection.release().getEdition();
+		Edition edition = selection.release().getEdition();
 		AccountAccess access = account.access(edition);
 		if (access.getAvailability() == AccountAvailability.UNAVAILABLE)
 			throw new ScenarioValidationException("Player '" + options.getName() + "' cannot sign in with account '" + accountId
@@ -534,7 +534,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	/**
 	 * Edition and exact native version of the servers a player reaches.
 	 */
-	private record Reach(@NotNull MinecraftEdition edition, @NotNull MinecraftVersion version) { }
+	private record Reach(@NotNull Edition edition, @NotNull MinecraftVersion version) { }
 
 	private record Target(@NotNull String name, @NotNull MinecraftProcess process, @NotNull Reach reach) { }
 }

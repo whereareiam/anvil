@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.player;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.process.Distribution;
@@ -26,8 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProtocolLibrarySelectorTest {
 	private static final MinecraftVersion VERSION = MinecraftVersion.parse("1.21.11");
-	private static final MinecraftEdition JAVA = MinecraftEdition.of("java");
-	private static final MinecraftEdition OTHER = MinecraftEdition.of("other");
+	private static final Edition JAVA = Edition.of("java");
+	private static final Edition OTHER = Edition.of("other");
 
 	private final Map<String, List<ProtocolRelease>> releases = new LinkedHashMap<>();
 	private final List<String> notices = new ArrayList<>();
@@ -213,7 +213,7 @@ class ProtocolLibrarySelectorTest {
 				.build();
 
 		// Tied libraries and releases the policy refuses are selectable only by declaration.
-		Map<String, MinecraftEdition> editions = editions(scenario);
+		Map<String, Edition> editions = editions(scenario);
 		assertEquals(List.of("verified", "additional"), selector(null, SupportPolicy.LENIENT).scenarioLibraries(scenario, editions));
 		assertEquals(List.of("verified"), selector(null, SupportPolicy.STRICT).scenarioLibraries(scenario, editions));
 		assertEquals(List.of("verified"), selector(null, SupportPolicy.LENIENT)
@@ -313,7 +313,7 @@ class ProtocolLibrarySelectorTest {
 		return release(name, JAVA, version, verified, additional);
 	}
 
-	private ProtocolRelease release(String name, MinecraftEdition edition, String version, boolean verified, boolean additional) {
+	private ProtocolRelease release(String name, Edition edition, String version, boolean verified, boolean additional) {
 		MinecraftVersion parsed = MinecraftVersion.parse(version);
 		var builder = ProtocolRelease.builder()
 				.libraryVersion(name + "-release")
@@ -335,8 +335,8 @@ class ProtocolLibrarySelectorTest {
 		return MinecraftServer.builder().name(name).platform("test").distribution(distribution).build();
 	}
 
-	private static Map<String, MinecraftEdition> editions(AnvilScenario scenario) {
-		Map<String, MinecraftEdition> editions = new LinkedHashMap<>();
+	private static Map<String, Edition> editions(AnvilScenario scenario) {
+		Map<String, Edition> editions = new LinkedHashMap<>();
 		scenario.getServers().forEach(server -> editions.put(server.getName(), JAVA));
 
 		return editions;

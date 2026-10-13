@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.worker.account;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.type.AccountAvailability;
@@ -28,8 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AccountStoreTest {
-	static final MinecraftEdition JAVA = MinecraftEdition.of("java");
-	static final MinecraftEdition BEDROCK = MinecraftEdition.of("bedrock");
+	static final Edition JAVA = Edition.of("java");
+	static final Edition BEDROCK = Edition.of("bedrock");
 	static final MicrosoftToken TOKEN = MicrosoftToken.builder()
 			.clientId("client")
 			.scope("scope")

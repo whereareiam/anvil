@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.type.ProtocolFeature;
@@ -153,10 +153,10 @@ final class ReleaseReader {
 			return ReleaseDefinition.builder().release(release).module(module).artifacts(artifacts).build();
 		}
 
-		private MinecraftEdition edition(JsonNode row, String context) {
+		private Edition edition(JsonNode row, String context) {
 			String edition = text(row, "edition", context);
 			try {
-				return MinecraftEdition.of(edition);
+				return Edition.of(edition);
 			} catch (IllegalArgumentException exception) {
 				throw new IllegalArgumentException(source + ": " + context + " edition: " + exception.getMessage(), exception);
 			}

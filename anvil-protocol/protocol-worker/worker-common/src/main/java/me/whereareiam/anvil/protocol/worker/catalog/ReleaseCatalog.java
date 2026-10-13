@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.worker.catalog;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.worker.model.WorkerLibrary;
@@ -31,7 +31,7 @@ import java.util.function.Consumer;
  *
  * <pre>{@code
  * ReleaseCatalog catalog = ReleaseCatalog.load(library, Path.of("extra-releases.toml"));
- * ReleaseDefinition definition = catalog.require(MinecraftEdition.of("example"), MinecraftVersion.parse("1.21.11"));
+ * ReleaseDefinition definition = catalog.require(Edition.of("example"), MinecraftVersion.parse("1.21.11"));
  * }</pre>
  */
 public final class ReleaseCatalog {
@@ -134,7 +134,7 @@ public final class ReleaseCatalog {
 	 * @return definition of the release of that edition listing the version
 	 * @throws IllegalArgumentException when no release of this catalog serves the edition and version
 	 */
-	public @NotNull ReleaseDefinition require(@NotNull MinecraftEdition edition, @NotNull MinecraftVersion version) {
+	public @NotNull ReleaseDefinition require(@NotNull Edition edition, @NotNull MinecraftVersion version) {
 		return definitions.values().stream()
 				.filter(definition -> definition.getRelease().serves(edition, version))
 				.findFirst()

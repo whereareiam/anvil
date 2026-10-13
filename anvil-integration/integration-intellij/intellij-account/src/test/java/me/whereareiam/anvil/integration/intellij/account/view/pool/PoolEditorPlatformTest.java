@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.integration.intellij.AccountPlatformTestCase;
@@ -27,7 +27,7 @@ public class PoolEditorPlatformTest extends AccountPlatformTestCase {
 		try {
 			library.setDirectory(directory);
 			library.savePool(null, "Players", List.of("missing"));
-			var entry = new AvailableAccount(new AuthenticationAccount("alice", List.of(AccountAccess.available(MinecraftEdition.of("java"), "Alice", UUID.randomUUID()))), List.of(),
+			var entry = new AvailableAccount(new AuthenticationAccount("alice", List.of(AccountAccess.available(Edition.of("java"), "Alice", UUID.randomUUID()))), List.of(),
 					directory.resolve("alice.json"), AccountSource.PROJECT);
 			var dialog = new PoolEditorDialog(getProject(), library, "Players", library.catalog().getPools(), List.of(entry));
 			Disposer.register(getTestRootDisposable(), dialog.getDisposable());

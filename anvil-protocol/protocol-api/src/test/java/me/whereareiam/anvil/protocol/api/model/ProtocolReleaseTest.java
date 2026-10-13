@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.api.model;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import org.junit.jupiter.api.Test;
@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProtocolReleaseTest {
-	private static final MinecraftEdition EDITION = MinecraftEdition.of("first");
+	private static final Edition EDITION = Edition.of("first");
 	private static final ProtocolRelease RELEASE = ProtocolRelease.builder()
 			.libraryVersion("1.16.5-2")
 			.edition(EDITION)
@@ -35,7 +35,7 @@ class ProtocolReleaseTest {
 	void servesOnlyListedVersionsOfItsOwnEdition() {
 		assertTrue(RELEASE.serves(EDITION, version("1.16.5")));
 		assertFalse(RELEASE.serves(EDITION, version("1.17")));
-		assertFalse(RELEASE.serves(MinecraftEdition.of("second"), version("1.16.5")));
+		assertFalse(RELEASE.serves(Edition.of("second"), version("1.16.5")));
 	}
 
 	@Test

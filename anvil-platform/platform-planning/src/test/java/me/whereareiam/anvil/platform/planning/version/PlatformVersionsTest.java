@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.platform.planning.version;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
@@ -214,7 +214,7 @@ class PlatformVersionsTest {
 				[sample.nested]
 				"1.0" = 1
 				""");
-		assertEquals(MinecraftEdition.of("sample"), versions.getEdition());
+		assertEquals(Edition.of("sample"), versions.getEdition());
 
 		PlatformException scalar = assertThrows(PlatformException.class, () -> read("""
 				edition = "sample"
@@ -240,7 +240,7 @@ class PlatformVersionsTest {
 
 	@Test
 	void readsTheRequiredEditionAsAnOpaqueIdentifier() throws IOException {
-		assertEquals(MinecraftEdition.of("java"), SAMPLE.getEdition());
+		assertEquals(Edition.of("java"), SAMPLE.getEdition());
 		PlatformVersions other = read("""
 				edition = "other"
 
@@ -248,7 +248,7 @@ class PlatformVersionsTest {
 				minimum = 17
 				preferred = 17
 				""");
-		assertEquals(MinecraftEdition.of("other"), other.getEdition());
+		assertEquals(Edition.of("other"), other.getEdition());
 
 		PlatformException missing = assertThrows(PlatformException.class, () -> read("""
 				[[java]]

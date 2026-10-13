@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol;
 
 import com.google.gson.JsonObject;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.protocol.api.worker.model.AccountCredentials;
@@ -56,7 +56,7 @@ class MicrosoftAuthenticationTest {
 				releases::releases
 		)), temporary);
 		MinecraftVersion version = MinecraftVersion.parse("1.21.11");
-		MinecraftEdition edition = releases.releases().stream()
+		Edition edition = releases.releases().stream()
 				.filter(release -> release.getMinecraftVersions().contains(version))
 				.findFirst()
 				.orElseThrow()

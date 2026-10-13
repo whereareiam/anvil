@@ -74,7 +74,7 @@ release names the Minecraft edition it implements, lists every version of that e
 maps each listed version to its wire protocol number:
 
 ```java
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.type.ProtocolFeature;
@@ -83,7 +83,7 @@ MinecraftVersion older = MinecraftVersion.parse("1.20.5");
 MinecraftVersion newer = MinecraftVersion.parse("1.20.6");
 ProtocolRelease release = ProtocolRelease.builder()
 		.libraryVersion("2.4.0")
-		.edition(MinecraftEdition.of("java"))
+		.edition(Edition.of("java"))
 		.minecraftVersion(older)
 		.minecraftVersion(newer)
 		.verifiedVersion(newer)

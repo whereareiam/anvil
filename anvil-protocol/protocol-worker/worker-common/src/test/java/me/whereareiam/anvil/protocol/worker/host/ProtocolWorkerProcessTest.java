@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.worker.host;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.worker.fixture.ProbeLibrary;
@@ -17,7 +17,7 @@ class ProtocolWorkerProcessTest {
 		int current = Runtime.version().feature();
 		ProtocolRelease release = ProtocolRelease.builder()
 				.libraryVersion("future-1")
-				.edition(MinecraftEdition.of("java"))
+				.edition(Edition.of("java"))
 				.minecraftVersion(MinecraftVersion.parse("1.21.11"))
 				.protocolNumber(MinecraftVersion.parse("1.21.11"), 774)
 				.javaVersion(current + 4)

@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.AccountAvailability;
 import me.whereareiam.anvil.integration.intellij.account.AccountSource;
@@ -62,10 +62,10 @@ class AccountDirectoryRepositoryTest {
 
 		var alice = repository.readMetadata(current);
 
-		assertEquals(AccountAvailability.AVAILABLE, alice.access(MinecraftEdition.of("java")).getAvailability());
-		assertEquals("Alice", alice.access(MinecraftEdition.of("java")).getUsername());
-		assertEquals("Account 'alice' owns no game", alice.access(MinecraftEdition.of("bedrock")).getReason());
-		assertEquals(AccountAvailability.UNKNOWN, alice.access(MinecraftEdition.of("other")).getAvailability());
+		assertEquals(AccountAvailability.AVAILABLE, alice.access(Edition.of("java")).getAvailability());
+		assertEquals("Alice", alice.access(Edition.of("java")).getUsername());
+		assertEquals("Account 'alice' owns no game", alice.access(Edition.of("bedrock")).getReason());
+		assertEquals(AccountAvailability.UNKNOWN, alice.access(Edition.of("other")).getAvailability());
 	}
 
 	@Test void namesAccountsOfSchemasThatRecordedLibrariesWhileTheirEditionsStayUnchecked() throws Exception {
@@ -98,7 +98,7 @@ class AccountDirectoryRepositoryTest {
 		var carol = new AccountDirectoryRepository().readAccounts(accounts, AccountSource.PROJECT).accounts().getFirst();
 
 		assertEquals(List.of(), carol.getLibraryProfiles());
-		assertEquals("Carol", carol.getAccount().access(MinecraftEdition.of("java")).getUsername());
+		assertEquals("Carol", carol.getAccount().access(Edition.of("java")).getUsername());
 	}
 
 	private void copyFixture(String name, Path target) throws Exception {

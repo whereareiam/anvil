@@ -126,7 +126,7 @@ public interface PlayerManager extends AutoCloseable {
 
 	/**
 	 * Creates a player from explicit options with an account it leases from a pool for the edition of the servers
-	 * it reaches, as {@link AccountPool#lease(me.whereareiam.anvil.api.model.MinecraftEdition)} leases it, so it never
+	 * it reaches, as {@link AccountPool#lease(me.whereareiam.anvil.api.model.Edition)} leases it, so it never
 	 * connects with an account its edition cannot use. The player releases the lease when destroyed; a creation that
 	 * fails releases it at once.
 	 *

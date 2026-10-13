@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Singular;
 import lombok.Value;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import me.whereareiam.anvil.protocol.api.type.ProtocolFeature;
@@ -20,7 +20,7 @@ import java.util.Set;
  * One release of a protocol library: the Minecraft edition it implements, the versions of that edition it
  * speaks and the native wire-protocol number of each.
  *
- * <p>A release serves exactly the versions it lists, and only for servers of its {@link MinecraftEdition}:
+ * <p>A release serves exactly the versions it lists, and only for servers of its {@link Edition}:
  * selection compares the edition first, so a release never serves a server of another edition that numbers a
  * version alike. Several listed versions may share one protocol number, or each may have its own. The highest
  * listed version is the release's key, used to select version-specific code.</p>
@@ -30,7 +30,7 @@ import java.util.Set;
  * MinecraftVersion newer = MinecraftVersion.parse("1.16.5");
  * ProtocolRelease release = ProtocolRelease.builder()
  *         .libraryVersion("1.16.5-2")
- *         .edition(MinecraftEdition.of("example"))
+ *         .edition(Edition.of("example"))
  *         .minecraftVersion(older)
  *         .minecraftVersion(newer)
  *         .verifiedVersion(newer)
@@ -52,7 +52,7 @@ public class ProtocolRelease {
 	/**
 	 * Minecraft edition whose servers this release reaches.
 	 */
-	@NotNull MinecraftEdition edition;
+	@NotNull Edition edition;
 	/**
 	 * Every Minecraft version of the edition this release speaks.
 	 */
@@ -107,7 +107,7 @@ public class ProtocolRelease {
 	@Builder(toBuilder = true)
 	private ProtocolRelease(
 			@NotNull String libraryVersion,
-			@NotNull MinecraftEdition edition,
+			@NotNull Edition edition,
 			@NotNull @Singular List<MinecraftVersion> minecraftVersions,
 			@NotNull @Singular Set<MinecraftVersion> verifiedVersions,
 			@NotNull @Singular Map<MinecraftVersion, Integer> protocolNumbers,
@@ -188,7 +188,7 @@ public class ProtocolRelease {
 	 * @param version the server's Minecraft version
 	 * @return whether the release implements the edition and lists the version
 	 */
-	public boolean serves(@NotNull MinecraftEdition edition, @NotNull MinecraftVersion version) {
+	public boolean serves(@NotNull Edition edition, @NotNull MinecraftVersion version) {
 		return this.edition.equals(edition) && minecraftVersions.contains(version);
 	}
 

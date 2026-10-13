@@ -2,7 +2,7 @@ package me.whereareiam.anvil.platform.planning.version;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
-import me.whereareiam.anvil.api.model.MinecraftEdition;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import org.jetbrains.annotations.NotNull;
@@ -43,7 +43,7 @@ import java.util.Set;
  *
  * <p>Every key is optional except {@code edition}, the {@code [[java]]} rows and their {@code minimum} and
  * {@code preferred}; only the first row may omit {@code since}. The edition is an opaque
- * {@link MinecraftEdition} identifier that planning only compares. A table named after the platform
+ * {@link Edition} identifier that planning only compares. A table named after the platform
  * identifier belongs to the provider, which reads its own data from it; planning skips it. Other unknown keys
  * are refused, so a misspelt key cannot silently drop a rule.</p>
  */
@@ -111,11 +111,11 @@ public final class PlatformVersionsReader {
 		return versions.build();
 	}
 
-	private static MinecraftEdition edition(JsonNode document) {
+	private static Edition edition(JsonNode document) {
 		if (!document.has("edition"))
 			throw new IllegalArgumentException("'edition' is missing; declare the Minecraft edition the platform's processes speak");
 
-		return MinecraftEdition.of(text(document, "edition"));
+		return Edition.of(text(document, "edition"));
 	}
 
 	private static void refuseUnknownKeys(JsonNode node, Set<String> keys, String location) {
