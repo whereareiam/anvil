@@ -32,68 +32,63 @@ Run all → ScenarioContext.start() → ready processes → global extensions an
 | `anvil-integration/integration-gradle/gradle-junit`        | Assemble Gradle testing and the independent JUnit runtime                                      |
 | `anvil-integration/integration-gradle/gradle-platforms`    | Gradle adapters for platform providers                                                         |
 | `anvil-integration/integration-gradle/gradle-capabilities` | Gradle adapters for capability providers                                                       |
-| `anvil-integration/integration-intellij/intellij-api`      | IntelliJ integration contracts                                                                 |
-| `anvil-integration/integration-intellij/intellij-engine`   | IntelliJ integration lifecycle and tooling logic                                               |
+| `anvil-integration/integration-intellij`                   | IntelliJ plugin assembly composing the feature modules                                         |
+| `anvil-integration/integration-intellij/intellij-api`      | Contracts the IntelliJ features and build integrations share                                   |
+| `anvil-integration/integration-intellij/intellij-common`   | Standard implementations of the shared IntelliJ services                                       |
+| `anvil-integration/integration-intellij/intellij-scenario` | Scenario catalog, tooling launches, environments, consoles, and run configurations             |
+| `anvil-integration/integration-intellij/intellij-account`  | Accounts, pools, sign-in, and the accounts a run is given                                      |
 | `anvil-integration/integration-intellij/intellij-gradle`   | Native Gradle adapter                                                                          |
-| `anvil-integration/integration-intellij/intellij-ui`       | IntelliJ SDK UI and presentation                                                               |
-| `anvil-integration/integration-intellij/intellij`          | Plugin descriptor and packaged assembly                                                        |
 
 ## Bind the IntelliJ integration
 
-`intellij-api` defines scenario-source discovery and preparation, a scenario catalog, environment
-lifecycle and retained handles, a project account library, preferences, project command history, and
-read-only session logs. UI code retrieves those typed services from the IntelliJ container. Its
-dialogs own their disposable sign-in operations, and environment views release their handles when
-closed. Engine-owned XML state beans are translated to immutable preference snapshots at the boundary.
+The plugin's modules and how they reach each other are described in
+[the module architecture](../modules/index.md#intellij-plugin-modules). This section follows one run
+through the scenario module's services.
 
-`SourceDiscovery`, implemented by `ProjectSourceDiscovery`, owns source selection, native
-sync, and refresh after successful imports. Initialization begins when Anvil is first
-opened in a project. Observation continues until the project closes, independently of view subscribers.
-Refresh coalesces imported revisions and waits for preparation and environment cleanup. Views read
-`DiscoverySnapshot` and submit selection, refresh, or sync commands through the contract.
+`SourceDiscovery` owns source selection, native sync, and reloading after successful imports.
+Initialization begins when Anvil is first opened in a project. Observation continues until the project
+closes, independently of open views. Reloads coalesce imported revisions and wait for preparation and
+environment cleanup. Views read `SourceDiscovery.Snapshot` and submit selection, reload, or sync commands.
 
-The catalog panel composes Swing controls. Its `CatalogController` owns view interactions and
-subscriptions, and releases those subscriptions when the panel closes. Settings likewise separate
-the editable form from the native Apply/Reset adapter.
+`ScenarioCatalog` owns the selected source's discovered definitions, loading state, and preparation
+output in one `ScenarioCatalog.Snapshot`. `EnvironmentLifecycle` owns the active environment and the
+retained sessions. Catalog state remains available after an environment fails; each
+`EnvironmentExecution` owns its own authoritative snapshot.
 
-The `intellij` descriptor binds engine implementations to those interfaces. `ProjectScenarioCatalog`
-owns the selected source's discovered definitions, loading state, and discovery output.
-`ProjectEnvironmentLifecycle` owns the active environment and retained handles. Catalog state remains
-available after an environment fails; each `EnvironmentExecution` owns its own authoritative snapshot.
-
-Both services use `ProjectToolingHost` to share one tooling launch. Discovery can prepare a source
-before the user selects a scenario; starting an environment reserves that same launch, including while
-preparation is still in progress. Refresh can replace an idle launch. `ToolingLaunch` owns preparation,
-the runner, the manifest, and temporary account files. Its private resource owner registers the manifest
-and account workspace as they are acquired, including during partial startup. `ToolingConnection`
-reads process output and waits for diagnostic delivery after termination. The resource scope then
-releases accounts and the manifest, preserving the first failure and suppressing additional cleanup
-failures. Replacement starts only after this cleanup has completed.
+Both services share one tooling launch through `ToolingHost`. Discovery can prepare a source before the
+user selects a scenario; starting an environment reserves that same launch, including while preparation
+is still in progress. Reloading can replace an idle launch. `ToolingLaunch` owns preparation, the runner,
+the manifest, and the staged accounts it obtains from the `AccountStaging` service. Its private resource
+owner registers the manifest and the staged accounts as they are acquired, including during partial
+startup. `ToolingConnection` reads process output and waits for diagnostic delivery after termination.
+The resource scope then releases the accounts and the manifest, preserving the first failure and
+suppressing additional cleanup failures. A replacement starts only after this cleanup has completed.
 
 Launch scheduling, cancellation, execution, and cleanup settle through one terminal-completion path.
 A failing listener cannot prevent other listeners, pending futures, or owned resources from being
 settled. Readiness and discovery callbacks remain separate from resource acquisition and release.
 
-A `RetainedEnvironmentSession` stays bound to its original execution. Stopped handles retain their
-state and output, and their controls cannot reach a newer environment. Closing a handle removes it
-from the retained list, but the project remains busy until its execution finishes cleanup. Session
-controls report transport submission asynchronously; contributed actions return their remote results.
+An `EnvironmentSession` stays bound to its original execution. Stopped sessions retain their state and
+output, and their controls cannot reach a newer environment. Closing a session's tab removes it from
+the retained list, but the project remains busy until its execution finishes cleanup. Session controls
+report transport submission asynchronously; contributed actions return their remote results.
 
 `ToolingClient.request(operation, payload)` serializes writes, correlates replies, and completes
 pending results when the connection closes or fails. Each pending request retains the operation's
-response type, including collection element types. `ToolingMessageCodec` maps typed envelopes and shared payload models through Jackson, and validates
-protocol compatibility before delivering events and results. `ToolingOperationRegistry` binds shared operation declarations to typed session handlers and their
-cancellation policy. `ToolingRequestReader` decodes each registered request type generically, while
-`ToolingProtocolWriter` serializes typed response and event envelopes. Wire operations and envelopes stay inside the protocol implementations. UI controls use explicit environment methods such as `restartProcess` and `console`.
+response type, including collection element types. `ToolingMessageCodec` maps typed envelopes and
+shared payload models through Jackson, and validates protocol compatibility before delivering events
+and results. `ToolingOperationRegistry` binds shared operation declarations to typed session handlers
+and their cancellation policy. `ToolingRequestReader` decodes each registered request type generically,
+while `ToolingProtocolWriter` serializes typed response and event envelopes. Wire operations and
+envelopes stay inside the protocol implementations; views call explicit session methods such as
+`restartProcess` and `console`.
 
-`BuildIntegration` is the optional native build-system extension point, implemented by
-`intellij-gradle`. Gradle SDK classes stay within that adapter. Engine output remains a neutral retained
-log; catalog state is one `CatalogSnapshot` with a `CatalogState`, and environment labels derive from `SessionSnapshot`
-in the UI. The UI creates and owns native console presentations. Engine and UI communicate through
-contracts, with service and extension wiring in the assembly.
+`BuildIntegration` is the native build-system extension point, implemented by `intellij-gradle`. Gradle
+SDK classes stay within that adapter. Output remains a neutral retained `SessionLog`; every view
+creates its own `ConsolePresentation` over it.
 
-Production descriptor bindings are tested in `intellij`. Engine and UI tests install their own
-contract bindings, and API contract tests live in `intellij-engine`.
+Each module's tests load that module's real descriptor fragment through a test-only `plugin.xml`, with
+stand-ins for contracts other modules implement; the plugin's own tests check how the fragments compose.
 
 ## Exchange protocol messages
 

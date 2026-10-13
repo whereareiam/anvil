@@ -24,9 +24,9 @@ Anvil source targets Java 21. Code that Minecraft servers load, such as `agent-a
 the Bukkit platform agent, and the server-plugin fixture, applies the `module-java-legacy` convention instead:
 its main classes compile for Java 11, the Bukkit agent and the fixture plugin against the Bukkit API of
 Minecraft 1.16.5, and
-`checkClassRelease` fails the build on a newer class. IntelliJ panel definitions use Kotlin in
-`intellij-ui`; controllers, platform adapters, and engine code remain Java. See the
-[UI ownership guidance](./architecture/modules/index.md) before adding a form. Managed distributions
+`checkClassRelease` fails the build on a newer class. IntelliJ panels and dialogs use Kotlin in the
+plugin's feature modules; controllers, services, and platform adapters remain Java. See the
+[IntelliJ plugin modules](./architecture/modules/index.md#intellij-plugin-modules) before adding a screen. Managed distributions
 may require another Java runtime; that requirement is separate from the framework's compilation
 target.
 

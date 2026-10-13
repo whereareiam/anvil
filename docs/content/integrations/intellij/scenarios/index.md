@@ -25,11 +25,11 @@ Use the toolbar to keep the list current:
 
 | Action | Use it when |
 |---|---|
-| **Load scenarios** / **Refresh scenarios** | You changed scenario definitions or runtime inputs |
-| **Sync project** | You changed the build and want IntelliJ to import it again, then reload the scenarios |
+| **Load Scenarios** / **Reload Scenarios** | You changed scenario definitions or runtime inputs |
+| **Sync Project** | You changed the build and want IntelliJ to import it again, then reload the scenarios |
 
 After a successful sync started anywhere in IntelliJ, Anvil reloads the selected source's scenarios
-automatically, waiting until any active run has finished cleanup. Disable **Refresh scenarios after
+automatically, waiting until any active run has finished cleanup. Disable **Reload scenarios after
 project sync** in [preferences](../settings/index.md) to reload manually.
 
 ## Find and inspect a scenario
@@ -40,9 +40,9 @@ or proxy directly.
 
 Selecting a scenario or process shows its declaration in the details panel: entrypoint, execution
 and Java settings, timeouts, platform and distribution, memory, online mode, and proxy routes.
-Addresses, readiness, and workspace directories appear once a run allocates them. Select the
-**Definition** link, or use **Open source**, to open the definition class; right-click a link to copy
-its full class name or path.
+Addresses, readiness, and workspace directories appear once a run allocates them. Double-click an
+entry, press F4, or choose **Jump to Source** from its context menu to open the definition class.
+Select the **Definition** link for the same result; right-click a link to copy its full class name or path.
 
 Scenario titles and descriptions come from the definition's optional `PresentationMetadata`; see
 [describing a scenario's purpose](../../../building-blocks/environments/definitions/index.md#describe-the-scenarios-purpose).
@@ -50,22 +50,44 @@ Without a display name, Anvil derives a readable title from the stable scenario 
 
 ## Start a run
 
-| Selection | Toolbar action | Effect |
-|---|---|---|
-| A scenario | **Run scenario** | Starts every process and runs the scenario's setup once |
-| A server or proxy | **Start server** / **Start proxy** | Prepares the whole environment but starts only that process |
+Select a scenario, or one of its servers or proxies, and choose an action from the toolbar or the
+context menu:
 
-Pressing Enter on a selected scenario also runs it. The run opens in a new session tab; continue with
+| Selection | Action | Effect |
+|---|---|---|
+| A scenario | **Run Scenario** | Starts every process and runs the scenario's setup once |
+| A server or proxy | **Start Server** / **Start Proxy** | Prepares the whole environment but starts only that process |
+| Anything, while an environment runs | **Stop** | Stops the selected process of the running scenario, or else the whole environment |
+
+Pressing Enter on a selection runs it as well. The run opens in its own session tab; continue with
 [inspecting a run](../sessions/index.md).
+
+One environment runs per project at a time. While another scenario is running, **Run Scenario** is
+unavailable and its tooltip names the environment to stop first; **Stop** in the same toolbar stops it.
+If a run cannot start, or an environment fails while its tab is not in view, a notification reports
+the reason and links to its console.
 
 During a run, a status dot on each icon in the list shows its state: green for running, amber while
 starting or changing state, red for failure, and gray for not started or stopped. Hover an item for a
 description.
 
+## Run from the editor
+
+Every class that implements `AnvilScenarioDefinition` has a Run icon in the gutter beside its name.
+Click it, or right-click the class and choose **Run**, to run that scenario. Anvil creates a temporary
+run configuration for the class and its scenario source, so the run also appears in IntelliJ's run
+toolbar and Run window. The scenarios do not need to be loaded in the tool window first; the
+environment tab shows the scenario's servers and proxies once its runtime has been prepared.
+
+Abstract classes and classes outside an imported Anvil source get no icon.
+
 ## Save a run configuration
 
-**Run scenario** does not create a Run Configuration. Choose **Save run configuration** to add the
-selected scenario, or the selected server or proxy, to IntelliJ's Run menu. The configuration stores
-the scenario source, definition class, scenario name, and process. Leave **Process ID** blank in the
-configuration editor to run the whole scenario. If a saved scenario source is removed or renamed,
-choose its replacement in the configuration editor.
+Running from the tool window does not create a run configuration. Choose **Save as Run Configuration**
+to add the selected scenario, or the selected server or proxy, to IntelliJ's run toolbar; a notification
+confirms the name and links to the configuration editor. A configuration stores the scenario source,
+the definition class, and an optional process. Leave **Process** blank in the configuration editor to
+run the whole scenario. If a saved scenario source is removed or renamed, choose its replacement in
+the configuration editor.
+
+Run configurations offer only Run: processes cannot be debugged from the IDE.

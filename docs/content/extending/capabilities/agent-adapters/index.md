@@ -78,9 +78,12 @@ selection aligned with the platforms supported by your installed native handlers
 
 Declare process capability dependencies in the `CapabilityDescriptor` returned by `descriptor()`,
 using `.requiredCapability(Type.class)` on its builder. Retrieve them with
-`context.requireCapability(Type.class)`. Only declared predecessors are available, and all belong
-to this same logical process. Register capability-owned resources with `context.onClose(...)`;
-cleanup runs in reverse registration order before the underlying agent connection closes.
+`context.requireCapability(Type.class)`. A capability it can work without goes in
+`.optionalCapability(Type.class)` instead: it is created first when the process has it, and
+`context.findCapability(Type.class)` is empty when it does not. Only declared predecessors are
+available, and all belong to this same logical process. Register capability-owned resources with
+`context.onClose(...)`; cleanup runs in reverse registration order before the underlying agent
+connection closes.
 
 The scenario owns the request channel's transport, which follows the process's replacement
 connection across restarts. The same capability instance remains associated with that process;

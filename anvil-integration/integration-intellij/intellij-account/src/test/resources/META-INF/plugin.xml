@@ -1,0 +1,18 @@
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+	<id>me.whereareiam.anvil.account.test</id>
+	<name>Anvil Accounts (tests)</name>
+	<vendor>whereareiam</vendor>
+	<depends>com.intellij.modules.platform</depends>
+
+	<!-- The catalog toolbar the account action joins; in the plugin, the scenario module declares it first. -->
+	<actions>
+		<group id="Anvil.Catalog.Toolbar"/>
+	</actions>
+	<extensions defaultExtensionNs="com.intellij">
+		<groupConfigurable id="me.whereareiam.anvil" parentId="tools" bundle="messages.AnvilTestSettings" displayNameKey="anvil" descriptionKey="anvil"/>
+	</extensions>
+
+	<!-- The module's own descriptor, with the shared services it relies on. -->
+	<xi:include href="/META-INF/anvil-common.xml" xpointer="xpointer(/idea-plugin/*)"/>
+	<xi:include href="/META-INF/anvil-account.xml" xpointer="xpointer(/idea-plugin/*)"/>
+</idea-plugin>

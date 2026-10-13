@@ -7,6 +7,8 @@ import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.api.player.CapabilityPlayer;
+import me.whereareiam.anvil.capability.commands.Commands;
+import me.whereareiam.anvil.capability.dialogs.Dialogs;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.movement.Movement;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityContext;
@@ -63,7 +65,9 @@ class PlayerCapabilityRuntimeTest {
 				"me.whereareiam.anvil.messages",
 				"me.whereareiam.anvil.movement",
 				"me.whereareiam.anvil.inventory",
-				"me.whereareiam.anvil.interaction"
+				"me.whereareiam.anvil.interaction",
+				"me.whereareiam.anvil.commands",
+				"me.whereareiam.anvil.dialogs"
 		), PlayerCapabilityRuntime.discover().providers().stream()
 				.map(CapabilityDescriptor::getId)
 				.collect(Collectors.toSet()));
@@ -112,6 +116,12 @@ class PlayerCapabilityRuntimeTest {
 		assertFalse(player.hasCapability(Movement.class));
 		var missing = assertThrows(CapabilityUnavailableException.class, () -> player.capability(Movement.class));
 		assertTrue(missing.getMessage().endsWith("not installed by the cloudburst worker"), missing.getMessage());
+		for (Class<? extends PlayerCapability> javaOnly : List.of(Commands.class, Dialogs.class)) {
+			assertFalse(player.hasCapability(javaOnly), javaOnly.getName());
+			var unsupported = assertThrows(CapabilityUnavailableException.class, () -> player.capability(javaOnly));
+			assertTrue(unsupported.getMessage().endsWith("no provider supports protocol library 'cloudburst' that the player "
+					+ "uses; it is provided only for the protocol libraries [mcprotocol]"), unsupported.getMessage());
+		}
 		player.destroy();
 	}
 

@@ -3,49 +3,50 @@ title: Project accounts
 description: Add project accounts, choose global account availability, and manage account pools in IntelliJ IDEA.
 ---
 
-Select **Accounts…** in the Anvil tool window toolbar to manage accounts available to the current
-IntelliJ project. The **Accounts** tab shows each account's profile names, local ID and source (**Project** or
-**Global**). After the profile names, a tag such as **Java** or **Bedrock** names each Minecraft edition the account
-is available for; an edition whose services refused the account, or that no library has checked yet, has no tag.
-An account file that Anvil has not rewritten since it recorded results per protocol library, including those of
-Anvil 1.0, still shows the profile names it recorded, but no tag until a sign-in or a player that uses the account
-records the editions again. An account is one Microsoft account that every library
-derives its own session from;
-see [Authentication](../../../building-blocks/players/authentication/index.md). Account and pool operations are saved immediately; **Close** finishes the manager.
+Select **Anvil Accounts…** in the Anvil tool window toolbar, or find it with **Find Action**, to manage the
+accounts available to the current IntelliJ project. The **Accounts** tab shows each account's profile names,
+local ID and source (**Project** or **Global**). After the profile names, a tag such as **Java** or **Bedrock**
+names each Minecraft edition the account is available for; an edition whose services refused the account, or that
+no library has checked yet, has no tag. An account file that Anvil has not rewritten since it recorded results per
+protocol library, including those of Anvil 1.0, still shows the profile names it recorded, but no tag until a
+sign-in or a player that uses the account records the editions again. An account is one Microsoft account that
+every library derives its own session from; see
+[Authentication](../../../building-blocks/players/authentication/index.md). Account and pool operations are saved
+immediately; **Close** finishes the manager.
 
 ## Add an account
 
-Select a scenario source in Scenarios, then choose **Add account…** and enter a unique local ID.
+Open the manager from the Scenarios tab with a scenario source selected, choose **+** and then
+**Sign In with Browser…**, and enter a unique local ID.
 Anvil prepares the selected scenario source's authentication runtime and displays progress in a sign-in
 dialog. When prompted, select **Open sign-in page** or **Copy link**, then complete sign-in in your
 browser. Instructions appear while authentication is running. **Cancel sign-in** stops the active
 operation and cleans up its temporary launch manifest.
 
-New accounts are saved in the project account directory. **Import…** adds an existing Anvil JSON
-account file to that directory. Replacing an existing project account requires confirmation.
+New accounts are saved in the project account directory. **+ → Import Account File…** adds an existing
+Anvil JSON account file to that directory. Replacing an existing project account requires confirmation.
+When the project has no accounts yet, the empty list offers both choices as links.
 
-Select an account and choose **Export…** to save it to a new or existing file using the save dialog. **Remove** is
-available only for project accounts and asks for confirmation. Removing an account retains its
+Select an account and choose **Export Account File…** to save it to a new or existing file. **−** removes
+a project account after confirmation; global accounts cannot be removed here. Removing an account retains its
 pool memberships so those references can be reviewed in the pool editor.
 
 ## Include global accounts
 
-**Include global accounts in this project** takes effect immediately and refreshes the account list.
-It controls this project's access to the global account directory configured in
-[preferences](../settings/index.md).
-It does not change the global directory or make new accounts global.
+Whether this project uses the global accounts, and where both account directories are, is set on
+**Settings → Tools → Anvil → Accounts**; the **Account directories…** link at the bottom of the manager
+opens that page. See [account preferences](../settings/index.md#accounts).
 
 Project and global accounts must use distinct local IDs when both sources are enabled. The manager
-shows duplicate IDs as a problem; remove the duplicate project account or disable global accounts
+shows duplicate IDs as a problem; remove the duplicate project account or stop using global accounts
 before running. Read errors are shown without exposing credential contents.
 
 ## Create and edit pools
 
-On **Pools**, choose **Create pool…**, enter a name, and select its members with checkboxes; each account
-carries the same edition tags as in the **Accounts** tab. **Save Pool**
-persists the selection. Select an existing pool and choose **Edit…** to rename it or change membership.
-Cancelling the editor leaves that pool unchanged. **Remove** deletes the selected project pool after
-confirmation and keeps the account files.
+On **Pools**, choose **+**, enter a name, and select its members with checkboxes; each account carries the
+same edition tags as in the **Accounts** tab. **Save Pool** persists the selection. Select an existing pool and
+choose the edit button to rename it or change membership. Cancelling the editor leaves that pool unchanged.
+**−** deletes the selected project pool after confirmation and keeps the account files.
 
 Saved members that are absent from the current account sources remain visible as **Not currently
 available**. Restore their accounts, enable the required source, or deselect those members before
@@ -55,16 +56,3 @@ Pools are saved as `pools.properties` in each account directory, in the
 [format that runs read](../../../building-blocks/players/authentication/index.md). Gradle runs read
 only their configured account directory, the global one by default, so project pools are available
 to runs started from the IDE.
-
-## Change project storage
-
-Expand **Storage** to change the project account directory. By default each project keeps its accounts
-in its own directory under `~/.anvil/projects`, outside the project tree, so saved sign-ins cannot be
-committed with the source. Relative paths are resolved from the IntelliJ project directory; avoid
-choosing a directory inside the project unless your version control ignores it. Choose **Use Default**
-to fill in the default path, then **Apply Location** to save the change and refresh accounts and pools.
-The chosen location is a personal setting stored in the IDE workspace, not in shared project files.
-
-Editing the path alone does not change the active location. Applying a location affects subsequent
-imports and sign-ins and does not move existing account files. Unapplied path edits are discarded
-when the manager closes.

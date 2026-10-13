@@ -1,10 +1,14 @@
 package me.whereareiam.anvil.testkit.tests.server.capability;
 
+import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
+import me.whereareiam.anvil.capability.commands.Commands;
 import me.whereareiam.anvil.capability.console.Console;
+import me.whereareiam.anvil.capability.dialogs.Dialogs;
 import me.whereareiam.anvil.capability.interaction.Interaction;
 import me.whereareiam.anvil.capability.interaction.model.BlockPosition;
 import me.whereareiam.anvil.capability.interaction.type.BlockFace;
@@ -27,11 +31,13 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestFactory;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -41,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * through the Lumi agent: a console command reports whether it succeeded, which turns the vanilla {@code testfor},
  * {@code testforblock} and {@code clear} commands into assertions on the server's own state. What no vanilla command
  * shows, an entity's runtime ID and what the player did to the entity, the Lumi fixture plugin reports to the player.
+ * The player has neither of the Java-only Commands and Dialogs capabilities, and asking for one names its library.
  * The {@code anvil.matrix.filter} system property, set from {@code -PanvilMatrixFilter}, selects scenarios by name;
  * the {@code capabilities} tag shares the Java journey's CI shard.
  */
@@ -110,6 +117,20 @@ class BedrockPlayerCapabilitiesSystemTest {
 		selectsAndClicksItems(console, alice.capability(Inventory.class));
 		usesItemsAndBlocks(console, alice.capability(Inventory.class), alice.capability(Interaction.class));
 		interactsWithAnEntity(alice.capability(Messages.class), alice.capability(Interaction.class));
+		lacksJavaOnlyCapabilities(alice);
+	}
+
+	/**
+	 * Commands and Dialogs are Java Edition behaviour that only MCProtocolLib provides, so a Bedrock player has neither
+	 * and names the library that provides them when asked.
+	 */
+	private void lacksJavaOnlyCapabilities(SimulatedPlayer alice) {
+		for (Class<? extends PlayerCapability> type : List.of(Commands.class, Dialogs.class)) {
+			assertFalse(alice.hasCapability(type), type.getName());
+			var missing = assertThrows(CapabilityUnavailableException.class, () -> alice.capability(type));
+			assertTrue(missing.getMessage().endsWith("it is provided only for the protocol libraries [mcprotocol]"),
+					missing.getMessage());
+		}
 	}
 
 	/**

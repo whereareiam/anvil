@@ -32,7 +32,7 @@ permissions:
   checks: write
 
 env:
-  INTELLIJ: ":anvil-integration:integration-intellij:intellij"
+  INTELLIJ: ":anvil-integration:integration-intellij"
 
 jobs:
   intellij:
@@ -69,7 +69,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: anvil-intellij-plugin-${{ steps.identity.outputs.version }}
-          path: anvil-integration/integration-intellij/intellij/build/distributions/*.zip
+          path: anvil-integration/integration-intellij/build/distributions/*.zip
           if-no-files-found: error
           compression-level: 0
           retention-days: 14

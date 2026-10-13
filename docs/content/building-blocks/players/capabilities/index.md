@@ -15,7 +15,7 @@ by its [agent](../../environments/actions/agents/index.md), such as `Console`.
 ## Choose the behavior
 
 For the first journey, use Session to connect, Server to observe arrival, and Messages to trigger
-commands and check replies. Movement, Inventory, and Interaction cover additional game actions.
+commands and check replies. Movement, Inventory, Interaction, Commands, and Dialogs cover additional game actions.
 Each capability is optional unless the test or another installed capability requires it.
 
 | Capability | Use it to | Bundled requirement |
@@ -26,15 +26,19 @@ Each capability is optional unless the test or another installed capability requ
 | [Movement](./movement/index.md) | Send absolute position and view changes. | MCProtocol or CloudburstMC Protocol, and Session |
 | [Inventory](./inventory/index.md) | Observe inventory or containers and perform clicks. | MCProtocol or CloudburstMC Protocol, and Session |
 | [Interaction](./interaction/index.md) | Use items and interact with blocks or entities. | MCProtocol or CloudburstMC Protocol, and Session |
+| [Commands](./commands/index.md) | Read the command tree and check commands as the client does. | MCProtocol and Session |
+| [Dialogs](./dialogs/index.md) | Observe dialogs, fill their inputs, and press their buttons. | MCProtocol and Session, Minecraft 1.21.6+; Commands for buttons that run commands |
 
 The `Server` capability does not depend on `Session`. Its observations come from the scenario's
 platform agents, while packet-backed capabilities operate through the player's protocol library. The
 built-in capabilities are installed on every MCProtocolLib release Anvil ships, from Minecraft 1.18.2
-to 26.1.2. Bedrock players, which connect through CloudburstMC Protocol, have Session, Server, Messages,
-Movement, Inventory and Interaction on every Bedrock version it speaks, from 1.20.0 to 1.26.60; the
+to 26.1.2, except Dialogs, which needs a release with dialogs: 1.21.11 and 26.1.2. Bedrock players, which
+connect through CloudburstMC Protocol, have Session, Server, Messages, Movement, Inventory and Interaction on
+every Bedrock version it speaks, from 1.20.0 to 1.26.60; the
 [Messages](./messages/index.md#bedrock-players), [Movement](./movement/index.md#bedrock-players),
 [Inventory](./inventory/index.md#bedrock-players) and [Interaction](./interaction/index.md#bedrock-players)
-pages describe how their actions differ.
+pages describe how their actions differ. Commands and Dialogs are Java Edition behaviour that only MCProtocolLib
+provides: asking a Bedrock player for them fails with a reason naming the libraries that provide them.
 
 ## Install built-in capabilities
 
@@ -54,7 +58,7 @@ plugins {
 
 Keep the repositories, protocol dependency, and `anvil` configuration from
 [installation](../../../getting-started/installation/index.md). The remaining unit suffixes are
-`movement`, `inventory`, and `interaction`. Keep unit versions aligned with Anvil.
+`movement`, `inventory`, `interaction`, `commands`, and `dialogs`. Keep unit versions aligned with Anvil.
 
 ## Retrieve a capability
 

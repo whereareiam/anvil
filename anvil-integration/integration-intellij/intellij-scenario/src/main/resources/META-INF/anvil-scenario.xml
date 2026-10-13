@@ -1,0 +1,58 @@
+<idea-plugin>
+	<extensions defaultExtensionNs="com.intellij">
+		<applicationConfigurable parentId="me.whereareiam.anvil" id="me.whereareiam.anvil.scenarios" displayName="Scenarios"
+				instance="me.whereareiam.anvil.integration.intellij.scenario.settings.ScenarioSettingsPage"/>
+		<configurationType implementation="me.whereareiam.anvil.integration.intellij.scenario.runconfiguration.AnvilConfigurationType"/>
+		<runConfigurationProducer implementation="me.whereareiam.anvil.integration.intellij.scenario.runconfiguration.ScenarioConfigurationProducer"/>
+		<runLineMarkerContributor language="JAVA" implementationClass="me.whereareiam.anvil.integration.intellij.scenario.editor.ScenarioLineMarker"/>
+		<toolWindow id="Anvil" anchor="bottom" icon="/icons/anvil.svg" canCloseContents="true"
+				factoryClass="me.whereareiam.anvil.integration.intellij.scenario.window.AnvilToolWindowFactory"/>
+		<notificationGroup id="Anvil" displayType="BALLOON"/>
+	</extensions>
+	<actions>
+		<action id="Anvil.Run" class="me.whereareiam.anvil.integration.intellij.scenario.action.RunAction" text="Run Scenario"
+				description="Run the selected scenario, or start the selected server or proxy" icon="AllIcons.Actions.Execute"/>
+		<action id="Anvil.Stop" class="me.whereareiam.anvil.integration.intellij.scenario.action.StopAction" text="Stop Environment"
+				description="Stop the selected process, or the whole environment" icon="AllIcons.Actions.Suspend"/>
+		<action id="Anvil.RestartProcess" class="me.whereareiam.anvil.integration.intellij.scenario.action.RestartProcessAction" text="Restart Process"
+				description="Restart the selected server or proxy with its workspace" icon="AllIcons.Actions.Restart"/>
+		<action id="Anvil.SaveRunConfiguration" class="me.whereareiam.anvil.integration.intellij.scenario.action.SaveRunConfigurationAction" text="Save as Run Configuration"
+				description="Save the selection as a run configuration" icon="AllIcons.Actions.MenuSaveall"/>
+		<action id="Anvil.RefreshScenarios" class="me.whereareiam.anvil.integration.intellij.scenario.action.RefreshScenariosAction" text="Reload Scenarios"
+				description="Compile the project and read its scenario definitions" icon="AllIcons.Actions.Refresh"/>
+		<action id="Anvil.SyncProject" class="me.whereareiam.anvil.integration.intellij.scenario.action.SyncProjectAction" text="Sync Project"
+				description="Import the build again and discover its scenario sources" icon="AllIcons.Actions.SyncPanels"/>
+
+		<group id="Anvil.Catalog.Toolbar">
+			<reference ref="Anvil.RefreshScenarios"/>
+			<reference ref="Anvil.SyncProject"/>
+			<separator/>
+			<reference ref="Anvil.Run"/>
+			<reference ref="Anvil.Stop"/>
+			<separator/>
+			<reference ref="Anvil.SaveRunConfiguration"/>
+			<separator/>
+		</group>
+		<group id="Anvil.Catalog.Popup">
+			<reference ref="Anvil.Run"/>
+			<reference ref="Anvil.Stop"/>
+			<reference ref="Anvil.RestartProcess"/>
+			<separator/>
+			<reference ref="EditSource"/>
+			<reference ref="Anvil.SaveRunConfiguration"/>
+		</group>
+		<group id="Anvil.Environment.Toolbar">
+			<reference ref="Anvil.Run"/>
+			<reference ref="Anvil.Stop"/>
+			<reference ref="Anvil.RestartProcess"/>
+		</group>
+		<group id="Anvil.Environment.Popup">
+			<reference ref="Anvil.Run"/>
+			<reference ref="Anvil.Stop"/>
+			<reference ref="Anvil.RestartProcess"/>
+			<separator/>
+			<reference ref="EditSource"/>
+			<reference ref="Anvil.SaveRunConfiguration"/>
+		</group>
+	</actions>
+</idea-plugin>
