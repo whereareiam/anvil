@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.session;
 
+import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
@@ -23,7 +24,9 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ChannelSessionTest {
 	private static final PlayerProfile ALICE = new PlayerProfile("Alice", UUID.randomUUID());
@@ -67,6 +70,26 @@ class ChannelSessionTest {
 
 		assertEquals(SessionState.builder().connected(false).build(), session.state());
 		assertThrows(IllegalStateException.class, () -> session.kicked(TIMEOUT));
+	}
+
+	@Test
+	void expectsAKickAndADisconnectFromTheObservedState() {
+		RecordingChannel channel = new RecordingChannel();
+		ChannelSession session = new ChannelSession(channel);
+		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(true, null, null, ALICE));
+		Expectation kicked = session.expectKicked();
+		Expectation disconnected = session.expectDisconnected();
+
+		assertFalse(kicked.met());
+		assertFalse(disconnected.met());
+
+		channel.publish(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(false, "Reconnect", DisconnectCause.SERVER, null));
+		assertTrue(kicked.met());
+		assertTrue(disconnected.met());
+		assertEquals("Reconnect", session.kicked(TIMEOUT));
+
+		session.rejoin();
+		assertFalse(kicked.met(), "a new session is not kicked yet");
 	}
 
 	@Test

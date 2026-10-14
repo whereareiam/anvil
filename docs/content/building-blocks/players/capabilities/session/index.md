@@ -60,6 +60,10 @@ String reason = session.kicked();
 reason using JUnit rather than treating any disconnect as the correct application behavior. A network
 disconnect and a server kick are different observations.
 
+When a kick is only one of several correct outcomes, pass `session.expectKicked()`, or
+`session.expectDisconnected()` for any disconnect, to `player.awaitFirst(...)`; see
+[waiting for whichever outcome comes first](../../../../workflows/testing/assertions/index.md#wait-for-whichever-outcome-comes-first).
+
 To try a fresh session afterwards:
 
 ```java

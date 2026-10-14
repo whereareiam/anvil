@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
+import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.model.player.PlayerState;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
@@ -152,6 +153,11 @@ class ExternalProviderDiscoveryIntegrationTest {
 				@Override
 				public boolean hasCapability(@NotNull Class<? extends PlayerCapability> type) {
 					return false;
+				}
+
+				@Override
+				public int awaitFirst(@NotNull Duration timeout, @NotNull Expectation... expectations) {
+					throw new UnsupportedOperationException();
 				}
 
 				@Override

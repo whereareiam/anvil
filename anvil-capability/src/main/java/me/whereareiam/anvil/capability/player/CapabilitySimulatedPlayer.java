@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.player;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
+import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.model.player.PlayerState;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.PlayerObservation;
@@ -19,16 +20,21 @@ import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityCha
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /**
  * Default player facade composed from dependency-discovered capabilities.
  */
 final class CapabilitySimulatedPlayer implements SimulatedPlayer {
+	private static final Duration EXPECTATION_INTERVAL = Duration.ofMillis(25);
+
 	private final CapabilityPlayer player;
 	private final PlayerObservation observation;
 	private final Consumer<SimulatedPlayer> onDestroyed;
@@ -87,6 +93,57 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 	@Override
 	public boolean hasCapability(@NotNull Class<? extends PlayerCapability> type) {
 		return !destroyed.get() && !player.destroyed() && capabilities.hasCapability(type);
+	}
+
+	@Override
+	public int awaitFirst(@NotNull Duration timeout, @NotNull Expectation... expectations) {
+		if (expectations.length == 0) throw new IllegalArgumentException("Expected at least one expectation");
+		if (timeout.isNegative() || timeout.isZero()) throw new IllegalArgumentException("timeout must be positive");
+
+		AtomicInteger first = new AtomicInteger(-1);
+		BooleanSupplier anyMet = () -> {
+			for (int index = 0; index < expectations.length; index++) {
+				if (!expectations[index].met()) continue;
+
+				first.set(index);
+				return true;
+			}
+
+			return false;
+		};
+		String description = describe(expectations);
+		Optional<CapabilityChannel> channel = player instanceof ProtocolCapabilityPlayer protocol ? protocol.channel() : Optional.empty();
+		if (channel.isPresent()) channel.get().await(anyMet, description, timeout);
+		else awaitWithoutChannel(anyMet, description, timeout);
+
+		return first.get();
+	}
+
+	/**
+	 * Checks the expectations of a player that has no capability channel to wait on, such as one whose
+	 * capabilities are all agent-backed.
+	 */
+	private void awaitWithoutChannel(@NotNull BooleanSupplier anyMet, @NotNull String description, @NotNull Duration timeout) {
+		long deadline = System.nanoTime() + timeout.toNanos();
+		while (!anyMet.getAsBoolean()) {
+			if (System.nanoTime() >= deadline)
+				throw new IllegalStateException("Player '" + name() + "' did not " + description + " within " + timeout);
+
+			try {
+				Thread.sleep(EXPECTATION_INTERVAL);
+			} catch (InterruptedException exception) {
+				Thread.currentThread().interrupt();
+				throw new IllegalStateException("Interrupted while waiting for player '" + name() + "'", exception);
+			}
+		}
+	}
+
+	private static @NotNull String describe(@NotNull Expectation... expectations) {
+		StringJoiner joined = new StringJoiner(" or ");
+		for (Expectation expectation : expectations)
+			joined.add(expectation.getDescription());
+
+		return joined.toString();
 	}
 
 	@Override

@@ -3,6 +3,7 @@ package me.whereareiam.anvil.api.player;
 import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
+import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.model.player.PlayerState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -67,6 +68,41 @@ public interface SimulatedPlayer extends CapabilityOwner<PlayerCapability> {
 	 * @return {@code true} when the capability is available
 	 */
 	boolean hasCapability(@NotNull Class<? extends PlayerCapability> type);
+
+	/**
+	 * Waits, using the default timeout, until the first of several expectations is met.
+	 *
+	 * @param expectations expectations in order of preference when several are met at once
+	 * @return index of the first expectation met
+	 * @see #awaitFirst(Duration, Expectation...)
+	 */
+	default int awaitFirst(@NotNull Expectation... expectations) {
+		return awaitFirst(DEFAULT_TIMEOUT, expectations);
+	}
+
+	/**
+	 * Waits until the first of several expectations is met, for a test in which more than one outcome is correct,
+	 * such as a race whose winner decides whether the player is answered or disconnected. When several are met by
+	 * the time they are checked, the earliest in the arguments wins. The wait fails with the player's diagnostics
+	 * when the player fails or none is met in time.
+	 *
+	 * <pre>{@code
+	 * int before = messages.checkpoint();
+	 * messages.command("confirm 123456");
+	 * int outcome = player.awaitFirst(Duration.ofSeconds(10),
+	 *         messages.expectReceived(text -> text.contains("Invalid code"), before),
+	 *         session.expectKicked());
+	 * if (outcome == 1) assertTrue(session.kicked().contains("Reconnect"));
+	 * }</pre>
+	 *
+	 * @param timeout maximum wait
+	 * @param expectations at least one expectation, created by this player's capabilities or with
+	 *                     {@link Expectation#of}
+	 * @return index of the first expectation met
+	 * @throws IllegalArgumentException when no expectation is given
+	 * @throws IllegalStateException when none is met within the timeout
+	 */
+	int awaitFirst(@NotNull Duration timeout, @NotNull Expectation... expectations);
 
 	/**
 	 * Returns an immutable snapshot immediately without waiting.

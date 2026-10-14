@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.messages;
 
+import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.capability.messages.model.ReceivedMessage;
@@ -20,6 +21,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -99,6 +101,22 @@ class ChannelMessagesTest {
 		channel.publish(MessagesOperations.RECEIVED, new MessageText("Use /login"));
 		assertEquals(new ReceivedMessage("Use /login", 3), messages.received(text -> text.contains("/login"), afterFirstPrompt, TIMEOUT));
 		assertEquals(new ReceivedMessage("Use /login", 1), messages.received(text -> text.contains("/login"), 0, TIMEOUT));
+	}
+
+	@Test
+	void expectsAMatchingMessageOnlyAfterTheCheckpoint() {
+		RecordingChannel channel = new RecordingChannel();
+		ChannelMessages messages = new ChannelMessages(channel);
+		channel.publish(MessagesOperations.RECEIVED, new MessageText("Invalid code"));
+		int before = messages.checkpoint();
+		Expectation invalid = messages.expectReceived(text -> text.contains("Invalid code"), before);
+
+		assertFalse(invalid.met());
+		assertEquals("receive a matching message after message 1", invalid.getDescription());
+
+		channel.publish(MessagesOperations.RECEIVED, new MessageText("Invalid code"));
+		assertTrue(invalid.met());
+		assertEquals(new ReceivedMessage("Invalid code", 2), messages.received(text -> text.contains("Invalid code"), before, TIMEOUT));
 	}
 
 	@Test

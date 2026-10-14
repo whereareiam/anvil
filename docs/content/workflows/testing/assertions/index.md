@@ -22,6 +22,36 @@ Capability waits offer explicit duration overloads; their default maximum wait i
 Immediate snapshots such as `Session.state()`, `Messages.history()`, `Server.identity()`, and
 `Inventory.snapshot()` do not wait.
 
+## Wait for whichever outcome comes first
+
+Some tests have more than one correct outcome, decided by a race the test cannot order, such as the same
+player acting through two proxies at once. Waiting for one outcome would then time out whenever the other
+one happens. `SimulatedPlayer.awaitFirst` waits for the first of several expectations and returns its index;
+the capability's ordinary wait for that outcome then returns at once:
+
+```java
+Messages messages = player.capability(Messages.class);
+Session session = player.capability(Session.class);
+int before = messages.checkpoint();
+messages.command("confirm 123456");
+
+int outcome = player.awaitFirst(Duration.ofSeconds(10),
+        messages.expectReceived(text -> text.contains("Invalid code"), before),
+        session.expectKicked());
+if (outcome == 1) assertTrue(session.kicked().contains("Reconnect"));
+```
+
+| Expectation | Met when |
+| --- | --- |
+| `Messages.expectReceived(matcher, checkpoint)` | a message after the checkpoint matches |
+| `Session.expectKicked()` | the server kicked the current session |
+| `Session.expectDisconnected()` | the current session is disconnected for any reason |
+| `Expectation.of(description, condition)` | a check of your own that never waits holds |
+
+When several expectations are met by the time they are checked, the earliest argument wins. A timeout names
+every expectation, joined by "or". Use it only for outcomes that are really both correct; one expected
+result still belongs in an ordinary wait, which explains a failure better.
+
 ## Checkpoint console output before acting
 
 Inside a live test with `ScenarioContext anvil` and the first-test process named `server`, import
