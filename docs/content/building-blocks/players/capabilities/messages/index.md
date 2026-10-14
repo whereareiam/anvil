@@ -90,6 +90,12 @@ messages.notReceived(text -> text.contains("Invalid password"), welcome.getCheck
 It returns normally when the duration passes without such a message. Choose the shortest duration in
 which the server would have sent the message.
 
+## Expect a message among other outcomes
+
+`expectReceived(matcher, checkpoint)` describes a matching message after a checkpoint without waiting.
+Pass it to `player.awaitFirst(...)` together with other expectations when the message is only one correct
+outcome; see [waiting for whichever outcome comes first](../../../../workflows/testing/assertions/index.md#wait-for-whichever-outcome-comes-first).
+
 ## Inspect failures
 
 `history()` returns an immutable snapshot without waiting. Include relevant received text in a failed

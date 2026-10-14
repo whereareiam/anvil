@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.messages;
 
+import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.messages.model.ReceivedMessage;
@@ -98,4 +99,28 @@ public interface Messages extends PlayerCapability {
 	 * @param duration how long no matching message may arrive
 	 */
 	void notReceived(@NotNull Predicate<String> matcher, int after, @NotNull Duration duration);
+
+	/**
+	 * Expects a message after a checkpoint that satisfies a condition, for {@link SimulatedPlayer#awaitFirst}. Once
+	 * it is met, {@link #received(Predicate, int, Duration)} with the same arguments returns the message at once.
+	 *
+	 * <pre>{@code
+	 * int before = messages.checkpoint();
+	 * messages.command("confirm 123456");
+	 * int outcome = player.awaitFirst(messages.expectReceived(text -> text.contains("Welcome"), before), session.expectKicked());
+	 * }</pre>
+	 *
+	 * @param matcher condition on the message's plain text
+	 * @param after checkpoint; only messages received after it are considered
+	 * @return expectation met once such a message has been received
+	 */
+	default @NotNull Expectation expectReceived(@NotNull Predicate<String> matcher, int after) {
+		return Expectation.of("receive a matching message after message " + after, () -> {
+			List<String> history = history();
+			for (int index = Math.max(0, after); index < history.size(); index++)
+				if (matcher.test(history.get(index))) return true;
+
+			return false;
+		});
+	}
 }
