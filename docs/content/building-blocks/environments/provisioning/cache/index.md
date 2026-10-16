@@ -23,3 +23,8 @@ preparing an environment and later running it offline.
 For another machine or CI run, copy only the cache data you intend to reuse. The root can also contain
 private authentication accounts; exclude those account files rather than archiving the entire root.
 See [Authentication](../../../players/authentication/index.md).
+
+On GitHub Actions, [Anvil Actions](https://github.com/whereareiam/anvil-actions) does this for you:
+`whereareiam/anvil-actions/setup@v1` keeps downloaded software, Java installations and workspace snapshots in
+the Actions cache and leaves accounts out, and `whereareiam/anvil-actions/report@v1` uploads the console logs of
+failed scenarios.
