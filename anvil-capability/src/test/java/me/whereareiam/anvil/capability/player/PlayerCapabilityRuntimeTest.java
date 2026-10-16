@@ -61,7 +61,8 @@ class PlayerCapabilityRuntimeTest {
 				"me.whereareiam.anvil.inventory",
 				"me.whereareiam.anvil.interaction",
 				"me.whereareiam.anvil.commands",
-				"me.whereareiam.anvil.dialogs"
+				"me.whereareiam.anvil.dialogs",
+				"me.whereareiam.anvil.cookies"
 		), PlayerCapabilityRuntime.discover().providers().stream()
 				.map(CapabilityDescriptor::getId)
 				.collect(Collectors.toSet()));

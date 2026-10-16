@@ -6,6 +6,8 @@ import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.capability.commands.Commands;
 import me.whereareiam.anvil.capability.commands.type.CommandCheck;
+import me.whereareiam.anvil.capability.cookies.Cookies;
+import me.whereareiam.anvil.capability.cookies.model.CookieRequest;
 import me.whereareiam.anvil.capability.dialogs.Dialogs;
 import me.whereareiam.anvil.capability.dialogs.model.click.CommandConfirmation;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.Dialog;
@@ -31,6 +33,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +55,10 @@ class PlayerCapabilitiesSystemTest {
 	 * Scenarios whose Minecraft version predates dialogs, which arrived in 1.21.6.
 	 */
 	private static final Set<String> RELEASES_WITHOUT_DIALOGS = Set.of("paper-1.18.2", "paper-1.21.1");
+	/**
+	 * Scenarios whose Minecraft version predates cookies, which arrived in 1.20.5.
+	 */
+	private static final Set<String> RELEASES_WITHOUT_COOKIES = Set.of("paper-1.18.2");
 
 	@TestFactory
 	Stream<DynamicTest> controlsAProtocolPlayerOnEveryPaperRelease() {
@@ -66,7 +73,7 @@ class PlayerCapabilitiesSystemTest {
 		try (ScenarioEngine engine = AnvilLauncher.create(EngineProperties.fromSystemProperties());
 		     ScenarioContext anvil = engine.start(scenario)) {
 			try {
-				verify(anvil, !RELEASES_WITHOUT_DIALOGS.contains(scenario.getName()));
+				verify(anvil, !RELEASES_WITHOUT_DIALOGS.contains(scenario.getName()), !RELEASES_WITHOUT_COOKIES.contains(scenario.getName()));
 			} catch (Throwable failure) {
 				finishFailed(anvil, failure);
 				throw failure;
@@ -86,7 +93,7 @@ class PlayerCapabilitiesSystemTest {
 		}
 	}
 
-	private void verify(ScenarioContext anvil, boolean dialogs) {
+	private void verify(ScenarioContext anvil, boolean dialogs, boolean cookies) {
 		SimulatedPlayer alice = anvil.players().create("Alice");
 		assertEquals("external:hello", alice.capability(FixtureAgentProbeProvider.Probe.class).echo("server", "hello"));
 		Session session = alice.capability(Session.class);
@@ -158,15 +165,69 @@ class PlayerCapabilitiesSystemTest {
 		messages.received("anvil:click:4", Duration.ofSeconds(10));
 
 		verifyDialogs(alice, messages, dialogs);
+		verifyCookies(anvil, alice, messages, cookies);
 
 		messages.command("anvil-fixture kick");
 		assertEquals("anvil:requested-kick", session.kicked(Duration.ofSeconds(10)));
 		assertTrue(session.state().kickReason().contains("anvil:requested-kick"));
+		if (cookies) alice.capability(Cookies.class).store("anvil:arrival", "carried".getBytes(StandardCharsets.UTF_8));
 		session.rejoin();
 		session.connected(Duration.ofSeconds(20));
+		verifyCookiesOfANewConnection(anvil, alice, messages, cookies);
 		alice.destroy();
 		assertTrue(alice.state().destroyed());
 		assertTrue(anvil.players().all().isEmpty());
+	}
+
+	/**
+	 * Lets the server store a cookie and ask for it, and gives and takes away a cookie the server then asks for, or
+	 * checks that a player of a release without cookies has no Cookies capability.
+	 */
+	private void verifyCookies(ScenarioContext anvil, SimulatedPlayer alice, Messages messages, boolean supported) {
+		assertEquals(supported, alice.hasCapability(Cookies.class));
+		if (!supported) return;
+
+		Cookies cookies = alice.capability(Cookies.class);
+		int before = cookies.checkpoint();
+		cookie(anvil, "store anvil:ticket day-pass");
+		messages.received("anvil:cookie-stored:anvil:ticket", Duration.ofSeconds(10));
+		assertEquals("day-pass", new String(cookies.stored("anvil:ticket", Duration.ofSeconds(10)), StandardCharsets.UTF_8));
+
+		cookie(anvil, "request anvil:ticket");
+		messages.received("anvil:cookie:anvil:ticket:day-pass", Duration.ofSeconds(10));
+		CookieRequest request = cookies.requested("anvil:ticket", before, Duration.ofSeconds(10));
+		assertEquals("day-pass", new String(request.getAnswer(), StandardCharsets.UTF_8));
+
+		cookies.store("anvil:gift", "ribbon".getBytes(StandardCharsets.UTF_8));
+		cookie(anvil, "request anvil:gift");
+		messages.received("anvil:cookie:anvil:gift:ribbon", Duration.ofSeconds(10));
+		cookies.remove("anvil:gift");
+		cookie(anvil, "request anvil:gift");
+		messages.received("anvil:cookie:anvil:gift:none", Duration.ofSeconds(10));
+		cookies.notRequested("anvil:unasked", request.getCheckpoint(), Duration.ofSeconds(1));
+	}
+
+	/**
+	 * Checks that a new connection starts without the cookies of the previous one, holding only the cookie given
+	 * while the player was disconnected.
+	 */
+	private void verifyCookiesOfANewConnection(ScenarioContext anvil, SimulatedPlayer alice, Messages messages, boolean supported) {
+		if (!supported) return;
+
+		Cookies cookies = alice.capability(Cookies.class);
+		cookie(anvil, "request anvil:ticket");
+		messages.received("anvil:cookie:anvil:ticket:none", Duration.ofSeconds(10));
+		cookie(anvil, "request anvil:arrival");
+		messages.received("anvil:cookie:anvil:arrival:carried", Duration.ofSeconds(10));
+		assertEquals(List.of("anvil:arrival"), List.copyOf(cookies.stored().keySet()));
+	}
+
+	/**
+	 * Drives the fixture's cookie command for Alice from the server console, which does not count towards the
+	 * spam limit her own commands are under.
+	 */
+	private static void cookie(ScenarioContext anvil, String arguments) {
+		anvil.processes().server("server").console().sendCommand("anvil-cookie Alice " + arguments);
 	}
 
 	/**

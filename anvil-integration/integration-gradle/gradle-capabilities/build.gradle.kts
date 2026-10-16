@@ -67,6 +67,12 @@ gradlePlugin {
 			displayName = "Anvil Commands Capability"
 			description = "Includes the built-in Commands capability"
 		}
+		create("anvilCapabilityCookies") {
+			id = "me.whereareiam.anvil.capability.cookies"
+			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.CookiesPlugin"
+			displayName = "Anvil Cookies Capability"
+			description = "Includes the built-in Cookies capability"
+		}
 		create("anvilCapabilityDialogs") {
 			id = "me.whereareiam.anvil.capability.dialogs"
 			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.DialogsPlugin"

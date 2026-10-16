@@ -46,6 +46,9 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 		var command = getCommand("anvil-fixture");
 		if (command != null)
 			command.setExecutor((sender, ignored, label, arguments) -> execute(player(sender), arguments));
+		var cookie = getCommand("anvil-cookie");
+		if (cookie != null)
+			cookie.setExecutor((sender, ignored, label, arguments) -> cookie(arguments));
 		var auth = getCommand("auth");
 		if (auth != null)
 			auth.setExecutor((sender, ignored, label, arguments) -> authenticate(player(sender)));
@@ -152,6 +155,24 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 			default:
 				player.sendMessage("anvil:unknown:" + operation);
 		}
+		return true;
+	}
+
+	/**
+	 * Stores or requests a cookie of a player named by the console, so a test drives cookies without sending the
+	 * player's own commands, which count towards the server's spam limit.
+	 */
+	private static boolean cookie(String[] arguments) {
+		Player player = arguments.length < 3 ? null : Bukkit.getPlayerExact(arguments[0]);
+		if (player == null)
+			return false;
+
+		if (arguments[1].equals("store") && arguments.length == 4)
+			FixtureCookies.store(player, arguments[2], arguments[3]);
+		else if (arguments[1].equals("request"))
+			FixtureCookies.request(player, arguments[2]);
+		else
+			return false;
 		return true;
 	}
 
