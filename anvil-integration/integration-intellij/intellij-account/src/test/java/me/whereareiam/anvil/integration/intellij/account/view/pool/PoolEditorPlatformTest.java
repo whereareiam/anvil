@@ -6,13 +6,17 @@ import com.intellij.ui.components.JBTextField;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 
+import me.whereareiam.anvil.api.model.Edition;
+import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.integration.intellij.AccountPlatformTestCase;
 import me.whereareiam.anvil.integration.intellij.SwingTestSupport;
 import me.whereareiam.anvil.integration.intellij.account.AccountLibrary;
 import me.whereareiam.anvil.integration.intellij.account.AccountSource;
 import me.whereareiam.anvil.integration.intellij.account.AvailableAccount;
+import me.whereareiam.anvil.integration.intellij.account.view.EditionChip;
 
 public class PoolEditorPlatformTest extends AccountPlatformTestCase {
 	public void testMembershipSelectionAndRenameAreCommittedOnlyOnSave() throws Exception {
@@ -23,7 +27,7 @@ public class PoolEditorPlatformTest extends AccountPlatformTestCase {
 		try {
 			library.setDirectory(directory);
 			library.savePool(null, "Players", List.of("missing"));
-			var entry = new AvailableAccount(new AuthenticationAccount("alice", "mcprotocol", "Alice", null),
+			var entry = new AvailableAccount(new AuthenticationAccount("alice", List.of(AccountAccess.available(Edition.of("java"), "Alice", UUID.randomUUID()))), List.of(),
 					directory.resolve("alice.json"), AccountSource.PROJECT);
 			var dialog = new PoolEditorDialog(getProject(), library, "Players", library.catalog().getPools(), List.of(entry));
 			Disposer.register(getTestRootDisposable(), dialog.getDisposable());
@@ -32,7 +36,10 @@ public class PoolEditorPlatformTest extends AccountPlatformTestCase {
 			assertTrue(missing.isSelected());
 			missing.doClick();
 			assertNotNull(dialog.doValidate());
-			SwingTestSupport.button(panel, "alice · Project · Alice").doClick();
+			var alice = SwingTestSupport.button(panel, "alice · Project · Alice");
+			assertEquals("alice · Project · Alice, available for Java", alice.getAccessibleContext().getAccessibleName());
+			assertEquals("Java", SwingTestSupport.find(alice.getParent(), EditionChip.class).getText());
+			alice.doClick();
 			SwingTestSupport.find(panel, JBTextField.class).setText("Test players");
 			assertNull(dialog.doValidate());
 			assertEquals(List.of("missing"), library.catalog().getPools().get("Players"));

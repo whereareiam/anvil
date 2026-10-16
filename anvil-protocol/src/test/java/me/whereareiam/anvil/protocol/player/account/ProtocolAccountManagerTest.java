@@ -1,20 +1,21 @@
 package me.whereareiam.anvil.protocol.player.account;
 
+import me.whereareiam.anvil.api.model.Edition;
+import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.player.account.AccountPool;
 import me.whereareiam.anvil.protocol.api.library.ProtocolAuthentication;
-import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
-import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
-import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
-import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
-import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -24,48 +25,74 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProtocolAccountManagerTest {
+	private static final Edition JAVA = Edition.of("java");
+	private static final Edition BEDROCK = Edition.of("bedrock");
 	private static final List<AuthenticationAccount> ACCOUNTS = List.of(
-			new AuthenticationAccount("alice", "fixture", "Alice", UUID.randomUUID()),
-			new AuthenticationAccount("bob", "fixture", "Bob", UUID.randomUUID())
-	);
-	private static final List<AuthenticationAccount> OTHER_ACCOUNTS = List.of(
-			new AuthenticationAccount("carol", "other", "Carol", UUID.randomUUID()),
-			new AuthenticationAccount("alice", "other", "Alice", UUID.randomUUID())
+			new AuthenticationAccount("alice", List.of(AccountAccess.available(JAVA, "Alice", UUID.randomUUID()))),
+			new AuthenticationAccount("bob", List.of(AccountAccess.available(JAVA, "Bob", UUID.randomUUID())))
 	);
 
 	@TempDir
 	Path directory;
 
 	@Test
-	void aggregatesTheAccountsOfEveryLibraryOfferingAuthentication() {
-		var registry = new ProtocolLibraryRegistry(List.of(
-				new FixtureLibrary("fixture", ACCOUNTS),
-				new OfflineLibrary(),
-				new FixtureLibrary("other", OTHER_ACCOUNTS)
-		));
-		var manager = new ProtocolAccountManager(registry, directory, new AccountReservations());
-
-		var accounts = manager.list();
-
-		assertEquals(List.of("alice", "bob", "carol", "alice"), accounts.stream().map(AuthenticationAccount::getAccountId).toList());
-		assertEquals(List.of("fixture", "fixture", "other", "other"), accounts.stream().map(AuthenticationAccount::getLibraryId).toList());
-		AccountPool pool = manager.pool(List.of("carol", "bob"));
-		assertEquals(List.of("other", "fixture"), pool.accounts().stream().map(AuthenticationAccount::getLibraryId).toList());
-		assertEquals("carol", pool.lease().account().getAccountId());
+	void listsTheAccountsOfTheLibrariesAccountWorkflowAndNoneWithoutOne() {
+		assertEquals(List.of("alice", "bob"), manager().list().stream().map(AuthenticationAccount::getAccountId).toList());
+		assertEquals(List.of(), new ProtocolAccountManager(null, directory, new AccountReservations()).list());
 	}
 
 	@Test
-	void poolsRefuseAnIdThatSeveralLibrariesStore() {
-		var registry = new ProtocolLibraryRegistry(List.of(
-				new FixtureLibrary("fixture", ACCOUNTS),
-				new FixtureLibrary("other", OTHER_ACCOUNTS)
+	void poolsRefuseUnknownAndRepeatedAccounts() {
+		var unknown = assertThrows(IllegalArgumentException.class, () -> manager().pool(List.of("bob", "carol")));
+		var repeated = assertThrows(IllegalArgumentException.class, () -> manager().pool(List.of("bob", "bob")));
+
+		assertEquals("Unknown account: carol", unknown.getMessage());
+		assertEquals("Duplicate account in pool: bob", repeated.getMessage());
+	}
+
+	@Test
+	void leasesForAnEditionOnlyAccountsRecordedAsAvailableReadingTheCurrentRecord() {
+		StoredAccounts stored = new StoredAccounts(List.of(
+				new AuthenticationAccount("alice", List.of(AccountAccess.unavailable(JAVA, "Account 'alice' owns no Java profile"))),
+				new AuthenticationAccount("bob", List.of(AccountAccess.available(BEDROCK, "Bob", UUID.randomUUID()),
+						AccountAccess.unavailable(JAVA, "Account 'bob' owns no Java profile"))),
+				new AuthenticationAccount("carol", List.of(AccountAccess.available(JAVA, "Carol", UUID.randomUUID())))
 		));
-		var manager = new ProtocolAccountManager(registry, directory, new AccountReservations());
+		AccountPool pool = new ProtocolAccountManager(stored, directory, new AccountReservations()).pool(List.of("alice", "bob", "carol"));
 
-		var failure = assertThrows(IllegalArgumentException.class, () -> manager.pool(List.of("bob", "alice")));
+		assertEquals("carol", pool.lease(JAVA).account().getAccountId());
+		assertEquals("bob", pool.lease(BEDROCK).account().getAccountId());
+		var none = assertThrows(IllegalStateException.class, () -> pool.lease(JAVA));
+		assertEquals("No account of the pool is available for edition 'java': alice (java: unavailable, Account 'alice' "
+				+ "owns no Java profile), bob (java: unavailable, Account 'bob' owns no Java profile), carol (in use)", none.getMessage());
 
-		assertTrue(failure.getMessage().contains("Account 'alice' is stored by several protocol libraries [fixture, other]"),
-				failure.getMessage());
+		stored.accounts = List.of(new AuthenticationAccount("alice", List.of(AccountAccess.available(JAVA, "Alice", UUID.randomUUID()))));
+		assertEquals("alice", pool.lease(JAVA).account().getAccountId());
+		assertEquals(List.of(), stored.checks);
+	}
+
+	@Test
+	void checksAccountsOfUnknownAvailabilityOnlyWhenNoneIsAvailableAndLendsTheFirstThatIs() {
+		UUID carol = UUID.randomUUID();
+		StoredAccounts stored = new StoredAccounts(List.of(
+				new AuthenticationAccount("alice", List.of()),
+				new AuthenticationAccount("bob", List.of()),
+				new AuthenticationAccount("carol", List.of(AccountAccess.unknown(BEDROCK, "Could not reach the services")))
+		));
+		stored.results.put("alice", AccountAccess.unavailable(BEDROCK, "Account 'alice' owns no Bedrock profile"));
+		stored.results.put("carol", AccountAccess.available(BEDROCK, "Carol", carol));
+		AccountReservations reservations = new AccountReservations();
+		assertTrue(reservations.reserve("bob"));
+		AccountPool pool = new ProtocolAccountManager(stored, directory, reservations).pool(List.of("alice", "bob", "carol"));
+
+		AccountPool.AccountLease lease = pool.lease(BEDROCK);
+
+		assertEquals("carol", lease.account().getAccountId());
+		assertEquals(AccountAccess.available(BEDROCK, "Carol", carol), lease.account().access(BEDROCK));
+		assertEquals(List.of("alice bedrock", "carol bedrock"), stored.checks);
+		var none = assertThrows(IllegalStateException.class, () -> pool.lease(BEDROCK));
+		assertEquals("No account of the pool is available for edition 'bedrock': alice (bedrock: unavailable, Account 'alice' "
+				+ "owns no Bedrock profile), bob (in use), carol (in use)", none.getMessage());
 	}
 
 	@Test
@@ -148,57 +175,49 @@ class ProtocolAccountManagerTest {
 	}
 
 	private ProtocolAccountManager manager(AccountReservations reservations) {
-		return new ProtocolAccountManager(new ProtocolLibraryRegistry(List.of(new FixtureLibrary("fixture", ACCOUNTS))),
-				directory, reservations);
+		return new ProtocolAccountManager(new StoredAccounts(ACCOUNTS), directory, reservations);
 	}
 
 	private void pools(String declarations) throws Exception {
 		Files.writeString(directory.resolve(AccountPoolFile.FILE_NAME), declarations);
 	}
 
-	private record FixtureLibrary(String id, List<AuthenticationAccount> accounts) implements ProtocolLibraryProvider {
-		@Override
-		public List<ProtocolRelease> releases(ProtocolLibraryContext context) {
-			return List.of();
+	/**
+	 * Stored accounts without files, as the libraries' account workflow lists them now; a check records the result
+	 * the test prepared for the account.
+	 */
+	private static final class StoredAccounts implements ProtocolAuthentication {
+		private final Map<String, AccountAccess> results = new HashMap<>();
+		private final List<String> checks = new ArrayList<>();
+		private List<AuthenticationAccount> accounts;
+
+		private StoredAccounts(List<AuthenticationAccount> accounts) {
+			this.accounts = accounts;
 		}
 
 		@Override
-		public ProtocolLibrary create(ProtocolLibraryContext context) {
+		public @NotNull Collection<AuthenticationAccount> accounts() {
+			return accounts;
+		}
+
+		@Override
+		public void login(@NotNull String accountId, @NotNull Consumer<String> output) {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public Optional<ProtocolAuthentication> authentication(Path directory) {
-			return Optional.of(new ProtocolAuthentication() {
-				@Override
-				public List<AuthenticationAccount> accounts() {
-					return accounts;
-				}
+		public @NotNull AccountAccess check(@NotNull String accountId, @NotNull Edition edition) {
+			checks.add(accountId + " " + edition);
+			AccountAccess result = results.get(accountId);
+			accounts = accounts.stream()
+					.map(account -> account.getAccountId().equals(accountId) ? new AuthenticationAccount(accountId, List.of(result)) : account)
+					.toList();
 
-				@Override
-				public void login(String id, Consumer<String> output) {
-				}
-
-				@Override
-				public void logout(String id, Consumer<String> output) {
-				}
-			});
-		}
-	}
-
-	private static final class OfflineLibrary implements ProtocolLibraryProvider {
-		@Override
-		public String id() {
-			return "offline";
+			return result;
 		}
 
 		@Override
-		public List<ProtocolRelease> releases(ProtocolLibraryContext context) {
-			return List.of();
-		}
-
-		@Override
-		public ProtocolLibrary create(ProtocolLibraryContext context) {
+		public void logout(@NotNull String accountId, @NotNull Consumer<String> output) {
 			throw new UnsupportedOperationException();
 		}
 	}

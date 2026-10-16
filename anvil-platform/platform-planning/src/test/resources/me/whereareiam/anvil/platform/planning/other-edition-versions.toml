@@ -1,0 +1,10 @@
+# A server platform of another edition that numbers its versions like the Java-shaped data and runs any LTS.
+edition = "other"
+
+[verified]
+"1.16.5" = [17, 21]
+
+[[java]]
+since = "1.16.5"
+minimum = 11
+preferred = 17

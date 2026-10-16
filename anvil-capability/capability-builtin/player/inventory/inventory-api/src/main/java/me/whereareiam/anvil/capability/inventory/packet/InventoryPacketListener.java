@@ -10,7 +10,7 @@ import java.util.List;
  * Receives the inventory state that one release's packets carry, translated by {@link InventoryPackets} into
  * library-neutral values. Container IDs, slots and state IDs are passed on as received: the binding decides which
  * of them change its observed container, for example by ignoring the cursor slot {@code -1}. Releases before
- * Minecraft 1.17 have no state IDs and report {@code 0}.
+ * Minecraft 1.17 and Bedrock releases have no state IDs and report {@code 0}.
  *
  * <pre>{@code
  * Runnable detach = packets.listen(session, new InventoryPacketListener() {

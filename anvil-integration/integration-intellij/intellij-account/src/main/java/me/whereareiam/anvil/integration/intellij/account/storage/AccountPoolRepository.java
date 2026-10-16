@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -16,10 +15,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,8 +25,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Uses the runtime's {@code pools.properties} format: {@code schemaVersion=1} and one
  * {@code pool.<name>=<id>,<id>} entry per pool, listing distinct account IDs in lease order. The
- * runtime rejects duplicates and other schema versions, so this reader does too. The runtime leases one
- * account per ID and refuses an ID that several protocol libraries store, so saving refuses such a pool.
+ * runtime rejects duplicates and other schema versions, so this reader does too.
  */
 @RequiredArgsConstructor
 public final class AccountPoolRepository {
@@ -86,11 +82,9 @@ public final class AccountPoolRepository {
 	public void save(
 			@Nullable String previous,
 			@NotNull String name,
-			@NotNull List<String> ids,
-			@NotNull Collection<AuthenticationAccount> accounts
+			@NotNull List<String> ids
 	) throws IOException {
 		if (name.isBlank() || ids.isEmpty()) throw new IOException("A pool needs a name and at least one account.");
-		requireOneLibraryPerId(ids, accounts);
 
 		Map<String, List<String>> pools = new TreeMap<>(read());
 		if (!name.equals(previous) && pools.containsKey(name)) throw new IOException("A pool with this name already exists.");
@@ -98,19 +92,6 @@ public final class AccountPoolRepository {
 		if (previous != null) pools.remove(previous);
 		pools.put(name, ids.stream().distinct().toList());
 		replace(pools);
-	}
-
-	private static void requireOneLibraryPerId(List<String> ids, Collection<AuthenticationAccount> accounts) throws IOException {
-		Map<String, Set<String>> libraries = new TreeMap<>();
-		for (AuthenticationAccount account : accounts)
-			libraries.computeIfAbsent(account.getAccountId(), id -> new TreeSet<>()).add(account.getLibraryId());
-
-		for (String id : ids) {
-			Set<String> stored = libraries.getOrDefault(id, Set.of());
-			if (stored.size() > 1)
-				throw new IOException("Account '" + id + "' is stored by several protocol libraries " + stored
-						+ "; a pool leases one account per ID, so store each pooled ID in one library only.");
-		}
 	}
 
 	public void remove(@NotNull String name) throws IOException {

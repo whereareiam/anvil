@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.player;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerManager;
@@ -73,13 +74,14 @@ public final class DefaultPlayerService implements AutoCloseable {
 		this.artifacts = artifacts;
 		this.selector = new ProtocolLibrarySelector(libraries.ids(), this::releases, options.getProtocolLibrary(),
 				options.getSupportPolicy(), System.err::println);
-		this.accounts = new ProtocolAccountManager(libraries, accountsDirectory, reservations);
+		this.accounts = new ProtocolAccountManager(libraries.authentication(accountsDirectory).orElse(null), accountsDirectory,
+				reservations);
 		// User-supplied release data is read now, so invalid files fail the engine instead of a later player.
 		for (String library : options.getProtocolReleases().keySet()) releases(library);
 	}
 
 	/**
-	 * Returns the engine-wide account manager aggregating every installed library's accounts.
+	 * Returns the engine-wide account manager over the stored accounts that the installed libraries share.
 	 *
 	 * @return account manager
 	 */
@@ -94,15 +96,17 @@ public final class DefaultPlayerService implements AutoCloseable {
 	 * <p>Ranking reads the release data of every installed library, without holding this service's lock,
 	 * also for a scenario that never creates a player.</p>
 	 *
-	 * @param scenario scenario validated by {@link #prepare(AnvilScenario)}
+	 * @param scenario scenario validated by {@link #prepare(AnvilScenario, Map)}
+	 * @param editions Minecraft edition of each of the scenario's processes, as their platforms declare it, keyed by
+	 * process name
 	 * @return distinct library identifiers, without creating any library
 	 */
-	public @NotNull List<String> scenarioLibraries(@NotNull AnvilScenario scenario) {
+	public @NotNull List<String> scenarioLibraries(@NotNull AnvilScenario scenario, @NotNull Map<String, Edition> editions) {
 		synchronized (this) {
 			ensureOpen();
 		}
 
-		return selector.scenarioLibraries(scenario);
+		return selector.scenarioLibraries(scenario, editions);
 	}
 
 	/**
@@ -112,17 +116,21 @@ public final class DefaultPlayerService implements AutoCloseable {
 	 * is refused.
 	 *
 	 * @param scenario scenario about to be prepared
+	 * @param editions Minecraft edition of each of the scenario's processes, as their platforms declare it, keyed by
+	 * process name; a player reaches a server only with a protocol release of the server's edition
 	 * @throws ScenarioValidationException when the scenario names a library that is not installed
 	 */
-	public synchronized void prepare(@NotNull AnvilScenario scenario) {
+	public synchronized void prepare(@NotNull AnvilScenario scenario, @NotNull Map<String, Edition> editions) {
 		ensureOpen();
-		selector.validate(scenario);
+		selector.validate(scenario, editions);
 	}
 
 	/**
 	 * Opens the player manager of one prepared scenario.
 	 *
 	 * @param scenario prepared scenario
+	 * @param editions Minecraft edition of each of the scenario's processes, as their platforms declare it, keyed by
+	 * process name
 	 * @param processes scenario processes resolved at player creation
 	 * @param observations scenario-bound player observations
 	 * @param composer scenario-bound player composition
@@ -132,6 +140,7 @@ public final class DefaultPlayerService implements AutoCloseable {
 	 */
 	public synchronized @NotNull PlayerManager open(
 			@NotNull AnvilScenario scenario,
+			@NotNull Map<String, Edition> editions,
 			@NotNull ScenarioProcesses processes,
 			@NotNull PlayerObservationFactory observations,
 			@NotNull ProtocolPlayerComposer composer,
@@ -140,6 +149,7 @@ public final class DefaultPlayerService implements AutoCloseable {
 		ensureOpen();
 		RunningPlayerManager manager = new RunningPlayerManager(
 				scenario,
+				editions,
 				selector,
 				this::library,
 				processes,

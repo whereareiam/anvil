@@ -4,8 +4,14 @@ description: Add project accounts, choose global account availability, and manag
 ---
 
 Select **Anvil Accounts…** in the Anvil tool window toolbar, or find it with **Find Action**, to manage the
-accounts available to the current IntelliJ project. The **Accounts** tab shows each account's name,
-local ID, source (**Project** or **Global**), and provider. Account and pool operations are saved
+accounts available to the current IntelliJ project. The **Accounts** tab shows each account's profile names,
+local ID and source (**Project** or **Global**). After the profile names, a tag such as **Java** or **Bedrock**
+names each Minecraft edition the account is available for; an edition whose services refused the account, or that
+no library has checked yet, has no tag. An account file that Anvil has not rewritten since it recorded results per
+protocol library, including those of Anvil 1.0, still shows the profile names it recorded, but no tag until a
+sign-in or a player that uses the account records the editions again. An account is one Microsoft account that
+every library derives its own session from; see
+[Authentication](../../../building-blocks/players/authentication/index.md). Account and pool operations are saved
 immediately; **Close** finishes the manager.
 
 ## Add an account
@@ -37,10 +43,10 @@ before running. Read errors are shown without exposing credential contents.
 
 ## Create and edit pools
 
-On **Pools**, choose **+**, enter a name, and select its members with checkboxes. **Save Pool**
-persists the selection. Select an existing pool and choose the edit button to rename it or change
-membership. Cancelling the editor leaves that pool unchanged. **−** deletes the selected project pool
-after confirmation and keeps the account files.
+On **Pools**, choose **+**, enter a name, and select its members with checkboxes; each account carries the
+same edition tags as in the **Accounts** tab. **Save Pool** persists the selection. Select an existing pool and
+choose the edit button to rename it or change membership. Cancelling the editor leaves that pool unchanged.
+**−** deletes the selected project pool after confirmation and keeps the account files.
 
 Saved members that are absent from the current account sources remain visible as **Not currently
 available**. Restore their accounts, enable the required source, or deselect those members before

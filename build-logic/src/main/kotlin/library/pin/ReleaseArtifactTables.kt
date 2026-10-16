@@ -6,14 +6,16 @@ import org.gradle.api.GradleException
 
 /**
  * Rewrites the `[[release.artifact]]` tables of a releases file's text while keeping everything people write:
- * the header comments, each `[[release]]` table with its fields, blank lines and comments, inline comments included,
- * and the comments placed between a release's last artifact and the next `[[release]]` with their layout.
+ * the header comments, each `[[release]]` table with its fields and its `[release.protocol]` table, blank lines and
+ * comments, inline comments included, and the comments placed between a release's last artifact and the next
+ * `[[release]]` with their layout. A `[release.protocol]` table must precede the release's artifact tables.
  * Artifact tables are generated lock data, so a comment inside them, whether on its own line or after a value or
  * table header, has no stable place and is refused rather than dropped.
  */
 object ReleaseArtifactTables {
 	private val releaseHeader = Regex("""\s*\[\[\s*release\s*]]\s*(#.*)?""")
 	private val artifactHeader = Regex("""\s*\[\[\s*release\.artifact\s*]]\s*(#.*)?""")
+	private val protocolHeader = Regex("""\s*\[\s*release\.protocol\s*]\s*(#.*)?""")
 	private val tableHeader = Regex("""\s*\[.*""")
 	private val toml = TomlMapper()
 
@@ -26,7 +28,7 @@ object ReleaseArtifactTables {
 	 */
 	fun replace(text: String, closures: Map<String, List<ReleaseArtifact>>): String {
 		val lines = text.lines().let { if (text.endsWith("\n")) it.dropLast(1) else it }
-		lines.firstOrNull { tableHeader.matches(it) && !releaseHeader.matches(it) && !artifactHeader.matches(it) }?.let {
+		lines.firstOrNull { tableHeader.matches(it) && !releaseHeader.matches(it) && !artifactHeader.matches(it) && !protocolHeader.matches(it) }?.let {
 			throw GradleException("Releases file has an unexpected table '${it.trim()}'")
 		}
 
@@ -60,6 +62,10 @@ object ReleaseArtifactTables {
 		val closure = closures[version] ?: throw GradleException("Releases file has no resolved closure for release '$version'")
 
 		val artifactLines = block.subList(firstArtifact, block.size)
+		artifactLines.firstOrNull { protocolHeader.matches(it) }?.let {
+			throw GradleException("Release $version declares '${it.trim()}' after its [[release.artifact]] tables, which pinning "
+				+ "regenerates; move it into the [[release]] table before the artifacts")
+		}
 		val lastData = artifactLines.indexOfLast { it.isNotBlank() && !isComment(it) }
 		artifactLines.subList(0, lastData + 1).firstOrNull(::hasComment)?.let {
 			throw GradleException("Release $version has a comment inside its [[release.artifact]] tables, which pinning "

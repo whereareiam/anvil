@@ -93,12 +93,15 @@ dependencies {
     testRuntimeOnly(projects.anvilPlatform.platformBukkit.platformBukkitAgent)
     testRuntimeOnly(projects.anvilPlatform.platformBungeecord.platformBungeecordAgent)
     testRuntimeOnly(projects.anvilPlatform.platformBungeecord.platformBungeecordProvider)
+    testRuntimeOnly(projects.anvilPlatform.platformLumi.platformLumiAgent)
+    testRuntimeOnly(projects.anvilPlatform.platformLumi.platformLumiProvider)
     testRuntimeOnly(projects.anvilPlatform.platformNeoforge.platformNeoforgeAgent)
     testRuntimeOnly(projects.anvilPlatform.platformNeoforge.platformNeoforgeProvider)
     testRuntimeOnly(projects.anvilPlatform.platformPaper.platformPaperProvider)
     testRuntimeOnly(projects.anvilPlatform.platformSpigot.platformSpigotProvider)
     testRuntimeOnly(projects.anvilPlatform.platformVelocity.platformVelocityAgent)
     testRuntimeOnly(projects.anvilPlatform.platformVelocity.platformVelocityProvider)
+    testRuntimeOnly(projects.anvilProtocol.protocolCloudburst)
     testRuntimeOnly(projects.anvilProtocol.protocolMcprotocol)
 }
 

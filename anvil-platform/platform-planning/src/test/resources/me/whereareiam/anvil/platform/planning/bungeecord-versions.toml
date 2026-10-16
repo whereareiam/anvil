@@ -1,4 +1,6 @@
 # Shaped like the built-in BungeeCord data: unversioned builds, and an agent that needs Java 21.
+edition = "java"
+
 [agent]
 minimumJava = 21
 

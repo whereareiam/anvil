@@ -26,7 +26,8 @@ public interface ToolingCommands {
 	@NotNull List<String> runner(@NotNull Path manifest, @Nullable Path accountsDirectory) throws IOException;
 
 	/**
-	 * Builds the command that signs in one account through the prepared runtime's protocol library.
+	 * Builds the command that signs in one Microsoft account through the prepared runtime, without choosing a
+	 * protocol library.
 	 *
 	 * @param manifest launch manifest written by the source's preparation
 	 * @param accountsDirectory directory that receives the signed-in account

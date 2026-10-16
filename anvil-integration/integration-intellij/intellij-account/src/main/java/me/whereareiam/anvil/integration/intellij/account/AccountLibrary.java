@@ -177,16 +177,15 @@ public final class AccountLibrary implements PersistentStateComponent<AccountLib
 	}
 
 	/**
-	 * Creates or renames a project pool as a stable list of account IDs. Like the runtime, it refuses an account
-	 * ID that several protocol libraries store, because a pool leases one account per ID.
+	 * Creates or renames a project pool as a stable list of account IDs. When a player leases from the pool, the
+	 * runtime lends only an account available for the edition of the servers the player reaches.
 	 *
 	 * @param previous original pool name, or null for a new pool
 	 * @throws IOException if the pool is invalid, conflicts with another pool, or cannot be written
 	 */
 	public void savePool(@Nullable String previous, @NotNull String name, @NotNull List<String> accountIds)
 			throws IOException {
-		List<AuthenticationAccount> known = catalog().getAccounts().stream().map(AvailableAccount::getAccount).toList();
-		new AccountPoolRepository(directory()).save(previous, name, accountIds, known);
+		new AccountPoolRepository(directory()).save(previous, name, accountIds);
 	}
 
 	/**

@@ -2,7 +2,9 @@ package me.whereareiam.anvil.protocol.player;
 
 import me.whereareiam.anvil.api.exception.AnvilException;
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
+import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
@@ -13,15 +15,19 @@ import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.model.player.PlayerState;
 import me.whereareiam.anvil.api.model.player.SessionIdentity;
 import me.whereareiam.anvil.api.model.process.Distribution;
+import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
+import me.whereareiam.anvil.api.player.account.AccountPool;
 import me.whereareiam.anvil.api.player.account.AccountPool.AccountLease;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.type.AuthenticationMode;
 import me.whereareiam.anvil.api.type.SupportPolicy;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
+import me.whereareiam.anvil.protocol.api.library.ProtocolAuthentication;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
@@ -29,6 +35,7 @@ import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.api.type.ProtocolFeature;
 import me.whereareiam.anvil.protocol.player.account.AccountReservations;
+import me.whereareiam.anvil.protocol.player.account.ProtocolAccountManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -39,6 +46,8 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,6 +64,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RunningPlayerManagerTest {
+	private static final Edition JAVA = Edition.of("java");
+	private static final Edition OTHER = Edition.of("other");
+
 	@TempDir
 	Path temporary;
 
@@ -101,8 +113,8 @@ class RunningPlayerManagerTest {
 		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create(PlayerOptions.builder()
 				.name("alice").login(PlayerLogin.leased(AuthenticationMode.ON_REQUEST)).build()));
 
-		assertEquals("Player 'alice' declares a leased login; create it with PlayerManager.create(PlayerOptions, AccountLease)",
-				refused.getMessage());
+		assertEquals("Player 'alice' declares a leased login; create it with PlayerManager.create(PlayerOptions, AccountPool) "
+				+ "or PlayerManager.create(PlayerOptions, AccountLease)", refused.getMessage());
 		assertNull(library.lastRequest);
 	}
 
@@ -124,9 +136,76 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
+	void passesTheEditionOfTheReachedServersToTheLibrary() {
+		StubLibrary library = new StubLibrary();
+
+		manager(library).create("alice");
+
+		assertEquals(JAVA, library.lastRequest.getEdition());
+		assertEquals(MinecraftVersion.parse("1.21.11"), library.lastRequest.getClientVersion());
+	}
+
+	@Test
+	void aServerNeverSelectsAReleaseOfAnotherEditionThatListsItsVersion() {
+		StubLibrary library = new StubLibrary();
+		ProtocolRelease other = release("other-1.21.11", "1.21.11").toBuilder().edition(OTHER).build();
+		ProtocolLibrarySelector selector = new ProtocolLibrarySelector(List.of("other"), Map.of("other", List.of(other))::get,
+				null, SupportPolicy.LENIENT, ignored -> { });
+		AnvilScenario scenario = scenario();
+		StubScenarioProcesses processes = new StubScenarioProcesses("server", temporary.resolve("server"));
+		RunningPlayerManager java = new RunningPlayerManager(scenario, editions(scenario), selector, ignored -> library, processes,
+				(player, connectedTo) -> observation(player), composer(), ignored -> { }, List::of, new AccountReservations(), true);
+
+		var refused = assertThrows(ScenarioValidationException.class, () -> java.create("alice"));
+		assertTrue(refused.getMessage().startsWith("No installed protocol library supports java Minecraft 1.21.11 for player "
+				+ "'alice' (releases list Minecraft 1.21.11 only for the editions [other], which never reach java servers)"),
+				refused.getMessage());
+		assertNull(library.lastRequest);
+
+		RunningPlayerManager matching = new RunningPlayerManager(scenario, Map.of("server", OTHER), selector, ignored -> library,
+				processes, (player, connectedTo) -> observation(player), composer(), ignored -> { }, List::of,
+				new AccountReservations(), true);
+		matching.create("bob");
+		assertEquals(OTHER, library.lastRequest.getEdition());
+	}
+
+	@Test
+	void refusesATargetThatReachesServersOfDifferentEditions() {
+		StubLibrary library = new StubLibrary();
+		MinecraftServer first = MinecraftServer.builder().name("first").platform("test")
+				.distribution(Distribution.remote("1.21.11", "1")).build();
+		MinecraftServer second = first.toBuilder().name("second").build();
+		MinecraftProxy proxy = MinecraftProxy.builder().name("proxy").platform("test")
+				.distribution(Distribution.remote("1.21.11", "1")).server("first").server("second").defaultServer("first").build();
+		AnvilScenario scenario = AnvilScenario.builder().name("editions").entrypoint("proxy")
+				.server(first).server(second).proxy(proxy).build();
+		RunningPlayerManager manager = new RunningPlayerManager(scenario, Map.of("first", JAVA, "second", OTHER, "proxy", JAVA),
+				selector(library), ignored -> library, new StubScenarioProcesses("first", temporary.resolve("first")),
+				(player, connectedTo) -> observation(player), composer(), ignored -> { }, List::of, new AccountReservations(), true);
+
+		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create("alice"));
+		assertEquals("Connection target 'proxy' reaches servers of different Minecraft editions [java, other]; no client speaks "
+				+ "more than one edition", refused.getMessage());
+		assertNull(library.lastRequest);
+	}
+
+	@Test
+	void probesTheSourceAddressWithTheTransportOfTheTarget() {
+		StubLibrary library = new StubLibrary();
+		RunningPlayerManager manager = new RunningPlayerManager(scenario(), editions(scenario()), selector(library), ignored -> library,
+				new StubScenarioProcesses("server", temporary.resolve("server"), ListenerTransport.UDP),
+				(player, connectedTo) -> observation(player), composer(), ignored -> { }, List::of, new AccountReservations(), true);
+
+		manager.create(PlayerOptions.builder().name("alice").connection(PlayerConnection.builder()
+				.sourceAddress("127.0.0.1").build()).build());
+
+		assertEquals(InetAddress.getLoopbackAddress(), library.lastRequest.getConnection().getSourceAddress());
+	}
+
+	@Test
 	void aSourceAddressIsRefusedWhenTheExecutionTranslatesConnections() {
 		StubLibrary library = new StubLibrary();
-		RunningPlayerManager manager = new RunningPlayerManager(scenario(), selector(library), ignored -> library,
+		RunningPlayerManager manager = new RunningPlayerManager(scenario(), editions(scenario()), selector(library), ignored -> library,
 				new StubScenarioProcesses("server", temporary.resolve("server")), (player, connectedTo) -> observation(player),
 				composer(), ignored -> { }, List::of, new AccountReservations(), false);
 
@@ -248,7 +327,7 @@ class RunningPlayerManagerTest {
 		StubLibrary library = new StubLibrary();
 		IllegalStateException refresh = new IllegalStateException("Token refresh failed");
 		library.creationFailure = refresh;
-		AuthenticationAccount alice = new AuthenticationAccount("alice", "test", "Alice", null);
+		AuthenticationAccount alice = usable("alice");
 		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), alice);
 		PlayerOptions options = online("alice");
 
@@ -260,7 +339,7 @@ class RunningPlayerManagerTest {
 
 	@Test
 	void scenariosOfOneEngineCannotUseTheSameAccountAtOnce() {
-		AuthenticationAccount alice = new AuthenticationAccount("alice", "test", "Alice", null);
+		AuthenticationAccount alice = usable("alice");
 		AccountReservations reservations = new AccountReservations();
 		RunningPlayerManager first = onlineManager(new StubLibrary(), reservations, alice);
 		RunningPlayerManager second = onlineManager(new StubLibrary(), reservations, alice);
@@ -272,23 +351,26 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
-	void onlinePlayersRequireAnAccountOwnedByTheirSelectedLibrary() {
+	void anOnlinePlayerIsRefusedBeforeConnectingWhenTheAccountIsRecordedAsUnavailableForItsEdition() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount foreign = new AuthenticationAccount("alice", "other", "Alice", null);
-		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), foreign);
+		AuthenticationAccount refused = new AuthenticationAccount("alice", List.of(
+				AccountAccess.available(OTHER, "Alice", UUID.randomUUID()),
+				AccountAccess.unavailable(JAVA, "Account 'alice' owns no test game")
+		));
+		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), refused);
 
 		var failure = assertThrows(ScenarioValidationException.class, () -> manager.create(online("alice")));
 
-		assertTrue(failure.getMessage().contains("is not stored by protocol library 'test'"), failure.getMessage());
-		assertTrue(failure.getMessage().endsWith("it is stored by [other]"), failure.getMessage());
+		assertEquals("Player 'alice' cannot sign in with account 'alice' on servers of edition 'java': Account 'alice' "
+				+ "owns no test game", failure.getMessage());
 		assertNull(library.lastRequest);
 	}
 
 	@Test
 	void onRequestPlayersSignInOnAnOfflineEntrypointThatOnlinePlayersCannotJoin() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount account = new AuthenticationAccount("alice", "test", "Alice", null);
-		RunningPlayerManager manager = new RunningPlayerManager(scenario(), selector(library), ignored -> library,
+		AuthenticationAccount account = usable("alice");
+		RunningPlayerManager manager = new RunningPlayerManager(scenario(), editions(scenario()), selector(library), ignored -> library,
 				new StubScenarioProcesses("server", temporary.resolve("server")), (player, connectedTo) -> observation(player), composer(),
 				ignored -> { }, () -> List.of(account), new AccountReservations(), true);
 
@@ -303,11 +385,10 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
-	void anAccountIdStoredBySeveralLibrariesSignsInWithTheAccountOfTheSelectedLibrary() {
+	void anAccountNotCheckedForThePlayersEditionLetsTheLibraryDetermineItWhenThePlayerSignsIn() {
 		StubLibrary library = new StubLibrary();
-		RunningPlayerManager manager = onlineManager(library, new AccountReservations(),
-				new AuthenticationAccount("alice", "other", "Alice", null),
-				new AuthenticationAccount("alice", "test", "Alice", null));
+		AuthenticationAccount unchecked = new AuthenticationAccount("alice", List.of(AccountAccess.available(OTHER, "Alice", UUID.randomUUID())));
+		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), unchecked);
 
 		assertEquals("alice", manager.create(online("alice")).name());
 		assertEquals("alice", library.lastRequest.getLogin().getAccountId());
@@ -331,25 +412,49 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
-	void aLeasedAccountSelectsItsOwnLibraryOverTheEngineChoice() {
+	void aLeasedAccountKeepsTheLibraryThePlayerSelects() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount leased = new AuthenticationAccount("alice", "other", "Alice", null);
+		AuthenticationAccount leased = new AuthenticationAccount("alice", List.of(AccountAccess.available(JAVA, "Alice", UUID.randomUUID())));
 		ProtocolLibrarySelector selector = new ProtocolLibrarySelector(List.of("test", "other"),
 				Map.of("test", library.releases(), "other", List.of(release("other-1.21.11", "1.21.11")))::get, "test",
 				SupportPolicy.LENIENT, ignored -> { });
-		RunningPlayerManager manager = onlineManager(selector, library, leased, new AuthenticationAccount("alice", "test", "Alice", null));
+		RunningPlayerManager manager = onlineManager(selector, library, leased);
 		RecordingLease lease = new RecordingLease(leased);
 
 		manager.create("alice", lease);
 
-		assertEquals("other", library.lastSelectedId);
+		assertEquals("test", library.lastSelectedId);
 		assertFalse(lease.closed);
+	}
+
+	@Test
+	void aPoolLendsThePlayerTheFirstAccountItsEditionCanUse() {
+		StubLibrary library = new StubLibrary();
+		AuthenticationAccount refused = new AuthenticationAccount("alice", List.of(AccountAccess.unavailable(JAVA, "Account 'alice' owns no test game")));
+		AuthenticationAccount unchecked = new AuthenticationAccount("bob", List.of());
+		AccountReservations reservations = new AccountReservations();
+		ProtocolAccountManager accounts = new ProtocolAccountManager(new StoredAccounts(refused, unchecked, usable("carol")),
+				temporary, reservations);
+		RunningPlayerManager manager = onlineManager(library, reservations, refused, unchecked, usable("carol"));
+		AccountPool pool = accounts.pool(List.of("alice", "bob", "carol"));
+		PlayerOptions leased = PlayerOptions.builder().name("player").login(PlayerLogin.leased(AuthenticationMode.ONLINE)).build();
+
+		SimulatedPlayer player = manager.create(leased, pool);
+
+		assertEquals("carol", library.lastRequest.getLogin().getAccountId());
+		var exhausted = assertThrows(IllegalStateException.class,
+				() -> manager.create(leased.toBuilder().name("second").build(), pool));
+		assertEquals("No account of the pool is available for edition 'java': alice (java: unavailable, Account 'alice' "
+				+ "owns no test game), bob (java: unknown, the test checks no account), carol (in use)", exhausted.getMessage());
+		player.destroy();
+		manager.create(leased.toBuilder().name("third").build(), pool);
+		assertEquals("carol", library.lastRequest.getLogin().getAccountId());
 	}
 
 	@Test
 	void aLeaseKeepsThePlayerOptionsAndSuppliesItsAccount() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount leased = new AuthenticationAccount("stored", "test", "Alice", null);
+		AuthenticationAccount leased = usable("stored");
 		RunningPlayerManager manager = onlineManager(new ProtocolLibrarySelector(List.of("test"),
 				Map.of("test", library.releases())::get, "test", SupportPolicy.LENIENT, ignored -> { }), library, leased);
 		RecordingLease lease = new RecordingLease(leased);
@@ -364,7 +469,7 @@ class RunningPlayerManagerTest {
 	@Test
 	void aLeaseIsRefusedForALoginThatTakesNoLeaseWithoutBeingClaimed() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount leased = new AuthenticationAccount("stored", "test", "Alice", null);
+		AuthenticationAccount leased = usable("stored");
 		RunningPlayerManager manager = onlineManager(new ProtocolLibrarySelector(List.of("test"),
 				Map.of("test", library.releases())::get, "test", SupportPolicy.LENIENT, ignored -> { }), library, leased);
 		RecordingLease lease = new RecordingLease(leased);
@@ -378,16 +483,22 @@ class RunningPlayerManagerTest {
 	@Test
 	void aLeasedAccountWhoseLibraryCannotServeThePlayerIsRefusedAndReturned() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount leased = new AuthenticationAccount("alice", "other", "Alice", null);
+		AuthenticationAccount leased = usable("alice");
 		ProtocolLibrarySelector selector = new ProtocolLibrarySelector(List.of("test", "other"),
 				Map.of("test", library.releases(), "other", List.of(release("other-1.20.6", "1.20.6")))::get, null,
 				SupportPolicy.LENIENT, ignored -> { });
 		RunningPlayerManager manager = onlineManager(selector, library, leased);
 		RecordingLease lease = new RecordingLease(leased);
+		PlayerOptions options = PlayerOptions.builder()
+				.name("alice")
+				.protocolLibrary("other")
+				.login(PlayerLogin.leased(AuthenticationMode.ONLINE))
+				.build();
 
-		var failure = assertThrows(ScenarioValidationException.class, () -> manager.create("alice", lease));
+		var failure = assertThrows(ScenarioValidationException.class, () -> manager.create(options, lease));
 
-		assertEquals("Protocol library 'other' selected for player 'alice' does not support Minecraft 1.21.11. Supported: [1.20.6]",
+		assertEquals("Protocol library 'other' selected for player 'alice' does not support java Minecraft 1.21.11. Supported java "
+				+ "versions: [1.20.6]",
 				failure.getMessage());
 		assertTrue(lease.closed);
 		assertNull(library.lastRequest);
@@ -396,7 +507,7 @@ class RunningPlayerManagerTest {
 	@Test
 	void aLeasedAccountOfTheSelectedLibrarySignsInAndIsReturnedOnDestruction() {
 		StubLibrary library = new StubLibrary();
-		AuthenticationAccount leased = new AuthenticationAccount("alice", "test", "Alice", null);
+		AuthenticationAccount leased = usable("alice");
 		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), leased);
 		RecordingLease lease = new RecordingLease(leased);
 
@@ -406,6 +517,25 @@ class RunningPlayerManagerTest {
 		assertFalse(lease.closed);
 		player.destroy();
 		assertTrue(lease.closed);
+	}
+
+	@Test
+	void aLeasedAccountRecordedAsUnavailableForThePlayersEditionIsRefusedBeforeConnectingAndReturned() {
+		StubLibrary library = new StubLibrary();
+		AuthenticationAccount leased = new AuthenticationAccount("alice", List.of(AccountAccess.unavailable(JAVA, "Account 'alice' owns no test game")));
+		RunningPlayerManager manager = onlineManager(library, new AccountReservations(), leased);
+		RecordingLease lease = new RecordingLease(leased);
+
+		var failure = assertThrows(ScenarioValidationException.class, () -> manager.create("alice", lease));
+
+		assertTrue(failure.getMessage().endsWith("on servers of edition 'java': Account 'alice' owns no test game"),
+				failure.getMessage());
+		assertTrue(lease.closed);
+		assertNull(library.lastRequest);
+	}
+
+	private static AuthenticationAccount usable(String accountId) {
+		return new AuthenticationAccount(accountId, List.of(AccountAccess.available(JAVA, "Alice", UUID.randomUUID())));
 	}
 
 	private RunningPlayerManager onlineManager(ProtocolLibrarySelector selector, StubLibrary library, AuthenticationAccount... accounts) {
@@ -441,7 +571,7 @@ class RunningPlayerManagerTest {
 				.build();
 		AnvilScenario scenario = AnvilScenario.builder().name("online").entrypoint("server").server(server).build();
 
-		return new RunningPlayerManager(scenario, selector, selected -> {
+		return new RunningPlayerManager(scenario, editions(scenario), selector, selected -> {
 			library.lastSelectedId = selected;
 			return library;
 		}, new StubScenarioProcesses("server", temporary.resolve("server")), (player, connectedTo) -> observation(player), composer(),
@@ -466,7 +596,7 @@ class RunningPlayerManagerTest {
 			ProtocolPlayerComposer composer,
 			Consumer<RunningPlayerManager> onClosed
 	) {
-		return new RunningPlayerManager(scenario, selector(library), ignored -> library, processes,
+		return new RunningPlayerManager(scenario, editions(scenario), selector(library), ignored -> library, processes,
 				(player, connectedTo) -> observation(player), composer, onClosed, List::of, new AccountReservations(), true);
 	}
 
@@ -474,9 +604,10 @@ class RunningPlayerManagerTest {
 		MinecraftVersion version = MinecraftVersion.parse(minecraft);
 		return ProtocolRelease.builder()
 				.libraryVersion(libraryVersion)
+				.edition(JAVA)
 				.minecraftVersion(version)
 				.verifiedVersion(version)
-				.protocolNumber(1)
+				.protocolNumber(version, 1)
 				.javaVersion(21)
 				.feature(ProtocolFeature.ONLINE_AUTHENTICATION)
 				.build();
@@ -485,6 +616,14 @@ class RunningPlayerManagerTest {
 	private ProtocolLibrarySelector selector(StubLibrary library) {
 		return new ProtocolLibrarySelector(List.of(library.id()), Map.of(library.id(), library.releases())::get, null,
 				SupportPolicy.LENIENT, ignored -> { });
+	}
+
+	private static Map<String, Edition> editions(AnvilScenario scenario) {
+		Map<String, Edition> editions = new LinkedHashMap<>();
+		scenario.getServers().forEach(server -> editions.put(server.getName(), JAVA));
+		scenario.getProxies().forEach(proxy -> editions.put(proxy.getName(), JAVA));
+
+		return editions;
 	}
 
 	private AnvilScenario scenario() {
@@ -548,6 +687,38 @@ class RunningPlayerManagerTest {
 	}
 
 	/**
+	 * Stored accounts without files, as the libraries' account workflow lists them; checking an account determines
+	 * nothing.
+	 */
+	private static final class StoredAccounts implements ProtocolAuthentication {
+		private final List<AuthenticationAccount> accounts;
+
+		private StoredAccounts(AuthenticationAccount... accounts) {
+			this.accounts = List.of(accounts);
+		}
+
+		@Override
+		public @NotNull Collection<AuthenticationAccount> accounts() {
+			return accounts;
+		}
+
+		@Override
+		public void login(@NotNull String accountId, @NotNull Consumer<String> output) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public @NotNull AccountAccess check(@NotNull String accountId, @NotNull Edition edition) {
+			return AccountAccess.unknown(edition, "the test checks no account");
+		}
+
+		@Override
+		public void logout(@NotNull String accountId, @NotNull Consumer<String> output) {
+			throw new UnsupportedOperationException();
+		}
+	}
+
+	/**
 	 * Lease that can be claimed once and records being returned.
 	 */
 	private static final class RecordingLease implements AccountLease {
@@ -595,9 +766,10 @@ class RunningPlayerManagerTest {
 			MinecraftVersion version = MinecraftVersion.parse("1.21.11");
 			return List.of(ProtocolRelease.builder()
 					.libraryVersion("test-1.21.11")
+					.edition(JAVA)
 					.minecraftVersion(version)
-					.verifiedVersion(version)
-					.protocolNumber(1)
+				.verifiedVersion(version)
+					.protocolNumber(version, 1)
 					.javaVersion(21)
 					.feature(ProtocolFeature.ONLINE_AUTHENTICATION)
 					.build());

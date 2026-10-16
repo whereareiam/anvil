@@ -79,6 +79,19 @@ class ReleaseArtifactTablesTest {
 	}
 
 	@Test
+	fun `keeps a protocol table before the artifacts and refuses one after them`() {
+		val closures = mapOf("1.18.2-1" to listOf(artifact("demo:protocol:1.18.2-1")), "1.20.6-1" to listOf(artifact("demo:protocol:1.20.6-1")))
+		val table = "[release.protocol]\n\"1.20.5\" = 766\n\"1.20.6\" = 766\n"
+		val before = text.replace("minecraft = [\"1.20.5\", \"1.20.6\"]\n", "minecraft = [\"1.20.5\", \"1.20.6\"]\n\n$table")
+		val after = text + "\n$table"
+
+		assertTrue(ReleaseArtifactTables.replace(before, closures).contains("\n\n$table\n[[release.artifact]]\n"))
+		val refused = assertThrows<GradleException> { ReleaseArtifactTables.replace(after, closures) }
+		assertTrue(refused.message!!.contains("Release 1.20.6-1 declares '[release.protocol]' after its [[release.artifact]] tables"),
+			refused.message)
+	}
+
+	@Test
 	fun `writes the same text again when the closures do not change`() {
 		val closures = mapOf(
 			"1.18.2-1" to listOf(artifact("demo:protocol:1.18.2-1")),

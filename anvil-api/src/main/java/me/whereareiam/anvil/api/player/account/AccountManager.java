@@ -19,13 +19,14 @@ public interface AccountManager {
 	/**
 	 * Creates a pool over the supplied local account IDs.
 	 *
-	 * <p>Each account belongs to the protocol library that stores it, and a pool leases one account per ID.
-	 * An ID that several installed libraries store is therefore refused rather than leased ambiguously.</p>
+	 * <p>Every protocol library can use a stored account, so the pool holds every listed account; when it lends
+	 * one for a player, it lends only an account that is
+	 * {@link me.whereareiam.anvil.api.type.AccountAvailability#AVAILABLE available} for the edition of the servers the
+	 * player reaches.</p>
 	 *
 	 * @param accountIds distinct account IDs eligible for allocation, in lease order
 	 * @return account pool owned by the caller
-	 * @throws IllegalArgumentException when no ID is supplied, an ID repeats, no installed library stores an
-	 * ID, or several installed libraries store an ID
+	 * @throws IllegalArgumentException when no ID is supplied, an ID repeats, or no account is stored under an ID
 	 */
 	default @NotNull AccountPool pool(@NotNull Collection<String> accountIds) {
 		throw new UnsupportedOperationException("Account pooling is unavailable");
@@ -41,13 +42,13 @@ public interface AccountManager {
 	 * pool.testers=alice,bob
 	 * }</pre>
 	 *
-	 * <p>The pool follows the rules of {@link #pool(Collection)}, so it refuses an ID that several
-	 * installed protocol libraries store. Tools that write the file apply the same rules.</p>
+	 * <p>The pool follows the rules of {@link #pool(Collection)}. Tools that write the file apply the same
+	 * rules.</p>
 	 *
 	 * @param poolName declared pool name
 	 * @return account pool owned by the caller
-	 * @throws IllegalArgumentException when the pool is not declared, or lists an ID that no installed library
-	 * or several installed libraries store
+	 * @throws IllegalArgumentException when the pool is not declared, or lists an ID under which no account is
+	 * stored
 	 * @throws IllegalStateException when the pool file violates the format
 	 */
 	default @NotNull AccountPool pool(@NotNull String poolName) {

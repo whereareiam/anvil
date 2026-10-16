@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.api.player.account;
 
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,7 +14,11 @@ import java.util.Collection;
  */
 public interface AccountPool extends AutoCloseable {
 	/**
-	 * Reserves the first account that is not reserved anywhere in the engine.
+	 * Reserves the first account that is not reserved anywhere in the engine, whatever was recorded about it. A
+	 * player created with the lease is refused before it connects when the account was recorded as unavailable for
+	 * the edition of the servers the player reaches; prefer {@link #lease(Edition)} or
+	 * {@code PlayerManager.create(PlayerOptions, AccountPool)}, which lend only an account the player's edition can
+	 * use.
 	 *
 	 * @return account lease, held until a player claims it or it is closed
 	 * @throws IllegalStateException when the pool is closed or every account is reserved
@@ -21,7 +26,30 @@ public interface AccountPool extends AutoCloseable {
 	@NotNull AccountLease lease();
 
 	/**
-	 * Returns the accounts this pool may lease, in lease order.
+	 * Reserves the first account that is not reserved anywhere in the engine and that was recorded as
+	 * {@link me.whereareiam.anvil.api.type.AccountAvailability#AVAILABLE available} for an edition. The pool reads the
+	 * records when it leases, so an account refused earlier in the run is skipped.
+	 *
+	 * <p>When no free account is recorded as available, the pool checks each free account whose availability for the
+	 * edition is {@link me.whereareiam.anvil.api.type.AccountAvailability#UNKNOWN unknown} in lease order: an installed
+	 * protocol library of the edition derives a session from it once, over the network, the result is recorded, and
+	 * the first account that turns out available is lent.</p>
+	 *
+	 * <pre>{@code
+	 * try (AccountPool pool = accounts.pool("testers")) {
+	 *     AccountPool.AccountLease lease = pool.lease(Edition.of("example"));
+	 * }
+	 * }</pre>
+	 *
+	 * @param edition edition of the servers the players that use the account reach
+	 * @return account lease, held until a player claims it or it is closed
+	 * @throws IllegalStateException when the pool is closed or holds no free account available for the edition;
+	 * the message names each account and why it was skipped
+	 */
+	@NotNull AccountLease lease(@NotNull Edition edition);
+
+	/**
+	 * Returns the accounts this pool may lease, in lease order, as they were recorded when the pool was created.
 	 *
 	 * @return accounts eligible for this pool
 	 */

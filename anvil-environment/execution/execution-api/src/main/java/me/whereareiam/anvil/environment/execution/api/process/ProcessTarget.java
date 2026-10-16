@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.environment.execution.api.process;
 
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,6 +23,13 @@ public interface ProcessTarget extends AutoCloseable {
 	 * @return peer-visible game endpoint
 	 */
 	@NotNull InetSocketAddress peerAddress();
+
+	/**
+	 * Returns the transport the game endpoints accept connections on; the agent endpoint is always TCP.
+	 *
+	 * @return game listener transport the target was prepared with
+	 */
+	@NotNull ListenerTransport gameTransport();
 
 	/**
 	 * Returns the address the platform should bind inside its execution environment.

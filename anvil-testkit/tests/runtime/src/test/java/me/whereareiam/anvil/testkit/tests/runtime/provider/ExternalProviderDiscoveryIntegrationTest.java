@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.testkit.tests.runtime.provider;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
@@ -20,6 +21,7 @@ import me.whereareiam.anvil.api.process.type.RunningProxy;
 import me.whereareiam.anvil.api.process.type.RunningServer;
 import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.api.type.ProcessState;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
 import me.whereareiam.anvil.protocol.api.library.ProtocolArtifactResolver;
@@ -40,6 +42,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -50,6 +53,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * Verifies external protocol-library selection and capability validation without launching Minecraft.
  */
 class ExternalProviderDiscoveryIntegrationTest {
+	private static final Map<String, Edition> EDITIONS = Map.of("server", Edition.of("java"));
+
 	@TempDir
 	Path temporary;
 
@@ -57,7 +62,7 @@ class ExternalProviderDiscoveryIntegrationTest {
 	void installsSeveralLibrariesWithoutCreatingThem() throws Exception {
 		try (var ignored = new TestExtensionLoader(FixtureArtifacts.extension(), true);
 		     var ignored1 = AnvilLauncher.create(options())) {
-			assertEquals(List.of("mcprotocol", "fixture"), List.copyOf(ProtocolLibraryRegistry.discover().ids()));
+			assertEquals(List.of("fixture", "cloudburst", "mcprotocol"), List.copyOf(ProtocolLibraryRegistry.discover().ids()));
 		}
 		assertFalse(Files.exists(temporary.resolve("cache/fixture.lifecycle")));
 	}
@@ -68,26 +73,27 @@ class ExternalProviderDiscoveryIntegrationTest {
 			List<String> composed = new ArrayList<>();
 			try (var players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(), options(), artifacts())) {
 				AnvilScenario scenario = scenario();
-				players.prepare(scenario);
-				PlayerManager manager = players.open(scenario, new Processes(), (player, connectedTo) -> observation(player), composer(composed), true);
+				players.prepare(scenario, EDITIONS);
+				PlayerManager manager = players.open(scenario, EDITIONS, new Processes(), (player, connectedTo) -> observation(player), composer(composed), true);
 
 				var tie = assertThrows(ScenarioValidationException.class, () -> manager.create("Undeclared"));
-				assertTrue(tie.getMessage().contains("[mcprotocol, fixture]"), tie.getMessage());
+				assertTrue(tie.getMessage().contains("[fixture, mcprotocol]"), tie.getMessage());
 				assertTrue(tie.getMessage().contains("set protocolLibrary"), tie.getMessage());
 
 				manager.create(PlayerOptions.builder().name("Declared").protocolLibrary("fixture").build());
 				var unknown = assertThrows(ScenarioValidationException.class,
 						() -> manager.create(PlayerOptions.builder().name("Unknown").protocolLibrary("missing").build()));
-				assertTrue(unknown.getMessage().contains("Installed: [mcprotocol, fixture]"), unknown.getMessage());
+				assertTrue(unknown.getMessage().contains("Installed: [fixture, cloudburst, mcprotocol]"), unknown.getMessage());
 
-				PlayerManager scoped = players.open(scenario.toBuilder().protocolLibrary("fixture").build(), new Processes(),
+				PlayerManager scoped = players.open(scenario.toBuilder().protocolLibrary("fixture").build(), EDITIONS, new Processes(),
 						(player, connectedTo) -> observation(player), composer(composed), true);
 				scoped.create("ScenarioChoice");
 			}
 
 			try (var players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(),
 					options().toBuilder().protocolLibrary("fixture").build(), artifacts())) {
-				players.open(scenario(), new Processes(), (player, connectedTo) -> observation(player), composer(composed), true).create("EngineChoice");
+				players.open(scenario(), EDITIONS, new Processes(), (player, connectedTo) -> observation(player), composer(composed), true)
+						.create("EngineChoice");
 			}
 
 			assertEquals(List.of("Declared:fixture", "ScenarioChoice:fixture", "EngineChoice:fixture"), composed);
@@ -109,7 +115,10 @@ class ExternalProviderDiscoveryIntegrationTest {
 	@Test
 	void offlineLibraryHasNoAuthenticationRequirement() throws Exception {
 		try (var ignored = new TestExtensionLoader(FixtureArtifacts.extension(), false)) {
-			assertTrue(ProtocolLibraryRegistry.discover().require("fixture").authentication(temporary).isEmpty());
+			ProtocolLibraryRegistry libraries = ProtocolLibraryRegistry.discover();
+
+			assertEquals(List.of("fixture"), List.copyOf(libraries.ids()));
+			assertTrue(libraries.authentication(temporary).isEmpty());
 		}
 	}
 
@@ -260,6 +269,11 @@ class ExternalProviderDiscoveryIntegrationTest {
 		@Override
 		public @NotNull InetSocketAddress address() {
 			return new InetSocketAddress("127.0.0.1", 25565);
+		}
+
+		@Override
+		public @NotNull ListenerTransport transport() {
+			return ListenerTransport.TCP;
 		}
 
 		@Override

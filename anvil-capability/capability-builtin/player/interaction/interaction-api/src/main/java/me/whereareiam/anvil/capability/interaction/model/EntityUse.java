@@ -10,7 +10,10 @@ import org.jetbrains.annotations.NotNull;
  */
 @Value
 public class EntityUse {
-	int entityId;
+	/**
+	 * Protocol identifier of the targeted entity: a Java Edition entity ID or a Bedrock Edition runtime entity ID.
+	 */
+	long entityId;
 	@NotNull EntityInteraction interaction;
 	@NotNull Hand hand;
 }

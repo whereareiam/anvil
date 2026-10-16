@@ -11,6 +11,12 @@ import java.util.function.Predicate;
 
 /**
  * Observes and interacts with a simulated player's inventory and open container.
+ *
+ * <p>Bedrock players, which use the CloudburstMC Protocol library, observe their inventory, select hotbar slots and
+ * click like Java Edition players. Their session keeps the item stacks the server sent, because a Bedrock client
+ * sends its own copy of the stacks a selection or click involves. Their snapshots have the state ID {@code 0}, and
+ * their own inventory appears as container {@code 0} in the slot layout Java Edition players see. The clicks a
+ * Bedrock player refuses are listed on {@link #click(int, InventoryClick, int)}.</p>
  */
 public interface Inventory extends PlayerCapability {
 	/**
@@ -43,7 +49,7 @@ public interface Inventory extends PlayerCapability {
 	);
 
 	/**
-	 * Changes the selected hotbar slot.
+	 * Changes the selected hotbar slot. A Bedrock player announces the slot together with the item it holds.
 	 *
 	 * @param slot zero-based slot in the range {@code 0..8}
 	 */
@@ -54,6 +60,11 @@ public interface Inventory extends PlayerCapability {
 	 * {@code 0..8} as its button, or {@code 40} to swap with the off hand. The request fails for any other button,
 	 * and for the off-hand swap when the player's protocol library cannot send it, as MCProtocolLib cannot for
 	 * Minecraft 1.16.5 and 1.17.1.
+	 *
+	 * <p>A Bedrock player computes the click from the item stacks its client keeps for the slot and the cursor and
+	 * sends nothing when the click changes nothing. It refuses {@link InventoryClick#SHIFT_LEFT}, a click that would
+	 * stack the cursor onto the same item, the crafting slots {@code 0..4} of its inventory container, and clicks on
+	 * an opened container while the server is authoritative over inventories.</p>
 	 *
 	 * <pre>{@code
 	 * inventory.click(36, InventoryClick.HOTBAR_SWAP, 40);

@@ -19,6 +19,7 @@ import me.whereareiam.anvil.platform.api.model.PlatformAgentDescriptor;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.model.ProcessPlan;
 import me.whereareiam.anvil.platform.api.model.ResolvedDistribution;
+import me.whereareiam.anvil.platform.planning.version.ProviderVersions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -31,11 +32,13 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -120,6 +123,16 @@ class JavaRequirementPlannerTest {
 		var verified = refuse(PROVIDERS, process("spigot", "1.16.5", 17), SupportPolicy.STRICT);
 		assertTrue(verified.getMessage().contains("or use 'paper', which runs Minecraft 1.16.5 on Java 17"),
 				verified.getMessage());
+	}
+
+	@Test
+	void suggestsOnlyPlatformsOfTheSameEdition() {
+		Map<String, PlatformProvider> providers = new HashMap<>(PROVIDERS);
+		providers.put("other-edition", new TablePlatform("other-edition", MinecraftServer.class, true, false));
+
+		var failure = refuse(providers, process("spigot", "1.16.5", 17), SupportPolicy.LENIENT);
+		assertTrue(failure.getMessage().contains("'paper', which runs Minecraft 1.16.5 on Java 17"), failure.getMessage());
+		assertFalse(failure.getMessage().contains("other-edition"), failure.getMessage());
 	}
 
 	@ParameterizedTest(name = "{0} {1} requesting Java {2} under {3} is refused")
@@ -226,7 +239,8 @@ class JavaRequirementPlannerTest {
 		var options = EngineOptions.builder()
 				.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().featureVersion(21).build()).build())
 				.build();
-		var planner = new JavaRequirementPlanner(options, PROVIDERS, new PrintStream(new ByteArrayOutputStream()));
+		var planner = new JavaRequirementPlanner(options, PROVIDERS, new ProviderVersions(),
+				new PrintStream(new ByteArrayOutputStream()));
 		var legacy = server("spigot", "1.16.5", null);
 		var modern = server("paper", "1.21.11", null);
 		var scenario = scenario(legacy);
@@ -266,7 +280,7 @@ class JavaRequirementPlannerTest {
 	void appliesTheScenarioPolicyBeforeTheEnginePolicy() {
 		var process = process("paper", "1.16.5", 21);
 		var strictEngine = new JavaRequirementPlanner(EngineOptions.builder().supportPolicy(SupportPolicy.STRICT).build(),
-				PROVIDERS, new PrintStream(new ByteArrayOutputStream()));
+				PROVIDERS, new ProviderVersions(), new PrintStream(new ByteArrayOutputStream()));
 
 		assertThrows(ScenarioValidationException.class, () -> strictEngine.plan(scenario(process), process));
 		assertEquals(SupportLevel.UNTESTED, strictEngine.plan(scenario(process).toBuilder()
@@ -304,13 +318,13 @@ class JavaRequirementPlannerTest {
 			ByteArrayOutputStream output
 	) {
 		var planner = new JavaRequirementPlanner(EngineOptions.builder().supportPolicy(policy).build(), providers,
-				new PrintStream(output, true, StandardCharsets.UTF_8));
+				new ProviderVersions(), new PrintStream(output, true, StandardCharsets.UTF_8));
 		return planner.plan(scenario(process), process);
 	}
 
 	private static ScenarioValidationException refuse(Map<String, PlatformProvider> providers, MinecraftProcess process, SupportPolicy policy) {
 		var planner = new JavaRequirementPlanner(EngineOptions.builder().supportPolicy(policy).build(), providers,
-				new PrintStream(new ByteArrayOutputStream()));
+				new ProviderVersions(), new PrintStream(new ByteArrayOutputStream()));
 		return assertThrows(ScenarioValidationException.class, () -> planner.plan(scenario(process), process));
 	}
 

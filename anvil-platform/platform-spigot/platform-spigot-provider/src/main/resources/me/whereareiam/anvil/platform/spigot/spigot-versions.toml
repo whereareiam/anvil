@@ -1,5 +1,7 @@
 # Spigot version data exposed by SpigotPlatformProvider.versionData() and read by platform planning.
 #
+# edition:  the Minecraft edition the platform's processes speak; players reach them only with
+#           a protocol release of the same edition.
 # known:    Minecraft versions GetBukkit publishes Spigot JARs for; Anvil assesses them as COMPATIBLE.
 # agent:    the oldest Java the Bukkit agent installed into Spigot runs on. Planning never selects
 #           older Java, and the provider's checkAgentJava build task fails when the agent's classes
@@ -10,6 +12,7 @@
 #           startup refusal ("Only up to Java N is supported"). Spigot has no bypass, so planning
 #           refuses an explicit request above it.
 
+edition = "java"
 known = [
 	"1.16.5",
 	"1.17", "1.17.1",

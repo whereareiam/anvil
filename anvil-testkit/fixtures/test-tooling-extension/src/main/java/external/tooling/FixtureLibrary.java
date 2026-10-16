@@ -3,6 +3,7 @@ package external.tooling;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
@@ -24,8 +25,8 @@ public final class FixtureLibrary implements ProtocolLibraryProvider {
 
 	@Override public @NotNull List<ProtocolRelease> releases(@NotNull ProtocolLibraryContext context) {
 		MinecraftVersion version = MinecraftVersion.parse("1.21.11");
-		return List.of(ProtocolRelease.builder().libraryVersion("fixture").minecraftVersion(version)
-				.verifiedVersion(version).protocolNumber(774).javaVersion(21).build());
+		return List.of(ProtocolRelease.builder().libraryVersion("fixture").edition(Edition.of("java"))
+				.minecraftVersion(version).verifiedVersion(version).protocolNumber(version, 774).javaVersion(21).build());
 	}
 
 	@Override public @NotNull ProtocolLibrary create(@NotNull ProtocolLibraryContext context) {

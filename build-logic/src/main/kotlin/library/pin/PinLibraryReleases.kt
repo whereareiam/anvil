@@ -102,8 +102,7 @@ abstract class PinLibraryReleases : DefaultTask() {
 				val component = artifact.id.componentIdentifier as? ModuleComponentIdentifier ?: throw GradleException(
 					"Release ${release.version} resolves ${artifact.id.componentIdentifier.displayName}, which is not a published module"
 				)
-				val coordinate = ArtifactCoordinate.of(component.group, component.module, component.version, artifact.file.name)
-				return ResolvedJar(coordinate, Checksums.sha256(artifact.file))
+				return ResolvedJar(ArtifactCoordinate.of(component, artifact.file.name), Checksums.sha256(artifact.file))
 			}
 		}
 	}

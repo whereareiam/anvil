@@ -7,6 +7,7 @@ import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,6 +27,23 @@ class ProtocolLibraryRegistryTest {
 		assertSame(second, registry.require("second"));
 		assertSame(first, registry.find("first").orElseThrow());
 		assertTrue(registry.find("missing").isEmpty());
+	}
+
+	@Test
+	void discoversTheLibrariesOfEveryHost() {
+		ProtocolLibraryRegistry registry = ProtocolLibraryRegistry.discover();
+
+		assertEquals(List.of("hosted-first", "hosted-second"), List.copyOf(registry.ids()));
+	}
+
+	@Test
+	void offersTheAccountWorkflowOfTheHostThatRunsTheLibraries() {
+		Path accounts = Path.of("accounts");
+
+		ProtocolAuthentication discovered = ProtocolLibraryRegistry.discover().authentication(accounts).orElseThrow();
+
+		assertEquals(new FixtureLibraryHost.Accounts(accounts), discovered);
+		assertTrue(new ProtocolLibraryRegistry(List.of(new StubProvider("first"))).authentication(accounts).isEmpty());
 	}
 
 	@Test

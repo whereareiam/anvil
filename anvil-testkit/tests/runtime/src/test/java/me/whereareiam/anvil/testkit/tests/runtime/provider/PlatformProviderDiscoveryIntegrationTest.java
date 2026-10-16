@@ -22,6 +22,7 @@ class PlatformProviderDiscoveryIntegrationTest {
 				Platforms.PAPER,
 				Platforms.SPIGOT,
 				Platforms.NEOFORGE,
+				Platforms.LUMI,
 				Platforms.VELOCITY,
 				Platforms.BUNGEECORD
 		), platforms);

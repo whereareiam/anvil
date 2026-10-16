@@ -54,6 +54,24 @@ player-chat entry holds the message without the sender, `hello`, unless the serv
 content. Match on the text your server or plugin sends rather than on formatting that the client
 would add.
 
+## Bedrock players
+
+A Bedrock player sends chat as a chat text named after the profile it logs in as, and commands as
+command requests with their leading slash. Every text the server sends counts as received, including
+the tip and popup texts shown above the hotbar, and so does each message of a command's output, which
+a Bedrock client prints into its chat. Plain text drops the `§` formatting codes:
+
+| Bedrock text | Contributes |
+|---|---|
+| Raw, system, tip, chat, whisper, or announcement | Its text, without the author of a chat line |
+| Translated, popup, or jukebox popup | Its translation key without the `%` that marks it, then each parameter after a space |
+| Command output message | Its translation key, then each parameter after a space |
+| JSON raw text | Text parts, the key and then each argument of translated parts, and selector patterns; score parts contribute nothing |
+
+For example, Lumi sends a console `say anvil:ready` as `chat.type.announcement CONSOLE anvil:ready`
+and confirms `/tp ~ ~ ~` with `commands.tp.success.coordinates Alice 128 70 128`. Lumi formats player
+chat itself, so a chat line arrives as `<Alice> hello`.
+
 ## Match the intended operation
 
 `received(text)` matches messages containing the supplied text. It searches captured history, so a

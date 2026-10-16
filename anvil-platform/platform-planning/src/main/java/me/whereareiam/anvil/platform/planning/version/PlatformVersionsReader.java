@@ -2,6 +2,7 @@ package me.whereareiam.anvil.platform.planning.version;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import org.jetbrains.annotations.NotNull;
@@ -19,6 +20,7 @@ import java.util.Set;
  * into {@link PlatformVersions}.
  *
  * <pre>{@code
+ * edition = "example"
  * known = ["1.16.5", "1.17.1"]
  *
  * [agent]
@@ -33,14 +35,20 @@ import java.util.Set;
  * maximum = 16
  * preferred = 11
  * maximumBypassProperty = "Paper.IgnoreJavaVersion"
+ *
+ * # Read by the provider of platform "example" only; planning skips it.
+ * [example]
+ * release = "data only the provider understands"
  * }</pre>
  *
- * <p>Every key is optional except the {@code [[java]]} rows and their {@code minimum} and
- * {@code preferred}; only the first row may omit {@code since}. Unknown keys are refused, so a
- * misspelt key cannot silently drop a rule.</p>
+ * <p>Every key is optional except {@code edition}, the {@code [[java]]} rows and their {@code minimum} and
+ * {@code preferred}; only the first row may omit {@code since}. The edition is an opaque
+ * {@link Edition} identifier that planning only compares. A table named after the platform
+ * identifier belongs to the provider, which reads its own data from it; planning skips it. Other unknown keys
+ * are refused, so a misspelt key cannot silently drop a rule.</p>
  */
 public final class PlatformVersionsReader {
-	private static final Set<String> DOCUMENT_KEYS = Set.of("known", "agent", "verified", "java");
+	private static final Set<String> DOCUMENT_KEYS = Set.of("edition", "known", "agent", "verified", "java");
 	private static final Set<String> AGENT_KEYS = Set.of("minimumJava");
 	private static final Set<String> ROW_KEYS = Set.of("since", "minimum", "maximum", "preferred", "maximumBypassProperty");
 
@@ -58,16 +66,22 @@ public final class PlatformVersionsReader {
 		if (resource == null) throw new PlatformException("Platform '" + platform + "' supplies no version data");
 
 		try (InputStream input = resource.openStream()) {
-			return versions(mapper.readTree(input));
+			return versions(platform, mapper.readTree(input));
 		} catch (IOException | IllegalArgumentException failure) {
 			throw new PlatformException("Platform '" + platform + "' has invalid version data " + resource + ": "
 					+ failure.getMessage(), failure);
 		}
 	}
 
-	private PlatformVersions versions(JsonNode document) {
-		refuseUnknownKeys(document, DOCUMENT_KEYS, "the document");
-		PlatformVersions.PlatformVersionsBuilder versions = PlatformVersions.builder();
+	private PlatformVersions versions(String platform, JsonNode document) {
+		Set<String> documentKeys = new LinkedHashSet<>(DOCUMENT_KEYS);
+		documentKeys.add(platform);
+		refuseUnknownKeys(document, documentKeys, "the document");
+		// The provider reads its own table; planning only requires it to be one.
+		table(document, platform);
+
+		PlatformVersions.PlatformVersionsBuilder versions = PlatformVersions.builder()
+				.edition(edition(document));
 		for (JsonNode version : array(document, "known"))
 			versions.knownVersion(MinecraftVersion.parse(version.asText()));
 
@@ -95,6 +109,13 @@ public final class PlatformVersionsReader {
 		}
 
 		return versions.build();
+	}
+
+	private static Edition edition(JsonNode document) {
+		if (!document.has("edition"))
+			throw new IllegalArgumentException("'edition' is missing; declare the Minecraft edition the platform's processes speak");
+
+		return Edition.of(text(document, "edition"));
 	}
 
 	private static void refuseUnknownKeys(JsonNode node, Set<String> keys, String location) {

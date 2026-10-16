@@ -4,9 +4,11 @@ description: Read the command tree a player received and check commands against 
 ---
 
 `Commands` holds the command tree the server sends a player, which tells the client which commands
-the player may run, and checks commands against it as the client does. It works on every release
-Anvil ships. Install the commands unit and its Session dependency, or explicitly select the default
-capability unit.
+the player may run, and checks commands against it as the client does. It works on every Java Edition
+release Anvil ships. Bedrock players, which connect through CloudburstMC Protocol, do not get it:
+retrieving it fails with `CapabilityUnavailableException`, whose message says that it is provided only for
+the `mcprotocol` library. Install the commands unit and its Session dependency, or explicitly select the
+default capability unit.
 
 ## Wait for a command
 

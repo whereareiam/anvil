@@ -250,6 +250,7 @@ class SegmentConventionsFunctionalTest {
 		val header = """
 			[[release]]
 			version = "$version"
+			edition = "java"
 			module = "$module"
 			protocol = $protocol
 			minecraft = [$minecraft]

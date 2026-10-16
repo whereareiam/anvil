@@ -223,6 +223,24 @@ segment does not link, or more than one adapter is declared, `adapter` throws
 `AdapterUnavailableException` and the worker reports your capability as unavailable with that reason,
 while the player keeps its other capabilities.
 
+A CloudburstMC Protocol segment for Bedrock players implements the same port against
+`me.whereareiam.anvil.protocol.cloudburst.client.CloudburstSession<P, I, T>` from `cloudburst-api`, the
+session the Bedrock worker hands to bindings. Its type parameters name the release's packet, item
+definition and item stack types, so the movement segment `movement-cloudburst/V1_26_60` implements
+`MovementPackets<CloudburstSession<BedrockPacket, ItemDefinition, ItemData>>`. The session sends packets,
+delivers received packets to typed subscriptions, and reports the game start, the client tick and whether
+the server is authoritative over movement and inventories. Like a real client it also keeps what it knows
+about its own player: the item stacks of its containers and the cursor, the selected hotbar slot and its
+position. Its `blockAt(x, y, z)` returns the runtime id of a block in the player's dimension as the
+server's chunks and block updates last sent it, which is the id an interaction with that block carries; it
+is empty for a block the client never received or that lies in a sub-chunk the server sent as air only. A
+packet your segment sends updates that state as the client's prediction, so build packets from it rather
+than keeping state in the segment. Under server movement authority the session also sends a player
+authoritative input on every tick that repeats the player's last position, so a segment that moves the
+player sends one input for the move and does not keep the player ticking itself. One segment serves every
+Bedrock codec of the release, so it sets every
+field a packet has in any codec; the player's codec writes those its protocol knows.
+
 ## Package a segment
 
 A segment JAR contains the port implementation, its one-line `META-INF/services/<port>` descriptor,

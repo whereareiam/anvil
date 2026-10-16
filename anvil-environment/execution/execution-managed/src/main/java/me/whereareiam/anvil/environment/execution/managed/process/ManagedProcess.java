@@ -6,6 +6,7 @@ import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.api.process.ProcessConsole;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.type.ProcessState;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +30,7 @@ public abstract class ManagedProcess implements RunningProcess {
 	private final UUID executionId = UUID.randomUUID();
 	private final @Nullable CapabilityOwner<ProcessCapability> capabilities;
 	private final InetSocketAddress address;
+	private final ListenerTransport transport;
 	private final Path workDirectory;
 	private final ManagedProcessConsole console;
 	private final AtomicReference<ProcessState> state = new AtomicReference<>(ProcessState.CREATED);
@@ -45,12 +47,14 @@ public abstract class ManagedProcess implements RunningProcess {
 	protected ManagedProcess(
 			@NotNull String name,
 			@NotNull InetSocketAddress address,
+			@NotNull ListenerTransport transport,
 			@NotNull Path workDirectory,
 			@Nullable CapabilityOwner<ProcessCapability> capabilities
 	) {
 		this.name = name;
 		this.capabilities = capabilities;
 		this.address = address;
+		this.transport = transport;
 		this.workDirectory = workDirectory;
 		this.console = new ManagedProcessConsole(name, workDirectory);
 	}
@@ -282,6 +286,11 @@ public abstract class ManagedProcess implements RunningProcess {
 	@Override
 	public @NotNull InetSocketAddress address() {
 		return address;
+	}
+
+	@Override
+	public @NotNull ListenerTransport transport() {
+		return transport;
 	}
 
 	@Override

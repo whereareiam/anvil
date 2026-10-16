@@ -40,7 +40,7 @@ face; `Hand` selects `MAIN` or `OFF`. Set up the player's position so the server
 
 ## Target an entity
 
-For an `int entityId` supplied by your fixture for an entity visible to this player:
+For a `long entityId` supplied by your fixture for an entity visible to this player:
 
 ```java
 interaction.entity(entityId, EntityInteraction.INTERACT, Hand.MAIN);
@@ -48,7 +48,28 @@ interaction.entity(entityId, EntityInteraction.INTERACT, Hand.MAIN);
 
 Import `me.whereareiam.anvil.capability.interaction.type.EntityInteraction`. Use `ATTACK` for an attack
 action. The identifier is the protocol entity ID, not a UUID, and must refer to the current entity
-instance. This capability does not discover nearby entities or choose targets automatically.
+instance. A Java Edition entity ID is an `int`, so a Java Edition player refuses an identifier outside the
+`int` range with an `IllegalArgumentException`; a Bedrock runtime entity ID uses the whole `long`. This
+capability does not discover nearby entities or choose targets automatically.
 
 Use [messages](../messages/index.md), [inventory observations](../inventory/index.md), or a custom
 [agent operation](../../../../extending/agent-operations/index.md) to verify the application result.
+
+## Bedrock players
+
+A Bedrock player sends each use as an item use transaction from the hotbar slot it holds, with the item
+that slot or the off hand holds and its position at the eyes, and swings its arm with an animate packet.
+`useItem` uses the item in the air. `entity` sends `INTERACT` or `ATTACK`, the two entity actions Bedrock
+has, for the entity's runtime ID. Lumi's commands do not report runtime IDs, so a test that targets an
+entity needs a server plugin or an [agent operation](../../../../extending/agent-operations/index.md) that
+reports the ID.
+
+`block` names the block it targets by the block's runtime ID, which the player knows only from the world
+the server sent it: the chunks around the player, the sub-chunks it requests when the server sends chunks
+in request mode, and each block update. Until the player has received the targeted block, `block` fails
+with a message that says so; a block changed by a command such as `setblock` or `fill` is known as soon as
+its update arrives. Blocks of a sub-chunk the server sent as air only are unknown too.
+
+The off hand is part of Bedrock's item use from Bedrock 1.26.50 and of its arm swing and entity
+interaction from 1.26.60. On older versions an action with `Hand.OFF` fails instead of acting with the
+main hand; `useItem` swings the arm first, so it needs 1.26.60 for the off hand as well.

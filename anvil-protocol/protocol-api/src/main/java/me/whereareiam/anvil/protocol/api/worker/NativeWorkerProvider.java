@@ -18,7 +18,7 @@ public interface NativeWorkerProvider {
 	 * Prepares extension installation for one worker runtime. Native sessions passed to the returned
 	 * extension are instances of {@link NativeWorkerContext#getNativeSessionType()}.
 	 *
-	 * @param context owning library, release key version, protocol number, and native session type
+	 * @param context owning library, release edition and key version, protocol number, and native session type
 	 * @return prepared worker extension, possibly installing nothing for a library it does not target
 	 */
 	@NotNull NativeWorkerExtension<Object> create(@NotNull NativeWorkerContext context);

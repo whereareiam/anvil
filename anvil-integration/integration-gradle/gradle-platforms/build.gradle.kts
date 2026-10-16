@@ -29,6 +29,12 @@ gradlePlugin {
 			displayName = "Anvil NeoForge Platform"
 			description = "Includes the NeoForge platform provider and agent"
 		}
+		create("anvilPlatformLumi") {
+			id = "me.whereareiam.anvil.platform.lumi"
+			implementationClass = "me.whereareiam.anvil.integration.gradle.platform.LumiPlugin"
+			displayName = "Anvil Lumi Platform"
+			description = "Includes the Lumi platform provider and agent"
+		}
 		create("anvilPlatformVelocity") {
 			id = "me.whereareiam.anvil.platform.velocity"
 			implementationClass = "me.whereareiam.anvil.integration.gradle.platform.VelocityPlugin"

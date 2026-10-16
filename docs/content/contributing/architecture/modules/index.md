@@ -18,7 +18,9 @@ a family's API describes its services and extension points. The launcher binds t
 | Other `anvil-platform` modules                  | Platform-provider contracts, implementations, and platform-agent assemblies                                         |
 | `anvil-protocol/src`                            | Player registration, per-player library and release selection, authentication compatibility, and observations     |
 | `anvil-protocol/protocol-api`                   | Protocol library contracts, releases, players, protocol-owned channels and native worker contracts                 |
-| `anvil-protocol/protocol-mcprotocol`            | The MCProtocolLib library: release data, client port, client segments, worker host and shell, and account storage |
+| `anvil-protocol/protocol-worker`                | Native worker JVMs of every hosted library: worker host and shell, release data reader and catalog, and the stored Microsoft accounts with their device-code sign-in |
+| `anvil-protocol/protocol-mcprotocol`            | The MCProtocolLib library: release data, client port, client segments, and `MicrosoftAuthentication`, which derives the Java Edition session of a stored account |
+| `anvil-protocol/protocol-cloudburst`            | The CloudburstMC Protocol library for Bedrock players: release data, client port, client segment, Bedrock login identities, and `XboxAuthentication`, which derives the Bedrock Edition session of a stored account |
 | `anvil-capability/src`                          | Dependency validation, agent-provider adaptation, logical process owners, player facades, and capability cleanup                                |
 | `anvil-capability/capability-api`                | Generic composition, neutral player contracts, descriptors, exceptions, and typed requests |
 | `anvil-capability/capability-protocol-api`         | Protocol-backed player providers/contexts, channels/events, and native worker bindings |
@@ -191,15 +193,65 @@ implementation uses global player observations where needed without exposing the
 
 A protocol library is a family under `anvil-protocol/protocol-<library>`, and its folder holds the
 library's release data, `<library>-releases.toml`. The settings plugin `build-libraries` registers
-every such library. MCProtocolLib's family is laid out like this:
+every such library. Its players run in native worker JVMs of `anvil-protocol/protocol-worker`, a family
+that hosts every library plugged into it:
 
 | Module | Owns |
 |---|---|
-| `protocol-mcprotocol` | Wiring-only root: shades `mcprotocol-common`, publishes `protocol-mcprotocol`, and owns `mcprotocol-releases.toml` and its `pinLibraryReleases` task |
+| `protocol-worker` | Wiring-only root: shades `worker-common` and publishes `protocol-worker` once for every library |
+| `worker-common` | The worker process and its RPC client, segment selection on the worker class path, the JSON-lines transport, the `ProtocolWorker` entry point with its capability registry, segment verification and session bindings, the release data reader and catalog, `ProtocolWorkerPool`, a `ProtocolLibrary` that shares one worker per release, `HostedAccounts`, the stored Microsoft accounts every hosted library derives its session from, and `WorkerLibraryHost` |
+
+The contracts a hosted library implements live in `protocol-api`, under `me.whereareiam.anvil.protocol.api.worker`:
+the `WorkerLibraryProvider` SPI, the `WorkerLibrary` description, `WorkerClient`, `WorkerAuthentication` with
+the `MicrosoftToken`, `AccountCredentials` and `DerivedSession` it works on, and the worker messages a client reads. A library family therefore shares one API,
+`protocol-api`, with every other protocol family.
+
+A library plugs into the worker by implementing `WorkerLibraryProvider` and registering it in
+`META-INF/services/me.whereareiam.anvil.protocol.api.worker.WorkerLibraryProvider`. The provider describes the
+library as a `WorkerLibrary`: its ID and name, its client port, its built-in release data and pin task, the
+packages its release closures own, and the arguments of its worker JVM. It builds the `WorkerClient` that
+drives its client port for the worker's players and may supply a `WorkerAuthentication`, which derives the
+library's session from a stored account's Microsoft token. The worker owns the sign-in and the account files: one
+file per Microsoft account, holding its token, the availability recorded per Minecraft edition, which counts for
+every library of the edition, and each library's cached session. It
+offers them to tooling as `WorkerLibraryHost.authentication(...)`. The worker names no library; a class path entry of the host that contains a package the closure
+owns is refused for that library's workers only.
+
+`WorkerLibraryHost` is the worker's one registration, as a `ProtocolLibraryHost`: protocol library
+discovery asks it for the hosted libraries, and it installs each `WorkerLibraryProvider` it finds as a
+protocol library of its own. A worker JVM starts `ProtocolWorker` with the library's ID and loads that
+library's provider again. A library family compiles against `protocol-api` only, and its wiring root
+depends on the `protocol-worker` bundle, so every installation holds one copy of the worker.
+MCProtocolLib's family is laid out like this:
+
+| Module | Owns |
+|---|---|
+| `protocol-mcprotocol` | Wiring-only root: shades `mcprotocol-common`, depends on `protocol-worker`, publishes `protocol-mcprotocol`, and owns `mcprotocol-releases.toml` and its `pinLibraryReleases` task |
 | `mcprotocol-api` | The release-neutral client port `McProtocolClient<S>` that client segments implement |
-| `mcprotocol-common` | `McProtocolLibraryProvider`, the release catalog, worker host and segment selection, the worker shell, and the private account store |
+| `mcprotocol-common` | `McProtocolWorkerLibrary`, the library's `WorkerLibraryProvider`, the `WorkerClient` that drives `McProtocolClient`, and `MicrosoftAuthentication`, which derives the Java Edition session of a stored account |
 | `mcprotocol-client` | Source-free side folder whose `V*` children are the client segments |
 | `mcprotocol-client/V1_18_2`, `V1_21_1` and `V1_21_11` | One client segment per range of releases; `V1_21_11` also serves `26.1.2` |
+
+CloudburstMC Protocol's family for Bedrock players has the same shape:
+
+| Module | Owns |
+|---|---|
+| `protocol-cloudburst` | Wiring-only root: shades `cloudburst-common`, depends on `protocol-worker`, publishes `protocol-cloudburst`, and owns `cloudburst-releases.toml` and its `pinLibraryReleases` task |
+| `cloudburst-api` | The release-neutral client port `CloudburstClient<S>`, the `CloudburstSession<P, I, T>` that capability bindings receive as the native session, and the `ClientIdentity` a login proves itself with |
+| `cloudburst-common` | `CloudburstWorkerLibrary`, the `WorkerClient` that drives `CloudburstClient`, the offline and Xbox login identities, and `XboxAuthentication`, which derives the Bedrock Edition session of a stored account |
+| `cloudburst-client` | Source-free side folder whose `V*` children are the client segments |
+| `cloudburst-client/V1_26_60` | The one client segment of the release; it selects each player's codec by the player's protocol number, and its trackers keep what the client knows about its own player and, through `WorldTracker`, the blocks of the chunks the server sends that `CloudburstSession.blockAt` reads |
+
+The client segment keeps what a Bedrock client knows about its own player in one tracker class per subject,
+such as `InventoryTracker` for item stacks and the selected hotbar slot, `PositionTracker` for the position and
+rotation, and `WorldTracker` for the blocks of the dimension. `InputTicker` sends the player authoritative input a
+Bedrock client sends on every tick under server movement authority, repeating the tracked position.
+`ConnectionSession` only wires them into the session's received and sent packets.
+
+The messages, movement, inventory and interaction families each add a `<feature>-cloudburst` side whose one segment,
+`V1_26_60`, implements the feature's port against `CloudburstSession` for every codec of the release.
+Because `cloudburst-api` belongs to another API family, those family roots declare it through
+`architecture.dependsOnApis`.
 
 The worker shell never imports MCProtocolLib. Every class that does lives in a segment: a project named
 after the release key it starts at, under a side folder named after its owner and library, such as
@@ -211,7 +263,10 @@ the code of the previous one, which `checkSegmentLinkage` reports; see
 [Adding a Minecraft version](../../minecraft-versions/index.md).
 
 Capability families repeat the pattern: `<feature>-api` declares the port in its `packet` package, and
-`<feature>-mcprotocol` holds the wiring extension and the `V*` segments that implement it.
+`<feature>-mcprotocol` holds the wiring extension and the `V*` segments that implement it. A
+`<feature>-cloudburst` side, such as `inventory-cloudburst`, does the same for CloudburstMC Protocol; its
+segments compile against `cloudburst-api` only for the `CloudburstSession` that the worker supplies with its
+client segment.
 
 ## Preserve dependency direction
 

@@ -8,6 +8,10 @@ import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.panel as formPanel
 import com.intellij.util.ui.JBUI
 import me.whereareiam.anvil.integration.intellij.account.AvailableAccount
+import me.whereareiam.anvil.integration.intellij.account.view.accessibleAccountName
+import me.whereareiam.anvil.integration.intellij.account.view.availableEditions
+import me.whereareiam.anvil.integration.intellij.account.view.profileNames
+import me.whereareiam.anvil.integration.intellij.account.view.withEditionChips
 
 internal class PoolEditorForm(
 	original: String?,
@@ -27,11 +31,14 @@ internal class PoolEditorForm(
 				val account = entry.account
 				val id = account.accountId
 				if (members.containsKey(id)) continue
-				val username = account.username?.let { " · $it" }.orEmpty()
-				row {
-					members[id] = checkBox("$id · ${entry.source.label}$username")
-						.applyToComponent { isSelected = id in selected }.component
+				val username = entry.profileNames()?.let { " · $it" }.orEmpty()
+				val label = "$id · ${entry.source.label}$username"
+				val editions = entry.availableEditions()
+				val member = JBCheckBox(label, id in selected).apply {
+					accessibleContext.accessibleName = accessibleAccountName(label, editions)
 				}
+				members[id] = member
+				row { cell(withEditionChips(member, editions)) }
 			}
 			for (id in selected) {
 				if (members.containsKey(id)) continue

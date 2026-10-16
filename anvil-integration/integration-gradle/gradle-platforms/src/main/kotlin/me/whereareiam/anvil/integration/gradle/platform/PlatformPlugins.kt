@@ -26,6 +26,10 @@ class NeoForgePlugin : Plugin<Project> {
 	override fun apply(project: Project) = project.installPlatform(arrayOf("platform-neoforge-provider", "platform-neoforge-agent"))
 }
 
+class LumiPlugin : Plugin<Project> {
+	override fun apply(project: Project) = project.installPlatform(arrayOf("platform-lumi-provider", "platform-lumi-agent"))
+}
+
 class VelocityPlugin : Plugin<Project> {
 	override fun apply(project: Project) = project.installPlatform(arrayOf("platform-velocity-provider", "platform-velocity-agent"))
 }

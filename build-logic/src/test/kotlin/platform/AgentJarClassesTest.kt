@@ -44,6 +44,25 @@ class AgentJarClassesTest {
 	}
 
 	@Test
+	fun `checks the classes of a nested JAR`() {
+		val nested = jar(
+			"nested.jar",
+			"agent/Nested.class" to type("agent/Nested", Opcodes.V17),
+			"META-INF/versions/21/shaded/Fast.class" to type("shaded/Fast", Opcodes.V21),
+		)
+		val jar = jar(
+			"agent/Bootstrap.class" to type("agent/Bootstrap", Opcodes.V11),
+			"META-INF/anvil/agent.jar" to nested.readBytes(),
+		)
+
+		assertEquals(
+			listOf("agent.jar!META-INF/anvil/agent.jar!agent/Nested.class needs Java 17"),
+			AgentJarClasses.newerThan(jar, 11),
+		)
+		assertEquals(emptyList<String>(), AgentJarClasses.newerThan(jar, 17))
+	}
+
+	@Test
 	fun `refuses an entry without a class-file header`() {
 		val jar = jar("agent/Broken.class" to "not a class".toByteArray())
 
@@ -56,8 +75,10 @@ class AgentJarClassesTest {
 		visitEnd()
 	}.toByteArray()
 
-	private fun jar(vararg entries: Pair<String, ByteArray>): File {
-		val jar = File(directory, "agent.jar")
+	private fun jar(vararg entries: Pair<String, ByteArray>): File = jar("agent.jar", *entries)
+
+	private fun jar(name: String, vararg entries: Pair<String, ByteArray>): File {
+		val jar = File(directory, name)
 		JarOutputStream(jar.outputStream()).use { output ->
 			entries.forEach { (name, bytes) ->
 				output.putNextEntry(JarEntry(name))

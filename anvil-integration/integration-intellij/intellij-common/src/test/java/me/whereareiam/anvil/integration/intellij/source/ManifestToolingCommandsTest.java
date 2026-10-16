@@ -46,7 +46,7 @@ class ManifestToolingCommandsTest {
 	}
 
 	@Test
-	void forwardsTheProjectProtocolLibraryToAccountSignIn() throws Exception {
+	void signsInWithoutChoosingAProtocolLibrary() throws Exception {
 		Path manifest = directory.resolve("tooling.json");
 		new ObjectMapper()
 				.writeValue(
@@ -70,9 +70,7 @@ class ManifestToolingCommandsTest {
 						"--accounts-dir",
 						accounts.toAbsolutePath().toString(),
 						"--account-id",
-						"alice",
-						"--library",
-						"mcprotocol"),
+						"alice"),
 				command);
 	}
 

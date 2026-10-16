@@ -6,16 +6,19 @@ description: Find the Minecraft versions each protocol library and platform supp
 Choose one native Minecraft version for every server reachable by a player. A proxy has its own
 release version; that version does not select the simulated player's protocol.
 
-Anvil assesses players and processes separately. A player speaks one Minecraft version through a
-release of a protocol library. A server or proxy runs one platform version on one Java version.
+Anvil assesses players and processes separately. A player speaks one Minecraft version of one edition
+through a release of a protocol library. A server or proxy runs one platform version on one Java version.
 Each assessment has a [support level](#support-levels-and-policies), and the support policy decides
 which levels run.
 
 ## Players through MCProtocolLib
 
-MCProtocolLib is the bundled protocol library, with the ID `mcprotocol`. Its releases are data:
-`mcprotocol-releases.toml`, shipped inside `protocol-mcprotocol`. Each release speaks one wire
-protocol and lists every Minecraft version that speaks it; its highest version is the release key.
+Anvil bundles two protocol libraries: MCProtocolLib for Java Edition servers and
+[CloudburstMC Protocol](#bedrock-players-through-cloudburstmc-protocol) for Bedrock Edition servers.
+MCProtocolLib has the ID `mcprotocol`. Its releases are data:
+`mcprotocol-releases.toml`, shipped inside `protocol-mcprotocol`. Each release names the Minecraft
+edition it implements (`java` for every MCProtocolLib release), speaks one wire protocol, and lists
+every Minecraft version that speaks it; its highest version is the release key.
 
 | Release key | MCProtocolLib release | Protocol | Minecraft versions | Verified by the live matrix |
 |---|---|---|---|---|
@@ -34,6 +37,36 @@ SHA-256 pins. A release with an artifact that has no pin is listed but cannot be
 scenario whose servers would use it by default prints a warning, and creating a player that selects
 it is refused with the reason.
 
+## Bedrock players through CloudburstMC Protocol
+
+CloudburstMC Protocol has the ID `cloudburst`, and its releases are data too:
+`cloudburst-releases.toml`, shipped inside `protocol-cloudburst`. Its one release names the `bedrock`
+edition and speaks every listed Bedrock version through that version's own codec, so it maps each
+version to its own protocol number. Versions use the numbering CloudburstMC Protocol and Bedrock servers
+such as Lumi share: Bedrock 26.x is written `1.26.x`.
+
+| Release key | CloudburstMC Protocol release | Verified by the live matrix |
+|---|---|---|
+| `1.26.60` | `3.0.0.Beta14-20261009.172637-6` | `1.20.0`, `1.21.80`, `1.21.90`, `1.26.50` |
+
+| Minecraft versions | Protocols |
+|---|---|
+| `1.20.0`, `1.20.10`, `1.20.30`, `1.20.40`, `1.20.50`, `1.20.60`, `1.20.70`, `1.20.80` | 589, 594, 618, 622, 630, 649, 662, 671 |
+| `1.21.0`, `1.21.2`, `1.21.20`, `1.21.30`, `1.21.40`, `1.21.50`, `1.21.60`, `1.21.70`, `1.21.80` | 685, 686, 712, 729, 748, 766, 776, 786, 800 |
+| `1.21.90`, `1.21.93`, `1.21.100`, `1.21.111`, `1.21.120`, `1.21.124`, `1.21.130` | 818, 819, 827, 844, 859, 860, 898 |
+| `1.26.0`, `1.26.10`, `1.26.20`, `1.26.30`, `1.26.40`, `1.26.45`, `1.26.50`, `1.26.60` | 924, 944, 975, 1001, 2168, 2169, 2193, 2225 |
+
+`1.20.0`, `1.21.80`, `1.21.90` and `1.26.50` are `VERIFIED` against Lumi: the oldest and newest
+version and both sides of `1.21.90`, from which Bedrock moves a player only by the server's authority.
+Every other listed version is `COMPATIBLE`. The release is a CloudburstMC Protocol snapshot build, pinned to
+an exact timestamp like the MCProtocolLib snapshots. Its players log in offline with a self-signed
+identity, which a server accepts only with Xbox authentication turned off, or online with an
+[account](../../../players/authentication/index.md) that owns Bedrock Edition. Bedrock has no handshake host, so a Bedrock
+player that declares a virtual host is refused when it connects. Bedrock players have all six built-in
+capabilities; [Movement](../../../players/capabilities/movement/index.md#bedrock-players),
+[Inventory](../../../players/capabilities/inventory/index.md#bedrock-players) and
+[Interaction](../../../players/capabilities/interaction/index.md#bedrock-players) describe what differs.
+
 ## Servers and proxies
 
 | Platform | Supported versions | Verified by the live matrix |
@@ -41,13 +74,32 @@ it is refused with the reason.
 | Paper | `1.16.5` and newer | `1.18.2`, `1.21.1`, `1.21.11`, and `26.1.2` |
 | Spigot | `1.16.5` and newer | `1.21.11` and `26.1.2` |
 | NeoForge | `1.21.1` and newer | `1.21.1`, `1.21.11`, and `26.1.2` |
+| Lumi | Bedrock `1.20.0` to `1.26.50`, as listed [below](#bedrock-edition) | `1.20.0`, `1.21.80`, `1.21.90`, and `1.26.50` |
 | Velocity | `3.3.0` and newer | `3.5.1` |
 | BungeeCord | Every build, assessed by Java range only | None; the matrix runs build `2085` |
 
-Each platform provider ships its known versions, its Java rows, its agent's minimum Java, and the
-combinations Anvil's live matrix verifies as data. Planning picks one exact LTS release per process.
+Each platform provider ships its Minecraft edition, its known versions, its Java rows, its agent's
+minimum Java, and the combinations Anvil's live matrix verifies as data. Lumi declares the `bedrock`
+edition and every other platform in the table the `java` edition. Planning picks one exact LTS release
+per process.
 See [Java per platform version](../../provisioning/java/index.md#java-per-platform-version) for the
 rows, the defaults, and the Java version of each verified combination.
+
+### Bedrock Edition
+
+Lumi serves Bedrock Edition. Lumi names every Bedrock version `1.x.y`, so Bedrock `26.10` is `1.26.10`,
+and Anvil follows that naming. Each version below is the first of its protocol: a patch release that
+speaks the same protocol, such as `1.20.1`, is declared as the version that names it, `1.20.0`. A Lumi
+server allows exactly the protocol of its version. Lumi's versions are exactly those whose protocol Lumi and
+CloudburstMC Protocol agree on, so every Lumi server has players: `1.26.45` is left out because Lumi speaks it
+as protocol 2170 and CloudburstMC Protocol as 2169.
+
+| Lumi release | Bedrock versions (protocol) | Verified by the live matrix |
+|---|---|---|
+| `1.6.9` | `1.20.0` (589), `1.20.10` (594), `1.20.30` (618), `1.20.40` (622), `1.20.50` (630), `1.20.60` (649), `1.20.70` (662), `1.20.80` (671), `1.21.0` (685), `1.21.2` (686), `1.21.20` (712), `1.21.30` (729), `1.21.40` (748), `1.21.50` (766), `1.21.60` (776), `1.21.70` (786), `1.21.80` (800), `1.21.90` (818), `1.21.93` (819), `1.21.100` (827), `1.21.111` (844), `1.21.120` (859), `1.21.124` (860), `1.21.130` (898), `1.26.0` (924), `1.26.10` (944), `1.26.20` (975), `1.26.30` (1001), `1.26.40` (2168), `1.26.50` (2193) | `1.20.0`, `1.21.80`, `1.21.90` and `1.26.50` on Java 21 |
+
+Bedrock players connect to Lumi through [CloudburstMC Protocol](#bedrock-players-through-cloudburstmc-protocol);
+see the [Lumi guide](../servers/lumi/index.md).
 
 ## Support levels and policies
 
@@ -94,9 +146,8 @@ This fragment assumes an existing `AnvilScenario scenario`, such as the one your
 
 ## Select a protocol library
 
-Each player selects a library and its exact release when it is created. A player created from an
-[account lease](../../../players/authentication/index.md) always uses the library that stores the leased
-account, whatever the scenario or engine declares. Every other player selects:
+Each player selects a library and its exact release when it is created, also one that signs in with a
+[stored account](../../../players/authentication/index.md), which every library can use. Each player selects:
 
 1. `PlayerOptions.protocolLibrary(...)`, else `AnvilScenario.protocolLibrary(...)`, else the engine's
    `protocolLibrary`, set through `EngineOptions`, `anvil { engine { protocolLibrary("mcprotocol") } }`,
@@ -105,7 +156,8 @@ account, whatever the scenario or engine declares. Every other player selects:
    by support level, and the strongest one wins. A tie at the strongest level is refused with the
    tied library IDs; set `protocolLibrary` to choose one.
 
-With MCProtocolLib as the only installed library, every player uses it without a declaration.
+Each bundled library serves the servers of its own edition, so with MCProtocolLib and CloudburstMC
+Protocol installed, every player uses the library of its servers' edition without a declaration.
 
 ## Add release data
 
@@ -128,6 +180,7 @@ release; replace every value in angle brackets:
 ```toml
 [[release]]
 version = "<MCProtocolLib release>"
+edition = "java"
 module = "<group>:<name>:<version>"
 protocol = <protocol number>
 minecraft = ["<Minecraft version>"]
@@ -141,10 +194,19 @@ url = "<URL of the JAR>"
 sha256 = "<SHA-256 of the JAR>"
 ```
 
+`edition` names the edition of the servers the release reaches. When the listed versions speak
+different protocol numbers, replace `protocol` with a `[release.protocol]` table that maps each listed
+version to its number, placed before the artifact tables:
+
+```toml
+[release.protocol]
+"<Minecraft version>" = <protocol number>
+```
+
 List the release module and every JAR of its runtime in `[[release.artifact]]` tables, in class path
 order. Your releases are assessed as `UNTESTED`, so `STRICT` refuses them. The engine reads the file
-when it starts and refuses invalid data, an unknown library ID, and a Minecraft version that another
-release already lists. A release with an empty `sha256` is listed, but players that select it are
+when it starts and refuses invalid data, an unknown library ID, a Minecraft version that another
+release of the same edition already lists, and a release key that another release already has. A release with an empty `sha256` is listed, but players that select it are
 refused until you set the checksum. A built-in release cannot be changed: a release with a built-in
 release's version is ignored when its content is identical and refused otherwise.
 
@@ -156,14 +218,16 @@ the player. A release older than `1.18.2` has no segments and cannot start.
 ## Native client selection
 
 Without a `PlayerOptions.clientVersion` override, Anvil derives the native version from the player's
-connection target and its reachable servers. An explicit override must still be listed by a release
-of the selected protocol library and match the reachable servers.
+connection target and its reachable servers. Their platforms decide the edition: only a release of
+the same edition serves them, so a release of another edition that lists the same version number is
+never selected. An explicit override must still be listed by a release of that edition in the
+selected protocol library and match the reachable servers.
 
 For an executable supplied through `Distribution.local(...)` or `Distribution.artifact(...)`, set
 `.minecraftVersion("1.21.11")` on the server declaration, changing the value to match that JAR.
 Anvil cannot determine the required native client solely from an arbitrary artifact filename.
 
-A mixed topology with incompatible reachable server versions fails validation. Anvil does not insert
+A mixed topology with reachable servers of different editions or versions fails validation. Anvil does not insert
 a protocol translator or silently fall back to ViaVersion. If you test several versions, define separate
 scenarios or separate [scenario definitions](../../index.md).
 
@@ -179,6 +243,10 @@ current versions also run directly on Spigot and behind Velocity and BungeeCord,
 | `1.21.1` | `133` | Not in the live matrix | `21.1.256` |
 | `1.21.11` | `132` | [Pinned GetBukkit JAR](../servers/spigot/index.md#recorded-content-pins) | `21.11.45` |
 | `26.1.2` | `74` | [Pinned GetBukkit JAR](../servers/spigot/index.md#recorded-content-pins) | `26.1.2.114` |
+
+The live matrix also runs Lumi `1.6.9` directly on Bedrock `1.20.0`, `1.21.80` (with client movement
+authority), `1.21.90` and `1.26.50`, and drives a Bedrock player's capabilities on each through the
+server's console and agent.
 
 The proxy selections in that matrix are Velocity `3.5.1` build `615` and BungeeCord Jenkins build
 `2085`. These are the repository's pinned compatibility selections, not moving recommendations to use

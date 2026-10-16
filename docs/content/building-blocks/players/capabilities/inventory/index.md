@@ -73,3 +73,33 @@ container (ID `0`) is the observed one, at that index's slot in the container.
 ## Behavior across Minecraft versions
 
 Inventory works on every Minecraft version the MCProtocol library supports.
+
+## Bedrock players
+
+Bedrock players, which use the CloudburstMC Protocol library, observe their inventory on every Bedrock
+version that library supports. Bedrock has no state IDs, so `getStateId()` is always `0`. The player's own
+inventory is container `0` in the layout Java Edition players see, filled from Bedrock's inventory, armor
+and off-hand containers: armor from head to feet in slots `5` to `8`, the main inventory in `9` to `35`, the
+hotbar in `36` to `44` and the off hand in `45`. A container the server opens keeps the ID and the slots Bedrock gives it: Bedrock lists only the
+container's own slots, not the player's inventory below them. Each item carries its Bedrock runtime ID as the
+protocol ID and its textual identifier, such as `minecraft:stone`.
+
+The Bedrock session keeps the player's item stacks as a Bedrock client does, so `selectSlot` and `click`
+send what such a client sends. `selectSlot` announces the slot together with the item it holds. A click
+moves stacks between the clicked slot and the cursor and is sent the way the server's game start asks
+for: as an item stack request that names each stack by its network ID when the server is authoritative
+over inventories, otherwise as an inventory transaction that lists each changed slot, as Lumi expects.
+
+| Click | Bedrock player |
+|---|---|
+| `LEFT` | Takes the stack to an empty cursor, places the cursor into an empty slot, or swaps different items |
+| `RIGHT` | Takes half the stack, rounded up, to an empty cursor, places one item into an empty slot, or swaps different items |
+| `DROP_ONE`, `DROP_STACK` | Drops one item or the whole stack of the slot |
+| `HOTBAR_SWAP` | Swaps with the hotbar slot `0..8` or off hand `40`, or moves the stack when one side is empty |
+| `SHIFT_LEFT` | Refused: a Bedrock client chooses where a shift-clicked stack goes from the screen it shows |
+
+A click that would change nothing, such as `LEFT` on an empty slot with an empty cursor, sends nothing.
+Clicks are refused when they would stack the cursor onto the same item, because the session does not know
+an item's maximum stack size, on the crafting slots `0` to `4`, which a Bedrock inventory does not have,
+and on an opened container while the server is authoritative over inventories, because an item stack
+request names that container by a type the server's open packet does not give.

@@ -66,8 +66,9 @@ class SegmentPlanTest {
 		val module = "demo:protocol:$version"
 		return LibraryRelease(
 			version = version,
+			edition = "java",
 			module = module,
-			protocol = 1,
+			protocols = minecraft.associate { MinecraftVersion.parse(it) to 1 },
 			minecraft = minecraft.map(MinecraftVersion::parse),
 			verified = emptyList(),
 			java = 17,

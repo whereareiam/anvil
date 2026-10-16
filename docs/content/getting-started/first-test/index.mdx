@@ -111,5 +111,68 @@ process diagnostics in [troubleshooting](../../help/troubleshooting/index.md).
   event and assert the resulting message, route, or state.
 </Callout>
 
+## Run the same test on Bedrock Edition [step]
+
+The same test runs against a Bedrock Edition server. Apply the Lumi platform unit and add the
+CloudburstMC Protocol library next to the setup from [installation](../installation/index.md):
+
+```kotlin
+plugins {
+	id("me.whereareiam.anvil.platform.lumi") version "0.0.1"
+}
+
+dependencies {
+	add("anvilRuntimeOnly", "me.whereareiam.anvil:protocol-cloudburst:0.0.1")
+}
+```
+
+Save the scenario as `src/anvil/java/com/example/test/LumiScenario.java`:
+
+```java
+package com.example.test;
+
+import me.whereareiam.anvil.api.model.process.Distribution;
+import me.whereareiam.anvil.api.model.process.MinecraftServer;
+import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.scenario.AnvilScenarioDefinition;
+import me.whereareiam.anvil.api.type.Platforms;
+import org.jetbrains.annotations.NotNull;
+
+public final class LumiScenario implements AnvilScenarioDefinition {
+	@Override
+	public @NotNull AnvilScenario define() {
+		MinecraftServer server = MinecraftServer.builder()
+				.name("server")
+				.platform(Platforms.LUMI)
+				.distribution(Distribution.remote("1.26.50", "1.6.9"))
+				.build();
+
+		return AnvilScenario.builder()
+				.name("first-lumi-test")
+				.protocolLibrary("cloudburst")
+				.entrypoint("server")
+				.server(server)
+				.build();
+	}
+}
+```
+
+The distribution names the Bedrock version, `1.26.50`, and the exact Lumi release that runs it.
+`protocolLibrary("cloudburst")` overrides the engine's `mcprotocol` default for this scenario, so its
+players speak Bedrock. Copy `PlayerJoinTest` to `BedrockJoinTest` and change only the annotation to
+`@AnvilTest(LumiScenario.class)`; the capabilities, the console and the assertions stay the same. Lumi
+delivers the console's `say` as an announcement, which Alice receives as
+`chat.type.announcement CONSOLE anvil-first-test`, so the `contains` check still holds.
+
+```shell
+./gradlew anvilTest --tests 'com.example.test.BedrockJoinTest'
+```
+
+A passing run means that Lumi started on a UDP listener, the Bedrock player logged in offline with a
+self-signed identity, the Lumi agent observed Alice, and the client received the announcement.
+[Lumi](../../building-blocks/environments/platforms/servers/lumi/index.md) lists the versions and settings,
+and each [capability page](../../building-blocks/players/capabilities/index.md) notes what a Bedrock player
+does differently.
+
 Continue with [Testing](../../workflows/testing/index.md) to turn this working example into a
 plugin-specific journey. Its reading path starts with the environment and the plugin artifact.

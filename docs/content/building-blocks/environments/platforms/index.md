@@ -10,7 +10,7 @@ Server and proxy platforms share the same scenario lifecycle and are selected ex
 
 | Role | Available platforms | Used for |
 |---|---|---|
-| [Servers](./servers/index.md) | Paper, Spigot, NeoForge | Running worlds and server plugins, directly or behind a proxy |
+| [Servers](./servers/index.md) | Paper, Spigot, NeoForge, Lumi | Running worlds and server plugins, directly or behind a proxy |
 | [Proxies](./proxies/index.md) | Velocity, BungeeCord | Accepting player connections and routing them to declared servers |
 
 A proxy scenario applies a unit plugin for the proxy and for every backend platform it uses.
@@ -25,6 +25,7 @@ The proxy guide builds on a named backend server.
 When adapting an example, use [Platform provisioning](../provisioning/platform/index.md) to choose a remote
 build, checksum, or supplied artifact, and [Versions and compatibility](./versions/index.md) to check
 native-client and Java requirements. Every reachable backend must be compatible with the player.
+Lumi is a Bedrock Edition server; the others speak Java Edition.
 
 Once the topology is declared, use [Provisioning](../provisioning/index.md) to supply its software
 and [Configuration](../configuration/index.md) to choose execution settings.

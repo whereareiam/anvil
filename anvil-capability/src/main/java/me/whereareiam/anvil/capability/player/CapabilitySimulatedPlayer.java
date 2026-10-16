@@ -39,6 +39,7 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 	private final PlayerObservation observation;
 	private final Consumer<SimulatedPlayer> onDestroyed;
 	private final CapabilitySet<PlayerCapability> capabilities;
+	private final Map<Class<? extends PlayerCapability>, String> unsupported;
 
 	private final AtomicBoolean destroyed = new AtomicBoolean();
 
@@ -46,10 +47,12 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 			CapabilityPlayer player,
 			CapabilityRuntime<PlayerCapability, PlayerCapabilityContext> runtime,
 			Map<String, String> unavailable,
+			Map<Class<? extends PlayerCapability>, String> unsupported,
 			PlayerObservation observation,
 			Consumer<SimulatedPlayer> onDestroyed
 	) {
 		this.player = player;
+		this.unsupported = unsupported;
 		this.observation = observation;
 		this.onDestroyed = onDestroyed;
 		this.capabilities = runtime.compose("Player '" + player.name() + "'", unavailable, dependencies ->
@@ -87,6 +90,11 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 	@Override
 	public @NotNull <C extends PlayerCapability> C capability(@NotNull Class<C> type) {
 		if (destroyed.get() || player.destroyed()) throw new CapabilityUnavailableException("Player '" + name() + "' is destroyed");
+
+		String reason = unsupported.get(type);
+		if (reason != null && !capabilities.hasCapability(type))
+			throw new CapabilityUnavailableException("Player '" + name() + "' has no capability " + type.getName() + ": " + reason);
+
 		return capabilities.capability(type);
 	}
 

@@ -11,8 +11,9 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>The three profiles differ when a proxy or a login plugin changes the profile: a proxy that renames
  * {@code Steve} to {@code Steve_Premium} grants the new name, and a server behind it reports what the proxy
- * forwarded. Anvil finds the player on each process by the UUID it was granted, so players whose names differ
- * only in letter case are never mistaken for one another.</p>
+ * forwarded. A server that keeps another UUID for a player than the one it shows to the player's client reports
+ * its own UUID in the observed profile. Anvil finds the player on each process by the UUID it was granted, so
+ * players whose names differ only in letter case are never mistaken for one another.</p>
  */
 @Value
 @Builder(toBuilder = true)

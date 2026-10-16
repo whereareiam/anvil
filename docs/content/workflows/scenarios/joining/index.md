@@ -1,10 +1,11 @@
 ---
 title: Joining an environment
-description: Connect your Minecraft Java Edition client to a running local or explicitly shared environment.
+description: Connect your Minecraft Java Edition or Bedrock Edition client to a running local or explicitly shared environment.
 ---
 
 Start a [prepared scenario](../running/index.md) and keep its terminal open. You join with your own
-Minecraft Java Edition client; Anvil does not launch or control that rendered client for you.
+Minecraft client, of the edition the entrypoint serves; Anvil does not launch or control that rendered
+client for you.
 
 ## Join from this machine
 
@@ -15,6 +16,11 @@ Minecraft Java Edition client; Anvil does not launch or control that rendered cl
 For the `local-paper` scenario definition, use a Minecraft `1.21.11` client. A loopback address is usually
 `127.0.0.1` and the port is allocated for the run. Copy the address and port, omitting any leading
 slash shown by Java's address formatting. Do not assume the default Minecraft port.
+
+A [Lumi](../../../building-blocks/environments/platforms/servers/lumi/index.md) entrypoint serves Bedrock
+Edition. Join it with a Bedrock client of exactly the Minecraft version the server declares, because Lumi
+accepts only that version's protocol: open **Play**, then **Servers**, and use **Add Server** with the
+printed host and port.
 
 When the entrypoint is a proxy, connect to that proxy endpoint. Connecting to a listed backend
 directly bypasses the route that the scenario was prepared to exercise. Check
@@ -50,7 +56,8 @@ entrypoint, and other settings, then relaunch the scenario. On the other machine
 Anvil host's reachable LAN address and the allocated game port. `0.0.0.0` is a bind address, not the
 destination to enter in the client.
 
-The listener must also be reachable through the host's network and firewall. Local agent endpoints
+The listener must also be reachable through the host's network and firewall. A Java Edition
+listener uses TCP, while a Lumi listener uses UDP, so allow the allocated port for that transport. Local agent endpoints
 stay on loopback with per-run authentication. Docker publishes agent endpoints on host loopback;
 its internal container binding and supported local-daemon setup are described under
 [execution providers](../../../building-blocks/environments/configuration/execution/index.md).

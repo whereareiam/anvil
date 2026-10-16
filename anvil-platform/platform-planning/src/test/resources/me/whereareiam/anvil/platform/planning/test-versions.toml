@@ -1,4 +1,6 @@
 # A server platform without an agent for planner tests that do not exercise Java selection.
+edition = "java"
+
 [verified]
 "1.21.11" = [17, 21, 25]
 

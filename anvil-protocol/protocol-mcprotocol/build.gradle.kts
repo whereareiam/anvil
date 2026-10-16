@@ -4,7 +4,8 @@ plugins {
 	id("module-library")
 }
 
-// Owning mcprotocol-api makes this family its own API family, so the protocol library API it implements is shared explicitly.
+// Owning mcprotocol-api makes this family its own API family, so the protocol library API it
+// implements, worker contracts included, is shared explicitly.
 architecture {
 	sharedApis = setOf(projects.anvilProtocol.protocolApi.path)
 }
@@ -15,8 +16,8 @@ dependencies {
 	api(projects.anvilProtocol.protocolApi)
 
 	implementation(projects.anvilProtocol.protocolMcprotocol.mcprotocolApi)
-	implementation(libs.jackson.databind)
-	implementation(libs.jackson.toml)
+	// The worker that hosts this library ships as a bundle of its own, which every hosted library shares.
+	implementation(projects.anvilProtocol.protocolWorker)
 	implementation(libs.minecraft.auth)
 	implementation(libs.slf4j.api)
 

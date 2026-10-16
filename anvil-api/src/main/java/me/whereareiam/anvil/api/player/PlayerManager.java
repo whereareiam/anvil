@@ -70,15 +70,16 @@ public interface PlayerManager extends AutoCloseable {
 	 * Creates a player using an exclusively reserved authenticated account. The player claims the lease
 	 * and releases it when destroyed; a creation that fails releases it at once.
 	 *
-	 * <p>An account belongs to the protocol library that stores it, so the player uses the leased
-	 * account's library, whatever the scenario or engine declares.</p>
+	 * <p>The player selects its protocol library as any other player does. When the leased account was recorded as
+	 * unavailable for the edition of the servers the player reaches, the player is refused before it connects.</p>
 	 *
 	 * @param name local simulated-player handle
 	 * @param lease unclaimed account reservation
 	 * @return context-owned simulated player
 	 * @throws IllegalStateException when the lease was already claimed or released
-	 * @throws ScenarioValidationException when the player cannot be created, for example because the leased
-	 * account's library has no permitted, launchable release for the player's Minecraft version
+	 * @throws ScenarioValidationException when the player cannot be created, for example because its library has
+	 * no permitted, launchable release for the player's Minecraft version or the account was recorded as unavailable
+	 * for the player's edition
 	 */
 	default @NotNull SimulatedPlayer create(@NotNull String name, @NotNull AccountPool.AccountLease lease) {
 		return create(PlayerOptions.builder().name(name).login(PlayerLogin.leased(AuthenticationMode.ONLINE)).build(), lease);
@@ -90,8 +91,9 @@ public interface PlayerManager extends AutoCloseable {
 	 * client version. The options declare their authentication mode through {@link PlayerLogin#leased}.
 	 * The player claims the lease and releases it when destroyed; a creation that fails releases it at once.
 	 *
-	 * <p>The leased account replaces the options' login and protocol library, because an account belongs
-	 * to the library that stores it.</p>
+	 * <p>The leased account replaces the options' login. The player selects its protocol library as any other
+	 * player does; when the account was recorded as unavailable for the player's edition, the player is refused
+	 * before it connects. {@link #create(PlayerOptions, AccountPool)} leases a suitable account instead.</p>
 	 *
 	 * <pre>{@code
 	 * SimulatedPlayer player = players.create(PlayerOptions.builder()
@@ -113,12 +115,39 @@ public interface PlayerManager extends AutoCloseable {
 			throw new IllegalStateException("Account lease for '" + lease.account().getAccountId() + "' is no longer available");
 
 		try {
-			return create(options.toBuilder().protocolLibrary(lease.account().getLibraryId())
-					.login(PlayerLogin.account(login.getAuthentication(), lease.account().getAccountId())).build());
+			return create(options.toBuilder()
+					.login(PlayerLogin.account(login.getAuthentication(), lease.account().getAccountId()))
+					.build());
 		} catch (RuntimeException exception) {
 			lease.close();
 			throw exception;
 		}
+	}
+
+	/**
+	 * Creates a player from explicit options with an account it leases from a pool for the edition of the servers
+	 * it reaches, as {@link AccountPool#lease(me.whereareiam.anvil.api.model.Edition)} leases it, so it never
+	 * connects with an account its edition cannot use. The player releases the lease when destroyed; a creation that
+	 * fails releases it at once.
+	 *
+	 * <pre>{@code
+	 * SimulatedPlayer player = players.create(PlayerOptions.builder()
+	 *         .name("premium")
+	 *         .login(PlayerLogin.leased(AuthenticationMode.ONLINE))
+	 *         .build(), pool);
+	 * }</pre>
+	 *
+	 * @param options player creation options with a {@link PlayerLogin#isLeased() leased} login
+	 * @param pool pool to lease the account from
+	 * @return context-owned simulated player
+	 * @throws IllegalArgumentException when the options' login is not a leased one
+	 * @throws IllegalStateException when the pool is closed or holds no free account available to the player's
+	 * edition; the message names each account and why it was skipped
+	 * @throws ScenarioValidationException when the player cannot be created as declared
+	 * @throws UnsupportedOperationException when this manager cannot tell a player's edition before creating it
+	 */
+	default @NotNull SimulatedPlayer create(@NotNull PlayerOptions options, @NotNull AccountPool pool) {
+		throw new UnsupportedOperationException("Leasing an account for the player's edition is unavailable");
 	}
 
 	private static @NotNull PlayerLogin leasedLogin(@NotNull PlayerOptions options) {

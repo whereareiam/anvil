@@ -1,5 +1,7 @@
 package me.whereareiam.anvil.platform.planning;
 
+import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.NetworkPolicy;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
@@ -10,6 +12,7 @@ import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
@@ -226,13 +229,82 @@ class DefaultPlatformPlannerTest {
 				refused.getMessage());
 	}
 
+	@Test
+	void carriesThePlatformsGameTransportIntoTheProcessPlan() {
+		var server = MinecraftServer.builder().name("server").platform("udp")
+				.distribution(Distribution.remote("1.21.11", "1")).build();
+		var scenario = AnvilScenario.builder().name("test").entrypoint("server").server(server).build();
+
+		var planned = policyPlanner(EngineOptions.builder().build()).plan(scenario).getProcesses().get("server");
+
+		assertEquals(ListenerTransport.UDP, planned.getGameTransport());
+		assertEquals(ListenerTransport.TCP, policyPlanner(EngineOptions.builder().build())
+				.plan(withPlatform(scenario, "test")).getProcesses().get("server").getGameTransport());
+	}
+
+	@Test
+	void carriesTheEditionOfThePlatformsVersionDataIntoTheProcessPlan() {
+		var server = MinecraftServer.builder().name("server").platform("test")
+				.distribution(Distribution.remote("1.21.11", "1")).build();
+		var scenario = AnvilScenario.builder().name("test").entrypoint("server").server(server).build();
+
+		var planned = policyPlanner(EngineOptions.builder().build()).plan(scenario).getProcesses().get("server");
+
+		assertEquals(Edition.of("java"), planned.getEdition());
+	}
+
+	@Test
+	void refusesAProxyWhoseBackendListensOnAnotherTransport() {
+		var server = MinecraftServer.builder().name("server").platform("udp")
+				.distribution(Distribution.remote("1.21.11", "1")).build();
+		var proxy = MinecraftProxy.builder().name("proxy").platform("test")
+				.distribution(Distribution.remote("1.21.11", "1"))
+				.server("server").defaultServer("server").build();
+		var scenario = AnvilScenario.builder().name("test").entrypoint("proxy").server(server).proxy(proxy).build();
+
+		ScenarioValidationException refused = assertThrows(ScenarioValidationException.class,
+				() -> policyPlanner(EngineOptions.builder().build()).plan(scenario));
+		assertTrue(refused.getMessage().contains("Proxy 'proxy' accepts players over TCP but its server 'server'"),
+				refused.getMessage());
+
+		var udpProxy = scenario.toBuilder().clearProxies().proxy(proxy.toBuilder().platform("udp").build()).build();
+		assertEquals(ListenerTransport.UDP, policyPlanner(EngineOptions.builder().build())
+				.plan(udpProxy).getProcesses().get("proxy").getGameTransport());
+	}
+
+	private static AnvilScenario withPlatform(AnvilScenario scenario, String platform) {
+		return scenario.toBuilder().clearServers()
+				.servers(scenario.getServers().stream().map(server -> server.toBuilder().platform(platform).build()).toList())
+				.build();
+	}
+
 	private DefaultPlatformPlanner policyPlanner(EngineOptions options) {
-		PlatformProvider provider = new PlatformProvider() {
+		PlatformArtifactSource artifacts = new PlatformArtifactSource() {
 			@Override
-			public @NotNull String id() { return "test"; }
+			public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, @Nullable String checksum) {
+				throw new AssertionError("Planning must not download artifacts");
+			}
+
+			@Override
+			public @NotNull String read(@NotNull URI uri) {
+				throw new AssertionError("Planning must not download metadata");
+			}
+		};
+		return new DefaultPlatformPlanner(options,
+				Map.of("test", policyProvider("test", ListenerTransport.TCP), "udp", policyProvider("udp", ListenerTransport.UDP)),
+				artifacts, entrypoint -> { throw new AssertionError("No agent is requested"); });
+	}
+
+	private static PlatformProvider policyProvider(String id, ListenerTransport transport) {
+		return new PlatformProvider() {
+			@Override
+			public @NotNull String id() { return id; }
 
 			@Override
 			public @NotNull Class<? extends MinecraftProcess> configurationType() { return MinecraftProcess.class; }
+
+			@Override
+			public @NotNull ListenerTransport gameTransport() { return transport; }
 
 			@Override
 			public @NotNull ResolvedDistribution resolve(@NotNull MinecraftProcess process, @NotNull PlatformContext context) {
@@ -250,19 +322,5 @@ class DefaultPlatformPlannerTest {
 			@Override
 			public @NotNull URL versionData() { return VERSION_DATA; }
 		};
-		PlatformArtifactSource artifacts = new PlatformArtifactSource() {
-			@Override
-			public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, @Nullable String checksum) {
-				throw new AssertionError("Planning must not download artifacts");
-			}
-
-			@Override
-			public @NotNull String read(@NotNull URI uri) {
-				throw new AssertionError("Planning must not download metadata");
-			}
-		};
-		return new DefaultPlatformPlanner(options, Map.of("test", provider), artifacts,
-				entrypoint -> { throw new AssertionError("No agent is requested"); });
 	}
-
 }

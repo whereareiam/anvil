@@ -35,17 +35,19 @@ A `sourceAddress` is refused when the player is created, never replaced by `127.
 
 ## Check the protocol library
 
-Creating a player selects a protocol library and the exact release for its Minecraft version, and
-applies the support policy before the player exists:
+Creating a player selects a protocol library and the exact release for the edition and Minecraft
+version of the servers it reaches, and applies the support policy before the player exists:
 
 | Message | Check |
 |---|---|
-| `No installed protocol library supports Minecraft <version>` | Install a library that supports the version, or [add release data](../../../building-blocks/environments/platforms/versions/index.md#add-release-data) for a newer version |
-| `Protocol libraries [...] support Minecraft <version> equally` | Set `protocolLibrary` on the player, the scenario, or the engine |
-| `Protocol library '<id>' selected for player '<name>' does not support Minecraft <version>` | Choose another library, or a server version the selected library lists |
+| `No installed protocol library supports <edition> Minecraft <version>` | Install a library with a release of that edition for the version, or [add release data](../../../building-blocks/environments/platforms/versions/index.md#add-release-data) for a newer version. When the message adds that releases list the version only for other editions, those releases cannot reach the server's platform |
+| `Protocol libraries [...] support <edition> Minecraft <version> equally` | Set `protocolLibrary` on the player, the scenario, or the engine |
+| `Protocol library '<id>' selected for player '<name>' does not support <edition> Minecraft <version>` | Choose another library, or a server version the selected library lists for that edition |
+| `Connection target '<name>' reaches servers of different Minecraft editions [...]` | Route the player only to servers whose platforms declare one edition |
 | `The STRICT support policy refuses ...` | The release is `UNTESTED`; use the default `LENIENT` policy or a version Anvil's data lists |
 | `MCProtocolLib release <version> has no pinned checksum for <module>` | Run the named pin task, or set the `sha256` in your own release data |
-| `Authenticated account '<id>' is not stored by protocol library '<library>'` | Sign the account in through that library, or select the library that stores it |
+| `Player '<name>' cannot sign in with account '<id>' on servers of edition '<edition>': <reason>` | The edition's services refused the account, for example because it does not own that edition. Use another account, or sign this one in again after fixing the reason |
+| `No account of the pool is available for edition '<edition>': ...` | Every pooled account is unavailable for the edition, could not be checked, or is in use; the message lists each with its reason. Sign in an account that owns the edition, or sign unknown ones in again once the service is reachable |
 
 The [versions page](../../../building-blocks/environments/platforms/versions/index.md) lists the
 releases and support levels.
@@ -57,6 +59,7 @@ releases and support levels.
 | A capability is absent | Its public API alone is insufficient; install its consumer wiring artifact |
 | A declared dependency is unavailable | Install compatible wiring for the predecessor capabilities |
 | A capability reports `not installed by the <library> worker` | The library's worker has no wiring for it: install the capability's bundle, which brings its library sides, or select a library that supports it |
+| A capability reports `no provider supports protocol library '<library>'` | Its providers declare other libraries in `supportedLibraries()`; select one of the named libraries for the player |
 | A capability reports a missing class or member | The selected segment does not link against the player's release; the reason names the first missing member |
 | The same capability has competing providers | Keep one selected implementation for that type and protocol library |
 | An external adapter is ignored | Check its `supportedLibraries()` and service descriptor |

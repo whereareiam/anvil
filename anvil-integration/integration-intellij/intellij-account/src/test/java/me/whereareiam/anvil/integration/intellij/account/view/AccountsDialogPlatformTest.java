@@ -7,10 +7,13 @@ import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.JBUI;
 
 import java.awt.BorderLayout;
+import java.awt.Container;
 import java.awt.FlowLayout;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -43,6 +46,11 @@ public class AccountsDialogPlatformTest extends AccountPlatformTestCase {
 
 		assertEquals("Project", table.getValueAt(0, 2));
 		assertEquals("Global", table.getValueAt(1, 2));
+		assertEquals("Bob", table.getValueAt(1, 0));
+		assertEquals(3, table.getColumnCount());
+		var cell = (Container) table.prepareRenderer(table.getCellRenderer(1, 0), 1, 0);
+		assertEquals("Bob, available for Java", cell.getAccessibleContext().getAccessibleName());
+		assertEquals(List.of("Java"), chips(cell));
 		assertTrue(SwingTestSupport.text(view).contains("2 accounts available to this project."));
 	}
 
@@ -104,6 +112,13 @@ public class AccountsDialogPlatformTest extends AccountPlatformTestCase {
 		SwingTestSupport.await(() -> SwingTestSupport.text(view).contains("Duplicate account ID 'alice'"));
 	}
 
+	private List<String> chips(Container cell) {
+		return Arrays.stream(cell.getComponents())
+				.filter(EditionChip.class::isInstance)
+				.map(chip -> ((EditionChip) chip).getText())
+				.toList();
+	}
+
 	private JComponent dialog(Path directory) {
 		ScenarioSource source = ScenarioSource.builder().id("fixture").displayName("Example").integrationId("gradle")
 				.directory(directory).build();
@@ -126,7 +141,8 @@ public class AccountsDialogPlatformTest extends AccountPlatformTestCase {
 	}
 
 	private static String account(String id, String user) {
-		return "{\"schemaVersion\":1,\"accountId\":\"" + id + "\",\"provider\":\"mcprotocol\",\"username\":\""
-				+ user + "\",\"credentials\":{}}";
+		return "{\"schemaVersion\":3,\"accountId\":\"" + id + "\",\"microsoft\":{},\"editions\":{"
+				+ "\"java\":{\"availability\":\"AVAILABLE\",\"username\":\"" + user + "\",\"uuid\":\"" + UUID.randomUUID() + "\"},"
+				+ "\"bedrock\":{\"availability\":\"UNAVAILABLE\",\"reason\":\"Account '" + id + "' owns no game\"}},\"sessions\":{}}";
 	}
 }

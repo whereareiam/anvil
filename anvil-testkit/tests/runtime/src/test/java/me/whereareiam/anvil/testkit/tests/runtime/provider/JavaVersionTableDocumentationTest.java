@@ -20,10 +20,13 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -33,6 +36,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,10 +46,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 /**
  * Keeps the Java guide's table of Java versions per platform version equal to what the bundled platform providers
  * ship: one table row per Java row of every installed provider, with its versions, range, the default the planner
- * selects, and the combinations the live matrix verifies.
+ * selects, and the combinations the live matrix verifies. Each version is spelled as the provider's data writes it,
+ * so a Bedrock platform's {@code 1.20.0} stays {@code 1.20.0} rather than the parsed {@code 1.20}.
  */
 class JavaVersionTableDocumentationTest {
 	private static final String HEADER = "| Platform | Versions | Range | Default | Verified by the live matrix |";
+	private static final Pattern QUOTED_VERSION = Pattern.compile("\"(\\d+(?:\\.\\d+){1,2})\"");
 	private static final Map<String, PlatformProvider> PROVIDERS = ServiceLoader.load(PlatformProvider.class).stream()
 			.map(ServiceLoader.Provider::get)
 			.collect(Collectors.toMap(PlatformProvider::id, Function.identity(), (first, second) -> first, TreeMap::new));
@@ -66,26 +73,58 @@ class JavaVersionTableDocumentationTest {
 		List<JavaCompatibility> compatibilities = versions.getJavaCompatibilities();
 		TreeSet<MinecraftVersion> known = new TreeSet<>(versions.getKnownVersions());
 		known.addAll(versions.getVerifiedJavaVersions().keySet());
+		Function<MinecraftVersion, String> spelling = spellings(provider);
 		List<String> rows = new ArrayList<>();
 		for (int index = 0; index < compatibilities.size(); index++) {
 			JavaCompatibility row = compatibilities.get(index);
 			MinecraftVersion next = index + 1 < compatibilities.size() ? compatibilities.get(index + 1).getSince() : null;
-			rows.add("| " + label + " | " + versions(row.getSince(), next, known) + " | " + range(row, versions.getAgentMinimumJava())
-					+ " | " + plannedDefault(provider, representative(row.getSince(), next, known)) + " | "
-					+ verified(row.getSince(), next, versions) + " |");
+			rows.add("| " + label + " | " + versions(row.getSince(), next, known, spelling) + " | "
+					+ range(row, versions.getAgentMinimumJava()) + " | "
+					+ plannedDefault(provider, representative(row.getSince(), next, known)) + " | "
+					+ verified(row.getSince(), next, versions, spelling) + " |");
 		}
 
 		return rows;
 	}
 
-	private static String versions(MinecraftVersion since, MinecraftVersion next, TreeSet<MinecraftVersion> known) {
+	private static String versions(
+			MinecraftVersion since,
+			MinecraftVersion next,
+			TreeSet<MinecraftVersion> known,
+			Function<MinecraftVersion, String> spelling
+	) {
 		if (since == null) return "every build";
-		if (next == null) return "`" + since + "` and newer";
+		if (next == null) return "`" + spelling.apply(since) + "` and newer";
 
 		MinecraftVersion last = known.lower(next);
-		if (last == null || last.compareTo(since) <= 0) return "`" + since + "`";
+		if (last == null || last.compareTo(since) <= 0) return "`" + spelling.apply(since) + "`";
 
-		return "`" + since + "` to `" + last + "`";
+		return "`" + spelling.apply(since) + "` to `" + spelling.apply(last) + "`";
+	}
+
+	/**
+	 * Reads how the provider's data spells each version it names, as parsing drops a trailing zero part: the version
+	 * data quotes every version, so each quoted release version is one spelling. A version the data spells two ways
+	 * has no single spelling and fails the test.
+	 */
+	private static Function<MinecraftVersion, String> spellings(PlatformProvider provider) {
+		String data;
+		try (var input = provider.versionData().openStream()) {
+			data = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+		} catch (IOException exception) {
+			throw new UncheckedIOException("Could not read the version data of " + provider.id(), exception);
+		}
+
+		Map<MinecraftVersion, String> spellings = new HashMap<>();
+		Matcher quoted = QUOTED_VERSION.matcher(data);
+		while (quoted.find()) {
+			String text = quoted.group(1);
+			String previous = spellings.putIfAbsent(MinecraftVersion.parse(text), text);
+			if (previous != null && !previous.equals(text))
+				throw new AssertionError("The version data of " + provider.id() + " spells one version as both " + previous + " and " + text);
+		}
+
+		return version -> spellings.getOrDefault(version, version.toString());
 	}
 
 	/**
@@ -179,13 +218,18 @@ class JavaVersionTableDocumentationTest {
 				artifacts, agent -> Path.of("agent.jar"));
 	}
 
-	private static String verified(MinecraftVersion since, MinecraftVersion next, PlatformVersions versions) {
+	private static String verified(
+			MinecraftVersion since,
+			MinecraftVersion next,
+			PlatformVersions versions,
+			Function<MinecraftVersion, String> spelling
+	) {
 		Map<Set<Integer>, List<String>> byJava = new LinkedHashMap<>();
 		new TreeMap<>(versions.getVerifiedJavaVersions()).forEach((version, java) -> {
 			if (since != null && version.compareTo(since) < 0) return;
 			if (next != null && version.compareTo(next) >= 0) return;
 
-			byJava.computeIfAbsent(new TreeSet<>(java), ignored -> new ArrayList<>()).add("`" + version + "`");
+			byJava.computeIfAbsent(new TreeSet<>(java), ignored -> new ArrayList<>()).add("`" + spelling.apply(version) + "`");
 		});
 		if (byJava.isEmpty()) return "None";
 

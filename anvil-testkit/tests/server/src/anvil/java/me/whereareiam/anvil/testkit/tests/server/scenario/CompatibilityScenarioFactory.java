@@ -20,7 +20,7 @@ import java.util.List;
  * combination these scenarios run is what the platforms' and protocol libraries' version data call
  * verified. Every Minecraft version runs direct on Paper, one release key of each MCProtocolLib release, and
  * player capability tests run their full journey on those servers; current versions also run on Spigot and behind
- * both proxies.
+ * both proxies. NeoForge and Lumi servers run direct: NeoForge without a fixture, Lumi with the Lumi fixture plugin.
  */
 public final class CompatibilityScenarioFactory {
 	private static final String VELOCITY_VERSION = "3.5.1";
@@ -35,15 +35,27 @@ public final class CompatibilityScenarioFactory {
 			new NeoForgeRelease("1.21.11", "21.11.45"),
 			new NeoForgeRelease("26.1.2", "26.1.2.114")
 	);
+	/**
+	 * Lumi's oldest and newest Bedrock version, and both sides of 1.21.90, from which Bedrock has no client movement
+	 * authority: the scenario below it lets the client move its player, as older Bedrock servers may.
+	 */
+	private static final List<LumiRelease> LUMI = List.of(
+			new LumiRelease("1.20.0", "1.6.9", false),
+			new LumiRelease("1.21.80", "1.6.9", true),
+			new LumiRelease("1.21.90", "1.6.9", false),
+			new LumiRelease("1.26.50", "1.6.9", false)
+	);
 
 	/**
-	 * Returns every scenario of the live matrix: the fixture scenarios and the NeoForge scenarios.
+	 * Returns every scenario of the live matrix: the fixture scenarios, the NeoForge scenarios and the Lumi
+	 * scenarios.
 	 *
 	 * @return all scenarios whose combinations the version data calls verified
 	 */
 	public static List<AnvilScenario> scenarios() {
 		List<AnvilScenario> scenarios = new ArrayList<>(fixtureScenarios());
 		scenarios.addAll(neoForgeScenarios());
+		scenarios.addAll(lumiScenarios());
 		return List.copyOf(scenarios);
 	}
 
@@ -55,6 +67,18 @@ public final class CompatibilityScenarioFactory {
 	 */
 	public static List<AnvilScenario> neoForgeScenarios() {
 		return NEOFORGE.stream().map(release -> neoForgeScenario(release.version(), release.release())).toList();
+	}
+
+	/**
+	 * Returns the direct Lumi scenario of each Minecraft version Lumi is verified on, oldest first. Lumi loads no
+	 * Bukkit plugin, so these servers carry the Lumi fixture plugin instead: their tests drive the console, the Lumi
+	 * agent and that plugin, and observe through them what a Bedrock player of the CloudburstMC Protocol library does
+	 * with its capabilities.
+	 *
+	 * @return one direct Lumi scenario per verified Minecraft version
+	 */
+	public static List<AnvilScenario> lumiScenarios() {
+		return LUMI.stream().map(CompatibilityScenarioFactory::lumiScenario).toList();
 	}
 
 	/**
@@ -151,6 +175,41 @@ public final class CompatibilityScenarioFactory {
 						.category("Native compatibility").tag("login").build())
 				.entrypoint(server.getName())
 				.server(server)
+				.build();
+	}
+
+	private static AnvilScenario lumiScenario(LumiRelease release) {
+		Path fixture = FixtureArtifacts.lumiPlugin();
+		MinecraftServer.MinecraftServerBuilder server = MinecraftServer.builder()
+				.name("server")
+				.metadata(PresentationMetadata.builder()
+						.displayName("Test server")
+						.description("Lumi server driven through its console, the Lumi agent and the Lumi fixture plugin, "
+								+ "which spawns entities and reports what the player does to them.")
+						.build())
+				.platform(Platforms.LUMI)
+				.distribution(Distribution.remote(release.version(), release.release()))
+				.workspace(WorkspacePlan.builder()
+						.asset(WorkspaceAsset.builder()
+								.group("fixture")
+								.source(AssetSource.path(fixture))
+								.target(Path.of("plugins", fixture.getFileName().toString()))
+								.build())
+						.build())
+				.memoryMegabytes(1024);
+		if (release.clientMovement())
+			server.setting("general.server-authoritative-movement", "client-auth");
+
+		String authority = release.clientMovement() ? " with client movement authority" : "";
+		return AnvilScenario.builder()
+				.name("lumi-" + release.version())
+				.metadata(PresentationMetadata.builder()
+						.displayName("Direct server · Lumi " + release.version())
+						.description("Single Lumi server" + authority + " with the Lumi fixture plugin for checking startup, "
+								+ "console commands, agent operations and the player capabilities of a Bedrock player.")
+						.category("Native compatibility").tag("console").tag("login").tag("capabilities").build())
+				.entrypoint("server")
+				.server(server.build())
 				.build();
 	}
 
@@ -272,6 +331,15 @@ public final class CompatibilityScenarioFactory {
 	 * @param release NeoForge release
 	 */
 	private record NeoForgeRelease(String version, String release) { }
+
+	/**
+	 * Pinned Lumi release of one Minecraft version.
+	 *
+	 * @param version Minecraft version
+	 * @param release Lumi release
+	 * @param clientMovement whether the server lets the client move its player instead of keeping movement authority
+	 */
+	private record LumiRelease(String version, String release, boolean clientMovement) { }
 
 	private static String platformLabel(String platform) {
 		return switch (platform) {

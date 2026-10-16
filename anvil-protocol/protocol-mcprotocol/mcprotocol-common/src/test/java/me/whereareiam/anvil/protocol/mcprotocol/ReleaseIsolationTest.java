@@ -1,11 +1,13 @@
 package me.whereareiam.anvil.protocol.mcprotocol;
 
-import me.whereareiam.anvil.protocol.mcprotocol.worker.child.McProtocolWorkerMain;
+import me.whereareiam.anvil.protocol.worker.child.ProtocolWorker;
 import org.junit.jupiter.api.Test;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -18,34 +20,34 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The worker shell, the library provider and the worker host must not link against MCProtocolLib or the
- * libraries whose versions each release pins, because every release brings its own copy in its closure.
+ * This library's provider and worker client, and the native worker that hosts it, must not link against
+ * MCProtocolLib or the libraries whose versions each release pins, because every release brings its own copy in its
+ * closure.
  */
 class ReleaseIsolationTest {
-	private static final List<String> RELEASE_PACKAGES = List.of(
-			"io/netty/",
-			"org/geysermc/mcprotocollib/",
-			"com/github/steveice10/",
-			"org/cloudburstmc/",
-			"net/kyori/adventure/"
-	);
-
 	@Test
-	void mainClassesReferenceNoReleasePackage() throws Exception {
-		Path classes = Path.of(McProtocolWorkerMain.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+	void mainClassesReferenceNoPackageTheClosureOwns() throws Exception {
 		List<String> violations = new ArrayList<>();
 		int scanned = 0;
-		try (Stream<Path> files = Files.walk(classes)) {
-			for (Path file : files.filter(path -> path.toString().endsWith(".class")).toList()) {
-				scanned++;
-				try (InputStream input = Files.newInputStream(file)) {
-					for (String type : referencedTypes(input))
-						if (RELEASE_PACKAGES.stream().anyMatch(type::contains)) violations.add(classes.relativize(file) + " -> " + type);
+		for (Class<?> owner : List.of(McProtocolWorkerLibrary.class, ProtocolWorker.class)) {
+			Path location = Path.of(owner.getProtectionDomain().getCodeSource().getLocation().toURI());
+			// Tests see this project's classes as a directory and the worker's as a directory or a JAR.
+			try (FileSystem jar = Files.isDirectory(location) ? null : FileSystems.newFileSystem(location)) {
+				Path classes = jar == null ? location : jar.getPath("/");
+				try (Stream<Path> files = Files.walk(classes)) {
+					for (Path file : files.filter(path -> path.toString().endsWith(".class")).toList()) {
+						scanned++;
+						try (InputStream input = Files.newInputStream(file)) {
+							for (String type : referencedTypes(input))
+								if (McProtocolWorkerLibrary.LIBRARY.getOwnedPackages().stream().anyMatch(type::contains))
+									violations.add(location.getFileName() + "/" + classes.relativize(file) + " -> " + type);
+						}
+					}
 				}
 			}
 		}
 
-		assertTrue(scanned > 20, "scanned only " + scanned + " classes in " + classes);
+		assertTrue(scanned > 20, "scanned only " + scanned + " classes");
 		assertEquals(List.of(), violations);
 	}
 

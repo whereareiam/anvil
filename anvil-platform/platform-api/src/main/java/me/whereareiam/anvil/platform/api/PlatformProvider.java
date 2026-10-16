@@ -6,6 +6,7 @@ import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
 import me.whereareiam.anvil.api.type.CachePolicy;
 import me.whereareiam.anvil.api.type.SupportLevel;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.api.model.PlatformAgentDescriptor;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
@@ -66,6 +67,17 @@ public interface PlatformProvider {
 	}
 
 	/**
+	 * Returns the transport this platform's game listener accepts players on. Execution reserves, binds and
+	 * publishes the game port with it, while the platform agent always listens on TCP. Planning refuses a proxy
+	 * whose backend servers listen on another transport than the proxy itself. The default is TCP.
+	 *
+	 * @return game listener transport
+	 */
+	default @NotNull ListenerTransport gameTransport() {
+		return ListenerTransport.TCP;
+	}
+
+	/**
 	 * Resolves or builds the process executable JAR.
 	 *
 	 * @param process server or proxy declaration
@@ -103,6 +115,9 @@ public interface PlatformProvider {
 	 * {@link SupportLevel} before anything is downloaded or launched.
 	 *
 	 * <pre>{@code
+	 * # Minecraft edition the platform's processes speak; an opaque identifier planning only compares.
+	 * edition = "example"
+	 *
 	 * # Platform versions the data declares as supported (COMPATIBLE).
 	 * known = ["1.16.5", "1.17.1", "1.18.2"]
 	 *
@@ -123,12 +138,21 @@ public interface PlatformProvider {
 	 * maximum = 16
 	 * preferred = 11
 	 * maximumBypassProperty = "Paper.IgnoreJavaVersion"
+	 *
+	 * # Optional table named after id(): the provider's own data, which planning skips.
+	 * [example]
+	 * releases = ["1.0.0"]
 	 * }</pre>
 	 *
 	 * <p>Platform versions are the values {@link #platformVersion(MinecraftProcess)} returns; a process
 	 * without a version uses the newest row. Each preferred version is an LTS release (11, 17, 21, 25,
 	 * then every fourth release) inside its row. A bypass property needs a maximum, and planning sets
-	 * it only for an explicitly requested Java version above that maximum. Unknown keys are refused.</p>
+	 * it only for an explicitly requested Java version above that maximum. The edition is required:
+	 * planning records it in each {@code ProcessPlan}, a player
+	 * reaches the process only with a protocol release of the same edition, and Java planning suggests
+	 * only platforms of the same edition. A table named after the platform {@link #id() identifier} holds data
+	 * only the provider reads, such as which of its releases support which version. Other unknown keys are
+	 * refused.</p>
 	 *
 	 * <pre>{@code
 	 * public @NotNull URL versionData() {

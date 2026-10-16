@@ -1,6 +1,6 @@
 ---
 title: Overview
-description: Declare world servers and install the platform unit for Paper, Spigot, or NeoForge.
+description: Declare world servers and install the platform unit for Paper, Spigot, NeoForge, or Lumi.
 ---
 
 A `MinecraftServer` runs a world and its server plugins or mods. It can be the scenario entrypoint or a backend
@@ -13,10 +13,12 @@ registered with one or more proxies.
 | [Paper](./paper/index.md) | `me.whereareiam.anvil.platform.paper` | PaperMC Fill version and build |
 | [Spigot](./spigot/index.md) | `me.whereareiam.anvil.platform.spigot` | GetBukkit version and SHA-256 |
 | [NeoForge](./neoforge/index.md) | `me.whereareiam.anvil.platform.neoforge` | Minecraft version and NeoForge release |
+| [Lumi](./lumi/index.md) | `me.whereareiam.anvil.platform.lumi` | Bedrock version and Lumi release |
 
 Apply the unit at the same Anvil version as the main plugin. Each unit includes its platform's agent,
-which enables native server observations and operations: the Bukkit agent for Paper and Spigot, and
-the NeoForge agent for NeoForge.
+which enables native server observations and operations: the Bukkit agent for Paper and Spigot, the
+NeoForge agent for NeoForge, and the Lumi agent for Lumi. Paper, Spigot and NeoForge speak Java Edition;
+Lumi is a Bedrock Edition server that accepts players over UDP.
 
 ## Configure shared server behavior
 
@@ -24,7 +26,8 @@ Each server declares a unique name, platform, and distribution. The default heap
 `onlineMode` defaults to `false`. Use `.memoryMegabytes(...)`, `.onlineMode(...)`, and
 `.jvmArgument(...)` for process-specific choices.
 
-A server's `.setting(key, value)` entries update `server.properties`. Install other configuration
+A server's `.setting(key, value)` entries update `server.properties`, or `settings.yml` on
+[Lumi](./lumi/index.md). Install other configuration
 files using [workspace assets](../../workspaces/index.md). Anvil applies its listener,
 authentication, EULA, and forwarding values after assets are prepared; those runtime values take
 precedence. Existing unrelated configuration values are retained, while formatting and comments may

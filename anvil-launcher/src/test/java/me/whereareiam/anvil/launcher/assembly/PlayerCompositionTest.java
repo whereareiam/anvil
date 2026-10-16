@@ -5,6 +5,7 @@ import me.whereareiam.anvil.agent.api.model.AgentIdentity;
 import me.whereareiam.anvil.agent.client.AgentPlayerObservation;
 import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.agent.client.api.AgentDirectory;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.player.PlayerCapability;
@@ -178,7 +179,8 @@ public class PlayerCompositionTest {
 		@Override
 		public @NotNull ProtocolRelease release() {
 			MinecraftVersion version = MinecraftVersion.parse("1.21.11");
-			return ProtocolRelease.builder().libraryVersion("test").minecraftVersion(version).protocolNumber(774).javaVersion(21).build();
+			return ProtocolRelease.builder().libraryVersion("test").edition(Edition.of("java"))
+					.minecraftVersion(version).protocolNumber(version, 774).javaVersion(21).build();
 		}
 
 		@Override

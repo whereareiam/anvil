@@ -12,16 +12,21 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import me.whereareiam.anvil.api.model.Edition;
+import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.integration.intellij.account.AccountLibrary;
 import me.whereareiam.anvil.integration.intellij.account.AccountSource;
 import me.whereareiam.anvil.integration.intellij.account.AvailableAccount;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Persists and reads account JSON files in one account directory.
@@ -60,11 +65,12 @@ public final class AccountDirectoryRepository {
 					.toList())
 			{
 				try {
-					AuthenticationAccount account = readMetadata(file);
+					JsonNode document = readDocument(file);
+					AuthenticationAccount account = metadata(document);
 					if (!file.getFileName().toString().equals(account.getAccountId() + ".json"))
 						throw new IOException("File name must match the account ID.");
 
-					accounts.add(new AvailableAccount(account, file, source));
+					accounts.add(new AvailableAccount(account, libraryProfiles(document), file, source));
 				} catch (IOException failure) {
 					problems.add(
 							source.getLabel()
@@ -129,34 +135,105 @@ public final class AccountDirectoryRepository {
 		}
 	}
 
+	/**
+	 * Reads what an account file tells about the account without its credentials and without any protocol library:
+	 * what was recorded for each Minecraft edition. Files of schema 1 and 2 recorded availability per protocol library,
+	 * which only the runtime maps to editions, so they show every edition as not yet checked until the runtime next
+	 * writes the file; their profiles are read by {@link #libraryProfiles(JsonNode)}.
+	 */
 	public @NotNull AuthenticationAccount readMetadata(@NotNull Path source) throws IOException {
-		JsonNode root;
+		return metadata(readDocument(source));
+	}
+
+	private static JsonNode readDocument(Path source) throws IOException {
 		try (var input = Files.newInputStream(source)) {
-			root = JSON.readTree(input);
+			return JSON.readTree(input);
 		} catch (IOException failure) {
 			// Parser exceptions may include credential values from the document.
 			throw new IOException("Cannot read this account file.");
 		}
+	}
 
-		if (root == null
-				|| root.path("schemaVersion").asInt() != 1
-				|| !isSafeAccountId(root.path("accountId").asText())
-				|| root.path("provider").asText().isBlank()
-				|| !root.path("credentials").isObject())
+	private AuthenticationAccount metadata(JsonNode root) throws IOException {
+		if (root == null || !isSafeAccountId(root.path("accountId").asText()))
 			throw new IOException("This is not a supported Anvil account file.");
 
-		UUID uuid = null;
+		String accountId = root.path("accountId").asText();
+		int schema = root.path("schemaVersion").asInt();
+		if (schema == 1 && !root.path("provider").asText().isBlank() && root.path("credentials").isObject())
+			return new AuthenticationAccount(accountId, List.of());
+		if (schema == 2 && root.path("microsoft").isObject())
+			return new AuthenticationAccount(accountId, List.of());
+		if (schema == 3 && root.path("microsoft").isObject())
+			return new AuthenticationAccount(accountId, editions(root.path("editions")));
+
+		throw new IOException("This is not a supported Anvil account file.");
+	}
+
+	/**
+	 * Reads the profiles a file of schema 1 or 2 recorded for its protocol libraries: the {@code username} and
+	 * {@code uuid} beside the {@code provider} of schema 1, and those of each available library of schema 2, without
+	 * repeating one profile. A file of the current schema records its profiles per edition and has none here.
+	 */
+	private static List<PlayerProfile> libraryProfiles(JsonNode root) throws IOException {
+		int schema = root.path("schemaVersion").asInt();
+		if (schema == 1) {
+			PlayerProfile profile = profile(root);
+			return profile == null ? List.of() : List.of(profile);
+		}
+		if (schema != 2) return List.of();
+
+		Set<PlayerProfile> profiles = new LinkedHashSet<>();
+		for (JsonNode recorded : root.path("libraries")) {
+			if (!recorded.path("availability").asText().equals("AVAILABLE")) continue;
+
+			PlayerProfile profile = profile(recorded);
+			if (profile != null) profiles.add(profile);
+		}
+
+		return List.copyOf(profiles);
+	}
+
+	private static @Nullable PlayerProfile profile(JsonNode recorded) throws IOException {
+		if (!recorded.path("username").isTextual() || !recorded.path("uuid").isTextual()) return null;
+
+		return new PlayerProfile(recorded.get("username").asText(), uniqueId(recorded.get("uuid").asText()));
+	}
+
+	private static List<AccountAccess> editions(JsonNode editions) throws IOException {
+		List<AccountAccess> access = new ArrayList<>();
+		var entries = editions.fields();
+		while (entries.hasNext()) {
+			var entry = entries.next();
+			Edition edition = edition(entry.getKey());
+			JsonNode recorded = entry.getValue();
+			String reason = recorded.path("reason").isTextual() ? recorded.path("reason").asText() : null;
+			switch (recorded.path("availability").asText()) {
+				case "AVAILABLE" -> access.add(AccountAccess.available(edition, recorded.path("username").asText(),
+						uniqueId(recorded.path("uuid").asText())));
+				case "UNAVAILABLE" -> access.add(AccountAccess.unavailable(edition, reason == null ? "" : reason));
+				case "UNKNOWN" -> access.add(AccountAccess.unknown(edition, reason));
+				default -> throw new IOException("The account records edition '" + edition + "' invalidly.");
+			}
+		}
+
+		return access;
+	}
+
+	private static Edition edition(String id) throws IOException {
 		try {
-			if (root.path("uuid").isTextual()) uuid = UUID.fromString(root.path("uuid").asText());
+			return Edition.of(id);
+		} catch (IllegalArgumentException failure) {
+			throw new IOException("The account records an invalid edition.");
+		}
+	}
+
+	private static UUID uniqueId(String text) throws IOException {
+		try {
+			return UUID.fromString(text);
 		} catch (IllegalArgumentException failure) {
 			throw new IOException("The account contains an invalid profile UUID.");
 		}
-
-		return new AuthenticationAccount(
-				root.path("accountId").asText(),
-				root.path("provider").asText(),
-				root.path("username").isTextual() ? root.path("username").asText() : null,
-				uuid);
 	}
 
 	public boolean isSafeAccountId(@NotNull String id) {

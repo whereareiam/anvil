@@ -9,7 +9,8 @@ import java.util.Set;
 
 /**
  * Host-side provider of the standard session capability over the player's typed channel, for the libraries
- * whose workers the built-in capabilities serve. Composition creates it only for players whose worker
+ * whose workers the built-in capabilities serve. The session only drives the native worker's own connect, disconnect
+ * and rejoin, so it serves every library hosted by that worker, Java and Bedrock alike. Composition creates it only for players whose worker
  * installed {@link SessionBinding}; another library, such as one without a native worker, provides its own
  * session capability.
  */
@@ -23,7 +24,7 @@ public final class SessionProvider implements ProtocolPlayerCapabilityProvider<S
 
 	@Override
 	public @NotNull Set<String> supportedLibraries() {
-		return Set.of("mcprotocol");
+		return Set.of("mcprotocol", "cloudburst");
 	}
 
 	@Override

@@ -32,8 +32,8 @@ public final class ManifestToolingCommands implements ToolingCommands {
 	}
 
 	/**
-	 * Builds the sign-in command. The protocol library is the manifest's {@code anvil.protocolLibrary}
-	 * property when set, otherwise the runtime's sole library that offers authentication.
+	 * Builds the sign-in command. The account is one Microsoft account, so the command names no protocol library;
+	 * every library derives its session from the account when it first uses it.
 	 */
 	@Override
 	public @NotNull List<String> authentication(
@@ -47,12 +47,6 @@ public final class ManifestToolingCommands implements ToolingCommands {
 		command.add(accountsDirectory.toAbsolutePath().toString());
 		command.add("--account-id");
 		command.add(accountId);
-
-		String library = root.path("properties").path("anvil.protocolLibrary").asText();
-		if (!library.isBlank()) {
-			command.add("--library");
-			command.add(library);
-		}
 
 		return List.copyOf(command);
 	}

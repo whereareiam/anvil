@@ -1,0 +1,80 @@
+# Lumi version data exposed by LumiPlatformProvider.versionData() and read by platform planning.
+# Lumi is keyed by the Minecraft version of the server, which Lumi names 1.x.y for every Bedrock release (it calls
+# Bedrock 26.10 "1.26.10"); the Lumi release is the distribution's build.
+#
+# edition:  the Minecraft edition the platform's processes speak; players reach them only with
+#           a protocol release of the same edition.
+# known:    Minecraft versions a listed Lumi release accepts; Anvil assesses them as COMPATIBLE. Each is the first
+#           version of its protocol, as Lumi names it: a patch release that speaks the same protocol, such as 1.20.1,
+#           is reached through the version that names the protocol, 1.20.0. The list holds exactly the versions whose
+#           protocol Lumi and the CloudburstMC Protocol library agree on, spelled as both spell them: Lumi accepts
+#           Bedrock 1.26.45 as protocol 2170 and 2169 under its own name 1.26.44, while CloudburstMC Protocol speaks
+#           1.26.45 as 2169, so no player would reach a 1.26.45 server.
+# agent:    the oldest Java the Lumi agent runs on. It compiles against Lumi for Java 21, and the provider's
+#           checkAgentJava build task fails when the agent's classes need newer Java.
+# verified: Minecraft version -> Java feature versions Anvil's live matrix (CompatibilityScenarioFactory)
+#           runs (VERIFIED); every other supported version is listed in `known` only.
+# java:     Lumi itself requires Java 21 on every version.
+# lumi:     read only by the Lumi provider.
+#   protocol: Minecraft version -> the protocol number Lumi accepts for it. The provider allows exactly this
+#             protocol on the server, so a player of that version, and only one, joins it.
+#   release:  Lumi release -> the oldest and newest Minecraft version it accepts. A server's release must be listed
+#             and accept the server's version.
+
+edition = "bedrock"
+known = [
+	"1.20.0", "1.20.10", "1.20.30", "1.20.40", "1.20.50", "1.20.60", "1.20.70", "1.20.80",
+	"1.21.0", "1.21.2", "1.21.20", "1.21.30", "1.21.40", "1.21.50", "1.21.60", "1.21.70", "1.21.80", "1.21.90",
+	"1.21.93", "1.21.100", "1.21.111", "1.21.120", "1.21.124", "1.21.130",
+	"1.26.0", "1.26.10", "1.26.20", "1.26.30", "1.26.40", "1.26.50"
+]
+
+[agent]
+minimumJava = 21
+
+[verified]
+"1.20.0" = [21]
+"1.21.80" = [21]
+"1.21.90" = [21]
+"1.26.50" = [21]
+
+[[java]]
+since = "1.20.0"
+minimum = 21
+preferred = 21
+
+[lumi.protocol]
+"1.20.0" = 589
+"1.20.10" = 594
+"1.20.30" = 618
+"1.20.40" = 622
+"1.20.50" = 630
+"1.20.60" = 649
+"1.20.70" = 662
+"1.20.80" = 671
+"1.21.0" = 685
+"1.21.2" = 686
+"1.21.20" = 712
+"1.21.30" = 729
+"1.21.40" = 748
+"1.21.50" = 766
+"1.21.60" = 776
+"1.21.70" = 786
+"1.21.80" = 800
+"1.21.90" = 818
+"1.21.93" = 819
+"1.21.100" = 827
+"1.21.111" = 844
+"1.21.120" = 859
+"1.21.124" = 860
+"1.21.130" = 898
+"1.26.0" = 924
+"1.26.10" = 944
+"1.26.20" = 975
+"1.26.30" = 1001
+"1.26.40" = 2168
+"1.26.50" = 2193
+
+[lumi.release."1.6.9"]
+oldest = "1.20.0"
+newest = "1.26.50"

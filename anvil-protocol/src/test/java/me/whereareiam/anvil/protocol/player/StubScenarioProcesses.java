@@ -7,6 +7,7 @@ import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.process.type.RunningProxy;
 import me.whereareiam.anvil.api.process.type.RunningServer;
 import me.whereareiam.anvil.api.type.ProcessState;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
@@ -20,7 +21,11 @@ final class StubScenarioProcesses implements ScenarioProcesses {
 	private RunningServer server;
 
 	StubScenarioProcesses(String name, Path workspace) {
-		server = new StubServer(name, workspace, new InetSocketAddress("127.0.0.1", 25565));
+		this(name, workspace, ListenerTransport.TCP);
+	}
+
+	StubScenarioProcesses(String name, Path workspace, ListenerTransport transport) {
+		server = new StubServer(name, workspace, new InetSocketAddress("127.0.0.1", 25565), transport);
 	}
 
 	@Override
@@ -73,7 +78,7 @@ final class StubScenarioProcesses implements ScenarioProcesses {
 	public @NotNull RunningProcess restart(@NotNull String name) {
 		RunningServer previous = server(name);
 		server = new StubServer(name, previous.workDirectory(),
-				new InetSocketAddress("127.0.0.1", previous.address().getPort() + 1));
+				new InetSocketAddress("127.0.0.1", previous.address().getPort() + 1), previous.transport());
 		return server;
 	}
 
@@ -82,6 +87,7 @@ final class StubScenarioProcesses implements ScenarioProcesses {
 		private final String name;
 		private final Path workspace;
 		private final InetSocketAddress address;
+		private final ListenerTransport transport;
 		private final UUID executionId = UUID.randomUUID();
 
 		@Override
@@ -95,6 +101,11 @@ final class StubScenarioProcesses implements ScenarioProcesses {
 		@Override
 		public @NotNull InetSocketAddress address() {
 			return address;
+		}
+
+		@Override
+		public @NotNull ListenerTransport transport() {
+			return transport;
 		}
 
 		@Override

@@ -87,7 +87,7 @@ class InteractionBindingTest {
 		operations.execute(InteractionOperations.ITEM, new ItemUse(Hand.MAIN));
 
 		assertEquals(List.of(
-				new Sent(player.session, "entity", List.of(42, EntityInteraction.ATTACK, Hand.MAIN)),
+				new Sent(player.session, "entity", List.of(42L, EntityInteraction.ATTACK, Hand.MAIN)),
 				new Sent(player.session, "swing", List.of(Hand.MAIN)),
 				new Sent(player.session, "swing", List.of(Hand.MAIN)),
 				new Sent(player.session, "useItem", List.of(Hand.MAIN, 1, 0F, 0F))
@@ -177,7 +177,7 @@ class InteractionBindingTest {
 		}
 
 		@Override
-		public void entity(@NotNull NativeSession session, int entityId, @NotNull EntityInteraction kind, @NotNull Hand hand) {
+		public void entity(@NotNull NativeSession session, long entityId, @NotNull EntityInteraction kind, @NotNull Hand hand) {
 			sent.add(new Sent(session, "entity", List.of(entityId, kind, hand)));
 		}
 

@@ -3,6 +3,7 @@ package me.whereareiam.anvil.api.process;
 import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
 import me.whereareiam.anvil.api.type.ProcessState;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
@@ -40,6 +41,14 @@ public interface RunningProcess extends CapabilityOwner<ProcessCapability> {
 	 * @return listener address
 	 */
 	@NotNull InetSocketAddress address();
+
+	/**
+	 * Returns the transport the listener at {@link #address()} accepts game connections on. The process's
+	 * platform decides it; a player reaches the process only with the same transport.
+	 *
+	 * @return game listener transport
+	 */
+	@NotNull ListenerTransport transport();
 
 	/**
 	 * Returns the disposable process workspace.

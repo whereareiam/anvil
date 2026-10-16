@@ -15,7 +15,10 @@ import org.jetbrains.annotations.NotNull;
  *
  * <p>Implementations are stateless, send exactly one packet per call and are called only on the player's current
  * native session. A release whose packet does not carry a value, such as the sequence before Minecraft 1.19 or the
- * view rotation of an item use before 1.21, leaves it out.</p>
+ * view rotation of an item use before 1.21, leaves it out; Bedrock releases carry neither the sequence nor the view
+ * rotation and take the held item and position from the client state their session keeps. A release whose packet
+ * cannot name the requested hand refuses the call with an {@link UnsupportedOperationException} instead of acting
+ * with another hand.</p>
  *
  * <pre>{@code
  * public final class McProtocolInteractionPackets implements InteractionPackets<Session> {
@@ -75,6 +78,8 @@ public interface InteractionPackets<S> {
 	 * @param entityId protocol identifier of the targeted entity
 	 * @param kind whether the player interacts with or attacks the entity
 	 * @param hand hand used to interact, ignored by releases whose attack carries no hand
+	 * @throws IllegalArgumentException when the release's packet cannot carry the identifier, such as a Java Edition
+	 *                                  release given an identifier outside the {@code int} range
 	 */
-	void entity(@NotNull S session, int entityId, @NotNull EntityInteraction kind, @NotNull Hand hand);
+	void entity(@NotNull S session, long entityId, @NotNull EntityInteraction kind, @NotNull Hand hand);
 }

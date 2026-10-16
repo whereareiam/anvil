@@ -26,6 +26,10 @@ Implement `me.whereareiam.anvil.platform.api.PlatformProvider` and register its 
 Override `jvmArguments`, `programArguments`, `stopCommand`, and `defaultCaches` where the defaults do not fit your
 platform. Add `forwardingModes` and `platformAgent` when your platform supports those features.
 
+Override `gameTransport()` when your platform's game listener accepts players over UDP instead of the default
+TCP. Execution then reserves, binds, and publishes the game port over UDP, while the platform agent keeps
+listening on TCP. Planning refuses a proxy whose backend servers listen on another transport than the proxy.
+
 ## Declare Java and version data
 
 Keep version data in a `<platform>-versions.toml` resource beside the provider class and return its
@@ -40,6 +44,9 @@ public @NotNull URL versionData() {
 ```
 
 ```toml
+# Minecraft edition your platform's processes speak. Required.
+edition = "java"
+
 # Versions your data supports; Anvil assesses them as COMPATIBLE.
 known = ["1.20.4", "1.20.6", "1.21.11"]
 
@@ -64,12 +71,21 @@ minimum = 21
 preferred = 21
 ```
 
+`edition` is an opaque identifier that Anvil only compares: a simulated player reaches your servers
+only with a protocol release of the same edition, and Java planning suggests alternative platforms
+only of the same edition. Planning refuses a proxy whose backend servers speak different editions, because a
+player reaches all of them with one client. Use the identifier the protocol libraries for that game declare in their
+release data.
+
 `preferred` must be an LTS release inside `[minimum, maximum]`; planning uses it when no declaration
 requests a version. `maximum` is optional and models the platform's own refusal of newer Java. Add
 `maximumBypassProperty` only when the platform offers a system property that lifts that refusal;
 planning then adds `-D<property>=true` for an explicitly requested newer LTS. Without it, planning
 refuses such a request. Only the first row may omit `since`; it then applies from the oldest version,
-which suits a platform whose builds carry no version. Unknown keys are refused.
+which suits a platform whose builds carry no version. Unknown keys are refused, except a table named
+after your platform ID, such as `[example]`: it holds data only your provider reads, for example which of
+its releases support which version, and planning skips it. The Lumi provider keeps the protocol of each
+version and the versions of each Lumi release there.
 
 `[agent] minimumJava` raises every row: planning never selects older Java for the platform, raises a
 preferred version below it to the next LTS release, and refuses a version whose maximum leaves no LTS

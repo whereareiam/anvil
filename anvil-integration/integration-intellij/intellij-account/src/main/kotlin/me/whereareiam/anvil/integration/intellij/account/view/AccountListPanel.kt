@@ -13,10 +13,15 @@ import com.intellij.util.ui.JBUI
 import me.whereareiam.anvil.integration.intellij.account.AccountSource
 import me.whereareiam.anvil.integration.intellij.account.AvailableAccount
 import java.awt.BorderLayout
+import java.awt.Component
 import javax.swing.Icon
+import javax.swing.JComponent
 import javax.swing.JPanel
+import javax.swing.JTable
 import javax.swing.ListSelectionModel
 import javax.swing.table.AbstractTableModel
+import javax.swing.table.DefaultTableCellRenderer
+import javax.swing.table.TableCellRenderer
 
 /**
  * Accounts available to the project, with the native list toolbar; [AccountsController] performs the requests.
@@ -39,6 +44,7 @@ class AccountListPanel(
 			setShowGrid(false)
 			autoCreateRowSorter = true
 			accessibleContext.accessibleName = "Accounts available to this project"
+			columnModel.getColumn(0).cellRenderer = AccountRenderer(this@AccountListPanel.model)
 			emptyText.text = "No accounts available to this project"
 			if (canSignIn) {
 				emptyText.appendSecondaryText("Sign in", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES) { signIn.run() }
@@ -109,18 +115,57 @@ class AccountListPanel(
 
 	private class AccountsModel : AbstractTableModel() {
 		var accounts: List<AvailableAccount> = emptyList()
-		private val columns = listOf("Account", "Local ID", "Source", "Provider")
+		private val columns = listOf("Account", "Local ID", "Source")
 		override fun getRowCount() = accounts.size
 		override fun getColumnCount() = columns.size
 		override fun getColumnName(column: Int) = columns[column]
 		override fun getValueAt(row: Int, column: Int): Any {
 			val entry = accounts[row]
 			return when (column) {
-				0 -> entry.account.username ?: "Profile not available"
+				0 -> entry.profileNames() ?: "Profile not available"
 				1 -> entry.account.accountId
-				2 -> entry.source.label
-				else -> entry.account.libraryId
+				else -> entry.source.label
 			}
 		}
 	}
+
+	/**
+	 * Shows the account's profile names followed by a chip for each edition it is available for.
+	 */
+	private class AccountRenderer(private val model: AccountsModel) : TableCellRenderer {
+		private val name = DefaultTableCellRenderer()
+
+		override fun getTableCellRendererComponent(
+			table: JTable,
+			value: Any?,
+			selected: Boolean,
+			focused: Boolean,
+			row: Int,
+			column: Int
+		): Component {
+			val label = name.getTableCellRendererComponent(table, value, selected, focused, row, column) as JComponent
+			val editions = model.accounts[table.convertRowIndexToModel(row)].availableEditions()
+			val cell = withEditionChips(label, editions)
+			cell.isOpaque = true
+			cell.background = label.background
+			cell.border = label.border
+			label.border = null
+			label.isOpaque = false
+			cell.accessibleContext.accessibleName = accessibleAccountName(value.toString(), editions)
+			// A renderer pane validates only while the table is displayable, so offscreen painting needs the layout now.
+			cell.size = table.getCellRect(row, column, false).size
+			cell.doLayout()
+
+			return cell
+		}
+	}
 }
+
+/**
+ * The distinct profile names the account signs in as in the editions it is available for, or those its file recorded
+ * per protocol library before the runtime records editions, or null when none is known yet.
+ */
+internal fun AvailableAccount.profileNames(): String? = (account.access.mapNotNull { it.username } + libraryProfiles.map { it.username })
+	.distinct()
+	.takeIf { it.isNotEmpty() }
+	?.joinToString(" / ")

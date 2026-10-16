@@ -31,7 +31,7 @@ class MessagesProviderTest {
 		assertEquals("me.whereareiam.anvil.messages", MessagesProvider.ID);
 		assertEquals(MessagesProvider.ID, provider.descriptor().getId());
 		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
-		assertEquals(Set.of("mcprotocol"), provider.supportedLibraries());
+		assertEquals(Set.of("mcprotocol", "cloudburst"), provider.supportedLibraries());
 		assertEquals(Messages.class, provider.capability());
 	}
 

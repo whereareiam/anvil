@@ -1,4 +1,6 @@
 # Shaped like the built-in Spigot data.
+edition = "java"
+
 [agent]
 minimumJava = 11
 

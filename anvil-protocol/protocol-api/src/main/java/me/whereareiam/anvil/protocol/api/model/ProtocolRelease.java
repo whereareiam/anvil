@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Singular;
 import lombok.Value;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import me.whereareiam.anvil.protocol.api.type.ProtocolFeature;
@@ -12,26 +13,34 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * One release of a protocol library and the Minecraft versions it speaks.
+ * One release of a protocol library: the Minecraft edition it implements, the versions of that edition it
+ * speaks and the native wire-protocol number of each.
  *
- * <p>A release speaks exactly one wire protocol, so it lists every Minecraft version sharing that
- * protocol. Selection is exact: a release never serves a version it does not list. The highest listed
- * version is the release's key, used to select version-specific code.</p>
+ * <p>A release serves exactly the versions it lists, and only for servers of its {@link Edition}:
+ * selection compares the edition first, so a release never serves a server of another edition that numbers a
+ * version alike. Several listed versions may share one protocol number, or each may have its own. The highest
+ * listed version is the release's key, used to select version-specific code.</p>
  *
  * <pre>{@code
+ * MinecraftVersion older = MinecraftVersion.parse("1.16.4");
+ * MinecraftVersion newer = MinecraftVersion.parse("1.16.5");
  * ProtocolRelease release = ProtocolRelease.builder()
  *         .libraryVersion("1.16.5-2")
- *         .minecraftVersion(MinecraftVersion.parse("1.16.4"))
- *         .minecraftVersion(MinecraftVersion.parse("1.16.5"))
- *         .verifiedVersion(MinecraftVersion.parse("1.16.5"))
- *         .protocolNumber(754)
+ *         .edition(Edition.of("example"))
+ *         .minecraftVersion(older)
+ *         .minecraftVersion(newer)
+ *         .verifiedVersion(newer)
+ *         .protocolNumber(older, 754)
+ *         .protocolNumber(newer, 754)
  *         .javaVersion(8)
  *         .feature(ProtocolFeature.ONLINE_AUTHENTICATION)
  *         .build();
- * SupportLevel level = release.support(MinecraftVersion.parse("1.16.4")); // COMPATIBLE
+ * SupportLevel level = release.support(older); // COMPATIBLE
+ * int protocol = release.protocolNumber(older); // 754
  * }</pre>
  */
 @Value
@@ -41,7 +50,11 @@ public class ProtocolRelease {
 	 */
 	@NotNull String libraryVersion;
 	/**
-	 * Every Minecraft version speaking this release's protocol.
+	 * Minecraft edition whose servers this release reaches.
+	 */
+	@NotNull Edition edition;
+	/**
+	 * Every Minecraft version of the edition this release speaks.
 	 */
 	@NotNull List<MinecraftVersion> minecraftVersions;
 	/**
@@ -49,9 +62,9 @@ public class ProtocolRelease {
 	 */
 	@NotNull Set<MinecraftVersion> verifiedVersions;
 	/**
-	 * Native Minecraft wire-protocol number.
+	 * Native wire-protocol number of each listed Minecraft version.
 	 */
-	int protocolNumber;
+	@NotNull Map<MinecraftVersion, Integer> protocolNumbers;
 	/**
 	 * Minimum Java feature version required by the client runtime.
 	 */
@@ -79,22 +92,25 @@ public class ProtocolRelease {
 	 * Creates a validated release.
 	 *
 	 * @param libraryVersion non-blank library release identifier
-	 * @param minecraftVersions every Minecraft version speaking this protocol, at least one and each once
+	 * @param edition Minecraft edition whose servers the release reaches
+	 * @param minecraftVersions every Minecraft version the release speaks, at least one and each once
 	 * @param verifiedVersions live-tested versions, each also listed in {@code minecraftVersions}
-	 * @param protocolNumber positive native wire-protocol number
+	 * @param protocolNumbers positive native wire-protocol number of exactly the listed versions
 	 * @param javaVersion positive minimum Java feature version of the client runtime
 	 * @param features release-specific client behavior
 	 * @param additional whether the release is user-supplied
 	 * @param launchRefusal why no client of the release can be launched, or {@code null} when it can
 	 * @throws IllegalArgumentException when the identifier is blank, no version is listed, a version is listed
-	 * twice, a verified version is not listed, or the protocol number or Java version is not positive
+	 * twice, a verified version is not listed, a listed version has no protocol number or an unlisted one has
+	 * one, or a protocol number or the Java version is not positive
 	 */
 	@Builder(toBuilder = true)
 	private ProtocolRelease(
 			@NotNull String libraryVersion,
+			@NotNull Edition edition,
 			@NotNull @Singular List<MinecraftVersion> minecraftVersions,
 			@NotNull @Singular Set<MinecraftVersion> verifiedVersions,
-			int protocolNumber,
+			@NotNull @Singular Map<MinecraftVersion, Integer> protocolNumbers,
 			int javaVersion,
 			@NotNull @Singular Set<ProtocolFeature> features,
 			boolean additional,
@@ -106,9 +122,13 @@ public class ProtocolRelease {
 		if (Set.copyOf(minecraftVersions).size() != minecraftVersions.size())
 			throw new IllegalArgumentException("Protocol release '" + libraryVersion + "' lists a Minecraft version twice: "
 					+ minecraftVersions);
-		if (protocolNumber <= 0)
-			throw new IllegalArgumentException("Protocol release '" + libraryVersion + "' declares non-positive protocol number "
-					+ protocolNumber);
+		if (!protocolNumbers.keySet().equals(Set.copyOf(minecraftVersions)))
+			throw new IllegalArgumentException("Protocol release '" + libraryVersion + "' must declare one protocol number for "
+					+ "each listed Minecraft version " + minecraftVersions + ", not for " + protocolNumbers.keySet());
+		for (var protocol : protocolNumbers.entrySet())
+			if (protocol.getValue() <= 0)
+				throw new IllegalArgumentException("Protocol release '" + libraryVersion + "' declares non-positive protocol number "
+						+ protocol.getValue() + " for Minecraft " + protocol.getKey());
 		if (javaVersion <= 0)
 			throw new IllegalArgumentException("Protocol release '" + libraryVersion + "' declares non-positive Java version "
 					+ javaVersion);
@@ -118,9 +138,10 @@ public class ProtocolRelease {
 						+ " but does not list it");
 
 		this.libraryVersion = libraryVersion;
+		this.edition = edition;
 		this.minecraftVersions = minecraftVersions;
 		this.verifiedVersions = verifiedVersions;
-		this.protocolNumber = protocolNumber;
+		this.protocolNumbers = protocolNumbers;
 		this.javaVersion = javaVersion;
 		this.features = features;
 		this.additional = additional;
@@ -143,6 +164,32 @@ public class ProtocolRelease {
 	 */
 	public @NotNull MinecraftVersion version() {
 		return Collections.max(minecraftVersions);
+	}
+
+	/**
+	 * Returns the native wire-protocol number a client of this release speaks for one listed version.
+	 *
+	 * @param version Minecraft version the release lists
+	 * @return positive protocol number
+	 * @throws IllegalArgumentException when the release does not list the version
+	 */
+	public int protocolNumber(@NotNull MinecraftVersion version) {
+		Integer protocol = protocolNumbers.get(version);
+		if (protocol == null)
+			throw new IllegalArgumentException("Protocol release '" + libraryVersion + "' does not list Minecraft " + version);
+
+		return protocol;
+	}
+
+	/**
+	 * Tests whether this release serves a server of an edition and version.
+	 *
+	 * @param edition the server's Minecraft edition
+	 * @param version the server's Minecraft version
+	 * @return whether the release implements the edition and lists the version
+	 */
+	public boolean serves(@NotNull Edition edition, @NotNull MinecraftVersion version) {
+		return this.edition.equals(edition) && minecraftVersions.contains(version);
 	}
 
 	/**

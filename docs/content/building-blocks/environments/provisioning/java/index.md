@@ -12,8 +12,8 @@ process needs newer Java.
 
 This is the one table of Java versions per platform version; the platform pages link here. Each
 provider ships the same data in its `<platform>-versions.toml`, and a test of the runtime test suite
-fails when this table and that data differ. Versions are written in their canonical form, so Velocity
-`3.3` is release `3.3.0`.
+fails when this table and that data differ. Versions are written as the provider's data writes them, so
+Velocity's first row starts at `3.3.0` and Lumi's at Bedrock `1.20.0`.
 
 | Platform | Versions | Range | Default | Verified by the live matrix |
 |---|---|---|---|---|
@@ -24,6 +24,7 @@ fails when this table and that data differ. Versions are written in their canoni
 | Paper | `26.1` and newer | Java 25 or newer | 25 | `26.1.2` on 25 |
 | NeoForge | `1.21.1` to `1.21.11` | Java 21 or newer | 21 | `1.21.1` and `1.21.11` on 21 |
 | NeoForge | `26.1` and newer | Java 25 or newer | 25 | `26.1.2` on 25 |
+| Lumi | `1.20.0` and newer | Java 21 or newer | 21 | `1.20.0`, `1.21.80`, `1.21.90` and `1.26.50` on 21 |
 | Spigot | `1.16.5` | Java 11 to 16 | 11 | None |
 | Spigot | `1.17` to `1.17.1` | Java 17 | 17 | None |
 | Spigot | `1.18` to `1.18.2` | Java 17 to 18 | 17 | None |
@@ -31,13 +32,15 @@ fails when this table and that data differ. Versions are written in their canoni
 | Spigot | `1.20.5` to `1.20.6` | Java 21 to 22 | 21 | None |
 | Spigot | `1.21` to `1.21.11` | Java 21 or newer | 21 | `1.21.11` on 21 |
 | Spigot | `26.1` and newer | Java 25 or newer | 25 | `26.1.2` on 25 |
-| Velocity | `3.3` to `3.4` | Java 17 or newer; the Anvil agent needs 21 | 21 | None |
-| Velocity | `3.5` to `3.5.1` | Java 21 or newer | 21 | `3.5.1` on 21 |
-| Velocity | `4.0` and newer | Java 25 or newer | 25 | None |
+| Velocity | `3.3.0` to `3.4.0` | Java 17 or newer; the Anvil agent needs 21 | 21 | None |
+| Velocity | `3.5.0` to `3.5.1` | Java 21 or newer | 21 | `3.5.1` on 21 |
+| Velocity | `4.0.0` and newer | Java 25 or newer | 25 | None |
 | BungeeCord | every build | Java 17 or newer; the Anvil agent needs 21 | 21 | None |
 
-The range is the platform's own limit. The Anvil agent installed into every managed process needs
-Java 11 on Paper and Spigot and Java 21 on Velocity and BungeeCord, whose agents compile for Java 21.
+Lumi is a Bedrock Edition server, so its versions are Bedrock versions, which Lumi names `1.x.y`; Lumi
+itself needs Java 21 on every version. The range is the platform's own limit. The Anvil agent installed
+into every managed process needs Java 11 on Paper and Spigot and Java 21 on NeoForge, Lumi, Velocity
+and BungeeCord, whose agents compile for Java 21.
 Planning never selects older Java than the agent needs, so Velocity `3.3.x` and `3.4.x` and every
 BungeeCord build run Java 21 by default although they start on Java 17. Each provider declares its
 agent's minimum in its version data, and Anvil's build fails when the agent's classes need newer Java.
@@ -45,7 +48,9 @@ agent's minimum in its version data, and Anvil's build fails when the agent's cl
 The last column lists the combinations Anvil's live matrix runs; planning assesses exactly these as
 `VERIFIED`, and every other version a provider's data knows as `COMPATIBLE`. The matrix runs one
 Minecraft version of each MCProtocolLib release directly on Paper, and its current versions on
-Spigot and behind Velocity `3.5.1` and BungeeCord build `2085` as well. BungeeCord builds carry no
+Spigot and behind Velocity `3.5.1` and BungeeCord build `2085` as well. It runs NeoForge on each
+verified version and Lumi `1.6.9` on Bedrock `1.20.0`, `1.21.80`, `1.21.90` and `1.26.50`, both
+directly. BungeeCord builds carry no
 release version, so its single row applies to every build and Anvil assesses BungeeCord by its Java
 range only.
 

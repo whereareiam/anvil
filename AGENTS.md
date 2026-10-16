@@ -2,10 +2,11 @@
 
 ## Purpose and scope
 
-Anvil is a Java 21 testing framework for local Minecraft Java Edition processes and native-protocol
-players. Preserve reproducibility, protocol fidelity, complete cleanup, and useful failure diagnostics.
-NeoForge is the supported mod loader. Kubernetes, SSH/hosted orchestration, Fabric, Sponge, Bedrock, rendering,
-pathfinding, autonomous AI, and crafting automation are outside the current project scope.
+Anvil is a Java 21 testing framework for local Minecraft Java Edition and Bedrock Edition processes and
+native-protocol players. Preserve reproducibility, protocol fidelity, complete cleanup, and useful failure
+diagnostics. NeoForge is the supported mod loader and Lumi the supported Bedrock server. Kubernetes, SSH/hosted
+orchestration, Fabric, Sponge, rendering, pathfinding, autonomous AI, and crafting automation are outside the
+current project scope.
 
 ## Working in this repository
 
@@ -52,13 +53,20 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-capability/capability-builtin/player/<feature>/<feature>-<library>/V*` | Segments that implement only the feature's port for the library releases from their key on                                                                                 |
 | `anvil-capability/capability-builtin/process/<feature>`               | Process capability family: `<feature>-api` and a root holding the agent-backed provider, independent of simulated players                                                           |
 | `anvil-capability/capability-builtin/default`                         | Aggregate of every built-in player and process capability                                                                                                                           |
-| `anvil-protocol/protocol-api`                                         | Protocol library providers and releases, player creation/composition, protocol-owned channels/workers, pinned runtime resolution, and optional authentication                       |
+| `anvil-protocol/protocol-api`                                         | Protocol library providers, library hosts and releases, player creation/composition, protocol-owned channels/workers, pinned runtime resolution, the account workflow a library host offers, and under `.worker` the contracts of a library the native worker hosts (`WorkerLibraryProvider`, `WorkerLibrary`, `WorkerClient`, `WorkerAuthentication` with the Microsoft token it derives from, worker messages)                       |
 | `anvil-protocol`                                                      | Player registration, version selection, authentication compatibility, composition, and observations                                                                                 |
-| `anvil-protocol/protocol-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port and the client segments; owns `mcprotocol-releases.toml` and `pinLibraryReleases`  |
+| `anvil-protocol/protocol-worker`                                      | Wiring bundle publishing the native player worker once as the shaded `protocol-worker`: embeds `worker-common` and exports `protocol-api`; every library family depends on it |
+| `anvil-protocol/protocol-worker/worker-common`                        | Embedded, unpublished worker host and shell: `WorkerLibraryHost` (the worker's one `ProtocolLibraryHost` registration), worker process, RPC client, class path, transport, `ProtocolWorker` entry point, capability registry, segment verification, session bindings, release reader/catalog, `ProtocolWorkerPool`, and the stored Microsoft accounts with their device-code sign-in (`HostedAccounts`) |
+| `anvil-protocol/protocol-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port, the client segments and a dependency on the `protocol-worker` bundle; owns `mcprotocol-releases.toml` and `pinLibraryReleases` |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell                                                                                       |
-| `anvil-protocol/protocol-mcprotocol/mcprotocol-common`                | MCProtocolLib library provider, release data, worker host and segment selection, MCProtocolLib-free worker shell, and private authentication store                                  |
+| `anvil-protocol/protocol-mcprotocol/mcprotocol-common`                | `McProtocolWorkerLibrary`, the library's `WorkerLibraryProvider`, the `WorkerClient` driving `McProtocolClient`, and `MicrosoftAuthentication`, which derives a stored account's Java Edition session; depends only on `protocol-api` |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client/V*`             | Client segments `V1_18_2`, `V1_21_1` and `V1_21_11`, each implementing only `McProtocolClient` from its release key on; `V1_21_11` also serves `26.1.2`                             |
+| `anvil-protocol/protocol-cloudburst`                                  | Wiring bundle publishing the CloudburstMC Protocol library for Bedrock players: shaded `cloudburst-common`, the client port, the client segment and a dependency on the `protocol-worker` bundle; owns `cloudburst-releases.toml` and `pinLibraryReleases` |
+| `anvil-protocol/protocol-cloudburst/cloudburst-api`                   | Release-neutral CloudburstMC Protocol client port `CloudburstClient`, the native session `CloudburstSession<P, I, T>` that bindings receive, and the `ClientIdentity` a Bedrock login proves itself with                                           |
+| `anvil-protocol/protocol-cloudburst/cloudburst-common`                | `CloudburstWorkerLibrary`, the `WorkerClient` driving `CloudburstClient`, offline and Xbox login identities, and `XboxAuthentication`, which derives a stored account's Bedrock Edition session; depends only on `protocol-api` |
+| `anvil-protocol/protocol-cloudburst/cloudburst-client`                | Source-free side folder exporting the CloudburstMC Protocol client segment                                                                                                         |
+| `anvil-protocol/protocol-cloudburst/cloudburst-client/V*`             | Client segment `V1_26_60`, implementing only `CloudburstClient` for the whole release and selecting each player's codec by its protocol number                                  |
 | `anvil-platform/platform-api`                                         | Platform-provider/planning SPI, version data contract, artifact sources, distribution validation, and configuration contracts                                                      |
 | `anvil-platform/platform-planning`                                    | Platform declaration validation, version data reading, effective Java/topology requirements, forwarding negotiation, the split of a plan by process lifetime, artifact planning, and provider preparation/configuration      |
 | `anvil-platform/platform-*`                                           | Provider-specific distribution/configuration implementations and platform-agent assemblies                                                                                          |
@@ -82,7 +90,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-integration/integration-gradle/gradle-platforms`                                    | Gradle adapters for platform providers                                                                                                                     |
 | `anvil-integration/integration-gradle/gradle-capabilities`                                 | Gradle adapters for capability providers                                                                                                                   |
 | `anvil-testkit/tests`                                                 | Cross-module runtime and live assertions                                                                                                                                            |
-| `anvil-testkit/fixtures`                                              | Independent consumer build for process, server-plugin, and extension fixture JARs                                                                                                   |
+| `anvil-testkit/fixtures`                                              | Independent consumer build for process, server-plugin, Lumi-plugin, and extension fixture JARs                                                                                                   |
 | `anvil-testkit/support`                                               | Host-side fixture artifact access and scoped extension loading                                                                                                                      |
 | `examples/proof-of-patience`                                          | Standalone consumer example, not a home for framework system assertions                                                                                                             |
 | `build-logic`                                                         | Shared conventions grouped by `module/`, `packaging/`, `adapter/`, `library/`, `platform/`, `capability/`, `integration/`, and `fixture/`                                           |
@@ -96,6 +104,11 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   Ordinary implementations and API modules consume only their own family's APIs and `anvil-api`;
   foreign API dependencies and re-exports are forbidden unless an ancestor-owned contract API is
   explicitly declared through `architecture.sharedApis`. Each exposed API needs permission independently.
+  A family may consume another family's API only when declared through `architecture.dependsOnApis` on the
+  family root, for two reasons: a protocol library's native-session API that its library-side segments
+  implement a port against (the messages, movement, inventory and interaction families declare
+  `cloudburst-api` for their cloudburst segments), and another capability's API that a capability uses
+  when the player has it (the dialogs family declares `commands-api`).
   Organizational grouping does not merge families. Agent client/server families share only `agent-api`;
   they must not depend on or re-export each other's API or implementation.
 - Keep concrete platform SDKs, MCProtocolLib, serialization, transport implementations, and assembly
@@ -108,18 +121,82 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   Do not disguise source dependencies as external Maven coordinates or classify implementations as
   assemblies to evade verification. The launcher owns internal composition and packaging;
   `anvil-integration` is reserved for external integrations.
+- The native worker hosts libraries and names none. A library plugs in by implementing `protocol-api`'s
+  `WorkerLibraryProvider` (package `protocol.api.worker`), registered through `ServiceLoader`: it describes itself as
+  a `WorkerLibrary` (id, name, client port, release data, pin task, the offline UUID prefix, the packages its closures
+  own, worker JVM arguments), builds the `WorkerClient` that drives its client port, and
+  may supply a `WorkerAuthentication`. Its family shares `protocol-api` through `architecture.sharedApis`, and its
+  wiring root depends on the `protocol-worker` bundle instead of embedding it. The worker's `WorkerLibraryHost` is
+  the one `ProtocolLibraryHost` registration that installs every hosted library as a protocol library, and the
+  worker JVM starts `ProtocolWorker`, which loads the library's provider by id. Never put a library ID, package ban
+  or client type into `protocol-worker`.
+- An Anvil account is one Microsoft account. `worker-common`'s `HostedAccounts` owns the one device-code sign-in
+  (`MicrosoftSignIn`, the Minecraft Launcher's Xbox title `00000000402b5328` with scope
+  `service::user.auth.xboxlive.com::MBI_SSL`, the application of the account files Anvil 1.0 stored) and the account
+  files: one `<accountId>.json` (schema 3) holding the `MicrosoftToken`, per `Edition` id the recorded
+  `AccountAccess` (`AccountAvailability` with profile or reason) and per library ID its cached session. Availability
+  belongs to the edition, not the library: a result counts for every installed library of the edition. Sign-in
+  chooses no library and checks each edition that the hosted libraries' online releases speak once, with the first
+  library of the edition and the newest version of its releases of that edition. A library's `WorkerAuthentication`
+  only derives its session from the token (`derive(credentials, version)`), returns the token as it left it, and
+  refuses an account its edition's services refuse with a reason it words itself, naming the account; neutral code
+  names no edition. Every derivation, at sign-in, for each player (under the edition of the player's release) and
+  for `ProtocolAuthentication.check(accountId, edition)`, records the result for its edition. Schema 1 files (one
+  library's serialized MinecraftAuth session under `credentials`, named by `provider`) and schema 2 files (results
+  per library ID) are read into that shape without a new sign-in: a library's record becomes the record of the one
+  edition its online releases speak, an available record winning, and a library that is not installed or speaks
+  several editions leaves its edition unknown. The IDE, which knows no library, shows those files as not checked. `ProtocolLibraryHost.authentication(...)` offers the workflow
+  and `ProtocolLibraryRegistry.authentication(...)` returns it; there is no per-library authentication.
+- A CloudburstMC Protocol client segment hands bindings a `CloudburstSession<P, I, T>` as the native session: `send`,
+  typed `subscribe` dispatched from the session's one packet handler, the `GameStart`, the item definitions and the
+  client tick. Each session is one connection generation, and closing its connection ends its subscriptions, so a
+  reconnect never reaches them. The session also names the profile its login claimed and whether the server is
+  authoritative over movement: always from protocol 818 on, before that as the game start or a later movement
+  authority packet says. CloudburstMC types reach feature segments only through the type parameters; host
+  code and `cloudburst-common` never see them. The session, messages, movement, inventory and interaction
+  capabilities serve `mcprotocol` and `cloudburst`; their `<feature>-cloudburst/V1_26_60` segment serves every codec
+  of the release. Commands and dialogs are Java Edition behaviour and serve only `mcprotocol`; a Bedrock player
+  asking for them is told the libraries that provide them.
+- Like a real client, a Bedrock session tracks its own player and world per connection generation: item stacks of
+  the player's containers (inventory, off hand, armor, user interface with the cursor) and of opened containers, the
+  selected hotbar slot, the position and rotation at the eyes, and the blocks of the player's dimension. Under server
+  movement authority it also sends a player authoritative input on every tick from its spawn on, repeating the tracked
+  position, so one move stays in effect after a server ignored it while completing a teleport. Trackers and that
+  `InputTicker` live in their own classes in the client segment (`InventoryTracker`, `PositionTracker`,
+  `InputTicker`, and `WorldTracker` in package `client.world.v1_26_60`); `ConnectionSession` only wires them. They see each received packet before subscriptions
+  and the player's trackers see each sent packet before it leaves, so a feature's own send is the client's
+  prediction, settled by item stack responses or the server's corrections. `blockAt(x, y, z)` returns the
+  first-layer runtime id the server sent for a block, as `WorldTracker` keeps the chunks like a client: full level
+  chunks, sub-chunks it requests in request mode, block and sub-chunk updates, dropped on a dimension change or
+  outside the chunk publisher; air-only and never-received blocks are unknown. Inventory clicks follow the
+  game start: item stack requests under server inventory authority, otherwise normal inventory transactions, which
+  Lumi expects. Feature segments refuse what the session cannot send faithfully (shift clicks, stacking onto the
+  same item, opened containers under server authority, the off hand where the codec has no hand, a block use
+  whose block the session has not received) and ignore Java-only port values such as state IDs and sequences.
 - Use `ServiceLoader` for the existing provider SPIs. Preserve service descriptors and merge them
   when shading. Do not add broad reflection scanning as an alternative discovery path.
 - Each player selects its protocol library: its own `protocolLibrary`, else the scenario's, else the engine's,
   else the one installed library whose release supports its Minecraft version most strongly; a tie requires an
-  explicit choice. A player created from a lease uses the leased account's library instead. Launcher composition
+  explicit choice. A stored or leased account never changes the library. Launcher composition
   creates one capability runtime per selected library.
+- Editions are platform-agnostic: `api.model.Edition` is an opaque identifier compared only for equality,
+  with no constants or default, and Java code never names an edition; the identifiers appear only in each family's
+  data files. A platform declares `edition` in its version data; planning records it in `ProcessPlan`, refuses a
+  proxy whose backend servers speak different editions (`BackendEditionValidator`), and the
+  launcher passes `PlatformPlan.editions()` to the player service. Each protocol release row declares its own
+  `edition` (a library is not single-edition) and maps its versions to protocol numbers, `protocol = N` or a
+  `[release.protocol]` table, read by `ProtocolRelease.protocolNumber(MinecraftVersion)`. Selection compares
+  (edition, version): only releases of the reachable servers' edition match, across all installed libraries;
+  release keys stay unique within a library because segments name them. A protocol-backed capability whose
+  providers all exclude the player's library reports the libraries that provide it.
 - Public capabilities extend `PlayerCapability` or `ProcessCapability`, both rooted in the neutral
   `Capability` contract. Dependencies remain within the same owner. Neutral player providers use
   shared observations and dependencies. Protocol-backed providers declare library support through
   `supportedLibraries()`; agent process providers select supported platform IDs.
-- Retrieve only declared capability dependencies. The agent-backed `Server` capability must remain
-  independent of `Session`.
+- Retrieve only declared capability dependencies: `requiredCapabilities`, without which a provider is not
+  created, and `optionalCapabilities`, which are created first when the owner has them and are absent from
+  the context otherwise; only a missing required capability makes a provider unavailable. The agent-backed
+  `Server` capability must remain independent of `Session`.
 - Packet behavior belongs in feature-owned native implementations. Feature wiring registers scoped
   typed operation/event descriptors and `WorkerExtension<S>` bindings, where `S` is the session type the
   extension accepts: built-ins accept `Object` and let the port's `sessionType()` cast it, because the
@@ -181,11 +258,18 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 - A protocol library may expose its own stable services through `ProtocolPlayer.findService`.
   Anvil protocol/capability services cross their boundary through explicit assembly bridges, not
   `findService` or a fake universal packet abstraction.
-- Authentication is an optional `ProtocolLibraryProvider` service. Tooling depends on that API, not
-  MCProtocol's account-store implementation. Account files are managed outside project configuration.
-  The IntelliJ account manager and Gradle `anvilLogin`/`anvilLogout` share the `AnvilAuthentication` entry point.
-  Named pools live in the account directory's versioned `pools.properties`, documented on
-  `AccountManager.pool(String)`; the runtime reads it and the IDE writes it, with the same rules.
+- Tooling signs in through `ProtocolLibraryRegistry.authentication(...)`, not the worker's account files, and never
+  chooses a library. Account files are managed outside project configuration. The IntelliJ account manager and
+  Gradle `anvilLogin`/`anvilLogout` share the `AnvilAuthentication` entry point; the IDE reads account files
+  without any library. An online player whose account is recorded as unavailable for the edition of the servers it
+  reaches is refused before it connects, naming the account and giving the recorded reason. Named pools live in the account directory's
+  versioned `pools.properties`, documented on `AccountManager.pool(String)`; the runtime reads it and the IDE writes
+  it, with the same rules. A pool lends a player only an account available for the edition of the servers it reaches
+  (`AccountPool.lease(Edition)`, `PlayerManager.create(options, pool)`); when it has none, it checks its
+  free accounts of unknown availability in order through `ProtocolAuthentication.check`, one network derivation
+  each while the account is reserved, records each result and lends the first that becomes available, and otherwise
+  fails listing each account and why. JUnit's `@AnvilAccounts(edition = "...")` counts, and pools, only accounts
+  available for that edition; without it, every stored account counts.
 - External embedded-agent handlers implement `agent.server.api.operation.AgentOperationProvider`
   and own their operation namespace.
   Install their JARs under `plugins/anvil-agent-extensions`; do not bundle Anvil agent APIs or
@@ -205,9 +289,10 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   an exact feature version. Scenario listener binding and LAN permission belong to `NetworkPolicy`,
   alongside exposure and access policy.
 - Processes run on LTS releases only (11, 17, 21, 25, then every fourth); Java 8 is not one of them.
-  Each provider owns `<platform>-versions.toml` (Java rows, `[agent] minimumJava`, verified and known
+  Each provider owns `<platform>-versions.toml` (`edition`, Java rows, `[agent] minimumJava`, verified and known
   versions) and exposes it through `PlatformProvider.versionData()`; platform-planning reads it, so
-  platform-api carries no parser. The agent minimum raises the effective minimum and the default LTS;
+  platform-api carries no parser. A table named after the platform ID holds data only the provider reads;
+  planning skips it and refuses every other unknown key. The agent minimum raises the effective minimum and the default LTS;
   a default it pushes above the row maximum is refused. A maximum is refused unless the row names a
   bypass property; planning then adds `-D<property>=true` before provider defaults for explicit requests
   only, never for the default. Version and Java assessments follow `SupportLevel`/`SupportPolicy` and
@@ -224,7 +309,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `CompatibilityScenarioFactoryTest` through the server suite's `matrixTest`), and every other supported
   version is only known (COMPATIBLE). Docs keep one Java-per-version table in the Java provisioning guide,
   which `JavaVersionTableDocumentationTest` compares with the installed providers' version data and the
-  planner's defaults.
+  planner's defaults, spelling each version as that data writes it (`1.20.0` stays `1.20.0`).
 - Java requirements are execution-agnostic. Local homes and verified archives belong to Java provisioning;
   Docker image mappings belong to the Docker execution provider.
 - Execution providers own network topology and endpoint translation. A local loopback bind is host exposure
@@ -232,11 +317,20 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 - Execution sessions reserve host listener ports through the engine's `PortReservations` and release them when
   they close. Managed execution's `PortSelection` picks them below the ephemeral ranges, because a process
   binds its port seconds after preparation selected it; do not probe port 0 in a provider.
+- A platform's `PlatformProvider.gameTransport()` (`api.type.network.ListenerTransport`, TCP by default) travels
+  through `ProcessPlan`, `ProcessRequest` and `ProcessTarget` to `RunningProcess.transport()`. Ports are reserved,
+  probed and published with that transport while agent ports stay TCP; reserved numbers stay distinct across
+  transports. Planning refuses a proxy whose backends use another transport, and a player's source-address probe
+  binds with the transport of its target.
 - A simulated player's name is its unique identity within the scenario; its Minecraft username defaults to
   the name and may be shared by several players. The client records the profile its login success granted,
   which a proxy or login plugin may have renamed. Player observations follow the player's own connection from
   the process it connects to, ask each agent for that granted UUID, and never look a player up by username,
-  which platforms match without regard to letter case. Routes name scenario processes.
+  which platforms match without regard to letter case. Routes name scenario processes. A client reports as granted
+  the UUID the server shows it; an agent whose platform keeps another UUID for the player matches the shown one and
+  reports the platform's own in `AgentIdentity`, which becomes the observed profile (the Lumi agent matches
+  `getLoginUuid()`). An offline player's requested UUID is the name-based UUID of its library's
+  `offlineUniqueIdPrefix` and username: `OfflinePlayer:` for MCProtocolLib, `BedrockPlayer:` for CloudburstMC Protocol.
 - `api.process.RunningProcess` exposes lifecycle, address, and console; server/proxy specializations live in
   `api.process.type`. Player identities/routes belong to
   `PlayerObservation` and the Server capability.
@@ -315,6 +409,27 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `neoforge-versions.toml`; it uses only names that later releases keep, so one JAR loads on every supported
   release. NeoForge servers load no Bukkit plugin: their live scenarios carry no fixture, and
   `NeoForgeServerSystemTest` drives them with vanilla commands.
+- Lumi, a Bedrock Edition server, selects `Distribution.remote(bedrockVersion, lumiRelease)`, with versions named
+  as Lumi names them (`1.26.50`). `lumi-versions.toml` declares the `bedrock` edition and, in its provider-owned
+  `[lumi]` table, the protocol of each version and the versions each release accepts; the provider refuses an
+  unlisted release, a release that does not accept the version, and `latest`. The JAR `com.koshakmine:Lumi` comes
+  from `https://repo.lumi.su/releases`, verified against the repository's SHA-256 or an explicit pin. The game
+  listener is UDP. `settings.yml` is written structurally before each start with `min-protocol` = `max-protocol` =
+  the version's protocol and `xbox-auth` = online mode; Lumi has no identity forwarding and no Yggdrasil, so
+  its only forwarding mode is `NONE` and `sessionServer` is refused. The Lumi agent is a Lumi plugin compiled
+  against the release in the catalog. Lumi ships an older Jackson and loads plugin classes parent first, so the
+  plugin is only a bootstrap: the agent (its `agent` source set) and the agent server with its own Jackson form a
+  nested JAR that the plugin loads in a child-first `AgentClassLoader` sharing only the JDK and `cn.nukkit`, and
+  closes on disable; extensions load beneath it and see the agent's Jackson, as on Paper. `checkAgentJava` checks
+  nested JARs too. Lumi servers load no Bukkit plugin, so their live scenarios carry the Lumi
+  fixture plugin `test-lumi-plugin` instead of `test-server-plugin`: `LumiServerSystemTest` drives them through
+  the console and the agent, and `BedrockPlayerCapabilitiesSystemTest` and `BedrockPlayerSessionSystemTest` check
+  each Bedrock player action with vanilla commands (`testfor`, `testforblock`, `clear`) through the agent's console
+  execution, except what no vanilla command shows: the fixture spawns an entity, reports its runtime ID and reports
+  the player's interaction with and attack on it. The matrix runs
+  Lumi's oldest and newest version and both sides of the 1.21.90 movement-authority boundary (`1.21.80` with
+  `client-auth`). `known` lists exactly the versions whose protocol Lumi and the cloudburst row agree on,
+  spelled the same on both sides; `1.26.45` is left out (Lumi 2170, CloudburstMC Protocol 2169).
 - Local/named server artifacts declare `minecraftVersion`. Native clients must match every reachable
   server. Preserve explicit client overrides and deterministic native selection; no implicit ViaVersion fallback.
 - Prepare declared assets and caches before provider configuration. Runtime ports, forwarding,
@@ -387,15 +502,18 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   settings control personal IDE behavior, while runtime options stay in project/scenario definitions.
 - Adding a Minecraft version follows the contributing guide `docs/content/contributing/minecraft-versions`.
   Add the version to the `mcprotocol-releases.toml` release that speaks its protocol, or a `[[release]]` row
-  for a new protocol (version, module, protocol, Minecraft versions, verified versions, Java, features), and
+  for a new protocol (version, edition, module, protocol, Minecraft versions, verified versions, Java, features), and
   pin its closure with `pinLibraryReleases`. Add a segment only to a side whose newest segment fails
   `checkSegmentLinkage` against the new closure, named after the new release key; a segment folder must name
   a release key, so raising a key renames that segment. Add the release to `McProtocolWorkerContractTest`,
   platform `known` versions and `[[java]]` rows only where Java changes, and mark as verified exactly what
   `CompatibilityScenarioFactory` runs; every other listed version is COMPATIBLE, and user-supplied release
-  data is UNTESTED. Update the versions page, the Java table, the README, and the FAQ. The worker shell never
-  imports MCProtocolLib; release-specific client code lives only in `mcprotocol-client` segments, whose
-  `linkage.txt` requirement keywords the worker's self-check enforces. A release with an unpinned closure is
+  data is UNTESTED. Update the versions page, the Java table, the README, and the FAQ. Neither `protocol-worker` nor
+  `McProtocolWorkerLibrary` imports MCProtocolLib; release-specific client code lives only in `mcprotocol-client` segments, whose
+  `linkage.txt` requirement keywords the worker's self-check enforces. A Bedrock version extends CloudburstMC
+  Protocol's one `cloudburst-releases.toml` row: the newer snapshot build, the version in `minecraft` and its number
+  in `[release.protocol]`, written `1.26.x` for Bedrock 26.x as the library and Bedrock servers write it, its codec
+  in the client segment, and the segment renamed to the new key. A release with an unpinned closure is
   listed but cannot be launched: preparing a scenario whose servers would use it by default prints a warning,
   and creating a player that selects it is refused.
 
@@ -414,7 +532,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   grouped by behavior. The whole task requires `-Panvil.testMode=full`; only its `matrixTest` task, which
   checks `CompatibilityScenarioFactoryTest` without starting a server, runs in every build.
 - The independent `anvil-test-fixtures` consumer build under `anvil-testkit/fixtures` contains
-  `test-process`, `test-server-plugin`, and `test-extension`. They use `src/main`; dependencies on Anvil
+  `test-process`, `test-server-plugin`, `test-lumi-plugin`, and `test-extension`. They use `src/main`; dependencies on Anvil
   use public artifact aliases, with current source projects substituted in the root composite build.
   Gradle produces fixture variants and supplies their exact artifacts to tests. Keep JAR construction
   out of Java test helpers; `TestExtensionLoader` owns discovery isolation and classloader cleanup.
@@ -437,7 +555,9 @@ Run the nearest relevant test first, then architecture/build checks:
 ./gradlew :anvil-agent:agent-client:test
 ./gradlew :anvil-agent:agent-server:test
 ./gradlew :anvil-capability:test
+./gradlew :anvil-protocol:protocol-worker:worker-common:test
 ./gradlew :anvil-protocol:protocol-mcprotocol:mcprotocol-common:test
+./gradlew :anvil-protocol:protocol-cloudburst:cloudburst-common:test
 ./gradlew :anvil-integration:integration-gradle:gradle-plugin:test :anvil-integration:integration-gradle:gradle-capabilities:test :anvil-integration:integration-gradle:gradle-platforms:test
 ./gradlew :anvil-testkit:tests:runtime:test
 ./gradlew :anvil-testkit:tests:server:matrixTest
@@ -501,7 +621,8 @@ category of its label. Readers are developers who test with Anvil or extend it.
 - The draft sorts by the exact area, so spell an area exactly as listed: `Engine`, `Environments`,
   `Workspaces`, `Execution`, `Processes`, `Platforms`, `Players`, `Capabilities`, `Protocol`, `Yggdrasil`,
   `JUnit`, `Gradle`, `IntelliJ`, `Launcher`. A change to one platform only may use its name: `Paper`,
-  `Spigot`, `NeoForge`, `Velocity`, `BungeeCord`. Add an area only for something readers recognise by that
+  `Spigot`, `NeoForge`, `Lumi`, `Velocity`, `BungeeCord`. A change to one protocol library, MCProtocolLib or
+  CloudburstMC Protocol, uses `Protocol`, which readers know both libraries by. Add an area only for something readers recognise by that
   name, such as a new platform, protocol library or integration, and add it to this list in the same
   pull request. Never use module or package names such as `Architecture` or `Integration`.
 - A `skip-changelog` pull request still needs a title in that format; `CI`, `Build`, `Docs` and `Tests`
@@ -597,7 +718,10 @@ then rerun the `Release drafter` workflow; text typed into the draft is lost on 
 - `intellij-account` keeps `AccountLibrary` (the project and global directories it reads), `storage`
   (account and pool files, `StagedAccountDirectory`, `ProjectAccountStaging`), `AccountSignIn` (one browser
   sign-in with its processes and manifest), `settings` (`AccountSettings` and the Accounts settings page,
-  which owns both directories and global participation), and `view` (the account window).
+  which owns both directories and global participation), and `view` (the account window). Account metadata
+  holds no protocol library: the lists show each account's profile names with an `EditionChip` per edition
+  it is available for, and files of schemas 1 and 2 show the profiles they recorded per library
+  (`AvailableAccount.libraryProfiles`) until the runtime rewrites them. Sign-in never chooses a library.
 - Each feature owns its settings: `ScenarioSettings` with the Scenarios page and `AccountSettings` with the
   Accounts page, both under the `me.whereareiam.anvil` group. Name persistent components and storage files
   after their feature (`AnvilScenarios`, `anvil-scenarios.xml`) and keep them stable when renaming classes.

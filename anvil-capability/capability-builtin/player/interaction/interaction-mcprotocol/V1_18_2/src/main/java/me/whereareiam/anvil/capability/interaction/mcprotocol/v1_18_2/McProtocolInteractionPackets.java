@@ -45,12 +45,19 @@ public final class McProtocolInteractionPackets implements InteractionPackets<Se
 	}
 
 	@Override
-	public void entity(@NotNull Session session, int entityId, @NotNull EntityInteraction kind, @NotNull Hand hand) {
+	public void entity(@NotNull Session session, long entityId, @NotNull EntityInteraction kind, @NotNull Hand hand) {
 		InteractAction action = switch (kind) {
 			case INTERACT -> InteractAction.INTERACT;
 			case ATTACK -> InteractAction.ATTACK;
 		};
-		session.send(new ServerboundInteractPacket(entityId, action, nativeHand(hand), false));
+		session.send(new ServerboundInteractPacket(javaEntityId(entityId), action, nativeHand(hand), false));
+	}
+
+	private static int javaEntityId(long entityId) {
+		if (entityId < Integer.MIN_VALUE || entityId > Integer.MAX_VALUE)
+			throw new IllegalArgumentException("Java Edition entity IDs are int values; " + entityId + " is outside their range");
+
+		return (int) entityId;
 	}
 
 	private static com.github.steveice10.mc.protocol.data.game.entity.player.Hand nativeHand(Hand hand) {

@@ -5,7 +5,7 @@ description: Write repeatable tests for packaged plugins using real servers, pro
 
 Anvil is a Java testing framework for developers building Minecraft plugins and integrations.
 It starts the servers and proxies your test needs, installs your packaged artifacts, and gives
-your code control of players that speak the native Java Edition protocol.
+your code control of players that speak the native Java Edition or Bedrock Edition protocol.
 
 A scenario describes the environment once. Use it in a JUnit test to verify behavior after a
 change, or run it in the foreground when you need to join and inspect the environment yourself.
@@ -73,13 +73,15 @@ assume you already have a working consumer environment.
 Anvil targets Java 21. Each managed process runs on the LTS Java release its platform version
 prefers; the [Java guide](./building-blocks/environments/provisioning/java/index.md#java-per-platform-version)
 lists those versions and explains selection and provisioning.
-The bundled platforms are Paper, Spigot, and NeoForge servers, plus Velocity and BungeeCord proxies.
-MCProtocolLib is the bundled protocol library for native players, from Minecraft 1.18.2 to 26.1.2.
+The bundled platforms are Paper, Spigot, and NeoForge Java Edition servers, the Lumi Bedrock Edition
+server, plus Velocity and BungeeCord proxies.
+MCProtocolLib is the bundled protocol library for native Java Edition players, from Minecraft 1.18.2 to
+26.1.2, and CloudburstMC Protocol the one for Bedrock Edition players, from 1.20.0 to 1.26.60.
 See the [version and route matrix](./building-blocks/environments/platforms/versions/index.md) for
 supported versions and tested combinations.
 
 Local process execution is the standard Gradle workflow. A Docker execution provider is also
 available with explicit image configuration; read its [setup and limits](./building-blocks/environments/configuration/execution/index.md)
-before selecting it. Kubernetes, SSH/hosted orchestration, Fabric, Sponge, and Bedrock are outside
-the current scope. Protocol players do not render the game or provide autonomous AI, pathfinding,
+before selecting it. Kubernetes, SSH/hosted orchestration, Fabric, and Sponge are outside the current
+scope. Protocol players do not render the game or provide autonomous AI, pathfinding,
 or crafting automation.

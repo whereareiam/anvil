@@ -1,5 +1,6 @@
 package external.fixture.capability;
 
+import external.fixture.agent.FixtureGreeting;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityContext;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
@@ -36,6 +37,13 @@ public final class FixtureProcessEchoProvider implements AgentProcessCapabilityP
 			@Override
 			public @NotNull String prefix() {
 				return channel.request(FixtureChannels.GET_PREFIX, null);
+			}
+
+			@Override
+			public @NotNull String greet(@NotNull String name, int count) {
+				FixtureGreeting greeting = channel.request(FixtureChannels.GREET,
+						FixtureGreeting.builder().name(name).count(count).build());
+				return greeting.getName() + "#" + greeting.getCount();
 			}
 		};
 	}

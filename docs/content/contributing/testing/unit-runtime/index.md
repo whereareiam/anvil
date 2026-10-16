@@ -30,7 +30,9 @@ TestKit without starting Minecraft. Its location follows the owner of the behavi
 | Agent clients, sessions, and observations                | `:anvil-agent:agent-client:test`                              |
 | Native agent dispatch and extension loading              | `:anvil-agent:agent-server:test`                              |
 | Capability discovery and composition                    | `:anvil-capability:test`                                      |
+| Native worker host and shell                           | `:anvil-protocol:protocol-worker:worker-common:test` |
 | MCProtocolLib library, worker contracts and segments   | `:anvil-protocol:protocol-mcprotocol:mcprotocol-common:test` and `:anvil-protocol:protocol-mcprotocol:mcprotocol-client:<segment>:check` |
+| CloudburstMC Protocol library, worker contracts and segment | `:anvil-protocol:protocol-cloudburst:cloudburst-common:test` and `:anvil-protocol:protocol-cloudburst:cloudburst-client:V1_26_60:check` |
 | Gradle scenario tooling                                 | `:anvil-integration:integration-gradle:gradle-plugin:test`                        |
 | Curated plugin composition                              | `:anvil-integration:integration-gradle:gradle-capabilities:test`                   |
 | Root build discovery and fixture publication                  | `./gradlew help`                                    |

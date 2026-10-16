@@ -20,18 +20,24 @@ import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.testkit.support.FixtureArtifacts;
 import me.whereareiam.anvil.testkit.support.TestExtensionLoader;
+import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
 import me.whereareiam.anvil.testkit.tests.server.scenario.Paper12111SystemScenario;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests an external protocol library and capabilities calling extensions installed in a real Paper agent.
+ * Tests an external protocol library and capabilities calling extensions installed in a real Paper agent, and the
+ * process capability on a real Lumi agent too.
  */
 class ExternalExtensionSystemTest {
 	@TempDir
@@ -67,7 +73,7 @@ class ExternalExtensionSystemTest {
 	}
 
 	@Test
-	void usesServerObservationAndAgentOperationsWithoutASessionAdapter() throws Exception {
+	void usesServerObservationAndStructuredAgentPayloadsWithoutASessionAdapter() throws Exception {
 		try (var fixture = new TestExtensionLoader(FixtureArtifacts.observationExtension(), false);
 			 var engine = AnvilLauncher.create(options())) {
 			try (var context = engine.start(scenario(fixture.artifact()))) {
@@ -77,6 +83,10 @@ class ExternalExtensionSystemTest {
 				assertFalse(player.hasCapability(Session.class));
 				assertEquals("Observer", player.capability(Server.class).identity().getRequested().getUsername());
 				assertEquals("fixture:agent-only", probe(fixture, player, "echo", new Class<?>[] {String.class, String.class}, "server", "agent-only"));
+				Class<? extends ProcessCapability> echoType = fixture.load("external.fixture.capability.ProcessEcho")
+						.asSubclass(ProcessCapability.class);
+				var echo = context.processes().server("server").capability(echoType);
+				assertEquals("fixture:Alice#2", echoType.getMethod("greet", String.class, int.class).invoke(echo, "Alice", 1));
 			}
 		}
 		assertEquals(List.of("created", "closed"), Files.readAllLines(temporary.resolve("cache/fixture-observer.lifecycle")));
@@ -87,20 +97,26 @@ class ExternalExtensionSystemTest {
 				.workDirectory(Path.of("build/anvil/external-extension")).build();
 	}
 
-	@Test
-	void usesProcessCapabilitiesWithoutPlayersAcrossAProcessRestart() throws Exception {
+	/**
+	 * Runs on Paper and on Lumi, whose agent loads extensions in a class loader apart from Lumi's own Jackson, so the
+	 * annotated greeting payload binds there as well.
+	 */
+	@ParameterizedTest(name = "{0}")
+	@MethodSource("processScenarios")
+	void usesProcessCapabilitiesWithoutPlayersAcrossAProcessRestart(String name, AnvilScenario base) throws Exception {
 		try (var fixture = new TestExtensionLoader(FixtureArtifacts.observationExtension(), false);
 			 var engine = AnvilLauncher.create(options())) {
 			RunningProcess process;
 			Class<? extends ProcessCapability> echoType = fixture.load("external.fixture.capability.ProcessEcho")
 					.asSubclass(ProcessCapability.class);
-			try (var context = engine.start(scenario(fixture.artifact()))) {
+			try (var context = engine.start(scenario(base, fixture.artifact()))) {
 				assertTrue(context.players().all().isEmpty());
 				process = context.processes().server("server");
 				var echo = process.capability(echoType);
 				var console = process.capability(Console.class);
 				assertTrue(console.execute("list"));
 				assertEquals("fixture:before", echoType.getMethod("echo", String.class).invoke(echo, "before"));
+				assertEquals("fixture:Alice#2", echoType.getMethod("greet", String.class, int.class).invoke(echo, "Alice", 1));
 				echoType.getMethod("prefix", String.class).invoke(echo, "first-generation");
 				assertEquals("first-generation", echoType.getMethod("prefix").invoke(echo));
 				assertEquals("first-generation:changed", echoType.getMethod("echo", String.class).invoke(echo, "changed"));
@@ -125,13 +141,23 @@ class ExternalExtensionSystemTest {
 		}
 	}
 
+	private static Stream<Arguments> processScenarios() {
+		return Stream.of(
+				Arguments.of("paper", new Paper12111SystemScenario().define()),
+				Arguments.of("lumi", CompatibilityScenarioFactory.lumiScenarios().getLast())
+		);
+	}
+
 	private AnvilScenario scenario(Path extension) {
-		AnvilScenario base = new Paper12111SystemScenario().define();
+		return scenario(new Paper12111SystemScenario().define(), extension);
+	}
+
+	private AnvilScenario scenario(AnvilScenario base, Path extension) {
 		var server = base.getServers().getFirst();
 		var workspace = server.getWorkspace().toBuilder().asset(WorkspaceAsset.builder().group("external-agent")
 				.source(AssetSource.path(extension))
 				.target(Path.of("plugins/anvil-agent-extensions/external.jar")).build()).build();
-		return base.toBuilder().name("external-extension").clearServers()
+		return base.toBuilder().name("external-extension-" + base.getName()).clearServers()
 				.server(server.toBuilder().workspace(workspace).build()).build();
 	}
 

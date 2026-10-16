@@ -28,4 +28,14 @@ public interface ProcessEcho extends ProcessCapability {
 	 * @return prefix used by this process generation
 	 */
 	@NotNull String prefix();
+
+	/**
+	 * Sends a structured payload that the native handler binds through its Jackson annotations, and answers with the
+	 * payload it returns.
+	 *
+	 * @param name name the greeting addresses
+	 * @param count number of times the greeting has passed through a handler
+	 * @return the returned greeting as {@code <name>#<count>}
+	 */
+	@NotNull String greet(@NotNull String name, int count);
 }

@@ -4,8 +4,9 @@ description: Integrate another native client library as a protocol library with 
 ---
 
 A protocol library owns native client creation, the releases it can run, client identity, and client
-cleanup. MCProtocolLib is the bundled library, with the ID `mcprotocol`. Use this extension point to
-integrate another client library. A packet-backed capability alone belongs under
+cleanup. Anvil bundles two libraries: MCProtocolLib, with the ID `mcprotocol`, for Java Edition
+servers, and CloudburstMC Protocol, with the ID `cloudburst`, for Bedrock Edition servers. Both run
+in Anvil's native worker. Use this extension point to integrate another client library. A packet-backed capability alone belongs under
 [Protocol adapters](../capabilities/protocol-adapters/index.md).
 
 Several libraries can be installed at once; Anvil selects one for each player. Create a Java library
@@ -34,34 +35,76 @@ For the exact contracts, read the
 [ProtocolPlayer](https://github.com/whereareiam/anvil/blob/dev/anvil-protocol/protocol-api/src/main/java/me/whereareiam/anvil/protocol/api/player/ProtocolPlayer.java)
 source Javadocs. These links use `dev`; select your release tag when checking a released version.
 
+## Run your players in Anvil's native worker
+
+Instead of implementing these contracts yourself, a library can plug into Anvil's native worker, which
+runs each release of the library in a version-isolated JVM, reads the library's release data and pins,
+and installs it as a protocol library. Depend on `me.whereareiam.anvil:protocol-api` at compile time and
+implement `WorkerLibraryProvider` from `me.whereareiam.anvil.protocol.api.worker`:
+
+| Method | Supplies |
+|---|---|
+| `library()` | The `WorkerLibrary` description: ID, name, client port, release data, pin task, the offline UUID prefix, the packages the release closures own, and worker JVM arguments |
+| `client(adapter)` | The `WorkerClient` that drives your client segment's implementation of the client port |
+| `authentication()` | An optional `WorkerAuthentication`, which derives the session a player signs in with from a stored account's Microsoft token |
+
+The worker owns the Microsoft sign-in and the account files; your library only derives its session from an
+account and says when its services refuse it. See [Authentication](authentication/index.md).
+
+A player without an account logs in offline with a UUID the worker derives from its username and your
+library's `offlineUniqueIdPrefix`: the name-based UUID of the prefix followed by the username. MCProtocolLib
+uses `OfflinePlayer:`, the UUID a Java Edition server assigns offline players; CloudburstMC Protocol uses
+`BedrockPlayer:`, because Bedrock has no such convention.
+
+A resolved `AuthenticationSession` carries the account's profile, its access token and, when the
+token alone cannot sign a login, `libraryCredentials`: further secrets in a text form your library
+defines, such as the key pair and certificate chain of a Bedrock login. The worker never reads them; it
+hands both to your `WorkerClient` as `WorkerCredentials`, only over the worker's private standard input.
+
+Register the provider in `META-INF/services/me.whereareiam.anvil.protocol.api.worker.WorkerLibraryProvider`
+and give your published library a runtime dependency on `me.whereareiam.anvil:protocol-worker`, which
+registers itself as the `ProtocolLibraryHost` that installs every such library. Do not also register a
+`ProtocolLibraryProvider` for the same library.
+
 ## Describe the releases
 
 `releases(context)` returns every release your library can run as `ProtocolRelease` values. Anvil
 reads it to select a library before any library exists, so keep it cheap and free of side effects. A
-release speaks exactly one wire protocol and lists every Minecraft version that speaks it:
+release names the Minecraft edition it implements, lists every version of that edition it speaks, and
+maps each listed version to its wire protocol number:
 
 ```java
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.type.ProtocolFeature;
 
+MinecraftVersion older = MinecraftVersion.parse("1.20.5");
+MinecraftVersion newer = MinecraftVersion.parse("1.20.6");
 ProtocolRelease release = ProtocolRelease.builder()
 		.libraryVersion("2.4.0")
-		.minecraftVersion(MinecraftVersion.parse("1.20.5"))
-		.minecraftVersion(MinecraftVersion.parse("1.20.6"))
-		.verifiedVersion(MinecraftVersion.parse("1.20.6"))
-		.protocolNumber(766)
+		.edition(Edition.of("java"))
+		.minecraftVersion(older)
+		.minecraftVersion(newer)
+		.verifiedVersion(newer)
+		.protocolNumber(older, 766)
+		.protocolNumber(newer, 766)
 		.javaVersion(17)
 		.feature(ProtocolFeature.ONLINE_AUTHENTICATION)
 		.build();
 ```
+
+The edition is an opaque identifier that Anvil compares with the edition the servers' platforms
+declare in their version data; a release never serves a server of another edition, even when both
+number a version alike. A release may map its versions to one protocol number or to several, and
+`protocolNumber(version)` returns the number of one listed version.
 
 The library version is your release identifier, such as the client library version. The highest
 listed Minecraft version is the release key returned by `version()`. List a version under
 `verifiedVersion` only when your own live tests run it. `javaVersion` is the minimum Java feature
 version of your client runtime. `ONLINE_AUTHENTICATION` declares that clients of the release can log
 in to online-mode servers; features describe the client and never select capability providers. Each
-Minecraft version may appear in only one of your releases.
+Minecraft version of an edition may appear in only one of your releases.
 
 `release.support(version)` assesses one version: `UNSUPPORTED` when the release does not list it,
 `UNTESTED` for a user-supplied release, `VERIFIED` for a verified version, and `COMPATIBLE`
@@ -86,7 +129,7 @@ with the engine. `ProtocolLibrary.create(PlayerRequest)` receives who logs in, w
 | Group | Content |
 |---|---|
 | `getName()`, `getLogin()` | The player name and its `PlayerLogin`: the authentication mode and either an offline username, an account ID, or a session identity. `getUsername()` returns the offline username, or the name when the login declares none |
-| `getClientVersion()` | The exact Minecraft version the client speaks. Each Minecraft version appears in only one of your releases, so resolve the release from it through your own release data |
+| `getEdition()`, `getClientVersion()` | The edition of the servers the client reaches and the exact Minecraft version it speaks. Each version of an edition appears in only one of your releases, so resolve the release from both through your own release data |
 | `getConnection()` | `GameConnection`: the game listener's address, the optional virtual host the handshake announces, and the optional source address the socket binds to |
 
 A leased login never reaches the library; Anvil replaces it with the leased account first. Your library
@@ -96,19 +139,22 @@ either one, just as a library that cannot redirect its session service refuses a
 Create a disconnected client; connection behavior is supplied through the
 appropriate capability. `ProtocolPlayer.identity()` returns the profile the client requests and, while it is
 connected, the profile the server or proxy granted in its login success. Anvil asks platform agents for the
-player by the granted UUID, so a library that never reports a granted profile is never observed on a server. Destroying a player releases its client resources, and `close()` attempts
+player by the granted UUID, so a library that never reports a granted profile is never observed on a server.
+Report the UUID the server shows your client: an agent finds the player by it and reports the platform's own
+UUID, which may differ, as the observed profile. Destroying a player releases its client resources, and `close()` attempts
 cleanup of all clients and owned workers even after a failure.
 
 ## Understand library selection
 
 Anvil selects a library and an exact release for each player:
 
-1. The player's `protocolLibrary`, else the scenario's, else the engine's. A player created from an
-   account lease uses the library that stores the leased account.
-2. Without a declaration, every installed library that lists the player's Minecraft version is ranked
-   by support level, and the strongest one wins. A tie at the strongest level is refused with a
-   message naming the tied libraries and asking for `protocolLibrary`.
-3. The release is the one that lists the exact version; a neighboring release is never used.
+1. The player's `protocolLibrary`, else the scenario's, else the engine's.
+2. Without a declaration, every installed library with a release of the servers' edition that lists the
+   player's Minecraft version is ranked by support level, and the strongest one wins. A tie at the
+   strongest level is refused with a message naming the tied libraries and asking for `protocolLibrary`.
+3. The release is the one of that edition that lists the exact version; a neighboring release, or a
+   release of another edition listing the same version, is never used. A refusal names the edition
+   and any other editions whose releases list the version.
 4. The support policy applies to that release's level, and the release must be launchable.
 
 An unknown library ID is refused with the installed IDs. The engine checks its own library ID, and
@@ -127,7 +173,9 @@ The channel's `installedCapabilities()` and `unavailableCapabilities()` report w
 native worker installs and why the rest is missing. Composition skips every protocol-backed provider
 whose capability the worker does not install, together with the providers that depend on it, and
 reports the worker's reason, or `not installed by the <library> worker`, when the capability is
-requested. A player without a channel composes every provider that accepts its library.
+requested. A player without a channel composes every provider that accepts its library. Requesting a
+capability whose providers all exclude the player's library through `supportedLibraries()` reports the
+libraries that provide it.
 
 A native worker loads `NativeWorkerProvider` implementations through `ServiceLoader` and calls
 `create(NativeWorkerContext)` once per worker, with the library ID, the release key version, the
@@ -207,7 +255,7 @@ empty set accepts every library.
 
 ## Verify selection and cleanup
 
-Exercise automatic selection alone and alongside MCProtocol, an explicit choice, a tie, an unknown
+Exercise automatic selection alone and alongside the bundled libraries, an explicit choice, a tie, an unknown
 ID, missing execution services, unsupported versions, and a release that cannot be launched.
 Destroying a player must release its client resources; closing the library must attempt cleanup of
 all clients and any owned workers after failures.

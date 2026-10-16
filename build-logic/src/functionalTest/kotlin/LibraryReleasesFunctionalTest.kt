@@ -115,6 +115,7 @@ class LibraryReleasesFunctionalTest {
 
 		[[release]]
 		version = "1.18.2-1"
+		edition = "java"
 		# A hand-written note about this release.
 		module = "com.example.legacy:protocol:1.18.2-1"
 		protocol = 758
@@ -128,6 +129,7 @@ class LibraryReleasesFunctionalTest {
 		# Snapshot releases resolve from their -SNAPSHOT folder.
 		[[release]]
 		version = "$snapshot"
+		edition = "java"
 		module = "com.example.modern:protocol:$snapshot"
 		protocol = 774
 		minecraft = ["1.21.11"]

@@ -7,6 +7,10 @@ import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.api.player.CapabilityPlayer;
+import me.whereareiam.anvil.capability.commands.Commands;
+import me.whereareiam.anvil.capability.dialogs.Dialogs;
+import me.whereareiam.anvil.capability.messages.Messages;
+import me.whereareiam.anvil.capability.movement.Movement;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityContext;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityProvider;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolCapabilityPlayer;
@@ -14,6 +18,7 @@ import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabil
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
+import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
@@ -92,6 +97,35 @@ class PlayerCapabilityRuntimeTest {
 	}
 
 	@Test
+	void composesTheCapabilitiesTheCloudburstWorkerInstalledForABedrockPlayer() {
+		StubPlayer bedrock = new StubPlayer();
+		bedrock.libraryId = "cloudburst";
+		bedrock.channel = channel(Set.of("me.whereareiam.anvil.session", "me.whereareiam.anvil.messages"), Map.of());
+		var previous = System.err;
+
+		SimulatedPlayer player;
+		System.setErr(new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
+		try {
+			player = PlayerCapabilityRuntime.discover("cloudburst").compose(bedrock, observation(), ignored -> { });
+		} finally {
+			System.setErr(previous);
+		}
+
+		assertTrue(player.hasCapability(Session.class));
+		assertTrue(player.hasCapability(Messages.class));
+		assertFalse(player.hasCapability(Movement.class));
+		var missing = assertThrows(CapabilityUnavailableException.class, () -> player.capability(Movement.class));
+		assertTrue(missing.getMessage().endsWith("not installed by the cloudburst worker"), missing.getMessage());
+		for (Class<? extends PlayerCapability> javaOnly : List.of(Commands.class, Dialogs.class)) {
+			assertFalse(player.hasCapability(javaOnly), javaOnly.getName());
+			var unsupported = assertThrows(CapabilityUnavailableException.class, () -> player.capability(javaOnly));
+			assertTrue(unsupported.getMessage().endsWith("no provider supports protocol library 'cloudburst' that the player "
+					+ "uses; it is provided only for the protocol libraries [mcprotocol]"), unsupported.getMessage());
+		}
+		player.destroy();
+	}
+
+	@Test
 	void validatesDiscoveredDependenciesAfterAddingAssemblyProviders(@TempDir Path directory) throws Exception {
 		Path service = directory.resolve("META-INF/services/" + ProtocolPlayerCapabilityProvider.class.getName());
 		Files.createDirectories(service.getParent());
@@ -116,6 +150,41 @@ class PlayerCapabilityRuntimeTest {
 		}
 		public @NotNull Class<DependentCapability> capability() { return DependentCapability.class; }
 		public @NotNull DependentCapability create(@NotNull ProtocolPlayerCapabilityContext context) { return () -> "dependent"; }
+	}
+
+	@Test
+	void reportsACapabilityProvidedOnlyForOtherLibrariesWithTheLibrariesThatProvideIt(@TempDir Path directory) throws Exception {
+		Path service = directory.resolve("META-INF/services/" + ProtocolPlayerCapabilityProvider.class.getName());
+		Files.createDirectories(service.getParent());
+		Files.writeString(service, OtherLibraryProvider.class.getName());
+		ClassLoader original = Thread.currentThread().getContextClassLoader();
+		try (var loader = new URLClassLoader(new java.net.URL[]{directory.toUri().toURL()}, original)) {
+			SimulatedPlayer player = PlayerCapabilityRuntime.discover(loader, "stub", List.of())
+					.compose(new StubPlayer(), observation(), ignored -> { });
+
+			assertFalse(player.hasCapability(DependentCapability.class));
+			var missing = assertThrows(CapabilityUnavailableException.class, () -> player.capability(DependentCapability.class));
+			assertEquals("Player 'Alice' has no capability " + DependentCapability.class.getName() + ": no provider supports "
+					+ "protocol library 'stub' that the player uses; it is provided only for the protocol libraries [other-library]",
+					missing.getMessage());
+			player.destroy();
+
+			SimulatedPlayer supported = PlayerCapabilityRuntime.discover(loader, "other-library", List.of())
+					.compose(new StubPlayer(), observation(), ignored -> { });
+			assertEquals("other-library", supported.capability(DependentCapability.class).value());
+			supported.destroy();
+		}
+	}
+
+	public static final class OtherLibraryProvider implements ProtocolPlayerCapabilityProvider<DependentCapability> {
+		public @NotNull Set<String> supportedLibraries() {
+			return Set.of("other-library");
+		}
+		public @NotNull CapabilityDescriptor descriptor() {
+			return CapabilityDescriptor.builder().id("other-library-only").build();
+		}
+		public @NotNull Class<DependentCapability> capability() { return DependentCapability.class; }
+		public @NotNull DependentCapability create(@NotNull ProtocolPlayerCapabilityContext context) { return () -> "other-library"; }
 	}
 
 	@Test
@@ -544,6 +613,7 @@ class PlayerCapabilityRuntimeTest {
 		private boolean destroyed;
 		private CapabilityChannel channel;
 		private Error destroyFailure;
+		private String libraryId = "stub";
 
 		@Override
 		public @NotNull String name() {
@@ -552,7 +622,7 @@ class PlayerCapabilityRuntimeTest {
 
 		@Override
 		public @NotNull String libraryId() {
-			return "stub";
+			return libraryId;
 		}
 
 		@Override

@@ -60,8 +60,8 @@ public final class ProcessSlot {
 			PreparedLaunch preparedLaunch = prepared.launch();
 			launch = preparedLaunch;
 			current = spec.isProxy()
-					? new ManagedProxy(name(), target.address(), spec.getRequest().getWorkspace(), prepared.capabilities())
-					: new ManagedServer(name(), target.address(), spec.getRequest().getWorkspace(), prepared.capabilities());
+					? new ManagedProxy(name(), target.address(), target.gameTransport(), spec.getRequest().getWorkspace(), prepared.capabilities())
+					: new ManagedServer(name(), target.address(), target.gameTransport(), spec.getRequest().getWorkspace(), prepared.capabilities());
 
 			// A cancellation that read the previous generation is caught here; a later one sees this one.
 			if (cancelled) current.cancelStart();

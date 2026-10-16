@@ -3,6 +3,7 @@ package me.whereareiam.anvil.platform.planning.version;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
+import me.whereareiam.anvil.api.model.Edition;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import org.jetbrains.annotations.NotNull;
@@ -18,8 +19,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Version data of one platform provider: Java compatibility rows, the oldest Java the provider's
- * agent runs on, the Java versions verified for each platform version, and every platform version
+ * Version data of one platform provider: the Minecraft edition its processes speak, Java compatibility
+ * rows, the oldest Java the provider's agent runs on, the Java versions verified for each platform version, and every platform version
  * the data declares as supported. {@link PlatformVersionsReader} reads it from the provider's
  * {@code <platform>-versions.toml} resource.
  *
@@ -30,6 +31,11 @@ import java.util.TreeSet;
  */
 @Value
 public class PlatformVersions {
+	/**
+	 * Minecraft edition the platform's processes speak; players reach them only with a protocol release of it.
+	 */
+	@NotNull Edition edition;
+
 	/**
 	 * Java compatibility rows ordered by their start version.
 	 */
@@ -53,6 +59,7 @@ public class PlatformVersions {
 
 	@Builder
 	private PlatformVersions(
+			@NotNull Edition edition,
 			@NotNull @Singular List<JavaCompatibility> javaCompatibilities,
 			@Nullable Integer agentMinimumJava,
 			@NotNull @Singular Map<MinecraftVersion, Set<Integer>> verifiedJavaVersions,
@@ -74,6 +81,7 @@ public class PlatformVersions {
 			validate(row);
 		}
 
+		this.edition = edition;
 		this.javaCompatibilities = List.copyOf(rows);
 		this.agentMinimumJava = agentMinimumJava;
 		Map<MinecraftVersion, Set<Integer>> verified = new LinkedHashMap<>();

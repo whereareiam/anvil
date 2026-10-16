@@ -31,7 +31,7 @@ class SessionProviderTest {
 		assertEquals(SessionProvider.ID, provider.descriptor().getId());
 		assertEquals(SessionProvider.ID, new SessionBinding().id());
 		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
-		assertEquals(Set.of("mcprotocol"), provider.supportedLibraries());
+		assertEquals(Set.of("mcprotocol", "cloudburst"), provider.supportedLibraries());
 		assertEquals(Session.class, provider.capability());
 	}
 

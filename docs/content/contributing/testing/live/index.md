@@ -64,9 +64,12 @@ combination.
 ## Keep verified data equal to the matrix
 
 `CompatibilityScenarioFactory` defines the live matrix: every release key directly on Paper, `1.21.1`
-and newer directly on NeoForge, and `1.21.11` and `26.1.2` also on Spigot and behind Velocity and BungeeCord.
-The `verified` data of MCProtocolLib's releases and of each platform lists exactly the combinations it
-runs. `CompatibilityScenarioFactoryTest` plans the matrix without starting a server and fails when they
+and newer directly on NeoForge, `1.21.11` and `26.1.2` also on Spigot and behind Velocity and BungeeCord,
+and Bedrock `1.20.0`, `1.21.80`, `1.21.90` and `1.26.50` directly on Lumi. The Lumi versions are the
+oldest and newest Lumi accepts and both sides of `1.21.90`, from which Bedrock has no client movement
+authority; the `1.21.80` scenario hands movement to the client, so both movement packets meet a server.
+The `verified` data of each protocol library's releases and of each platform lists exactly the
+combinations it runs. `CompatibilityScenarioFactoryTest` plans the matrix without starting a server and fails when they
 differ; every build runs it through the `matrixTest` task, without `-Panvil.testMode=full`:
 
 ```shell
@@ -76,8 +79,12 @@ differ; every build runs it through the `matrixTest` task, without `-Panvil.test
 ## Run groups and full verification
 
 `anvilTestTags` accepts a JUnit tag expression. Compatibility tests are tagged `compatibility`, and
-`PlayerCapabilitiesSystemTest`, which starts a Paper server for every Minecraft version, is tagged
-`capabilities`:
+`PlayerCapabilitiesSystemTest`, which starts a Paper server for every Minecraft version, and
+`BedrockPlayerCapabilitiesSystemTest`, which starts a Lumi server for every Bedrock version of the matrix,
+are tagged `capabilities`. Lumi loads no Bukkit plugin, so the Bedrock tests set up the world and check
+each effect through the console with vanilla commands such as `testfor`, `testforblock` and `clear`; the
+`test-lumi-plugin` fixture reports what no vanilla command shows, an entity's runtime ID and the player's
+interaction with and attack on it:
 
 ```shell
 ./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full -PanvilTestTags=compatibility

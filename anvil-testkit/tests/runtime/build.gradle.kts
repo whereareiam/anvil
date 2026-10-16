@@ -14,16 +14,19 @@ dependencies {
 	testImplementation(projects.anvilPlatform.platformApi)
 	testImplementation(projects.anvilProtocol)
 	testImplementation(projects.anvilProtocol.protocolApi)
+	testImplementation(libs.jackson.toml)
 
 	// The launcher's shaded JAR carries the planner at runtime; tests only compile against it.
 	testCompileOnly(projects.anvilPlatform.platformPlanning)
 
 	testRuntimeOnly(projects.anvilPlatform.platformBukkit.platformBukkitAgent)
 	testRuntimeOnly(projects.anvilPlatform.platformBungeecord.platformBungeecordProvider)
+	testRuntimeOnly(projects.anvilPlatform.platformLumi.platformLumiProvider)
 	testRuntimeOnly(projects.anvilPlatform.platformNeoforge.platformNeoforgeProvider)
 	testRuntimeOnly(projects.anvilPlatform.platformPaper.platformPaperProvider)
 	testRuntimeOnly(projects.anvilPlatform.platformSpigot.platformSpigotProvider)
 	testRuntimeOnly(projects.anvilPlatform.platformVelocity.platformVelocityProvider)
+	testRuntimeOnly(projects.anvilProtocol.protocolCloudburst)
 	testRuntimeOnly(projects.anvilProtocol.protocolMcprotocol)
 }
 

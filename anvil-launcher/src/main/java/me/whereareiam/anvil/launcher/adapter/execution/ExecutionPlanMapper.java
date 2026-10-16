@@ -93,6 +93,7 @@ public final class ExecutionPlanMapper {
 				.javaSelection(plan.getJavaSelection())
 				.agent(plan.isAgent())
 				.publishGame(plan.isPublishGame())
+				.gameTransport(plan.getGameTransport())
 				.build();
 
 		return ProcessSpec.builder()

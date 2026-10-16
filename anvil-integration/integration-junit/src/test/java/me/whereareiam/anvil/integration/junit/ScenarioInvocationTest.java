@@ -1,6 +1,8 @@
 package me.whereareiam.anvil.integration.junit;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.model.Edition;
+import me.whereareiam.anvil.api.model.player.AccountAccess;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.account.AccountManager;
@@ -20,6 +22,7 @@ import org.opentest4j.TestAbortedException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -114,7 +117,7 @@ class ScenarioInvocationTest {
 	void finishesThePreparedScenarioWithoutStartingItWhenTheMachineStoresTooFewAccounts() throws Exception {
 		List<String> actions = new ArrayList<>();
 		Context context = new Context(() -> actions.add("context"));
-		context.stored.add(new AuthenticationAccount("alice", "library", "Alice", null));
+		context.stored.add(new AuthenticationAccount("alice", List.of()));
 
 		assertThrows(TestAbortedException.class, () -> new ScenarioInvocation(
 				engine(context), definition, () -> true, requirement("twoAccounts")));
@@ -124,12 +127,10 @@ class ScenarioInvocationTest {
 	}
 
 	@Test
-	void poolsEveryUnambiguousStoredAccountAndReleasesThePoolWithTheInvocation() throws Exception {
+	void poolsEveryStoredAccountAndReleasesThePoolWithTheInvocation() throws Exception {
 		Context context = new Context(() -> { });
-		context.stored.add(new AuthenticationAccount("alice", "library", "Alice", null));
-		context.stored.add(new AuthenticationAccount("bob", "library", "Bob", null));
-		context.stored.add(new AuthenticationAccount("shared", "library", null, null));
-		context.stored.add(new AuthenticationAccount("shared", "other-library", null, null));
+		context.stored.add(new AuthenticationAccount("alice", List.of()));
+		context.stored.add(new AuthenticationAccount("bob", List.of()));
 
 		var invocation = new ScenarioInvocation(engine(context), definition, () -> true, requirement("twoAccounts"));
 
@@ -138,6 +139,39 @@ class ScenarioInvocationTest {
 		assertEquals(2, invocation.getAccounts().accounts().size());
 		invocation.close();
 		assertTrue(context.poolClosed);
+	}
+
+	@Test
+	void poolsAndCountsOnlyAccountsAvailableForTheDeclaredEdition() throws Exception {
+		Edition bedrock = Edition.of("bedrock");
+		Context context = new Context(() -> { });
+		context.stored.add(new AuthenticationAccount("alice", List.of(AccountAccess.available(bedrock, "Alice", UUID.randomUUID()))));
+		context.stored.add(new AuthenticationAccount("bob", List.of(AccountAccess.unavailable(bedrock, "Account 'bob' owns no game"))));
+		context.stored.add(new AuthenticationAccount("carol", List.of()));
+		context.stored.add(new AuthenticationAccount("dave", List.of(AccountAccess.available(bedrock, "Dave", UUID.randomUUID()))));
+
+		var invocation = new ScenarioInvocation(engine(context), definition, () -> true, requirement("twoBedrockAccounts"));
+
+		assertEquals(List.of("alice", "dave"), context.pooled);
+		invocation.close();
+	}
+
+	@Test
+	void skipsWhenTooFewAccountsAreAvailableForTheDeclaredEdition() throws Exception {
+		Context context = new Context(() -> { });
+		context.stored.add(new AuthenticationAccount("alice", List.of(AccountAccess.available(Edition.of("bedrock"), "Alice",
+				UUID.randomUUID()))));
+		context.stored.add(new AuthenticationAccount("bob", List.of()));
+
+		TestAbortedException skipped = assertThrows(TestAbortedException.class, () -> new ScenarioInvocation(
+				engine(context), definition, () -> true, requirement("twoBedrockAccounts")));
+		assertEquals("Test requires 2 accounts available for edition 'bedrock', but 1 available", skipped.getMessage());
+		assertEquals(0, context.starts);
+	}
+
+	@Test
+	void rejectsAnInvalidEdition() {
+		assertThrows(ExtensionConfigurationException.class, () -> requirement("invalidEdition"));
 	}
 
 	@Test
@@ -170,6 +204,14 @@ class ScenarioInvocationTest {
 
 		@AnvilAccounts(0)
 		void noAccounts() {
+		}
+
+		@AnvilAccounts(value = 2, edition = "bedrock")
+		void twoBedrockAccounts() {
+		}
+
+		@AnvilAccounts(edition = "Bedrock Edition")
+		void invalidEdition() {
 		}
 	}
 
@@ -207,6 +249,7 @@ class ScenarioInvocationTest {
 					pooled.addAll(accountIds);
 					return new AccountPool() {
 						public @NonNull AccountLease lease() { throw new AssertionError("No lease expected"); }
+						public @NonNull AccountLease lease(@NonNull Edition edition) { throw new AssertionError("No lease expected"); }
 						public @NonNull Collection<AuthenticationAccount> accounts() {
 							return stored.stream().filter(account -> pooled.contains(account.getAccountId())).toList();
 						}

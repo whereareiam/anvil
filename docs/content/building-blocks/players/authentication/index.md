@@ -9,26 +9,43 @@ Keep real account sign-in out of CI.
 
 ## Add a local account
 
-Use the [installed MCProtocolLib library](../../../getting-started/installation/index.md), whose ID is
-`mcprotocol`. Accounts are signed in through one library: the engine's
-`anvil { engine { protocolLibrary("mcprotocol") } }`, or the sole installed library that offers
-authentication.
-Use the Anvil IntelliJ panel's **Accounts** action to authenticate. Follow the library's device-code
-instructions in your browser; Anvil retrieves the Minecraft username and UUID and stores the account
-file under the configured account directory. You can also import an account file that the library
-generated elsewhere. MCProtocolLib's library stores one account per JSON file and restricts files to
-the owner on filesystems supporting POSIX permissions.
+An Anvil account is one Microsoft account. You sign it in once, without choosing a
+[protocol library](../../../getting-started/installation/index.md), and every installed library that plays
+online derives its own session from it when one of its players uses the account: MCProtocolLib (`mcprotocol`)
+a Java Edition session, CloudburstMC Protocol (`cloudburst`) a Bedrock Edition session.
 
-Without IntelliJ IDEA, sign in from the project that applies the Anvil plugin:
+Use the Anvil IntelliJ panel's **Accounts** action to sign in, or, without IntelliJ IDEA, the Gradle task of
+the project that applies the Anvil plugin:
 
 ```shell
 ./gradlew anvilLogin --account=main
 ```
 
-The task runs the same library workflow in a separate JVM and prints the device-code instructions.
-It stores the account in the directory configured by `anvil { engine { accountsDirectory } }`, which
-defaults to `~/.anvil/accounts`. Remove an account with `./gradlew anvilLogout --account=main`. Sign in
-on developer machines only; the stored file holds refresh tokens.
+Follow the device-code instructions in your browser. After the sign-in, one installed library of each Minecraft
+edition checks what that edition's players can do with the account, and the task prints one line per edition,
+named as the platforms' version data name it:
+
+```text
+Signed in account 'main'.
+java: available as Steve (069a79f4-44e9-4726-a5be-fca90e38aaf5)
+bedrock: unavailable, Account 'main' was refused by Minecraft's multiplayer service (HTTP 401), ...
+```
+
+A Microsoft account can own Java Edition and not Bedrock Edition, or the other way round. Whether an account
+can be used depends on the edition, not on the protocol library, so the account file records one result per
+edition, and it counts for every installed library of that edition: available with the profile the edition's
+players sign in as, unavailable with the checking library's reason, or unknown when no library could tell, for
+example because the edition's service was unreachable or no library of the edition was installed at the
+sign-in. A library checks again whenever one of its players uses the account and records the new result for its
+edition. To check an account again after buying the other edition, sign it in again under the same ID.
+
+The task stores the account in the directory configured by `anvil { engine { accountsDirectory } }`, which
+defaults to `~/.anvil/accounts`, as one JSON file named after the account ID, restricted to the owner on
+filesystems supporting POSIX permissions. Remove an account with `./gradlew anvilLogout --account=main`. You
+can also import an account file signed in elsewhere. Account files written by Anvil 1.0, which belonged to
+MCProtocolLib, keep working without a new sign-in: their profile becomes the result of the Java edition, and the
+Bedrock edition is checked the first time a Bedrock player or pool needs it. Sign in on developer machines only;
+the stored file holds refresh tokens.
 
 When a scenario references an account that is not stored, the run fails with the account ID and the
 directory that was searched.
@@ -84,14 +101,38 @@ The account modes are `ONLINE` and `ON_REQUEST`; the account factories refuse `O
 refuses a blank value. A login therefore never carries a username next to an account, or an account ID next
 to a session identity.
 
-The account must be stored by the protocol library selected for the player, and that library's release
-for the player's Minecraft version must support online authentication; otherwise creation fails before
-the player connects.
+The account must not be recorded as unavailable for the edition of the servers the player reaches, and the
+release of the player's protocol library for its Minecraft version must support online authentication;
+otherwise creation fails before the player connects, naming the account and giving the recorded reason. When
+the account's result for the edition is unknown, the player's library checks it while the player is created and
+refuses the player with its reason if the edition cannot use the account.
 
 Call `AuthenticatedPlayers.connect(anvil)` from a local test in the same package and run that class with
 `./gradlew anvilTest --tests 'your.package.YourOnlineTest'`. A connected session establishes that
 the account authenticated at the target. Check [identity and server observations](../capabilities/server/index.md)
 for assertions about what the platform sees; the authenticated identity is controlled by the account.
+
+## Sign in a Bedrock player with Xbox
+
+A Bedrock Edition player signs in with a stored account that is available for the `bedrock` edition. Any
+account signed in with `anvilLogin` or the IntelliJ **Accounts** action can be one; the sign-in prints whether
+it is.
+
+Then turn on Xbox authentication on the Lumi server with `.onlineMode(true)`, which sets Lumi's
+`network.xbox-auth`, and create the player with the account:
+
+```java
+var player = anvil.players().create(PlayerOptions.builder()
+		.name("BedrockPlayer")
+		.login(PlayerLogin.account(AuthenticationMode.ONLINE, "main"))
+		.build());
+```
+
+The player logs in with the Xbox identity of the account, so Lumi grants and observes the same UUID and
+username, unlike an offline Bedrock player. While Xbox authentication is on, Lumi refuses offline Bedrock
+players. A Bedrock login is signed with the account's Xbox credentials, so `PlayerLogin.session(...)` is
+refused for a Bedrock player, and Lumi refuses `sessionServer`. As for Java accounts, the worker receives
+the tokens only on its private standard input.
 
 ## Authenticate on an offline-mode entrypoint
 
@@ -110,35 +151,41 @@ var player = anvil.players().create(PlayerOptions.builder()
 A connection that the entrypoint does not challenge joins unauthenticated, so assert what the plugin
 and the platform report rather than relying on the mode.
 
-For several real accounts, create a pool from local account IDs. A leased or directly selected account
-is exclusive across every scenario of the engine until its player is destroyed or the lease is closed:
+For several real accounts, create a pool from local account IDs and create each player from the pool. The
+player leases the first free account available for the edition of the servers it reaches, so a Java Edition
+player never receives a Bedrock-only account. A leased or directly selected
+account is exclusive across every scenario of the engine until its player is destroyed or the lease is closed:
 
 ```java
 var testers = anvil.accounts().pool(java.util.List.of("alice", "bob", "charlie"));
-var first = testers.lease();
-var second = testers.lease();
-var one = anvil.players().create("player-1", first);
-var two = anvil.players().create("player-2", second);
-// The two players use different authenticated accounts. Player cleanup releases the leases.
+var login = PlayerLogin.leased(AuthenticationMode.ONLINE);
+var one = anvil.players().create(PlayerOptions.builder().name("player-1").login(login).build(), testers);
+var two = anvil.players().create(PlayerOptions.builder().name("player-2").login(login).build(), testers);
+// The two players use different accounts their edition can use. Player cleanup releases the leases.
 ```
 
-`create(name, lease)` signs in with `ONLINE`. When the player needs more than a name, for example
-`ON_REQUEST` or a connection, declare a leased login; the lease supplies its account:
+When no free account of the pool is available for the edition, the pool checks the free accounts whose result
+for the edition is unknown, in pool order: an installed library of the edition derives a session from each, over
+the network, records the result, and the first account that turns out available is lent. When none is,
+creation fails before anything connects, listing each account and why it was skipped: unavailable with the
+recorded reason, unknown with the failure that kept the check from telling, or in use.
+
+To pick the account yourself, lease it and pass the lease. `testers.lease(edition)` leases for one edition, the
+`Edition` of the servers the player reaches, such as `Edition.of("java")`;
+`testers.lease()` leases the next free account whatever was recorded, and the player is refused before it
+connects when the account is recorded as unavailable for its edition:
 
 ```java
 var premium = anvil.players().create(PlayerOptions.builder()
 		.name("premium")
 		.login(PlayerLogin.leased(AuthenticationMode.ON_REQUEST))
-		.build(), testers.lease());
+		.build(), testers.lease(Edition.of("java")));
 ```
 
-A leased login is refused without a lease, and a lease is refused, without being claimed, for any other login.
-
-Account IDs belong to the protocol library that stores them. A pool holds one account per ID and refuses
-an ID that several libraries store, so a lease always names the account its player signs in with. A player
-created from a lease uses that account's library, whatever `protocolLibrary` the scenario or engine selects.
-Creation fails before the player connects when that library cannot serve the player's Minecraft version, and
-the lease returns to the pool.
+`create(name, lease)` signs in with `ONLINE`. A leased login is refused without a lease or pool, and a lease
+is refused, without being claimed, for any other login. A leased account does not change the player's
+protocol library. Creation fails before the player connects when that library cannot serve the player's
+Minecraft version, and the lease returns to the pool.
 
 A named pool keeps account IDs out of scenario code, so each machine can supply its own accounts.
 Declare it in `pools.properties` in the account directory. The IntelliJ account manager writes this
@@ -236,8 +283,5 @@ Renaming to a name another account holds fails; a change of letter case alone is
 
 Treat the authentication directory as credentials. Exclude it from source control, diagnostic uploads,
 and shared cache archives. Access and refresh tokens do not belong in Gradle inputs, CLI arguments,
-environment variables, system properties, or scenario files. MCProtocol sends the access token to its
-worker through private stdin. Agent session credentials are separate per-run values.
-
-Authentication is an optional service of a protocol library. A library without that service can still
-support offline players; selecting it does not enable MCProtocolLib's account workflow.
+environment variables, system properties, or scenario files. Each library sends the session it derived to
+its worker through private stdin. Agent session credentials are separate per-run values.

@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.model.process.lifecycle.ProcessScheduling;
 import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
+import me.whereareiam.anvil.api.type.network.ListenerTransport;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
@@ -198,6 +199,8 @@ final class ExecutionFixture {
 		public @NotNull InetSocketAddress address() { return new InetSocketAddress("127.0.0.1", 20000 + index); }
 		@Override
 		public @NotNull InetSocketAddress peerAddress() { return new InetSocketAddress("127.0.0.1", 30000 + index); }
+		@Override
+		public @NotNull ListenerTransport gameTransport() { return ListenerTransport.TCP; }
 		@Override
 		public @NotNull String bindAddress() { return "127.0.0.1"; }
 		@Override

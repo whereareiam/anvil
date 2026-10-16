@@ -104,6 +104,9 @@ each backend and each proxy. Loopback host binding restricts host exposure, and 
 processes from other programs on the same machine. Docker agents bind inside their containers and
 are published to host loopback with per-run authentication.
 
+A game port is published with the transport its platform's game listener uses, TCP or UDP. The agent port is
+always published over TCP.
+
 Docker forwards a published game port through its own network, so a container sees the bridge gateway
 instead of the address a client connected from. A player's
 [`sourceAddress`](../../../players/connections/index.md#connect-from-another-loopback-address) is therefore
