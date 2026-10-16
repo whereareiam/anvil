@@ -8,6 +8,7 @@
     "inventory",
     "interaction",
     "commands",
-    "dialogs"
+    "dialogs",
+    "cookies"
   ]
 }

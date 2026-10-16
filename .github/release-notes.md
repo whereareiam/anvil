@@ -2,9 +2,9 @@
 version: 2.0.0
 ---
 
-# Anvil 2.0.0 - Players known to each server and proxy
+# Anvil 2.0.0 - Cookies and players
 
-Anvil 2.0.0 asks each server and proxy what it knows about its players: the new Players capability of a process reports who is on it, the profile it sees and, on a proxy, the backend it connected each player to, from the joins and leaves every platform agent now reports. Tests that used the player's Server capability, extension providers, and custom protocol libraries must follow the upgrade notes below.
+Anvil 2.0.0 lets players hold cookies and answer cookie requests as the client does, and asks each server and proxy what it knows about its players: the new Players capability of a process reports who is on it, the profile it sees and, on a proxy, the backend it connected each player to, from the joins and leaves every platform agent now reports. Tests that used the player's Server capability, extension providers, and custom protocol libraries must follow the upgrade notes below.
 
 ## Upgrade notes
 

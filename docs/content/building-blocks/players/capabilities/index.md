@@ -19,7 +19,8 @@ capability owned by the process and backed by its [agent](../../environments/act
 
 For the first journey, use Session to connect, the server's
 [Players](../../environments/actions/players/index.md) to observe arrival, and Messages to trigger commands
-and check replies. Movement, Inventory, Interaction, Commands, and Dialogs cover additional game actions.
+and check replies. Movement, Inventory, Interaction, Commands, and Dialogs cover additional game actions;
+Cookies holds the cookies a server stores on the client.
 Each capability is optional unless the test or another installed capability requires it.
 
 | Capability | Use it to | Bundled requirement |
@@ -31,10 +32,12 @@ Each capability is optional unless the test or another installed capability requ
 | [Interaction](./interaction/index.md) | Use items and interact with blocks or entities. | MCProtocol and Session |
 | [Commands](./commands/index.md) | Read the command tree and check commands as the client does. | MCProtocol and Session |
 | [Dialogs](./dialogs/index.md) | Observe dialogs, fill their inputs, and press their buttons. | MCProtocol and Session, Minecraft 1.21.6+; Commands for buttons that run commands |
+| [Cookies](./cookies/index.md) | Hold cookies, answer the server's cookie requests, and observe them. | MCProtocol and Session, Minecraft 1.20.5+ |
 
 Packet-backed capabilities operate through the player's protocol library. The built-in capabilities
 are installed on every MCProtocolLib release Anvil ships, from Minecraft 1.18.2 to 26.1.2,
-except Dialogs, which needs a release with dialogs: 1.21.11 and 26.1.2.
+except Dialogs, which needs a release with dialogs: 1.21.11 and 26.1.2, and Cookies, which needs a
+release with cookies: 1.21.1, 1.21.11 and 26.1.2.
 
 ## Install built-in capabilities
 
@@ -55,7 +58,7 @@ plugins {
 
 Keep the repositories, protocol dependency, and `anvil` configuration from
 [installation](../../../getting-started/installation/index.md). The remaining unit suffixes are
-`movement`, `inventory`, `interaction`, `commands`, and `dialogs`. Keep unit versions aligned with Anvil.
+`movement`, `inventory`, `interaction`, `commands`, `dialogs`, and `cookies`. Keep unit versions aligned with Anvil.
 
 ## Retrieve a capability
 
