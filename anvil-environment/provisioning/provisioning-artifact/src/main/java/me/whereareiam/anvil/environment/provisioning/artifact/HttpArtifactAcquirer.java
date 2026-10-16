@@ -22,6 +22,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.HexFormat;
 import java.util.concurrent.Semaphore;
+import java.util.function.Predicate;
 
 /**
  * Acquires verified artifacts and metadata with bounded HTTP transfers and shared cache entries.
@@ -95,21 +96,29 @@ public final class HttpArtifactAcquirer implements ArtifactAcquirer {
 	}
 
 	/**
-	 * Reads cached UTF-8 metadata, downloading it when missing or when refresh is enabled.
+	 * Reads cached UTF-8 metadata, downloading it when missing, unusable or when refresh is enabled.
+	 * A downloaded response that is not usable is not published, so the previous entry stays as it was.
 	 *
-	 * @param uri metadata source and cache identity
-	 * @return metadata contents
+	 * @param uri    metadata source and cache identity
+	 * @param usable whether a response answers the caller's request
+	 * @return usable metadata contents
 	 */
 	@Override
-	public @NotNull String read(@NotNull URI uri) {
+	public @NotNull String read(@NotNull URI uri, @NotNull Predicate<String> usable) {
 		try (ArtifactEntry entry = storage.open(metadata(uri))) {
 			Path target = entry.path();
-			if (Files.isRegularFile(target) && !refresh) return Files.readString(target);
+			if (Files.isRegularFile(target) && !refresh) {
+				String cached = Files.readString(target);
+				if (usable.test(cached)) return cached;
+			}
 			if (offline) throw new ProvisioningException("Resolution metadata is unavailable offline: " + uri);
 
 			return entry.replace(staging -> {
 				download(uri, staging);
-				return Files.readString(staging);
+				String body = Files.readString(staging);
+				if (!usable.test(body)) throw new ProvisioningException("Resolution metadata has no usable answer: " + uri);
+
+				return body;
 			});
 		} catch (IOException failure) {
 			throw new ProvisioningException("Could not read resolution metadata: " + uri, failure);

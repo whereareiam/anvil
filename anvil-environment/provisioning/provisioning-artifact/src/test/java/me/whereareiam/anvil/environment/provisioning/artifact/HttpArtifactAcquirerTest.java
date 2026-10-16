@@ -19,15 +19,19 @@ import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HttpArtifactAcquirerTest {
+	private static final Predicate<String> FOUND = body -> !body.equals("[]");
+
 	@TempDir
 	Path temporary;
 
@@ -155,6 +159,69 @@ class HttpArtifactAcquirerTest {
 			assertSame(storageFailure, metadata.getCause().getCause());
 			assertTrue(metadata.getMessage().contains(uri.toString()));
 		}
+	}
+
+	@Test
+	void keepsNoMetadataTheCallerCannotUse() throws Exception {
+		AtomicReference<String> body = new AtomicReference<>("[]");
+		AtomicInteger requests = new AtomicInteger();
+		HttpServer server = metadataServer(body, requests);
+		URI uri = URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/metadata");
+		FileCache cache = new FileCache(temporary);
+		Path metadata = cache.path(CacheKey.builder().namespace("metadata").value(uri.toString()).suffix(".json").build());
+		try (var artifacts = new HttpArtifactAcquirer(temporary, new TestArtifactStorage(cache), false, false, 1)) {
+			ProvisioningException empty = assertThrows(ProvisioningException.class, () -> artifacts.read(uri, FOUND));
+			assertTrue(empty.getMessage().contains("no usable answer"));
+			assertFalse(Files.exists(metadata), "An unusable answer must not be cached");
+
+			body.set("[package]");
+			assertEquals("[package]", artifacts.read(uri, FOUND));
+			assertEquals("[package]", artifacts.read(uri, FOUND));
+			assertEquals(2, requests.get());
+		} finally {
+			server.stop(0);
+		}
+	}
+
+	@Test
+	void downloadsAgainWhenTheCachedMetadataIsNotUsable() throws Exception {
+		AtomicReference<String> body = new AtomicReference<>("[package]");
+		AtomicInteger requests = new AtomicInteger();
+		HttpServer server = metadataServer(body, requests);
+		URI uri = URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/metadata");
+		FileCache cache = new FileCache(temporary);
+		Path metadata = cache.path(CacheKey.builder().namespace("metadata").value(uri.toString()).suffix(".json").build());
+		Files.createDirectories(metadata.getParent());
+		Files.writeString(metadata, "[]");
+		try {
+			try (var offline = new HttpArtifactAcquirer(temporary, new TestArtifactStorage(cache), true, false, 1)) {
+				ProvisioningException failure = assertThrows(ProvisioningException.class, () -> offline.read(uri, FOUND));
+				assertTrue(failure.getMessage().contains("unavailable offline"));
+				assertEquals("[]", offline.read(uri), "Callers without a check still read what is cached");
+			}
+
+			try (var artifacts = new HttpArtifactAcquirer(temporary, new TestArtifactStorage(cache), false, false, 1)) {
+				assertEquals("[package]", artifacts.read(uri, FOUND));
+				assertEquals("[package]", Files.readString(metadata));
+				assertEquals(1, requests.get());
+			}
+		} finally {
+			server.stop(0);
+		}
+	}
+
+	private static HttpServer metadataServer(AtomicReference<String> body, AtomicInteger requests) throws Exception {
+		HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+		server.createContext("/metadata", exchange -> {
+			requests.incrementAndGet();
+			byte[] content = body.get().getBytes(StandardCharsets.UTF_8);
+			exchange.sendResponseHeaders(200, content.length);
+			exchange.getResponseBody().write(content);
+			exchange.close();
+		});
+		server.start();
+
+		return server;
 	}
 
 	private Set<Path> paths() throws Exception {

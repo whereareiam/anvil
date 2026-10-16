@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.function.Predicate;
 
 /**
  * Obtains Java catalog documents and content-pinned installation archives.
@@ -13,12 +14,14 @@ import java.nio.file.Path;
  */
 public interface JavaPackageSource {
 	/**
-	 * Reads catalog metadata according to the configured acquisition policy.
+	 * Reads catalog metadata according to the configured acquisition policy, keeping only a document the catalog
+	 * can use. A cached document that is not usable is read again, and one that is still not usable is not kept.
 	 * @param uri Java catalog resource
-	 * @return catalog document
+	 * @param usable whether a document answers the request, such as a search that found a package
+	 * @return usable catalog document
 	 * @throws IOException when catalog content cannot be read
 	 */
-	@NotNull String catalog(@NotNull URI uri) throws IOException;
+	@NotNull String catalog(@NotNull URI uri, @NotNull Predicate<String> usable) throws IOException;
 
 	/**
 	 * Obtains a Java archive and verifies its declared checksum before returning it.

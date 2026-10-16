@@ -18,7 +18,8 @@ checked against the release's pins.
 When an expected SHA-256 is supplied, Anvil verifies cached or newly downloaded artifact bytes against
 it. A missing or invalid cached artifact needs acquisition again; offline mode cannot repair it.
 Resolution metadata matters too: possessing a JAR alone may not be enough to resolve its remote build
-selector without network access.
+selector without network access. Metadata that does not answer the request, such as a Java package search
+that found nothing, is not retained: the next run asks again instead of failing on a stored empty answer.
 
 These inputs can remain outside the process workspace. Cache reuse does not mean that every executable
 is copied into the workspace or that your plugin's generated data is retained automatically.
