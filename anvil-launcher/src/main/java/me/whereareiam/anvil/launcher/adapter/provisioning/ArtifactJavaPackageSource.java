@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.function.Predicate;
 
 /**
  * Supplies Java catalog documents and pinned archives through the assembled acquisition policy.
@@ -18,8 +19,8 @@ public final class ArtifactJavaPackageSource implements JavaPackageSource {
 	private final @NotNull ArtifactResolver artifacts;
 
 	@Override
-	public @NotNull String catalog(@NotNull URI uri) throws IOException {
-		return artifacts.read(uri);
+	public @NotNull String catalog(@NotNull URI uri, @NotNull Predicate<String> usable) throws IOException {
+		return artifacts.read(uri, usable);
 	}
 
 	@Override

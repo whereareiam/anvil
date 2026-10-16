@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.function.Predicate;
 
 /**
  * Obtains verified artifacts and resolution metadata according to the configured acquisition policy.
@@ -34,5 +35,19 @@ public interface ArtifactResolver {
 	 * @param uri resource location
 	 * @return response body
 	 */
-	@NotNull String read(@NotNull URI uri);
+	default @NotNull String read(@NotNull URI uri) {
+		return read(uri, body -> true);
+	}
+
+	/**
+	 * Reads cached resolution metadata like {@link #read(URI)}, keeping only a response the caller can use.
+	 * A cached response that is not usable is downloaded again, and a downloaded response that is not usable is
+	 * neither cached nor returned, so a temporary empty answer of a remote service does not outlive its request.
+	 * Reading fails when no usable response is cached and none can be downloaded, such as while offline.
+	 *
+	 * @param uri    resource location
+	 * @param usable whether a response answers the caller's request, such as a search that found something
+	 * @return usable response body
+	 */
+	@NotNull String read(@NotNull URI uri, @NotNull Predicate<String> usable);
 }

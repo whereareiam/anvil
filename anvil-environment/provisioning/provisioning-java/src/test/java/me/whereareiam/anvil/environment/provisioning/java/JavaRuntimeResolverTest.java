@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -120,7 +121,7 @@ class JavaRuntimeResolverTest {
 			}
 
 			@Override
-			public @NotNull String catalog(@NotNull URI uri) {
+			public @NotNull String catalog(@NotNull URI uri, @NotNull Predicate<String> usable) {
 				throw new UnsupportedOperationException();
 			}
 
@@ -140,7 +141,7 @@ class JavaRuntimeResolverTest {
 	private JavaRuntimeResolver resolver() {
 		JavaPackageSource packages = new JavaPackageSource() {
 			@Override
-			public @NotNull String catalog(@NotNull URI uri) {
+			public @NotNull String catalog(@NotNull URI uri, @NotNull Predicate<String> usable) {
 				throw new AssertionError("Local inspection must not request catalog documents");
 			}
 
