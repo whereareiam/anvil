@@ -1,5 +1,5 @@
 name: Set up the Anvil build
-description: Install the JDKs and Gradle, and restore the cache of pinned server distributions, protocol artifacts and JDKs.
+description: Install the JDKs and Gradle, and restore the cache of what Anvil downloads and prepares.
 
 inputs:
   cache-shard:
@@ -38,28 +38,13 @@ runs:
         toolchain-versions: "25"
         cache: ${{ steps.cache.outputs.read-only == 'true' && 'read-only' || 'read-write' }}
 
-    - name: Restore Anvil cache
-      if: steps.cache.outputs.read-only == 'true'
-      uses: actions/cache/restore@v5
+    # Servers, protocol libraries, Java runtimes and prepared workspaces, keyed by the files that pin them.
+    - uses: whereareiam/anvil-actions/setup@v1
       with:
-        path: |
-          ~/.anvil/distributions
-          ~/.anvil/protocol
-          ~/.anvil/jdks
-        key: ${{ runner.os }}-anvil-${{ inputs.cache-shard }}-${{ hashFiles('anvil-protocol/**/*-releases.toml', 'anvil-platform/**/*-versions.toml', 'anvil-testkit/**/CompatibilityScenarioFactory.java', 'gradle/libs.versions.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-anvil-${{ inputs.cache-shard }}-
-          ${{ runner.os }}-anvil-
-
-    - name: Restore and save Anvil cache
-      if: steps.cache.outputs.read-only != 'true'
-      uses: actions/cache@v5
-      with:
-        path: |
-          ~/.anvil/distributions
-          ~/.anvil/protocol
-          ~/.anvil/jdks
-        key: ${{ runner.os }}-anvil-${{ inputs.cache-shard }}-${{ hashFiles('anvil-protocol/**/*-releases.toml', 'anvil-platform/**/*-versions.toml', 'anvil-testkit/**/CompatibilityScenarioFactory.java', 'gradle/libs.versions.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-anvil-${{ inputs.cache-shard }}-
-          ${{ runner.os }}-anvil-
+        cache: ${{ steps.cache.outputs.read-only == 'true' && 'read-only' || 'read-write' }}
+        key-prefix: ${{ inputs.cache-shard }}
+        key-files: |
+          anvil-protocol/**/*-releases.toml
+          anvil-platform/**/*-versions.toml
+          anvil-testkit/**/CompatibilityScenarioFactory.java
+          gradle/libs.versions.toml
