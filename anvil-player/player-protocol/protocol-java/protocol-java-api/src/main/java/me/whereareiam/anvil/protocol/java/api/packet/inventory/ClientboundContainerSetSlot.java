@@ -11,8 +11,7 @@ import org.jetbrains.annotations.Nullable;
 @Value
 public class ClientboundContainerSetSlot implements ClientboundPacket {
 	/**
-	 * Container the slot belongs to: {@code -1} for the cursor and, in releases without
-	 * {@link ClientboundSetPlayerInventory}, {@code -2} for the player's inventory addressed by inventory index.
+	 * Container the slot belongs to, or {@code -1} for the cursor.
 	 */
 	int containerId;
 	/**
@@ -20,7 +19,7 @@ public class ClientboundContainerSetSlot implements ClientboundPacket {
 	 */
 	int stateId;
 	/**
-	 * The container slot, the inventory index for container {@code -2}, or {@code -1} for the cursor.
+	 * The container slot, or {@code -1} for the cursor.
 	 */
 	int slot;
 	/**

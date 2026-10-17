@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.entity;
 
 import lombok.Builder;
 import lombok.Value;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityPosition;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.type.Relative;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +23,7 @@ public class ClientboundTeleportEntity implements ClientboundPacket {
 	/**
 	 * The new position, each coordinate named in {@link #relatives} added to the current one.
 	 */
-	@NotNull EntityPosition position;
+	@NotNull Vec3d position;
 	/**
 	 * The new horizontal direction in degrees, added to the current one when {@link #relatives} names it.
 	 */

@@ -54,7 +54,8 @@ class ClientPacketListenerTest {
 	private final List<Packet> sent = new ArrayList<>();
 	private final List<ClientboundPacket> received = new ArrayList<>();
 	private final Session session = session();
-	private final ClientPacketListener listener = new ClientPacketListener(LOGIN, new RecordingListener(), new JavaPackets());
+	private final ClientPacketListener listener = new ClientPacketListener(LOGIN, new RecordingListener(),
+			McProtocolClientAdapter.packets());
 
 	@Test
 	void answersTheLoginWithClientInformationBeforeReportingItWithTheGrantedProfile() throws Exception {
@@ -96,7 +97,8 @@ class ClientPacketListenerTest {
 				.build();
 		PacketSendingEvent handshake = new PacketSendingEvent(session, new ClientIntentionPacket(1, "127.0.0.1", 25577, HandshakeIntent.LOGIN));
 
-		new ClientPacketListener(virtual, new RecordingListener(), new JavaPackets()).packetSending(handshake);
+		new ClientPacketListener(virtual, new RecordingListener(), McProtocolClientAdapter.packets())
+				.packetSending(handshake);
 
 		ClientIntentionPacket announced = assertInstanceOf(ClientIntentionPacket.class, handshake.getPacket());
 		assertEquals("lobby.example.test", announced.getHostname());
@@ -128,7 +130,8 @@ class ClientPacketListenerTest {
 	}
 
 	private Session session() {
-		return (Session) Proxy.newProxyInstance(Session.class.getClassLoader(), new Class<?>[]{Session.class}, (proxy, method, arguments) -> {
+		Class<?>[] types = {Session.class};
+		return (Session) Proxy.newProxyInstance(Session.class.getClassLoader(), types, (proxy, method, arguments) -> {
 			if (!method.getName().equals("send")) throw new UnsupportedOperationException(method.getName());
 
 			Packet packet = (Packet) arguments[0];

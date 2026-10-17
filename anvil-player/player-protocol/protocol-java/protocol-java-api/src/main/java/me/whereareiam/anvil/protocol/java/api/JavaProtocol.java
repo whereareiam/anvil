@@ -7,6 +7,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collection;
 import java.util.function.Consumer;
 
 /**
@@ -76,4 +77,25 @@ public interface JavaProtocol {
 	 * {@link #listenSent(Class, Consumer)} accepts it
 	 */
 	boolean supports(@NotNull Class<? extends JavaPacket> type);
+
+	/**
+	 * Requires the packets a feature needs, so that a binding whose feature the loaded release lacks, such as cookies
+	 * before Minecraft 1.20.5, fails before it registers anything.
+	 *
+	 * <pre>{@code
+	 * protocol.require("cookies", List.of(ClientboundCookieRequest.class, ServerboundCookieResponse.class));
+	 * }</pre>
+	 *
+	 * @param feature what the packets carry, which the failure names, such as {@code cookies}
+	 * @param packets packet classes the feature needs
+	 * @throws ProtocolUnavailableException naming the first packet the loaded release does not carry; the worker
+	 * reports the binding's capability as unavailable with its message
+	 */
+	default void require(@NotNull String feature, @NotNull Collection<Class<? extends JavaPacket>> packets) {
+		for (Class<? extends JavaPacket> packet : packets) {
+			if (!supports(packet))
+				throw new ProtocolUnavailableException("the player's release has no " + feature + "; it does not carry "
+						+ packet.getName());
+		}
+	}
 }

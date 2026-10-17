@@ -4,7 +4,7 @@ import com.github.steveice10.mc.protocol.data.game.entity.player.PositionElement
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerPosRotPacket;
-import me.whereareiam.anvil.protocol.java.api.model.player.Position;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundMovePlayerPosRot;
@@ -47,7 +47,7 @@ class PlayerPacketsTest {
 		ClientboundPlayerPositionPacket position = new ClientboundPlayerPositionPacket(10, 64, -10, 90, 5, 1, false,
 				PositionElement.X, PositionElement.PITCH);
 
-		assertEquals(ClientboundPlayerPosition.builder().x(10).y(64).z(-10).yaw(90).pitch(5)
+		assertEquals(ClientboundPlayerPosition.builder().position(new Vec3d(10, 64, -10)).yaw(90).pitch(5)
 				.relatives(Set.of(Relative.X, Relative.PITCH)).build(), packets.decode(position));
 	}
 
@@ -64,7 +64,7 @@ class PlayerPacketsTest {
 
 	private static ServerboundMovePlayerPosRot move(boolean onGround, boolean horizontalCollision) {
 		return ServerboundMovePlayerPosRot.builder()
-				.position(Position.builder().x(1.5).y(64).z(-2.5).build())
+				.position(new Vec3d(1.5, 64, -2.5))
 				.yaw(90)
 				.pitch(-15)
 				.onGround(onGround)

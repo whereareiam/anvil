@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Set;
 
 /**
- * Dialogs of the MCProtocolLib 1.21.11 release, which also serves 26.1.2, carried as the NBT of the vanilla dialog
+ * Dialogs of the MCProtocolLib 1.21.11 release, carried as the NBT of the vanilla dialog
  * codec through {@link NbtTranslator}. The game's show-dialog packet carries the dialog or, in the game, its registry
  * ID, and the configuration one always the dialog.
  */

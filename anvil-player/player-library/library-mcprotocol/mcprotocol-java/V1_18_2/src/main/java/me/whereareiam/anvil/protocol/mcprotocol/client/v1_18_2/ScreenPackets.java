@@ -27,7 +27,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleT
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitlesAnimation;
 import me.whereareiam.anvil.protocol.java.api.type.BossEventColor;
 import me.whereareiam.anvil.protocol.java.api.type.BossEventOverlay;
-import me.whereareiam.anvil.protocol.mcprotocol.client.AdventureText;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,8 +35,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Set;
 
 /**
- * Titles, action bars and boss bars of Minecraft 1.18.2. Titles, subtitles, title times and action bars have packets
- * of their own since Minecraft 1.17, and boss bars share one packet whose action says which part it changes.
+ * Titles, action bars and boss bars of the MCProtocolLib 1.18.2 release. Titles, subtitles, title times and action
+ * bars have packets of their own since Minecraft 1.17, and boss bars share one packet whose action says which part it
+ * changes.
  */
 final class ScreenPackets implements PacketTranslation<Packet> {
 	@Override

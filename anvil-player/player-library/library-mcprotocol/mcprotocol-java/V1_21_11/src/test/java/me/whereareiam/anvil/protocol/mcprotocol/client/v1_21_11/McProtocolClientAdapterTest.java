@@ -17,8 +17,6 @@ import me.whereareiam.anvil.protocol.java.api.packet.cookie.ServerboundCookieRes
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ClientboundShowDialog;
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ServerboundCustomClickAction;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddExperienceOrb;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddMob;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundEntityPositionSync;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
@@ -34,7 +32,6 @@ import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundMovePlaye
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundBossEvent;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetActionBarText;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleText;
-import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundCustomSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
@@ -136,8 +133,6 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ClientboundEntityPositionSync.class));
 		assertTrue(client.supports(ClientboundSetEntityData.class));
 		assertTrue(client.supports(ClientboundPlayerPosition.class));
-		assertFalse(client.supports(ClientboundAddExperienceOrb.class));
-		assertFalse(client.supports(ClientboundAddMob.class));
 		assertTrue(client.supports(ClientboundSystemChat.class));
 		assertTrue(client.supports(ServerboundChat.class));
 		assertTrue(client.supports(ServerboundChatCommand.class));
@@ -146,7 +141,7 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ServerboundUseItem.class));
 		assertTrue(client.supports(ServerboundUseItemOn.class));
 		assertTrue(client.supports(ServerboundInteract.class));
-		assertFalse(client.supports(ServerboundAttack.class));
+		assertTrue(client.supports(ServerboundAttack.class));
 		assertTrue(client.supports(ClientboundCommands.class));
 		assertTrue(client.supports(ClientboundCookieRequest.class));
 		assertTrue(client.supports(ClientboundStoreCookie.class));
@@ -164,7 +159,6 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ClientboundShowDialog.class));
 		assertTrue(client.supports(ClientboundRegistryData.class));
 		assertTrue(client.supports(ServerboundCustomClickAction.class));
-		assertFalse(client.supports(ClientboundCustomSound.class));
 		assertFalse(client.supports(UnknownPacket.class));
 	}
 
@@ -192,7 +186,8 @@ class McProtocolClientAdapterTest {
 	 * A session that records the packets sent on it and supports nothing else.
 	 */
 	private static ClientSession recording(List<Packet> sent) {
-		return (ClientSession) Proxy.newProxyInstance(ClientSession.class.getClassLoader(), new Class<?>[]{ClientSession.class}, (proxy, method, arguments) -> {
+		Class<?>[] types = {ClientSession.class};
+		return (ClientSession) Proxy.newProxyInstance(ClientSession.class.getClassLoader(), types, (proxy, method, arguments) -> {
 			if (!method.getName().equals("send")) throw new UnsupportedOperationException(method.getName());
 
 			sent.add((Packet) arguments[0]);

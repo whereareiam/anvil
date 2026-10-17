@@ -8,10 +8,10 @@ import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundMovePlayerPosRot;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Optional;
 
 /**
  * Installs the built-in movement capability for players that speak the Java Edition protocol: each move sends the
@@ -22,11 +22,6 @@ public final class JavaMovementExtension implements WorkerExtension<Object> {
 	@Override
 	public @NotNull String id() {
 		return MovementChannel.ID;
-	}
-
-	@Override
-	public @NotNull Optional<String> libraryId() {
-		return Optional.empty();
 	}
 
 	@Override
@@ -47,11 +42,7 @@ public final class JavaMovementExtension implements WorkerExtension<Object> {
 
 	private static void move(PlayerBindingContext<Object> player, JavaProtocol protocol, Position position) {
 		protocol.send(ServerboundMovePlayerPosRot.builder()
-				.position(me.whereareiam.anvil.protocol.java.api.model.player.Position.builder()
-						.x(position.getX())
-						.y(position.getY())
-						.z(position.getZ())
-						.build())
+				.position(new Vec3d(position.getX(), position.getY(), position.getZ()))
 				.yaw(position.getYaw())
 				.pitch(position.getPitch())
 				.onGround(position.isOnGround())

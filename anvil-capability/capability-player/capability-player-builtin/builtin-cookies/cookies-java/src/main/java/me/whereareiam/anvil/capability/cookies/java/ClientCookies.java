@@ -101,7 +101,7 @@ final class ClientCookies {
 
 	private HeldCookies emit() {
 		Map<String, byte[]> copy = new HashMap<>();
-		(open ? connection : next).forEach((key, payload) -> copy.put(key, payload.clone()));
+		held().forEach((key, payload) -> copy.put(key, payload.clone()));
 		HeldCookies held = new HeldCookies(++version, Map.copyOf(copy));
 		player.emit(CookiesChannel.HELD, held);
 		return held;

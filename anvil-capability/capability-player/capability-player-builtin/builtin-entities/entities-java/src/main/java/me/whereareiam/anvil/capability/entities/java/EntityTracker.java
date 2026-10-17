@@ -9,10 +9,10 @@ import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomNameVisible;
 import me.whereareiam.anvil.protocol.java.api.model.entity.DisplayText;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityDataValue;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityPosition;
 import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
 import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -109,7 +109,7 @@ final class EntityTracker {
 			int entityId,
 			@Nullable UUID uniqueId,
 			@NotNull String type,
-			@NotNull EntityPosition position,
+			@NotNull Vec3d position,
 			float yaw,
 			float pitch
 	) {

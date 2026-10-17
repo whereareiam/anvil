@@ -3,34 +3,24 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 import com.github.steveice10.mc.protocol.data.game.entity.type.EntityType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
-import org.jetbrains.annotations.Nullable;
+import me.whereareiam.anvil.protocol.mcprotocol.client.EntityDataLayout;
+import me.whereareiam.anvil.protocol.mcprotocol.client.type.EntityDataField;
 
 import java.util.Map;
 
 /**
- * The entity data indexes of Minecraft 1.18.2 that carry a value the protocol models, by entity type. Every entity
- * keeps its shared flags at index 0, its custom name at 2 and whether the name is shown at 3. Dropped items, item
- * frames, thrown items, eyes of ender, fireballs and fireworks keep the item they show at 8. The release has no
- * displays, which arrived in Minecraft 1.19.4.
+ * The entity data indexes of the MCProtocolLib 1.18.2 release that carry a value the protocol models, by entity type.
+ * Dropped items, item frames, thrown items, eyes of ender, fireballs and fireworks keep the item they show at 8. The
+ * release has no displays, which arrived in Minecraft 1.19.4.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 final class EntityDataTable {
-	private static final int ON_FIRE = 0x01;
-	private static final int SNEAKING = 0x02;
-	private static final int SPRINTING = 0x08;
-	private static final int SWIMMING = 0x10;
-	private static final int INVISIBLE = 0x20;
-	private static final int GLOWING = 0x40;
-	private static final int GLIDING = 0x80;
+	private static final Map<Integer, EntityDataField> ITEM_AT_8 = Map.of(8, EntityDataField.SHOWN_ITEM);
 
-	private static final Map<Integer, Field> EVERY_ENTITY = Map.of(
-			0, Field.SHARED_FLAGS,
-			2, Field.CUSTOM_NAME,
-			3, Field.CUSTOM_NAME_VISIBLE
-	);
-	private static final Map<Integer, Field> ITEM_AT_8 = Map.of(8, Field.SHOWN_ITEM);
-	private static final Map<EntityType, Map<Integer, Field>> BY_TYPE = Map.ofEntries(
+	/**
+	 * The release's layout.
+	 */
+	static final EntityDataLayout<EntityType> LAYOUT = new EntityDataLayout<>(Map.ofEntries(
 			Map.entry(EntityType.ITEM, ITEM_AT_8),
 			Map.entry(EntityType.ITEM_FRAME, ITEM_AT_8),
 			Map.entry(EntityType.GLOW_ITEM_FRAME, ITEM_AT_8),
@@ -43,47 +33,5 @@ final class EntityDataTable {
 			Map.entry(EntityType.FIREBALL, ITEM_AT_8),
 			Map.entry(EntityType.SMALL_FIREBALL, ITEM_AT_8),
 			Map.entry(EntityType.FIREWORK_ROCKET, ITEM_AT_8)
-	);
-
-	/**
-	 * Tells what an index carries for an entity of a type.
-	 *
-	 * @param type the entity's type, or {@code null} for an entity the session never added, such as the player
-	 * @param index the entity data index
-	 * @return the value the index carries, or {@code null} for one the protocol does not model
-	 */
-	static @Nullable Field field(@Nullable EntityType type, int index) {
-		Field common = EVERY_ENTITY.get(index);
-		if (common != null || type == null) return common;
-
-		return BY_TYPE.getOrDefault(type, Map.of()).get(index);
-	}
-
-	/**
-	 * Reads the shared flags byte.
-	 *
-	 * @param flags the byte the server sent
-	 * @return the flags it sets
-	 */
-	static SharedFlags sharedFlags(byte flags) {
-		return SharedFlags.builder()
-				.onFire((flags & ON_FIRE) != 0)
-				.sneaking((flags & SNEAKING) != 0)
-				.sprinting((flags & SPRINTING) != 0)
-				.swimming((flags & SWIMMING) != 0)
-				.invisible((flags & INVISIBLE) != 0)
-				.glowing((flags & GLOWING) != 0)
-				.gliding((flags & GLIDING) != 0)
-				.build();
-	}
-
-	/**
-	 * A value the protocol models, which an index carries.
-	 */
-	enum Field {
-		SHARED_FLAGS,
-		CUSTOM_NAME,
-		CUSTOM_NAME_VISIBLE,
-		SHOWN_ITEM
-	}
+	));
 }

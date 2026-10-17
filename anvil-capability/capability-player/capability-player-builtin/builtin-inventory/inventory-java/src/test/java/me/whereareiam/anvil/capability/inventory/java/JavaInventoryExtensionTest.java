@@ -67,7 +67,7 @@ class JavaInventoryExtensionTest {
 
 	@Test
 	void selectsTheHotbarSlot() {
-		Fixture fixture = new Fixture(false);
+		Fixture fixture = new Fixture();
 
 		assertNull(fixture.operations.execute(InventoryChannel.SELECT, new SlotSelection(3)));
 
@@ -77,7 +77,7 @@ class JavaInventoryExtensionTest {
 
 	@Test
 	void clicksTheObservedContainerWithItsState() {
-		Fixture fixture = new Fixture(false);
+		Fixture fixture = new Fixture();
 		fixture.protocol.deliver(content(1, 7, stack(3)));
 
 		fixture.operations.execute(InventoryChannel.CLICK, new InventoryAction(4, InventoryClick.LEFT, 0));
@@ -93,7 +93,7 @@ class JavaInventoryExtensionTest {
 
 	@Test
 	void sendsEachClickModeAsItsClickTypeAndButton() {
-		Fixture fixture = new Fixture(false);
+		Fixture fixture = new Fixture();
 		Map<InventoryClick, List<Object>> expected = Map.of(
 				InventoryClick.LEFT, List.of(ClickType.PICKUP, 0),
 				InventoryClick.RIGHT, List.of(ClickType.PICKUP, 1),
@@ -113,7 +113,7 @@ class JavaInventoryExtensionTest {
 
 	@Test
 	void refusesAHotbarButtonOutsideTheHotbarBeforeSending() {
-		Fixture fixture = new Fixture(false);
+		Fixture fixture = new Fixture();
 
 		IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
 				() -> fixture.click(InventoryClick.HOTBAR_SWAP, 9));
@@ -124,7 +124,7 @@ class JavaInventoryExtensionTest {
 
 	@Test
 	void sendsTheOffHandSwapButtonAndRefusesTheButtonAfterIt() {
-		Fixture fixture = new Fixture(false);
+		Fixture fixture = new Fixture();
 
 		fixture.operations.execute(InventoryChannel.CLICK, new InventoryAction(4, InventoryClick.HOTBAR_SWAP, 40));
 		IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
@@ -136,7 +136,7 @@ class JavaInventoryExtensionTest {
 
 	@Test
 	void passesOnTheRefusalOfAPlayerThatIsNotConnected() {
-		Fixture fixture = new Fixture(false);
+		Fixture fixture = new Fixture();
 		fixture.protocol.connected = false;
 
 		IllegalStateException failure = assertThrows(IllegalStateException.class,
@@ -150,7 +150,7 @@ class JavaInventoryExtensionTest {
 
 	@Test
 	void publishesEveryChangeOfTheObservedContainer() {
-		Fixture fixture = new Fixture(false);
+		Fixture fixture = new Fixture();
 		InventoryItem stone = item(0, 64);
 
 		fixture.protocol.deliver(new ClientboundOpenScreen(2, "minecraft:generic_9x1", "Chest"));
@@ -168,12 +168,12 @@ class JavaInventoryExtensionTest {
 
 	@Test
 	void ignoresSlotsOfOtherContainersTheCursorAndThePlayersInventoryWhileAContainerIsOpen() {
-		Fixture fixture = new Fixture(false);
+		Fixture fixture = new Fixture();
 		fixture.protocol.deliver(content(2, 3, null, null, null, null, stack(3)));
 
 		fixture.protocol.deliver(new ClientboundContainerSetSlot(0, 9, 36, stack(1)));
 		fixture.protocol.deliver(new ClientboundContainerSetSlot(-1, 9, -1, stack(1)));
-		fixture.protocol.deliver(new ClientboundContainerSetSlot(-2, 0, 0, stack(1)));
+		fixture.protocol.deliver(new ClientboundSetPlayerInventory(0, stack(1)));
 
 		assertEquals(List.of(snapshot(2, 3, DIAMONDS)), fixture.player.snapshots);
 		fixture.operations.execute(InventoryChannel.CLICK, new InventoryAction(4, InventoryClick.LEFT, 0));
@@ -181,25 +181,8 @@ class JavaInventoryExtensionTest {
 	}
 
 	@Test
-	void placesInventoryIndexSlotsOfContainerMinusTwoInThePlayersInventoryContainer() {
-		Fixture fixture = new Fixture(false);
-		fixture.protocol.deliver(content(0, 1));
-
-		fixture.protocol.deliver(new ClientboundContainerSetSlot(-2, 0, 0, stack(1)));
-		fixture.protocol.deliver(new ClientboundContainerSetSlot(-2, 0, 9, stack(2)));
-		fixture.protocol.deliver(new ClientboundContainerSetSlot(-2, 0, 39, stack(3)));
-		fixture.protocol.deliver(new ClientboundContainerSetSlot(-2, 0, 40, stack(4)));
-		fixture.protocol.deliver(new ClientboundContainerSetSlot(-2, 0, 41, stack(5)));
-		fixture.protocol.deliver(new ClientboundContainerSetSlot(-2, 0, 0, null));
-
-		assertEquals(playerInventorySnapshots(), fixture.player.snapshots);
-		assertEquals(List.of(ClientboundOpenScreen.class, ClientboundContainerSetContent.class,
-				ClientboundContainerSetSlot.class), List.copyOf(fixture.protocol.listeners.keySet()));
-	}
-
-	@Test
-	void placesThePlayerInventoryPacketsSlotsInThePlayersInventoryContainerWhereTheReleaseCarriesIt() {
-		Fixture fixture = new Fixture(true);
+	void placesTheSlotsOfThePlayersInventoryInThePlayersInventoryContainer() {
+		Fixture fixture = new Fixture();
 		fixture.protocol.deliver(content(0, 1));
 
 		fixture.protocol.deliver(new ClientboundSetPlayerInventory(0, stack(1)));
@@ -208,15 +191,13 @@ class JavaInventoryExtensionTest {
 		fixture.protocol.deliver(new ClientboundSetPlayerInventory(40, stack(4)));
 		fixture.protocol.deliver(new ClientboundSetPlayerInventory(41, stack(5)));
 		fixture.protocol.deliver(new ClientboundSetPlayerInventory(0, null));
-		// A release with its own player inventory packet does not address the inventory as container -2.
-		fixture.protocol.deliver(new ClientboundContainerSetSlot(-2, 0, 9, null));
 
 		assertEquals(playerInventorySnapshots(), fixture.player.snapshots);
 	}
 
 	@Test
 	void stopsListeningWhenClosed() {
-		Fixture fixture = new Fixture(true);
+		Fixture fixture = new Fixture();
 
 		fixture.binding.close();
 		fixture.protocol.deliver(new ClientboundOpenScreen(5, "minecraft:generic_9x1", "Chest"));
@@ -272,7 +253,7 @@ class JavaInventoryExtensionTest {
 	}
 
 	/**
-	 * Binds inventory for one player whose release does or does not carry the player inventory packet.
+	 * Binds inventory for one player.
 	 */
 	private final class Fixture {
 		private final RecordingProtocol protocol;
@@ -280,8 +261,8 @@ class JavaInventoryExtensionTest {
 		private final RecordingOperations operations = new RecordingOperations();
 		private final WorkerBinding binding;
 
-		private Fixture(boolean playerInventoryPacket) {
-			protocol = new RecordingProtocol(playerInventoryPacket);
+		private Fixture() {
+			protocol = new RecordingProtocol();
 			player = new RecordingPlayer(protocol);
 			binding = extension.bind(player, operations);
 		}
@@ -295,22 +276,15 @@ class JavaInventoryExtensionTest {
 	 * Records sent packets and hands delivered packets to the listener of their class.
 	 */
 	private static final class RecordingProtocol implements JavaProtocol {
-		private final boolean playerInventoryPacket;
 		private final Map<Class<?>, Consumer<Object>> listeners = new LinkedHashMap<>();
 		private final List<ServerboundPacket> sent = new ArrayList<>();
 		private boolean connected = true;
-
-		private RecordingProtocol(boolean playerInventoryPacket) {
-			this.playerInventoryPacket = playerInventoryPacket;
-		}
 
 		@Override
 		public <P extends ClientboundPacket> @NotNull Subscription listen(
 				@NotNull Class<P> type,
 				@NotNull Consumer<? super P> listener
 		) {
-			if (!supports(type)) throw new ProtocolUnavailableException("the release does not carry " + type.getName());
-
 			listeners.put(type, packet -> listener.accept(type.cast(packet)));
 			return () -> listeners.remove(type);
 		}
@@ -332,7 +306,7 @@ class JavaInventoryExtensionTest {
 
 		@Override
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
-			return playerInventoryPacket || type != ClientboundSetPlayerInventory.class;
+			return true;
 		}
 
 		private void deliver(ClientboundPacket packet) {

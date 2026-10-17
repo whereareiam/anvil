@@ -15,8 +15,6 @@ import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleT
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitlesAnimation;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongSupplier;
 
@@ -46,11 +44,6 @@ public final class JavaScreenExtension implements WorkerExtension<Object> {
 	}
 
 	@Override
-	public @NotNull Optional<String> libraryId() {
-		return Optional.empty();
-	}
-
-	@Override
 	public @NotNull Class<Object> nativeSessionType() {
 		return Object.class;
 	}
@@ -61,25 +54,22 @@ public final class JavaScreenExtension implements WorkerExtension<Object> {
 		AtomicReference<ClientTitles> titles = new AtomicReference<>(new ClientTitles(player, nanoClock));
 		ClientBossBars bossBars = new ClientBossBars(player);
 
-		Subscription connections = player.bindNativeSession(ignored -> {
+		Subscription connections = player.bindConnection(() -> {
 			titles.set(new ClientTitles(player, nanoClock));
 			return bossBars::removeAll;
 		});
-		List<Subscription> listening = List.of(
+		Subscription binding = Subscription.all(
 				protocol.listen(ClientboundSetTitleText.class, packet -> titles.get().title(packet)),
 				protocol.listen(ClientboundSetSubtitleText.class, packet -> titles.get().subtitle(packet)),
 				protocol.listen(ClientboundSetTitlesAnimation.class, packet -> titles.get().times(packet)),
 				protocol.listen(ClientboundClearTitles.class, packet -> titles.get().cleared(packet)),
 				protocol.listen(ClientboundSetActionBarText.class, packet ->
 						player.emit(ScreenChannel.ACTION_BAR, packet.getText())),
-				protocol.listen(ClientboundBossEvent.class, bossBars::apply)
+				protocol.listen(ClientboundBossEvent.class, bossBars::apply),
+				bossBars::discard,
+				connections
 		);
 
-		return () -> {
-			try (connections) {
-				listening.forEach(Subscription::close);
-				bossBars.discard();
-			}
-		};
+		return binding::close;
 	}
 }

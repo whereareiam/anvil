@@ -17,7 +17,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Installs the built-in messages capability for players that speak the Java Edition protocol: it sends chat and
@@ -28,11 +27,6 @@ public final class JavaMessagesExtension implements WorkerExtension<Object> {
 	@Override
 	public @NotNull String id() {
 		return MessagesChannel.ID;
-	}
-
-	@Override
-	public @NotNull Optional<String> libraryId() {
-		return Optional.empty();
 	}
 
 	@Override
@@ -57,8 +51,9 @@ public final class JavaMessagesExtension implements WorkerExtension<Object> {
 		received.add(protocol.listen(ClientboundPlayerChat.class, chat -> received(player, chat.getText())));
 		if (protocol.supports(ClientboundDisguisedChat.class))
 			received.add(protocol.listen(ClientboundDisguisedChat.class, chat -> received(player, chat.getText())));
+		Subscription listening = Subscription.all(received);
 
-		return () -> received.forEach(Subscription::close);
+		return listening::close;
 	}
 
 	private static void received(PlayerBindingContext<Object> player, String text) {

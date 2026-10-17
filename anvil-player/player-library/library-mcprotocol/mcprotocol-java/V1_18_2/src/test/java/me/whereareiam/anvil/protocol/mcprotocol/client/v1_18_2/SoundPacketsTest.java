@@ -7,9 +7,8 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKe
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundSoundEntityPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.ClientboundCustomSoundPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.ClientboundSoundPacket;
-import me.whereareiam.anvil.protocol.java.api.model.sound.SoundPosition;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundCustomSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
 import me.whereareiam.anvil.protocol.java.api.type.SoundSource;
@@ -34,7 +33,7 @@ class SoundPacketsTest {
 		assertEquals(ClientboundSound.builder()
 				.sound("minecraft:entity.player.levelup")
 				.source(SoundSource.PLAYERS)
-				.position(new SoundPosition(1.5D, 64D, -2D))
+				.position(new Vec3d(1.5D, 64D, -2D))
 				.volume(1F)
 				.pitch(2F)
 				.seed(0L)
@@ -42,20 +41,20 @@ class SoundPacketsTest {
 	}
 
 	@Test
-	void decodesANamedSoundKeepingItsNamespaceOrAddingTheMinecraftOne() {
+	void decodesANamedSoundAsASoundAtAPositionKeepingItsNamespaceOrAddingTheMinecraftOne() {
 		ClientboundCustomSoundPacket alert = new ClientboundCustomSoundPacket(new CustomSound("example:alert"),
 				SoundCategory.RECORD, 0D, 70D, 0D, 0.5F, 1F);
 		ClientboundCustomSoundPacket toast = new ClientboundCustomSoundPacket(new CustomSound("ui.toast.in"),
 				SoundCategory.MASTER, 0D, 70D, 0D, 1F, 1F);
 
-		assertEquals(ClientboundCustomSound.builder()
+		assertEquals(ClientboundSound.builder()
 				.sound("example:alert")
 				.source(SoundSource.RECORDS)
-				.position(new SoundPosition(0D, 70D, 0D))
+				.position(new Vec3d(0D, 70D, 0D))
 				.volume(0.5F)
 				.pitch(1F)
 				.build(), packets.decode(alert));
-		assertEquals("minecraft:ui.toast.in", assertInstanceOf(ClientboundCustomSound.class,
+		assertEquals("minecraft:ui.toast.in", assertInstanceOf(ClientboundSound.class,
 				packets.decode(toast)).getSound());
 	}
 
@@ -64,7 +63,7 @@ class SoundPacketsTest {
 		ClientboundCustomSoundPacket sound = new ClientboundCustomSoundPacket(BuiltinSound.BLOCK_NOTE_BLOCK_PLING,
 				SoundCategory.BLOCK, 0D, 0D, 0D, 1F, 1F);
 
-		assertEquals("minecraft:block.note_block.pling", assertInstanceOf(ClientboundCustomSound.class,
+		assertEquals("minecraft:block.note_block.pling", assertInstanceOf(ClientboundSound.class,
 				packets.decode(sound)).getSound());
 	}
 
@@ -115,8 +114,7 @@ class SoundPacketsTest {
 
 	@Test
 	void carriesEverySoundPacketOfTheRelease() {
-		assertEquals(Set.of(ClientboundSound.class, ClientboundCustomSound.class, ClientboundSoundEntity.class),
-				packets.packets());
+		assertEquals(Set.of(ClientboundSound.class, ClientboundSoundEntity.class), packets.packets());
 	}
 
 	private static final class UnknownPacket implements ServerboundPacket {

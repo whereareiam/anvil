@@ -3,7 +3,7 @@ plugins {
 	id("packaging-publication")
 }
 
-description = "Java Edition side of the built-in interaction capability: its worker extension over the player's protocol"
+description = "Java Edition side of the built-in interaction capability: its worker extension over the protocol"
 
 dependencies {
 	implementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinInteraction.interactionApi)

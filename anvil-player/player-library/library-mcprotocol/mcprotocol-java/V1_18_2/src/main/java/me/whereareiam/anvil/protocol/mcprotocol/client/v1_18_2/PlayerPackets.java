@@ -4,7 +4,7 @@ import com.github.steveice10.mc.protocol.data.game.entity.player.PositionElement
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerPosRotPacket;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.protocol.java.api.model.player.Position;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Player movement of Minecraft 1.18.2, whose position packet carries no horizontal collision flag, and the server's
- * placement of the player, which names relative coordinates and angles.
+ * Player movement of the MCProtocolLib 1.18.2 release, whose position packet carries no horizontal collision flag, and
+ * the server's placement of the player, which names relative coordinates and angles.
  */
 final class PlayerPackets implements PacketTranslation<Packet> {
 	@Override
@@ -35,9 +35,7 @@ final class PlayerPackets implements PacketTranslation<Packet> {
 		if (!(packet instanceof ClientboundPlayerPositionPacket position)) return null;
 
 		return ClientboundPlayerPosition.builder()
-				.x(position.getX())
-				.y(position.getY())
-				.z(position.getZ())
+				.position(new Vec3d(position.getX(), position.getY(), position.getZ()))
 				.yaw(position.getYaw())
 				.pitch(position.getPitch())
 				.relatives(relatives(position.getRelative()))
@@ -48,7 +46,7 @@ final class PlayerPackets implements PacketTranslation<Packet> {
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		if (!(packet instanceof ServerboundMovePlayerPosRot move)) return null;
 
-		Position position = move.getPosition();
+		Vec3d position = move.getPosition();
 		return new ServerboundMovePlayerPosRotPacket(move.isOnGround(),
 				position.getX(), position.getY(), position.getZ(), move.getYaw(), move.getPitch());
 	}
@@ -56,7 +54,7 @@ final class PlayerPackets implements PacketTranslation<Packet> {
 	/**
 	 * Names the coordinates and angles a teleport adds to the current ones.
 	 */
-	static Set<Relative> relatives(List<PositionElement> elements) {
+	private static Set<Relative> relatives(List<PositionElement> elements) {
 		Set<Relative> relatives = EnumSet.noneOf(Relative.class);
 		for (PositionElement element : elements) relatives.add(switch (element) {
 			case X -> Relative.X;

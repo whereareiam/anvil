@@ -11,6 +11,7 @@ import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -67,11 +68,7 @@ class JavaMovementExtensionTest {
 
 		assertEquals(List.of("movement.move"), List.copyOf(operations.handlers.keySet()));
 		assertEquals(List.of(ServerboundMovePlayerPosRot.builder()
-				.position(me.whereareiam.anvil.protocol.java.api.model.player.Position.builder()
-						.x(1.5)
-						.y(64)
-						.z(-2.5)
-						.build())
+				.position(new Vec3d(1.5, 64, -2.5))
 				.yaw(90)
 				.pitch(-15)
 				.onGround(true)

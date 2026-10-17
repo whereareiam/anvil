@@ -1,8 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
-import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
-import me.whereareiam.anvil.protocol.java.api.model.interaction.BlockPosition;
-import me.whereareiam.anvil.protocol.java.api.model.interaction.InteractionPoint;
+import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInteract;
@@ -31,7 +30,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class InteractionPacketsTest {
@@ -111,7 +109,7 @@ class InteractionPacketsTest {
 				.entityId(42)
 				.action(InteractAction.INTERACT_AT)
 				.hand(InteractionHand.MAIN_HAND)
-				.location(InteractionPoint.builder().x(0.25).y(1.5).z(-0.25).build())
+				.point(new Vec3d(0.25, 1.5, -0.25))
 				.sneaking(true)
 				.build());
 
@@ -126,17 +124,6 @@ class InteractionPacketsTest {
 		Object encoded = packets.encode(new ServerboundAttack(43));
 
 		assertEquals(43, assertInstanceOf(ServerboundAttackPacket.class, encoded).getEntityId());
-	}
-
-	@Test
-	void refusesAnAttackInTheInteractionPacket() {
-		ServerboundInteract attack = ServerboundInteract.builder()
-				.entityId(43)
-				.action(InteractAction.ATTACK)
-				.hand(InteractionHand.MAIN_HAND)
-				.build();
-
-		assertThrows(ProtocolUnavailableException.class, () -> packets.encode(attack));
 	}
 
 	@Test

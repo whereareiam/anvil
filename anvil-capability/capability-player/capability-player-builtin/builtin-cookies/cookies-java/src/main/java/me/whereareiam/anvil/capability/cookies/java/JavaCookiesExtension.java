@@ -15,7 +15,6 @@ import me.whereareiam.anvil.protocol.java.api.packet.cookie.ServerboundCookieRes
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Installs the built-in cookies capability for players that speak the Java Edition protocol: it keeps the cookies of
@@ -24,6 +23,7 @@ import java.util.Optional;
  * before Minecraft 1.20.5 have no cookies, so the worker reports the capability unavailable for them.
  */
 public final class JavaCookiesExtension implements WorkerExtension<Object> {
+	private static final String FEATURE = "cookies";
 	private static final List<Class<? extends JavaPacket>> PACKETS = List.of(
 			ClientboundCookieRequest.class,
 			ClientboundStoreCookie.class,
@@ -33,11 +33,6 @@ public final class JavaCookiesExtension implements WorkerExtension<Object> {
 	@Override
 	public @NotNull String id() {
 		return CookiesChannel.ID;
-	}
-
-	@Override
-	public @NotNull Optional<String> libraryId() {
-		return Optional.empty();
 	}
 
 	@Override
@@ -54,29 +49,24 @@ public final class JavaCookiesExtension implements WorkerExtension<Object> {
 	@Override
 	public @NotNull WorkerBinding bind(@NotNull PlayerBindingContext<Object> player, @NotNull OperationRegistry operations) {
 		JavaProtocol protocol = player.protocol(JavaProtocol.class);
-		for (Class<? extends JavaPacket> packet : PACKETS) {
-			if (!protocol.supports(packet))
-				throw new ProtocolUnavailableException("the player's release has no cookies; it does not carry "
-						+ packet.getName());
-		}
+		protocol.require(FEATURE, PACKETS);
 
 		ClientCookies cookies = new ClientCookies(player);
 		operations.register(CookiesChannel.STORE, stored -> cookies.store(stored.getKey(), stored.getPayload()));
 		operations.register(CookiesChannel.REMOVE, key -> cookies.remove(key.getKey()));
 
-		Subscription connections = player.bindNativeSession(nativeSession -> {
+		Subscription connections = player.bindConnection(() -> {
 			cookies.opened();
 			return cookies::ended;
 		});
-		Subscription requests = protocol.listen(ClientboundCookieRequest.class, request ->
-				protocol.send(new ServerboundCookieResponse(request.getKey(), cookies.requested(request.getKey()))));
-		Subscription stores = protocol.listen(ClientboundStoreCookie.class, store ->
-				cookies.serverStored(store.getKey(), store.getPayload()));
+		Subscription binding = Subscription.all(
+				protocol.listen(ClientboundCookieRequest.class, request -> protocol.send(
+						new ServerboundCookieResponse(request.getKey(), cookies.requested(request.getKey())))),
+				protocol.listen(ClientboundStoreCookie.class, store ->
+						cookies.serverStored(store.getKey(), store.getPayload())),
+				connections
+		);
 
-		return () -> {
-			try (connections; requests) {
-				stores.close();
-			}
-		};
+		return binding::close;
 	}
 }

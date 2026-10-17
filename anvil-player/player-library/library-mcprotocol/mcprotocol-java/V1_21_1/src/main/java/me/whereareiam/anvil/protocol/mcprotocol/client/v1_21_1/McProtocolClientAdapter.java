@@ -1,78 +1,40 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1;
 
-import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
-import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientCredentials;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
-import org.geysermc.mcprotocollib.auth.GameProfile;
+import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import org.geysermc.mcprotocollib.network.Session;
-import org.geysermc.mcprotocollib.network.tcp.TcpClientSession;
-import org.geysermc.mcprotocollib.protocol.MinecraftConstants;
-import org.geysermc.mcprotocollib.protocol.MinecraftProtocol;
-import org.geysermc.mcprotocollib.protocol.codec.MinecraftCodec;
-import org.jetbrains.annotations.NotNull;
+import org.geysermc.mcprotocollib.network.packet.Packet;
+
+import java.util.List;
 
 /**
- * Client of MCProtocolLib 1.21.1: the GeyserMC packages with TCP sessions, built-in profiles and adventure
- * 4.15 without its plain-text serializer. The session binds the source address through its bind-address
- * constructor; the handshake always announces the session host, so {@link ClientPacketListener} rewrites the
- * handshake for a virtual host.
+ * The client segment's adapter for the MCProtocolLib 1.21.1 release: the {@link JavaClient} with the release's TCP
+ * sessions and packet table.
  */
-public final class McProtocolClientAdapter implements McProtocolClient<Session> {
-	private final JavaPackets packets = new JavaPackets();
-
-	@Override
-	public int protocolNumber() {
-		return MinecraftCodec.CODEC.getProtocolVersion();
+public final class McProtocolClientAdapter extends JavaClient<Session> {
+	/**
+	 * Creates the client of the MCProtocolLib 1.21.1 release.
+	 */
+	public McProtocolClientAdapter() {
+		super(new TcpClientSessions(), McProtocolClientAdapter::packets);
 	}
 
-	@Override
-	public @NotNull Class<Session> sessionType() {
-		return Session.class;
-	}
-
-	@Override
-	public @NotNull Session open(@NotNull ClientLogin login, @NotNull ClientListener<? super Session> listener) {
-		ClientProfile profile = login.getProfile();
-		ClientCredentials credentials = login.getCredentials();
-		ClientConnection connection = login.getConnection();
-		MinecraftProtocol protocol = new MinecraftProtocol(new GameProfile(profile.getUniqueId(), profile.getName()),
-				credentials == null ? null : credentials.getAccessToken());
-		Session session = connection.getSourceAddress() == null
-				? new TcpClientSession(connection.getHost(), connection.getPort(), protocol)
-				: new TcpClientSession(connection.getHost(), connection.getPort(), connection.getSourceAddress(), 0, protocol);
-		if (credentials != null && credentials.getSessionServer() != null)
-			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, new RedirectedSessionService(credentials.getSessionServer()));
-		session.addListener(new ClientPacketListener(login, listener, new JavaPackets()));
-		return session;
-	}
-
-	@Override
-	public void connect(@NotNull Session session) {
-		session.connect(true);
-	}
-
-	@Override
-	public boolean connected(@NotNull Session session) {
-		return session.isConnected();
-	}
-
-	@Override
-	public void disconnect(@NotNull Session session, @NotNull String reason) {
-		session.disconnect(reason);
-	}
-
-	@Override
-	public void send(@NotNull Session session, @NotNull ServerboundPacket packet) {
-		session.send(packets.encode(packet));
-	}
-
-	@Override
-	public boolean supports(@NotNull Class<? extends JavaPacket> type) {
-		return packets.supports(type);
+	/**
+	 * Returns a new packet table of the MCProtocolLib 1.21.1 release.
+	 *
+	 * @return the release's translations
+	 */
+	static PacketTable<Packet> packets() {
+		return new PacketTable<>(List.of(
+				new ChatPackets(),
+				new CommandPackets(),
+				new ConnectionPackets(),
+				new CookiePackets(),
+				new EntityPackets(),
+				new InteractionPackets(),
+				new InventoryPackets(),
+				new PlayerPackets(),
+				new ScreenPackets(),
+				new SoundPackets()
+		));
 	}
 }

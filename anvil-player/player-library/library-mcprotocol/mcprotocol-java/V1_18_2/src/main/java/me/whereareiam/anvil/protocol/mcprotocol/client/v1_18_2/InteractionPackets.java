@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.Position;
-import com.github.steveice10.mc.protocol.data.game.entity.object.Direction;
 import com.github.steveice10.mc.protocol.data.game.entity.player.Hand;
 import com.github.steveice10.mc.protocol.data.game.entity.player.InteractAction;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundInteractPacket;
@@ -9,16 +8,16 @@ import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.Server
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundUseItemOnPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundUseItemPacket;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.protocol.java.api.model.interaction.BlockPosition;
-import me.whereareiam.anvil.protocol.java.api.model.interaction.InteractionPoint;
+import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInteract;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwing;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
-import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,11 +25,19 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Set;
 
 /**
- * Interaction of Minecraft 1.18.2, whose item and block uses carry neither the block-change sequence nor the view,
- * and whose entity packet carries attacks as well as interactions.
+ * Interaction of the MCProtocolLib 1.18.2 release, whose item and block uses carry neither the block-change sequence
+ * nor the view. Attacks and interactions share one entity packet, so an attack is sent as its attack action, which
+ * carries neither a hand nor a point.
  */
 final class InteractionPackets implements PacketTranslation<Packet> {
-	private static final InteractionPoint ORIGIN = InteractionPoint.builder().build();
+	/**
+	 * The hand the library writes nowhere for an attack, which the vanilla protocol sends without one.
+	 */
+	private static final Hand ATTACK_HAND = Hand.MAIN_HAND;
+	/**
+	 * Whether the player sneaks while it attacks, which the protocol's attack does not tell.
+	 */
+	private static final boolean ATTACK_SNEAKING = false;
 
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
@@ -38,7 +45,8 @@ final class InteractionPackets implements PacketTranslation<Packet> {
 				ServerboundSwing.class,
 				ServerboundUseItem.class,
 				ServerboundUseItemOn.class,
-				ServerboundInteract.class
+				ServerboundInteract.class,
+				ServerboundAttack.class
 		);
 	}
 
@@ -49,55 +57,34 @@ final class InteractionPackets implements PacketTranslation<Packet> {
 
 	@Override
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
-		if (packet instanceof ServerboundSwing swing) return new ServerboundSwingPacket(hand(swing.getHand()));
-		if (packet instanceof ServerboundUseItem use) return new ServerboundUseItemPacket(hand(use.getHand()));
-		if (packet instanceof ServerboundUseItemOn use) return useItemOn(use);
-		if (packet instanceof ServerboundInteract interact) return interact(interact);
-
-		return null;
+		return switch (packet) {
+			case ServerboundSwing swing -> new ServerboundSwingPacket(ValueTranslator.hand(swing.getHand()));
+			case ServerboundUseItem use -> new ServerboundUseItemPacket(ValueTranslator.hand(use.getHand()));
+			case ServerboundUseItemOn use -> useItemOn(use);
+			case ServerboundInteract interact -> interact(interact);
+			case ServerboundAttack attack -> new ServerboundInteractPacket(attack.getEntityId(), InteractAction.ATTACK,
+					ATTACK_HAND, ATTACK_SNEAKING);
+			default -> null;
+		};
 	}
 
 	private static Packet useItemOn(ServerboundUseItemOn use) {
 		BlockPosition position = use.getPosition();
 		return new ServerboundUseItemOnPacket(new Position(position.getX(), position.getY(), position.getZ()),
-				direction(use.getFace()), hand(use.getHand()), use.getCursorX(), use.getCursorY(), use.getCursorZ(),
-				use.isInsideBlock());
+				ValueTranslator.direction(use.getFace()), ValueTranslator.hand(use.getHand()), use.getCursorX(),
+				use.getCursorY(), use.getCursorZ(), use.isInsideBlock());
 	}
 
 	private static Packet interact(ServerboundInteract interact) {
-		Hand hand = hand(interact.getHand());
-		InteractAction action = action(interact);
-		if (action != InteractAction.INTERACT_AT)
-			return new ServerboundInteractPacket(interact.getEntityId(), action, hand, interact.isSneaking());
-
-		InteractionPoint point = interact.getLocation() == null ? ORIGIN : interact.getLocation();
-		return new ServerboundInteractPacket(interact.getEntityId(), action,
-				(float) point.getX(), (float) point.getY(), (float) point.getZ(), hand, interact.isSneaking());
-	}
-
-	private static InteractAction action(ServerboundInteract interact) {
+		Hand hand = ValueTranslator.hand(interact.getHand());
 		return switch (interact.getAction()) {
-			case INTERACT -> InteractAction.INTERACT;
-			case ATTACK -> InteractAction.ATTACK;
-			case INTERACT_AT -> InteractAction.INTERACT_AT;
-		};
-	}
-
-	private static Hand hand(InteractionHand hand) {
-		return switch (hand) {
-			case MAIN_HAND -> Hand.MAIN_HAND;
-			case OFF_HAND -> Hand.OFF_HAND;
-		};
-	}
-
-	private static Direction direction(me.whereareiam.anvil.protocol.java.api.type.Direction face) {
-		return switch (face) {
-			case DOWN -> Direction.DOWN;
-			case UP -> Direction.UP;
-			case NORTH -> Direction.NORTH;
-			case SOUTH -> Direction.SOUTH;
-			case WEST -> Direction.WEST;
-			case EAST -> Direction.EAST;
+			case INTERACT -> new ServerboundInteractPacket(interact.getEntityId(), InteractAction.INTERACT, hand,
+					interact.isSneaking());
+			case INTERACT_AT -> {
+				Vec3d point = interact.getPoint() == null ? Vec3d.ZERO : interact.getPoint();
+				yield new ServerboundInteractPacket(interact.getEntityId(), InteractAction.INTERACT_AT,
+						(float) point.getX(), (float) point.getY(), (float) point.getZ(), hand, interact.isSneaking());
+			}
 		};
 	}
 }

@@ -4,6 +4,7 @@ import me.whereareiam.anvil.capability.commands.channel.CommandsChannel;
 import me.whereareiam.anvil.capability.commands.model.CommandTree;
 import me.whereareiam.anvil.capability.commands.model.CommandTreeNode;
 import me.whereareiam.anvil.capability.commands.type.CommandNodeType;
+import me.whereareiam.anvil.capability.commands.type.StringArgumentMode;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
@@ -13,9 +14,9 @@ import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.model.command.CommandNode;
 import me.whereareiam.anvil.protocol.java.api.packet.command.ClientboundCommands;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Installs the built-in commands capability for players that speak the Java Edition protocol: it emits each command
@@ -30,11 +31,6 @@ public final class JavaCommandsExtension implements WorkerExtension<Object> {
 	}
 
 	@Override
-	public @NotNull Optional<String> libraryId() {
-		return Optional.empty();
-	}
-
-	@Override
 	public @NotNull Class<Object> nativeSessionType() {
 		return Object.class;
 	}
@@ -42,37 +38,36 @@ public final class JavaCommandsExtension implements WorkerExtension<Object> {
 	@Override
 	public @NotNull WorkerBinding bind(@NotNull PlayerBindingContext<Object> player, @NotNull OperationRegistry operations) {
 		JavaProtocol protocol = player.protocol(JavaProtocol.class);
-		Subscription connections = player.bindNativeSession(ignored -> {
+		Subscription connections = player.bindConnection(() -> {
 			player.emit(CommandsChannel.RESET, null);
 			return () -> { };
 		});
-		Subscription trees = protocol.listen(ClientboundCommands.class, commands ->
-				player.emit(CommandsChannel.TREE, tree(commands)));
+		Subscription binding = Subscription.all(
+				protocol.listen(ClientboundCommands.class,
+						commands -> player.emit(CommandsChannel.TREE, tree(commands))),
+				connections
+		);
 
-		return () -> {
-			try (connections) {
-				trees.close();
-			}
-		};
+		return binding::close;
 	}
 
 	private static CommandTree tree(ClientboundCommands commands) {
 		List<CommandTreeNode> nodes = commands.getNodes().stream()
 				.map(JavaCommandsExtension::node)
 				.toList();
+
 		return new CommandTree(nodes, commands.getRootIndex());
 	}
-
 	private static CommandTreeNode node(CommandNode node) {
 		return CommandTreeNode.builder()
 				.type(type(node))
-				.name(node.getName() == null ? "" : node.getName())
+				.name(node.getName())
 				.children(node.getChildren())
 				.redirect(node.getRedirect())
 				.executable(node.isExecutable())
 				.restricted(node.isRestricted())
-				.parser(node.getParser() == null ? "" : node.getParser())
-				.stringMode(node.getStringMode() == null ? null : node.getStringMode().name())
+				.parser(node.getParser())
+				.stringMode(stringMode(node.getStringMode()))
 				.min(node.getMin())
 				.max(node.getMax())
 				.build();
@@ -83,6 +78,18 @@ public final class JavaCommandsExtension implements WorkerExtension<Object> {
 			case ROOT -> CommandNodeType.ROOT;
 			case LITERAL -> CommandNodeType.LITERAL;
 			case ARGUMENT -> CommandNodeType.ARGUMENT;
+		};
+	}
+
+	private static @Nullable StringArgumentMode stringMode(
+			me.whereareiam.anvil.protocol.java.api.type.@Nullable StringArgumentMode mode
+	) {
+		if (mode == null) return null;
+
+		return switch (mode) {
+			case SINGLE_WORD -> StringArgumentMode.SINGLE_WORD;
+			case QUOTABLE_PHRASE -> StringArgumentMode.QUOTABLE_PHRASE;
+			case GREEDY_PHRASE -> StringArgumentMode.GREEDY_PHRASE;
 		};
 	}
 }

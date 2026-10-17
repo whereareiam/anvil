@@ -18,8 +18,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Set;
 
 /**
- * Cookies of the MCProtocolLib 1.21.11 release, which also serves 26.1.2 and moves the request and the response into
- * their own cookie package. The request serves the login, configuration and game phases, so one response answers a
+ * Cookies of the MCProtocolLib 1.21.11 release, which moves the request and the response into their own cookie
+ * package. The request serves the login, configuration and game phases, so one response answers a
  * request in any of them.
  */
 public final class CookiePackets implements PacketTranslation<Packet> {

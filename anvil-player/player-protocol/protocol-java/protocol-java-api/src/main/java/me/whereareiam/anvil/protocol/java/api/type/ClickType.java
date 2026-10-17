@@ -35,5 +35,16 @@ public enum ClickType {
 	/**
 	 * Collects every item of the carried kind into the carried stack, as a double click does, with button {@code 0}.
 	 */
-	PICKUP_ALL
+	PICKUP_ALL;
+
+	/**
+	 * The button of a click type's first variant: a left click that picks up or puts down a whole stack, or a drop of
+	 * one item.
+	 */
+	public static final int PRIMARY_BUTTON = 0;
+	/**
+	 * The button of a click type's second variant: a right click that picks up half a stack or puts down one item, or a
+	 * drop of the whole stack.
+	 */
+	public static final int SECONDARY_BUTTON = 1;
 }

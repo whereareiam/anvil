@@ -84,7 +84,8 @@ public interface Session extends PlayerCapability {
 	 * {@link #kicked()} returns the reason at once.
 	 *
 	 * <pre>{@code
-	 * if (player.awaitFirst(messages.expectReceived(text -> text.contains("Welcome"), before), session.expectKicked()) == 1)
+	 * Expectation welcomed = messages.expectReceived(text -> text.contains("Welcome"), before);
+	 * if (player.awaitFirst(welcomed, session.expectKicked()) == 1)
 	 *     reason = session.kicked();
 	 * }</pre>
 	 *

@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Configuration of the MCProtocolLib 1.21.11 release, which also serves 26.1.2: the registry data of every
- * synchronized registry, with each entry's data translated by {@link NbtTranslator}.
+ * Configuration of the MCProtocolLib 1.21.11 release: the registry data of every synchronized registry, with each
+ * entry's data translated by {@link NbtTranslator}.
  */
 public final class ConfigurationPackets implements PacketTranslation<Packet> {
 	@Override

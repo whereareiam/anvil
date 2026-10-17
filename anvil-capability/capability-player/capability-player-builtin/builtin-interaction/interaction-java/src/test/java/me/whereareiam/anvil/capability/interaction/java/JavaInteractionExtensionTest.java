@@ -17,7 +17,7 @@ import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
-import me.whereareiam.anvil.protocol.java.api.model.interaction.BlockPosition;
+import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -51,13 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JavaInteractionExtensionTest {
-	private static final Set<Class<? extends JavaPacket>> ENTITY_PACKET_ATTACKS = Set.of(
-			ServerboundSwing.class,
-			ServerboundUseItem.class,
-			ServerboundUseItemOn.class,
-			ServerboundInteract.class
-	);
-	private static final Set<Class<? extends JavaPacket>> ATTACK_PACKET = Set.of(
+	private static final Set<Class<? extends JavaPacket>> INTERACTION_PACKETS = Set.of(
 			ServerboundSwing.class,
 			ServerboundUseItem.class,
 			ServerboundUseItemOn.class,
@@ -84,7 +78,8 @@ class JavaInteractionExtensionTest {
 	void registersTheItemBlockAndEntityOperations() {
 		RecordingOperations operations = new RecordingOperations();
 
-		WorkerBinding binding = extension.bind(new RecordingPlayer(new RecordingProtocol(ENTITY_PACKET_ATTACKS)), operations);
+		WorkerBinding binding = extension.bind(new RecordingPlayer(new RecordingProtocol(INTERACTION_PACKETS)),
+				operations);
 
 		assertEquals(List.of("interaction.item", "interaction.block", "interaction.entity"), List.copyOf(operations.handlers.keySet()));
 		assertDoesNotThrow(binding::close);
@@ -92,7 +87,7 @@ class JavaInteractionExtensionTest {
 
 	@Test
 	void swingsBeforeUsingTheItemWithTheNextSequenceAndTheSharedView() {
-		RecordingProtocol protocol = new RecordingProtocol(ENTITY_PACKET_ATTACKS);
+		RecordingProtocol protocol = new RecordingProtocol(INTERACTION_PACKETS);
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		player.rotation = new ViewRotation(90, -15);
 		RecordingOperations operations = new RecordingOperations();
@@ -108,7 +103,7 @@ class JavaInteractionExtensionTest {
 
 	@Test
 	void usesTheItemOnTheCenterOfTheBlockFaceBeforeSwinging() {
-		RecordingProtocol protocol = new RecordingProtocol(ENTITY_PACKET_ATTACKS);
+		RecordingProtocol protocol = new RecordingProtocol(INTERACTION_PACKETS);
 		RecordingOperations operations = new RecordingOperations();
 		extension.bind(new RecordingPlayer(protocol), operations);
 
@@ -132,7 +127,7 @@ class JavaInteractionExtensionTest {
 
 	@Test
 	void sendsEachBlockFaceAsItsDirection() {
-		RecordingProtocol protocol = new RecordingProtocol(ENTITY_PACKET_ATTACKS);
+		RecordingProtocol protocol = new RecordingProtocol(INTERACTION_PACKETS);
 		RecordingOperations operations = new RecordingOperations();
 		extension.bind(new RecordingPlayer(protocol), operations);
 
@@ -147,8 +142,8 @@ class JavaInteractionExtensionTest {
 	}
 
 	@Test
-	void attacksAndInteractsInTheEntityPacketBeforeSwingingWithoutTakingASequence() {
-		RecordingProtocol protocol = new RecordingProtocol(ENTITY_PACKET_ATTACKS);
+	void attacksAndInteractsWithEntitiesBeforeSwingingWithoutTakingASequence() {
+		RecordingProtocol protocol = new RecordingProtocol(INTERACTION_PACKETS);
 		RecordingOperations operations = new RecordingOperations();
 		extension.bind(new RecordingPlayer(protocol), operations);
 
@@ -157,7 +152,7 @@ class JavaInteractionExtensionTest {
 		operations.execute(InteractionChannel.ITEM, new ItemUse(Hand.MAIN));
 
 		assertEquals(List.of(
-				ServerboundInteract.builder().entityId(42).action(InteractAction.ATTACK).hand(InteractionHand.MAIN_HAND).build(),
+				new ServerboundAttack(42),
 				new ServerboundSwing(InteractionHand.MAIN_HAND),
 				ServerboundInteract.builder().entityId(43).action(InteractAction.INTERACT).hand(InteractionHand.OFF_HAND).build(),
 				new ServerboundSwing(InteractionHand.OFF_HAND),
@@ -167,26 +162,9 @@ class JavaInteractionExtensionTest {
 	}
 
 	@Test
-	void attacksInThePacketOfItsOwnWhereTheReleaseCarriesOne() {
-		RecordingProtocol protocol = new RecordingProtocol(ATTACK_PACKET);
-		RecordingOperations operations = new RecordingOperations();
-		extension.bind(new RecordingPlayer(protocol), operations);
-
-		operations.execute(InteractionChannel.ENTITY, new EntityUse(42, EntityInteraction.ATTACK, Hand.OFF));
-		operations.execute(InteractionChannel.ENTITY, new EntityUse(43, EntityInteraction.INTERACT, Hand.OFF));
-
-		assertEquals(List.of(
-				new ServerboundAttack(42),
-				new ServerboundSwing(InteractionHand.OFF_HAND),
-				ServerboundInteract.builder().entityId(43).action(InteractAction.INTERACT).hand(InteractionHand.OFF_HAND).build(),
-				new ServerboundSwing(InteractionHand.OFF_HAND)
-		), protocol.sent);
-	}
-
-	@Test
 	void numbersItemAndBlockUsesInOneSequencePerPlayer() {
-		RecordingProtocol alice = new RecordingProtocol(ENTITY_PACKET_ATTACKS);
-		RecordingProtocol bob = new RecordingProtocol(ENTITY_PACKET_ATTACKS);
+		RecordingProtocol alice = new RecordingProtocol(INTERACTION_PACKETS);
+		RecordingProtocol bob = new RecordingProtocol(INTERACTION_PACKETS);
 		RecordingOperations aliceOperations = new RecordingOperations();
 		RecordingOperations bobOperations = new RecordingOperations();
 		extension.bind(new RecordingPlayer(alice), aliceOperations);
@@ -203,16 +181,18 @@ class JavaInteractionExtensionTest {
 
 	@Test
 	void sendsNothingAndTakesNoSequenceWhileThePlayerIsDisconnected() {
-		RecordingProtocol protocol = new RecordingProtocol(ENTITY_PACKET_ATTACKS);
+		RecordingProtocol protocol = new RecordingProtocol(INTERACTION_PACKETS);
 		protocol.connected = false;
 		RecordingOperations operations = new RecordingOperations();
 		extension.bind(new RecordingPlayer(protocol), operations);
 
 		IllegalStateException failure = assertThrows(IllegalStateException.class,
 				() -> operations.execute(InteractionChannel.BLOCK, new BlockUse(4, -60, -7, BlockFace.UP, Hand.MAIN)));
-		assertThrows(IllegalStateException.class, () -> operations.execute(InteractionChannel.ITEM, new ItemUse(Hand.MAIN)));
 		assertThrows(IllegalStateException.class,
-				() -> operations.execute(InteractionChannel.ENTITY, new EntityUse(42, EntityInteraction.INTERACT, Hand.MAIN)));
+				() -> operations.execute(InteractionChannel.ITEM, new ItemUse(Hand.MAIN)));
+		assertThrows(IllegalStateException.class,
+				() -> operations.execute(InteractionChannel.ENTITY,
+						new EntityUse(42, EntityInteraction.INTERACT, Hand.MAIN)));
 
 		assertTrue(failure.getMessage().contains("not connected"), failure.getMessage());
 		assertEquals(List.of(), protocol.sent);

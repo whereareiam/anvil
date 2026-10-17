@@ -20,10 +20,6 @@ import me.whereareiam.anvil.protocol.java.api.packet.cookie.ServerboundCookieRes
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ClientboundShowDialog;
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ServerboundCustomClickAction;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddExperienceOrb;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddMob;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddPainting;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddPlayer;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundEntityPositionSync;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
@@ -39,7 +35,6 @@ import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundMovePlaye
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundBossEvent;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetActionBarText;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleText;
-import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundCustomSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
@@ -135,10 +130,6 @@ class McProtocolClientAdapterTest {
 		McProtocolClientAdapter client = new McProtocolClientAdapter();
 
 		assertTrue(client.supports(ClientboundAddEntity.class));
-		assertTrue(client.supports(ClientboundAddMob.class));
-		assertTrue(client.supports(ClientboundAddPlayer.class));
-		assertTrue(client.supports(ClientboundAddPainting.class));
-		assertTrue(client.supports(ClientboundAddExperienceOrb.class));
 		assertTrue(client.supports(ClientboundSetEntityData.class));
 		assertTrue(client.supports(ClientboundPlayerPosition.class));
 		assertFalse(client.supports(ClientboundEntityPositionSync.class));
@@ -150,7 +141,7 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ServerboundUseItem.class));
 		assertTrue(client.supports(ServerboundUseItemOn.class));
 		assertTrue(client.supports(ServerboundInteract.class));
-		assertFalse(client.supports(ServerboundAttack.class));
+		assertTrue(client.supports(ServerboundAttack.class));
 		assertTrue(client.supports(ClientboundCommands.class));
 		assertTrue(client.supports(ClientboundSound.class));
 		assertTrue(client.supports(ClientboundSoundEntity.class));
@@ -159,13 +150,12 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ClientboundBossEvent.class));
 		assertTrue(client.supports(ClientboundContainerSetSlot.class));
 		assertTrue(client.supports(ServerboundContainerClick.class));
-		assertTrue(client.supports(ClientboundCustomSound.class));
 		assertTrue(client.supports(ClientboundLogin.class));
 		assertFalse(client.supports(ClientboundDisguisedChat.class));
 		assertFalse(client.supports(ClientboundCookieRequest.class));
 		assertFalse(client.supports(ClientboundStoreCookie.class));
 		assertFalse(client.supports(ServerboundCookieResponse.class));
-		assertFalse(client.supports(ClientboundSetPlayerInventory.class));
+		assertTrue(client.supports(ClientboundSetPlayerInventory.class));
 		assertFalse(client.supports(ClientboundStartConfiguration.class));
 		assertFalse(client.supports(ClientboundShowDialog.class));
 		assertFalse(client.supports(ServerboundCustomClickAction.class));
@@ -196,7 +186,8 @@ class McProtocolClientAdapterTest {
 	 * A session that records the packets sent on it and supports nothing else.
 	 */
 	private static Session recording(List<Packet> sent) {
-		return (Session) Proxy.newProxyInstance(Session.class.getClassLoader(), new Class<?>[]{Session.class}, (proxy, method, arguments) -> {
+		Class<?>[] types = {Session.class};
+		return (Session) Proxy.newProxyInstance(Session.class.getClassLoader(), types, (proxy, method, arguments) -> {
 			if (!method.getName().equals("send")) throw new UnsupportedOperationException(method.getName());
 
 			sent.add((Packet) arguments[0]);

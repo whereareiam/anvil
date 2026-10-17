@@ -2,21 +2,21 @@ package me.whereareiam.anvil.protocol.java.api.packet.sound;
 
 import lombok.Builder;
 import lombok.Value;
-import me.whereareiam.anvil.protocol.java.api.model.sound.SoundPosition;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.type.SoundSource;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A sound the server tells the player to play at a position. Releases before Minecraft 1.19.3 send only built-in
- * sounds by their registry ID in it and name other sounds in {@link ClientboundCustomSound}.
+ * A sound the server tells the player to play at a position, whether a built-in sound the server refers to by its
+ * registry ID or a sound it names.
  */
 @Value
 @Builder
 public class ClientboundSound implements ClientboundPacket {
 	/**
 	 * The sound's namespaced key, such as {@code minecraft:entity.player.levelup}, resolved from its registry ID when
-	 * the server referred to a built-in sound.
+	 * the server referred to a built-in sound; a name sent without a namespace is in the {@code minecraft} namespace.
 	 */
 	@NotNull String sound;
 	/**
@@ -26,7 +26,7 @@ public class ClientboundSound implements ClientboundPacket {
 	/**
 	 * Where the sound plays.
 	 */
-	@NotNull SoundPosition position;
+	@NotNull Vec3d position;
 	/**
 	 * The sound's volume, where {@code 1} is full volume and higher values carry further.
 	 */

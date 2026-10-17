@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
-import me.whereareiam.anvil.protocol.java.api.model.sound.SoundPosition;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
@@ -32,7 +32,7 @@ class SoundPacketsTest {
 		assertEquals(ClientboundSound.builder()
 				.sound("minecraft:entity.player.levelup")
 				.source(SoundSource.PLAYERS)
-				.position(new SoundPosition(1.5D, 64D, -2D))
+				.position(new Vec3d(1.5D, 64D, -2D))
 				.volume(1F)
 				.pitch(2F)
 				.seed(7L)
@@ -47,7 +47,7 @@ class SoundPacketsTest {
 		assertEquals(ClientboundSound.builder()
 				.sound("example:alert")
 				.source(SoundSource.RECORDS)
-				.position(new SoundPosition(0D, 70D, 0D))
+				.position(new Vec3d(0D, 70D, 0D))
 				.volume(0.5F)
 				.pitch(1F)
 				.build(), packets.decode(sound));

@@ -4,6 +4,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.ConnectionPackets;
 import net.kyori.adventure.key.Key;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;

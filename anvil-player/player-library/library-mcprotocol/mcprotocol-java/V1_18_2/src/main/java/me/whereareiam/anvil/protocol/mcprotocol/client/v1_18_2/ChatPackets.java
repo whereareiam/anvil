@@ -10,7 +10,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundPlayerChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
-import me.whereareiam.anvil.protocol.mcprotocol.client.AdventureText;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,10 +18,15 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Set;
 
 /**
- * Chat of Minecraft 1.18.2, which has one chat packet in each direction: a received message names its kind, and a
- * command is sent as a chat message starting with a slash.
+ * Chat of the MCProtocolLib 1.18.2 release, which has one chat packet in each direction: a received message names its
+ * kind, and a command is sent as a chat message starting with a slash.
  */
 final class ChatPackets implements PacketTranslation<Packet> {
+	/**
+	 * What a chat message starts with to run the rest as a command.
+	 */
+	private static final String COMMAND_PREFIX = "/";
+
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(ClientboundSystemChat.class, ClientboundPlayerChat.class, ServerboundChat.class, ServerboundChatCommand.class);
@@ -42,7 +47,8 @@ final class ChatPackets implements PacketTranslation<Packet> {
 	@Override
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		if (packet instanceof ServerboundChat chat) return new ServerboundChatPacket(chat.getText());
-		if (packet instanceof ServerboundChatCommand command) return new ServerboundChatPacket("/" + command.getCommand());
+		if (packet instanceof ServerboundChatCommand command)
+			return new ServerboundChatPacket(COMMAND_PREFIX + command.getCommand());
 
 		return null;
 	}
