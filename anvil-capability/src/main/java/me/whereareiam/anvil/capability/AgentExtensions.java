@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.capability;
 
 import me.whereareiam.anvil.capability.agent.api.model.AgentExtension;
-import me.whereareiam.anvil.capability.agent.api.player.AgentPlayerCapabilityProvider;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,7 +11,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
- * Collects the agent extensions that the installed agent-backed player and process providers declare, so that
+ * Collects the agent extensions that the installed agent-backed process providers declare, so that
  * platform planning installs them into the processes of their platforms.
  */
 public final class AgentExtensions {
@@ -51,8 +50,6 @@ public final class AgentExtensions {
 	 */
 	public static @NotNull AgentExtensions discover(@NotNull ClassLoader loader) {
 		Set<AgentExtension> extensions = new LinkedHashSet<>();
-		for (AgentPlayerCapabilityProvider<?> provider : ServiceLoader.load(AgentPlayerCapabilityProvider.class, loader))
-			extensions.addAll(provider.agentExtensions());
 		for (AgentProcessCapabilityProvider<?> provider : ServiceLoader.load(AgentProcessCapabilityProvider.class, loader))
 			extensions.addAll(provider.agentExtensions());
 

@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.launcher.adapter.player;
+package me.whereareiam.anvil.launcher.adapter.process;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.agent.client.api.connection.AgentConnection;

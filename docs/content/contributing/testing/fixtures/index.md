@@ -112,8 +112,8 @@ starting Minecraft. See [the framework IDE workflow](../live/index.md#inspect-fr
 
 The external-extension fixture compiles against public Anvil contracts. Its runtime tests verify
 protocol library selection, missing-capability diagnostics, and offline authentication defaults. Its live
-tests verify agent-backed process capabilities without players, agent-backed player observations
-without a Session adapter, native operations, and cleanup.
+tests verify agent-backed process capabilities without players, players of a library without a Session
+adapter, native operations, and cleanup.
 
 Neutral player providers compile against `capability-api`. Protocol and agent adapters use
 `capability-protocol-api` and `capability-agent-api`, respectively;

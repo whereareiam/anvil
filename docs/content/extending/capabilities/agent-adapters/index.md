@@ -1,6 +1,6 @@
 ---
 title: Agent providers
-description: Implement process or player capabilities through native agent operations.
+description: Implement process capabilities through native agent operations.
 ---
 
 Use an `AgentProcessCapabilityProvider` to implement a process capability through its server or proxy
@@ -70,7 +70,10 @@ containing:
 com.example.echo.host.EchoProvider
 ```
 
-The factory receives the process name and platform ID as well as its request channel. Override
+Process contracts live under `capability.agent.api.process`, alongside the shared `capability-api`
+contracts. A test retrieves the capability with `process.capability(Type.class)`, and it lives as long as the
+logical process within the scenario. The factory receives the process name and platform ID as well as its
+request channel. Override
 `supportsPlatform(platformId)` when your implementation requires a specific platform. Keep that
 selection aligned with the platforms supported by your installed native handlers.
 
@@ -91,31 +94,15 @@ requests can fail while its agent is disconnected. Native handler code is loaded
 managed JVM. Final scenario cleanup closes these capabilities after players and before their
 transports. After cleanup, process capability lookup fails and `hasCapability(...)` returns `false`.
 
-## Implement player behavior through agents
+## Put what a server knows about a player on the process
 
-Use `AgentPlayerCapabilityProvider<C extends PlayerCapability>` when the capability belongs to one
-player but obtains its behavior through an agent extension's operations.
+An agent-backed provider always belongs to a process. What a client can do or see is a player capability
+backed by its protocol. What a server or proxy knows about a player, such as the backend a proxy connected it
+to, is a capability of that process, which a test reads from the process:
 
-Its `AgentPlayerCapabilityContext` extends the shared `PlayerCapabilityContext`: player name and version,
-the profiles the client requested and was granted (`requestedProfile()`, `grantedProfile()`), the
-player's `connection()`, whose target names the scenario process the player connects to, declared
-dependencies, and cleanup. It adds `channel(processName)` for native requests. Select a scenario process
-name to request work from its agent. What a server or proxy knows about the player, such as the backend a
-proxy connected it to, is that process's `Players` capability, which a test reads from the process.
-A request to a process whose agent is reconnecting throws `ChannelUnavailableException`. Return the provider's identity and
-dependencies from `descriptor()`, and register owned cleanup with `context.onClose(...)`.
-
-Register such a factory under
-`META-INF/services/me.whereareiam.anvil.capability.agent.api.player.AgentPlayerCapabilityProvider`.
-Both provider kinds use `capability-agent-api` and its shared `capability-api` contracts.
-Process contracts live under `capability.agent.api.process`, and player contracts under
-`capability.agent.api.player`. Their scope determines
-where the consumer retrieves the result:
-
-| Provider | Consumer lookup | Cleanup lifetime |
-|---|---|---|
-| `AgentProcessCapabilityProvider` | `process.capability(Type.class)` | Logical process within the scenario |
-| `AgentPlayerCapabilityProvider` | `player.capability(Type.class)` | Simulated player |
+```java
+Players lobby = scenario.processes().server("lobby").capability(Players.class);
+```
 
 ## Use the platform's general facts
 

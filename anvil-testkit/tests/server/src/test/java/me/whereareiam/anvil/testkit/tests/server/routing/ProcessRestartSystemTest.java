@@ -39,8 +39,8 @@ class ProcessRestartSystemTest {
 		     ScenarioContext context = engine.start(scenario)) {
 			var alice = context.players().create("Alice");
 			Session session = alice.capability(Session.class);
-			var probe = alice.capability(FixtureAgentProbeProvider.Probe.class);
 			String destination = scenario.getProxies().isEmpty() ? "server" : "lobby";
+			var probe = context.processes().server(destination).capability(FixtureAgentProbeProvider.Probe.class);
 			Players players = context.processes().server(destination).capability(Players.class);
 			PlayerWatch arrivals = players.watch();
 			session.connect();
@@ -67,7 +67,7 @@ class ProcessRestartSystemTest {
 			session.connected(Duration.ofSeconds(30));
 			assertEquals(identity.getUniqueId(), arrivals.joined(alice).getProfile().getUniqueId());
 			assertSame(players, context.processes().server(destination).capability(Players.class));
-			assertEquals("external:after", probe.echo(destination, "after"));
+			assertEquals("external:after", probe.echo("after"));
 
 			if (!scenario.getProxies().isEmpty()) {
 				session.disconnect();
@@ -86,7 +86,7 @@ class ProcessRestartSystemTest {
 				arrivals.joined(alice);
 				moves.joined(alice, destination);
 				assertEquals(Optional.of(destination), proxied.backend(alice));
-				assertEquals("external:backend", probe.echo(destination, "backend"));
+				assertEquals("external:backend", probe.echo("backend"));
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.launcher.adapter.platform;
+package me.whereareiam.anvil.launcher.adapter.process;
 
 import me.whereareiam.anvil.agent.client.api.AgentDirectory;
 import me.whereareiam.anvil.capability.api.platform.ProcessPlatform;

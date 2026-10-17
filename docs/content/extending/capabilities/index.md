@@ -10,7 +10,6 @@ its owner, then choose the mechanism that supplies the behavior.
 |---|---|---|
 | Player behavior using observations or other capabilities | `PlayerCapability` | `PlayerCapabilityProvider` |
 | Player actions through the native protocol client | `PlayerCapability` | `ProtocolPlayerCapabilityProvider` |
-| Player observations or actions through agents | `PlayerCapability` | `AgentPlayerCapabilityProvider` |
 | Server or proxy behavior through its agent, independent of a player | `ProcessCapability` | `AgentProcessCapabilityProvider` |
 
 `ProcessCapability` belongs to the global API. A custom `RunningProcess` implementation can

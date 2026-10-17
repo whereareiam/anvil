@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
 import me.whereareiam.anvil.api.process.ProcessGroup;
-import me.whereareiam.anvil.launcher.adapter.platform.ScenarioPlatforms;
+import me.whereareiam.anvil.launcher.adapter.process.ScenarioPlatforms;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import org.jetbrains.annotations.NotNull;
 

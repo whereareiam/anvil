@@ -28,7 +28,6 @@ qualified implementation class names, one per line.
 |---|---|
 | Player capability using shared observations/dependencies | `me.whereareiam.anvil.capability.api.player.PlayerCapabilityProvider` |
 | Protocol-backed player capability provider | `me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider` |
-| Agent-backed player capability provider | `me.whereareiam.anvil.capability.agent.api.player.AgentPlayerCapabilityProvider` |
 | Agent-backed process capability provider | `me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider` |
 | Native worker extension | `me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerExtension` |
 | Protocol library | `me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider` |

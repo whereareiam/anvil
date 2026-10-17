@@ -37,7 +37,7 @@ uses each process's declared platform, independently of player creation.
 
 Shared capability composition validates dependencies, rejects competing providers for one capability
 type within an owner, and orders creation by declared predecessors. Before capabilities are
-created, neutral, protocol-backed, and agent-backed player factories contribute to one validated
+created, neutral and protocol-backed player factories contribute to one validated
 player dependency graph. Filtering protocol adapters does not skip duplicate or dependency checks
 for the remaining providers. For a player whose native worker does not install a protocol-backed
 provider's capability, composition skips that provider and every provider depending on it, and records
@@ -47,16 +47,15 @@ the worker's reason for `CapabilityUnavailableException`. The launcher binds sco
 |---|---|
 | `PlayerCapabilityProvider` | One player, with identity/version, observations, declared dependencies, and cleanup |
 | `ProtocolPlayerCapabilityProvider` | One player, with the shared context plus its protocol channel and the services of the player's protocol library |
-| `AgentPlayerCapabilityProvider` | One player, with observations, process-selected request channels, and declared player dependencies |
 | `AgentProcessCapabilityProvider` | One logical process, with its platform, request channel, and declared process dependencies |
 
 All capability providers use shared descriptor, dependency, and cleanup contracts from
 `capability-api`. Neutral player providers work with shared observations; they do not select a
 protocol library or receive its services. Protocol channels and native worker providers live in
 `capability-protocol-api`, with player events, waits, and installed-capability discovery.
-Agent-backed factories live in `capability-agent-api` and request a typed `RequestChannel`, which
-launcher bindings connect to an agent client. Both player-specific mechanism contexts extend the
-shared player context.
+Agent-backed process factories live in `capability-agent-api` and request a typed `RequestChannel`, which
+launcher bindings connect to an agent client. The protocol-backed player context extends the shared player
+context.
 
 Embedded handlers consume `agent-server-api`; both agent role APIs share native operation
 descriptors from `agent-api` without depending on each other. Feature wiring derives capability

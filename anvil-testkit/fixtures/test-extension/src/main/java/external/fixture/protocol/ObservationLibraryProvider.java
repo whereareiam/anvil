@@ -3,7 +3,7 @@ package external.fixture.protocol;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Exposes fixture SDK probing without Session or movement adapters, alongside agent capabilities.
+ * Exposes fixture SDK probing without Session or movement adapters.
  */
 public final class ObservationLibraryProvider extends FixtureLibraryProvider {
 	@Override

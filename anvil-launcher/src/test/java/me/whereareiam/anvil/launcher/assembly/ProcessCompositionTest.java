@@ -12,7 +12,7 @@ import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.type.RunningServer;
-import me.whereareiam.anvil.launcher.adapter.platform.ScenarioPlatforms;
+import me.whereareiam.anvil.launcher.adapter.process.ScenarioPlatforms;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import me.whereareiam.anvil.platform.api.model.ProcessPlan;

@@ -59,11 +59,11 @@ class PartialScenarioLifecycleSystemTest {
 				var alice = context.players().create("PartialAlice");
 				Session connection = alice.capability(Session.class);
 				PlayerWatch arrivals = lobby.capability(Players.class).watch();
-				var probe = alice.capability(FixtureAgentProbeProvider.Probe.class);
+				var probe = lobby.capability(FixtureAgentProbeProvider.Probe.class);
 				connection.connect();
 				connection.connected(Duration.ofSeconds(30));
 				arrivals.joined(alice, Duration.ofSeconds(20));
-				assertEquals("external:partial", probe.echo("lobby", "partial"));
+				assertEquals("external:partial", probe.echo("partial"));
 				connection.disconnect();
 				connection.disconnected();
 				context.processes().stop("lobby");
@@ -79,7 +79,7 @@ class PartialScenarioLifecycleSystemTest {
 				connection.connected(Duration.ofSeconds(30));
 				arrivals.joined(alice, Duration.ofSeconds(20));
 				assertSame(lobby.capability(Players.class), replacement.capability(Players.class));
-				assertEquals("external:replacement", probe.echo("lobby", "replacement"));
+				assertEquals("external:replacement", probe.echo("replacement"));
 				assertEquals(0, setup.get());
 				context.start();
 				context.start();

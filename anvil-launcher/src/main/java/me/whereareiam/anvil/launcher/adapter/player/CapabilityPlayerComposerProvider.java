@@ -1,8 +1,5 @@
 package me.whereareiam.anvil.launcher.adapter.player;
 
-import me.whereareiam.anvil.agent.client.api.AgentDirectory;
-import me.whereareiam.anvil.capability.api.channel.RequestChannel;
-import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.player.LibraryCapabilityRuntimes;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposerProvider;
@@ -10,11 +7,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Composes independently owned native and agent-backed capabilities for one scenario, with one
- * capability runtime per protocol library.
+ * Composes independently owned player capabilities for one scenario, with one capability runtime per protocol
+ * library.
  */
 public final class CapabilityPlayerComposerProvider implements ProtocolPlayerComposerProvider {
 	@Override
@@ -23,14 +19,14 @@ public final class CapabilityPlayerComposerProvider implements ProtocolPlayerCom
 	}
 
 	/**
-	 * Creates capability composition with an empty agent directory for standalone protocol consumers.
-	 * Each library's capability runtime is created when its first player is composed.
+	 * Creates capability composition for standalone protocol consumers. Each library's capability runtime is
+	 * created when its first player is composed.
 	 *
-	 * @return composer without scenario agent access
+	 * @return composer without validated libraries
 	 */
 	@Override
 	public @NotNull ProtocolPlayerComposer create() {
-		return create(List.of(), Map::of);
+		return create(List.of());
 	}
 
 	/**
@@ -38,16 +34,10 @@ public final class CapabilityPlayerComposerProvider implements ProtocolPlayerCom
 	 * any player exists. Other libraries' runtimes are created when their first player is composed.
 	 *
 	 * @param libraries protocol libraries whose capability graphs are validated immediately
-	 * @param agents borrowed scenario agent directory
-	 * @return composer bound to the scenario's agents
+	 * @return composer for the scenario's players
 	 */
-	public @NotNull ProtocolPlayerComposer create(
-			@NotNull Collection<String> libraries,
-			@NotNull AgentDirectory agents
-	) {
-		var runtimes = new LibraryCapabilityRuntimes(libraries, processName ->
-				agents.find(processName).<RequestChannel>map(AgentRequestChannel::new)
-						.orElseThrow(() -> new CapabilityException("Process '" + processName + "' has no agent request channel")));
+	public @NotNull ProtocolPlayerComposer create(@NotNull Collection<String> libraries) {
+		var runtimes = new LibraryCapabilityRuntimes(libraries);
 
 		return (player, connection, metadata, onDestroyed) -> runtimes.of(player.libraryId())
 				.compose(new ProtocolPlayerAdapter(player, metadata), connection, onDestroyed);
