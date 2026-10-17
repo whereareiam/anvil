@@ -35,6 +35,7 @@ on:
 permissions:
   contents: read
   checks: write
+  packages: read
 
 jobs:
   build:
@@ -107,3 +108,10 @@ jobs:
         if: inputs.packaging
         with:
           mode: save
+
+  docker:
+    name: Docker
+    uses: ./.github/workflows/reusable-docker.yml
+    with:
+      ref: ${{ inputs.ref }}
+      cache: ${{ inputs.cache }}

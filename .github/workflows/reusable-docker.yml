@@ -1,0 +1,55 @@
+name: Docker engine tests
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit, branch or tag to test.
+        required: true
+        type: string
+      cache:
+        description: Gradle cache policy, auto or read-only. A run of code that is not yet reviewed passes read-only.
+        required: false
+        type: string
+        default: auto
+
+permissions:
+  contents: read
+  checks: write
+  packages: read
+
+jobs:
+  docker:
+    name: Docker engine tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          cache-shard: docker
+          cache: ${{ inputs.cache }}
+
+      # The tests run in the copy of the image that docker-test-image.yml keeps on the GitHub Container Registry.
+      # Pulls from Actions with GITHUB_TOKEN are free and have no anonymous pull limits, unlike Docker Hub and ECR.
+      - name: Log in to the GitHub Container Registry
+        env:
+          TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.actor }}
+        run: echo "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+
+      - name: Pull the test image
+        run: docker pull "$(sed -n 's/^anvil\.docker\.testImage=//p' gradle.properties)"
+
+      - name: Run the Docker engine tests
+        run: ./gradlew --no-daemon :anvil-environment:execution:execution-docker:dockerTest -Panvil.intellij=false
+
+      - uses: whereareiam/devops/primitive/report/junit/publish@v3
+        if: always()
+        with:
+          name: Docker engine test results
+          artifact-name: test-results-docker
