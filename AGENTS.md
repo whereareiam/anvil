@@ -53,13 +53,13 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-capability/capability-builtin/server/<feature>`               | Process capability family: `<feature>-api` and `<feature>-common` holding the agent-backed provider, independent of simulated players                                                           |
 | `anvil-capability/capability-builtin/server/players`                 | Players family: what one server or proxy knows about the players on it, from its own agent's events, with `players-api` and `players-common` |
 | `anvil-capability/capability-builtin/default`                         | Aggregate of every built-in client and server capability                                                                                                                            |
-| `anvil-protocol/protocol-api`                                         | Protocol library providers and releases, player creation/composition, protocol-owned channels/workers, pinned runtime resolution, and optional authentication                       |
-| `anvil-protocol`                                                      | Player registration, version selection, authentication compatibility, composition, and observations                                                                                 |
-| `anvil-protocol/protocol-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port and the client segments; owns `mcprotocol-releases.toml` and `pinLibraryReleases`  |
-| `anvil-protocol/protocol-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell                                                                                       |
-| `anvil-protocol/protocol-mcprotocol/mcprotocol-common`                | MCProtocolLib library provider, release data, worker host and segment selection, MCProtocolLib-free worker shell, and private authentication store                                  |
-| `anvil-protocol/protocol-mcprotocol/mcprotocol-client`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
-| `anvil-protocol/protocol-mcprotocol/mcprotocol-client/V*`             | Client segments `V1_18_2`, `V1_21_1` and `V1_21_11`, each implementing only `McProtocolClient` from its release key on; `V1_21_11` also serves `26.1.2`                             |
+| `anvil-player/player-api`                                         | Protocol library providers and releases, player creation/composition, protocol-owned channels/workers, pinned runtime resolution, and optional authentication                       |
+| `anvil-player/player-common`                                         | Player registration, version selection, authentication compatibility, composition, and observations                                                                                 |
+| `anvil-player/player-library/library-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port and the client segments; owns `mcprotocol-releases.toml` and `pinLibraryReleases`  |
+| `anvil-player/player-library/library-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell                                                                                       |
+| `anvil-player/player-library/library-mcprotocol/mcprotocol-common`                | MCProtocolLib library provider, release data, worker host and segment selection, MCProtocolLib-free worker shell, and private authentication store                                  |
+| `anvil-player/player-library/library-mcprotocol/mcprotocol-java`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
+| `anvil-player/player-library/library-mcprotocol/mcprotocol-java/V*`             | Client segments `V1_18_2`, `V1_21_1` and `V1_21_11`, each implementing only `McProtocolClient` from its release key on; `V1_21_11` also serves `26.1.2`                             |
 | `anvil-process/process-api`                                         | Platform-provider/planning SPI, version data contract, artifact sources, distribution validation, and configuration contracts                                                      |
 | `anvil-process/process-common`                                    | Platform declaration validation, version data reading, effective Java/topology requirements, forwarding negotiation, the split of a plan by process lifetime, artifact planning, and provider preparation/configuration      |
 | `anvil-process/process-platform/platform-<name>`                      | One family per platform: its provider (`<name>-provider`) and, where it installs one, its platform agent assembly (`<name>-agent`); Paper and Spigot share `platform-bukkit` |
@@ -413,7 +413,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   platform `known` versions and `[[java]]` rows only where Java changes, and mark as verified exactly what
   `CompatibilityScenarioFactory` runs; every other listed version is COMPATIBLE, and user-supplied release
   data is UNTESTED. Update the versions page, the Java table, the README, and the FAQ. The worker shell never
-  imports MCProtocolLib; release-specific client code lives only in `mcprotocol-client` segments, whose
+  imports MCProtocolLib; release-specific client code lives only in `mcprotocol-java` segments, whose
   `linkage.txt` requirement keywords the worker's self-check enforces. A release with an unpinned closure is
   listed but cannot be launched: preparing a scenario whose servers would use it by default prints a warning,
   and creating a player that selects it is refused.
@@ -452,11 +452,11 @@ Run the nearest relevant test first, then architecture/build checks:
 ./gradlew :anvil-engine:test
 ./gradlew :anvil-environment:execution:execution-managed:test
 ./gradlew :anvil-process:process-common:test
-./gradlew :anvil-protocol:test
+./gradlew :anvil-player:player-common:test
 ./gradlew :anvil-process:process-protocol:protocol-host:protocol-host-common:test
 ./gradlew :anvil-process:process-protocol:protocol-agent:protocol-agent-common:test
 ./gradlew :anvil-capability:test
-./gradlew :anvil-protocol:protocol-mcprotocol:mcprotocol-common:test
+./gradlew :anvil-player:player-library:library-mcprotocol:mcprotocol-common:test
 ./gradlew :anvil-integration:integration-gradle:gradle-plugin:test :anvil-integration:integration-gradle:gradle-capabilities:test :anvil-integration:integration-gradle:gradle-platforms:test
 ./gradlew :anvil-testkit:tests:runtime:test
 ./gradlew :anvil-testkit:tests:server:matrixTest

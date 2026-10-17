@@ -44,7 +44,7 @@ runs:
         cache: ${{ steps.cache.outputs.read-only == 'true' && 'read-only' || 'read-write' }}
         key-prefix: ${{ inputs.cache-shard }}
         key-files: |
-          anvil-protocol/**/*-releases.toml
+          anvil-player/**/*-releases.toml
           anvil-process/**/*-versions.toml
           anvil-testkit/**/CompatibilityScenarioFactory.java
           gradle/libs.versions.toml

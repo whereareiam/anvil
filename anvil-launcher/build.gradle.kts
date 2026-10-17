@@ -45,7 +45,7 @@ dependencies {
     implementation(projects.anvilEnvironment.provisioning.provisioningJava.javaApi)
     implementation(projects.anvilEnvironment.provisioning.provisioningWorkspace.workspaceApi)
     implementation(projects.anvilProcess.processApi)
-    implementation(projects.anvilProtocol.protocolApi)
+    implementation(projects.anvilPlayer.playerApi)
 
     compileOnly(projects.anvilProcess.processProtocol.protocolHost.protocolHostCommon)
     compileOnly(projects.anvilCapability)
@@ -53,7 +53,7 @@ dependencies {
     compileOnly(projects.anvilEnvironment.cache)
     compileOnly(projects.anvilEnvironment.execution.executionManaged)
     compileOnly(projects.anvilProcess.processCommon)
-    compileOnly(projects.anvilProtocol)
+    compileOnly(projects.anvilPlayer.playerCommon)
     compileOnly(projects.anvilEnvironment.provisioning.provisioningWorkspace)
     compileOnly(projects.anvilEnvironment.provisioning.provisioningArtifact)
     compileOnly(projects.anvilEnvironment.provisioning.provisioningJava)
@@ -64,7 +64,7 @@ dependencies {
     embedded(projects.anvilEnvironment.cache) { isTransitive = false }
     embedded(projects.anvilEnvironment.execution.executionManaged) { isTransitive = false }
     embedded(projects.anvilProcess.processCommon) { isTransitive = false }
-    embedded(projects.anvilProtocol) { isTransitive = false }
+    embedded(projects.anvilPlayer.playerCommon) { isTransitive = false }
     embedded(projects.anvilEnvironment.provisioning.provisioningWorkspace) { isTransitive = false }
     embedded(projects.anvilEnvironment.execution.executionLocal) { isTransitive = false }
     embedded(projects.anvilEnvironment.execution.executionDocker) { isTransitive = false }
@@ -88,7 +88,7 @@ dependencies {
     testImplementation(projects.anvilEnvironment.provisioning.provisioningJava)
     testImplementation(projects.anvilEnvironment.provisioning.provisioningWorkspace)
     testImplementation(projects.anvilProcess.processCommon)
-    testImplementation(projects.anvilProtocol)
+    testImplementation(projects.anvilPlayer.playerCommon)
 
     testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.bukkitAgent)
     testRuntimeOnly(projects.anvilProcess.processPlatform.platformBungeecord.bungeecordAgent)
@@ -99,7 +99,7 @@ dependencies {
     testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.spigotProvider)
     testRuntimeOnly(projects.anvilProcess.processPlatform.platformVelocity.velocityAgent)
     testRuntimeOnly(projects.anvilProcess.processPlatform.platformVelocity.velocityProvider)
-    testRuntimeOnly(projects.anvilProtocol.protocolMcprotocol)
+    testRuntimeOnly(projects.anvilPlayer.playerLibrary.libraryMcprotocol)
 }
 
 toolkitPublish {

@@ -50,7 +50,7 @@ linkage manifests of the built client segments and checks them against every rel
 does:
 
 ```shell
-./gradlew :anvil-protocol:protocol-mcprotocol:mcprotocol-common:test --tests '*McProtocolWorkerContractTest'
+./gradlew :anvil-player:player-library:library-mcprotocol:mcprotocol-common:test --tests '*McProtocolWorkerContractTest'
 ```
 
 Retain coverage for every release. [Adding a Minecraft version](../../minecraft-versions/index.md)

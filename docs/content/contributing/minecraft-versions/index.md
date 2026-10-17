@@ -10,7 +10,7 @@ what the next step needs. Pinning and live tests need network access.
 
 ## Add or extend a release row
 
-MCProtocolLib's releases are data in `anvil-protocol/protocol-mcprotocol/mcprotocol-releases.toml`.
+MCProtocolLib's releases are data in `anvil-player/player-library/library-mcprotocol/mcprotocol-releases.toml`.
 One `[[release]]` row describes one MCProtocolLib build, which speaks one wire protocol:
 
 | Field | Content |
@@ -37,7 +37,7 @@ served by a repository that `settings.gradle.kts` does not list yet, add it to b
 ## Pin the runtime closure
 
 ```shell
-./gradlew :anvil-protocol:protocol-mcprotocol:pinLibraryReleases
+./gradlew :anvil-player:player-library:library-mcprotocol:pinLibraryReleases
 ```
 
 For each release, the task resolves `module` at runtime scope and rewrites that release's
@@ -53,7 +53,7 @@ pin task as the remedy.
 ## Let linkage decide about segments
 
 Release-specific code lives only in segments: projects named `V<major>_<minor>[_<patch>]` after the
-release key they start at, inside a side folder such as `mcprotocol-client` or `movement-mcprotocol`.
+release key they start at, inside a side folder such as `mcprotocol-java` or `movement-mcprotocol`.
 Each segment compiles against its own release and serves every later release up to the next segment.
 After adding a release, check every segment against the locked closures:
 
@@ -86,7 +86,7 @@ checks the protocol number, the selected client segment, and the installed built
 a row for the new release key, its protocol number, and the client segment that serves it, then run:
 
 ```shell
-./gradlew :anvil-protocol:protocol-mcprotocol:mcprotocol-common:test
+./gradlew :anvil-player:player-library:library-mcprotocol:mcprotocol-common:test
 ```
 
 `ClientSegmentLinkageTest` in the same suite checks the built client segments against every release

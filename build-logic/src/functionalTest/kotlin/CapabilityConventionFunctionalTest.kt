@@ -101,7 +101,7 @@ class CapabilityConventionFunctionalTest {
 			}
 		""")
 		// Registers the library `mcprotocol`, which makes `demo-mcprotocol` a library side of the family.
-		project.write("anvil-protocol/protocol-mcprotocol/mcprotocol-releases.toml", "# no releases are needed to register the library")
+		project.write("anvil-player/player-library/library-mcprotocol/mcprotocol-releases.toml", "# no releases are needed to register the library")
 
 		project.write("demo/build.gradle.kts", """
 			plugins {

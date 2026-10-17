@@ -12,7 +12,7 @@ dependencies {
 	testImplementation(projects.anvilIntegration.integrationJunit)
 	testImplementation(projects.anvilLauncher)
 	testImplementation(projects.anvilProcess.processApi)
-	testImplementation(projects.anvilProtocol.protocolApi)
+	testImplementation(projects.anvilPlayer.playerApi)
 	testImplementation(projects.anvilTooling.toolingRunner)
 
 	// The launcher's shaded JAR carries the planner at runtime; the matrix data test only compiles against it.
@@ -27,7 +27,7 @@ dependencies {
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.spigotProvider)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformVelocity.velocityAgent)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformVelocity.velocityProvider)
-	testRuntimeOnly(projects.anvilProtocol.protocolMcprotocol)
+	testRuntimeOnly(projects.anvilPlayer.playerLibrary.libraryMcprotocol)
 	testRuntimeOnly(projects.anvilTooling.toolingBuiltin)
 }
 

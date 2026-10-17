@@ -45,7 +45,7 @@ fixtures {
 }
 
 dependencies {
-	testImplementation(projects.anvilProtocol.protocolApi)
+	testImplementation(projects.anvilPlayer.playerApi)
 }
 ```
 

@@ -6,6 +6,6 @@ description = "Executable CLI and IDE entry points using Anvil's default engine 
 
 dependencies {
 	implementation(projects.anvilLauncher)
-	implementation(projects.anvilProtocol.protocolApi)
+	implementation(projects.anvilPlayer.playerApi)
 	implementation(projects.anvilTooling.toolingRunner)
 }
