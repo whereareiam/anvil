@@ -13,9 +13,11 @@ import org.jetbrains.annotations.NotNull;
  * library-neutral interaction binding owns everything else: the sequence numbers that acknowledge block changes,
  * the view rotation sent with an item use, and the order of the arm swing relative to each use.
  *
- * <p>Implementations are stateless, send exactly one packet per call and are called only on the player's current
- * native session. A release whose packet does not carry a value, such as the sequence before Minecraft 1.19 or the
- * view rotation of an item use before 1.21, leaves it out.</p>
+ * <p>Implementations are stateless, send the packets the vanilla client of their release sends for the action and are
+ * called only on the player's current native session. That is one packet per call in most releases; from Minecraft
+ * 26.3 the server plays arm swings itself, so a swing sends nothing and an attack is followed by a punch. A release
+ * whose packet does not carry a value, such as the sequence before Minecraft 1.19 or the view rotation of an item use
+ * before 1.21, leaves it out.</p>
  *
  * <pre>{@code
  * public final class McProtocolInteractionPackets implements InteractionPackets<Session> {
@@ -39,7 +41,8 @@ public interface InteractionPackets<S> {
 	@NotNull Class<S> sessionType();
 
 	/**
-	 * Swings the player's arm.
+	 * Swings the player's arm, which sends nothing in releases from Minecraft 26.3, where the server plays the swing
+	 * of every use.
 	 *
 	 * @param session the player's current native session
 	 * @param hand hand whose arm swings
@@ -69,7 +72,8 @@ public interface InteractionPackets<S> {
 	void useItemOn(@NotNull S session, @NotNull BlockPosition position, @NotNull BlockFace face, @NotNull Hand hand, int sequence);
 
 	/**
-	 * Interacts with or attacks an entity, without the arm swing that follows either.
+	 * Interacts with or attacks an entity, without the arm swing that follows either. Releases from Minecraft 26.3
+	 * follow an attack with the punch their vanilla client sends after every attack.
 	 *
 	 * @param session the player's current native session
 	 * @param entityId protocol identifier of the targeted entity

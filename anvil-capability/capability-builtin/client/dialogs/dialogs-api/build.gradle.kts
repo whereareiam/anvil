@@ -6,5 +6,6 @@ description = "Public API and protocol-library port of the built-in dialogs capa
 
 dependencies {
 	api(projects.anvilApi)
+	api(projects.anvilCapability.capabilityProtocolApi)
 	api(projects.anvilCapability.capabilityBuiltin.client.commands.commandsApi)
 }

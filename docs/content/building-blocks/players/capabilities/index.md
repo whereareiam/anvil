@@ -35,9 +35,9 @@ Each capability is optional unless the test or another installed capability requ
 | [Cookies](./cookies/index.md) | Hold cookies, answer the server's cookie requests, and observe them. | MCProtocol and Session, Minecraft 1.20.5+ |
 
 Packet-backed capabilities operate through the player's protocol library. The built-in capabilities
-are installed on every MCProtocolLib release Anvil ships, from Minecraft 1.18.2 to 26.1.2,
-except Dialogs, which needs a release with dialogs: 1.21.11 and 26.1.2, and Cookies, which needs a
-release with cookies: 1.21.1, 1.21.11 and 26.1.2.
+are installed on every MCProtocolLib release Anvil ships, from Minecraft 1.18.2 to 26.3,
+except Dialogs, which needs a release with dialogs: 1.21.11 and newer, and Cookies, which needs a
+release with cookies: 1.21.1 and newer.
 
 ## Install built-in capabilities
 

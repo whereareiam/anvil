@@ -13,6 +13,7 @@ import me.whereareiam.anvil.testkit.support.FixtureArtifacts;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -28,7 +29,9 @@ public final class CompatibilityScenarioFactory {
 	private static final String BUNGEE_BUILD = "2085";
 	private static final List<PaperBuild> DIRECT_PAPER = List.of(
 			new PaperBuild("1.18.2", "388"),
-			new PaperBuild("1.21.1", "133")
+			new PaperBuild("1.21.1", "133"),
+			new PaperBuild("26.2", "134"),
+			new PaperBuild("26.3", "202")
 	);
 	private static final List<NeoForgeRelease> NEOFORGE = List.of(
 			new NeoForgeRelease("1.21.1", "21.1.256"),
@@ -84,6 +87,7 @@ public final class CompatibilityScenarioFactory {
 		DIRECT_PAPER.forEach(paper -> register(scenarios, paperScenario(paper.version(), paper.build())));
 		register(scenarios, new Paper12111SystemScenario().define());
 		register(scenarios, new Paper2612SystemScenario().define());
+		scenarios.sort(Comparator.comparing(scenario -> scenario.getServers().getFirst().nativeVersion()));
 		return List.copyOf(scenarios);
 	}
 

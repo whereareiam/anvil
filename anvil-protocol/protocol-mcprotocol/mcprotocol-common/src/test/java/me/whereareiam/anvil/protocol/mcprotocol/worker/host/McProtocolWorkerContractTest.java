@@ -70,7 +70,9 @@ class McProtocolWorkerContractTest {
 			new ReleaseExpectation("1.18.2", 758, "1.18.2"),
 			new ReleaseExpectation("1.21.1", 767, "1.21.1"),
 			new ReleaseExpectation("1.21.11", 774, "1.21.11"),
-			new ReleaseExpectation("26.1.2", 775, "1.21.11")
+			new ReleaseExpectation("26.1.2", 775, "1.21.11"),
+			new ReleaseExpectation("26.2", 776, "1.21.11"),
+			new ReleaseExpectation("26.3", 777, "26.3")
 	);
 
 	@Test

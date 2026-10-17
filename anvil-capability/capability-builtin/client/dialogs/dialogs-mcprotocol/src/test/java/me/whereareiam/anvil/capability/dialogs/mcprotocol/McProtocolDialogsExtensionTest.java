@@ -9,6 +9,7 @@ import me.whereareiam.anvil.capability.dialogs.packet.DialogsPackets;
 import me.whereareiam.anvil.capability.protocol.api.exception.AdapterUnavailableException;
 import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
 import me.whereareiam.anvil.capability.protocol.api.model.ViewRotation;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtCompound;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
 import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
 import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerExtension;
@@ -55,7 +56,7 @@ class McProtocolDialogsExtensionTest {
 
 		assertEquals(List.of(DialogsPackets.class), player.requestedPorts);
 		assertEquals(List.of("dialogs.click"), List.copyOf(operations.handlers.keySet()));
-		assertEquals(List.of(DialogClick.command("login secret")), packets.sent);
+		assertEquals(List.of("command login secret"), packets.sent);
 		assertSame(Player.SESSION, packets.listened);
 		assertEquals(List.of("dialogs.reset"), player.emitted);
 	}
@@ -77,7 +78,7 @@ class McProtocolDialogsExtensionTest {
 	}
 
 	private static final class RecordingPackets implements DialogsPackets<String> {
-		private final List<DialogClick> sent = new ArrayList<>();
+		private final List<String> sent = new ArrayList<>();
 		private @Nullable String listened;
 
 		@Override
@@ -86,8 +87,13 @@ class McProtocolDialogsExtensionTest {
 		}
 
 		@Override
-		public void click(@NotNull String session, @NotNull DialogClick click) {
-			sent.add(click);
+		public void command(@NotNull String session, @NotNull String commandWithoutSlash) {
+			sent.add("command " + commandWithoutSlash);
+		}
+
+		@Override
+		public void customClick(@NotNull String session, @NotNull String id, @NotNull NbtCompound payload) {
+			sent.add("custom " + id + " " + payload);
 		}
 
 		@Override

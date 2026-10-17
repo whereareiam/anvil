@@ -4,7 +4,7 @@ description: Wait for a dialog the server shows, fill its inputs and press its b
 ---
 
 `Dialogs` observes the dialogs the server shows a player and presses their buttons as the Minecraft
-client does. Dialogs arrived in Minecraft 1.21.6, so players on 1.21.11 and 26.1.2 get this capability;
+client does. Dialogs arrived in Minecraft 1.21.6, so players on 1.21.11 and newer get this capability;
 players on older releases do not, and retrieving it fails with `CapabilityUnavailableException`. Install
 the dialogs unit and its Session dependency, or explicitly select the default capability unit.
 
