@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.capability.movement;
 
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
+import me.whereareiam.anvil.capability.movement.channel.MovementChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
@@ -14,15 +15,10 @@ import java.util.Set;
  * installed the movement binding.
  */
 public final class MovementProvider implements ProtocolPlayerCapabilityProvider<Movement> {
-	/**
-	 * Capability ID shared by this provider and the worker extension of every library side.
-	 */
-	public static final String ID = "me.whereareiam.anvil.movement";
-
 	@Override
 	public @NotNull CapabilityDescriptor descriptor() {
 		return CapabilityDescriptor.builder()
-				.id(ID)
+				.id(MovementChannel.ID)
 				.build();
 	}
 
@@ -39,6 +35,6 @@ public final class MovementProvider implements ProtocolPlayerCapabilityProvider<
 	@Override
 	public @NotNull Movement create(@NotNull ProtocolPlayerCapabilityContext context) {
 		ProtocolChannel channel = context.channel();
-		return position -> channel.request(MovementOperations.MOVE, position);
+		return position -> channel.request(MovementChannel.MOVE, position);
 	}
 }

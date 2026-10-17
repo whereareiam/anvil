@@ -177,20 +177,21 @@ with a `null` payload when an event carries no value.
 Register host subscription cleanup with `context.onDestroy(...)`. `player.viewRotation()`
 returns the shared `ViewRotation`: yaw and pitch in degrees, including server corrections. Movement
 updates this state when sending a new direction, and interaction reads it for the current view.
-Calling `player.viewRotation(rotation)` records the value; the port remains responsible for sending
+Calling `player.viewRotation(rotation)` records the value; the binding remains responsible for sending
 the packet.
 
 ## Put release-specific code in segments
 
-Anvil's own packet capabilities show the layout. The movement family declares the port
-`me.whereareiam.anvil.capability.movement.packet.MovementPackets<S>` in its API artifact: a stateless
-interface whose `sessionType()` names the release's session class and whose methods take that session.
-Its library side, `movement-mcprotocol`, holds the extension and one segment per range of releases:
-`V1_18_2`, `V1_21_1`, and `V1_21_11`. A segment is named after the release key it starts at
-and serves every later release up to the next segment. Each implements only the port:
+For example, a family whose capability teleports a player declares the port
+`com.example.teleport.packet.TeleportPackets<S>` in its API artifact: a stateless interface whose
+`sessionType()` names the release's session class and whose methods take that session. Its library
+side, `teleport-mcprotocol`, holds the extension and one segment per range of releases, such as
+`V1_18_2`, `V1_21_1`, and `V1_21_11`. A segment is named after the release key it starts at and serves
+every later release up to the next segment. Each implements only the port; here `Position` is the
+family's own model:
 
 ```java
-public final class McProtocolMovementPackets implements MovementPackets<Session> {
+public final class McProtocolTeleportPackets implements TeleportPackets<Session> {
 	@Override
 	public @NotNull Class<Session> sessionType() {
 		return Session.class;
@@ -210,8 +211,8 @@ That is the `V1_21_11` segment, which imports `org.geysermc.mcprotocollib.networ
 implementation, the adapter, while binding a player, and hands it to the library-neutral binding:
 
 ```java
-MovementPackets<?> packets = player.adapter(MovementPackets.class);
-return new MovementBinding<>(packets).bind(player, operations);
+TeleportPackets<?> packets = player.adapter(TeleportPackets.class);
+return new TeleportBinding<>(packets).bind(player, operations);
 ```
 
 The binding casts `player.nativeSession()` with `packets.sessionType()` before each call. Call

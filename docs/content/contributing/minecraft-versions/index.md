@@ -53,7 +53,7 @@ pin task as the remedy.
 ## Let linkage decide about segments
 
 Release-specific code lives only in segments: projects named `V<major>_<minor>[_<patch>]` after the
-release key they start at, inside a side folder such as `mcprotocol-java` or `movement-mcprotocol`.
+release key they start at, inside a side folder such as `mcprotocol-java` or `inventory-mcprotocol`.
 Each segment compiles against its own release and serves every later release up to the next segment.
 After adding a release, check every segment against the locked closures:
 
@@ -72,7 +72,7 @@ The `check` task runs the same verification. A segment's report is
   `.v1_21_11`, and adapt the code the failure names. The side's `module-adapter` convention adds the new
   child automatically.
 - **The port cannot express the release:** change the port in the feature API's `packet` package,
-  such as `MovementPackets`, and every segment implementing it, or `McProtocolClient` in
+  such as `InventoryPackets`, and every segment implementing it, or `McProtocolClient` in
   `mcprotocol-api` for the client.
 
 A segment holds only port implementations and their `META-INF/services/<port>` descriptors; it never
