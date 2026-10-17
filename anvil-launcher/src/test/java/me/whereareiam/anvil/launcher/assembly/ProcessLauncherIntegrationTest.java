@@ -131,7 +131,7 @@ class ProcessLauncherIntegrationTest {
 				assertNotEquals(tokens.get(0), tokens.get(1));
 				assertEquals(ports.get(0), ports.get(1));
 				assertNotEquals(original.address().getPort(), ports.getFirst());
-				assertEquals("first", Files.readString(replacement.workDirectory().resolve("installed.txt")));
+				assertEquals("second", Files.readString(replacement.workDirectory().resolve("installed.txt")), "A restart installs ALWAYS assets again");
 			}
 		}
 		assertEquals(List.of("1:before", "1:close", "2:after", "2:close"), calls);

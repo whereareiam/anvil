@@ -152,6 +152,12 @@ final class EnvironmentExecution {
 		return submit(ProcessOperations.RESTART, ProcessControlRequest.builder().target(name).build());
 	}
 
+	@NotNull CompletableFuture<Void> rebuild() {
+		if (!usable()) return CompletableFuture.failedFuture(new IllegalStateException("The environment is not running."));
+
+		return launch.rebuild();
+	}
+
 	@NotNull CompletableFuture<Boolean> console(@NotNull String name, @NotNull String text) {
 		if (!usable()) return CompletableFuture.completedFuture(false);
 		var request = ConsoleCommandRequest.builder().target(name).text(text).build();
