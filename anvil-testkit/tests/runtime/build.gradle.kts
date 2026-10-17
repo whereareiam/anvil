@@ -11,19 +11,19 @@ dependencies {
 	testImplementation(projects.anvilCapability.capabilityApi)
 	testImplementation(projects.anvilCapability.capabilityBuiltin.default)
 	testImplementation(projects.anvilLauncher)
-	testImplementation(projects.anvilPlatform.platformApi)
+	testImplementation(projects.anvilProcess.processApi)
 	testImplementation(projects.anvilProtocol)
 	testImplementation(projects.anvilProtocol.protocolApi)
 
 	// The launcher's shaded JAR carries the planner at runtime; tests only compile against it.
-	testCompileOnly(projects.anvilPlatform.platformPlanning)
+	testCompileOnly(projects.anvilProcess.processCommon)
 
-	testRuntimeOnly(projects.anvilPlatform.platformBukkit.platformBukkitAgent)
-	testRuntimeOnly(projects.anvilPlatform.platformBungeecord.platformBungeecordProvider)
-	testRuntimeOnly(projects.anvilPlatform.platformNeoforge.platformNeoforgeProvider)
-	testRuntimeOnly(projects.anvilPlatform.platformPaper.platformPaperProvider)
-	testRuntimeOnly(projects.anvilPlatform.platformSpigot.platformSpigotProvider)
-	testRuntimeOnly(projects.anvilPlatform.platformVelocity.platformVelocityProvider)
+	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.bukkitAgent)
+	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBungeecord.bungeecordProvider)
+	testRuntimeOnly(projects.anvilProcess.processPlatform.platformNeoforge.neoforgeProvider)
+	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.paperProvider)
+	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.spigotProvider)
+	testRuntimeOnly(projects.anvilProcess.processPlatform.platformVelocity.velocityProvider)
 	testRuntimeOnly(projects.anvilProtocol.protocolMcprotocol)
 }
 

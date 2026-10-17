@@ -99,11 +99,11 @@ Each platform provider owns its version data:
 
 | Platform | Version data |
 |---|---|
-| Paper | `anvil-platform/platform-paper/platform-paper-provider/src/main/resources/me/whereareiam/anvil/platform/paper/paper-versions.toml` |
-| Spigot | `anvil-platform/platform-spigot/platform-spigot-provider/src/main/resources/me/whereareiam/anvil/platform/spigot/spigot-versions.toml` |
-| NeoForge | `anvil-platform/platform-neoforge/platform-neoforge-provider/src/main/resources/me/whereareiam/anvil/platform/neoforge/neoforge-versions.toml` |
-| Velocity | `anvil-platform/platform-velocity/platform-velocity-provider/src/main/resources/me/whereareiam/anvil/platform/velocity/velocity-versions.toml` |
-| BungeeCord | `anvil-platform/platform-bungeecord/platform-bungeecord-provider/src/main/resources/me/whereareiam/anvil/platform/bungeecord/bungeecord-versions.toml` |
+| Paper | `anvil-process/process-platform/platform-bukkit/paper-provider/src/main/resources/me/whereareiam/anvil/platform/paper/paper-versions.toml` |
+| Spigot | `anvil-process/process-platform/platform-bukkit/spigot-provider/src/main/resources/me/whereareiam/anvil/platform/spigot/spigot-versions.toml` |
+| NeoForge | `anvil-process/process-platform/platform-neoforge/neoforge-provider/src/main/resources/me/whereareiam/anvil/platform/neoforge/neoforge-versions.toml` |
+| Velocity | `anvil-process/process-platform/platform-velocity/velocity-provider/src/main/resources/me/whereareiam/anvil/platform/velocity/velocity-versions.toml` |
+| BungeeCord | `anvil-process/process-platform/platform-bungeecord/bungeecord-provider/src/main/resources/me/whereareiam/anvil/platform/bungeecord/bungeecord-versions.toml` |
 
 Add the version to `known`. Add a `[[java]]` row only when the platform's Java requirement changes at
 that version: `since`, `minimum`, an optional `maximum`, the `preferred` LTS release, and, for a

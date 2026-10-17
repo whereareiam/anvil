@@ -25,10 +25,10 @@ TestKit without starting Minecraft. Its location follows the owner of the behavi
 | Java provisioning                                       | `:anvil-environment:provisioning:provisioning-java:test`      |
 | Workspace policies and snapshots                        | `:anvil-environment:provisioning:provisioning-workspace:test` |
 | Process lifecycle and restarts                          | `:anvil-environment:execution:execution-managed:test`         |
-| Platform planning and forwarding                        | `:anvil-platform:platform-planning:test`                      |
+| Platform planning and forwarding                        | `:anvil-process:process-common:test`                      |
 | Player registration, library selection, and observations | `:anvil-protocol:test`                                       |
-| Agent clients, sessions, and observations                | `:anvil-agent:agent-client:test`                              |
-| Native agent dispatch and extension loading              | `:anvil-agent:agent-server:test`                              |
+| Agent clients, sessions, and observations                | `:anvil-process:process-protocol:protocol-host:protocol-host-common:test`                              |
+| Native agent dispatch and extension loading              | `:anvil-process:process-protocol:protocol-agent:protocol-agent-common:test`                              |
 | Capability discovery and composition                    | `:anvil-capability:test`                                      |
 | MCProtocolLib library, worker contracts and segments   | `:anvil-protocol:protocol-mcprotocol:mcprotocol-common:test` and `:anvil-protocol:protocol-mcprotocol:mcprotocol-client:<segment>:check` |
 | Gradle scenario tooling                                 | `:anvil-integration:integration-gradle:gradle-plugin:test`                        |

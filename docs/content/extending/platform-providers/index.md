@@ -88,9 +88,9 @@ configuration. Streams remain pipes; enabling colors must not require an interac
 Keep these platform-specific options in the provider. The engine and IDE do not branch on platform IDs.
 
 The
-[PlatformProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-platform/platform-api/src/main/java/me/whereareiam/anvil/platform/api/PlatformProvider.java)
+[PlatformProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-process/process-api/src/main/java/me/whereareiam/anvil/platform/api/PlatformProvider.java)
 source Javadocs define each method's inputs and behavior;
-[PlatformContext](https://github.com/whereareiam/anvil/blob/dev/anvil-platform/platform-api/src/main/java/me/whereareiam/anvil/platform/api/model/PlatformContext.java)
+[PlatformContext](https://github.com/whereareiam/anvil/blob/dev/anvil-process/process-api/src/main/java/me/whereareiam/anvil/platform/api/model/PlatformContext.java)
 documents the supplied runtime values. These links use `dev`; select your release tag when checking
 a released version.
 

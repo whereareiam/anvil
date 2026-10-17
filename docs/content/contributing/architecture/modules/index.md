@@ -14,8 +14,9 @@ a family's API describes its services and extension points. The launcher binds t
 | `anvil-environment/provisioning`                | Separate artifact, Java, and workspace APIs with acquisition, installation, layout, snapshots, and retention policy |
 | `anvil-environment/execution/execution-managed` | Execution plans, preparation handoff, readiness, consoles, generation replacement, and ordered finalization         |
 | Other `anvil-environment/execution` modules     | Execution-provider contracts, local processes, and Docker execution                                                 |
-| `anvil-platform/platform-planning`              | Distribution validation, effective Java/topology requirements, forwarding, and provider preparation/configuration                             |
-| Other `anvil-platform` modules                  | Platform-provider contracts, implementations, and platform-agent assemblies                                         |
+| `anvil-process/process-common`              | Distribution validation, effective Java/topology requirements, forwarding, and provider preparation/configuration                             |
+| `anvil-process/process-api`                     | Platform-provider contracts, version data, artifact sources, and configuration contracts                            |
+| `anvil-process/process-platform/platform-<name>` | One family per platform: its provider and, where it installs one, its platform agent assembly                |
 | `anvil-protocol/src`                            | Player registration, per-player library and release selection, authentication compatibility, and observations     |
 | `anvil-protocol/protocol-api`                   | Protocol library contracts, releases, players, protocol-owned channels and native worker contracts                 |
 | `anvil-protocol/protocol-mcprotocol`            | The MCProtocolLib library: release data, client port, client segments, worker host and shell, and account storage |
@@ -25,11 +26,11 @@ a family's API describes its services and extension points. The launcher binds t
 | `anvil-capability/capability-agent-api`          | Agent-backed process/player providers and scoped request-channel contexts |
 | `anvil-capability/capability-builtin/client`     | Client capability families, owned by players: feature APIs, library-neutral providers and bindings, and library sides with segments    |
 | `anvil-capability/capability-builtin/server`     | Server capability families, owned by processes, with agent-backed host wiring: Dispatch, and Players, which reports what one server or proxy knows about the players on it from its own agent's events |
-| `anvil-agent/agent-api`                          | Shared operation descriptors, payloads, identities, and exceptions                                                   |
-| `anvil-agent/agent-client/client-api`            | Host clients, connections, directories, and artifact lookup                               |
-| `anvil-agent/agent-client`                       | Connections, stable process clients and sessions, directories, and observations in the Anvil JVM                    |
-| `anvil-agent/agent-server/agent-server-api`      | Native services, operation handlers, and embedded endpoint contracts                                                 |
-| `anvil-agent/agent-server`                       | Embedded native operation dispatch, transport endpoint, and external-handler loading                                |
+| `anvil-process/process-protocol/process-protocol-api`                          | Shared operation descriptors, payloads, identities, and exceptions                                                   |
+| `anvil-process/process-protocol/protocol-host/protocol-host-api`            | Host clients, connections, directories, and artifact lookup                               |
+| `anvil-process/process-protocol/protocol-host/protocol-host-common`                       | Connections, stable process clients and sessions, directories, and observations in the Anvil JVM                    |
+| `anvil-process/process-protocol/protocol-agent/protocol-agent-api`      | Native services, operation handlers, and embedded endpoint contracts                                                 |
+| `anvil-process/process-protocol/protocol-agent/protocol-agent-common`                       | Embedded native operation dispatch, transport endpoint, and external-handler loading                                |
 | `anvil-launcher`                                | Global engine builder, default scenario factory, scoped-service bindings, and shaded assembly; no rules of its own |
 | `anvil-integration/integration-junit`                        | JUnit lifecycle, context injection, and outcome propagation                                                   |
 | `anvil-tooling`                                 | Neutral session contracts, extensible actions, and foreground/IDE runner              |
