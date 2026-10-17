@@ -15,6 +15,8 @@ import me.whereareiam.anvil.capability.dialogs.type.DialogAfterAction;
 import me.whereareiam.anvil.capability.dialogs.type.DialogInputType;
 import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
 import me.whereareiam.anvil.capability.protocol.api.model.ViewRotation;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtCompound;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtString;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
 import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
 import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerBinding;
@@ -44,7 +46,10 @@ class DialogsBindingTest {
 			.afterAction(DialogAfterAction.CLOSE)
 			.button(new DialogButton("gui.ok", null, true))
 			.build();
-	private static final Map<String, Object> LOGIN_NBT = Map.of("type", "minecraft:notice", "title", "Log in");
+	private static final NbtCompound LOGIN_NBT = NbtCompound.builder()
+			.entry("type", NbtString.of("minecraft:notice"))
+			.entry("title", NbtString.of("Log in"))
+			.build();
 
 	@Test
 	void sendsClicksThroughThePortWithThePlayersSession() {
@@ -59,7 +64,7 @@ class DialogsBindingTest {
 				List.of(new DialogValue("remember", DialogInputType.BOOLEAN, "true")))));
 
 		assertEquals(List.of("dialogs.click"), List.copyOf(operations.handlers.keySet()));
-		assertEquals(List.of("command login secret", "custom example:submit {source=dialog, remember=1}"), packets.sent);
+		assertEquals(List.of("command login secret", "custom example:submit {source:\"dialog\",remember:1b}"), packets.sent);
 		assertEquals(List.of(player.session, player.session), packets.sessions);
 	}
 
@@ -153,9 +158,9 @@ class DialogsBindingTest {
 		}
 
 		@Override
-		public void customClick(@NotNull NativeSession session, @NotNull String id, @NotNull Map<String, Object> payload) {
+		public void customClick(@NotNull NativeSession session, @NotNull String id, @NotNull NbtCompound payload) {
 			sessions.add(session);
-			sent.add("custom " + id + " " + payload);
+			sent.add("custom " + id + " " + payload.toSnbt());
 		}
 
 		@Override

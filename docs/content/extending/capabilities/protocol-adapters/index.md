@@ -223,6 +223,15 @@ segment does not link, or more than one adapter is declared, `adapter` throws
 `AdapterUnavailableException` and the worker reports your capability as unavailable with that reason,
 while the player keeps its other capabilities.
 
+Keep segments thin: everything that does not depend on the release belongs in the binding, so a new
+release needs a segment only where its packets change. When a packet carries NBT, let the port take and
+return the library-neutral NBT model from `capability-protocol-api`
+(`me.whereareiam.anvil.capability.protocol.api.model.nbt`): `NbtCompound`, `NbtList`, `NbtString`,
+the numeric tags and the array tags. The segment converts its library's tags at the boundary, and the
+binding reads and builds values with the typed model and its `Snbt` reader and writer. The dialogs
+family works this way: its segments only convert NBT, while dialog reading and SNBT live in its common
+binding.
+
 ## Package a segment
 
 A segment JAR contains the port implementation, its one-line `META-INF/services/<port>` descriptor,

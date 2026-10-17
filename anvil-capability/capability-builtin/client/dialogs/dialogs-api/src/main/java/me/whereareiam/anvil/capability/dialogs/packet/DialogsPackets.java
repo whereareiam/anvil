@@ -1,8 +1,7 @@
 package me.whereareiam.anvil.capability.dialogs.packet;
 
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtCompound;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Map;
 
 /**
  * Reads the dialog-related packets of one protocol-library release and sends what the client sends when a dialog
@@ -11,15 +10,10 @@ import java.util.Map;
  * segment for the player's release and hands its implementation to the dialogs wiring. Releases before Minecraft
  * 1.21.6 have no dialogs and no segment.
  *
- * <p>A segment only moves NBT between the release's packets and the library-neutral dialogs binding, which reads
- * dialogs, flattens their text, writes and parses SNBT, builds click payloads and decides which native connection
- * generation a dialog belongs to. NBT crosses the port as a plain tree:</p>
- * <ul>
- *     <li>a compound is a {@code Map<String, Object>} whose iteration order is the order of its entries;</li>
- *     <li>a list is a {@code List<?>} of one element type;</li>
- *     <li>a value is a {@code Byte}, {@code Short}, {@code Integer}, {@code Long}, {@code Float}, {@code Double},
- *     {@code String}, {@code byte[]}, {@code int[]} or {@code long[]}, and a boolean is a byte of 0 or 1.</li>
- * </ul>
+ * <p>A segment only converts NBT between the release's native tags and the library-neutral
+ * {@link me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtTag} model; the dialogs binding reads dialogs,
+ * flattens their text, writes and parses SNBT, builds click payloads and decides which native connection generation
+ * a dialog belongs to.</p>
  *
  * <p>Implementations are stateless and are called only with the player's current native session.</p>
  *
@@ -29,13 +23,13 @@ import java.util.Map;
  *     public void command(Session session, String command) {
  *         session.send(new ServerboundChatCommandPacket(command));
  *     }
- *     public void customClick(Session session, String id, Map<String, Object> payload) {
- *         session.send(new ServerboundCustomClickActionPacket(Key.key(id), compound(payload)));
+ *     public void customClick(Session session, String id, NbtCompound payload) {
+ *         session.send(new ServerboundCustomClickActionPacket(Key.key(id), nativeCompound(payload)));
  *     }
  *     public Runnable listen(Session session, DialogsPacketListener listener) {
  *         SessionListener native = new SessionAdapter() {
  *             public void packetReceived(Session received, Packet packet) {
- *                 if (packet instanceof ClientboundShowDialogConfigurationPacket show) listener.shown(show.getDialog(), true);
+ *                 if (packet instanceof ClientboundShowDialogConfigurationPacket show) listener.shown(neutral(show.getDialog()), true);
  *                 if (packet instanceof ClientboundClearDialogPacket) listener.cleared();
  *                 if (packet instanceof ClientboundRespawnPacket) listener.reset();
  *             }
@@ -70,9 +64,9 @@ public interface DialogsPackets<S> {
 	 *
 	 * @param session the player's current native session
 	 * @param id custom click ID, such as {@code example:submit}
-	 * @param payload the payload compound as an NBT tree, empty when the click carries none
+	 * @param payload the payload compound, empty when the click carries none
 	 */
-	void customClick(@NotNull S session, @NotNull String id, @NotNull Map<String, Object> payload);
+	void customClick(@NotNull S session, @NotNull String id, @NotNull NbtCompound payload);
 
 	/**
 	 * Reports what the session receives about dialogs while it is connected, until the returned handle runs:

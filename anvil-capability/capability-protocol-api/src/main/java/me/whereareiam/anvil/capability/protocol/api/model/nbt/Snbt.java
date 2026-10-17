@@ -1,9 +1,8 @@
-package me.whereareiam.anvil.capability.dialogs.nbt;
+package me.whereareiam.anvil.capability.protocol.api.model.nbt;
 
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -11,16 +10,22 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Writes NBT trees as SNBT and reads SNBT compounds back into NBT trees, independent of any protocol library.
+ * Writes NBT tags as SNBT, Minecraft's text form of NBT, and reads SNBT compounds, independent of any protocol
+ * library.
  *
- * <p>The writer produces the compact form adventure's SNBT writer produces: keys stay unquoted unless they hold a
- * character outside {@code [A-Za-z0-9._+-]}, strings are double-quoted, integers carry no suffix while other numbers
- * carry a lower-case one ({@code 1b}, {@code 2s}, {@code 3l}, {@code 4.5f}, {@code 6.0d}), and arrays name their type
- * in upper case ({@code [B;1b,2b]}). The reader accepts what the writer produces and the usual SNBT around it:
- * either quote character, upper- and lower-case suffixes, {@code true} and {@code false} as bytes, unsuffixed
- * decimals as doubles and other unquoted words as strings.</p>
+ * <p>The writer produces the compact form: keys stay unquoted unless they hold a character outside
+ * {@code [A-Za-z0-9._+-]}, strings are double-quoted, ints carry no suffix while other numbers carry a lower-case one
+ * ({@code 1b}, {@code 2s}, {@code 3l}, {@code 4.5f}, {@code 6.0d}), and arrays name their type in upper case
+ * ({@code [B;1b,2b]}). The reader accepts that form and the usual SNBT around it: either quote character,
+ * whitespace, upper- and lower-case suffixes, {@code true} and {@code false} as bytes, unsuffixed decimals as doubles
+ * and other unquoted words as strings.</p>
+ *
+ * <pre>{@code
+ * NbtCompound payload = Snbt.readCompound("{source:\"dialog\",page:2}");
+ * String text = Snbt.write(payload); // {source:"dialog",page:2}
+ * }</pre>
  */
-final class Snbt {
+public final class Snbt {
 	private static final Pattern INTEGER = Pattern.compile("[-+]?(?:0|[1-9][0-9]*)([bBsSlL]?)");
 	private static final Pattern DECIMAL = Pattern.compile("[-+]?(?:[0-9]+[.]?|[0-9]*[.][0-9]+)(?:[eE][-+]?[0-9]+)?([fFdD]?)");
 
@@ -32,13 +37,12 @@ final class Snbt {
 	}
 
 	/**
-	 * Writes a tag of an NBT tree as SNBT.
+	 * Writes a tag as compact SNBT.
 	 *
-	 * @param tag compound, list or value of an NBT tree
+	 * @param tag the tag
 	 * @return the tag as SNBT
-	 * @throws IllegalArgumentException when the tree holds a value outside the NBT tree model
 	 */
-	static @NotNull String write(@NotNull Object tag) {
+	public static @NotNull String write(@NotNull NbtTag tag) {
 		StringBuilder out = new StringBuilder();
 		write(tag, out);
 		return out.toString();
@@ -47,66 +51,69 @@ final class Snbt {
 	/**
 	 * Reads an SNBT compound.
 	 *
-	 * @param snbt SNBT text of one compound
+	 * @param snbt SNBT text of exactly one compound, optionally surrounded by whitespace
 	 * @return the compound, its entries in the order the text lists them
 	 * @throws IllegalArgumentException when the text is not exactly one SNBT compound
 	 */
-	static @NotNull Map<String, Object> compound(@NotNull String snbt) {
+	public static @NotNull NbtCompound readCompound(@NotNull String snbt) {
 		Snbt reader = new Snbt(snbt);
 		reader.skipWhitespace();
 		if (!reader.peek('{')) throw new IllegalArgumentException("Not an SNBT compound: " + snbt);
 
-		Map<String, Object> compound = reader.readCompound();
+		NbtCompound compound = reader.readCompound();
 		reader.skipWhitespace();
 		if (reader.position != snbt.length()) throw reader.failure("unexpected text after the compound");
 		return compound;
 	}
 
-	private static void write(Object tag, StringBuilder out) {
+	private static void write(NbtTag tag, StringBuilder out) {
 		switch (tag) {
-			case Byte value -> out.append(value).append('b');
-			case Short value -> out.append(value).append('s');
-			case Integer value -> out.append(value);
-			case Long value -> out.append(value).append('l');
-			case Float value -> out.append(value).append('f');
-			case Double value -> out.append(value).append('d');
-			case String value -> quote(value, out);
-			case byte[] values -> {
+			case NbtByte value -> out.append(value.getValue()).append('b');
+			case NbtShort value -> out.append(value.getValue()).append('s');
+			case NbtInt value -> out.append(value.getValue());
+			case NbtLong value -> out.append(value.getValue()).append('l');
+			case NbtFloat value -> out.append(value.getValue()).append('f');
+			case NbtDouble value -> out.append(value.getValue()).append('d');
+			case NbtString value -> quote(value.getValue(), out);
+			case NbtByteArray array -> {
+				byte[] values = array.getValues();
 				out.append("[B;");
 				for (int index = 0; index < values.length; index++) out.append(index == 0 ? "" : ",").append(values[index]).append('b');
 				out.append(']');
 			}
-			case int[] values -> {
+			case NbtIntArray array -> {
+				int[] values = array.getValues();
 				out.append("[I;");
 				for (int index = 0; index < values.length; index++) out.append(index == 0 ? "" : ",").append(values[index]);
 				out.append(']');
 			}
-			case long[] values -> {
+			case NbtLongArray array -> {
+				long[] values = array.getValues();
 				out.append("[L;");
 				for (int index = 0; index < values.length; index++) out.append(index == 0 ? "" : ",").append(values[index]).append('l');
 				out.append(']');
 			}
-			case List<?> list -> {
+			case NbtList list -> {
 				out.append('[');
-				for (int index = 0; index < list.size(); index++) {
+				List<NbtTag> elements = list.getElements();
+				for (int index = 0; index < elements.size(); index++) {
 					if (index > 0) out.append(',');
-					write(list.get(index), out);
+					write(elements.get(index), out);
 				}
 				out.append(']');
 			}
-			case Map<?, ?> compound -> {
+			case NbtCompound compound -> {
 				out.append('{');
 				boolean first = true;
-				for (Map.Entry<?, ?> entry : compound.entrySet()) {
+				for (Map.Entry<String, NbtTag> entry : compound.getEntries().entrySet()) {
 					if (!first) out.append(',');
 					first = false;
-					key((String) entry.getKey(), out);
+					key(entry.getKey(), out);
 					out.append(':');
 					write(entry.getValue(), out);
 				}
 				out.append('}');
 			}
-			default -> throw new IllegalArgumentException("Not an NBT value: " + tag.getClass().getName());
 		}
 	}
 
@@ -134,60 +141,62 @@ final class Snbt {
 				|| character == '-' || character == '_' || character == '.' || character == '+';
 	}
 
-	private Object readValue() {
+	private NbtTag readValue() {
 		skipWhitespace();
 		if (peek('{')) return readCompound();
 		if (peek('[')) return readList();
-		if (peek('"') || peek('\'')) return readQuoted();
+		if (peek('"') || peek('\'')) return NbtString.of(readQuoted());
 
 		return typed(readWord());
 	}
 
-	private Map<String, Object> readCompound() {
+	private NbtCompound readCompound() {
 		expect('{');
-		Map<String, Object> compound = new LinkedHashMap<>();
+		NbtCompound.NbtCompoundBuilder compound = NbtCompound.builder();
 		skipWhitespace();
-		if (accept('}')) return compound;
+		if (accept('}')) return compound.build();
 
 		do {
 			skipWhitespace();
 			String key = peek('"') || peek('\'') ? readQuoted() : readWord();
-			if (key.isEmpty()) throw failure("expected a key");
-
 			skipWhitespace();
 			expect(':');
-			compound.put(key, readValue());
+			compound.entry(key, readValue());
 			skipWhitespace();
 		} while (accept(','));
 		expect('}');
-		return compound;
+		return compound.build();
 	}
 
-	private Object readList() {
+	private NbtTag readList() {
 		expect('[');
 		if (position + 1 < text.length() && text.charAt(position + 1) == ';') return readArray(text.charAt(position));
 
-		List<Object> list = new ArrayList<>();
+		List<NbtTag> elements = new ArrayList<>();
 		skipWhitespace();
-		if (accept(']')) return list;
+		if (accept(']')) return NbtList.EMPTY;
 
 		do {
-			list.add(readValue());
+			elements.add(readValue());
 		} while (acceptAfterWhitespace(','));
 		skipWhitespace();
 		expect(']');
-		return list;
+		try {
+			return NbtList.of(elements);
+		} catch (IllegalArgumentException mixed) {
+			throw failure(mixed.getMessage());
+		}
 	}
 
-	private Object readArray(char type) {
+	private NbtTag readArray(char type) {
 		position += 2;
 		List<Number> elements = new ArrayList<>();
 		skipWhitespace();
 		if (!accept(']')) {
 			do {
 				skipWhitespace();
-				if (!(typed(readWord()) instanceof Number number)) throw failure("expected a number in the array");
-				elements.add(number);
+				if (!(typed(readWord()) instanceof NbtNumber number)) throw failure("expected a number in the array");
+				elements.add(number.asNumber());
 			} while (acceptAfterWhitespace(','));
 			skipWhitespace();
 			expect(']');
@@ -197,10 +206,10 @@ final class Snbt {
 			case 'B' -> {
 				byte[] values = new byte[elements.size()];
 				for (int index = 0; index < values.length; index++) values[index] = elements.get(index).byteValue();
-				yield values;
+				yield NbtByteArray.of(values);
 			}
-			case 'I' -> elements.stream().mapToInt(Number::intValue).toArray();
-			case 'L' -> elements.stream().mapToLong(Number::longValue).toArray();
+			case 'I' -> NbtIntArray.of(elements.stream().mapToInt(Number::intValue).toArray());
+			case 'L' -> NbtLongArray.of(elements.stream().mapToLong(Number::longValue).toArray());
 			default -> throw failure("unknown array type " + type);
 		};
 	}
@@ -228,27 +237,27 @@ final class Snbt {
 		return text.substring(start, position);
 	}
 
-	private static Object typed(String word) {
-		if (word.equals("true")) return (byte) 1;
-		if (word.equals("false")) return (byte) 0;
+	private static NbtTag typed(String word) {
+		if (word.equals("true")) return NbtByte.of(true);
+		if (word.equals("false")) return NbtByte.of(false);
 
 		Matcher integer = INTEGER.matcher(word);
 		if (integer.matches()) {
 			String digits = word.substring(0, word.length() - integer.group(1).length());
 			return switch (integer.group(1).toLowerCase(Locale.ROOT)) {
-				case "b" -> Byte.parseByte(digits);
-				case "s" -> Short.parseShort(digits);
-				case "l" -> Long.parseLong(digits);
-				default -> Integer.parseInt(digits);
+				case "b" -> NbtByte.of(Byte.parseByte(digits));
+				case "s" -> NbtShort.of(Short.parseShort(digits));
+				case "l" -> NbtLong.of(Long.parseLong(digits));
+				default -> NbtInt.of(Integer.parseInt(digits));
 			};
 		}
 
 		Matcher decimal = DECIMAL.matcher(word);
 		if (decimal.matches() && word.chars().anyMatch(Character::isDigit)) {
 			String digits = word.substring(0, word.length() - decimal.group(1).length());
-			return decimal.group(1).equalsIgnoreCase("f") ? (Object) Float.parseFloat(digits) : Double.parseDouble(digits);
+			return decimal.group(1).equalsIgnoreCase("f") ? NbtFloat.of(Float.parseFloat(digits)) : NbtDouble.of(Double.parseDouble(digits));
 		}
-		return word;
+		return NbtString.of(word);
 	}
 
 	private void skipWhitespace() {

@@ -8,11 +8,16 @@ import me.whereareiam.anvil.capability.dialogs.model.dialog.DialogOption;
 import me.whereareiam.anvil.capability.dialogs.type.DialogActionType;
 import me.whereareiam.anvil.capability.dialogs.type.DialogAfterAction;
 import me.whereareiam.anvil.capability.dialogs.type.DialogInputType;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtByte;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtCompound;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtFloat;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtInt;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtList;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtString;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtTag;
 import org.junit.jupiter.api.Test;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DialogReaderTest {
 	@Test
 	void readsAMultiActionFormWithEveryInputType() {
-		Map<String, Object> form = compound(
+		NbtCompound form = compound(
 				"type", "minecraft:multi_action",
 				"title", compound("text", "Identica", "extra", List.of(": Log in")),
 				"body", compound("type", "minecraft:plain_message", "contents", "Welcome back"),
@@ -66,14 +71,14 @@ class DialogReaderTest {
 
 	@Test
 	void readsTheDefaultsOfNoticesAndTheButtonsOfConfirmations() {
-		Map<String, Object> notice = compound(
+		NbtCompound notice = compound(
 				"type", "minecraft:notice",
 				"title", compound("translate", "menu.paused"),
 				"body", List.of(
 						compound("type", "minecraft:plain_message", "contents", "First"),
 						compound("type", "minecraft:item", "item", compound("id", "minecraft:diamond"), "description", compound("contents", "Shiny")))
 		);
-		Map<String, Object> confirmation = compound(
+		NbtCompound confirmation = compound(
 				"type", "minecraft:confirmation",
 				"title", "Leave?",
 				"yes", compound("label", "Yes", "action", compound("type", "minecraft:custom", "id", "example:leave")),
@@ -105,15 +110,15 @@ class DialogReaderTest {
 
 	@Test
 	void readsNestedDialogsAndTheEntriesOfADialogList() {
-		Map<String, Object> rules = compound("type", "minecraft:notice", "title", "Rules", "external_title", "Server rules");
-		Map<String, Object> list = compound(
+		NbtCompound rules = compound("type", "minecraft:notice", "title", "Rules", "external_title", "Server rules");
+		NbtCompound list = compound(
 				"type", "minecraft:dialog_list",
 				"title", "Menu",
 				"dialogs", List.of(rules),
 				"exit_action", compound("label", "Back", "action", compound("type", "minecraft:show_dialog", "dialog", "example:main"))
 		);
-		Map<String, Object> tagged = compound("type", "minecraft:dialog_list", "title", "Extras", "dialogs", "#minecraft:pause_screen_additions");
-		Map<String, Object> named = compound("type", "minecraft:dialog_list", "title", "Named", "dialogs", List.of("example:rules"));
+		NbtCompound tagged = compound("type", "minecraft:dialog_list", "title", "Extras", "dialogs", "#minecraft:pause_screen_additions");
+		NbtCompound named = compound("type", "minecraft:dialog_list", "title", "Named", "dialogs", List.of("example:rules"));
 
 		Dialog menu = DialogReader.read(list);
 
@@ -128,7 +133,7 @@ class DialogReaderTest {
 
 	@Test
 	void readsAShowDialogActionWithTheDialogInline() {
-		Map<String, Object> dialog = compound(
+		NbtCompound dialog = compound(
 				"type", "minecraft:notice",
 				"title", "Start",
 				"action", compound("label", "Next", "action", compound("type", "show_dialog",
@@ -140,9 +145,24 @@ class DialogReaderTest {
 		assertEquals("Second", action.getDialog().getTitle());
 	}
 
-	static Map<String, Object> compound(Object... entries) {
-		Map<String, Object> compound = new LinkedHashMap<>();
-		for (int index = 0; index < entries.length; index += 2) compound.put((String) entries[index], entries[index + 1]);
-		return compound;
+	/**
+	 * Builds a compound from key and value pairs, each value a tag or a Java string, byte, int, float or list.
+	 */
+	static NbtCompound compound(Object... entries) {
+		NbtCompound.NbtCompoundBuilder compound = NbtCompound.builder();
+		for (int index = 0; index < entries.length; index += 2) compound.entry((String) entries[index], tag(entries[index + 1]));
+		return compound.build();
+	}
+
+	static NbtTag tag(Object value) {
+		return switch (value) {
+			case NbtTag tag -> tag;
+			case String text -> NbtString.of(text);
+			case Byte number -> NbtByte.of(number);
+			case Integer number -> NbtInt.of(number);
+			case Float number -> NbtFloat.of(number);
+			case List<?> list -> NbtList.of(list.stream().map(DialogReaderTest::tag).toList());
+			default -> throw new IllegalArgumentException("No NBT tag for " + value.getClass().getName());
+		};
 	}
 }

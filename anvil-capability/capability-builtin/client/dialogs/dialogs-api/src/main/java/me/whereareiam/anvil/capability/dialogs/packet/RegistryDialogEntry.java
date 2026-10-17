@@ -1,10 +1,9 @@
 package me.whereareiam.anvil.capability.dialogs.packet;
 
 import lombok.Value;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtCompound;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Map;
 
 /**
  * One entry of the dialog registry as a release's registry packet carries it, which
@@ -17,8 +16,8 @@ public class RegistryDialogEntry {
 	 */
 	@NotNull String name;
 	/**
-	 * The dialog compound as an NBT tree, or {@code null} when the server left it out because the client knows it
-	 * from a built-in pack.
+	 * The dialog compound, or {@code null} when the server left it out because the client knows it from a built-in
+	 * pack.
 	 */
-	@Nullable Map<String, Object> dialog;
+	@Nullable NbtCompound dialog;
 }

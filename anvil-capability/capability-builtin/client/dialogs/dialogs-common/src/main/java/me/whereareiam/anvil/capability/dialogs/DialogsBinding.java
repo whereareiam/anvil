@@ -10,20 +10,20 @@ import me.whereareiam.anvil.capability.dialogs.packet.DialogsPacketListener;
 import me.whereareiam.anvil.capability.dialogs.packet.DialogsPackets;
 import me.whereareiam.anvil.capability.dialogs.packet.RegistryDialogEntry;
 import me.whereareiam.anvil.capability.dialogs.screen.DialogRegistry;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtCompound;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
 import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
 import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerBinding;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Worker-side dialogs behavior over the packets of one library release: it registers the click operation for a
  * player, sends clicks through the player's current native session, and emits what a native session reports about
  * dialogs while it is still the player's current one. Each new native session starts by resetting the screens,
  * because a client that reconnects has none open. The binding reads the dialog NBT the release reports and builds
- * the payload of each custom click, so a release's packets only carry NBT trees.
+ * the payload of each custom click, so a release's packets only convert NBT.
  *
  * @param <S> native session type of the library release
  */
@@ -53,7 +53,7 @@ public final class DialogsBinding<S> {
 		player.emit(DialogsOperations.RESET, null);
 		Runnable detach = packets.listen(session, new DialogsPacketListener() {
 			@Override
-			public void shown(@NotNull Map<String, Object> dialog, boolean configuration) {
+			public void shown(@NotNull NbtCompound dialog, boolean configuration) {
 				if (player.isCurrentNativeSession(nativeSession))
 					player.emit(DialogsOperations.SHOWN, DialogReader.read(dialog).toBuilder().configuration(configuration).build());
 			}

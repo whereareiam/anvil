@@ -3,6 +3,12 @@ package me.whereareiam.anvil.capability.dialogs.mcprotocol.v26_3;
 import me.whereareiam.anvil.capability.dialogs.packet.DialogsPacketListener;
 import me.whereareiam.anvil.capability.dialogs.packet.DialogsPackets;
 import me.whereareiam.anvil.capability.dialogs.packet.RegistryDialogEntry;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtByte;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtCompound;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtFloat;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtInt;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtIntArray;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtString;
 import net.kyori.adventure.key.Key;
 import org.cloudburstmc.nbt.NbtList;
 import org.cloudburstmc.nbt.NbtMap;
@@ -27,17 +33,18 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.ServiceLoader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertSame;
 
 class McProtocolDialogsPacketsTest {
 	private static final NbtMap NOTICE = NbtMap.builder().putString("type", "minecraft:notice").putString("title", "Terms").build();
+	private static final NbtCompound NEUTRAL_NOTICE = NbtCompound.builder()
+			.entry("type", NbtString.of("minecraft:notice"))
+			.entry("title", NbtString.of("Terms"))
+			.build();
 
 	private final McProtocolDialogsPackets packets = new McProtocolDialogsPackets();
 	private final NativeSession session = new NativeSession();
@@ -52,7 +59,7 @@ class McProtocolDialogsPacketsTest {
 		session.receive(new ClientboundShowDialogGamePacket(Holder.ofId(3)));
 
 		assertEquals(List.of("shown in the game", "shown from registry 3"), events);
-		assertSame(NOTICE, reported.getFirst());
+		assertEquals(NEUTRAL_NOTICE, reported.getFirst());
 	}
 
 	@Test
@@ -66,7 +73,7 @@ class McProtocolDialogsPacketsTest {
 		session.receive(new ClientboundRespawnPacket(null, false, false));
 
 		assertEquals(List.of("shown during configuration", "cleared", "reset", "reset"), events);
-		assertSame(NOTICE, reported.getFirst());
+		assertEquals(NEUTRAL_NOTICE, reported.getFirst());
 	}
 
 	@Test
@@ -80,7 +87,7 @@ class McProtocolDialogsPacketsTest {
 		)));
 
 		assertEquals(List.of("registry"), events);
-		assertEquals(List.of(new RegistryDialogEntry("minecraft:server_links", null), new RegistryDialogEntry("example:rules", NOTICE)),
+		assertEquals(List.of(new RegistryDialogEntry("minecraft:server_links", null), new RegistryDialogEntry("example:rules", NEUTRAL_NOTICE)),
 				reported.getFirst());
 	}
 
@@ -104,16 +111,18 @@ class McProtocolDialogsPacketsTest {
 	}
 
 	@Test
-	void sendsCustomClicksWithTheirPayloadTreeAsCompound() {
-		Map<String, Object> payload = new LinkedHashMap<>();
-		payload.put("source", "dialog");
-		payload.put("remember", (byte) 1);
-		payload.put("amount", 2.5F);
-		payload.put("pages", List.of(1, 2));
-		payload.put("nested", Map.of("empty", List.of()));
+	void sendsCustomClicksWithTheirPayloadAsNativeCompound() {
+		NbtCompound payload = NbtCompound.builder()
+				.entry("source", NbtString.of("dialog"))
+				.entry("remember", NbtByte.of(true))
+				.entry("amount", NbtFloat.of(2.5F))
+				.entry("pages", me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtList.of(NbtInt.of(1), NbtInt.of(2)))
+				.entry("colors", NbtIntArray.of(3, 4))
+				.entry("nested", NbtCompound.builder().entry("empty", me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtList.EMPTY).build())
+				.build();
 
 		packets.customClick(session.proxy, "example:submit", payload);
-		packets.customClick(session.proxy, "example:ping", Map.of());
+		packets.customClick(session.proxy, "example:ping", NbtCompound.EMPTY);
 
 		ServerboundCustomClickActionPacket submit = assertInstanceOf(ServerboundCustomClickActionPacket.class, session.sent.get(0));
 		assertEquals(Key.key("example:submit"), submit.getId());
@@ -122,6 +131,7 @@ class McProtocolDialogsPacketsTest {
 				.putBoolean("remember", true)
 				.putFloat("amount", 2.5F)
 				.putList("pages", NbtType.INT, 1, 2)
+				.putIntArray("colors", new int[]{3, 4})
 				.putCompound("nested", NbtMap.builder().putList("empty", NbtType.END).build())
 				.build(), submit.getPayload());
 		assertEquals(new NbtList<>(NbtType.INT, 1, 2), submit.getPayload().get("pages"));
@@ -142,7 +152,7 @@ class McProtocolDialogsPacketsTest {
 	private DialogsPacketListener recording() {
 		return new DialogsPacketListener() {
 			@Override
-			public void shown(@NotNull Map<String, Object> dialog, boolean configuration) {
+			public void shown(@NotNull NbtCompound dialog, boolean configuration) {
 				events.add(configuration ? "shown during configuration" : "shown in the game");
 				reported.add(dialog);
 			}

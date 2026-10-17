@@ -1,18 +1,20 @@
 package me.whereareiam.anvil.capability.dialogs.nbt;
 
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtTag;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static me.whereareiam.anvil.capability.dialogs.nbt.DialogReaderTest.compound;
+import static me.whereareiam.anvil.capability.dialogs.nbt.DialogReaderTest.tag;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ComponentTextTest {
 	@Test
 	void flattensTextKeybindAndSelectorPartsWithTheirChildren() {
-		Object component = compound("text", "Press ", "extra", List.of(
+		NbtTag component = compound("text", "Press ", "extra", List.of(
 				compound("keybind", "key.jump"),
-				" near ",
+				compound("", " near "),
 				compound("selector", "@p"),
 				compound("score", compound("name", "@s", "objective", "kills"))
 		));
@@ -22,7 +24,7 @@ class ComponentTextTest {
 
 	@Test
 	void writesATranslationAsItsKeyFollowedByEachArgument() {
-		Object component = compound("translate", "multiplayer.player.joined", "with", List.of(
+		NbtTag component = compound("translate", "multiplayer.player.joined", "with", List.of(
 				compound("text", "Alice"),
 				compound("", 3)
 		));
@@ -32,11 +34,12 @@ class ComponentTextTest {
 
 	@Test
 	void followsTheTypeEntryAndJoinsTheElementsOfAList() {
-		Object typed = compound("type", "keybind", "text", "ignored", "keybind", "key.use");
-		Object list = List.of("A", compound("text", "B"), compound("", "C"));
+		NbtTag typed = compound("type", "keybind", "text", "ignored", "keybind", "key.use");
+		NbtTag list = tag(List.of(compound("", "A"), compound("text", "B"), compound("", "C")));
 
 		assertEquals("key.use", ComponentText.plain(typed));
 		assertEquals("ABC", ComponentText.plain(list));
+		assertEquals("Plain", ComponentText.plain(tag("Plain")));
 		assertEquals("", ComponentText.plain(null));
 	}
 }

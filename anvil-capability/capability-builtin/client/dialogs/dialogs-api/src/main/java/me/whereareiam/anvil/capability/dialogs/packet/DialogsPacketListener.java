@@ -1,18 +1,18 @@
 package me.whereareiam.anvil.capability.dialogs.packet;
 
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtCompound;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Receives what one release's packets tell a client about dialogs, as {@link DialogsPackets} reports it: the dialogs
  * the server shows and clears, the moments the client replaces every screen, and the dialog registry. Dialogs arrive
- * as the NBT trees {@link DialogsPackets} describes, exactly as the vanilla dialog codec wrote them.
+ * as the compounds the vanilla dialog codec wrote, in the library-neutral NBT model.
  *
  * <pre>{@code
  * Runnable detach = packets.listen(session, new DialogsPacketListener() {
- *     public void shown(Map<String, Object> dialog, boolean configuration) { player.emit(SHOWN, read(dialog, configuration)); }
+ *     public void shown(NbtCompound dialog, boolean configuration) { player.emit(SHOWN, read(dialog, configuration)); }
  *     public void shownFromRegistry(int registryId) { player.emit(SHOWN, registered(registryId)); }
  *     public void cleared() { player.emit(CLEARED, null); }
  *     public void reset() { player.emit(RESET, null); }
@@ -27,7 +27,7 @@ public interface DialogsPacketListener {
 	 * @param dialog the dialog compound
 	 * @param configuration whether the server showed it during the configuration phase rather than in the game
 	 */
-	void shown(@NotNull Map<String, Object> dialog, boolean configuration);
+	void shown(@NotNull NbtCompound dialog, boolean configuration);
 
 	/**
 	 * Reports that the server showed, in the game, a dialog of the registry it sent during configuration.

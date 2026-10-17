@@ -9,6 +9,7 @@ import me.whereareiam.anvil.capability.dialogs.packet.DialogsPackets;
 import me.whereareiam.anvil.capability.protocol.api.exception.AdapterUnavailableException;
 import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
 import me.whereareiam.anvil.capability.protocol.api.model.ViewRotation;
+import me.whereareiam.anvil.capability.protocol.api.model.nbt.NbtCompound;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
 import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
 import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerExtension;
@@ -91,7 +92,7 @@ class McProtocolDialogsExtensionTest {
 		}
 
 		@Override
-		public void customClick(@NotNull String session, @NotNull String id, @NotNull Map<String, Object> payload) {
+		public void customClick(@NotNull String session, @NotNull String id, @NotNull NbtCompound payload) {
 			sent.add("custom " + id + " " + payload);
 		}
 
