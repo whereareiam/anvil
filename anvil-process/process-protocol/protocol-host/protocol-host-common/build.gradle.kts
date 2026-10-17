@@ -5,9 +5,9 @@ plugins {
 description = "Host-side agent connections, sessions, and player observation"
 
 dependencies {
-	compileOnly(projects.anvilProcess.processProtocol.protocolHost.protocolHostApi)
 	compileOnly(projects.anvilApi)
+	compileOnly(projects.anvilProcess.processProtocol.protocolHost.protocolHostApi)
 
-	testImplementation(projects.anvilProcess.processProtocol.protocolHost.protocolHostApi)
 	testImplementation(projects.anvilApi)
+	testImplementation(projects.anvilProcess.processProtocol.protocolHost.protocolHostApi)
 }

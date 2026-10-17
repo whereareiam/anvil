@@ -9,9 +9,10 @@ import java.io.File
 import java.util.jar.JarFile
 
 /**
- * Builds a consumer of the `demo` capability family to check what the `module-capability` convention wires from the
- * family folder: the API for compilation, the common code embedded into the root's JAR and described by its
- * sources JAR, the library side at runtime, and the published artifact IDs of the root and its members.
+ * Builds a consumer of the `demo` capability family in `builtin-demo` to check what the `module-capability`
+ * convention wires from the family folder: the API for compilation, the common code embedded into the root's JAR
+ * and described by its sources JAR, the library side at runtime, and the published artifact IDs of the root and
+ * its members.
  */
 class CapabilityConventionFunctionalTest {
 	@TempDir
@@ -23,15 +24,15 @@ class CapabilityConventionFunctionalTest {
 		writeProject(project)
 
 		val compile = project.dependencies(":consumer", "compileClasspath")
-		assertTrue(compile.contains("project ':demo:demo-api'"), compile)
+		assertTrue(compile.contains("project ':builtin-demo:demo-api'"), compile)
 		assertFalse(compile.contains("demo-common") || compile.contains("demo-mcprotocol"), compile)
 		val runtime = project.dependencies(":consumer", "runtimeClasspath")
-		assertTrue(runtime.contains("project ':demo:demo-api'") && runtime.contains("project ':demo:demo-mcprotocol'"), runtime)
+		assertTrue(runtime.contains("project ':builtin-demo:demo-api'") && runtime.contains("project ':builtin-demo:demo-mcprotocol'"), runtime)
 		assertFalse(runtime.contains("demo-common"), runtime)
 
-		project.run(":demo:shadowJar", "publishAllPublicationsToFunctionalRepository")
+		project.run(":builtin-demo:shadowJar", "publishAllPublicationsToFunctionalRepository")
 		// The shaded JAR carries no classifier, unlike the plain, sources and Javadoc JARs beside it.
-		val bundle = project.file("demo/build/libs").listFiles().orEmpty().single { it.name.endsWith("-1.0.0.jar") }
+		val bundle = project.file("builtin-demo/build/libs").listFiles().orEmpty().single { it.name.endsWith("-1.0.0.jar") }
 		val entries = JarFile(bundle).use { jar -> jar.entries().asSequence().map { it.name }.toSet() }
 		assertTrue("demo/DemoProvider.class" in entries, entries.toString())
 		assertTrue("META-INF/services/demo.Provider" in entries, entries.toString())
@@ -52,25 +53,25 @@ class CapabilityConventionFunctionalTest {
 		writeProject(project)
 
 		val settings = project.file("settings.gradle.kts").readText()
-		project.write("demo/demo-extra/build.gradle.kts", "plugins {\n\tid(\"module-java\")\n}\n")
-		project.write("settings.gradle.kts", settings + "include(\":demo:demo-extra\")\n")
+		project.write("builtin-demo/demo-extra/build.gradle.kts", "plugins {\n\tid(\"module-java\")\n}\n")
+		project.write("settings.gradle.kts", settings + "include(\":builtin-demo:demo-extra\")\n")
 		val foreign = project.fail("help")
 		assertTrue(foreign.output.contains("found 'demo-extra'"), foreign.output)
 		project.write("settings.gradle.kts", settings)
-		project.file("demo/demo-extra").deleteRecursively()
+		project.file("builtin-demo/demo-extra").deleteRecursively()
 
-		project.write("demo/src/main/java/demo/Wiring.java", "package demo;\n\npublic final class Wiring {\n}\n")
+		project.write("builtin-demo/src/main/java/demo/Wiring.java", "package demo;\n\npublic final class Wiring {\n}\n")
 		val rootCode = project.fail("help")
 		assertTrue(rootCode.output.contains("only wires its members; move the code of its root to 'demo-common'"), rootCode.output)
-		project.file("demo/src/main/java").deleteRecursively()
+		project.file("builtin-demo/src/main/java").deleteRecursively()
 
-		project.write("demo/demo-common/src/main/java/demo/common/Shared.java", "package demo.common;\n\npublic final class Shared {\n}\n")
+		project.write("builtin-demo/demo-common/src/main/java/demo/common/Shared.java", "package demo.common;\n\npublic final class Shared {\n}\n")
 		val catchAll = project.fail("help")
 		assertTrue(catchAll.output.contains("declares the catch-all package 'demo.common' in 'demo-common'"), catchAll.output)
-		project.file("demo/demo-common/src/main/java/demo/common").deleteRecursively()
+		project.file("builtin-demo/demo-common/src/main/java/demo/common").deleteRecursively()
 
-		val apiBuild = project.file("demo/demo-api/build.gradle.kts").readText()
-		project.write("demo/demo-api/build.gradle.kts", apiBuild + "\ntoolkitPublish {\n\tartifactId.set(\"demo-api\")\n}\n")
+		val apiBuild = project.file("builtin-demo/demo-api/build.gradle.kts").readText()
+		project.write("builtin-demo/demo-api/build.gradle.kts", apiBuild + "\ntoolkitPublish {\n\tartifactId.set(\"demo-api\")\n}\n")
 		val renamed = project.fail("help")
 		assertTrue(renamed.output.contains("cannot be changed any further"), renamed.output)
 	}
@@ -84,7 +85,7 @@ class CapabilityConventionFunctionalTest {
 			}
 
 			rootProject.name = "capability-consumer"
-			include(":demo", ":demo:demo-api", ":demo:demo-common", ":demo:demo-mcprotocol", ":consumer")
+			include(":builtin-demo", ":builtin-demo:demo-api", ":builtin-demo:demo-common", ":builtin-demo:demo-mcprotocol", ":consumer")
 		""")
 		project.write("build.gradle.kts", """
 			allprojects {
@@ -103,32 +104,32 @@ class CapabilityConventionFunctionalTest {
 		// Registers the library `mcprotocol`, which makes `demo-mcprotocol` a library side of the family.
 		project.write("anvil-player/player-library/library-mcprotocol/mcprotocol-releases.toml", "# no releases are needed to register the library")
 
-		project.write("demo/build.gradle.kts", """
+		project.write("builtin-demo/build.gradle.kts", """
 			plugins {
 				id("module-capability")
 			}
 
 			description = "Demo capability family"
 		""")
-		project.write("demo/src/main/resources/META-INF/services/demo.Provider", "demo.DemoProvider")
-		project.write("demo/demo-api/build.gradle.kts", """
+		project.write("builtin-demo/src/main/resources/META-INF/services/demo.Provider", "demo.DemoProvider")
+		project.write("builtin-demo/demo-api/build.gradle.kts", """
 			plugins {
 				id("module-api")
 			}
 
 			description = "Demo capability API"
 		""")
-		project.write("demo/demo-api/src/main/java/demo/Demo.java", "package demo;\n\npublic interface Demo {\n}\n")
-		project.write("demo/demo-common/build.gradle.kts", """
+		project.write("builtin-demo/demo-api/src/main/java/demo/Demo.java", "package demo;\n\npublic interface Demo {\n}\n")
+		project.write("builtin-demo/demo-common/build.gradle.kts", """
 			plugins {
 				id("module-java")
 			}
 
 			dependencies {
-				compileOnly(project(":demo:demo-api"))
+				compileOnly(project(":builtin-demo:demo-api"))
 			}
 		""")
-		project.write("demo/demo-common/src/main/java/demo/DemoProvider.java", """
+		project.write("builtin-demo/demo-common/src/main/java/demo/DemoProvider.java", """
 			package demo;
 
 			public final class DemoProvider {
@@ -137,7 +138,7 @@ class CapabilityConventionFunctionalTest {
 				}
 			}
 		""")
-		project.write("demo/demo-mcprotocol/build.gradle.kts", """
+		project.write("builtin-demo/demo-mcprotocol/build.gradle.kts", """
 			plugins {
 				id("module-java")
 				id("packaging-publication")
@@ -145,14 +146,14 @@ class CapabilityConventionFunctionalTest {
 
 			description = "Demo capability side for MCProtocolLib"
 		""")
-		project.write("demo/demo-mcprotocol/src/main/java/demo/mcprotocol/DemoExtension.java", "package demo.mcprotocol;\n\npublic final class DemoExtension {\n}\n")
+		project.write("builtin-demo/demo-mcprotocol/src/main/java/demo/mcprotocol/DemoExtension.java", "package demo.mcprotocol;\n\npublic final class DemoExtension {\n}\n")
 		project.write("consumer/build.gradle.kts", """
 			plugins {
 				id("module-java")
 			}
 
 			dependencies {
-				implementation(project(":demo"))
+				implementation(project(":builtin-demo"))
 			}
 		""")
 	}

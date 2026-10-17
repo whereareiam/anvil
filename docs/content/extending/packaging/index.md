@@ -46,7 +46,7 @@ Use each scoped API at the same Anvil version as the host:
 |---|---|
 | Shared providers/contexts, neutral player contracts, typed requests, and handler registration | `capability-api` |
 | Protocol-backed player providers, channels, and native worker bindings | `capability-protocol-api` |
-| Agent-backed process and player capability providers | `capability-agent-api` |
+| Agent-backed process capability providers | `capability-agent-api` |
 | Host agent clients, connections, and directories | `agent-client-api` |
 | Embedded native handlers and platform agents | `agent-server-api` |
 | Shared agent request/response descriptors and payloads | `agent-api` |

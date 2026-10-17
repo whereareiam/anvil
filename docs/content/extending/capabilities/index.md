@@ -81,16 +81,15 @@ protocol channel and the services of the player's protocol library. An empty set
 library. When the player's worker does not install the provider's capability, composition skips the
 provider and its dependents for that player. Declare `Session` only when the implementation uses it.
 
-Agent-backed process and player providers use `capability-agent-api`, which includes the shared
-capability contracts and neutral player context. Its process/player contexts add scoped request
-channels for native agent work. `AgentProcessCapabilityProvider`
-can restrict platforms with `supportsPlatform(...)`.
-[Agent providers](./agent-adapters/index.md) explains both scopes and their cleanup hooks.
+Agent-backed process providers use `capability-agent-api`, which includes the shared
+capability contracts. Its process context adds a scoped request channel for native agent work.
+`AgentProcessCapabilityProvider` can restrict platforms with `supportsPlatform(...)`.
+[Agent providers](./agent-adapters/index.md) explains its scope and cleanup hooks.
 
 For exact signatures, consult the
 [PlayerCapabilityProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-capability/capability-api/src/main/java/me/whereareiam/anvil/capability/api/player/PlayerCapabilityProvider.java),
-[ProtocolPlayerCapabilityProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-capability/capability-protocol-api/src/main/java/me/whereareiam/anvil/capability/protocol/api/player/ProtocolPlayerCapabilityProvider.java)
-and [AgentProcessCapabilityProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-capability/capability-agent-api/src/main/java/me/whereareiam/anvil/capability/agent/api/process/AgentProcessCapabilityProvider.java)
+[ProtocolPlayerCapabilityProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-capability/capability-player/capability-player-api/src/main/java/me/whereareiam/anvil/capability/protocol/api/player/ProtocolPlayerCapabilityProvider.java)
+and [AgentProcessCapabilityProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-capability/capability-process/capability-process-api/src/main/java/me/whereareiam/anvil/capability/agent/api/process/AgentProcessCapabilityProvider.java)
 source Javadocs. These links use `dev`; select your release tag when checking a released version.
 
 ## Implement an existing capability

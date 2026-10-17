@@ -6,7 +6,7 @@ description: Run the closest regression test before architecture and cross-modul
 Run a focused test in its owning module first. For example, after changing capability composition:
 
 ```shell
-./gradlew :anvil-capability:test
+./gradlew :anvil-capability:capability-common:test
 ./gradlew verifyArchitecture
 ./gradlew :anvil-testkit:tests:runtime:test
 ```
@@ -29,7 +29,7 @@ TestKit without starting Minecraft. Its location follows the owner of the behavi
 | Player registration, library selection, and observations | `:anvil-player:player-common:test`                                       |
 | Agent clients, sessions, and observations                | `:anvil-process:process-protocol:protocol-host:protocol-host-common:test`                              |
 | Native agent dispatch and extension loading              | `:anvil-process:process-protocol:protocol-agent:protocol-agent-common:test`                              |
-| Capability discovery and composition                    | `:anvil-capability:test`                                      |
+| Capability discovery and composition                    | `:anvil-capability:capability-common:test`                    |
 | MCProtocolLib library, worker contracts and segments   | `:anvil-player:player-library:library-mcprotocol:mcprotocol-common:test` and `:anvil-player:player-library:library-mcprotocol:mcprotocol-java:<segment>:check` |
 | Gradle scenario tooling                                 | `:anvil-integration:integration-gradle:gradle-plugin:test`                        |
 | Curated plugin composition                              | `:anvil-integration:integration-gradle:gradle-capabilities:test`                   |

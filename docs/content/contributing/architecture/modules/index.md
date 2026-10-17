@@ -20,12 +20,13 @@ a family's API describes its services and extension points. The launcher binds t
 | `anvil-player/player-common/src`                            | Player registration, per-player library and release selection, authentication compatibility, and observations     |
 | `anvil-player/player-api`                   | Protocol library contracts, releases, players, protocol-owned channels and native worker contracts                 |
 | `anvil-player/player-library/library-mcprotocol`            | The MCProtocolLib library: release data, client port, client segments, worker host and shell, and account storage |
-| `anvil-capability/src`                          | Dependency validation, agent-provider adaptation, logical process owners, player facades, and capability cleanup                                |
 | `anvil-capability/capability-api`                | Generic composition, neutral player contracts, descriptors, exceptions, and typed requests |
-| `anvil-capability/capability-protocol-api`         | Protocol-backed player providers/contexts, channels/events, and native worker bindings |
-| `anvil-capability/capability-agent-api`          | Agent-backed process/player providers and scoped request-channel contexts |
-| `anvil-capability/capability-builtin/client`     | Client capability families, owned by players: feature APIs, library-neutral providers and bindings, and library sides with segments    |
-| `anvil-capability/capability-builtin/server`     | Server capability families, owned by processes, with agent-backed host wiring: Dispatch, and Players, which reports what one server or proxy knows about the players on it from its own agent's events |
+| `anvil-capability/capability-common`             | Dependency validation, agent-provider adaptation and agent extensions, logical process owners, player facades, and capability cleanup |
+| `anvil-capability/capability-player/capability-player-api` | Protocol-backed player providers/contexts, channels/events, and native worker bindings |
+| `anvil-capability/capability-player/capability-player-builtin` | Player capability families: feature APIs, library-neutral providers and bindings, and library sides with segments |
+| `anvil-capability/capability-process/capability-process-api` | Agent-backed process providers and scoped request-channel contexts |
+| `anvil-capability/capability-process/capability-process-builtin` | Process capability families with agent-backed host wiring: Dispatch, and Players, which reports what one server or proxy knows about the players on it from its own agent's events |
+| `anvil-capability/capability-default`            | Aggregate of every built-in capability |
 | `anvil-process/process-protocol/process-protocol-api`                          | Shared operation descriptors, payloads, identities, and exceptions                                                   |
 | `anvil-process/process-protocol/protocol-host/protocol-host-api`            | Host clients, connections, directories, and artifact lookup                               |
 | `anvil-process/process-protocol/protocol-host/protocol-host-common`                       | Connections, stable process clients and sessions, directories, and observations in the Anvil JVM                    |
@@ -137,14 +138,15 @@ Capability ownership and transport are separate. `Capability` and `CapabilityOwn
 identity/lookup contracts. `PlayerCapability` and `ProcessCapability` constrain the types accepted
 by players and running processes. Their APIs do not require an agent transport.
 
-Built-in families are grouped by side, decided by who can normally do or know it, never by how it is
-implemented. `capability-builtin/client` contains what a client can do or see, which players own, such as
-Session and Messages. `capability-builtin/server` contains what a server or proxy can do or know, which running
-processes own, such as Dispatch and Players; a proxy is server side. The groups are no public owners themselves:
-public feature packages and artifact IDs remain feature-specific, such as `builtin-players`.
+Built-in families are grouped by participant, decided by who can normally do or know it, never by how it is
+implemented. `capability-player/capability-player-builtin` contains what a client can do or see, which players
+own, such as Session and Messages. `capability-process/capability-process-builtin` contains what a server or proxy
+can do or know, which running processes own, such as Dispatch and Players; a proxy is server side. The groups
+are no public owners themselves: public feature packages and artifact IDs remain feature-specific, such as
+`builtin-players`.
 
-Each built-in capability is a family folder: `<feature>-api` holds the public API (and, for packet
-capabilities, the library-neutral port in its `packet` package), `<feature>-common` holds the host provider
+Each built-in capability is a family folder `builtin-<feature>`: `<feature>-api` holds the public API (and,
+for packet capabilities, the library-neutral port in its `packet` package), `<feature>-common` holds the host provider
 and worker binding in the feature packages, and `<feature>-<library>` adapts the feature to one protocol
 library through `V*` segments. The family root applies the `module-capability` convention and only wires these
 members into the `builtin-<feature>` bundle. The convention publishes the members as `builtin-<member>`,
@@ -162,7 +164,7 @@ The shared `capability.api.player` package contains `PlayerCapabilityProvider`,
 `PlayerCapabilityContext`, and `CapabilityPlayer`: player identity/version, the requested and granted
 profiles, the connection, declared dependencies, and lifetime.
 
-The mechanism APIs add only the access their providers need. `capability-protocol-api` groups
+The mechanism APIs add only the access their providers need. `capability-player-api` groups
 protocol player factories, channels/events, and native worker contracts under
 `capability.protocol.api.player`. `PlayerConnectionEvent` lives under
 `capability.protocol.api.model.player`. `ViewRotation` and `EventDescriptor<E>` live directly under
@@ -170,9 +172,8 @@ protocol player factories, channels/events, and native worker contracts under
 with the class of its payload. Publishers and
 subscribers share the descriptor; each emitted `PlayerConnectionEvent` is a separate payload value.
 `PlayerBindingContext` remains in the worker package
-because it supplies native SDK/lifecycle access during binding. `capability-agent-api` groups native
-request factories under
-`capability.agent.api.player` and `capability.agent.api.process`. Both mechanism APIs depend on
+because it supplies native SDK/lifecycle access during binding. `capability-process-api` groups native
+request factories under `capability.agent.api.process`. Both mechanism APIs depend on
 `capability-api`, without exposing the other mechanism or an agent transport API.
 
 Agent transport and native handlers have separate contracts. `agent-client-api`, in `agent.client.api`,

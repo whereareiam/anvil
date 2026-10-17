@@ -13,7 +13,7 @@ import javax.inject.Inject
  *
  * ```kotlin
  * segment {
- *     extends(projects.anvilCapability.capabilityBuiltin.client.messages.messagesMcprotocol.v1_21_1)
+ *     extends(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinMessages.messagesMcprotocol.v1_21_1)
  * }
  * ```
  *

@@ -26,7 +26,7 @@ class CapabilityFamilyTest {
 
 	@Test
 	fun `keeps code out of the root of a process family without common code`() {
-		val family = family("console", "console-api", owner = "server")
+		val family = family("console", "console-api", group = PROCESS)
 		File(family, "src/main/java").mkdirs()
 
 		val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("mcprotocol")) }
@@ -45,15 +45,29 @@ class CapabilityFamilyTest {
 	}
 
 	@Test
-	fun `names the families of every side group`() {
+	fun `names the families of every participant group`() {
 		family("movement", "movement-api")
 		family("session", "session-api")
-		family("console", "console-api", owner = "server")
-		File(root, "client/messages/builtin-messages").mkdirs()
-		File(root, "client/messages/builtin-messages/build.gradle.kts").writeText("")
-		File(root, "client/notes").mkdirs()
+		family("console", "console-api", group = PROCESS)
+		File(root, "$PLAYER/builtin-messages/messages-api").mkdirs()
+		File(root, "$PLAYER/builtin-messages/messages-api/build.gradle.kts").writeText("")
+		File(root, "$PLAYER/builtin-notes").mkdirs()
 
 		assertEquals(listOf("console", "messages", "movement", "session"), CapabilityFamily.names(root))
+	}
+
+	@Test
+	fun `requires the built-in prefix on every family folder`() {
+		val family = File(root, "$PLAYER/movement")
+		File(family, "movement-api").mkdirs()
+		File(family, "movement-api/build.gradle.kts").writeText("")
+
+		val read = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("mcprotocol")) }
+		val named = assertThrows<GradleException> { CapabilityFamily.names(root) }
+
+		listOf(read, named).forEach { failure ->
+			assertTrue(failure.message!!.contains("'movement' must be named 'builtin-<feature>'"), failure.message)
+		}
 	}
 
 	@Test
@@ -80,7 +94,7 @@ class CapabilityFamilyTest {
 	@Test
 	fun `keeps code out of the root of a family with common code or library sides`() {
 		listOf(listOf("server-api", "server-common"), listOf("server-api", "server-mcprotocol")).forEach { members ->
-			val family = family("server", *members.toTypedArray(), owner = "server")
+			val family = family("server", *members.toTypedArray(), group = PROCESS)
 			File(family, "src/main/java").mkdirs()
 
 			val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("mcprotocol")) }
@@ -109,8 +123,8 @@ class CapabilityFamilyTest {
 		}
 	}
 
-	private fun family(name: String, vararg projects: String, owner: String = "client"): File {
-		val family = File(root, "$owner/$name")
+	private fun family(name: String, vararg projects: String, group: String = PLAYER): File {
+		val family = File(root, "$group/builtin-$name")
 		family.mkdirs()
 		File(family, "build.gradle.kts").writeText("")
 		projects.forEach { project ->
@@ -118,5 +132,10 @@ class CapabilityFamilyTest {
 			File(family, "$project/build.gradle.kts").writeText("")
 		}
 		return family
+	}
+
+	private companion object {
+		const val PLAYER = "capability-player/capability-player-builtin"
+		const val PROCESS = "capability-process/capability-process-builtin"
 	}
 }

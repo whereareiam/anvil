@@ -17,9 +17,9 @@ dependencies {
 	compileOnly(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolApi)
 
 	testImplementation(projects.anvilApi)
-	testImplementation(projects.anvilCapability)
-	testImplementation(projects.anvilCapability.capabilityBuiltin.default)
-	testImplementation(projects.anvilCapability.capabilityProtocolApi)
+	testImplementation(projects.anvilCapability.capabilityCommon)
+	testImplementation(projects.anvilCapability.capabilityDefault)
+	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi)
 	testImplementation(projects.anvilLauncher)
 	testImplementation(projects.anvilPlayer.playerApi)
 	testImplementation(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolApi)
