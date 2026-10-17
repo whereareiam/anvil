@@ -51,6 +51,8 @@ if (outcome == 1) assertTrue(session.kicked().contains("Reconnect"));
 | `MessageWatch.expectReceived(matcher)` | a message received since the watch's previous wait matches |
 | `DialogWatch.expectShown(matcher)` | a dialog shown since the watch's previous wait matches |
 | `CookieWatch.expectRequested(key)` | the server asked for the cookie since the watch's previous wait |
+| `TitleWatch.expectShown(matcher)`, `ActionBarWatch.expectShown(matcher)` | a title or action bar shown since the watch's previous wait matches |
+| `BossBarWatch.expectShown(matcher)`, `BossBarWatch.expectRemoved(matcher)` | a boss bar added or changed, or removed, since the watch's previous wait matches |
 | `Session.expectKicked()` | the server kicked the current session |
 | `Session.expectDisconnected()` | the current session is disconnected for any reason |
 | `PlayerWatch.expectJoined(player)` | the player joined that watch's process since the watch's previous wait |

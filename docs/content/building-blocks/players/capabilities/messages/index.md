@@ -35,7 +35,8 @@ use `command(...)` whenever you mean a command, so the step behaves the same on 
 Each received chat message becomes one plain-text history entry: player chat, system messages and, on
 Minecraft 1.19.4 and later, disguised chat such as `say` from the console. Action-bar text that the
 server sends as chat is included too: the game-info chat type before Minecraft 1.19 and overlay system
-chat from 1.19. Titles and text sent through the separate title or action-bar packets are not recorded.
+chat from 1.19. Titles and text sent through the separate title or action-bar packets are not recorded;
+[Screen](../screen/index.md) records them.
 
 Plain text joins every part of the message in order, because the client's language file is not
 available:

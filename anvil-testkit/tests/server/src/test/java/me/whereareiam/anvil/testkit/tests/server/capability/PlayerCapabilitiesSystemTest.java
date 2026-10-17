@@ -27,6 +27,12 @@ import me.whereareiam.anvil.capability.movement.Movement;
 import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.capability.players.PlayerWatch;
 import me.whereareiam.anvil.capability.players.Players;
+import me.whereareiam.anvil.capability.screen.ActionBarWatch;
+import me.whereareiam.anvil.capability.screen.BossBarWatch;
+import me.whereareiam.anvil.capability.screen.Screen;
+import me.whereareiam.anvil.capability.screen.TitleWatch;
+import me.whereareiam.anvil.capability.screen.model.BossBar;
+import me.whereareiam.anvil.capability.screen.model.Title;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.engine.config.EngineProperties;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
@@ -169,6 +175,7 @@ class PlayerCapabilitiesSystemTest {
 
 		verifyDialogs(alice, messages, dialogs);
 		verifyCookies(anvil, alice, messages, cookies);
+		verifyScreen(anvil, alice);
 
 		messages.command("anvil-fixture kick");
 		assertEquals("anvil:requested-kick", session.kicked(Duration.ofSeconds(10)));
@@ -223,6 +230,41 @@ class PlayerCapabilitiesSystemTest {
 		cookie(anvil, "request anvil:arrival");
 		messages.received("anvil:cookie:anvil:arrival:carried", Duration.ofSeconds(10));
 		assertEquals(List.of("anvil:arrival"), List.copyOf(cookies.stored().keySet()));
+	}
+
+	/**
+	 * Shows Alice a title with a subtitle, an action bar and a boss bar through the vanilla commands, and checks what
+	 * reaches her screen, including the boss bar's progress and its removal.
+	 */
+	private void verifyScreen(ScenarioContext anvil, SimulatedPlayer alice) {
+		Screen screen = alice.capability(Screen.class);
+		TitleWatch titles = screen.watchTitles();
+		ActionBarWatch actionBars = screen.watchActionBars();
+		BossBarWatch bossBars = screen.watchBossBars();
+
+		console(anvil, "title Alice times 5 40 5");
+		console(anvil, "title Alice subtitle \"anvil:subtitle\"");
+		console(anvil, "title Alice title \"anvil:title\"");
+		Title title = titles.shown(shown -> shown.getTitle().equals("anvil:title") && shown.getSubtitle().equals("anvil:subtitle"),
+				Duration.ofSeconds(10));
+		assertEquals(40, title.getStayTicks());
+
+		console(anvil, "title Alice actionbar \"anvil:action-bar\"");
+		actionBars.shown("anvil:action-bar", Duration.ofSeconds(10));
+
+		console(anvil, "bossbar add anvil:screen \"anvil:boss-bar\"");
+		console(anvil, "bossbar set anvil:screen players Alice");
+		console(anvil, "bossbar set anvil:screen value 50");
+		BossBar bar = bossBars.shown(shown -> shown.getText().equals("anvil:boss-bar") && shown.getProgress() == 0.5F,
+				Duration.ofSeconds(10));
+		assertEquals(List.of(bar), screen.bossBars());
+		console(anvil, "bossbar remove anvil:screen");
+		bossBars.removed(removed -> removed.getId().equals(bar.getId()), Duration.ofSeconds(10));
+		assertTrue(screen.bossBars().isEmpty());
+	}
+
+	private static void console(ScenarioContext anvil, String command) {
+		anvil.processes().server("server").console().sendCommand(command);
 	}
 
 	/**

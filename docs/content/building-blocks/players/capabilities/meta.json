@@ -9,6 +9,7 @@
     "interaction",
     "commands",
     "dialogs",
-    "cookies"
+    "cookies",
+    "screen"
   ]
 }
