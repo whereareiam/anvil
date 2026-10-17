@@ -2,7 +2,7 @@ plugins {
 	id("module-api")
 }
 
-description = "Public API for the built-in agent console capability"
+description = "Public API for the built-in dispatch capability"
 
 dependencies {
 	api(projects.anvilApi)

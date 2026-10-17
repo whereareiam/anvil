@@ -6,7 +6,7 @@ import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.api.type.ProcessState;
-import me.whereareiam.anvil.capability.console.Console;
+import me.whereareiam.anvil.capability.dispatch.Dispatch;
 import me.whereareiam.anvil.capability.players.PlayerWatch;
 import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
@@ -48,17 +48,17 @@ class ProcessRestartSystemTest {
 			var identity = arrivals.joined(alice).getProfile();
 
 			var before = context.processes().get(scenario.getEntrypoint());
-			var console = before.capability(Console.class);
+			var dispatch = before.capability(Dispatch.class);
 			for (var process : context.processes().all())
 				if (!process.name().equals(before.name()))
-					assertNotSame(console, process.capability(Console.class));
+					assertNotSame(dispatch, process.capability(Dispatch.class));
 			Files.writeString(before.workDirectory().resolve("restart-marker"), "preserved");
 			var after = context.processes().restart(before.name());
 			assertNotSame(before, after);
 			assertEquals(ProcessState.STOPPED, before.state());
 			assertEquals(ProcessState.READY, after.state());
-			assertSame(console, after.capability(Console.class));
-			assertSame(console, before.capability(Console.class));
+			assertSame(dispatch, after.capability(Dispatch.class));
+			assertSame(dispatch, before.capability(Dispatch.class));
 			assertEquals(before.address(), after.address());
 			assertEquals(before.workDirectory(), after.workDirectory());
 			assertEquals("preserved", Files.readString(after.workDirectory().resolve("restart-marker")));
@@ -73,12 +73,12 @@ class ProcessRestartSystemTest {
 				session.disconnect();
 				session.disconnected();
 				var proxy = context.processes().proxy("proxy");
-				var backendConsole = context.processes().server(destination).capability(Console.class);
+				var backendDispatch = context.processes().server(destination).capability(Dispatch.class);
 				var backend = context.processes().restart(destination);
 				assertSame(proxy, context.processes().proxy("proxy"));
 				assertEquals(ProcessState.READY, proxy.state());
-				assertSame(console, proxy.capability(Console.class));
-				assertSame(backendConsole, backend.capability(Console.class));
+				assertSame(dispatch, proxy.capability(Dispatch.class));
+				assertSame(backendDispatch, backend.capability(Dispatch.class));
 				Players proxied = proxy.capability(Players.class);
 				PlayerWatch moves = proxied.watch();
 				session.rejoin();

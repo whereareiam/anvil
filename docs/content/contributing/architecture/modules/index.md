@@ -24,7 +24,7 @@ a family's API describes its services and extension points. The launcher binds t
 | `anvil-capability/capability-protocol-api`         | Protocol-backed player providers/contexts, channels/events, and native worker bindings |
 | `anvil-capability/capability-agent-api`          | Agent-backed process/player providers and scoped request-channel contexts |
 | `anvil-capability/capability-builtin/client`     | Client capability families, owned by players: feature APIs, library-neutral providers and bindings, and library sides with segments    |
-| `anvil-capability/capability-builtin/server`     | Server capability families, owned by processes, with agent-backed host wiring: Console, and Players, which reports what one server or proxy knows about the players on it from its own agent's events |
+| `anvil-capability/capability-builtin/server`     | Server capability families, owned by processes, with agent-backed host wiring: Dispatch, and Players, which reports what one server or proxy knows about the players on it from its own agent's events |
 | `anvil-agent/agent-api`                          | Shared operation descriptors, payloads, identities, and exceptions                                                   |
 | `anvil-agent/agent-client/client-api`            | Host clients, connections, directories, and artifact lookup                               |
 | `anvil-agent/agent-client`                       | Connections, stable process clients and sessions, directories, and observations in the Anvil JVM                    |
@@ -139,7 +139,7 @@ by players and running processes. Their APIs do not require an agent transport.
 Built-in families are grouped by side, decided by who can normally do or know it, never by how it is
 implemented. `capability-builtin/client` contains what a client can do or see, which players own, such as
 Session and Messages. `capability-builtin/server` contains what a server or proxy can do or know, which running
-processes own, such as Console and Players; a proxy is server side. The groups are no public owners themselves:
+processes own, such as Dispatch and Players; a proxy is server side. The groups are no public owners themselves:
 public feature packages and artifact IDs remain feature-specific, such as `builtin-players`.
 
 Each built-in capability is a family folder: `<feature>-api` holds the public API (and, for packet
@@ -150,7 +150,7 @@ members into the `builtin-<feature>` bundle. The convention publishes the member
 such as `builtin-movement-api`, and refuses a child that is not a member, a `common` or `util` package, and
 code in the root of a family with common code or library sides.
 
-A family that reads its processes through their agents, such as console or players, keeps its provider in
+A family that reads its processes through their agents, such as dispatch or players, keeps its provider in
 `<feature>-common` as well: it uses the platform agents' general operations, so it ships nothing into the
 processes.
 

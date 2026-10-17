@@ -62,7 +62,7 @@ Anvil artifact IDs in this table use the Maven group `me.whereareiam.anvil`.
 The runtime orders creation by declared predecessor capabilities. Access to other capabilities is
 restricted to those dependencies, within the same owner. A player capability can declare `Messages`
 and obtain it through `context.requireCapability(Messages.class)`. A process capability backed by
-an agent can declare `Console` and obtain it through its provider context.
+an agent can declare `Dispatch` and obtain it through its provider context.
 
 A required dependency the owner lacks keeps the capability from being created, and retrieving it
 then names the missing dependency. A capability that only uses another when it is there declares it

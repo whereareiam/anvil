@@ -25,11 +25,11 @@ gradlePlugin {
 			displayName = "Anvil Session Capability"
 			description = "Includes the built-in Session capability"
 		}
-		create("anvilCapabilityConsole") {
-			id = "me.whereareiam.anvil.capability.console"
-			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.ConsolePlugin"
-			displayName = "Anvil Console Capability"
-			description = "Includes the agent-owned Console capability"
+		create("anvilCapabilityDispatch") {
+			id = "me.whereareiam.anvil.capability.dispatch"
+			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.DispatchPlugin"
+			displayName = "Anvil Dispatch Capability"
+			description = "Includes the built-in Dispatch capability"
 		}
 		create("anvilCapabilityPlayers") {
 			id = "me.whereareiam.anvil.capability.players"

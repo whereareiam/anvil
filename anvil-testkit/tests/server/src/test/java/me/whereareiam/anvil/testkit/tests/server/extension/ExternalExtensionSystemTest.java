@@ -11,7 +11,7 @@ import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.api.type.ProcessState;
-import me.whereareiam.anvil.capability.console.Console;
+import me.whereareiam.anvil.capability.dispatch.Dispatch;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.movement.Movement;
 import me.whereareiam.anvil.capability.movement.model.Position;
@@ -97,8 +97,8 @@ class ExternalExtensionSystemTest {
 				assertTrue(context.players().all().isEmpty());
 				process = context.processes().server("server");
 				var echo = process.capability(echoType);
-				var console = process.capability(Console.class);
-				assertTrue(console.execute("list"));
+				var dispatch = process.capability(Dispatch.class);
+				assertTrue(dispatch.execute("list"));
 				assertEquals("fixture:before", echoType.getMethod("echo", String.class).invoke(echo, "before"));
 				echoType.getMethod("prefix", String.class).invoke(echo, "first-generation");
 				assertEquals("first-generation", echoType.getMethod("prefix").invoke(echo));
@@ -110,8 +110,8 @@ class ExternalExtensionSystemTest {
 				assertEquals(ProcessState.READY, after.state());
 				assertSame(echo, after.capability(echoType));
 				assertSame(echo, process.capability(echoType));
-				assertSame(console, after.capability(Console.class));
-				assertTrue(console.execute("list"));
+				assertSame(dispatch, after.capability(Dispatch.class));
+				assertTrue(dispatch.execute("list"));
 				assertEquals("fixture:after", echoType.getMethod("echo", String.class).invoke(echo, "after"));
 				assertEquals("fixture", echoType.getMethod("prefix").invoke(echo));
 				echoType.getMethod("prefix", String.class).invoke(echo, "replacement-generation");
@@ -119,7 +119,7 @@ class ExternalExtensionSystemTest {
 				assertEquals("replacement-generation:changed", echoType.getMethod("echo", String.class).invoke(echo, "changed"));
 				assertTrue(context.players().all().isEmpty());
 			}
-			assertFalse(process.hasCapability(Console.class));
+			assertFalse(process.hasCapability(Dispatch.class));
 			assertThrows(CapabilityUnavailableException.class, () -> process.capability(echoType));
 		}
 	}

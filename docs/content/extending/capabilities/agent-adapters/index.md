@@ -125,11 +125,11 @@ extension for them. A process capability reaches them through `context.platform(
 the platform accepted it, and `events()` lists the players' joins and leaves the process reported, as
 `PlatformEvent` values with the process and whether it is a proxy, a position, when it happened, `JOINED` or
 `LEFT`, the player as the platform reports it, and on a proxy the backend, or none for the proxy itself. The
-built-in Console capability is one such provider:
+built-in Dispatch capability is one such provider:
 
 ```java
 @Override
-public @NotNull Console create(@NotNull AgentProcessCapabilityContext context) {
+public @NotNull Dispatch create(@NotNull AgentProcessCapabilityContext context) {
 	return command -> context.platform().execute(command);
 }
 ```

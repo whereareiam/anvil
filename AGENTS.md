@@ -148,7 +148,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   artifact ID from the folder names and fails a build file that sets its own, and `gradle-capabilities` tests
   that each family has a plugin installing `builtin-<feature>`.
   Common code lives in the feature packages, never in `common` or `util` packages. An agent-backed provider,
-  such as Console's, lives in `<feature>-common` as well; the convention refuses code in every family root. The extension takes the port's adapter only through
+  such as Dispatch's, lives in `<feature>-common` as well; the convention refuses code in every family root. The extension takes the port's adapter only through
   `PlayerBindingContext.adapter(Class)` while binding a player, never in its constructor and never through
   `ServiceLoader`; `checkAdapterLookup` fails a library side whose classes reference `ServiceLoader`. No segment
   for the release, a segment failing its linkage self-check, or more than one adapter throws

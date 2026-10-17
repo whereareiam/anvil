@@ -5,7 +5,7 @@ import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.api.type.Platforms;
-import me.whereareiam.anvil.capability.console.Console;
+import me.whereareiam.anvil.capability.dispatch.Dispatch;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.players.PlayerWatch;
 import me.whereareiam.anvil.capability.players.Players;
@@ -43,10 +43,10 @@ class ProxyServerCompatibilitySystemTest {
 			for (var process : context.processes().servers())
 				assertEquals("external:matrix", probe.echo(process.name(), "matrix"));
 			for (var process : context.processes().servers())
-				assertTrue(process.capability(Console.class).execute("list"), process.name() + " must accept a console command");
+				assertTrue(process.capability(Dispatch.class).execute("list"), process.name() + " must accept a console command");
 			for (var proxy : scenario.getProxies()) {
 				String command = proxy.getPlatform().equals(Platforms.VELOCITY) ? "velocity version" : "glist";
-				assertTrue(context.processes().get(proxy.getName()).capability(Console.class).execute(command),
+				assertTrue(context.processes().get(proxy.getName()).capability(Dispatch.class).execute(command),
 						proxy.getName() + " must accept a console command");
 			}
 			Session session = alice.capability(Session.class);

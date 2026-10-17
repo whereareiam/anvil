@@ -105,7 +105,7 @@ players on it therefore belongs to the built-in `Players` process capability, no
 player. Its agent-backed provider reads `platform().events()` of its own process and finds a simulated
 player by the UUIDs of `SimulatedPlayer.grantedProfiles()`, every profile the client was granted at its
 logins. It does not depend on `Session` or the protocol capability API. Core keeps only what the client
-knows itself: the requested and granted profiles. The built-in Console capability runs its commands through
+knows itself: the requested and granted profiles. The built-in Dispatch capability runs its commands through
 `platform().execute(...)`. External protocol libraries may expose their own stable
 SDK service interfaces through the protocol player's explicit extension hook.
 

@@ -54,13 +54,14 @@ Server and proxy setup lives under [Platforms](../../../building-blocks/environm
 ## Capability units
 
 The prefix is `me.whereareiam.anvil.capability.`. Available suffixes are `session`, `messages`,
-`movement`, `inventory`, `interaction`, `server`, `console`, and `default`. The `default` unit supplies all
+`movement`, `inventory`, `interaction`, `commands`, `dialogs`, `dispatch`, `players`, and `default`. The `default` unit supplies all
 built-in capabilities when explicitly selected. Individual wiring artifacts bring
-their required capability dependencies; the `server` unit does not install Session.
+their required capability dependencies.
 
 See [Player capabilities](../../../building-blocks/players/capabilities/index.md) for player actions
-and observations. The `console` unit supplies the process's agent-backed
-[Console capability](../../../building-blocks/environments/actions/agents/index.md).
+and observations. The `dispatch` unit supplies the process's agent-backed
+[Dispatch capability](../../../building-blocks/environments/actions/dispatch/index.md), and the `players` unit
+the process's [Players capability](../../../building-blocks/environments/actions/players/index.md).
 
 ## Dependency configurations
 

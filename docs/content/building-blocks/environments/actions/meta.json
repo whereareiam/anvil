@@ -3,6 +3,7 @@
   "pages": [
     "index",
     "console",
+    "dispatch",
     "agents",
     "players",
     "restarts",

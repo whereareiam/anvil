@@ -53,6 +53,7 @@ appropriate player, server, or console assertion.
 Choose the operation your test needs to perform against an existing server or proxy:
 
 - [Running console commands](./console/index.md) shows bounded log observations.
+- [Dispatching commands](./dispatch/index.md) runs a command as the console and reports whether the platform accepted it.
 - [Interacting through agents](./agents/index.md) explains typed capabilities and native work inside a server or proxy.
 - [Watching players on a process](./players/index.md) waits until a player is on a server and reads what a server or proxy knows about it.
 - [Restarting processes](./restarts/index.md) covers workspace preservation and explicit player reconnection.
