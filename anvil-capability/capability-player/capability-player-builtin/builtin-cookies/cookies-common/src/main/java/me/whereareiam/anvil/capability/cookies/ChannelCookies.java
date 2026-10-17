@@ -3,11 +3,11 @@ package me.whereareiam.anvil.capability.cookies;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.api.history.HistoryCursor;
-import me.whereareiam.anvil.capability.cookies.exchange.CookieKey;
-import me.whereareiam.anvil.capability.cookies.exchange.CookieKeys;
-import me.whereareiam.anvil.capability.cookies.exchange.HeldCookies;
-import me.whereareiam.anvil.capability.cookies.exchange.StoredCookie;
+import me.whereareiam.anvil.capability.cookies.channel.CookiesChannel;
+import me.whereareiam.anvil.capability.cookies.model.CookieKey;
 import me.whereareiam.anvil.capability.cookies.model.CookieRequest;
+import me.whereareiam.anvil.capability.cookies.model.HeldCookies;
+import me.whereareiam.anvil.capability.cookies.model.StoredCookie;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,9 +21,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 
 /**
- * Cookies capability driven over a player's typed channel: the worker's cookies binding answers the server and
+ * Cookies capability driven over a player's typed channel: the worker's cookies extension answers the server and
  * reports every request and every change of the cookies the player holds, which this side keeps; changes the test
- * makes go to the binding. The channel releases the event subscriptions together with the player.
+ * makes go to the extension. The channel releases the event subscriptions together with the player.
  */
 final class ChannelCookies implements Cookies {
 	private final ProtocolChannel channel;
@@ -32,8 +32,8 @@ final class ChannelCookies implements Cookies {
 
 	ChannelCookies(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
-		channel.subscribe(CookiesOperations.REQUESTED, request -> requests.add(new CookieRequest(request.getKey(), request.getAnswer())));
-		channel.subscribe(CookiesOperations.HELD, this::hold);
+		channel.subscribe(CookiesChannel.REQUESTED, requests::add);
+		channel.subscribe(CookiesChannel.HELD, this::hold);
 	}
 
 	@Override
@@ -60,12 +60,12 @@ final class ChannelCookies implements Cookies {
 			throw new IllegalArgumentException("Cookie '" + normalized + "' holds " + payload.length + " bytes; a cookie holds at most "
 					+ MAX_PAYLOAD);
 
-		hold(channel.request(CookiesOperations.STORE, new StoredCookie(normalized, payload.clone())));
+		hold(channel.request(CookiesChannel.STORE, new StoredCookie(normalized, payload.clone())));
 	}
 
 	@Override
 	public void remove(@NotNull String key) {
-		hold(channel.request(CookiesOperations.REMOVE, new CookieKey(CookieKeys.normalize(key))));
+		hold(channel.request(CookiesChannel.REMOVE, new CookieKey(CookieKeys.normalize(key))));
 	}
 
 	@Override

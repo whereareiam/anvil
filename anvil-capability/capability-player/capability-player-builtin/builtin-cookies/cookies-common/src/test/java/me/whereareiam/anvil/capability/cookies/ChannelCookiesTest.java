@@ -1,10 +1,10 @@
 package me.whereareiam.anvil.capability.cookies;
 
-import me.whereareiam.anvil.capability.cookies.exchange.AnsweredRequest;
-import me.whereareiam.anvil.capability.cookies.exchange.CookieKey;
-import me.whereareiam.anvil.capability.cookies.exchange.HeldCookies;
-import me.whereareiam.anvil.capability.cookies.exchange.StoredCookie;
+import me.whereareiam.anvil.capability.cookies.channel.CookiesChannel;
+import me.whereareiam.anvil.capability.cookies.model.CookieKey;
 import me.whereareiam.anvil.capability.cookies.model.CookieRequest;
+import me.whereareiam.anvil.capability.cookies.model.HeldCookies;
+import me.whereareiam.anvil.capability.cookies.model.StoredCookie;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
@@ -39,8 +39,8 @@ class ChannelCookiesTest {
 		RecordingChannel channel = new RecordingChannel();
 		Cookies cookies = new ChannelCookies(channel);
 
-		channel.publish(CookiesOperations.REQUESTED, new AnsweredRequest("example:ticket", TICKET));
-		channel.publish(CookiesOperations.REQUESTED, new AnsweredRequest("example:ticket", null));
+		channel.publish(CookiesChannel.REQUESTED, new CookieRequest("example:ticket", TICKET));
+		channel.publish(CookiesChannel.REQUESTED, new CookieRequest("example:ticket", null));
 
 		List<CookieRequest> requests = cookies.requests();
 		assertEquals(2, requests.size());
@@ -52,14 +52,14 @@ class ChannelCookiesTest {
 	void watchesOnlyRequestsMadeSinceItAndContinuesAfterEachMatch() {
 		RecordingChannel channel = new RecordingChannel();
 		Cookies cookies = new ChannelCookies(channel);
-		channel.publish(CookiesOperations.REQUESTED, new AnsweredRequest("example:ticket", TICKET));
+		channel.publish(CookiesChannel.REQUESTED, new CookieRequest("example:ticket", TICKET));
 		CookieWatch asked = cookies.watch();
 
 		assertThrows(IllegalStateException.class, () -> asked.requested("example:ticket", WAIT));
 		assertFalse(asked.expectRequested("example:ticket").met());
 		asked.neverRequested("example:ticket", WAIT);
 
-		channel.publish(CookiesOperations.REQUESTED, new AnsweredRequest("example:ticket", null));
+		channel.publish(CookiesChannel.REQUESTED, new CookieRequest("example:ticket", null));
 
 		assertTrue(asked.expectRequested("example:ticket").met());
 		assertThrows(IllegalStateException.class, () -> asked.neverRequested("example:ticket", WAIT));
@@ -73,10 +73,10 @@ class ChannelCookiesTest {
 	void readsAKeyWithoutANamespaceAsAMinecraftKey() {
 		RecordingChannel channel = new RecordingChannel();
 		Cookies cookies = new ChannelCookies(channel);
-		channel.publish(CookiesOperations.HELD, new HeldCookies(1, Map.of("minecraft:ticket", TICKET)));
+		channel.publish(CookiesChannel.HELD, new HeldCookies(1, Map.of("minecraft:ticket", TICKET)));
 
 		CookieWatch asked = cookies.watch();
-		channel.publish(CookiesOperations.REQUESTED, new AnsweredRequest("minecraft:ticket", TICKET));
+		channel.publish(CookiesChannel.REQUESTED, new CookieRequest("minecraft:ticket", TICKET));
 
 		assertArrayEquals(TICKET, asked.requested("ticket", WAIT).getAnswer());
 		assertArrayEquals(TICKET, cookies.stored("ticket", WAIT));
@@ -89,10 +89,10 @@ class ChannelCookiesTest {
 		channel.response = new HeldCookies(3, Map.of("example:ticket", TICKET));
 
 		cookies.store("example:ticket", TICKET);
-		channel.publish(CookiesOperations.HELD, new HeldCookies(2, Map.of()));
+		channel.publish(CookiesChannel.HELD, new HeldCookies(2, Map.of()));
 
 		assertArrayEquals(TICKET, cookies.stored().get("example:ticket"));
-		channel.publish(CookiesOperations.HELD, new HeldCookies(4, Map.of()));
+		channel.publish(CookiesChannel.HELD, new HeldCookies(4, Map.of()));
 		assertEquals(Map.of(), cookies.stored());
 	}
 
@@ -106,7 +106,7 @@ class ChannelCookiesTest {
 		payload[0] = 'X';
 		cookies.remove("example:ticket");
 
-		assertEquals(List.of(CookiesOperations.STORE.getId(), CookiesOperations.REMOVE.getId()), channel.requests);
+		assertEquals(List.of(CookiesChannel.STORE.getId(), CookiesChannel.REMOVE.getId()), channel.requests);
 		StoredCookie stored = (StoredCookie) channel.payloads.get(0);
 		assertEquals("minecraft:ticket", stored.getKey());
 		assertArrayEquals(TICKET, stored.getPayload());
@@ -117,7 +117,7 @@ class ChannelCookiesTest {
 	void returnsCopiesOfTheHeldPayloads() {
 		RecordingChannel channel = new RecordingChannel();
 		Cookies cookies = new ChannelCookies(channel);
-		channel.publish(CookiesOperations.HELD, new HeldCookies(1, Map.of("example:ticket", TICKET.clone())));
+		channel.publish(CookiesChannel.HELD, new HeldCookies(1, Map.of("example:ticket", TICKET.clone())));
 
 		cookies.stored().get("example:ticket")[0] = 'X';
 		cookies.stored("example:ticket", WAIT)[1] = 'X';
@@ -134,7 +134,7 @@ class ChannelCookiesTest {
 		assertThrows(IllegalArgumentException.class, () -> cookies.store("example:ticket", new byte[Cookies.MAX_PAYLOAD + 1]));
 
 		cookies.store("example:ticket", new byte[Cookies.MAX_PAYLOAD]);
-		assertEquals(List.of(CookiesOperations.STORE.getId()), channel.requests);
+		assertEquals(List.of(CookiesChannel.STORE.getId()), channel.requests);
 	}
 
 	@Test
@@ -182,7 +182,7 @@ class ChannelCookiesTest {
 
 		@Override
 		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(CookiesProvider.ID);
+			return Set.of(CookiesChannel.ID);
 		}
 	}
 }

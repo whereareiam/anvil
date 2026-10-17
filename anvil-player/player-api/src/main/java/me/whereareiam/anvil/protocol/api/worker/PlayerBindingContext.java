@@ -66,9 +66,10 @@ public interface PlayerBindingContext<S> {
 	boolean isCurrentNativeSession(@NotNull S nativeSession);
 
 	/**
-	 * Binds native listeners before each session starts connecting. Previous listener bindings
-	 * are closed before a replacement is installed; closing the returned subscription also
-	 * closes its current binding. The callback must not start the native session itself.
+	 * Binds native listeners before each session starts connecting. A session's binding is closed when its
+	 * connection ends, before the player reports the disconnect, and at the latest before a replacement is
+	 * installed; closing the returned subscription also closes the current binding. The callback must not start the
+	 * native session itself.
 	 *
 	 * @param listener factory returning cleanup for the supplied native generation
 	 * @return owned generation-listener registration

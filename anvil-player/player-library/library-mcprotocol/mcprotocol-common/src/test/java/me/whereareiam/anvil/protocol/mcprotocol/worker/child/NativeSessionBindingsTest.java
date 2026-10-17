@@ -31,6 +31,28 @@ class NativeSessionBindingsTest {
 	}
 
 	@Test
+	void endsTheGenerationOfASessionWhoseConnectionEndedAndBindsTheNextSessionAgain() {
+		List<String> events = new ArrayList<>();
+		Object first = session();
+		Object second = session();
+		try (var bindings = new NativeSessionBindings()) {
+			bindings.register(nativeSession -> {
+				String generation = nativeSession == first ? "first" : "second";
+				events.add("attach " + generation);
+				return () -> events.add("close " + generation);
+			});
+			bindings.attach(first);
+			bindings.end(first);
+			bindings.end(first);
+			bindings.attach(second);
+			bindings.end(first);
+
+			assertEquals(List.of("attach first", "close first", "attach second"), events);
+		}
+		assertEquals(List.of("attach first", "close first", "attach second", "close second"), events);
+	}
+
+	@Test
 	void closesAllRegistrationsDespiteOneCleanupFailure() {
 		List<String> closed = new ArrayList<>();
 		var bindings = new NativeSessionBindings();
