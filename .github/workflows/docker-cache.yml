@@ -1,0 +1,28 @@
+name: Docker image cache
+run-name: "Docker image cache of ${{ github.ref_name }}"
+
+# Pull requests only read the Actions cache, and GitHub evicts an entry that nobody used for seven days. Pushes to dev
+# save the Docker engine tests' image under the key pull requests read, and a weekly run keeps the entry in use, so
+# a pull request almost never has to pull the image itself.
+on:
+  push:
+    branches:
+      - dev
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: docker-cache-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  docker:
+    name: Docker
+    uses: ./.github/workflows/reusable-docker.yml
+    with:
+      ref: ${{ github.sha }}

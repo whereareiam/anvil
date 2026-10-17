@@ -427,6 +427,12 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   composition tests belong to the `integration-intellij` root. Share fixtures that several modules use,
   such as `SwingTestSupport` and `ControlledToolingProcess`, through `intellij-common/src/testFixtures`,
   never through production artifacts or another module's whole test tree.
+- Tests that need a real Docker engine live in their module's `dockerTest` JVM test suite (`src/dockerTest/java`),
+  so `test` and `build` need no Docker. They run in the image the `anvil.docker.testImage` property of
+  `gradle.properties` names, the only place it is named, passed to them through an argument provider. CI loads
+  the image from the Actions cache keyed by that reference (`whereareiam/devops/primitive/setup/docker-images`);
+  `docker-cache.yml` saves it on pushes to `dev` and weekly, pull requests only read it, and a test pulls it only
+  when the engine lacks it.
 - `anvil-testkit/tests/runtime/src/test`: cross-module discovery/composition without live Minecraft.
 - `anvil-testkit/tests/server/src/test`: real sessions, capabilities, routes, and external agents,
   grouped by behavior. The whole task requires `-Panvil.testMode=full`; only its `matrixTest` task, which
@@ -461,6 +467,7 @@ Run the nearest relevant test first, then architecture/build checks:
 ./gradlew :anvil-testkit:tests:server:matrixTest
 ./gradlew :build-logic:check :build-logic-settings:check
 ./gradlew build
+./gradlew dockerTest
 ~~~
 
 For protocol behavior, run the exact worker contracts, which cover every release in
@@ -488,9 +495,10 @@ failures.
 - Use relative content links. Validate navigation, local links, and Scriptorium content
   compilation after documentation changes. Generated `.scriptorium/` output is ignored.
 - Keep `LICENSE`, wrapper, POM metadata, and CI/release workflows valid. Entry workflows only select a trigger
-  and call `reusable-verify.yml`, `reusable-intellij.yml`, `reusable-live.yml` and `reusable-publish.yml`; shared steps come from `whereareiam/devops`, and
-  only Anvil-specific ones live in `.github/actions`. Pull requests automatically get the metadata check and
-  the quick `build` checks, which start no server. Full verification with the IntelliJ plugin, standalone
+  and call `reusable-verify.yml`, `reusable-docker.yml`, `reusable-intellij.yml`, `reusable-live.yml` and `reusable-publish.yml`; shared steps come from `whereareiam/devops`, and
+  only Anvil-specific ones live in `.github/actions`. Pull requests automatically get the metadata check,
+  the quick `build` checks, which start no server, and the Docker engine tests (`reusable-docker.yml`); the development
+  and release workflows run the same verification before they publish. Full verification with the IntelliJ plugin, standalone
   consumers and real platforms is maintainer-requested through `workflow_dispatch` and reports a
   `Full verification` status on the pull request's head commit. Development builds are manual-only and
   publish a branch-qualified version. Release Drafter updates on `dev` pushes or manual dispatch,

@@ -10,7 +10,9 @@ import me.whereareiam.anvil.environment.execution.docker.DockerEngine;
 import me.whereareiam.anvil.environment.execution.docker.DockerNetwork;
 import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
 import me.whereareiam.anvil.testkit.support.FixtureArtifacts;
+import me.whereareiam.anvil.api.exception.ProvisioningException;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -27,14 +29,29 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Runs against the Docker engine of the machine, in the {@code dockerTest} suite. The image comes from the
+ * {@code anvil.docker.testImage} Gradle property, which CI caches under the same reference.
+ */
 class DockerEngineTest {
-	/**
-	 * The official Temurin image from Amazon's public mirror of Docker's library. Docker Hub limits anonymous pulls
-	 * per address, which shared CI runners exhaust; the mirror serves the same image without that limit.
-	 */
-	private static final String IMAGE = "public.ecr.aws/docker/library/eclipse-temurin:21-jdk";
+	private static final String IMAGE = System.getProperty("anvil.docker.testImage");
 
 	private final Path directory = Path.of("build", "docker-smoke", UUID.randomUUID().toString()).toAbsolutePath();
+
+	/**
+	 * Makes the image available before any test inspects it, pulling it only when the engine does not have it yet.
+	 */
+	@BeforeAll
+	static void provideTheImage() {
+		assertNotNull(IMAGE, "Run the Docker engine tests through the dockerTest task, which names their image");
+		try (DockerEngine docker = new DockerEngine()) {
+			try {
+				docker.images().inspectMetadata(IMAGE);
+			} catch (ProvisioningException missing) {
+				docker.images().pull(IMAGE);
+			}
+		}
+	}
 
 	@AfterEach
 	void removePreparedFiles() throws IOException {
