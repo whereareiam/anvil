@@ -2,8 +2,8 @@ package me.whereareiam.anvil.agent.server.operation;
 
 import me.whereareiam.anvil.agent.api.model.transport.command.AgentCommandRequest;
 import me.whereareiam.anvil.agent.api.model.transport.command.AgentCommandResponse;
-import me.whereareiam.anvil.agent.server.api.operation.AgentOperationHandler;
 import me.whereareiam.anvil.agent.server.api.PlatformAgent;
+import me.whereareiam.anvil.agent.server.api.operation.AgentOperationHandler;
 import org.jetbrains.annotations.NotNull;
 
 /**

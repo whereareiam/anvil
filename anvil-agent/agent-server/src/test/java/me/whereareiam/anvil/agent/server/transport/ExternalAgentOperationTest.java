@@ -2,14 +2,14 @@ package me.whereareiam.anvil.agent.server.transport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.whereareiam.anvil.agent.api.exception.AgentException;
-import me.whereareiam.anvil.agent.api.model.AgentIdentity;
 import me.whereareiam.anvil.agent.api.model.AgentInfo;
 import me.whereareiam.anvil.agent.api.model.AgentOperation;
-import me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider;
-import me.whereareiam.anvil.agent.server.api.operation.AgentOperationRegistry;
-import me.whereareiam.anvil.agent.server.api.PlatformAgent;
+import me.whereareiam.anvil.agent.api.model.AgentOperations;
 import me.whereareiam.anvil.agent.api.type.AgentRole;
 import me.whereareiam.anvil.agent.client.transport.connection.JsonLineAgentConnectionProvider;
+import me.whereareiam.anvil.agent.server.api.PlatformAgent;
+import me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider;
+import me.whereareiam.anvil.agent.server.api.operation.AgentOperationRegistry;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -21,8 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -76,7 +75,7 @@ class ExternalAgentOperationTest {
 					new PlatformAgentRequestDispatcher(new TestPlatform(), providers), ignored -> { });
 				 var client = new JsonLineAgentConnectionProvider().connect(port, "secret", Duration.ofSeconds(2))) {
 				assertEquals("echo:hello", client.request(ECHO, "hello"));
-				assertTrue(client.identity(UUID.randomUUID()).isEmpty());
+				assertEquals("test", client.request(AgentOperations.PING, Map.of()).getPlatform());
 			}
 		}
 	}
@@ -203,13 +202,8 @@ class ExternalAgentOperationTest {
 		}
 
 		@Override
-		public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
-			return Optional.empty();
-		}
-
-		@Override
 		public boolean executeCommand(@NotNull String command) {
-			return true;
+			return command.equals("accepted");
 		}
 	}
 }

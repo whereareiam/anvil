@@ -1,10 +1,10 @@
 package me.whereareiam.anvil.testkit.tests.server.session;
 
-import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.messages.Messages;
-import me.whereareiam.anvil.capability.server.Server;
+import me.whereareiam.anvil.capability.players.PlayerWatch;
+import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.integration.junit.AnvilTest;
 import me.whereareiam.anvil.testkit.tests.server.scenario.Paper12111SystemScenario;
@@ -39,11 +39,12 @@ class PlayerIdentityReconnectSystemTest {
 		SimulatedPlayer alice = anvil.players().create("Alice");
 		Session session = alice.capability(Session.class);
 		Messages messages = alice.capability(Messages.class);
-		Server server = alice.capability(Server.class);
+		Players server = anvil.processes().server("server").capability(Players.class);
+		PlayerWatch arrivals = server.watch();
 		session.connect();
 		session.connected();
 
-		UUID initialUuid = server.joined("server").getObserved().getUniqueId();
+		UUID initialUuid = arrivals.joined(alice).getProfile().getUniqueId();
 		assertNotNull(initialUuid);
 		assertNotEquals(AUTHENTICATED_UUID, initialUuid);
 
@@ -59,13 +60,11 @@ class PlayerIdentityReconnectSystemTest {
 
 		session.rejoin();
 		session.connected();
-		PlayerIdentity authenticated = server.joined("server");
-		assertEquals(AUTHENTICATED_UUID, authenticated.getGranted().getUniqueId());
-		assertEquals(AUTHENTICATED_UUID, authenticated.getObserved().getUniqueId());
-		assertNotEquals(initialUuid, authenticated.getObserved().getUniqueId());
-
-		PlayerIdentity observedByServer = server.identity();
-		assertNotNull(observedByServer);
-		assertEquals(AUTHENTICATED_UUID, observedByServer.getObserved().getUniqueId());
+		UUID authenticated = arrivals.joined(alice).getProfile().getUniqueId();
+		assertEquals(AUTHENTICATED_UUID, alice.grantedProfile().getUniqueId());
+		assertEquals(AUTHENTICATED_UUID, authenticated);
+		assertNotEquals(initialUuid, authenticated);
+		assertEquals(AUTHENTICATED_UUID, server.profile(alice).orElseThrow().getUniqueId());
+		assertEquals(1, server.online().size());
 	}
 }

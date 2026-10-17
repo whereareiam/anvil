@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.launcher.adapter.player;
 
 import me.whereareiam.anvil.api.model.PresentationMetadata;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.capability.binding.TypedCapabilityChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolCapabilityPlayer;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
@@ -9,6 +10,7 @@ import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -38,6 +40,21 @@ final class ProtocolPlayerAdapter implements ProtocolCapabilityPlayer {
 	@Override
 	public @NotNull String clientVersion() {
 		return player.clientVersion();
+	}
+
+	@Override
+	public @NotNull PlayerProfile requestedProfile() {
+		return player.requestedProfile();
+	}
+
+	@Override
+	public @Nullable PlayerProfile grantedProfile() {
+		return player.grantedProfile();
+	}
+
+	@Override
+	public @NotNull List<PlayerProfile> grantedProfiles() {
+		return player.grantedProfiles();
 	}
 
 	@Override

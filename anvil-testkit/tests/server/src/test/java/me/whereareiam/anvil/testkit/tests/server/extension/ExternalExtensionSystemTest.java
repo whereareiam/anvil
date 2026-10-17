@@ -1,23 +1,22 @@
 package me.whereareiam.anvil.testkit.tests.server.extension;
 
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
-import me.whereareiam.anvil.api.process.ProcessCapability;
-import me.whereareiam.anvil.api.process.RunningProcess;
-import me.whereareiam.anvil.api.type.ProcessState;
-import me.whereareiam.anvil.capability.console.Console;
+import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.model.workspace.AssetSource;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceAsset;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
+import me.whereareiam.anvil.api.process.ProcessCapability;
+import me.whereareiam.anvil.api.process.RunningProcess;
+import me.whereareiam.anvil.api.scenario.ScenarioEngine;
+import me.whereareiam.anvil.api.type.ProcessState;
+import me.whereareiam.anvil.capability.console.Console;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.movement.Movement;
 import me.whereareiam.anvil.capability.movement.model.Position;
-import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
-import me.whereareiam.anvil.api.scenario.ScenarioEngine;
-import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.testkit.support.FixtureArtifacts;
 import me.whereareiam.anvil.testkit.support.TestExtensionLoader;
 import me.whereareiam.anvil.testkit.tests.server.scenario.Paper12111SystemScenario;
@@ -75,7 +74,7 @@ class ExternalExtensionSystemTest {
 				assertEquals("Observer@1.21.11", probe(fixture, player, "label", new Class<?>[0]));
 				assertEquals("Observer@1.21.11", probe(fixture, player, "agentLabel", new Class<?>[0]));
 				assertFalse(player.hasCapability(Session.class));
-				assertEquals("Observer", player.capability(Server.class).identity().getRequested().getUsername());
+				assertEquals("Observer", player.requestedProfile().getUsername());
 				assertEquals("fixture:agent-only", probe(fixture, player, "echo", new Class<?>[] {String.class, String.class}, "server", "agent-only"));
 			}
 		}

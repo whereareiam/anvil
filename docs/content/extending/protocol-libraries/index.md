@@ -94,10 +94,13 @@ must honour the virtual host and source address, or refuse the player when it is
 either one, just as a library that cannot redirect its session service refuses a session identity.
 
 Create a disconnected client; connection behavior is supplied through the
-appropriate capability. `ProtocolPlayer.identity()` returns the profile the client requests and, while it is
-connected, the profile the server or proxy granted in its login success. Anvil asks platform agents for the
-player by the granted UUID, so a library that never reports a granted profile is never observed on a server. Destroying a player releases its client resources, and `close()` attempts
-cleanup of all clients and owned workers even after a failure.
+appropriate capability. `ProtocolPlayer.requestedProfile()` returns the profile the client requests, and
+`grantedProfile()` returns, while it is connected, the profile the server or proxy granted in its login
+success. Each process's Players capability finds the player by the UUIDs of its granted profiles, so the
+Players capability of no server or proxy finds a player whose library never reports a granted profile.
+Implement `grantedProfiles()` when the library keeps every profile granted at earlier logins; without
+it, a player is found only under the current one. Destroying a player releases its client resources,
+and `close()` attempts cleanup of all clients and owned workers even after a failure.
 
 ## Understand library selection
 
@@ -160,19 +163,21 @@ The installed `ProtocolPlayerComposer` wraps a library-owned `ProtocolPlayer` as
 ```java
 @NotNull SimulatedPlayer compose(
 		@NotNull ProtocolPlayer player,
-		@NotNull PlayerObservation observation,
+		@NotNull PlayerConnection connection,
 		@Nullable PresentationMetadata metadata,
 		@NotNull Consumer<SimulatedPlayer> onDestroyed
 );
 ```
 
-`ProtocolPlayer` belongs to `me.whereareiam.anvil.protocol.api.player`. `PlayerObservation` and
-`SimulatedPlayer` belong to `me.whereareiam.anvil.api.player`; `PresentationMetadata` belongs to
+`ProtocolPlayer` belongs to `me.whereareiam.anvil.protocol.api.player`. `SimulatedPlayer` belongs to
+`me.whereareiam.anvil.api.player`, `PlayerConnection` to `me.whereareiam.anvil.api.model.player`; `PresentationMetadata` belongs to
 `me.whereareiam.anvil.api.model`. The destruction callback uses `java.util.function.Consumer`,
 with JetBrains nullability annotations on the signature.
 
-The protocol player manager passes metadata from `PlayerOptions` alongside the native player and
-its scoped `PlayerObservation`. Preserve that optional value in `SimulatedPlayer.metadata()` while
+The protocol player manager passes metadata from `PlayerOptions` alongside the native player and its
+`PlayerConnection` (`me.whereareiam.anvil.api.model.player`), with the target process named also for the
+entrypoint, which capabilities that follow the player's connection receive as
+`PlayerCapabilityContext.connection()`. Preserve the optional metadata in `SimulatedPlayer.metadata()` while
 retaining the library's connection identity. The launcher binds the bundled capability composer
 to its scoped request channels; a composer does not receive an untyped collection of scenario services.
 Invoke `onDestroyed` after permanent player destruction, not on an ordinary disconnect.

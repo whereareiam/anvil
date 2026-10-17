@@ -3,6 +3,8 @@ package me.whereareiam.anvil.launcher.adapter.player;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.agent.api.exception.AgentException;
 import me.whereareiam.anvil.agent.client.api.connection.AgentConnection;
+import me.whereareiam.anvil.agent.client.api.exception.AgentUnavailableException;
+import me.whereareiam.anvil.capability.api.exception.ChannelUnavailableException;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -89,6 +91,18 @@ class AgentRequestChannelTest {
 
 		assertSame(failure, assertThrows(AgentException.class, () -> channel.request(operation, "hello")));
 		assertEquals(0, connection.closed);
+	}
+
+	@Test
+	void reportsAnUnavailableConnectionAsAnUnavailableChannel() {
+		var failure = new AgentUnavailableException("Agent connection is closed");
+		var connection = new Connection(ignored -> { throw failure; });
+		var channel = new AgentRequestChannel(connection);
+		var operation = new ChannelOperation<>("external.fixture.echo", String.class, String.class);
+
+		var unavailable = assertThrows(ChannelUnavailableException.class, () -> channel.request(operation, "hello"));
+		assertSame(failure, unavailable.getCause());
+		assertTrue(unavailable.getMessage().contains(operation.getId()));
 	}
 
 	@RequiredArgsConstructor

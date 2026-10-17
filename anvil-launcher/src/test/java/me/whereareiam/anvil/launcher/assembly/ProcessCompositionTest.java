@@ -12,6 +12,7 @@ import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.type.RunningServer;
+import me.whereareiam.anvil.launcher.adapter.platform.ScenarioPlatforms;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import me.whereareiam.anvil.platform.api.model.ProcessPlan;
@@ -32,7 +33,7 @@ class ProcessCompositionTest {
 	void noAgentProcessesKeepTheOriginalGroupAndDoNotDiscoverProviders() {
 		var directory = new ScenarioAgentDirectory();
 		ProcessGroup raw = group(List.of("first"), ignored -> { });
-		var composition = ProcessComposition.discover(plan(false, "first"), directory);
+		var composition = ProcessComposition.discover(plan(false, "first"), directory, new ScenarioPlatforms(directory));
 
 		assertSame(raw, composition.bind(raw));
 		assertTrue(directory.agents().isEmpty());

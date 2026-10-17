@@ -3,7 +3,6 @@
   "pages": [
     "index",
     "session",
-    "server",
     "messages",
     "movement",
     "inventory",

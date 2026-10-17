@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.launcher.assembly;
 
 import me.whereareiam.anvil.agent.api.exception.AgentException;
-import me.whereareiam.anvil.agent.api.model.AgentIdentity;
 import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
 import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.api.model.EngineOptions;
@@ -40,8 +39,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -86,7 +83,7 @@ class ProcessLauncherIntegrationTest {
 			@Override
 			public void configure(@NotNull MinecraftProcess process, @NotNull PlatformContext context) {
 				preparation.add("configure");
-				if (borrowed.get() != null) assertThrows(AgentException.class, () -> borrowed.get().executeCommand("during"));
+				if (borrowed.get() != null) assertThrows(AgentException.class, () -> borrowed.get().request("during", null, Boolean.class));
 			}
 			@Override
 			public @NotNull Pattern readinessPattern() { return Pattern.compile("READY"); }
@@ -122,11 +119,11 @@ class ProcessLauncherIntegrationTest {
 				group.startAll();
 				var original = group.server("server");
 				borrowed.set(agents.require("server"));
-				borrowed.get().executeCommand("before");
+				borrowed.get().request("before", null, Boolean.class);
 				Files.writeString(asset, "second");
 				var replacement = group.restart("server");
 				assertSame(borrowed.get(), agents.require("server"));
-				borrowed.get().executeCommand("after");
+				borrowed.get().request("after", null, Boolean.class);
 				assertEquals(ProcessState.STOPPED, original.state());
 				assertEquals(ProcessState.READY, replacement.state());
 				assertEquals(original.address(), replacement.address());
@@ -149,11 +146,10 @@ class ProcessLauncherIntegrationTest {
 			}
 
 			@Override
-			public <T> T request(@NotNull String operation, @NotNull Object args, @NotNull Class<T> response) { throw new UnsupportedOperationException(); }
-			@Override
-			public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) { return Optional.empty(); }
-			@Override
-			public boolean executeCommand(@NotNull String command) { calls.add(generation + ":" + command); return true; }
+			public <T> T request(@NotNull String operation, Object args, @NotNull Class<T> response) {
+				calls.add(generation + ":" + operation);
+				return response.cast(true);
+			}
 			@Override
 			public void close() { calls.add(generation + ":close"); }
 		};

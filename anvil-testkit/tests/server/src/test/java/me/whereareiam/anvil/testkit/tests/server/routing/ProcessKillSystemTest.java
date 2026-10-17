@@ -7,7 +7,8 @@ import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.api.type.ProcessState;
-import me.whereareiam.anvil.capability.server.Server;
+import me.whereareiam.anvil.capability.players.PlayerWatch;
+import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
 import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
@@ -17,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -46,10 +48,15 @@ class ProcessKillSystemTest {
 			try {
 				SimulatedPlayer alice = context.players().create("KilledAlice");
 				Session session = alice.capability(Session.class);
-				Server server = alice.capability(Server.class);
+				Players lobby = context.processes().server("lobby").capability(Players.class);
+				Players proxied = context.processes().proxy("proxy").capability(Players.class);
+				PlayerWatch arrivals = lobby.watch();
+				PlayerWatch moves = proxied.watch();
 				session.connect();
 				session.connected(TIMEOUT);
-				server.joined("lobby", TIMEOUT);
+				arrivals.joined(alice, TIMEOUT);
+				moves.joined(alice, "lobby", TIMEOUT);
+				assertEquals(Optional.of("lobby"), proxied.backend(alice));
 
 				RunningProcess killed = context.processes().get("proxy");
 				long checkpoint = killed.console().checkpoint();
@@ -64,6 +71,7 @@ class ProcessKillSystemTest {
 				assertTrue(output.getLast().contains("[Anvil] Process 'proxy' was killed on request without a clean shutdown"),
 						output.toString());
 				assertEquals(ProcessState.READY, context.processes().get("lobby").state());
+				arrivals.left(alice, TIMEOUT);
 				assertEquals(ProcessState.READY, context.processes().get("game").state());
 
 				RunningProcess replacement = context.processes().start("proxy");
@@ -72,7 +80,12 @@ class ProcessKillSystemTest {
 				assertEquals("retained", Files.readString(replacement.workDirectory().resolve("kill-marker")));
 				session.rejoin();
 				session.connected(TIMEOUT);
-				assertEquals("lobby", server.joined("lobby", TIMEOUT).getRoute().getServer());
+				arrivals.joined(alice, TIMEOUT);
+				moves.left(alice, TIMEOUT);
+				moves.joined(alice, TIMEOUT);
+				moves.joined(alice, "lobby", TIMEOUT);
+				assertEquals(Optional.of("lobby"), proxied.backend(alice));
+				assertEquals(1, proxied.online().size());
 				successful = true;
 			} finally {
 				context.finish(successful);

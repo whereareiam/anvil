@@ -2,7 +2,6 @@ package me.whereareiam.anvil.buildlogic.capability
 
 import org.gradle.api.GradleException
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -26,14 +25,13 @@ class CapabilityFamilyTest {
 	}
 
 	@Test
-	fun `lets a process family without common code keep its provider in the root`() {
+	fun `keeps code out of the root of a process family without common code`() {
 		val family = family("console", "console-api", owner = "process")
 		File(family, "src/main/java").mkdirs()
 
-		val read = CapabilityFamily.read(family, listOf("mcprotocol"))
+		val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("mcprotocol")) }
 
-		assertNull(read.common)
-		assertEquals(listOf<String>(), read.sides)
+		assertTrue(failure.message!!.contains("move the code of its root to 'console-common'"), failure.message)
 	}
 
 	@Test

@@ -24,7 +24,7 @@ a family's API describes its services and extension points. The launcher binds t
 | `anvil-capability/capability-protocol-api`         | Protocol-backed player providers/contexts, channels/events, and native worker bindings |
 | `anvil-capability/capability-agent-api`          | Agent-backed process/player providers and scoped request-channel contexts |
 | `anvil-capability/capability-builtin/player`     | Player capability families: feature APIs, library-neutral providers and bindings, and library sides with segments    |
-| `anvil-capability/capability-builtin/process`    | Process capability families with agent-backed host wiring, including Console                                        |
+| `anvil-capability/capability-builtin/process`    | Process capability families with agent-backed host wiring: Console, and Players, which reports what one server or proxy knows about the players on it from its own agent's events |
 | `anvil-agent/agent-api`                          | Shared operation descriptors, payloads, identities, and exceptions                                                   |
 | `anvil-agent/agent-client/client-api`            | Host clients, connections, directories, and artifact lookup                               |
 | `anvil-agent/agent-client`                       | Connections, stable process clients and sessions, directories, and observations in the Anvil JVM                    |
@@ -139,6 +139,9 @@ by players and running processes. Their APIs do not require an agent transport.
 `capability-builtin/player` contains player features. `capability-builtin/process` contains process
 features with agent-backed wiring, including Console; that directory groups families by capability owner
 and is not a separate public owner. Public feature packages and artifact IDs remain feature-specific.
+`capability-builtin/server` is a family directly below `capability-builtin`: its capabilities are about what a
+server or proxy observes of players, so a process-scoped capability can join the family later without depending
+sideways on `capability-builtin/player`.
 
 Each built-in capability is a family folder: `<feature>-api` holds the public API (and, for packet
 capabilities, the library-neutral port in its `packet` package), `<feature>-common` holds the host provider
@@ -148,16 +151,16 @@ members into the `builtin-<feature>` bundle. The convention publishes the member
 such as `builtin-movement-api`, and refuses a child that is not a member, a `common` or `util` package, and
 code in the root of a family with common code or library sides.
 
-A process family such as console has no common code or library sides: its root holds the agent-backed
-provider. That provider binds the family API to agent operations, and only an assembly may depend on both
-the capability and the agent APIs, so the root is its owner.
+A family that reads its processes through their agents, such as console or players, keeps its provider in
+`<feature>-common` as well: it uses the platform agents' general operations, so it ships nothing into the
+processes.
 
 Capability providers share `CapabilityProvider`, `CapabilityContext`, and `CapabilityDescriptor`
 from `capability-api`. Its `RequestChannel` performs typed calls described by `ChannelOperation`, and `OperationRegistry`
 registers handlers for those same descriptors.
 The shared `capability.api.player` package contains `PlayerCapabilityProvider`,
-`PlayerCapabilityContext`, and `CapabilityPlayer`: player identity/version, observations, declared
-dependencies, and lifetime. The built-in `Server` provider uses that neutral observation contract.
+`PlayerCapabilityContext`, and `CapabilityPlayer`: player identity/version, the requested and granted
+profiles, the connection, declared dependencies, and lifetime.
 
 The mechanism APIs add only the access their providers need. `capability-protocol-api` groups
 protocol player factories, channels/events, and native worker contracts under

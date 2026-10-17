@@ -50,7 +50,7 @@ class DefaultPlayerServiceTest {
 		AnvilScenario scenario = scenario();
 
 		service.prepare(scenario);
-		PlayerManager manager = service.open(scenario, new StubScenarioProcesses("server", directory), (player, connectedTo) -> { throw new AssertionError(); }, composer(), true);
+		PlayerManager manager = service.open(scenario, new StubScenarioProcesses("server", directory), composer(), true);
 		assertEquals(0, first.created + second.created, "Preparation must not create libraries");
 
 		create(manager, "Alice", "first");
@@ -69,7 +69,7 @@ class DefaultPlayerServiceTest {
 		assertEquals(1, second.closed);
 		assertThrows(IllegalStateException.class, () -> service.prepare(scenario));
 		assertThrows(IllegalStateException.class,
-				() -> service.open(scenario, new StubScenarioProcesses("server", directory), (player, connectedTo) -> { throw new AssertionError(); }, composer(), true));
+				() -> service.open(scenario, new StubScenarioProcesses("server", directory), composer(), true));
 	}
 
 	@Test
@@ -96,7 +96,7 @@ class DefaultPlayerServiceTest {
 	void closingWhilePlayerCreationHoldsItsManagerNeitherDeadlocksNorLeaksTheLibrary() throws Exception {
 		StubProvider provider = new StubProvider("test");
 		DefaultPlayerService service = service(options(), provider);
-		PlayerManager manager = service.open(scenario(), new StubScenarioProcesses("server", directory), (player, connectedTo) -> { throw new AssertionError(); }, composer(), true);
+		PlayerManager manager = service.open(scenario(), new StubScenarioProcesses("server", directory), composer(), true);
 		AtomicReference<Thread> closer = new AtomicReference<>();
 		CountDownLatch selecting = new CountDownLatch(1);
 		// Release selection runs while creation holds the manager lock; it waits until close() holds the
@@ -141,7 +141,7 @@ class DefaultPlayerServiceTest {
 		IllegalStateException failure = new IllegalStateException("library cleanup failed");
 		provider.onClose = () -> { throw failure; };
 		DefaultPlayerService service = service(options(), provider);
-		PlayerManager manager = service.open(scenario(), new StubScenarioProcesses("server", directory), (player, connectedTo) -> { throw new AssertionError(); }, composer(), true);
+		PlayerManager manager = service.open(scenario(), new StubScenarioProcesses("server", directory), composer(), true);
 		create(manager, "Alice", null);
 
 		assertSame(failure, assertThrows(IllegalStateException.class, service::close));
@@ -174,7 +174,7 @@ class DefaultPlayerServiceTest {
 		Path releases = directory.resolve("releases.toml");
 		StubProvider provider = new StubProvider("test");
 		DefaultPlayerService service = service(options().toBuilder().protocolRelease("test", releases).build(), provider);
-		PlayerManager manager = service.open(scenario(), new StubScenarioProcesses("server", directory), (player, connectedTo) -> { throw new AssertionError(); }, composer(), true);
+		PlayerManager manager = service.open(scenario(), new StubScenarioProcesses("server", directory), composer(), true);
 
 		create(manager, "Alice", null);
 
@@ -233,7 +233,7 @@ class DefaultPlayerServiceTest {
 	}
 
 	private ProtocolPlayerComposer composer() {
-		return (player, observation, metadata, onDestroyed) -> {
+		return (player, connection, metadata, onDestroyed) -> {
 			throw new AssertionError("These service lifecycle tests do not compose players");
 		};
 	}

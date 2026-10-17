@@ -21,7 +21,10 @@ public final class PlayerComposition {
 	 * @param agents borrowed scenario agent directory
 	 * @return composer bound to this scenario
 	 */
-	public static @NotNull ProtocolPlayerComposer create(@NotNull Collection<String> libraries, @NotNull AgentDirectory agents) {
+	public static @NotNull ProtocolPlayerComposer create(
+			@NotNull Collection<String> libraries,
+			@NotNull AgentDirectory agents
+	) {
 		var provider = new ProviderDiscovery().required(ProtocolPlayerComposerProvider.class, "protocol-player composer");
 
 		return create(libraries, agents, provider);

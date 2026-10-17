@@ -2,16 +2,15 @@ package me.whereareiam.anvil.testkit.tests.runtime.provider;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.EngineOptions;
-import me.whereareiam.anvil.api.model.player.PlayerIdentity;
-import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.player.Expectation;
+import me.whereareiam.anvil.api.model.player.PlayerOptions;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.model.player.PlayerState;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.PlayerManager;
-import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.process.ProcessConsole;
 import me.whereareiam.anvil.api.process.RunningProcess;
@@ -24,12 +23,12 @@ import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
 import me.whereareiam.anvil.protocol.api.library.ProtocolArtifactResolver;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
-import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.player.DefaultPlayerService;
 import me.whereareiam.anvil.testkit.support.FixtureArtifacts;
 import me.whereareiam.anvil.testkit.support.TestExtensionLoader;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -42,7 +41,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -69,7 +67,7 @@ class ExternalProviderDiscoveryIntegrationTest {
 			try (var players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(), options(), artifacts())) {
 				AnvilScenario scenario = scenario();
 				players.prepare(scenario);
-				PlayerManager manager = players.open(scenario, new Processes(), (player, connectedTo) -> observation(player), composer(composed), true);
+				PlayerManager manager = players.open(scenario, new Processes(), composer(composed), true);
 
 				var tie = assertThrows(ScenarioValidationException.class, () -> manager.create("Undeclared"));
 				assertTrue(tie.getMessage().contains("[mcprotocol, fixture]"), tie.getMessage());
@@ -81,13 +79,13 @@ class ExternalProviderDiscoveryIntegrationTest {
 				assertTrue(unknown.getMessage().contains("Installed: [mcprotocol, fixture]"), unknown.getMessage());
 
 				PlayerManager scoped = players.open(scenario.toBuilder().protocolLibrary("fixture").build(), new Processes(),
-						(player, connectedTo) -> observation(player), composer(composed), true);
+						composer(composed), true);
 				scoped.create("ScenarioChoice");
 			}
 
 			try (var players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(),
 					options().toBuilder().protocolLibrary("fixture").build(), artifacts())) {
-				players.open(scenario(), new Processes(), (player, connectedTo) -> observation(player), composer(composed), true).create("EngineChoice");
+				players.open(scenario(), new Processes(), composer(composed), true).create("EngineChoice");
 			}
 
 			assertEquals(List.of("Declared:fixture", "ScenarioChoice:fixture", "EngineChoice:fixture"), composed);
@@ -132,7 +130,7 @@ class ExternalProviderDiscoveryIntegrationTest {
 	}
 
 	private static ProtocolPlayerComposer composer(List<String> composed) {
-		return (player, observation, metadata, onDestroyed) -> {
+		return (player, connection, metadata, onDestroyed) -> {
 			composed.add(player.name() + ":" + player.libraryId());
 			return new SimulatedPlayer() {
 				@Override
@@ -143,6 +141,16 @@ class ExternalProviderDiscoveryIntegrationTest {
 				@Override
 				public @NotNull String clientVersion() {
 					return player.clientVersion();
+				}
+
+				@Override
+				public @NotNull PlayerProfile requestedProfile() {
+					return player.requestedProfile();
+				}
+
+				@Override
+				public @Nullable PlayerProfile grantedProfile() {
+					return player.grantedProfile();
 				}
 
 				@Override
@@ -174,20 +182,6 @@ class ExternalProviderDiscoveryIntegrationTest {
 		};
 	}
 
-	private static PlayerObservation observation(ProtocolPlayer player) {
-		PlayerIdentity identity = player.identity();
-		return new PlayerObservation() {
-			@Override
-			public PlayerIdentity identity() {
-				return identity;
-			}
-
-			@Override
-			public PlayerIdentity await(Predicate<PlayerIdentity> condition, Duration timeout) {
-				return identity;
-			}
-		};
-	}
 
 	private static final class Processes implements ScenarioProcesses {
 		private final RunningServer server = new Server();

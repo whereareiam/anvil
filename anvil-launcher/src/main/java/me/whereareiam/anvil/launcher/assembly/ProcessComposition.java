@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
 import me.whereareiam.anvil.capability.process.ProcessCapabilityRuntime;
+import me.whereareiam.anvil.launcher.adapter.platform.ScenarioPlatforms;
 import me.whereareiam.anvil.launcher.adapter.player.AgentRequestChannel;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import org.jetbrains.annotations.NotNull;
@@ -22,14 +23,19 @@ public final class ProcessComposition {
 	 *
 	 * @param plan validated platform declarations
 	 * @param directory stable client handles used by process launches
+	 * @param platforms the platforms of the scenario's processes, read through their agents
 	 * @return validated capability runtime, ready to bind after process startup
 	 */
-	public static @NotNull ProcessCapabilityRuntime discover(@NotNull PlatformPlan plan, @NotNull ScenarioAgentDirectory directory) {
-		Map<String, String> platforms = new LinkedHashMap<>();
+	public static @NotNull ProcessCapabilityRuntime discover(
+			@NotNull PlatformPlan plan,
+			@NotNull ScenarioAgentDirectory directory,
+			@NotNull ScenarioPlatforms platforms
+	) {
+		Map<String, String> declared = new LinkedHashMap<>();
 		plan.getProcesses().forEach((name, process) -> {
-			if (process.isAgent()) platforms.put(name, process.getDeclaration().getPlatform());
+			if (process.isAgent()) declared.put(name, process.getDeclaration().getPlatform());
 		});
 
-		return ProcessCapabilityRuntime.discover(platforms, name -> new AgentRequestChannel(directory.register(name)));
+		return ProcessCapabilityRuntime.discover(declared, name -> new AgentRequestChannel(directory.register(name)), platforms::platform);
 	}
 }

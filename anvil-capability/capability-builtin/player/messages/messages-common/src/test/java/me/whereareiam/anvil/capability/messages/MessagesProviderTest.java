@@ -1,7 +1,8 @@
 package me.whereareiam.anvil.capability.messages;
 
+import me.whereareiam.anvil.api.model.player.PlayerConnection;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
-import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
@@ -82,7 +84,7 @@ class MessagesProviderTest {
 	}
 
 	/**
-	 * Supplies only the channel; messages need no services, capabilities or observations.
+	 * Supplies only the channel; messages need no services or capabilities.
 	 */
 	private record ChannelContext(CapabilityChannel channel) implements ProtocolPlayerCapabilityContext {
 		@Override
@@ -101,9 +103,20 @@ class MessagesProviderTest {
 		}
 
 		@Override
-		public @NotNull PlayerObservation observation() {
-			throw new AssertionError("Messages do not observe the player");
+		public @NotNull PlayerProfile requestedProfile() {
+			return new PlayerProfile("Alice", UUID.nameUUIDFromBytes("Alice".getBytes()));
 		}
+
+		@Override
+		public @Nullable PlayerProfile grantedProfile() {
+			return null;
+		}
+
+		@Override
+		public @NotNull PlayerConnection connection() {
+			return PlayerConnection.to("proxy");
+		}
+
 
 		@Override
 		public void onDestroy(@NotNull Runnable action) {

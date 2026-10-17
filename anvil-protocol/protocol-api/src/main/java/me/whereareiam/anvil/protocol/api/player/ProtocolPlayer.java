@@ -1,10 +1,12 @@
 package me.whereareiam.anvil.protocol.api.player;
 
-import me.whereareiam.anvil.api.model.player.PlayerIdentity;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -41,12 +43,30 @@ public interface ProtocolPlayer {
 	@NotNull ProtocolRelease release();
 
 	/**
-	 * Returns the identity the protocol library knows: the profile its client requested and, while connected,
-	 * the profile the joined process granted at login. Observations add what servers report.
+	 * Returns the profile the client asks for when it logs in.
 	 *
-	 * @return current client identity snapshot
+	 * @return requested profile
 	 */
-	@NotNull PlayerIdentity identity();
+	@NotNull PlayerProfile requestedProfile();
+
+	/**
+	 * Returns the profile the joined process granted at the latest login.
+	 *
+	 * @return granted profile, or null before the player logged in and after it disconnected
+	 */
+	@Nullable PlayerProfile grantedProfile();
+
+	/**
+	 * Returns every profile a process granted the client at its logins, oldest first and without repeats, so that a
+	 * capability can find what processes reported about earlier connections, whose UUID may differ. The default
+	 * keeps no history and returns the current granted profile, or nothing while there is none.
+	 *
+	 * @return immutable list of the granted profiles
+	 */
+	default @NotNull List<PlayerProfile> grantedProfiles() {
+		PlayerProfile granted = grantedProfile();
+		return granted == null ? List.of() : List.of(granted);
+	}
 
 	/**
 	 * Finds an implementation-specific service that capability providers may target through a stable API.

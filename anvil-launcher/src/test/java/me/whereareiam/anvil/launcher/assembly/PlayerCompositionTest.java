@@ -1,12 +1,11 @@
 package me.whereareiam.anvil.launcher.assembly;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.agent.api.model.AgentIdentity;
-import me.whereareiam.anvil.agent.client.AgentPlayerObservation;
 import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.agent.client.api.AgentDirectory;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.api.model.player.PlayerIdentity;
+import me.whereareiam.anvil.api.model.player.PlayerConnection;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.capability.agent.api.player.AgentPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.agent.api.player.AgentPlayerCapabilityProvider;
@@ -33,13 +32,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PlayerCompositionTest {
 	private static final String PROVIDER_DESCRIPTOR = "META-INF/services/" + ProtocolPlayerComposerProvider.class.getName();
-	private static final ProtocolPlayerComposer COMPOSER = (player, observation, metadata, onDestroyed) -> {
+	private static final ProtocolPlayerComposer COMPOSER = (player, connection, metadata, onDestroyed) -> {
 		throw new AssertionError("Discovery must not create a player");
 	};
 
@@ -64,11 +62,10 @@ public class PlayerCompositionTest {
 			AgentDirectory agents = () -> Map.of("server", new StubAgent());
 			var provider = new CapabilityPlayerComposerProvider();
 			var protocol = new StubPlayer();
-			var observation = new AgentPlayerObservation(protocol.name(), "server", protocol::identity, Map::of, Set.of());
-			var scoped = PlayerComposition.create(List.of("selected"), agents, provider).compose(protocol, observation, null, ignored -> {});
+			var scoped = PlayerComposition.create(List.of("selected"), agents, provider).compose(protocol, PlayerConnection.to("server"), null, ignored -> {});
 			try (AutoCloseable scopedCleanup = scoped::destroy) {
 				assertNotNull(scoped.capability(AgentFeature.class).context.channel("server"));
-				var standalone = provider.create().compose(new StubPlayer(), observation, null, ignored -> {});
+				var standalone = provider.create().compose(new StubPlayer(), PlayerConnection.to("server"), null, ignored -> {});
 				try (AutoCloseable standaloneCleanup = standalone::destroy) {
 					var failure = assertThrows(CapabilityException.class,
 							() -> standalone.capability(AgentFeature.class).context.channel("server"));
@@ -142,16 +139,6 @@ public class PlayerCompositionTest {
 		}
 
 		@Override
-		public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
-			return Optional.empty();
-		}
-
-		@Override
-		public boolean executeCommand(@NotNull String command) {
-			throw new AssertionError("Composition must not execute commands");
-		}
-
-		@Override
 		public void close() {
 			throw new AssertionError("Composition borrows scenario agents");
 		}
@@ -182,8 +169,13 @@ public class PlayerCompositionTest {
 		}
 
 		@Override
-		public @NotNull PlayerIdentity identity() {
-			throw new AssertionError("Composition must not observe identity");
+		public @NotNull PlayerProfile requestedProfile() {
+			return new PlayerProfile("Alice", UUID.nameUUIDFromBytes("Alice".getBytes()));
+		}
+
+		@Override
+		public @Nullable PlayerProfile grantedProfile() {
+			return null;
 		}
 
 		@Override

@@ -38,7 +38,8 @@ Close the context: release players and stop the managed processes
 ```
 
 Players are created as the test needs them. Installed capabilities provide session management,
-messages, movement, inventory, interactions, and server observations. You can add capabilities
+messages, movement, inventory, and interactions for players, and console commands and the players on
+each server or proxy for processes. You can add capabilities
 or implement another protocol library through Anvil's public extension contracts.
 
 ## Follow the guide

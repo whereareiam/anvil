@@ -27,14 +27,24 @@ platform configuration; do not store per-run forwarding values in fixture files.
 ## Assert the route
 
 In a JUnit method receiving `ScenarioContext anvil`, this fragment targets the example proxy and
-checks the backend. The default capability unit supplies the required Session and Server capabilities;
+checks the backend. The default capability unit supplies the required Session and Players capabilities;
 a smaller installation must add both units.
 
 ```java
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
-import me.whereareiam.anvil.capability.server.Server;
+import me.whereareiam.anvil.capability.players.PlayerWatch;
+import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
+
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+Players lobby = anvil.processes().server("lobby").capability(Players.class);
+Players proxy = anvil.processes().proxy("proxy").capability(Players.class);
+PlayerWatch arrivals = lobby.watch();
+PlayerWatch moves = proxy.watch();
 
 var alice = anvil.players().create(PlayerOptions.builder()
 		.name("RouteAlice")
@@ -43,15 +53,21 @@ var alice = anvil.players().create(PlayerOptions.builder()
 var session = alice.capability(Session.class);
 session.connect();
 session.connected();
-alice.capability(Server.class).joined("lobby");
+
+arrivals.joined(alice);
+moves.joined(alice, "lobby");
+assertEquals(Optional.of("lobby"), proxy.backend(alice));
+assertEquals(alice.grantedProfile(), lobby.profile(alice).orElseThrow());
 ```
 
 Run the containing class using `./gradlew anvilTest --tests 'your.package.YourTest'`.
-The first wait establishes the client connection. The final wait matches the route reported by
-platform agents. In a proxied topology, the proxy agent's connected-backend report can satisfy this
-wait; it does not require an independent observation from the backend agent. Use a backend-specific
-[agent operation](../../../../../extending/agent-operations/index.md) if your test needs proof of
-application behavior inside that backend.
+The first wait establishes the client connection. `arrivals.joined(alice)` waits until the lobby's
+own agent reports that Alice joined it, and `moves.joined(alice, "lobby")` until the proxy reports
+connecting her to `lobby`. Only after that wait does `proxy.backend(alice)` reliably name `lobby`: it is
+a snapshot of the proxy's reports, which can arrive a moment after the backend's. The last assertion compares the profile the lobby received through forwarding with
+the one the proxy granted the client; a broken forwarding setup shows up there as another username or
+UUID. Use a backend-specific [agent operation](../../../../../extending/agent-operations/index.md) if
+your test needs proof of application behavior inside that backend.
 
 Use the same check after a server switch or [process restart](../../../actions/restarts/index.md).
 Keep every reachable backend on the same [native version](../../versions/index.md).

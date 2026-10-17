@@ -9,10 +9,19 @@ platform supports and verify them through real server/proxy behavior.
 ## Supply a platform agent
 
 Implement `PlatformAgent` in an artifact packaged as a plugin for the target platform. Its required
-baseline reports `AgentInfo`, looks up observed identities, and executes console commands. Look a player
-up by the UUID that `identity(UUID)` receives, never by name: it is the UUID the player was granted at
-login, and platforms match names without regard to letter case. Native
-services are exposed through `findService`; `requireService` provides a diagnostic when unavailable.
+baseline reports `AgentInfo` and executes console commands through `executeCommand`, and it runs work by the
+platform's threading rules. Native services are exposed through `findService`; `requireService` provides a
+diagnostic when unavailable. Expose the platform's server or proxy API and the plugin instance there: agent
+extensions reach the platform only through them.
+
+Report every player joining and leaving to the endpoint's `PlayerEvents`, which `AgentServer.playerEvents()`
+returns after startup: on a server, the player joining and leaving the server itself, with no server name; on
+a proxy, the player joining the proxy itself, with no server name, once it has logged in and before any backend,
+then each backend the proxy connects the player to and away from, named as the proxy names it, leaving the
+previous backend before joining the next, and the proxy itself last when the player disconnects. Report the
+platform's role in `AgentInfo`: the endpoint tells the host whether the events come from a proxy. Report the player as your platform knows it, as an `AgentProfile`
+(`me.whereareiam.anvil.agent.api.model`). Each process's built-in Players capability reads its own process's
+events, so a platform that reports none has players that its Players capability never sees.
 
 Compile the platform plugin against `agent-server-api` and package the `agent` runtime artifact.
 Server contracts use `me.whereareiam.anvil.agent.server.api`; shared identities and request payloads
@@ -55,6 +64,6 @@ its mode, secret, and proxy online-mode setting. Do not infer forwarding from pl
 choose another mode during configuration.
 
 Expose only combinations you can verify. Test the negotiated configuration, successful player login,
-server-observed identity, and reconnect behavior. Network isolation remains the execution provider's
+the profile the server observes, and reconnect behavior. Network isolation remains the execution provider's
 responsibility; correct forwarding alone does not prevent direct backend access. Consumer topology
 choices are described under [Forwarding](../../../building-blocks/environments/platforms/proxies/forwarding/index.md).

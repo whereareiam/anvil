@@ -9,13 +9,23 @@ behavior you want to control: a simulated player or a running server or proxy.
 | Owner | Capability contract | Examples |
 |---|---|---|
 | Player | `PlayerCapability` | `Session` controls connections; `Messages` sends chat and observes replies |
-| Process | `ProcessCapability` | `Console` dispatches native server or proxy commands |
+| Process | `ProcessCapability` | `Console` dispatches native server or proxy commands; `Players` reports who is on the process |
 
 Both extend the shared `Capability` contract. Ownership determines which object exposes the
-capability and how long its instance lives. It does not determine the implementation mechanism:
-a player capability can use packets or agents, and a process capability can use an agent or
-another implementation. For example, `Server` uses agents to observe one player's identity and
-route, so it still belongs to that player.
+capability and how long its instance lives.
+
+## Choose the owner by who can normally do or know it
+
+A player capability is the client side: what a Minecraft client can normally do or see, such as
+connecting, sending chat, reading its inventory, or answering a dialog. A process capability is the
+server side: what a server or proxy can normally do or know, such as running a console command or
+knowing which players are on it and under which profile. A proxy counts as server side.
+
+The implementation never decides the owner. A player capability can use packets or agents, and a
+process capability can use an agent or another implementation. `Players` is built from the joins and
+leaves a process's platform agent reports, and it belongs to that process because the process is what
+knows who is on it. Alice's client knows only the profile it was granted; which backend a proxy sent her
+to is something the proxy knows, so you ask the proxy's `Players`.
 
 Use `Messages` to send a command as a player and `Console` to dispatch it as the process console.
 The two callers can have different permissions and trigger different application behavior.
@@ -80,9 +90,8 @@ appropriate bounded wait: login completion through `Session`, message delivery t
 or an inventory condition through `Inventory`. Immediate methods such as `history()` return a
 snapshot without waiting.
 
-The `Server` capability observes aggregate identity and routes through platform agents. A route may
-include a proxy's connected-server report, so it is distinct from inspecting native state directly
-on a particular backend.
+To wait until a player arrives somewhere, watch that process's `Players` before the action and wait
+for the join; see [watching players on a process](../../../building-blocks/environments/actions/players/index.md).
 
 ## Keep capabilities with their owner
 

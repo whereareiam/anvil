@@ -19,9 +19,10 @@ supply it through the inherited `CapabilityOwner` lookup contract without an age
 
 For example, `PluginCommands` could belong to a player and use `Messages` to execute commands with
 that player's permissions. A process capability could read your plugin's server-wide state
-through a native handler. Using an agent to implement a feature does not by itself make the feature
-process-owned: the built-in `Server` capability observes one player's identity and route. Its provider
-uses shared player observations, so it needs neither a protocol channel nor direct agent requests.
+through a native handler. Choose the owner by who can normally do or know the thing, not by how you
+implement it: what a client can do or see belongs to the player, and what a server or proxy can do or
+know belongs to the process. The built-in `Players` capability is process-owned because a server knows
+who is on it; Alice's client does not.
 
 ## Create the example capability
 

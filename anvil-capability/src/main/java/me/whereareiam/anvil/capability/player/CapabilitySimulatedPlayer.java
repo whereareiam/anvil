@@ -4,9 +4,10 @@ import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.player.Expectation;
+import me.whereareiam.anvil.api.model.player.PlayerConnection;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.model.player.PlayerState;
 import me.whereareiam.anvil.api.player.PlayerCapability;
-import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.CapabilityRuntime;
 import me.whereareiam.anvil.capability.CapabilitySet;
@@ -21,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -36,7 +38,7 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 	private static final Duration EXPECTATION_INTERVAL = Duration.ofMillis(25);
 
 	private final CapabilityPlayer player;
-	private final PlayerObservation observation;
+	private final PlayerConnection connection;
 	private final Consumer<SimulatedPlayer> onDestroyed;
 	private final CapabilitySet<PlayerCapability> capabilities;
 
@@ -46,11 +48,11 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 			CapabilityPlayer player,
 			CapabilityRuntime<PlayerCapability, PlayerCapabilityContext> runtime,
 			Map<String, String> unavailable,
-			PlayerObservation observation,
+			PlayerConnection connection,
 			Consumer<SimulatedPlayer> onDestroyed
 	) {
 		this.player = player;
-		this.observation = observation;
+		this.connection = connection;
 		this.onDestroyed = onDestroyed;
 		this.capabilities = runtime.compose("Player '" + player.name() + "'", unavailable, dependencies ->
 				player instanceof ProtocolCapabilityPlayer protocol
@@ -82,6 +84,21 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 	@Override
 	public @Nullable PresentationMetadata metadata() {
 		return player.metadata();
+	}
+
+	@Override
+	public @NotNull PlayerProfile requestedProfile() {
+		return player.requestedProfile();
+	}
+
+	@Override
+	public @Nullable PlayerProfile grantedProfile() {
+		return player.grantedProfile();
+	}
+
+	@Override
+	public @NotNull List<PlayerProfile> grantedProfiles() {
+		return player.grantedProfiles();
 	}
 
 	@Override
@@ -188,8 +205,18 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 		}
 
 		@Override
-		public @NotNull PlayerObservation observation() {
-			return observation;
+		public @NotNull PlayerProfile requestedProfile() {
+			return CapabilitySimulatedPlayer.this.requestedProfile();
+		}
+
+		@Override
+		public @Nullable PlayerProfile grantedProfile() {
+			return CapabilitySimulatedPlayer.this.grantedProfile();
+		}
+
+		@Override
+		public @NotNull PlayerConnection connection() {
+			return connection;
 		}
 
 		@Override

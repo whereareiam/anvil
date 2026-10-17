@@ -4,15 +4,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.agent.api.model.AgentOperation;
+import me.whereareiam.anvil.agent.api.model.AgentOperations;
+import me.whereareiam.anvil.agent.api.type.AgentRole;
+import me.whereareiam.anvil.agent.server.api.PlatformAgent;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationHandler;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationRegistry;
-import me.whereareiam.anvil.agent.api.model.AgentOperations;
-import me.whereareiam.anvil.agent.server.operation.TypedAgentOperation;
-import me.whereareiam.anvil.agent.server.api.PlatformAgent;
+import me.whereareiam.anvil.agent.server.event.PlatformEventLog;
 import me.whereareiam.anvil.agent.server.operation.CommandHandler;
-import me.whereareiam.anvil.agent.server.operation.IdentityHandler;
+import me.whereareiam.anvil.agent.server.operation.PlayerEventsHandler;
 import me.whereareiam.anvil.agent.server.operation.PingHandler;
+import me.whereareiam.anvil.agent.server.operation.TypedAgentOperation;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -32,6 +34,7 @@ final class PlatformAgentRequestDispatcher {
 	private final PlatformAgent platformAgent;
 	private final Map<String, TypedAgentOperation<?, ?>> operations = new LinkedHashMap<>();
 	private final ObjectMapper mapper = new ObjectMapper();
+	private final PlatformEventLog events;
 
 	/**
 	 * Creates a request dispatcher for a platform agent.
@@ -47,9 +50,10 @@ final class PlatformAgentRequestDispatcher {
 			@NotNull Collection<AgentOperationProvider> providers
 	) {
 		this.platformAgent = platformAgent;
+		this.events = new PlatformEventLog(platformAgent.info().getRole() == AgentRole.PROXY);
 		register(new TypedAgentOperation<>(AgentOperations.PING, new PingHandler(), mapper));
-		register(new TypedAgentOperation<>(AgentOperations.IDENTITY, new IdentityHandler(), mapper));
 		register(new TypedAgentOperation<>(AgentOperations.COMMAND, new CommandHandler(), mapper));
+		register(new TypedAgentOperation<>(AgentOperations.PLAYER_EVENTS, new PlayerEventsHandler(events), mapper));
 		Set<String> installed = new HashSet<>();
 		for (AgentOperationProvider provider : providers) {
 			if (!provider.supports(platformAgent.info()))
@@ -66,6 +70,15 @@ final class PlatformAgentRequestDispatcher {
 				registration.active = false;
 			}
 		}
+	}
+
+	/**
+	 * Returns where the platform agent reports players joining and leaving.
+	 *
+	 * @return the endpoint's event log
+	 */
+	@NotNull PlatformEventLog playerEvents() {
+		return events;
 	}
 
 	/**

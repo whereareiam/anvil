@@ -14,13 +14,18 @@ command, and requesting an interaction do not imply their server-side effects ha
 | Current session disconnected | `Session.disconnected()` |
 | Server kicked the session with a reason | `Session.kicked()` |
 | Player received text | `Messages.received(text)` |
-| Agent-observed route names the expected backend | `Server.joined(serverName)` |
+| Player joined a server or proxy | `PlayerWatch.joined(player)` on that process's `Players.watch()` |
+| Player left a server or proxy | `PlayerWatch.left(player)` |
+| Proxy connected the player to a backend | `PlayerWatch.joined(player, backend)` on the proxy's `Players.watch()` |
+| Proxy moved the player away from a backend | `PlayerWatch.left(player, backend)` on the proxy's watch |
 | Inventory reached a condition | `Inventory.matching(predicate)` |
 | New process output contains text | `ProcessConsole.await(text, checkpoint, timeout)` |
 
 Capability waits offer explicit duration overloads; their default maximum wait is ten seconds.
-Immediate snapshots such as `Session.state()`, `Messages.history()`, `Server.identity()`, and
-`Inventory.snapshot()` do not wait.
+Immediate snapshots such as `Session.state()`, `Messages.history()`, `Players.profile(player)`,
+`Players.backend(player)`, and `Inventory.snapshot()` do not wait. `Players.backend(player)` can lag a
+moment behind a move, so wait for the move on the proxy's watch instead of reading it straight after an
+action. Create a `PlayerWatch` before the action it observes; see [watching players on a process](../../../building-blocks/environments/actions/players/index.md).
 
 ## Wait for whichever outcome comes first
 
@@ -46,6 +51,8 @@ if (outcome == 1) assertTrue(session.kicked().contains("Reconnect"));
 | `Messages.expectReceived(matcher, checkpoint)` | a message after the checkpoint matches |
 | `Session.expectKicked()` | the server kicked the current session |
 | `Session.expectDisconnected()` | the current session is disconnected for any reason |
+| `PlayerWatch.expectJoined(player)` | the player joined that watch's process since the watch's previous wait |
+| `PlayerWatch.expectJoined(player, backend)` | the proxy connected the player to that backend since the watch's previous wait |
 | `Expectation.of(description, condition)` | a check of your own that never waits holds |
 
 When several expectations are met by the time they are checked, the earliest argument wins. A timeout names
@@ -88,7 +95,7 @@ neither establish completion nor explain which result was missing.
 
 ## Diagnose a timeout
 
-Check the nearest evidence first: connection state, received messages, observed route, then the
+Check the nearest evidence first: connection state, received messages, the players the expected process reports, then the
 relevant process console tail. A command error or missing permission needs setup corrected, not a
 longer wait. Increase an explicit timeout only when the operation legitimately needs more time.
 Use [troubleshooting](../../../help/troubleshooting/index.md) for startup, routing, and retained diagnostics.

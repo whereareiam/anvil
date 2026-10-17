@@ -118,5 +118,5 @@ runtime classpath. Use an exact build or verified checksum in automated scenario
 
 Verify discovery, selector failures, configuration preservation, readiness, graceful shutdown, and
 Java requirements. For a proxy, run every supported direct/backend combination and inspect identity
-forwarding through server observations. A successful process launch does not prove a forwarding
+forwarding through the backend's Players capability. A successful process launch does not prove a forwarding
 configuration is correct.

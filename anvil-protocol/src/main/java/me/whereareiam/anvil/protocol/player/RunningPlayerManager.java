@@ -12,18 +12,16 @@ import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerManager;
-import me.whereareiam.anvil.api.player.account.AccountManager;
-import me.whereareiam.anvil.api.player.account.AccountPool;
-import me.whereareiam.anvil.api.player.account.AccountPool.AccountLease;
-import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
+import me.whereareiam.anvil.api.player.account.AccountManager;
+import me.whereareiam.anvil.api.player.account.AccountPool.AccountLease;
+import me.whereareiam.anvil.api.player.account.AccountPool;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.type.AuthenticationMode;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.model.GameConnection;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
-import me.whereareiam.anvil.protocol.api.player.PlayerObservationFactory;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.api.type.ProtocolFeature;
@@ -60,7 +58,6 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	private final ProtocolLibrarySelector selector;
 	private final Function<String, ProtocolLibrary> libraries;
 	private final ScenarioProcesses processes;
-	private final PlayerObservationFactory observations;
 	private final Map<String, MinecraftProcess> declarations;
 	private final Map<String, MinecraftServer> servers;
 	private final ProtocolPlayerComposer playerComposer;
@@ -81,7 +78,6 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 			@NotNull ProtocolLibrarySelector selector,
 			@NotNull Function<String, ProtocolLibrary> libraries,
 			@NotNull ScenarioProcesses processes,
-			@NotNull PlayerObservationFactory observations,
 			@NotNull ProtocolPlayerComposer playerComposer,
 			@NotNull Consumer<RunningPlayerManager> onClosed,
 			@NotNull AccountManager accounts,
@@ -92,7 +88,6 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		this.selector = selector;
 		this.libraries = libraries;
 		this.processes = processes;
-		this.observations = observations;
 		this.playerComposer = playerComposer;
 		this.onClosed = onClosed;
 		this.accounts = accounts;
@@ -197,10 +192,9 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 							.sourceAddress(sourceAddress)
 							.build())
 					.build());
-			PlayerObservation observation = observations.create(driven, targetName);
 			player = playerComposer.compose(
 					driven,
-					observation,
+					connection.toBuilder().target(targetName).build(),
 					options.getMetadata(),
 					destroyed -> {
 					players.remove(options.getName(), destroyed);

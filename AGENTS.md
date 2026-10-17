@@ -51,6 +51,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-capability/capability-builtin/player/<feature>/<feature>-<library>` | Segmented side folder holding the library's `WorkerExtension` (`builtin-<feature>-<library>`)                                                                                  |
 | `anvil-capability/capability-builtin/player/<feature>/<feature>-<library>/V*` | Segments that implement only the feature's port for the library releases from their key on                                                                                 |
 | `anvil-capability/capability-builtin/process/<feature>`               | Process capability family: `<feature>-api` and a root holding the agent-backed provider, independent of simulated players                                                           |
+| `anvil-capability/capability-builtin/process/players`                 | Players family: what one server or proxy knows about the players on it, from its own agent's events, with `players-api` and `players-common` |
 | `anvil-capability/capability-builtin/default`                         | Aggregate of every built-in player and process capability                                                                                                                           |
 | `anvil-protocol/protocol-api`                                         | Protocol library providers and releases, player creation/composition, protocol-owned channels/workers, pinned runtime resolution, and optional authentication                       |
 | `anvil-protocol`                                                      | Player registration, version selection, authentication compatibility, composition, and observations                                                                                 |
@@ -118,8 +119,12 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `Capability` contract. Dependencies remain within the same owner. Neutral player providers use
   shared observations and dependencies. Protocol-backed providers declare library support through
   `supportedLibraries()`; agent process providers select supported platform IDs.
-- Retrieve only declared capability dependencies. The agent-backed `Server` capability must remain
+- Retrieve only declared capability dependencies. The agent-backed `Players` capability must remain
   independent of `Session`.
+- A built-in capability belongs to whoever can normally do or know the thing: what a client can do or see
+  belongs to the simulated player (`PlayerCapability`), what a server or proxy can do or know belongs to the
+  running process (`ProcessCapability`); a proxy counts as server side. The implementation (packets, agent
+  events) never decides the owner.
 - Packet behavior belongs in feature-owned native implementations. Feature wiring registers scoped
   typed operation/event descriptors and `WorkerExtension<S>` bindings, where `S` is the session type the
   extension accepts: built-ins accept `Object` and let the port's `sessionType()` cast it, because the
@@ -129,6 +134,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   namespaced uniqueness, and cleanup; launcher `ProtocolOperationRegistry` binds handlers to
   protocol-owned native operations; capability codecs own typed handler wire encoding/decoding.
   Never add feature branches or an opaque universal packet abstraction to the MCProtocol worker.
+- Built-in families live below their owner's group, `capability-builtin/player` or `capability-builtin/process`, or
+  directly below `capability-builtin` when their capabilities may belong to more than one owner, as `server` does:
+  what a process observes of players, which a later process-scoped capability may extend.
 - A built-in capability is a family folder whose root applies the `module-capability` convention and only wires
   its members into `builtin-<feature>`: `<feature>-api` (artifact `builtin-<feature>-api`) holds the API and,
   for packet capabilities, the stateless port `<feature root>.packet.<Feature>Packets<S>`; `<feature>-common`
@@ -138,10 +146,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   its shaded JAR, and its sources and Javadoc JARs carry the embedded common code. The convention derives every
   artifact ID from the folder names and fails a build file that sets its own, and `gradle-capabilities` tests
   that each family has a plugin installing `builtin-<feature>`.
-  Common code lives in the feature packages, never in `common` or `util` packages. A process family without
-  common code or library sides, such as console, keeps its agent-backed provider in the root: the provider
-  binds the family API to agent operations, which only an assembly may depend on; the convention refuses root
-  code in every other family. The extension takes the port's adapter only through
+  Common code lives in the feature packages, never in `common` or `util` packages. An agent-backed provider,
+  such as Console's, lives in `<feature>-common` as well; the convention refuses code in every family root. The extension takes the port's adapter only through
   `PlayerBindingContext.adapter(Class)` while binding a player, never in its constructor and never through
   `ServiceLoader`; `checkAdapterLookup` fails a library side whose classes reference `ServiceLoader`. No segment
   for the release, a segment failing its linkage self-check, or more than one adapter throws
@@ -187,10 +193,19 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   Named pools live in the account directory's versioned `pools.properties`, documented on
   `AccountManager.pool(String)`; the runtime reads it and the IDE writes it, with the same rules.
 - External embedded-agent handlers implement `agent.server.api.operation.AgentOperationProvider`
-  and own their operation namespace.
+  and own their operation namespace. `install(platform, registry)` receives the platform agent, so a handler
+  reaches the native API through `requireService` and can register native listeners when the endpoint starts.
   Install their JARs under `plugins/anvil-agent-extensions`; do not bundle Anvil agent APIs or
-  platform SDKs into those JARs. Host capabilities receive scoped request channels; launcher adapters
-  bind them to connections obtained through `AgentDirectory`.
+  platform SDKs into those JARs. An agent-backed capability provider that needs its own extension declares it
+  through `agentExtensions()` (platform IDs and a class the JAR contains); launcher assembly locates each JAR
+  on the runtime class path and platform planning installs it into every process of those platforms. Host
+  capabilities receive scoped request channels; launcher adapters bind them to connections obtained through
+  `AgentDirectory`.
+- Every platform agent provides the core operations once: `ping`, `command` (`PlatformAgent.executeCommand`) and
+  `player-events`, the players' joins and leaves, which the agent reports to `AgentServer.playerEvents()` (`PlayerEvents`).
+  Keep that vocabulary small: only facts about players' connections and the console. Built-in capabilities use
+  them through `ProcessCapabilityContext.platform()`, which carries only that process's events, and ship no
+  agent JARs; anything else a capability needs from a platform belongs to an agent extension.
 - Platform agents expose native services and their scheduling rules. The endpoint owns its extension
   class loader; the scenario owns host connections.
 - `executionProviderId` selects providers in declarations and execution plans; `RunningProcess.executionId()`
@@ -234,12 +249,14 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   binds its port seconds after preparation selected it; do not probe port 0 in a provider.
 - A simulated player's name is its unique identity within the scenario; its Minecraft username defaults to
   the name and may be shared by several players. The client records the profile its login success granted,
-  which a proxy or login plugin may have renamed. Player observations follow the player's own connection from
-  the process it connects to, ask each agent for that granted UUID, and never look a player up by username,
-  which platforms match without regard to letter case. Routes name scenario processes.
+  which a proxy or login plugin may have renamed, and `SimulatedPlayer.grantedProfiles()` keeps every profile
+  granted at its logins. A process's Players capability finds a player by those UUIDs in its own process's
+  events and never looks a player up by username, which platforms match without regard to letter case.
+  A proxy's `backend(player)` names a scenario process.
 - `api.process.RunningProcess` exposes lifecycle, address, and console; server/proxy specializations live in
-  `api.process.type`. Player identities/routes belong to
-  `PlayerObservation` and the Server capability.
+  `api.process.type`. Core keeps only what the client knows itself: `SimulatedPlayer.requestedProfile()` and
+  `grantedProfile()`. What a server or proxy knows about a player, such as the profile it sees and the backend a
+  proxy connected it to, belongs to that process's `Players` capability.
 - Forwarding is negotiated from provider-supported modes before launch, not from platform-name
   branches in the engine. Platform configuration writers own their formats and preserve unrelated
   values while replacing runtime-owned settings structurally.

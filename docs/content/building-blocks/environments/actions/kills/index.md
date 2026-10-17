@@ -12,7 +12,7 @@ disable logic. `processes.stop(name)` is the clean counterpart.
 
 Use the [proxy environment](../../platforms/proxies/index.md), with `proxy` as the entrypoint and
 `lobby` as its backend. Enable rapid reconnections in the proxy declaration when its throttle would
-delay the rejoin. The Session and Server capabilities must be installed.
+delay the rejoin. The Session and Players capabilities must be installed.
 
 Place this helper at `src/anvil/java/com/example/test/ProxyCrashChecks.java`. Call
 `ProxyCrashChecks.verify(anvil)` from a test method in the same package:
@@ -23,7 +23,8 @@ package com.example.test;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.api.type.ProcessState;
-import me.whereareiam.anvil.capability.server.Server;
+import me.whereareiam.anvil.capability.players.PlayerWatch;
+import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 
 import java.time.Duration;
@@ -35,10 +36,10 @@ public final class ProxyCrashChecks {
 		var processes = anvil.processes();
 		var alice = anvil.players().create("CrashAlice");
 		var session = alice.capability(Session.class);
-		var server = alice.capability(Server.class);
+		PlayerWatch lobby = processes.server("lobby").capability(Players.class).watch();
 		session.connect();
 		session.connected(Duration.ofSeconds(30));
-		server.joined("lobby");
+		lobby.joined(alice);
 
 		var killed = processes.proxy("proxy");
 		processes.kill("proxy");
@@ -53,12 +54,14 @@ public final class ProxyCrashChecks {
 		processes.start("proxy");
 		session.rejoin();
 		session.connected(Duration.ofSeconds(30));
-		server.joined("lobby");
+		lobby.joined(alice);
 	}
 }
 ```
 
 Run the containing test with `./gradlew anvilTest --tests 'your.package.YourTest'`.
+The watch on `lobby` is created before the first login and keeps its position, so the second
+`joined(alice)` waits for the join after the rejoin, not the one before the kill.
 
 ## What a kill does
 

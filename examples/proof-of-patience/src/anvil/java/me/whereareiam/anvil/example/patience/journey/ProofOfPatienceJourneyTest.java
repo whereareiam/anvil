@@ -1,11 +1,11 @@
 package me.whereareiam.anvil.example.patience.journey;
 
-import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.capability.messages.Messages;
-import me.whereareiam.anvil.capability.server.Server;
+import me.whereareiam.anvil.capability.players.PlayerWatch;
+import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.example.patience.scenario.Paper12111Scenario;
 import me.whereareiam.anvil.example.patience.scenario.Paper2612Scenario;
@@ -45,12 +45,12 @@ class ProofOfPatienceJourneyTest {
 		SimulatedPlayer alice = anvil.players().create("Alice");
 		Session session = alice.capability(Session.class);
 		Messages messages = alice.capability(Messages.class);
-		Server server = alice.capability(Server.class);
+		Players authentication = anvil.processes().server("authentication").capability(Players.class);
+		PlayerWatch arrivals = authentication.watch();
 		session.connect();
 		session.connected();
 
-		PlayerIdentity initialIdentity = server.joined("authentication");
-		UUID initialUuid = initialIdentity.getObserved().getUniqueId();
+		UUID initialUuid = arrivals.joined(alice).getProfile().getUniqueId();
 		assertNotNull(initialUuid);
 		assertNotEquals(AUTHENTICATED_UUID, initialUuid);
 
@@ -66,14 +66,10 @@ class ProofOfPatienceJourneyTest {
 
 		session.rejoin();
 		session.connected();
-		PlayerIdentity authenticatedIdentity = server.joined("authentication");
-		assertEquals("authentication", authenticatedIdentity.getRoute().getServer());
-		assertEquals(AUTHENTICATED_UUID, authenticatedIdentity.getObserved().getUniqueId());
-		assertNotEquals(initialUuid, authenticatedIdentity.getObserved().getUniqueId());
-
-		PlayerIdentity observedByPlugin = server.identity();
-		assertNotNull(observedByPlugin);
-		assertEquals(AUTHENTICATED_UUID, observedByPlugin.getObserved().getUniqueId());
+		UUID authenticatedUuid = arrivals.joined(alice).getProfile().getUniqueId();
+		assertEquals(AUTHENTICATED_UUID, authenticatedUuid);
+		assertNotEquals(initialUuid, authenticatedUuid);
+		assertEquals(AUTHENTICATED_UUID, authentication.profile(alice).orElseThrow().getUniqueId());
 
 		alice.destroy();
 	}

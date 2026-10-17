@@ -94,14 +94,16 @@ transports. After cleanup, process capability lookup fails and `hasCapability(..
 ## Implement player behavior through agents
 
 Use `AgentPlayerCapabilityProvider<C extends PlayerCapability>` when the capability belongs to one
-player but obtains its behavior through agents. This has the same owner scope as the built-in
-`Server` capability, which consumes player observations and works independently of `Session`.
+player but obtains its behavior through an agent extension's operations.
 
-Its `AgentPlayerCapabilityContext` extends the shared `PlayerCapabilityContext`: player name and
-version, observations, declared dependencies, and cleanup. It adds `channel(processName)` for native
-requests. Select a scenario process name to request work from its agent; use player observations
-to determine the relevant backend or proxy. Return the provider's
-identity and dependencies from `descriptor()`, and register owned cleanup with `context.onClose(...)`.
+Its `AgentPlayerCapabilityContext` extends the shared `PlayerCapabilityContext`: player name and version,
+the profiles the client requested and was granted (`requestedProfile()`, `grantedProfile()`), the
+player's `connection()`, whose target names the scenario process the player connects to, declared
+dependencies, and cleanup. It adds `channel(processName)` for native requests. Select a scenario process
+name to request work from its agent. What a server or proxy knows about the player, such as the backend a
+proxy connected it to, is that process's `Players` capability, which a test reads from the process.
+A request to a process whose agent is reconnecting throws `ChannelUnavailableException`. Return the provider's identity and
+dependencies from `descriptor()`, and register owned cleanup with `context.onClose(...)`.
 
 Register such a factory under
 `META-INF/services/me.whereareiam.anvil.capability.agent.api.player.AgentPlayerCapabilityProvider`.
@@ -114,6 +116,23 @@ where the consumer retrieves the result:
 |---|---|---|
 | `AgentProcessCapabilityProvider` | `process.capability(Type.class)` | Logical process within the scenario |
 | `AgentPlayerCapabilityProvider` | `player.capability(Type.class)` | Simulated player |
+
+## Use the platform's general facts
+
+Every platform agent answers a few general operations for every capability, so a capability does not need an
+extension for them. A process capability reaches them through `context.platform()`, a `ProcessPlatform`
+(`me.whereareiam.anvil.capability.api.platform`): `execute(command)` runs a console command and returns whether
+the platform accepted it, and `events()` lists the players' joins and leaves the process reported, as
+`PlatformEvent` values with the process and whether it is a proxy, a position, when it happened, `JOINED` or
+`LEFT`, the player as the platform reports it, and on a proxy the backend, or none for the proxy itself. The
+built-in Console capability is one such provider:
+
+```java
+@Override
+public @NotNull Console create(@NotNull AgentProcessCapabilityContext context) {
+	return command -> context.platform().execute(command);
+}
+```
 
 ## Install the handlers with the provider
 
@@ -140,7 +159,8 @@ handlers use a platform's SDK, so each process links only against its own.
 
 ## Verify the round trip
 
-Install the host dependency in `anvilImplementation`, install the handler JAR as a workspace asset, and
+Install the host dependency in `anvilImplementation`, install the handler JAR as a workspace asset or
+declare it through `agentExtensions()`, and
 run the assertion on the [public contract page](../contracts/index.md). See
 [Installing agent operations](../../agent-operations/installation/index.md) for the workspace path.
 

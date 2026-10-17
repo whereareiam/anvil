@@ -211,12 +211,12 @@ plugins {
     id("me.whereareiam.anvil") version "0.0.1"
     id("me.whereareiam.anvil.capability.session") version "0.0.1"
     id("me.whereareiam.anvil.capability.messages") version "0.0.1"
-    id("me.whereareiam.anvil.capability.server") version "0.0.1"
+    id("me.whereareiam.anvil.capability.players") version "0.0.1"
 }
 ```
 
-The available built-in unit IDs are `session`, `server`, `messages`, `movement`, `inventory`,
-`interaction`, `commands`, and `dialogs`. The umbrella plugin uses the separate `default` unit internally to include the
+The available built-in unit IDs are `session`, `messages`, `movement`, `inventory`, `interaction`,
+`commands`, and `dialogs` for players, and `console` and `players` for servers and proxies. The umbrella plugin uses the separate `default` unit internally to include the
 aggregate artifact. Unit plugins own their capability artifact coordinates; the scenarios plugin has
 no built-in capability catalog.
 
@@ -354,14 +354,24 @@ its implementation. Anvil ships a useful starting set:
 |---------------------|--------------------------------------------------------------------------------|
 | `Session`           | Connect, disconnect, rejoin, inspect connection state, and verify kick reasons |
 | `Messages`          | Send chat and commands, capture messages, and wait for expected output         |
-| `Server`            | Observe usernames, UUIDs, proxies, backends, and server transfers              |
 | `Movement`          | Send position, rotation, and on-ground state                                   |
 | `Inventory`         | Inspect containers, select held slots, and click inventory slots               |
 | `Interaction`       | Use held items and interact with blocks or entities                            |
 | `Commands`          | Read the command tree and check commands as the client does                    |
 | `Dialogs`           | Observe dialogs, fill their inputs, and press their buttons (1.21.6+)          |
 
-That table describes what Anvil includes, not everything Alice will ever be allowed to learn. An
+Servers and proxies have capabilities of their own: `Console` runs native console commands, and
+`Players` reports who is on that process, the username and UUID it sees, and on a proxy the backend it
+connected each player to:
+
+```java
+Players lobby = anvil.processes().server("lobby").capability(Players.class);
+PlayerWatch arrivals = lobby.watch();
+alice.capability(Session.class).connect();
+arrivals.joined(alice);
+```
+
+These are what Anvil includes, not everything Alice will ever be allowed to learn. An
 external library can ship another capability wiring bundle as a normal dependency. Anvil discovers
 its provider, attaches the typed capability to compatible players, and exposes it through the same
 global API:
@@ -380,9 +390,8 @@ Providers can retrieve only the capability dependencies declared in their `Capab
 Registered cleanup runs in reverse order, including when capability construction fails. Cleanup
 failures are reported after the remaining resources are released.
 
-The `Server` capability uses the scenario's player-observation service and has no `Session`
-dependency. Its wiring does not install the session adapter. Agent operations can be used with
-another protocol library or without any packet-capability adapter.
+The `Players` capability reads its process's platform agent and has no `Session` dependency. Agent
+operations can be used with another protocol library or without any packet-capability adapter.
 
 Players can be created dynamically, disconnected, rejoined, or destroyed independently. Installed
 capabilities decide what else they can do.

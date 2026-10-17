@@ -1,10 +1,8 @@
 package me.whereareiam.anvil.launcher.assembly;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.agent.client.AgentPlayerObservation;
 import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
 import me.whereareiam.anvil.agent.client.api.AgentDirectory;
-import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
@@ -13,14 +11,13 @@ import me.whereareiam.anvil.api.scenario.ScenarioObserver;
 import me.whereareiam.anvil.capability.process.ProcessCapabilityRuntime;
 import me.whereareiam.anvil.engine.process.RetainedProcesses;
 import me.whereareiam.anvil.engine.scenario.RunningScenario;
+import me.whereareiam.anvil.launcher.adapter.platform.ScenarioPlatforms;
 import me.whereareiam.anvil.platform.api.PlatformPlanner;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.player.DefaultPlayerService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.stream.Collectors;
 
 /**
  * Prepares each scenario through scoped services and joins its process and player lifetimes.
@@ -42,11 +39,12 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 		PlatformPlan own = lease.ownPlan();
 		ScenarioAgentDirectory agents = new ScenarioAgentDirectory();
 		AgentDirectory reachable = lease.agents(agents);
+		ScenarioPlatforms platforms = new ScenarioPlatforms(reachable);
 		ProcessCapabilityRuntime capabilities;
 		ProtocolPlayerComposer composer;
 		ProcessGroup processes;
 		try {
-			capabilities = ProcessComposition.discover(own, agents);
+			capabilities = ProcessComposition.discover(own, agents, platforms);
 			composer = PlayerComposition.create(players.scenarioLibraries(plan.getScenario()), reachable);
 			processes = lease.join(execution.prepare(own, agents, capabilities, observer, lease.addresses()));
 		} catch (RuntimeException | Error failure) {
@@ -61,12 +59,7 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 		try {
 			processes = capabilities.bind(processes);
 			lease.announce(observer);
-			var serverNames = plan.getScenario().getServers().stream()
-					.map(MinecraftProcess::getName)
-					.collect(Collectors.toSet());
-			var manager = players.open(plan.getScenario(), processes,
-					(player, connectedTo) -> new AgentPlayerObservation(player.name(), connectedTo, player::identity, reachable, serverNames),
-					composer, execution.preservesClientAddress(plan));
+			var manager = players.open(plan.getScenario(), processes, composer, execution.preservesClientAddress(plan));
 
 			return new RunningScenario(plan.getScenario(), processes, manager);
 		} catch (RuntimeException | Error failure) {

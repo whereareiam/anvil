@@ -1,15 +1,17 @@
 package me.whereareiam.anvil.capability.api.player;
 
+import me.whereareiam.anvil.api.model.player.PlayerConnection;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
-import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.capability.api.CapabilityContext;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 
 /**
- * Player identity, observations, declared dependencies, and cleanup available during capability creation.
- * The context borrows observations from the scenario and exposes no connection, request channel,
- * or external SDK service. Dependencies always belong to this player.
+ * Player identity, declared dependencies, and cleanup available during capability creation. The context
+ * exposes no connection, request channel, or external SDK service. Dependencies always belong to this player.
  */
 public interface PlayerCapabilityContext extends CapabilityContext<PlayerCapability> {
 	/**
@@ -27,11 +29,27 @@ public interface PlayerCapabilityContext extends CapabilityContext<PlayerCapabil
 	@NotNull String clientVersion();
 
 	/**
-	 * Returns identity and route observations for this player.
+	 * Returns the profile the player's client asks for when it logs in.
 	 *
-	 * @return borrowed observation source
+	 * @return requested profile
 	 */
-	@NotNull PlayerObservation observation();
+	@NotNull PlayerProfile requestedProfile();
+
+	/**
+	 * Returns the profile the process the player joined granted at the latest login, read when called.
+	 *
+	 * @return granted profile, or null before the player logged in and after it disconnected
+	 */
+	@Nullable PlayerProfile grantedProfile();
+
+	/**
+	 * Returns how the player connects, as its options declare it: the scenario server or proxy it joins, where a
+	 * capability that follows the player's connection through the scenario's processes starts, the host it announces
+	 * and the address it connects from. The target is always named, also when the player joins the entrypoint.
+	 *
+	 * @return the player's connection, with its target process
+	 */
+	@NotNull PlayerConnection connection();
 
 	/**
 	 * Registers cleanup for permanent destruction of the owning player.

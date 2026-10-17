@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.launcher.assembly;
 
-import me.whereareiam.anvil.agent.api.model.AgentIdentity;
 import me.whereareiam.anvil.agent.api.model.AgentOperations;
 import me.whereareiam.anvil.agent.api.model.transport.command.AgentCommandRequest;
 import me.whereareiam.anvil.agent.api.model.transport.command.AgentCommandResponse;
@@ -695,17 +694,6 @@ class DefaultScenarioFactoryIntegrationTest {
 				commands.accept(((AgentCommandRequest) arguments).getCommand());
 
 				return responseType.cast(AgentCommandResponse.builder().accepted(true).build());
-			}
-
-			@Override
-			public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
-				return Optional.empty();
-			}
-
-			@Override
-			public boolean executeCommand(@NotNull String command) {
-				commands.accept(command);
-				return true;
 			}
 
 			@Override

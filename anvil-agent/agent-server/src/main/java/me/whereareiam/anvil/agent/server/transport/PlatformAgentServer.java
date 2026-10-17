@@ -4,8 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import me.whereareiam.anvil.agent.server.api.PlatformAgent;
-import me.whereareiam.anvil.agent.server.api.transport.AgentServer;
+import me.whereareiam.anvil.agent.server.api.event.PlayerEvents;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider;
+import me.whereareiam.anvil.agent.server.api.transport.AgentServer;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
@@ -18,8 +19,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.Set;
 import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -201,6 +202,11 @@ public final class PlatformAgentServer implements AgentServer {
 	/**
 	 * Stops accepting agent requests and closes all client tasks.
 	 */
+	@Override
+	public @NotNull PlayerEvents playerEvents() {
+		return dispatcher.playerEvents();
+	}
+
 	@Override
 	public void close() {
 		try {

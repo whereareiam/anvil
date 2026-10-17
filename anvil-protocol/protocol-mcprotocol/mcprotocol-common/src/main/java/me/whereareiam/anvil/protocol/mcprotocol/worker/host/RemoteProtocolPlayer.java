@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.host;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolSubscription;
@@ -11,9 +10,9 @@ import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.model.AuthenticationSession;
-import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerCapabilities;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerCredentials;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerCapabilities;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerControlOperation;
@@ -25,10 +24,12 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -51,6 +52,7 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 	private final AtomicBoolean destroyed = new AtomicBoolean();
 	private final WorkerPlayerCapabilities capabilities;
 	private volatile @Nullable PlayerProfile granted;
+	private final CopyOnWriteArrayList<PlayerProfile> grantedProfiles = new CopyOnWriteArrayList<>();
 
 	RemoteProtocolPlayer(
 			@NotNull ProtocolWorkerProcess worker,
@@ -98,12 +100,15 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 	}
 
 	/**
-	 * Records the profile a connection event grants before subscribers see the event, so that an identity read
-	 * after the session reports its connection already carries it.
+	 * Records the profile a connection event grants before subscribers see the event, so that the granted profile
+	 * read after the session reports its connection is already the new one.
 	 */
 	void event(@NotNull String type, @NotNull JsonNode payload) {
-		if (type.equals(WorkerPlayerEvent.CONNECTION.getWireName()))
+		if (type.equals(WorkerPlayerEvent.CONNECTION.getWireName())) {
 			granted = codec.granted(codec.messageBytes(payload)).orElse(null);
+			PlayerProfile login = granted;
+			if (login != null) grantedProfiles.addIfAbsent(login);
+		}
 		events.dispatch(type, payload);
 	}
 
@@ -128,8 +133,18 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 	}
 
 	@Override
-	public @NotNull PlayerIdentity identity() {
-		return PlayerIdentity.builder().requested(requested).granted(granted).build();
+	public @NotNull PlayerProfile requestedProfile() {
+		return requested;
+	}
+
+	@Override
+	public @Nullable PlayerProfile grantedProfile() {
+		return granted;
+	}
+
+	@Override
+	public @NotNull List<PlayerProfile> grantedProfiles() {
+		return List.copyOf(grantedProfiles);
 	}
 
 	@Override

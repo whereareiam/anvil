@@ -1,31 +1,60 @@
 package me.whereareiam.anvil.agent.bukkit;
 
 import me.whereareiam.anvil.agent.api.model.AgentInfo;
+import me.whereareiam.anvil.agent.api.model.AgentProfile;
+import me.whereareiam.anvil.agent.api.type.AgentRole;
 import me.whereareiam.anvil.agent.server.api.PlatformAgent;
 import me.whereareiam.anvil.agent.server.api.transport.AgentServer;
 import me.whereareiam.anvil.agent.server.api.transport.AgentServerProvider;
-import me.whereareiam.anvil.agent.api.type.AgentRole;
-import me.whereareiam.anvil.agent.api.model.AgentIdentity;
-import me.whereareiam.anvil.agent.api.model.location.ServerLocation;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
  * Internal Paper/Spigot plugin that exposes authenticated test observations to Anvil.
  */
-public final class AnvilBukkitAgent extends JavaPlugin implements PlatformAgent {
+public final class AnvilBukkitAgent extends JavaPlugin implements PlatformAgent, Listener {
 	private AgentServer agent;
 
 	@Override
 	public void onEnable() {
 		agent = AgentServerProvider.discover().start(this, message -> getLogger().info(message));
+		getServer().getPluginManager().registerEvents(this, this);
+	}
+
+	/**
+	 * Reports a player joining once every other plugin has seen the join.
+	 *
+	 * @param event the join
+	 */
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void joined(PlayerJoinEvent event) {
+		agent.playerEvents().joined(profile(event.getPlayer()), null);
+	}
+
+	/**
+	 * Reports a player leaving.
+	 *
+	 * @param event the quit
+	 */
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void left(PlayerQuitEvent event) {
+		agent.playerEvents().left(profile(event.getPlayer()), null);
+	}
+
+	private static AgentProfile profile(Player player) {
+		return AgentProfile.builder().username(player.getName()).uniqueId(player.getUniqueId()).build();
 	}
 
 	@Override
@@ -41,20 +70,6 @@ public final class AnvilBukkitAgent extends JavaPlugin implements PlatformAgent 
 				.version(Bukkit.getVersion())
 				.role(AgentRole.SERVER)
 				.build();
-	}
-
-	@Override
-	public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
-		try {
-			return Optional.ofNullable(call(() -> Bukkit.getPlayer(uniqueId)))
-					.map(player -> AgentIdentity.builder()
-							.username(player.getName())
-							.uniqueId(player.getUniqueId())
-							.location(ServerLocation.builder().server(Bukkit.getServer().getName()).build())
-							.build());
-		} catch (Exception exception) {
-			throw new IllegalStateException("Could not read Bukkit player identity", exception);
-		}
 	}
 
 	@Override

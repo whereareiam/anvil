@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.testkit.tests.server.capability;
 
-import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
@@ -21,7 +20,8 @@ import me.whereareiam.anvil.capability.inventory.type.InventoryClick;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.movement.Movement;
 import me.whereareiam.anvil.capability.movement.model.Position;
-import me.whereareiam.anvil.capability.server.Server;
+import me.whereareiam.anvil.capability.players.PlayerWatch;
+import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.engine.config.EngineProperties;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
@@ -38,7 +38,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -92,7 +91,8 @@ class PlayerCapabilitiesSystemTest {
 		assertEquals("external:hello", alice.capability(FixtureAgentProbeProvider.Probe.class).echo("server", "hello"));
 		Session session = alice.capability(Session.class);
 		Messages messages = alice.capability(Messages.class);
-		Server server = alice.capability(Server.class);
+		Players server = anvil.processes().server("server").capability(Players.class);
+		PlayerWatch arrivals = server.watch();
 		Movement movement = alice.capability(Movement.class);
 		Inventory inventory = alice.capability(Inventory.class);
 		Interaction interaction = alice.capability(Interaction.class);
@@ -112,11 +112,9 @@ class PlayerCapabilitiesSystemTest {
 		messages.chat("hello-from-anvil");
 		messages.received("hello-from-anvil", Duration.ofSeconds(10));
 
-		PlayerIdentity identity = server.joined("server", Duration.ofSeconds(10));
-		assertEquals("Alice", identity.getRequested().getUsername());
-		assertEquals("server", identity.getRoute().getServer());
-		assertEquals("Alice", identity.getObserved().getUsername());
-		assertNotNull(server.identity());
+		assertEquals("Alice", alice.requestedProfile().getUsername());
+		assertEquals("Alice", arrivals.joined(alice, Duration.ofSeconds(10)).getProfile().getUsername());
+		assertEquals("Alice", server.profile(alice).orElseThrow().getUsername());
 
 		messages.command("anvil-fixture position");
 		String[] position = message(messages, "anvil:position:").split(":");

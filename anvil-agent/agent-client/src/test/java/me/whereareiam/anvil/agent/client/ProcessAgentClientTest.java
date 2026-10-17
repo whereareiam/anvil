@@ -8,53 +8,49 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class ProcessAgentClientTest {
-	private static final UUID ALICE = UUID.randomUUID();
 
 	@Test
 	void refreshesBorrowedAgentHandlesAndClosesBothGenerationsExactlyOnce() {
 		List<String> calls = new ArrayList<>();
 		ProcessAgentClient borrowed = new ProcessAgentClient();
 		borrowed.attach(agent("old", calls));
-		borrowed.executeCommand("before");
+		borrowed.request("before", null, Boolean.class);
 		borrowed.close();
-		assertThrows(AgentException.class, () -> borrowed.executeCommand("during"));
+		assertThrows(AgentException.class, () -> borrowed.request("during", null, Boolean.class));
 		borrowed.attach(agent("new", calls));
-		borrowed.executeCommand("after");
+		borrowed.request("after", null, Boolean.class);
 		borrowed.close();
 		borrowed.close();
 
 		assertEquals(List.of("old:before", "old:close", "new:after", "new:close"), calls);
-		assertThrows(AgentException.class, () -> borrowed.executeCommand("closed"));
+		assertThrows(AgentException.class, () -> borrowed.request("closed", null, Boolean.class));
 	}
 
 	@Test
-	void distinguishesUnavailableConnectionsFromUnobservedPlayersAcrossRestarts() {
+	void reportsUnavailableConnectionsAcrossRestarts() {
 		ProcessAgentClient client = new ProcessAgentClient();
 		assertFalse(client.available());
-		assertThrows(AgentUnavailableException.class, () -> client.identity(ALICE));
+		assertThrows(AgentUnavailableException.class, () -> client.request("probe", null, Boolean.class));
 
 		List<String> calls = new ArrayList<>();
 		client.attach(agent("first", calls));
 		assertTrue(client.available());
-		assertTrue(client.identity(ALICE).isEmpty());
+		assertTrue(client.request("probe", null, Boolean.class));
 		client.close();
 		assertFalse(client.available());
-		assertThrows(AgentUnavailableException.class, () -> client.identity(ALICE));
 		assertThrows(AgentUnavailableException.class, () -> client.request("probe", null, String.class));
-		assertThrows(AgentUnavailableException.class, () -> client.executeCommand("probe"));
+		assertThrows(AgentUnavailableException.class, () -> client.request("probe", null, Boolean.class));
 
 		client.attach(agent("second", calls));
 		assertTrue(client.available());
-		assertTrue(client.identity(ALICE).isEmpty());
+		assertTrue(client.request("probe", null, Boolean.class));
 		client.close();
 		assertFalse(client.available());
-		assertEquals(List.of("first:" + ALICE, "first:close", "second:" + ALICE, "second:close"), calls);
+		assertEquals(List.of("first:probe", "first:close", "second:probe", "second:close"), calls);
 	}
 
 	@Test
@@ -72,7 +68,7 @@ class ProcessAgentClientTest {
 			var failure = assertThrows(IllegalStateException.class, () -> borrowed.attach(rejected));
 			assertEquals("Close the current agent connection before attaching another", failure.getMessage());
 			assertArrayEquals(new Throwable[]{cleanup}, failure.getSuppressed());
-			borrowed.executeCommand("still-connected");
+			borrowed.request("still-connected", null, Boolean.class);
 		}
 
 		assertEquals(List.of("active:still-connected", "active:close"), calls);
@@ -83,8 +79,7 @@ class ProcessAgentClientTest {
 				(proxy, method, arguments) -> {
 					if (method.getName().equals("available")) return true;
 					calls.add(generation + ":" + (arguments == null ? method.getName() : arguments[0]));
-					if (method.getName().equals("identity")) return Optional.empty();
-					return method.getName().equals("executeCommand") ? true : null;
+					return method.getName().equals("request") ? true : null;
 				});
 	}
 }

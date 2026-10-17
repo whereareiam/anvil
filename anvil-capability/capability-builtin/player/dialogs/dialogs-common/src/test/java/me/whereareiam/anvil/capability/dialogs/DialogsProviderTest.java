@@ -1,7 +1,8 @@
 package me.whereareiam.anvil.capability.dialogs;
 
+import me.whereareiam.anvil.api.model.player.PlayerConnection;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
-import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.commands.Commands;
 import me.whereareiam.anvil.capability.commands.model.CommandTree;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -119,9 +121,20 @@ class DialogsProviderTest {
 		}
 
 		@Override
-		public @NotNull PlayerObservation observation() {
-			throw new AssertionError("Dialogs do not observe the player");
+		public @NotNull PlayerProfile requestedProfile() {
+			return new PlayerProfile("Alice", UUID.nameUUIDFromBytes("Alice".getBytes()));
 		}
+
+		@Override
+		public @Nullable PlayerProfile grantedProfile() {
+			return null;
+		}
+
+		@Override
+		public @NotNull PlayerConnection connection() {
+			return PlayerConnection.to("proxy");
+		}
+
 
 		@Override
 		public void onDestroy(@NotNull Runnable action) {

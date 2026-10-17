@@ -69,11 +69,14 @@ become compatible with another protocol library by putting them on its classpath
 
 ## Verify the observation you need
 
-A client connection proves a protocol session was established. To verify the backend, use the
-Server capability's observed route and identity. Its joined wait can be satisfied by a proxy agent's
-connected-backend report; use a backend-specific operation if you need independent confirmation
-inside that server. A successful reconnect by itself does not prove
-that your plugin restored data; assert the plugin-specific behavior after reconnecting.
+A client connection proves a protocol session was established. To verify the backend, watch that
+backend's [Players](../../../building-blocks/environments/actions/players/index.md) capability before the
+action and wait for the player's join, which the backend's own agent reports. To verify which backend
+the proxy chose, watch the proxy before the action and wait for `joined(player, backend)`. Do not read
+the proxy's `backend(player)` straight after the action or after the backend's join: it is a snapshot
+of the proxy's reports, which can arrive a moment later, and can still name the previous backend. Use a
+backend-specific operation if you need native state inside that server. A successful reconnect by
+itself does not prove that your plugin restored data; assert the plugin-specific behavior after reconnecting.
 
 Use bounded capability waits for messages, connection changes, and backend arrival. A fixed sleep
 only delays the test. If a wait times out, inspect the reported recent history and confirm that the

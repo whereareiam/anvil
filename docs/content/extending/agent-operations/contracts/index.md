@@ -83,8 +83,9 @@ com.example.echo.agent.EchoAgentOperations
 ```
 
 Registration is limited to `install`. Duplicate provider IDs, duplicate operation names, and names
-outside the provider's namespace fail registration. The platform's built-in operations remain
-available alongside your extension.
+outside the provider's namespace fail registration. The platform agent itself answers only `ping`, `command`
+and `player-events`, the general facts every process capability can read through
+`ProcessCapabilityContext.platform()`; everything else comes from extensions like yours.
 
 ## Call native APIs
 

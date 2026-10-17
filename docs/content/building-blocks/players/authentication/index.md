@@ -90,8 +90,8 @@ the player connects.
 
 Call `AuthenticatedPlayers.connect(anvil)` from a local test in the same package and run that class with
 `./gradlew anvilTest --tests 'your.package.YourOnlineTest'`. A connected session establishes that
-the account authenticated at the target. Check [identity and server observations](../capabilities/server/index.md)
-for assertions about what the platform sees; the authenticated identity is controlled by the account.
+the account authenticated at the target. Ask the target's [Players](../../environments/actions/players/index.md) capability
+for the profile the platform sees; the authenticated identity is controlled by the account.
 
 ## Authenticate on an offline-mode entrypoint
 

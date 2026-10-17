@@ -56,7 +56,8 @@ public final class ProxyEnvironment implements AnvilScenarioDefinition {
 Select `ProxyEnvironment.class` in the `@AnvilTest` annotation of the
 [first-test pattern](../../../../getting-started/first-test/index.mdx), then run that class with
 `./gradlew anvilTest --tests 'your.package.YourTest'`. The proxy becomes ready after its lobby.
-Create a player, connect it through Session, and wait for `Server.joined("lobby")` to verify the route.
+Watch the lobby's [Players](../../actions/players/index.md) capability, connect a player through Session,
+and wait for `joined(player)` on that watch to verify the route.
 
 Each `.server(name)` on the proxy must refer to a declared scenario server. Its `defaultServer` must
 be one of those names. Add additional backends to both the proxy's server list and the scenario.

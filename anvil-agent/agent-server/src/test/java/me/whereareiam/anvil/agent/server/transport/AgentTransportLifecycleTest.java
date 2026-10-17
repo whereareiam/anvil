@@ -1,8 +1,14 @@
 package me.whereareiam.anvil.agent.server.transport;
 
-import me.whereareiam.anvil.agent.api.model.AgentIdentity;
+import me.whereareiam.anvil.agent.api.model.AgentPlayerEvent;
 import me.whereareiam.anvil.agent.api.model.AgentInfo;
-import me.whereareiam.anvil.agent.api.model.location.ProxyLocation;
+import me.whereareiam.anvil.agent.api.model.AgentOperations;
+import me.whereareiam.anvil.agent.api.model.AgentProfile;
+import me.whereareiam.anvil.agent.api.model.transport.AgentPingResponse;
+import me.whereareiam.anvil.agent.api.model.transport.command.AgentCommandRequest;
+import me.whereareiam.anvil.agent.api.model.transport.event.AgentPlayerEventsRequest;
+import me.whereareiam.anvil.agent.api.model.transport.event.AgentPlayerEventsResponse;
+import me.whereareiam.anvil.agent.api.type.AgentPlayerEventType;
 import me.whereareiam.anvil.agent.api.type.AgentRole;
 import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.agent.client.api.exception.AgentUnavailableException;
@@ -19,15 +25,13 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Optional;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class AgentTransportLifecycleTest {
-	private static final UUID ALICE = new UUID(0, 1);
-	private static final UUID MISSING = new UUID(0, 2);
-
 	@Test
 	void discoversThePackagedProviderWithoutTheThreadContextLoader() {
 		ClassLoader previous = Thread.currentThread().getContextClassLoader();
@@ -40,24 +44,30 @@ class AgentTransportLifecycleTest {
 	}
 
 	@Test
-	void roundTripsAbsentAndProxyIdentitiesAndCommandResults() throws Exception {
+	void roundTripsRequestsUntilTheClientCloses() throws Exception {
 		int port = freePort();
-		try (PlatformAgentServer ignored1 = new PlatformAgentServer(port, "token", new TestPlatform(), ignored -> {});
+		try (PlatformAgentServer server = new PlatformAgentServer(port, "token", new TestPlatform(), ignored -> {});
 		     AgentClient client = new JsonLineAgentConnectionProvider().connect(port, "token", Duration.ofSeconds(2))) {
 			assertTrue(client.available());
-			assertTrue(client.identity(MISSING).isEmpty());
-			AgentIdentity identity = client.identity(ALICE).orElseThrow();
-			assertEquals("Alice", identity.getUsername());
-			assertEquals(ALICE, identity.getUniqueId());
-			ProxyLocation location = assertInstanceOf(ProxyLocation.class, identity.getLocation());
-			assertEquals("proxy", location.getProxy());
-			assertEquals("server", location.getConnectedServer());
-			assertTrue(client.executeCommand("accepted"));
-			assertFalse(client.executeCommand("rejected"));
+			AgentPingResponse ping = client.request(AgentOperations.PING, Map.of());
+			assertEquals("test", ping.getPlatform());
+			assertEquals("proxy", ping.getRole());
+			assertTrue(client.request(AgentOperations.COMMAND, AgentCommandRequest.builder().command("accepted").build()).isAccepted());
+			assertFalse(client.request(AgentOperations.COMMAND, AgentCommandRequest.builder().command("rejected").build()).isAccepted());
+
+			AgentProfile alice = AgentProfile.builder().username("Alice").uniqueId(UUID.randomUUID()).build();
+			server.playerEvents().joined(alice, "lobby");
+			server.playerEvents().left(alice, "lobby");
+			AgentPlayerEventsResponse events = client.request(AgentOperations.PLAYER_EVENTS, AgentPlayerEventsRequest.builder().after(0).build());
+			assertEquals(List.of(AgentPlayerEventType.JOINED, AgentPlayerEventType.LEFT), events.getEvents().stream().map(AgentPlayerEvent::getType).toList());
+			assertEquals(alice, events.getEvents().getFirst().getProfile());
+			assertEquals("lobby", events.getEvents().getFirst().getServer());
+			AgentPlayerEventsResponse later = client.request(AgentOperations.PLAYER_EVENTS, AgentPlayerEventsRequest.builder().after(1).build());
+			assertEquals(events.getGeneration(), later.getGeneration());
+			assertEquals(1, later.getEvents().size());
 			client.close();
 			assertFalse(client.available());
-			assertThrows(AgentUnavailableException.class, () -> client.identity(MISSING));
-			assertThrows(AgentUnavailableException.class, () -> client.executeCommand("accepted"));
+			assertThrows(AgentUnavailableException.class, () -> client.request(AgentOperations.PING, Map.of()));
 		}
 	}
 
@@ -87,14 +97,6 @@ class AgentTransportLifecycleTest {
 		@Override
 		public @NotNull AgentInfo info() {
 			return AgentInfo.builder().platform("test").version("1").role(AgentRole.PROXY).build();
-		}
-
-		@Override
-		public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
-			if (!uniqueId.equals(ALICE))
-				return Optional.empty();
-			return Optional.of(AgentIdentity.builder().username("Alice").uniqueId(uniqueId)
-					.location(ProxyLocation.builder().proxy("proxy").connectedServer("server").build()).build());
 		}
 
 		@Override

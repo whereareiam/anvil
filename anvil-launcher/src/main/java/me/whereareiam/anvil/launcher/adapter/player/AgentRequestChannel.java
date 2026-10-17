@@ -2,7 +2,9 @@ package me.whereareiam.anvil.launcher.adapter.player;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.agent.client.api.connection.AgentConnection;
+import me.whereareiam.anvil.agent.client.api.exception.AgentUnavailableException;
 import me.whereareiam.anvil.capability.api.channel.RequestChannel;
+import me.whereareiam.anvil.capability.api.exception.ChannelUnavailableException;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,6 +22,11 @@ public final class AgentRequestChannel implements RequestChannel {
 		if (checked == null && operation.getRequestType() != Void.class)
 			throw new IllegalArgumentException("Missing request for capability operation '" + operation.getId() + "'");
 
-		return connection.request(operation.getId(), checked, operation.getResponseType());
+		try {
+			return connection.request(operation.getId(), checked, operation.getResponseType());
+		} catch (AgentUnavailableException unavailable) {
+			throw new ChannelUnavailableException("Capability operation '" + operation.getId() + "' is unavailable: "
+					+ unavailable.getMessage(), unavailable);
+		}
 	}
 }

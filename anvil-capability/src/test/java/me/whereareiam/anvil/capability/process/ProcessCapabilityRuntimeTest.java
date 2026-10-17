@@ -13,6 +13,8 @@ import me.whereareiam.anvil.capability.api.channel.RequestChannel;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
+import me.whereareiam.anvil.capability.api.model.platform.PlatformEvent;
+import me.whereareiam.anvil.capability.api.platform.ProcessPlatform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -122,6 +124,8 @@ class ProcessCapabilityRuntimeTest {
 	@Test
 	void discoversNothingAndAsksForNoChannelWithoutProcessesThatRunAnAgent() {
 		ProcessCapabilityRuntime runtime = ProcessCapabilityRuntime.discover(Map.of(), name -> {
+			throw new AssertionError("No process runs an agent");
+		}, name -> {
 			throw new AssertionError("No process runs an agent");
 		});
 
@@ -270,8 +274,20 @@ class ProcessCapabilityRuntimeTest {
 		Map<String, String> platforms = new LinkedHashMap<>();
 		names.forEach(name -> platforms.put(name, "test"));
 
-		return ProcessCapabilityRuntime.of(platforms, name -> SILENT, providers);
+		return ProcessCapabilityRuntime.of(platforms, name -> SILENT, name -> PLATFORM, providers);
 	}
+
+	private static final ProcessPlatform PLATFORM = new ProcessPlatform() {
+		@Override
+		public boolean execute(@NotNull String command) {
+			throw new AssertionError("Composition must not run commands");
+		}
+
+		@Override
+		public @NotNull List<PlatformEvent> events() {
+			return List.of();
+		}
+	};
 
 	private static final RequestChannel SILENT = new RequestChannel() {
 		@Override

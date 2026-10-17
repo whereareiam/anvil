@@ -51,7 +51,7 @@ Use the [proxy environment](../../platforms/proxies/index.md), with `proxy` as t
 `lobby` as its backend. Enable rapid reconnections in the
 [Velocity](../../platforms/proxies/velocity/index.md) or
 [BungeeCord](../../platforms/proxies/bungeecord/index.md) declaration when its throttle would delay this test.
-The Session and Server capabilities must be installed.
+The Session and Players capabilities must be installed.
 
 Place this helper at `src/anvil/java/com/example/test/ProxyRestartChecks.java`. Call
 `ProxyRestartChecks.verify(anvil)` from a test method in the same package:
@@ -61,10 +61,12 @@ package com.example.test;
 
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.type.ProcessState;
-import me.whereareiam.anvil.capability.server.Server;
+import me.whereareiam.anvil.capability.players.PlayerWatch;
+import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 
 import java.time.Duration;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -77,11 +79,14 @@ public final class ProxyRestartChecks {
 		var lobby = processes.server("lobby");
 		var alice = anvil.players().create("RestartAlice");
 		var session = alice.capability(Session.class);
-		var server = alice.capability(Server.class);
+		Players proxyPlayers = original.capability(Players.class);
+		PlayerWatch arrivals = lobby.capability(Players.class).watch();
+		PlayerWatch moves = proxyPlayers.watch();
 
 		session.connect();
 		session.connected(Duration.ofSeconds(30));
-		server.joined("lobby");
+		arrivals.joined(alice);
+		moves.joined(alice, "lobby");
 
 		var replacement = processes.restart("proxy");
 		assertNotSame(original, replacement);
@@ -94,14 +99,20 @@ public final class ProxyRestartChecks {
 		session.disconnected();
 		session.rejoin();
 		session.connected(Duration.ofSeconds(30));
-		server.joined("lobby");
+		arrivals.joined(alice);
+		moves.joined(alice, "lobby");
+		assertSame(proxyPlayers, replacement.capability(Players.class));
+		assertEquals(Optional.of("lobby"), proxyPlayers.backend(alice));
 	}
 }
 ```
 
 Run the containing test with `./gradlew anvilTest --tests 'your.package.YourTest'`.
 This checks replacement of the proxy, preservation of the lobby, and reconnection of the same
-registered player to that lobby.
+registered player to that lobby. The proxy's `Players` is the same instance before and after the
+restart, so the watch `moves` created before it continues: the restart ended the visits the earlier
+generation reported, and the second `moves.joined(alice, "lobby")` waits for the replacement proxy to
+connect her to `lobby`. After that wait, `backend(alice)` names the same backend.
 
 To test persistence, write application state before the restart and assert that state after rejoining.
 A successful reconnection alone does not prove that plugin data survived.
