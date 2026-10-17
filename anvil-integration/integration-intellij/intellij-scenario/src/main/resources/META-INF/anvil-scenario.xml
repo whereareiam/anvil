@@ -16,6 +16,8 @@
 				description="Stop the selected process, or the whole environment" icon="AllIcons.Actions.Suspend"/>
 		<action id="Anvil.RestartProcess" class="me.whereareiam.anvil.integration.intellij.scenario.action.RestartProcessAction" text="Restart Process"
 				description="Restart the selected server or proxy with its workspace" icon="AllIcons.Actions.Restart"/>
+		<action id="Anvil.RunScenarioTests" class="me.whereareiam.anvil.integration.intellij.scenario.action.RunScenarioTestsAction" text="Run Tests Using Scenario"
+				description="Run the JUnit tests annotated with @AnvilTest for this scenario" icon="AllIcons.RunConfigurations.TestState.Run_run"/>
 		<action id="Anvil.SaveRunConfiguration" class="me.whereareiam.anvil.integration.intellij.scenario.action.SaveRunConfigurationAction" text="Save as Run Configuration"
 				description="Save the selection as a run configuration" icon="AllIcons.Actions.MenuSaveall"/>
 		<action id="Anvil.RefreshScenarios" class="me.whereareiam.anvil.integration.intellij.scenario.action.RefreshScenariosAction" text="Reload Scenarios"
@@ -37,6 +39,7 @@
 			<reference ref="Anvil.Run"/>
 			<reference ref="Anvil.Stop"/>
 			<reference ref="Anvil.RestartProcess"/>
+			<reference ref="Anvil.RunScenarioTests"/>
 			<separator/>
 			<reference ref="EditSource"/>
 			<reference ref="Anvil.SaveRunConfiguration"/>

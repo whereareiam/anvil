@@ -2,15 +2,17 @@ package me.whereareiam.anvil.integration.intellij.scenario.editor;
 
 import com.intellij.execution.actions.ConfigurationContext;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
-import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.PsiIdentifier;
+import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.testFramework.ExtensionTestUtil;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -55,6 +57,8 @@ public class ScenarioLineMarkerPlatformTest extends ScenarioPlatformTestCase {
 		listSourceOf(definition);
 		var marker = new ScenarioLineMarker();
 		assertNotNull(marker.getInfo(identifier(definition)));
+		assertTrue("The icon offers the scenario's tests", Arrays.stream(marker.getInfo(identifier(definition)).actions)
+				.anyMatch(action -> action == ActionManager.getInstance().getAction("Anvil.RunScenarioTests")));
 		assertNotNull("A class inherits the definition contract", marker.getInfo(identifier(inherited)));
 		assertNull(marker.getInfo(identifier(base)));
 		assertNull(marker.getInfo(identifier(unrelated)));
