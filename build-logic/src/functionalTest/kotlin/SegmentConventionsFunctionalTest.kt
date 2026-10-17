@@ -131,6 +131,92 @@ class SegmentConventionsFunctionalTest {
 		assertTrue(misnamed.output.contains("may contain only segments"), misnamed.output)
 	}
 
+	@Test
+	fun `a segment extends an earlier sibling, carries its classes but its adapter and checks their linkage`() {
+		val project = TestProject(directory)
+		writeProject(project)
+		project.write("settings.gradle.kts", project.file("settings.gradle.kts").readText() + "include(\":demo-mcprotocol:V1_19_4\")\n")
+		// The 1.18.2 segment shares an abstract base and adapts it to 1.18.2-1 with its own adapter.
+		project.write("demo-mcprotocol/V1_18_2/src/main/java/demo/mcprotocol/v1_18_2/DemoPacketsBase.java", """
+			package demo.mcprotocol.v1_18_2;
+
+			import com.example.legacy.MinecraftProtocol;
+			import demo.api.packet.DemoPackets;
+
+			public abstract class DemoPacketsBase implements DemoPackets {
+				@Override
+				public String profileName(String username) {
+					return new MinecraftProtocol(username).getProfile().getName();
+				}
+
+				public abstract Object chat(String message);
+			}
+		""")
+		project.write("demo-mcprotocol/V1_18_2/src/main/java/demo/mcprotocol/v1_18_2/McProtocolDemoPackets.java", """
+			package demo.mcprotocol.v1_18_2;
+
+			public final class McProtocolDemoPackets extends DemoPacketsBase {
+				@Override
+				public Object chat(String message) {
+					return new com.example.legacy.ChatPacket(message);
+				}
+			}
+		""")
+		project.write("demo-mcprotocol/V1_18_2/src/main/resources/META-INF/services/demo.api.packet.DemoPackets",
+			"demo.mcprotocol.v1_18_2.McProtocolDemoPackets\n")
+		// 1.19.4-1 changed only the chat packet's constructor, so its segment adapts only the chat.
+		project.write("demo-mcprotocol/V1_19_4/build.gradle.kts", """
+			plugins {
+				id("module-adapter-segment")
+			}
+
+			segment {
+				extends(":demo-mcprotocol:V1_18_2")
+			}
+
+			dependencies {
+				compileOnly(project(":demo-api"))
+			}
+		""")
+		project.write("demo-mcprotocol/V1_19_4/src/main/java/demo/mcprotocol/v1_19_4/McProtocolDemoPackets.java", """
+			package demo.mcprotocol.v1_19_4;
+
+			public final class McProtocolDemoPackets extends demo.mcprotocol.v1_18_2.DemoPacketsBase {
+				@Override
+				public Object chat(String message) {
+					return new com.example.legacy.ChatPacket(message, 0L);
+				}
+			}
+		""")
+
+		val build = project.run(":demo-mcprotocol:V1_19_4:build")
+		assertEquals(TaskOutcome.SUCCESS, build.task(":demo-mcprotocol:V1_19_4:checkSegmentLinkage")?.outcome, build.output)
+		val jar = "demo-mcprotocol/V1_19_4/build/libs/demo-mcprotocol-V1_19_4-1.0.0.jar"
+		assertEquals(
+			listOf("demo/mcprotocol/v1_18_2/DemoPacketsBase.class", "demo/mcprotocol/v1_19_4/McProtocolDemoPackets.class"),
+			project.jarEntries(jar).filter { it.endsWith(".class") }.sorted(),
+		)
+		assertEquals("library=mcprotocol\nowner=demo-mcprotocol\nsince=1.19.4\n", project.jarText(jar, "META-INF/anvil/segment.properties"))
+		val linkage = project.jarText(jar, "META-INF/anvil/segment/linkage.txt").lines()
+		assertTrue(linkage.contains("method com.example.legacy.MinecraftProtocol <init>(Ljava/lang/String;)V public instance class"), linkage.toString())
+		assertTrue(linkage.contains("method com.example.legacy.ChatPacket <init>(Ljava/lang/String;J)V public instance class"), linkage.toString())
+		assertFalse(linkage.contains("method com.example.legacy.ChatPacket <init>(Ljava/lang/String;)V public instance class"), linkage.toString())
+
+		project.write("demo-mcprotocol/V1_18_2/build.gradle.kts", """
+			plugins {
+				id("module-adapter-segment")
+			}
+
+			segment {
+				extends(":demo-mcprotocol:V1_19_4")
+			}
+		""")
+		val later = project.fail(":demo-mcprotocol:V1_18_2:compileJava")
+		assertTrue(later.output.contains(
+			"Segment :demo-mcprotocol:V1_18_2 can extend only an earlier segment, not :demo-mcprotocol:V1_19_4"
+		), later.output)
+	}
+
 	private fun writeProject(project: TestProject) {
 		publishLibrary(LibraryRepository(project.file("repository")))
 		project.write("settings.gradle.kts", """

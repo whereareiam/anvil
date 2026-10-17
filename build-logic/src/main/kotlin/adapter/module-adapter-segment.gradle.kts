@@ -1,8 +1,10 @@
 import me.whereareiam.anvil.buildlogic.library.LibraryRepositories
 import me.whereareiam.anvil.buildlogic.library.releaseClosureClasspath
 import me.whereareiam.anvil.buildlogic.library.releaseModule
+import me.whereareiam.anvil.buildlogic.adapter.SegmentExtension
 import me.whereareiam.anvil.buildlogic.adapter.SegmentPackageRule
 import me.whereareiam.anvil.buildlogic.adapter.SegmentPlanSource
+import me.whereareiam.anvil.buildlogic.adapter.SyncSegmentBase
 import me.whereareiam.anvil.buildlogic.adapter.WriteSegmentManifest
 import me.whereareiam.anvil.buildlogic.adapter.linkage.CheckSegmentLinkage
 
@@ -34,10 +36,42 @@ base {
 	archivesName.set("${plan.owner}-${project.name}")
 }
 
+// A segment may extend an earlier segment of its side and take its classes except its adapters, which serve only
+// the base's release. A segment offers its classes and resources, with those of its own base, through a variant
+// of its own, so the chain resolves transitively.
+extensions.create("segment", SegmentExtension::class, dependencies, path, plan.segment)
+val segmentBase = configurations.dependencyScope(SegmentExtension.BASE_CONFIGURATION)
+val segmentClassesUsage = objects.named<Usage>(SegmentExtension.CLASSES_USAGE)
+val baseClasses = configurations.resolvable("segmentBaseClasses") {
+	extendsFrom(segmentBase.get())
+	attributes { attribute(Usage.USAGE_ATTRIBUTE, segmentClassesUsage) }
+}
+configurations.consumable("segmentClassesElements") {
+	extendsFrom(segmentBase.get())
+	attributes { attribute(Usage.USAGE_ATTRIBUTE, segmentClassesUsage) }
+	outgoing.artifact(tasks.named<JavaCompile>("compileJava").flatMap { it.destinationDirectory })
+	outgoing.artifact(tasks.named<ProcessResources>("processResources").map { it.destinationDir }) {
+		builtBy(tasks.named("processResources"))
+	}
+}
+val sharedBase = tasks.register<SyncSegmentBase>("syncSegmentBase") {
+	description = "Collects the classes the segment takes from its base chain, without the bases' adapters."
+	base.from(baseClasses)
+	destination.set(layout.buildDirectory.dir("segment/base"))
+}
+val sharedBaseClasses = files(sharedBase.flatMap { it.destination })
+
 // The release the segment starts at is its compile baseline; the worker supplies the library at runtime.
 dependencies {
 	compileOnly(plan.release.module)
+	compileOnly(sharedBaseClasses)
 	testImplementation(plan.release.module)
+	testImplementation(sharedBaseClasses)
+}
+
+// The worker loads one segment per side, so a segment carries the classes of its base chain.
+tasks.named<Jar>("jar") {
+	from(sharedBaseClasses)
 }
 
 // Classes outside the versioned package fail the compilation itself.
@@ -57,6 +91,7 @@ val manifest = tasks.register<WriteSegmentManifest>("writeSegmentManifest") {
 	owner.set(plan.owner)
 	since.set(plan.segment.since.toString())
 	classes.from(sourceSets.main.map { it.output.classesDirs })
+	classes.from(sharedBaseClasses)
 	classpath.from(configurations.named("compileClasspath"))
 	projectDependencies.from(projectClasses)
 	jdk.set(toolchainJdk)
