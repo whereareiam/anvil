@@ -18,7 +18,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   abstraction, fallback, or wrapper just to move complexity elsewhere.
 - Use interfaces at real module and extension boundaries. Keep ordinary local collaborators concrete.
 - Names describe responsibilities and, when relevant, their technology: for example,
-  `McProtocolMovementExtension`, `SpigotDistributionResolver`, and `WorkspacePlanValidator`.
+  `JavaMovementExtension`, `SpigotDistributionResolver`, and `WorkspacePlanValidator`.
 
 ## Module ownership
 
@@ -45,18 +45,18 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-capability/capability-common`                                  | Shared dependency validation/composition/cleanup for capability owners, agent extensions of installed process providers, per-library player runtimes and the player composer, and process/player facades |
 | `anvil-capability/capability-player/capability-player-api`            | Protocol-backed player providers and their contexts over the player's `ProtocolChannel` (artifact `capability-protocol-api`) |
 | `anvil-capability/capability-player/capability-player-builtin/builtin-<feature>` | Player capability family whose wiring-only root publishes the shaded `builtin-<feature>` bundle |
-| `anvil-capability/capability-player/capability-player-builtin/builtin-<feature>/<feature>-api` | Public feature API (`builtin-<feature>-api`) and, for packet capabilities, the stateless release port in `.packet` |
-| `anvil-capability/capability-player/capability-player-builtin/builtin-<feature>/<feature>-common` | Embedded, unpublished host provider, operation descriptors, and library-neutral binding in the feature root package |
-| `anvil-capability/capability-player/capability-player-builtin/builtin-<feature>/<feature>-<library>` | Segmented side folder holding the library's `WorkerExtension` (`builtin-<feature>-<library>`) |
-| `anvil-capability/capability-player/capability-player-builtin/builtin-<feature>/<feature>-<library>/V*` | Segments that implement only the feature's port for the library releases from their key on |
+| `anvil-capability/capability-player/capability-player-builtin/builtin-<feature>/<feature>-api` | Public feature API (`builtin-<feature>-api`) and, in `.channel`, the `<Feature>Channel` contract between host and worker: capability ID, operation and event descriptors |
+| `anvil-capability/capability-player/capability-player-builtin/builtin-<feature>/<feature>-common` | Embedded, unpublished host provider and host capability in the feature root package |
+| `anvil-capability/capability-player/capability-player-builtin/builtin-<feature>/<feature>-java` | The feature's worker extension over the Java Edition protocol (`builtin-<feature>-java`), free of any release |
 | `anvil-capability/capability-process/capability-process-api`          | Agent-backed process providers and scoped request-channel contexts; shared capability API only (artifact `capability-agent-api`) |
 | `anvil-capability/capability-process/capability-process-builtin/builtin-<feature>` | Process capability family: `<feature>-api` and `<feature>-common` holding the agent-backed provider, independent of simulated players |
 | `anvil-capability/capability-process/capability-process-builtin/builtin-players` | Players family: what one server or proxy knows about the players on it, from its own agent's events, with `players-api` and `players-common` |
 | `anvil-capability/capability-default`                                 | Aggregate of every built-in player and process capability (artifact `default`) |
 | `anvil-player/player-api`                                         | Protocol library providers and releases, player creation/composition, the typed player channel and worker extension contracts, pinned runtime resolution, and optional authentication                       |
 | `anvil-player/player-common`                                         | Player registration, version selection, authentication compatibility, composition, and observations                                                                                 |
+| `anvil-player/player-protocol/protocol-java/protocol-java-api` | Java Edition protocol of simulated players: `JavaProtocol` and the packets, models and types it carries, as release-neutral values |
 | `anvil-player/player-library/library-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port and the client segments; owns `mcprotocol-releases.toml` and `pinLibraryReleases`  |
-| `anvil-player/player-library/library-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell                                                                                       |
+| `anvil-player/player-library/library-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell, `PacketTranslation` and `AdventureText`                                                                                       |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-common`                | MCProtocolLib library provider, release data, worker host and segment selection, MCProtocolLib-free worker shell with its extension registry and typed transport, and private authentication store                                  |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-java`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-java/V*`             | Client segments `V1_18_2`, `V1_21_1`, `V1_21_11` and `V26_1_2`, each implementing only `McProtocolClient` from its release key on; `V26_1_2` extends `V1_21_11` and replaces only its interaction translation |
@@ -128,11 +128,15 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   belongs to the simulated player (`PlayerCapability`), what a server or proxy can do or know belongs to the
   running process (`ProcessCapability`); a proxy counts as server side. The implementation (packets, agent
   events) never decides the owner.
-- Packet behavior belongs in feature-owned native implementations. Feature wiring registers scoped
-  typed operation/event descriptors and `WorkerExtension<S>` bindings, where `S` is the session type the
-  extension accepts: built-ins accept `Object` and let the port's `sessionType()` cast it, because the
-  native session type differs between releases. Release-specific packet code lives in segments behind the
-  feature's port.
+- A player speaks its edition's protocol: `protocol-java-api`'s `JavaProtocol` (`listen` by packet class, `send`,
+  `supports`), which a worker extension gets from `PlayerBindingContext.protocol(JavaProtocol.class)`. Packets are
+  immutable values grouped by area under `packet.<area>`, one class per game packet; the protocol owns the data
+  types they need (`model.<area>`, enums in `type`) and carries text flattened to plain strings. A listener follows
+  the player's current connection. Release-specific packet code lives only in the library's client segments: one
+  `PacketTranslation` per area and segment, registered in the segment's `JavaPackets`, with components flattened by
+  `mcprotocol-api`'s `AdventureText`. A release without a packet leaves it out of the table; a feature checks
+  `supports` and throws `ProtocolUnavailableException` when it cannot work without it. Features never touch native
+  sessions or library packets.
   The worker contracts belong to the player family: `player-api`'s `WorkerExtension`, `PlayerBindingContext`,
   `OperationRegistry` and `WorkerBinding` under `protocol.api.worker`, and the typed `ProtocolChannel` with
   `OperationDescriptor`/`EventDescriptor` that both ends of a player's channel share. Capabilities implement and
@@ -145,27 +149,28 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   (`PlayerCapability`, owned by the simulated player), `capability-process/capability-process-builtin` for what a
   server or proxy can do or know (`ProcessCapability`, owned by the running process; a proxy is server side).
 - A built-in capability is a family folder `builtin-<feature>` whose root applies the `module-capability`
-  convention and only wires its members into `builtin-<feature>`: `<feature>-api` (artifact `builtin-<feature>-api`) holds the API and,
-  for packet capabilities, the stateless port `<feature root>.packet.<Feature>Packets<S>`; `<feature>-common`
-  (embedded, unpublished) holds the host provider and the library-neutral `<Feature>Binding<S>`;
-  `<feature>-<library>` (artifact `builtin-<feature>-<library>`) holds the library's `WorkerExtension<Object>`
-  and its `V*` segments, which implement only the port and never wire anything. The root is a wiring bundle: consumers compile against
-  its shaded JAR, and its sources and Javadoc JARs carry the embedded common code. The convention derives every
-  artifact ID from the folder names and fails a build file that sets its own, and `gradle-capabilities` tests
-  that each family has a plugin installing `builtin-<feature>`.
+  convention and only wires its members into `builtin-<feature>`: `<feature>-api` (artifact `builtin-<feature>-api`)
+  holds the API and, for capabilities with a worker side, the `.channel.<Feature>Channel` both sides share;
+  `<feature>-common` (embedded, unpublished) holds the host provider; `<feature>-<edition>` (artifact
+  `builtin-<feature>-<edition>`, such as `-java`) holds the edition's `WorkerExtension<Object>`, whose `libraryId()`
+  is empty and whose `nativeSessionType()` is `Object.class`. The editions are the `protocol-<edition>` folders below
+  `anvil-player/player-protocol`. The root is a wiring bundle: consumers compile against its shaded JAR, and its
+  sources and Javadoc JARs carry the embedded common code. The convention derives every artifact ID from the folder
+  names and fails a build file that sets its own, and `gradle-capabilities` tests that each family has a plugin
+  installing `builtin-<feature>`.
   Common code lives in the feature packages, never in `common` or `util` packages. An agent-backed provider,
-  such as Dispatch's, lives in `<feature>-common` as well; the convention refuses code in every family root. The extension takes the port's adapter only through
-  `PlayerBindingContext.adapter(Class)` while binding a player, never in its constructor and never through
-  `ServiceLoader`; `checkAdapterLookup` fails a library side whose classes reference `ServiceLoader`. No segment
-  for the release, a segment failing its linkage self-check, or more than one adapter throws
-  `ProtocolUnavailableException`, and the worker reports the capability unavailable with that reason; a
-  `LinkageError` or `ServiceConfigurationError` while binding likewise disables only that capability.
+  such as Dispatch's, lives in `<feature>-common` as well; the convention refuses code in every family root. An
+  extension needing what the release cannot carry throws `ProtocolUnavailableException`, and the worker reports the
+  capability unavailable with that reason; a `LinkageError` or `ServiceConfigurationError` while binding likewise
+  disables only that capability. An external capability that needs library code Anvil's protocol does not cover may
+  still keep a segmented library side: its extension takes the port's adapter only through
+  `PlayerBindingContext.adapter(Class)` while binding, never through `ServiceLoader` (`checkAdapterLookup`).
   For a player with a native worker, composition skips every protocol-backed provider whose capability the
   worker does not install, and its dependents, with the worker's reason or "not installed by the <library>
   worker"; host providers do not check installation themselves. Players without a native worker compose
   every provider of their library.
-- `PlayerBindingContext` supplies an existing player's native SDK/session, lifecycle and release adapters to a
-  binding; it is not another player entity, and the library's worker player implements it. `PlayerConnectionEvent`
+- `PlayerBindingContext` supplies an existing player's lifecycle, edition protocol, native session generations and
+  release adapters to a binding; it is not another player entity, and the library's worker player implements it. `PlayerConnectionEvent`
   and `ViewRotation` live under `protocol.api.model.player`, `OperationDescriptor<Q, R>` and `EventDescriptor<E>`
   under `protocol.api.model.channel`. View rotation holds yaw/pitch; a descriptor pairs an ID with its payload
   classes.
@@ -282,9 +287,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   Use private inner types for implementation-local state; records are allowed only as small inner records.
 - Add subpackages for coherent responsibilities shared by several files, not merely to classify
   one implementation; a package holds at least two files. The fixed role packages `model`, `type`,
-  `exception`, and `packet` are exempt: every packet capability keeps its release port in `.packet`,
-  even when it is the package's only file. A segment's version package (`.v1_18_2`) and a library side's
-  wiring package (`<feature>.mcprotocol`) hold one class by design and are exempt too. Avoid catch-all
+  `exception`, and `channel` are exempt: every capability with a worker side keeps its host-to-worker contract in
+  `.channel`, even when it is the package's only file. A segment's version package (`.v1_18_2`) and an edition
+  side's wiring package (`<feature>.java`) hold one class by design and are exempt too. Avoid catch-all
   `util` or `common` packages.
 - Keep classes and methods focused. Prefer early returns and `continue` to nested or `else if` chains.
   For a short single-statement `if`/`for`, omit braces.

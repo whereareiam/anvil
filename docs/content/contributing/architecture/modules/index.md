@@ -149,10 +149,10 @@ Each built-in capability is a family folder `builtin-<feature>`: `<feature>-api`
 player capability, the contract between host and worker in its `channel` package; `<feature>-common` holds the host
 provider in the feature packages; and a player capability's `<feature>-java` holds its worker extension, which
 speaks the Java Edition protocol through the player's `JavaProtocol`. The library's client segments translate that
-protocol for each release, so no built-in capability has segments of its own. The family root applies the `module-capability` convention and only wires these
-members into the `builtin-<feature>` bundle. The convention publishes the members as `builtin-<member>`,
+protocol for each release, so no built-in capability has segments of its own. The family root applies the
+`module-capability` convention and only wires these members into the `builtin-<feature>` bundle. The convention publishes the members as `builtin-<member>`,
 such as `builtin-movement-api`, and refuses a child that is not a member, a `common` or `util` package, and
-code in the root of a family with common code or library sides.
+code in the root of a family with common code or sides.
 
 A family that reads its processes through their agents, such as dispatch or players, keeps its provider in
 `<feature>-common` as well: it uses the platform agents' general operations, so it ships nothing into the
