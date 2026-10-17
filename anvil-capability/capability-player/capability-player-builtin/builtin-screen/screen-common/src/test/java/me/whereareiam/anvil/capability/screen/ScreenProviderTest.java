@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
+import me.whereareiam.anvil.capability.screen.channel.ScreenChannel;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
@@ -29,8 +30,8 @@ class ScreenProviderTest {
 	void describesTheScreenCapabilityForTheLibrariesWithAWorkerSide() {
 		ScreenProvider provider = new ScreenProvider();
 
-		assertEquals("me.whereareiam.anvil.screen", ScreenProvider.ID);
-		assertEquals(ScreenProvider.ID, provider.descriptor().getId());
+		assertEquals("me.whereareiam.anvil.screen", ScreenChannel.ID);
+		assertEquals(ScreenChannel.ID, provider.descriptor().getId());
 		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
 		assertEquals(Set.of("mcprotocol"), provider.supportedLibraries());
 		assertEquals(Screen.class, provider.capability());
@@ -41,7 +42,7 @@ class ScreenProviderTest {
 		RecordingChannel channel = new RecordingChannel();
 		Screen screen = new ScreenProvider().create(new ChannelContext(channel));
 
-		assertEquals(List.of(ScreenOperations.TITLE.getId(), ScreenOperations.ACTION_BAR.getId(), ScreenOperations.BOSS_BAR.getId()),
+		assertEquals(List.of(ScreenChannel.TITLE.getId(), ScreenChannel.ACTION_BAR.getId(), ScreenChannel.BOSS_BAR.getId()),
 				channel.subscriptions);
 		assertTrue(channel.requests.isEmpty());
 		assertTrue(screen.bossBars().isEmpty());
@@ -73,7 +74,7 @@ class ScreenProviderTest {
 
 		@Override
 		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(ScreenProvider.ID);
+			return Set.of(ScreenChannel.ID);
 		}
 	}
 
