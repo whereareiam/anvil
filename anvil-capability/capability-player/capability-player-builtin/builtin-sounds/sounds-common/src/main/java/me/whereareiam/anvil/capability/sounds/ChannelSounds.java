@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.sounds;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.api.history.HistoryCursor;
+import me.whereareiam.anvil.capability.sounds.channel.SoundsChannel;
 import me.whereareiam.anvil.capability.sounds.model.HeardSound;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +24,7 @@ final class ChannelSounds implements Sounds {
 
 	ChannelSounds(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
-		channel.subscribe(SoundsOperations.HEARD, history::add);
+		channel.subscribe(SoundsChannel.HEARD, history::add);
 	}
 
 	@Override

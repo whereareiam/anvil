@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.capability.sounds;
 
 import me.whereareiam.anvil.api.model.player.Expectation;
+import me.whereareiam.anvil.capability.sounds.channel.SoundsChannel;
 import me.whereareiam.anvil.capability.sounds.model.HeardSound;
 import me.whereareiam.anvil.capability.sounds.model.SoundPosition;
 import me.whereareiam.anvil.capability.sounds.type.SoundCategory;
@@ -39,8 +40,8 @@ class ChannelSoundsTest {
 	void keepsEveryHeardSoundInOrder() {
 		assertTrue(sounds.history().isEmpty());
 
-		channel.publish(SoundsOperations.HEARD, LEVEL_UP);
-		channel.publish(SoundsOperations.HEARD, ALERT);
+		channel.publish(SoundsChannel.HEARD, LEVEL_UP);
+		channel.publish(SoundsChannel.HEARD, ALERT);
 
 		assertEquals(List.of(LEVEL_UP, ALERT), sounds.history());
 		assertThrows(UnsupportedOperationException.class, () -> sounds.history().add(PLING));
@@ -57,15 +58,15 @@ class ChannelSoundsTest {
 
 	@Test
 	void watchesOnlySoundsHeardSinceItAndContinuesAfterEachMatch() {
-		channel.publish(SoundsOperations.HEARD, PLING);
+		channel.publish(SoundsChannel.HEARD, PLING);
 		SoundWatch watch = sounds.watch();
 
 		assertEquals("Player did not hear a matching sound", assertThrows(IllegalStateException.class,
 				() -> watch.heard("block.note_block.pling", TIMEOUT)).getMessage());
 
-		channel.publish(SoundsOperations.HEARD, LEVEL_UP);
-		channel.publish(SoundsOperations.HEARD, PLING);
-		channel.publish(SoundsOperations.HEARD, sound("minecraft:block.note_block.pling", 0.5F));
+		channel.publish(SoundsChannel.HEARD, LEVEL_UP);
+		channel.publish(SoundsChannel.HEARD, PLING);
+		channel.publish(SoundsChannel.HEARD, sound("minecraft:block.note_block.pling", 0.5F));
 		assertEquals(List.of(LEVEL_UP, PLING, sound("minecraft:block.note_block.pling", 0.5F)), watch.unread());
 		assertEquals(PLING, watch.heard(sound -> sound.is("block.note_block.pling") && sound.getPitch() > 1F, TIMEOUT));
 		assertEquals(sound("minecraft:block.note_block.pling", 0.5F), watch.heard("block.note_block.pling", TIMEOUT));
@@ -75,30 +76,30 @@ class ChannelSoundsTest {
 
 	@Test
 	void expectsAMatchingSoundOnlySinceTheWatchStarted() {
-		channel.publish(SoundsOperations.HEARD, ALERT);
+		channel.publish(SoundsChannel.HEARD, ALERT);
 		SoundWatch watch = sounds.watch();
 		Expectation alert = watch.expectHeard(sound -> sound.is("example:alert"));
 
 		assertFalse(alert.met());
 		assertEquals("hear a matching sound", alert.getDescription());
 
-		channel.publish(SoundsOperations.HEARD, ALERT);
+		channel.publish(SoundsChannel.HEARD, ALERT);
 		assertTrue(alert.met());
 		assertEquals(ALERT, watch.heard("example:alert", TIMEOUT));
 	}
 
 	@Test
 	void failsWhenAForbiddenSoundIsHeardSinceThePreviousWaitOnly() {
-		channel.publish(SoundsOperations.HEARD, ALERT);
+		channel.publish(SoundsChannel.HEARD, ALERT);
 		SoundWatch watch = sounds.watch();
 
 		watch.neverHeard("example:alert", TIMEOUT);
 
-		channel.publish(SoundsOperations.HEARD, ALERT);
+		channel.publish(SoundsChannel.HEARD, ALERT);
 		assertEquals("Player heard a sound it must not hear: example:alert", assertThrows(IllegalStateException.class,
 				() -> watch.neverHeard("example:alert", TIMEOUT)).getMessage());
 
-		channel.publish(SoundsOperations.HEARD, LEVEL_UP);
+		channel.publish(SoundsChannel.HEARD, LEVEL_UP);
 		watch.heard("entity.player.levelup", TIMEOUT);
 		watch.neverHeard("example:alert", TIMEOUT);
 	}
@@ -143,7 +144,7 @@ class ChannelSoundsTest {
 
 		@Override
 		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(SoundsProvider.ID);
+			return Set.of(SoundsChannel.ID);
 		}
 	}
 }
