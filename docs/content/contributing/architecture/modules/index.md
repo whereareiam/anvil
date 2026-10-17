@@ -206,7 +206,7 @@ every such library. MCProtocolLib's family is laid out like this:
 
 The worker shell never imports MCProtocolLib. Every class that does lives in a segment: a project named
 after the release key it starts at, under a side folder named after its owner and library, such as
-`mcprotocol-java` or `inventory-mcprotocol`. A segment holds only the adapters of library-neutral ports
+`mcprotocol-java` or `interaction-mcprotocol`. A segment holds only the adapters of library-neutral ports
 and their service descriptors; it never wires anything. Its package ends in the folder name in lower
 case, such as `.v1_18_2`. For a release, the worker keeps the segment of each side with the greatest
 start version that does not exceed the release key. A new segment is added only when a release breaks
@@ -307,7 +307,7 @@ Small implementation-local carriers can be inner records; public models use sepa
 A package needs at least two files unless it is one of the fixed role packages `model`, `type`,
 `exception`, and `packet`. Every packet capability keeps its release port in `packet`, even when the
 port is the package's only file, so the port has the same place in every family. A segment's version
-package, such as `v1_18_2`, and a library side's wiring package, such as `inventory.mcprotocol`, hold one
+package, such as `v1_18_2`, and a library side's wiring package, such as `interaction.mcprotocol`, hold one
 class by design and are exempt as well. Avoid catch-all
 `util` or `common` packages; common code lives in the feature packages.
 

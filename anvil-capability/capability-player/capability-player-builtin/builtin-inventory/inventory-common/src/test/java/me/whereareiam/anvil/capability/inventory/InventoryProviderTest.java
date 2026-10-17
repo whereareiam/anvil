@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.inventory;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
+import me.whereareiam.anvil.capability.inventory.channel.InventoryChannel;
 import me.whereareiam.anvil.capability.inventory.model.InventoryAction;
 import me.whereareiam.anvil.capability.inventory.model.SlotSelection;
 import me.whereareiam.anvil.capability.inventory.type.InventoryClick;
@@ -43,12 +44,12 @@ class InventoryProviderTest {
 		RecordingChannel channel = new RecordingChannel();
 		Inventory inventory = new InventoryProvider().create(new ChannelContext(channel));
 		assertTrue(channel.requests.isEmpty());
-		assertEquals(List.of(InventoryOperations.CHANGED.getId()), channel.subscriptions);
+		assertEquals(List.of(InventoryChannel.CHANGED.getId()), channel.subscriptions);
 
 		inventory.selectSlot(0);
 		inventory.click(4, InventoryClick.LEFT, 0);
 
-		assertEquals(List.of(InventoryOperations.SELECT.getId(), InventoryOperations.CLICK.getId()), channel.requests);
+		assertEquals(List.of(InventoryChannel.SELECT.getId(), InventoryChannel.CLICK.getId()), channel.requests);
 		assertEquals(List.of(new SlotSelection(0), new InventoryAction(4, InventoryClick.LEFT, 0)), channel.payloads);
 	}
 
@@ -80,7 +81,7 @@ class InventoryProviderTest {
 
 		@Override
 		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(InventoryProvider.ID);
+			return Set.of(InventoryChannel.ID);
 		}
 	}
 

@@ -12,6 +12,9 @@ import me.whereareiam.anvil.protocol.java.api.packet.command.ClientboundCommands
 import me.whereareiam.anvil.protocol.java.api.packet.cookie.ClientboundCookieRequest;
 import me.whereareiam.anvil.protocol.java.api.packet.cookie.ClientboundStoreCookie;
 import me.whereareiam.anvil.protocol.java.api.packet.cookie.ServerboundCookieResponse;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundMovePlayerPosRot;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundBossEvent;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetActionBarText;
@@ -127,8 +130,11 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ClientboundSetTitleText.class));
 		assertTrue(client.supports(ClientboundSetActionBarText.class));
 		assertTrue(client.supports(ClientboundBossEvent.class));
+		assertTrue(client.supports(ClientboundContainerSetSlot.class));
+		assertTrue(client.supports(ServerboundContainerClick.class));
 		assertTrue(client.supports(ClientboundDisguisedChat.class));
 		assertFalse(client.supports(ClientboundCustomSound.class));
+		assertFalse(client.supports(ClientboundSetPlayerInventory.class));
 		assertFalse(client.supports(UnknownPacket.class));
 	}
 
