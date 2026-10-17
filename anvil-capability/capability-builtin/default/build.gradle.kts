@@ -2,16 +2,16 @@ plugins {
 	id("module-assembly")
 }
 
-description = "Default aggregate containing the built-in player and process capabilities"
+description = "Default aggregate containing the built-in client and server capabilities"
 
 dependencies {
-	api(projects.anvilCapability.capabilityBuiltin.player.commands)
-	api(projects.anvilCapability.capabilityBuiltin.player.dialogs)
-	api(projects.anvilCapability.capabilityBuiltin.player.interaction)
-	api(projects.anvilCapability.capabilityBuiltin.player.inventory)
-	api(projects.anvilCapability.capabilityBuiltin.player.messages)
-	api(projects.anvilCapability.capabilityBuiltin.player.movement)
-	api(projects.anvilCapability.capabilityBuiltin.player.session)
-	api(projects.anvilCapability.capabilityBuiltin.process.console)
-	api(projects.anvilCapability.capabilityBuiltin.process.players)
+	api(projects.anvilCapability.capabilityBuiltin.client.commands)
+	api(projects.anvilCapability.capabilityBuiltin.client.dialogs)
+	api(projects.anvilCapability.capabilityBuiltin.client.interaction)
+	api(projects.anvilCapability.capabilityBuiltin.client.inventory)
+	api(projects.anvilCapability.capabilityBuiltin.client.messages)
+	api(projects.anvilCapability.capabilityBuiltin.client.movement)
+	api(projects.anvilCapability.capabilityBuiltin.client.session)
+	api(projects.anvilCapability.capabilityBuiltin.server.console)
+	api(projects.anvilCapability.capabilityBuiltin.server.players)
 }

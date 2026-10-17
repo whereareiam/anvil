@@ -45,14 +45,14 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-capability/capability-protocol-api`                            | Protocol-backed player providers/contexts, channels/events, and native worker contracts                                                                                             |
 | `anvil-capability/capability-agent-api`                               | Agent-backed process/player providers and scoped request-channel contexts; shared capability API only                                                                               |
 | `anvil-capability`                                                    | Shared dependency validation/composition/cleanup for capability owners, discovery of installed agent-backed providers, per-library player runtimes, process/player facades, agent-provider adaptation, codecs, and worker bindings |
-| `anvil-capability/capability-builtin/player/<feature>`                | Player capability family whose wiring-only root publishes the shaded `builtin-<feature>` bundle                                                                                     |
-| `anvil-capability/capability-builtin/player/<feature>/<feature>-api`  | Public feature API (`builtin-<feature>-api`) and, for packet capabilities, the stateless release port in `.packet`                                                                  |
-| `anvil-capability/capability-builtin/player/<feature>/<feature>-common` | Embedded, unpublished host provider, operation descriptors, and library-neutral binding in the feature root package                                                               |
-| `anvil-capability/capability-builtin/player/<feature>/<feature>-<library>` | Segmented side folder holding the library's `WorkerExtension` (`builtin-<feature>-<library>`)                                                                                  |
-| `anvil-capability/capability-builtin/player/<feature>/<feature>-<library>/V*` | Segments that implement only the feature's port for the library releases from their key on                                                                                 |
-| `anvil-capability/capability-builtin/process/<feature>`               | Process capability family: `<feature>-api` and a root holding the agent-backed provider, independent of simulated players                                                           |
-| `anvil-capability/capability-builtin/process/players`                 | Players family: what one server or proxy knows about the players on it, from its own agent's events, with `players-api` and `players-common` |
-| `anvil-capability/capability-builtin/default`                         | Aggregate of every built-in player and process capability                                                                                                                           |
+| `anvil-capability/capability-builtin/client/<feature>`                | Client capability family whose wiring-only root publishes the shaded `builtin-<feature>` bundle                                                                                     |
+| `anvil-capability/capability-builtin/client/<feature>/<feature>-api`  | Public feature API (`builtin-<feature>-api`) and, for packet capabilities, the stateless release port in `.packet`                                                                  |
+| `anvil-capability/capability-builtin/client/<feature>/<feature>-common` | Embedded, unpublished host provider, operation descriptors, and library-neutral binding in the feature root package                                                               |
+| `anvil-capability/capability-builtin/client/<feature>/<feature>-<library>` | Segmented side folder holding the library's `WorkerExtension` (`builtin-<feature>-<library>`)                                                                                  |
+| `anvil-capability/capability-builtin/client/<feature>/<feature>-<library>/V*` | Segments that implement only the feature's port for the library releases from their key on                                                                                 |
+| `anvil-capability/capability-builtin/server/<feature>`               | Process capability family: `<feature>-api` and `<feature>-common` holding the agent-backed provider, independent of simulated players                                                           |
+| `anvil-capability/capability-builtin/server/players`                 | Players family: what one server or proxy knows about the players on it, from its own agent's events, with `players-api` and `players-common` |
+| `anvil-capability/capability-builtin/default`                         | Aggregate of every built-in client and server capability                                                                                                                            |
 | `anvil-protocol/protocol-api`                                         | Protocol library providers and releases, player creation/composition, protocol-owned channels/workers, pinned runtime resolution, and optional authentication                       |
 | `anvil-protocol`                                                      | Player registration, version selection, authentication compatibility, composition, and observations                                                                                 |
 | `anvil-protocol/protocol-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port and the client segments; owns `mcprotocol-releases.toml` and `pinLibraryReleases`  |
@@ -134,9 +134,10 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   namespaced uniqueness, and cleanup; launcher `ProtocolOperationRegistry` binds handlers to
   protocol-owned native operations; capability codecs own typed handler wire encoding/decoding.
   Never add feature branches or an opaque universal packet abstraction to the MCProtocol worker.
-- Built-in families live below their owner's group, `capability-builtin/player` or `capability-builtin/process`, or
-  directly below `capability-builtin` when their capabilities may belong to more than one owner, as `server` does:
-  what a process observes of players, which a later process-scoped capability may extend.
+- Built-in families live below the group of their side, decided by who can normally do or know it, never by how it
+  is implemented: `capability-builtin/client` for what a client can do or see (`PlayerCapability`, owned by the
+  simulated player), `capability-builtin/server` for what a server or proxy can do or know (`ProcessCapability`,
+  owned by the running process; a proxy is server side).
 - A built-in capability is a family folder whose root applies the `module-capability` convention and only wires
   its members into `builtin-<feature>`: `<feature>-api` (artifact `builtin-<feature>-api`) holds the API and,
   for packet capabilities, the stateless port `<feature root>.packet.<Feature>Packets<S>`; `<feature>-common`

@@ -21,7 +21,7 @@ abstract class CapabilityFamiliesArgument : CommandLineArgumentProvider {
 	abstract val builtinDirectory: DirectoryProperty
 
 	/**
-	 * The build files of each family below an owner group and of its members.
+	 * The build files of each family below a side group and of its members.
 	 */
 	@get:InputFiles
 	@get:PathSensitive(PathSensitivity.RELATIVE)

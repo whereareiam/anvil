@@ -33,17 +33,18 @@ data class CapabilityFamily(
 
 	companion object {
 		private const val serialVersionUID = 1L
-		private const val processOwner = "process"
 		private val buildFiles = listOf("build.gradle.kts", "build.gradle")
 		private val catchAllPackages = setOf("common", "util")
 
 		/**
-		 * The folders below `capability-builtin` that group the built-in families by capability owner.
+		 * The folders below `capability-builtin` that group the built-in families by side: `client` for what a
+		 * client can do or see, which simulated players own, and `server` for what a server or proxy can do or
+		 * know, which running processes own.
 		 */
-		val owners = listOf("player", processOwner)
+		val owners = listOf("client", "server")
 
 		/**
-		 * Names the built-in families below [builtinDirectory]: each folder of an owner group whose root or member
+		 * Names the built-in families below [builtinDirectory]: each folder of a side group whose root or member
 		 * folders hold a build file.
 		 *
 		 * @param builtinDirectory the `capability-builtin` folder
