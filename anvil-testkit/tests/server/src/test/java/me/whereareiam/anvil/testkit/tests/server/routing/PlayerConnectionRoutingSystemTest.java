@@ -5,7 +5,7 @@ import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
-import me.whereareiam.anvil.api.process.ProcessConsole;
+import me.whereareiam.anvil.api.process.ConsoleWatch;
 import me.whereareiam.anvil.capability.players.PlayerWatch;
 import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
@@ -45,8 +45,7 @@ class PlayerConnectionRoutingSystemTest {
 		     var context = engine.start(scenario)) {
 			boolean successful = false;
 			try {
-				ProcessConsole console = context.processes().get("proxy").console();
-				long checkpoint = console.checkpoint();
+				ConsoleWatch console = context.processes().get("proxy").console().watch();
 
 				SimulatedPlayer routed = context.players().create(PlayerOptions.builder()
 						.name("Routed")
@@ -60,7 +59,7 @@ class PlayerConnectionRoutingSystemTest {
 				game.joined(routed, TIMEOUT);
 				moves.joined(routed, "game", TIMEOUT);
 				assertEquals(Optional.of("game"), gateway.backend(routed));
-				console.await("[connected player] Routed (/127.0.0.2:", checkpoint, TIMEOUT);
+				console.printed("[connected player] Routed (/127.0.0.2:", TIMEOUT);
 
 				SimulatedPlayer direct = context.players().create("Direct");
 				join(direct);
@@ -69,7 +68,7 @@ class PlayerConnectionRoutingSystemTest {
 				lobby.neverJoined(routed, Duration.ofSeconds(1));
 				moves.neverJoined(routed, "lobby", Duration.ofSeconds(1));
 				assertEquals(Optional.of("lobby"), gateway.backend(direct));
-				console.await("[connected player] Direct (/127.0.0.1:", checkpoint, TIMEOUT);
+				console.printed("[connected player] Direct (/127.0.0.1:", TIMEOUT);
 				successful = true;
 			} finally {
 				context.finish(successful);

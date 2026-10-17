@@ -20,6 +20,7 @@ This fragment belongs in a live test after Alice has connected to a server whose
 and asks for it again. It uses `SimulatedPlayer alice` and these imports:
 
 ```java
+import me.whereareiam.anvil.capability.cookies.CookieWatch;
 import me.whereareiam.anvil.capability.cookies.Cookies;
 import me.whereareiam.anvil.capability.cookies.model.CookieRequest;
 import java.nio.charset.StandardCharsets;
@@ -30,20 +31,21 @@ Wait until Alice holds the cookie, then for the request, and read what she answe
 
 ```java
 Cookies cookies = alice.capability(Cookies.class);
-int before = cookies.checkpoint();
+CookieWatch asked = cookies.watch();
 byte[] ticket = cookies.stored("example:ticket", Duration.ofSeconds(10));
-CookieRequest request = cookies.requested("example:ticket", before, Duration.ofSeconds(10));
+CookieRequest request = asked.requested("example:ticket", Duration.ofSeconds(10));
 String answered = new String(request.getAnswer(), StandardCharsets.UTF_8);
 ```
 
-`stored(key)` waits until Alice holds a cookie under the key and returns a copy of its payload.
-`requested(key, checkpoint)` waits for the first request for the key after the checkpoint. The request
-carries the answer Alice gave, or `null` when she held no cookie under the key, and the checkpoint
-directly after it, for the next wait.
+`stored(key)` waits until Alice holds a cookie under the key and returns a copy of its payload. A watch
+sees only the requests made after it was created: `requested(key)` waits for the next request for the key,
+and the following wait continues after it. The request carries the answer Alice gave, or `null` when she
+held no cookie under the key.
 
-`notRequested(key, checkpoint, duration)` fails as soon as the server asks for the key and returns
-normally once the duration has passed without a request. `expectRequested(key, checkpoint)` describes a
-request without waiting, for [`player.awaitFirst(...)`](../../../../workflows/testing/assertions/index.md#wait-for-whichever-outcome-comes-first).
+`neverRequested(key, duration)` fails as soon as the server has asked for the key since the previous wait
+and returns normally once the duration has passed without a request; it does not move the watch.
+`expectRequested(key)` describes the next request without waiting, for
+[`player.awaitFirst(...)`](../../../../workflows/testing/assertions/index.md#wait-for-whichever-outcome-comes-first).
 
 ## Keys
 
@@ -76,7 +78,7 @@ it:
 - `stored()` returns what she holds now: the current connection's cookies, or the ones her next
   connection starts with.
 
-The history of requests is kept across reconnects, so start a wait from a checkpoint when a key is
+The history of requests is kept across reconnects, so start a watch before the join when a key is
 requested on every join.
 
 ## Inspect failures

@@ -4,14 +4,12 @@ import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.dialogs.model.click.CommandConfirmation;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.Dialog;
-import me.whereareiam.anvil.capability.dialogs.model.dialog.ShownDialog;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 /**
  * Observes the dialogs the server shows a player and presses their buttons as the Minecraft client does. Dialogs
@@ -82,39 +80,18 @@ public interface Dialogs extends PlayerCapability {
 	@NotNull Dialog shown(@NotNull String title, @NotNull Duration timeout);
 
 	/**
-	 * Captures the current end of the history. A wait that starts from a checkpoint ignores every dialog shown
-	 * before it, so a dialog shown again, such as a login form after a wrong password, is not satisfied by its earlier
-	 * occurrence.
+	 * Starts following the dialogs the player is shown from now on. Each watch keeps its own position, so several can
+	 * follow the same player independently.
 	 *
 	 * <pre>{@code
-	 * int before = dialogs.checkpoint();
+	 * DialogWatch shown = dialogs.watch();
 	 * dialogs.press("Log in", Map.of("password", "wrong"));
-	 * ShownDialog again = dialogs.shown(dialog -> dialog.getBody().contains("Invalid password."), before, timeout);
+	 * Dialog again = shown.shown(dialog -> dialog.getBody().contains("Invalid password."), timeout);
 	 * }</pre>
 	 *
-	 * @return number of dialogs shown so far
+	 * @return a watch that starts after the last dialog shown so far
 	 */
-	int checkpoint();
-
-	/**
-	 * Waits for the first dialog after a checkpoint that satisfies a condition.
-	 *
-	 * @param matcher condition on the dialog
-	 * @param after checkpoint; only dialogs shown after it are considered
-	 * @param timeout maximum wait
-	 * @return the matching dialog and the checkpoint directly after it
-	 */
-	@NotNull ShownDialog shown(@NotNull Predicate<Dialog> matcher, int after, @NotNull Duration timeout);
-
-	/**
-	 * Expects that no dialog after a checkpoint satisfies a condition for a duration. It fails as soon as such a
-	 * dialog is shown, naming its title, and returns normally once the duration has passed without one.
-	 *
-	 * @param matcher condition on the dialog
-	 * @param after checkpoint; only dialogs shown after it are considered
-	 * @param duration how long no matching dialog may be shown
-	 */
-	void notShown(@NotNull Predicate<Dialog> matcher, int after, @NotNull Duration duration);
+	@NotNull DialogWatch watch();
 
 	/**
 	 * Waits until no dialog is on screen.

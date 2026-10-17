@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.capability.cookies;
 
-import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.cookies.model.CookieRequest;
@@ -85,58 +84,17 @@ public interface Cookies extends PlayerCapability {
 	@NotNull List<CookieRequest> requests();
 
 	/**
-	 * Captures the current end of the request history. A wait that starts from a checkpoint ignores every request
-	 * made before it, so a key that is requested on every join is not satisfied by an earlier request.
+	 * Starts following the cookie requests the server makes from now on. Each watch keeps its own position, so several
+	 * can follow the same player independently.
 	 *
 	 * <pre>{@code
-	 * int before = cookies.checkpoint();
+	 * CookieWatch asked = cookies.watch();
 	 * session.rejoin();
-	 * CookieRequest request = cookies.requested("example:ticket", before, Duration.ofSeconds(10));
+	 * CookieRequest request = asked.requested("example:ticket", Duration.ofSeconds(10));
 	 * assertNull(request.getAnswer());
 	 * }</pre>
 	 *
-	 * @return number of requests made so far
+	 * @return a watch that starts after the last request made so far
 	 */
-	int checkpoint();
-
-	/**
-	 * Waits for the first request for a key after a checkpoint, using the default timeout.
-	 *
-	 * @param key cookie key
-	 * @param after checkpoint; only requests made after it are considered
-	 * @return the request, with the answer the player gave and the checkpoint directly after it
-	 */
-	default @NotNull CookieRequest requested(@NotNull String key, int after) {
-		return requested(key, after, SimulatedPlayer.DEFAULT_TIMEOUT);
-	}
-
-	/**
-	 * Waits for the first request for a key after a checkpoint.
-	 *
-	 * @param key cookie key
-	 * @param after checkpoint; only requests made after it are considered
-	 * @param timeout maximum wait
-	 * @return the request, with the answer the player gave and the checkpoint directly after it
-	 */
-	@NotNull CookieRequest requested(@NotNull String key, int after, @NotNull Duration timeout);
-
-	/**
-	 * Expects that the server does not ask for a key after a checkpoint for a duration. It fails as soon as such a
-	 * request arrives and returns normally once the duration has passed without one.
-	 *
-	 * @param key cookie key
-	 * @param after checkpoint; only requests made after it are considered
-	 * @param duration how long no such request may arrive
-	 */
-	void notRequested(@NotNull String key, int after, @NotNull Duration duration);
-
-	/**
-	 * Expects a request for a key after a checkpoint, for {@link SimulatedPlayer#awaitFirst}. Once it is met,
-	 * {@link #requested(String, int, Duration)} with the same arguments returns the request at once.
-	 *
-	 * @param key cookie key
-	 * @param after checkpoint; only requests made after it are considered
-	 * @return expectation met once such a request has been made
-	 */
-	@NotNull Expectation expectRequested(@NotNull String key, int after);
+	@NotNull CookieWatch watch();
 }

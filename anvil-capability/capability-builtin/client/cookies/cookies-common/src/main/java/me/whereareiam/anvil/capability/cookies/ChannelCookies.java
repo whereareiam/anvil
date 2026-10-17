@@ -1,6 +1,8 @@
 package me.whereareiam.anvil.capability.cookies;
 
+import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.player.Expectation;
+import me.whereareiam.anvil.capability.api.history.HistoryCursor;
 import me.whereareiam.anvil.capability.cookies.exchange.CookieKey;
 import me.whereareiam.anvil.capability.cookies.exchange.CookieKeys;
 import me.whereareiam.anvil.capability.cookies.exchange.HeldCookies;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Predicate;
 
 /**
  * Cookies capability driven over a player's typed channel: the worker's cookies binding answers the server and
@@ -29,8 +32,7 @@ final class ChannelCookies implements Cookies {
 
 	ChannelCookies(@NotNull CapabilityChannel channel) {
 		this.channel = channel;
-		channel.subscribe(CookiesOperations.REQUESTED, request -> requests.add(
-				new CookieRequest(request.getKey(), request.getAnswer(), requests.size() + 1)));
+		channel.subscribe(CookiesOperations.REQUESTED, request -> requests.add(new CookieRequest(request.getKey(), request.getAnswer())));
 		channel.subscribe(CookiesOperations.HELD, this::hold);
 	}
 
@@ -72,33 +74,8 @@ final class ChannelCookies implements Cookies {
 	}
 
 	@Override
-	public int checkpoint() {
-		return requests.size();
-	}
-
-	@Override
-	public @NotNull CookieRequest requested(@NotNull String key, int after, @NotNull Duration timeout) {
-		String normalized = CookieKeys.normalize(key);
-		channel.await(() -> find(normalized, after) != null, describe(normalized, after), timeout);
-		return Objects.requireNonNull(find(normalized, after));
-	}
-
-	@Override
-	public void notRequested(@NotNull String key, int after, @NotNull Duration duration) {
-		String normalized = CookieKeys.normalize(key);
-		try {
-			channel.await(() -> find(normalized, after) != null, describe(normalized, after), duration);
-		} catch (IllegalStateException quiet) {
-			if (find(normalized, after) == null) return;
-		}
-
-		throw new IllegalStateException("Server asked the player for the cookie '" + normalized + "', which it must not ask for");
-	}
-
-	@Override
-	public @NotNull Expectation expectRequested(@NotNull String key, int after) {
-		String normalized = CookieKeys.normalize(key);
-		return Expectation.of(describe(normalized, after), () -> find(normalized, after) != null);
+	public @NotNull CookieWatch watch() {
+		return new Watch(new HistoryCursor<>(this::requests));
 	}
 
 	/**
@@ -116,16 +93,51 @@ final class ChannelCookies implements Cookies {
 		return current == null ? null : current.getCookies().get(key);
 	}
 
-	private @Nullable CookieRequest find(String key, int after) {
-		List<CookieRequest> snapshot = List.copyOf(requests);
-		for (int index = Math.max(0, after); index < snapshot.size(); index++)
-			if (snapshot.get(index).getKey().equals(key))
-				return snapshot.get(index);
+	/**
+	 * A watch over this player's cookie requests, which waits through the player's channel.
+	 */
+	@RequiredArgsConstructor
+	private final class Watch implements CookieWatch {
+		private final HistoryCursor<CookieRequest> cursor;
 
-		return null;
-	}
+		@Override
+		public @NotNull CookieRequest requested(@NotNull String key, @NotNull Duration timeout) {
+			Predicate<CookieRequest> request = forKey(key);
+			channel.await(() -> cursor.find(request) != null, describe(key), timeout);
+			return Objects.requireNonNull(cursor.take(request));
+		}
 
-	private static String describe(String key, int after) {
-		return "be asked for the cookie '" + key + "' after request " + after;
+		@Override
+		public void neverRequested(@NotNull String key, @NotNull Duration duration) {
+			Predicate<CookieRequest> request = forKey(key);
+			try {
+				channel.await(() -> cursor.find(request) != null, describe(key), duration);
+			} catch (IllegalStateException quiet) {
+				if (cursor.find(request) == null) return;
+			}
+
+			throw new IllegalStateException("Server asked the player for the cookie '" + CookieKeys.normalize(key)
+					+ "', which it must not ask for");
+		}
+
+		@Override
+		public @NotNull Expectation expectRequested(@NotNull String key) {
+			Predicate<CookieRequest> request = forKey(key);
+			return Expectation.of(describe(key), () -> cursor.find(request) != null);
+		}
+
+		@Override
+		public @NotNull List<CookieRequest> unread() {
+			return cursor.unread();
+		}
+
+		private static Predicate<CookieRequest> forKey(String key) {
+			String normalized = CookieKeys.normalize(key);
+			return request -> request.getKey().equals(normalized);
+		}
+
+		private static String describe(String key) {
+			return "be asked for the cookie '" + CookieKeys.normalize(key) + "'";
+		}
 	}
 }

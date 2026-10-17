@@ -1,15 +1,13 @@
 package me.whereareiam.anvil.api.process;
 
-import me.whereareiam.anvil.api.model.process.console.ConsoleOutput;
 import org.jetbrains.annotations.NotNull;
 
-import java.time.Duration;
 import java.util.List;
 
 /**
  * Sends commands to one running process and observes its captured console output.
  *
- * <p>Use a checkpoint before an operation when the assertion must ignore earlier output.</p>
+ * <p>Start a {@link ConsoleWatch} before an operation when the assertion must ignore earlier output.</p>
  */
 public interface ProcessConsole {
 	/**
@@ -28,29 +26,17 @@ public interface ProcessConsole {
 	@NotNull List<String> tail(int maximumLines);
 
 	/**
-	 * Reads captured lines after a checkpoint without waiting, reporting history eviction.
-	 * Checkpoints belong to one process generation and must not exceed its current position.
+	 * Starts following the lines the process prints from now on. Each watch keeps its own position.
 	 *
-	 * @param after last consumed checkpoint, or zero to read available history
-	 * @param maximumLines positive read limit
-	 * @return immutable output batch and its next checkpoint
+	 * @return a watch that starts after the last line printed so far
 	 */
-	@NotNull ConsoleOutput read(long after, int maximumLines);
+	@NotNull ConsoleWatch watch();
 
 	/**
-	 * Captures the current output position before an operation.
+	 * Starts following the process's output from the oldest line the bounded history still keeps, for example to
+	 * replay everything a process printed.
 	 *
-	 * @return process-local checkpoint
+	 * @return a watch that starts before the oldest kept line
 	 */
-	long checkpoint();
-
-	/**
-	 * Waits for a newly captured line containing text after a checkpoint.
-	 *
-	 * @param text text the line must contain
-	 * @param after checkpoint captured before the operation
-	 * @param timeout maximum wait
-	 * @return matching line with its original formatting
-	 */
-	@NotNull String await(@NotNull String text, long after, @NotNull Duration timeout);
+	@NotNull ConsoleWatch watchFromStart();
 }

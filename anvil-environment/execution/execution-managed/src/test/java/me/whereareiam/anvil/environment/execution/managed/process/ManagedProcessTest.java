@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.environment.execution.managed.process;
 
 import me.whereareiam.anvil.api.exception.ProcessException;
+import me.whereareiam.anvil.api.process.ConsoleWatch;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.environment.execution.local.process.LocalProcess;
 import me.whereareiam.anvil.environment.execution.managed.process.type.ManagedServer;
@@ -213,18 +214,16 @@ class ManagedProcessTest {
 	}
 
 	@Test
-	void consoleCheckpointExcludesOldLinesAndWaitsForNewOutput() {
+	void consoleWatchExcludesOldLinesAndWaitsForNewOutput() {
 		ManagedServer process = echoProcess("cursor");
 
 		try {
-			assertEquals("READY", process.console().await("READY", 0, Duration.ofSeconds(1)));
-			long checkpoint = process.console().checkpoint();
-			assertThrows(ProcessException.class, () -> process.console().await("READY", checkpoint, Duration.ofMillis(50)));
+			assertEquals("READY", process.console().watchFromStart().printed("READY", Duration.ofSeconds(1)));
+			ConsoleWatch output = process.console().watch();
+			assertThrows(ProcessException.class, () -> output.printed("READY", Duration.ofMillis(50)));
 			process.console().sendCommand("READY");
-			assertEquals("READY", process.console().await("READY", checkpoint, Duration.ofSeconds(1)));
-			assertTrue(process.console().checkpoint() > checkpoint);
-			assertThrows(IllegalArgumentException.class,
-						() -> process.console().await("x", process.console().checkpoint() + 1, Duration.ofSeconds(1)));
+			assertEquals("READY", output.printed("READY", Duration.ofSeconds(1)));
+			assertThrows(IllegalArgumentException.class, () -> output.printed("x", Duration.ZERO));
 		} finally {
 			process.stop(Duration.ofSeconds(1));
 		}
@@ -237,7 +236,7 @@ class ManagedProcessTest {
 			Thread.currentThread().interrupt();
 			assertThrows(
 				ProcessException.class,
-				() -> process.console().await("missing", process.console().checkpoint(), Duration.ofSeconds(1)));
+				() -> process.console().watch().printed("missing", Duration.ofSeconds(1)));
 			assertTrue(Thread.currentThread().isInterrupted());
 		} finally {
 			Thread.interrupted();
@@ -246,7 +245,7 @@ class ManagedProcessTest {
 
 		assertTrue(assertThrows(
 					ProcessException.class,
-					() -> process.console().await("missing", process.console().checkpoint(), Duration.ofSeconds(10)))
+					() -> process.console().watch().printed("missing", Duration.ofSeconds(10)))
 					.getMessage()
 					.contains("no further console output"));
 	}
@@ -260,9 +259,10 @@ class ManagedProcessTest {
 					Map.of(), Pattern.compile("READY"), Duration.ofSeconds(3));
 
 		try {
+			ConsoleWatch output = process.console().watch();
 			process.console().sendCommand("flood");
 			assertTrue(
-				assertThrows(ProcessException.class, () -> process.console().await("END", 0, Duration.ofSeconds(3)))
+				assertThrows(ProcessException.class, () -> output.printed("END", Duration.ofSeconds(3)))
 					.getMessage()
 					.contains("evicted"));
 		} finally {

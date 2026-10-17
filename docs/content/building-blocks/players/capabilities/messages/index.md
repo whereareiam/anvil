@@ -60,41 +60,44 @@ would add.
 message received before the current operation can satisfy the wait. The bundled implementation keeps
 that history across reconnects of the same player.
 
-When an action repeats, wait from a [checkpoint](#wait-from-a-checkpoint) so that an earlier response
+When an action repeats, [watch the messages](#watch-what-arrives-next) so that an earlier response
 cannot satisfy the wait. For console assertions that must ignore earlier output, use a
-[console checkpoint](../../../../workflows/testing/assertions/index.md).
+[console watch](../../../../workflows/testing/assertions/index.md).
 
-## Wait from a checkpoint
+## Watch what arrives next
 
-When a text repeats, such as a prompt shown again after a reconnect, start the wait from a checkpoint.
-A checkpoint is a position in the history; a wait that starts from it ignores every earlier message.
+When a text repeats, such as a prompt shown again after a reconnect, start a watch before the action. A watch
+sees only the messages received after it was created, and each wait continues after the message the previous
+one found:
 
 ```java
-int before = messages.checkpoint();
+MessageWatch chat = messages.watch();
 messages.command("login secret");
-ReceivedMessage welcome = messages.received(text -> text.contains("Welcome back"), before, Duration.ofSeconds(10));
+String welcome = chat.received("Welcome back", Duration.ofSeconds(10));
 ```
 
-The condition is any predicate on the message's plain text, so one wait can require several texts in
-one message or accept alternatives. The result carries the message and the checkpoint directly after
-it, for the next wait. Import `me.whereareiam.anvil.capability.messages.model.ReceivedMessage`.
+`received` also takes any predicate on the message's plain text, so one wait can require several texts in one
+message or accept alternatives: `chat.received(text -> text.contains("Welcome") && text.contains("Alice"), timeout)`.
+Import `me.whereareiam.anvil.capability.messages.MessageWatch`. `unread()` lists the messages received since
+the previous wait without moving the watch. Several watches on one player are independent.
 
 ## Expect that a message does not arrive
 
-`notReceived(...)` watches for a duration and fails as soon as a matching message arrives, naming it:
+`neverReceived(...)` watches for a duration and fails as soon as a matching message has arrived since the
+previous wait, naming it:
 
 ```java
-messages.notReceived(text -> text.contains("Invalid password"), welcome.getCheckpoint(), Duration.ofSeconds(2));
+chat.neverReceived("Invalid password", Duration.ofSeconds(2));
 ```
 
-It returns normally when the duration passes without such a message. Choose the shortest duration in
-which the server would have sent the message.
+It returns normally when the duration passes without such a message, and it does not move the watch. Choose the
+shortest duration in which the server would have sent the message.
 
 ## Expect a message among other outcomes
 
-`expectReceived(matcher, checkpoint)` describes a matching message after a checkpoint without waiting.
-Pass it to `player.awaitFirst(...)` together with other expectations when the message is only one correct
-outcome; see [waiting for whichever outcome comes first](../../../../workflows/testing/assertions/index.md#wait-for-whichever-outcome-comes-first).
+`chat.expectReceived(matcher)` describes the next matching message without waiting. Pass it to
+`player.awaitFirst(...)` together with other expectations when the message is only one correct outcome; see
+[waiting for whichever outcome comes first](../../../../workflows/testing/assertions/index.md#wait-for-whichever-outcome-comes-first).
 
 ## Inspect failures
 

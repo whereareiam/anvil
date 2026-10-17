@@ -3,6 +3,7 @@ package me.whereareiam.anvil.environment.execution.managed.process;
 import me.whereareiam.anvil.api.exception.ProcessException;
 import me.whereareiam.anvil.api.model.process.console.ConsoleLine;
 import me.whereareiam.anvil.api.model.process.console.ConsoleOutput;
+import me.whereareiam.anvil.api.process.ConsoleWatch;
 import me.whereareiam.anvil.api.process.ProcessConsole;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import org.jetbrains.annotations.NotNull;
@@ -22,6 +23,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 /**
@@ -141,65 +143,28 @@ final class ManagedProcessConsole implements ProcessConsole {
 	}
 
 	@Override
-	public @NotNull ConsoleOutput read(long after, int maximumLines) {
-		if (maximumLines <= 0) throw new IllegalArgumentException("maximumLines must be positive");
-
+	public @NotNull ConsoleWatch watch() {
 		synchronized (lines) {
-			validateCheckpoint(after);
-			boolean truncated = !lines.isEmpty() && after < lines.getFirst().sequence() - 1;
-			List<ConsoleLine> batch = lines.stream()
-					.filter(line -> line.sequence() > after)
-					.limit(maximumLines)
-					.map(line -> new ConsoleLine(line.sequence(), line.text()))
-					.toList();
-
-			return new ConsoleOutput(batch.isEmpty() ? after : batch.getLast().getSequence(), truncated, closed, batch);
+			return new Watch(sequence);
 		}
 	}
 
 	@Override
-	public long checkpoint() {
+	public @NotNull ConsoleWatch watchFromStart() {
 		synchronized (lines) {
-			return sequence;
+			return new Watch(lines.isEmpty() ? sequence : lines.getFirst().sequence() - 1);
 		}
 	}
 
-	@Override
-	public @NotNull String await(@NotNull String text, long after, @NotNull Duration timeout) {
-		if (text.isEmpty())
-			throw new IllegalArgumentException("text must not be empty");
-		if (timeout.isNegative() || timeout.isZero())
-			throw new IllegalArgumentException("timeout must be positive");
+	private @Nullable Line next(long after, Predicate<String> matcher) {
+		for (Line line : lines)
+			if (line.sequence() > after && matcher.test(line.text())) return line;
 
-		long deadline = System.nanoTime() + timeout.toNanos();
-		synchronized (lines) {
-			validateCheckpoint(after);
-
-			while (true) {
-				if (!lines.isEmpty() && after < lines.getFirst().sequence() - 1)
-					throw failure("Console history after checkpoint " + after + " was evicted");
-
-				for (Line line : lines) {
-					if (line.sequence() > after && line.text().contains(text))
-						return line.text();
-				}
-
-				if (closed)
-					throw failure("Process has no further console output while waiting for '" + text + "'");
-
-				long remaining = deadline - System.nanoTime();
-				if (remaining <= 0)
-					throw failure("Process did not output '" + text + "' after checkpoint " + after
-							+ " within " + timeout);
-
-				waitForOutput(remaining);
-			}
-		}
+		return null;
 	}
 
-	private void validateCheckpoint(long checkpoint) {
-		if (checkpoint < 0 || checkpoint > sequence)
-			throw new IllegalArgumentException("Checkpoint is outside this process's console history");
+	private boolean evicted(long after) {
+		return !lines.isEmpty() && after < lines.getFirst().sequence() - 1;
 	}
 
 	private void waitForOutput(long remaining) {
@@ -259,6 +224,80 @@ final class ManagedProcessConsole implements ProcessConsole {
 		} finally {
 			closeOutput();
 			onOutputEnded.run();
+		}
+	}
+
+	/**
+	 * A position in this console's history that each wait or read moves forward.
+	 */
+	private final class Watch implements ConsoleWatch {
+		private long position;
+
+		private Watch(long position) {
+			this.position = position;
+		}
+
+		@Override
+		public @NotNull String printed(@NotNull Predicate<String> matcher, @NotNull Duration timeout) {
+			if (timeout.isNegative() || timeout.isZero())
+				throw new IllegalArgumentException("timeout must be positive");
+
+			long deadline = System.nanoTime() + timeout.toNanos();
+			synchronized (lines) {
+				while (true) {
+					if (evicted(position))
+						throw failure("Console history after line " + position + " was evicted");
+
+					Line line = next(position, matcher);
+					if (line != null) {
+						position = line.sequence();
+						return line.text();
+					}
+
+					if (closed)
+						throw failure("Process has no further console output while waiting for a matching line");
+
+					long remaining = deadline - System.nanoTime();
+					if (remaining <= 0)
+						throw failure("Process did not output a matching line within " + timeout);
+
+					waitForOutput(remaining);
+				}
+			}
+		}
+
+		@Override
+		public void neverPrinted(@NotNull Predicate<String> matcher, @NotNull Duration duration) {
+			long deadline = System.nanoTime() + duration.toNanos();
+			synchronized (lines) {
+				while (true) {
+					Line line = next(position, matcher);
+					if (line != null)
+						throw failure("Process output a line it must not output: " + line.text());
+
+					long remaining = deadline - System.nanoTime();
+					if (closed || remaining <= 0) return;
+
+					waitForOutput(remaining);
+				}
+			}
+		}
+
+		@Override
+		public @NotNull ConsoleOutput read(int maximumLines) {
+			if (maximumLines <= 0) throw new IllegalArgumentException("maximumLines must be positive");
+
+			synchronized (lines) {
+				boolean truncated = evicted(position);
+				List<ConsoleLine> batch = lines.stream()
+						.filter(line -> line.sequence() > position)
+						.limit(maximumLines)
+						.map(line -> new ConsoleLine(line.sequence(), line.text()))
+						.toList();
+				if (!batch.isEmpty()) position = batch.getLast().getSequence();
+
+				return new ConsoleOutput(truncated, closed, batch);
+			}
 		}
 	}
 

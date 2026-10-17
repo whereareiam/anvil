@@ -35,7 +35,7 @@ class ChannelCookiesTest {
 	private static final Duration WAIT = Duration.ofSeconds(1);
 
 	@Test
-	void keepsEveryRequestInOrderWithItsAnswerAndCheckpoint() {
+	void keepsEveryRequestInOrderWithItsAnswer() {
 		RecordingChannel channel = new RecordingChannel();
 		Cookies cookies = new ChannelCookies(channel);
 
@@ -43,39 +43,42 @@ class ChannelCookiesTest {
 		channel.publish(CookiesOperations.REQUESTED, new AnsweredRequest("example:ticket", null));
 
 		List<CookieRequest> requests = cookies.requests();
-		assertEquals(2, cookies.checkpoint());
+		assertEquals(2, requests.size());
 		assertArrayEquals(TICKET, requests.get(0).getAnswer());
-		assertEquals(1, requests.get(0).getCheckpoint());
 		assertNull(requests.get(1).getAnswer());
-		assertEquals(2, requests.get(1).getCheckpoint());
 	}
 
 	@Test
-	void waitsOnlyForRequestsAfterACheckpoint() {
+	void watchesOnlyRequestsMadeSinceItAndContinuesAfterEachMatch() {
 		RecordingChannel channel = new RecordingChannel();
 		Cookies cookies = new ChannelCookies(channel);
 		channel.publish(CookiesOperations.REQUESTED, new AnsweredRequest("example:ticket", TICKET));
-		int before = cookies.checkpoint();
+		CookieWatch asked = cookies.watch();
 
-		assertThrows(IllegalStateException.class, () -> cookies.requested("example:ticket", before, WAIT));
-		assertFalse(cookies.expectRequested("example:ticket", before).met());
-		cookies.notRequested("example:ticket", before, WAIT);
+		assertThrows(IllegalStateException.class, () -> asked.requested("example:ticket", WAIT));
+		assertFalse(asked.expectRequested("example:ticket").met());
+		asked.neverRequested("example:ticket", WAIT);
 
 		channel.publish(CookiesOperations.REQUESTED, new AnsweredRequest("example:ticket", null));
 
-		assertNull(cookies.requested("example:ticket", before, WAIT).getAnswer());
-		assertTrue(cookies.expectRequested("example:ticket", before).met());
-		assertThrows(IllegalStateException.class, () -> cookies.notRequested("example:ticket", before, WAIT));
+		assertTrue(asked.expectRequested("example:ticket").met());
+		assertThrows(IllegalStateException.class, () -> asked.neverRequested("example:ticket", WAIT));
+		assertNull(asked.requested("example:ticket", WAIT).getAnswer());
+		assertEquals(List.of(), asked.unread());
+		assertThrows(IllegalStateException.class, () -> asked.requested("example:ticket", WAIT));
+		asked.neverRequested("example:ticket", WAIT);
 	}
 
 	@Test
 	void readsAKeyWithoutANamespaceAsAMinecraftKey() {
 		RecordingChannel channel = new RecordingChannel();
 		Cookies cookies = new ChannelCookies(channel);
-		channel.publish(CookiesOperations.REQUESTED, new AnsweredRequest("minecraft:ticket", TICKET));
 		channel.publish(CookiesOperations.HELD, new HeldCookies(1, Map.of("minecraft:ticket", TICKET)));
 
-		assertArrayEquals(TICKET, cookies.requested("ticket", 0, WAIT).getAnswer());
+		CookieWatch asked = cookies.watch();
+		channel.publish(CookiesOperations.REQUESTED, new AnsweredRequest("minecraft:ticket", TICKET));
+
+		assertArrayEquals(TICKET, asked.requested("ticket", WAIT).getAnswer());
 		assertArrayEquals(TICKET, cookies.stored("ticket", WAIT));
 	}
 

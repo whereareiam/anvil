@@ -1,16 +1,17 @@
 package me.whereareiam.anvil.capability.messages;
 
+import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.model.player.Expectation;
+import me.whereareiam.anvil.capability.api.history.HistoryCursor;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
-import me.whereareiam.anvil.capability.messages.model.ReceivedMessage;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Predicate;
 
 /**
  * Messages capability driven over a player's typed channel: chat and commands go to the worker's messages binding,
@@ -53,34 +54,43 @@ final class ChannelMessages implements Messages {
 	}
 
 	@Override
-	public int checkpoint() {
-		return history.size();
+	public @NotNull MessageWatch watch() {
+		return new Watch(new HistoryCursor<>(this::history));
 	}
 
-	@Override
-	public @NotNull ReceivedMessage received(@NotNull Predicate<String> matcher, int after, @NotNull Duration timeout) {
-		channel.await(() -> find(matcher, after) != null, "receive a matching message after message " + after, timeout);
-		return Objects.requireNonNull(find(matcher, after));
-	}
+	/**
+	 * A watch over this player's history, which waits through the player's channel.
+	 */
+	@RequiredArgsConstructor
+	private final class Watch implements MessageWatch {
+		private final HistoryCursor<String> cursor;
 
-	@Override
-	public void notReceived(@NotNull Predicate<String> matcher, int after, @NotNull Duration duration) {
-		try {
-			channel.await(() -> find(matcher, after) != null, "receive a matching message after message " + after, duration);
-		} catch (IllegalStateException quiet) {
-			if (find(matcher, after) == null) return;
+		@Override
+		public @NotNull String received(@NotNull Predicate<String> matcher, @NotNull Duration timeout) {
+			channel.await(() -> cursor.find(matcher) != null, "receive a matching message", timeout);
+			return Objects.requireNonNull(cursor.take(matcher));
 		}
 
-		throw new IllegalStateException("Player received a message it must not receive: "
-				+ Objects.requireNonNull(find(matcher, after)).getText());
-	}
+		@Override
+		public void neverReceived(@NotNull Predicate<String> matcher, @NotNull Duration duration) {
+			try {
+				channel.await(() -> cursor.find(matcher) != null, "receive a matching message", duration);
+			} catch (IllegalStateException quiet) {
+				if (cursor.find(matcher) == null) return;
+			}
 
-	private @Nullable ReceivedMessage find(Predicate<String> matcher, int after) {
-		List<String> snapshot = List.copyOf(history);
-		for (int index = Math.max(0, after); index < snapshot.size(); index++)
-			if (matcher.test(snapshot.get(index)))
-				return new ReceivedMessage(snapshot.get(index), index + 1);
+			throw new IllegalStateException("Player received a message it must not receive: "
+					+ Objects.requireNonNull(cursor.find(matcher)));
+		}
 
-		return null;
+		@Override
+		public @NotNull Expectation expectReceived(@NotNull Predicate<String> matcher) {
+			return Expectation.of("receive a matching message", () -> cursor.find(matcher) != null);
+		}
+
+		@Override
+		public @NotNull List<String> unread() {
+			return cursor.unread();
+		}
 	}
 }

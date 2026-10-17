@@ -17,8 +17,4 @@ public class CookieRequest {
 	 * Payload the player answered with, or {@code null} when it held no cookie under the key.
 	 */
 	byte @Nullable [] answer;
-	/**
-	 * Checkpoint directly after this request; pass it to the next wait to look only at later requests.
-	 */
-	int checkpoint;
 }

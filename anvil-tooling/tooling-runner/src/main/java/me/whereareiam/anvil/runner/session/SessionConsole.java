@@ -3,6 +3,7 @@ package me.whereareiam.anvil.runner.session;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.runner.scenario.DisplayNameResolver;
 import me.whereareiam.anvil.api.model.process.console.ConsoleOutput;
+import me.whereareiam.anvil.api.process.ConsoleWatch;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.tooling.api.model.LogEvent;
 import me.whereareiam.anvil.tooling.api.model.process.ProcessSnapshot;
@@ -81,10 +82,10 @@ public final class SessionConsole {
 		List<LogEvent> events = new ArrayList<>(pendingLogs);
 		pendingLogs.clear();
 		Stream.concat(retiredConsoles.stream(), consoles.values().stream()).forEach(cursor -> {
-			ConsoleOutput output = cursor.process.console().read(cursor.checkpoint, 2000);
-			if (output.isTruncated()) events.add(cursor.event(cursor.checkpoint, "[Anvil] Earlier console output was evicted from bounded history."));
+			ConsoleOutput output = cursor.output.read(2000);
+			if (output.isTruncated()) events.add(cursor.event(cursor.sequence, "[Anvil] Earlier console output was evicted from bounded history."));
 			output.getLines().forEach(line -> events.add(cursor.event(line.getSequence(), line.getText())));
-			cursor.checkpoint = output.getNextCheckpoint();
+			if (!output.getLines().isEmpty()) cursor.sequence = output.getLines().getLast().getSequence();
 			cursor.drained = output.isClosed() && output.getLines().size() < 2000;
 		});
 		retiredConsoles.removeIf(cursor -> cursor.drained);
@@ -105,9 +106,11 @@ public final class SessionConsole {
 		private final RunningProcess process;
 		private final UUID executionId;
 		private boolean drained;
-		private long checkpoint;
+		private final ConsoleWatch output;
+		private long sequence;
 		private ConsoleCursor(String sessionId, RunningProcess process, UUID executionId) {
 			this.sessionId = sessionId; this.process = process; this.executionId = executionId;
+			this.output = process.console().watchFromStart();
 		}
 		private LogEvent event(long sequence, String text) { return LogEvent.builder().sessionId(sessionId).process(process.name())
 				.executionId(executionId).sequence(sequence).text(text).build(); }

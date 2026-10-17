@@ -6,8 +6,10 @@ import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.capability.commands.Commands;
 import me.whereareiam.anvil.capability.commands.type.CommandCheck;
+import me.whereareiam.anvil.capability.cookies.CookieWatch;
 import me.whereareiam.anvil.capability.cookies.Cookies;
 import me.whereareiam.anvil.capability.cookies.model.CookieRequest;
+import me.whereareiam.anvil.capability.dialogs.DialogWatch;
 import me.whereareiam.anvil.capability.dialogs.Dialogs;
 import me.whereareiam.anvil.capability.dialogs.model.click.CommandConfirmation;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.Dialog;
@@ -19,6 +21,7 @@ import me.whereareiam.anvil.capability.interaction.type.EntityInteraction;
 import me.whereareiam.anvil.capability.interaction.type.Hand;
 import me.whereareiam.anvil.capability.inventory.Inventory;
 import me.whereareiam.anvil.capability.inventory.type.InventoryClick;
+import me.whereareiam.anvil.capability.messages.MessageWatch;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.movement.Movement;
 import me.whereareiam.anvil.capability.movement.model.Position;
@@ -188,14 +191,14 @@ class PlayerCapabilitiesSystemTest {
 		if (!supported) return;
 
 		Cookies cookies = alice.capability(Cookies.class);
-		int before = cookies.checkpoint();
+		CookieWatch asked = cookies.watch();
 		cookie(anvil, "store anvil:ticket day-pass");
 		messages.received("anvil:cookie-stored:anvil:ticket", Duration.ofSeconds(10));
 		assertEquals("day-pass", new String(cookies.stored("anvil:ticket", Duration.ofSeconds(10)), StandardCharsets.UTF_8));
 
 		cookie(anvil, "request anvil:ticket");
 		messages.received("anvil:cookie:anvil:ticket:day-pass", Duration.ofSeconds(10));
-		CookieRequest request = cookies.requested("anvil:ticket", before, Duration.ofSeconds(10));
+		CookieRequest request = asked.requested("anvil:ticket", Duration.ofSeconds(10));
 		assertEquals("day-pass", new String(request.getAnswer(), StandardCharsets.UTF_8));
 
 		cookies.store("anvil:gift", "ribbon".getBytes(StandardCharsets.UTF_8));
@@ -204,7 +207,7 @@ class PlayerCapabilitiesSystemTest {
 		cookies.remove("anvil:gift");
 		cookie(anvil, "request anvil:gift");
 		messages.received("anvil:cookie:anvil:gift:none", Duration.ofSeconds(10));
-		cookies.notRequested("anvil:unasked", request.getCheckpoint(), Duration.ofSeconds(1));
+		asked.neverRequested("anvil:unasked", Duration.ofSeconds(1));
 	}
 
 	/**
@@ -261,9 +264,9 @@ class PlayerCapabilitiesSystemTest {
 
 		dialogs.press("Signed");
 		assertEquals(CommandCheck.SIGNATURE_REQUIRED, dialogs.confirmation().orElseThrow().getReason());
-		int beforeSigned = messages.checkpoint();
+		MessageWatch afterSigned = messages.watch();
 		dialogs.confirm();
-		messages.notReceived(text -> text.contains("anvil:signed"), beforeSigned, Duration.ofSeconds(2));
+		afterSigned.neverReceived("anvil:signed", Duration.ofSeconds(2));
 
 		dialogs.press("Seed");
 		assertEquals(CommandCheck.PERMISSIONS_REQUIRED, dialogs.confirmation().orElseThrow().getReason());
@@ -275,9 +278,9 @@ class PlayerCapabilitiesSystemTest {
 		dialogs.close();
 		dialogs.closed(Duration.ofSeconds(10));
 
-		int beforeAgain = dialogs.checkpoint();
+		DialogWatch again = dialogs.watch();
 		messages.command("anvil-fixture dialog");
-		dialogs.shown(shown -> shown.getTitle().equals("anvil:dialog"), beforeAgain, Duration.ofSeconds(10));
+		again.shown(shown -> shown.getTitle().equals("anvil:dialog"), Duration.ofSeconds(10));
 		dialogs.press("Clear");
 		dialogs.closed(Duration.ofSeconds(10));
 	}
