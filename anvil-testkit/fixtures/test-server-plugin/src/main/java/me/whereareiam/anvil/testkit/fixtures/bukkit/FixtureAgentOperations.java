@@ -2,9 +2,10 @@ package me.whereareiam.anvil.testkit.fixtures.bukkit;
 
 import me.whereareiam.anvil.agent.api.model.AgentInfo;
 import me.whereareiam.anvil.agent.api.model.AgentOperation;
+import me.whereareiam.anvil.agent.api.type.AgentRole;
+import me.whereareiam.anvil.agent.server.api.PlatformAgent;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationRegistry;
-import me.whereareiam.anvil.agent.api.type.AgentRole;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.jetbrains.annotations.NotNull;
@@ -24,9 +25,9 @@ public final class FixtureAgentOperations implements AgentOperationProvider {
 	}
 
 	@Override
-	public void install(@NotNull AgentOperationRegistry registry) {
+	public void install(@NotNull PlatformAgent platform, @NotNull AgentOperationRegistry registry) {
 		registry.register(AgentOperation.<String, String>builder().name("anvil.testing.fixture.echo")
-				.requestType(String.class).responseType(String.class).build(), (platform, request) -> platform.call(() -> {
+				.requestType(String.class).responseType(String.class).build(), (agent, request) -> agent.call(() -> {
 			Server server = platform.requireService(Server.class);
 			if (!Bukkit.isPrimaryThread() || !server.getPluginManager().isPluginEnabled("AnvilSystemFixture"))
 				throw new IllegalStateException("External operation did not run with the expected platform services");

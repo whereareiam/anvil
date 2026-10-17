@@ -1,5 +1,6 @@
 package external.fixture.agent;
 
+import me.whereareiam.anvil.agent.server.api.PlatformAgent;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationRegistry;
 import org.jetbrains.annotations.NotNull;
@@ -16,13 +17,13 @@ public final class FixtureAgentOperations implements AgentOperationProvider {
 	}
 
 	@Override
-	public void install(@NotNull AgentOperationRegistry registry) {
+	public void install(@NotNull PlatformAgent platform, @NotNull AgentOperationRegistry registry) {
 		var prefix = new AtomicReference<>("fixture");
-		registry.register(FixtureOperations.ECHO, (platform, request) -> platform.call(() -> prefix.get() + ":" + request));
-		registry.register(FixtureOperations.SET_PREFIX, (platform, request) -> {
+		registry.register(FixtureOperations.ECHO, (agent, request) -> agent.call(() -> prefix.get() + ":" + request));
+		registry.register(FixtureOperations.SET_PREFIX, (agent, request) -> {
 			prefix.set(request);
 			return null;
 		});
-		registry.register(FixtureOperations.GET_PREFIX, (platform, request) -> prefix.get());
+		registry.register(FixtureOperations.GET_PREFIX, (agent, request) -> prefix.get());
 	}
 }

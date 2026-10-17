@@ -21,6 +21,8 @@ import java.util.Map;
  * Resolves scenario artifact references and assembles the platform-agent workspace asset.
  */
 public final class ScenarioArtifactResolver {
+	private static final Path EXTENSIONS = Path.of("plugins", "anvil-agent-extensions");
+
 	private final Map<String, Path> artifacts;
 	private final PlatformAgentSource agents;
 
@@ -48,22 +50,33 @@ public final class ScenarioArtifactResolver {
 	}
 
 	/**
-	 * Adds the provider's agent to an already resolved workspace plan.
+	 * Adds the provider's agent to an already resolved workspace plan, together with the agent extensions that the
+	 * processes of the platform install into {@code plugins/anvil-agent-extensions}, where the agent loads them.
 	 */
 	public @NotNull WorkspacePlan installAgent(
 			@NotNull WorkspacePlan workspace,
+			@NotNull String platformId,
 			@Nullable PlatformAgentDescriptor agent
 	) {
 		if (agent == null)
 			return workspace;
-		return workspace.toBuilder()
+
+		WorkspacePlan.WorkspacePlanBuilder installed = workspace.toBuilder()
 				.asset(WorkspaceAsset.builder()
 						.group("anvil-platform-agent")
 						.source(AssetSource.path(agents.locate(agent)))
 						.target(agent.getTarget())
 						.mode(AssetInstallMode.ALWAYS)
-						.build())
-				.build();
+						.build());
+		for (Path extension : agents.extensions(platformId))
+			installed.asset(WorkspaceAsset.builder()
+					.group("anvil-agent-extensions")
+					.source(AssetSource.path(extension))
+					.target(EXTENSIONS.resolve(extension.getFileName().toString()))
+					.mode(AssetInstallMode.ALWAYS)
+					.build());
+
+		return installed.build();
 	}
 
 	private WorkspacePlan resolve(WorkspacePlan workspace) {

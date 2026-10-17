@@ -5,6 +5,7 @@ import me.whereareiam.anvil.agent.client.api.AgentArtifactLocator;
 import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.scenario.ScenarioFactory;
+import me.whereareiam.anvil.capability.AgentExtensions;
 import me.whereareiam.anvil.engine.process.RetainedProcesses;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
 import me.whereareiam.anvil.environment.execution.managed.ManagedProcessService;
@@ -13,6 +14,7 @@ import me.whereareiam.anvil.launcher.adapter.execution.CacheImageLocks;
 import me.whereareiam.anvil.launcher.adapter.execution.ExecutionPlanMapper;
 import me.whereareiam.anvil.launcher.adapter.execution.JavaExecutionRuntime;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ArtifactPlatformSource;
+import me.whereareiam.anvil.launcher.adapter.provisioning.ClasspathPlatformAgentSource;
 import me.whereareiam.anvil.platform.planning.DefaultPlatformPlanner;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.protocol.player.DefaultPlayerService;
@@ -64,7 +66,7 @@ public final class LauncherAssembly implements AutoCloseable {
 			var locator = discovery.required(AgentArtifactLocator.class, "agent artifact locator");
 			var platforms = new DefaultPlatformPlanner(options, discovery.platforms(),
 					new ArtifactPlatformSource(provisioning.getArtifacts()),
-					descriptor -> locator.locate(descriptor.getEntrypointClassName()));
+					new ClasspathPlatformAgentSource(locator, AgentExtensions.discover()));
 			var execution = ProcessLauncher.builder()
 					.options(options)
 					.processes(new ManagedProcessService(discovery.executions(executions)))

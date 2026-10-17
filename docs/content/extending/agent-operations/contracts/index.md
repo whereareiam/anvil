@@ -53,6 +53,7 @@ Place this in `echo-agent/src/main/java/com/example/echo/agent/EchoAgentOperatio
 package com.example.echo.agent;
 
 import com.example.echo.operation.EchoOperations;
+import me.whereareiam.anvil.agent.server.api.PlatformAgent;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationRegistry;
 import org.jetbrains.annotations.NotNull;
@@ -67,9 +68,9 @@ public final class EchoAgentOperations implements AgentOperationProvider {
 	}
 
 	@Override
-	public void install(@NotNull AgentOperationRegistry registry) {
+	public void install(@NotNull PlatformAgent platform, @NotNull AgentOperationRegistry registry) {
 		registry.register(EchoOperations.ECHO,
-				(platform, request) -> platform.call(() -> "echo:" + request));
+				(agent, request) -> agent.call(() -> "echo:" + request));
 	}
 }
 ```
@@ -88,8 +89,10 @@ available alongside your extension.
 ## Call native APIs
 
 A native handler can resolve a service with `platform.requireService(...)`. For example, the Bukkit
-agent exposes `org.bukkit.Server`. Execute native work through `platform.call(...)` and obey any
-additional threading rules of the API you invoke. Compile platform SDKs as `compileOnly` dependencies.
+agent exposes `org.bukkit.Server` and itself as the `org.bukkit.plugin.Plugin`, and the Velocity agent the
+`ProxyServer` and itself as the plugin instance. `install` receives the same platform, so a provider can
+resolve them once and register a native listener there, before the platform's players join. Execute native
+work through `platform.call(...)` and obey any additional threading rules of the API you invoke. Compile platform SDKs as `compileOnly` dependencies.
 
 The handler runs in the server's or proxy's own JVM. `agent-api` and `agent-server-api` target Java
 11, the Java of the oldest supported servers, Paper and Spigot `1.16.5`. Compile `echo-operations` and

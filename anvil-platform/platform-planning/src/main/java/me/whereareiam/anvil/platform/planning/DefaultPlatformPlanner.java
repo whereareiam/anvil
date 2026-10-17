@@ -76,7 +76,7 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 					.proxy(proxy)
 					.publishGame(proxy || resolved.getNetworkPolicy().getBackendNetworkExposure() != NetworkExposure.PRIVATE)
 					.dependencies(proxy ? servers : List.of())
-					.workspace(artifacts.installAgent(declaration.getWorkspace(), agent))
+					.workspace(artifacts.installAgent(declaration.getWorkspace(), declaration.getPlatform(), agent))
 					.forwarding(forwarding.get(name))
 					.agent(agent != null)
 					.readinessPattern(provider.readinessPattern())
