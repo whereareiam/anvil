@@ -30,8 +30,8 @@ class DialogPressTest {
 
 	@Test
 	void fillsCommandTemplatesWithEveryKindOfValue() {
-		DialogAction register = DialogAction.of(DialogActionType.DYNAMIC_RUN_COMMAND, "/register $(password) $(remember) $(amount) $(mode)", null);
-		DialogAction set = DialogAction.of(DialogActionType.DYNAMIC_RUN_COMMAND, "set $(amount) $(remember)", null);
+		DialogAction register = DialogAction.of(DialogActionType.DYNAMIC_RUN_COMMAND, "/register $(password) $(remember) $(amount) $(mode)");
+		DialogAction set = DialogAction.of(DialogActionType.DYNAMIC_RUN_COMMAND, "set $(amount) $(remember)");
 
 		assertEquals(DialogClick.command("register Pass 1$ yes 5 easy"),
 				DialogPress.click(register, INPUTS, Map.of("password", "Pass 1$", "remember", "true")));
@@ -40,33 +40,33 @@ class DialogPressTest {
 
 	@Test
 	void runsStaticCommandsWithoutTheirSlash() {
-		assertEquals(DialogClick.command("hub"), DialogPress.click(DialogAction.of(DialogActionType.RUN_COMMAND, "/hub", null), INPUTS, Map.of()));
+		assertEquals(DialogClick.command("hub"), DialogPress.click(DialogAction.of(DialogActionType.RUN_COMMAND, "/hub"), INPUTS, Map.of()));
 	}
 
 	@Test
-	void sendsEveryInputValueWithADynamicCustomClickAndTheStaticPayloadOtherwise() {
-		DialogAction submit = DialogAction.of(DialogActionType.DYNAMIC_CUSTOM, "example:submit", "{source:\"anvil\"}");
-		DialogAction ping = DialogAction.of(DialogActionType.CUSTOM, "example:ping", "{ping:1b}");
+	void namesTheCustomActionAndSendsEveryInputValueWithADynamicOne() {
+		DialogAction submit = DialogAction.custom(DialogActionType.DYNAMIC_CUSTOM, "example:submit", 4);
+		DialogAction ping = DialogAction.custom(DialogActionType.CUSTOM, "example:ping", 5);
 
-		assertEquals(DialogClick.custom("example:submit", "{source:\"anvil\"}", List.of(
+		assertEquals(DialogClick.custom(4, List.of(
 				new DialogValue("password", DialogInputType.TEXT, "secret"),
 				new DialogValue("remember", DialogInputType.BOOLEAN, "false"),
 				new DialogValue("amount", DialogInputType.NUMBER_RANGE, "5"),
 				new DialogValue("mode", DialogInputType.SINGLE_OPTION, "easy")
 		)), DialogPress.click(submit, INPUTS, Map.of("password", "secret")));
-		assertEquals(DialogClick.custom("example:ping", "{ping:1b}", List.of()), DialogPress.click(ping, INPUTS, Map.of()));
+		assertEquals(DialogClick.custom(5, List.of()), DialogPress.click(ping, INPUTS, Map.of()));
 	}
 
 	@Test
 	void sendsNothingForClientSideActionsButtonsWithoutOneAndNestedDialogs() {
 		assertNull(DialogPress.click(null, INPUTS, Map.of()));
-		assertNull(DialogPress.click(DialogAction.of(DialogActionType.OPEN_URL, "https://example.com", null), INPUTS, Map.of()));
+		assertNull(DialogPress.click(DialogAction.of(DialogActionType.OPEN_URL, "https://example.com"), INPUTS, Map.of()));
 		assertNull(DialogPress.click(DialogAction.show("example:rules", null), INPUTS, Map.of()));
 	}
 
 	@Test
 	void refusesValuesTheInputsDoNotAccept() {
-		DialogAction go = DialogAction.of(DialogActionType.DYNAMIC_RUN_COMMAND, "go $(missing)", null);
+		DialogAction go = DialogAction.of(DialogActionType.DYNAMIC_RUN_COMMAND, "go $(missing)");
 
 		assertEquals("The dialog has no input name; inputs: [password, remember, amount, mode, colour]",
 				assertThrows(IllegalArgumentException.class, () -> DialogPress.click(go, INPUTS, Map.of("name", "Alice"))).getMessage());
@@ -82,8 +82,11 @@ class DialogPressTest {
 				assertThrows(IllegalArgumentException.class, () -> DialogPress.click(go, INPUTS, Map.of("colour", "red"))).getMessage());
 		assertEquals("The template go $(missing) names the input missing, which the dialog does not have",
 				assertThrows(IllegalArgumentException.class, () -> DialogPress.click(go, INPUTS, Map.of())).getMessage());
+		assertEquals("The custom action example:ping has no handle; only actions of a dialog the server showed can be pressed",
+				assertThrows(IllegalArgumentException.class, () -> DialogPress.click(
+						new DialogAction(DialogActionType.CUSTOM, "example:ping", null, null), INPUTS, Map.of())).getMessage());
 		assertEquals("The button runs the action example:wave, which Anvil does not know",
 				assertThrows(IllegalArgumentException.class,
-						() -> DialogPress.click(DialogAction.of(DialogActionType.OTHER, "example:wave", null), INPUTS, Map.of())).getMessage());
+						() -> DialogPress.click(DialogAction.of(DialogActionType.OTHER, "example:wave"), INPUTS, Map.of())).getMessage());
 	}
 }

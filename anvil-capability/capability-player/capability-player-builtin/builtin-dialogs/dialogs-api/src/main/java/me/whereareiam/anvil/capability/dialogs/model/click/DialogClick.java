@@ -1,13 +1,16 @@
 package me.whereareiam.anvil.capability.dialogs.model.click;
 
 import lombok.Value;
+import me.whereareiam.anvil.capability.dialogs.model.dialog.DialogAction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 /**
- * What the client sends when a dialog button is pressed: a command, or a custom click.
+ * What the client sends when a dialog button is pressed: a command, or the custom click of a custom action. A custom
+ * click names the pressed action by the handle {@link DialogAction#getHandle()} returns; the player's worker sends
+ * the ID and payload the action declared, with the values put in.
  */
 @Value
 public class DialogClick {
@@ -16,15 +19,12 @@ public class DialogClick {
 	 */
 	@Nullable String command;
 	/**
-	 * ID of a custom click, or {@code null} for a command.
+	 * Handle of the pressed custom action, or {@code null} for a command.
 	 */
-	@Nullable String customId;
+	@Nullable Long action;
 	/**
-	 * SNBT compound the custom click's payload starts from, or {@code null} for none.
-	 */
-	@Nullable String payload;
-	/**
-	 * Input values a dynamic custom click puts into its payload, each replacing an entry with the same key.
+	 * Input values a dynamic custom click puts into its payload, each replacing an entry with the same key; empty for
+	 * a command or a static custom click.
 	 */
 	@NotNull List<DialogValue> values;
 
@@ -35,18 +35,17 @@ public class DialogClick {
 	 * @return command click
 	 */
 	public static @NotNull DialogClick command(@NotNull String commandWithoutSlash) {
-		return new DialogClick(commandWithoutSlash, null, null, List.of());
+		return new DialogClick(commandWithoutSlash, null, List.of());
 	}
 
 	/**
-	 * Creates a custom click.
+	 * Creates the custom click of a custom action.
 	 *
-	 * @param id custom click ID, such as {@code example:submit}
-	 * @param payload SNBT compound the payload starts from, or {@code null} for none
-	 * @param values input values put into the payload
+	 * @param action the pressed action's handle
+	 * @param values input values put into the payload, empty for a static custom action
 	 * @return custom click
 	 */
-	public static @NotNull DialogClick custom(@NotNull String id, @Nullable String payload, @NotNull List<DialogValue> values) {
-		return new DialogClick(null, id, payload, List.copyOf(values));
+	public static @NotNull DialogClick custom(long action, @NotNull List<DialogValue> values) {
+		return new DialogClick(null, action, List.copyOf(values));
 	}
 }

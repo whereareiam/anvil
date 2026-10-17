@@ -52,10 +52,16 @@ holds text and options as strings, a checkbox as a byte and a slider as a float.
 not accept fails the press: text longer than its maximum length, a checkbox value other than `true` or
 `false`, an option the input does not have, or a number outside the slider's range.
 
+The payload a `custom` or `dynamic/custom` action declares stays in the player's worker, which sends it with
+the click; the action's `DialogAction` carries the ID and a `getHandle()` that the press names it by. Pressing
+such a button fails with an `IllegalStateException` when the server replaced or cleared its dialog, or the
+connection that showed it ended, before the click was sent.
+
 After the action the dialog stays open, closes or gives way to the waiting screen, as its `after_action`
-says. `waitingForResponse()` tells whether the waiting screen is shown; it stays until the server shows
-another dialog, and `close()` leaves it once the client enables its back button, five seconds after it
-appeared.
+says. A dialog whose `after_action` Anvil does not know has `DialogAfterAction.OTHER`, and pressing its
+buttons fails without sending anything. `waitingForResponse()` tells whether the waiting screen is shown; it
+stays until the server shows another dialog, and `close()` leaves it once the client enables its back button,
+five seconds after it appeared.
 
 ## Commands the client asks about
 

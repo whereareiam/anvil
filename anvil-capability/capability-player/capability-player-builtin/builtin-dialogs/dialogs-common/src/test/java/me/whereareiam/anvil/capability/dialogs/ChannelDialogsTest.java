@@ -112,7 +112,7 @@ class ChannelDialogsTest {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
 		channel.publish(DialogsChannel.SHOWN, form(DialogAction.of(DialogActionType.DYNAMIC_RUN_COMMAND,
-				"/register $(password) $(remember) $(amount) $(mode)", null), DialogAfterAction.CLOSE));
+				"/register $(password) $(remember) $(amount) $(mode)"), DialogAfterAction.CLOSE));
 
 		dialogs.press("Submit", Map.of("password", "Pass 1$", "remember", "true"));
 
@@ -141,8 +141,8 @@ class ChannelDialogsTest {
 				.type("minecraft:confirmation")
 				.title("Leave?")
 				.externalTitle("Leave?")
-				.button(new DialogButton("Yes", DialogAction.of(DialogActionType.RUN_COMMAND, "/leave", null), false))
-				.button(new DialogButton("No", DialogAction.of(DialogActionType.RUN_COMMAND, "stay", null), true))
+				.button(new DialogButton("Yes", DialogAction.of(DialogActionType.RUN_COMMAND, "/leave"), false))
+				.button(new DialogButton("No", DialogAction.of(DialogActionType.RUN_COMMAND, "stay"), true))
 				.closeWithEscape(true)
 				.afterAction(DialogAfterAction.NONE)
 				.build();
@@ -158,7 +158,7 @@ class ChannelDialogsTest {
 	void refusesToCloseADialogThatEscapeCannotClose() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
-		channel.publish(DialogsChannel.SHOWN, form(DialogAction.of(DialogActionType.RUN_COMMAND, "go", null), DialogAfterAction.CLOSE));
+		channel.publish(DialogsChannel.SHOWN, form(DialogAction.of(DialogActionType.RUN_COMMAND, "go"), DialogAfterAction.CLOSE));
 
 		assertEquals("The open dialog 'Form' cannot be closed with Escape",
 				assertThrows(IllegalStateException.class, dialogs::close).getMessage());
@@ -171,7 +171,7 @@ class ChannelDialogsTest {
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
 		Dialog next = notice("Next");
 		channel.onRequest = () -> channel.publish(DialogsChannel.SHOWN, next);
-		channel.publish(DialogsChannel.SHOWN, form(DialogAction.of(DialogActionType.RUN_COMMAND, "go", null), DialogAfterAction.CLOSE));
+		channel.publish(DialogsChannel.SHOWN, form(DialogAction.of(DialogActionType.RUN_COMMAND, "go"), DialogAfterAction.CLOSE));
 
 		dialogs.press("Submit");
 
@@ -182,7 +182,7 @@ class ChannelDialogsTest {
 	void asksBeforeACommandTheClientCannotCheckAndRunsItWhenConfirmed() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
-		Dialog form = form(DialogAction.of(DialogActionType.RUN_COMMAND, "/missing command", null), DialogAfterAction.CLOSE);
+		Dialog form = form(DialogAction.of(DialogActionType.RUN_COMMAND, "/missing command"), DialogAfterAction.CLOSE);
 		channel.publish(DialogsChannel.SHOWN, form);
 		channel.commands.result = CommandCheck.PARSE_ERRORS;
 
@@ -207,23 +207,23 @@ class ChannelDialogsTest {
 	void needsCommandsOnlyForButtonsThatRunACommand() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, null);
-		Dialog form = form(DialogAction.of(DialogActionType.RUN_COMMAND, "login secret", null), DialogAfterAction.CLOSE);
+		Dialog form = form(DialogAction.of(DialogActionType.RUN_COMMAND, "login secret"), DialogAfterAction.CLOSE);
 		channel.publish(DialogsChannel.SHOWN, form);
 
 		assertEquals("The button runs a command, which the client checks against its command tree first; install the Commands "
 				+ "capability to press it", assertThrows(IllegalStateException.class, () -> dialogs.press("Submit")).getMessage());
 		assertEquals(Optional.of(form), dialogs.current());
 
-		channel.publish(DialogsChannel.SHOWN, form(DialogAction.of(DialogActionType.CUSTOM, "example:ping", null), DialogAfterAction.CLOSE));
+		channel.publish(DialogsChannel.SHOWN, form(DialogAction.custom(DialogActionType.CUSTOM, "example:ping", 7), DialogAfterAction.CLOSE));
 		dialogs.press("Submit");
-		assertEquals(List.of(DialogClick.custom("example:ping", null, List.of())), channel.payloads);
+		assertEquals(List.of(DialogClick.custom(7, List.of())), channel.payloads);
 	}
 
 	@Test
 	void neverSendsACommandWithASignedArgument() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
-		channel.publish(DialogsChannel.SHOWN, form(DialogAction.of(DialogActionType.RUN_COMMAND, "msg Bob hello", null), DialogAfterAction.CLOSE));
+		channel.publish(DialogsChannel.SHOWN, form(DialogAction.of(DialogActionType.RUN_COMMAND, "msg Bob hello"), DialogAfterAction.CLOSE));
 		channel.commands.result = CommandCheck.SIGNATURE_REQUIRED;
 
 		dialogs.press("Submit");
@@ -238,7 +238,7 @@ class ChannelDialogsTest {
 	void runsNoCommandsFromADialogShownDuringConfiguration() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
-		Dialog form = form(DialogAction.of(DialogActionType.RUN_COMMAND, "login secret", null), DialogAfterAction.CLOSE).toBuilder()
+		Dialog form = form(DialogAction.of(DialogActionType.RUN_COMMAND, "login secret"), DialogAfterAction.CLOSE).toBuilder()
 				.configuration(true)
 				.build();
 		channel.publish(DialogsChannel.SHOWN, form);
@@ -299,7 +299,7 @@ class ChannelDialogsTest {
 		RecordingChannel channel = new RecordingChannel();
 		MutableClock clock = new MutableClock();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands, clock);
-		channel.publish(DialogsChannel.SHOWN, form(DialogAction.of(DialogActionType.CUSTOM, "example:wait", null), DialogAfterAction.WAIT_FOR_RESPONSE));
+		channel.publish(DialogsChannel.SHOWN, form(DialogAction.custom(DialogActionType.CUSTOM, "example:wait", 8), DialogAfterAction.WAIT_FOR_RESPONSE));
 
 		dialogs.press("Submit");
 		assertTrue(dialogs.waitingForResponse());

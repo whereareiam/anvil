@@ -18,10 +18,12 @@ public class DialogAction {
 	 */
 	@NotNull String value;
 	/**
-	 * Payload of a {@link DialogActionType#CUSTOM} action or additions of a {@link DialogActionType#DYNAMIC_CUSTOM}
-	 * action, as SNBT, or {@code null} when the action has none.
+	 * Handle by which a {@link DialogActionType#CUSTOM} or {@link DialogActionType#DYNAMIC_CUSTOM} action's click
+	 * names it, or {@code null} for an action of another type. The player's worker gives every custom action of a
+	 * dialog it was shown, or of the dialog registry, a handle unique for the player, and keeps the action's payload
+	 * under it while the dialog is shown or the registry is current; the payload itself never leaves the worker.
 	 */
-	@Nullable String payload;
+	@Nullable Long handle;
 	/**
 	 * Dialog a {@link DialogActionType#SHOW_DIALOG} action opens, or {@code null} when the action names a registry
 	 * dialog Anvil does not know or is of another type.
@@ -29,15 +31,30 @@ public class DialogAction {
 	@Nullable Dialog dialog;
 
 	/**
-	 * Creates an action that carries no dialog.
+	 * Creates an action that carries neither a dialog nor a handle.
 	 *
 	 * @param type action type
-	 * @param value the command, template, ID, URL, text or page the action carries
-	 * @param payload SNBT payload or additions, or {@code null}
+	 * @param value the command, template, URL, text or page the action carries
 	 * @return the action
 	 */
-	public static @NotNull DialogAction of(@NotNull DialogActionType type, @NotNull String value, @Nullable String payload) {
-		return new DialogAction(type, value, payload, null);
+	public static @NotNull DialogAction of(@NotNull DialogActionType type, @NotNull String value) {
+		return new DialogAction(type, value, null, null);
+	}
+
+	/**
+	 * Creates a custom action, which sends a custom click when pressed.
+	 *
+	 * @param type {@link DialogActionType#CUSTOM} or {@link DialogActionType#DYNAMIC_CUSTOM}
+	 * @param id the custom click's ID, such as {@code example:submit}
+	 * @param handle the handle the player's worker gave the action
+	 * @return the action
+	 * @throws IllegalArgumentException when the type is not a custom one
+	 */
+	public static @NotNull DialogAction custom(@NotNull DialogActionType type, @NotNull String id, long handle) {
+		if (type != DialogActionType.CUSTOM && type != DialogActionType.DYNAMIC_CUSTOM)
+			throw new IllegalArgumentException("A custom action is of type CUSTOM or DYNAMIC_CUSTOM, not " + type);
+
+		return new DialogAction(type, id, handle, null);
 	}
 
 	/**

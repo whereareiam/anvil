@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
+import me.whereareiam.anvil.protocol.java.api.packet.configuration.ClientboundRegistryData;
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ClientboundShowDialog;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundEntityPositionSync;
@@ -74,6 +75,7 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ServerboundMovePlayerPosRot.class));
 		assertTrue(client.supports(ServerboundContainerClick.class));
 		assertTrue(client.supports(ClientboundShowDialog.class));
+		assertTrue(client.supports(ClientboundRegistryData.class));
 		assertTrue(client.supports(ServerboundSwing.class));
 		assertTrue(client.supports(ServerboundUseItem.class));
 		assertTrue(client.supports(ServerboundUseItemOn.class));
