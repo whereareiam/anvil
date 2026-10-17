@@ -8,6 +8,7 @@ dependencies {
 	api(projects.anvilCapability.capabilityBuiltin.client.commands)
 	api(projects.anvilCapability.capabilityBuiltin.client.cookies)
 	api(projects.anvilCapability.capabilityBuiltin.client.dialogs)
+	api(projects.anvilCapability.capabilityBuiltin.client.entities)
 	api(projects.anvilCapability.capabilityBuiltin.client.interaction)
 	api(projects.anvilCapability.capabilityBuiltin.client.inventory)
 	api(projects.anvilCapability.capabilityBuiltin.client.messages)
