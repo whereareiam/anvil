@@ -25,6 +25,7 @@ TestKit without starting Minecraft. Its location follows the owner of the behavi
 | Java provisioning                                       | `:anvil-environment:provisioning:provisioning-java:test`      |
 | Workspace policies and snapshots                        | `:anvil-environment:provisioning:provisioning-workspace:test` |
 | Process lifecycle and restarts                          | `:anvil-environment:execution:execution-managed:test`         |
+| Docker execution settings and image resolution          | `:anvil-environment:execution:execution-docker:test`; containers on a real engine: `dockerTest` |
 | Platform planning and forwarding                        | `:anvil-process:process-common:test`                      |
 | Player registration, library selection, and observations | `:anvil-player:player-common:test`                                       |
 | Agent clients, sessions, and observations                | `:anvil-process:process-protocol:protocol-host:protocol-host-common:test`                              |
@@ -51,6 +52,24 @@ Workspace tests mirror the `directory`, `preparation`, and `snapshot` implementa
 Agent client tests exercise host lifetimes and connections; server tests exercise embedded handlers
 and endpoints. Cross-process assertions belong in the live suite, with the independently compiled
 fixture checking the public client and server API dependencies.
+
+## Run the Docker engine tests
+
+Tests that start containers on a real Docker engine live in the module's `dockerTest` test suite, in
+`src/dockerTest/java`, apart from its `test` suite. `test`, and therefore `build`, never runs them, so neither needs
+Docker. Run them with a Docker engine available:
+
+```shell
+./gradlew dockerTest
+./gradlew :anvil-environment:execution:execution-docker:dockerTest
+```
+
+They run in the image `anvil.docker.testImage` in `gradle.properties` names, the only place it is named.
+It is a copy of `eclipse-temurin:21-jdk` on the GitHub Container Registry, which the **Docker test image** workflow
+refreshes when `dev` changes the reference, weekly and on demand. A test pulls the image when the engine does not
+have it; the package is public, so that needs no login, and CI pulls it with its `GITHUB_TOKEN`. To test against
+another image for a run, pass `-Panvil.docker.testImage=<image>`; to change it for everyone, change the property,
+and the workflow copies the new image once the change reaches `dev`.
 
 ## Check cross-module discovery
 

@@ -23,6 +23,7 @@ jobs:
     permissions:
       contents: read
       checks: write
+      packages: read
     uses: ./.github/workflows/reusable-verify.yml
     with:
       ref: ${{ github.sha }}
