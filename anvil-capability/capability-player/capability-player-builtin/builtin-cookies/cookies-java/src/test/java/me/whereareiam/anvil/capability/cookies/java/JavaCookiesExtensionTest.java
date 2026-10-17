@@ -252,6 +252,14 @@ class JavaCookiesExtensionTest {
 		}
 
 		@Override
+		public <P extends ServerboundPacket> @NotNull Subscription listenSent(
+				@NotNull Class<P> type,
+				@NotNull Consumer<? super P> listener
+		) {
+			throw new AssertionError("The cookies binding observes no sent packets");
+		}
+
+		@Override
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
 			return cookies;
 		}

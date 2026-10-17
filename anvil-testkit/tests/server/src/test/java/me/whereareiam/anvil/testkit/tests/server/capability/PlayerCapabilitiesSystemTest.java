@@ -14,6 +14,10 @@ import me.whereareiam.anvil.capability.dialogs.Dialogs;
 import me.whereareiam.anvil.capability.dialogs.model.click.CommandConfirmation;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.Dialog;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.DialogButton;
+import me.whereareiam.anvil.capability.entities.Entities;
+import me.whereareiam.anvil.capability.entities.EntityQuery;
+import me.whereareiam.anvil.capability.entities.EntityWatch;
+import me.whereareiam.anvil.capability.entities.model.SeenEntity;
 import me.whereareiam.anvil.capability.interaction.Interaction;
 import me.whereareiam.anvil.capability.interaction.model.BlockPosition;
 import me.whereareiam.anvil.capability.interaction.type.BlockFace;
@@ -70,6 +74,10 @@ class PlayerCapabilitiesSystemTest {
 	 * Scenarios whose Minecraft version predates cookies, which arrived in 1.20.5.
 	 */
 	private static final Set<String> RELEASES_WITHOUT_COOKIES = Set.of("paper-1.18.2");
+	/**
+	 * Scenarios whose Minecraft version predates text displays, which arrived in 1.19.4.
+	 */
+	private static final Set<String> RELEASES_WITHOUT_TEXT_DISPLAYS = Set.of("paper-1.18.2");
 
 	@TestFactory
 	Stream<DynamicTest> controlsAProtocolPlayerOnEveryPaperRelease() {
@@ -84,7 +92,8 @@ class PlayerCapabilitiesSystemTest {
 		try (ScenarioEngine engine = AnvilLauncher.create(EngineProperties.fromSystemProperties());
 		     ScenarioContext anvil = engine.start(scenario)) {
 			try {
-				verify(anvil, !RELEASES_WITHOUT_DIALOGS.contains(scenario.getName()), !RELEASES_WITHOUT_COOKIES.contains(scenario.getName()));
+				verify(anvil, !RELEASES_WITHOUT_DIALOGS.contains(scenario.getName()), !RELEASES_WITHOUT_COOKIES.contains(scenario.getName()),
+						!RELEASES_WITHOUT_TEXT_DISPLAYS.contains(scenario.getName()));
 			} catch (Throwable failure) {
 				finishFailed(anvil, failure);
 				throw failure;
@@ -104,7 +113,7 @@ class PlayerCapabilitiesSystemTest {
 		}
 	}
 
-	private void verify(ScenarioContext anvil, boolean dialogs, boolean cookies) {
+	private void verify(ScenarioContext anvil, boolean dialogs, boolean cookies, boolean textDisplays) {
 		SimulatedPlayer alice = anvil.players().create("Alice");
 		Session session = alice.capability(Session.class);
 		Messages messages = alice.capability(Messages.class);
@@ -178,6 +187,7 @@ class PlayerCapabilitiesSystemTest {
 		verifyCookies(anvil, alice, messages, cookies);
 		verifyScreen(anvil, alice);
 		verifySounds(anvil, alice);
+		verifyEntities(anvil, alice, messages, textDisplays);
 
 		messages.command("anvil-fixture kick");
 		assertEquals("anvil:requested-kick", session.kicked(Duration.ofSeconds(10)));
@@ -288,6 +298,59 @@ class PlayerCapabilitiesSystemTest {
 	 */
 	private static void cookie(ScenarioContext anvil, String arguments) {
 		anvil.processes().server("server").console().sendCommand("anvil-cookie Alice " + arguments);
+	}
+
+	/**
+	 * Sees text appear above Alice and disappear again, as a chat bubble plugin shows it: an invisible armor stand with
+	 * a visible custom name riding her and, where the release has them, a text display above her. In between, a glowing
+	 * dropped item shows its stack.
+	 */
+	private void verifyEntities(ScenarioContext anvil, SimulatedPlayer alice, Messages messages, boolean textDisplays) {
+		Entities entities = alice.capability(Entities.class);
+		EntityWatch shown = entities.watch();
+
+		entity(anvil, "bubble anvil:bubble-text");
+		int bubbleId = Integer.parseInt(message(messages, "anvil:bubble:").substring("anvil:bubble:".length()));
+		SeenEntity bubble = shown.appeared(EntityQuery.labelled("anvil:bubble-text").and(EntityQuery.ridingPlayer()), Duration.ofSeconds(10));
+		assertEquals(bubbleId, bubble.getId());
+		assertEquals("minecraft:armor_stand", bubble.getType());
+		assertEquals("anvil:bubble-text", bubble.getCustomName());
+		assertTrue(bubble.isCustomNameVisible());
+		assertTrue(bubble.isInvisible());
+		assertTrue(entities.all().stream().anyMatch(bubble::sameEntity));
+		entity(anvil, "remove " + bubbleId);
+		shown.disappeared(bubble, Duration.ofSeconds(10));
+
+		entity(anvil, "drop");
+		int itemId = Integer.parseInt(message(messages, "anvil:dropped:").substring("anvil:dropped:".length()));
+		SeenEntity dropped = shown.appeared(EntityQuery.ofType("item").and(SeenEntity::isGlowing).and(entity -> entity.getItem() != null),
+				Duration.ofSeconds(10));
+		assertEquals(itemId, dropped.getId());
+		assertEquals(3, dropped.getItem().getAmount());
+		assertEquals(itemId, entities.present(EntityQuery.ofType("item").and(EntityQuery.nearPlayer(4)), Duration.ofSeconds(10)).getId());
+		entity(anvil, "remove " + itemId);
+		shown.disappeared(dropped, Duration.ofSeconds(10));
+
+		if (!textDisplays) {
+			entity(anvil, "display anvil:display-text");
+			messages.received("anvil:display:unsupported", Duration.ofSeconds(10));
+			return;
+		}
+
+		entity(anvil, "display anvil:display-text");
+		SeenEntity display = shown.appeared(EntityQuery.labelled("anvil:display-text").and(EntityQuery.nearPlayer(4)), Duration.ofSeconds(10));
+		assertEquals("minecraft:text_display", display.getType());
+		assertEquals("anvil:display-text", display.getText());
+		entity(anvil, "remove " + display.getId());
+		shown.disappeared(display, Duration.ofSeconds(10));
+	}
+
+	/**
+	 * Drives the fixture's entity command for Alice from the server console, which does not count towards the spam
+	 * limit her own commands are under.
+	 */
+	private static void entity(ScenarioContext anvil, String arguments) {
+		anvil.processes().server("server").console().sendCommand("anvil-entity Alice " + arguments);
 	}
 
 	/**

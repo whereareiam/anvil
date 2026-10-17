@@ -19,31 +19,37 @@ import java.util.function.Supplier;
 
 /**
  * One worker player's Java Edition protocol: it hands the packets of the player's current connection to their
- * listeners and sends packets on that connection, through the release's client segment.
+ * listeners and sends packets on that connection, through the release's client segment, and then hands each sent
+ * packet to the listeners of sent packets.
  */
 @RequiredArgsConstructor
 final class JavaPacketChannel implements JavaProtocol {
 	private final @NotNull McProtocolClient<Object> client;
 	private final @NotNull Supplier<Object> currentSession;
 	private final Map<Class<?>, List<Consumer<Object>>> listeners = new ConcurrentHashMap<>();
+	private final Map<Class<?>, List<Consumer<Object>>> sentListeners = new ConcurrentHashMap<>();
 
 	@Override
 	public <P extends ClientboundPacket> @NotNull Subscription listen(
 			@NotNull Class<P> type,
 			@NotNull Consumer<? super P> listener
 	) {
-		requireSupported(type);
-		Consumer<Object> typed = packet -> listener.accept(type.cast(packet));
-		List<Consumer<Object>> subscribed = listeners.computeIfAbsent(type, ignored -> new CopyOnWriteArrayList<>());
-		subscribed.add(typed);
-
-		return () -> subscribed.remove(typed);
+		return subscribe(listeners, type, listener);
 	}
 
 	@Override
 	public void send(@NotNull ServerboundPacket packet) {
 		requireSupported(packet.getClass());
 		client.send(currentSession.get(), packet);
+		handOut(sentListeners, packet);
+	}
+
+	@Override
+	public <P extends ServerboundPacket> @NotNull Subscription listenSent(
+			@NotNull Class<P> type,
+			@NotNull Consumer<? super P> listener
+	) {
+		return subscribe(sentListeners, type, listener);
 	}
 
 	@Override
@@ -58,7 +64,28 @@ final class JavaPacketChannel implements JavaProtocol {
 	 * @param packet received packet
 	 */
 	void deliver(@NotNull ClientboundPacket packet) {
-		List<Consumer<Object>> subscribed = listeners.get(packet.getClass());
+		handOut(listeners, packet);
+	}
+
+	private <P extends JavaPacket> Subscription subscribe(
+			Map<Class<?>, List<Consumer<Object>>> table,
+			Class<P> type,
+			Consumer<? super P> listener
+	) {
+		requireSupported(type);
+		Consumer<Object> typed = packet -> listener.accept(type.cast(packet));
+		List<Consumer<Object>> subscribed = table.computeIfAbsent(type, ignored -> new CopyOnWriteArrayList<>());
+		subscribed.add(typed);
+
+		return () -> subscribed.remove(typed);
+	}
+
+	/**
+	 * Hands a packet to the listeners of its class in one table. A failing listener is reported on standard error
+	 * and does not keep the packet from the others.
+	 */
+	private static void handOut(Map<Class<?>, List<Consumer<Object>>> table, JavaPacket packet) {
+		List<Consumer<Object>> subscribed = table.get(packet.getClass());
 		if (subscribed == null) return;
 
 		for (Consumer<Object> listener : subscribed) {

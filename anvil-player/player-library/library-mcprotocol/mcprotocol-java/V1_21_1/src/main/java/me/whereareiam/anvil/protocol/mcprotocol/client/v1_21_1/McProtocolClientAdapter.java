@@ -47,7 +47,7 @@ public final class McProtocolClientAdapter implements McProtocolClient<Session> 
 				: new TcpClientSession(connection.getHost(), connection.getPort(), connection.getSourceAddress(), 0, protocol);
 		if (credentials != null && credentials.getSessionServer() != null)
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, new RedirectedSessionService(credentials.getSessionServer()));
-		session.addListener(new ClientPacketListener(login, listener, packets));
+		session.addListener(new ClientPacketListener(login, listener, new JavaPackets()));
 		return session;
 	}
 

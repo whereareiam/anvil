@@ -3,12 +3,16 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ClientboundShowDialog;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundEntityPositionSync;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInteract;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwing;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundMovePlayerPosRot;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundCustomSound;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
@@ -61,6 +65,10 @@ class McProtocolClientAdapterTest {
 	void supportsThe1_21_11PacketsWithThisReleasesInteraction() {
 		McProtocolClientAdapter client = new McProtocolClientAdapter();
 
+		assertTrue(client.supports(ClientboundAddEntity.class));
+		assertTrue(client.supports(ClientboundEntityPositionSync.class));
+		assertTrue(client.supports(ClientboundSetEntityData.class));
+		assertTrue(client.supports(ClientboundPlayerPosition.class));
 		assertTrue(client.supports(ClientboundSystemChat.class));
 		assertTrue(client.supports(ServerboundChat.class));
 		assertTrue(client.supports(ServerboundMovePlayerPosRot.class));

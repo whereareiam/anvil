@@ -79,6 +79,12 @@ The `check` task runs the same verification. A segment's report is
   for the client itself. An external capability with segments of its own changes its port in its API's
   `packet` package and every segment implementing it.
 
+Linkage does not cover what the game keeps in entity data. Each segment's `EntityDataTable` names, by entity
+type, the index that carries each value the protocol models, and a release may move them while every class still
+links: between 1.21.1 and 1.21.11 hanging entities gained their direction at index 8, which moved an item frame's
+item from 8 to 9. Check
+the table against the new release's entity data, and give the new release a segment of its own when an index moved.
+
 A segment holds only port implementations and their `META-INF/services/<port>` descriptors; it never
 wires a capability. Its folder must name a release key, and its classes must stay in its versioned
 package, or the build fails.

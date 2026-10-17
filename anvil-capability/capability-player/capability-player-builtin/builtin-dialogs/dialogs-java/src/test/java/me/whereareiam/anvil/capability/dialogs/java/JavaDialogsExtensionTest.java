@@ -154,7 +154,7 @@ class JavaDialogsExtensionTest {
 		player.startConnection();
 		protocol.deliver(new ClientboundShowDialog(null, NOTICE, false));
 		protocol.deliver(new ClientboundClearDialog());
-		protocol.deliver(new ClientboundLogin());
+		protocol.deliver(new ClientboundLogin(42));
 		protocol.deliver(new ClientboundRespawn());
 		protocol.deliver(new ClientboundStartConfiguration());
 		player.startConnection();
@@ -347,6 +347,14 @@ class JavaDialogsExtensionTest {
 			if (!connected) throw new IllegalStateException("Player Alice is not connected");
 
 			sent.add(packet);
+		}
+
+		@Override
+		public <P extends ServerboundPacket> @NotNull Subscription listenSent(
+				@NotNull Class<P> type,
+				@NotNull Consumer<? super P> listener
+		) {
+			throw new AssertionError("The dialogs binding observes no sent packets");
 		}
 
 		@Override

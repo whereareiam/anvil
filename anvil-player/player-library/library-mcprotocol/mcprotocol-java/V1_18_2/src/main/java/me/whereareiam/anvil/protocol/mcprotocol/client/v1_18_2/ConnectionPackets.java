@@ -26,7 +26,7 @@ final class ConnectionPackets implements PacketTranslation<Packet> {
 
 	@Override
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
-		if (packet instanceof ClientboundLoginPacket) return new ClientboundLogin();
+		if (packet instanceof ClientboundLoginPacket login) return new ClientboundLogin(login.getEntityId());
 		if (packet instanceof ClientboundRespawnPacket) return new ClientboundRespawn();
 
 		return null;

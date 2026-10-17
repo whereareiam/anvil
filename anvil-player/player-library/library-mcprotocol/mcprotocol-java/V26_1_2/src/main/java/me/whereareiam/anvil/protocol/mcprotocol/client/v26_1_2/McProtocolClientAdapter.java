@@ -5,6 +5,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.CommandPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ConnectionPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.CookiePackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.DialogPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.EntityPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.InventoryPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.JavaPackets;
@@ -23,7 +24,7 @@ public final class McProtocolClientAdapter extends JavaClient {
 	 * Creates the client with the packet table of MCProtocolLib 26.1.
 	 */
 	public McProtocolClientAdapter() {
-		super(packets());
+		super(McProtocolClientAdapter::packets);
 	}
 
 	/**
@@ -38,6 +39,7 @@ public final class McProtocolClientAdapter extends JavaClient {
 				new ConnectionPackets(),
 				new CookiePackets(),
 				new DialogPackets(),
+				new EntityPackets(),
 				new InteractionPackets(),
 				new InventoryPackets(),
 				new PlayerPackets(),

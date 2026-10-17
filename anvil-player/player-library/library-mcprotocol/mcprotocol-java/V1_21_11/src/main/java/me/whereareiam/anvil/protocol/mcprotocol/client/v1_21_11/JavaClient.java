@@ -17,6 +17,7 @@ import org.geysermc.mcprotocollib.protocol.codec.MinecraftCodec;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
+import java.util.function.Supplier;
 
 /**
  * Client of MCProtocolLib 1.21.11 and of later releases whose sessions did not change, translating the packets through
@@ -27,15 +28,18 @@ import java.net.InetSocketAddress;
  * it replaces the remote address instead.
  */
 public class JavaClient implements McProtocolClient<ClientSession> {
+	private final Supplier<JavaPackets> tables;
 	private final JavaPackets packets;
 
 	/**
-	 * Creates a client that translates the Java Edition packets through a release's table.
+	 * Creates a client that translates the Java Edition packets through a release's table. Each session decodes
+	 * through a table of its own, since the entity translation remembers the types of the session's entities.
 	 *
-	 * @param packets the packet table of the segment's release
+	 * @param tables creates a new packet table of the segment's release
 	 */
-	protected JavaClient(@NotNull JavaPackets packets) {
-		this.packets = packets;
+	protected JavaClient(@NotNull Supplier<JavaPackets> tables) {
+		this.tables = tables;
+		this.packets = tables.get();
 	}
 
 	@Override
@@ -63,7 +67,7 @@ public class JavaClient implements McProtocolClient<ClientSession> {
 			session.setFlag(MinecraftConstants.CLIENT_HOST, connection.getVirtualHost());
 		if (credentials != null && credentials.getSessionServer() != null)
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, new RedirectedSessionService(credentials.getSessionServer()));
-		session.addListener(new ClientPacketListener(session, login, listener, packets));
+		session.addListener(new ClientPacketListener(session, login, listener, tables.get()));
 		return session;
 	}
 

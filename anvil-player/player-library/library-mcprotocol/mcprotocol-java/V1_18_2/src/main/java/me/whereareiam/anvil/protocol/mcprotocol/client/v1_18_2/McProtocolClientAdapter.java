@@ -51,7 +51,7 @@ public final class McProtocolClientAdapter implements McProtocolClient<Session> 
 			sessionService.setBaseUri(credentials.getSessionServer() + "/");
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, sessionService);
 		}
-		session.addListener(new ClientPacketListener(login, listener, packets));
+		session.addListener(new ClientPacketListener(login, listener, new JavaPackets()));
 		return session;
 	}
 

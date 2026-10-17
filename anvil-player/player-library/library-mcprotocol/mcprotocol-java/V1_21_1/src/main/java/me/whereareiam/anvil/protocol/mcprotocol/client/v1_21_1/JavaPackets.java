@@ -15,13 +15,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * The Java Edition packets this release carries, translated area by area.
+ * The Java Edition packets this release carries, translated area by area. Each session decodes through a table of
+ * its own, since the entity translation remembers the types of the session's entities; sending and the packets the
+ * release carries do not depend on a session.
  */
 final class JavaPackets {
 	private final List<PacketTranslation<Packet>> areas = List.of(
 			new ChatPackets(),
 			new CommandPackets(),
 			new ConnectionPackets(),
+			new EntityPackets(),
 			new CookiePackets(),
 			new InteractionPackets(),
 			new InventoryPackets(),
