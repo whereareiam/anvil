@@ -20,6 +20,7 @@ Assume that `ScenarioContext anvil` contains the declared process named `server`
 it inside the [first test](../../first-test/index.mdx). Add these imports to the calling code:
 
 ```java
+import me.whereareiam.anvil.api.process.ConsoleWatch;
 import me.whereareiam.anvil.api.process.ProcessConsole;
 import me.whereareiam.anvil.api.process.type.RunningServer;
 import java.time.Duration;
@@ -28,13 +29,13 @@ import java.time.Duration;
 ```java
 RunningServer server = anvil.processes().server("server");
 ProcessConsole console = server.console();
-long before = console.checkpoint();
+ConsoleWatch output = console.watch();
 console.sendCommand("say process-ready-check");
-String output = console.await("process-ready-check", before, Duration.ofSeconds(10));
+String line = output.printed("process-ready-check", Duration.ofSeconds(10));
 ```
 
 When run inside the completed test, this waits for a fresh console line containing the marker. The
-checkpoint excludes an earlier identical line. It proves the server produced that output; use Alice's
+watch, started before the command, excludes an earlier identical line. It proves the server produced that output; use Alice's
 [Messages capability](../../../building-blocks/players/capabilities/messages/index.md) when the assertion
 must prove that she received the message.
 
@@ -52,7 +53,7 @@ processes remain running.
 
 A handle represents one process generation. The original `server` handle remains attached to the
 stopped generation; use the returned replacement or look up the name again for later observations.
-Take a fresh console checkpoint on the replacement. A disconnected Alice remains registered with the
+Start a new console watch on the replacement. A disconnected Alice remains registered with the
 scenario and needs an explicit reconnect.
 
 Keep process operations inside the running [context](../context/index.md). Scenario teardown owns

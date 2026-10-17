@@ -40,18 +40,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public final class DispatchChecks {
 	public static void announce(ScenarioContext anvil) {
 		var lobby = anvil.processes().server("lobby");
-		var console = lobby.console();
-		long before = console.checkpoint();
+		var output = lobby.console().watch();
 
 		assertTrue(lobby.capability(Dispatch.class).execute("say hello-from-anvil"));
-		console.await("hello-from-anvil", before, Duration.ofSeconds(10));
+		output.printed("hello-from-anvil", Duration.ofSeconds(10));
 	}
 }
 ```
 
 Run the containing test with `./gradlew anvilTest`. `execute` takes the command without a leading slash and
 returns whether the platform accepted it. Acceptance does not return output or prove that the command's work
-finished, so the helper also waits for the line the server printed, starting from a checkpoint taken before
+finished, so the helper also waits for the line the server printed, through a console watch started before
 the command. Assert on a typed observation instead when the command changes state a player or another
 capability can see.
 
@@ -60,7 +59,7 @@ capability can see.
 | You need | Use |
 |---|---|
 | The command run as the console, and whether the platform accepted it | `process.capability(Dispatch.class).execute(command)` |
-| A line typed into the process's input, and what it printed in response | The process's [console](../console/index.md): `console().sendCommand(command)` with a checkpoint |
+| A line typed into the process's input, and what it printed in response | The process's [console](../console/index.md): `console().sendCommand(command)` with a `console().watch()` |
 | The command run by a player, with that player's permissions | The player's [Messages capability](../../../players/capabilities/messages/index.md): `messages.command(command)` |
 
 `Dispatch` and `console().sendCommand(...)` both run the command as the console, with the console's

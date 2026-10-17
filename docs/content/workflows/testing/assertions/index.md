@@ -19,7 +19,7 @@ command, and requesting an interaction do not imply their server-side effects ha
 | Proxy connected the player to a backend | `PlayerWatch.joined(player, backend)` on the proxy's `Players.watch()` |
 | Proxy moved the player away from a backend | `PlayerWatch.left(player, backend)` on the proxy's watch |
 | Inventory reached a condition | `Inventory.matching(predicate)` |
-| New process output contains text | `ProcessConsole.await(text, checkpoint, timeout)` |
+| New process output contains text | `ConsoleWatch.printed(text, timeout)` |
 
 Capability waits offer explicit duration overloads; their default maximum wait is ten seconds.
 Immediate snapshots such as `Session.state()`, `Messages.history()`, `Players.profile(player)`,
@@ -37,18 +37,20 @@ the capability's ordinary wait for that outcome then returns at once:
 ```java
 Messages messages = player.capability(Messages.class);
 Session session = player.capability(Session.class);
-int before = messages.checkpoint();
+MessageWatch chat = messages.watch();
 messages.command("confirm 123456");
 
 int outcome = player.awaitFirst(Duration.ofSeconds(10),
-        messages.expectReceived(text -> text.contains("Invalid code"), before),
+        chat.expectReceived(text -> text.contains("Invalid code")),
         session.expectKicked());
 if (outcome == 1) assertTrue(session.kicked().contains("Reconnect"));
 ```
 
 | Expectation | Met when |
 | --- | --- |
-| `Messages.expectReceived(matcher, checkpoint)` | a message after the checkpoint matches |
+| `MessageWatch.expectReceived(matcher)` | a message received since the watch's previous wait matches |
+| `DialogWatch.expectShown(matcher)` | a dialog shown since the watch's previous wait matches |
+| `CookieWatch.expectRequested(key)` | the server asked for the cookie since the watch's previous wait |
 | `Session.expectKicked()` | the server kicked the current session |
 | `Session.expectDisconnected()` | the current session is disconnected for any reason |
 | `PlayerWatch.expectJoined(player)` | the player joined that watch's process since the watch's previous wait |
@@ -59,21 +61,23 @@ When several expectations are met by the time they are checked, the earliest arg
 every expectation, joined by "or". Use it only for outcomes that are really both correct; one expected
 result still belongs in an ordinary wait, which explains a failure better.
 
-## Checkpoint console output before acting
+## Watch console output before acting
 
 Inside a live test with `ScenarioContext anvil` and the first-test process named `server`, import
 `java.time.Duration` and use:
 
 ```java
 var console = anvil.processes().server("server").console();
-long checkpoint = console.checkpoint();
-console.sendCommand("say checkpoint-verification");
-String line = console.await("checkpoint-verification", checkpoint, Duration.ofSeconds(10));
+var output = console.watch();
+console.sendCommand("say watch-verification");
+String line = output.printed("watch-verification", Duration.ofSeconds(10));
+output.neverPrinted("Exception", Duration.ofSeconds(2));
 ```
 
-Capture the checkpoint before the command. The returned line must have arrived after that checkpoint,
-so an earlier identical message cannot satisfy the wait. Checkpoints belong to one process console;
-obtain a new console and checkpoint after a [process restart](../../../building-blocks/environments/actions/restarts/index.md).
+Start the watch before the command. The returned line must have been printed after the watch started,
+so an earlier identical message cannot satisfy the wait, and each later wait continues after it. A watch
+belongs to one process console; watch the new console after a
+[process restart](../../../building-blocks/environments/actions/restarts/index.md).
 
 ## Avoid old messages satisfying new steps
 

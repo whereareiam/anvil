@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.process.console.ConsoleLine;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
+import me.whereareiam.anvil.api.process.ConsoleWatch;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.api.type.ProcessState;
@@ -59,14 +60,14 @@ class ProcessKillSystemTest {
 				assertEquals(Optional.of("lobby"), proxied.backend(alice));
 
 				RunningProcess killed = context.processes().get("proxy");
-				long checkpoint = killed.console().checkpoint();
+				ConsoleWatch console = killed.console().watch();
 				Files.writeString(killed.workDirectory().resolve("kill-marker"), "retained");
 				context.processes().kill("proxy");
 
 				session.disconnected(TIMEOUT);
 				assertEquals(DisconnectCause.CONNECTION_LOST, session.state().disconnectCause());
 				assertEquals(ProcessState.STOPPED, killed.state());
-				List<String> output = killed.console().read(checkpoint, 200).getLines().stream().map(ConsoleLine::getText).toList();
+				List<String> output = console.read(200).getLines().stream().map(ConsoleLine::getText).toList();
 				assertFalse(output.stream().anyMatch(line -> line.contains(CLEAN_SHUTDOWN)), output.toString());
 				assertTrue(output.getLast().contains("[Anvil] Process 'proxy' was killed on request without a clean shutdown"),
 						output.toString());

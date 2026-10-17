@@ -1,7 +1,9 @@
 package me.whereareiam.anvil.environment.execution.managed.process;
 
+import me.whereareiam.anvil.api.exception.ProcessException;
 import me.whereareiam.anvil.api.model.process.console.ConsoleLine;
 import me.whereareiam.anvil.api.model.process.console.ConsoleOutput;
+import me.whereareiam.anvil.api.process.ConsoleWatch;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -26,23 +28,52 @@ class ManagedProcessConsoleTest {
 	@TempDir Path directory;
 
 	@Test
-	void supportsIndependentCursorsWithoutDuplicatesAndReportsEvictedHistory() {
+	void readsThroughIndependentWatchesWithoutDuplicatesAndReportsEvictedHistory() {
 		ManagedProcessConsole console = new ManagedProcessConsole("server", directory);
 		console.append("first");
 		console.append("second");
-		ConsoleOutput firstReader = console.read(0, 1);
-		assertEquals(List.of("first"), firstReader.getLines().stream().map(ConsoleLine::getText).toList());
-		assertEquals(1, firstReader.getNextCheckpoint());
-		assertEquals(2, console.read(0, 10).getLines().size());
-		assertEquals("second", console.read(firstReader.getNextCheckpoint(), 1).getLines().getFirst().getText());
-		assertTrue(console.read(2, 1).getLines().isEmpty());
+		ConsoleWatch firstReader = console.watchFromStart();
+		ConsoleWatch secondReader = console.watchFromStart();
+
+		assertEquals(List.of("first"), firstReader.read(1).getLines().stream().map(ConsoleLine::getText).toList());
+		assertEquals(2, secondReader.read(10).getLines().size());
+		assertEquals("second", firstReader.read(1).getLines().getFirst().getText());
+		assertTrue(firstReader.read(1).getLines().isEmpty());
+		assertTrue(console.watch().read(1).getLines().isEmpty());
+
 		for (int index = 0; index < 2100; index++) console.append("extra " + index);
-		ConsoleOutput evicted = console.read(2, 1);
+		ConsoleOutput evicted = firstReader.read(1);
 		assertTrue(evicted.isTruncated());
-		assertEquals(103, evicted.getNextCheckpoint());
-		assertFalse(console.read(evicted.getNextCheckpoint(), 1).isTruncated());
-		assertThrows(IllegalArgumentException.class, () -> console.read(3000, 1));
-		assertThrows(IllegalArgumentException.class, () -> console.read(0, 0));
+		assertEquals(103, evicted.getLines().getFirst().getSequence());
+		assertFalse(firstReader.read(1).isTruncated());
+		assertEquals(103, console.watchFromStart().read(1).getLines().getFirst().getSequence());
+		assertThrows(IllegalArgumentException.class, () -> firstReader.read(0));
+	}
+
+	@Test
+	void waitsForEachNextPrintedLineAndRefusesAForbiddenOne() {
+		ManagedProcessConsole console = new ManagedProcessConsole("server", directory);
+		console.append("Done (1.2s)");
+		ConsoleWatch output = console.watch();
+		Duration wait = Duration.ofMillis(50);
+
+		assertThrows(ProcessException.class, () -> output.printed("Done", wait));
+		output.neverPrinted("Done", wait);
+
+		console.append("Alice joined the game");
+		console.append("Alice joined the game");
+		assertEquals("Alice joined the game", output.printed("joined", wait));
+		assertEquals("Alice joined the game", output.printed("joined", wait));
+		assertThrows(ProcessException.class, () -> output.printed("joined", wait));
+
+		console.append("Exception in thread");
+		ProcessException forbidden = assertThrows(ProcessException.class, () -> output.neverPrinted("Exception", wait));
+		assertTrue(forbidden.getMessage().contains("Exception in thread"), forbidden.getMessage());
+		assertThrows(IllegalArgumentException.class, () -> output.printed("", wait));
+
+		console.append("[12:00:01] Bob left the game");
+		assertEquals("[12:00:01] Bob left the game", output.printed(line -> line.endsWith("left the game"), wait));
+		output.neverPrinted(line -> line.endsWith("left the game"), wait);
 	}
 
 	@Test

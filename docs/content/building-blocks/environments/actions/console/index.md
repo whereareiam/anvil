@@ -1,10 +1,10 @@
 ---
 title: Running console commands
-description: Send process commands and wait for fresh output using a console checkpoint.
+description: Send process commands and wait for fresh output through a console watch.
 ---
 
 Use a process console when the behavior under test is exposed through a console command or log line.
-Take a checkpoint before the operation so an earlier matching line cannot satisfy the wait.
+Start a watch before the operation so an earlier matching line cannot satisfy the wait.
 
 ## Send a command and observe its output
 
@@ -22,10 +22,10 @@ import java.time.Duration;
 public final class ConsoleChecks {
 	public static void verify(ScenarioContext anvil) {
 		var console = anvil.processes().server("server").console();
-		long before = console.checkpoint();
+		var output = console.watch();
 		console.sendCommand("say ANVIL_CONSOLE_CHECK");
-		String output = console.await("ANVIL_CONSOLE_CHECK", before, Duration.ofSeconds(10));
-		System.out.println(output);
+		String line = output.printed("ANVIL_CONSOLE_CHECK", Duration.ofSeconds(10));
+		System.out.println(line);
 	}
 }
 ```
@@ -48,26 +48,27 @@ output; it remains available independently of installed process capabilities.
 For full retained process output, inspect `anvil-console.log` in `workDirectory()` while the workspace
 exists. Avoid printing unlimited logs into routine test output.
 
-A checkpoint belongs to one process generation. After restarting a process, use the replacement
-handle's console and take a new checkpoint. If a wait expires, inspect the tail for command syntax,
+A watch belongs to one process generation. After restarting a process, use the replacement
+handle's console and start a new watch. If a wait expires, inspect the tail for command syntax,
 plugin initialization failures, and the actual response text before increasing the timeout.
 See [startup troubleshooting](../../../../help/troubleshooting/startup/index.md).
 
 ## Read incremental output
 
-For a log view or polling loop, use `console.read(checkpoint, maximumLines)`. It returns immediately
-with a bounded batch. With an existing process console named `console`, initialize `long checkpoint = 0`
-once, then repeat this fragment to consume available history:
+For a log view or polling loop, read through a watch. `read(maximumLines)` returns immediately with a
+bounded batch and moves the watch after it. With an existing process console named `console`, start the
+watch once, from the oldest kept line, then repeat the read to consume available history:
 
 ```java
-var output = console.read(checkpoint, 50);
-output.getLines().forEach(line -> System.out.println(line.getText()));
-checkpoint = output.getNextCheckpoint();
+var output = console.watchFromStart();
+// repeat:
+var batch = output.read(50);
+batch.getLines().forEach(line -> System.out.println(line.getText()));
 ```
 
-`output.isTruncated()` reports that unread lines were evicted from bounded history. Treat it as an
-output gap. `output.isClosed()` means no future lines will be captured; consume any remaining buffered
-lines before ending the reader. Maintain separate checkpoints for replacement process generations.
+`batch.isTruncated()` reports that unread lines were evicted from bounded history. Treat it as an
+output gap. `batch.isClosed()` means no future lines will be captured; consume any remaining buffered
+lines before ending the reader. Keep a separate watch for each replacement process generation.
 Use `process.executionId()` to identify the console stream; the runtime assigns a fresh opaque UUID
 to each process execution. The scenario and process name describe its logical ownership.
 

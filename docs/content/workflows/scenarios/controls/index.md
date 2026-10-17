@@ -43,7 +43,7 @@ read it again when needed. Sending a command does not prove that the application
 Use the exact scenario process name shown by `status`. In a proxy environment, the proxy and lobby
 have separate consoles. For a full log while its workspace exists, inspect the process's
 `anvil-console.log`; [environment actions](../../../building-blocks/environments/actions/index.md)
-cover console checkpoints and typed native operations from Java.
+cover console watches and typed native operations from Java.
 
 ## Invoke a tooling extension
 

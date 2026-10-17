@@ -32,7 +32,7 @@ class ManagedPreparationTest {
 				fixture.spec("lobby", false), fixture.spec("game", false));
 		ProcessGroup group = fixture.service().prepare(plan, fixture.preparation, process -> {
 			assertEquals(ProcessState.CREATED, process.state());
-			assertTrue(process.console().read(0, 10).getLines().isEmpty());
+			assertTrue(process.console().watchFromStart().read(10).getLines().isEmpty());
 			assertSame(process, exposed.get().get(process.name()));
 			observed.add(process);
 		});
@@ -99,7 +99,7 @@ class ManagedPreparationTest {
 		assertSame(rejected, assertThrows(IllegalArgumentException.class, () -> group.start("server")));
 		assertFalse(fixture.calls.contains("start:server"));
 		assertEquals(ProcessState.STOPPED, observed.get().state());
-		assertTrue(observed.get().console().read(0, 10).isClosed());
+		assertTrue(observed.get().console().watchFromStart().read(10).isClosed());
 		group.finish(true);
 		assertEquals("finish:false", fixture.calls.getLast());
 	}

@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.dialogs;
 
+import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.commands.Commands;
 import me.whereareiam.anvil.capability.commands.model.CommandTree;
@@ -12,7 +13,6 @@ import me.whereareiam.anvil.capability.dialogs.model.dialog.DialogButton;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.DialogInput;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.DialogOption;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.RegistryDialog;
-import me.whereareiam.anvil.capability.dialogs.model.dialog.ShownDialog;
 import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens;
 import me.whereareiam.anvil.capability.dialogs.screen.DialogRegistry;
 import me.whereareiam.anvil.capability.dialogs.type.DialogActionType;
@@ -42,6 +42,7 @@ import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -81,20 +82,28 @@ class ChannelDialogsTest {
 	}
 
 	@Test
-	void findsOnlyDialogsAfterACheckpointAndFailsOnAForbiddenOne() {
+	void watchesOnlyDialogsShownSinceItAndFailsOnAForbiddenOne() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
 		channel.publish(DialogsOperations.SHOWN, notice("Log in"));
-		int checkpoint = dialogs.checkpoint();
+		DialogWatch shown = dialogs.watch();
+		Predicate<Dialog> login = dialog -> dialog.getTitle().equals("Log in");
+		Expectation again = shown.expectShown(login);
 
-		dialogs.notShown(dialog -> dialog.getTitle().equals("Log in"), checkpoint, TIMEOUT);
-		assertThrows(IllegalStateException.class, () -> dialogs.shown(dialog -> dialog.getTitle().equals("Log in"), checkpoint, TIMEOUT));
+		shown.neverShown(login, TIMEOUT);
+		assertFalse(again.met());
+		assertEquals("Player did not show a matching dialog",
+				assertThrows(IllegalStateException.class, () -> shown.shown(login, TIMEOUT)).getMessage());
 
-		Dialog again = notice("Log in");
-		channel.publish(DialogsOperations.SHOWN, again);
-		assertEquals(new ShownDialog(again, 2), dialogs.shown(dialog -> dialog.getTitle().equals("Log in"), checkpoint, TIMEOUT));
-		assertEquals("Player was shown a dialog it must not be shown: Log in", assertThrows(IllegalStateException.class,
-				() -> dialogs.notShown(dialog -> dialog.getTitle().equals("Log in"), checkpoint, TIMEOUT)).getMessage());
+		Dialog second = notice("Log in");
+		channel.publish(DialogsOperations.SHOWN, second);
+		assertTrue(again.met());
+		assertEquals(List.of(second), shown.unread());
+		assertEquals("Player was shown a dialog it must not be shown: Log in",
+				assertThrows(IllegalStateException.class, () -> shown.neverShown(login, TIMEOUT)).getMessage());
+		assertSame(second, shown.shown(login, TIMEOUT));
+		assertEquals(List.of(), shown.unread());
+		shown.neverShown(login, TIMEOUT);
 	}
 
 	@Test

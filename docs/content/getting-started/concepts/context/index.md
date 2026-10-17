@@ -47,15 +47,15 @@ final class ContextExample {
 	static String announceReady(ScenarioContext anvil) {
 		var console = anvil.processes().server("server").console();
 		String marker = "context-ready-" + anvil.definition().getName();
-		long checkpoint = console.checkpoint();
+		var output = console.watch();
 		console.sendCommand("say " + marker);
-		return console.await(marker, checkpoint, Duration.ofSeconds(10));
+		return output.printed(marker, Duration.ofSeconds(10));
 	}
 }
 ```
 
 The context resolves `server` within its own scenario. The helper sends an announcement and returns
-the newly captured console line containing its marker. Taking a checkpoint before the command means
+the newly captured console line containing its marker. Starting a watch before the command means
 an earlier identical line cannot satisfy the wait.
 
 This establishes that the console produced the expected output after the command. It does not prove

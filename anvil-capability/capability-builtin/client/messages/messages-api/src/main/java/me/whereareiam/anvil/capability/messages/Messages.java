@@ -1,14 +1,11 @@
 package me.whereareiam.anvil.capability.messages;
 
-import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
-import me.whereareiam.anvil.capability.messages.model.ReceivedMessage;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.function.Predicate;
 
 /**
  * Sends player chat and commands and observes messages received from the server.
@@ -65,62 +62,17 @@ public interface Messages extends PlayerCapability {
 	@NotNull String received(@NotNull String text, @NotNull Duration timeout);
 
 	/**
-	 * Captures the current end of the history. A wait that starts from a checkpoint ignores every message
-	 * received before it, so a text that repeats, such as a prompt shown again after a reconnect, is not
-	 * satisfied by its earlier occurrence.
+	 * Starts following the messages the player receives from now on. Each watch keeps its own position, so several
+	 * can follow the same player independently.
 	 *
 	 * <pre>{@code
-	 * int before = messages.checkpoint();
+	 * MessageWatch chat = messages.watch();
 	 * messages.command("login secret");
-	 * ReceivedMessage welcome = messages.received(text -> text.contains("Welcome back"), before, timeout);
-	 * messages.notReceived(text -> text.contains("Invalid password"), welcome.getCheckpoint(), Duration.ofSeconds(2));
+	 * chat.received("Welcome back");
+	 * chat.neverReceived("Invalid password", Duration.ofSeconds(3));
 	 * }</pre>
 	 *
-	 * @return number of messages received so far
+	 * @return a watch that starts after the last message received so far
 	 */
-	int checkpoint();
-
-	/**
-	 * Waits for the first message after a checkpoint that satisfies a condition.
-	 *
-	 * @param matcher condition on the message's plain text
-	 * @param after checkpoint; only messages received after it are considered
-	 * @param timeout maximum wait
-	 * @return the matching message and the checkpoint directly after it
-	 */
-	@NotNull ReceivedMessage received(@NotNull Predicate<String> matcher, int after, @NotNull Duration timeout);
-
-	/**
-	 * Expects that no message after a checkpoint satisfies a condition for a duration. It fails as soon as such a
-	 * message arrives, naming the message, and returns normally once the duration has passed without one.
-	 *
-	 * @param matcher condition on the message's plain text
-	 * @param after checkpoint; only messages received after it are considered
-	 * @param duration how long no matching message may arrive
-	 */
-	void notReceived(@NotNull Predicate<String> matcher, int after, @NotNull Duration duration);
-
-	/**
-	 * Expects a message after a checkpoint that satisfies a condition, for {@link SimulatedPlayer#awaitFirst}. Once
-	 * it is met, {@link #received(Predicate, int, Duration)} with the same arguments returns the message at once.
-	 *
-	 * <pre>{@code
-	 * int before = messages.checkpoint();
-	 * messages.command("confirm 123456");
-	 * int outcome = player.awaitFirst(messages.expectReceived(text -> text.contains("Welcome"), before), session.expectKicked());
-	 * }</pre>
-	 *
-	 * @param matcher condition on the message's plain text
-	 * @param after checkpoint; only messages received after it are considered
-	 * @return expectation met once such a message has been received
-	 */
-	default @NotNull Expectation expectReceived(@NotNull Predicate<String> matcher, int after) {
-		return Expectation.of("receive a matching message after message " + after, () -> {
-			List<String> history = history();
-			for (int index = Math.max(0, after); index < history.size(); index++)
-				if (matcher.test(history.get(index))) return true;
-
-			return false;
-		});
-	}
+	@NotNull MessageWatch watch();
 }

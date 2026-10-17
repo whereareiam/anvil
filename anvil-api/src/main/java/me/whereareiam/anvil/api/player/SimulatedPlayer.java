@@ -119,10 +119,10 @@ public interface SimulatedPlayer extends CapabilityOwner<PlayerCapability> {
 	 * when the player fails or none is met in time.
 	 *
 	 * <pre>{@code
-	 * int before = messages.checkpoint();
+	 * MessageWatch chat = messages.watch();
 	 * messages.command("confirm 123456");
 	 * int outcome = player.awaitFirst(Duration.ofSeconds(10),
-	 *         messages.expectReceived(text -> text.contains("Invalid code"), before),
+	 *         chat.expectReceived(text -> text.contains("Invalid code")),
 	 *         session.expectKicked());
 	 * if (outcome == 1) assertTrue(session.kicked().contains("Reconnect"));
 	 * }</pre>

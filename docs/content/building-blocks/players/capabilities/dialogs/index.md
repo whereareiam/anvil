@@ -112,17 +112,19 @@ it. Anvil resolves it from the registry the server sent during configuration and
 client knows it, such as a built-in one, carries only those two; its title, body, inputs and buttons are
 empty.
 
-## Wait from a checkpoint
+## Watch the dialogs shown next
 
-When the same dialog is shown again, such as a login form after a wrong password, wait from a
-checkpoint so the earlier dialog cannot satisfy the wait:
+When the same dialog is shown again, such as a login form after a wrong password, start a watch before the
+press, so the earlier dialog cannot satisfy the wait:
 
 ```java
-int before = dialogs.checkpoint();
+DialogWatch shown = dialogs.watch();
 dialogs.press("Log in", Map.of("password", "wrong"));
-ShownDialog again = dialogs.shown(dialog -> dialog.getBody().contains("Invalid password."), before, Duration.ofSeconds(10));
-dialogs.notShown(dialog -> dialog.getTitle().contains("Welcome"), again.getCheckpoint(), Duration.ofSeconds(2));
+Dialog again = shown.shown(dialog -> dialog.getBody().contains("Invalid password."), Duration.ofSeconds(10));
+shown.neverShown(dialog -> dialog.getTitle().contains("Welcome"), Duration.ofSeconds(2));
 ```
 
-The result carries the dialog and the checkpoint directly after it. Import
-`me.whereareiam.anvil.capability.dialogs.model.dialog.ShownDialog`.
+A watch sees only the dialogs shown after it was created, and each wait continues after the dialog the previous
+one found; `neverShown` does not move it. Pressing, closing and confirming stay on `Dialogs`. Import
+`me.whereareiam.anvil.capability.dialogs.DialogWatch`; `expectShown(matcher)` describes the next matching dialog
+for `player.awaitFirst(...)`, and `unread()` lists the dialogs shown since the previous wait.

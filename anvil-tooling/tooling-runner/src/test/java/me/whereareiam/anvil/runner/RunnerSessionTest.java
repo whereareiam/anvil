@@ -12,6 +12,7 @@ import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerManager;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
+import me.whereareiam.anvil.api.process.ConsoleWatch;
 import me.whereareiam.anvil.api.process.ProcessConsole;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
@@ -366,12 +367,17 @@ class RunnerSessionTest {
 			ProcessConsole console = proxy(ProcessConsole.class, (ignored, method, arguments) -> switch (method.getName()) {
 				case "sendCommand" -> { commands.add("console:" + arguments[0]); yield null; }
 				case "tail" -> List.copyOf(captured);
-				case "read" -> {
-					long after = (long) arguments[0];
-					List<ConsoleLine> lines = new ArrayList<>();
-					for (int index = (int) after; index < captured.size(); index++)
-						lines.add(new ConsoleLine(index + 1, captured.get(index)));
-					yield new ConsoleOutput(captured.size(), false, !active, lines);
+				case "watchFromStart" -> {
+					int[] read = {0};
+					yield proxy(ConsoleWatch.class, (watch, watchMethod, watchArguments) -> {
+						if (!watchMethod.getName().equals("read")) throw new AssertionError(watchMethod);
+
+						List<ConsoleLine> lines = new ArrayList<>();
+						for (int index = read[0]; index < captured.size(); index++)
+							lines.add(new ConsoleLine(index + 1, captured.get(index)));
+						read[0] = captured.size();
+						return new ConsoleOutput(false, !active, lines);
+					});
 				}
 				default -> throw new AssertionError(method);
 			});

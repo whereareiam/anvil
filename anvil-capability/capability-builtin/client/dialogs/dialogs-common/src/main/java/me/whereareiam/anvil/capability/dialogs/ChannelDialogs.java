@@ -1,5 +1,8 @@
 package me.whereareiam.anvil.capability.dialogs;
 
+import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.model.player.Expectation;
+import me.whereareiam.anvil.capability.api.history.HistoryCursor;
 import me.whereareiam.anvil.capability.commands.Commands;
 import me.whereareiam.anvil.capability.commands.type.CommandCheck;
 import me.whereareiam.anvil.capability.dialogs.model.click.CommandConfirmation;
@@ -7,12 +10,11 @@ import me.whereareiam.anvil.capability.dialogs.model.click.DialogClick;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.Dialog;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.DialogAction;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.DialogButton;
-import me.whereareiam.anvil.capability.dialogs.model.dialog.ShownDialog;
-import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens;
 import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens.ConfirmScreen;
 import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens.DialogScreen;
 import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens.Screen;
 import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens.WaitingScreen;
+import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens;
 import me.whereareiam.anvil.capability.dialogs.screen.DialogPress;
 import me.whereareiam.anvil.capability.dialogs.screen.DialogRegistry;
 import me.whereareiam.anvil.capability.dialogs.type.DialogActionType;
@@ -101,26 +103,8 @@ final class ChannelDialogs implements Dialogs {
 	}
 
 	@Override
-	public int checkpoint() {
-		return history.size();
-	}
-
-	@Override
-	public @NotNull ShownDialog shown(@NotNull Predicate<Dialog> matcher, int after, @NotNull Duration timeout) {
-		channel.await(() -> find(matcher, after) != null, "show a matching dialog after dialog " + after, timeout);
-		return Objects.requireNonNull(find(matcher, after));
-	}
-
-	@Override
-	public void notShown(@NotNull Predicate<Dialog> matcher, int after, @NotNull Duration duration) {
-		try {
-			channel.await(() -> find(matcher, after) != null, "show a matching dialog after dialog " + after, duration);
-		} catch (IllegalStateException quiet) {
-			if (find(matcher, after) == null) return;
-		}
-
-		throw new IllegalStateException("Player was shown a dialog it must not be shown: "
-				+ Objects.requireNonNull(find(matcher, after)).getDialog().getTitle());
+	public @NotNull DialogWatch watch() {
+		return new Watch(new HistoryCursor<>(this::history));
 	}
 
 	@Override
@@ -305,12 +289,39 @@ final class ChannelDialogs implements Dialogs {
 		return dialog != null && dialog.getTitle().contains(title) ? dialog : null;
 	}
 
-	private @Nullable ShownDialog find(Predicate<Dialog> matcher, int after) {
-		List<Dialog> snapshot = List.copyOf(history);
-		for (int index = Math.max(0, after); index < snapshot.size(); index++)
-			if (matcher.test(snapshot.get(index)))
-				return new ShownDialog(snapshot.get(index), index + 1);
+	/**
+	 * A watch over this player's dialog history, which waits through the player's channel.
+	 */
+	@RequiredArgsConstructor
+	private final class Watch implements DialogWatch {
+		private final HistoryCursor<Dialog> cursor;
 
-		return null;
+		@Override
+		public @NotNull Dialog shown(@NotNull Predicate<Dialog> matcher, @NotNull Duration timeout) {
+			channel.await(() -> cursor.find(matcher) != null, "show a matching dialog", timeout);
+			return Objects.requireNonNull(cursor.take(matcher));
+		}
+
+		@Override
+		public void neverShown(@NotNull Predicate<Dialog> matcher, @NotNull Duration duration) {
+			try {
+				channel.await(() -> cursor.find(matcher) != null, "show a matching dialog", duration);
+			} catch (IllegalStateException quiet) {
+				if (cursor.find(matcher) == null) return;
+			}
+
+			throw new IllegalStateException("Player was shown a dialog it must not be shown: "
+					+ Objects.requireNonNull(cursor.find(matcher)).getTitle());
+		}
+
+		@Override
+		public @NotNull Expectation expectShown(@NotNull Predicate<Dialog> matcher) {
+			return Expectation.of("show a matching dialog", () -> cursor.find(matcher) != null);
+		}
+
+		@Override
+		public @NotNull List<Dialog> unread() {
+			return cursor.unread();
+		}
 	}
 }
