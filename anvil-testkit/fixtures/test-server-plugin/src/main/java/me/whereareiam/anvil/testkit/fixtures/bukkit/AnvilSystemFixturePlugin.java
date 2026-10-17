@@ -7,6 +7,8 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -39,6 +41,7 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 	private static final String AUTH_REJOIN_FORBIDDEN = "anvil:auth:rejoin-forbidden:";
 	private final Map<String, AtomicInteger> authenticationAttempts = new ConcurrentHashMap<>();
 	private FixtureCookies cookies;
+	private FixtureDisplays displays;
 
 	@Override
 	public void onEnable() {
@@ -51,6 +54,10 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 		var cookie = getCommand("anvil-cookie");
 		if (cookie != null)
 			cookie.setExecutor((sender, ignored, label, arguments) -> cookie(arguments));
+		displays = FixtureDisplays.load(getClassLoader());
+		var entity = getCommand("anvil-entity");
+		if (entity != null)
+			entity.setExecutor((sender, ignored, label, arguments) -> entity(arguments));
 		var auth = getCommand("auth");
 		if (auth != null)
 			auth.setExecutor((sender, ignored, label, arguments) -> authenticate(player(sender)));
@@ -180,6 +187,56 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 		else
 			return false;
 		return true;
+	}
+
+	/**
+	 * Shows text above a player named by the console, as a chat bubble plugin does, or removes it again, each
+	 * confirmed to the player as chat: an invisible armor stand with a visible custom name riding the player
+	 * ({@code anvil:bubble:<id>}), a text display above the player ({@code anvil:display:<id>}, or
+	 * {@code anvil:display:unsupported} before Minecraft 1.19.4), a glowing stack of three diamonds dropped next to
+	 * the player that nobody can pick up ({@code anvil:dropped:<id>}), and the removal of an entity
+	 * ({@code anvil:removed:<id>}).
+	 */
+	private boolean entity(String[] arguments) {
+		Player player = arguments.length < 2 ? null : Bukkit.getPlayerExact(arguments[0]);
+		if (player == null)
+			return false;
+		if (arguments.length < 3 && !arguments[1].equals("drop"))
+			return false;
+
+		String text = String.join(" ", Arrays.copyOfRange(arguments, 2, arguments.length));
+		switch (arguments[1]) {
+			case "bubble":
+				ArmorStand bubble = player.getWorld().spawn(player.getLocation().add(0, 2, 0), ArmorStand.class);
+				bubble.setVisible(false);
+				bubble.setGravity(false);
+				bubble.setCustomName(text);
+				bubble.setCustomNameVisible(true);
+				player.addPassenger(bubble);
+				player.sendMessage("anvil:bubble:" + bubble.getEntityId());
+				return true;
+			case "display":
+				if (displays == null)
+					player.sendMessage("anvil:display:unsupported");
+				else
+					player.sendMessage("anvil:display:" + displays.show(player.getLocation().add(0, 2.5, 0), text));
+				return true;
+			case "drop":
+				Item dropped = player.getWorld().dropItem(player.getLocation().add(1, 0, 1), new ItemStack(Material.DIAMOND, 3));
+				dropped.setPickupDelay(Integer.MAX_VALUE);
+				dropped.setGlowing(true);
+				player.sendMessage("anvil:dropped:" + dropped.getEntityId());
+				return true;
+			case "remove":
+				int entityId = Integer.parseInt(arguments[2]);
+				player.getWorld().getEntities().stream()
+						.filter(candidate -> candidate.getEntityId() == entityId)
+						.forEach(Entity::remove);
+				player.sendMessage("anvil:removed:" + entityId);
+				return true;
+			default:
+				return false;
+		}
 	}
 
 	private static Player player(CommandSender sender) {
