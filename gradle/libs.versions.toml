@@ -30,6 +30,8 @@ intellij-verify = "2026.2.2"
 paper = "1.21.11-R0.1-SNAPSHOT"
 # The oldest Bukkit API that in-server code compiles against.
 bukkit = "1.16.5-R0.1-SNAPSHOT"
+# The oldest Paper API with cookies, which arrived in Minecraft 1.20.5, for the server fixture's cookie commands.
+bukkit-cookies = "1.21.1-R0.1-SNAPSHOT"
 velocity = "3.5.1"
 # The oldest NeoForge release the NeoForge agent compiles against.
 neoforge = "21.1.256"
@@ -73,6 +75,7 @@ slf4j-simple = { group = "org.slf4j", name = "slf4j-simple", version.ref = "slf4
 paper = { group = "io.papermc.paper", name = "paper-api", version.ref = "paper" }
 bukkit-spigot = { group = "org.spigotmc", name = "spigot-api", version.ref = "bukkit" }
 bukkit-paper = { group = "com.destroystokyo.paper", name = "paper-api", version.ref = "bukkit" }
+bukkit-paper-cookies = { group = "io.papermc.paper", name = "paper-api", version.ref = "bukkit-cookies" }
 velocity = { group = "com.velocitypowered", name = "velocity-api", version.ref = "velocity" }
 bungeecord = { group = "net.md-5", name = "bungeecord-api", version.ref = "bungeecord" }
 

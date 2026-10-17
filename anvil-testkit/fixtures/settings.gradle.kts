@@ -12,7 +12,7 @@ pluginManagement {
 
 rootProject.name = "anvil-test-fixtures"
 
-include("test-extension", "test-process", "test-server-plugin", "test-tooling-extension")
+include("test-extension", "test-process", "test-server-plugin", "test-server-plugin:V1_21_1", "test-tooling-extension")
 
 val repositoryVersion = providers.fileContents(layout.settingsDirectory.file("../../gradle.properties"))
     .asText.map { text -> Properties().apply { load(text.reader()) }.getProperty("anvilVersion") }
