@@ -22,6 +22,7 @@ final class JavaPackets {
 			new ChatPackets(),
 			new CommandPackets(),
 			new PlayerPackets(),
+			new ScreenPackets(),
 			new SoundPackets()
 	);
 	private final Set<Class<? extends JavaPacket>> supported = areas.stream()

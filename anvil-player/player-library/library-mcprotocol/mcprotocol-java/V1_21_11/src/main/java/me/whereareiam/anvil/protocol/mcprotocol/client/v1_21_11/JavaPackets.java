@@ -23,6 +23,7 @@ final class JavaPackets {
 			new CommandPackets(),
 			new CookiePackets(),
 			new PlayerPackets(),
+			new ScreenPackets(),
 			new SoundPackets()
 	);
 	private final Set<Class<? extends JavaPacket>> supported = areas.stream()

@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.screen;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.api.history.HistoryCursor;
+import me.whereareiam.anvil.capability.screen.channel.ScreenChannel;
 import me.whereareiam.anvil.capability.screen.model.BossBar;
 import me.whereareiam.anvil.capability.screen.model.BossBarEvent;
 import me.whereareiam.anvil.capability.screen.model.Title;
@@ -34,9 +35,9 @@ final class ChannelScreen implements Screen {
 
 	ChannelScreen(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
-		channel.subscribe(ScreenOperations.TITLE, titles::add);
-		channel.subscribe(ScreenOperations.ACTION_BAR, actionBars::add);
-		channel.subscribe(ScreenOperations.BOSS_BAR, bossBarEvents::add);
+		channel.subscribe(ScreenChannel.TITLE, titles::add);
+		channel.subscribe(ScreenChannel.ACTION_BAR, actionBars::add);
+		channel.subscribe(ScreenChannel.BOSS_BAR, bossBarEvents::add);
 	}
 
 	@Override
