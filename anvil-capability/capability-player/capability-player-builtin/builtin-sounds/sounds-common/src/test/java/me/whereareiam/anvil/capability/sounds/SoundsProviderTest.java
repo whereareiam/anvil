@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
+import me.whereareiam.anvil.capability.sounds.channel.SoundsChannel;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
@@ -29,8 +30,8 @@ class SoundsProviderTest {
 	void describesTheSoundsCapabilityForTheLibrariesWithAWorkerSide() {
 		SoundsProvider provider = new SoundsProvider();
 
-		assertEquals("me.whereareiam.anvil.sounds", SoundsProvider.ID);
-		assertEquals(SoundsProvider.ID, provider.descriptor().getId());
+		assertEquals("me.whereareiam.anvil.sounds", SoundsChannel.ID);
+		assertEquals(SoundsChannel.ID, provider.descriptor().getId());
 		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
 		assertEquals(Set.of("mcprotocol"), provider.supportedLibraries());
 		assertEquals(Sounds.class, provider.capability());
@@ -41,7 +42,7 @@ class SoundsProviderTest {
 		RecordingChannel channel = new RecordingChannel();
 		Sounds sounds = new SoundsProvider().create(new ChannelContext(channel));
 
-		assertEquals(List.of(SoundsOperations.HEARD.getId()), channel.subscriptions);
+		assertEquals(List.of(SoundsChannel.HEARD.getId()), channel.subscriptions);
 		assertTrue(channel.requests.isEmpty());
 		assertTrue(sounds.history().isEmpty());
 	}
@@ -51,7 +52,7 @@ class SoundsProviderTest {
 	 */
 	private static final class RecordingChannel implements ProtocolChannel {
 		private final List<String> requests = new ArrayList<>();
-				private final List<String> subscriptions = new ArrayList<>();
+		private final List<String> subscriptions = new ArrayList<>();
 
 		@Override
 		public <Q, R> @Nullable R request(@NotNull OperationDescriptor<Q, R> operation, @Nullable Q request) {
@@ -72,7 +73,7 @@ class SoundsProviderTest {
 
 		@Override
 		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(SoundsProvider.ID);
+			return Set.of(SoundsChannel.ID);
 		}
 	}
 

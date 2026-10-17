@@ -9,6 +9,9 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundMovePlayerPosRot;
+import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundCustomSound;
+import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
+import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -108,7 +111,10 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ServerboundChat.class));
 		assertTrue(client.supports(ServerboundChatCommand.class));
 		assertTrue(client.supports(ServerboundMovePlayerPosRot.class));
+		assertTrue(client.supports(ClientboundSound.class));
+		assertTrue(client.supports(ClientboundSoundEntity.class));
 		assertTrue(client.supports(ClientboundDisguisedChat.class));
+		assertFalse(client.supports(ClientboundCustomSound.class));
 		assertFalse(client.supports(UnknownPacket.class));
 	}
 

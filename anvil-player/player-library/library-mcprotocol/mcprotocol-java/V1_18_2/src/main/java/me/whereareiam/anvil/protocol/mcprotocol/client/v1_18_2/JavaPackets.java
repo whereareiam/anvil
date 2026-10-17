@@ -18,7 +18,11 @@ import java.util.stream.Collectors;
  * The Java Edition packets this release carries, translated area by area.
  */
 final class JavaPackets {
-	private final List<PacketTranslation<Packet>> areas = List.of(new ChatPackets(), new PlayerPackets());
+	private final List<PacketTranslation<Packet>> areas = List.of(
+			new ChatPackets(),
+			new PlayerPackets(),
+			new SoundPackets()
+	);
 	private final Set<Class<? extends JavaPacket>> supported = areas.stream()
 			.flatMap(area -> area.packets().stream())
 			.collect(Collectors.toUnmodifiableSet());
