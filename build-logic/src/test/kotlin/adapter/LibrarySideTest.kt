@@ -35,7 +35,7 @@ class LibrarySideTest {
 
 	@Test
 	fun `requires at least one segment`() {
-		val side = side("mcprotocol-client")
+		val side = side("mcprotocol-java")
 
 		val failure = assertThrows<GradleException> { LibrarySide.read(side, listOf("mcprotocol")) }
 

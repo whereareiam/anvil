@@ -16,7 +16,7 @@ class LibraryLayout private constructor(val conventions: Map<String, String>) {
 	/**
 	 * One project of the build.
 	 *
-	 * @property path project path, such as `:anvil-protocol:protocol-mcprotocol`
+	 * @property path project path, such as `:anvil-player:player-library:library-mcprotocol`
 	 * @property directory project folder
 	 * @property children names of the child projects
 	 */

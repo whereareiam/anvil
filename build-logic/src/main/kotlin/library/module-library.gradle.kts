@@ -17,7 +17,7 @@ val releaseData = providers.of(LibraryRegistrySource::class) {
 	parameters.rootDirectory.set(isolated.rootProject.projectDirectory)
 }.get().values.singleOrNull { it.parentFile.absoluteFile == projectDir.absoluteFile } ?: throw GradleException(
 	"$path applies module-library, but only a library family root that owns its <id>-releases.toml, such as "
-		+ "anvil-protocol/protocol-mcprotocol/mcprotocol-releases.toml, has release data to pin"
+		+ "anvil-player/player-library/library-mcprotocol/mcprotocol-releases.toml, has release data to pin"
 )
 val libraryRepositories = gradle.extensions.findByType<LibraryRepositories>() ?: throw GradleException(
 	"$path applies module-library, which needs the library repositories: add id(\"build-libraries\") to the settings plugins"

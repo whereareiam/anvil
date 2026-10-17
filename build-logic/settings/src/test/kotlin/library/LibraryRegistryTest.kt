@@ -13,23 +13,23 @@ class LibraryRegistryTest {
 	lateinit var root: File
 
 	@Test
-	fun `registers libraries that own a releases file in their protocol folder`() {
-		val mcprotocol = releases("protocol-mcprotocol", "mcprotocol")
-		val other = releases("protocol-other", "other")
-		File(root, "anvil-protocol/protocol-api").mkdirs()
-		releases("protocol-misnamed", "different")
+	fun `registers libraries that own a releases file in their library folder`() {
+		val mcprotocol = releases("library-mcprotocol", "mcprotocol")
+		val other = releases("library-other", "other")
+		File(root, "anvil-player/player-library/library-pending").mkdirs()
+		releases("library-misnamed", "different")
 
 		assertEquals(mapOf("mcprotocol" to mcprotocol, "other" to other), LibraryRegistry.discover(root))
 	}
 
 	@Test
-	fun `finds no libraries without a protocol family`() {
+	fun `finds no libraries without a player library group`() {
 		assertEquals(emptyMap<String, File>(), LibraryRegistry.discover(root))
 	}
 
 	@Test
 	fun `rejects library ids that are not one word`() {
-		releases("protocol-two-words", "two-words")
+		releases("library-two-words", "two-words")
 
 		assertThrows<GradleException> { LibraryRegistry.discover(root) }
 	}
@@ -37,7 +37,7 @@ class LibraryRegistryTest {
 	@Test
 	fun `names the one library among a side folder's words`() {
 		assertEquals("mcprotocol", LibraryRegistry.libraryOf("messages-mcprotocol", listOf("mcprotocol", "other")))
-		assertEquals("mcprotocol", LibraryRegistry.libraryOf("mcprotocol-client", listOf("mcprotocol")))
+		assertEquals("mcprotocol", LibraryRegistry.libraryOf("mcprotocol-java", listOf("mcprotocol")))
 	}
 
 	@Test
@@ -50,7 +50,7 @@ class LibraryRegistryTest {
 	}
 
 	private fun releases(folder: String, library: String): File {
-		val directory = File(root, "anvil-protocol/$folder")
+		val directory = File(root, "anvil-player/player-library/$folder")
 		directory.mkdirs()
 		return File(directory, "$library-releases.toml").apply { writeText("") }
 	}

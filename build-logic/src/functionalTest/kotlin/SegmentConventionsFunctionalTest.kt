@@ -74,7 +74,7 @@ class SegmentConventionsFunctionalTest {
 		segmentSource(project, "1_18_2", "com.example.legacy", "")
 
 		// Workers load the locked closure, so a closure without the auth JAR breaks the segment's own release.
-		val releases = project.file("anvil-protocol/protocol-mcprotocol/mcprotocol-releases.toml")
+		val releases = project.file("anvil-player/player-library/library-mcprotocol/mcprotocol-releases.toml")
 		val locked = releases.readText()
 		releases.writeText(locked.replaceFirst(closureTable("com.example:auth:1.0"), "").trimEnd() + "\n")
 		val unlocked = project.fail(":demo-mcprotocol:V1_18_2:checkSegmentLinkage")
@@ -114,8 +114,8 @@ class SegmentConventionsFunctionalTest {
 		// Worker tests of the library receive each release's locked closure, in release data order, from a file
 		// without a timestamp, which stays the same while the closures do. The file is ASCII, as the test JVM's
 		// Properties.load(InputStream) reads it.
-		project.run(":anvil-protocol:protocol-mcprotocol:mcprotocol-common:writeReleaseClosures")
-		val closures = project.file("anvil-protocol/protocol-mcprotocol/mcprotocol-common/build/release-closures/mcprotocol.properties")
+		project.run(":anvil-player:player-library:library-mcprotocol:mcprotocol-common:writeReleaseClosures")
+		val closures = project.file("anvil-player/player-library/library-mcprotocol/mcprotocol-common/build/release-closures/mcprotocol.properties")
 		val written = Properties().apply { closures.inputStream().use(::load) }
 		assertTrue(closures.readLines().none { it.startsWith("#") }, closures.readText())
 		assertTrue(closures.readBytes().all { it >= 0 }, closures.readText())
@@ -233,10 +233,10 @@ class SegmentConventionsFunctionalTest {
 
 			rootProject.name = "segment-consumer"
 			include(":demo-api", ":demo-mcprotocol", ":demo-mcprotocol:V1_18_2", ":demo-mcprotocol:V1_20_6", ":consumer")
-			include(":anvil-protocol:protocol-mcprotocol:mcprotocol-common")
+			include(":anvil-player:player-library:library-mcprotocol:mcprotocol-common")
 		""")
-		project.write("anvil-protocol/protocol-mcprotocol/build.gradle.kts", "plugins {\n\tid(\"module-library\")\n}\n")
-		project.write("anvil-protocol/protocol-mcprotocol/mcprotocol-common/build.gradle.kts", """
+		project.write("anvil-player/player-library/library-mcprotocol/build.gradle.kts", "plugins {\n\tid(\"module-library\")\n}\n")
+		project.write("anvil-player/player-library/library-mcprotocol/mcprotocol-common/build.gradle.kts", """
 			plugins {
 				id("module-java")
 				id("test-library-closures")
@@ -256,7 +256,7 @@ class SegmentConventionsFunctionalTest {
 				}
 			}
 		""")
-		project.write("anvil-protocol/protocol-mcprotocol/mcprotocol-releases.toml", listOf(
+		project.write("anvil-player/player-library/library-mcprotocol/mcprotocol-releases.toml", listOf(
 			release("1.18.2-1", "com.example.legacy:protocol:1.18.2-1", 758, "1.18.2", 8, "com.example:auth:1.0"),
 			release("1.19.4-1", "com.example.legacy:protocol:1.19.4-1", 762, "1.19.4", 8, "com.example:auth:1.0"),
 			release("1.20.6-1", "com.example.modern:protocol:1.20.6-1", 766, "1.20.6", 17, "com.example:auth:2.0", "1.20.5"),

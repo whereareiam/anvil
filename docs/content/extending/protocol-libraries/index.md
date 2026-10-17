@@ -28,10 +28,10 @@ are in `me.whereareiam.anvil.protocol.api.library`. Player contracts are in
 `me.whereareiam.anvil.protocol.api.type`.
 
 For the exact contracts, read the
-[ProtocolLibraryProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-protocol/protocol-api/src/main/java/me/whereareiam/anvil/protocol/api/library/ProtocolLibraryProvider.java),
-[ProtocolLibrary](https://github.com/whereareiam/anvil/blob/dev/anvil-protocol/protocol-api/src/main/java/me/whereareiam/anvil/protocol/api/library/ProtocolLibrary.java),
-[ProtocolRelease](https://github.com/whereareiam/anvil/blob/dev/anvil-protocol/protocol-api/src/main/java/me/whereareiam/anvil/protocol/api/model/ProtocolRelease.java), and
-[ProtocolPlayer](https://github.com/whereareiam/anvil/blob/dev/anvil-protocol/protocol-api/src/main/java/me/whereareiam/anvil/protocol/api/player/ProtocolPlayer.java)
+[ProtocolLibraryProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-player/player-api/src/main/java/me/whereareiam/anvil/protocol/api/library/ProtocolLibraryProvider.java),
+[ProtocolLibrary](https://github.com/whereareiam/anvil/blob/dev/anvil-player/player-api/src/main/java/me/whereareiam/anvil/protocol/api/library/ProtocolLibrary.java),
+[ProtocolRelease](https://github.com/whereareiam/anvil/blob/dev/anvil-player/player-api/src/main/java/me/whereareiam/anvil/protocol/api/model/ProtocolRelease.java), and
+[ProtocolPlayer](https://github.com/whereareiam/anvil/blob/dev/anvil-player/player-api/src/main/java/me/whereareiam/anvil/protocol/api/player/ProtocolPlayer.java)
 source Javadocs. These links use `dev`; select your release tag when checking a released version.
 
 ## Describe the releases

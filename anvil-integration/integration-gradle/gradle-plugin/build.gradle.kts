@@ -13,7 +13,7 @@ dependencies {
 	implementation(projects.anvilIntegration.integrationGradle.gradleArtifacts)
 	implementation(projects.anvilIntegration.integrationGradle.gradleTooling)
 
-	testImplementation(projects.anvilProtocol.protocolApi)
+	testImplementation(projects.anvilPlayer.playerApi)
 	testImplementation(libs.jackson.databind)
 }
 

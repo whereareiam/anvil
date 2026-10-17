@@ -12,8 +12,8 @@ dependencies {
 	testImplementation(projects.anvilCapability.capabilityBuiltin.default)
 	testImplementation(projects.anvilLauncher)
 	testImplementation(projects.anvilProcess.processApi)
-	testImplementation(projects.anvilProtocol)
-	testImplementation(projects.anvilProtocol.protocolApi)
+	testImplementation(projects.anvilPlayer.playerCommon)
+	testImplementation(projects.anvilPlayer.playerApi)
 
 	// The launcher's shaded JAR carries the planner at runtime; tests only compile against it.
 	testCompileOnly(projects.anvilProcess.processCommon)
@@ -24,7 +24,7 @@ dependencies {
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.paperProvider)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.spigotProvider)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformVelocity.velocityProvider)
-	testRuntimeOnly(projects.anvilProtocol.protocolMcprotocol)
+	testRuntimeOnly(projects.anvilPlayer.playerLibrary.libraryMcprotocol)
 }
 
 fixtures {

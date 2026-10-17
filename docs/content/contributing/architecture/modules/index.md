@@ -17,9 +17,9 @@ a family's API describes its services and extension points. The launcher binds t
 | `anvil-process/process-common`              | Distribution validation, effective Java/topology requirements, forwarding, and provider preparation/configuration                             |
 | `anvil-process/process-api`                     | Platform-provider contracts, version data, artifact sources, and configuration contracts                            |
 | `anvil-process/process-platform/platform-<name>` | One family per platform: its provider and, where it installs one, its platform agent assembly                |
-| `anvil-protocol/src`                            | Player registration, per-player library and release selection, authentication compatibility, and observations     |
-| `anvil-protocol/protocol-api`                   | Protocol library contracts, releases, players, protocol-owned channels and native worker contracts                 |
-| `anvil-protocol/protocol-mcprotocol`            | The MCProtocolLib library: release data, client port, client segments, worker host and shell, and account storage |
+| `anvil-player/player-common/src`                            | Player registration, per-player library and release selection, authentication compatibility, and observations     |
+| `anvil-player/player-api`                   | Protocol library contracts, releases, players, protocol-owned channels and native worker contracts                 |
+| `anvil-player/player-library/library-mcprotocol`            | The MCProtocolLib library: release data, client port, client segments, worker host and shell, and account storage |
 | `anvil-capability/src`                          | Dependency validation, agent-provider adaptation, logical process owners, player facades, and capability cleanup                                |
 | `anvil-capability/capability-api`                | Generic composition, neutral player contracts, descriptors, exceptions, and typed requests |
 | `anvil-capability/capability-protocol-api`         | Protocol-backed player providers/contexts, channels/events, and native worker bindings |
@@ -192,21 +192,21 @@ implementation uses global player observations where needed without exposing the
 
 ## Locate a protocol library
 
-A protocol library is a family under `anvil-protocol/protocol-<library>`, and its folder holds the
+A protocol library is a family under `anvil-player/player-library/library-<library>`, and its folder holds the
 library's release data, `<library>-releases.toml`. The settings plugin `build-libraries` registers
 every such library. MCProtocolLib's family is laid out like this:
 
 | Module | Owns |
 |---|---|
-| `protocol-mcprotocol` | Wiring-only root: shades `mcprotocol-common`, publishes `protocol-mcprotocol`, and owns `mcprotocol-releases.toml` and its `pinLibraryReleases` task |
+| `library-mcprotocol` | Wiring-only root: shades `mcprotocol-common`, publishes `protocol-mcprotocol`, and owns `mcprotocol-releases.toml` and its `pinLibraryReleases` task |
 | `mcprotocol-api` | The release-neutral client port `McProtocolClient<S>` that client segments implement |
 | `mcprotocol-common` | `McProtocolLibraryProvider`, the release catalog, worker host and segment selection, the worker shell, and the private account store |
-| `mcprotocol-client` | Source-free side folder whose `V*` children are the client segments |
-| `mcprotocol-client/V1_18_2`, `V1_21_1` and `V1_21_11` | One client segment per range of releases; `V1_21_11` also serves `26.1.2` |
+| `mcprotocol-java` | Source-free side folder whose `V*` children are the client segments |
+| `mcprotocol-java/V1_18_2`, `V1_21_1` and `V1_21_11` | One client segment per range of releases; `V1_21_11` also serves `26.1.2` |
 
 The worker shell never imports MCProtocolLib. Every class that does lives in a segment: a project named
 after the release key it starts at, under a side folder named after its owner and library, such as
-`mcprotocol-client` or `movement-mcprotocol`. A segment holds only the adapters of library-neutral ports
+`mcprotocol-java` or `movement-mcprotocol`. A segment holds only the adapters of library-neutral ports
 and their service descriptors; it never wires anything. Its package ends in the folder name in lower
 case, such as `.v1_18_2`. For a release, the worker keeps the segment of each side with the greatest
 start version that does not exceed the release key. A new segment is added only when a release breaks

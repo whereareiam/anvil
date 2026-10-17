@@ -5,11 +5,11 @@ import java.io.File
 
 /**
  * The protocol libraries registered in a build. Library `X` is registered by owning
- * `anvil-protocol/protocol-X/X-releases.toml`; no other list of libraries exists.
+ * `anvil-player/player-library/library-X/X-releases.toml`; no other list of libraries exists.
  */
 object LibraryRegistry {
-	private const val familyDirectory = "anvil-protocol"
-	private const val libraryDirectoryPrefix = "protocol-"
+	private const val familyDirectory = "anvil-player/player-library"
+	private const val libraryDirectoryPrefix = "library-"
 	private val identifier = Regex("[a-z][a-z0-9]*")
 
 	/**
@@ -32,7 +32,7 @@ object LibraryRegistry {
 
 	/**
 	 * Names the library a library side folder belongs to: the one registered id among its hyphen-separated
-	 * words, as in `messages-mcprotocol` or `mcprotocol-client`.
+	 * words, as in `messages-mcprotocol` or `mcprotocol-java`.
 	 *
 	 * @throws GradleException unless exactly one registered library id is a word of [folderName]
 	 */

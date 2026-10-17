@@ -48,7 +48,7 @@ dependencyResolutionManagement {
             library("capability-agent-api", "me.whereareiam.anvil", "capability-agent-api").versionRef("anvil")
             library("capability-protocol-api", "me.whereareiam.anvil", "capability-protocol-api").versionRef("anvil")
             library("movement-api", "me.whereareiam.anvil", module("builtin-movement-api", "movement-api")).versionRef("anvil")
-            library("protocol-api", "me.whereareiam.anvil", "protocol-api").versionRef("anvil")
+            library("protocol-api", "me.whereareiam.anvil", module("protocol-api", "player-api")).versionRef("anvil")
             library("session-api", "me.whereareiam.anvil", module("builtin-session-api", "session-api")).versionRef("anvil")
         }
     }

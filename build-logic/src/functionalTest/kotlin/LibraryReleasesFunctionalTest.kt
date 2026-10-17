@@ -18,7 +18,7 @@ class LibraryReleasesFunctionalTest {
 	@TempDir
 	lateinit var directory: File
 
-	private val releasesPath = "anvil-protocol/protocol-demo/demo-releases.toml"
+	private val releasesPath = "anvil-player/player-library/library-demo/demo-releases.toml"
 	private val snapshot = "1.21.11-20260512.221357-18"
 
 	@Test
@@ -29,7 +29,7 @@ class LibraryReleasesFunctionalTest {
 		val legacyChecksum = sha256(project.file("repository/$legacy"))
 		project.file(releasesPath).apply { parentFile.mkdirs() }.writeText(releases(legacyChecksum))
 
-		val pinned = project.run(":anvil-protocol:protocol-demo:pinLibraryReleases")
+		val pinned = project.run(":anvil-player:player-library:library-demo:pinLibraryReleases")
 		assertTrue(pinned.output.contains("Pinned 5 JARs of 2 releases in demo-releases.toml; 4 pins are new"), pinned.output)
 
 		val expected = listOf(
@@ -43,7 +43,7 @@ class LibraryReleasesFunctionalTest {
 		).joinToString("\n\n") + "\n"
 		assertEquals(expected, project.file(releasesPath).readText())
 
-		val again = project.run(":anvil-protocol:protocol-demo:pinLibraryReleases")
+		val again = project.run(":anvil-player:player-library:library-demo:pinLibraryReleases")
 		assertTrue(again.output.contains("Pinned 5 JARs of 2 releases in demo-releases.toml; 0 pins are new"), again.output)
 		assertEquals(expected, project.file(releasesPath).readText())
 
@@ -51,16 +51,16 @@ class LibraryReleasesFunctionalTest {
 		val authChecksum = sha256(project.file("mirror/com/example/auth/2.0/auth-2.0.jar"))
 		val tampered = expected.replace(authChecksum, wrong)
 		project.file(releasesPath).writeText(tampered)
-		val refused = project.fail(":anvil-protocol:protocol-demo:pinLibraryReleases")
+		val refused = project.fail(":anvil-player:player-library:library-demo:pinLibraryReleases")
 		assertTrue(refused.output.contains("com.example:auth:2.0 is pinned to $wrong, but resolves to $authChecksum"), refused.output)
 		assertEquals(tampered, project.file(releasesPath).readText())
 
-		project.write("anvil-protocol/protocol-demo/build.gradle.kts", "plugins {\n\tbase\n}\n")
+		project.write("anvil-player/player-library/library-demo/build.gradle.kts", "plugins {\n\tbase\n}\n")
 		val unpinned = project.fail("help")
 		assertTrue(unpinned.output.contains(
-			":anvil-protocol:protocol-demo owns the release data of a protocol library and must apply id(\"module-library\")"
+			":anvil-player:player-library:library-demo owns the release data of a protocol library and must apply id(\"module-library\")"
 		), unpinned.output)
-		project.write("anvil-protocol/protocol-demo/build.gradle.kts", "plugins {\n\tid(\"module-library\")\n}\n")
+		project.write("anvil-player/player-library/library-demo/build.gradle.kts", "plugins {\n\tid(\"module-library\")\n}\n")
 
 		project.write("other/build.gradle.kts", "plugins {\n\tid(\"module-library\")\n}\n")
 		project.write("settings.gradle.kts", project.file("settings.gradle.kts").readText() + "include(\":other\")\n")
@@ -105,9 +105,9 @@ class LibraryReleasesFunctionalTest {
 			}
 
 			rootProject.name = "release-consumer"
-			include(":anvil-protocol:protocol-demo")
+			include(":anvil-player:player-library:library-demo")
 		""")
-		project.write("anvil-protocol/protocol-demo/build.gradle.kts", "plugins {\n\tid(\"module-library\")\n}\n")
+		project.write("anvil-player/player-library/library-demo/build.gradle.kts", "plugins {\n\tid(\"module-library\")\n}\n")
 	}
 
 	private val legacyRelease = """
