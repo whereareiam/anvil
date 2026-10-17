@@ -133,8 +133,8 @@ public interface PlayerBindingContext<S> {
 	 *
 	 * <pre>{@code
 	 * public WorkerBinding bind(PlayerBindingContext<Object> player, OperationRegistry operations) {
-	 *     InventoryPackets<?> packets = player.adapter(InventoryPackets.class);
-	 *     return new InventoryBinding<>(packets).bind(player, operations);
+	 *     InteractionPackets<?> packets = player.adapter(InteractionPackets.class);
+	 *     return new InteractionBinding<>(packets).bind(player, operations);
 	 * }
 	 * }</pre>
 	 *

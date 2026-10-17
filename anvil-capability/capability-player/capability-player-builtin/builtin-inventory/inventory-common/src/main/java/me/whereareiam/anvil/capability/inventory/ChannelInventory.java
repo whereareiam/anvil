@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.inventory;
 
+import me.whereareiam.anvil.capability.inventory.channel.InventoryChannel;
 import me.whereareiam.anvil.capability.inventory.model.InventoryAction;
 import me.whereareiam.anvil.capability.inventory.model.InventorySnapshot;
 import me.whereareiam.anvil.capability.inventory.model.SlotSelection;
@@ -13,7 +14,7 @@ import java.util.function.Predicate;
 
 /**
  * Inventory capability driven over a player's typed channel: selections and clicks go to the worker's inventory
- * binding, and the snapshots it publishes keep the latest observed state. The channel releases the event
+ * extension, and the snapshots it publishes keep the latest observed state. The channel releases the event
  * subscription together with the player.
  */
 final class ChannelInventory implements Inventory {
@@ -24,7 +25,7 @@ final class ChannelInventory implements Inventory {
 
 	ChannelInventory(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
-		channel.subscribe(InventoryOperations.CHANGED, snapshot::set);
+		channel.subscribe(InventoryChannel.CHANGED, snapshot::set);
 	}
 
 	@Override
@@ -46,11 +47,11 @@ final class ChannelInventory implements Inventory {
 		if (slot < 0 || slot > 8)
 			throw new IllegalArgumentException("Hotbar slot must be in range 0..8");
 
-		channel.request(InventoryOperations.SELECT, new SlotSelection(slot));
+		channel.request(InventoryChannel.SELECT, new SlotSelection(slot));
 	}
 
 	@Override
 	public void click(int slot, @NotNull InventoryClick click, int button) {
-		channel.request(InventoryOperations.CLICK, new InventoryAction(slot, click, button));
+		channel.request(InventoryChannel.CLICK, new InventoryAction(slot, click, button));
 	}
 }

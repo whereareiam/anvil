@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.inventory;
 
+import me.whereareiam.anvil.capability.inventory.channel.InventoryChannel;
 import me.whereareiam.anvil.capability.inventory.model.InventoryAction;
 import me.whereareiam.anvil.capability.inventory.model.InventoryItem;
 import me.whereareiam.anvil.capability.inventory.model.InventorySnapshot;
@@ -64,7 +65,7 @@ class ChannelInventoryTest {
 		ChannelInventory inventory = new ChannelInventory(channel);
 		assertEquals(InventorySnapshot.builder().containerId(0).stateId(0).build(), inventory.snapshot());
 
-		channel.publish(InventoryOperations.CHANGED, CHEST);
+		channel.publish(InventoryChannel.CHANGED, CHEST);
 
 		assertSame(CHEST, inventory.snapshot());
 	}
@@ -78,7 +79,7 @@ class ChannelInventoryTest {
 				() -> inventory.matching(snapshot -> snapshot.getContainerId() == 2, TIMEOUT));
 		assertEquals("Player did not receive matching inventory", failure.getMessage());
 
-		channel.publish(InventoryOperations.CHANGED, CHEST);
+		channel.publish(InventoryChannel.CHANGED, CHEST);
 		assertSame(CHEST, inventory.matching(snapshot -> snapshot.getContainerId() == 2, TIMEOUT));
 	}
 
@@ -116,7 +117,7 @@ class ChannelInventoryTest {
 
 		@Override
 		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(InventoryProvider.ID);
+			return Set.of(InventoryChannel.ID);
 		}
 	}
 }

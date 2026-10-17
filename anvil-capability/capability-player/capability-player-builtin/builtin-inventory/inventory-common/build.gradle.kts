@@ -2,7 +2,7 @@ plugins {
 	id("module-java")
 }
 
-description = "Library-neutral host provider and worker binding of the built-in inventory capability"
+description = "Host provider of the built-in inventory capability"
 
 dependencies {
 	compileOnly(projects.anvilApi)
