@@ -459,9 +459,9 @@ each process's console, commands, and players one click away. Install it from Je
 | Direct server            | NeoForge             |
 | Proxy                    | Velocity, BungeeCord |
 
-Players speak Minecraft `1.18.2`, `1.21.1`, `1.21.11`, and `26.1.2`
+Players speak Minecraft `1.18.2`, `1.21.1`, `1.21.11`, `26.1.2`, `26.2`, and `26.3`
 through MCProtocolLib, plus `1.21`, `26.1`, and `26.1.1`, which share those protocols. The
-live matrix runs those four versions on Paper and `1.21.1` and newer on NeoForge, and verifies `1.21.11`
+live matrix runs those six versions on Paper and `1.21.1` and newer on NeoForge, and verifies `1.21.11`
 and `26.1.2` on Spigot and across every supported proxy/backend combination; the other supported
 versions are compatible but not live-tested. Release data you supply can add newer versions. The
 [version support page](https://anvil.whereareiam.me/docs/dev/building-blocks/environments/platforms/versions)

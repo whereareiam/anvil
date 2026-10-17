@@ -49,10 +49,10 @@ class McProtocolReleaseCatalogTest {
 		McProtocolReleaseCatalog catalog = McProtocolReleaseCatalog.load(null);
 
 		Map<String, Integer> protocols = Map.of(
-				"1.18.2", 758, "1.21.1", 767, "1.21.11", 774, "26.1.2", 775
+				"1.18.2", 758, "1.21.1", 767, "1.21.11", 774, "26.1.2", 775, "26.2", 776, "26.3", 777
 		);
 		List<ProtocolRelease> releases = catalog.releases();
-		assertEquals(List.of("1.18.2", "1.21.1", "1.21.11", "26.1.2"),
+		assertEquals(List.of("1.18.2", "1.21.1", "1.21.11", "26.1.2", "26.2", "26.3"),
 				releases.stream().map(release -> release.version().toString()).toList());
 		for (ProtocolRelease release : releases) {
 			assertEquals(protocols.get(release.version().toString()), release.getProtocolNumber());
@@ -64,11 +64,13 @@ class McProtocolReleaseCatalogTest {
 			assertTrue(definition.getArtifacts().stream().anyMatch(artifact -> artifact.getModule().equals(definition.getModule())));
 		}
 
+		ProtocolRelease snapshot = catalog.require(MinecraftVersion.parse("26.1")).getRelease();
+		assertEquals("26.1-20260708.090514-22", snapshot.getLibraryVersion());
+		assertEquals(SupportLevel.COMPATIBLE, snapshot.support(MinecraftVersion.parse("26.1")));
 		ProtocolRelease current = releases.getLast();
-		assertEquals("26.1-20260708.090514-22", current.getLibraryVersion());
-		assertEquals(SupportLevel.COMPATIBLE, current.support(MinecraftVersion.parse("26.1")));
+		assertEquals("26.3", current.getLibraryVersion());
 		assertEquals(8, releases.getFirst().getJavaVersion());
-		assertEquals(17, current.getJavaVersion());
+		assertEquals(21, current.getJavaVersion());
 		assertThrows(IllegalArgumentException.class, () -> catalog.require(MinecraftVersion.parse("1.20.4")));
 		assertThrows(UnsupportedOperationException.class, () -> catalog.releases().clear());
 	}
@@ -130,7 +132,7 @@ class McProtocolReleaseCatalogTest {
 	@Test
 	void marksNewAdditionalReleasesUntestedAndKeepsEachMinecraftVersionInOneRelease() {
 		ReleaseDefinition builtIn = read(SNAPSHOT, false).getFirst();
-		String newer = SNAPSHOT.replace("1.21.11", "1.21.12").replace("protocol = 774", "protocol = 776");
+		String newer = SNAPSHOT.replace("1.21.11", "1.21.12").replace("protocol = 774", "protocol = 799");
 		McProtocolReleaseCatalog catalog = new McProtocolReleaseCatalog(List.of(builtIn), read(newer, true), ignored -> { });
 
 		ProtocolRelease additional = catalog.releases().getLast();
@@ -146,10 +148,10 @@ class McProtocolReleaseCatalogTest {
 	@Test
 	void loadsAdditionalReleasesFromAFile() throws Exception {
 		Path file = temporary.resolve("extra-releases.toml");
-		Files.writeString(file, SNAPSHOT.replace("1.21.11", "1.21.12").replace("protocol = 774", "protocol = 776"));
+		Files.writeString(file, SNAPSHOT.replace("1.21.11", "1.21.12").replace("protocol = 774", "protocol = 799"));
 
 		McProtocolReleaseCatalog catalog = McProtocolReleaseCatalog.load(file);
-		assertEquals(5, catalog.releases().size());
+		assertEquals(7, catalog.releases().size());
 		assertTrue(catalog.releases().stream().anyMatch(release -> release.isAdditional()
 				&& release.version().equals(MinecraftVersion.parse("1.21.12"))));
 		assertThrows(IllegalArgumentException.class, () -> McProtocolReleaseCatalog.load(temporary.resolve("missing.toml")));
