@@ -11,6 +11,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundDisguisedCh
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundMovePlayerPosRot;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -106,6 +107,7 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ClientboundSystemChat.class));
 		assertTrue(client.supports(ServerboundChat.class));
 		assertTrue(client.supports(ServerboundChatCommand.class));
+		assertTrue(client.supports(ServerboundMovePlayerPosRot.class));
 		assertFalse(client.supports(ClientboundDisguisedChat.class));
 		assertFalse(client.supports(UnknownPacket.class));
 	}

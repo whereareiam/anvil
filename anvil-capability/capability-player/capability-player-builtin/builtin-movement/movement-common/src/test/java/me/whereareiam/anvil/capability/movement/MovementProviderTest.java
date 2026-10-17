@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.movement;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
+import me.whereareiam.anvil.capability.movement.channel.MovementChannel;
 import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
@@ -30,7 +31,7 @@ class MovementProviderTest {
 	void describesTheMovementCapabilityForTheLibrariesWithAWorkerSide() {
 		MovementProvider provider = new MovementProvider();
 
-		assertEquals(MovementProvider.ID, provider.descriptor().getId());
+		assertEquals(MovementChannel.ID, provider.descriptor().getId());
 		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
 		assertEquals(Set.of("mcprotocol"), provider.supportedLibraries());
 		assertEquals(Movement.class, provider.capability());
@@ -45,7 +46,7 @@ class MovementProviderTest {
 		Position position = Position.builder().x(1).y(64).z(-2).yaw(90).pitch(10).onGround(true).build();
 		movement.move(position);
 
-		assertEquals(List.of(MovementOperations.MOVE.getId()), channel.requests);
+		assertEquals(List.of(MovementChannel.MOVE.getId()), channel.requests);
 		assertEquals(List.of(position), channel.payloads);
 	}
 
@@ -75,7 +76,7 @@ class MovementProviderTest {
 
 		@Override
 		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(MovementProvider.ID);
+			return Set.of(MovementChannel.ID);
 		}
 	}
 
