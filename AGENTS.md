@@ -78,7 +78,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-integration/integration-intellij/intellij-common`                                   | Standard implementations of the shared IntelliJ services and the IntelliJ test fixtures several modules share |
 | `anvil-integration/integration-intellij/intellij-scenario`                                 | Scenario catalog, tooling launches, environments, consoles, actions, editor run icons, run configurations, tool window, and scenario settings |
 | `anvil-integration/integration-intellij/intellij-account`                                  | Project and global accounts, pools, browser sign-in, account directories, and the accounts staged for a run |
-| `anvil-integration/integration-intellij/intellij-gradle`                                   | Optional native Gradle project discovery, sync, and preparation adapter                                |
+| `anvil-integration/integration-intellij/intellij-gradle`                                   | Optional native Gradle project discovery, sync, and preparation adapter, and the build-script EULA inspection |
 | `anvil-integration/integration-gradle/gradle-plugin`                                      | Standard scenario entry point assembling shared Gradle declarations, foreground tasks, and project discovery                                                                                         |
 | `anvil-integration/integration-gradle/gradle-platforms`                                    | Gradle adapters for platform providers                                                                                                                     |
 | `anvil-integration/integration-gradle/gradle-capabilities`                                 | Gradle adapters for capability providers                                                                                                                   |
@@ -578,6 +578,13 @@ then rerun the `Release drafter` workflow; text typed into the draft is lost on 
   returns an `EnvironmentSession.Availability` whose reason the action shows; `run` applies the same rule.
   A failed request or a failed environment out of view becomes a notification in the `Anvil` group, never a
   replacement of the catalog.
+- Editor checks read the scenario API's builder calls through `editor.BuilderCalls`, and only values the
+  compiler can evaluate; computed values are left to the engine's validation. `editor.inspection` reports a
+  `latest` build outside a manual scenario and a version missing from the platform provider's
+  `<platform>-versions.toml`, read from the module's classpath so it matches the project's Anvil release; never
+  bundle a copy of version data in the plugin. `ProcessNameReferences` are soft references, so a process
+  declared elsewhere is never an error. The EULA inspection reads Gradle build scripts and belongs to
+  `intellij-gradle`.
 - `intellij-scenario` groups packages by what they own, with a `view` subpackage for Swing screens:
   `tooling` (`ToolingHost`, `ToolingLaunch`, `ToolingConnection`, and `tooling.protocol`), `catalog`
   (`ScenarioCatalog`, `catalog.source.SourceDiscovery` with `ImportRefreshPolicy`, `catalog.view` with the

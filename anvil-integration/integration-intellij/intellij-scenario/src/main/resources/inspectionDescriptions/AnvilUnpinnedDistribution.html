@@ -1,0 +1,13 @@
+<html>
+<body>
+Reports <code>Distribution.remote(version, "latest")</code> in a scenario that is not manual.
+<p>
+Automated runs refuse the latest build, because the same test would download a different server over time.
+Pin a build number, use <code>Distribution.pinned(version, sha256)</code>, or mark the scenario with
+<code>manual(true)</code> in the same method.
+</p>
+<p>Example:</p>
+<pre><code>.distribution(Distribution.remote("1.21.11", "latest")) // reported
+.distribution(Distribution.remote("1.21.11", "132"))    // pinned</code></pre>
+</body>
+</html>

@@ -7,6 +7,13 @@
 		<runLineMarkerContributor language="JAVA" implementationClass="me.whereareiam.anvil.integration.intellij.scenario.editor.ScenarioLineMarker"/>
 		<toolWindow id="Anvil" anchor="bottom" icon="/icons/anvil.svg" canCloseContents="true"
 				factoryClass="me.whereareiam.anvil.integration.intellij.scenario.window.AnvilToolWindowFactory"/>
+		<psi.referenceContributor language="JAVA" implementation="me.whereareiam.anvil.integration.intellij.scenario.editor.ProcessNameReferences"/>
+		<localInspection language="JAVA" shortName="AnvilUnpinnedDistribution" displayName="Latest build in an automated scenario"
+				groupName="Anvil" enabledByDefault="true" level="WARNING"
+				implementationClass="me.whereareiam.anvil.integration.intellij.scenario.editor.inspection.UnpinnedDistributionInspection"/>
+		<localInspection language="JAVA" shortName="AnvilUnknownPlatformVersion" displayName="Version unknown to the platform provider"
+				groupName="Anvil" enabledByDefault="true" level="WARNING"
+				implementationClass="me.whereareiam.anvil.integration.intellij.scenario.editor.inspection.UnknownPlatformVersionInspection"/>
 		<notificationGroup id="Anvil" displayType="BALLOON"/>
 	</extensions>
 	<actions>

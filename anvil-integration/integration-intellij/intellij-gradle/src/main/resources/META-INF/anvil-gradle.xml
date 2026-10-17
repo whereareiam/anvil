@@ -3,6 +3,9 @@
 		<projectResolve implementation="me.whereareiam.anvil.integration.intellij.gradle.ModuleImportExtension"/>
 	</extensions>
 	<extensions defaultExtensionNs="com.intellij">
+		<localInspection shortName="AnvilEulaNotAccepted" displayName="Minecraft EULA not accepted" groupName="Anvil"
+				enabledByDefault="true" level="WARNING"
+				implementationClass="me.whereareiam.anvil.integration.intellij.gradle.eula.EulaInspection"/>
 		<externalProjectDataService implementation="me.whereareiam.anvil.integration.intellij.gradle.ModuleDataRegistration"/>
 	</extensions>
 	<extensions defaultExtensionNs="me.whereareiam.anvil">

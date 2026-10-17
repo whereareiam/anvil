@@ -1,0 +1,15 @@
+<html>
+<body>
+Reports a <code>Distribution.remote</code> or <code>Distribution.pinned</code> version that the platform's provider does
+not list among its known versions.
+<p>
+The versions come from the provider on the project's classpath, so they match the Anvil release the project uses.
+Planning runs an unknown version as untested, and the strict support policy refuses it. Only versions and platforms
+given as literals or constants are checked.
+</p>
+<p>Example:</p>
+<pre><code>MinecraftServer.builder()
+    .platform(Platforms.PAPER)
+    .distribution(Distribution.remote("1.21.12", "1")) // reported when Paper's provider does not know 1.21.12</code></pre>
+</body>
+</html>
