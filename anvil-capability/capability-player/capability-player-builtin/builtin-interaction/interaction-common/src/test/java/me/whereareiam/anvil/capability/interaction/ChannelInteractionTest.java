@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.capability.interaction;
 
-import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.interaction.model.BlockPosition;
 import me.whereareiam.anvil.capability.interaction.model.BlockUse;
 import me.whereareiam.anvil.capability.interaction.model.EntityUse;
@@ -8,9 +7,10 @@ import me.whereareiam.anvil.capability.interaction.model.ItemUse;
 import me.whereareiam.anvil.capability.interaction.type.BlockFace;
 import me.whereareiam.anvil.capability.interaction.type.EntityInteraction;
 import me.whereareiam.anvil.capability.interaction.type.Hand;
-import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -63,12 +63,12 @@ class ChannelInteractionTest {
 	/**
 	 * Records each request; interaction neither subscribes nor waits.
 	 */
-	private static final class RecordingChannel implements CapabilityChannel {
+	private static final class RecordingChannel implements ProtocolChannel {
 		private final List<Request> requests = new ArrayList<>();
 
 		@Override
-		public <Q, R> @Nullable R request(@NotNull ChannelOperation<Q, R> channelOperation, @Nullable Q request) {
-			requests.add(new Request(channelOperation.getId(), request));
+		public <Q, R> @Nullable R request(@NotNull OperationDescriptor<Q, R> operation, @Nullable Q request) {
+			requests.add(new Request(operation.getId(), request));
 			return null;
 		}
 

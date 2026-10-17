@@ -75,7 +75,8 @@ contract, generic provider/context interfaces, typed request descriptors/channel
 contracts under `capability.api.player`. Use `PlayerCapabilityProvider` when the implementation
 needs only player identity/version, observations, declared dependencies, and cleanup.
 
-Protocol-backed player providers and native worker bindings use `capability-protocol-api`.
+Protocol-backed player providers use `capability-protocol-api`, and their native worker extensions implement
+`WorkerExtension` from `protocol-api`, which it includes.
 `ProtocolPlayerCapabilityProvider` adds `supportedLibraries()`; its creation context supplies the
 protocol channel and the services of the player's protocol library. An empty set accepts every
 library. When the player's worker does not install the provider's capability, composition skips the

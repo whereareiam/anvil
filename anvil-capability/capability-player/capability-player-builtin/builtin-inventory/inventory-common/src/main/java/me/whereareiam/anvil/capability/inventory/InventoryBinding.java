@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.capability.inventory;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.capability.api.channel.OperationRegistry;
 import me.whereareiam.anvil.capability.inventory.model.InventoryAction;
 import me.whereareiam.anvil.capability.inventory.model.InventoryItem;
 import me.whereareiam.anvil.capability.inventory.model.InventorySnapshot;
@@ -9,9 +8,10 @@ import me.whereareiam.anvil.capability.inventory.packet.InventoryPacketListener;
 import me.whereareiam.anvil.capability.inventory.packet.InventoryPackets;
 import me.whereareiam.anvil.capability.inventory.packet.model.ContainerClick;
 import me.whereareiam.anvil.capability.inventory.type.InventoryClick;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerBinding;
+import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
+import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

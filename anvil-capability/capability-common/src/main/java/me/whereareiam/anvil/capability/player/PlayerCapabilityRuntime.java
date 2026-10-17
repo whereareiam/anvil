@@ -1,16 +1,17 @@
 package me.whereareiam.anvil.capability.player;
 
+import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.CapabilityRuntime;
+import me.whereareiam.anvil.capability.api.CapabilityProvider;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
-import me.whereareiam.anvil.capability.api.player.CapabilityPlayer;
-import me.whereareiam.anvil.capability.api.player.PlayerCapabilityContext;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityProvider;
-import me.whereareiam.anvil.capability.protocol.api.player.ProtocolCapabilityPlayer;
+import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,7 +37,7 @@ import java.util.function.Consumer;
  * such as one whose library works only through its own services, is composed with every provider.</p>
  */
 public final class PlayerCapabilityRuntime {
-	private final CapabilityRuntime<PlayerCapability, PlayerCapabilityContext> runtime;
+	private final CapabilityRuntime<PlayerCapability, ProtocolPlayerCapabilityContext> runtime;
 	private final Set<String> protocolProviders;
 
 	/**
@@ -126,12 +127,12 @@ public final class PlayerCapabilityRuntime {
 			@NotNull Collection<? extends PlayerCapabilityProvider<?>> providers,
 			@NotNull Collection<? extends ProtocolPlayerCapabilityProvider<?>> protocolProviders
 	) {
-		List<PlayerCapabilityProvider<?>> combined = new ArrayList<>(providers);
+		List<CapabilityProvider<? extends PlayerCapability, ? super ProtocolPlayerCapabilityContext>> combined =
+				new ArrayList<>(providers);
+		combined.addAll(protocolProviders);
 		Set<String> protocol = new LinkedHashSet<>();
-		for (ProtocolPlayerCapabilityProvider<?> provider : protocolProviders) {
-			combined.add(new ProtocolPlayerCapabilityProviderAdapter<>(provider));
+		for (ProtocolPlayerCapabilityProvider<?> provider : protocolProviders)
 			protocol.add(provider.descriptor().getId());
-		}
 
 		this.runtime = new CapabilityRuntime<>(PlayerCapability.class, combined);
 		this.protocolProviders = Set.copyOf(protocol);
@@ -148,29 +149,29 @@ public final class PlayerCapabilityRuntime {
 
 	/**
 	 * Composes all discovered capabilities around one library-owned player.
-	 * Protocol factories require a protocol-specific player input; shared factories need only the
+	 * Protocol factories receive the player's channel and library services; shared factories need only the
 	 * player lifetime and its connection. All matching factories share one dependency graph. When the
 	 * player has a native channel, protocol factories whose capability its worker does not install are
 	 * skipped with the worker's reason, or with the note that the library's worker does not install them,
 	 * together with their dependents.
 	 *
-	 * @param player library-owned player lifetime and any specialized inputs
+	 * @param player library-owned player
+	 * @param metadata presentation labels of the player, or {@code null}
 	 * @param connection how the player connects, with its target process named
 	 * @param onDestroyed callback invoked after permanent destruction
 	 * @return extensible simulated player
 	 */
 	public @NotNull SimulatedPlayer compose(
-			@NotNull CapabilityPlayer player,
+			@NotNull ProtocolPlayer player,
+			@Nullable PresentationMetadata metadata,
 			@NotNull PlayerConnection connection,
 			@NotNull Consumer<SimulatedPlayer> onDestroyed
 	) {
-		return new CapabilitySimulatedPlayer(player, runtime, unavailable(player), connection, onDestroyed);
+		return new CapabilitySimulatedPlayer(player, metadata, runtime, unavailable(player), connection, onDestroyed);
 	}
 
-	private Map<String, String> unavailable(CapabilityPlayer player) {
-		if (!(player instanceof ProtocolCapabilityPlayer protocol)) return Map.of();
-
-		Optional<CapabilityChannel> channel = protocol.channel();
+	private Map<String, String> unavailable(ProtocolPlayer player) {
+		Optional<ProtocolChannel> channel = player.channel();
 		if (channel.isEmpty()) return Map.of();
 
 		Set<String> installed = channel.get().installedCapabilities();
@@ -180,7 +181,7 @@ public final class PlayerCapabilityRuntime {
 			if (installed.contains(id)) continue;
 
 			String reason = reported.get(id);
-			skipped.put(id, reason == null ? "not installed by the " + protocol.libraryId() + " worker" : reason);
+			skipped.put(id, reason == null ? "not installed by the " + player.libraryId() + " worker" : reason);
 		}
 
 		return skipped;

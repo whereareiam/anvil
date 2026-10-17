@@ -8,7 +8,7 @@ import me.whereareiam.anvil.capability.interaction.model.ItemUse;
 import me.whereareiam.anvil.capability.interaction.type.BlockFace;
 import me.whereareiam.anvil.capability.interaction.type.EntityInteraction;
 import me.whereareiam.anvil.capability.interaction.type.Hand;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
  */
 @RequiredArgsConstructor
 final class ChannelInteraction implements Interaction {
-	private final @NotNull CapabilityChannel channel;
+	private final @NotNull ProtocolChannel channel;
 
 	@Override
 	public void useItem(@NotNull Hand hand) {

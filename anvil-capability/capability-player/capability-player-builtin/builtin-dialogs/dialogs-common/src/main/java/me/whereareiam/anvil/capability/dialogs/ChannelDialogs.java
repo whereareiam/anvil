@@ -10,15 +10,15 @@ import me.whereareiam.anvil.capability.dialogs.model.click.DialogClick;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.Dialog;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.DialogAction;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.DialogButton;
+import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens;
 import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens.ConfirmScreen;
 import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens.DialogScreen;
 import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens.Screen;
 import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens.WaitingScreen;
-import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens;
 import me.whereareiam.anvil.capability.dialogs.screen.DialogPress;
 import me.whereareiam.anvil.capability.dialogs.screen.DialogRegistry;
 import me.whereareiam.anvil.capability.dialogs.type.DialogActionType;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,17 +38,17 @@ import java.util.function.Predicate;
  * and commands are checked through the player's {@link Commands}, if it has them. Clicks go to the worker's dialogs binding. The channel releases the event subscriptions together with the player.
  */
 final class ChannelDialogs implements Dialogs {
-	private final CapabilityChannel channel;
+	private final ProtocolChannel channel;
 	private final @Nullable Commands commands;
 	private final CopyOnWriteArrayList<Dialog> history = new CopyOnWriteArrayList<>();
 	private final ClientScreens screens;
 	private volatile DialogRegistry registry = new DialogRegistry(List.of());
 
-	ChannelDialogs(@NotNull CapabilityChannel channel, @Nullable Commands commands) {
+	ChannelDialogs(@NotNull ProtocolChannel channel, @Nullable Commands commands) {
 		this(channel, commands, Clock.systemUTC());
 	}
 
-	ChannelDialogs(@NotNull CapabilityChannel channel, @Nullable Commands commands, @NotNull Clock clock) {
+	ChannelDialogs(@NotNull ProtocolChannel channel, @Nullable Commands commands, @NotNull Clock clock) {
 		this.channel = channel;
 		this.commands = commands;
 		this.screens = new ClientScreens(clock);

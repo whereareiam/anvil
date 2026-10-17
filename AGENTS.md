@@ -40,10 +40,10 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-environment/execution/execution-local`                         | Host process execution and local endpoints                                                                                                                                          |
 | `anvil-environment/execution/execution-docker`                        | Typed Docker Engine execution, images, networks, and container endpoints                                                                                                            |
 | `anvil-environment/yggdrasil-mock`                                    | Optional test-only Yggdrasil session server and profile lookup; one possible target of the session-server declarations, depends only on anvil-api                                   |
-| `anvil-launcher`                                                      | Public default builder, scoped-service adapters, default ScenarioFactory/per-run assembly, native worker bridge, and shaded packaging; wiring only, no rules of its own |
-| `anvil-capability/capability-api`                                     | Owner-neutral composition, typed requests/handler registration, and neutral player identity/observations/dependency/lifetime contracts                                              |
-| `anvil-capability/capability-common`                                  | Shared dependency validation/composition/cleanup for capability owners, agent extensions of installed process providers, per-library player runtimes, process/player facades, codecs, and worker bindings |
-| `anvil-capability/capability-player/capability-player-api`            | Protocol-backed player providers/contexts, channels/events, and native worker contracts (artifact `capability-protocol-api`) |
+| `anvil-launcher`                                                      | Public default builder, scoped-service adapters, default ScenarioFactory/per-run assembly, and shaded packaging; wiring only, no rules of its own |
+| `anvil-capability/capability-api`                                     | Owner-neutral composition, typed process requests, and neutral player identity/dependency/lifetime contracts                                              |
+| `anvil-capability/capability-common`                                  | Shared dependency validation/composition/cleanup for capability owners, agent extensions of installed process providers, per-library player runtimes and the player composer, and process/player facades |
+| `anvil-capability/capability-player/capability-player-api`            | Protocol-backed player providers and their contexts over the player's `ProtocolChannel` (artifact `capability-protocol-api`) |
 | `anvil-capability/capability-player/capability-player-builtin/builtin-<feature>` | Player capability family whose wiring-only root publishes the shaded `builtin-<feature>` bundle |
 | `anvil-capability/capability-player/capability-player-builtin/builtin-<feature>/<feature>-api` | Public feature API (`builtin-<feature>-api`) and, for packet capabilities, the stateless release port in `.packet` |
 | `anvil-capability/capability-player/capability-player-builtin/builtin-<feature>/<feature>-common` | Embedded, unpublished host provider, operation descriptors, and library-neutral binding in the feature root package |
@@ -53,11 +53,11 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-capability/capability-process/capability-process-builtin/builtin-<feature>` | Process capability family: `<feature>-api` and `<feature>-common` holding the agent-backed provider, independent of simulated players |
 | `anvil-capability/capability-process/capability-process-builtin/builtin-players` | Players family: what one server or proxy knows about the players on it, from its own agent's events, with `players-api` and `players-common` |
 | `anvil-capability/capability-default`                                 | Aggregate of every built-in player and process capability (artifact `default`) |
-| `anvil-player/player-api`                                         | Protocol library providers and releases, player creation/composition, protocol-owned channels/workers, pinned runtime resolution, and optional authentication                       |
+| `anvil-player/player-api`                                         | Protocol library providers and releases, player creation/composition, the typed player channel and worker extension contracts, pinned runtime resolution, and optional authentication                       |
 | `anvil-player/player-common`                                         | Player registration, version selection, authentication compatibility, composition, and observations                                                                                 |
 | `anvil-player/player-library/library-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port and the client segments; owns `mcprotocol-releases.toml` and `pinLibraryReleases`  |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell                                                                                       |
-| `anvil-player/player-library/library-mcprotocol/mcprotocol-common`                | MCProtocolLib library provider, release data, worker host and segment selection, MCProtocolLib-free worker shell, and private authentication store                                  |
+| `anvil-player/player-library/library-mcprotocol/mcprotocol-common`                | MCProtocolLib library provider, release data, worker host and segment selection, MCProtocolLib-free worker shell with its extension registry and typed transport, and private authentication store                                  |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-java`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-java/V*`             | Client segments `V1_18_2`, `V1_21_1` and `V1_21_11`, each implementing only `McProtocolClient` from its release key on; `V1_21_11` also serves `26.1.2`                             |
 | `anvil-process/process-api`                                         | Platform-provider/planning SPI, version data contract, artifact sources, distribution validation, and configuration contracts                                                      |
@@ -133,9 +133,12 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   extension accepts: built-ins accept `Object` and let the port's `sessionType()` cast it, because the
   native session type differs between releases. Release-specific packet code lives in segments behind the
   feature's port.
-  Shared `OperationRegistry` accepts typed handlers. `WorkerCapabilities` enforces registration phase,
-  namespaced uniqueness, and cleanup; launcher `ProtocolOperationRegistry` binds handlers to
-  protocol-owned native operations; capability codecs own typed handler wire encoding/decoding.
+  The worker contracts belong to the player family: `player-api`'s `WorkerExtension`, `PlayerBindingContext`,
+  `OperationRegistry` and `WorkerBinding` under `protocol.api.worker`, and the typed `ProtocolChannel` with
+  `OperationDescriptor`/`EventDescriptor` that both ends of a player's channel share. Capabilities implement and
+  call them directly; nothing mirrors them on the capability side or bridges them in the launcher. The library's
+  worker discovers extensions, enforces the registration phase, namespaced uniqueness and cleanup
+  (`WorkerCapabilityRegistry`), and owns the typed encoding on both ends of its transport (`WorkerMessageCodec`).
   Never add feature branches or an opaque universal packet abstraction to the MCProtocol worker.
 - Built-in families live below the group of their participant, decided by who can normally do or know it, never by
   how it is implemented: `capability-player/capability-player-builtin` for what a client can do or see
@@ -162,16 +165,17 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   worker"; host providers do not check installation themselves. Players without a native worker compose
   every provider of their library.
 - `PlayerBindingContext` supplies an existing player's native SDK/session, lifecycle and release adapters to a
-  binding; it is not another player entity. Its `adapter` maps to the native worker's `NativePlayer.adapter`.
-  `PlayerConnectionEvent` lives under `.api.model.player`, while
-  `ViewRotation` and `EventDescriptor<E>` live directly under `.api.model`. View rotation holds yaw/pitch;
-  an event descriptor pairs an event ID with its payload class.
+  binding; it is not another player entity, and the library's worker player implements it. `PlayerConnectionEvent`
+  and `ViewRotation` live under `protocol.api.model.player`, `OperationDescriptor<Q, R>` and `EventDescriptor<E>`
+  under `protocol.api.model.channel`. View rotation holds yaw/pitch; a descriptor pairs an ID with its payload
+  classes.
   Event payloads such as `PlayerConnectionEvent` remain separate values. Worker bindings own per-player
   state and native listeners. Use `bindNativeSession` for generation-scoped listeners across reconnects;
   old native handles must not silently bind to replacement sessions.
-  Neutral player provider/context and lifecycle contracts live under `capability.api.player`.
-  Protocol factories, channels/events, and native worker contracts live under
-  `capability.protocol.api.player` in `capability-player-api`. A player capability is backed by its
+  Neutral player provider/context contracts live under `capability.api.player`. Protocol factories and their
+  context, which hands a provider the player's `ProtocolChannel` and library services, live under
+  `capability.protocol.api.player` in `capability-player-api`. Capability composition works on the player-api
+  `ProtocolPlayer` itself. A player capability is backed by its
   player's protocol, never by a process's agent: what a server or proxy knows about a player belongs to that
   process's capability. Agent-backed process factories implement `AgentProcessCapabilityProvider` with
   `AgentProcessCapabilityContext` in `capability-process-api` under `.api.process`; these have process/platform
@@ -187,8 +191,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   while retaining capability instances; requests can be unavailable during replacement. Closed owners
   reject capability lookup and report `hasCapability` as false.
 - A protocol library may expose its own stable services through `ProtocolPlayer.findService`.
-  Anvil protocol/capability services cross their boundary through explicit assembly bridges, not
-  `findService` or a fake universal packet abstraction.
+  Anvil's own player contracts reach capabilities through `player-api` itself (`ProtocolChannel`, the worker
+  contracts), and process services through launcher adapters, never through `findService` or a fake universal
+  packet abstraction.
 - Authentication is an optional `ProtocolLibraryProvider` service. Tooling depends on that API, not
   MCProtocol's account-store implementation. Account files are managed outside project configuration.
   The IntelliJ account manager and Gradle `anvilLogin`/`anvilLogout` share the `AnvilAuthentication` entry point.
@@ -363,7 +368,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   state to a retained set, and do not share one between scenarios that run at once.
 - The launcher holds no rules. Its `assembly` package constructs services and hands them to each other, `adapter`
   implements one family's contract on another family's service without deciding anything, grouped by `execution`,
-  `player`, `process` and `provisioning`, and `worker` is the same kind of binding for the native player worker JVM.
+  `process` and `provisioning`.
   Behaviour that needs only `anvil-api` belongs in the engine and behaviour over one family's types in that family:
   capability discovery in `capability-common` (`ProcessCapabilityRuntime.discover`, `LibraryCapabilityRuntimes`), the
   order of a process's JVM arguments and the lifetime split in platform planning. `ExecutionPlanMapper` is the one

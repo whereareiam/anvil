@@ -9,9 +9,11 @@ dependencies {
 	compileOnly(projects.anvilCapability.capabilityApi)
 	compileOnly(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi)
 	compileOnly(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinCookies.cookiesApi)
+	compileOnly(projects.anvilPlayer.playerApi)
 
 	testImplementation(projects.anvilApi)
 	testImplementation(projects.anvilCapability.capabilityApi)
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi)
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinCookies.cookiesApi)
+	testImplementation(projects.anvilPlayer.playerApi)
 }

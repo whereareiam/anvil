@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.commands;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.capability.commands.model.CommandTree;
-import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
+import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 
 /**
  * Typed commands events shared by the host commands capability and the worker's commands binding.

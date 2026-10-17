@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.capability.screen;
 
-import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
 import me.whereareiam.anvil.capability.screen.model.Title;
 import me.whereareiam.anvil.capability.screen.packet.TitlePacketListener;
+import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

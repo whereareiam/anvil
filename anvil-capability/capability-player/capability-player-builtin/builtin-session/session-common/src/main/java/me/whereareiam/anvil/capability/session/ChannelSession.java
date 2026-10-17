@@ -1,9 +1,9 @@
 package me.whereareiam.anvil.capability.session;
 
 import me.whereareiam.anvil.api.type.DisconnectCause;
-import me.whereareiam.anvil.capability.protocol.api.model.player.PlayerConnectionEvent;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
 import me.whereareiam.anvil.capability.session.model.SessionState;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,12 +16,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * event subscriptions together with the player.
  */
 final class ChannelSession implements Session {
-	private final CapabilityChannel channel;
+	private final ProtocolChannel channel;
 	private final AtomicBoolean connected = new AtomicBoolean();
 	private volatile @Nullable String kickReason;
 	private volatile @Nullable DisconnectCause disconnectCause;
 
-	ChannelSession(@NotNull CapabilityChannel channel) {
+	ChannelSession(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
 		channel.subscribe(PlayerConnectionEvent.CHANGED, event -> {
 			connected.set(event.isConnected());

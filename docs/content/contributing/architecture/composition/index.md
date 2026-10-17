@@ -41,7 +41,8 @@ created, neutral and protocol-backed player factories contribute to one validate
 player dependency graph. Filtering protocol adapters does not skip duplicate or dependency checks
 for the remaining providers. For a player whose native worker does not install a protocol-backed
 provider's capability, composition skips that provider and every provider depending on it, and records
-the worker's reason for `CapabilityUnavailableException`. The launcher binds scoped factories into that composition:
+the worker's reason for `CapabilityUnavailableException`. `CapabilityPlayerComposerProvider` composes players and
+the launcher binds process factories to their agents:
 
 | Provider | Owner and context |
 |---|---|
@@ -51,8 +52,9 @@ the worker's reason for `CapabilityUnavailableException`. The launcher binds sco
 
 All capability providers use shared descriptor, dependency, and cleanup contracts from
 `capability-api`. Neutral player providers work with shared observations; they do not select a
-protocol library or receive its services. Protocol channels and native worker providers live in
-`capability-player-api`, with player events, waits, and installed-capability discovery.
+protocol library or receive its services. Protocol providers live in `capability-player-api`; the
+`ProtocolChannel` their context hands them, with player events, waits, and installed-capability discovery, and
+the native worker contracts belong to `player-api`.
 Agent-backed process factories live in `capability-process-api` and request a typed `RequestChannel`, which
 launcher bindings connect to an agent client. The protocol-backed player context extends the shared player
 context.
@@ -153,17 +155,16 @@ for each server whose default players would use it, so a scenario whose players 
 runs. A player that selects such a release is refused when it is created. The worker
 shell never links against MCProtocolLib: the release's client segment implements the `mcprotocol-api`
 client port and owns login, client information, teleport and disconnect packets.
-Its protocol-owned worker contract is bound to capability worker composition by the launcher.
-Feature wiring registers `WorkerExtension` from `capability-player-api`. Its `PlayerBindingContext`
-supplies SDK/session access for the existing native player and, through `adapter(Class)`, the
-release-specific port implementation of the segment selected for the worker's release. Native implementations own the actual
-packets, state, and listeners; feature APIs keep domain models free of transport types.
+Feature wiring implements `player-api`'s `WorkerExtension` directly; the worker discovers it. Its
+`PlayerBindingContext` supplies SDK/session access for the existing native player and, through `adapter(Class)`,
+the release-specific port implementation of the segment selected for the worker's release. Native
+implementations own the actual packets, state, and listeners; feature APIs keep domain models free of transport
+types.
 
-`OperationRegistry` is the shared typed-handler boundary. `WorkerCapabilities` enforces binding-time
-registration, unique namespaced operation IDs, and cleanup, then delegates the typed handlers.
-Launcher `ProtocolOperationRegistry` registers the capability codec's encoded handlers with the
-protocol's `NativeOperations`. `JsonCapabilityCodec` owns request decoding, response type checks,
-and response encoding; dependency composition and feature handlers operate on typed values.
+`OperationRegistry` registers a typed handler for an `OperationDescriptor`. The worker's
+`WorkerCapabilityRegistry` enforces binding-time registration, unique namespaced operation IDs, and cleanup.
+`WorkerMessageCodec` owns request decoding, response type checks, and encoding on both ends of the worker's
+transport, so the host's `ProtocolChannel` and the worker's handlers operate on typed values.
 
 Each binding owns one player's state. Native listeners attach before login and are replaced with
 their connection generation. The binding survives reconnects until player destruction; old native

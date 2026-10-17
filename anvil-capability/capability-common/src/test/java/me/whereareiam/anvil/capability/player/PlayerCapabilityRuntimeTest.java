@@ -1,22 +1,23 @@
 package me.whereareiam.anvil.capability.player;
 
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
-import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
-import me.whereareiam.anvil.capability.api.player.CapabilityPlayer;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityContext;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityProvider;
-import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
-import me.whereareiam.anvil.capability.protocol.api.player.ProtocolCapabilityPlayer;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
+import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -79,14 +80,14 @@ class PlayerCapabilityRuntimeTest {
 		for (ProtocolPlayerCapabilityProvider<?> provider : ServiceLoader.load(ProtocolPlayerCapabilityProvider.class)) {
 			if (!independent.contains(provider.descriptor().getId())) continue;
 			StubPlayer stub = new StubPlayer();
-			stub.channel = new CapabilityChannel() {
-				public <Q, R> R request(@NotNull ChannelOperation<Q, R> channelOperation, Q request) { throw new AssertionError("Creation must not execute packets"); }
+			stub.channel = new ProtocolChannel() {
+				public <Q, R> R request(@NotNull OperationDescriptor<Q, R> operation, Q request) { throw new AssertionError("Creation must not execute packets"); }
 				public <E> @NotNull Subscription subscribe(@NotNull EventDescriptor<E> eventDescriptor, @NotNull Consumer<E> listener) { return () -> { }; }
 				public void await(@NotNull BooleanSupplier condition, @NotNull String description, @NotNull Duration timeout) { throw new AssertionError(); }
 				public @NotNull Set<String> installedCapabilities() { return Set.of(provider.descriptor().getId()); }
 			};
 			SimulatedPlayer player = new PlayerCapabilityRuntime(List.of(), List.of(provider))
-					.compose(stub, PlayerConnection.to("proxy"), ignored -> { });
+					.compose(stub, null, PlayerConnection.to("proxy"), ignored -> { });
 			assertTrue(player.hasCapability(provider.capability()));
 			player.destroy();
 			tested++;
@@ -142,7 +143,7 @@ class PlayerCapabilityRuntimeTest {
 		System.setErr(new PrintStream(output, true, StandardCharsets.UTF_8));
 		try {
 			player = new PlayerCapabilityRuntime(List.of(summary), List.of(installed, linked))
-					.compose(stub, PlayerConnection.to("proxy"), ignored -> { });
+					.compose(stub, null, PlayerConnection.to("proxy"), ignored -> { });
 		} finally {
 			System.setErr(previous);
 		}
@@ -176,7 +177,7 @@ class PlayerCapabilityRuntimeTest {
 		SimulatedPlayer player;
 		System.setErr(new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
 		try {
-			player = new PlayerCapabilityRuntime(List.of(), List.of(unknown)).compose(stub, PlayerConnection.to("proxy"), ignored -> { });
+			player = new PlayerCapabilityRuntime(List.of(), List.of(unknown)).compose(stub, null, PlayerConnection.to("proxy"), ignored -> { });
 		} finally {
 			System.setErr(previous);
 		}
@@ -193,16 +194,16 @@ class PlayerCapabilityRuntimeTest {
 				context -> () -> context.requireService(String.class));
 		StubPlayer stub = new StubPlayer();
 
-		SimulatedPlayer player = new PlayerCapabilityRuntime(List.of(), List.of(serviceBacked)).compose(stub, PlayerConnection.to("proxy"), ignored -> { });
+		SimulatedPlayer player = new PlayerCapabilityRuntime(List.of(), List.of(serviceBacked)).compose(stub, null, PlayerConnection.to("proxy"), ignored -> { });
 
 		assertTrue(player.hasCapability(DependentCapability.class));
 		assertEquals("service", player.capability(DependentCapability.class).value());
 		player.destroy();
 	}
 
-	private static CapabilityChannel channel(Set<String> installed, Map<String, String> unavailable) {
-		return new CapabilityChannel() {
-			public <Q, R> R request(@NotNull ChannelOperation<Q, R> channelOperation, Q request) { throw new AssertionError(); }
+	private static ProtocolChannel channel(Set<String> installed, Map<String, String> unavailable) {
+		return new ProtocolChannel() {
+			public <Q, R> R request(@NotNull OperationDescriptor<Q, R> operation, Q request) { throw new AssertionError(); }
 			public <E> @NotNull Subscription subscribe(@NotNull EventDescriptor<E> eventDescriptor, @NotNull Consumer<E> listener) { return () -> { }; }
 			public void await(@NotNull BooleanSupplier condition, @NotNull String description, @NotNull Duration timeout) { throw new AssertionError(); }
 			public @NotNull Set<String> installedCapabilities() { return installed; }
@@ -234,7 +235,7 @@ class PlayerCapabilityRuntimeTest {
 		StubPlayer driven = new StubPlayer();
 		AtomicBoolean removed = new AtomicBoolean();
 
-		SimulatedPlayer player = runtime.compose(driven, PlayerConnection.to("proxy"), ignored -> removed.set(true));
+		SimulatedPlayer player = runtime.compose(driven, null, PlayerConnection.to("proxy"), ignored -> removed.set(true));
 
 		assertEquals(List.of("base", "dependent", "summary"), runtime.providers().stream()
 				.map(CapabilityDescriptor::getId)
@@ -250,10 +251,9 @@ class PlayerCapabilityRuntimeTest {
 	}
 
 	@Test
-	void composesSharedCapabilitiesWithoutProtocolChannelsOrSdkServices() {
+	void composesSharedCapabilitiesFromThePlayersIdentityAndConnection() {
 		List<String> released = new ArrayList<>();
 		var provider = sharedProvider("identity", BaseCapability.class, Set.of(), context -> {
-			assertFalse(context instanceof ProtocolPlayerCapabilityContext);
 			assertEquals("Alice", context.playerName());
 			assertEquals("test", context.clientVersion());
 			assertEquals("proxy", context.connection().getTarget());
@@ -261,9 +261,9 @@ class PlayerCapabilityRuntimeTest {
 			context.onClose(() -> released.add("shared"));
 			return () -> context.requestedProfile().getUsername();
 		});
-		var plain = new PlainPlayer();
+		var plain = new StubPlayer();
 		SimulatedPlayer player = new PlayerCapabilityRuntime(List.of(provider))
-				.compose(plain, PlayerConnection.to("proxy"), ignored -> released.add("removed"));
+				.compose(plain, null, PlayerConnection.to("proxy"), ignored -> released.add("removed"));
 
 		assertEquals("Alice", player.capability(BaseCapability.class).value());
 		assertFalse(player.state().destroyed());
@@ -272,21 +272,6 @@ class PlayerCapabilityRuntimeTest {
 		assertTrue(plain.destroyed());
 		assertTrue(player.state().destroyed());
 		assertEquals(List.of("shared", "removed"), released);
-	}
-
-	@Test
-	void rejectsProtocolFactoriesWhenThePlayerSuppliesOnlySharedInputs() {
-		AtomicBoolean created = new AtomicBoolean();
-		var provider = provider("native", BaseCapability.class, Set.of(), context -> {
-			created.set(true);
-			return () -> "native";
-		});
-		var runtime = new PlayerCapabilityRuntime(List.of(), List.of(provider));
-
-		var failure = assertThrows(CapabilityException.class,
-				() -> runtime.compose(new PlainPlayer(), PlayerConnection.to("proxy"), ignored -> { }));
-		assertTrue(failure.getMessage().contains("requires protocol player inputs"));
-		assertFalse(created.get());
 	}
 
 	@Test
@@ -306,7 +291,7 @@ class PlayerCapabilityRuntimeTest {
 	@Test
 	void reportsMissingCapabilitiesThroughTheGlobalApi() {
 		SimulatedPlayer player = new PlayerCapabilityRuntime(List.of())
-				.compose(new StubPlayer(), PlayerConnection.to("proxy"), ignored -> { });
+				.compose(new StubPlayer(), null, PlayerConnection.to("proxy"), ignored -> { });
 
 		CapabilityUnavailableException failure = assertThrows(
 				CapabilityUnavailableException.class,
@@ -325,7 +310,7 @@ class PlayerCapabilityRuntimeTest {
 					return () -> "independent";
 				});
 		for (var providers : List.of(List.of(base, dependent), List.of(dependent, base)))
-			new PlayerCapabilityRuntime(List.of(), providers).compose(new StubPlayer(), PlayerConnection.to("proxy"), ignored -> { }).destroy();
+			new PlayerCapabilityRuntime(List.of(), providers).compose(new StubPlayer(), null, PlayerConnection.to("proxy"), ignored -> { }).destroy();
 	}
 
 	@Test
@@ -347,7 +332,7 @@ class PlayerCapabilityRuntimeTest {
 				});
 		RuntimeException failure = assertThrows(CapabilityException.class,
 				() -> new PlayerCapabilityRuntime(List.of(), List.of(failing, base))
-						.compose(new StubPlayer(), PlayerConnection.to("proxy"), ignored -> { }));
+						.compose(new StubPlayer(), null, PlayerConnection.to("proxy"), ignored -> { }));
 		assertSame(constructionFailure, failure);
 		assertSame(cleanupFailure, failure.getSuppressed()[0]);
 		assertEquals(List.of("dependent", "base"), released);
@@ -364,7 +349,7 @@ class PlayerCapabilityRuntimeTest {
 		});
 		StubPlayer driven = new StubPlayer();
 		SimulatedPlayer player = new PlayerCapabilityRuntime(List.of(), List.of(base))
-				.compose(driven, PlayerConnection.to("proxy"), ignored -> released.add("removed"));
+				.compose(driven, null, PlayerConnection.to("proxy"), ignored -> released.add("removed"));
 		assertSame(cleanupFailure, assertThrows(RuntimeException.class, player::destroy));
 		assertTrue(driven.destroyed());
 		assertEquals(List.of("base", "removed"), released);
@@ -387,7 +372,7 @@ class PlayerCapabilityRuntimeTest {
 		StubPlayer stub = new StubPlayer();
 		stub.destroyFailure = destructionFailure;
 		SimulatedPlayer player = new PlayerCapabilityRuntime(List.of(), List.of(base))
-				.compose(stub, PlayerConnection.to("proxy"), ignored -> released.add("removed"));
+				.compose(stub, null, PlayerConnection.to("proxy"), ignored -> released.add("removed"));
 
 		assertSame(destructionFailure, assertThrows(AssertionError.class, player::destroy));
 		assertSame(cleanupFailure, destructionFailure.getSuppressed()[0]);
@@ -532,9 +517,9 @@ class PlayerCapabilityRuntimeTest {
 		}
 	}
 
-	private static final class StubPlayer implements ProtocolCapabilityPlayer {
+	private static final class StubPlayer implements ProtocolPlayer {
 		private boolean destroyed;
-		private CapabilityChannel channel;
+		private ProtocolChannel channel;
 		private Error destroyFailure;
 
 		@Override
@@ -553,6 +538,16 @@ class PlayerCapabilityRuntimeTest {
 		}
 
 		@Override
+		public @NotNull ProtocolRelease release() {
+			return ProtocolRelease.builder()
+					.libraryVersion("test")
+					.minecraftVersion(MinecraftVersion.parse("1.21.11"))
+					.protocolNumber(774)
+					.javaVersion(21)
+					.build();
+		}
+
+		@Override
 		public @NotNull PlayerProfile requestedProfile() {
 			return new PlayerProfile("Alice", UUID.nameUUIDFromBytes("Alice".getBytes(StandardCharsets.UTF_8)));
 		}
@@ -568,7 +563,7 @@ class PlayerCapabilityRuntimeTest {
 		}
 
 		@Override
-		public @NotNull Optional<CapabilityChannel> channel() { return Optional.ofNullable(channel); }
+		public @NotNull Optional<ProtocolChannel> channel() { return Optional.ofNullable(channel); }
 
 		@Override
 		public boolean destroyed() {
@@ -579,40 +574,6 @@ class PlayerCapabilityRuntimeTest {
 		public void destroy() {
 			destroyed = true;
 			if (destroyFailure != null) throw destroyFailure;
-		}
-	}
-
-	private static final class PlainPlayer implements CapabilityPlayer {
-		private boolean destroyed;
-
-		@Override
-		public @NotNull String name() {
-			return "Alice";
-		}
-
-		@Override
-		public @NotNull String clientVersion() {
-			return "test";
-		}
-
-		@Override
-		public @NotNull PlayerProfile requestedProfile() {
-			return new PlayerProfile("Alice", UUID.nameUUIDFromBytes("Alice".getBytes(StandardCharsets.UTF_8)));
-		}
-
-		@Override
-		public @Nullable PlayerProfile grantedProfile() {
-			return null;
-		}
-
-		@Override
-		public boolean destroyed() {
-			return destroyed;
-		}
-
-		@Override
-		public void destroy() {
-			destroyed = true;
 		}
 	}
 }

@@ -13,11 +13,9 @@ import me.whereareiam.anvil.capability.CapabilityRuntime;
 import me.whereareiam.anvil.capability.CapabilitySet;
 import me.whereareiam.anvil.capability.api.CapabilityContext;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
-import me.whereareiam.anvil.capability.api.player.CapabilityPlayer;
-import me.whereareiam.anvil.capability.api.player.PlayerCapabilityContext;
-import me.whereareiam.anvil.capability.protocol.api.player.ProtocolCapabilityPlayer;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,7 +35,8 @@ import java.util.function.Consumer;
 final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 	private static final Duration EXPECTATION_INTERVAL = Duration.ofMillis(25);
 
-	private final CapabilityPlayer player;
+	private final ProtocolPlayer player;
+	private final @Nullable PresentationMetadata metadata;
 	private final PlayerConnection connection;
 	private final Consumer<SimulatedPlayer> onDestroyed;
 	private final CapabilitySet<PlayerCapability> capabilities;
@@ -45,19 +44,18 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 	private final AtomicBoolean destroyed = new AtomicBoolean();
 
 	CapabilitySimulatedPlayer(
-			CapabilityPlayer player,
-			CapabilityRuntime<PlayerCapability, PlayerCapabilityContext> runtime,
+			ProtocolPlayer player,
+			@Nullable PresentationMetadata metadata,
+			CapabilityRuntime<PlayerCapability, ProtocolPlayerCapabilityContext> runtime,
 			Map<String, String> unavailable,
 			PlayerConnection connection,
 			Consumer<SimulatedPlayer> onDestroyed
 	) {
 		this.player = player;
+		this.metadata = metadata;
 		this.connection = connection;
 		this.onDestroyed = onDestroyed;
-		this.capabilities = runtime.compose("Player '" + player.name() + "'", unavailable, dependencies ->
-				player instanceof ProtocolCapabilityPlayer protocol
-						? new ProtocolContext(dependencies, protocol)
-						: new Context(dependencies));
+		this.capabilities = runtime.compose("Player '" + player.name() + "'", unavailable, Context::new);
 		warnAboutSkippedCapabilities();
 	}
 
@@ -83,7 +81,7 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 
 	@Override
 	public @Nullable PresentationMetadata metadata() {
-		return player.metadata();
+		return metadata;
 	}
 
 	@Override
@@ -129,7 +127,7 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 			return false;
 		};
 		String description = describe(expectations);
-		Optional<CapabilityChannel> channel = player instanceof ProtocolCapabilityPlayer protocol ? protocol.channel() : Optional.empty();
+		Optional<ProtocolChannel> channel = player.channel();
 		if (channel.isPresent()) channel.get().await(anyMet, description, timeout);
 		else awaitWithoutChannel(anyMet, description, timeout);
 
@@ -137,7 +135,7 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 	}
 
 	/**
-	 * Checks the expectations of a player that has no capability channel to wait on, such as one whose library
+	 * Checks the expectations of a player that has no protocol channel to wait on, such as one whose library
 	 * has no native worker and works only through its own services.
 	 */
 	private void awaitWithoutChannel(@NotNull BooleanSupplier anyMet, @NotNull String description, @NotNull Duration timeout) {
@@ -191,7 +189,7 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 	}
 
 	@RequiredArgsConstructor
-	private class Context implements PlayerCapabilityContext {
+	private final class Context implements ProtocolPlayerCapabilityContext {
 		private final CapabilityContext<PlayerCapability> capabilities;
 
 		@Override
@@ -233,26 +231,17 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 		public void onDestroy(@NotNull Runnable action) {
 			capabilities.onClose(action);
 		}
-	}
-
-	private final class ProtocolContext extends Context implements ProtocolPlayerCapabilityContext {
-		private final ProtocolCapabilityPlayer protocol;
-
-		private ProtocolContext(CapabilityContext<PlayerCapability> capabilities, ProtocolCapabilityPlayer protocol) {
-			super(capabilities);
-			this.protocol = protocol;
-		}
 
 		@Override
-		public @NotNull CapabilityChannel channel() {
-			return protocol.channel().orElseThrow(() -> new CapabilityException(
-					"Player '" + name() + "' has no capability channel"
+		public @NotNull ProtocolChannel channel() {
+			return player.channel().orElseThrow(() -> new CapabilityException(
+					"Player '" + name() + "' has no protocol channel"
 			));
 		}
 
 		@Override
 		public @NotNull <T> Optional<T> findService(@NotNull Class<T> type) {
-			return protocol.findService(type);
+			return player.findService(type);
 		}
 	}
 }

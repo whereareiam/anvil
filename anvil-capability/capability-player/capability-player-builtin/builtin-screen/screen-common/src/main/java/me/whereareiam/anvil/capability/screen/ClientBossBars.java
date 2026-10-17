@@ -1,13 +1,13 @@
 package me.whereareiam.anvil.capability.screen;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
 import me.whereareiam.anvil.capability.screen.model.BossBar;
 import me.whereareiam.anvil.capability.screen.model.BossBarEvent;
 import me.whereareiam.anvil.capability.screen.packet.BossBarPacketListener;
 import me.whereareiam.anvil.capability.screen.type.BossBarChange;
 import me.whereareiam.anvil.capability.screen.type.BossBarColor;
 import me.whereareiam.anvil.capability.screen.type.BossBarOverlay;
+import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

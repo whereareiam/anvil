@@ -29,7 +29,7 @@ qualified implementation class names, one per line.
 | Player capability using shared observations/dependencies | `me.whereareiam.anvil.capability.api.player.PlayerCapabilityProvider` |
 | Protocol-backed player capability provider | `me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider` |
 | Agent-backed process capability provider | `me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider` |
-| Native worker extension | `me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerExtension` |
+| Native worker extension | `me.whereareiam.anvil.protocol.api.worker.WorkerExtension` |
 | Protocol library | `me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider` |
 | Platform provider | `me.whereareiam.anvil.platform.api.PlatformProvider` |
 | Agent operation provider | `me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider` |
@@ -44,17 +44,17 @@ Use each scoped API at the same Anvil version as the host:
 
 | Extension code | API artifact |
 |---|---|
-| Shared providers/contexts, neutral player contracts, typed requests, and handler registration | `capability-api` |
-| Protocol-backed player providers, channels, and native worker bindings | `capability-protocol-api` |
+| Shared providers/contexts, neutral player contracts, and typed process requests | `capability-api` |
+| Protocol-backed player providers and their contexts | `capability-protocol-api` |
 | Agent-backed process capability providers | `capability-agent-api` |
 | Host agent clients, connections, and directories | `agent-client-api` |
 | Embedded native handlers and platform agents | `agent-server-api` |
 | Shared agent request/response descriptors and payloads | `agent-api` |
-| Protocol libraries | `protocol-api` |
+| Protocol libraries, the typed player channel, and native worker extensions | `protocol-api` |
 | Global engine extensions and public scenario, player, process, and capability contracts | `api` |
 
-Both mechanism APIs, `capability-protocol-api` and `capability-agent-api`, include `capability-api`.
-Neither includes the other or an agent transport API.
+Both mechanism APIs, `capability-protocol-api` and `capability-agent-api`, include `capability-api`, and
+`capability-protocol-api` also includes `protocol-api`. Neither includes the other or an agent transport API.
 Both agent role APIs include the shared `agent-api` contracts. Neither agent role API includes the other.
 Use `compileOnly` for parent-provided Anvil APIs and platform SDKs in installed agent extension JARs.
 

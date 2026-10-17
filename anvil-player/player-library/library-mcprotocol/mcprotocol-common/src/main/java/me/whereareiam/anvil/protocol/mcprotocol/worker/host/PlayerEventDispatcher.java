@@ -2,8 +2,8 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.host;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolSubscription;
-import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerPlayerEvent;
+import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,7 +52,7 @@ final class PlayerEventDispatcher implements AutoCloseable {
 				}));
 	}
 
-	synchronized @NotNull ProtocolSubscription subscribe(@NotNull String event, @NotNull Consumer<JsonNode> listener) {
+	synchronized @NotNull Subscription subscribe(@NotNull String event, @NotNull Consumer<JsonNode> listener) {
 		if (stopping) throw new IllegalStateException("Player '" + player + "' event channel is closing");
 		throwIfFailed();
 		Registration registration = new Registration(event, listener);
@@ -115,7 +115,7 @@ final class PlayerEventDispatcher implements AutoCloseable {
 
 	private void deliver(String event, JsonNode payload, List<Registration> recipients) {
 		for (Registration registration : recipients) {
-			if (cancelNormalCallbacks && !event.equals(WorkerPlayerEvent.DESTROYED.getWireName())) return;
+			if (cancelNormalCallbacks && !event.equals(PlayerConnectionEvent.DESTROYED.getId())) return;
 			if (!registration.active.get()) continue;
 			try {
 				registration.listener.accept(payload);
@@ -148,8 +148,9 @@ final class PlayerEventDispatcher implements AutoCloseable {
 		}
 		stop();
 		Runnable notifyDestroyed = () -> {
-			String event = WorkerPlayerEvent.DESTROYED.getWireName();
-			try { deliver(event, WorkerMessageCodec.message(new byte[0]), List.copyOf(listeners.getOrDefault(event, new CopyOnWriteArrayList<>()))); }
+			String event = PlayerConnectionEvent.DESTROYED.getId();
+			List<Registration> recipients = List.copyOf(listeners.getOrDefault(event, new CopyOnWriteArrayList<>()));
+			try { deliver(event, WorkerMessageCodec.emptyEnvelope(), recipients); }
 			finally { clearListeners(); }
 		};
 		if (Thread.currentThread() == dispatchThread && !executor.isShutdown()) {
@@ -167,7 +168,7 @@ final class PlayerEventDispatcher implements AutoCloseable {
 	}
 
 	@RequiredArgsConstructor
-	private final class Registration implements ProtocolSubscription {
+	private final class Registration implements Subscription {
 		private final String event;
 		private final Consumer<JsonNode> listener;
 		private final AtomicBoolean active = new AtomicBoolean(true);

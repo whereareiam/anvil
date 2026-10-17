@@ -2,14 +2,16 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolSubscription;
-import me.whereareiam.anvil.protocol.api.exception.NativeAdapterUnavailableException;
-import me.whereareiam.anvil.protocol.api.model.NativeWorkerContext;
-import me.whereareiam.anvil.protocol.api.worker.NativeBinding;
-import me.whereareiam.anvil.protocol.api.worker.NativeOperations;
-import me.whereareiam.anvil.protocol.api.worker.NativePlayer;
-import me.whereareiam.anvil.protocol.api.worker.NativeWorkerExtension;
-import me.whereareiam.anvil.protocol.api.worker.NativeWorkerProvider;
+import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
+import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
+import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
+import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
+import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerCapabilities;
 import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerControlOperation;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
@@ -18,57 +20,123 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 
 /**
- * Creates the worker's native extensions and owns each player's opaque operation table.
+ * Selects the worker's extensions and owns each player's operation table.
  *
- * <p>Each extension binds a player through its own scope: its operations are buffered and its native
- * listeners tracked until its binding returns. An extension whose binding fails to link against the loaded
- * release, or finds no adapter for its port, leaves nothing behind, loses its capabilities for this and later
- * players and does not fail the player.</p>
+ * <p>An extension is installed when it targets this library, or every library, and accepts the worker's native
+ * session type. Each extension binds a player through its own scope: its operations are buffered and its native
+ * listeners tracked until its binding returns. An extension whose session type is missing from the loaded release,
+ * whose binding fails to link against the release, finds no adapter for its port, or fails its own service lookup
+ * leaves nothing behind, is reported unavailable with the reason for this and later players, and does not fail the
+ * player.</p>
  */
 final class WorkerCapabilityRegistry {
-	private final Map<String, NativeWorkerExtension<Object>> extensions = new LinkedHashMap<>();
-	// Linkage failure reasons of whole extensions, keyed by provider ID; they are not bound again.
-	private final Map<String, String> unlinked = new LinkedHashMap<>();
+	private final Map<String, WorkerExtension<Object>> extensions = new LinkedHashMap<>();
+	private final Map<String, String> unavailable = new LinkedHashMap<>();
+	private final WorkerMessageCodec codec = new WorkerMessageCodec();
 
-	static @NotNull WorkerCapabilityRegistry discover(@NotNull NativeWorkerContext context) {
-		List<NativeWorkerProvider> providers = new ArrayList<>();
-		ServiceLoader.load(NativeWorkerProvider.class).forEach(providers::add);
+	/**
+	 * Discovers the extensions on the worker's class path. A provider class that cannot be loaded is skipped with a
+	 * diagnostic on standard error naming the provider where the failure does, because its capability ID is unknown.
+	 * A failure to read the provider configuration itself ends the discovery with the same diagnostic.
+	 *
+	 * @param nativeSessionType class of the worker's native sessions
+	 * @return registry of the extensions selected for this worker
+	 */
+	static @NotNull WorkerCapabilityRegistry discover(@NotNull Class<?> nativeSessionType) {
+		List<WorkerExtension<?>> discovered = new ArrayList<>();
+		Iterator<ServiceLoader.Provider<WorkerExtension>> providers = ServiceLoader.load(WorkerExtension.class)
+				.stream()
+				.iterator();
+		while (hasNext(providers)) {
+			try {
+				discovered.add(providers.next().get());
+			} catch (ServiceConfigurationError | LinkageError failure) {
+				warnSkipped(failure);
+			}
+		}
 
-		return new WorkerCapabilityRegistry(context, providers);
+		return new WorkerCapabilityRegistry(nativeSessionType, discovered);
 	}
 
-	WorkerCapabilityRegistry(@NotNull NativeWorkerContext context, @NotNull Collection<? extends NativeWorkerProvider> providers) {
-		Set<String> capabilities = new LinkedHashSet<>();
-		for (NativeWorkerProvider provider : providers) {
-			NativeWorkerExtension<Object> extension = provider.create(context);
-			if (extensions.putIfAbsent(provider.id(), extension) != null)
-				throw new IllegalStateException("Duplicate native worker provider: " + provider.id());
-
-			for (String id : extension.capabilities())
-				if (!capabilities.add(id)) throw new IllegalStateException("Duplicate native capability: " + id);
-			for (String id : extension.unavailable().keySet())
-				if (!capabilities.add(id)) throw new IllegalStateException("Duplicate native capability: " + id);
+	private static boolean hasNext(Iterator<?> providers) {
+		try {
+			return providers.hasNext();
+		} catch (ServiceConfigurationError | LinkageError failure) {
+			warnSkipped(failure);
+			return false;
 		}
 	}
 
-	@NotNull PlayerBindings bind(@NotNull NativePlayer<Object> player) {
+	private static void warnSkipped(Throwable failure) {
+		System.err.println("[Anvil] Warning: skipped a worker extension that cannot be loaded: "
+				+ loadFailure(failure));
+	}
+
+	/**
+	 * Selects extensions from explicit candidates.
+	 *
+	 * @param nativeSessionType class of the worker's native sessions
+	 * @param candidates extensions of any library
+	 * @throws IllegalStateException when two candidates of this worker share a capability ID
+	 */
+	WorkerCapabilityRegistry(
+			@NotNull Class<?> nativeSessionType,
+			@NotNull Collection<? extends WorkerExtension<?>> candidates
+	) {
+		for (WorkerExtension<?> candidate : candidates) {
+			boolean otherLibrary = candidate.libraryId()
+					.filter(library -> !library.equals(McProtocolClient.LIBRARY_ID))
+					.isPresent();
+			if (otherLibrary) continue;
+			if (extensions.containsKey(candidate.id()) || unavailable.containsKey(candidate.id()))
+				throw new IllegalStateException("Duplicate worker capability: " + candidate.id());
+
+			Class<?> required;
+			try {
+				required = candidate.nativeSessionType();
+			} catch (LinkageError failure) {
+				unavailable.put(candidate.id(), reason(failure));
+				continue;
+			}
+			if (!required.isAssignableFrom(nativeSessionType)) {
+				unavailable.put(candidate.id(), "requires native session " + required.getName() + ", but the "
+						+ McProtocolClient.LIBRARY_ID + " worker provides " + nativeSessionType.getName());
+				continue;
+			}
+
+			@SuppressWarnings("unchecked")
+			WorkerExtension<Object> extension = (WorkerExtension<Object>) candidate;
+			extensions.put(extension.id(), extension);
+		}
+	}
+
+	/**
+	 * Binds every installed extension to a player. An extension that is unavailable on this release is removed
+	 * from the registry; any other failure closes the completed bindings and is rethrown.
+	 *
+	 * @param player the player's lifecycle, session access and event delivery
+	 * @return the player's bindings and operation table
+	 */
+	synchronized @NotNull PlayerBindings bind(@NotNull PlayerBindingContext<Object> player) {
 		var bindings = new PlayerBindings();
 		try {
-			for (Map.Entry<String, NativeWorkerExtension<Object>> extension : extensions.entrySet()) {
-				if (unlinked.containsKey(extension.getKey())) continue;
+			for (WorkerExtension<Object> extension : List.copyOf(extensions.values())) {
+				String failure = bindings.bind(extension, player);
+				if (failure == null) continue;
 
-				String failure = bindings.bind(extension.getValue(), player);
-				if (failure != null) unlinked.put(extension.getKey(), failure);
+				extensions.remove(extension.id());
+				unavailable.put(extension.id(), failure);
 			}
 
 			bindings.installing = false;
@@ -89,13 +157,8 @@ final class WorkerCapabilityRegistry {
 	 *
 	 * @return immutable capability IDs
 	 */
-	@NotNull Set<String> capabilities() {
-		Set<String> installed = new LinkedHashSet<>();
-		extensions.forEach((provider, extension) -> {
-			if (!unlinked.containsKey(provider)) installed.addAll(extension.capabilities());
-		});
-
-		return Set.copyOf(installed);
+	synchronized @NotNull Set<String> capabilities() {
+		return Set.copyOf(extensions.keySet());
 	}
 
 	/**
@@ -103,15 +166,8 @@ final class WorkerCapabilityRegistry {
 	 *
 	 * @return immutable reasons keyed by capability ID
 	 */
-	@NotNull Map<String, String> unavailable() {
-		Map<String, String> reasons = new LinkedHashMap<>();
-		extensions.forEach((provider, extension) -> {
-			reasons.putAll(extension.unavailable());
-			String reason = unlinked.get(provider);
-			if (reason != null) extension.capabilities().forEach(id -> reasons.putIfAbsent(id, reason));
-		});
-
-		return Map.copyOf(reasons);
+	synchronized @NotNull Map<String, String> unavailable() {
+		return Map.copyOf(unavailable);
 	}
 
 	/**
@@ -119,7 +175,7 @@ final class WorkerCapabilityRegistry {
 	 *
 	 * @return installed and unavailable capabilities
 	 */
-	@NotNull WorkerPlayerCapabilities report() {
+	synchronized @NotNull WorkerPlayerCapabilities report() {
 		return WorkerPlayerCapabilities.builder()
 				.capabilities(capabilities())
 				.unavailable(unavailable())
@@ -127,9 +183,18 @@ final class WorkerCapabilityRegistry {
 	}
 
 	private static String reason(Throwable failure) {
-		if (failure instanceof NativeAdapterUnavailableException) return failure.getMessage();
+		if (failure instanceof AdapterUnavailableException) return failure.getMessage();
 
 		return failure.getClass().getSimpleName() + ": " + failure.getMessage();
+	}
+
+	private static String loadFailure(Throwable failure) {
+		Throwable cause = failure;
+		while (cause.getCause() != null) cause = cause.getCause();
+		if (cause == failure) return reason(failure);
+
+		// A service failure names the provider; its root cause names what the provider could not link against.
+		return reason(failure) + " (" + reason(cause) + ")";
 	}
 
 	private static void validate(String id) {
@@ -141,23 +206,22 @@ final class WorkerCapabilityRegistry {
 	 * One player's operation table and extension bindings. Operations are registered only through each
 	 * extension's scope while the player binds.
 	 */
-	static final class PlayerBindings implements AutoCloseable {
-		private final WorkerMessageCodec codec = new WorkerMessageCodec();
-		private final Map<String, Function<byte[], byte[]>> operations = new LinkedHashMap<>();
-		private final List<NativeBinding> bindings = new ArrayList<>();
+	final class PlayerBindings implements AutoCloseable {
+		private final Map<String, Function<JsonNode, JsonNode>> operations = new LinkedHashMap<>();
+		private final List<WorkerBinding> bindings = new ArrayList<>();
 		private boolean installing = true;
 
 		/**
 		 * Binds one extension through its own scope, forwarding its operations only when the binding returns.
 		 *
-		 * @return the linkage or adapter failure reason, or null when the extension was bound
+		 * @return the linkage, service configuration or adapter failure reason, or null when the extension was bound
 		 */
-		private @Nullable String bind(NativeWorkerExtension<Object> extension, NativePlayer<Object> player) {
+		private @Nullable String bind(WorkerExtension<Object> extension, PlayerBindingContext<Object> player) {
 			ExtensionScope scope = new ExtensionScope(player);
-			NativeBinding binding;
+			WorkerBinding binding;
 			try {
 				binding = extension.bind(scope, scope);
-			} catch (LinkageError | NativeAdapterUnavailableException failure) {
+			} catch (LinkageError | ServiceConfigurationError | AdapterUnavailableException failure) {
 				scope.discard(null);
 				return reason(failure);
 			} catch (RuntimeException | Error failure) {
@@ -171,17 +235,24 @@ final class WorkerCapabilityRegistry {
 			return null;
 		}
 
-		@NotNull JsonNode execute(@NotNull String operation, @NotNull JsonNode arguments) {
-			Function<byte[], byte[]> handler = operations.get(operation);
+		/**
+		 * Executes one registered operation.
+		 *
+		 * @param operation operation ID
+		 * @param request request envelope
+		 * @return response envelope
+		 */
+		@NotNull JsonNode execute(@NotNull String operation, @NotNull JsonNode request) {
+			Function<JsonNode, JsonNode> handler = operations.get(operation);
 			if (handler == null) throw new IllegalArgumentException("Unknown protocol operation: " + operation);
 
-			return WorkerMessageCodec.message(handler.apply(codec.messageBytes(arguments)));
+			return handler.apply(request);
 		}
 
 		@Override
 		public void close() {
 			Throwable failure = null;
-			for (NativeBinding binding : bindings.reversed()) {
+			for (WorkerBinding binding : bindings.reversed()) {
 				try {
 					binding.close();
 				} catch (RuntimeException | Error cleanup) {
@@ -203,24 +274,26 @@ final class WorkerCapabilityRegistry {
 		 * registrations tracked, so a binding that fails to link can be released completely.
 		 */
 		@RequiredArgsConstructor
-		private final class ExtensionScope implements NativePlayer<Object>, NativeOperations {
-			private final NativePlayer<Object> player;
-			private final Map<String, Function<byte[], byte[]>> pending = new LinkedHashMap<>();
-			private final List<ProtocolSubscription> subscriptions = new ArrayList<>();
+		private final class ExtensionScope implements PlayerBindingContext<Object>, OperationRegistry {
+			private final PlayerBindingContext<Object> player;
+			private final Map<String, Function<JsonNode, JsonNode>> pending = new LinkedHashMap<>();
+			private final List<Subscription> subscriptions = new ArrayList<>();
 			private boolean open = true;
 
 			@Override
-			public void register(@NotNull String id, @NotNull Function<byte[], byte[]> handler) {
+			public <Q, R> void register(@NotNull OperationDescriptor<Q, R> operation, @NotNull Function<Q, R> handler) {
 				if (!installing || !open) throw new IllegalStateException("Worker operations may only be registered while binding a player");
+
+				String id = operation.getId();
 				validate(id);
-				if (operations.containsKey(id) || pending.putIfAbsent(id, handler) != null)
-					throw new IllegalStateException("Duplicate native operation: " + id);
+				if (operations.containsKey(id) || pending.putIfAbsent(id, codec.handler(operation, handler)) != null)
+					throw new IllegalStateException("Duplicate worker operation: " + id);
 			}
 
 			private void discard(@Nullable Throwable failure) {
 				open = false;
 				pending.clear();
-				for (ProtocolSubscription subscription : subscriptions.reversed()) {
+				for (Subscription subscription : subscriptions.reversed()) {
 					try {
 						subscription.close();
 					} catch (RuntimeException | Error cleanup) {
@@ -266,30 +339,25 @@ final class WorkerCapabilityRegistry {
 			}
 
 			@Override
-			public @NotNull ProtocolSubscription bindNativeSession(@NotNull Function<Object, ProtocolSubscription> listener) {
-				ProtocolSubscription subscription = player.bindNativeSession(listener);
+			public @NotNull Subscription bindNativeSession(@NotNull Function<Object, Subscription> listener) {
+				Subscription subscription = player.bindNativeSession(listener);
 				if (open) subscriptions.add(subscription);
 
 				return subscription;
 			}
 
 			@Override
-			public float yaw() {
-				return player.yaw();
+			public @NotNull ViewRotation viewRotation() {
+				return player.viewRotation();
 			}
 
 			@Override
-			public float pitch() {
-				return player.pitch();
+			public void viewRotation(@NotNull ViewRotation rotation) {
+				player.viewRotation(rotation);
 			}
 
 			@Override
-			public void view(float yaw, float pitch) {
-				player.view(yaw, pitch);
-			}
-
-			@Override
-			public void emit(@NotNull String event, byte @NotNull [] payload) {
+			public <E> void emit(@NotNull EventDescriptor<E> event, @Nullable E payload) {
 				player.emit(event, payload);
 			}
 

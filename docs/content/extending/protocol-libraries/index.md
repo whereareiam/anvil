@@ -19,7 +19,7 @@ artifacts will consume them.
 |---|---|
 | `ProtocolLibraryProvider` | Stable `id()`, release data through `releases(context)`, the run-scoped library through `create(context)`, and optional `authentication(accountsDirectory)` |
 | `ProtocolLibrary` | Its `releases()`, initially disconnected players through `create(PlayerRequest)`, and cleanup of every client and worker in `close()` |
-| `ProtocolPlayer` | Name, client version, `libraryId()`, the selected `release()`, identity, an optional capability channel, library services, and permanent destruction |
+| `ProtocolPlayer` | Name, client version, `libraryId()`, the selected `release()`, identity, an optional typed player channel, library services, and permanent destruction |
 
 `ProtocolLibraryProvider`, `ProtocolLibrary`, `ProtocolArtifactResolver`, and `ProtocolAuthentication`
 are in `me.whereareiam.anvil.protocol.api.library`. Player contracts are in
@@ -121,10 +121,11 @@ describes the policies from a test author's view.
 
 ## Expose execution services
 
-For typed worker operations, expose your protocol API's `ProtocolChannel` through
-`ProtocolPlayer.channel()`. Launcher binding supplies the corresponding capability-owned channel to
-`ProtocolPlayerCapabilityContext.channel()`. The library owns serialization and transport; feature
-wiring owns operation descriptors and the public feature API owns domain payload models.
+For typed worker operations, implement the player API's `ProtocolChannel` and expose it through
+`ProtocolPlayer.channel()`; capability composition hands that same channel to
+`ProtocolPlayerCapabilityContext.channel()`. The library owns serialization and transport, and decodes only the
+schemas an `OperationDescriptor` or `EventDescriptor` declares; feature wiring owns operation descriptors and the
+public feature API owns domain payload models.
 
 The channel's `installedCapabilities()` and `unavailableCapabilities()` report what the player's
 native worker installs and why the rest is missing. Composition skips every protocol-backed provider
@@ -132,14 +133,14 @@ whose capability the worker does not install, together with the providers that d
 reports the worker's reason, or `not installed by the <library> worker`, when the capability is
 requested. A player without a channel composes every provider that accepts its library.
 
-A native worker loads `NativeWorkerProvider` implementations through `ServiceLoader` and calls
-`create(NativeWorkerContext)` once per worker, with the library ID, the release key version, the
-protocol number, and the native session type. Anvil's launcher supplies the provider that installs
-capability `WorkerExtension` bindings. The returned `NativeWorkerExtension` binds each player through
-`bind(NativePlayer, NativeOperations)`: your `NativePlayer<S>` supplies the current native session,
-generation-scoped listener registration through `bindNativeSession(...)`, and the release-specific
-adapter of a port through `adapter(Class)`. MCProtocol's worker transport and
-dispatch remain private implementation details of that library.
+A native worker loads the `WorkerExtension` implementations on its class path through `ServiceLoader`. It installs
+those that target its library, or every library, and accept its native session type, and binds each of them to
+every player: your worker player implements `PlayerBindingContext<S>`, which supplies the current native session,
+generation-scoped listener registration through `bindNativeSession(...)`, typed event emission, and the
+release-specific adapter of a port through `adapter(Class)`. The worker registers each extension's typed
+handlers through its own `OperationRegistry`, accepts registrations only while binding, and reports an extension
+that fails to link or finds no adapter as unavailable with the reason. MCProtocol's worker transport and dispatch
+remain private implementation details of that library.
 
 For another library-specific service, implement a stable interface and return it from
 `ProtocolPlayer.findService(Class<T>)`. A provider can resolve that service through

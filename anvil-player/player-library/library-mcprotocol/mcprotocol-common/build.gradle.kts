@@ -8,6 +8,7 @@ description = "MCProtocolLib library provider, release data, worker host and the
 
 dependencies {
 	implementation(libs.jackson.databind)
+	implementation(libs.jackson.parameters)
 	implementation(libs.jackson.toml)
 	implementation(libs.minecraft.auth)
 	implementation(libs.slf4j.api)

@@ -2,11 +2,11 @@ package me.whereareiam.anvil.capability.screen;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.capability.api.channel.OperationRegistry;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerBinding;
 import me.whereareiam.anvil.capability.screen.packet.ScreenPackets;
+import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
+import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.LongSupplier;

@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.protocol.api.exception.NativeAdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.fixture.ProbePackets;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.fixture.ProbePacketsAdapter;
@@ -68,7 +68,7 @@ class WorkerSegmentsTest {
 			String reason = "segment probe-mcprotocol 1.16.5 does not link against the MCProtocolLib release for Minecraft 1.17.1: "
 					+ "method " + ProbePacketsAdapter.class.getName() + " name()Ljava/lang/String; is not static, linked as static";
 			assertEquals(List.of("[Anvil] Warning: " + reason + "; its adapters are unavailable"), warnings);
-			NativeAdapterUnavailableException unavailable = assertThrows(NativeAdapterUnavailableException.class,
+			AdapterUnavailableException unavailable = assertThrows(AdapterUnavailableException.class,
 					() -> segments.adapter(ProbePackets.class));
 			assertEquals(reason, unavailable.getMessage());
 			assertInstanceOf(RecordingClient.class, segments.client());
@@ -124,7 +124,7 @@ class WorkerSegmentsTest {
 	private void assertUnavailable(String message, Path... roots) throws Exception {
 		try (URLClassLoader loader = SegmentRoots.loader(roots)) {
 			WorkerSegments segments = WorkerSegments.verify(loader, MinecraftVersion.parse("1.18.2"), warnings::add);
-			NativeAdapterUnavailableException failure = assertThrows(NativeAdapterUnavailableException.class,
+			AdapterUnavailableException failure = assertThrows(AdapterUnavailableException.class,
 					() -> segments.adapter(ProbePackets.class));
 			assertTrue(failure.getMessage().contains(message), failure.getMessage());
 		}

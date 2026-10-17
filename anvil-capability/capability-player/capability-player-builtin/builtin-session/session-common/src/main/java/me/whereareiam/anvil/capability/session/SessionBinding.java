@@ -1,9 +1,9 @@
 package me.whereareiam.anvil.capability.session;
 
-import me.whereareiam.anvil.capability.api.channel.OperationRegistry;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerBinding;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerExtension;
+import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
+import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
+import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;

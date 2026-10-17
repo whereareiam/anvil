@@ -1,36 +1,29 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.host;
 
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.MessageChannel;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
-import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
-import me.whereareiam.anvil.capability.protocol.api.model.player.PlayerConnectionEvent;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.capability.inventory.model.SlotSelection;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
-import me.whereareiam.anvil.capability.binding.TypedCapabilityChannel;
-import me.whereareiam.anvil.api.model.MinecraftVersion;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.model.GameConnection;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
+import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.mcprotocol.catalog.McProtocolReleaseCatalog;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.fixture.EventWorkerExtension;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.fixture.GradleReleaseClosures;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -41,8 +34,8 @@ class PlayerChannelEventIsolationTest {
 		try (ProtocolWorkerProcess worker = worker(version)) {
 			ProtocolPlayer alice = worker.create(request(version, "Alice"), null);
 			ProtocolPlayer bob = worker.create(request(version, "Bob"), null);
-			CapabilityChannel aliceChannel = channel(alice);
-			CapabilityChannel bobChannel = channel(bob);
+			ProtocolChannel aliceChannel = channel(alice);
+			ProtocolChannel bobChannel = channel(bob);
 			var entered = new CountDownLatch(1);
 			var proceed = new CountDownLatch(1);
 			var nested = new CompletableFuture<MessageText>();
@@ -87,7 +80,7 @@ class PlayerChannelEventIsolationTest {
 	void destructionDrainsAcceptedCallbacksBeforeRemovingTheirChildPlayer(String version) throws Exception {
 		try (ProtocolWorkerProcess worker = worker(version); var closers = Executors.newVirtualThreadPerTaskExecutor()) {
 			ProtocolPlayer player = worker.create(request(version, "Alice"), null);
-			CapabilityChannel channel = channel(player);
+			ProtocolChannel channel = channel(player);
 			var entered = new CountDownLatch(1);
 			var proceed = new CountDownLatch(1);
 			var closing = new CountDownLatch(1);
@@ -116,7 +109,7 @@ class PlayerChannelEventIsolationTest {
 		try (ProtocolWorkerProcess worker = worker(version)) {
 			ProtocolPlayer player = worker.create(request(version, "Alice"), null);
 			ProtocolPlayer other = worker.create(request(version, "Bob"), null);
-			CapabilityChannel channel = channel(player);
+			ProtocolChannel channel = channel(player);
 			var entered = new CountDownLatch(1);
 			var proceed = new CountDownLatch(1);
 			var notified = new CountDownLatch(1);
@@ -158,17 +151,8 @@ class PlayerChannelEventIsolationTest {
 		}
 	}
 
-	private CapabilityChannel channel(ProtocolPlayer player) {
-		var raw = player.channel().orElseThrow();
-		return new TypedCapabilityChannel(new MessageChannel() {
-			public byte @NotNull [] request(@NotNull String operation, byte @NotNull [] request) { return raw.request(operation, request); }
-			public @NotNull Subscription subscribe(@NotNull String event, @NotNull Consumer<byte[]> listener) {
-				var subscription = raw.subscribe(event, listener);
-				return subscription::close;
-			}
-			public void await(@NotNull BooleanSupplier condition, @NotNull String description, @NotNull Duration timeout) { raw.await(condition, description, timeout); }
-			public @NotNull Set<String> installedCapabilities() { return raw.installedCapabilities(); }
-		});
+	private ProtocolChannel channel(ProtocolPlayer player) {
+		return player.channel().orElseThrow();
 	}
 
 	private ProtocolWorkerProcess worker(String version) {

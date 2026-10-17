@@ -3,10 +3,13 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.host;
 import com.fasterxml.jackson.databind.JsonNode;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolSubscription;
+import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.model.GameConnection;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
+import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.model.AuthenticationSession;
@@ -16,7 +19,6 @@ import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerCapabil
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerControlOperation;
-import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerPlayerEvent;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,7 +37,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /**
- * Library-owned player handle and capability-provider request channel backed by an isolated worker.
+ * Library-owned player handle and its typed player channel, backed by an isolated worker.
  */
 final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 	private static final Duration OBSERVATION_INTERVAL = Duration.ofMillis(25);
@@ -104,9 +106,9 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 	 * read after the session reports its connection is already the new one.
 	 */
 	void event(@NotNull String type, @NotNull JsonNode payload) {
-		if (type.equals(WorkerPlayerEvent.CONNECTION.getWireName())) {
-			granted = codec.granted(codec.messageBytes(payload)).orElse(null);
-			PlayerProfile login = granted;
+		if (type.equals(PlayerConnectionEvent.CHANGED.getId())) {
+			PlayerProfile login = codec.open(payload, PlayerConnectionEvent.class).getGranted();
+			granted = login;
 			if (login != null) grantedProfiles.addIfAbsent(login);
 		}
 		events.dispatch(type, payload);
@@ -174,16 +176,20 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 	public @NotNull Optional<ProtocolChannel> channel() { return Optional.of(this); }
 
 	@Override
-	public byte @NotNull [] request(@NotNull String operation, byte @NotNull [] request) {
+	public <Q, R> @Nullable R request(@NotNull OperationDescriptor<Q, R> operation, @Nullable Q request) {
+		if (request == null && operation.getRequestType() != Void.class)
+			throw new IllegalArgumentException("Operation '" + operation.getId() + "' requires a "
+					+ operation.getRequestType().getName() + " request");
+
 		ensureOpen();
-		JsonNode result = worker.request(operation, id, arguments -> arguments.setAll(WorkerMessageCodec.message(request)));
-		return codec.messageBytes(result);
+		JsonNode result = worker.request(operation.getId(), id, arguments -> arguments.setAll(codec.envelope(request)));
+		return codec.open(result, operation.getResponseType());
 	}
 
 	@Override
-	public @NotNull ProtocolSubscription subscribe(@NotNull String event, @NotNull Consumer<byte[]> listener) {
+	public <E> @NotNull Subscription subscribe(@NotNull EventDescriptor<E> event, @NotNull Consumer<E> listener) {
 		ensureOpen();
-		return events.subscribe(event, encoded -> listener.accept(codec.messageBytes(encoded)));
+		return events.subscribe(event.getId(), payload -> listener.accept(codec.open(payload, event.getPayloadType())));
 	}
 
 	@Override

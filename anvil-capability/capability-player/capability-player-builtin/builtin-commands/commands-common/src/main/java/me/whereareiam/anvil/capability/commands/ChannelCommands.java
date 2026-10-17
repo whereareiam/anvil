@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.commands;
 import me.whereareiam.anvil.capability.commands.model.CommandTree;
 import me.whereareiam.anvil.capability.commands.parse.CommandVerifier;
 import me.whereareiam.anvil.capability.commands.type.CommandCheck;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,10 +18,10 @@ import java.util.function.Predicate;
  * together with the player.
  */
 final class ChannelCommands implements Commands {
-	private final CapabilityChannel channel;
+	private final ProtocolChannel channel;
 	private volatile @Nullable CommandTree tree;
 
-	ChannelCommands(@NotNull CapabilityChannel channel) {
+	ChannelCommands(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
 		channel.subscribe(CommandsOperations.TREE, received -> tree = received);
 		channel.subscribe(CommandsOperations.RESET, ignored -> tree = null);

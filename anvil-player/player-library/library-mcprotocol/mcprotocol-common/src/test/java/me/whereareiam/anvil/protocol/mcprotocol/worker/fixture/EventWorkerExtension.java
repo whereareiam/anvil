@@ -1,12 +1,12 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.fixture;
 
-import me.whereareiam.anvil.capability.api.channel.OperationRegistry;
-import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
-import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerBinding;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerExtension;
+import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
+import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
+import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -17,8 +17,8 @@ import java.util.Optional;
 public final class EventWorkerExtension implements WorkerExtension<Object> {
 	public static final String ID = "test.events";
 	public static final EventDescriptor<MessageText> CHANGED = new EventDescriptor<>("test.events.changed", MessageText.class);
-	public static final ChannelOperation<MessageText, Void> EMIT = new ChannelOperation<>("test.events.emit", MessageText.class, Void.class);
-	public static final ChannelOperation<MessageText, MessageText> ECHO = new ChannelOperation<>("test.events.echo", MessageText.class, MessageText.class);
+	public static final OperationDescriptor<MessageText, Void> EMIT = new OperationDescriptor<>("test.events.emit", MessageText.class, Void.class);
+	public static final OperationDescriptor<MessageText, MessageText> ECHO = new OperationDescriptor<>("test.events.echo", MessageText.class, MessageText.class);
 
 	public @NotNull String id() { return ID; }
 	public @NotNull Optional<String> libraryId() { return Optional.of("mcprotocol"); }

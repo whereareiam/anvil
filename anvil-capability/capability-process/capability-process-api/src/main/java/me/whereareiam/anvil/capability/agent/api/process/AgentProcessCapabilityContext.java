@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.capability.agent.api.process;
 
-import me.whereareiam.anvil.capability.api.channel.RequestChannel;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.api.process.ProcessCapabilityContext;
+import me.whereareiam.anvil.capability.api.process.RequestChannel;
 import org.jetbrains.annotations.NotNull;
 
 /**

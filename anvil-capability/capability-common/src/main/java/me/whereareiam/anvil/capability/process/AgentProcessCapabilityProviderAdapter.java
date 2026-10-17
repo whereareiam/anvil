@@ -6,9 +6,9 @@ import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityC
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider;
 import me.whereareiam.anvil.capability.api.CapabilityContext;
 import me.whereareiam.anvil.capability.api.CapabilityProvider;
-import me.whereareiam.anvil.capability.api.channel.RequestChannel;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.api.platform.ProcessPlatform;
+import me.whereareiam.anvil.capability.api.process.RequestChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;

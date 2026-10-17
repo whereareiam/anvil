@@ -1,15 +1,16 @@
 package me.whereareiam.anvil.capability.player;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
-import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
-import me.whereareiam.anvil.capability.api.player.CapabilityPlayer;
-import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
-import me.whereareiam.anvil.capability.protocol.api.player.ProtocolCapabilityPlayer;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
+import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ class CapabilitySimulatedPlayerTest {
 	@Test
 	void waitsThroughThePlayersChannelAndReturnsTheExpectationMet() {
 		RecordingChannel channel = new RecordingChannel();
-		SimulatedPlayer player = compose(new ChannelPlayer(channel));
+		SimulatedPlayer player = compose(new StubPlayer(channel));
 
 		int first = player.awaitFirst(TIMEOUT,
 				Expectation.of("receive a reply", () -> false),
@@ -48,14 +49,14 @@ class CapabilitySimulatedPlayerTest {
 
 	@Test
 	void prefersTheEarliestExpectationWhenSeveralAreMet() {
-		SimulatedPlayer player = compose(new ChannelPlayer(new RecordingChannel()));
+		SimulatedPlayer player = compose(new StubPlayer(new RecordingChannel()));
 
 		assertEquals(0, player.awaitFirst(TIMEOUT, Expectation.of("a", () -> true), Expectation.of("b", () -> true)));
 	}
 
 	@Test
 	void failsWithEveryExpectationNamedWhenTheChannelGivesUp() {
-		SimulatedPlayer player = compose(new ChannelPlayer(new RecordingChannel()));
+		SimulatedPlayer player = compose(new StubPlayer(new RecordingChannel()));
 
 		IllegalStateException failure = assertThrows(IllegalStateException.class,
 				() -> player.awaitFirst(TIMEOUT, Expectation.of("receive a reply", () -> false), Expectation.of("be kicked", () -> false)));
@@ -65,7 +66,7 @@ class CapabilitySimulatedPlayerTest {
 
 	@Test
 	void checksAgainUntilAnExpectationIsMetWhenThePlayerHasNoChannel() {
-		SimulatedPlayer player = compose(new PlainPlayer());
+		SimulatedPlayer player = compose(new StubPlayer(null));
 		AtomicInteger checks = new AtomicInteger();
 
 		int first = player.awaitFirst(TIMEOUT,
@@ -78,7 +79,7 @@ class CapabilitySimulatedPlayerTest {
 
 	@Test
 	void failsWhenNoExpectationIsMetInTimeWithoutAChannel() {
-		SimulatedPlayer player = compose(new PlainPlayer());
+		SimulatedPlayer player = compose(new StubPlayer(null));
 
 		IllegalStateException failure = assertThrows(IllegalStateException.class,
 				() -> player.awaitFirst(Duration.ofMillis(60), Expectation.of("be kicked", () -> false)));
@@ -88,24 +89,23 @@ class CapabilitySimulatedPlayerTest {
 
 	@Test
 	void refusesAWaitForNothing() {
-		SimulatedPlayer player = compose(new PlainPlayer());
+		SimulatedPlayer player = compose(new StubPlayer(null));
 
 		assertThrows(IllegalArgumentException.class, () -> player.awaitFirst(TIMEOUT));
 	}
 
-	private static SimulatedPlayer compose(CapabilityPlayer player) {
-		return new PlayerCapabilityRuntime(List.of()).compose(player, PlayerConnection.to("proxy"), ignored -> { });
+	private static SimulatedPlayer compose(ProtocolPlayer player) {
+		return new PlayerCapabilityRuntime(List.of()).compose(player, null, PlayerConnection.to("proxy"), ignored -> { });
 	}
-
 
 	/**
 	 * Checks a wait's condition once, as a channel whose observation is already complete; a condition that does
 	 * not hold fails at once instead of timing out.
 	 */
-	private static final class RecordingChannel implements CapabilityChannel {
+	private static final class RecordingChannel implements ProtocolChannel {
 		private final List<String> waits = new ArrayList<>();
 
-		public <Q, R> R request(@NotNull ChannelOperation<Q, R> channelOperation, Q request) { throw new AssertionError(); }
+		public <Q, R> R request(@NotNull OperationDescriptor<Q, R> operation, Q request) { throw new AssertionError(); }
 		public <E> @NotNull Subscription subscribe(@NotNull EventDescriptor<E> eventDescriptor, @NotNull Consumer<E> listener) { return () -> { }; }
 		public @NotNull Set<String> installedCapabilities() { return Set.of(); }
 		public @NotNull Map<String, String> unavailableCapabilities() { return Map.of(); }
@@ -116,23 +116,22 @@ class CapabilitySimulatedPlayerTest {
 		}
 	}
 
-	private record ChannelPlayer(CapabilityChannel capabilityChannel) implements ProtocolCapabilityPlayer {
+	private record StubPlayer(@Nullable ProtocolChannel protocolChannel) implements ProtocolPlayer {
 		public @NotNull String name() { return "Alice"; }
 		public @NotNull String libraryId() { return "stub"; }
 		public @NotNull String clientVersion() { return "test"; }
+		public @NotNull ProtocolRelease release() {
+			return ProtocolRelease.builder()
+					.libraryVersion("test")
+					.minecraftVersion(MinecraftVersion.parse("1.21.11"))
+					.protocolNumber(774)
+					.javaVersion(21)
+					.build();
+		}
 		public @NotNull PlayerProfile requestedProfile() { return new PlayerProfile("Alice", UUID.nameUUIDFromBytes("Alice".getBytes(StandardCharsets.UTF_8))); }
 		public @Nullable PlayerProfile grantedProfile() { return null; }
 		public @NotNull <T> Optional<T> findService(@NotNull Class<T> type) { return Optional.empty(); }
-		public @NotNull Optional<CapabilityChannel> channel() { return Optional.of(capabilityChannel); }
-		public boolean destroyed() { return false; }
-		public void destroy() { }
-	}
-
-	private static final class PlainPlayer implements CapabilityPlayer {
-		public @NotNull String name() { return "Alice"; }
-		public @NotNull String clientVersion() { return "test"; }
-		public @NotNull PlayerProfile requestedProfile() { return new PlayerProfile("Alice", UUID.nameUUIDFromBytes("Alice".getBytes(StandardCharsets.UTF_8))); }
-		public @Nullable PlayerProfile grantedProfile() { return null; }
+		public @NotNull Optional<ProtocolChannel> channel() { return Optional.ofNullable(protocolChannel); }
 		public boolean destroyed() { return false; }
 		public void destroy() { }
 	}

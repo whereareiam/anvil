@@ -1,11 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.host;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.capability.binding.TypedCapabilityChannel;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.MessageChannel;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.model.GameConnection;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
@@ -17,7 +13,6 @@ import me.whereareiam.anvil.protocol.mcprotocol.worker.fixture.GradleReleaseClos
 import me.whereareiam.anvil.protocol.mcprotocol.worker.fixture.ProbePackets;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.fixture.ProbePacketsAdapter;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.fixture.ProbeWorkerExtension;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.api.io.TempDir;
@@ -31,17 +26,16 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -114,8 +108,13 @@ class McProtocolWorkerContractTest {
 				assertEquals("no mcprotocol segment selected for Minecraft " + release.version() + " provides an adapter for "
 						+ ProbePackets.class.getName(), unavailable.get(ProbeWorkerExtension.ID));
 
-				MessageText echoed = typed(channel).request(EventWorkerExtension.ECHO, new MessageText("release " + version));
+				MessageText echoed = channel.request(EventWorkerExtension.ECHO, new MessageText("release " + version));
 				assertEquals(new MessageText("release " + version), echoed);
+				assertNull(channel.request(EventWorkerExtension.EMIT, new MessageText("no response")));
+				IllegalArgumentException rejected = assertThrows(IllegalArgumentException.class,
+						() -> channel.request(EventWorkerExtension.ECHO, null));
+				assertEquals("Operation '" + EventWorkerExtension.ECHO.getId() + "' requires a " + MessageText.class.getName()
+						+ " request", rejected.getMessage());
 			} finally {
 				player.destroy();
 			}
@@ -130,7 +129,7 @@ class McProtocolWorkerContractTest {
 			try {
 				ProtocolChannel channel = player.channel().orElseThrow();
 				assertTrue(channel.installedCapabilities().contains(ProbeWorkerExtension.ID), channel.unavailableCapabilities().toString());
-				assertEquals("probe", typed(channel).request(ProbeWorkerExtension.NAME, null));
+				assertEquals("probe", channel.request(ProbeWorkerExtension.NAME, null));
 			} finally {
 				player.destroy();
 			}
@@ -204,18 +203,6 @@ class McProtocolWorkerContractTest {
 						.sourceAddress(InetAddress.getLoopbackAddress())
 						.build())
 				.build();
-	}
-
-	private CapabilityChannel typed(ProtocolChannel raw) {
-		return new TypedCapabilityChannel(new MessageChannel() {
-			public byte @NotNull [] request(@NotNull String operation, byte @NotNull [] request) { return raw.request(operation, request); }
-			public @NotNull Subscription subscribe(@NotNull String event, @NotNull Consumer<byte[]> listener) {
-				var subscription = raw.subscribe(event, listener);
-				return subscription::close;
-			}
-			public void await(@NotNull BooleanSupplier condition, @NotNull String description, @NotNull Duration timeout) { raw.await(condition, description, timeout); }
-			public @NotNull Set<String> installedCapabilities() { return raw.installedCapabilities(); }
-		});
 	}
 
 	/**

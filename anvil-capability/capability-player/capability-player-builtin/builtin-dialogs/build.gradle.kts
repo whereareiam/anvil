@@ -8,7 +8,10 @@ architecture {
 		projects.anvilCapability.capabilityPlayer.capabilityPlayerApi.path,
 	)
 	// Dialogs check the commands their buttons run through the player's Commands capability, when it has one.
-	dependsOnApis = setOf(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinCommands.commandsApi.path)
+	dependsOnApis = setOf(
+		projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinCommands.commandsApi.path,
+		projects.anvilPlayer.playerApi.path,
+	)
 }
 
 description = "Public wiring bundle for the built-in dialogs capability"
