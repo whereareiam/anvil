@@ -4,6 +4,8 @@ import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.commands.Commands;
 import me.whereareiam.anvil.capability.commands.model.CommandTree;
 import me.whereareiam.anvil.capability.commands.type.CommandCheck;
+import me.whereareiam.anvil.capability.dialogs.channel.DialogsChannel;
+import me.whereareiam.anvil.capability.dialogs.model.DialogRegistry;
 import me.whereareiam.anvil.capability.dialogs.model.click.CommandConfirmation;
 import me.whereareiam.anvil.capability.dialogs.model.click.DialogClick;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.Dialog;
@@ -13,7 +15,6 @@ import me.whereareiam.anvil.capability.dialogs.model.dialog.DialogInput;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.DialogOption;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.RegistryDialog;
 import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens;
-import me.whereareiam.anvil.capability.dialogs.screen.DialogRegistry;
 import me.whereareiam.anvil.capability.dialogs.type.DialogActionType;
 import me.whereareiam.anvil.capability.dialogs.type.DialogAfterAction;
 import me.whereareiam.anvil.capability.dialogs.type.DialogInputType;
@@ -57,14 +58,14 @@ class ChannelDialogsTest {
 
 		Dialog first = notice("First");
 		Dialog second = notice("Second");
-		channel.publish(DialogsOperations.SHOWN, first);
-		channel.publish(DialogsOperations.SHOWN, second);
+		channel.publish(DialogsChannel.SHOWN, first);
+		channel.publish(DialogsChannel.SHOWN, second);
 
 		assertEquals(Optional.of(second), dialogs.current());
 		assertEquals(List.of(first, second), dialogs.history());
 		assertThrows(UnsupportedOperationException.class, () -> dialogs.history().add(first));
 
-		channel.publish(DialogsOperations.CLEARED, null);
+		channel.publish(DialogsChannel.CLEARED, null);
 		assertEquals(Optional.empty(), dialogs.current());
 		dialogs.closed(TIMEOUT);
 	}
@@ -73,7 +74,7 @@ class ChannelDialogsTest {
 	void waitsForTheOpenDialogByTitle() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
-		channel.publish(DialogsOperations.SHOWN, notice("Identica: Log in"));
+		channel.publish(DialogsChannel.SHOWN, notice("Identica: Log in"));
 
 		assertEquals("Identica: Log in", dialogs.shown("Log in").getTitle());
 		assertEquals("Player did not show a dialog titled 'Register'",
@@ -85,7 +86,7 @@ class ChannelDialogsTest {
 	void watchesOnlyDialogsShownSinceItAndFailsOnAForbiddenOne() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
-		channel.publish(DialogsOperations.SHOWN, notice("Log in"));
+		channel.publish(DialogsChannel.SHOWN, notice("Log in"));
 		DialogWatch shown = dialogs.watch();
 		Predicate<Dialog> login = dialog -> dialog.getTitle().equals("Log in");
 		Expectation again = shown.expectShown(login);
@@ -96,7 +97,7 @@ class ChannelDialogsTest {
 				assertThrows(IllegalStateException.class, () -> shown.shown(login, TIMEOUT)).getMessage());
 
 		Dialog second = notice("Log in");
-		channel.publish(DialogsOperations.SHOWN, second);
+		channel.publish(DialogsChannel.SHOWN, second);
 		assertTrue(again.met());
 		assertEquals(List.of(second), shown.unread());
 		assertEquals("Player was shown a dialog it must not be shown: Log in",
@@ -110,7 +111,7 @@ class ChannelDialogsTest {
 	void runsADynamicCommandWithTheInputsFilledAndClosesTheDialog() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
-		channel.publish(DialogsOperations.SHOWN, form(DialogAction.of(DialogActionType.DYNAMIC_RUN_COMMAND,
+		channel.publish(DialogsChannel.SHOWN, form(DialogAction.of(DialogActionType.DYNAMIC_RUN_COMMAND,
 				"/register $(password) $(remember) $(amount) $(mode)", null), DialogAfterAction.CLOSE));
 
 		dialogs.press("Submit", Map.of("password", "Pass 1$", "remember", "true"));
@@ -125,7 +126,7 @@ class ChannelDialogsTest {
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
 		assertEquals("Player has no dialog open", assertThrows(IllegalStateException.class, () -> dialogs.press("Submit")).getMessage());
 
-		channel.publish(DialogsOperations.SHOWN, form(DialogAction.show("example:missing", null), DialogAfterAction.CLOSE));
+		channel.publish(DialogsChannel.SHOWN, form(DialogAction.show("example:missing", null), DialogAfterAction.CLOSE));
 		assertEquals("The open dialog 'Form' has no button 'Cancel'; buttons: [Submit]",
 				assertThrows(IllegalStateException.class, () -> dialogs.press("Cancel")).getMessage());
 		assertEquals("The button opens the registry dialog example:missing, which the server did not send",
@@ -145,7 +146,7 @@ class ChannelDialogsTest {
 				.closeWithEscape(true)
 				.afterAction(DialogAfterAction.NONE)
 				.build();
-		channel.publish(DialogsOperations.SHOWN, confirmation);
+		channel.publish(DialogsChannel.SHOWN, confirmation);
 
 		dialogs.close();
 
@@ -157,7 +158,7 @@ class ChannelDialogsTest {
 	void refusesToCloseADialogThatEscapeCannotClose() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
-		channel.publish(DialogsOperations.SHOWN, form(DialogAction.of(DialogActionType.RUN_COMMAND, "go", null), DialogAfterAction.CLOSE));
+		channel.publish(DialogsChannel.SHOWN, form(DialogAction.of(DialogActionType.RUN_COMMAND, "go", null), DialogAfterAction.CLOSE));
 
 		assertEquals("The open dialog 'Form' cannot be closed with Escape",
 				assertThrows(IllegalStateException.class, dialogs::close).getMessage());
@@ -169,8 +170,8 @@ class ChannelDialogsTest {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
 		Dialog next = notice("Next");
-		channel.onRequest = () -> channel.publish(DialogsOperations.SHOWN, next);
-		channel.publish(DialogsOperations.SHOWN, form(DialogAction.of(DialogActionType.RUN_COMMAND, "go", null), DialogAfterAction.CLOSE));
+		channel.onRequest = () -> channel.publish(DialogsChannel.SHOWN, next);
+		channel.publish(DialogsChannel.SHOWN, form(DialogAction.of(DialogActionType.RUN_COMMAND, "go", null), DialogAfterAction.CLOSE));
 
 		dialogs.press("Submit");
 
@@ -182,7 +183,7 @@ class ChannelDialogsTest {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
 		Dialog form = form(DialogAction.of(DialogActionType.RUN_COMMAND, "/missing command", null), DialogAfterAction.CLOSE);
-		channel.publish(DialogsOperations.SHOWN, form);
+		channel.publish(DialogsChannel.SHOWN, form);
 		channel.commands.result = CommandCheck.PARSE_ERRORS;
 
 		dialogs.press("Submit");
@@ -207,13 +208,13 @@ class ChannelDialogsTest {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, null);
 		Dialog form = form(DialogAction.of(DialogActionType.RUN_COMMAND, "login secret", null), DialogAfterAction.CLOSE);
-		channel.publish(DialogsOperations.SHOWN, form);
+		channel.publish(DialogsChannel.SHOWN, form);
 
 		assertEquals("The button runs a command, which the client checks against its command tree first; install the Commands "
 				+ "capability to press it", assertThrows(IllegalStateException.class, () -> dialogs.press("Submit")).getMessage());
 		assertEquals(Optional.of(form), dialogs.current());
 
-		channel.publish(DialogsOperations.SHOWN, form(DialogAction.of(DialogActionType.CUSTOM, "example:ping", null), DialogAfterAction.CLOSE));
+		channel.publish(DialogsChannel.SHOWN, form(DialogAction.of(DialogActionType.CUSTOM, "example:ping", null), DialogAfterAction.CLOSE));
 		dialogs.press("Submit");
 		assertEquals(List.of(DialogClick.custom("example:ping", null, List.of())), channel.payloads);
 	}
@@ -222,7 +223,7 @@ class ChannelDialogsTest {
 	void neverSendsACommandWithASignedArgument() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
-		channel.publish(DialogsOperations.SHOWN, form(DialogAction.of(DialogActionType.RUN_COMMAND, "msg Bob hello", null), DialogAfterAction.CLOSE));
+		channel.publish(DialogsChannel.SHOWN, form(DialogAction.of(DialogActionType.RUN_COMMAND, "msg Bob hello", null), DialogAfterAction.CLOSE));
 		channel.commands.result = CommandCheck.SIGNATURE_REQUIRED;
 
 		dialogs.press("Submit");
@@ -240,7 +241,7 @@ class ChannelDialogsTest {
 		Dialog form = form(DialogAction.of(DialogActionType.RUN_COMMAND, "login secret", null), DialogAfterAction.CLOSE).toBuilder()
 				.configuration(true)
 				.build();
-		channel.publish(DialogsOperations.SHOWN, form);
+		channel.publish(DialogsChannel.SHOWN, form);
 
 		dialogs.press("Submit");
 
@@ -255,7 +256,7 @@ class ChannelDialogsTest {
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
 		Dialog rules = notice("Rules");
 		Dialog form = form(DialogAction.show("", rules), DialogAfterAction.NONE);
-		channel.publish(DialogsOperations.SHOWN, form);
+		channel.publish(DialogsChannel.SHOWN, form);
 
 		dialogs.press("Submit");
 
@@ -270,20 +271,20 @@ class ChannelDialogsTest {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands);
 		Dialog rules = notice("Rules").toBuilder().externalTitle("Server rules").build();
-		channel.publish(DialogsOperations.REGISTRY, new DialogRegistry(List.of(
+		channel.publish(DialogsChannel.REGISTRY, new DialogRegistry(List.of(
 				new RegistryDialog("minecraft:server_links", null),
 				new RegistryDialog("example:rules", rules)
 		)));
 
-		channel.publish(DialogsOperations.SHOWN, Dialog.builder().type("").registryId(1).title("").externalTitle("")
+		channel.publish(DialogsChannel.SHOWN, Dialog.builder().type("").registryId(1).title("").externalTitle("")
 				.afterAction(DialogAfterAction.CLOSE).build());
 		assertEquals(rules.toBuilder().registryId(1).registryName("example:rules").build(), dialogs.current().orElseThrow());
 
-		channel.publish(DialogsOperations.SHOWN, Dialog.builder().type("").registryId(0).title("").externalTitle("")
+		channel.publish(DialogsChannel.SHOWN, Dialog.builder().type("").registryId(0).title("").externalTitle("")
 				.afterAction(DialogAfterAction.CLOSE).build());
 		assertEquals("minecraft:server_links", dialogs.current().orElseThrow().getRegistryName());
 
-		channel.publish(DialogsOperations.SHOWN, Dialog.builder().type("minecraft:dialog_list").title("Menu").externalTitle("Menu")
+		channel.publish(DialogsChannel.SHOWN, Dialog.builder().type("minecraft:dialog_list").title("Menu").externalTitle("Menu")
 				.button(new DialogButton("example:rules", DialogAction.show("example:rules", null), false))
 				.closeWithEscape(true)
 				.afterAction(DialogAfterAction.CLOSE)
@@ -298,7 +299,7 @@ class ChannelDialogsTest {
 		RecordingChannel channel = new RecordingChannel();
 		MutableClock clock = new MutableClock();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, channel.commands, clock);
-		channel.publish(DialogsOperations.SHOWN, form(DialogAction.of(DialogActionType.CUSTOM, "example:wait", null), DialogAfterAction.WAIT_FOR_RESPONSE));
+		channel.publish(DialogsChannel.SHOWN, form(DialogAction.of(DialogActionType.CUSTOM, "example:wait", null), DialogAfterAction.WAIT_FOR_RESPONSE));
 
 		dialogs.press("Submit");
 		assertTrue(dialogs.waitingForResponse());
@@ -308,8 +309,8 @@ class ChannelDialogsTest {
 		dialogs.close();
 		assertFalse(dialogs.waitingForResponse());
 
-		channel.publish(DialogsOperations.SHOWN, notice("First"));
-		channel.publish(DialogsOperations.RESET, null);
+		channel.publish(DialogsChannel.SHOWN, notice("First"));
+		channel.publish(DialogsChannel.RESET, null);
 		assertEquals(Optional.empty(), dialogs.current());
 		assertEquals("Player has no screen open", assertThrows(IllegalStateException.class, dialogs::close).getMessage());
 	}
@@ -407,7 +408,7 @@ class ChannelDialogsTest {
 
 		@Override
 		public <Q, R> @Nullable R request(@NotNull OperationDescriptor<Q, R> operation, @Nullable Q request) {
-			assertEquals(DialogsOperations.CLICK.getId(), operation.getId());
+			assertEquals(DialogsChannel.CLICK.getId(), operation.getId());
 			payloads.add(request);
 			onRequest.run();
 			return null;
@@ -427,7 +428,7 @@ class ChannelDialogsTest {
 
 		@Override
 		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(DialogsProvider.ID);
+			return Set.of(DialogsChannel.ID);
 		}
 	}
 }

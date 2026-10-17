@@ -11,6 +11,7 @@ architecture {
 	dependsOnApis = setOf(
 		projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinCommands.commandsApi.path,
 		projects.anvilPlayer.playerApi.path,
+		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi.path,
 	)
 }
 

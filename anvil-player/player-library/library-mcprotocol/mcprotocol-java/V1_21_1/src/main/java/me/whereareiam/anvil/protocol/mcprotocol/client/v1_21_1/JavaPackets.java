@@ -21,6 +21,7 @@ final class JavaPackets {
 	private final List<PacketTranslation<Packet>> areas = List.of(
 			new ChatPackets(),
 			new CommandPackets(),
+			new ConnectionPackets(),
 			new CookiePackets(),
 			new InventoryPackets(),
 			new PlayerPackets(),

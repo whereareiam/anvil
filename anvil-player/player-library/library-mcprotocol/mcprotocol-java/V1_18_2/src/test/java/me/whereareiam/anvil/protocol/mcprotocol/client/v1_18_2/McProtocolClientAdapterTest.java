@@ -12,9 +12,13 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.command.ClientboundCommands;
+import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
 import me.whereareiam.anvil.protocol.java.api.packet.cookie.ClientboundCookieRequest;
 import me.whereareiam.anvil.protocol.java.api.packet.cookie.ClientboundStoreCookie;
 import me.whereareiam.anvil.protocol.java.api.packet.cookie.ServerboundCookieResponse;
+import me.whereareiam.anvil.protocol.java.api.packet.dialog.ClientboundShowDialog;
+import me.whereareiam.anvil.protocol.java.api.packet.dialog.ServerboundCustomClickAction;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
@@ -130,11 +134,15 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ClientboundContainerSetSlot.class));
 		assertTrue(client.supports(ServerboundContainerClick.class));
 		assertTrue(client.supports(ClientboundCustomSound.class));
+		assertTrue(client.supports(ClientboundLogin.class));
 		assertFalse(client.supports(ClientboundDisguisedChat.class));
 		assertFalse(client.supports(ClientboundCookieRequest.class));
 		assertFalse(client.supports(ClientboundStoreCookie.class));
 		assertFalse(client.supports(ServerboundCookieResponse.class));
 		assertFalse(client.supports(ClientboundSetPlayerInventory.class));
+		assertFalse(client.supports(ClientboundStartConfiguration.class));
+		assertFalse(client.supports(ClientboundShowDialog.class));
+		assertFalse(client.supports(ServerboundCustomClickAction.class));
 		assertFalse(client.supports(UnknownPacket.class));
 	}
 
