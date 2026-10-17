@@ -1,84 +1,139 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
+import me.whereareiam.anvil.protocol.java.api.model.interaction.BlockPosition;
+import me.whereareiam.anvil.protocol.java.api.model.interaction.InteractionPoint;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
-import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientCredentials;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
-import org.geysermc.mcprotocollib.auth.GameProfile;
-import org.geysermc.mcprotocollib.network.ClientSession;
-import org.geysermc.mcprotocollib.network.factory.ClientNetworkSessionFactory;
-import org.geysermc.mcprotocollib.protocol.MinecraftConstants;
-import org.geysermc.mcprotocollib.protocol.MinecraftProtocol;
-import org.geysermc.mcprotocollib.protocol.codec.MinecraftCodec;
+import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInteract;
+import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwing;
+import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
+import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
+import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
+import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import org.cloudburstmc.math.vector.Vector3i;
+import org.geysermc.mcprotocollib.network.packet.Packet;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.object.Direction;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Hand;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.InteractAction;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundInteractPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundUseItemOnPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundUseItemPacket;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.Set;
 
 /**
- * Client of MCProtocolLib 1.21.11: client sessions from the network session factory, built-in profiles,
- * particle settings, the player-loaded acknowledgement after each teleport and adventure 4.25 without its
- * plain-text serializer. The handshake announces a virtual host through the client-host flag, and the session
- * binds the source address as its bind socket address; the factory's {@code setBindAddress} is avoided because
- * it replaces the remote address instead.
+ * The client segment's adapter for MCProtocolLib 1.21.11: the {@link JavaClient} with the release's packet table.
+ * The release's interaction translation is nested here, so a segment extending this one, which takes every class but
+ * this adapter, does not carry the entity packet of a release that sends attacks in the same packet as interactions.
  */
-public final class McProtocolClientAdapter implements McProtocolClient<ClientSession> {
-	private final JavaPackets packets = new JavaPackets();
-
-	@Override
-	public int protocolNumber() {
-		return MinecraftCodec.CODEC.getProtocolVersion();
+public final class McProtocolClientAdapter extends JavaClient {
+	/**
+	 * Creates the client with the packet table of MCProtocolLib 1.21.11.
+	 */
+	public McProtocolClientAdapter() {
+		super(packets());
 	}
 
-	@Override
-	public @NotNull Class<ClientSession> sessionType() {
-		return ClientSession.class;
+	/**
+	 * Returns a new packet table of MCProtocolLib 1.21.11.
+	 *
+	 * @return the release's areas, the interaction translation nested in this adapter among them
+	 */
+	static JavaPackets packets() {
+		return new JavaPackets(List.of(
+				new ChatPackets(),
+				new CommandPackets(),
+				new ConnectionPackets(),
+				new CookiePackets(),
+				new DialogPackets(),
+				new InteractionPackets(),
+				new InventoryPackets(),
+				new PlayerPackets(),
+				new ScreenPackets(),
+				new SoundPackets()
+		));
 	}
 
-	@Override
-	public @NotNull ClientSession open(@NotNull ClientLogin login, @NotNull ClientListener<? super ClientSession> listener) {
-		ClientProfile profile = login.getProfile();
-		ClientCredentials credentials = login.getCredentials();
-		ClientConnection connection = login.getConnection();
-		ClientSession session = ClientNetworkSessionFactory.factory()
-				.setAddress(connection.getHost(), connection.getPort())
-				.setBindSocketAddress(connection.getSourceAddress() == null ? null : new InetSocketAddress(connection.getSourceAddress(), 0))
-				.setProtocol(new MinecraftProtocol(new GameProfile(profile.getUniqueId(), profile.getName()),
-						credentials == null ? null : credentials.getAccessToken()))
-				.create();
-		if (connection.getVirtualHost() != null)
-			session.setFlag(MinecraftConstants.CLIENT_HOST, connection.getVirtualHost());
-		if (credentials != null && credentials.getSessionServer() != null)
-			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, new RedirectedSessionService(credentials.getSessionServer()));
-		session.addListener(new ClientPacketListener(session, login, listener, packets));
-		return session;
-	}
+	/**
+	 * Interaction of the MCProtocolLib 1.21.11 release, whose item use carries the view and whose block use reports
+	 * whether it hit the world border; attacks and interactions still share one entity packet.
+	 */
+	static final class InteractionPackets implements PacketTranslation<Packet> {
+		private static final InteractionPoint ORIGIN = InteractionPoint.builder().build();
 
-	@Override
-	public void connect(@NotNull ClientSession session) {
-		session.connect(true);
-	}
+		@Override
+		public @NotNull Set<Class<? extends JavaPacket>> packets() {
+			return Set.of(
+					ServerboundSwing.class,
+					ServerboundUseItem.class,
+					ServerboundUseItemOn.class,
+					ServerboundInteract.class
+			);
+		}
 
-	@Override
-	public boolean connected(@NotNull ClientSession session) {
-		return session.isConnected();
-	}
+		@Override
+		public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
+			return null;
+		}
 
-	@Override
-	public void disconnect(@NotNull ClientSession session, @NotNull String reason) {
-		session.disconnect(reason);
-	}
+		@Override
+		public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
+			if (packet instanceof ServerboundSwing swing) return new ServerboundSwingPacket(hand(swing.getHand()));
+			if (packet instanceof ServerboundUseItem use)
+				return new ServerboundUseItemPacket(hand(use.getHand()), use.getSequence(), use.getYaw(), use.getPitch());
+			if (packet instanceof ServerboundUseItemOn use) return useItemOn(use);
+			if (packet instanceof ServerboundInteract interact) return interact(interact);
 
-	@Override
-	public void send(@NotNull ClientSession session, @NotNull ServerboundPacket packet) {
-		session.send(packets.encode(packet));
-	}
+			return null;
+		}
 
-	@Override
-	public boolean supports(@NotNull Class<? extends JavaPacket> type) {
-		return packets.supports(type);
+		private static Packet useItemOn(ServerboundUseItemOn use) {
+			BlockPosition position = use.getPosition();
+			return new ServerboundUseItemOnPacket(Vector3i.from(position.getX(), position.getY(), position.getZ()),
+					direction(use.getFace()), hand(use.getHand()), use.getCursorX(), use.getCursorY(), use.getCursorZ(),
+					use.isInsideBlock(), use.isWorldBorderHit(), use.getSequence());
+		}
+
+		private static Packet interact(ServerboundInteract interact) {
+			Hand hand = hand(interact.getHand());
+			InteractAction action = action(interact);
+			if (action != InteractAction.INTERACT_AT)
+				return new ServerboundInteractPacket(interact.getEntityId(), action, hand, interact.isSneaking());
+
+			InteractionPoint point = interact.getLocation() == null ? ORIGIN : interact.getLocation();
+			return new ServerboundInteractPacket(interact.getEntityId(), action,
+					(float) point.getX(), (float) point.getY(), (float) point.getZ(), hand, interact.isSneaking());
+		}
+
+		private static InteractAction action(ServerboundInteract interact) {
+			return switch (interact.getAction()) {
+				case INTERACT -> InteractAction.INTERACT;
+				case ATTACK -> InteractAction.ATTACK;
+				case INTERACT_AT -> InteractAction.INTERACT_AT;
+			};
+		}
+
+		private static Hand hand(InteractionHand hand) {
+			return switch (hand) {
+				case MAIN_HAND -> Hand.MAIN_HAND;
+				case OFF_HAND -> Hand.OFF_HAND;
+			};
+		}
+
+		private static Direction direction(me.whereareiam.anvil.protocol.java.api.type.Direction face) {
+			return switch (face) {
+				case DOWN -> Direction.DOWN;
+				case UP -> Direction.UP;
+				case NORTH -> Direction.NORTH;
+				case SOUTH -> Direction.SOUTH;
+				case WEST -> Direction.WEST;
+				case EAST -> Direction.EAST;
+			};
+		}
 	}
 }

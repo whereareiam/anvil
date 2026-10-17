@@ -53,7 +53,8 @@ pin task as the remedy.
 ## Let linkage decide about segments
 
 Release-specific code lives only in segments: projects named `V<major>_<minor>[_<patch>]` after the
-release key they start at, inside a side folder such as `mcprotocol-java` or `interaction-mcprotocol`.
+release key they start at, inside a side folder such as the client's `mcprotocol-java`. Built-in capabilities
+have no segments: they speak the Java Edition protocol, which the client segments translate.
 Each segment compiles against its own release and serves every later release up to the next segment.
 After adding a release, check every segment against the locked closures:
 
@@ -64,16 +65,19 @@ After adding a release, check every segment against the locked closures:
 The `check` task runs the same verification. A segment's report is
 `build/reports/segment/linkage.txt` in its project.
 
-- **Everything links:** the new release reuses the newest segment of each side; no code changes. The
-  `26.1.2` release, for example, runs the `V1_21_11` client segment.
+- **Everything links:** the new release reuses the newest segment of each side; no code changes.
 - **A segment does not link:** the failure names the missing or changed class, field, or method. Add
   a segment named after the new release key in that side only, such as `V1_21_11` beside `V1_21_1`.
   Copy the previous segment, change its package suffix to the new folder name in lower case, such as
-  `.v1_21_11`, and adapt the code the failure names. The side's `module-adapter` convention adds the new
-  child automatically.
-- **The port cannot express the release:** change the port in the feature API's `packet` package,
-  such as `InteractionPackets`, and every segment implementing it, or `McProtocolClient` in
-  `mcprotocol-api` for the client.
+  `.v1_21_11`, and adapt the code the failure names. When the release changes only a few classes, let
+  the new segment extend the previous one instead and bring only those classes and its own adapter:
+  `V26_1_2` declares `segment { extends(...mcprotocolJava.v12111) }`, takes every `V1_21_11` class but
+  that segment's adapter, and replaces only the interaction translation in its packet table. The side's
+  `module-adapter` convention adds the new child automatically.
+- **The protocol cannot express the release:** add or change the packet values in `protocol-java-api`
+  and the area translations of every client segment, or change `McProtocolClient` in `mcprotocol-api`
+  for the client itself. An external capability with segments of its own changes its port in its API's
+  `packet` package and every segment implementing it.
 
 A segment holds only port implementations and their `META-INF/services/<port>` descriptors; it never
 wires a capability. Its folder must name a release key, and its classes must stay in its versioned
@@ -90,8 +94,8 @@ a row for the new release key, its protocol number, and the client segment that 
 ```
 
 `ClientSegmentLinkageTest` in the same suite checks the built client segments against every release
-they serve, as the worker does. Run `./gradlew check` afterwards for the capability segments' own
-tests and the build conventions.
+they serve, as the worker does. Run `./gradlew check` afterwards for the client segments' own tests and
+the build conventions.
 
 ## Add platform Java data
 

@@ -11,7 +11,7 @@ import java.util.Properties;
 /**
  * Selection properties of one segment JAR, written by the build to {@value #PROPERTIES}.
  *
- * <p>A segment adapts one owner, such as {@code mcprotocol-java} or {@code messages-mcprotocol}, to the
+ * <p>A segment adapts one owner, such as {@code mcprotocol-java} or a capability's {@code teleport-mcprotocol}, to the
  * releases of one library from its start version on. For a release, the selected segment of each owner is the
  * one with the greatest start version that does not exceed the release key.</p>
  */

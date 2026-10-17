@@ -23,6 +23,7 @@ final class JavaPackets {
 			new CommandPackets(),
 			new ConnectionPackets(),
 			new CookiePackets(),
+			new InteractionPackets(),
 			new InventoryPackets(),
 			new PlayerPackets(),
 			new ScreenPackets(),

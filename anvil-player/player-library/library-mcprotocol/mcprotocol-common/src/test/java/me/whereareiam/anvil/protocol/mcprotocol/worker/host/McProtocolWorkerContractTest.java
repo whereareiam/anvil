@@ -49,8 +49,9 @@ class McProtocolWorkerContractTest {
 	private static final String INTERACTION = "me.whereareiam.anvil.interaction";
 
 	/**
-	 * The built-in capabilities every release's worker installs. Session needs no segment and the others have
-	 * segments serving every release key, so none of them may be reported unavailable.
+	 * The built-in capabilities every release's worker installs. None of them has segments of its own: they speak
+	 * the Java Edition protocol that every release's client segment translates, so none may be reported
+	 * unavailable.
 	 */
 	private static final Set<String> BUILT_IN = Set.of(SESSION, MOVEMENT, MESSAGES, INVENTORY, INTERACTION);
 
@@ -64,7 +65,7 @@ class McProtocolWorkerContractTest {
 			new ReleaseExpectation("1.18.2", 758, "1.18.2"),
 			new ReleaseExpectation("1.21.1", 767, "1.21.1"),
 			new ReleaseExpectation("1.21.11", 774, "1.21.11"),
-			new ReleaseExpectation("26.1.2", 775, "1.21.11")
+			new ReleaseExpectation("26.1.2", 775, "26.1.2")
 	);
 
 	@Test

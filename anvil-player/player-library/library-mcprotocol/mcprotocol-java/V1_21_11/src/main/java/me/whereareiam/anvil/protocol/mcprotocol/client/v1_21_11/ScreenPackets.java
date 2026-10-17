@@ -39,7 +39,7 @@ import java.util.Set;
  * the shape they have in the 1.21 release: titles, subtitles, title times and action bars have packets of their own,
  * and boss bars share one packet whose action says which part it changes.
  */
-final class ScreenPackets implements PacketTranslation<Packet> {
+public final class ScreenPackets implements PacketTranslation<Packet> {
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(

@@ -20,7 +20,7 @@ import java.util.Set;
  * The moments the MCProtocolLib 1.21.11 release, which also serves 26.1.2, joins a level, respawns and returns to
  * the configuration phase.
  */
-final class ConnectionPackets implements PacketTranslation<Packet> {
+public final class ConnectionPackets implements PacketTranslation<Packet> {
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(ClientboundLogin.class, ClientboundRespawn.class, ClientboundStartConfiguration.class);

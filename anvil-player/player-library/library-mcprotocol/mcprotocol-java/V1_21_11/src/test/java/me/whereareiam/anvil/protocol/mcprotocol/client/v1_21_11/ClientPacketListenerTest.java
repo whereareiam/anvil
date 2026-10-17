@@ -53,7 +53,7 @@ class ClientPacketListenerTest {
 	private final List<Packet> sent = new ArrayList<>();
 	private final List<ClientboundPacket> received = new ArrayList<>();
 	private final ClientSession session = session();
-	private final ClientPacketListener listener = new ClientPacketListener(session, LOGIN, new RecordingListener(), new JavaPackets());
+	private final ClientPacketListener listener = new ClientPacketListener(session, LOGIN, new RecordingListener(), McProtocolClientAdapter.packets());
 
 	@Test
 	void answersTheLoginWithClientInformationBeforeReportingItWithTheGrantedProfile() throws Exception {

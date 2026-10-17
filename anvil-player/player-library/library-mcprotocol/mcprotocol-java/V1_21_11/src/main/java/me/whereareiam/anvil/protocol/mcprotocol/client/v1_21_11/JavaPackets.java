@@ -1,12 +1,12 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
-import org.geysermc.mcprotocollib.network.packet.Packet;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,23 +15,25 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * The Java Edition packets this release carries, translated area by area.
+ * The Java Edition packets a release carries, translated area by area. The table belongs to the segment's adapter,
+ * which lists the areas of its release: a segment extending this one reuses the areas that did not change and brings
+ * its own for those that did.
  */
-final class JavaPackets {
-	private final List<PacketTranslation<Packet>> areas = List.of(
-			new ChatPackets(),
-			new CommandPackets(),
-			new ConnectionPackets(),
-			new CookiePackets(),
-			new DialogPackets(),
-			new InventoryPackets(),
-			new PlayerPackets(),
-			new ScreenPackets(),
-			new SoundPackets()
-	);
-	private final Set<Class<? extends JavaPacket>> supported = areas.stream()
-			.flatMap(area -> area.packets().stream())
-			.collect(Collectors.toUnmodifiableSet());
+public final class JavaPackets {
+	private final List<PacketTranslation<Packet>> areas;
+	private final Set<Class<? extends JavaPacket>> supported;
+
+	/**
+	 * Creates the table of a release from its areas, each translating the packets of one area of the game.
+	 *
+	 * @param areas the release's translations, none of which carries a packet another one carries
+	 */
+	public JavaPackets(@NotNull List<PacketTranslation<Packet>> areas) {
+		this.areas = List.copyOf(areas);
+		this.supported = this.areas.stream()
+				.flatMap(area -> area.packets().stream())
+				.collect(Collectors.toUnmodifiableSet());
+	}
 
 	boolean supports(@NotNull Class<? extends JavaPacket> type) {
 		return supported.contains(type);

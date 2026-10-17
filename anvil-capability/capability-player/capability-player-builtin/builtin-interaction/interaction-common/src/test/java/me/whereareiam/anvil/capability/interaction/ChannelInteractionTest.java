@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.interaction;
 
+import me.whereareiam.anvil.capability.interaction.channel.InteractionChannel;
 import me.whereareiam.anvil.capability.interaction.model.BlockPosition;
 import me.whereareiam.anvil.capability.interaction.model.BlockUse;
 import me.whereareiam.anvil.capability.interaction.model.EntityUse;
@@ -84,7 +85,7 @@ class ChannelInteractionTest {
 
 		@Override
 		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(InteractionProvider.ID);
+			return Set.of(InteractionChannel.ID);
 		}
 	}
 }
