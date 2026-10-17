@@ -5,7 +5,8 @@ import java.io.File
 import java.io.Serializable
 
 /**
- * A built-in capability family, such as `movement`: the folder whose project only wires its member projects.
+ * A built-in capability family, such as `movement` in the folder `builtin-movement`: the folder whose project only
+ * wires its member projects.
  *
  * - `<name>-api` holds the public capability API and, for packet capabilities, its library-neutral port;
  * - `<name>-common` holds the library-neutral host provider and worker binding;
@@ -13,7 +14,7 @@ import java.io.Serializable
  *
  * A family root holds no code, an agent-backed provider included: that lives in `<name>-common` as well.
  *
- * @property name folder and project name
+ * @property name feature name, the family folder's name without the `builtin-` prefix
  * @property api project name of the family API
  * @property common project name of the library-neutral code, or `null` when the family has none
  * @property sides project names of the library sides, ordered by name
@@ -33,38 +34,39 @@ data class CapabilityFamily(
 
 	companion object {
 		private const val serialVersionUID = 1L
+		private const val PREFIX = "builtin-"
 		private val buildFiles = listOf("build.gradle.kts", "build.gradle")
 		private val catchAllPackages = setOf("common", "util")
 
 		/**
-		 * The folders below `capability-builtin` that group the built-in families by side: `client` for what a
-		 * client can do or see, which simulated players own, and `server` for what a server or proxy can do or
-		 * know, which running processes own.
+		 * The folders below `anvil-capability` that hold the built-in families of each participant: what a
+		 * simulated player can do or see, and what a server or proxy process can do or know.
 		 */
-		val owners = listOf("client", "server")
+		val groups = listOf("capability-player/capability-player-builtin", "capability-process/capability-process-builtin")
 
 		/**
-		 * Names the built-in families below [builtinDirectory]: each folder of a side group whose root or member
-		 * folders hold a build file.
+		 * Names the built-in families below [capabilityDirectory]: each folder of a participant group whose root or
+		 * member folders hold a build file.
 		 *
-		 * @param builtinDirectory the `capability-builtin` folder
+		 * @param capabilityDirectory the `anvil-capability` folder
 		 * @return family names, ordered by name
+		 * @throws GradleException when such a folder is not named `builtin-<name>`
 		 */
-		fun names(builtinDirectory: File): List<String> = owners
-			.flatMap { owner -> File(builtinDirectory, owner).listFiles(File::isDirectory).orEmpty().toList() }
+		fun names(capabilityDirectory: File): List<String> = groups
+			.flatMap { group -> File(capabilityDirectory, group).listFiles(File::isDirectory).orEmpty().toList() }
 			.filter { family -> hasBuildFile(family) || projectFolders(family).isNotEmpty() }
-			.map(File::getName)
+			.map(::featureName)
 			.sorted()
 
 		/**
 		 * Reads the family folder at [directory]. Every child directory with a build file is a member project.
 		 *
 		 * @param libraries registered library ids
-		 * @throws GradleException when the family has no API, holds a child project that is not a member, keeps
-		 * code in its root, or declares a `common` or `util` package
+		 * @throws GradleException when the folder is not named `builtin-<name>`, the family has no API, holds a child
+		 * project that is not a member, keeps code in its root, or declares a `common` or `util` package
 		 */
 		fun read(directory: File, libraries: Collection<String>): CapabilityFamily {
-			val name = directory.name
+			val name = featureName(directory)
 			val children = projectFolders(directory)
 			val api = "$name-api"
 			val common = "$name-common"
@@ -82,6 +84,13 @@ data class CapabilityFamily(
 			requireFeaturePackages(name, name, directory)
 			children.forEach { child -> requireFeaturePackages(name, child, File(directory, child)) }
 			return CapabilityFamily(name, api, common.takeIf { hasCommon }, sides)
+		}
+
+		private fun featureName(directory: File): String {
+			if (!directory.name.startsWith(PREFIX))
+				throw GradleException("Capability family folder '${directory.name}' must be named '$PREFIX<feature>'")
+
+			return directory.name.removePrefix(PREFIX)
 		}
 
 		private fun projectFolders(directory: File): List<String> =

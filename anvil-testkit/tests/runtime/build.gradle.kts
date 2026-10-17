@@ -9,22 +9,22 @@ description = "Provider discovery, capability composition, and cross-module runt
 
 dependencies {
 	testImplementation(projects.anvilCapability.capabilityApi)
-	testImplementation(projects.anvilCapability.capabilityBuiltin.default)
+	testImplementation(projects.anvilCapability.capabilityDefault)
 	testImplementation(projects.anvilLauncher)
-	testImplementation(projects.anvilProcess.processApi)
-	testImplementation(projects.anvilPlayer.playerCommon)
 	testImplementation(projects.anvilPlayer.playerApi)
+	testImplementation(projects.anvilPlayer.playerCommon)
+	testImplementation(projects.anvilProcess.processApi)
 
 	// The launcher's shaded JAR carries the planner at runtime; tests only compile against it.
 	testCompileOnly(projects.anvilProcess.processCommon)
 
+	testRuntimeOnly(projects.anvilPlayer.playerLibrary.libraryMcprotocol)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.bukkitAgent)
-	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBungeecord.bungeecordProvider)
-	testRuntimeOnly(projects.anvilProcess.processPlatform.platformNeoforge.neoforgeProvider)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.paperProvider)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.spigotProvider)
+	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBungeecord.bungeecordProvider)
+	testRuntimeOnly(projects.anvilProcess.processPlatform.platformNeoforge.neoforgeProvider)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformVelocity.velocityProvider)
-	testRuntimeOnly(projects.anvilPlayer.playerLibrary.libraryMcprotocol)
 }
 
 fixtures {

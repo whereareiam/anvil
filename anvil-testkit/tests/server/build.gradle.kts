@@ -7,27 +7,27 @@ plugins {
 description = "Sessions, capabilities, extensions, and routing against real Minecraft servers and proxies"
 
 dependencies {
-	testImplementation(projects.anvilCapability.capabilityAgentApi)
-	testImplementation(projects.anvilCapability.capabilityBuiltin.default)
+	testImplementation(projects.anvilCapability.capabilityDefault)
+	testImplementation(projects.anvilCapability.capabilityProcess.capabilityProcessApi)
 	testImplementation(projects.anvilIntegration.integrationJunit)
 	testImplementation(projects.anvilLauncher)
-	testImplementation(projects.anvilProcess.processApi)
 	testImplementation(projects.anvilPlayer.playerApi)
+	testImplementation(projects.anvilProcess.processApi)
 	testImplementation(projects.anvilTooling.toolingRunner)
 
 	// The launcher's shaded JAR carries the planner at runtime; the matrix data test only compiles against it.
 	testCompileOnly(projects.anvilProcess.processCommon)
 
+	testRuntimeOnly(projects.anvilPlayer.playerLibrary.libraryMcprotocol)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.bukkitAgent)
+	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.paperProvider)
+	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.spigotProvider)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBungeecord.bungeecordAgent)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBungeecord.bungeecordProvider)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformNeoforge.neoforgeAgent)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformNeoforge.neoforgeProvider)
-	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.paperProvider)
-	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.spigotProvider)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformVelocity.velocityAgent)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformVelocity.velocityProvider)
-	testRuntimeOnly(projects.anvilPlayer.playerLibrary.libraryMcprotocol)
 	testRuntimeOnly(projects.anvilTooling.toolingBuiltin)
 }
 

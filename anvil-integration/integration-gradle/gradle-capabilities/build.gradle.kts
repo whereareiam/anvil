@@ -98,6 +98,6 @@ gradlePlugin {
 // names and checks that every family has a plugin installing that bundle.
 tasks.named<Test>("test") {
 	jvmArgumentProviders.add(objects.newInstance<CapabilityFamiliesArgument>().apply {
-		builtinDirectory.set(layout.settingsDirectory.dir("anvil-capability/capability-builtin"))
+		capabilityDirectory.set(layout.settingsDirectory.dir("anvil-capability"))
 	})
 }

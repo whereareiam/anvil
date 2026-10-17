@@ -52,8 +52,8 @@ the worker's reason for `CapabilityUnavailableException`. The launcher binds sco
 All capability providers use shared descriptor, dependency, and cleanup contracts from
 `capability-api`. Neutral player providers work with shared observations; they do not select a
 protocol library or receive its services. Protocol channels and native worker providers live in
-`capability-protocol-api`, with player events, waits, and installed-capability discovery.
-Agent-backed process factories live in `capability-agent-api` and request a typed `RequestChannel`, which
+`capability-player-api`, with player events, waits, and installed-capability discovery.
+Agent-backed process factories live in `capability-process-api` and request a typed `RequestChannel`, which
 launcher bindings connect to an agent client. The protocol-backed player context extends the shared player
 context.
 
@@ -154,7 +154,7 @@ runs. A player that selects such a release is refused when it is created. The wo
 shell never links against MCProtocolLib: the release's client segment implements the `mcprotocol-api`
 client port and owns login, client information, teleport and disconnect packets.
 Its protocol-owned worker contract is bound to capability worker composition by the launcher.
-Feature wiring registers `WorkerExtension` from `capability-protocol-api`. Its `PlayerBindingContext`
+Feature wiring registers `WorkerExtension` from `capability-player-api`. Its `PlayerBindingContext`
 supplies SDK/session access for the existing native player and, through `adapter(Class)`, the
 release-specific port implementation of the segment selected for the worker's release. Native implementations own the actual
 packets, state, and listeners; feature APIs keep domain models free of transport types.

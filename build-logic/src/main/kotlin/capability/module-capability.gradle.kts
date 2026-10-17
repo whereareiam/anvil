@@ -18,10 +18,10 @@ val family = providers.of(CapabilityFamilySource::class) {
 	}
 }.get()
 
-// The folder names are the published artifact IDs: the root publishes builtin-<family> and each published
-// member builtin-<member>, such as builtin-movement-api and builtin-movement-mcprotocol. The IDs are final once
-// set, so a build file that sets its own fails instead of silently publishing other coordinates. The Gradle
-// capability plugins install builtin-<family>. Members are evaluated after the root, which registers this first.
+// The folder names are the published artifact IDs: the root publishes its folder name builtin-<family> and each
+// published member builtin-<member>, such as builtin-movement-api and builtin-movement-mcprotocol. The IDs are
+// final once set, so a build file that sets its own fails instead of silently publishing other coordinates. The
+// Gradle capability plugins install builtin-<family>. Members are evaluated after the root, which registers this first.
 extensions.configure<ToolkitPublishExtension> {
 	artifactId.set("builtin-${family.name}")
 	artifactId.disallowChanges()
