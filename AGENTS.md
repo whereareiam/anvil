@@ -129,14 +129,17 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   running process (`ProcessCapability`); a proxy counts as server side. The implementation (packets, agent
   events) never decides the owner.
 - A player speaks its edition's protocol: `protocol-java-api`'s `JavaProtocol` (`listen` by packet class, `send`,
-  `supports`), which a worker extension gets from `PlayerBindingContext.protocol(JavaProtocol.class)`. Packets are
-  immutable values grouped by area under `packet.<area>`, one class per game packet; the protocol owns the data
-  types they need (`model.<area>`, enums in `type`) and carries text flattened to plain strings. A listener follows
-  the player's current connection. Release-specific packet code lives only in the library's client segments: one
-  `PacketTranslation` per area and segment, registered in the segment's `JavaPackets`, with components flattened by
-  `mcprotocol-api`'s `AdventureText`. A release without a packet leaves it out of the table; a feature checks
-  `supports` and throws `ProtocolUnavailableException` when it cannot work without it. Features never touch native
-  sessions or library packets.
+  `listenSent` for the packets bindings send, `supports`), which a worker extension gets from
+  `PlayerBindingContext.protocol(JavaProtocol.class)`. Packets are immutable values grouped by area under
+  `packet.<area>`, one class per game packet; the protocol owns the data types they need (`model.<area>`, enums in
+  `type`) and carries text flattened to plain strings. A listener follows the player's current connection.
+  Release-specific packet code lives only in the library's client segments: one `PacketTranslation` per area and
+  segment, registered in the segment's `JavaPackets`, with components flattened by `mcprotocol-api`'s
+  `AdventureText`. Each session decodes through a table of its own, so the entity translation can remember the types
+  of the session's entities: entity data is decoded by entity type from a typed table of the release's indexes, never
+  by guessing from value types. A release without a packet leaves it out of the table; a feature checks `supports`
+  and throws `ProtocolUnavailableException` when it cannot work without it. Features never touch native sessions or
+  library packets.
   The worker contracts belong to the player family: `player-api`'s `WorkerExtension`, `PlayerBindingContext`,
   `OperationRegistry` and `WorkerBinding` under `protocol.api.worker`, and the typed `ProtocolChannel` with
   `OperationDescriptor`/`EventDescriptor` that both ends of a player's channel share. Capabilities implement and

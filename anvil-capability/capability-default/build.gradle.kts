@@ -12,6 +12,7 @@ dependencies {
 	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinCommands)
 	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinCookies)
 	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinDialogs)
+	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinEntities)
 	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinInteraction)
 	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinInventory)
 	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinMessages)

@@ -167,7 +167,9 @@ protocol.send(new ServerboundChatCommand("spawn"));
 
 The protocol belongs to the player, not to one connection: a listener receives the packets of whichever connection
 is current, never a late packet of a replaced one, and `send` uses the current connection and fails while the
-player is disconnected. Close your subscriptions from `WorkerBinding.close()`, and keep state such as counters in an
+player is disconnected. `protocol.listenSent(type, listener)` observes the packets the player sends through the
+protocol, whichever capability sends them, such as the moves of Movement; packets the library sends on its own,
+such as the acceptance of a teleport, are not reported. Close your subscriptions from `WorkerBinding.close()`, and keep state such as counters in an
 object created by `bind`, so different players cannot share it.
 
 A release may lack a packet; `protocol.supports(type)` tells. Listen to an optional packet only when the release

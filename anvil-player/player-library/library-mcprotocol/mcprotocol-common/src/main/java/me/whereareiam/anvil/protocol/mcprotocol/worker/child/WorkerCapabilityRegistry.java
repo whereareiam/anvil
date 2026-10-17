@@ -403,6 +403,17 @@ final class WorkerCapabilityRegistry {
 				}
 
 				@Override
+				public <T extends ServerboundPacket> @NotNull Subscription listenSent(
+						@NotNull Class<T> type,
+						@NotNull Consumer<? super T> listener
+				) {
+					Subscription subscription = protocol.listenSent(type, listener);
+					if (open) subscriptions.add(subscription);
+
+					return subscription;
+				}
+
+				@Override
 				public boolean supports(@NotNull Class<? extends JavaPacket> type) {
 					return protocol.supports(type);
 				}

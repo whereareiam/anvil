@@ -323,6 +323,14 @@ class JavaInventoryExtensionTest {
 		}
 
 		@Override
+		public <P extends ServerboundPacket> @NotNull Subscription listenSent(
+				@NotNull Class<P> type,
+				@NotNull Consumer<? super P> listener
+		) {
+			throw new AssertionError("The inventory binding observes no sent packets");
+		}
+
+		@Override
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
 			return playerInventoryPacket || type != ClientboundSetPlayerInventory.class;
 		}

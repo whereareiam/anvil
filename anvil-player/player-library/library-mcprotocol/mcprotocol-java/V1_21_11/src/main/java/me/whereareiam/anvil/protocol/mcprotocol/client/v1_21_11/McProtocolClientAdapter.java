@@ -36,7 +36,7 @@ public final class McProtocolClientAdapter extends JavaClient {
 	 * Creates the client with the packet table of MCProtocolLib 1.21.11.
 	 */
 	public McProtocolClientAdapter() {
-		super(packets());
+		super(McProtocolClientAdapter::packets);
 	}
 
 	/**
@@ -51,6 +51,7 @@ public final class McProtocolClientAdapter extends JavaClient {
 				new ConnectionPackets(),
 				new CookiePackets(),
 				new DialogPackets(),
+				new EntityPackets(),
 				new InteractionPackets(),
 				new InventoryPackets(),
 				new PlayerPackets(),

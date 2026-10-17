@@ -1,8 +1,10 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
+import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
+import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
@@ -19,7 +21,9 @@ class ConnectionPacketsTest {
 
 	@Test
 	void decodesJoiningALevelAndRespawning() throws Exception {
-		assertEquals(new ClientboundLogin(), packets.decode(allocate(ClientboundLoginPacket.class)));
+		assertEquals(new ClientboundLogin(42), packets.decode(new ClientboundLoginPacket(42, false, GameMode.SURVIVAL,
+				GameMode.SURVIVAL, 1, new String[0], new CompoundTag(""), new CompoundTag(""), "minecraft:overworld", 0, 20, 10,
+				10, false, true, false, false)));
 		assertEquals(new ClientboundRespawn(), packets.decode(allocate(ClientboundRespawnPacket.class)));
 	}
 

@@ -16,6 +16,11 @@ import me.whereareiam.anvil.protocol.java.api.packet.cookie.ServerboundCookieRes
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ClientboundRegistryData;
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ClientboundShowDialog;
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ServerboundCustomClickAction;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddExperienceOrb;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddMob;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundEntityPositionSync;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInteract;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwing;
@@ -24,6 +29,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseI
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundMovePlayerPosRot;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundBossEvent;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetActionBarText;
@@ -126,6 +132,12 @@ class McProtocolClientAdapterTest {
 	void supportsExactlyThePacketsOfTheReleaseTable() {
 		McProtocolClientAdapter client = new McProtocolClientAdapter();
 
+		assertTrue(client.supports(ClientboundAddEntity.class));
+		assertTrue(client.supports(ClientboundEntityPositionSync.class));
+		assertTrue(client.supports(ClientboundSetEntityData.class));
+		assertTrue(client.supports(ClientboundPlayerPosition.class));
+		assertFalse(client.supports(ClientboundAddExperienceOrb.class));
+		assertFalse(client.supports(ClientboundAddMob.class));
 		assertTrue(client.supports(ClientboundSystemChat.class));
 		assertTrue(client.supports(ServerboundChat.class));
 		assertTrue(client.supports(ServerboundChatCommand.class));

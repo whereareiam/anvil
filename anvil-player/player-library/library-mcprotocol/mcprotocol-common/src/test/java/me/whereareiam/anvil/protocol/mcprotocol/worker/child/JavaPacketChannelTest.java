@@ -78,9 +78,23 @@ class JavaPacketChannelTest {
 	}
 
 	@Test
+	void handsEachSentPacketToTheListenersOfSentPacketsOfItsClassAfterSendingIt() {
+		List<String> observed = new ArrayList<>();
+		Subscription subscription = channel.listenSent(ServerboundChat.class, packet ->
+				observed.add(packet.getText() + " after " + client.sent(session.get()).size()));
+
+		channel.send(new ServerboundChat("first"));
+		subscription.close();
+		channel.send(new ServerboundChat("second"));
+
+		assertEquals(List.of("first after 1"), observed);
+	}
+
+	@Test
 	void refusesToSendOrListenToAPacketTheReleaseDoesNotCarry() {
 		assertThrows(ProtocolUnavailableException.class, () -> channel.send(new ServerboundChatCommand("anvil-fixture ping")));
 		assertThrows(ProtocolUnavailableException.class, () -> channel.listen(ClientboundDisguisedChat.class, packet -> { }));
+		assertThrows(ProtocolUnavailableException.class, () -> channel.listenSent(ServerboundChatCommand.class, packet -> { }));
 		assertEquals(List.of(), client.sent(session.get()));
 	}
 

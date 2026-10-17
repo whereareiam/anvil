@@ -29,7 +29,7 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 	@Override
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		return switch (packet) {
-			case ClientboundLoginPacket ignored -> new ClientboundLogin();
+			case ClientboundLoginPacket login -> new ClientboundLogin(login.getEntityId());
 			case ClientboundRespawnPacket ignored -> new ClientboundRespawn();
 			case ClientboundStartConfigurationPacket ignored -> new ClientboundStartConfiguration();
 			default -> null;

@@ -4,6 +4,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
+import net.kyori.adventure.key.Key;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
@@ -21,7 +22,8 @@ class ConnectionPacketsTest {
 
 	@Test
 	void decodesJoiningALevelRespawningAndReturningToConfiguration() throws Exception {
-		assertEquals(new ClientboundLogin(), packets.decode(allocate(ClientboundLoginPacket.class)));
+		assertEquals(new ClientboundLogin(42), packets.decode(new ClientboundLoginPacket(42, false, new Key[0], 20, 10, 10,
+				false, true, false, null, false)));
 		assertEquals(new ClientboundRespawn(), packets.decode(allocate(ClientboundRespawnPacket.class)));
 		assertEquals(new ClientboundStartConfiguration(), packets.decode(new ClientboundStartConfigurationPacket()));
 	}

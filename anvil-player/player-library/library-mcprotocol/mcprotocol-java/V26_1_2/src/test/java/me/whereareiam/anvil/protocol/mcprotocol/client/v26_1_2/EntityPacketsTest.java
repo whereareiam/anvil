@@ -1,0 +1,67 @@
+package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
+
+import me.whereareiam.anvil.protocol.java.api.model.entity.DisplayText;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityPosition;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
+import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundEntityPositionSync;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.type.Relative;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.EntityPackets;
+import net.kyori.adventure.text.Component;
+import org.cloudburstmc.math.vector.Vector3d;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.MetadataTypes;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.type.ObjectEntityMetadata;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PositionElement;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
+import org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAddEntityPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundEntityPositionSyncPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundTeleportEntityPacket;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * Runs the 1.21.11 entity translation, which this segment reuses, against the packets of MCProtocolLib 26.1.
+ */
+class EntityPacketsTest {
+	private final EntityPackets packets = new EntityPackets();
+
+	@Test
+	void decodesASpawnAndTheDataOfADisplayAndAnItemFrameAsIn1_21_11() {
+		assertEquals(ClientboundAddEntity.builder().entityId(8).uniqueId(new UUID(0, 8))
+						.type(EntityTypeKey.minecraft("text_display")).position(new EntityPosition(0, 66, 0)).build(),
+				packets.decode(new ClientboundAddEntityPacket(8, new UUID(0, 8), EntityType.TEXT_DISPLAY, 0, 66, 0, 0, 0, 0)));
+		packets.decode(new ClientboundAddEntityPacket(9, new UUID(0, 9), EntityType.ITEM_FRAME, 0, 0, 0, 0, 0, 0));
+
+		assertEquals(new ClientboundSetEntityData(8, List.of(new DisplayText("bubble"))),
+				packets.decode(new ClientboundSetEntityDataPacket(8, new ObjectEntityMetadata<?>[]{
+						new ObjectEntityMetadata<>(23, MetadataTypes.COMPONENT, Component.text("bubble"))
+				})));
+		assertEquals(new ClientboundSetEntityData(9, List.of(
+				new ShownItem(new me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack(40, 1))
+		)), packets.decode(new ClientboundSetEntityDataPacket(9, new ObjectEntityMetadata<?>[]{
+				new ObjectEntityMetadata<>(9, MetadataTypes.ITEM_STACK, new ItemStack(40, 1))
+		})));
+	}
+
+	@Test
+	void decodesRelativeTeleportsAndPositionSyncs() {
+		assertEquals(ClientboundTeleportEntity.builder().entityId(7).position(new EntityPosition(1, 2, 3)).yaw(15).pitch(5)
+						.relatives(Set.of(Relative.X, Relative.PITCH)).build(),
+				packets.decode(new ClientboundTeleportEntityPacket(7, Vector3d.from(1, 2, 3), Vector3d.ZERO, 15, 5,
+						List.of(PositionElement.X, PositionElement.X_ROT), false)));
+		assertEquals(ClientboundEntityPositionSync.builder().entityId(7).position(new EntityPosition(4, 5, 6)).yaw(30)
+						.pitch(20).build(),
+				packets.decode(new ClientboundEntityPositionSyncPacket(7, Vector3d.from(4, 5, 6), Vector3d.ZERO, 30, 20,
+						true)));
+	}
+}
