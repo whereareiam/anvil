@@ -7,10 +7,10 @@ import me.whereareiam.anvil.capability.entities.type.EntityChangeKind;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomNameVisible;
 import me.whereareiam.anvil.protocol.java.api.model.entity.DisplayText;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityPosition;
 import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
 import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -141,7 +141,7 @@ class EntityTrackerTest {
 	@Test
 	void keepsTheSpawnRotationAndTurnsByRelativeAnglesAndToAbsoluteOnes() {
 		EntityTracker tracker = new EntityTracker(1);
-		SeenEntity spawned = single(tracker.spawn(7, null, "minecraft:zombie", new EntityPosition(0, 0, 0), 90, 10))
+		SeenEntity spawned = single(tracker.spawn(7, null, "minecraft:zombie", new Vec3d(0, 0, 0), 90, 10))
 				.getEntity();
 
 		tracker.turn(7, 180, 5, false, true);
@@ -221,8 +221,15 @@ class EntityTrackerTest {
 		assertEquals(List.of(), tracker.clear());
 	}
 
-	private static List<EntityChange> spawn(EntityTracker tracker, int entityId, String type, double x, double y, double z) {
-		return tracker.spawn(entityId, new UUID(0, entityId), type, new EntityPosition(x, y, z), 0, 0);
+	private static List<EntityChange> spawn(
+			EntityTracker tracker,
+			int entityId,
+			String type,
+			double x,
+			double y,
+			double z
+	) {
+		return tracker.spawn(entityId, new UUID(0, entityId), type, new Vec3d(x, y, z), 0, 0);
 	}
 
 	private static EntityChange single(List<EntityChange> changes) {

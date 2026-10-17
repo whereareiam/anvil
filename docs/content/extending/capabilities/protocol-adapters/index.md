@@ -17,7 +17,11 @@ and the listeners.
 Packet classes differ between releases of a client library: MCProtocolLib renamed its packets and moved them
 between packages from Minecraft 1.18.2 to 1.21.11. Your extension does not see them. It speaks the Java Edition
 protocol, `me.whereareiam.anvil:protocol-java-api`, whose packets are the same for every release; the library
-translates them for the release the player runs.
+translates them for the release the player runs. Where releases say the same thing in different packets, the library
+reports the current packet for every release: a release that spawns mobs through a packet of their own reports a
+`ClientboundAddEntity`, one that addresses the player's own inventory through a container slot packet reports a
+`ClientboundSetPlayerInventory`, and an attack you send as `ServerboundAttack` reaches a release without that packet
+as its entity interaction packet.
 
 ## Define a shared operation
 
@@ -84,8 +88,6 @@ import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Optional;
-
 /**
  * Registers a diagnostic operation for each MCProtocol player.
  */
@@ -93,11 +95,6 @@ public final class RoundTripExtension implements WorkerExtension<Object> {
 	@Override
 	public @NotNull String id() {
 		return "com.example.roundtrip";
-	}
-
-	@Override
-	public @NotNull Optional<String> libraryId() {
-		return Optional.empty();
 	}
 
 	@Override
@@ -116,9 +113,10 @@ public final class RoundTripExtension implements WorkerExtension<Object> {
 }
 ```
 
-`libraryId()` names the library whose workers install the extension; an empty value installs it in
-every library's worker. A worker also requires `nativeSessionType()` to accept its own session type;
-`Object.class` accepts every release.
+`libraryId()` names the library whose workers install the extension. Its default is empty, which installs the
+extension in every library's worker, as an extension that speaks only the Java Edition protocol wants; override it
+when the extension needs a library's own adapters. A worker also requires `nativeSessionType()` to accept its own
+session type; `Object.class` accepts every release.
 
 `PlayerBindingContext` supplies the existing player's protocol, connection lifecycle, and event emission to this
 binding. Keep the binding's state in the object returned from `bind`.
@@ -174,18 +172,39 @@ The protocol belongs to the player, not to one connection: a listener receives t
 is current, never a late packet of a replaced one, and `send` uses the current connection and fails while the
 player is disconnected. `protocol.listenSent(type, listener)` observes the packets the player sends through the
 protocol, whichever capability sends them, such as the moves of Movement; packets the library sends on its own,
-such as the acceptance of a teleport, are not reported. Close your subscriptions from `WorkerBinding.close()`, and keep state such as counters in an
-object created by `bind`, so different players cannot share it.
+such as the acceptance of a teleport, are not reported. Close your subscriptions from `WorkerBinding.close()`, and
+keep state such as counters in an object created by `bind`, so different players cannot share it.
+`Subscription.all(...)` closes several subscriptions together, each one even when another fails:
+
+```java
+Subscription listening = Subscription.all(
+		protocol.listen(ClientboundSystemChat.class, packet -> received(packet.getText())),
+		protocol.listen(ClientboundPlayerChat.class, packet -> received(packet.getText()))
+);
+return listening::close;
+```
 
 A release may lack a packet; `protocol.supports(type)` tells. Listen to an optional packet only when the release
-carries it. When your capability cannot work without a packet, throw `ProtocolUnavailableException` from `bind`:
-the worker reports the capability as unavailable with your message, and the player keeps its other capabilities.
-`listen` and `send` throw it themselves for a packet the release cannot carry. A player of a library that does not
-speak the Java Edition protocol throws it from `protocol(JavaProtocol.class)`.
+carries it. When your capability cannot work without some packets, require them from `bind`:
+`protocol.require("cookies", List.of(ClientboundCookieRequest.class, ServerboundCookieResponse.class))` throws
+`ProtocolUnavailableException` naming the first one the release lacks; the worker reports the capability as
+unavailable with that message, and the player keeps its other capabilities. `listen` and `send` throw it themselves
+for a packet the release cannot carry. A player of a library that does not speak the Java Edition protocol throws it
+from `protocol(JavaProtocol.class)`.
 
-`player.bindNativeSession(...)` tells you when a connection starts: its callback runs before each connection logs
-in and returns a `Subscription` that is closed when that connection ends or a new one replaces it. Use it for state
-that belongs to one connection, such as cookies.
+`player.bindConnection(...)` tells you when a connection starts: its callback runs before each connection logs in
+and returns a `Subscription` that is closed when that connection ends or a new one replaces it. Use it for state
+that belongs to one connection, such as cookies:
+
+```java
+Subscription connections = player.bindConnection(() -> {
+	cookies.opened();
+	return cookies::ended;
+});
+```
+
+Connections are the player's; the library's native sessions stay out of your extension. Only segmented code of
+your own, below, works with native sessions.
 
 An `EventDescriptor<E>` declares the event ID and payload class shared by the worker and host. Send a value with
 `player.emit(eventDescriptor, payload)` and receive it through `channel.subscribe(eventDescriptor, listener)`. A

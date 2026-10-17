@@ -1,8 +1,9 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1;
 
-import me.whereareiam.anvil.protocol.java.api.model.interaction.BlockPosition;
-import me.whereareiam.anvil.protocol.java.api.model.interaction.InteractionPoint;
+import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInteract;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwing;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
@@ -86,15 +87,11 @@ class InteractionPacketsTest {
 		assertEquals(OFF_HAND, interact.getHand());
 		assertFalse(interact.isSneaking());
 
-		ServerboundInteractPacket attack = assertInstanceOf(ServerboundInteractPacket.class, packets.encode(ServerboundInteract.builder()
-				.entityId(43)
-				.action(me.whereareiam.anvil.protocol.java.api.type.InteractAction.ATTACK)
-				.hand(InteractionHand.MAIN_HAND)
-				.sneaking(true)
-				.build()));
+		ServerboundInteractPacket attack = assertInstanceOf(ServerboundInteractPacket.class,
+				packets.encode(new ServerboundAttack(43)));
 		assertEquals(43, attack.getEntityId());
 		assertEquals(InteractAction.ATTACK, attack.getAction());
-		assertTrue(attack.isSneaking());
+		assertFalse(attack.isSneaking());
 	}
 
 	@Test
@@ -103,7 +100,7 @@ class InteractionPacketsTest {
 				.entityId(42)
 				.action(me.whereareiam.anvil.protocol.java.api.type.InteractAction.INTERACT_AT)
 				.hand(InteractionHand.MAIN_HAND)
-				.location(InteractionPoint.builder().x(0.25).y(1.5).z(-0.25).build())
+				.point(new Vec3d(0.25, 1.5, -0.25))
 				.build()));
 
 		assertEquals(InteractAction.INTERACT_AT, packet.getAction());
@@ -120,9 +117,14 @@ class InteractionPacketsTest {
 	}
 
 	@Test
-	void carriesTheInteractionPacketsButNoAttackOfItsOwn() {
-		assertEquals(Set.of(ServerboundSwing.class, ServerboundUseItem.class, ServerboundUseItemOn.class, ServerboundInteract.class),
-				packets.packets());
+	void carriesTheInteractionPacketsWithTheAttack() {
+		assertEquals(Set.of(
+				ServerboundSwing.class,
+				ServerboundUseItem.class,
+				ServerboundUseItemOn.class,
+				ServerboundInteract.class,
+				ServerboundAttack.class
+		), packets.packets());
 	}
 
 	private static ServerboundUseItemOn useItemOn(Direction face) {

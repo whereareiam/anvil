@@ -67,13 +67,31 @@ The `check` task runs the same verification. A segment's report is
 
 - **Everything links:** the new release reuses the newest segment of each side; no code changes.
 - **A segment does not link:** the failure names the missing or changed class, field, or method. Add
-  a segment named after the new release key in that side only, such as `V1_21_11` beside `V1_21_1`.
-  Copy the previous segment, change its package suffix to the new folder name in lower case, such as
-  `.v1_21_11`, and adapt the code the failure names. When the release changes only a few classes, let
-  the new segment extend the previous one instead and bring only those classes and its own adapter:
-  `V26_1_2` declares `segment { extends(...mcprotocolJava.v12111) }`, takes every `V1_21_11` class but
-  that segment's adapter, and replaces only the interaction translation in its packet table. The side's
-  `module-adapter` convention adds the new child automatically.
+  a segment named after the new release key in that side only, such as `V26_1_2` beside `V1_21_11`, with
+  its classes in the package named after its folder in lower case, such as `.v26_1_2`. Let it extend the
+  newest segment of the side and bring only the classes that differ or no longer link:
+
+  ```kotlin
+  segment {
+      extends(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolJava.v12111)
+      replaces("me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.InteractionPackets")
+  }
+  ```
+
+  The segment carries every class of its base chain but the bases' adapters and the classes it names in
+  `replaces`, which leave its JAR and its linkage manifest; the build fails when a replaced class is not a
+  class of the base chain, or a class the segment still takes from its base uses it. Its adapter, a
+  `McProtocolClientAdapter` extending the side's client base, lists the release's translations: the base's
+  ones that still link and its own replacements. Release-neutral code shared by a chain, such as the client
+  base and the value translations, lives in the earliest segment of the chain, and a translation whose bulk
+  does not change between releases keeps that bulk in an abstract base there, so a later segment overrides
+  only the part that changed. Linkage tells which classes to replace: a base class that no longer links
+  against the new release fails `checkSegmentLinkage` until the segment replaces it. Only when the release
+  changes the library's packages or sessions throughout does the segment start a new chain without a base,
+  as `V1_18_2` does. Every segment depends on `mcprotocol-api`, and a segment whose release's components are
+  Adventure's (MCProtocolLib for Minecraft 1.16 on) also on `mcprotocol-adventure` for `AdventureText`; an older
+  release flattens its own text components in its segment. The side's `module-adapter` convention adds the new
+  child automatically.
 - **The protocol cannot express the release:** add or change the packet values in `protocol-java-api`
   and the area translations of every client segment, or change `McProtocolClient` in `mcprotocol-api`
   for the client itself. An external capability with segments of its own changes its port in its API's

@@ -18,7 +18,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleT
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitlesAnimation;
 import me.whereareiam.anvil.protocol.java.api.type.BossEventColor;
 import me.whereareiam.anvil.protocol.java.api.type.BossEventOverlay;
-import me.whereareiam.anvil.protocol.mcprotocol.client.AdventureText;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.BossBarColor;
@@ -35,11 +35,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Set;
 
 /**
- * Titles, action bars and boss bars of the MCProtocolLib 1.21 release, in the {@code org.geysermc.mcprotocollib}
- * packages. Titles, subtitles, title times and action bars have packets of their own, and boss bars share one packet
- * whose action says which part it changes.
+ * Titles, action bars and boss bars of the MCProtocolLib releases from 1.21 on, which keep their packets. Titles,
+ * subtitles, title times and action bars have packets of their own, and boss bars share one packet whose action says
+ * which part it changes.
  */
-final class ScreenPackets implements PacketTranslation<Packet> {
+public final class ScreenPackets implements PacketTranslation<Packet> {
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(

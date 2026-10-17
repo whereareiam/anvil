@@ -16,10 +16,8 @@ import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityPosition;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
-import me.whereareiam.anvil.protocol.java.api.model.interaction.BlockPosition;
-import me.whereareiam.anvil.protocol.java.api.model.player.Position;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -27,10 +25,6 @@ import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddExperienceOrb;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddMob;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddPainting;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddPlayer;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundEntityPositionSync;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPos;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPosRot;
@@ -111,7 +105,7 @@ class JavaEntitiesExtensionTest {
 		protocol.deliver(spawn(7, "zombie", 0, 0, 0));
 		player.open();
 		protocol.deliver(spawn(8, "zombie", 0, 0, 0));
-		protocol.deliver(ClientboundMoveEntityPos.builder().entityId(8).deltaX(4).build());
+		protocol.deliver(ClientboundMoveEntityPos.builder().entityId(8).delta(new Vec3d(4, 0, 0)).build());
 
 		List<SeenEntity> known = operations.execute(EntitiesChannel.KNOWN, null).getEntities();
 		assertEquals(List.of("entities.known"), List.copyOf(operations.handlers.keySet()));
@@ -122,20 +116,21 @@ class JavaEntitiesExtensionTest {
 	}
 
 	@Test
-	void decodesWhatTheSpawnPacketsOfEveryReleaseSay() {
+	void spawnsWhatTheAddedEntitiesSay() {
 		RecordingProtocol protocol = new RecordingProtocol(Set.of());
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 		player.open();
 
 		protocol.deliver(spawn(7, "armor_stand", 1.5, 64, -2.5));
-		protocol.deliver(ClientboundAddMob.builder().entityId(8).uniqueId(new UUID(0, 8)).type(EntityTypeKey.minecraft("zombie"))
-				.position(new EntityPosition(0, 66, 0)).yaw(180).pitch(20).build());
-		protocol.deliver(ClientboundAddPlayer.builder().entityId(9).uniqueId(new UUID(0, 9))
-				.position(new EntityPosition(2, 64, 2)).yaw(270).pitch(-30).build());
-		protocol.deliver(ClientboundAddPainting.builder().entityId(10).uniqueId(new UUID(0, 10))
-				.position(BlockPosition.builder().x(4).y(65).z(4).build()).build());
-		protocol.deliver(ClientboundAddExperienceOrb.builder().entityId(11).position(new EntityPosition(1, 2, 3)).build());
+		protocol.deliver(ClientboundAddEntity.builder().entityId(8).uniqueId(new UUID(0, 8))
+				.type(EntityTypeKey.minecraft("zombie")).position(new Vec3d(0, 66, 0)).yaw(180).pitch(20).build());
+		protocol.deliver(ClientboundAddEntity.builder().entityId(9).uniqueId(new UUID(0, 9))
+				.type(EntityTypeKey.minecraft("player")).position(new Vec3d(2, 64, 2)).yaw(270).pitch(-30).build());
+		protocol.deliver(ClientboundAddEntity.builder().entityId(10).uniqueId(new UUID(0, 10))
+				.type(EntityTypeKey.minecraft("painting")).position(new Vec3d(4, 65, 4)).build());
+		protocol.deliver(ClientboundAddEntity.builder().entityId(11).type(EntityTypeKey.minecraft("experience_orb"))
+				.position(new Vec3d(1, 2, 3)).build());
 
 		List<SeenEntity> spawned = player.emitted.stream().map(EntityChange::getEntity).toList();
 		assertEquals(List.of("minecraft:armor_stand", "minecraft:zombie", "minecraft:player", "minecraft:painting",
@@ -175,14 +170,15 @@ class JavaEntitiesExtensionTest {
 		player.open();
 		protocol.deliver(spawn(7, "zombie", 1, 2, 3));
 
-		protocol.deliver(ClientboundMoveEntityPosRot.builder().entityId(7).deltaX(1).yaw(90).pitch(10).build());
+		protocol.deliver(ClientboundMoveEntityPosRot.builder().entityId(7).delta(new Vec3d(1, 0, 0)).yaw(90).pitch(10)
+				.build());
 		assertEquals(List.of(2.0, 2.0, 3.0, 90f, 10f), place(operations));
 		protocol.deliver(new ClientboundMoveEntityRot(7, 180, -10));
 		assertEquals(List.of(2.0, 2.0, 3.0, 180f, -10f), place(operations));
-		protocol.deliver(ClientboundTeleportEntity.builder().entityId(7).position(new EntityPosition(1, 2, 3)).yaw(15)
+		protocol.deliver(ClientboundTeleportEntity.builder().entityId(7).position(new Vec3d(1, 2, 3)).yaw(15)
 				.pitch(5).relatives(Set.of(Relative.Y, Relative.YAW)).build());
 		assertEquals(List.of(1.0, 4.0, 3.0, 195f, 5f), place(operations));
-		protocol.deliver(ClientboundEntityPositionSync.builder().entityId(7).position(new EntityPosition(4, 5, 6)).yaw(30)
+		protocol.deliver(ClientboundEntityPositionSync.builder().entityId(7).position(new Vec3d(4, 5, 6)).yaw(30)
 				.pitch(20).build());
 		assertEquals(List.of(4.0, 5.0, 6.0, 30f, 20f), place(operations));
 		assertEquals(1, player.emitted.size());
@@ -197,12 +193,13 @@ class JavaEntitiesExtensionTest {
 		player.open();
 		protocol.deliver(spawn(7, "zombie", 0, 64, 10));
 
-		protocol.deliver(ClientboundPlayerPosition.builder().x(0).y(64).z(4).relatives(Set.of()).build());
+		protocol.deliver(ClientboundPlayerPosition.builder().position(new Vec3d(0, 64, 4)).relatives(Set.of()).build());
 		assertEquals(6.0, distance(operations));
-		protocol.deliver(ClientboundPlayerPosition.builder().z(2).relatives(Set.of(Relative.X, Relative.Y, Relative.Z))
+		protocol.deliver(ClientboundPlayerPosition.builder().position(new Vec3d(0, 0, 2))
+				.relatives(Set.of(Relative.X, Relative.Y, Relative.Z))
 				.build());
 		assertEquals(4.0, distance(operations));
-		protocol.send(ServerboundMovePlayerPosRot.builder().position(Position.builder().x(0).y(64).z(7).build()).build());
+		protocol.send(ServerboundMovePlayerPosRot.builder().position(new Vec3d(0, 64, 7)).build());
 		assertEquals(3.0, distance(operations));
 	}
 
@@ -224,8 +221,7 @@ class JavaEntitiesExtensionTest {
 
 	@Test
 	void listensOnlyToThePacketsTheReleaseCarries() {
-		RecordingProtocol protocol = new RecordingProtocol(Set.of(ClientboundAddMob.class, ClientboundAddPlayer.class,
-				ClientboundAddPainting.class, ClientboundAddExperienceOrb.class, ClientboundEntityPositionSync.class,
+		RecordingProtocol protocol = new RecordingProtocol(Set.of(ClientboundEntityPositionSync.class,
 				ClientboundStartConfiguration.class));
 		extension.bind(new RecordingPlayer(protocol), new RecordingOperations());
 
@@ -266,7 +262,7 @@ class JavaEntitiesExtensionTest {
 				.entityId(entityId)
 				.uniqueId(new UUID(0, entityId))
 				.type(EntityTypeKey.minecraft(type))
-				.position(new EntityPosition(x, y, z))
+				.position(new Vec3d(x, y, z))
 				.build();
 	}
 

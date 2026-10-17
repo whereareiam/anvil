@@ -2,7 +2,9 @@ package me.whereareiam.anvil.protocol.java.api.packet.entity;
 
 import lombok.Builder;
 import lombok.Value;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The server moves an entity by a short distance from where it is.
@@ -15,15 +17,7 @@ public class ClientboundMoveEntityPos implements ClientboundPacket {
 	 */
 	int entityId;
 	/**
-	 * The change of the east-west coordinate, in blocks.
+	 * The change of the entity's position, in blocks.
 	 */
-	double deltaX;
-	/**
-	 * The change of the height, in blocks.
-	 */
-	double deltaY;
-	/**
-	 * The change of the north-south coordinate, in blocks.
-	 */
-	double deltaZ;
+	@NotNull Vec3d delta;
 }

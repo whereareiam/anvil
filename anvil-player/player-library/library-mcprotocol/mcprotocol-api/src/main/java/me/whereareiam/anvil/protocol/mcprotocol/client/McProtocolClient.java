@@ -1,10 +1,10 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client;
 
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -18,18 +18,19 @@ import org.jetbrains.annotations.NotNull;
  * segment that created them.</p>
  *
  * <p>Segments register their implementation in
- * {@code META-INF/services/me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient}:</p>
+ * {@code META-INF/services/me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient}: an adapter per segment,
+ * which lists its release's translations in a {@link PacketTable} and hands them to the client base its side
+ * shares:</p>
  *
  * <pre>{@code
- * public final class McProtocolClientAdapter implements McProtocolClient<Session> {
- *     public int protocolNumber() { return MinecraftCodec.CODEC.getProtocolVersion(); }
- *     public Class<Session> sessionType() { return Session.class; }
- *     public Session open(ClientLogin login, ClientListener<? super Session> listener) { ... }
- *     public void connect(Session session) { session.connect(true); }
- *     public boolean connected(Session session) { return session.isConnected(); }
- *     public void disconnect(Session session, String reason) { session.disconnect(reason); }
- *     public void send(Session session, ServerboundPacket packet) { session.send(packets.encode(packet)); }
- *     public boolean supports(Class<? extends JavaPacket> type) { return packets.supports(type); }
+ * public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
+ *     public McProtocolClientAdapter() {
+ *         super(new NetworkClientSessions(), McProtocolClientAdapter::packets);
+ *     }
+ *
+ *     static PacketTable<Packet> packets() {
+ *         return new PacketTable<>(List.of(new ChatPackets(), new InteractionPackets()));
+ *     }
  * }
  * }</pre>
  *

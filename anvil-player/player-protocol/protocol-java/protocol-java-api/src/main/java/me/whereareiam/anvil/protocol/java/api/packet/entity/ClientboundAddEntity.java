@@ -2,16 +2,18 @@ package me.whereareiam.anvil.protocol.java.api.packet.entity;
 
 import lombok.Builder;
 import lombok.Value;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityPosition;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
 /**
- * The server adds an entity to the player's view. Releases before Minecraft 1.19 add mobs, players and paintings
- * through packets of their own, releases before 1.20.2 players, and releases before 1.21.2 experience orbs.
+ * The server adds an entity to the player's view. Releases that add some entities through packets of their own, such
+ * as mobs, players and paintings before Minecraft 1.19 or experience orbs before 1.21.2, report those as this packet
+ * too: a painting at the corner of the block it hangs at, facing no direction.
  */
 @Value
 @Builder
@@ -21,9 +23,10 @@ public class ClientboundAddEntity implements ClientboundPacket {
 	 */
 	int entityId;
 	/**
-	 * The entity's unique ID.
+	 * The entity's unique ID, or {@code null} for an experience orb of a release before Minecraft 1.21.2, which added
+	 * orbs without one.
 	 */
-	@NotNull UUID uniqueId;
+	@Nullable UUID uniqueId;
 	/**
 	 * The entity's type.
 	 */
@@ -31,7 +34,7 @@ public class ClientboundAddEntity implements ClientboundPacket {
 	/**
 	 * Where the entity appears.
 	 */
-	@NotNull EntityPosition position;
+	@NotNull Vec3d position;
 	/**
 	 * The horizontal direction the entity faces, in degrees.
 	 */

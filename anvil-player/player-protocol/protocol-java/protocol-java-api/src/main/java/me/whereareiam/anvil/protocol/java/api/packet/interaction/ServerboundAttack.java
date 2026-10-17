@@ -4,8 +4,8 @@ import lombok.Value;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 
 /**
- * The player attacks an entity, a packet of Minecraft 26.1 and later; earlier releases send an attack as a
- * {@link ServerboundInteract} with the attack action.
+ * The player attacks an entity. Minecraft 26.1 sends an attack in a packet of its own; the player's library sends it
+ * as the attack action of the entity interaction packet to earlier releases.
  */
 @Value
 public class ServerboundAttack implements ServerboundPacket {

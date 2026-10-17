@@ -10,30 +10,21 @@ import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
-import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundCustomSound;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
 import me.whereareiam.anvil.protocol.java.api.type.SoundSource;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Installs the built-in sounds capability for players that speak the Java Edition protocol: it emits every sound the
- * player is told to play, at a position or following an entity, by its namespaced key. A release without the named
- * sound packet simply names such sounds in the positioned sound packet. Sounds register no operations.
+ * player is told to play, at a position or following an entity, by its namespaced key. Sounds register no operations.
  */
 public final class JavaSoundsExtension implements WorkerExtension<Object> {
 	@Override
 	public @NotNull String id() {
 		return SoundsChannel.ID;
-	}
-
-	@Override
-	public @NotNull Optional<String> libraryId() {
-		return Optional.empty();
 	}
 
 	@Override
@@ -45,28 +36,22 @@ public final class JavaSoundsExtension implements WorkerExtension<Object> {
 	public @NotNull WorkerBinding bind(@NotNull PlayerBindingContext<Object> player, @NotNull OperationRegistry operations) {
 		JavaProtocol protocol = player.protocol(JavaProtocol.class);
 
-		List<Subscription> heard = new ArrayList<>();
-		heard.add(protocol.listen(ClientboundSound.class, sound -> heard(player, HeardSound.builder()
-				.key(sound.getSound())
-				.category(category(sound.getSource()))
-				.volume(sound.getVolume())
-				.pitch(sound.getPitch())
-				.position(position(sound.getPosition())))));
-		heard.add(protocol.listen(ClientboundSoundEntity.class, sound -> heard(player, HeardSound.builder()
-				.key(sound.getSound())
-				.category(category(sound.getSource()))
-				.volume(sound.getVolume())
-				.pitch(sound.getPitch())
-				.entityId(sound.getEntityId()))));
-		if (protocol.supports(ClientboundCustomSound.class))
-			heard.add(protocol.listen(ClientboundCustomSound.class, sound -> heard(player, HeardSound.builder()
-					.key(sound.getSound())
-					.category(category(sound.getSource()))
-					.volume(sound.getVolume())
-					.pitch(sound.getPitch())
-					.position(position(sound.getPosition())))));
+		Subscription heard = Subscription.all(
+				protocol.listen(ClientboundSound.class, sound -> heard(player, HeardSound.builder()
+						.key(sound.getSound())
+						.category(category(sound.getSource()))
+						.volume(sound.getVolume())
+						.pitch(sound.getPitch())
+						.position(position(sound.getPosition())))),
+				protocol.listen(ClientboundSoundEntity.class, sound -> heard(player, HeardSound.builder()
+						.key(sound.getSound())
+						.category(category(sound.getSource()))
+						.volume(sound.getVolume())
+						.pitch(sound.getPitch())
+						.entityId(sound.getEntityId())))
+		);
 
-		return () -> heard.forEach(Subscription::close);
+		return heard::close;
 	}
 
 	private static void heard(PlayerBindingContext<Object> player, HeardSound.HeardSoundBuilder sound) {
@@ -74,9 +59,9 @@ public final class JavaSoundsExtension implements WorkerExtension<Object> {
 	}
 
 	/**
-	 * Copies a protocol position into the capability's own position, which shares its name.
+	 * Copies a protocol position into the capability's own position.
 	 */
-	private static SoundPosition position(me.whereareiam.anvil.protocol.java.api.model.sound.SoundPosition position) {
+	private static SoundPosition position(Vec3d position) {
 		return new SoundPosition(position.getX(), position.getY(), position.getZ());
 	}
 

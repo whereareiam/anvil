@@ -47,11 +47,16 @@ public interface WorkerExtension<S> {
 	@NotNull String id();
 
 	/**
-	 * Returns the protocol library this extension targets.
+	 * Returns the protocol library this extension targets. An extension that reaches the player only through its
+	 * {@link PlayerBindingContext#protocol(Class) protocol}, such as the built-in Java Edition extensions, works with
+	 * every library that speaks that protocol and keeps this default; one that needs a library's own adapters names
+	 * that library.
 	 *
 	 * @return library identifier, or empty when the extension works with every library
 	 */
-	@NotNull Optional<String> libraryId();
+	default @NotNull Optional<String> libraryId() {
+		return Optional.empty();
+	}
 
 	/**
 	 * Returns the native session type this binding casts to. A worker accepts the extension when this

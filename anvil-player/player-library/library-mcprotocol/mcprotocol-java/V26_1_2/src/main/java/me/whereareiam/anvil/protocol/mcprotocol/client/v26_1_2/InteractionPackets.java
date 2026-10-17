@@ -1,8 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
-import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
-import me.whereareiam.anvil.protocol.java.api.model.interaction.BlockPosition;
-import me.whereareiam.anvil.protocol.java.api.model.interaction.InteractionPoint;
+import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -11,14 +10,11 @@ import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInte
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwing;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
-import me.whereareiam.anvil.protocol.java.api.type.InteractAction;
-import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.ValueTranslator;
 import org.cloudburstmc.math.vector.Vector3d;
 import org.cloudburstmc.math.vector.Vector3i;
 import org.geysermc.mcprotocollib.network.packet.Packet;
-import org.geysermc.mcprotocollib.protocol.data.game.entity.object.Direction;
-import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Hand;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundAttackPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundInteractPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
@@ -31,7 +27,7 @@ import java.util.Set;
 
 /**
  * Interaction of the MCProtocolLib 26.1 release, which sends an attack in a packet of its own and every interaction
- * with the hand and the point on the entity, its position when the interaction names none.
+ * with the hand and the point of the entity, its position when the interaction names none.
  */
 final class InteractionPackets implements PacketTranslation<Packet> {
 	@Override
@@ -52,47 +48,27 @@ final class InteractionPackets implements PacketTranslation<Packet> {
 
 	@Override
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
-		if (packet instanceof ServerboundSwing swing) return new ServerboundSwingPacket(hand(swing.getHand()));
-		if (packet instanceof ServerboundUseItem use)
-			return new ServerboundUseItemPacket(hand(use.getHand()), use.getSequence(), use.getYaw(), use.getPitch());
-		if (packet instanceof ServerboundUseItemOn use) return useItemOn(use);
-		if (packet instanceof ServerboundInteract interact) return interact(interact);
-		if (packet instanceof ServerboundAttack attack) return new ServerboundAttackPacket(attack.getEntityId());
-
-		return null;
+		return switch (packet) {
+			case ServerboundSwing swing -> new ServerboundSwingPacket(ValueTranslator.hand(swing.getHand()));
+			case ServerboundUseItem use -> new ServerboundUseItemPacket(ValueTranslator.hand(use.getHand()),
+					use.getSequence(), use.getYaw(), use.getPitch());
+			case ServerboundUseItemOn use -> useItemOn(use);
+			case ServerboundInteract interact -> interact(interact);
+			case ServerboundAttack attack -> new ServerboundAttackPacket(attack.getEntityId());
+			default -> null;
+		};
 	}
 
 	private static Packet useItemOn(ServerboundUseItemOn use) {
 		BlockPosition position = use.getPosition();
 		return new ServerboundUseItemOnPacket(Vector3i.from(position.getX(), position.getY(), position.getZ()),
-				direction(use.getFace()), hand(use.getHand()), use.getCursorX(), use.getCursorY(), use.getCursorZ(),
-				use.isInsideBlock(), use.isWorldBorderHit(), use.getSequence());
+				ValueTranslator.direction(use.getFace()), ValueTranslator.hand(use.getHand()), use.getCursorX(),
+				use.getCursorY(), use.getCursorZ(), use.isInsideBlock(), use.isWorldBorderHit(), use.getSequence());
 	}
 
 	private static Packet interact(ServerboundInteract interact) {
-		if (interact.getAction() == InteractAction.ATTACK)
-			throw new ProtocolUnavailableException("Minecraft 26.1 sends an attack as " + ServerboundAttack.class.getName());
-
-		InteractionPoint point = interact.getLocation();
-		Vector3d location = point == null ? Vector3d.ZERO : Vector3d.from(point.getX(), point.getY(), point.getZ());
-		return new ServerboundInteractPacket(interact.getEntityId(), hand(interact.getHand()), location, interact.isSneaking());
-	}
-
-	private static Hand hand(InteractionHand hand) {
-		return switch (hand) {
-			case MAIN_HAND -> Hand.MAIN_HAND;
-			case OFF_HAND -> Hand.OFF_HAND;
-		};
-	}
-
-	private static Direction direction(me.whereareiam.anvil.protocol.java.api.type.Direction face) {
-		return switch (face) {
-			case DOWN -> Direction.DOWN;
-			case UP -> Direction.UP;
-			case NORTH -> Direction.NORTH;
-			case SOUTH -> Direction.SOUTH;
-			case WEST -> Direction.WEST;
-			case EAST -> Direction.EAST;
-		};
+		Vec3d point = interact.getPoint() == null ? Vec3d.ZERO : interact.getPoint();
+		return new ServerboundInteractPacket(interact.getEntityId(), ValueTranslator.hand(interact.getHand()),
+				Vector3d.from(point.getX(), point.getY(), point.getZ()), interact.isSneaking());
 	}
 }

@@ -3,8 +3,9 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.mcprotocol.client.AdventureText;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
+import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import org.geysermc.mcprotocollib.network.ClientSession;
@@ -32,8 +33,8 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
- * Answers the packets an MCProtocolLib 1.21.11 client must answer on its own and reports login, teleports and
- * disconnects with their reason flattened to plain text. The login reports the profile the server granted in its
+ * Answers the packets a client of the MCProtocolLib 1.21.11 release must answer on its own and reports login, teleports
+ * and disconnects with their reason flattened to plain text. The login reports the profile the server granted in its
  * login success, which arrives before the game starts.
  */
 @RequiredArgsConstructor
@@ -41,7 +42,7 @@ final class ClientPacketListener extends SessionAdapter {
 	private final ClientSession session;
 	private final ClientLogin login;
 	private final ClientListener<? super ClientSession> listener;
-	private final JavaPackets packets;
+	private final PacketTable<Packet> packets;
 	private volatile ClientProfile granted;
 
 	@Override
@@ -58,7 +59,8 @@ final class ClientPacketListener extends SessionAdapter {
 			session.send(new ServerboundAcceptTeleportationPacket(position.getId()));
 			session.send(ServerboundPlayerLoadedPacket.INSTANCE);
 		}
-		// A vanilla client answers every ping; NeoForge waits for the answer to tell a vanilla client from a modded one.
+		// A vanilla client answers every ping; NeoForge waits for the answer to tell a vanilla client from a modded
+		// one.
 		if (packet instanceof ClientboundPingPacket ping) session.send(new ServerboundPongPacket(ping.getId()));
 		if (packet instanceof ClientboundDisconnectPacket disconnect)
 			listener.disconnected(session, DisconnectCause.SERVER, AdventureText.plain(disconnect.getReason()));
@@ -71,7 +73,8 @@ final class ClientPacketListener extends SessionAdapter {
 
 	@Override
 	public void disconnected(DisconnectedEvent event) {
-		listener.disconnected(session, cause(event), event.getReason() == null ? "" : AdventureText.plain(event.getReason()));
+		String reason = event.getReason() == null ? "" : AdventureText.plain(event.getReason());
+		listener.disconnected(session, cause(event), reason);
 	}
 
 	/**

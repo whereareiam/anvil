@@ -9,12 +9,15 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Native lifecycle controls, session access, rotation, and event delivery supplied to one player's binding.
  * This context remains associated with that player until destruction. Native sessions returned by
  * {@link #nativeSession()} and supplied to {@link #bindNativeSession(Function)} represent individual
- * connection generations; callers must not retain them across reconnects.
+ * connection generations; callers must not retain them across reconnects. Bindings that speak the player's
+ * {@link #protocol(Class) protocol} never touch native sessions: they follow connections through
+ * {@link #bindConnection(Supplier)}, and only external segmented code reaches the library's sessions.
  *
  * @param <S> native session type of the protocol library
  */
@@ -75,6 +78,26 @@ public interface PlayerBindingContext<S> {
 	 * @return owned generation-listener registration
 	 */
 	@NotNull Subscription bindNativeSession(@NotNull Function<S, Subscription> listener);
+
+	/**
+	 * Follows the player's connections without touching the library's sessions: the listener runs before each
+	 * connection of the player starts logging in, and the subscription it returns closes when that connection ends,
+	 * before the player reports the disconnect, and at the latest before a new connection replaces it. Closing the
+	 * returned subscription also closes the current connection's.
+	 *
+	 * <pre>{@code
+	 * Subscription connections = player.bindConnection(() -> {
+	 *     player.emit(ExampleChannel.RESET, null);
+	 *     return state::clear;
+	 * });
+	 * }</pre>
+	 *
+	 * @param listener starts the state of a new connection and returns what ends it
+	 * @return registration that stops following connections when closed
+	 */
+	default @NotNull Subscription bindConnection(@NotNull Supplier<Subscription> listener) {
+		return bindNativeSession(ignored -> listener.get());
+	}
 
 	/**
 	 * Returns the latest shared yaw and pitch, including server corrections.

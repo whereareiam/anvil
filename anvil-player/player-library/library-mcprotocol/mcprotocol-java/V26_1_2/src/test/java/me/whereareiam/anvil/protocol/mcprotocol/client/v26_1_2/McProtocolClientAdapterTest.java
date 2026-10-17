@@ -15,7 +15,6 @@ import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseI
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundMovePlayerPosRot;
-import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundCustomSound;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -29,7 +28,6 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -81,7 +79,6 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ServerboundUseItemOn.class));
 		assertTrue(client.supports(ServerboundInteract.class));
 		assertTrue(client.supports(ServerboundAttack.class));
-		assertFalse(client.supports(ClientboundCustomSound.class));
 	}
 
 	/**

@@ -29,7 +29,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Installs the built-in dialogs capability for players that speak the Java Edition protocol: it emits each dialog the
@@ -44,6 +43,7 @@ import java.util.Optional;
  * the worker reports the capability unavailable for them.
  */
 public final class JavaDialogsExtension implements WorkerExtension<Object> {
+	private static final String FEATURE = "dialogs";
 	private static final String DIALOG_REGISTRY = "minecraft:dialog";
 	private static final List<Class<? extends JavaPacket>> PACKETS = List.of(
 			ClientboundShowDialog.class,
@@ -62,11 +62,6 @@ public final class JavaDialogsExtension implements WorkerExtension<Object> {
 	}
 
 	@Override
-	public @NotNull Optional<String> libraryId() {
-		return Optional.empty();
-	}
-
-	@Override
 	public @NotNull Class<Object> nativeSessionType() {
 		return Object.class;
 	}
@@ -80,11 +75,7 @@ public final class JavaDialogsExtension implements WorkerExtension<Object> {
 	@Override
 	public @NotNull WorkerBinding bind(@NotNull PlayerBindingContext<Object> player, @NotNull OperationRegistry operations) {
 		JavaProtocol protocol = player.protocol(JavaProtocol.class);
-		for (Class<? extends JavaPacket> packet : PACKETS) {
-			if (!protocol.supports(packet))
-				throw new ProtocolUnavailableException("the player's release has no dialogs; it does not carry "
-						+ packet.getName());
-		}
+		protocol.require(FEATURE, PACKETS);
 
 		ShownActions actions = new ShownActions();
 		DialogReader shownReader = new DialogReader(actions::retainShown);
@@ -94,12 +85,12 @@ public final class JavaDialogsExtension implements WorkerExtension<Object> {
 			return null;
 		});
 
-		Subscription connections = player.bindNativeSession(ignored -> {
+		Subscription connections = player.bindConnection(() -> {
 			actions.releaseAll();
 			player.emit(DialogsChannel.RESET, null);
 			return actions::releaseAll;
 		});
-		List<Subscription> listening = List.of(
+		Subscription binding = Subscription.all(
 				protocol.listen(ClientboundShowDialog.class, show -> {
 					actions.releaseShown();
 					player.emit(DialogsChannel.SHOWN, shown(show, shownReader));
@@ -116,16 +107,12 @@ public final class JavaDialogsExtension implements WorkerExtension<Object> {
 
 					actions.releaseRegistry();
 					player.emit(DialogsChannel.REGISTRY, registry(registry, registryReader));
-				})
+				}),
+				connections,
+				actions::releaseAll
 		);
 
-		return () -> {
-			try (connections) {
-				listening.forEach(Subscription::close);
-			} finally {
-				actions.releaseAll();
-			}
-		};
+		return binding::close;
 	}
 
 	/**
@@ -148,6 +135,7 @@ public final class JavaDialogsExtension implements WorkerExtension<Object> {
 			throw new IllegalArgumentException("A click is a command or names a custom action");
 
 		ShownActions.CustomAction action = actions.find(click.getAction());
+
 		return new ServerboundCustomClickAction(action.id(), ClickPayload.of(action.payload(), click.getValues()));
 	}
 
@@ -171,7 +159,6 @@ public final class JavaDialogsExtension implements WorkerExtension<Object> {
 				.closeWithEscape(true)
 				.afterAction(DialogAfterAction.CLOSE);
 	}
-
 	/**
 	 * Reads the dialog registry, keeping its order, so registry IDs still index it.
 	 */

@@ -56,10 +56,11 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-player/player-common`                                         | Player registration, version selection, authentication compatibility, composition, and observations                                                                                 |
 | `anvil-player/player-protocol/protocol-java/protocol-java-api` | Java Edition protocol of simulated players: `JavaProtocol` and the packets, models and types it carries, as release-neutral values |
 | `anvil-player/player-library/library-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port and the client segments; owns `mcprotocol-releases.toml` and `pinLibraryReleases`  |
-| `anvil-player/player-library/library-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell, `PacketTranslation` and `AdventureText`                                                                                       |
+| `anvil-player/player-library/library-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell, and what their translations share: `PacketTranslation`, `PacketTable` and `EntityDataLayout` |
+| `anvil-player/player-library/library-mcprotocol/mcprotocol-adventure`             | `AdventureText` for the segments of releases whose components are Adventure's; each such segment declares it, and Adventure comes from the release's closure |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-common`                | MCProtocolLib library provider, release data, worker host and segment selection, MCProtocolLib-free worker shell with its extension registry and typed transport, and private authentication store                                  |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-java`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
-| `anvil-player/player-library/library-mcprotocol/mcprotocol-java/V*`             | Client segments `V1_18_2`, `V1_21_1`, `V1_21_11` and `V26_1_2`, each implementing only `McProtocolClient` from its release key on; `V26_1_2` extends `V1_21_11` and replaces only its interaction translation |
+| `anvil-player/player-library/library-mcprotocol/mcprotocol-java/V*`             | Client segments `V1_18_2`, `V1_21_1`, `V1_21_11` and `V26_1_2`, each implementing only `McProtocolClient` from its release key on through an adapter over its chain's `JavaClient` base; `V1_21_11` extends `V1_21_1` and `V26_1_2` extends `V1_21_11`, each replacing the base classes that changed |
 | `anvil-process/process-api`                                         | Platform-provider/planning SPI, version data contract, artifact sources, distribution validation, and configuration contracts                                                      |
 | `anvil-process/process-common`                                    | Platform declaration validation, version data reading, effective Java/topology requirements, forwarding negotiation, the split of a plan by process lifetime, artifact planning, and provider preparation/configuration      |
 | `anvil-process/process-platform/platform-<name>`                      | One family per platform: its provider (`<name>-provider`) and, where it installs one, its platform agent assembly (`<name>-agent`); Paper and Spigot share `platform-bukkit` |
@@ -137,13 +138,19 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   text, and the feature interprets it: `dialogs-java` reads dialogs, flattens their text components itself and
   keeps custom payloads in the worker, where a click names them by handle. A listener follows the player's current
   connection.
-  Release-specific packet code lives only in the library's client segments: one `PacketTranslation` per area and
-  segment, registered in the segment's `JavaPackets`, with components flattened by `mcprotocol-api`'s
-  `AdventureText` and NBT translated by the segment's one `NbtTranslator`. Each session decodes through a table of
-  its own, so the entity translation can remember the types of the session's entities: entity data is decoded by
-  entity type from a typed table of the release's indexes, never by guessing from value types. A release without a
-  packet leaves it out of the table; a feature checks `supports` and throws `ProtocolUnavailableException` when it
-  cannot work without it. Features never touch native sessions or library packets.
+  Release-specific packet code lives only in the library's client segments: one `PacketTranslation` per area, listed
+  by the segment's adapter in `mcprotocol-api`'s `PacketTable`, which alone refuses to send a packet the release
+  cannot carry, with Adventure components flattened by `mcprotocol-adventure`'s `AdventureText` and NBT translated by
+  the segment's one `NbtTranslator`. Each session decodes through a table of its own, so the entity translation can
+  remember the types of the session's entities: entity data is decoded by entity type from the release's
+  `EntityDataLayout`, never by guessing from value types. Release quirks stay in the segments: where releases say the
+  same thing in different packets, every release reports the current packet (spawns as `ClientboundAddEntity`, the
+  player's own inventory slots as `ClientboundSetPlayerInventory`, named sounds as `ClientboundSound`), and the
+  current packet a feature sends reaches an older release in that release's form (`ServerboundAttack` as the attack
+  action of the interact packet). A release without a packet leaves it out of the table; a feature checks `supports`,
+  or `JavaProtocol.require` throws `ProtocolUnavailableException` when it cannot work without some packets. Features
+  never touch native sessions or library packets: they follow connections through
+  `PlayerBindingContext.bindConnection` and close their listeners together through `Subscription.all`.
   The worker contracts belong to the player family: `player-api`'s `WorkerExtension`, `PlayerBindingContext`,
   `OperationRegistry` and `WorkerBinding` under `protocol.api.worker`, and the typed `ProtocolChannel` with
   `OperationDescriptor`/`EventDescriptor` that both ends of a player's channel share. Capabilities implement and
@@ -159,8 +166,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   convention and only wires its members into `builtin-<feature>`: `<feature>-api` (artifact `builtin-<feature>-api`)
   holds the API and, for capabilities with a worker side, the `.channel.<Feature>Channel` both sides share;
   `<feature>-common` (embedded, unpublished) holds the host provider; `<feature>-<edition>` (artifact
-  `builtin-<feature>-<edition>`, such as `-java`) holds the edition's `WorkerExtension<Object>`, whose `libraryId()`
-  is empty and whose `nativeSessionType()` is `Object.class`. The editions are the `protocol-<edition>` folders below
+  `builtin-<feature>-<edition>`, such as `-java`) holds the edition's `WorkerExtension<Object>`, which keeps the
+  empty default `libraryId()` and whose `nativeSessionType()` is `Object.class`. The editions are the `protocol-<edition>` folders below
   `anvil-player/player-protocol`. The root is a wiring bundle: consumers compile against its shaded JAR, and its
   sources and Javadoc JARs carry the embedded common code. The convention derives every artifact ID from the folder
   names and fails a build file that sets its own, and `gradle-capabilities` tests that each family has a plugin
@@ -182,8 +189,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   under `protocol.api.model.channel`. View rotation holds yaw/pitch; a descriptor pairs an ID with its payload
   classes.
   Event payloads such as `PlayerConnectionEvent` remain separate values. Worker bindings own per-player
-  state and native listeners. Use `bindNativeSession` for generation-scoped listeners across reconnects;
-  old native handles must not silently bind to replacement sessions.
+  state and listeners. Protocol bindings use `bindConnection` for state of one connection; only segmented code uses
+  `bindNativeSession` for generation-scoped native listeners across reconnects, and old native handles must not
+  silently bind to replacement sessions.
   Neutral player provider/context contracts live under `capability.api.player`. Protocol factories and their
   context, which hands a provider the player's `ProtocolChannel` and library services, live under
   `capability.protocol.api.player` in `capability-player-api`. Capability composition works on the player-api
@@ -426,7 +434,11 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   for a new protocol (version, module, protocol, Minecraft versions, verified versions, Java, features), and
   pin its closure with `pinLibraryReleases`. Add a segment only to a side whose newest segment fails
   `checkSegmentLinkage` against the new closure, named after the new release key; a segment folder must name
-  a release key, so raising a key renames that segment. Add the release to `McProtocolWorkerContractTest`,
+  a release key, so raising a key renames that segment. A new segment extends the side's newest one
+  (`segment { extends(...) }`) and names each base class it brings its own version of in `replaces("<binary
+  name>")`, which the build validates; code a chain shares, its public `JavaClient` base and abstract bases of
+  translations whose bulk does not change, lives in the chain's earliest segment, and each segment has its own
+  `McProtocolClientAdapter`. Add the release to `McProtocolWorkerContractTest`,
   platform `known` versions and `[[java]]` rows only where Java changes, and mark as verified exactly what
   `CompatibilityScenarioFactory` runs; every other listed version is COMPATIBLE, and user-supplied release
   data is UNTESTED. Update the versions page, the Java table, the README, and the FAQ. The worker shell never

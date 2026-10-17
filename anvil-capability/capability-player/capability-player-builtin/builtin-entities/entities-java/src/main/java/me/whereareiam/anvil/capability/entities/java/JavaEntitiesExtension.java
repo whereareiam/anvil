@@ -10,18 +10,12 @@ import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityPosition;
-import me.whereareiam.anvil.protocol.java.api.model.interaction.BlockPosition;
-import me.whereareiam.anvil.protocol.java.api.model.player.Position;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddExperienceOrb;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddMob;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddPainting;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddPlayer;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundEntityPositionSync;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPos;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPosRot;
@@ -37,7 +31,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -53,23 +46,13 @@ import java.util.function.Consumer;
  * travel as events. When a connection ends or is replaced, its entities disappear; when the player is destroyed,
  * nothing more is emitted.
  *
- * <p>Releases spawn some entities through packets of their own, such as mobs and players before Minecraft 1.19 and
- * experience orbs before 1.21.2, and correct positions through a sync packet from 1.21.2; the extension listens to
- * each spawn and placement packet the player's release carries.</p>
+ * <p>Releases from Minecraft 1.21.2 on also correct positions through a sync packet, which the extension follows
+ * where the player's release carries it.</p>
  */
 public final class JavaEntitiesExtension implements WorkerExtension<Object> {
-	private static final String PLAYER = "minecraft:player";
-	private static final String PAINTING = "minecraft:painting";
-	private static final String EXPERIENCE_ORB = "minecraft:experience_orb";
-
 	@Override
 	public @NotNull String id() {
 		return EntitiesChannel.ID;
-	}
-
-	@Override
-	public @NotNull Optional<String> libraryId() {
-		return Optional.empty();
 	}
 
 	@Override
@@ -98,7 +81,7 @@ public final class JavaEntitiesExtension implements WorkerExtension<Object> {
 		private final JavaProtocol protocol;
 		private final AtomicInteger connections = new AtomicInteger();
 		private final AtomicReference<EntityTracker> current = new AtomicReference<>();
-		private final List<Subscription> subscriptions = new ArrayList<>();
+		private final List<Subscription> listening = new ArrayList<>();
 
 		private KnownEntities known() {
 			EntityTracker tracker = current.get();
@@ -106,11 +89,12 @@ public final class JavaEntitiesExtension implements WorkerExtension<Object> {
 		}
 
 		private WorkerBinding listen() {
-			Subscription generations = player.bindNativeSession(ignored -> connected());
+			Subscription connections = player.bindConnection(this::connected);
 			facts(ClientboundLogin.class, (tracker, login) -> tracker.join(login.getEntityId()));
 			facts(ClientboundRespawn.class, (tracker, respawn) -> tracker.clear());
 			optionalFacts(ClientboundStartConfiguration.class, (tracker, configuration) -> tracker.clear());
-			spawns();
+			facts(ClientboundAddEntity.class, (tracker, add) -> tracker.spawn(add.getEntityId(), add.getUniqueId(),
+					add.getType().toString(), add.getPosition(), add.getYaw(), add.getPitch()));
 			moves();
 			facts(ClientboundSetEntityData.class, (tracker, data) ->
 					tracker.change(data.getEntityId(), data.getValues()));
@@ -118,12 +102,13 @@ public final class JavaEntitiesExtension implements WorkerExtension<Object> {
 					tracker.mount(passengers.getVehicleId(), passengers.getPassengerIds()));
 			facts(ClientboundRemoveEntities.class, (tracker, removed) -> tracker.remove(removed.getEntityIds()));
 
-			return () -> {
-				try (generations) {
-					current.set(null);
-					subscriptions.forEach(Subscription::close);
-				}
-			};
+			Subscription binding = Subscription.all(
+					() -> current.set(null),
+					Subscription.all(listening),
+					connections
+			);
+
+			return binding::close;
 		}
 
 		/**
@@ -138,31 +123,20 @@ public final class JavaEntitiesExtension implements WorkerExtension<Object> {
 			};
 		}
 
-		private void spawns() {
-			facts(ClientboundAddEntity.class, (tracker, add) -> tracker.spawn(add.getEntityId(), add.getUniqueId(),
-					add.getType().toString(), add.getPosition(), add.getYaw(), add.getPitch()));
-			optionalFacts(ClientboundAddMob.class, (tracker, add) -> tracker.spawn(add.getEntityId(), add.getUniqueId(),
-					add.getType().toString(), add.getPosition(), add.getYaw(), add.getPitch()));
-			optionalFacts(ClientboundAddPlayer.class, (tracker, add) -> tracker.spawn(add.getEntityId(),
-					add.getUniqueId(), PLAYER, add.getPosition(), add.getYaw(), add.getPitch()));
-			optionalFacts(ClientboundAddPainting.class, (tracker, add) -> tracker.spawn(add.getEntityId(),
-					add.getUniqueId(), PAINTING, at(add.getPosition()), 0, 0));
-			optionalFacts(ClientboundAddExperienceOrb.class, (tracker, orb) -> tracker.spawn(orb.getEntityId(), null,
-					EXPERIENCE_ORB, orb.getPosition(), 0, 0));
-		}
-
 		private void moves() {
-			state(ClientboundMoveEntityPos.class, (tracker, move) -> tracker.move(move.getEntityId(),
-					move.getDeltaX(), move.getDeltaY(), move.getDeltaZ(), true, true, true));
+			state(ClientboundMoveEntityPos.class, (tracker, move) -> {
+				Vec3d delta = move.getDelta();
+				tracker.move(move.getEntityId(), delta.getX(), delta.getY(), delta.getZ(), true, true, true);
+			});
 			state(ClientboundMoveEntityPosRot.class, (tracker, move) -> {
-				tracker.move(move.getEntityId(), move.getDeltaX(), move.getDeltaY(), move.getDeltaZ(),
-						true, true, true);
+				Vec3d delta = move.getDelta();
+				tracker.move(move.getEntityId(), delta.getX(), delta.getY(), delta.getZ(), true, true, true);
 				tracker.turn(move.getEntityId(), move.getYaw(), move.getPitch(), false, false);
 			});
 			state(ClientboundMoveEntityRot.class, (tracker, turn) ->
 					tracker.turn(turn.getEntityId(), turn.getYaw(), turn.getPitch(), false, false));
 			state(ClientboundTeleportEntity.class, (tracker, teleport) -> {
-				EntityPosition position = teleport.getPosition();
+				Vec3d position = teleport.getPosition();
 				Set<Relative> relatives = teleport.getRelatives();
 				tracker.move(teleport.getEntityId(), position.getX(), position.getY(), position.getZ(),
 						relatives.contains(Relative.X), relatives.contains(Relative.Y), relatives.contains(Relative.Z));
@@ -171,18 +145,19 @@ public final class JavaEntitiesExtension implements WorkerExtension<Object> {
 			});
 			if (protocol.supports(ClientboundEntityPositionSync.class))
 				state(ClientboundEntityPositionSync.class, (tracker, sync) -> {
-					EntityPosition position = sync.getPosition();
+					Vec3d position = sync.getPosition();
 					tracker.move(sync.getEntityId(), position.getX(), position.getY(), position.getZ(),
 							false, false, false);
 					tracker.turn(sync.getEntityId(), sync.getYaw(), sync.getPitch(), false, false);
 				});
 			state(ClientboundPlayerPosition.class, (tracker, placed) -> {
+				Vec3d position = placed.getPosition();
 				Set<Relative> relatives = placed.getRelatives();
-				tracker.movePlayer(placed.getX(), placed.getY(), placed.getZ(), relatives.contains(Relative.X),
+				tracker.movePlayer(position.getX(), position.getY(), position.getZ(), relatives.contains(Relative.X),
 						relatives.contains(Relative.Y), relatives.contains(Relative.Z));
 			});
-			subscriptions.add(protocol.listenSent(ServerboundMovePlayerPosRot.class, move -> withTracker(tracker -> {
-				Position position = move.getPosition();
+			listening.add(protocol.listenSent(ServerboundMovePlayerPosRot.class, move -> withTracker(tracker -> {
+				Vec3d position = move.getPosition();
 				tracker.movePlayer(position.getX(), position.getY(), position.getZ(), false, false, false);
 			})));
 		}
@@ -194,7 +169,7 @@ public final class JavaEntitiesExtension implements WorkerExtension<Object> {
 				Class<P> type,
 				BiFunction<EntityTracker, P, List<EntityChange>> apply
 		) {
-			subscriptions.add(protocol.listen(type, packet ->
+			listening.add(protocol.listen(type, packet ->
 					withTracker(tracker -> emit(apply.apply(tracker, packet)))));
 		}
 
@@ -209,7 +184,7 @@ public final class JavaEntitiesExtension implements WorkerExtension<Object> {
 		 * Applies the packets of one type that only update the state reads see.
 		 */
 		private <P extends ClientboundPacket> void state(Class<P> type, BiConsumer<EntityTracker, P> apply) {
-			subscriptions.add(protocol.listen(type, packet -> withTracker(tracker -> apply.accept(tracker, packet))));
+			listening.add(protocol.listen(type, packet -> withTracker(tracker -> apply.accept(tracker, packet))));
 		}
 
 		private void withTracker(Consumer<EntityTracker> action) {
@@ -219,13 +194,6 @@ public final class JavaEntitiesExtension implements WorkerExtension<Object> {
 
 		private void emit(List<EntityChange> changes) {
 			for (EntityChange change : changes) player.emit(EntitiesChannel.CHANGED, change);
-		}
-
-		/**
-		 * Places a painting at the corner of the block it hangs at, as releases that add paintings separately send it.
-		 */
-		private static EntityPosition at(BlockPosition block) {
-			return new EntityPosition(block.getX(), block.getY(), block.getZ());
 		}
 	}
 }

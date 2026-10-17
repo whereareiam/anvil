@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.interaction;
 
 import lombok.Builder;
 import lombok.Value;
-import me.whereareiam.anvil.protocol.java.api.model.interaction.InteractionPoint;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.type.InteractAction;
 import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
@@ -10,9 +10,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The player interacts with an entity, or attacks it before Minecraft 26.1. Minecraft 26.1 and later send an attack
- * as {@link ServerboundAttack} and refuse {@link InteractAction#ATTACK} here; they send every interaction with its
- * point.
+ * The player interacts with an entity using a hand; an attack is a {@link ServerboundAttack}. Minecraft 26.1 and later
+ * send every interaction with its point and no longer tell {@link InteractAction#INTERACT_AT} from
+ * {@link InteractAction#INTERACT}.
  */
 @Value
 @Builder
@@ -22,18 +22,19 @@ public class ServerboundInteract implements ServerboundPacket {
 	 */
 	int entityId;
 	/**
-	 * What the player does to the entity; Minecraft 26.1 and later tell only an interaction.
+	 * Whether the player interacts with the entity or with a point of it.
 	 */
 	@NotNull InteractAction action;
 	/**
-	 * The hand the player interacts with; an attack carries none.
+	 * The hand the player interacts with.
 	 */
 	@NotNull InteractionHand hand;
 	/**
-	 * The point of the entity the player interacts with, sent with {@link InteractAction#INTERACT_AT} before
-	 * Minecraft 26.1 and with every interaction from 26.1 on; absent means the entity's position.
+	 * The point of the entity the player interacts with, relative to the entity's position, sent with
+	 * {@link InteractAction#INTERACT_AT} before Minecraft 26.1 and with every interaction from 26.1 on; absent means
+	 * {@link Vec3d#ZERO}, the entity's position.
 	 */
-	@Nullable InteractionPoint location;
+	@Nullable Vec3d point;
 	/**
 	 * Whether the player sneaks.
 	 */

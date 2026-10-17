@@ -5,6 +5,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetContent;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundOpenScreen;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
 import me.whereareiam.anvil.protocol.java.api.type.ClickType;
@@ -61,14 +62,14 @@ class InventoryPacketsTest {
 	}
 
 	@Test
-	void decodesSlotsOfAContainerAndOfTheCursor() {
+	void decodesSlotsOfAContainerOfTheCursorAndOfThePlayersInventory() {
 		assertEquals(new ClientboundContainerSetSlot(2, 8, 0, new ItemStack(1, 64)),
 				packets.decode(new ClientboundContainerSetSlotPacket(2, 8, 0, stack(1, 64))));
 		// The library decodes this container ID as an unsigned byte, so vanilla's cursor -1 and inventory index -2
 		// arrive as 255 and 254.
 		assertEquals(new ClientboundContainerSetSlot(-1, 8, -1, null),
 				packets.decode(new ClientboundContainerSetSlotPacket(255, 8, -1, null)));
-		assertEquals(new ClientboundContainerSetSlot(-2, 0, 40, new ItemStack(5, 1)),
+		assertEquals(new ClientboundSetPlayerInventory(40, new ItemStack(5, 1)),
 				packets.decode(new ClientboundContainerSetSlotPacket(254, 0, 40, stack(5, 1))));
 	}
 
@@ -133,6 +134,7 @@ class InventoryPacketsTest {
 				ClientboundOpenScreen.class,
 				ClientboundContainerSetContent.class,
 				ClientboundContainerSetSlot.class,
+				ClientboundSetPlayerInventory.class,
 				ServerboundSetCarriedItem.class,
 				ServerboundContainerClick.class
 		), packets.packets());

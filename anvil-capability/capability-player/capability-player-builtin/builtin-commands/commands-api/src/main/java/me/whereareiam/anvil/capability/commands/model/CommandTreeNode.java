@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
 import me.whereareiam.anvil.capability.commands.type.CommandNodeType;
+import me.whereareiam.anvil.capability.commands.type.StringArgumentMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,11 +16,14 @@ import java.util.List;
 @Value
 @Builder
 public class CommandTreeNode {
+	/**
+	 * The kind of the node.
+	 */
 	@NotNull CommandNodeType type;
 	/**
-	 * The literal's word or the argument's name; empty for the root.
+	 * The literal's word or the argument's name, or {@code null} for the root.
 	 */
-	@NotNull String name;
+	@Nullable String name;
 	/**
 	 * Indexes of the child nodes in the tree.
 	 */
@@ -38,14 +42,14 @@ public class CommandTreeNode {
 	 */
 	boolean restricted;
 	/**
-	 * Parser ID of an argument, such as {@code brigadier:string} or {@code minecraft:message}; empty for other nodes.
+	 * Parser ID of an argument, such as {@code brigadier:string} or {@code minecraft:message}, or {@code null} for
+	 * other nodes.
 	 */
-	@NotNull String parser;
+	@Nullable String parser;
 	/**
-	 * Mode of a {@code brigadier:string} argument: {@code SINGLE_WORD}, {@code QUOTABLE_PHRASE} or
-	 * {@code GREEDY_PHRASE}.
+	 * Mode of a {@code brigadier:string} argument, or {@code null} for other nodes.
 	 */
-	@Nullable String stringMode;
+	@Nullable StringArgumentMode stringMode;
 	/**
 	 * Lowest value of a number argument, or {@code null} for none.
 	 */

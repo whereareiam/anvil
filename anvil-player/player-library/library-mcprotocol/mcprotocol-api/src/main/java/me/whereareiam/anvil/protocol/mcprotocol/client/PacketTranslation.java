@@ -10,8 +10,9 @@ import java.util.Set;
 
 /**
  * Translates one area of the Java Edition protocol, such as chat, between its packets and the packets of one
- * MCProtocolLib release. A client segment carries one translation per area its release supports, and a later segment
- * reuses the translations of the segment it extends that still link against its release.
+ * MCProtocolLib release. A client segment carries one translation per area its release supports, which its adapter
+ * lists in the release's {@link PacketTable}, and a later segment reuses the translations of the segment it extends
+ * that still link against its release.
  *
  * @param <P> the release's packet type
  */

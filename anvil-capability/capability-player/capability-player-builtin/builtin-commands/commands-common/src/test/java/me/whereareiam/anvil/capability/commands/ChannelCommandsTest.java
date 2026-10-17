@@ -29,8 +29,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class ChannelCommandsTest {
 	private static final Duration TIMEOUT = Duration.ofSeconds(3);
 	private static final CommandTree LOGIN = new CommandTree(List.of(
-			CommandTreeNode.builder().type(CommandNodeType.ROOT).name("").parser("").child(1).build(),
-			CommandTreeNode.builder().type(CommandNodeType.LITERAL).name("login").parser("").executable(true).build()
+			CommandTreeNode.builder().type(CommandNodeType.ROOT).child(1).build(),
+			CommandTreeNode.builder().type(CommandNodeType.LITERAL).name("login").executable(true).build()
 	), 0);
 
 	@Test

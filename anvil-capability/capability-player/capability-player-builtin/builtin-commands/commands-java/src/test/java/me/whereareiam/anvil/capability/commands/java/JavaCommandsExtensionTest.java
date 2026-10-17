@@ -107,13 +107,16 @@ class JavaCommandsExtensionTest {
 
 		CommandTree tree = (CommandTree) player.payloads.getLast();
 		assertEquals(0, tree.getRoot());
-		assertEquals(CommandTreeNode.builder().type(CommandNodeType.ROOT).name("").child(1).parser("").build(), tree.getNodes().get(0));
-		assertEquals(CommandTreeNode.builder().type(CommandNodeType.LITERAL).name("give").child(2).child(3).restricted(true).parser("")
+		assertEquals(CommandTreeNode.builder().type(CommandNodeType.ROOT).child(1).build(), tree.getNodes().get(0));
+		assertEquals(CommandTreeNode.builder().type(CommandNodeType.LITERAL).name("give").child(2).child(3)
+				.restricted(true)
 				.build(), tree.getNodes().get(1));
 		assertEquals(CommandTreeNode.builder().type(CommandNodeType.ARGUMENT).name("amount").redirect(0).executable(true)
 				.parser("brigadier:integer").min(1D).max(64D).build(), tree.getNodes().get(2));
-		assertEquals(CommandTreeNode.builder().type(CommandNodeType.ARGUMENT).name("text").executable(true).parser("brigadier:string")
-				.stringMode("GREEDY_PHRASE").build(), tree.getNodes().get(3));
+		assertEquals(CommandTreeNode.builder().type(CommandNodeType.ARGUMENT).name("text").executable(true)
+				.parser("brigadier:string")
+				.stringMode(me.whereareiam.anvil.capability.commands.type.StringArgumentMode.GREEDY_PHRASE).build(),
+						tree.getNodes().get(3));
 		assertEquals(tree.getNodes().get(1), tree.literal("give").orElseThrow());
 	}
 

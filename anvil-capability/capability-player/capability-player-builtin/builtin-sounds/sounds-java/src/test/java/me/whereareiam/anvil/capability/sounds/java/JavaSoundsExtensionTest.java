@@ -14,10 +14,10 @@ import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundCustomSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
 import me.whereareiam.anvil.protocol.java.api.type.SoundSource;
@@ -42,8 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JavaSoundsExtensionTest {
-	private static final me.whereareiam.anvil.protocol.java.api.model.sound.SoundPosition POSITION =
-			new me.whereareiam.anvil.protocol.java.api.model.sound.SoundPosition(1.5D, 64D, -2D);
+	private static final Vec3d POSITION = new Vec3d(1.5D, 64D, -2D);
 
 	private final JavaSoundsExtension extension = new JavaSoundsExtension();
 
@@ -64,14 +63,14 @@ class JavaSoundsExtensionTest {
 	void registersNoOperations() {
 		RecordingOperations operations = new RecordingOperations();
 
-		extension.bind(new RecordingPlayer(new RecordingProtocol(true)), operations);
+		extension.bind(new RecordingPlayer(new RecordingProtocol()), operations);
 
 		assertEquals(List.of(), operations.registered);
 	}
 
 	@Test
 	void emitsEverySoundThePlayerIsToldToPlayByItsKey() {
-		RecordingProtocol protocol = new RecordingProtocol(true);
+		RecordingProtocol protocol = new RecordingProtocol();
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 
@@ -90,7 +89,7 @@ class JavaSoundsExtensionTest {
 				.volume(0.5F)
 				.pitch(1F)
 				.build());
-		protocol.deliver(ClientboundCustomSound.builder()
+		protocol.deliver(ClientboundSound.builder()
 				.sound("example:alert")
 				.source(SoundSource.RECORDS)
 				.position(POSITION)
@@ -125,7 +124,7 @@ class JavaSoundsExtensionTest {
 
 	@Test
 	void reportsEverySourceAsTheCategoryOfTheSameName() {
-		RecordingProtocol protocol = new RecordingProtocol(true);
+		RecordingProtocol protocol = new RecordingProtocol();
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 
@@ -142,8 +141,8 @@ class JavaSoundsExtensionTest {
 	}
 
 	@Test
-	void leavesTheNamedSoundPacketAloneOnAReleaseWithoutIt() {
-		RecordingProtocol protocol = new RecordingProtocol(false);
+	void listensToTheSoundsAtAPositionAndFollowingAnEntity() {
+		RecordingProtocol protocol = new RecordingProtocol();
 		extension.bind(new RecordingPlayer(protocol), new RecordingOperations());
 
 		assertEquals(Set.of(ClientboundSound.class, ClientboundSoundEntity.class), protocol.listeners.keySet());
@@ -151,7 +150,7 @@ class JavaSoundsExtensionTest {
 
 	@Test
 	void stopsListeningWhenClosed() {
-		RecordingProtocol protocol = new RecordingProtocol(true);
+		RecordingProtocol protocol = new RecordingProtocol();
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		WorkerBinding binding = extension.bind(player, new RecordingOperations());
 
@@ -176,12 +175,7 @@ class JavaSoundsExtensionTest {
 	 * Hands delivered packets to the listener of their class.
 	 */
 	private static final class RecordingProtocol implements JavaProtocol {
-		private final boolean customSound;
 		private final Map<Class<?>, Consumer<Object>> listeners = new LinkedHashMap<>();
-
-		private RecordingProtocol(boolean customSound) {
-			this.customSound = customSound;
-		}
 
 		@Override
 		public <P extends ClientboundPacket> @NotNull Subscription listen(
@@ -207,7 +201,7 @@ class JavaSoundsExtensionTest {
 
 		@Override
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
-			return customSound || type != ClientboundCustomSound.class;
+			return true;
 		}
 
 		private void deliver(ClientboundPacket packet) {

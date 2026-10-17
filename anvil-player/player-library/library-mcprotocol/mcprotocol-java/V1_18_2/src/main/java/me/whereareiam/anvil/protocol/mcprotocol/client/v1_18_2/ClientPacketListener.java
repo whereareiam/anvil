@@ -20,8 +20,9 @@ import com.github.steveice10.packetlib.packet.Packet;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.mcprotocol.client.AdventureText;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
+import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 
@@ -29,15 +30,15 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
- * Answers the packets an MCProtocolLib 1.18.2 client must answer on its own and reports login, teleports and
- * disconnects with their reason flattened to plain text. The login reports the profile the server granted in its
+ * Answers the packets a client of the MCProtocolLib 1.18.2 release must answer on its own and reports login, teleports
+ * and disconnects with their reason flattened to plain text. The login reports the profile the server granted in its
  * login success, which arrives before the game starts.
  */
 @RequiredArgsConstructor
 final class ClientPacketListener extends SessionAdapter {
 	private final ClientLogin login;
 	private final ClientListener<? super Session> listener;
-	private final JavaPackets packets;
+	private final PacketTable<Packet> packets;
 	private volatile ClientProfile granted;
 
 	@Override

@@ -110,7 +110,8 @@ class ClientPacketListenerTest {
 	}
 
 	private ClientSession session() {
-		return (ClientSession) Proxy.newProxyInstance(ClientSession.class.getClassLoader(), new Class<?>[]{ClientSession.class}, (proxy, method, arguments) -> {
+		Class<?>[] types = {ClientSession.class};
+		return (ClientSession) Proxy.newProxyInstance(ClientSession.class.getClassLoader(), types, (proxy, method, arguments) -> {
 			if (!method.getName().equals("send")) throw new UnsupportedOperationException(method.getName());
 
 			Packet packet = (Packet) arguments[0];

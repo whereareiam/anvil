@@ -20,7 +20,8 @@ import java.util.function.Supplier;
 /**
  * One worker player's Java Edition protocol: it hands the packets of the player's current connection to their
  * listeners and sends packets on that connection, through the release's client segment, and then hands each sent
- * packet to the listeners of sent packets.
+ * packet to the listeners of sent packets. The segment refuses a packet its release cannot send; a listener is
+ * refused here, since no packet the segment translates tells that its release never carries the listened packet.
  */
 @RequiredArgsConstructor
 final class JavaPacketChannel implements JavaProtocol {
@@ -39,7 +40,6 @@ final class JavaPacketChannel implements JavaProtocol {
 
 	@Override
 	public void send(@NotNull ServerboundPacket packet) {
-		requireSupported(packet.getClass());
 		client.send(currentSession.get(), packet);
 		handOut(sentListeners, packet);
 	}
@@ -72,7 +72,11 @@ final class JavaPacketChannel implements JavaProtocol {
 			Class<P> type,
 			Consumer<? super P> listener
 	) {
-		requireSupported(type);
+		if (!client.supports(type))
+			throw new ProtocolUnavailableException("the loaded " + McProtocolClient.LIBRARY_ID
+					+ " release does not carry "
+					+ type.getName());
+
 		Consumer<Object> typed = packet -> listener.accept(type.cast(packet));
 		List<Consumer<Object>> subscribed = table.computeIfAbsent(type, ignored -> new CopyOnWriteArrayList<>());
 		subscribed.add(typed);
@@ -95,10 +99,5 @@ final class JavaPacketChannel implements JavaProtocol {
 				System.err.println("[Anvil] Warning: a listener of " + packet.getClass().getSimpleName() + " failed: " + failure);
 			}
 		}
-	}
-
-	private void requireSupported(Class<? extends JavaPacket> type) {
-		if (!client.supports(type))
-			throw new ProtocolUnavailableException("the loaded " + McProtocolClient.LIBRARY_ID + " release does not carry " + type.getName());
 	}
 }

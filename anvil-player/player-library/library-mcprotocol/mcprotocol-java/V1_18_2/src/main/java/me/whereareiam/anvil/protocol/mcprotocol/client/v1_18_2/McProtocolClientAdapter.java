@@ -1,82 +1,38 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
-import com.github.steveice10.mc.auth.data.GameProfile;
-import com.github.steveice10.mc.auth.service.SessionService;
-import com.github.steveice10.mc.protocol.MinecraftConstants;
-import com.github.steveice10.mc.protocol.MinecraftProtocol;
-import com.github.steveice10.mc.protocol.codec.MinecraftCodec;
-import com.github.steveice10.packetlib.Session;
-import com.github.steveice10.packetlib.tcp.TcpClientSession;
-import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
-import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientCredentials;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
-import org.jetbrains.annotations.NotNull;
+import com.github.steveice10.packetlib.packet.Packet;
+import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
+
+import java.util.List;
 
 /**
- * Client of MCProtocolLib 1.18.2: packetlib 2.1 TCP sessions, the codec and clientbound/serverbound packet
- * names, plain-string disconnect events and adventure 4.9 without its plain-text serializer. The session binds
- * the source address through packetlib's bind-address constructor; the handshake always announces the session
- * host, so {@link ClientPacketListener} rewrites the handshake for a virtual host.
+ * The client segment's adapter for the MCProtocolLib 1.18.2 release: the {@link JavaClient} with the release's packet
+ * table.
  */
-public final class McProtocolClientAdapter implements McProtocolClient<Session> {
-	private final JavaPackets packets = new JavaPackets();
-
-	@Override
-	public int protocolNumber() {
-		return MinecraftCodec.CODEC.getProtocolVersion();
+public final class McProtocolClientAdapter extends JavaClient {
+	/**
+	 * Creates the client of the MCProtocolLib 1.18.2 release.
+	 */
+	public McProtocolClientAdapter() {
+		super(McProtocolClientAdapter::packets);
 	}
 
-	@Override
-	public @NotNull Class<Session> sessionType() {
-		return Session.class;
-	}
-
-	@Override
-	public @NotNull Session open(@NotNull ClientLogin login, @NotNull ClientListener<? super Session> listener) {
-		ClientProfile profile = login.getProfile();
-		ClientCredentials credentials = login.getCredentials();
-		ClientConnection connection = login.getConnection();
-		MinecraftProtocol protocol = new MinecraftProtocol(new GameProfile(profile.getUniqueId(), profile.getName()),
-				credentials == null ? null : credentials.getAccessToken());
-		Session session = connection.getSourceAddress() == null
-				? new TcpClientSession(connection.getHost(), connection.getPort(), protocol)
-				: new TcpClientSession(connection.getHost(), connection.getPort(), connection.getSourceAddress(), 0, protocol);
-		if (credentials != null && credentials.getSessionServer() != null) {
-			SessionService sessionService = new SessionService();
-			sessionService.setBaseUri(credentials.getSessionServer() + "/");
-			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, sessionService);
-		}
-		session.addListener(new ClientPacketListener(login, listener, new JavaPackets()));
-		return session;
-	}
-
-	@Override
-	public void connect(@NotNull Session session) {
-		session.connect(true);
-	}
-
-	@Override
-	public boolean connected(@NotNull Session session) {
-		return session.isConnected();
-	}
-
-	@Override
-	public void disconnect(@NotNull Session session, @NotNull String reason) {
-		session.disconnect(reason);
-	}
-
-	@Override
-	public void send(@NotNull Session session, @NotNull ServerboundPacket packet) {
-		session.send(packets.encode(packet));
-	}
-
-	@Override
-	public boolean supports(@NotNull Class<? extends JavaPacket> type) {
-		return packets.supports(type);
+	/**
+	 * Returns a new packet table of the MCProtocolLib 1.18.2 release.
+	 *
+	 * @return the release's translations
+	 */
+	static PacketTable<Packet> packets() {
+		return new PacketTable<>(List.of(
+				new ChatPackets(),
+				new CommandPackets(),
+				new ConnectionPackets(),
+				new EntityPackets(),
+				new InteractionPackets(),
+				new InventoryPackets(),
+				new PlayerPackets(),
+				new ScreenPackets(),
+				new SoundPackets()
+		));
 	}
 }

@@ -8,31 +8,29 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundSo
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.ClientboundCustomSoundPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.ClientboundSoundPacket;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.protocol.java.api.model.sound.SoundPosition;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundCustomSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
 import me.whereareiam.anvil.protocol.java.api.type.SoundSource;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
 
 /**
- * Sounds of Minecraft 1.18.2, which has three sound packets: a built-in sound at a position by registry ID, a named
- * sound at a position, and a built-in sound following an entity by registry ID, which this release leaves unresolved.
- * None of them carries a seed.
+ * Sounds of the MCProtocolLib 1.18.2 release, which has three sound packets: a built-in sound at a position by
+ * registry ID, a named sound at a position, both reported as a sound at a position, and a built-in sound following an
+ * entity by registry ID, which this release leaves unresolved. None of them carries a seed.
  */
 final class SoundPackets implements PacketTranslation<Packet> {
-	private static final String DEFAULT_NAMESPACE = "minecraft:";
-
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
-		return Set.of(ClientboundSound.class, ClientboundCustomSound.class, ClientboundSoundEntity.class);
+		return Set.of(ClientboundSound.class, ClientboundSoundEntity.class);
 	}
 
 	@Override
@@ -41,15 +39,15 @@ final class SoundPackets implements PacketTranslation<Packet> {
 			return ClientboundSound.builder()
 					.sound(key(sound.getSound().getName()))
 					.source(source(sound.getCategory()))
-					.position(new SoundPosition(sound.getX(), sound.getY(), sound.getZ()))
+					.position(new Vec3d(sound.getX(), sound.getY(), sound.getZ()))
 					.volume(sound.getVolume())
 					.pitch(sound.getPitch())
 					.build();
 		if (packet instanceof ClientboundCustomSoundPacket sound)
-			return ClientboundCustomSound.builder()
+			return ClientboundSound.builder()
 					.sound(key(name(sound.getSound())))
 					.source(source(sound.getCategory()))
-					.position(new SoundPosition(sound.getX(), sound.getY(), sound.getZ()))
+					.position(new Vec3d(sound.getX(), sound.getY(), sound.getZ()))
 					.volume(sound.getVolume())
 					.pitch(sound.getPitch())
 					.build();
@@ -85,8 +83,12 @@ final class SoundPackets implements PacketTranslation<Packet> {
 		return sound instanceof BuiltinSound builtin ? builtin.getName() : ((CustomSound) sound).getName();
 	}
 
+	/**
+	 * Returns the namespaced key of a sound the library names, whose namespace is {@code minecraft} when it names
+	 * none.
+	 */
 	private static String key(String name) {
-		return name.indexOf(':') < 0 ? DEFAULT_NAMESPACE + name : name;
+		return Key.key(name).asString();
 	}
 
 	private static SoundSource source(SoundCategory category) {

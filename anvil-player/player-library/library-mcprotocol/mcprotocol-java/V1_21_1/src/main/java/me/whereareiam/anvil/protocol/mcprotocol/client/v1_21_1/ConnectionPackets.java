@@ -17,9 +17,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Set;
 
 /**
- * The moments the MCProtocolLib 1.21.1 release joins a level, respawns and returns to the configuration phase.
+ * The moments the MCProtocolLib releases from 1.21 on join a level, respawn and return to the configuration phase.
  */
-final class ConnectionPackets implements PacketTranslation<Packet> {
+public final class ConnectionPackets implements PacketTranslation<Packet> {
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(ClientboundLogin.class, ClientboundRespawn.class, ClientboundStartConfiguration.class);

@@ -11,6 +11,7 @@ import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.PlayerInventoryLayout;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetContent;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
@@ -25,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.TreeMap;
 
 /**
@@ -35,21 +36,13 @@ import java.util.TreeMap;
  *
  * <p>The observed container is the one the server last opened or filled. Slot updates of other containers and of
  * the cursor are ignored, and changes addressed to the player's own inventory are applied only while the player's
- * inventory container is the observed one. Releases before Minecraft 1.21.2 address the player's own inventory
- * through the slot packet of container {@code -2}, later ones with a packet of its own.</p>
+ * inventory container is the observed one.</p>
  */
 public final class JavaInventoryExtension implements WorkerExtension<Object> {
-	private static final int INVENTORY_INDEX_CONTAINER = -2;
-	private static final int OFF_HAND_BUTTON = 40;
 
 	@Override
 	public @NotNull String id() {
 		return InventoryChannel.ID;
-	}
-
-	@Override
-	public @NotNull Optional<String> libraryId() {
-		return Optional.empty();
 	}
 
 	@Override
@@ -70,19 +63,19 @@ public final class JavaInventoryExtension implements WorkerExtension<Object> {
 			return null;
 		});
 
-		boolean playerInventoryPacket = protocol.supports(ClientboundSetPlayerInventory.class);
-		List<Subscription> subscriptions = new ArrayList<>();
-		subscriptions.add(protocol.listen(ClientboundOpenScreen.class, open ->
-				publish(player, container.open(open.getContainerId()))));
-		subscriptions.add(protocol.listen(ClientboundContainerSetContent.class, content -> publish(player,
-				container.replace(content.getContainerId(), content.getStateId(), items(content.getItems())))));
-		subscriptions.add(protocol.listen(ClientboundContainerSetSlot.class, slot ->
-				publish(player, slot(container, slot, playerInventoryPacket))));
-		if (playerInventoryPacket)
-			subscriptions.add(protocol.listen(ClientboundSetPlayerInventory.class, slot ->
-					publish(player, container.setPlayerSlot(slot.getSlot(), slot.getItem()))));
+		Subscription listening = Subscription.all(
+				protocol.listen(ClientboundOpenScreen.class, open ->
+						publish(player, container.open(open.getContainerId()))),
+				protocol.listen(ClientboundContainerSetContent.class, content -> publish(player,
+						container.replace(content.getContainerId(), content.getStateId(), items(content.getItems())))),
+				protocol.listen(ClientboundContainerSetSlot.class, slot -> publish(player, container.set(
+						slot.getContainerId(), slot.getStateId(), slot.getSlot(),
+								item(slot.getSlot(), slot.getItem())))),
+				protocol.listen(ClientboundSetPlayerInventory.class, slot ->
+						publish(player, container.setPlayerSlot(slot.getSlot(), slot.getItem())))
+		);
 
-		return () -> subscriptions.forEach(Subscription::close);
+		return listening::close;
 	}
 
 	private static ServerboundContainerClick click(ObservedContainer container, InventoryAction action) {
@@ -91,29 +84,21 @@ public final class JavaInventoryExtension implements WorkerExtension<Object> {
 
 		int slot = action.getSlot();
 		return switch (action.getClick()) {
-			case LEFT -> container.click(slot, ClickType.PICKUP, 0);
-			case RIGHT -> container.click(slot, ClickType.PICKUP, 1);
-			case SHIFT_LEFT -> container.click(slot, ClickType.QUICK_MOVE, 0);
+			case LEFT -> container.click(slot, ClickType.PICKUP, ClickType.PRIMARY_BUTTON);
+			case RIGHT -> container.click(slot, ClickType.PICKUP, ClickType.SECONDARY_BUTTON);
+			case SHIFT_LEFT -> container.click(slot, ClickType.QUICK_MOVE, ClickType.PRIMARY_BUTTON);
 			case HOTBAR_SWAP -> container.click(slot, ClickType.SWAP, action.getButton());
-			case DROP_ONE -> container.click(slot, ClickType.THROW, 0);
-			case DROP_STACK -> container.click(slot, ClickType.THROW, 1);
+			case DROP_ONE -> container.click(slot, ClickType.THROW, ClickType.PRIMARY_BUTTON);
+			case DROP_STACK -> container.click(slot, ClickType.THROW, ClickType.SECONDARY_BUTTON);
 		};
 	}
 
+	/**
+	 * Tells whether a hotbar swap's button names a slot to swap with: a hotbar slot or the off hand, by inventory
+	 * index.
+	 */
 	private static boolean swapButton(int button) {
-		return button >= 0 && button <= 8 || button == OFF_HAND_BUTTON;
-	}
-
-	private static @Nullable InventorySnapshot slot(
-			ObservedContainer container,
-			ClientboundContainerSetSlot slot,
-			boolean playerInventoryPacket
-	) {
-		if (!playerInventoryPacket && slot.getContainerId() == INVENTORY_INDEX_CONTAINER)
-			return container.setPlayerSlot(slot.getSlot(), slot.getItem());
-
-		InventoryItem item = item(slot.getSlot(), slot.getItem());
-		return container.set(slot.getContainerId(), slot.getStateId(), slot.getSlot(), item);
+		return PlayerInventoryLayout.hotbar(button) || button == PlayerInventoryLayout.OFF_HAND;
 	}
 
 	private static void publish(PlayerBindingContext<Object> player, @Nullable InventorySnapshot snapshot) {
@@ -146,8 +131,6 @@ public final class JavaInventoryExtension implements WorkerExtension<Object> {
 	 * packet did not change the observed container.
 	 */
 	private static final class ObservedContainer {
-		private static final int PLAYER_INVENTORY = 0;
-
 		private final Map<Integer, InventoryItem> items = new TreeMap<>();
 		private int containerId;
 		private int stateId;
@@ -156,6 +139,7 @@ public final class JavaInventoryExtension implements WorkerExtension<Object> {
 			this.containerId = containerId;
 			this.stateId = 0;
 			items.clear();
+
 			return snapshot();
 		}
 
@@ -168,9 +152,9 @@ public final class JavaInventoryExtension implements WorkerExtension<Object> {
 			this.stateId = stateId;
 			items.clear();
 			contents.forEach(item -> items.put(item.getSlot(), item));
+
 			return snapshot();
 		}
-
 		private synchronized @Nullable InventorySnapshot set(
 				int containerId,
 				int stateId,
@@ -181,17 +165,17 @@ public final class JavaInventoryExtension implements WorkerExtension<Object> {
 
 			this.stateId = stateId;
 			put(slot, item);
+
 			return snapshot();
 		}
-
 		private synchronized @Nullable InventorySnapshot setPlayerSlot(int index, @Nullable ItemStack stack) {
-			int slot = playerInventorySlot(index);
-			if (containerId != PLAYER_INVENTORY || slot < 0) return null;
+			OptionalInt slot = PlayerInventoryLayout.containerSlot(index);
+			if (containerId != PlayerInventoryLayout.CONTAINER_ID || slot.isEmpty()) return null;
 
-			put(slot, item(slot, stack));
+			put(slot.getAsInt(), item(slot.getAsInt(), stack));
+
 			return snapshot();
 		}
-
 		private synchronized @NotNull ServerboundContainerClick click(int slot, ClickType clickType, int button) {
 			return ServerboundContainerClick.builder()
 					.containerId(containerId)
@@ -217,22 +201,6 @@ public final class JavaInventoryExtension implements WorkerExtension<Object> {
 					.stateId(stateId)
 					.items(items.values())
 					.build();
-		}
-
-		/**
-		 * Maps an index of the player's inventory to its slot in the player's inventory container, which lists the
-		 * crafting slots, the armor from head to feet, the main inventory, the hotbar and the off hand.
-		 *
-		 * @return the container slot, or {@code -1} for an index the container does not show
-		 */
-		private static int playerInventorySlot(int index) {
-			if (index < 0) return -1;
-			if (index <= 8) return 36 + index;
-			if (index <= 35) return index;
-			if (index <= 39) return 44 - index;
-			if (index == 40) return 45;
-
-			return -1;
 		}
 	}
 }

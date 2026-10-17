@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.interaction;
 
 import lombok.Builder;
 import lombok.Value;
-import me.whereareiam.anvil.protocol.java.api.model.interaction.BlockPosition;
+import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.type.Direction;
 import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;

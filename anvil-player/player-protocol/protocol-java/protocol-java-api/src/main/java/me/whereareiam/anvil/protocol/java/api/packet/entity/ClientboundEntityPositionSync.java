@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.entity;
 
 import lombok.Builder;
 import lombok.Value;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityPosition;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,7 +20,7 @@ public class ClientboundEntityPositionSync implements ClientboundPacket {
 	/**
 	 * The entity's position.
 	 */
-	@NotNull EntityPosition position;
+	@NotNull Vec3d position;
 	/**
 	 * The horizontal direction the entity faces, in degrees.
 	 */

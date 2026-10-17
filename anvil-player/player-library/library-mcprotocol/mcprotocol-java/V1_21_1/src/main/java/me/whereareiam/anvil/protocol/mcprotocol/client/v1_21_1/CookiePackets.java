@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Set;
 
 /**
- * Cookies of the MCProtocolLib 1.21 release, which arrived in Minecraft 1.20.5 and keep every cookie packet in the
+ * Cookies of the MCProtocolLib 1.21.1 release, which arrived in Minecraft 1.20.5 and keep every cookie packet in the
  * common package, the response included. The request serves the login, configuration and game phases, so one
  * response answers a request in any of them.
  */

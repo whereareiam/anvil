@@ -200,10 +200,11 @@ every such library. MCProtocolLib's family is laid out like this:
 | Module | Owns |
 |---|---|
 | `library-mcprotocol` | Wiring-only root: shades `mcprotocol-common`, publishes `protocol-mcprotocol`, and owns `mcprotocol-releases.toml` and its `pinLibraryReleases` task |
-| `mcprotocol-api` | The release-neutral client port `McProtocolClient<S>` that client segments implement |
+| `mcprotocol-api` | The release-neutral client port `McProtocolClient<S>` that client segments implement, and what their translations share: `PacketTranslation`, the `PacketTable` that carries a release's translations, and `EntityDataLayout` |
+| `mcprotocol-adventure` | `AdventureText`, which flattens Adventure components to plain text for the segments of releases whose components are Adventure's (MCProtocolLib for Minecraft 1.16 on); Adventure itself comes from each release's closure |
 | `mcprotocol-common` | `McProtocolLibraryProvider`, the release catalog, worker host and segment selection, the worker shell, and the private account store |
 | `mcprotocol-java` | Source-free side folder whose `V*` children are the client segments |
-| `mcprotocol-java/V1_18_2`, `V1_21_1`, `V1_21_11` and `V26_1_2` | One client segment per range of releases; `V26_1_2` extends `V1_21_11` and replaces only its interaction translation |
+| `mcprotocol-java/V1_18_2`, `V1_21_1`, `V1_21_11` and `V26_1_2` | One client segment per range of releases. `V1_18_2` starts the chain of the `com.github.steveice10` packages and `V1_21_1` the chain of the `org.geysermc` ones, each with the chain's public `JavaClient` base; `V1_21_11` extends `V1_21_1` and `V26_1_2` extends `V1_21_11`, replacing the base classes that changed. Every segment has a `McProtocolClientAdapter` listing its release's translations |
 
 The worker shell never imports MCProtocolLib. Every class that does lives in a segment: a project named
 after the release key it starts at, under a side folder named after its owner and library, such as

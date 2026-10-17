@@ -125,7 +125,7 @@ public final class CommandVerifier {
 			List<CommandTreeNode> arguments = new ArrayList<>();
 			for (int index : node.getChildren()) {
 				CommandTreeNode child = node(index);
-				if (child.getType() == CommandNodeType.LITERAL && child.getName().equals(word)) return List.of(child);
+				if (child.getType() == CommandNodeType.LITERAL && word.equals(child.getName())) return List.of(child);
 				if (child.getType() == CommandNodeType.ARGUMENT) arguments.add(child);
 			}
 			return arguments;

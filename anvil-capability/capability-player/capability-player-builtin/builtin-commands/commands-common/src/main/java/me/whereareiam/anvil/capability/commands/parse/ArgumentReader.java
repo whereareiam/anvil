@@ -1,7 +1,9 @@
 package me.whereareiam.anvil.capability.commands.parse;
 
 import me.whereareiam.anvil.capability.commands.model.CommandTreeNode;
+import me.whereareiam.anvil.capability.commands.type.StringArgumentMode;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Reads one argument of a command as the client's parsers do, after Brigadier's string reader: the Brigadier
@@ -44,16 +46,16 @@ final class ArgumentReader {
 			case "minecraft:block_pos", "minecraft:vec3" -> readWords(3);
 			case "minecraft:column_pos", "minecraft:vec2", "minecraft:rotation" -> readWords(2);
 			case "minecraft:entity", "minecraft:game_profile", "minecraft:score_holder" -> readTarget();
-			default -> readWord();
+			case null, default -> readWord();
 		}
 	}
 
-	private void readStringArgument(String mode) {
-		if ("GREEDY_PHRASE".equals(mode)) {
+	private void readStringArgument(@Nullable StringArgumentMode mode) {
+		if (mode == StringArgumentMode.GREEDY_PHRASE) {
 			cursor = input.length();
 			return;
 		}
-		if ("QUOTABLE_PHRASE".equals(mode)) {
+		if (mode == StringArgumentMode.QUOTABLE_PHRASE) {
 			readString();
 			return;
 		}

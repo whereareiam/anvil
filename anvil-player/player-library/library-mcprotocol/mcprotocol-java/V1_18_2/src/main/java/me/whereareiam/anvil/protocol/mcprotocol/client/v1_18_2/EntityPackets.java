@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.EntityMetadata;
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.ItemStack;
+import com.github.steveice10.mc.protocol.data.game.entity.metadata.Position;
 import com.github.steveice10.mc.protocol.data.game.entity.type.EntityType;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
@@ -21,18 +22,13 @@ import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomNameVisible;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityDataValue;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityPosition;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
+import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
 import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
-import me.whereareiam.anvil.protocol.java.api.model.interaction.BlockPosition;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddExperienceOrb;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddMob;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddPainting;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddPlayer;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPos;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPosRot;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityRot;
@@ -40,8 +36,9 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEnt
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
-import me.whereareiam.anvil.protocol.mcprotocol.client.AdventureText;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.type.EntityDataField;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -50,14 +47,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 /**
- * Entities of Minecraft 1.18.2, which adds mobs, players, paintings and experience orbs through packets of their own,
- * hangs a painting at its block without a direction and teleports an entity absolutely.
+ * Entities of the MCProtocolLib 1.18.2 release, which spawns mobs, players, paintings and experience orbs through
+ * packets of their own; the translation reports each of them as an added entity, a painting at the corner of the
+ * block it hangs at and facing no direction, as it does an orb, which has no unique ID either. Teleports place and
+ * turn an entity absolutely.
  *
  * <p>Entity data is decoded by the entity's type through {@link EntityDataTable}, so each session decodes through a
  * translation of its own: it remembers the type of every entity the session added until the server removes the
@@ -65,16 +64,14 @@ import java.util.Set;
  * Packets of one session arrive on one thread.</p>
  */
 final class EntityPackets implements PacketTranslation<Packet> {
+	private static final float NO_DIRECTION = 0;
+
 	private final Map<Integer, EntityType> types = new HashMap<>();
 
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(
 				ClientboundAddEntity.class,
-				ClientboundAddMob.class,
-				ClientboundAddPlayer.class,
-				ClientboundAddPainting.class,
-				ClientboundAddExperienceOrb.class,
 				ClientboundMoveEntityPos.class,
 				ClientboundMoveEntityPosRot.class,
 				ClientboundMoveEntityRot.class,
@@ -90,22 +87,23 @@ final class EntityPackets implements PacketTranslation<Packet> {
 		return switch (packet) {
 			case ClientboundLoginPacket ignored -> forget();
 			case ClientboundRespawnPacket ignored -> forget();
-			case ClientboundAddEntityPacket add -> added(add);
-			case ClientboundAddMobPacket add -> mobAdded(add);
-			case ClientboundAddPlayerPacket add -> playerAdded(add);
-			case ClientboundAddPaintingPacket add -> paintingAdded(add);
-			case ClientboundAddExperienceOrbPacket orb -> orbAdded(orb);
+			case ClientboundAddEntityPacket add -> added(add.getEntityId(), add.getUuid(), add.getType(),
+					new Vec3d(add.getX(), add.getY(), add.getZ()), add.getYaw(), add.getPitch());
+			case ClientboundAddMobPacket add -> added(add.getEntityId(), add.getUuid(), add.getType(),
+					new Vec3d(add.getX(), add.getY(), add.getZ()), add.getYaw(), add.getPitch());
+			case ClientboundAddPlayerPacket add -> added(add.getEntityId(), add.getUuid(), EntityType.PLAYER,
+					new Vec3d(add.getX(), add.getY(), add.getZ()), add.getYaw(), add.getPitch());
+			case ClientboundAddPaintingPacket add -> added(add.getEntityId(), add.getUuid(), EntityType.PAINTING,
+					corner(add.getPosition()), NO_DIRECTION, NO_DIRECTION);
+			case ClientboundAddExperienceOrbPacket orb -> added(orb.getEntityId(), null, EntityType.EXPERIENCE_ORB,
+					new Vec3d(orb.getX(), orb.getY(), orb.getZ()), NO_DIRECTION, NO_DIRECTION);
 			case ClientboundMoveEntityPosPacket move -> ClientboundMoveEntityPos.builder()
 					.entityId(move.getEntityId())
-					.deltaX(move.getMoveX())
-					.deltaY(move.getMoveY())
-					.deltaZ(move.getMoveZ())
+					.delta(new Vec3d(move.getMoveX(), move.getMoveY(), move.getMoveZ()))
 					.build();
 			case ClientboundMoveEntityPosRotPacket move -> ClientboundMoveEntityPosRot.builder()
 					.entityId(move.getEntityId())
-					.deltaX(move.getMoveX())
-					.deltaY(move.getMoveY())
-					.deltaZ(move.getMoveZ())
+					.delta(new Vec3d(move.getMoveX(), move.getMoveY(), move.getMoveZ()))
 					.yaw(move.getYaw())
 					.pitch(move.getPitch())
 					.build();
@@ -113,7 +111,7 @@ final class EntityPackets implements PacketTranslation<Packet> {
 					new ClientboundMoveEntityRot(turn.getEntityId(), turn.getYaw(), turn.getPitch());
 			case ClientboundTeleportEntityPacket teleport -> ClientboundTeleportEntity.builder()
 					.entityId(teleport.getEntityId())
-					.position(new EntityPosition(teleport.getX(), teleport.getY(), teleport.getZ()))
+					.position(new Vec3d(teleport.getX(), teleport.getY(), teleport.getZ()))
 					.yaw(teleport.getYaw())
 					.pitch(teleport.getPitch())
 					.relatives(Set.of())
@@ -139,59 +137,22 @@ final class EntityPackets implements PacketTranslation<Packet> {
 		return null;
 	}
 
-	private ClientboundAddEntity added(ClientboundAddEntityPacket add) {
-		types.put(add.getEntityId(), add.getType());
+	private ClientboundAddEntity added(
+			int entityId,
+			@Nullable UUID uniqueId,
+			EntityType type,
+			Vec3d position,
+			float yaw,
+			float pitch
+	) {
+		types.put(entityId, type);
 		return ClientboundAddEntity.builder()
-				.entityId(add.getEntityId())
-				.uniqueId(add.getUuid())
-				.type(key(add.getType()))
-				.position(new EntityPosition(add.getX(), add.getY(), add.getZ()))
-				.yaw(add.getYaw())
-				.pitch(add.getPitch())
-				.build();
-	}
-
-	private ClientboundAddMob mobAdded(ClientboundAddMobPacket add) {
-		types.put(add.getEntityId(), add.getType());
-		return ClientboundAddMob.builder()
-				.entityId(add.getEntityId())
-				.uniqueId(add.getUuid())
-				.type(key(add.getType()))
-				.position(new EntityPosition(add.getX(), add.getY(), add.getZ()))
-				.yaw(add.getYaw())
-				.pitch(add.getPitch())
-				.build();
-	}
-
-	private ClientboundAddPlayer playerAdded(ClientboundAddPlayerPacket add) {
-		types.put(add.getEntityId(), EntityType.PLAYER);
-		return ClientboundAddPlayer.builder()
-				.entityId(add.getEntityId())
-				.uniqueId(add.getUuid())
-				.position(new EntityPosition(add.getX(), add.getY(), add.getZ()))
-				.yaw(add.getYaw())
-				.pitch(add.getPitch())
-				.build();
-	}
-
-	private ClientboundAddPainting paintingAdded(ClientboundAddPaintingPacket add) {
-		types.put(add.getEntityId(), EntityType.PAINTING);
-		return ClientboundAddPainting.builder()
-				.entityId(add.getEntityId())
-				.uniqueId(add.getUuid())
-				.position(BlockPosition.builder()
-						.x(add.getPosition().getX())
-						.y(add.getPosition().getY())
-						.z(add.getPosition().getZ())
-						.build())
-				.build();
-	}
-
-	private ClientboundAddExperienceOrb orbAdded(ClientboundAddExperienceOrbPacket orb) {
-		types.put(orb.getEntityId(), EntityType.EXPERIENCE_ORB);
-		return ClientboundAddExperienceOrb.builder()
-				.entityId(orb.getEntityId())
-				.position(new EntityPosition(orb.getX(), orb.getY(), orb.getZ()))
+				.entityId(entityId)
+				.uniqueId(uniqueId)
+				.type(ValueTranslator.entityType(type))
+				.position(position)
+				.yaw(yaw)
+				.pitch(pitch)
 				.build();
 	}
 
@@ -204,42 +165,40 @@ final class EntityPackets implements PacketTranslation<Packet> {
 		EntityType type = types.get(entityId);
 		List<EntityDataValue> values = new ArrayList<>();
 		for (EntityMetadata<?, ?> entry : metadata) {
-			EntityDataTable.Field field = EntityDataTable.field(type, entry.getId());
+			EntityDataField field = EntityDataTable.LAYOUT.field(type, entry.getId());
 			EntityDataValue value = field == null ? null : value(field, entry.getValue());
 			if (value != null) values.add(value);
 		}
+
 		return new ClientboundSetEntityData(entityId, List.copyOf(values));
 	}
 
 	/**
-	 * Reads the value an index carries; a value of another kind than the table names, which only a server of another
-	 * release sends, is left out.
+	 * Places a painting at the corner of the block it hangs at.
 	 */
-	private static @Nullable EntityDataValue value(EntityDataTable.Field field, @Nullable Object value) {
+	private static Vec3d corner(Position block) {
+		return new Vec3d(block.getX(), block.getY(), block.getZ());
+	}
+
+	/**
+	 * Reads the value an index carries; a value of another kind than the table names, which only a server of another
+	 * release sends, is left out. The release has no displays, so no index carries a display's text.
+	 */
+	private static @Nullable EntityDataValue value(EntityDataField field, @Nullable Object value) {
 		return switch (field) {
-			case SHARED_FLAGS -> value instanceof Byte flags ? EntityDataTable.sharedFlags(flags) : null;
+			case SHARED_FLAGS -> value instanceof Byte flags ? SharedFlags.of(flags) : null;
 			case CUSTOM_NAME -> value instanceof Optional<?> name ? customName(name) : null;
 			case CUSTOM_NAME_VISIBLE -> value instanceof Boolean visible ? new CustomNameVisible(visible) : null;
-			case SHOWN_ITEM -> value == null || value instanceof ItemStack ? new ShownItem(item((ItemStack) value)) : null;
+			case SHOWN_ITEM -> value == null || value instanceof ItemStack
+					? new ShownItem(ValueTranslator.item((ItemStack) value))
+					: null;
+			case DISPLAY_TEXT -> null;
 		};
 	}
 
 	private static @Nullable CustomName customName(Optional<?> name) {
 		if (name.isEmpty()) return new CustomName(null);
 		if (!(name.get() instanceof Component text)) return null;
-
 		return new CustomName(AdventureText.plain(text));
-	}
-
-	private static me.whereareiam.anvil.protocol.java.api.model.inventory.@Nullable ItemStack item(
-			@Nullable ItemStack stack
-	) {
-		if (stack == null || stack.getAmount() <= 0) return null;
-
-		return new me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack(stack.getId(), stack.getAmount());
-	}
-
-	private static EntityTypeKey key(EntityType type) {
-		return EntityTypeKey.minecraft(type.name().toLowerCase(Locale.ROOT));
 	}
 }

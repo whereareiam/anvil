@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
-import me.whereareiam.anvil.protocol.java.api.model.player.Position;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -8,6 +8,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPos
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundMovePlayerPosRot;
 import me.whereareiam.anvil.protocol.java.api.type.Relative;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.ValueTranslator;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PositionElement;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
@@ -21,9 +22,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Player movement of the MCProtocolLib 1.21.11 release, whose position packet also carries the
- * horizontal collision flag, and the server's placement of the player, which may also name relative velocity. The
- * class also links against the 26.1 release.
+ * Player movement of the MCProtocolLib 1.21.11 release, whose position packet also carries the horizontal collision
+ * flag, and the server's placement of the player, which may also name relative velocity.
  */
 public final class PlayerPackets implements PacketTranslation<Packet> {
 	@Override
@@ -36,9 +36,7 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 		if (!(packet instanceof ClientboundPlayerPositionPacket position)) return null;
 
 		return ClientboundPlayerPosition.builder()
-				.x(position.getPosition().getX())
-				.y(position.getPosition().getY())
-				.z(position.getPosition().getZ())
+				.position(ValueTranslator.vec3d(position.getPosition()))
 				.yaw(position.getYRot())
 				.pitch(position.getXRot())
 				.relatives(relatives(position.getRelatives()))
@@ -49,7 +47,7 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		if (!(packet instanceof ServerboundMovePlayerPosRot move)) return null;
 
-		Position position = move.getPosition();
+		Vec3d position = move.getPosition();
 		return new ServerboundMovePlayerPosRotPacket(move.isOnGround(), move.isHorizontalCollision(),
 				position.getX(), position.getY(), position.getZ(), move.getYaw(), move.getPitch());
 	}

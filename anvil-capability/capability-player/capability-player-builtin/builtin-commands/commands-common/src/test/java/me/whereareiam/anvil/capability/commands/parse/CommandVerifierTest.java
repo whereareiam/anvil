@@ -4,6 +4,7 @@ import me.whereareiam.anvil.capability.commands.model.CommandTree;
 import me.whereareiam.anvil.capability.commands.model.CommandTreeNode;
 import me.whereareiam.anvil.capability.commands.type.CommandCheck;
 import me.whereareiam.anvil.capability.commands.type.CommandNodeType;
+import me.whereareiam.anvil.capability.commands.type.StringArgumentMode;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -61,16 +62,20 @@ class CommandVerifierTest {
 	 */
 	private static CommandTree tree() {
 		List<CommandTreeNode.CommandTreeNodeBuilder> nodes = new ArrayList<>();
-		nodes.add(CommandTreeNode.builder().type(CommandNodeType.ROOT).name("").parser(""));
-		command(nodes, "login", argument("password", "brigadier:string").stringMode("SINGLE_WORD").executable(true));
-		command(nodes, "pass", argument("password", "brigadier:string").stringMode("GREEDY_PHRASE").executable(true));
-		command(nodes, "say", argument("text", "brigadier:string").stringMode("QUOTABLE_PHRASE").executable(true));
+		nodes.add(CommandTreeNode.builder().type(CommandNodeType.ROOT));
+		command(nodes, "login", argument("password", "brigadier:string").stringMode(StringArgumentMode.SINGLE_WORD)
+				.executable(true));
+		command(nodes, "pass", argument("password", "brigadier:string").stringMode(StringArgumentMode.GREEDY_PHRASE)
+				.executable(true));
+		command(nodes, "say", argument("text", "brigadier:string").stringMode(StringArgumentMode.QUOTABLE_PHRASE)
+				.executable(true));
 		command(nodes, "give", argument("amount", "brigadier:integer").min(1D).max(64D).executable(true));
 		command(nodes, "tp", argument("position", "minecraft:block_pos").executable(true));
 		command(nodes, "kill", argument("targets", "minecraft:entity").executable(true));
 		command(nodes, "data", argument("tag", "minecraft:nbt_compound_tag").executable(true));
 		command(nodes, "toggle", argument("value", "brigadier:bool").executable(true));
-		int help = command(nodes, "help", argument("topic", "brigadier:string").stringMode("SINGLE_WORD").executable(true));
+		int help = command(nodes, "help", argument("topic", "brigadier:string")
+				.stringMode(StringArgumentMode.SINGLE_WORD).executable(true));
 		nodes.get(help).executable(true);
 		int msg = command(nodes, "msg", argument("target", "minecraft:entity"));
 		nodes.get(msg + 1).child(add(nodes, argument("message", "minecraft:message").executable(true)));
@@ -81,11 +86,11 @@ class CommandVerifierTest {
 		nodes.get(execute).child(add(nodes, literal("run").redirect(0)));
 		return new CommandTree(nodes.stream().map(CommandTreeNode.CommandTreeNodeBuilder::build).toList(), 0);
 	}
-
 	private static int command(List<CommandTreeNode.CommandTreeNodeBuilder> nodes, String name, CommandTreeNode.CommandTreeNodeBuilder argument) {
 		int literal = add(nodes, literal(name));
 		nodes.getFirst().child(literal);
 		nodes.get(literal).child(add(nodes, argument));
+
 		return literal;
 	}
 
@@ -95,7 +100,7 @@ class CommandVerifierTest {
 	}
 
 	private static CommandTreeNode.CommandTreeNodeBuilder literal(String name) {
-		return CommandTreeNode.builder().type(CommandNodeType.LITERAL).name(name).parser("");
+		return CommandTreeNode.builder().type(CommandNodeType.LITERAL).name(name);
 	}
 
 	private static CommandTreeNode.CommandTreeNodeBuilder argument(String name, String parser) {

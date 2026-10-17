@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.player;
 
 import lombok.Builder;
 import lombok.Value;
-import me.whereareiam.anvil.protocol.java.api.model.player.Position;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,7 +15,7 @@ public class ServerboundMovePlayerPosRot implements ServerboundPacket {
 	/**
 	 * The position of the player's feet.
 	 */
-	@NotNull Position position;
+	@NotNull Vec3d position;
 	/**
 	 * The horizontal view direction in degrees.
 	 */

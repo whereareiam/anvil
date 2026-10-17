@@ -136,8 +136,9 @@ requested. A player without a channel composes every provider that accepts its l
 A native worker loads the `WorkerExtension` implementations on its class path through `ServiceLoader`. It installs
 those that target its library, or every library, and accept its native session type, and binds each of them to
 every player: your worker player implements `PlayerBindingContext<S>`, which supplies the current native session,
-generation-scoped listener registration through `bindNativeSession(...)`, typed event emission, and the
-release-specific adapter of a port through `adapter(Class)`. The worker registers each extension's typed
+generation-scoped listener registration through `bindNativeSession(...)`, on which the default
+`bindConnection(...)` that protocol extensions use is built, typed event emission, and the release-specific adapter
+of a port through `adapter(Class)`. The worker registers each extension's typed
 handlers through its own `OperationRegistry`, accepts registrations only while binding, and reports an extension
 that fails to link or finds no adapter as unavailable with the reason. MCProtocol's worker transport and dispatch
 remain private implementation details of that library.
