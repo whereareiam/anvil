@@ -1,15 +1,15 @@
 package me.whereareiam.anvil.capability.dialogs;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.capability.api.channel.OperationRegistry;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.Dialog;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.RegistryDialog;
 import me.whereareiam.anvil.capability.dialogs.packet.DialogsPacketListener;
 import me.whereareiam.anvil.capability.dialogs.packet.DialogsPackets;
 import me.whereareiam.anvil.capability.dialogs.screen.DialogRegistry;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerBinding;
+import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
+import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

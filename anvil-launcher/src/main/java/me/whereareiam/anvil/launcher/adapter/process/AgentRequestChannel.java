@@ -3,9 +3,9 @@ package me.whereareiam.anvil.launcher.adapter.process;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.agent.client.api.connection.AgentConnection;
 import me.whereareiam.anvil.agent.client.api.exception.AgentUnavailableException;
-import me.whereareiam.anvil.capability.api.channel.RequestChannel;
 import me.whereareiam.anvil.capability.api.exception.ChannelUnavailableException;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
+import me.whereareiam.anvil.capability.api.process.RequestChannel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

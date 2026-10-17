@@ -78,7 +78,7 @@ public interface ProtocolPlayer {
 	@NotNull <T> Optional<T> findService(@NotNull Class<T> type);
 
 	/**
-	 * Returns the typed capability channel when the library supports native worker operations.
+	 * Returns the typed player channel when the library supports native worker operations.
 	 *
 	 * @return channel when available
 	 */

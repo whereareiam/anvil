@@ -3,9 +3,13 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolSubscription;
-import me.whereareiam.anvil.protocol.api.worker.NativePlayer;
+import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
+import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
+import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
@@ -13,12 +17,11 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientCredentials;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
-import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerCapabilities;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerCredentials;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerCapabilities;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerProfile;
-import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerPlayerEvent;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageWriter;
 import org.jetbrains.annotations.NotNull;
@@ -32,13 +35,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 /**
- * Core player state shared with worker capabilities through a narrow provider API. Native sessions come from
- * the release's client segment and stay opaque here; this player owns their generations, the connection
+ * One worker player, which binds the worker's extensions as their {@code PlayerBindingContext}. Native sessions come
+ * from the release's client segment and stay opaque here; this player owns their generations, the connection
  * events and the view rotation. Adapters come from the worker's verified segments.
  */
 @RequiredArgsConstructor
 @Accessors(fluent = true)
-final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
+final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoCloseable {
 	private static final String CLIENT_LOCALE = "en_us";
 	private static final int VIEW_DISTANCE = 8;
 	/**
@@ -66,8 +69,7 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 
 	private WorkerCapabilityRegistry.PlayerBindings bindings;
 	private volatile @Nullable Object session;
-	private volatile float yaw;
-	private volatile float pitch;
+	private volatile @NotNull ViewRotation rotation = new ViewRotation(0, 0);
 
 	/**
 	 * Binds the worker's capabilities to this player.
@@ -168,29 +170,23 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 	}
 
 	@Override
-	public synchronized @NotNull ProtocolSubscription bindNativeSession(@NotNull Function<Object, ProtocolSubscription> listener) {
+	public synchronized @NotNull Subscription bindNativeSession(@NotNull Function<Object, Subscription> listener) {
 		return nativeBindings.register(listener);
 	}
 
 	@Override
-	public void emit(@NotNull String event, byte @NotNull [] payload) {
-		events.event(id, event, WorkerMessageCodec.message(payload));
+	public <E> void emit(@NotNull EventDescriptor<E> event, @Nullable E payload) {
+		events.event(id, event.getId(), codec.envelope(event.getPayloadType().cast(payload)));
 	}
 
 	@Override
-	public float yaw() {
-		return yaw;
+	public @NotNull ViewRotation viewRotation() {
+		return rotation;
 	}
 
 	@Override
-	public float pitch() {
-		return pitch;
-	}
-
-	@Override
-	public void view(float yaw, float pitch) {
-		this.yaw = yaw;
-		this.pitch = pitch;
+	public void viewRotation(@NotNull ViewRotation rotation) {
+		this.rotation = rotation;
 	}
 
 	@Override
@@ -215,13 +211,14 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 		@Override
 		public void loggedIn(@NotNull Object current, @NotNull ClientProfile granted) {
 			if (current != session) return;
-			emit(WorkerPlayerEvent.CONNECTION.getWireName(), codec.connected(granted));
+			PlayerProfile profile = new PlayerProfile(granted.getName(), granted.getUniqueId());
+			emit(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(true, null, null, profile));
 		}
 
 		@Override
 		public void teleported(@NotNull Object current, float yaw, float pitch) {
 			if (current != session) return;
-			view(yaw, pitch);
+			viewRotation(new ViewRotation(yaw, pitch));
 		}
 
 		@Override
@@ -243,7 +240,7 @@ final class McProtocolPlayer implements NativePlayer<Object>, AutoCloseable {
 		private void report(Object current, DisconnectCause cause, String reason) {
 			if (current != session) return;
 			if (!disconnectNotified.compareAndSet(false, true)) return;
-			emit(WorkerPlayerEvent.CONNECTION.getWireName(), codec.disconnected(cause, reason));
+			emit(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(false, reason, cause, null));
 		}
 	}
 }

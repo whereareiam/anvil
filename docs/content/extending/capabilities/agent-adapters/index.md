@@ -24,7 +24,7 @@ import com.example.echo.Echo;
 import com.example.echo.operation.EchoOperations;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityContext;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider;
-import me.whereareiam.anvil.capability.api.channel.RequestChannel;
+import me.whereareiam.anvil.capability.api.process.RequestChannel;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import org.jetbrains.annotations.NotNull;
@@ -60,7 +60,7 @@ public final class EchoProvider implements AgentProcessCapabilityProvider<Echo> 
 The host channel descriptor derives its name and payload types from the shared `AgentOperation`
 once. Both ends therefore use the same operation contract without duplicating its ID or schemas.
 `RequestChannel` supplies typed request/response calls; player events and worker capability discovery
-belong to `capability-protocol-api`. Use a `Void` request schema with a `null` request for an
+belong to the player's `ProtocolChannel` in `protocol-api`. Use a `Void` request schema with a `null` request for an
 operation without input. The operation's contract determines whether its response may be `null`.
 
 Add `src/main/resources/META-INF/services/me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider`

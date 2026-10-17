@@ -2,11 +2,11 @@ package me.whereareiam.anvil.capability.dialogs;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.dialogs.model.click.DialogClick;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.Dialog;
 import me.whereareiam.anvil.capability.dialogs.screen.DialogRegistry;
-import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
+import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 
 /**
  * Typed dialogs operations and events shared by the host dialogs capability and the worker's dialogs binding.
@@ -16,7 +16,9 @@ public final class DialogsOperations {
 	/**
 	 * Sends what the client sends for a pressed dialog button.
 	 */
-	public static final ChannelOperation<DialogClick, Void> CLICK = new ChannelOperation<>("dialogs.click", DialogClick.class, Void.class);
+	public static final OperationDescriptor<DialogClick, Void> CLICK = new OperationDescriptor<>(
+			"dialogs.click", DialogClick.class, Void.class
+	);
 	/**
 	 * A dialog the player's current native session was shown.
 	 */
@@ -32,5 +34,7 @@ public final class DialogsOperations {
 	/**
 	 * The dialog registry the server sent during configuration.
 	 */
-	public static final EventDescriptor<DialogRegistry> REGISTRY = new EventDescriptor<>("dialogs.registry", DialogRegistry.class);
+	public static final EventDescriptor<DialogRegistry> REGISTRY = new EventDescriptor<>(
+			"dialogs.registry", DialogRegistry.class
+	);
 }

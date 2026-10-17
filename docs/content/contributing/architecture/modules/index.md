@@ -158,23 +158,22 @@ A family that reads its processes through their agents, such as dispatch or play
 processes.
 
 Capability providers share `CapabilityProvider`, `CapabilityContext`, and `CapabilityDescriptor`
-from `capability-api`. Its `RequestChannel` performs typed calls described by `ChannelOperation`, and `OperationRegistry`
-registers handlers for those same descriptors.
-The shared `capability.api.player` package contains `PlayerCapabilityProvider`,
-`PlayerCapabilityContext`, and `CapabilityPlayer`: player identity/version, the requested and granted
-profiles, the connection, declared dependencies, and lifetime.
+from `capability-api`. Its `RequestChannel` performs a process's typed calls described by `ChannelOperation`; a
+player's channel uses `player-api`'s own `OperationDescriptor`, because capability APIs never reach into the
+player family's contracts the other way.
+The shared `capability.api.player` package contains `PlayerCapabilityProvider` and
+`PlayerCapabilityContext`: player identity/version, the requested and granted profiles, the connection,
+declared dependencies, and lifetime.
 
-The mechanism APIs add only the access their providers need. `capability-player-api` groups
-protocol player factories, channels/events, and native worker contracts under
-`capability.protocol.api.player`. `PlayerConnectionEvent` lives under
-`capability.protocol.api.model.player`. `ViewRotation` and `EventDescriptor<E>` live directly under
-`capability.protocol.api.model`: the former holds yaw and pitch, and the latter pairs an event ID
-with the class of its payload. Publishers and
-subscribers share the descriptor; each emitted `PlayerConnectionEvent` is a separate payload value.
-`PlayerBindingContext` remains in the worker package
-because it supplies native SDK/lifecycle access during binding. `capability-process-api` groups native
-request factories under `capability.agent.api.process`. Both mechanism APIs depend on
-`capability-api`, without exposing the other mechanism or an agent transport API.
+The mechanism APIs add only the access their providers need. `capability-player-api` groups protocol player
+factories and their context under `capability.protocol.api.player`; the context hands a provider the player's
+`ProtocolChannel` from `player-api`. The player family owns that channel and the worker contracts: `player-api`
+holds `WorkerExtension`, `PlayerBindingContext`, `OperationRegistry` and `WorkerBinding` under
+`protocol.api.worker`, `OperationDescriptor<Q, R>` and `EventDescriptor<E>` under `protocol.api.model.channel`,
+and `PlayerConnectionEvent` and `ViewRotation` under `protocol.api.model.player`. A descriptor pairs an ID with
+the classes of its payloads; publishers and subscribers share it, and each emitted event is a separate payload
+value. `capability-process-api` groups native request factories under `capability.agent.api.process`. Both
+mechanism APIs depend on `capability-api`, without exposing the other mechanism or an agent transport API.
 
 Agent transport and native handlers have separate contracts. `agent-client-api`, in `agent.client.api`,
 contains clients, connections, directories, and artifact lookup. `agent-server-api`, in
@@ -241,8 +240,8 @@ configuration writer and a distribution resolver remain concrete within their ow
 Assembly modules can bind and package implementations. Keep service construction in the launcher and
 external integrations in `anvil-integration`. Classifying an ordinary implementation as an assembly
 does not resolve a misplaced dependency. Service descriptors belong with the implementation or
-assembly that supplies the service, and shading must merge them. Feature wiring bundles register
-capability/worker bridges; the native feature implementation consumes its own API and actual SDK.
+assembly that supplies the service, and shading must merge them. Feature wiring bundles register their
+providers and worker extensions; the native feature implementation consumes its own API and actual SDK.
 
 ## Consume a scoped API directly
 

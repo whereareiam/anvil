@@ -10,10 +10,12 @@ dependencies {
 	compileOnly(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi)
 	compileOnly(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinCommands.commandsApi)
 	compileOnly(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinDialogs.dialogsApi)
+	compileOnly(projects.anvilPlayer.playerApi)
 
 	testImplementation(projects.anvilApi)
 	testImplementation(projects.anvilCapability.capabilityApi)
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi)
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinCommands.commandsApi)
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinDialogs.dialogsApi)
+	testImplementation(projects.anvilPlayer.playerApi)
 }

@@ -8,7 +8,7 @@ import me.whereareiam.anvil.capability.cookies.exchange.CookieKeys;
 import me.whereareiam.anvil.capability.cookies.exchange.HeldCookies;
 import me.whereareiam.anvil.capability.cookies.exchange.StoredCookie;
 import me.whereareiam.anvil.capability.cookies.model.CookieRequest;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,11 +26,11 @@ import java.util.function.Predicate;
  * makes go to the binding. The channel releases the event subscriptions together with the player.
  */
 final class ChannelCookies implements Cookies {
-	private final CapabilityChannel channel;
+	private final ProtocolChannel channel;
 	private final CopyOnWriteArrayList<CookieRequest> requests = new CopyOnWriteArrayList<>();
 	private volatile @Nullable HeldCookies held;
 
-	ChannelCookies(@NotNull CapabilityChannel channel) {
+	ChannelCookies(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
 		channel.subscribe(CookiesOperations.REQUESTED, request -> requests.add(new CookieRequest(request.getKey(), request.getAnswer())));
 		channel.subscribe(CookiesOperations.HELD, this::hold);

@@ -3,8 +3,8 @@ package me.whereareiam.anvil.capability.sounds;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.api.history.HistoryCursor;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
 import me.whereareiam.anvil.capability.sounds.model.HeardSound;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -18,10 +18,10 @@ import java.util.function.Predicate;
  * player's history, across reconnects. The channel releases the event subscription together with the player.
  */
 final class ChannelSounds implements Sounds {
-	private final CapabilityChannel channel;
+	private final ProtocolChannel channel;
 	private final CopyOnWriteArrayList<HeardSound> history = new CopyOnWriteArrayList<>();
 
-	ChannelSounds(@NotNull CapabilityChannel channel) {
+	ChannelSounds(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
 		channel.subscribe(SoundsOperations.HEARD, history::add);
 	}

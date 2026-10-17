@@ -1,13 +1,13 @@
 package me.whereareiam.anvil.capability.screen.mcprotocol;
 
-import me.whereareiam.anvil.capability.api.channel.OperationRegistry;
-import me.whereareiam.anvil.capability.protocol.api.exception.AdapterUnavailableException;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerBinding;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerExtension;
 import me.whereareiam.anvil.capability.screen.ScreenBinding;
 import me.whereareiam.anvil.capability.screen.ScreenProvider;
 import me.whereareiam.anvil.capability.screen.packet.ScreenPackets;
+import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
+import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
+import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;

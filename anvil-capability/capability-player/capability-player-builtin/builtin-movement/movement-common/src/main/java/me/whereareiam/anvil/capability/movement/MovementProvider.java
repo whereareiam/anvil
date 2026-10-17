@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.movement;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
@@ -38,7 +38,7 @@ public final class MovementProvider implements ProtocolPlayerCapabilityProvider<
 
 	@Override
 	public @NotNull Movement create(@NotNull ProtocolPlayerCapabilityContext context) {
-		CapabilityChannel channel = context.channel();
+		ProtocolChannel channel = context.channel();
 		return position -> channel.request(MovementOperations.MOVE, position);
 	}
 }

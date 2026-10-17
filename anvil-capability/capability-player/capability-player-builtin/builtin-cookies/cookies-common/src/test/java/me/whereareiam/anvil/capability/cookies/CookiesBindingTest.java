@@ -1,18 +1,18 @@
 package me.whereareiam.anvil.capability.cookies;
 
-import me.whereareiam.anvil.capability.api.channel.OperationRegistry;
-import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.cookies.exchange.AnsweredRequest;
 import me.whereareiam.anvil.capability.cookies.exchange.CookieKey;
 import me.whereareiam.anvil.capability.cookies.exchange.HeldCookies;
 import me.whereareiam.anvil.capability.cookies.exchange.StoredCookie;
 import me.whereareiam.anvil.capability.cookies.packet.CookiesPacketListener;
 import me.whereareiam.anvil.capability.cookies.packet.CookiesPackets;
-import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
-import me.whereareiam.anvil.capability.protocol.api.model.ViewRotation;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerBinding;
+import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
+import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
+import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -230,12 +230,12 @@ class CookiesBindingTest {
 
 		@Override
 		@SuppressWarnings("unchecked")
-		public <Q, R> void register(@NotNull ChannelOperation<Q, R> channelOperation, @NotNull Function<Q, R> handler) {
-			handlers.put(channelOperation.getId(), (Function<Object, Object>) handler);
+		public <Q, R> void register(@NotNull OperationDescriptor<Q, R> operation, @NotNull Function<Q, R> handler) {
+			handlers.put(operation.getId(), (Function<Object, Object>) handler);
 		}
 
 		@SuppressWarnings("unchecked")
-		private <Q, R> R execute(ChannelOperation<Q, R> operation, Q request) {
+		private <Q, R> R execute(OperationDescriptor<Q, R> operation, Q request) {
 			return (R) handlers.get(operation.getId()).apply(request);
 		}
 	}

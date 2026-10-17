@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.api.history.HistoryCursor;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -19,10 +19,10 @@ import java.util.function.Predicate;
  * channel releases the event subscription together with the player.
  */
 final class ChannelMessages implements Messages {
-	private final CapabilityChannel channel;
+	private final ProtocolChannel channel;
 	private final CopyOnWriteArrayList<String> history = new CopyOnWriteArrayList<>();
 
-	ChannelMessages(@NotNull CapabilityChannel channel) {
+	ChannelMessages(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
 		channel.subscribe(MessagesOperations.RECEIVED, message -> history.add(message.getText()));
 	}

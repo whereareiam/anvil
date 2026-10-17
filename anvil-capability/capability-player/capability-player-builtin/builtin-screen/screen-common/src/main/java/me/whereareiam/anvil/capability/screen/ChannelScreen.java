@@ -3,11 +3,11 @@ package me.whereareiam.anvil.capability.screen;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.api.history.HistoryCursor;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
 import me.whereareiam.anvil.capability.screen.model.BossBar;
 import me.whereareiam.anvil.capability.screen.model.BossBarEvent;
 import me.whereareiam.anvil.capability.screen.model.Title;
 import me.whereareiam.anvil.capability.screen.type.BossBarChange;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -27,12 +27,12 @@ import java.util.function.Supplier;
  * with the player.
  */
 final class ChannelScreen implements Screen {
-	private final CapabilityChannel channel;
+	private final ProtocolChannel channel;
 	private final CopyOnWriteArrayList<Title> titles = new CopyOnWriteArrayList<>();
 	private final CopyOnWriteArrayList<String> actionBars = new CopyOnWriteArrayList<>();
 	private final CopyOnWriteArrayList<BossBarEvent> bossBarEvents = new CopyOnWriteArrayList<>();
 
-	ChannelScreen(@NotNull CapabilityChannel channel) {
+	ChannelScreen(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
 		channel.subscribe(ScreenOperations.TITLE, titles::add);
 		channel.subscribe(ScreenOperations.ACTION_BAR, actionBars::add);

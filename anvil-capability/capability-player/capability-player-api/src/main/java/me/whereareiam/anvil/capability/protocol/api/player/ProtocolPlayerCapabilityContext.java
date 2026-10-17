@@ -2,7 +2,7 @@ package me.whereareiam.anvil.capability.protocol.api.player;
 
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityContext;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -18,11 +18,11 @@ public interface ProtocolPlayerCapabilityContext extends PlayerCapabilityContext
 	 * @return native operation channel
 	 * @throws CapabilityException when the library has no channel
 	 */
-	@NotNull CapabilityChannel channel();
+	@NotNull ProtocolChannel channel();
 
 	/**
-	 * Finds an explicitly supplied external library service. Anvil family services
-	 * are connected through assembly adapters and are not supplied through this hook.
+	 * Finds an explicitly supplied external library service. Anvil's own player contracts, such as the channel, are
+	 * not supplied through this hook.
 	 *
 	 * @param type external library service type
 	 * @param <T> service type

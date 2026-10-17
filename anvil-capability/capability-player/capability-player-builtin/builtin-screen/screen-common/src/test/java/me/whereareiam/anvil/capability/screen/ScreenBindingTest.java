@@ -1,12 +1,5 @@
 package me.whereareiam.anvil.capability.screen;
 
-import me.whereareiam.anvil.capability.api.channel.OperationRegistry;
-import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
-import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
-import me.whereareiam.anvil.capability.protocol.api.model.ViewRotation;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerBinding;
 import me.whereareiam.anvil.capability.screen.model.BossBar;
 import me.whereareiam.anvil.capability.screen.model.BossBarEvent;
 import me.whereareiam.anvil.capability.screen.model.Title;
@@ -16,6 +9,13 @@ import me.whereareiam.anvil.capability.screen.packet.TitlePacketListener;
 import me.whereareiam.anvil.capability.screen.type.BossBarChange;
 import me.whereareiam.anvil.capability.screen.type.BossBarColor;
 import me.whereareiam.anvil.capability.screen.type.BossBarOverlay;
+import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
+import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
+import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -297,8 +297,8 @@ class ScreenBindingTest {
 		private final List<String> registered = new ArrayList<>();
 
 		@Override
-		public <Q, R> void register(@NotNull ChannelOperation<Q, R> channelOperation, @NotNull Function<Q, R> handler) {
-			registered.add(channelOperation.getId());
+		public <Q, R> void register(@NotNull OperationDescriptor<Q, R> operation, @NotNull Function<Q, R> handler) {
+			registered.add(operation.getId());
 		}
 	}
 

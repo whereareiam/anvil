@@ -1,0 +1,29 @@
+package me.whereareiam.anvil.capability.api.process;
+
+import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+/**
+ * Invokes typed operations through a borrowed capability request channel.
+ * The channel's supplier owns serialization, transport, and connection lifetime. An operation can
+ * be unavailable while its process restarts, which a request reports as
+ * {@link me.whereareiam.anvil.capability.api.exception.ChannelUnavailableException}; this contract does not expose
+ * connection management or imply event-subscription support.
+ */
+public interface RequestChannel {
+	/**
+	 * Executes a registered operation using its declared request and response schemas.
+	 * The operation and the channel's supplier define whether an absent response is valid. A capability that
+	 * requires a result must reject its absence; connection access is not exposed by this contract.
+	 *
+	 * @param channelOperation namespaced operation and its schemas
+	 * @param request request value, or {@code null} for a {@link Void} request
+	 * @param <Q> request type
+	 * @param <R> response type
+	 * @return decoded response, or {@code null} when the operation returns no value
+	 * @throws me.whereareiam.anvil.capability.api.exception.ChannelUnavailableException when the channel cannot
+	 *         send the request now
+	 */
+	@Nullable <Q, R> R request(@NotNull ChannelOperation<Q, R> channelOperation, @Nullable Q request);
+}

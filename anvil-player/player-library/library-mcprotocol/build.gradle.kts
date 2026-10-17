@@ -20,6 +20,7 @@ dependencies {
 
 	implementation(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolApi)
 	implementation(libs.jackson.databind)
+	implementation(libs.jackson.parameters)
 	implementation(libs.jackson.toml)
 	implementation(libs.minecraft.auth)
 	implementation(libs.slf4j.api)

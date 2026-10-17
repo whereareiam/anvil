@@ -2,7 +2,7 @@ package me.whereareiam.anvil.capability.cookies;
 
 import me.whereareiam.anvil.capability.cookies.exchange.AnsweredRequest;
 import me.whereareiam.anvil.capability.cookies.exchange.HeldCookies;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
+import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

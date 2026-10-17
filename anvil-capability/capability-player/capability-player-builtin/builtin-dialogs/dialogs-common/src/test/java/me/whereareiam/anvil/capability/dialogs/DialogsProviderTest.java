@@ -3,14 +3,14 @@ package me.whereareiam.anvil.capability.dialogs;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
-import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.commands.Commands;
 import me.whereareiam.anvil.capability.commands.model.CommandTree;
 import me.whereareiam.anvil.capability.commands.type.CommandCheck;
-import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
-import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -55,14 +55,14 @@ class DialogsProviderTest {
 	/**
 	 * Records requests and subscriptions without delivering events.
 	 */
-	private static final class RecordingChannel implements CapabilityChannel {
+	private static final class RecordingChannel implements ProtocolChannel {
 		private final List<String> requests = new ArrayList<>();
 		private final List<Object> payloads = new ArrayList<>();
 		private final List<String> subscriptions = new ArrayList<>();
 
 		@Override
-		public <Q, R> @Nullable R request(@NotNull ChannelOperation<Q, R> channelOperation, @Nullable Q request) {
-			requests.add(channelOperation.getId());
+		public <Q, R> @Nullable R request(@NotNull OperationDescriptor<Q, R> operation, @Nullable Q request) {
+			requests.add(operation.getId());
 			payloads.add(request);
 			return null;
 		}
@@ -104,7 +104,7 @@ class DialogsProviderTest {
 	/**
 	 * Supplies the channel and the player's commands; dialogs need no services or observations.
 	 */
-	private record ChannelContext(CapabilityChannel channel) implements ProtocolPlayerCapabilityContext {
+	private record ChannelContext(ProtocolChannel channel) implements ProtocolPlayerCapabilityContext {
 		@Override
 		public @NotNull <T> Optional<T> findService(@NotNull Class<T> type) {
 			return Optional.empty();

@@ -1,17 +1,16 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
-import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.protocol.api.model.NativeWorkerContext;
+import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
+import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerCredentials;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerEvent;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerProfile;
-import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerEvent;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.fixture.RecordingClient;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageWriter;
@@ -28,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class McProtocolPlayerTest {
 	private final ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -58,7 +56,7 @@ class McProtocolPlayerTest {
 	}
 
 	@Test
-	void reportsConnectionEventsAndViewOnlyForTheCurrentSession() throws Exception {
+	void reportsConnectionEventsAndViewOnlyForTheCurrentSession() {
 		try (McProtocolPlayer player = player(null)) {
 			player.connect();
 			Object first = client.sessions().getFirst();
@@ -73,17 +71,12 @@ class McProtocolPlayerTest {
 			client.listener(second).disconnected(second, DisconnectCause.SERVER, "kicked anvil:requested-kick");
 			client.listener(second).disconnected(second, DisconnectCause.CONNECTION_LOST, "closed");
 
-			assertEquals(30, player.yaw());
-			assertEquals(40, player.pitch());
+			assertEquals(new ViewRotation(30, 40), player.viewRotation());
 			assertEquals(List.of("Disconnected by Anvil"), client.disconnects());
-			List<JsonNode> events = events();
-			assertEquals(2, events.size());
-			assertTrue(events.getFirst().path("connected").asBoolean());
-			assertEquals("Alice_Renamed", events.getFirst().path("granted").path("username").asText());
-			assertEquals(uuid.toString(), events.getFirst().path("granted").path("uniqueId").asText());
-			assertTrue(events.get(1).path("granted").isNull());
-			assertEquals("kicked anvil:requested-kick", events.get(1).path("reason").asText());
-			assertEquals("SERVER", events.get(1).path("cause").asText());
+			assertEquals(List.of(
+					new PlayerConnectionEvent(true, null, null, new PlayerProfile("Alice_Renamed", uuid)),
+					new PlayerConnectionEvent(false, "kicked anvil:requested-kick", DisconnectCause.SERVER, null)
+			), events());
 		}
 	}
 
@@ -97,10 +90,7 @@ class McProtocolPlayerTest {
 			client.listener(session).disconnected(session, DisconnectCause.SERVER, "anvil:kicked");
 			Thread.sleep(600);
 
-			List<JsonNode> events = events();
-			assertEquals(1, events.size());
-			assertEquals("anvil:kicked", events.getFirst().path("reason").asText());
-			assertEquals("SERVER", events.getFirst().path("cause").asText());
+			assertEquals(List.of(new PlayerConnectionEvent(false, "anvil:kicked", DisconnectCause.SERVER, null)), events());
 		}
 	}
 
@@ -112,12 +102,12 @@ class McProtocolPlayerTest {
 			client.listener(first).disconnected(first, DisconnectCause.CONNECTION_LOST, "disconnect.endOfStream");
 			assertEquals(List.of(), events());
 			Thread.sleep(600);
-			assertEquals("CONNECTION_LOST", events().getFirst().path("cause").asText());
+			assertEquals(DisconnectCause.CONNECTION_LOST, events().getFirst().getCause());
 
 			player.rejoin();
 			Object second = client.sessions().get(1);
 			client.listener(second).disconnected(second, DisconnectCause.AUTHENTICATION_REQUIRED, "encryption");
-			assertEquals("AUTHENTICATION_REQUIRED", events().get(1).path("cause").asText());
+			assertEquals(DisconnectCause.AUTHENTICATION_REQUIRED, events().get(1).getCause());
 		}
 	}
 
@@ -132,8 +122,6 @@ class McProtocolPlayerTest {
 	}
 
 	private McProtocolPlayer player(String accessToken) {
-		var context = NativeWorkerContext.builder().libraryId("mcprotocol").version(MinecraftVersion.parse("1.21.11"))
-				.protocolNumber(774).nativeSessionType(Object.class).build();
 		var options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder().name("Alice").uniqueId(uuid).build())
 				.credentials(accessToken == null ? null : WorkerCredentials.builder().accessToken(accessToken).build())
@@ -142,7 +130,7 @@ class McProtocolPlayerTest {
 				.build();
 		var player = new McProtocolPlayer("player", options, client, SegmentRoots.none(),
 				new WorkerMessageWriter(new PrintStream(output, true, StandardCharsets.UTF_8)),
-				new WorkerCapabilityRegistry(context, List.of()));
+				new WorkerCapabilityRegistry(Object.class, List.of()));
 		player.initialize();
 		return player;
 	}
@@ -151,15 +139,15 @@ class McProtocolPlayerTest {
 		return ClientProfile.builder().name(name).uniqueId(uuid).build();
 	}
 
-	private List<JsonNode> events() throws Exception {
-		ObjectMapper mapper = new ObjectMapper();
+	private List<PlayerConnectionEvent> events() {
 		WorkerMessageCodec codec = new WorkerMessageCodec();
-		List<JsonNode> events = new ArrayList<>();
+		List<PlayerConnectionEvent> events = new ArrayList<>();
 		for (String line : output.toString(StandardCharsets.UTF_8).lines().toList()) {
 			WorkerEvent event = (WorkerEvent) codec.decodeMessage(line).orElseThrow();
-			assertEquals("player.connection", event.getEvent());
-			events.add(mapper.readTree(codec.messageBytes(event.getPayload())));
+			assertEquals(PlayerConnectionEvent.CHANGED.getId(), event.getEvent());
+			events.add(codec.open(event.getPayload(), PlayerConnectionEvent.class));
 		}
+
 		return events;
 	}
 }

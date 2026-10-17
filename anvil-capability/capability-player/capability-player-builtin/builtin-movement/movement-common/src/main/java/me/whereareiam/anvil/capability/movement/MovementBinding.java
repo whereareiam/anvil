@@ -1,12 +1,12 @@
 package me.whereareiam.anvil.capability.movement;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.capability.api.channel.OperationRegistry;
 import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.capability.movement.packet.MovementPackets;
-import me.whereareiam.anvil.capability.protocol.api.model.ViewRotation;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerBinding;
+import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
+import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
+import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import org.jetbrains.annotations.NotNull;
 
 /**

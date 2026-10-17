@@ -27,7 +27,7 @@ import java.util.function.Function;
  * @param <X> owner-specific provider context
  */
 public final class CapabilityRuntime<C extends Capability, X extends CapabilityContext<C>> {
-	private final List<CapabilityProvider<? extends C, X>> providers;
+	private final List<CapabilityProvider<? extends C, ? super X>> providers;
 
 	/**
 	 * Validates identities, owner types, and dependencies before ordering providers.
@@ -37,7 +37,7 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 	 */
 	public CapabilityRuntime(
 			@NotNull Class<C> ownerType,
-			@NotNull Collection<? extends CapabilityProvider<? extends C, X>> providers
+			@NotNull Collection<? extends CapabilityProvider<? extends C, ? super X>> providers
 	) {
 		this.providers = validateAndOrder(ownerType, providers);
 	}
@@ -83,7 +83,7 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 	) {
 		CapabilitySet<C> capabilities = new CapabilitySet<>(ownerDescription);
 		try {
-			for (CapabilityProvider<? extends C, X> provider : providers) {
+			for (CapabilityProvider<? extends C, ? super X> provider : providers) {
 				String reason = unavailableReason(provider, unavailable, capabilities);
 				if (reason != null) {
 					capabilities.unavailable(provider.capability(), reason);
@@ -106,7 +106,7 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 	}
 
 	private @Nullable String unavailableReason(
-			CapabilityProvider<? extends C, X> provider,
+			CapabilityProvider<? extends C, ? super X> provider,
 			Map<String, String> unavailable,
 			CapabilitySet<C> capabilities
 	) {
@@ -123,7 +123,7 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 	}
 
 	private <T extends C> void create(
-			CapabilityProvider<T, X> provider,
+			CapabilityProvider<T, ? super X> provider,
 			CapabilitySet<C> capabilities,
 			String ownerDescription,
 			Function<CapabilityContext<C>, X> contextFactory
@@ -145,13 +145,13 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 		}
 	}
 
-	private List<CapabilityProvider<? extends C, X>> validateAndOrder(
+	private List<CapabilityProvider<? extends C, ? super X>> validateAndOrder(
 			Class<C> ownerType,
-			Collection<? extends CapabilityProvider<? extends C, X>> candidates
+			Collection<? extends CapabilityProvider<? extends C, ? super X>> candidates
 	) {
-		Map<String, CapabilityProvider<? extends C, X>> byId = new LinkedHashMap<>();
+		Map<String, CapabilityProvider<? extends C, ? super X>> byId = new LinkedHashMap<>();
 		Map<Class<? extends Capability>, String> byCapability = new LinkedHashMap<>();
-		for (CapabilityProvider<? extends C, X> provider : candidates) {
+		for (CapabilityProvider<? extends C, ? super X> provider : candidates) {
 			CapabilityDescriptor descriptor = provider.descriptor();
 			if (descriptor.getId().isBlank())
 				throw new CapabilityException("Anvil provider ID must not be blank: " + provider.getClass().getName());
@@ -162,7 +162,7 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 			for (Class<? extends Capability> dependency : dependencies(descriptor))
 				validateOwnerType(ownerType, dependency, descriptor.getId());
 
-			CapabilityProvider<? extends C, X> duplicate = byId.putIfAbsent(descriptor.getId(), provider);
+			CapabilityProvider<? extends C, ? super X> duplicate = byId.putIfAbsent(descriptor.getId(), provider);
 			if (duplicate != null)
 				throw new CapabilityException("Duplicate Anvil provider ID '" + descriptor.getId() + "': "
 						+ duplicate.getClass().getName() + " and " + provider.getClass().getName());
@@ -172,7 +172,7 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 						+ " is provided by both '" + capabilityOwner + "' and '" + descriptor.getId() + "'");
 		}
 
-		for (CapabilityProvider<? extends C, X> provider : byId.values()) {
+		for (CapabilityProvider<? extends C, ? super X> provider : byId.values()) {
 			Set<Class<? extends Capability>> missing = new LinkedHashSet<>(provider.descriptor().getRequiredCapabilities());
 			missing.removeAll(byCapability.keySet());
 			if (!missing.isEmpty())
@@ -180,7 +180,7 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 						+ "' requires missing capabilities " + missing.stream().map(Class::getName).toList());
 		}
 
-		List<CapabilityProvider<? extends C, X>> ordered = new ArrayList<>();
+		List<CapabilityProvider<? extends C, ? super X>> ordered = new ArrayList<>();
 		Set<String> complete = new LinkedHashSet<>();
 		Set<String> active = new LinkedHashSet<>();
 		Deque<String> path = new ArrayDeque<>();
@@ -208,12 +208,12 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 
 	private void visit(
 			String id,
-			Map<String, CapabilityProvider<? extends C, X>> providers,
+			Map<String, CapabilityProvider<? extends C, ? super X>> providers,
 			Map<Class<? extends Capability>, String> capabilityOwners,
 			Set<String> complete,
 			Set<String> active,
 			Deque<String> path,
-			List<CapabilityProvider<? extends C, X>> ordered
+			List<CapabilityProvider<? extends C, ? super X>> ordered
 	) {
 		if (complete.contains(id)) return;
 		if (!active.add(id)) {
@@ -222,7 +222,7 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 		}
 
 		path.addLast(id);
-		CapabilityProvider<? extends C, X> provider = providers.get(id);
+		CapabilityProvider<? extends C, ? super X> provider = providers.get(id);
 		for (Class<? extends Capability> dependency : dependencies(provider.descriptor())) {
 			String owner = capabilityOwners.get(dependency);
 			if (owner != null) visit(owner, providers, capabilityOwners, complete, active, path, ordered);

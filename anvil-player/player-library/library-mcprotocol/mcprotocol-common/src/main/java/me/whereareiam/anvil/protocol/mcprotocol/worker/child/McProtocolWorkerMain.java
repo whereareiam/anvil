@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.protocol.api.model.NativeWorkerContext;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageWriter;
 import org.jetbrains.annotations.NotNull;
@@ -28,13 +27,7 @@ public final class McProtocolWorkerMain {
 		int actual = client.protocolNumber();
 		if (expected != actual) throw new IllegalStateException("Expected protocol " + expected + " but loaded " + actual);
 
-		NativeWorkerContext context = NativeWorkerContext.builder()
-				.libraryId(McProtocolClient.LIBRARY_ID)
-				.version(version)
-				.protocolNumber(actual)
-				.nativeSessionType(client.sessionType())
-				.build();
-		WorkerCapabilityRegistry capabilities = WorkerCapabilityRegistry.discover(context);
+		WorkerCapabilityRegistry capabilities = WorkerCapabilityRegistry.discover(client.sessionType());
 		WorkerMessageWriter responses = new WorkerMessageWriter(System.out);
 		try (McProtocolWorker worker = new McProtocolWorker(client, segments, capabilities, responses)) {
 			responses.ready(version.toString(), actual, segments.selected(), capabilities.capabilities(), capabilities.unavailable());

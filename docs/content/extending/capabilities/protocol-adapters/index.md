@@ -1,16 +1,17 @@
 ---
 title: Protocol adapters
-description: Connect a typed capability channel to a worker extension and to release-specific code for each library release.
+description: Connect a player's typed protocol channel to a worker extension and to release-specific code for each library release.
 ---
 
 Use a protocol adapter for behavior carried by the native player's connection. Keep your public
 capability and request models in a feature API, depending on `me.whereareiam.anvil:api`. Put provider
 and worker registration in the wiring artifact, which adds `me.whereareiam.anvil:capability-protocol-api`.
 
-Host providers call `ProtocolPlayerCapabilityContext.channel()`. Worker extensions implement
-`WorkerExtension` from the protocol capability API. Its `bind` method receives a
+Host providers call `ProtocolPlayerCapabilityContext.channel()`, which returns the player's typed
+`ProtocolChannel`. Worker extensions implement `WorkerExtension` from the player API,
+`me.whereareiam.anvil:protocol-api`, which `capability-protocol-api` brings along. Its `bind` method receives a
 `PlayerBindingContext` for the player's native session and lifecycle, and an `OperationRegistry` for
-typed handlers. The runtime owns serialization and transport; your extension owns the operations,
+typed handlers. The protocol library owns serialization and transport; your extension owns the operations,
 the per-player state, and the listeners.
 
 Packet classes differ between releases of a client library. MCProtocolLib, for example, renamed its
@@ -47,7 +48,7 @@ public class RoundTripRequest {
 ```java
 package com.example.roundtrip;
 
-import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
+import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 
 /**
  * Shared descriptors used by the host provider and native worker extension.
@@ -56,7 +57,7 @@ public final class RoundTripOperations {
 	/**
 	 * Returns the request message from the worker.
 	 */
-	public static final ChannelOperation<RoundTripRequest, String> ROUNDTRIP = new ChannelOperation<>(
+	public static final OperationDescriptor<RoundTripRequest, String> ROUNDTRIP = new OperationDescriptor<>(
 			"com.example.roundtrip.message.v1", RoundTripRequest.class, String.class
 	);
 }
@@ -70,17 +71,17 @@ models; the bundled codec supports constructors whose parameter names are retain
 ## Bind behavior to a player
 
 Put this registration class in your wiring artifact's `src/main/java/com/example/roundtrip/mcprotocol`
-directory. Its compile dependencies are your feature API and Anvil's `capability-protocol-api`; it does
+directory. Its compile dependencies are your feature API and Anvil's `protocol-api`; it does
 not compile against MCProtocolLib, because it runs on every release.
 
 ```java
 package com.example.roundtrip.mcprotocol;
 
 import com.example.roundtrip.RoundTripOperations;
-import me.whereareiam.anvil.capability.api.channel.OperationRegistry;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.PlayerBindingContext;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerBinding;
-import me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerExtension;
+import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
+import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
+import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -121,10 +122,10 @@ every library's worker. A worker also requires `nativeSessionType()` to accept i
 
 `PlayerBindingContext` supplies the existing player's native session, connection lifecycle, and event
 emission to this binding. Keep the binding's state in the object returned from `bind`.
-`OperationRegistry` accepts the shared descriptor and a typed handler; encoding and decoding stay
-outside the feature implementation.
+`OperationRegistry` accepts the shared descriptor and a typed handler; the worker encodes and decodes the
+values outside the feature implementation.
 
-Create `src/main/resources/META-INF/services/me.whereareiam.anvil.capability.protocol.api.player.worker.WorkerExtension`
+Create `src/main/resources/META-INF/services/me.whereareiam.anvil.protocol.api.worker.WorkerExtension`
 in the wiring artifact containing:
 
 ```text
@@ -134,7 +135,7 @@ com.example.roundtrip.mcprotocol.RoundTripExtension
 The host `ProtocolPlayerCapabilityProvider` needs its own [service descriptor](../../packaging/index.md).
 Give its descriptor the matching capability ID `com.example.roundtrip` and return `Set.of("mcprotocol")`
 from `supportedLibraries()`.
-Obtain `CapabilityChannel channel = context.channel()` from `capability.protocol.api.player.channel` during
+Obtain `ProtocolChannel channel = context.channel()` from `protocol.api.channel` during
 its `create` method and construct the host capability over it. Do not check
 `channel.installedCapabilities()` yourself: composition creates the provider only for players whose worker
 installed `com.example.roundtrip`. For any other player it skips the provider and every provider that
