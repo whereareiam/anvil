@@ -161,6 +161,27 @@ class ExternalAgentOperationTest {
 				List.of(provider(registry -> { }), provider(registry -> { }))));
 	}
 
+	@Test
+	void installsEachProviderWithThePlatformItRunsIn() {
+		TestPlatform platform = new TestPlatform();
+		AtomicReference<PlatformAgent> installedWith = new AtomicReference<>();
+		AgentOperationProvider provider = new AgentOperationProvider() {
+			@Override
+			public @NotNull String id() {
+				return "external.sample";
+			}
+
+			@Override
+			public void install(@NotNull PlatformAgent agent, @NotNull AgentOperationRegistry registry) {
+				installedWith.set(agent);
+			}
+		};
+
+		new PlatformAgentRequestDispatcher(platform, List.of(provider));
+
+		assertSame(platform, installedWith.get());
+	}
+
 	private AgentOperationProvider provider(Consumer<AgentOperationRegistry> install) {
 		return new AgentOperationProvider() {
 			@Override
@@ -169,7 +190,7 @@ class ExternalAgentOperationTest {
 			}
 
 			@Override
-			public void install(@NotNull AgentOperationRegistry registry) {
+			public void install(@NotNull PlatformAgent platform, @NotNull AgentOperationRegistry registry) {
 				install.accept(registry);
 			}
 		};

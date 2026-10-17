@@ -61,7 +61,7 @@ final class PlatformAgentRequestDispatcher {
 				throw new IllegalArgumentException("Duplicate agent operation provider: " + id);
 			Registration registration = new Registration(id);
 			try {
-				provider.install(registration);
+				provider.install(platformAgent, registration);
 			} finally {
 				registration.active = false;
 			}

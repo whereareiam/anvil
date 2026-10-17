@@ -115,6 +115,29 @@ where the consumer retrieves the result:
 | `AgentProcessCapabilityProvider` | `process.capability(Type.class)` | Logical process within the scenario |
 | `AgentPlayerCapabilityProvider` | `player.capability(Type.class)` | Simulated player |
 
+## Install the handlers with the provider
+
+A provider can declare the agent extension JARs its capability needs, so that every scenario installs them
+without a workspace declaration. Return them from `agentExtensions()`, each with the platform IDs of the
+processes that load it and a class the JAR contains:
+
+```java
+@Override
+public @NotNull Set<AgentExtension> agentExtensions() {
+	return Set.of(AgentExtension.builder()
+			.platform(Platforms.PAPER)
+			.platform(Platforms.SPIGOT)
+			.entrypoint("com.example.echo.agent.bukkit.EchoBukkitOperations")
+			.build());
+}
+```
+
+`AgentExtension` belongs to `me.whereareiam.anvil.capability.agent.api.model` and `Platforms` to
+`me.whereareiam.anvil.api.type`. Put the handler JAR on the runtime class path of the tests, for example in
+`anvilRuntimeOnly`: Anvil finds it there by the class and copies it into `plugins/anvil-agent-extensions` of
+every process of those platforms before the process starts. Build one JAR per platform agent when the
+handlers use a platform's SDK, so each process links only against its own.
+
 ## Verify the round trip
 
 Install the host dependency in `anvilImplementation`, install the handler JAR as a workspace asset, and

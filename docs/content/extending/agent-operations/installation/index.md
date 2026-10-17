@@ -5,7 +5,8 @@ description: Package the handler and add it to each target process as a workspac
 
 The managed JVM loads operation JARs from `plugins/anvil-agent-extensions`. Adding a host dependency
 to `anvilImplementation` makes it available to Anvil; install the platform handler separately as a
-workspace asset.
+workspace asset, or let the capability provider declare it (see
+[Agent providers](../../capabilities/agent-adapters/index.md#install-the-handlers-with-the-provider)).
 
 ## Build the JAR
 

@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.agent.server.api.operation;
 
 import me.whereareiam.anvil.agent.api.model.AgentInfo;
+import me.whereareiam.anvil.agent.server.api.PlatformAgent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ServiceLoader;
@@ -31,9 +32,20 @@ public interface AgentOperationProvider {
 	}
 
 	/**
-	 * Registers the operations supplied by this provider.
+	 * Registers the operations supplied by this provider. It runs once when the endpoint starts, before the
+	 * platform's players join, so a provider can also start observing the platform here, for example by
+	 * registering a native listener with the plugin or server it reaches through
+	 * {@link PlatformAgent#requireService(Class)}.
 	 *
+	 * <pre>{@code
+	 * public void install(PlatformAgent platform, AgentOperationRegistry registry) {
+	 *     Server server = platform.requireService(Server.class);
+	 *     registry.register(PLAYERS, (agent, request) -> agent.call(() -> server.getOnlinePlayers().size()));
+	 * }
+	 * }</pre>
+	 *
+	 * @param platform the platform agent the endpoint runs in
 	 * @param registry registration surface restricted to this provider's namespace
 	 */
-	void install(@NotNull AgentOperationRegistry registry);
+	void install(@NotNull PlatformAgent platform, @NotNull AgentOperationRegistry registry);
 }

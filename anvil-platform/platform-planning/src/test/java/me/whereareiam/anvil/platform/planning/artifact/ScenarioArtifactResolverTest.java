@@ -7,12 +7,15 @@ import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.model.workspace.AssetSource;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceAsset;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
+import me.whereareiam.anvil.platform.api.PlatformAgentSource;
 import me.whereareiam.anvil.platform.api.model.PlatformAgentDescriptor;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,10 +40,37 @@ class ScenarioArtifactResolverTest {
 		assertEquals(jar, resolved.getWorkspace().getAssets().getFirst().getSource().getPath());
 		assertTrue(server.getDistribution().isArtifact());
 		assertTrue(workspace.getAssets().getFirst().getSource().isArtifact());
-		WorkspacePlan installed = resolver.installAgent(resolved.getWorkspace(), PlatformAgentDescriptor.builder()
+		WorkspacePlan installed = resolver.installAgent(resolved.getWorkspace(), "test", PlatformAgentDescriptor.builder()
 				.entrypointClassName("test.Agent").build());
 		assertEquals(2, installed.getAssets().size());
 		assertEquals(1, resolved.getWorkspace().getAssets().size());
+	}
+
+	@Test
+	void installsThePlatformsAgentExtensionsWhereTheAgentLoadsThem() throws Exception {
+		Path agent = Files.createFile(temporary.resolve("agent.jar"));
+		Path extension = Files.createFile(temporary.resolve("echo-agent-bukkit.jar"));
+		ScenarioArtifactResolver resolver = new ScenarioArtifactResolver(Map.of(), new PlatformAgentSource() {
+			@Override
+			public @NotNull Path locate(@NotNull PlatformAgentDescriptor descriptor) {
+				return agent;
+			}
+
+			@Override
+			public @NotNull List<Path> extensions(@NotNull String platformId) {
+				return platformId.equals("paper") ? List.of(extension) : List.of();
+			}
+		});
+		PlatformAgentDescriptor descriptor = PlatformAgentDescriptor.builder().entrypointClassName("test.Agent").build();
+
+		WorkspacePlan paper = resolver.installAgent(WorkspacePlan.builder().build(), "paper", descriptor);
+		WorkspacePlan velocity = resolver.installAgent(WorkspacePlan.builder().build(), "velocity", descriptor);
+
+		assertEquals(List.of(Path.of("plugins", "anvil-platform-agent.jar"),
+						Path.of("plugins", "anvil-agent-extensions", "echo-agent-bukkit.jar")),
+				paper.getAssets().stream().map(WorkspaceAsset::getTarget).toList());
+		assertEquals(extension, paper.getAssets().get(1).getSource().getPath());
+		assertEquals(1, velocity.getAssets().size());
 	}
 
 	@Test
