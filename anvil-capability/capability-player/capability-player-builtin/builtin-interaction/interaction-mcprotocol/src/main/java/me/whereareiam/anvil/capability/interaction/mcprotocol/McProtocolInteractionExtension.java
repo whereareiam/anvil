@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.interaction.mcprotocol;
 import me.whereareiam.anvil.capability.interaction.InteractionBinding;
 import me.whereareiam.anvil.capability.interaction.InteractionProvider;
 import me.whereareiam.anvil.capability.interaction.packet.InteractionPackets;
-import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
@@ -36,7 +36,7 @@ public final class McProtocolInteractionExtension implements WorkerExtension<Obj
 	/**
 	 * Installs the interaction operations for one player.
 	 *
-	 * @throws AdapterUnavailableException when no interaction segment serves the worker's release or the segment does
+	 * @throws ProtocolUnavailableException when no interaction segment serves the worker's release or the segment does
 	 * not link against it
 	 */
 	@Override

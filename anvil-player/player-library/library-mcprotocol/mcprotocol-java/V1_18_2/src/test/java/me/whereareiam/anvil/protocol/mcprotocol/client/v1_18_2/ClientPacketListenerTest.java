@@ -1,12 +1,15 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
 import com.github.steveice10.mc.auth.data.GameProfile;
+import com.github.steveice10.mc.protocol.data.game.MessageType;
 import com.github.steveice10.mc.protocol.data.game.entity.player.HandPreference;
 import com.github.steveice10.mc.protocol.data.game.setting.ChatVisibility;
 import com.github.steveice10.mc.protocol.data.game.setting.SkinPart;
 import com.github.steveice10.mc.protocol.data.handshake.HandshakeIntent;
 import com.github.steveice10.mc.protocol.packet.handshake.serverbound.ClientIntentionPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundChatPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundDisconnectPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientInformationPacket;
@@ -17,6 +20,8 @@ import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.event.session.PacketSendingEvent;
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.api.type.DisconnectCause;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -47,8 +52,9 @@ class ClientPacketListenerTest {
 
 	private final List<String> events = new ArrayList<>();
 	private final List<Packet> sent = new ArrayList<>();
+	private final List<ClientboundPacket> received = new ArrayList<>();
 	private final Session session = session();
-	private final ClientPacketListener listener = new ClientPacketListener(LOGIN, new RecordingListener());
+	private final ClientPacketListener listener = new ClientPacketListener(LOGIN, new RecordingListener(), new JavaPackets());
 
 	@Test
 	void answersTheLoginWithClientInformationBeforeReportingItWithTheGrantedProfile() throws Exception {
@@ -90,7 +96,7 @@ class ClientPacketListenerTest {
 				.build();
 		PacketSendingEvent handshake = new PacketSendingEvent(session, new ClientIntentionPacket(1, "127.0.0.1", 25577, HandshakeIntent.LOGIN));
 
-		new ClientPacketListener(virtual, new RecordingListener()).packetSending(handshake);
+		new ClientPacketListener(virtual, new RecordingListener(), new JavaPackets()).packetSending(handshake);
 
 		ClientIntentionPacket announced = assertInstanceOf(ClientIntentionPacket.class, handshake.getPacket());
 		assertEquals("lobby.example.test", announced.getHostname());
@@ -106,6 +112,15 @@ class ClientPacketListenerTest {
 		listener.packetSending(handshake);
 
 		assertSame(intention, handshake.getPacket());
+	}
+
+	@Test
+	void handsEveryTranslatedPacketToTheListenerAndNothingForOthers() {
+		receive(new ClientboundChatPacket(Component.text("anvil:welcome"), MessageType.SYSTEM));
+		receive(new ClientboundKeepAlivePacket(7));
+
+		assertEquals(List.of(new ClientboundSystemChat("anvil:welcome", false)), received);
+		assertEquals(List.of(), events);
 	}
 
 	private void receive(Packet packet) {
@@ -148,6 +163,11 @@ class ClientPacketListenerTest {
 		@Override
 		public void disconnected(@NotNull Session session, @NotNull DisconnectCause cause, @NotNull String reason) {
 			events.add("disconnected " + cause + " " + reason);
+		}
+
+		@Override
+		public void received(@NotNull Session session, @NotNull ClientboundPacket packet) {
+			received.add(packet);
 		}
 	}
 }

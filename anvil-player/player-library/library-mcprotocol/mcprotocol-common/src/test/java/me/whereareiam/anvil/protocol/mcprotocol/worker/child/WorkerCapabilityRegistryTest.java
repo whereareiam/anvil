@@ -8,6 +8,8 @@ import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
+import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerEvent;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
@@ -310,6 +312,50 @@ class WorkerCapabilityRegistryTest {
 		assertEquals(Set.of("first", "second", "broken"), registry.capabilities());
 	}
 
+	@Test
+	void linkageFailuresReleaseTheProtocolListenersTheExtensionAdded() {
+		List<String> received = new ArrayList<>();
+		var registry = new WorkerCapabilityRegistry(Object.class, List.of(
+				new Extension("partial", (player, operations) -> {
+					player.protocol(JavaProtocol.class).listen(ClientboundSystemChat.class, packet -> received.add("partial " + packet.getText()));
+					throw new NoClassDefFoundError("org/example/MissingPacket");
+				}),
+				new Extension("listening", (player, operations) -> player.protocol(JavaProtocol.class)
+						.listen(ClientboundSystemChat.class, packet -> received.add("listening " + packet.getText()))::close)
+		));
+		var client = new RecordingClient();
+
+		try (var player = player(registry, "Alice", OutputStream.nullOutputStream(), client)) {
+			player.initialize();
+			player.connect();
+			Object session = client.sessions().getFirst();
+			client.listener(session).received(session, new ClientboundSystemChat("welcome", false));
+
+			assertEquals(List.of("listening welcome"), received);
+			assertEquals(Set.of("listening"), registry.capabilities());
+			assertEquals(Map.of("partial", "NoClassDefFoundError: org/example/MissingPacket"), registry.unavailable());
+		}
+	}
+
+	@Test
+	void anExtensionAskingForAnotherProtocolIsUnavailableWithTheWorkersReason() {
+		var registry = new WorkerCapabilityRegistry(Object.class, List.of(
+				counter(),
+				new Extension("other-protocol", (player, operations) -> {
+					player.protocol(Runnable.class);
+					return () -> { };
+				})
+		));
+
+		try (var player = player(registry)) {
+			player.initialize();
+
+			assertEquals(Set.of("counter"), registry.capabilities());
+			assertEquals(Map.of("other-protocol", "the mcprotocol worker speaks " + JavaProtocol.class.getName() + ", not java.lang.Runnable"),
+					registry.unavailable());
+		}
+	}
+
 	private int count(WorkerCapabilityRegistry.PlayerBindings bindings) {
 		return codec.open(bindings.execute(COUNT.getId(), codec.envelope(null)), Integer.class);
 	}
@@ -335,12 +381,16 @@ class WorkerCapabilityRegistryTest {
 	}
 
 	private McProtocolPlayer player(WorkerCapabilityRegistry registry, String name, OutputStream events) {
+		return player(registry, name, events, new RecordingClient());
+	}
+
+	private McProtocolPlayer player(WorkerCapabilityRegistry registry, String name, OutputStream events, RecordingClient client) {
 		var options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder().name(name).uniqueId(UUID.randomUUID()).build())
 				.connection(WorkerConnection.builder().host("localhost").port(25565).build())
 				.build();
 
-		return new McProtocolPlayer("player", options, new RecordingClient(), SegmentRoots.none(),
+		return new McProtocolPlayer("player", options, client, SegmentRoots.none(),
 				new WorkerMessageWriter(new PrintStream(events, true, StandardCharsets.UTF_8)), registry);
 	}
 

@@ -19,12 +19,11 @@ import com.github.steveice10.packetlib.event.session.SessionAdapter;
 import com.github.steveice10.packetlib.packet.Packet;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.DisconnectCause;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.mcprotocol.client.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.TranslatableComponent;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -38,6 +37,7 @@ import java.util.Objects;
 final class ClientPacketListener extends SessionAdapter {
 	private final ClientLogin login;
 	private final ClientListener<? super Session> listener;
+	private final JavaPackets packets;
 	private volatile ClientProfile granted;
 
 	@Override
@@ -54,9 +54,12 @@ final class ClientPacketListener extends SessionAdapter {
 			session.send(new ServerboundAcceptTeleportationPacket(position.getTeleportId()));
 		}
 		if (packet instanceof ClientboundDisconnectPacket disconnect)
-			listener.disconnected(session, DisconnectCause.SERVER, plainText(disconnect.getReason()));
+			listener.disconnected(session, DisconnectCause.SERVER, AdventureText.plain(disconnect.getReason()));
 		if (packet instanceof ClientboundLoginDisconnectPacket disconnect)
-			listener.disconnected(session, DisconnectCause.SERVER, plainText(disconnect.getReason()));
+			listener.disconnected(session, DisconnectCause.SERVER, AdventureText.plain(disconnect.getReason()));
+
+		ClientboundPacket translated = packets.decode(packet);
+		if (translated != null) listener.received(session, translated);
 	}
 
 	/**
@@ -84,23 +87,5 @@ final class ClientPacketListener extends SessionAdapter {
 		return event.getCause() instanceof UnexpectedEncryptionException
 				? DisconnectCause.AUTHENTICATION_REQUIRED
 				: DisconnectCause.CONNECTION_LOST;
-	}
-
-	private static String plainText(Component component) {
-		StringBuilder text = new StringBuilder();
-		append(component, text);
-		return text.toString();
-	}
-
-	private static void append(Component component, StringBuilder text) {
-		if (component instanceof TextComponent value) text.append(value.content());
-		if (component instanceof TranslatableComponent value) {
-			text.append(value.key());
-			for (Component argument : value.args()) {
-				text.append(' ');
-				append(argument, text);
-			}
-		}
-		for (Component child : component.children()) append(child, text);
 	}
 }

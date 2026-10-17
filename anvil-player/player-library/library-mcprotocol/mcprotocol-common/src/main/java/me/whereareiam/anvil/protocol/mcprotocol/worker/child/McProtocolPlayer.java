@@ -1,15 +1,17 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
@@ -37,9 +39,9 @@ import java.util.function.Function;
 /**
  * One worker player, which binds the worker's extensions as their {@code PlayerBindingContext}. Native sessions come
  * from the release's client segment and stay opaque here; this player owns their generations, the connection
- * events and the view rotation. Adapters come from the worker's verified segments.
+ * events and the view rotation, and its Java Edition protocol follows the current session. Adapters come from the
+ * worker's verified segments.
  */
-@RequiredArgsConstructor
 @Accessors(fluent = true)
 final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoCloseable {
 	private static final String CLIENT_LOCALE = "en_us";
@@ -61,6 +63,7 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	private final WorkerSegments segments;
 	private final WorkerMessageWriter events;
 	private final WorkerCapabilityRegistry capabilities;
+	private final JavaPacketChannel protocol;
 
 	private final @NotNull WorkerMessageCodec codec = new WorkerMessageCodec();
 	private final AtomicBoolean disconnectNotified = new AtomicBoolean();
@@ -70,6 +73,23 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	private WorkerCapabilityRegistry.PlayerBindings bindings;
 	private volatile @Nullable Object session;
 	private volatile @NotNull ViewRotation rotation = new ViewRotation(0, 0);
+
+	McProtocolPlayer(
+			String id,
+			@NotNull WorkerPlayerOptions options,
+			McProtocolClient<Object> client,
+			WorkerSegments segments,
+			WorkerMessageWriter events,
+			WorkerCapabilityRegistry capabilities
+	) {
+		this.id = id;
+		this.options = options;
+		this.client = client;
+		this.segments = segments;
+		this.events = events;
+		this.capabilities = capabilities;
+		this.protocol = new JavaPacketChannel(client, this::nativeSession);
+	}
 
 	/**
 	 * Binds the worker's capabilities to this player.
@@ -190,6 +210,15 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	}
 
 	@Override
+	public <P> @NotNull P protocol(@NotNull Class<P> type) {
+		if (type != JavaProtocol.class)
+			throw new ProtocolUnavailableException("the " + McProtocolClient.LIBRARY_ID + " worker speaks " + JavaProtocol.class.getName()
+					+ ", not " + type.getName());
+
+		return type.cast(protocol);
+	}
+
+	@Override
 	public <P> @NotNull P adapter(@NotNull Class<P> port) {
 		return segments.adapter(port);
 	}
@@ -235,6 +264,12 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 
 			// The reason of this close may still be on its way; it wins when it arrives within the grace period.
 			CLOSE_REPORTS.schedule(() -> report(current, cause, reason), CLOSE_REASON_GRACE_MILLIS, TimeUnit.MILLISECONDS);
+		}
+
+		@Override
+		public void received(@NotNull Object current, @NotNull ClientboundPacket packet) {
+			if (current != session) return;
+			protocol.deliver(packet);
 		}
 
 		private void report(Object current, DisconnectCause cause, String reason) {

@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.commands.mcprotocol;
 import me.whereareiam.anvil.capability.commands.CommandsBinding;
 import me.whereareiam.anvil.capability.commands.CommandsProvider;
 import me.whereareiam.anvil.capability.commands.packet.CommandsPackets;
-import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
@@ -36,7 +36,7 @@ public final class McProtocolCommandsExtension implements WorkerExtension<Object
 	/**
 	 * Installs the command-tree listener for one player.
 	 *
-	 * @throws AdapterUnavailableException when no commands segment serves the worker's release or the segment does
+	 * @throws ProtocolUnavailableException when no commands segment serves the worker's release or the segment does
 	 * not link against it
 	 */
 	@Override

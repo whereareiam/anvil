@@ -3,7 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
@@ -11,6 +11,10 @@ import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
+import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerCapabilities;
 import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerControlOperation;
@@ -28,6 +32,7 @@ import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -183,7 +188,7 @@ final class WorkerCapabilityRegistry {
 	}
 
 	private static String reason(Throwable failure) {
-		if (failure instanceof AdapterUnavailableException) return failure.getMessage();
+		if (failure instanceof ProtocolUnavailableException) return failure.getMessage();
 
 		return failure.getClass().getSimpleName() + ": " + failure.getMessage();
 	}
@@ -221,7 +226,7 @@ final class WorkerCapabilityRegistry {
 			WorkerBinding binding;
 			try {
 				binding = extension.bind(scope, scope);
-			} catch (LinkageError | ServiceConfigurationError | AdapterUnavailableException failure) {
+			} catch (LinkageError | ServiceConfigurationError | ProtocolUnavailableException failure) {
 				scope.discard(null);
 				return reason(failure);
 			} catch (RuntimeException | Error failure) {
@@ -362,8 +367,45 @@ final class WorkerCapabilityRegistry {
 			}
 
 			@Override
+			public <P> @NotNull P protocol(@NotNull Class<P> type) {
+				if (type != JavaProtocol.class) return player.protocol(type);
+
+				return type.cast(new ScopedJavaProtocol(player.protocol(JavaProtocol.class)));
+			}
+
+			@Override
 			public <P> @NotNull P adapter(@NotNull Class<P> port) {
 				return player.adapter(port);
+			}
+
+			/**
+			 * The player's protocol as the extension sees it while binding: its listeners are released with the scope
+			 * when the binding fails.
+			 */
+			@RequiredArgsConstructor
+			private final class ScopedJavaProtocol implements JavaProtocol {
+				private final JavaProtocol protocol;
+
+				@Override
+				public <T extends ClientboundPacket> @NotNull Subscription listen(
+						@NotNull Class<T> type,
+						@NotNull Consumer<? super T> listener
+				) {
+					Subscription subscription = protocol.listen(type, listener);
+					if (open) subscriptions.add(subscription);
+
+					return subscription;
+				}
+
+				@Override
+				public void send(@NotNull ServerboundPacket packet) {
+					protocol.send(packet);
+				}
+
+				@Override
+				public boolean supports(@NotNull Class<? extends JavaPacket> type) {
+					return protocol.supports(type);
+				}
 			}
 		}
 	}

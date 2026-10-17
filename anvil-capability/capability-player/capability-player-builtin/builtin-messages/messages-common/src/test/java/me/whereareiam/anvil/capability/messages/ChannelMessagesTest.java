@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.capability.messages;
 
 import me.whereareiam.anvil.api.model.player.Expectation;
+import me.whereareiam.anvil.capability.messages.channel.MessagesChannel;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
@@ -56,8 +57,8 @@ class ChannelMessagesTest {
 		ChannelMessages messages = new ChannelMessages(channel);
 		assertTrue(messages.history().isEmpty());
 
-		channel.publish(MessagesOperations.RECEIVED, new MessageText("anvil:welcome"));
-		channel.publish(MessagesOperations.RECEIVED, new MessageText("anvil:pong"));
+		channel.publish(MessagesChannel.RECEIVED, new MessageText("anvil:welcome"));
+		channel.publish(MessagesChannel.RECEIVED, new MessageText("anvil:pong"));
 
 		assertEquals(List.of("anvil:welcome", "anvil:pong"), messages.history());
 		assertThrows(UnsupportedOperationException.class, () -> messages.history().add("changed"));
@@ -67,9 +68,9 @@ class ChannelMessagesTest {
 	void returnsTheLatestReceivedMessageContainingTheText() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelMessages messages = new ChannelMessages(channel);
-		channel.publish(MessagesOperations.RECEIVED, new MessageText("anvil:pong 1"));
-		channel.publish(MessagesOperations.RECEIVED, new MessageText("anvil:welcome"));
-		channel.publish(MessagesOperations.RECEIVED, new MessageText("anvil:pong 2"));
+		channel.publish(MessagesChannel.RECEIVED, new MessageText("anvil:pong 1"));
+		channel.publish(MessagesChannel.RECEIVED, new MessageText("anvil:welcome"));
+		channel.publish(MessagesChannel.RECEIVED, new MessageText("anvil:pong 2"));
 
 		assertEquals("anvil:pong 2", messages.received("pong", TIMEOUT));
 		assertEquals("anvil:welcome", messages.received("welcome"));
@@ -79,7 +80,7 @@ class ChannelMessagesTest {
 	void waitsThroughTheChannelUntilAMessageContainsTheText() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelMessages messages = new ChannelMessages(channel);
-		channel.publish(MessagesOperations.RECEIVED, new MessageText("anvil:welcome"));
+		channel.publish(MessagesChannel.RECEIVED, new MessageText("anvil:welcome"));
 
 		IllegalStateException failure = assertThrows(IllegalStateException.class, () -> messages.received("pong", TIMEOUT));
 
@@ -90,15 +91,15 @@ class ChannelMessagesTest {
 	void watchesOnlyMessagesReceivedSinceItAndContinuesAfterEachMatch() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelMessages messages = new ChannelMessages(channel);
-		channel.publish(MessagesOperations.RECEIVED, new MessageText("Use /login"));
+		channel.publish(MessagesChannel.RECEIVED, new MessageText("Use /login"));
 		MessageWatch chat = messages.watch();
 
 		assertEquals("Player did not receive a matching message", assertThrows(IllegalStateException.class,
 				() -> chat.received("/login", TIMEOUT)).getMessage());
 
-		channel.publish(MessagesOperations.RECEIVED, new MessageText("Invalid password"));
-		channel.publish(MessagesOperations.RECEIVED, new MessageText("Use /login"));
-		channel.publish(MessagesOperations.RECEIVED, new MessageText("Use /login"));
+		channel.publish(MessagesChannel.RECEIVED, new MessageText("Invalid password"));
+		channel.publish(MessagesChannel.RECEIVED, new MessageText("Use /login"));
+		channel.publish(MessagesChannel.RECEIVED, new MessageText("Use /login"));
 		assertEquals(List.of("Invalid password", "Use /login", "Use /login"), chat.unread());
 		assertEquals("Use /login", chat.received("/login", TIMEOUT));
 		assertEquals(List.of("Use /login"), chat.unread());
@@ -111,14 +112,14 @@ class ChannelMessagesTest {
 	void expectsAMatchingMessageOnlySinceTheWatchStarted() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelMessages messages = new ChannelMessages(channel);
-		channel.publish(MessagesOperations.RECEIVED, new MessageText("Invalid code"));
+		channel.publish(MessagesChannel.RECEIVED, new MessageText("Invalid code"));
 		MessageWatch chat = messages.watch();
 		Expectation invalid = chat.expectReceived(text -> text.contains("Invalid code"));
 
 		assertFalse(invalid.met());
 		assertEquals("receive a matching message", invalid.getDescription());
 
-		channel.publish(MessagesOperations.RECEIVED, new MessageText("Invalid code"));
+		channel.publish(MessagesChannel.RECEIVED, new MessageText("Invalid code"));
 		assertTrue(invalid.met());
 		assertEquals("Invalid code", chat.received(text -> text.contains("Invalid code"), TIMEOUT));
 	}
@@ -127,16 +128,16 @@ class ChannelMessagesTest {
 	void failsWhenAForbiddenMessageArrivesSinceThePreviousWaitOnly() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelMessages messages = new ChannelMessages(channel);
-		channel.publish(MessagesOperations.RECEIVED, new MessageText("Invalid password."));
+		channel.publish(MessagesChannel.RECEIVED, new MessageText("Invalid password."));
 		MessageWatch chat = messages.watch();
 
 		chat.neverReceived("Invalid", TIMEOUT);
 
-		channel.publish(MessagesOperations.RECEIVED, new MessageText("Invalid password."));
+		channel.publish(MessagesChannel.RECEIVED, new MessageText("Invalid password."));
 		assertEquals("Player received a message it must not receive: Invalid password.", assertThrows(IllegalStateException.class,
 				() -> chat.neverReceived("Invalid", TIMEOUT)).getMessage());
 
-		channel.publish(MessagesOperations.RECEIVED, new MessageText("Welcome back"));
+		channel.publish(MessagesChannel.RECEIVED, new MessageText("Welcome back"));
 		chat.received("Welcome", TIMEOUT);
 		chat.neverReceived("Invalid", TIMEOUT);
 	}
@@ -175,7 +176,7 @@ class ChannelMessagesTest {
 
 		@Override
 		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(MessagesProvider.ID);
+			return Set.of(MessagesChannel.ID);
 		}
 	}
 }

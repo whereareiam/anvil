@@ -221,7 +221,7 @@ extension before it knows which ones it installs. Do not call `ServiceLoader` yo
 The worker selects one segment per side for its release and checks the segment's recorded linkage
 against the loaded release before handing out its adapter. When no segment serves the release, the
 segment does not link, or more than one adapter is declared, `adapter` throws
-`AdapterUnavailableException` and the worker reports your capability as unavailable with that reason,
+`ProtocolUnavailableException` and the worker reports your capability as unavailable with that reason,
 while the player keeps its other capabilities.
 
 ## Package a segment

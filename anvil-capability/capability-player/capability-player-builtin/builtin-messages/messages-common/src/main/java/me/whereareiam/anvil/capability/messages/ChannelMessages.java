@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.messages;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.api.history.HistoryCursor;
+import me.whereareiam.anvil.capability.messages.channel.MessagesChannel;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
@@ -24,18 +25,18 @@ final class ChannelMessages implements Messages {
 
 	ChannelMessages(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
-		channel.subscribe(MessagesOperations.RECEIVED, message -> history.add(message.getText()));
+		channel.subscribe(MessagesChannel.RECEIVED, message -> history.add(message.getText()));
 	}
 
 	@Override
 	public void chat(@NotNull String message) {
-		channel.request(MessagesOperations.CHAT, new MessageText(message));
+		channel.request(MessagesChannel.CHAT, new MessageText(message));
 	}
 
 	@Override
 	public void command(@NotNull String command) {
 		String withoutSlash = command.startsWith("/") ? command.substring(1) : command;
-		channel.request(MessagesOperations.COMMAND, new MessageText(withoutSlash));
+		channel.request(MessagesChannel.COMMAND, new MessageText(withoutSlash));
 	}
 
 	@Override

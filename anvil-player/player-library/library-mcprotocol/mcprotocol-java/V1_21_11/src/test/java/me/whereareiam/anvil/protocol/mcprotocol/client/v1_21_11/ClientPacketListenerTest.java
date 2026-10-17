@@ -1,6 +1,8 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
 import me.whereareiam.anvil.api.type.DisconnectCause;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -15,10 +17,12 @@ import org.geysermc.mcprotocollib.protocol.data.game.setting.ChatVisibility;
 import org.geysermc.mcprotocollib.protocol.data.game.setting.ParticleStatus;
 import org.geysermc.mcprotocollib.protocol.data.game.setting.SkinPart;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundDisconnectPacket;
+import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundPingPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundClientInformationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundPongPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.ServerboundPlayerLoadedPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
@@ -47,8 +51,9 @@ class ClientPacketListenerTest {
 
 	private final List<String> events = new ArrayList<>();
 	private final List<Packet> sent = new ArrayList<>();
+	private final List<ClientboundPacket> received = new ArrayList<>();
 	private final ClientSession session = session();
-	private final ClientPacketListener listener = new ClientPacketListener(session, LOGIN, new RecordingListener());
+	private final ClientPacketListener listener = new ClientPacketListener(session, LOGIN, new RecordingListener(), new JavaPackets());
 
 	@Test
 	void answersTheLoginWithClientInformationBeforeReportingItWithTheGrantedProfile() throws Exception {
@@ -91,6 +96,15 @@ class ClientPacketListenerTest {
 		assertEquals(List.of("disconnected SERVER multiplayer.disconnect.kicked Alice by Anvil", "disconnected SERVER Outdated: version 1.21.11"), events);
 	}
 
+	@Test
+	void handsEveryTranslatedPacketToTheListenerAndNothingForOthers() {
+		receive(new ClientboundSystemChatPacket(Component.text("anvil:welcome"), false));
+		receive(new ClientboundKeepAlivePacket(7));
+
+		assertEquals(List.of(new ClientboundSystemChat("anvil:welcome", false)), received);
+		assertEquals(List.of(), events);
+	}
+
 	private void receive(Packet packet) {
 		listener.packetReceived(session, packet);
 	}
@@ -131,6 +145,11 @@ class ClientPacketListenerTest {
 		@Override
 		public void disconnected(@NotNull ClientSession session, @NotNull DisconnectCause cause, @NotNull String reason) {
 			events.add("disconnected " + cause + " " + reason);
+		}
+
+		@Override
+		public void received(@NotNull ClientSession session, @NotNull ClientboundPacket packet) {
+			received.add(packet);
 		}
 	}
 }

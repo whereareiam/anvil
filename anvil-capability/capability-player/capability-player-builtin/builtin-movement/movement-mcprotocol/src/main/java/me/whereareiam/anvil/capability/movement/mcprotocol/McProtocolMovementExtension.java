@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.movement.mcprotocol;
 import me.whereareiam.anvil.capability.movement.MovementBinding;
 import me.whereareiam.anvil.capability.movement.MovementProvider;
 import me.whereareiam.anvil.capability.movement.packet.MovementPackets;
-import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
@@ -36,7 +36,7 @@ public final class McProtocolMovementExtension implements WorkerExtension<Object
 	/**
 	 * Installs the movement operation for one player.
 	 *
-	 * @throws AdapterUnavailableException when no movement segment serves the worker's release or the segment does
+	 * @throws ProtocolUnavailableException when no movement segment serves the worker's release or the segment does
 	 * not link against it
 	 */
 	@Override

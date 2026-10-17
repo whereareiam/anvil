@@ -38,6 +38,8 @@ neoforge = "21.1.256"
 bungeecord = "26.1-R0.1-SNAPSHOT"
 
 # minecraft protocol
+# The oldest Adventure that a pinned MCProtocolLib release brings; release-neutral client code compiles against it.
+adventure = "4.9.3"
 mcprotocol = "26.1-SNAPSHOT"
 minecraft-auth = "5.0.2"
 
@@ -80,6 +82,7 @@ velocity = { group = "com.velocitypowered", name = "velocity-api", version.ref =
 bungeecord = { group = "net.md-5", name = "bungeecord-api", version.ref = "bungeecord" }
 
 # minecraft protocol
+adventure-api = { group = "net.kyori", name = "adventure-api", version.ref = "adventure" }
 mcprotocol = { group = "org.geysermc.mcprotocollib", name = "protocol", version.ref = "mcprotocol" }
 minecraft-auth = { group = "net.raphimc", name = "MinecraftAuth", version.ref = "minecraft-auth" }
 

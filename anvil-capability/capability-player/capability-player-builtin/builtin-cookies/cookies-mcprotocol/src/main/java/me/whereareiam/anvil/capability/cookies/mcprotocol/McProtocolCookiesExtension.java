@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.cookies.mcprotocol;
 import me.whereareiam.anvil.capability.cookies.CookiesBinding;
 import me.whereareiam.anvil.capability.cookies.CookiesProvider;
 import me.whereareiam.anvil.capability.cookies.packet.CookiesPackets;
-import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
@@ -37,7 +37,7 @@ public final class McProtocolCookiesExtension implements WorkerExtension<Object>
 	/**
 	 * Installs the cookies operations and the cookie packet listener for one player.
 	 *
-	 * @throws AdapterUnavailableException when no cookies segment serves the worker's release or the segment does
+	 * @throws ProtocolUnavailableException when no cookies segment serves the worker's release or the segment does
 	 * not link against it
 	 */
 	@Override

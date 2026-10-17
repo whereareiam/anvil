@@ -6,7 +6,7 @@ import me.whereareiam.anvil.capability.cookies.exchange.StoredCookie;
 import me.whereareiam.anvil.capability.cookies.packet.CookiesPacketListener;
 import me.whereareiam.anvil.capability.cookies.packet.CookiesPackets;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
@@ -72,7 +72,7 @@ class McProtocolCookiesExtensionTest {
 
 	@Test
 	void leavesTheCapabilityToTheWorkerWhenNoAdapterServesTheRelease() {
-		AdapterUnavailableException unavailable = new AdapterUnavailableException("no mcprotocol segment selected for Minecraft 1.18.2 "
+		ProtocolUnavailableException unavailable = new ProtocolUnavailableException("no mcprotocol segment selected for Minecraft 1.18.2 "
 				+ "provides an adapter for " + CookiesPackets.class.getName());
 		Player player = new Player(null) {
 			@Override
@@ -82,7 +82,7 @@ class McProtocolCookiesExtensionTest {
 		};
 		Operations operations = new Operations();
 
-		assertSame(unavailable, assertThrows(AdapterUnavailableException.class, () -> new McProtocolCookiesExtension().bind(player, operations)));
+		assertSame(unavailable, assertThrows(ProtocolUnavailableException.class, () -> new McProtocolCookiesExtension().bind(player, operations)));
 		assertEquals(Map.of(), operations.handlers);
 	}
 

@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.segment.SegmentDescriptor;
 import me.whereareiam.anvil.protocol.mcprotocol.segment.SegmentLinkage;
@@ -81,12 +81,12 @@ final class WorkerSegments {
 	 * @param port port interface
 	 * @param <P> port type
 	 * @return the adapter of the segment selected for the release
-	 * @throws AdapterUnavailableException when no selected segment provides the port, the providing segment
+	 * @throws ProtocolUnavailableException when no selected segment provides the port, the providing segment
 	 * does not link, more than one implementation is declared, or the adapter cannot be created
 	 */
 	<P> @NotNull P adapter(@NotNull Class<P> port) {
 		Object adapter = adapters.computeIfAbsent(port, this::create);
-		if (adapter instanceof Unavailable unavailable) throw new AdapterUnavailableException(unavailable.reason());
+		if (adapter instanceof Unavailable unavailable) throw new ProtocolUnavailableException(unavailable.reason());
 
 		return port.cast(adapter);
 	}
@@ -101,7 +101,7 @@ final class WorkerSegments {
 	@NotNull McProtocolClient<Object> client() {
 		try {
 			return (McProtocolClient<Object>) adapter(McProtocolClient.class);
-		} catch (AdapterUnavailableException unavailable) {
+		} catch (ProtocolUnavailableException unavailable) {
 			throw new IllegalStateException("Cannot load the MCProtocolLib client: " + unavailable.getMessage(), unavailable);
 		}
 	}

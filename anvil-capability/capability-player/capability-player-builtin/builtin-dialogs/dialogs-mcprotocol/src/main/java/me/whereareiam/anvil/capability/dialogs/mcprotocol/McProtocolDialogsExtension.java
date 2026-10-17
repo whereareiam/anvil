@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.dialogs.mcprotocol;
 import me.whereareiam.anvil.capability.dialogs.DialogsBinding;
 import me.whereareiam.anvil.capability.dialogs.DialogsProvider;
 import me.whereareiam.anvil.capability.dialogs.packet.DialogsPackets;
-import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
@@ -37,7 +37,7 @@ public final class McProtocolDialogsExtension implements WorkerExtension<Object>
 	/**
 	 * Installs the click operation and the dialog listener for one player.
 	 *
-	 * @throws AdapterUnavailableException when no dialogs segment serves the worker's release or the segment does
+	 * @throws ProtocolUnavailableException when no dialogs segment serves the worker's release or the segment does
 	 * not link against it
 	 */
 	@Override

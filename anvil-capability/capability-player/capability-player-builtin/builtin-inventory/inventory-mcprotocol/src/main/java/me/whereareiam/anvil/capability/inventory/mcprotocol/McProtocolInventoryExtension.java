@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.inventory.mcprotocol;
 import me.whereareiam.anvil.capability.inventory.InventoryBinding;
 import me.whereareiam.anvil.capability.inventory.InventoryProvider;
 import me.whereareiam.anvil.capability.inventory.packet.InventoryPackets;
-import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
@@ -36,7 +36,7 @@ public final class McProtocolInventoryExtension implements WorkerExtension<Objec
 	/**
 	 * Installs the inventory operations and packet listener for one player.
 	 *
-	 * @throws AdapterUnavailableException when no inventory segment serves the worker's release or the segment does
+	 * @throws ProtocolUnavailableException when no inventory segment serves the worker's release or the segment does
 	 * not link against it
 	 */
 	@Override

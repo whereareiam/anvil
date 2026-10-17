@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.screen.mcprotocol;
 import me.whereareiam.anvil.capability.screen.ScreenBinding;
 import me.whereareiam.anvil.capability.screen.ScreenProvider;
 import me.whereareiam.anvil.capability.screen.packet.ScreenPackets;
-import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
@@ -36,7 +36,7 @@ public final class McProtocolScreenExtension implements WorkerExtension<Object> 
 	/**
 	 * Installs the title, action-bar and boss bar listener for one player.
 	 *
-	 * @throws AdapterUnavailableException when no screen segment serves the worker's release or the segment does not
+	 * @throws ProtocolUnavailableException when no screen segment serves the worker's release or the segment does not
 	 * link against it
 	 */
 	@Override
