@@ -1,13 +1,12 @@
 package me.whereareiam.anvil.buildlogic.capability
 
-import me.whereareiam.anvil.buildlogic.library.LibraryRegistry
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.ValueSource
 import org.gradle.api.provider.ValueSourceParameters
 
 /**
- * Reads a capability family folder against the build's protocol editions and library registry. As a value source it is
- * a configuration-cache input: adding a member project, an edition or a library invalidates the cache.
+ * Reads a capability family folder against the build's protocol editions. As a value source it is a
+ * configuration-cache input: adding a member project or an edition invalidates the cache.
  */
 abstract class CapabilityFamilySource : ValueSource<CapabilityFamily, CapabilityFamilySource.Parameters> {
 	/**
@@ -15,7 +14,7 @@ abstract class CapabilityFamilySource : ValueSource<CapabilityFamily, Capability
 	 */
 	interface Parameters : ValueSourceParameters {
 		/**
-		 * Root project directory, which holds the protocol editions and the library registry.
+		 * Root project directory, which holds the protocol editions.
 		 */
 		val rootDirectory: DirectoryProperty
 
@@ -25,12 +24,8 @@ abstract class CapabilityFamilySource : ValueSource<CapabilityFamily, Capability
 		val familyDirectory: DirectoryProperty
 	}
 
-	override fun obtain(): CapabilityFamily {
-		val root = parameters.rootDirectory.get().asFile
-
-		return CapabilityFamily.read(
-			parameters.familyDirectory.get().asFile,
-			ProtocolEditions.discover(root) + LibraryRegistry.discover(root).keys,
-		)
-	}
+	override fun obtain(): CapabilityFamily = CapabilityFamily.read(
+		parameters.familyDirectory.get().asFile,
+		ProtocolEditions.discover(parameters.rootDirectory.get().asFile),
+	)
 }

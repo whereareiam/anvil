@@ -7,10 +7,10 @@ plugins {
 }
 
 // A built-in capability family root only wires its members: it exports the family API, embeds the
-// library-neutral common code into its shaded JAR, which consumers also compile against and whose sources and
-// Javadoc JARs describe that code, and brings every library side to the runtime, where the worker of each
-// library selects one segment. The folder is the only list of members, so a side cannot be left out of the
-// runtime, and a child project that is not a member fails here.
+// edition-neutral common code into its shaded JAR, which consumers also compile against and whose sources and
+// Javadoc JARs describe that code, and brings every edition side to the runtime, where each player's worker
+// installs the extensions of the edition it speaks. The folder is the only list of members, so a side cannot be
+// left out of the runtime, and a child project that is not a member fails here.
 val family = providers.of(CapabilityFamilySource::class) {
 	parameters {
 		rootDirectory.set(isolated.rootProject.projectDirectory)
