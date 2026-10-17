@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 final class JavaPackets {
 	private final List<PacketTranslation<Packet>> areas = List.of(
 			new ChatPackets(),
+			new CommandPackets(),
 			new PlayerPackets(),
 			new SoundPackets()
 	);

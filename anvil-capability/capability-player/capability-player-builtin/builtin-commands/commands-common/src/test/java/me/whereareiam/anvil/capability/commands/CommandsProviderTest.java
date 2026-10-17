@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.commands;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
+import me.whereareiam.anvil.capability.commands.channel.CommandsChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
@@ -29,8 +30,8 @@ class CommandsProviderTest {
 	void describesTheCommandsCapabilityForTheLibrariesWithAWorkerSide() {
 		CommandsProvider provider = new CommandsProvider();
 
-		assertEquals("me.whereareiam.anvil.commands", CommandsProvider.ID);
-		assertEquals(CommandsProvider.ID, provider.descriptor().getId());
+		assertEquals("me.whereareiam.anvil.commands", CommandsChannel.ID);
+		assertEquals(CommandsChannel.ID, provider.descriptor().getId());
 		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
 		assertEquals(Set.of("mcprotocol"), provider.supportedLibraries());
 		assertEquals(Commands.class, provider.capability());
@@ -41,7 +42,7 @@ class CommandsProviderTest {
 		RecordingChannel channel = new RecordingChannel();
 		Commands commands = new CommandsProvider().create(new ChannelContext(channel));
 
-		assertEquals(List.of(CommandsOperations.TREE.getId(), CommandsOperations.RESET.getId()), channel.subscriptions);
+		assertEquals(List.of(CommandsChannel.TREE.getId(), CommandsChannel.RESET.getId()), channel.subscriptions);
 		assertTrue(channel.requests.isEmpty());
 		assertTrue(commands.tree().isEmpty());
 	}
@@ -74,7 +75,7 @@ class CommandsProviderTest {
 
 		@Override
 		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(CommandsProvider.ID);
+			return Set.of(CommandsChannel.ID);
 		}
 	}
 
