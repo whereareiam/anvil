@@ -10,15 +10,15 @@ import java.io.Serializable
  *
  * - `<name>-api` holds the public capability API and, for packet capabilities, its library-neutral port;
  * - `<name>-common` holds the library-neutral host provider and worker binding;
- * - `<name>-<side>` adapts the family to one protocol edition, such as `<name>-java` over the Java Edition protocol,
- *   or to one registered protocol library through its segments.
+ * - `<name>-<edition>` adapts the family to one protocol edition, such as `<name>-java` over the Java Edition
+ *   protocol.
  *
  * A family root holds no code, an agent-backed provider included: that lives in `<name>-common` as well.
  *
  * @property name feature name, the family folder's name without the `builtin-` prefix
  * @property api project name of the family API
  * @property common project name of the library-neutral code, or `null` when the family has none
- * @property sides project names of the edition and library sides, ordered by name
+ * @property sides project names of the edition sides, ordered by name
  */
 data class CapabilityFamily(
 	val name: String,
@@ -27,7 +27,7 @@ data class CapabilityFamily(
 	val sides: List<String>,
 ) : Serializable {
 	/**
-	 * The member projects the family publishes, each as `builtin-<project>`: its API and its sides. The
+	 * The member projects the family publishes, each as `builtin-<project>`: its API and its edition sides. The
 	 * common project is embedded into the root's JAR instead.
 	 */
 	val published: List<String>
@@ -62,11 +62,11 @@ data class CapabilityFamily(
 		/**
 		 * Reads the family folder at [directory]. Every child directory with a build file is a member project.
 		 *
-		 * @param sides names a side may carry: the protocol editions and the registered library ids
+		 * @param editions the protocol editions a side may adapt the family to
 		 * @throws GradleException when the folder is not named `builtin-<name>`, the family has no API, holds a child
 		 * project that is not a member, keeps code in its root, or declares a `common` or `util` package
 		 */
-		fun read(directory: File, sides: Collection<String>): CapabilityFamily {
+		fun read(directory: File, editions: Collection<String>): CapabilityFamily {
 			val name = featureName(directory)
 			val children = projectFolders(directory)
 			val api = "$name-api"
@@ -75,7 +75,7 @@ data class CapabilityFamily(
 				throw GradleException("Capability family '$name' must contain its API project '$api'")
 
 			val members = children.filterNot { it == api || it == common }
-			members.forEach { member -> requireSide(name, member, sides) }
+			members.forEach { member -> requireSide(name, member, editions) }
 			val hasCommon = common in children
 			if (File(directory, "src/main/java").exists())
 				throw GradleException(
@@ -114,12 +114,12 @@ data class CapabilityFamily(
 			}
 		}
 
-		private fun requireSide(family: String, member: String, sides: Collection<String>) {
-			if (member.startsWith("$family-") && member.removePrefix("$family-") in sides) return
+		private fun requireSide(family: String, member: String, editions: Collection<String>) {
+			if (member.startsWith("$family-") && member.removePrefix("$family-") in editions) return
 
 			throw GradleException(
-				"Capability family '$family' may contain only '$family-api', '$family-common' and '$family-<side>' "
-					+ "projects for the sides ${sides.sorted()}; found '$member'"
+				"Capability family '$family' may contain only '$family-api', '$family-common' and '$family-<edition>' "
+					+ "projects for the protocol editions ${editions.sorted()}; found '$member'"
 			)
 		}
 	}

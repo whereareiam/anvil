@@ -13,25 +13,15 @@ class CapabilityFamilyTest {
 	lateinit var root: File
 
 	@Test
-	fun `reads the api, common and library sides of a family`() {
-		val family = family("movement", "movement-api", "movement-common", "movement-mcprotocol")
+	fun `reads the api, common and edition sides of a family`() {
+		val family = family("movement", "movement-api", "movement-common", "movement-java")
 		File(family, "src/main/resources/META-INF/services").mkdirs()
 		File(family, "docs").mkdirs()
 
-		val read = CapabilityFamily.read(family, listOf("mcprotocol"))
+		val read = CapabilityFamily.read(family, listOf("java"))
 
-		assertEquals(CapabilityFamily("movement", "movement-api", "movement-common", listOf("movement-mcprotocol")), read)
-		assertEquals(listOf("movement-api", "movement-mcprotocol"), read.published)
-	}
-
-	@Test
-	fun `reads the edition side of a family`() {
-		val family = family("messages", "messages-api", "messages-common", "messages-java")
-
-		val read = CapabilityFamily.read(family, listOf("java", "mcprotocol"))
-
-		assertEquals(CapabilityFamily("messages", "messages-api", "messages-common", listOf("messages-java")), read)
-		assertEquals(listOf("messages-api", "messages-java"), read.published)
+		assertEquals(CapabilityFamily("movement", "movement-api", "movement-common", listOf("movement-java")), read)
+		assertEquals(listOf("movement-api", "movement-java"), read.published)
 	}
 
 	@Test
@@ -39,7 +29,7 @@ class CapabilityFamilyTest {
 		val family = family("console", "console-api", group = PROCESS)
 		File(family, "src/main/java").mkdirs()
 
-		val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("mcprotocol")) }
+		val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("java")) }
 
 		assertTrue(failure.message!!.contains("move the code of its root to 'console-common'"), failure.message)
 	}
@@ -49,7 +39,7 @@ class CapabilityFamilyTest {
 		val family = family("server", "server-api")
 		File(family, "src/main/java").mkdirs()
 
-		val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("mcprotocol")) }
+		val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("java")) }
 
 		assertTrue(failure.message!!.contains("move the code of its root to 'server-common'"), failure.message)
 	}
@@ -72,7 +62,7 @@ class CapabilityFamilyTest {
 		File(family, "movement-api").mkdirs()
 		File(family, "movement-api/build.gradle.kts").writeText("")
 
-		val read = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("mcprotocol")) }
+		val read = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("java")) }
 		val named = assertThrows<GradleException> { CapabilityFamily.names(root) }
 
 		listOf(read, named).forEach { failure ->
@@ -84,17 +74,17 @@ class CapabilityFamilyTest {
 	fun `requires the family api`() {
 		val family = family("session", "session-common")
 
-		val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("mcprotocol")) }
+		val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("java")) }
 
 		assertTrue(failure.message!!.contains("must contain its API project 'session-api'"), failure.message)
 	}
 
 	@Test
-	fun `rejects children that are not family members or sides of editions or registered libraries`() {
-		listOf("movement-protocol", "movement-fixture", "mcprotocol-movement").forEach { child ->
+	fun `rejects children that are not family members or sides of protocol editions`() {
+		listOf("movement-protocol", "movement-fixture", "java-movement").forEach { child ->
 			val family = family("movement", "movement-api", child)
 
-			val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("mcprotocol")) }
+			val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("java")) }
 
 			assertTrue(failure.message!!.contains("found '$child'"), failure.message)
 			family.deleteRecursively()
@@ -103,11 +93,11 @@ class CapabilityFamilyTest {
 
 	@Test
 	fun `keeps code out of the root of a family with common code or library sides`() {
-		listOf(listOf("server-api", "server-common"), listOf("server-api", "server-mcprotocol")).forEach { members ->
+		listOf(listOf("server-api", "server-common"), listOf("server-api", "server-java")).forEach { members ->
 			val family = family("server", *members.toTypedArray(), group = PROCESS)
 			File(family, "src/main/java").mkdirs()
 
-			val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("mcprotocol")) }
+			val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("java")) }
 
 			assertTrue(failure.message!!.contains("move the code of its root to 'server-common'"), failure.message)
 			family.deleteRecursively()
@@ -119,13 +109,13 @@ class CapabilityFamilyTest {
 		listOf(
 			"movement-common/src/main/java/me/example/movement/common",
 			"movement-common/src/test/java/me/example/movement/common",
-			"movement-mcprotocol/src/main/java/me/example/movement/util",
+			"movement-java/src/main/java/me/example/movement/util",
 		).forEach { packageDirectory ->
-			val family = family("movement", "movement-api", "movement-common", "movement-mcprotocol")
+			val family = family("movement", "movement-api", "movement-common", "movement-java")
 			File(family, "movement-common/src/main/java/me/example/movement").mkdirs()
 			File(family, packageDirectory).mkdirs()
 
-			val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("mcprotocol")) }
+			val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("java")) }
 
 			val expected = packageDirectory.substringAfter("/java/").replace('/', '.')
 			assertTrue(failure.message!!.contains("catch-all package '$expected' in '${packageDirectory.substringBefore('/')}'"), failure.message)
