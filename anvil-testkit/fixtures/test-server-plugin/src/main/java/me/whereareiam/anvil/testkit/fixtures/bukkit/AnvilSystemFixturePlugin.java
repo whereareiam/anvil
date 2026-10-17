@@ -38,6 +38,7 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 	private static final String AUTH_STARTED = "anvil:auth:started";
 	private static final String AUTH_REJOIN_FORBIDDEN = "anvil:auth:rejoin-forbidden:";
 	private final Map<String, AtomicInteger> authenticationAttempts = new ConcurrentHashMap<>();
+	private FixtureCookies cookies;
 
 	@Override
 	public void onEnable() {
@@ -46,6 +47,7 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 		var command = getCommand("anvil-fixture");
 		if (command != null)
 			command.setExecutor((sender, ignored, label, arguments) -> execute(player(sender), arguments));
+		cookies = FixtureCookies.load(getClassLoader());
 		var cookie = getCommand("anvil-cookie");
 		if (cookie != null)
 			cookie.setExecutor((sender, ignored, label, arguments) -> cookie(arguments));
@@ -162,15 +164,19 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 	 * Stores or requests a cookie of a player named by the console, so a test drives cookies without sending the
 	 * player's own commands, which count towards the server's spam limit.
 	 */
-	private static boolean cookie(String[] arguments) {
+	private boolean cookie(String[] arguments) {
 		Player player = arguments.length < 3 ? null : Bukkit.getPlayerExact(arguments[0]);
 		if (player == null)
 			return false;
+		if (cookies == null) {
+			player.sendMessage("anvil:cookie:unsupported");
+			return true;
+		}
 
 		if (arguments[1].equals("store") && arguments.length == 4)
-			FixtureCookies.store(player, arguments[2], arguments[3]);
+			cookies.store(player, arguments[2], arguments[3]);
 		else if (arguments[1].equals("request"))
-			FixtureCookies.request(player, arguments[2]);
+			cookies.request(player, arguments[2]);
 		else
 			return false;
 		return true;
