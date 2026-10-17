@@ -4,9 +4,11 @@ plugins {
 	id("module-library")
 }
 
-// Owning mcprotocol-api makes this family its own API family, so the protocol library API it implements is shared explicitly.
+// Owning mcprotocol-api makes this family its own API family, so the protocol library API it implements is shared
+// explicitly, and the Java Edition protocol its client segments translate is declared as a sibling family's API.
 architecture {
 	sharedApis = setOf(projects.anvilPlayer.playerApi.path)
+	dependsOnApis = setOf(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi.path)
 }
 
 description = "Version-isolated MCProtocolLib clients and workers for Anvil"

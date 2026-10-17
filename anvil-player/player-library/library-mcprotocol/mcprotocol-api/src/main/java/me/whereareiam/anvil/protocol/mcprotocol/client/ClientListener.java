@@ -1,11 +1,12 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client;
 
 import me.whereareiam.anvil.api.type.DisconnectCause;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Receives the connection state of sessions opened by a {@link McProtocolClient}.
+ * Receives the connection state and the translated packets of sessions opened by a {@link McProtocolClient}.
  *
  * <p>Callbacks arrive on the release's network threads. A login is reported after the client sent its client
  * information, and a teleport before the client accepts it. Each callback names the session it belongs to; a
@@ -45,4 +46,13 @@ public interface ClientListener<S> {
 	 * @param reason the reason flattened to plain text, including translation keys and their arguments
 	 */
 	void disconnected(@NotNull S session, @NotNull DisconnectCause cause, @NotNull String reason);
+
+	/**
+	 * Delivers a packet the session received, translated to the Java Edition protocol. A segment translates every
+	 * packet it can carry, in the order they arrive, whether or not anyone listens.
+	 *
+	 * @param session session that received the packet
+	 * @param packet the received packet
+	 */
+	void received(@NotNull S session, @NotNull ClientboundPacket packet);
 }

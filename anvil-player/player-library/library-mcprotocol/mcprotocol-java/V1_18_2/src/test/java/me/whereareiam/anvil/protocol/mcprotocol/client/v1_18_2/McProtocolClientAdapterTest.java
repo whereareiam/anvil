@@ -1,25 +1,41 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundChatPacket;
+import com.github.steveice10.packetlib.Session;
+import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.api.type.DisconnectCause;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundDisguisedChat;
+import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
+import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
+import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
-import com.github.steveice10.packetlib.Session;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class McProtocolClientAdapterTest {
@@ -63,6 +79,37 @@ class McProtocolClientAdapterTest {
 		}
 	}
 
+	@Test
+	void sendsAPacketEncodedThroughTheReleaseTable() {
+		List<Packet> sent = new ArrayList<>();
+
+		new McProtocolClientAdapter().send(recording(sent), new ServerboundChat("hello there"));
+
+		assertEquals(1, sent.size());
+		assertEquals("hello there", assertInstanceOf(ServerboundChatPacket.class, sent.getFirst()).getMessage());
+	}
+
+	@Test
+	void refusesToSendAPacketTheReleaseDoesNotCarry() {
+		List<Packet> sent = new ArrayList<>();
+		McProtocolClientAdapter client = new McProtocolClientAdapter();
+		Session session = recording(sent);
+
+		assertThrows(ProtocolUnavailableException.class, () -> client.send(session, new UnknownPacket()));
+		assertEquals(List.of(), sent);
+	}
+
+	@Test
+	void supportsExactlyThePacketsOfTheReleaseTable() {
+		McProtocolClientAdapter client = new McProtocolClientAdapter();
+
+		assertTrue(client.supports(ClientboundSystemChat.class));
+		assertTrue(client.supports(ServerboundChat.class));
+		assertTrue(client.supports(ServerboundChatCommand.class));
+		assertFalse(client.supports(ClientboundDisguisedChat.class));
+		assertFalse(client.supports(UnknownPacket.class));
+	}
+
 	private static boolean bindable(InetAddress address) {
 		try (Socket socket = new Socket()) {
 			socket.bind(new InetSocketAddress(address, 0));
@@ -83,6 +130,21 @@ class McProtocolClientAdapterTest {
 		throw new IOException("VarInt is too long");
 	}
 
+	/**
+	 * A session that records the packets sent on it and supports nothing else.
+	 */
+	private static Session recording(List<Packet> sent) {
+		return (Session) Proxy.newProxyInstance(Session.class.getClassLoader(), new Class<?>[]{Session.class}, (proxy, method, arguments) -> {
+			if (!method.getName().equals("send")) throw new UnsupportedOperationException(method.getName());
+
+			sent.add((Packet) arguments[0]);
+			return null;
+		});
+	}
+
+	private static final class UnknownPacket implements ServerboundPacket {
+	}
+
 	private static final class IgnoringListener implements ClientListener<Session> {
 		@Override
 		public void loggedIn(@NotNull Session session, @NotNull ClientProfile granted) {
@@ -94,6 +156,10 @@ class McProtocolClientAdapterTest {
 
 		@Override
 		public void disconnected(@NotNull Session session, @NotNull DisconnectCause cause, @NotNull String reason) {
+		}
+
+		@Override
+		public void received(@NotNull Session session, @NotNull ClientboundPacket packet) {
 		}
 	}
 }

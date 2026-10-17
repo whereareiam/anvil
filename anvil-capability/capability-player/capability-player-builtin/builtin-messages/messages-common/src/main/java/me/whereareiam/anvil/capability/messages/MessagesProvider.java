@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.capability.messages;
 
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
+import me.whereareiam.anvil.capability.messages.channel.MessagesChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
 import org.jetbrains.annotations.NotNull;
@@ -13,15 +14,10 @@ import java.util.Set;
  * messages binding.
  */
 public final class MessagesProvider implements ProtocolPlayerCapabilityProvider<Messages> {
-	/**
-	 * Capability ID shared by this provider and the worker extension of every library side.
-	 */
-	public static final String ID = "me.whereareiam.anvil.messages";
-
 	@Override
 	public @NotNull CapabilityDescriptor descriptor() {
 		return CapabilityDescriptor.builder()
-				.id(ID)
+				.id(MessagesChannel.ID)
 				.build();
 	}
 

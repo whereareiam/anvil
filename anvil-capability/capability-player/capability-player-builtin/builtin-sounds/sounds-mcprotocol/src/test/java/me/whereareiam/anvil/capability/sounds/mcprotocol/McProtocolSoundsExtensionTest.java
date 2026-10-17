@@ -5,7 +5,7 @@ import me.whereareiam.anvil.capability.sounds.model.HeardSound;
 import me.whereareiam.anvil.capability.sounds.packet.SoundsPackets;
 import me.whereareiam.anvil.capability.sounds.type.SoundCategory;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
@@ -70,7 +70,7 @@ class McProtocolSoundsExtensionTest {
 
 	@Test
 	void leavesTheCapabilityToTheWorkerWhenNoAdapterServesTheRelease() {
-		AdapterUnavailableException unavailable = new AdapterUnavailableException("no mcprotocol segment selected for Minecraft 1.16.5 "
+		ProtocolUnavailableException unavailable = new ProtocolUnavailableException("no mcprotocol segment selected for Minecraft 1.16.5 "
 				+ "provides an adapter for " + SoundsPackets.class.getName());
 		Player player = new Player(null) {
 			@Override
@@ -79,7 +79,7 @@ class McProtocolSoundsExtensionTest {
 			}
 		};
 
-		assertSame(unavailable, assertThrows(AdapterUnavailableException.class,
+		assertSame(unavailable, assertThrows(ProtocolUnavailableException.class,
 				() -> new McProtocolSoundsExtension().bind(player, new Operations())));
 	}
 

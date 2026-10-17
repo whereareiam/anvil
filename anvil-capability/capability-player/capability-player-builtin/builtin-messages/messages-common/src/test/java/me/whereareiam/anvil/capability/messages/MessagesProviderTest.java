@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.messages;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
+import me.whereareiam.anvil.capability.messages.channel.MessagesChannel;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
@@ -30,8 +31,8 @@ class MessagesProviderTest {
 	void describesTheMessagesCapabilityForTheLibrariesWithAWorkerSide() {
 		MessagesProvider provider = new MessagesProvider();
 
-		assertEquals("me.whereareiam.anvil.messages", MessagesProvider.ID);
-		assertEquals(MessagesProvider.ID, provider.descriptor().getId());
+		assertEquals("me.whereareiam.anvil.messages", MessagesChannel.ID);
+		assertEquals(MessagesChannel.ID, provider.descriptor().getId());
 		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
 		assertEquals(Set.of("mcprotocol"), provider.supportedLibraries());
 		assertEquals(Messages.class, provider.capability());
@@ -41,13 +42,13 @@ class MessagesProviderTest {
 	void observesReceivedMessagesAndSendsThroughThePlayersChannelWithoutRequestingOnCreation() {
 		RecordingChannel channel = new RecordingChannel();
 		Messages messages = new MessagesProvider().create(new ChannelContext(channel));
-		assertEquals(List.of(MessagesOperations.RECEIVED.getId()), channel.subscriptions);
+		assertEquals(List.of(MessagesChannel.RECEIVED.getId()), channel.subscriptions);
 		assertTrue(channel.requests.isEmpty());
 
 		messages.chat("hello");
 		messages.command("/list");
 
-		assertEquals(List.of(MessagesOperations.CHAT.getId(), MessagesOperations.COMMAND.getId()), channel.requests);
+		assertEquals(List.of(MessagesChannel.CHAT.getId(), MessagesChannel.COMMAND.getId()), channel.requests);
 		assertEquals(List.of(new MessageText("hello"), new MessageText("list")), channel.payloads);
 	}
 
@@ -79,7 +80,7 @@ class MessagesProviderTest {
 
 		@Override
 		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(MessagesProvider.ID);
+			return Set.of(MessagesChannel.ID);
 		}
 	}
 

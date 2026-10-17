@@ -7,6 +7,8 @@ import com.github.steveice10.mc.protocol.MinecraftProtocol;
 import com.github.steveice10.mc.protocol.codec.MinecraftCodec;
 import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.tcp.TcpClientSession;
+import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
@@ -22,6 +24,8 @@ import org.jetbrains.annotations.NotNull;
  * host, so {@link ClientPacketListener} rewrites the handshake for a virtual host.
  */
 public final class McProtocolClientAdapter implements McProtocolClient<Session> {
+	private final JavaPackets packets = new JavaPackets();
+
 	@Override
 	public int protocolNumber() {
 		return MinecraftCodec.CODEC.getProtocolVersion();
@@ -47,7 +51,7 @@ public final class McProtocolClientAdapter implements McProtocolClient<Session> 
 			sessionService.setBaseUri(credentials.getSessionServer() + "/");
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, sessionService);
 		}
-		session.addListener(new ClientPacketListener(login, listener));
+		session.addListener(new ClientPacketListener(login, listener, packets));
 		return session;
 	}
 
@@ -64,5 +68,15 @@ public final class McProtocolClientAdapter implements McProtocolClient<Session> 
 	@Override
 	public void disconnect(@NotNull Session session, @NotNull String reason) {
 		session.disconnect(reason);
+	}
+
+	@Override
+	public void send(@NotNull Session session, @NotNull ServerboundPacket packet) {
+		session.send(packets.encode(packet));
+	}
+
+	@Override
+	public boolean supports(@NotNull Class<? extends JavaPacket> type) {
+		return packets.supports(type);
 	}
 }

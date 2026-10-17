@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.api.worker;
 
-import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -16,7 +16,7 @@ import java.util.ServiceLoader;
  * (or any library) and accepts the worker's native session type. An extension whose binding fails to
  * link against the loaded library release, for example with a {@link NoClassDefFoundError}, is reported
  * as unavailable with the missing member instead of failing the player. So is an extension whose
- * {@link PlayerBindingContext#adapter(Class) adapter lookup} fails with {@link AdapterUnavailableException}
+ * {@link PlayerBindingContext#adapter(Class) adapter lookup} fails with {@link ProtocolUnavailableException}
  * because no segment selected for the loaded release provides its port, or the segment does not link.</p>
  *
  * <p>An extension takes every release-specific implementation from that lookup while it binds a player, never

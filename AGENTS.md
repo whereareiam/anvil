@@ -158,7 +158,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `PlayerBindingContext.adapter(Class)` while binding a player, never in its constructor and never through
   `ServiceLoader`; `checkAdapterLookup` fails a library side whose classes reference `ServiceLoader`. No segment
   for the release, a segment failing its linkage self-check, or more than one adapter throws
-  `AdapterUnavailableException`, and the worker reports the capability unavailable with that reason; a
+  `ProtocolUnavailableException`, and the worker reports the capability unavailable with that reason; a
   `LinkageError` or `ServiceConfigurationError` while binding likewise disables only that capability.
   For a player with a native worker, composition skips every protocol-backed provider whose capability the
   worker does not install, and its dependents, with the worker's reason or "not installed by the <library>

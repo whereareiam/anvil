@@ -2,8 +2,12 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
+import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
+import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
@@ -27,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class McProtocolPlayerTest {
 	private final ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -118,6 +123,46 @@ class McProtocolPlayerTest {
 			player.connect();
 			player.disconnect();
 			assertThrows(IllegalStateException.class, player::nativeSession);
+		}
+	}
+
+	@Test
+	void deliversOnlyThePacketsOfTheCurrentSessionToProtocolListeners() {
+		try (McProtocolPlayer player = player(null)) {
+			List<ClientboundSystemChat> received = new ArrayList<>();
+			player.protocol(JavaProtocol.class).listen(ClientboundSystemChat.class, received::add);
+			player.connect();
+			Object first = client.sessions().getFirst();
+			player.rejoin();
+			Object second = client.sessions().get(1);
+
+			client.listener(first).received(first, new ClientboundSystemChat("replaced", false));
+			client.listener(second).received(second, new ClientboundSystemChat("current", false));
+
+			assertEquals(List.of(new ClientboundSystemChat("current", false)), received);
+		}
+	}
+
+	@Test
+	void sendsProtocolPacketsOnTheCurrentSession() {
+		try (McProtocolPlayer player = player(null)) {
+			player.connect();
+			player.rejoin();
+			Object current = client.sessions().get(1);
+
+			player.protocol(JavaProtocol.class).send(new ServerboundChat("hello there"));
+
+			assertEquals(List.of(), client.sent(client.sessions().getFirst()));
+			assertEquals(List.of(new ServerboundChat("hello there")), client.sent(current));
+		}
+	}
+
+	@Test
+	void speaksOnlyTheJavaEditionProtocol() {
+		try (McProtocolPlayer player = player(null)) {
+			ProtocolUnavailableException refused = assertThrows(ProtocolUnavailableException.class, () -> player.protocol(Runnable.class));
+
+			assertTrue(refused.getMessage().contains(Runnable.class.getName()), refused.getMessage());
 		}
 	}
 

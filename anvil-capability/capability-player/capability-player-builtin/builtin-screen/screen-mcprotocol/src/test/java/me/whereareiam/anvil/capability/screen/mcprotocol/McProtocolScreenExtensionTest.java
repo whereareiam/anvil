@@ -5,7 +5,7 @@ import me.whereareiam.anvil.capability.screen.packet.BossBarPacketListener;
 import me.whereareiam.anvil.capability.screen.packet.ScreenPackets;
 import me.whereareiam.anvil.capability.screen.packet.TitlePacketListener;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
@@ -62,7 +62,7 @@ class McProtocolScreenExtensionTest {
 
 	@Test
 	void leavesTheCapabilityToTheWorkerWhenNoAdapterServesTheRelease() {
-		AdapterUnavailableException unavailable = new AdapterUnavailableException("no mcprotocol segment selected for Minecraft 1.16.5 "
+		ProtocolUnavailableException unavailable = new ProtocolUnavailableException("no mcprotocol segment selected for Minecraft 1.16.5 "
 				+ "provides an adapter for " + ScreenPackets.class.getName());
 		Player player = new Player(null) {
 			@Override
@@ -71,7 +71,7 @@ class McProtocolScreenExtensionTest {
 			}
 		};
 
-		assertSame(unavailable, assertThrows(AdapterUnavailableException.class,
+		assertSame(unavailable, assertThrows(ProtocolUnavailableException.class,
 				() -> new McProtocolScreenExtension().bind(player, new Operations())));
 	}
 

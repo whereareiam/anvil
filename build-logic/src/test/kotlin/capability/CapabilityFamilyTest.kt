@@ -25,6 +25,16 @@ class CapabilityFamilyTest {
 	}
 
 	@Test
+	fun `reads the edition side of a family`() {
+		val family = family("messages", "messages-api", "messages-common", "messages-java")
+
+		val read = CapabilityFamily.read(family, listOf("java", "mcprotocol"))
+
+		assertEquals(CapabilityFamily("messages", "messages-api", "messages-common", listOf("messages-java")), read)
+		assertEquals(listOf("messages-api", "messages-java"), read.published)
+	}
+
+	@Test
 	fun `keeps code out of the root of a process family without common code`() {
 		val family = family("console", "console-api", group = PROCESS)
 		File(family, "src/main/java").mkdirs()
@@ -80,7 +90,7 @@ class CapabilityFamilyTest {
 	}
 
 	@Test
-	fun `rejects children that are not family members or sides of registered libraries`() {
+	fun `rejects children that are not family members or sides of editions or registered libraries`() {
 		listOf("movement-protocol", "movement-fixture", "mcprotocol-movement").forEach { child ->
 			val family = family("movement", "movement-api", child)
 

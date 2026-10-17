@@ -1,5 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1;
 
+import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
@@ -21,6 +23,8 @@ import org.jetbrains.annotations.NotNull;
  * handshake for a virtual host.
  */
 public final class McProtocolClientAdapter implements McProtocolClient<Session> {
+	private final JavaPackets packets = new JavaPackets();
+
 	@Override
 	public int protocolNumber() {
 		return MinecraftCodec.CODEC.getProtocolVersion();
@@ -43,7 +47,7 @@ public final class McProtocolClientAdapter implements McProtocolClient<Session> 
 				: new TcpClientSession(connection.getHost(), connection.getPort(), connection.getSourceAddress(), 0, protocol);
 		if (credentials != null && credentials.getSessionServer() != null)
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, new RedirectedSessionService(credentials.getSessionServer()));
-		session.addListener(new ClientPacketListener(login, listener));
+		session.addListener(new ClientPacketListener(login, listener, packets));
 		return session;
 	}
 
@@ -60,5 +64,15 @@ public final class McProtocolClientAdapter implements McProtocolClient<Session> 
 	@Override
 	public void disconnect(@NotNull Session session, @NotNull String reason) {
 		session.disconnect(reason);
+	}
+
+	@Override
+	public void send(@NotNull Session session, @NotNull ServerboundPacket packet) {
+		session.send(packets.encode(packet));
+	}
+
+	@Override
+	public boolean supports(@NotNull Class<? extends JavaPacket> type) {
+		return packets.supports(type);
 	}
 }

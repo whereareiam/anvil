@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.commands.mcprotocol;
 import me.whereareiam.anvil.capability.commands.model.CommandTree;
 import me.whereareiam.anvil.capability.commands.packet.CommandsPackets;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
@@ -55,7 +55,7 @@ class McProtocolCommandsExtensionTest {
 
 	@Test
 	void leavesTheCapabilityToTheWorkerWhenNoAdapterServesTheRelease() {
-		AdapterUnavailableException unavailable = new AdapterUnavailableException("no mcprotocol segment provides an adapter for "
+		ProtocolUnavailableException unavailable = new ProtocolUnavailableException("no mcprotocol segment provides an adapter for "
 				+ CommandsPackets.class.getName());
 		Player player = new Player(null) {
 			@Override
@@ -64,7 +64,7 @@ class McProtocolCommandsExtensionTest {
 			}
 		};
 
-		assertSame(unavailable, assertThrows(AdapterUnavailableException.class, () -> new McProtocolCommandsExtension().bind(player, new Operations())));
+		assertSame(unavailable, assertThrows(ProtocolUnavailableException.class, () -> new McProtocolCommandsExtension().bind(player, new Operations())));
 	}
 
 	private static final class RecordingPackets implements CommandsPackets<String> {

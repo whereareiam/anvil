@@ -1,13 +1,18 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client;
 
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Client side of one MCProtocolLib release, implemented by exactly one client segment on a worker's class path.
  *
- * <p>The worker shell never links against MCProtocolLib: it opens, connects and disconnects native sessions
- * only through this port. A segment owns every packet the client must answer on its own, such as sending
+ * <p>The worker shell never links against MCProtocolLib: it opens, connects and disconnects native sessions and
+ * exchanges Java Edition packets only through this port, and the segment translates them to and from the release's
+ * own packets. A segment owns every packet the client must answer on its own, such as sending
  * client information after login, accepting teleports and announcing that the player loaded, and reports the
  * resulting state through {@link ClientListener}. Sessions are opaque to the shell and are passed back to the
  * segment that created them.</p>
@@ -23,6 +28,8 @@ import org.jetbrains.annotations.NotNull;
  *     public void connect(Session session) { session.connect(true); }
  *     public boolean connected(Session session) { return session.isConnected(); }
  *     public void disconnect(Session session, String reason) { session.disconnect(reason); }
+ *     public void send(Session session, ServerboundPacket packet) { session.send(packets.encode(packet)); }
+ *     public boolean supports(Class<? extends JavaPacket> type) { return packets.supports(type); }
  * }
  * }</pre>
  *
@@ -86,4 +93,23 @@ public interface McProtocolClient<S> {
 	 * @param reason plain-text reason sent to the local session
 	 */
 	void disconnect(@NotNull S session, @NotNull String reason);
+
+	/**
+	 * Sends a Java Edition packet on a session, translated to the release's own packet.
+	 *
+	 * @param session connected session
+	 * @param packet packet to send
+	 * @throws ProtocolUnavailableException when the release cannot carry the packet
+	 */
+	void send(@NotNull S session, @NotNull ServerboundPacket packet);
+
+	/**
+	 * Tells whether the release carries a Java Edition packet: whether the segment translates it from the release's
+	 * packets for {@link ClientListener#received(Object, ClientboundPacket)}, or to them for
+	 * {@link #send(Object, ServerboundPacket)}.
+	 *
+	 * @param type packet class
+	 * @return whether the release carries it
+	 */
+	boolean supports(@NotNull Class<? extends JavaPacket> type);
 }

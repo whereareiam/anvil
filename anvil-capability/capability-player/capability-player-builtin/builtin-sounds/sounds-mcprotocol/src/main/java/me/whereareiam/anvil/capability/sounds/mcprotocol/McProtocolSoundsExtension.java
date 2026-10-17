@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.sounds.mcprotocol;
 import me.whereareiam.anvil.capability.sounds.SoundsBinding;
 import me.whereareiam.anvil.capability.sounds.SoundsProvider;
 import me.whereareiam.anvil.capability.sounds.packet.SoundsPackets;
-import me.whereareiam.anvil.protocol.api.exception.AdapterUnavailableException;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
@@ -36,7 +36,7 @@ public final class McProtocolSoundsExtension implements WorkerExtension<Object> 
 	/**
 	 * Installs the heard-sound listener for one player.
 	 *
-	 * @throws AdapterUnavailableException when no sounds segment serves the worker's release or the segment does not
+	 * @throws ProtocolUnavailableException when no sounds segment serves the worker's release or the segment does not
 	 * link against it
 	 */
 	@Override
