@@ -36,7 +36,7 @@ dependencies {
     api(projects.anvilApi)
     api(projects.anvilEnvironment.execution.executionApi)
 
-    implementation(projects.anvilAgent.agentClient.clientApi)
+    implementation(projects.anvilProcess.processProtocol.protocolHost.protocolHostApi)
     implementation(projects.anvilCapability.capabilityAgentApi)
     implementation(projects.anvilCapability.capabilityApi)
     implementation(projects.anvilCapability.capabilityProtocolApi)
@@ -44,26 +44,26 @@ dependencies {
     implementation(projects.anvilEnvironment.provisioning.provisioningArtifact.artifactApi)
     implementation(projects.anvilEnvironment.provisioning.provisioningJava.javaApi)
     implementation(projects.anvilEnvironment.provisioning.provisioningWorkspace.workspaceApi)
-    implementation(projects.anvilPlatform.platformApi)
+    implementation(projects.anvilProcess.processApi)
     implementation(projects.anvilProtocol.protocolApi)
 
-    compileOnly(projects.anvilAgent.agentClient)
+    compileOnly(projects.anvilProcess.processProtocol.protocolHost.protocolHostCommon)
     compileOnly(projects.anvilCapability)
     compileOnly(projects.anvilEngine)
     compileOnly(projects.anvilEnvironment.cache)
     compileOnly(projects.anvilEnvironment.execution.executionManaged)
-    compileOnly(projects.anvilPlatform.platformPlanning)
+    compileOnly(projects.anvilProcess.processCommon)
     compileOnly(projects.anvilProtocol)
     compileOnly(projects.anvilEnvironment.provisioning.provisioningWorkspace)
     compileOnly(projects.anvilEnvironment.provisioning.provisioningArtifact)
     compileOnly(projects.anvilEnvironment.provisioning.provisioningJava)
 
-    embedded(projects.anvilAgent.agentClient) { isTransitive = false }
+    embedded(projects.anvilProcess.processProtocol.protocolHost.protocolHostCommon) { isTransitive = false }
     embedded(projects.anvilCapability) { isTransitive = false }
     embedded(projects.anvilEngine) { isTransitive = false }
     embedded(projects.anvilEnvironment.cache) { isTransitive = false }
     embedded(projects.anvilEnvironment.execution.executionManaged) { isTransitive = false }
-    embedded(projects.anvilPlatform.platformPlanning) { isTransitive = false }
+    embedded(projects.anvilProcess.processCommon) { isTransitive = false }
     embedded(projects.anvilProtocol) { isTransitive = false }
     embedded(projects.anvilEnvironment.provisioning.provisioningWorkspace) { isTransitive = false }
     embedded(projects.anvilEnvironment.execution.executionLocal) { isTransitive = false }
@@ -77,7 +77,7 @@ dependencies {
     embedded(libs.slf4j.api)
     embedded(libs.slf4j.simple)
 
-    testImplementation(projects.anvilAgent.agentClient)
+    testImplementation(projects.anvilProcess.processProtocol.protocolHost.protocolHostCommon)
     testImplementation(projects.anvilCapability.capabilityBuiltin.default)
     testImplementation(projects.anvilCapability)
     testImplementation(projects.anvilEngine)
@@ -87,18 +87,18 @@ dependencies {
     testImplementation(projects.anvilEnvironment.provisioning.provisioningArtifact)
     testImplementation(projects.anvilEnvironment.provisioning.provisioningJava)
     testImplementation(projects.anvilEnvironment.provisioning.provisioningWorkspace)
-    testImplementation(projects.anvilPlatform.platformPlanning)
+    testImplementation(projects.anvilProcess.processCommon)
     testImplementation(projects.anvilProtocol)
 
-    testRuntimeOnly(projects.anvilPlatform.platformBukkit.platformBukkitAgent)
-    testRuntimeOnly(projects.anvilPlatform.platformBungeecord.platformBungeecordAgent)
-    testRuntimeOnly(projects.anvilPlatform.platformBungeecord.platformBungeecordProvider)
-    testRuntimeOnly(projects.anvilPlatform.platformNeoforge.platformNeoforgeAgent)
-    testRuntimeOnly(projects.anvilPlatform.platformNeoforge.platformNeoforgeProvider)
-    testRuntimeOnly(projects.anvilPlatform.platformPaper.platformPaperProvider)
-    testRuntimeOnly(projects.anvilPlatform.platformSpigot.platformSpigotProvider)
-    testRuntimeOnly(projects.anvilPlatform.platformVelocity.platformVelocityAgent)
-    testRuntimeOnly(projects.anvilPlatform.platformVelocity.platformVelocityProvider)
+    testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.bukkitAgent)
+    testRuntimeOnly(projects.anvilProcess.processPlatform.platformBungeecord.bungeecordAgent)
+    testRuntimeOnly(projects.anvilProcess.processPlatform.platformBungeecord.bungeecordProvider)
+    testRuntimeOnly(projects.anvilProcess.processPlatform.platformNeoforge.neoforgeAgent)
+    testRuntimeOnly(projects.anvilProcess.processPlatform.platformNeoforge.neoforgeProvider)
+    testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.paperProvider)
+    testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.spigotProvider)
+    testRuntimeOnly(projects.anvilProcess.processPlatform.platformVelocity.velocityAgent)
+    testRuntimeOnly(projects.anvilProcess.processPlatform.platformVelocity.velocityProvider)
     testRuntimeOnly(projects.anvilProtocol.protocolMcprotocol)
 }
 

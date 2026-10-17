@@ -60,14 +60,14 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-common`                | MCProtocolLib library provider, release data, worker host and segment selection, MCProtocolLib-free worker shell, and private authentication store                                  |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
 | `anvil-protocol/protocol-mcprotocol/mcprotocol-client/V*`             | Client segments `V1_18_2`, `V1_21_1` and `V1_21_11`, each implementing only `McProtocolClient` from its release key on; `V1_21_11` also serves `26.1.2`                             |
-| `anvil-platform/platform-api`                                         | Platform-provider/planning SPI, version data contract, artifact sources, distribution validation, and configuration contracts                                                      |
-| `anvil-platform/platform-planning`                                    | Platform declaration validation, version data reading, effective Java/topology requirements, forwarding negotiation, the split of a plan by process lifetime, artifact planning, and provider preparation/configuration      |
-| `anvil-platform/platform-*`                                           | Provider-specific distribution/configuration implementations and platform-agent assemblies                                                                                          |
-| `anvil-agent/agent-api`                                               | Shared operation descriptors, payloads, identities, types, and exceptions; no client/server contracts or core dependency                                                            |
-| `anvil-agent/agent-client/client-api`                                 | Host-side clients, directories, connections, and artifact lookup; exports shared agent contracts without core or capability APIs                                                    |
-| `anvil-agent/agent-server/agent-server-api`                           | Embedded endpoint, native service, and operation provider contracts; exports only shared agent contracts                                                                            |
-| `anvil-agent/agent-client`                                            | Host connections, stable process clients/directories, agent sessions, player observations, and artifact location                                                                    |
-| `anvil-agent/agent-server`                                            | Embedded authenticated endpoint, native operation dispatch, extension loading, and the shaded agent artifact used by platform agents                                         |
+| `anvil-process/process-api`                                         | Platform-provider/planning SPI, version data contract, artifact sources, distribution validation, and configuration contracts                                                      |
+| `anvil-process/process-common`                                    | Platform declaration validation, version data reading, effective Java/topology requirements, forwarding negotiation, the split of a plan by process lifetime, artifact planning, and provider preparation/configuration      |
+| `anvil-process/process-platform/platform-<name>`                      | One family per platform: its provider (`<name>-provider`) and, where it installs one, its platform agent assembly (`<name>-agent`); Paper and Spigot share `platform-bukkit` |
+| `anvil-process/process-protocol/process-protocol-api`                                               | Shared operation descriptors, payloads, identities, types, and exceptions; no client/server contracts or core dependency                                                            |
+| `anvil-process/process-protocol/protocol-host/protocol-host-api`                                 | Host-side clients, directories, connections, and artifact lookup; exports shared agent contracts without core or capability APIs                                                    |
+| `anvil-process/process-protocol/protocol-agent/protocol-agent-api`                           | Embedded endpoint, native service, and operation provider contracts; exports only shared agent contracts                                                                            |
+| `anvil-process/process-protocol/protocol-host/protocol-host-common`                                            | Host connections, stable process clients/directories, agent sessions, player observations, and artifact location                                                                    |
+| `anvil-process/process-protocol/protocol-agent/protocol-agent-common`                                            | Embedded authenticated endpoint, native operation dispatch, extension loading, and the shaded agent artifact used by platform agents                                         |
 | `anvil-integration/integration-junit`                                             | JUnit annotations, context injection, and lifecycle integration                                                                                                                     |
 | `anvil-integration/integration-gradle/gradle-junit`                                      | Optional `AnvilTest` tasks (`anvilTest` and one per suite) and JUnit dependency wiring                                                                                             |
 | `anvil-tooling/tooling-api`                                           | Editor-independent scenario, session, target, and log contracts                                                                                                                     |
@@ -97,8 +97,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   Ordinary implementations and API modules consume only their own family's APIs and `anvil-api`;
   foreign API dependencies and re-exports are forbidden unless an ancestor-owned contract API is
   explicitly declared through `architecture.sharedApis`. Each exposed API needs permission independently.
-  Organizational grouping does not merge families. Agent client/server families share only `agent-api`;
-  they must not depend on or re-export each other's API or implementation.
+  Organizational grouping does not merge families. The agent's host and agent families (`protocol-host`,
+  `protocol-agent`) share only `process-protocol-api`; they must not depend on or re-export each other's API or
+  implementation.
 - Keep concrete platform SDKs, MCProtocolLib, serialization, transport implementations, and assembly
   modules out of `anvil-api`. Global declarations and engine/scenario registration belong in core;
   scoped services stay in their owning APIs even when another family needs them.
@@ -222,8 +223,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   alongside exposure and access policy.
 - Processes run on LTS releases only (11, 17, 21, 25, then every fourth); Java 8 is not one of them.
   Each provider owns `<platform>-versions.toml` (Java rows, `[agent] minimumJava`, verified and known
-  versions) and exposes it through `PlatformProvider.versionData()`; platform-planning reads it, so
-  platform-api carries no parser. The agent minimum raises the effective minimum and the default LTS;
+  versions) and exposes it through `PlatformProvider.versionData()`; process-common reads it, so
+  process-api carries no parser. The agent minimum raises the effective minimum and the default LTS;
   a default it pushes above the row maximum is refused. A maximum is refused unless the row names a
   bypass property; planning then adds `-D<property>=true` before provider defaults for explicit requests
   only, never for the default. Version and Java assessments follow `SupportLevel`/`SupportPolicy` and
@@ -450,10 +451,10 @@ Run the nearest relevant test first, then architecture/build checks:
 ./gradlew checkSegmentLinkage
 ./gradlew :anvil-engine:test
 ./gradlew :anvil-environment:execution:execution-managed:test
-./gradlew :anvil-platform:platform-planning:test
+./gradlew :anvil-process:process-common:test
 ./gradlew :anvil-protocol:test
-./gradlew :anvil-agent:agent-client:test
-./gradlew :anvil-agent:agent-server:test
+./gradlew :anvil-process:process-protocol:protocol-host:protocol-host-common:test
+./gradlew :anvil-process:process-protocol:protocol-agent:protocol-agent-common:test
 ./gradlew :anvil-capability:test
 ./gradlew :anvil-protocol:protocol-mcprotocol:mcprotocol-common:test
 ./gradlew :anvil-integration:integration-gradle:gradle-plugin:test :anvil-integration:integration-gradle:gradle-capabilities:test :anvil-integration:integration-gradle:gradle-platforms:test
