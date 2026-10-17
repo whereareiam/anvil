@@ -27,7 +27,7 @@ import java.util.Set;
 /**
  * Chat of the MCProtocolLib 1.21.11 release, whose chat packet carries a checksum of the acknowledged messages.
  */
-final class ChatPackets implements PacketTranslation<Packet> {
+public final class ChatPackets implements PacketTranslation<Packet> {
 	private static final int ACKNOWLEDGED_MESSAGES = 20;
 	private static final int UNVERIFIED_CHECKSUM = 0;
 

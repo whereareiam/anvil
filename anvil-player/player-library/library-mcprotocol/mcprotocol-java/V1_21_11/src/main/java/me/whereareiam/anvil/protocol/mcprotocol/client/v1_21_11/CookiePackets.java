@@ -22,7 +22,7 @@ import java.util.Set;
  * their own cookie package. The request serves the login, configuration and game phases, so one response answers a
  * request in any of them.
  */
-final class CookiePackets implements PacketTranslation<Packet> {
+public final class CookiePackets implements PacketTranslation<Packet> {
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(ClientboundCookieRequest.class, ClientboundStoreCookie.class, ServerboundCookieResponse.class);

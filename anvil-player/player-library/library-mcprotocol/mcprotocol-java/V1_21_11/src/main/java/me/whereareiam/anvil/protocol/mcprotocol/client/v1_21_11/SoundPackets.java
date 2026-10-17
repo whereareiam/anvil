@@ -21,7 +21,7 @@ import java.util.Set;
  * following an entity each carry a sound that the library has already resolved: a built-in sound from its registry
  * ID or a sound the server named.
  */
-final class SoundPackets implements PacketTranslation<Packet> {
+public final class SoundPackets implements PacketTranslation<Packet> {
 	private static final String DEFAULT_NAMESPACE = "minecraft:";
 
 	@Override

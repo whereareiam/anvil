@@ -7,7 +7,10 @@ architecture {
 		projects.anvilCapability.capabilityApi.path,
 		projects.anvilCapability.capabilityPlayer.capabilityPlayerApi.path,
 	)
-	dependsOnApis = setOf(projects.anvilPlayer.playerApi.path)
+	dependsOnApis = setOf(
+		projects.anvilPlayer.playerApi.path,
+		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi.path,
+	)
 }
 
 description = "Public wiring bundle for the built-in interaction capability"

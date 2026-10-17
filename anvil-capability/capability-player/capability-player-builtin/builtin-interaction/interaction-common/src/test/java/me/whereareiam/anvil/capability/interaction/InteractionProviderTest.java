@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.interaction;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
+import me.whereareiam.anvil.capability.interaction.channel.InteractionChannel;
 import me.whereareiam.anvil.capability.interaction.model.ItemUse;
 import me.whereareiam.anvil.capability.interaction.type.Hand;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
@@ -31,8 +32,8 @@ class InteractionProviderTest {
 	void describesTheInteractionCapabilityForTheLibrariesWithAWorkerSide() {
 		InteractionProvider provider = new InteractionProvider();
 
-		assertEquals("me.whereareiam.anvil.interaction", InteractionProvider.ID);
-		assertEquals(InteractionProvider.ID, provider.descriptor().getId());
+		assertEquals("me.whereareiam.anvil.interaction", InteractionChannel.ID);
+		assertEquals(InteractionChannel.ID, provider.descriptor().getId());
 		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
 		assertEquals(Set.of("mcprotocol"), provider.supportedLibraries());
 		assertEquals(Interaction.class, provider.capability());
@@ -46,7 +47,7 @@ class InteractionProviderTest {
 
 		interaction.useItem(Hand.OFF);
 
-		assertEquals(List.of(InteractionOperations.ITEM.getId()), channel.requests);
+		assertEquals(List.of(InteractionChannel.ITEM.getId()), channel.requests);
 		assertEquals(List.of(new ItemUse(Hand.OFF)), channel.payloads);
 	}
 
@@ -76,7 +77,7 @@ class InteractionProviderTest {
 
 		@Override
 		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(InteractionProvider.ID);
+			return Set.of(InteractionChannel.ID);
 		}
 	}
 

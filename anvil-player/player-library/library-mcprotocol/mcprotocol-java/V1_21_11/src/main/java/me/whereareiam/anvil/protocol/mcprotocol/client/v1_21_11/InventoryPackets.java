@@ -43,7 +43,7 @@ import java.util.Set;
  * Containers and the held item of Minecraft 1.21.11, whose server addresses the player's own inventory with a packet
  * of its own and whose clicks describe items as hashed stacks. The class also links against the 26.1 release.
  */
-final class InventoryPackets implements PacketTranslation<Packet> {
+public final class InventoryPackets implements PacketTranslation<Packet> {
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(

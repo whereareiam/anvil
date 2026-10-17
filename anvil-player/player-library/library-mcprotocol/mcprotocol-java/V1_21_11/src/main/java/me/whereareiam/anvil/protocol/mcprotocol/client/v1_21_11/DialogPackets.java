@@ -35,7 +35,7 @@ import java.util.Set;
  * decoded. A custom click's payload is the compound its action declared in SNBT, an empty one when it declared none,
  * with the click's input values put in.
  */
-final class DialogPackets implements PacketTranslation<Packet> {
+public final class DialogPackets implements PacketTranslation<Packet> {
 	private static final Key DIALOG_REGISTRY = Key.key("minecraft:dialog");
 
 	@Override

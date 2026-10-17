@@ -31,7 +31,7 @@ import java.util.Set;
  * as needing permissions, which MCProtocolLib reads as {@code allowsRestricted}. A parser's ID is its vanilla ID:
  * {@code brigadier:} for the Brigadier types and {@code minecraft:} for the others.
  */
-final class CommandPackets implements PacketTranslation<Packet> {
+public final class CommandPackets implements PacketTranslation<Packet> {
 	private static final Set<CommandParser> BRIGADIER = Set.of(
 			CommandParser.BOOL, CommandParser.FLOAT, CommandParser.DOUBLE, CommandParser.INTEGER, CommandParser.LONG, CommandParser.STRING
 	);

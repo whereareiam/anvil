@@ -23,7 +23,7 @@ a family's API describes its services and extension points. The launcher binds t
 | `anvil-capability/capability-api`                | Generic composition, neutral player contracts, descriptors, exceptions, and typed requests |
 | `anvil-capability/capability-common`             | Dependency validation, agent-provider adaptation and agent extensions, logical process owners, player facades, and capability cleanup |
 | `anvil-capability/capability-player/capability-player-api` | Protocol-backed player providers/contexts, channels/events, and native worker bindings |
-| `anvil-capability/capability-player/capability-player-builtin` | Player capability families: feature APIs, library-neutral providers and bindings, and library sides with segments |
+| `anvil-capability/capability-player/capability-player-builtin` | Player capability families: feature APIs with their channel contracts, host providers, and Java Edition worker extensions |
 | `anvil-capability/capability-process/capability-process-api` | Agent-backed process providers and scoped request-channel contexts |
 | `anvil-capability/capability-process/capability-process-builtin` | Process capability families with agent-backed host wiring: Dispatch, and Players, which reports what one server or proxy knows about the players on it from its own agent's events |
 | `anvil-capability/capability-default`            | Aggregate of every built-in capability |
@@ -145,10 +145,11 @@ can do or know, which running processes own, such as Dispatch and Players; a pro
 are no public owners themselves: public feature packages and artifact IDs remain feature-specific, such as
 `builtin-players`.
 
-Each built-in capability is a family folder `builtin-<feature>`: `<feature>-api` holds the public API (and,
-for packet capabilities, the library-neutral port in its `packet` package), `<feature>-common` holds the host provider
-and worker binding in the feature packages, and `<feature>-<library>` adapts the feature to one protocol
-library through `V*` segments. The family root applies the `module-capability` convention and only wires these
+Each built-in capability is a family folder `builtin-<feature>`: `<feature>-api` holds the public API and, for a
+player capability, the contract between host and worker in its `channel` package; `<feature>-common` holds the host
+provider in the feature packages; and a player capability's `<feature>-java` holds its worker extension, which
+speaks the Java Edition protocol through the player's `JavaProtocol`. The library's client segments translate that
+protocol for each release, so no built-in capability has segments of its own. The family root applies the `module-capability` convention and only wires these
 members into the `builtin-<feature>` bundle. The convention publishes the members as `builtin-<member>`,
 such as `builtin-movement-api`, and refuses a child that is not a member, a `common` or `util` package, and
 code in the root of a family with common code or library sides.
@@ -202,19 +203,20 @@ every such library. MCProtocolLib's family is laid out like this:
 | `mcprotocol-api` | The release-neutral client port `McProtocolClient<S>` that client segments implement |
 | `mcprotocol-common` | `McProtocolLibraryProvider`, the release catalog, worker host and segment selection, the worker shell, and the private account store |
 | `mcprotocol-java` | Source-free side folder whose `V*` children are the client segments |
-| `mcprotocol-java/V1_18_2`, `V1_21_1` and `V1_21_11` | One client segment per range of releases; `V1_21_11` also serves `26.1.2` |
+| `mcprotocol-java/V1_18_2`, `V1_21_1`, `V1_21_11` and `V26_1_2` | One client segment per range of releases; `V26_1_2` extends `V1_21_11` and replaces only its interaction translation |
 
 The worker shell never imports MCProtocolLib. Every class that does lives in a segment: a project named
 after the release key it starts at, under a side folder named after its owner and library, such as
-`mcprotocol-java` or `interaction-mcprotocol`. A segment holds only the adapters of library-neutral ports
+`mcprotocol-java` or an external capability's `teleport-mcprotocol`. A segment holds only the adapters of library-neutral ports
 and their service descriptors; it never wires anything. Its package ends in the folder name in lower
 case, such as `.v1_18_2`. For a release, the worker keeps the segment of each side with the greatest
 start version that does not exceed the release key. A new segment is added only when a release breaks
 the code of the previous one, which `checkSegmentLinkage` reports; see
 [Adding a Minecraft version](../../minecraft-versions/index.md).
 
-Capability families repeat the pattern: `<feature>-api` declares the port in its `packet` package, and
-`<feature>-mcprotocol` holds the wiring extension and the `V*` segments that implement it.
+A capability that needs packets the protocol does not model can still repeat the pattern: its API declares a
+port in its `packet` package, and its `<feature>-mcprotocol` side holds the wiring extension and the `V*` segments
+that implement it; see [Protocol adapters](../../../extending/capabilities/protocol-adapters/index.md).
 
 ## Preserve dependency direction
 
@@ -305,9 +307,9 @@ Use feature-oriented packages. Keep contracts at the feature root, reusable publ
 `model`, and enums or closed value types under `type`. Physical directories match package names.
 Small implementation-local carriers can be inner records; public models use separate top-level files.
 A package needs at least two files unless it is one of the fixed role packages `model`, `type`,
-`exception`, and `packet`. Every packet capability keeps its release port in `packet`, even when the
+`exception`, and `packet`. A capability with segments keeps its release port in `packet`, even when the
 port is the package's only file, so the port has the same place in every family. A segment's version
-package, such as `v1_18_2`, and a library side's wiring package, such as `interaction.mcprotocol`, hold one
+package, such as `v1_18_2`, and a library side's wiring package, such as `teleport.mcprotocol`, hold one
 class by design and are exempt as well. Avoid catch-all
 `util` or `common` packages; common code lives in the feature packages.
 

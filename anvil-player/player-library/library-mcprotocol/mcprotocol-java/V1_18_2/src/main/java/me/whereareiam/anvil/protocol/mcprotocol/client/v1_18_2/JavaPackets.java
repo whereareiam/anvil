@@ -22,6 +22,7 @@ final class JavaPackets {
 			new ChatPackets(),
 			new CommandPackets(),
 			new ConnectionPackets(),
+			new InteractionPackets(),
 			new InventoryPackets(),
 			new PlayerPackets(),
 			new ScreenPackets(),

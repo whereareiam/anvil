@@ -15,6 +15,11 @@ import me.whereareiam.anvil.protocol.java.api.packet.cookie.ClientboundStoreCook
 import me.whereareiam.anvil.protocol.java.api.packet.cookie.ServerboundCookieResponse;
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ClientboundShowDialog;
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ServerboundCustomClickAction;
+import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
+import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInteract;
+import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwing;
+import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
+import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
@@ -124,6 +129,11 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ServerboundChat.class));
 		assertTrue(client.supports(ServerboundChatCommand.class));
 		assertTrue(client.supports(ServerboundMovePlayerPosRot.class));
+		assertTrue(client.supports(ServerboundSwing.class));
+		assertTrue(client.supports(ServerboundUseItem.class));
+		assertTrue(client.supports(ServerboundUseItemOn.class));
+		assertTrue(client.supports(ServerboundInteract.class));
+		assertFalse(client.supports(ServerboundAttack.class));
 		assertTrue(client.supports(ClientboundCommands.class));
 		assertTrue(client.supports(ClientboundCookieRequest.class));
 		assertTrue(client.supports(ClientboundStoreCookie.class));

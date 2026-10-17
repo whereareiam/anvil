@@ -127,14 +127,15 @@ public interface PlayerBindingContext<S> {
 
 	/**
 	 * Returns the adapter of a library-neutral port for this player's library release: the implementation that the
-	 * segment selected for the release provides. Capability wiring obtains every release-specific implementation
-	 * this way, never through a service lookup of its own, so the worker's segment selection and linkage self-check
-	 * decide what it receives. Call it while binding, not in the extension's constructor.
+	 * segment selected for the release provides. The wiring of a capability with segments of its own, such as an
+	 * external capability that sends packets the player's protocol does not model, obtains every release-specific
+	 * implementation this way, never through a service lookup of its own, so the worker's segment selection and
+	 * linkage self-check decide what it receives. Call it while binding, not in the extension's constructor.
 	 *
 	 * <pre>{@code
 	 * public WorkerBinding bind(PlayerBindingContext<Object> player, OperationRegistry operations) {
-	 *     InteractionPackets<?> packets = player.adapter(InteractionPackets.class);
-	 *     return new InteractionBinding<>(packets).bind(player, operations);
+	 *     TeleportPackets<?> packets = player.adapter(TeleportPackets.class);
+	 *     return new TeleportBinding<>(packets).bind(player, operations);
 	 * }
 	 * }</pre>
 	 *

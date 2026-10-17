@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.capability.interaction;
 
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
+import me.whereareiam.anvil.capability.interaction.channel.InteractionChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
 import org.jetbrains.annotations.NotNull;
@@ -13,15 +14,10 @@ import java.util.Set;
  * interaction binding.
  */
 public final class InteractionProvider implements ProtocolPlayerCapabilityProvider<Interaction> {
-	/**
-	 * Capability ID shared by this provider and the worker extension of every library side.
-	 */
-	public static final String ID = "me.whereareiam.anvil.interaction";
-
 	@Override
 	public @NotNull CapabilityDescriptor descriptor() {
 		return CapabilityDescriptor.builder()
-				.id(ID)
+				.id(InteractionChannel.ID)
 				.build();
 	}
 

@@ -17,7 +17,7 @@ import java.util.Set;
  * Player movement of the MCProtocolLib 1.21.11 release, whose position packet also carries the
  * horizontal collision flag.
  */
-final class PlayerPackets implements PacketTranslation<Packet> {
+public final class PlayerPackets implements PacketTranslation<Packet> {
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(ServerboundMovePlayerPosRot.class);

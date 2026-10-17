@@ -6,7 +6,7 @@ import java.io.File
 import java.io.Serializable
 
 /**
- * A library side folder, such as `messages-mcprotocol`: the project that holds one library's segments as its
+ * A library side folder, such as `mcprotocol-java` or a capability's `teleport-mcprotocol`: the project that holds one library's segments as its
  * only child projects.
  *
  * @property name folder and project name
