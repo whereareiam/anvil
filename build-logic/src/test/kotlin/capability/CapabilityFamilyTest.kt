@@ -26,7 +26,7 @@ class CapabilityFamilyTest {
 
 	@Test
 	fun `keeps code out of the root of a process family without common code`() {
-		val family = family("console", "console-api", owner = "process")
+		val family = family("console", "console-api", owner = "server")
 		File(family, "src/main/java").mkdirs()
 
 		val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("mcprotocol")) }
@@ -45,13 +45,13 @@ class CapabilityFamilyTest {
 	}
 
 	@Test
-	fun `names the families of every owner group`() {
+	fun `names the families of every side group`() {
 		family("movement", "movement-api")
 		family("session", "session-api")
-		family("console", "console-api", owner = "process")
-		File(root, "player/messages/builtin-messages").mkdirs()
-		File(root, "player/messages/builtin-messages/build.gradle.kts").writeText("")
-		File(root, "player/notes").mkdirs()
+		family("console", "console-api", owner = "server")
+		File(root, "client/messages/builtin-messages").mkdirs()
+		File(root, "client/messages/builtin-messages/build.gradle.kts").writeText("")
+		File(root, "client/notes").mkdirs()
 
 		assertEquals(listOf("console", "messages", "movement", "session"), CapabilityFamily.names(root))
 	}
@@ -80,7 +80,7 @@ class CapabilityFamilyTest {
 	@Test
 	fun `keeps code out of the root of a family with common code or library sides`() {
 		listOf(listOf("server-api", "server-common"), listOf("server-api", "server-mcprotocol")).forEach { members ->
-			val family = family("server", *members.toTypedArray(), owner = "process")
+			val family = family("server", *members.toTypedArray(), owner = "server")
 			File(family, "src/main/java").mkdirs()
 
 			val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("mcprotocol")) }
@@ -109,7 +109,7 @@ class CapabilityFamilyTest {
 		}
 	}
 
-	private fun family(name: String, vararg projects: String, owner: String = "player"): File {
+	private fun family(name: String, vararg projects: String, owner: String = "client"): File {
 		val family = File(root, "$owner/$name")
 		family.mkdirs()
 		File(family, "build.gradle.kts").writeText("")
