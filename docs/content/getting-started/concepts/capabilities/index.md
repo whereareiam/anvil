@@ -9,7 +9,7 @@ behavior you want to control: a simulated player or a running server or proxy.
 | Owner | Capability contract | Examples |
 |---|---|---|
 | Player | `PlayerCapability` | `Session` controls connections; `Messages` sends chat and observes replies |
-| Process | `ProcessCapability` | `Console` dispatches native server or proxy commands; `Players` reports who is on the process |
+| Process | `ProcessCapability` | `Dispatch` runs a command as the server or proxy console; `Players` reports who is on the process |
 
 Both extend the shared `Capability` contract. Ownership determines which object exposes the
 capability and how long its instance lives.
@@ -27,8 +27,10 @@ leaves a process's platform agent reports, and it belongs to that process becaus
 knows who is on it. Alice's client knows only the profile it was granted; which backend a proxy sent her
 to is something the proxy knows, so you ask the proxy's `Players`.
 
-Use `Messages` to send a command as a player and `Console` to dispatch it as the process console.
-The two callers can have different permissions and trigger different application behavior.
+Use `Messages` to send a command as a player and `Dispatch` to dispatch it as the process console.
+The two callers can have different permissions and trigger different application behavior. `Dispatch` is
+distinct from the process's own `console()`, which types into the process and reads what it prints; see
+[dispatching commands](../../../building-blocks/environments/actions/dispatch/index.md) for when to use each.
 
 ## Request behavior by its public type
 
@@ -36,9 +38,9 @@ The two callers can have different permissions and trigger different application
 operation, while an installed provider implements it for the selected runtime. Tests use the public
 interface without importing protocol packets, platform SDKs, or transport code.
 
-For a process, use `process.capability(Console.class)`. This does not require creating a player.
+For a process, use `process.capability(Dispatch.class)`. This does not require creating a player.
 The installed implementation determines whether a capability is available; Anvil's built-in
-`Console` requires the process's platform agent.
+`Dispatch` requires the process's platform agent.
 
 Installing an API alone does not supply its implementation. Anvil's bundled runtime offers
 [player capabilities](../../../building-blocks/players/capabilities/index.md) and

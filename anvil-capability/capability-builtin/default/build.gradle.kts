@@ -12,6 +12,6 @@ dependencies {
 	api(projects.anvilCapability.capabilityBuiltin.client.messages)
 	api(projects.anvilCapability.capabilityBuiltin.client.movement)
 	api(projects.anvilCapability.capabilityBuiltin.client.session)
-	api(projects.anvilCapability.capabilityBuiltin.server.console)
+	api(projects.anvilCapability.capabilityBuiltin.server.dispatch)
 	api(projects.anvilCapability.capabilityBuiltin.server.players)
 }

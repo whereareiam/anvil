@@ -38,9 +38,9 @@ when receipt by a player is the behavior under test.
 `sendCommand` takes console syntax without a leading slash. For a plugin command, use a marker or
 response that identifies that command's completion, rather than relying on unrelated periodic output.
 
-To dispatch through the native platform API and receive its boolean acceptance result, use the
-process's agent-backed [Console capability](../agents/index.md). The process console shown here supplies input and
-captured output; it remains available independently of installed process capabilities.
+To learn whether the platform accepted a command, dispatch it with the process's
+[Dispatch capability](../dispatch/index.md) instead. The process console shown here supplies input and captured
+output; it remains available independently of installed process capabilities.
 
 ## Read a bounded tail
 

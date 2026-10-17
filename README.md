@@ -216,7 +216,7 @@ plugins {
 ```
 
 The available built-in unit IDs are `session`, `messages`, `movement`, `inventory`, `interaction`,
-`commands`, and `dialogs` for players, and `console` and `players` for servers and proxies. The umbrella plugin uses the separate `default` unit internally to include the
+`commands`, and `dialogs` for players, and `dispatch` and `players` for servers and proxies. The umbrella plugin uses the separate `default` unit internally to include the
 aggregate artifact. Unit plugins own their capability artifact coordinates; the scenarios plugin has
 no built-in capability catalog.
 
@@ -360,7 +360,7 @@ its implementation. Anvil ships a useful starting set:
 | `Commands`          | Read the command tree and check commands as the client does                    |
 | `Dialogs`           | Observe dialogs, fill their inputs, and press their buttons (1.21.6+)          |
 
-Servers and proxies have capabilities of their own: `Console` runs native console commands, and
+Servers and proxies have capabilities of their own: `Dispatch` runs commands as the console, and
 `Players` reports who is on that process, the username and UUID it sees, and on a proxy the backend it
 connected each player to:
 

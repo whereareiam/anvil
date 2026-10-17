@@ -6,7 +6,7 @@ architecture {
 	sharedApis = setOf(projects.anvilCapability.capabilityApi.path, projects.anvilCapability.capabilityAgentApi.path)
 }
 
-description = "Wiring bundle for the built-in console capability"
+description = "Wiring bundle for the built-in dispatch capability"
 
 dependencies {
 	api(projects.anvilCapability.capabilityAgentApi)

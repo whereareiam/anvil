@@ -34,7 +34,7 @@ import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.api.type.WorkspaceMode;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
-import me.whereareiam.anvil.capability.console.Console;
+import me.whereareiam.anvil.capability.dispatch.Dispatch;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
 import me.whereareiam.anvil.engine.AnvilEngineBuilder;
@@ -140,8 +140,8 @@ class DefaultScenarioFactoryIntegrationTest {
 	void processesWithoutAgentCapabilitiesUseEmptyLookup() {
 		try (var run = start(true, new TestPlatform(), scenario(null), this::library)) {
 			var process = run.processes().server("server");
-			assertFalse(process.hasCapability(Console.class));
-			assertThrows(CapabilityUnavailableException.class, () -> process.capability(Console.class));
+			assertFalse(process.hasCapability(Dispatch.class));
+			assertThrows(CapabilityUnavailableException.class, () -> process.capability(Dispatch.class));
 		}
 	}
 
@@ -408,30 +408,30 @@ class DefaultScenarioFactoryIntegrationTest {
 			var processes = run.processes();
 			var original = processes.proxy("proxy");
 			var server = processes.server("server");
-			var console = original.capability(Console.class);
+			var dispatch = original.capability(Dispatch.class);
 			var snapshot = processes.all();
-			assertTrue(original.hasCapability(Console.class));
-			assertNotSame(console, server.capability(Console.class));
+			assertTrue(original.hasCapability(Dispatch.class));
+			assertNotSame(dispatch, server.capability(Dispatch.class));
 			assertSame(original, processes.get("proxy"));
-			assertTrue(console.execute("before"));
+			assertTrue(dispatch.execute("before"));
 			assertEquals(List.of("2:before"), commands);
 
 			var replacement = processes.restart("proxy");
 			assertNotSame(original, replacement);
-			assertSame(console, replacement.capability(Console.class));
+			assertSame(dispatch, replacement.capability(Dispatch.class));
 			assertSame(replacement, processes.get("proxy"));
 			assertSame(replacement, processes.proxy("proxy"));
 			assertSame(server, processes.server("server"));
 			assertEquals(List.of(server, original), List.copyOf(snapshot));
 			assertEquals(ProcessState.STOPPED, original.state());
 			assertEquals(ProcessState.READY, replacement.state());
-			assertTrue(console.execute("after"));
+			assertTrue(dispatch.execute("after"));
 			assertEquals(List.of("2:before", "3:after"), commands);
 
 			run.close();
-			assertThrows(IllegalStateException.class, () -> original.capability(Console.class));
-			assertFalse(original.hasCapability(Console.class));
-			assertFalse(replacement.hasCapability(Console.class));
+			assertThrows(IllegalStateException.class, () -> original.capability(Dispatch.class));
+			assertFalse(original.hasCapability(Dispatch.class));
+			assertFalse(replacement.hasCapability(Dispatch.class));
 		}
 	}
 

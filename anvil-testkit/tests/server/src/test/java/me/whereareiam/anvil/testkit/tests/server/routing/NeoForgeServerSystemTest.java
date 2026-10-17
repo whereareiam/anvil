@@ -4,7 +4,7 @@ import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
-import me.whereareiam.anvil.capability.console.Console;
+import me.whereareiam.anvil.capability.dispatch.Dispatch;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.players.PlayerWatch;
 import me.whereareiam.anvil.capability.players.Players;
@@ -40,17 +40,17 @@ class NeoForgeServerSystemTest {
 			Session session = alice.capability(Session.class);
 			Messages messages = alice.capability(Messages.class);
 			Players players = context.processes().server("server").capability(Players.class);
-			Console console = context.processes().server("server").capability(Console.class);
+			Dispatch dispatch = context.processes().server("server").capability(Dispatch.class);
 			PlayerWatch arrivals = players.watch();
 
 			session.connect();
 			session.connected(Duration.ofSeconds(30));
 			assertEquals("Alice", arrivals.joined(alice, Duration.ofSeconds(10)).getProfile().getUsername());
 
-			assertTrue(console.execute("tellraw Alice \"anvil:neoforge\""));
+			assertTrue(dispatch.execute("tellraw Alice \"anvil:neoforge\""));
 			messages.received("anvil:neoforge", Duration.ofSeconds(10));
 
-			assertTrue(console.execute("kick Alice anvil:kicked"));
+			assertTrue(dispatch.execute("kick Alice anvil:kicked"));
 			assertEquals("anvil:kicked", session.kicked());
 			assertFalse(session.state().connected());
 			arrivals.left(alice, Duration.ofSeconds(10));

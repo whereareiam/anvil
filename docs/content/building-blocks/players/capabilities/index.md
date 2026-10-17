@@ -12,7 +12,8 @@ receives, its inventory, the dialogs it is shown. What a server or proxy knows a
 whether the player is on it, the profile it sees, or the backend a proxy connected the player to,
 belongs to that process's [Players](../../environments/actions/players/index.md) capability. General
 server or proxy control uses the context's [process API](../../environments/actions/index.md) or a
-capability owned by its [agent](../../environments/actions/agents/index.md), such as `Console`.
+capability owned by the process and backed by its [agent](../../environments/actions/agents/index.md), such as
+[`Dispatch`](../../environments/actions/dispatch/index.md).
 
 ## Choose the behavior
 

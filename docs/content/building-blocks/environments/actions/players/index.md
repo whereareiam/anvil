@@ -184,7 +184,7 @@ is met, `joined(player)` on the same watch returns that visit at once.
 ## Restarts and renamed players
 
 The `Players` instance belongs to the logical process and is the same before and after a
-[restart](../restarts/index.md), like `Console`. A restarted process ends the visits it reported
+[restart](../restarts/index.md), like `Dispatch`. A restarted process ends the visits it reported
 before: after a restart, `online()` lists only players that joined the new generation, and a watch
 created before the restart waits for the player to join again.
 

@@ -8,53 +8,27 @@ server or proxy's native API. Retrieve the capability directly from the running 
 process owns the behavior; its platform agent supplies the native implementation. This does not
 require a simulated player or a game session.
 
-## Execute a native command
+## Retrieve a process capability
 
-This complete helper expects a running Paper or Spigot process named `lobby`. Apply its platform
-unit and the `me.whereareiam.anvil.capability.console` unit, or explicitly select the default capability unit with
-the platform unit. Put the helper in `src/anvil/java/com/example/test/AgentChecks.java` and call
-`AgentChecks.announce(anvil)` from a test receiving `ScenarioContext anvil`:
-
-```java
-package com.example.test;
-
-import me.whereareiam.anvil.api.scenario.ScenarioContext;
-import me.whereareiam.anvil.capability.console.Console;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-public final class AgentChecks {
-	public static void announce(ScenarioContext anvil) {
-		var lobby = anvil.processes().server("lobby");
-		Console console = lobby.capability(Console.class);
-		assertTrue(console.execute("say hello-from-anvil"));
-	}
-}
-```
-
-Run the containing test with `./gradlew anvilTest`. The boolean result reports whether the platform
-accepted the command. It does not return console output or prove that the requested application
-work finished. Use a typed observation or [captured process output](../console/index.md) to establish
-that outcome.
-
-The built-in `Console` requires an enabled platform agent, which runs the command through the platform's
-console. Capability retrieval fails with
-`CapabilityUnavailableException` when the installed providers do not supply the requested type.
-Use `process.hasCapability(type)` only when absence is an intentional supported case; it reports
+Look up a capability on the process handle, for example
+`anvil.processes().server("lobby").capability(Dispatch.class)` with the built-in
+[Dispatch capability](../dispatch/index.md), which runs a command as the console through the platform agent.
+Capability retrieval fails with `CapabilityUnavailableException` when the installed providers do not supply the
+requested type. Use `process.hasCapability(type)` only when absence is an intentional supported case; it reports
 whether the capability is installed, not whether its next request will succeed.
 
 ## Choose the owner and interaction
 
 | Task | Entry point |
 |---|---|
-| Dispatch a command through the native platform API | The process's `Console` capability |
+| Run a command as the console and know whether the platform accepted it | The process's [Dispatch capability](../dispatch/index.md) |
 | Send console input or inspect captured process output | The process's [console](../console/index.md) |
 | Read or change plugin state with a typed result | An installed process capability calling a native operation |
 | Know who is on a server or proxy, the profile it sees, or a player's backend | The process's [Players capability](../players/index.md) |
 | Restart one process | [Restarting processes](../restarts/index.md) |
 
 A capability's owner follows who can normally do or know the thing, not how it is implemented.
-`Console` and `Players` belong to the process because running a console command and knowing who is
+`Dispatch` and `Players` belong to the process because running a console command and knowing who is
 on it are what a server or proxy does; both happen to use its agent. A custom process capability can
 use another implementation without exposing an agent in its public API.
 
