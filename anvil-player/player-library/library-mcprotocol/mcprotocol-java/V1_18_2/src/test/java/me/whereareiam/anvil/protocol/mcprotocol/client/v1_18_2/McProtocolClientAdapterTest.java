@@ -12,6 +12,9 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.command.ClientboundCommands;
+import me.whereareiam.anvil.protocol.java.api.packet.cookie.ClientboundCookieRequest;
+import me.whereareiam.anvil.protocol.java.api.packet.cookie.ClientboundStoreCookie;
+import me.whereareiam.anvil.protocol.java.api.packet.cookie.ServerboundCookieResponse;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundMovePlayerPosRot;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundCustomSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
@@ -117,6 +120,9 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ClientboundSoundEntity.class));
 		assertTrue(client.supports(ClientboundCustomSound.class));
 		assertFalse(client.supports(ClientboundDisguisedChat.class));
+		assertFalse(client.supports(ClientboundCookieRequest.class));
+		assertFalse(client.supports(ClientboundStoreCookie.class));
+		assertFalse(client.supports(ServerboundCookieResponse.class));
 		assertFalse(client.supports(UnknownPacket.class));
 	}
 

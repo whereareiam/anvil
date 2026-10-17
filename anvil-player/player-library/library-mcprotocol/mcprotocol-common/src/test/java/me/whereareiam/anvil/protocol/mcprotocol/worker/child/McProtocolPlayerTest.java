@@ -117,6 +117,24 @@ class McProtocolPlayerTest {
 	}
 
 	@Test
+	void endsTheSessionsBindingsBeforeReportingItsDisconnect() {
+		try (McProtocolPlayer player = player(null)) {
+			List<String> bindings = new ArrayList<>();
+			player.bindNativeSession(nativeSession -> {
+				bindings.add("attach");
+				return () -> bindings.add("close with " + events().size() + " events");
+			});
+			player.connect();
+			Object session = client.sessions().getFirst();
+
+			client.listener(session).disconnected(session, DisconnectCause.SERVER, "anvil:kicked");
+
+			assertEquals(List.of("attach", "close with 0 events"), bindings);
+			assertEquals(1, events().size());
+		}
+	}
+
+	@Test
 	void refusesTheNativeSessionWhileDisconnected() {
 		try (McProtocolPlayer player = player(null)) {
 			assertThrows(IllegalStateException.class, player::nativeSession);

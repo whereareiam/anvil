@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * Rebinds capability listeners across native session generations and owns their cleanup.
+ * Rebinds capability listeners across native session generations and owns their cleanup: a generation's listeners
+ * are released when its connection ends or a new session replaces it.
  */
 final class NativeSessionBindings implements AutoCloseable {
 	private final List<Registration> registrations = new ArrayList<>();
@@ -47,6 +48,19 @@ final class NativeSessionBindings implements AutoCloseable {
 			}
 			throw failure;
 		}
+	}
+
+	/**
+	 * Ends the generation of a session whose connection ended; the next session that attaches binds the listeners
+	 * again. A session that is no longer current changes nothing.
+	 *
+	 * @param session the session whose connection ended
+	 */
+	synchronized void end(@NotNull Object session) {
+		if (closed || session != current) return;
+
+		current = null;
+		detach();
 	}
 
 	@Override

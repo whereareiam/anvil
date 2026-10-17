@@ -275,7 +275,12 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 		private void report(Object current, DisconnectCause cause, String reason) {
 			if (current != session) return;
 			if (!disconnectNotified.compareAndSet(false, true)) return;
-			emit(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(false, reason, cause, null));
+
+			try {
+				nativeBindings.end(current);
+			} finally {
+				emit(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(false, reason, cause, null));
+			}
 		}
 	}
 }

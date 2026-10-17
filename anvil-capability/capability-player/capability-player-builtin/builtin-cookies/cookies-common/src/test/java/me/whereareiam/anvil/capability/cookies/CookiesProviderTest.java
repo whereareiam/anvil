@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.cookies;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
+import me.whereareiam.anvil.capability.cookies.channel.CookiesChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
@@ -29,8 +30,8 @@ class CookiesProviderTest {
 	void describesTheCookiesCapabilityForTheLibrariesWithAWorkerSide() {
 		CookiesProvider provider = new CookiesProvider();
 
-		assertEquals("me.whereareiam.anvil.cookies", CookiesProvider.ID);
-		assertEquals(CookiesProvider.ID, provider.descriptor().getId());
+		assertEquals("me.whereareiam.anvil.cookies", CookiesChannel.ID);
+		assertEquals(CookiesChannel.ID, provider.descriptor().getId());
 		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
 		assertEquals(Set.of("mcprotocol"), provider.supportedLibraries());
 		assertEquals(Cookies.class, provider.capability());
@@ -41,7 +42,7 @@ class CookiesProviderTest {
 		RecordingChannel channel = new RecordingChannel();
 		new CookiesProvider().create(new ChannelContext(channel));
 
-		assertEquals(List.of(CookiesOperations.REQUESTED.getId(), CookiesOperations.HELD.getId()), channel.subscriptions);
+		assertEquals(List.of(CookiesChannel.REQUESTED.getId(), CookiesChannel.HELD.getId()), channel.subscriptions);
 		assertTrue(channel.requests.isEmpty());
 	}
 
@@ -71,7 +72,7 @@ class CookiesProviderTest {
 
 		@Override
 		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(CookiesProvider.ID);
+			return Set.of(CookiesChannel.ID);
 		}
 	}
 
