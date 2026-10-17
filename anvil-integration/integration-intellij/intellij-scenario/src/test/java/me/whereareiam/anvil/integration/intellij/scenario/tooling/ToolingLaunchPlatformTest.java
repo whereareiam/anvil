@@ -367,12 +367,13 @@ public class ToolingLaunchPlatformTest extends ScenarioPlatformTestCase {
 		first.startAfter(null);
 		await(() -> first.state() == ToolingLaunch.State.PREPARING);
 
-		List<String> order = new CopyOnWriteArrayList<>();
-		first.outcome().thenRun(() -> order.add("previous finished"));
+		// Observed inside the replacement's preparation: a separate callback on the predecessor's outcome may run
+		// after the replacement has already started on the executor.
+		AtomicReference<Boolean> predecessorFinished = new AtomicReference<>();
 		ControlledToolingProcess secondBuild = process(false);
 		secondBuild.complete(1);
 		var second = launch(builder -> {
-			order.add("replacement prepared");
+			predecessorFinished.set(first.outcome().isDone());
 			return secondBuild;
 		});
 		second.startAfter(first);
@@ -381,7 +382,7 @@ public class ToolingLaunchPlatformTest extends ScenarioPlatformTestCase {
 		first.stop();
 		completed(second);
 
-		assertEquals(List.of("previous finished", "replacement prepared"), order);
+		assertEquals(Boolean.TRUE, predecessorFinished.get());
 	}
 
 	private ToolingLaunch launch(ToolingConnection.Starter starter) {
