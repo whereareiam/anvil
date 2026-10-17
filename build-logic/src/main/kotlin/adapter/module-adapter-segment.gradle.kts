@@ -37,27 +37,31 @@ base {
 }
 
 // A segment may extend an earlier segment of its side and take its classes except its adapters, which serve only
-// the base's release. A segment offers its classes and resources, with those of its own base, through a variant
-// of its own, so the chain resolves transitively.
-extensions.create("segment", SegmentExtension::class, dependencies, path, plan.segment)
+// the base's release, and the classes it replaces with its own. A segment offers its own classes and resources, with
+// the classes it takes from its base, through a variant of its own, so the chain resolves transitively and a class
+// that one segment replaced never returns to the segments extending it.
+val segmentProjectPath = path
+val segment = extensions.create("segment", SegmentExtension::class, dependencies, segmentProjectPath, plan.segment)
 val segmentBase = configurations.dependencyScope(SegmentExtension.BASE_CONFIGURATION)
 val segmentClassesUsage = objects.named<Usage>(SegmentExtension.CLASSES_USAGE)
 val baseClasses = configurations.resolvable("segmentBaseClasses") {
 	extendsFrom(segmentBase.get())
 	attributes { attribute(Usage.USAGE_ATTRIBUTE, segmentClassesUsage) }
 }
+val sharedBase = tasks.register<SyncSegmentBase>("syncSegmentBase") {
+	description = "Collects the classes the segment takes from its base chain, without the bases' adapters."
+	base.from(baseClasses)
+	segmentPath.set(segmentProjectPath)
+	replaced.set(segment.replaced)
+	destination.set(layout.buildDirectory.dir("segment/base"))
+}
 configurations.consumable("segmentClassesElements") {
-	extendsFrom(segmentBase.get())
 	attributes { attribute(Usage.USAGE_ATTRIBUTE, segmentClassesUsage) }
 	outgoing.artifact(tasks.named<JavaCompile>("compileJava").flatMap { it.destinationDirectory })
 	outgoing.artifact(tasks.named<ProcessResources>("processResources").map { it.destinationDir }) {
 		builtBy(tasks.named("processResources"))
 	}
-}
-val sharedBase = tasks.register<SyncSegmentBase>("syncSegmentBase") {
-	description = "Collects the classes the segment takes from its base chain, without the bases' adapters."
-	base.from(baseClasses)
-	destination.set(layout.buildDirectory.dir("segment/base"))
+	outgoing.artifact(sharedBase.flatMap { it.destination })
 }
 val sharedBaseClasses = files(sharedBase.flatMap { it.destination })
 
@@ -109,11 +113,16 @@ val libraryModule = releaseModule(plan.release)
 val compiledRelease = releaseClosureClasspath(plan.release)
 val laterReleaseClasspaths = plan.laterReleases.map { releaseClosureClasspath(it) }
 
+// Classes taken from a base chain were compiled against the release of an earlier segment, so the releases of the
+// earlier segments also tell which of their references belong to the library.
+val baseLibraryModules = plan.earlierReleases.map { releaseModule(it) }
+
 val linkageCheck = tasks.register<CheckSegmentLinkage>("checkSegmentLinkage") {
 	group = LifecycleBasePlugin.VERIFICATION_GROUP
 	description = "Verifies that the segment links against every library release it serves, as workers load them."
 	linkage.set(manifest.flatMap { it.destination.file("META-INF/anvil/segment/linkage.txt") })
 	library.from(libraryModule)
+	library.from(segment.base.map { baseLibraryModules }.orElse(emptyList()))
 	release.set(compiledRelease)
 	laterReleases.set(laterReleaseClasspaths)
 	jdk.set(toolchainJdk)

@@ -217,6 +217,136 @@ class SegmentConventionsFunctionalTest {
 		), later.output)
 	}
 
+	@Test
+	fun `a segment replaces a base class that does not link against its release`() {
+		val project = TestProject(directory)
+		writeProject(project)
+		val settings = project.file("settings.gradle.kts").readText()
+		project.write("settings.gradle.kts", settings + "include(\":demo-mcprotocol:V1_19_4\")\n")
+		// The 1.18.2 segment keeps its chat in a class of its own, which the adapter names.
+		project.write("demo-mcprotocol/V1_18_2/src/main/java/demo/mcprotocol/v1_18_2/DemoChat.java", """
+			package demo.mcprotocol.v1_18_2;
+
+			public final class DemoChat {
+				public Object chat(String message) {
+					return new com.example.legacy.ChatPacket(message);
+				}
+			}
+		""")
+		project.write("demo-mcprotocol/V1_18_2/src/main/java/demo/mcprotocol/v1_18_2/DemoProfiles.java", """
+			package demo.mcprotocol.v1_18_2;
+
+			import com.example.legacy.MinecraftProtocol;
+
+			public final class DemoProfiles {
+				public String profileName(String username) {
+					return new MinecraftProtocol(username).getProfile().getName();
+				}
+			}
+		""")
+		project.write("demo-mcprotocol/V1_18_2/src/main/resources/META-INF/services/demo.api.packet.DemoPackets",
+			"demo.mcprotocol.v1_18_2.McProtocolDemoPackets\n")
+		// 1.19.4-1 changed the chat packet's constructor, so its segment brings a chat of its own.
+		project.write("demo-mcprotocol/V1_19_4/src/main/java/demo/mcprotocol/v1_19_4/DemoChat.java", """
+			package demo.mcprotocol.v1_19_4;
+
+			public final class DemoChat {
+				public Object chat(String message) {
+					return new com.example.legacy.ChatPacket(message, 0L);
+				}
+			}
+		""")
+		project.write("demo-mcprotocol/V1_19_4/src/main/java/demo/mcprotocol/v1_19_4/McProtocolDemoPackets.java", """
+			package demo.mcprotocol.v1_19_4;
+
+			import demo.api.packet.DemoPackets;
+			import demo.mcprotocol.v1_18_2.DemoProfiles;
+
+			public final class McProtocolDemoPackets implements DemoPackets {
+				@Override
+				public String profileName(String username) {
+					new DemoChat().chat(username);
+					return new DemoProfiles().profileName(username);
+				}
+			}
+		""")
+
+		extendingSegment(project)
+		val unreplaced = project.fail(":demo-mcprotocol:V1_19_4:checkSegmentLinkage")
+		assertTrue(unreplaced.output.contains("missing method com.example.legacy.ChatPacket <init>(Ljava/lang/String;)V"),
+			unreplaced.output)
+
+		extendingSegment(project, "demo.mcprotocol.v1_18_2.DemoChat")
+		val build = project.run(":demo-mcprotocol:V1_19_4:build")
+		assertEquals(TaskOutcome.SUCCESS, build.task(":demo-mcprotocol:V1_19_4:checkSegmentLinkage")?.outcome, build.output)
+		val jar = "demo-mcprotocol/V1_19_4/build/libs/demo-mcprotocol-V1_19_4-1.0.0.jar"
+		assertEquals(
+			listOf(
+				"demo/mcprotocol/v1_18_2/DemoProfiles.class",
+				"demo/mcprotocol/v1_19_4/DemoChat.class",
+				"demo/mcprotocol/v1_19_4/McProtocolDemoPackets.class",
+			),
+			project.jarEntries(jar).filter { it.endsWith(".class") }.sorted(),
+		)
+		val linkage = project.jarText(jar, "META-INF/anvil/segment/linkage.txt").lines()
+		assertTrue(linkage.contains("method com.example.legacy.ChatPacket <init>(Ljava/lang/String;J)V public instance class"),
+			linkage.toString())
+		assertFalse(linkage.contains("method com.example.legacy.ChatPacket <init>(Ljava/lang/String;)V public instance class"),
+			linkage.toString())
+
+		extendingSegment(project, "demo.mcprotocol.v1_18_2.DemoChats")
+		val missing = project.fail(":demo-mcprotocol:V1_19_4:syncSegmentBase")
+		assertTrue(missing.output.contains(
+			"Segment :demo-mcprotocol:V1_19_4 replaces demo.mcprotocol.v1_18_2.DemoChats, which is not a class of its "
+				+ "base chain"
+		), missing.output)
+
+		extendingSegment(project, "demo.mcprotocol.v1_18_2.DemoChat$1")
+		val nested = project.fail("help")
+		assertTrue(nested.output.contains("can replace only a top-level class by its binary name"), nested.output)
+
+		project.write("demo-mcprotocol/V1_18_2/src/main/java/demo/mcprotocol/v1_18_2/DemoProfiles.java", """
+			package demo.mcprotocol.v1_18_2;
+
+			import com.example.legacy.MinecraftProtocol;
+
+			public final class DemoProfiles {
+				public String profileName(String username) {
+					new DemoChat().chat(username);
+					return new MinecraftProtocol(username).getProfile().getName();
+				}
+			}
+		""")
+		extendingSegment(project, "demo.mcprotocol.v1_18_2.DemoChat")
+		val used = project.fail(":demo-mcprotocol:V1_19_4:syncSegmentBase")
+		assertTrue(used.output.contains(
+			"Segment :demo-mcprotocol:V1_19_4 replaces demo.mcprotocol.v1_18_2.DemoChat, which its base class "
+				+ "demo.mcprotocol.v1_18_2.DemoProfiles still uses; replace demo.mcprotocol.v1_18_2.DemoProfiles too"
+		), used.output)
+	}
+
+	/**
+	 * Writes the 1.19.4 segment extending the 1.18.2 one and replacing [replaced] base classes.
+	 */
+	private fun extendingSegment(project: TestProject, vararg replaced: String) {
+		val replaces = if (replaced.isEmpty()) ""
+		else replaced.joinToString(prefix = "replaces(", postfix = ")") { "\"$it\"" }
+		project.write("demo-mcprotocol/V1_19_4/build.gradle.kts", """
+			plugins {
+				id("module-adapter-segment")
+			}
+
+			segment {
+				extends(":demo-mcprotocol:V1_18_2")
+				$replaces
+			}
+
+			dependencies {
+				compileOnly(project(":demo-api"))
+			}
+		""")
+	}
+
 	private fun writeProject(project: TestProject) {
 		publishLibrary(LibraryRepository(project.file("repository")))
 		project.write("settings.gradle.kts", """
