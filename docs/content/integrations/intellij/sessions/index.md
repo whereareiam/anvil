@@ -83,6 +83,15 @@ Players appear once the scenario creates them, for example in its
 acknowledged submission does not prove the in-game effect; check observations or logs. Sensitive
 action inputs are excluded from history and saved drafts.
 
+## Follow runs in the Services view
+
+The IDE's **Services** tool window lists each retained run under **Anvil**, next to run
+configurations, Docker containers and databases. Each row shows the scenario and its status; select
+it to open the same Environment, Console and Players views as its Anvil tab, with the same toolbar
+and context menu. A run stays in **Services** as long as its tab in the Anvil tool window is retained.
+Closing the run's view in **Services** leaves the environment running. To stop it, use
+**Stop Environment** or close its Anvil tab.
+
 ## Close and retain runs
 
 Completed tabs keep their output and details until you close them. By default the five most recent
