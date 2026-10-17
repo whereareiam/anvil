@@ -20,8 +20,8 @@ capability owned by the process and backed by its [agent](../../environments/act
 For the first journey, use Session to connect, the server's
 [Players](../../environments/actions/players/index.md) to observe arrival, and Messages to trigger commands
 and check replies. Movement, Inventory, Interaction, Commands, and Dialogs cover additional game actions;
-Cookies holds the cookies a server stores on the client; Screen records the titles, action bars and
-boss bars the server shows.
+Cookies holds the cookies a server stores on the client; Screen and Sounds record the titles, action
+bars, boss bars and sounds the server shows and plays.
 Each capability is optional unless the test or another installed capability requires it.
 
 | Capability | Use it to | Bundled requirement |
@@ -35,6 +35,7 @@ Each capability is optional unless the test or another installed capability requ
 | [Dialogs](./dialogs/index.md) | Observe dialogs, fill their inputs, and press their buttons. | MCProtocol and Session, Minecraft 1.21.6+; Commands for buttons that run commands |
 | [Cookies](./cookies/index.md) | Hold cookies, answer the server's cookie requests, and observe them. | MCProtocol and Session, Minecraft 1.20.5+ |
 | [Screen](./screen/index.md) | Await titles, action bars, and boss bars. | MCProtocol and Session |
+| [Sounds](./sounds/index.md) | Await the sounds the server plays. | MCProtocol and Session |
 
 Packet-backed capabilities operate through the player's protocol library. The built-in capabilities
 are installed on every MCProtocolLib release Anvil ships, from Minecraft 1.18.2 to 26.1.2,
@@ -60,7 +61,7 @@ plugins {
 
 Keep the repositories, protocol dependency, and `anvil` configuration from
 [installation](../../../getting-started/installation/index.md). The remaining unit suffixes are
-`movement`, `inventory`, `interaction`, `commands`, `dialogs`, `cookies`, and `screen`. Keep unit versions aligned with Anvil.
+`movement`, `inventory`, `interaction`, `commands`, `dialogs`, `cookies`, `screen`, and `sounds`. Keep unit versions aligned with Anvil.
 
 ## Retrieve a capability
 
