@@ -25,6 +25,7 @@ TestKit without starting Minecraft. Its location follows the owner of the behavi
 | Java provisioning                                       | `:anvil-environment:provisioning:provisioning-java:test`      |
 | Workspace policies and snapshots                        | `:anvil-environment:provisioning:provisioning-workspace:test` |
 | Process lifecycle and restarts                          | `:anvil-environment:execution:execution-managed:test`         |
+| Docker execution settings and image resolution          | `:anvil-environment:execution:execution-docker:test`; containers on a real engine: `dockerTest` |
 | Platform planning and forwarding                        | `:anvil-platform:platform-planning:test`                      |
 | Player registration, library selection, and observations | `:anvil-protocol:test`                                       |
 | Agent clients, sessions, and observations                | `:anvil-agent:agent-client:test`                              |
@@ -51,6 +52,24 @@ Workspace tests mirror the `directory`, `preparation`, and `snapshot` implementa
 Agent client tests exercise host lifetimes and connections; server tests exercise embedded handlers
 and endpoints. Cross-process assertions belong in the live suite, with the independently compiled
 fixture checking the public client and server API dependencies.
+
+## Run the Docker engine tests
+
+Tests that start containers on a real Docker engine live in the module's `dockerTest` test suite, in
+`src/dockerTest/java`, apart from its `test` suite. `test`, and therefore `build`, never runs them, so neither needs
+Docker. Run them with a Docker engine available:
+
+```shell
+./gradlew dockerTest
+./gradlew :anvil-environment:execution:execution-docker:dockerTest
+```
+
+They run in the image `anvil.docker.testImage` in `gradle.properties` names, the only place it is named.
+A test pulls the image when the engine does not have it. CI loads it from the Actions cache, keyed by that
+reference: the **Docker image cache** workflow saves it on every push to `dev` and weekly, so the entry stays
+filled, and pull requests only read it. To test against another image, change the property. A failure that names
+`toomanyrequests` comes from a registry's anonymous pull limit: on a machine, pull the image once yourself, and in
+CI run **Docker image cache** on `dev` to fill the entry again.
 
 ## Check cross-module discovery
 

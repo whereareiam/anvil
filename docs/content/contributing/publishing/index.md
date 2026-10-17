@@ -8,11 +8,12 @@ the runtimes required by their selected distributions.
 
 ```shell
 ./gradlew build
+./gradlew dockerTest
 ./gradlew test -Panvil.testMode=full
 ```
 
-The normal build runs architecture, unit, and focused integration checks. Full mode additionally
-starts real platforms. [Testing Anvil](../testing/index.md) explains focused tasks and filters.
+The normal build runs architecture, unit, and focused integration checks, and needs no Docker. `dockerTest`
+runs the tests that need a Docker engine. Full mode additionally starts real platforms. [Testing Anvil](../testing/index.md) explains focused tasks and filters.
 
 ## Local publication
 
@@ -97,9 +98,14 @@ Two workflows start by themselves on a pull request:
 |---|---|
 | **Pull request · Metadata** | The `Area: Title` title and the release label |
 | **Pull request · Checks** | `./gradlew build -Panvil.intellij=false`: architecture, segment linkage, unit and runtime tests, and the live matrix data |
+| **Pull request · Checks**, Docker engine tests | `./gradlew :anvil-environment:execution:execution-docker:dockerTest`, with the test image loaded from the Actions cache |
 | **Pull request · Checks**, IntelliJ | The IntelliJ integration's build and tests, in a run of its own |
 
-The checks start no server and do not verify the IntelliJ plugin distribution. The IntelliJ integration
+The checks start no server and do not verify the IntelliJ plugin distribution. The Docker engine tests run in
+the image `anvil.docker.testImage` in `gradle.properties` names. The job loads it from the Actions cache keyed by
+that reference and pulls it only on a miss, because shared runners exhaust registries' anonymous pull limits. The
+**Docker image cache** workflow saves the entry on every push to `dev` and weekly, so it stays filled; pull
+requests only read it. The IntelliJ integration
 builds separately because the IntelliJ Platform Gradle Plugin's indexing of the IDE fails now and then on a
 fresh machine (JetBrains/intellij-platform-gradle-plugin#2192); such a failure fails only the IntelliJ run,
 which can be rerun alone. Every other CI build passes `-Panvil.intellij=false`, which leaves the IntelliJ
@@ -134,7 +140,7 @@ read the shared caches.
 ## Publish a development build
 
 Run **Development build** manually and select the intended branch, normally `dev`. It verifies the
-build and the standalone consumers, and then publishes a branch-qualified version such as `dev-a123bcd`;
+build, the Docker engine tests and the standalone consumers, and then publishes a branch-qualified version such as `dev-a123bcd`;
 slashes in branch names become hyphens. Development versions do not use a `-SNAPSHOT` suffix. The IntelliJ
 plugin is verified beside it and does not hold the publication back. Enable **live** to also run the live
 suites before publication. Pushes do not trigger publication.
