@@ -18,6 +18,7 @@ import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.api.scenario.ScenarioObserver;
+import me.whereareiam.anvil.runner.scenario.ScenarioDebugging;
 import me.whereareiam.anvil.runner.scenario.ScenarioRepository;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.tooling.api.model.LogEvent;
@@ -50,7 +51,7 @@ class RunnerSessionTest {
 		try (RunnerSession session = fixture.session()) {
 			assertEquals("User registration", session.scenarios().getFirst().getDisplayName());
 			assertEquals("user-registration", session.scenarios().getFirst().getName());
-			session.start("user-registration", null);
+			session.start("user-registration", null, false);
 			assertEquals("Lobby", session.snapshot().getProcesses().getFirst().getDisplayName());
 			assertEquals(fixture.process.executionId(), session.snapshot().getProcesses().getFirst().getExecutionId());
 			session.console("server", "say hi");
@@ -70,7 +71,7 @@ class RunnerSessionTest {
 		Harness fixture = new Harness();
 		try (RunnerSession session = fixture.session()) {
 			var failure = assertThrows(NoSuchElementException.class,
-					() -> session.start("example.RenamedDefinition", "user-registration"));
+					() -> session.start("example.RenamedDefinition", "user-registration", false));
 
 			assertTrue(failure.getMessage().contains("example.RenamedDefinition"));
 			assertEquals(0, fixture.setupCalls);
@@ -85,7 +86,7 @@ class RunnerSessionTest {
 		fixture.cleanupFailure = new IllegalStateException("Cleanup failed");
 		try (RunnerSession session = fixture.session()) {
 			IllegalStateException failure = assertThrows(IllegalStateException.class,
-					() -> session.start("user-registration", null));
+					() -> session.start("user-registration", null, false));
 			assertSame(fixture.setupFailure, failure);
 			assertEquals(List.of(fixture.cleanupFailure), List.of(failure.getSuppressed()));
 			assertEquals(List.of(false), fixture.finishes);
@@ -101,7 +102,7 @@ class RunnerSessionTest {
 	void aFailedProcessMutationKeepsItsOutcomeUntilFinalization() {
 		Harness fixture = new Harness();
 		try (RunnerSession session = fixture.session()) {
-			session.start("user-registration", null);
+			session.start("user-registration", null, false);
 			fixture.restartFailure = new IllegalStateException("Replacement failed");
 			assertThrows(IllegalStateException.class, () -> session.restartProcess("server"));
 			assertEquals(List.of(false), fixture.finishes);
@@ -116,7 +117,7 @@ class RunnerSessionTest {
 	void observedProcessFailurePreventsSuccessfulFinalization() {
 		Harness fixture = new Harness();
 		try (RunnerSession session = fixture.session()) {
-			session.start("user-registration", null);
+			session.start("user-registration", null, false);
 			fixture.processFailed = true;
 			assertEquals("FAILED", session.snapshot().getState().name());
 			session.stop();
@@ -134,7 +135,7 @@ class RunnerSessionTest {
 		try (RunnerSession session = fixture.session()) {
 			Thread starter = new Thread(() -> {
 				try {
-					session.start("user-registration", null);
+					session.start("user-registration", null, false);
 				} catch (Throwable exception) {
 					failure.set(exception);
 				}
@@ -159,7 +160,7 @@ class RunnerSessionTest {
 	void retainsFinalLogsAndSeparatesProcessGenerationsOnRestart() {
 		Harness fixture = new Harness();
 		try (RunnerSession session = fixture.session()) {
-			session.start("user-registration", null);
+			session.start("user-registration", null, false);
 			fixture.output.add("first");
 			assertEquals(List.of("first"), session.drainLogs().stream().map(LogEvent::getText).toList());
 			assertTrue(session.drainLogs().isEmpty());
@@ -181,7 +182,7 @@ class RunnerSessionTest {
 	void usesOpaqueRuntimeExecutionIdsAndIgnoresPreviouslyObservedExecutions() {
 		Harness fixture = new Harness();
 		try (RunnerSession session = fixture.session()) {
-			session.start("user-registration", null);
+			session.start("user-registration", null, false);
 			RunningProcess previous = fixture.process;
 			UUID replacementId = UUID.randomUUID();
 			fixture.nextExecutionId = replacementId;
@@ -200,10 +201,10 @@ class RunnerSessionTest {
 	void preservesUndeliveredFinalOutputWhenReplacingAnEnvironment() {
 		Harness fixture = new Harness();
 		try (RunnerSession session = fixture.session()) {
-			session.start("user-registration", null);
+			session.start("user-registration", null, false);
 			String oldId = session.snapshot().getSessionId();
 			fixture.output.add("old run");
-			session.start("user-registration", null);
+			session.start("user-registration", null, false);
 			List<LogEvent> retained = session.drainLogs();
 			assertEquals(List.of("old run", "closed"), retained.stream().map(LogEvent::getText).toList());
 			assertTrue(retained.stream().allMatch(event -> oldId.equals(event.getSessionId())));
@@ -223,7 +224,7 @@ class RunnerSessionTest {
 		});
 		try (RunnerSession session = new RunnerSession(() -> engine, repository())) {
 			Thread start = new Thread(() -> assertThrows(IllegalStateException.class,
-					() -> session.start("user-registration", null)));
+					() -> session.start("user-registration", null, false)));
 			start.start();
 			try {
 				assertTrue(starting.await(5, TimeUnit.SECONDS));
@@ -243,7 +244,7 @@ class RunnerSessionTest {
 	void selectedProcessStartPreservesRunAndDefersWholeScenarioSetup() {
 		Harness fixture = new Harness();
 		try (RunnerSession session = fixture.session()) {
-			session.start("user-registration", "server");
+			session.start("user-registration", "server", false);
 			String runId = session.snapshot().getSessionId();
 			assertEquals(List.of("prepare", "start:server"), fixture.lifecycle);
 			assertEquals(0, fixture.setupCalls);
@@ -260,6 +261,18 @@ class RunnerSessionTest {
 			assertEquals(runId, session.snapshot().getSessionId());
 			assertThrows(NoSuchElementException.class, () -> session.startProcess("absent"));
 			assertEquals("RUNNING", session.snapshot().getState().name());
+		}
+	}
+
+	@Test
+	void debuggingPreparesTheProcessesWithAnAgentAndRunningDoesNot() {
+		Harness fixture = new Harness();
+		try (RunnerSession session = fixture.session()) {
+			session.start("user-registration", null, true);
+			assertEquals(List.of(ScenarioDebugging.AGENT), fixture.prepared.getServers().getFirst().getJvmArguments());
+
+			session.start("user-registration", "server", false);
+			assertEquals(List.of(), fixture.prepared.getServers().getFirst().getJvmArguments());
 		}
 	}
 
@@ -286,6 +299,7 @@ class RunnerSessionTest {
 		private RuntimeException restartFailure;
 		private RuntimeException cleanupFailure;
 		private ScenarioObserver observer;
+		private AnvilScenario prepared;
 		private CountDownLatch started;
 		private CountDownLatch release;
 		private boolean processFailed;
@@ -299,6 +313,7 @@ class RunnerSessionTest {
 			ScenarioEngine engine = proxy(ScenarioEngine.class, (ignored, method, arguments) -> {
 				if (method.getName().equals("close")) { closedEngines++; return null; }
 				assertEquals("prepare", method.getName());
+				prepared = (AnvilScenario) arguments[0];
 				observer = (ScenarioObserver) arguments[1];
 				active = true;
 				setupComplete = false;

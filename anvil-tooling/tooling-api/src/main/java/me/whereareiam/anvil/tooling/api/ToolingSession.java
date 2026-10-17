@@ -43,8 +43,10 @@ public interface ToolingSession extends AutoCloseable {
 	 *
 	 * @param definition definition class name or an unambiguous scenario name
 	 * @param process initial process to start, or null to start the whole scenario and its setup
+	 * @param debug whether the process, or every server and proxy when it is null, starts with a JDWP agent on a
+	 *              free loopback port that its console announces; see {@code ScenarioLaunchRequest#isDebug()}
 	 */
-	void start(@NotNull String definition, @Nullable String process);
+	void start(@NotNull String definition, @Nullable String process, boolean debug);
 
 	/**
 	 * Starts remaining processes and completes scenario setup once, preserving the current run.
