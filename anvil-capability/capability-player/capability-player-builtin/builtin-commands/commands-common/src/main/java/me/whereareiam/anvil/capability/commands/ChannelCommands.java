@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.commands;
 
+import me.whereareiam.anvil.capability.commands.channel.CommandsChannel;
 import me.whereareiam.anvil.capability.commands.model.CommandTree;
 import me.whereareiam.anvil.capability.commands.parse.CommandVerifier;
 import me.whereareiam.anvil.capability.commands.type.CommandCheck;
@@ -23,8 +24,8 @@ final class ChannelCommands implements Commands {
 
 	ChannelCommands(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
-		channel.subscribe(CommandsOperations.TREE, received -> tree = received);
-		channel.subscribe(CommandsOperations.RESET, ignored -> tree = null);
+		channel.subscribe(CommandsChannel.TREE, received -> tree = received);
+		channel.subscribe(CommandsChannel.RESET, ignored -> tree = null);
 	}
 
 	@Override

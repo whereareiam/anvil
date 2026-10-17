@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.commands;
 
+import me.whereareiam.anvil.capability.commands.channel.CommandsChannel;
 import me.whereareiam.anvil.capability.commands.model.CommandTree;
 import me.whereareiam.anvil.capability.commands.model.CommandTreeNode;
 import me.whereareiam.anvil.capability.commands.type.CommandCheck;
@@ -38,11 +39,11 @@ class ChannelCommandsTest {
 		ChannelCommands commands = new ChannelCommands(channel);
 		assertEquals(Optional.empty(), commands.tree());
 
-		channel.publish(CommandsOperations.TREE, LOGIN);
+		channel.publish(CommandsChannel.TREE, LOGIN);
 		assertEquals(Optional.of(LOGIN), commands.tree());
 		assertEquals(LOGIN, commands.tree(tree -> tree.literal("login").isPresent(), TIMEOUT));
 
-		channel.publish(CommandsOperations.RESET, null);
+		channel.publish(CommandsChannel.RESET, null);
 		assertEquals(Optional.empty(), commands.tree());
 		assertEquals("Player did not receive a matching command tree",
 				assertThrows(IllegalStateException.class, () -> commands.tree(tree -> true, TIMEOUT)).getMessage());
@@ -54,7 +55,7 @@ class ChannelCommandsTest {
 		ChannelCommands commands = new ChannelCommands(channel);
 		assertEquals(CommandCheck.PARSE_ERRORS, commands.check("login"));
 
-		channel.publish(CommandsOperations.TREE, LOGIN);
+		channel.publish(CommandsChannel.TREE, LOGIN);
 
 		assertEquals(CommandCheck.NO_ISSUES, commands.check("login"));
 		assertEquals(CommandCheck.NO_ISSUES, commands.check("/login"));
@@ -94,7 +95,7 @@ class ChannelCommandsTest {
 
 		@Override
 		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(CommandsProvider.ID);
+			return Set.of(CommandsChannel.ID);
 		}
 	}
 }
