@@ -6,6 +6,7 @@ import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.capability.commands.Commands;
 import me.whereareiam.anvil.capability.commands.model.CommandTree;
 import me.whereareiam.anvil.capability.commands.type.CommandCheck;
+import me.whereareiam.anvil.capability.dialogs.channel.DialogsChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
@@ -33,8 +34,8 @@ class DialogsProviderTest {
 	void describesTheDialogsCapabilityForTheLibrariesWithAWorkerSide() {
 		DialogsProvider provider = new DialogsProvider();
 
-		assertEquals("me.whereareiam.anvil.dialogs", DialogsProvider.ID);
-		assertEquals(DialogsProvider.ID, provider.descriptor().getId());
+		assertEquals("me.whereareiam.anvil.dialogs", DialogsChannel.ID);
+		assertEquals(DialogsChannel.ID, provider.descriptor().getId());
 		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
 		assertEquals(Set.of(Commands.class), provider.descriptor().getOptionalCapabilities());
 		assertEquals(Set.of("mcprotocol"), provider.supportedLibraries());
@@ -46,8 +47,8 @@ class DialogsProviderTest {
 		RecordingChannel channel = new RecordingChannel();
 		Dialogs dialogs = new DialogsProvider().create(new ChannelContext(channel));
 
-		assertEquals(List.of(DialogsOperations.REGISTRY.getId(), DialogsOperations.SHOWN.getId(), DialogsOperations.CLEARED.getId(),
-				DialogsOperations.RESET.getId()), channel.subscriptions);
+		assertEquals(List.of(DialogsChannel.REGISTRY.getId(), DialogsChannel.SHOWN.getId(), DialogsChannel.CLEARED.getId(),
+				DialogsChannel.RESET.getId()), channel.subscriptions);
 		assertTrue(channel.requests.isEmpty());
 		assertTrue(dialogs.current().isEmpty());
 	}
@@ -80,7 +81,7 @@ class DialogsProviderTest {
 
 		@Override
 		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(DialogsProvider.ID);
+			return Set.of(DialogsChannel.ID);
 		}
 	}
 

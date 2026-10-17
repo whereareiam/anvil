@@ -2,7 +2,7 @@ plugins {
 	id("module-java")
 }
 
-description = "Library-neutral host provider and worker binding of the built-in dialogs capability"
+description = "Host provider of the built-in dialogs capability"
 
 dependencies {
 	compileOnly(projects.anvilApi)

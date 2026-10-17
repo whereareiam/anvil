@@ -5,6 +5,8 @@ import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.api.history.HistoryCursor;
 import me.whereareiam.anvil.capability.commands.Commands;
 import me.whereareiam.anvil.capability.commands.type.CommandCheck;
+import me.whereareiam.anvil.capability.dialogs.channel.DialogsChannel;
+import me.whereareiam.anvil.capability.dialogs.model.DialogRegistry;
 import me.whereareiam.anvil.capability.dialogs.model.click.CommandConfirmation;
 import me.whereareiam.anvil.capability.dialogs.model.click.DialogClick;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.Dialog;
@@ -16,7 +18,6 @@ import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens.DialogScreen
 import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens.Screen;
 import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens.WaitingScreen;
 import me.whereareiam.anvil.capability.dialogs.screen.DialogPress;
-import me.whereareiam.anvil.capability.dialogs.screen.DialogRegistry;
 import me.whereareiam.anvil.capability.dialogs.type.DialogActionType;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
@@ -35,7 +36,8 @@ import java.util.function.Predicate;
  * Dialogs capability driven over a player's typed channel: the events the worker reports and the buttons the test
  * presses move the player's {@link ClientScreens} as they move the client's, and every dialog shown is kept in the
  * history, across reconnects. Registry references are resolved through the last dialog registry the server sent,
- * and commands are checked through the player's {@link Commands}, if it has them. Clicks go to the worker's dialogs binding. The channel releases the event subscriptions together with the player.
+ * and commands are checked through the player's {@link Commands}, if it has them. Clicks go to the worker's dialogs
+ * extension. The channel releases the event subscriptions together with the player.
  */
 final class ChannelDialogs implements Dialogs {
 	private final ProtocolChannel channel;
@@ -52,18 +54,18 @@ final class ChannelDialogs implements Dialogs {
 		this.channel = channel;
 		this.commands = commands;
 		this.screens = new ClientScreens(clock);
-		channel.subscribe(DialogsOperations.REGISTRY, update -> registry = update);
-		channel.subscribe(DialogsOperations.SHOWN, dialog -> {
+		channel.subscribe(DialogsChannel.REGISTRY, update -> registry = update);
+		channel.subscribe(DialogsChannel.SHOWN, dialog -> {
 			synchronized (screens) {
 				open(dialog, screens.screen());
 			}
 		});
-		channel.subscribe(DialogsOperations.CLEARED, ignored -> {
+		channel.subscribe(DialogsChannel.CLEARED, ignored -> {
 			synchronized (screens) {
 				screens.clear();
 			}
 		});
-		channel.subscribe(DialogsOperations.RESET, ignored -> {
+		channel.subscribe(DialogsChannel.RESET, ignored -> {
 			synchronized (screens) {
 				screens.reset();
 			}
@@ -170,7 +172,7 @@ final class ChannelDialogs implements Dialogs {
 			screens.set(confirm.confirmed());
 		}
 		if (confirmation.getReason() != CommandCheck.SIGNATURE_REQUIRED)
-			channel.request(DialogsOperations.CLICK, DialogClick.command(confirmation.getCommand()));
+			channel.request(DialogsChannel.CLICK, DialogClick.command(confirmation.getCommand()));
 	}
 
 	@Override
@@ -200,7 +202,7 @@ final class ChannelDialogs implements Dialogs {
 				still(open);
 				screens.set(next);
 			}
-			if (click != null) channel.request(DialogsOperations.CLICK, click);
+			if (click != null) channel.request(DialogsChannel.CLICK, click);
 			return;
 		}
 
@@ -220,7 +222,7 @@ final class ChannelDialogs implements Dialogs {
 
 			screens.set(next);
 		}
-		channel.request(DialogsOperations.CLICK, click);
+		channel.request(DialogsChannel.CLICK, click);
 	}
 
 	private void still(DialogScreen open) {
