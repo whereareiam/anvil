@@ -37,22 +37,20 @@ class ExternalExtensionSystemTest {
 	Path temporary;
 
 	@Test
-	void combinesExternalSessionAndMovementWithRealAgentOperations() throws Exception {
+	void combinesExternalSessionAndMovementCapabilities() throws Exception {
 		try (var fixture = new TestExtensionLoader(FixtureArtifacts.extension(), true)) {
 			SimulatedPlayer player;
 			Session session;
 			try (ScenarioEngine engine = AnvilLauncher.create(options().toBuilder().protocolLibrary("fixture").build());
 				 var context = engine.start(scenario(fixture.artifact()))) {
 				player = context.players().create("FixturePlayer");
-				assertEquals("FixturePlayer@1.21.11", probe(fixture, player, "label", new Class<?>[0]));
-				assertEquals("FixturePlayer@1.21.11", probe(fixture, player, "agentLabel", new Class<?>[0]));
+				assertEquals("FixturePlayer@1.21.11", probe(fixture, player, "label"));
 				session = player.capability(Session.class);
 				assertFalse(session.state().connected());
 				session.connect();
 				session.connected();
 				player.capability(Movement.class).move(Position.builder().x(1).y(2).z(3).build());
-				assertEquals("move:1.0:2.0:3.0", probe(fixture, player, "lastSent", new Class<?>[0]));
-				assertEquals("fixture:hello", probe(fixture, player, "echo", new Class<?>[] {String.class, String.class}, "server", "hello"));
+				assertEquals("move:1.0:2.0:3.0", probe(fixture, player, "lastSent"));
 				assertThrows(CapabilityUnavailableException.class, () -> player.capability(Messages.class));
 				session.disconnect();
 				session.disconnected();
@@ -66,16 +64,14 @@ class ExternalExtensionSystemTest {
 	}
 
 	@Test
-	void usesServerObservationAndAgentOperationsWithoutASessionAdapter() throws Exception {
+	void composesAPlayerWithoutASessionAdapter() throws Exception {
 		try (var fixture = new TestExtensionLoader(FixtureArtifacts.observationExtension(), false);
 			 var engine = AnvilLauncher.create(options())) {
 			try (var context = engine.start(scenario(fixture.artifact()))) {
 				var player = context.players().create("Observer");
-				assertEquals("Observer@1.21.11", probe(fixture, player, "label", new Class<?>[0]));
-				assertEquals("Observer@1.21.11", probe(fixture, player, "agentLabel", new Class<?>[0]));
+				assertEquals("Observer@1.21.11", probe(fixture, player, "label"));
 				assertFalse(player.hasCapability(Session.class));
 				assertEquals("Observer", player.requestedProfile().getUsername());
-				assertEquals("fixture:agent-only", probe(fixture, player, "echo", new Class<?>[] {String.class, String.class}, "server", "agent-only"));
 			}
 		}
 		assertEquals(List.of("created", "closed"), Files.readAllLines(temporary.resolve("cache/fixture-observer.lifecycle")));
@@ -134,10 +130,9 @@ class ExternalExtensionSystemTest {
 				.server(server.toBuilder().workspace(workspace).build()).build();
 	}
 
-	private Object probe(TestExtensionLoader fixture, SimulatedPlayer player, String method,
-			Class<?>[] parameters, Object... arguments) throws Exception {
+	private Object probe(TestExtensionLoader fixture, SimulatedPlayer player, String method) throws Exception {
 		Class<? extends PlayerCapability> type = fixture.load("external.fixture.capability.FixtureProbeProvider$Probe")
 				.asSubclass(PlayerCapability.class);
-		return type.getMethod(method, parameters).invoke(player.capability(type), arguments);
+		return type.getMethod(method).invoke(player.capability(type));
 	}
 }

@@ -147,9 +147,7 @@ For another library-specific service, implement a stable interface and return it
 `supportedLibraries()`. Player observations use the shared `PlayerCapabilityContext.observation()`
 contract. Providers that need only those observations and capability dependencies use
 `PlayerCapabilityProvider` from `capability-api`; they do not need a protocol-specific context.
-Agent-backed player factories use `AgentPlayerCapabilityProvider` and `AgentPlayerCapabilityContext`
-from `capability-agent-api`; they request native work through `channel(processName)`. Process
-capabilities backed by agents use `AgentProcessCapabilityProvider` and its own-process `channel()`,
+Process capabilities backed by agents use `AgentProcessCapabilityProvider` and its own-process `channel()`,
 independently of protocol player composition.
 
 Keep the interface meaningful for your library. For example, an adapter API can expose typed client

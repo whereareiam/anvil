@@ -1,10 +1,7 @@
 package me.whereareiam.anvil.capability;
 
-import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.capability.agent.api.model.AgentExtension;
-import me.whereareiam.anvil.capability.agent.api.player.AgentPlayerCapabilityContext;
-import me.whereareiam.anvil.capability.agent.api.player.AgentPlayerCapabilityProvider;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityContext;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
@@ -33,7 +30,7 @@ class AgentExtensionsTest {
 			.platform("paper").entrypoint("example.agent.console.Operations").build();
 
 	@Test
-	void collectsTheExtensionsOfPlayerAndProcessProvidersByPlatform(@TempDir Path directory) throws IOException {
+	void collectsTheExtensionsOfProcessProvidersByPlatform(@TempDir Path directory) throws IOException {
 		try (URLClassLoader loader = providers(directory)) {
 			AgentExtensions extensions = AgentExtensions.discover(loader);
 
@@ -46,16 +43,13 @@ class AgentExtensionsTest {
 
 	private URLClassLoader providers(Path directory) throws IOException {
 		Path services = Files.createDirectories(directory.resolve("META-INF/services"));
-		String player = AgentPlayerCapabilityProvider.class.getName();
 		String process = AgentProcessCapabilityProvider.class.getName();
-		Files.writeString(services.resolve(player), PlayerFeatureProvider.class.getName());
-		Files.writeString(services.resolve(process), ProcessFeatureProvider.class.getName());
+		Files.write(services.resolve(process), List.of(NetworkFeatureProvider.class.getName(), ConsoleFeatureProvider.class.getName()));
 
 		return new URLClassLoader(new URL[]{directory.toUri().toURL()}, getClass().getClassLoader()) {
 			@Override
 			public Enumeration<URL> getResources(String name) throws IOException {
-				if (name.equals("META-INF/services/" + player) || name.equals("META-INF/services/" + process))
-					return findResources(name);
+				if (name.equals("META-INF/services/" + process)) return findResources(name);
 				if (name.startsWith("META-INF/services/")) return Collections.emptyEnumeration();
 
 				return super.getResources(name);
@@ -64,17 +58,17 @@ class AgentExtensionsTest {
 	}
 
 	/**
-	 * A player capability whose platform half runs on Bukkit and Velocity.
+	 * A process capability whose platform half runs on Bukkit and Velocity.
 	 */
-	public static final class PlayerFeatureProvider implements AgentPlayerCapabilityProvider<PlayerFeature> {
+	public static final class NetworkFeatureProvider implements AgentProcessCapabilityProvider<NetworkFeature> {
 		@Override
 		public @NotNull CapabilityDescriptor descriptor() {
-			return CapabilityDescriptor.builder().id("example.player-feature").build();
+			return CapabilityDescriptor.builder().id("example.network-feature").build();
 		}
 
 		@Override
-		public @NotNull Class<PlayerFeature> capability() {
-			return PlayerFeature.class;
+		public @NotNull Class<NetworkFeature> capability() {
+			return NetworkFeature.class;
 		}
 
 		@Override
@@ -83,7 +77,7 @@ class AgentExtensionsTest {
 		}
 
 		@Override
-		public @NotNull PlayerFeature create(@NotNull AgentPlayerCapabilityContext context) {
+		public @NotNull NetworkFeature create(@NotNull AgentProcessCapabilityContext context) {
 			throw new AssertionError("Discovery creates no capability");
 		}
 	}
@@ -91,15 +85,15 @@ class AgentExtensionsTest {
 	/**
 	 * A process capability whose platform half runs on Paper.
 	 */
-	public static final class ProcessFeatureProvider implements AgentProcessCapabilityProvider<ProcessFeature> {
+	public static final class ConsoleFeatureProvider implements AgentProcessCapabilityProvider<ConsoleFeature> {
 		@Override
 		public @NotNull CapabilityDescriptor descriptor() {
-			return CapabilityDescriptor.builder().id("example.process-feature").build();
+			return CapabilityDescriptor.builder().id("example.console-feature").build();
 		}
 
 		@Override
-		public @NotNull Class<ProcessFeature> capability() {
-			return ProcessFeature.class;
+		public @NotNull Class<ConsoleFeature> capability() {
+			return ConsoleFeature.class;
 		}
 
 		@Override
@@ -108,12 +102,12 @@ class AgentExtensionsTest {
 		}
 
 		@Override
-		public @NotNull ProcessFeature create(@NotNull AgentProcessCapabilityContext context) {
+		public @NotNull ConsoleFeature create(@NotNull AgentProcessCapabilityContext context) {
 			throw new AssertionError("Discovery creates no capability");
 		}
 	}
 
-	private interface PlayerFeature extends PlayerCapability { }
+	private interface NetworkFeature extends ProcessCapability { }
 
-	private interface ProcessFeature extends ProcessCapability { }
+	private interface ConsoleFeature extends ProcessCapability { }
 }

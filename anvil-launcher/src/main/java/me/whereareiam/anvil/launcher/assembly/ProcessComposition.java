@@ -4,8 +4,8 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
 import me.whereareiam.anvil.capability.process.ProcessCapabilityRuntime;
-import me.whereareiam.anvil.launcher.adapter.platform.ScenarioPlatforms;
-import me.whereareiam.anvil.launcher.adapter.player.AgentRequestChannel;
+import me.whereareiam.anvil.launcher.adapter.process.AgentRequestChannel;
+import me.whereareiam.anvil.launcher.adapter.process.ScenarioPlatforms;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import org.jetbrains.annotations.NotNull;
 

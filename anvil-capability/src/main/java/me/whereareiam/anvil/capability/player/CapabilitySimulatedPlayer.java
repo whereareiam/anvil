@@ -137,8 +137,8 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 	}
 
 	/**
-	 * Checks the expectations of a player that has no capability channel to wait on, such as one whose
-	 * capabilities are all agent-backed.
+	 * Checks the expectations of a player that has no capability channel to wait on, such as one whose library
+	 * has no native worker and works only through its own services.
 	 */
 	private void awaitWithoutChannel(@NotNull BooleanSupplier anyMet, @NotNull String description, @NotNull Duration timeout) {
 		long deadline = System.nanoTime() + timeout.toNanos();

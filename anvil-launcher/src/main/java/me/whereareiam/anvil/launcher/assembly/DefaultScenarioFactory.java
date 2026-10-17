@@ -11,7 +11,7 @@ import me.whereareiam.anvil.api.scenario.ScenarioObserver;
 import me.whereareiam.anvil.capability.process.ProcessCapabilityRuntime;
 import me.whereareiam.anvil.engine.process.RetainedProcesses;
 import me.whereareiam.anvil.engine.scenario.RunningScenario;
-import me.whereareiam.anvil.launcher.adapter.platform.ScenarioPlatforms;
+import me.whereareiam.anvil.launcher.adapter.process.ScenarioPlatforms;
 import me.whereareiam.anvil.platform.api.PlatformPlanner;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
@@ -45,7 +45,7 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 		ProcessGroup processes;
 		try {
 			capabilities = ProcessComposition.discover(own, agents, platforms);
-			composer = PlayerComposition.create(players.scenarioLibraries(plan.getScenario()), reachable);
+			composer = PlayerComposition.create(players.scenarioLibraries(plan.getScenario()));
 			processes = lease.join(execution.prepare(own, agents, capabilities, observer, lease.addresses()));
 		} catch (RuntimeException | Error failure) {
 			try {

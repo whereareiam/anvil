@@ -43,8 +43,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-launcher`                                                      | Public default builder, scoped-service adapters, default ScenarioFactory/per-run assembly, native worker bridge, and shaded packaging; wiring only, no rules of its own |
 | `anvil-capability/capability-api`                                     | Owner-neutral composition, typed requests/handler registration, and neutral player identity/observations/dependency/lifetime contracts                                              |
 | `anvil-capability/capability-protocol-api`                            | Protocol-backed player providers/contexts, channels/events, and native worker contracts                                                                                             |
-| `anvil-capability/capability-agent-api`                               | Agent-backed process/player providers and scoped request-channel contexts; shared capability API only                                                                               |
-| `anvil-capability`                                                    | Shared dependency validation/composition/cleanup for capability owners, discovery of installed agent-backed providers, per-library player runtimes, process/player facades, agent-provider adaptation, codecs, and worker bindings |
+| `anvil-capability/capability-agent-api`                               | Agent-backed process providers and scoped request-channel contexts; shared capability API only                                                                                      |
+| `anvil-capability`                                                    | Shared dependency validation/composition/cleanup for capability owners, agent extensions of installed process providers, per-library player runtimes, process/player facades, codecs, and worker bindings |
 | `anvil-capability/capability-builtin/client/<feature>`                | Client capability family whose wiring-only root publishes the shaded `builtin-<feature>` bundle                                                                                     |
 | `anvil-capability/capability-builtin/client/<feature>/<feature>-api`  | Public feature API (`builtin-<feature>-api`) and, for packet capabilities, the stateless release port in `.packet`                                                                  |
 | `anvil-capability/capability-builtin/client/<feature>/<feature>-common` | Embedded, unpublished host provider, operation descriptors, and library-neutral binding in the feature root package                                                               |
@@ -169,17 +169,15 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   old native handles must not silently bind to replacement sessions.
   Neutral player provider/context and lifecycle contracts live under `capability.api.player`.
   Protocol factories, channels/events, and native worker contracts live under
-  `capability.protocol.api.player` in `capability-protocol-api`. Agent-backed player
-  factories implement `AgentPlayerCapabilityProvider` with `AgentPlayerCapabilityContext`.
-  Agent-backed process factories implement `AgentProcessCapabilityProvider` with `AgentProcessCapabilityContext`; these have
-  process/platform identity and a typed request channel, without player state. Both provider kinds
-  live in `capability-agent-api`, under `.api.player` and `.api.process`, return shared
-  `CapabilityDescriptor` values, and use inherited dependency/cleanup contexts. Both mechanism APIs
-  depend only on the shared capability API; player contexts extend its neutral player context.
-  All matching player provider kinds form one dependency graph before capability creation.
-  Agent player factories select a channel by process name; process factories
-  use their own channel. Shared composition owns dependency ordering and cleanup, while launcher
-  adapters bind request channels to agent clients. Capability APIs do not expose agent-family types.
+  `capability.protocol.api.player` in `capability-protocol-api`. A player capability is backed by its
+  player's protocol, never by a process's agent: what a server or proxy knows about a player belongs to that
+  process's capability. Agent-backed process factories implement `AgentProcessCapabilityProvider` with
+  `AgentProcessCapabilityContext` in `capability-agent-api` under `.api.process`; these have process/platform
+  identity and their own typed request channel, without player state, return shared `CapabilityDescriptor`
+  values, and use inherited dependency/cleanup contexts. The mechanism API depends only on the shared
+  capability API. All matching player provider kinds form one dependency graph before capability creation.
+  Shared composition owns dependency ordering and cleanup, while launcher adapters bind request channels to
+  agent clients. Capability APIs do not expose agent-family types.
 - `RunningProcess` extends `CapabilityOwner<ProcessCapability>` and exposes capabilities directly.
   The logical process owns capability instances across JVM generations; global process contracts do
   not depend on agent APIs. Agent-backed implementations are created after initial transport readiness
@@ -363,7 +361,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   state to a retained set, and do not share one between scenarios that run at once.
 - The launcher holds no rules. Its `assembly` package constructs services and hands them to each other, `adapter`
   implements one family's contract on another family's service without deciding anything, grouped by `execution`,
-  `player` and `provisioning`, and `worker` is the same kind of binding for the native player worker JVM.
+  `player`, `process` and `provisioning`, and `worker` is the same kind of binding for the native player worker JVM.
   Behaviour that needs only `anvil-api` belongs in the engine and behaviour over one family's types in that family:
   capability discovery in `anvil-capability` (`ProcessCapabilityRuntime.discover`, `LibraryCapabilityRuntimes`), the
   order of a process's JVM arguments and the lifetime split in platform planning. `ExecutionPlanMapper` is the one

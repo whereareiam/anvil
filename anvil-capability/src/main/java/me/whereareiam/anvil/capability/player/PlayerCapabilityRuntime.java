@@ -55,22 +55,7 @@ public final class PlayerCapabilityRuntime {
 	 * @return validated provider runtime
 	 */
 	public static @NotNull PlayerCapabilityRuntime discover(@Nullable String libraryId) {
-		return discover(contextLoader(), libraryId, List.of());
-	}
-
-	/**
-	 * Discovers shared and protocol providers for one library from the current thread context class
-	 * loader and combines explicitly adapted scenario providers before dependency validation.
-	 *
-	 * @param libraryId protocol-library identifier of the composed players
-	 * @param additional assembly-supplied provider adapters
-	 * @return validated capability composer
-	 */
-	public static @NotNull PlayerCapabilityRuntime discover(
-			@NotNull String libraryId,
-			@NotNull Collection<? extends PlayerCapabilityProvider<?>> additional
-	) {
-		return discover(contextLoader(), libraryId, additional);
+		return discover(contextLoader(), libraryId);
 	}
 
 	/**
@@ -80,28 +65,19 @@ public final class PlayerCapabilityRuntime {
 	 * @return validated provider runtime
 	 */
 	public static @NotNull PlayerCapabilityRuntime discover(@NotNull ClassLoader loader) {
-		return discover(loader, null, List.of());
+		return discover(loader, null);
 	}
 
 	/**
-	 * Discovers shared and protocol providers for one library from an explicit class loader and
-	 * combines explicitly adapted scenario providers before dependency validation. Additional providers
-	 * retain their own scoped service ownership.
+	 * Discovers shared player providers and protocol providers compatible with one protocol library from an
+	 * explicit class loader.
 	 *
 	 * @param loader provider class loader
 	 * @param libraryId protocol-library identifier of the composed players, or {@code null} for all providers
-	 * @param additional assembly-supplied provider adapters
-	 * @return validated capability composer
+	 * @return validated provider runtime
 	 */
-	public static @NotNull PlayerCapabilityRuntime discover(
-			@NotNull ClassLoader loader,
-			@Nullable String libraryId,
-			@NotNull Collection<? extends PlayerCapabilityProvider<?>> additional
-	) {
-		List<PlayerCapabilityProvider<?>> combined = loadProviders(loader);
-		combined.addAll(additional);
-
-		return new PlayerCapabilityRuntime(combined, loadProtocolProviders(loader, libraryId));
+	public static @NotNull PlayerCapabilityRuntime discover(@NotNull ClassLoader loader, @Nullable String libraryId) {
+		return new PlayerCapabilityRuntime(loadProviders(loader), loadProtocolProviders(loader, libraryId));
 	}
 
 	private static ClassLoader contextLoader() {
@@ -143,7 +119,7 @@ public final class PlayerCapabilityRuntime {
 	 * Combines shared and already selected protocol factories into one dependency graph.
 	 * Capability creation remains deferred until the player is composed.
 	 *
-	 * @param providers shared player factories, including assembly-adapted agent factories
+	 * @param providers shared player factories
 	 * @param protocolProviders protocol factories selected for one protocol library
 	 */
 	public PlayerCapabilityRuntime(

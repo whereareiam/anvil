@@ -24,6 +24,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -94,23 +95,22 @@ class PlayerCapabilityRuntimeTest {
 	}
 
 	@Test
-	void validatesDiscoveredDependenciesAfterAddingAssemblyProviders(@TempDir Path directory) throws Exception {
-		Path service = directory.resolve("META-INF/services/" + ProtocolPlayerCapabilityProvider.class.getName());
-		Files.createDirectories(service.getParent());
-		Files.writeString(service, DiscoveredDependent.class.getName());
-		ClassLoader original = Thread.currentThread().getContextClassLoader();
-		try (var loader = new URLClassLoader(new java.net.URL[]{directory.toUri().toURL()}, original)) {
-			Thread.currentThread().setContextClassLoader(loader);
-			assertThrows(CapabilityException.class, () -> PlayerCapabilityRuntime.discover("additional-test"));
-			var runtime = PlayerCapabilityRuntime.discover("additional-test", List.of(new BaseProvider()));
+	void validatesSharedAndProtocolProvidersAsOneDependencyGraph(@TempDir Path directory) throws Exception {
+		Path services = Files.createDirectories(directory.resolve("META-INF/services"));
+		Files.writeString(services.resolve(ProtocolPlayerCapabilityProvider.class.getName()), DiscoveredDependent.class.getName());
+		try (var loader = new URLClassLoader(new URL[]{directory.toUri().toURL()}, getClass().getClassLoader())) {
+			assertThrows(CapabilityException.class, () -> PlayerCapabilityRuntime.discover(loader, "discovery-test"));
+
+			Files.writeString(services.resolve(PlayerCapabilityProvider.class.getName()), BaseProvider.class.getName());
+			var runtime = PlayerCapabilityRuntime.discover(loader, "discovery-test");
 			var ids = runtime.providers().stream().map(CapabilityDescriptor::getId).toList();
 			assertTrue(ids.indexOf("base") < ids.indexOf("discovered-dependent"));
-		} finally { Thread.currentThread().setContextClassLoader(original); }
+		}
 	}
 
 	public static final class DiscoveredDependent implements ProtocolPlayerCapabilityProvider<DependentCapability> {
 		public @NotNull Set<String> supportedLibraries() {
-			return Set.of("additional-test");
+			return Set.of("discovery-test");
 		}
 		public @NotNull CapabilityDescriptor descriptor() {
 			return CapabilityDescriptor.builder().id("discovered-dependent")
@@ -463,7 +463,7 @@ class PlayerCapabilityRuntimeTest {
 
 	private static final class TwoCapability implements PlayerCapability { }
 
-	private static final class BaseProvider implements PlayerCapabilityProvider<BaseCapability> {
+	public static final class BaseProvider implements PlayerCapabilityProvider<BaseCapability> {
 		@Override
 		public @NotNull CapabilityDescriptor descriptor() {
 			return CapabilityDescriptor.builder().id("base").build();

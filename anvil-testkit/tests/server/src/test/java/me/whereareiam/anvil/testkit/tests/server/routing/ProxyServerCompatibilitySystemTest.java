@@ -39,11 +39,10 @@ class ProxyServerCompatibilitySystemTest {
 		EngineOptions options = EngineOptions.builder().eulaAccepted(true).build();
 		try (ScenarioEngine engine = AnvilLauncher.create(options); var context = engine.start(scenario)) {
 			SimulatedPlayer alice = context.players().create("Alice");
-			FixtureAgentProbeProvider.Probe probe = alice.capability(FixtureAgentProbeProvider.Probe.class);
-			for (var process : context.processes().servers())
-				assertEquals("external:matrix", probe.echo(process.name(), "matrix"));
-			for (var process : context.processes().servers())
+			for (var process : context.processes().servers()) {
+				assertEquals("external:matrix", process.capability(FixtureAgentProbeProvider.Probe.class).echo("matrix"));
 				assertTrue(process.capability(Dispatch.class).execute("list"), process.name() + " must accept a console command");
+			}
 			for (var proxy : scenario.getProxies()) {
 				String command = proxy.getPlatform().equals(Platforms.VELOCITY) ? "velocity version" : "glist";
 				assertTrue(context.processes().get(proxy.getName()).capability(Dispatch.class).execute(command),

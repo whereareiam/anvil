@@ -2,7 +2,7 @@ plugins {
 	id("module-api")
 }
 
-description = "Agent-backed process and player capability provider contracts"
+description = "Agent-backed process capability provider contracts"
 
 dependencies {
 	api(projects.anvilCapability.capabilityApi)

@@ -39,7 +39,6 @@ import me.whereareiam.anvil.capability.sounds.Sounds;
 import me.whereareiam.anvil.capability.sounds.type.SoundCategory;
 import me.whereareiam.anvil.engine.config.EngineProperties;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
-import me.whereareiam.anvil.testkit.tests.server.extension.FixtureAgentProbeProvider;
 import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Tag;
@@ -107,7 +106,6 @@ class PlayerCapabilitiesSystemTest {
 
 	private void verify(ScenarioContext anvil, boolean dialogs, boolean cookies) {
 		SimulatedPlayer alice = anvil.players().create("Alice");
-		assertEquals("external:hello", alice.capability(FixtureAgentProbeProvider.Probe.class).echo("server", "hello"));
 		Session session = alice.capability(Session.class);
 		Messages messages = alice.capability(Messages.class);
 		Players server = anvil.processes().server("server").capability(Players.class);

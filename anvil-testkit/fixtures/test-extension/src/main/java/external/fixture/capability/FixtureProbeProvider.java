@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Set;
 
 /**
- * Combines a library-specific execution service with library-independent agent operations.
+ * Combines a library-specific execution service with a library-independent player dependency.
  */
 public final class FixtureProbeProvider implements ProtocolPlayerCapabilityProvider<FixtureProbeProvider.Probe> {
 	@Override
@@ -18,7 +18,6 @@ public final class FixtureProbeProvider implements ProtocolPlayerCapabilityProvi
 		return CapabilityDescriptor.builder()
 				.id("external.fixture.probe")
 				.requiredCapability(FixturePlayerLabelProvider.Label.class)
-				.requiredCapability(PlayerAgentEcho.class)
 				.build();
 	}
 
@@ -36,7 +35,6 @@ public final class FixtureProbeProvider implements ProtocolPlayerCapabilityProvi
 	public @NotNull Probe create(@NotNull ProtocolPlayerCapabilityContext context) {
 		FixtureConnection connection = context.requireService(FixtureConnection.class);
 		FixturePlayerLabelProvider.Label label = context.requireCapability(FixturePlayerLabelProvider.Label.class);
-		PlayerAgentEcho agents = context.requireCapability(PlayerAgentEcho.class);
 		return new Probe() {
 			@Override
 			public @NotNull String label() {
@@ -44,26 +42,14 @@ public final class FixtureProbeProvider implements ProtocolPlayerCapabilityProvi
 			}
 
 			@Override
-			public @NotNull String agentLabel() {
-				return agents.label();
-			}
-
-			@Override
 			public String lastSent() {
 				return connection.lastSent();
-			}
-
-			@Override
-			public String echo(String process, String value) {
-				return agents.echo(process, value);
 			}
 		};
 	}
 
 	public interface Probe extends PlayerCapability {
 		@NotNull String label();
-		@NotNull String agentLabel();
 		String lastSent();
-		String echo(String process, String value);
 	}
 }
