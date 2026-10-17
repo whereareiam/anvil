@@ -1,6 +1,6 @@
 ---
 title: Protocol adapters
-description: Connect a player's typed protocol channel to a worker extension and to release-specific code for each library release.
+description: Connect a player's typed channel to a worker extension that acts over the Java Edition protocol.
 ---
 
 Use a protocol adapter for behavior carried by the native player's connection. Keep your public
@@ -10,14 +10,14 @@ and worker registration in the wiring artifact, which adds `me.whereareiam.anvil
 Host providers call `ProtocolPlayerCapabilityContext.channel()`, which returns the player's typed
 `ProtocolChannel`. Worker extensions implement `WorkerExtension` from the player API,
 `me.whereareiam.anvil:protocol-api`, which `capability-protocol-api` brings along. Its `bind` method receives a
-`PlayerBindingContext` for the player's native session and lifecycle, and an `OperationRegistry` for
-typed handlers. The protocol library owns serialization and transport; your extension owns the operations,
-the per-player state, and the listeners.
+`PlayerBindingContext` for the player's lifecycle and protocol, and an `OperationRegistry` for typed handlers.
+The protocol library owns serialization and transport; your extension owns the operations, the per-player state,
+and the listeners.
 
-Packet classes differ between releases of a client library. MCProtocolLib, for example, renamed its
-packets and moved them between packages from Minecraft 1.18.2 to 1.21.11, and its session type
-changed with them. Code that uses those classes therefore lives in segments, one per range of
-releases, behind a library-neutral port that your extension obtains for the player's release.
+Packet classes differ between releases of a client library: MCProtocolLib renamed its packets and moved them
+between packages from Minecraft 1.18.2 to 1.21.11. Your extension does not see them. It speaks the Java Edition
+protocol, `me.whereareiam.anvil:protocol-java-api`, whose packets are the same for every release; the library
+translates them for the release the player runs.
 
 ## Define a shared operation
 
@@ -70,12 +70,12 @@ models; the bundled codec supports constructors whose parameter names are retain
 
 ## Bind behavior to a player
 
-Put this registration class in your wiring artifact's `src/main/java/com/example/roundtrip/mcprotocol`
-directory. Its compile dependencies are your feature API and Anvil's `protocol-api`; it does
-not compile against MCProtocolLib, because it runs on every release.
+Put this registration class in your wiring artifact's `src/main/java/com/example/roundtrip/java`
+directory. Its compile dependencies are your feature API and Anvil's `protocol-api` (and `protocol-java-api` once it
+uses packets); it does not compile against a client library, because it runs on every release of every library.
 
 ```java
-package com.example.roundtrip.mcprotocol;
+package com.example.roundtrip.java;
 
 import com.example.roundtrip.RoundTripOperations;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
@@ -97,7 +97,7 @@ public final class RoundTripExtension implements WorkerExtension<Object> {
 
 	@Override
 	public @NotNull Optional<String> libraryId() {
-		return Optional.of("mcprotocol");
+		return Optional.empty();
 	}
 
 	@Override
@@ -118,10 +118,10 @@ public final class RoundTripExtension implements WorkerExtension<Object> {
 
 `libraryId()` names the library whose workers install the extension; an empty value installs it in
 every library's worker. A worker also requires `nativeSessionType()` to accept its own session type;
-`Object.class` accepts every release, and a segment's port casts the session to the release's type.
+`Object.class` accepts every release.
 
-`PlayerBindingContext` supplies the existing player's native session, connection lifecycle, and event
-emission to this binding. Keep the binding's state in the object returned from `bind`.
+`PlayerBindingContext` supplies the existing player's protocol, connection lifecycle, and event emission to this
+binding. Keep the binding's state in the object returned from `bind`.
 `OperationRegistry` accepts the shared descriptor and a typed handler; the worker encodes and decodes the
 values outside the feature implementation.
 
@@ -129,7 +129,7 @@ Create `src/main/resources/META-INF/services/me.whereareiam.anvil.protocol.api.w
 in the wiring artifact containing:
 
 ```text
-com.example.roundtrip.mcprotocol.RoundTripExtension
+com.example.roundtrip.java.RoundTripExtension
 ```
 
 The host `ProtocolPlayerCapabilityProvider` needs its own [service descriptor](../../packaging/index.md).
@@ -154,76 +154,61 @@ String reply = channel.request(RoundTripOperations.ROUNDTRIP, new RoundTripReque
 The reply should be `hello`. This proves the registered worker operation ran; it does not establish
 that a Minecraft server accepted a game action.
 
-## Own native state and listeners
+## Act over the Java Edition protocol
 
-Within the binding, `player.nativeSession()` returns the current connection generation's native
-session and requires a connected player. Resolve it when sending rather than retaining it across a
-reconnect, and pass it to your port, which sends the release's packet values.
-
-Attach native listeners through `player.bindNativeSession(...)`. Its callback receives each replacement
-session before login starts and returns a `Subscription` that removes that session's listeners.
-In native callbacks, check `player.isCurrentNativeSession(session)` before updating observations; a
-callback already in flight can outlive listener removal. Close the returned registration from your
-`WorkerBinding.close()`. Keep state such as inventory contents and action counters in an object
-created by `bind`, so different players cannot share it.
-
-An `EventDescriptor<E>` declares the event ID and payload class shared by the worker and host.
-Send a value with `player.emit(eventDescriptor, payload)` and receive that value through
-`channel.subscribe(eventDescriptor, listener)`. For example, a connection event carries a
-`PlayerConnectionEvent` value with the profile the joined process granted at login, or the reason the
-connection ended; the descriptor identifies how to deliver and decode it. Use `Void`
-with a `null` payload when an event carries no value.
-
-Register host subscription cleanup with `context.onDestroy(...)`. `player.viewRotation()`
-returns the shared `ViewRotation`: yaw and pitch in degrees, including server corrections. Movement
-updates this state when sending a new direction, and interaction reads it for the current view.
-Calling `player.viewRotation(rotation)` records the value; the binding remains responsible for sending
-the packet.
-
-## Put release-specific code in segments
-
-For example, a family whose capability teleports a player declares the port
-`com.example.teleport.packet.TeleportPackets<S>` in its API artifact: a stateless interface whose
-`sessionType()` names the release's session class and whose methods take that session. Its library
-side, `teleport-mcprotocol`, holds the extension and one segment per range of releases, such as
-`V1_18_2`, `V1_21_1`, and `V1_21_11`. A segment is named after the release key it starts at and serves
-every later release up to the next segment. Each implements only the port; here `Position` is the
-family's own model:
+`player.protocol(JavaProtocol.class)` returns the player's protocol. Packets are immutable values grouped by area,
+such as `packet.chat` and `packet.interaction`, one class per game packet:
 
 ```java
-public final class McProtocolTeleportPackets implements TeleportPackets<Session> {
-	@Override
-	public @NotNull Class<Session> sessionType() {
-		return Session.class;
-	}
-
-	@Override
-	public void move(@NotNull Session session, @NotNull Position position) {
-		session.send(new ServerboundMovePlayerPosRotPacket(position.isOnGround(), false,
-				position.getX(), position.getY(), position.getZ(), position.getYaw(), position.getPitch()));
-	}
-}
+JavaProtocol protocol = player.protocol(JavaProtocol.class);
+Subscription chat = protocol.listen(ClientboundSystemChat.class, packet -> received(packet.getText()));
+protocol.send(new ServerboundChatCommand("spawn"));
 ```
 
-That is the `V1_21_11` segment, which imports `org.geysermc.mcprotocollib.network.Session`; the
-`V1_18_2` segment sends its release's `ServerboundMovePlayerPosRotPacket` through
-`com.github.steveice10.packetlib.Session` instead. The extension obtains the selected segment's
-implementation, the adapter, while binding a player, and hands it to the library-neutral binding:
+The protocol belongs to the player, not to one connection: a listener receives the packets of whichever connection
+is current, never a late packet of a replaced one, and `send` uses the current connection and fails while the
+player is disconnected. Close your subscriptions from `WorkerBinding.close()`, and keep state such as counters in an
+object created by `bind`, so different players cannot share it.
+
+A release may lack a packet; `protocol.supports(type)` tells. Listen to an optional packet only when the release
+carries it. When your capability cannot work without a packet, throw `ProtocolUnavailableException` from `bind`:
+the worker reports the capability as unavailable with your message, and the player keeps its other capabilities.
+`listen` and `send` throw it themselves for a packet the release cannot carry. A player of a library that does not
+speak the Java Edition protocol throws it from `protocol(JavaProtocol.class)`.
+
+`player.bindNativeSession(...)` tells you when a connection starts: its callback runs before each connection logs
+in and returns a `Subscription` that is closed when that connection ends or a new one replaces it. Use it for state
+that belongs to one connection, such as cookies.
+
+An `EventDescriptor<E>` declares the event ID and payload class shared by the worker and host. Send a value with
+`player.emit(eventDescriptor, payload)` and receive it through `channel.subscribe(eventDescriptor, listener)`. A
+connection event, for example, carries a `PlayerConnectionEvent` with the profile the joined process granted at
+login, or the reason the connection ended. Use `Void` with a `null` payload when an event carries no value.
+
+Register host subscription cleanup with `context.onDestroy(...)`. `player.viewRotation()` returns the shared
+`ViewRotation`: yaw and pitch in degrees, including server corrections. Movement updates it when sending a new
+direction, and interaction reads it for the current view; `player.viewRotation(rotation)` only records the value.
+
+## Reach a packet the protocol does not carry yet
+
+The Java Edition protocol carries the packets Anvil's own capabilities need. A packet it does not model yet belongs
+in the protocol: add it to `protocol-java-api` and its translation to the library's client segments, so every
+capability can use it. Until then, an external capability can keep its own release-specific code in segments.
+
+For example, a family whose capability teleports a player declares the port
+`com.example.teleport.packet.TeleportPackets<S>` in its API artifact: a stateless interface whose `sessionType()`
+names the release's session class and whose methods take that session. Its library side, `teleport-mcprotocol`,
+holds the extension and one segment per range of releases, such as `V1_18_2` and `V1_21_11`. A segment is named
+after the release key it starts at and serves every later release up to the next segment, and implements only the
+port. The extension obtains the selected segment's implementation, the adapter, while binding a player:
 
 ```java
 TeleportPackets<?> packets = player.adapter(TeleportPackets.class);
-return new TeleportBinding<>(packets).bind(player, operations);
 ```
 
-The binding casts `player.nativeSession()` with `packets.sessionType()` before each call. Call
-`adapter` while binding, never in the extension's constructor: a worker creates every discovered
-extension before it knows which ones it installs. Do not call `ServiceLoader` yourself.
-
-The worker selects one segment per side for its release and checks the segment's recorded linkage
-against the loaded release before handing out its adapter. When no segment serves the release, the
-segment does not link, or more than one adapter is declared, `adapter` throws
-`ProtocolUnavailableException` and the worker reports your capability as unavailable with that reason,
-while the player keeps its other capabilities.
+Cast `player.nativeSession()` with `packets.sessionType()` before each call. Call `adapter` while binding, never in
+the extension's constructor, and never call `ServiceLoader` yourself. When no segment serves the release, the
+segment does not link, or more than one adapter is declared, `adapter` throws `ProtocolUnavailableException`.
 
 ## Package a segment
 
@@ -263,8 +248,8 @@ are reserved. Register operations only during `bind`; a capability cannot add ha
 player is exposed.
 
 Test the packaged adapter on every library release you support. Cover requests, events, malformed
-payloads, duplicate registration, per-player isolation, and cleanup. Exercise reconnects to catch
-duplicate listeners and stale-session observations. For game actions, assert the result through a
+payloads, duplicate registration, per-player isolation, cleanup, and releases that lack a packet. Exercise
+reconnects to catch duplicate listeners and stale-connection observations. For game actions, assert the result through a
 real server observation. See the repository's [live and worker tests](../../../contributing/testing/live/index.md).
 
 For another client library, bind to its own session type or expose a stable library-specific
