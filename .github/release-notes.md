@@ -4,7 +4,7 @@ version: 2.0.0
 
 # Anvil 2.0.0 - Cookies, players and watches
 
-Anvil 2.0.0 lets players hold cookies and answer cookie requests as the client does, asks each server and proxy what it knows about its players, and replaces the int checkpoints of histories with watches. The new Players capability of a process reports who is on it, the profile it sees and, on a proxy, the backend it connected each player to, from the joins and leaves every platform agent now reports. Tests, extension providers, platform agents and custom protocol libraries must follow the upgrade notes below.
+Anvil 2.0.0 lets players hold cookies and answer cookie requests as the client does, records the titles, action bars and boss bars a server shows the player, asks each server and proxy what it knows about its players, and replaces the int checkpoints of histories with watches. The new Players capability of a process reports who is on it, the profile it sees and, on a proxy, the backend it connected each player to, from the joins and leaves every platform agent now reports. Tests, extension providers, platform agents and custom protocol libraries must follow the upgrade notes below.
 
 ## Upgrade notes
 

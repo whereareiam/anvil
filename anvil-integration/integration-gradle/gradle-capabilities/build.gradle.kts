@@ -79,6 +79,12 @@ gradlePlugin {
 			displayName = "Anvil Dialogs Capability"
 			description = "Includes the built-in Dialogs capability"
 		}
+		create("anvilCapabilityScreen") {
+			id = "me.whereareiam.anvil.capability.screen"
+			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.ScreenPlugin"
+			displayName = "Anvil Screen Capability"
+			description = "Includes the built-in Screen capability"
+		}
 	}
 }
 
