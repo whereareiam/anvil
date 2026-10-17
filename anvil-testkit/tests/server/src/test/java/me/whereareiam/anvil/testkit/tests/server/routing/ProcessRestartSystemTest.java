@@ -3,13 +3,14 @@ package me.whereareiam.anvil.testkit.tests.server.routing;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
+import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.api.type.ProcessState;
-import me.whereareiam.anvil.capability.server.Server;
 import me.whereareiam.anvil.capability.console.Console;
+import me.whereareiam.anvil.capability.players.PlayerWatch;
+import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
-import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.testkit.tests.server.extension.FixtureAgentProbeProvider;
 import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
 import org.junit.jupiter.api.DynamicTest;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.TestFactory;
 
 import java.nio.file.Files;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,12 +39,13 @@ class ProcessRestartSystemTest {
 		     ScenarioContext context = engine.start(scenario)) {
 			var alice = context.players().create("Alice");
 			Session session = alice.capability(Session.class);
-			Server server = alice.capability(Server.class);
 			var probe = alice.capability(FixtureAgentProbeProvider.Probe.class);
 			String destination = scenario.getProxies().isEmpty() ? "server" : "lobby";
+			Players players = context.processes().server(destination).capability(Players.class);
+			PlayerWatch arrivals = players.watch();
 			session.connect();
 			session.connected(Duration.ofSeconds(30));
-			var identity = server.joined(destination);
+			var identity = arrivals.joined(alice).getProfile();
 
 			var before = context.processes().get(scenario.getEntrypoint());
 			var console = before.capability(Console.class);
@@ -62,7 +65,8 @@ class ProcessRestartSystemTest {
 			session.disconnected();
 			session.rejoin();
 			session.connected(Duration.ofSeconds(30));
-			assertEquals(identity.getObserved().getUniqueId(), server.joined(destination).getObserved().getUniqueId());
+			assertEquals(identity.getUniqueId(), arrivals.joined(alice).getProfile().getUniqueId());
+			assertSame(players, context.processes().server(destination).capability(Players.class));
 			assertEquals("external:after", probe.echo(destination, "after"));
 
 			if (!scenario.getProxies().isEmpty()) {
@@ -75,9 +79,13 @@ class ProcessRestartSystemTest {
 				assertEquals(ProcessState.READY, proxy.state());
 				assertSame(console, proxy.capability(Console.class));
 				assertSame(backendConsole, backend.capability(Console.class));
+				Players proxied = proxy.capability(Players.class);
+				PlayerWatch moves = proxied.watch();
 				session.rejoin();
 				session.connected(Duration.ofSeconds(30));
-				server.joined(destination);
+				arrivals.joined(alice);
+				moves.joined(alice, destination);
+				assertEquals(Optional.of(destination), proxied.backend(alice));
 				assertEquals("external:backend", probe.echo(destination, "backend"));
 			}
 		}

@@ -11,7 +11,6 @@ import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
-import me.whereareiam.anvil.protocol.api.player.PlayerObservationFactory;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.player.account.AccountReservations;
 import me.whereareiam.anvil.protocol.player.account.ProtocolAccountManager;
@@ -124,7 +123,6 @@ public final class DefaultPlayerService implements AutoCloseable {
 	 *
 	 * @param scenario prepared scenario
 	 * @param processes scenario processes resolved at player creation
-	 * @param observations scenario-bound player observations
 	 * @param composer scenario-bound player composition
 	 * @param sourceAddressesPreserved whether the scenario's processes see a game connection's own source
 	 * address, which lets players declare one; an execution that translates connections refuses it
@@ -133,7 +131,6 @@ public final class DefaultPlayerService implements AutoCloseable {
 	public synchronized @NotNull PlayerManager open(
 			@NotNull AnvilScenario scenario,
 			@NotNull ScenarioProcesses processes,
-			@NotNull PlayerObservationFactory observations,
 			@NotNull ProtocolPlayerComposer composer,
 			boolean sourceAddressesPreserved
 	) {
@@ -143,7 +140,6 @@ public final class DefaultPlayerService implements AutoCloseable {
 				selector,
 				this::library,
 				processes,
-				observations,
 				composer,
 				managers::remove,
 				accounts,

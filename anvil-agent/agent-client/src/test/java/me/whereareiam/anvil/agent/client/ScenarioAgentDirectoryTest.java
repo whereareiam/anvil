@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.agent.client;
 
-import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.agent.api.exception.AgentException;
+import me.whereareiam.anvil.agent.client.api.AgentClient;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -21,6 +21,6 @@ class ScenarioAgentDirectoryTest {
 		assertSame(proxy, directory.require("proxy"));
 		assertEquals(Map.of("server", server), snapshot);
 		assertThrows(UnsupportedOperationException.class, () -> snapshot.put("other", server));
-		assertThrows(AgentException.class, () -> server.executeCommand("before-start"));
+		assertThrows(AgentException.class, () -> server.request("before-start", null, Boolean.class));
 	}
 }

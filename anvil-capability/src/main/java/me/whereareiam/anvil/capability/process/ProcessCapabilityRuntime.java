@@ -8,6 +8,7 @@ import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityP
 import me.whereareiam.anvil.capability.api.CapabilityContext;
 import me.whereareiam.anvil.capability.api.CapabilityProvider;
 import me.whereareiam.anvil.capability.api.channel.RequestChannel;
+import me.whereareiam.anvil.capability.api.platform.ProcessPlatform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -47,15 +48,17 @@ public final class ProcessCapabilityRuntime {
 	 *
 	 * @param platforms platform identifier of every process that runs an agent, by process name
 	 * @param channels supplies the request channel of a process's agent, by process name
+	 * @param platformAccess supplies what a process's platform agent provides to every capability, by process name
 	 * @return validated runtime, ready to bind after process startup
 	 */
 	public static @NotNull ProcessCapabilityRuntime discover(
 			@NotNull Map<String, String> platforms,
-			@NotNull Function<String, RequestChannel> channels
+			@NotNull Function<String, RequestChannel> channels,
+			@NotNull Function<String, ProcessPlatform> platformAccess
 	) {
 		if (platforms.isEmpty()) return new ProcessCapabilityRuntime(Map.of());
 
-		return of(platforms, channels, installed());
+		return of(platforms, channels, platformAccess, installed());
 	}
 
 	/**
@@ -64,21 +67,24 @@ public final class ProcessCapabilityRuntime {
 	 *
 	 * @param platforms platform identifier of every process that runs an agent, by process name
 	 * @param channels supplies the request channel of a process's agent, by process name
+	 * @param platformAccess supplies what a process's platform agent provides to every capability, by process name
 	 * @param providers agent-backed process capability providers to choose from
 	 * @return validated runtime, ready to bind after process startup
 	 */
 	public static @NotNull ProcessCapabilityRuntime of(
 			@NotNull Map<String, String> platforms,
 			@NotNull Function<String, RequestChannel> channels,
+			@NotNull Function<String, ProcessPlatform> platformAccess,
 			@NotNull Collection<AgentProcessCapabilityProvider<?>> providers
 	) {
 		Map<String, List<CapabilityProvider<? extends ProcessCapability, CapabilityContext<ProcessCapability>>>> owners = new LinkedHashMap<>();
 		platforms.forEach((name, platform) -> {
 			RequestChannel channel = channels.apply(name);
+			ProcessPlatform access = platformAccess.apply(name);
 			List<CapabilityProvider<? extends ProcessCapability, CapabilityContext<ProcessCapability>>> supported = new ArrayList<>();
 			for (AgentProcessCapabilityProvider<?> provider : providers)
 				if (provider.supportsPlatform(platform))
-					supported.add(new AgentProcessCapabilityProviderAdapter<>(provider, name, platform, channel));
+					supported.add(new AgentProcessCapabilityProviderAdapter<>(provider, name, platform, channel, access));
 			owners.put(name, supported);
 		});
 

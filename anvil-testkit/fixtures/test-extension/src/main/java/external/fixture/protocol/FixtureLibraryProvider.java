@@ -1,7 +1,6 @@
 package external.fixture.protocol;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.api.model.player.PlayerIdentity;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
@@ -10,6 +9,7 @@ import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -96,10 +96,13 @@ public class FixtureLibraryProvider implements ProtocolLibraryProvider {
 			}
 
 			@Override
-			public @NotNull PlayerIdentity identity() {
-				return PlayerIdentity.builder()
-						.requested(new PlayerProfile(name(), UUID.nameUUIDFromBytes(name().getBytes(StandardCharsets.UTF_8))))
-						.build();
+			public @NotNull PlayerProfile requestedProfile() {
+				return new PlayerProfile(name(), UUID.nameUUIDFromBytes(name().getBytes(StandardCharsets.UTF_8)));
+			}
+
+			@Override
+			public @Nullable PlayerProfile grantedProfile() {
+				return null;
 			}
 
 			@Override

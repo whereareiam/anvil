@@ -6,7 +6,8 @@ import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.process.ProcessConsole;
-import me.whereareiam.anvil.capability.server.Server;
+import me.whereareiam.anvil.capability.players.PlayerWatch;
+import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
 import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -50,13 +52,23 @@ class PlayerConnectionRoutingSystemTest {
 						.name("Routed")
 						.connection(PlayerConnection.builder().virtualHost(FORCED_HOST).sourceAddress("127.0.0.2").build())
 						.build());
+				PlayerWatch game = context.processes().server("game").capability(Players.class).watch();
+				PlayerWatch lobby = context.processes().server("lobby").capability(Players.class).watch();
+				Players gateway = context.processes().proxy("proxy").capability(Players.class);
+				PlayerWatch moves = gateway.watch();
 				join(routed);
-				assertEquals("game", routed.capability(Server.class).joined("game", TIMEOUT).getRoute().getServer());
+				game.joined(routed, TIMEOUT);
+				moves.joined(routed, "game", TIMEOUT);
+				assertEquals(Optional.of("game"), gateway.backend(routed));
 				console.await("[connected player] Routed (/127.0.0.2:", checkpoint, TIMEOUT);
 
 				SimulatedPlayer direct = context.players().create("Direct");
 				join(direct);
-				assertEquals("lobby", direct.capability(Server.class).joined("lobby", TIMEOUT).getRoute().getServer());
+				lobby.joined(direct, TIMEOUT);
+				moves.joined(direct, "lobby", TIMEOUT);
+				lobby.neverJoined(routed, Duration.ofSeconds(1));
+				moves.neverJoined(routed, "lobby", Duration.ofSeconds(1));
+				assertEquals(Optional.of("lobby"), gateway.backend(direct));
 				console.await("[connected player] Direct (/127.0.0.1:", checkpoint, TIMEOUT);
 				successful = true;
 			} finally {

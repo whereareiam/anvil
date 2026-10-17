@@ -1,9 +1,8 @@
 package me.whereareiam.anvil.capability.player;
 
 import me.whereareiam.anvil.api.model.player.Expectation;
-import me.whereareiam.anvil.api.model.player.PlayerIdentity;
+import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
-import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.api.player.CapabilityPlayer;
@@ -12,6 +11,7 @@ import me.whereareiam.anvil.capability.protocol.api.player.ProtocolCapabilityPla
 import me.whereareiam.anvil.capability.protocol.api.player.channel.CapabilityChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.channel.Subscription;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -25,7 +25,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -95,19 +94,9 @@ class CapabilitySimulatedPlayerTest {
 	}
 
 	private static SimulatedPlayer compose(CapabilityPlayer player) {
-		return new PlayerCapabilityRuntime(List.of()).compose(player, observation(), ignored -> { });
+		return new PlayerCapabilityRuntime(List.of()).compose(player, PlayerConnection.to("proxy"), ignored -> { });
 	}
 
-	private static PlayerObservation observation() {
-		PlayerIdentity identity = PlayerIdentity.builder()
-				.requested(new PlayerProfile("Alice", UUID.nameUUIDFromBytes("Alice".getBytes(StandardCharsets.UTF_8)))).build();
-		return new PlayerObservation() {
-			@Override
-			public PlayerIdentity identity() { return identity; }
-			@Override
-			public PlayerIdentity await(Predicate<PlayerIdentity> condition, Duration timeout) { return identity(); }
-		};
-	}
 
 	/**
 	 * Checks a wait's condition once, as a channel whose observation is already complete; a condition that does
@@ -131,6 +120,8 @@ class CapabilitySimulatedPlayerTest {
 		public @NotNull String name() { return "Alice"; }
 		public @NotNull String libraryId() { return "stub"; }
 		public @NotNull String clientVersion() { return "test"; }
+		public @NotNull PlayerProfile requestedProfile() { return new PlayerProfile("Alice", UUID.nameUUIDFromBytes("Alice".getBytes(StandardCharsets.UTF_8))); }
+		public @Nullable PlayerProfile grantedProfile() { return null; }
 		public @NotNull <T> Optional<T> findService(@NotNull Class<T> type) { return Optional.empty(); }
 		public @NotNull Optional<CapabilityChannel> channel() { return Optional.of(capabilityChannel); }
 		public boolean destroyed() { return false; }
@@ -140,6 +131,8 @@ class CapabilitySimulatedPlayerTest {
 	private static final class PlainPlayer implements CapabilityPlayer {
 		public @NotNull String name() { return "Alice"; }
 		public @NotNull String clientVersion() { return "test"; }
+		public @NotNull PlayerProfile requestedProfile() { return new PlayerProfile("Alice", UUID.nameUUIDFromBytes("Alice".getBytes(StandardCharsets.UTF_8))); }
+		public @Nullable PlayerProfile grantedProfile() { return null; }
 		public boolean destroyed() { return false; }
 		public void destroy() { }
 	}

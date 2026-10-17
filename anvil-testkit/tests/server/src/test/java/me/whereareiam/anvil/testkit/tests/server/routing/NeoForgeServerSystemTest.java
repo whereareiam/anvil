@@ -1,12 +1,13 @@
 package me.whereareiam.anvil.testkit.tests.server.routing;
 
-import me.whereareiam.anvil.api.scenario.ScenarioEngine;
-import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
+import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.capability.console.Console;
 import me.whereareiam.anvil.capability.messages.Messages;
-import me.whereareiam.anvil.capability.server.Server;
+import me.whereareiam.anvil.capability.players.PlayerWatch;
+import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
 import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestFactory;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,12 +39,13 @@ class NeoForgeServerSystemTest {
 			SimulatedPlayer alice = context.players().create("Alice");
 			Session session = alice.capability(Session.class);
 			Messages messages = alice.capability(Messages.class);
-			Server server = alice.capability(Server.class);
+			Players players = context.processes().server("server").capability(Players.class);
 			Console console = context.processes().server("server").capability(Console.class);
+			PlayerWatch arrivals = players.watch();
 
 			session.connect();
 			session.connected(Duration.ofSeconds(30));
-			assertEquals("server", server.joined("server", Duration.ofSeconds(10)).getRoute().getServer());
+			assertEquals("Alice", arrivals.joined(alice, Duration.ofSeconds(10)).getProfile().getUsername());
 
 			assertTrue(console.execute("tellraw Alice \"anvil:neoforge\""));
 			messages.received("anvil:neoforge", Duration.ofSeconds(10));
@@ -50,6 +53,8 @@ class NeoForgeServerSystemTest {
 			assertTrue(console.execute("kick Alice anvil:kicked"));
 			assertEquals("anvil:kicked", session.kicked());
 			assertFalse(session.state().connected());
+			arrivals.left(alice, Duration.ofSeconds(10));
+			assertEquals(List.of(), players.online());
 		}
 	}
 }

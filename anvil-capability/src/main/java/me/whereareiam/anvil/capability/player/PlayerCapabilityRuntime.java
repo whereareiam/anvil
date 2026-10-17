@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.capability.player;
 
+import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.player.PlayerCapability;
-import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.CapabilityRuntime;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
@@ -173,22 +173,22 @@ public final class PlayerCapabilityRuntime {
 	/**
 	 * Composes all discovered capabilities around one library-owned player.
 	 * Protocol factories require a protocol-specific player input; shared factories need only the
-	 * player lifetime and observations. All matching factories share one dependency graph. When the
+	 * player lifetime and its connection. All matching factories share one dependency graph. When the
 	 * player has a native channel, protocol factories whose capability its worker does not install are
 	 * skipped with the worker's reason, or with the note that the library's worker does not install them,
 	 * together with their dependents.
 	 *
 	 * @param player library-owned player lifetime and any specialized inputs
-	 * @param observation player identity and route observation
+	 * @param connection how the player connects, with its target process named
 	 * @param onDestroyed callback invoked after permanent destruction
 	 * @return extensible simulated player
 	 */
 	public @NotNull SimulatedPlayer compose(
 			@NotNull CapabilityPlayer player,
-			@NotNull PlayerObservation observation,
+			@NotNull PlayerConnection connection,
 			@NotNull Consumer<SimulatedPlayer> onDestroyed
 	) {
-		return new CapabilitySimulatedPlayer(player, runtime, unavailable(player), observation, onDestroyed);
+		return new CapabilitySimulatedPlayer(player, runtime, unavailable(player), connection, onDestroyed);
 	}
 
 	private Map<String, String> unavailable(CapabilityPlayer player) {

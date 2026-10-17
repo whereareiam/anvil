@@ -7,8 +7,9 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Invokes typed operations through a borrowed capability request channel.
  * The channel's supplier owns serialization, transport, and connection lifetime. An operation can
- * be unavailable while its process or player reconnects; this contract does not expose connection
- * management or imply event-subscription support.
+ * be unavailable while its process or player reconnects, which a request reports as
+ * {@link me.whereareiam.anvil.capability.api.exception.ChannelUnavailableException}; this contract does not expose
+ * connection management or imply event-subscription support.
  */
 public interface RequestChannel {
 	/**
@@ -21,6 +22,8 @@ public interface RequestChannel {
 	 * @param <Q> request type
 	 * @param <R> response type
 	 * @return decoded response, or {@code null} when the operation returns no value
+	 * @throws me.whereareiam.anvil.capability.api.exception.ChannelUnavailableException when the channel cannot
+	 *         send the request now
 	 */
 	@Nullable <Q, R> R request(@NotNull ChannelOperation<Q, R> channelOperation, @Nullable Q request);
 }

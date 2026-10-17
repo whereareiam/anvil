@@ -11,9 +11,7 @@ import java.io.Serializable
  * - `<name>-common` holds the library-neutral host provider and worker binding;
  * - `<name>-<library>` adapts the family to one registered protocol library through its segments.
  *
- * A process family without common code and library sides, such as `console`, keeps its agent-backed provider in
- * the root: that provider binds the family API to another family's agent operations, which only the root, as an
- * assembly, may depend on. Every other family root holds no code.
+ * A family root holds no code, an agent-backed provider included: that lives in `<name>-common` as well.
  *
  * @property name folder and project name
  * @property api project name of the family API
@@ -62,8 +60,7 @@ data class CapabilityFamily(
 		 *
 		 * @param libraries registered library ids
 		 * @throws GradleException when the family has no API, holds a child project that is not a member, keeps
-		 * code in its root although it is not a process family without a common project and library sides, or
-		 * declares a `common` or `util` package
+		 * code in its root, or declares a `common` or `util` package
 		 */
 		fun read(directory: File, libraries: Collection<String>): CapabilityFamily {
 			val name = directory.name
@@ -76,8 +73,7 @@ data class CapabilityFamily(
 			val sides = children.filterNot { it == api || it == common }
 			sides.forEach { side -> requireSide(name, side, libraries) }
 			val hasCommon = common in children
-			val agentBacked = directory.parentFile?.name == processOwner && !hasCommon && sides.isEmpty()
-			if (!agentBacked && File(directory, "src/main/java").exists())
+			if (File(directory, "src/main/java").exists())
 				throw GradleException(
 					"Capability family '$name' only wires its members; move the code of its root to '$common'"
 				)

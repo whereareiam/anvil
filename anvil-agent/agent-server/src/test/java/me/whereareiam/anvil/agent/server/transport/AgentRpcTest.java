@@ -1,27 +1,24 @@
 package me.whereareiam.anvil.agent.server.transport;
 
-import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.agent.api.exception.AgentException;
-import me.whereareiam.anvil.agent.api.model.AgentIdentity;
 import me.whereareiam.anvil.agent.api.model.AgentInfo;
-import me.whereareiam.anvil.agent.api.model.location.ServerLocation;
-import me.whereareiam.anvil.agent.server.api.PlatformAgent;
+import me.whereareiam.anvil.agent.api.model.AgentOperations;
 import me.whereareiam.anvil.agent.api.type.AgentRole;
+import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.agent.client.transport.connection.JsonLineAgentConnectionProvider;
+import me.whereareiam.anvil.agent.server.api.PlatformAgent;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.time.Duration;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AgentRpcTest {
-	private static final UUID HELLO = UUID.fromString("00000000-0000-0000-0000-000000000001");
 
 	@Test
 	void authenticatesJsonLinesRequestsOnLoopback() throws IOException {
@@ -34,23 +31,12 @@ class AgentRpcTest {
 			}
 
 			@Override
-			public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
-				return Optional.of(AgentIdentity.builder()
-						.username("hello")
-						.uniqueId(uniqueId)
-						.location(ServerLocation.builder().server("server").build())
-						.build());
-			}
-
-			@Override
 			public boolean executeCommand(@NotNull String command) {
-				return true;
+				return command.equals("accepted");
 			}
 		}, ignored -> {});
 		     AgentClient client = provider.connect(port, "correct", Duration.ofSeconds(2))) {
-			AgentIdentity identity = client.identity(HELLO).orElseThrow();
-			assertEquals("hello", identity.getUsername());
-			assertEquals(HELLO, identity.getUniqueId());
+			assertEquals("test", client.request(AgentOperations.PING, Map.of()).getPlatform());
 		}
 
 		int deniedPort = freePort();
@@ -61,13 +47,8 @@ class AgentRpcTest {
 			}
 
 			@Override
-			public @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
-				return Optional.empty();
-			}
-
-			@Override
 			public boolean executeCommand(@NotNull String command) {
-				return false;
+				return command.equals("accepted");
 			}
 		}, ignored -> {})) {
 			assertThrows(AgentException.class,

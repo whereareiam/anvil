@@ -2,8 +2,6 @@ package me.whereareiam.anvil.agent.server.api;
 
 import me.whereareiam.anvil.agent.api.exception.AgentException;
 import me.whereareiam.anvil.agent.api.model.AgentInfo;
-import me.whereareiam.anvil.agent.server.api.access.PlatformCommandAccess;
-import me.whereareiam.anvil.agent.server.api.access.PlatformPlayerIdentityAccess;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,17 +11,26 @@ import java.util.function.Supplier;
 /**
  * Required platform behavior implemented by every in-process Anvil agent.
  *
- * <p>The agent runtime handles authentication and serialization. Platform integrations only
- * implement these domain operations. The inherited interfaces make the required baseline
- * explicit while allowing future operations to be added as focused capabilities.</p>
+ * <p>The agent runtime handles authentication and serialization. A platform integration reports what it is, runs
+ * console commands, reports players joining and leaving to the {@code PlayerEvents} of its endpoint, exposes its
+ * native services, and runs work by the platform's threading rules. Anything else a capability needs from the
+ * platform belongs to an agent extension, which reaches the platform through these.</p>
  */
-public interface PlatformAgent extends PlatformPlayerIdentityAccess, PlatformCommandAccess {
+public interface PlatformAgent {
 	/**
 	 * Reports platform information used to verify agent readiness.
 	 *
 	 * @return current platform information
 	 */
 	@NotNull AgentInfo info();
+
+	/**
+	 * Executes a command as the platform console.
+	 *
+	 * @param command command without a leading slash
+	 * @return whether the platform accepted the command
+	 */
+	boolean executeCommand(@NotNull String command);
 
 	/**
 	 * Finds a native API service exposed by this platform integration.

@@ -33,7 +33,7 @@ A plain Java string containing `hello` alone is not a TOML string literal.
 
 The zero login rate limit is useful for rapid reconnect tests; configure it only when the journey
 needs repeated connections. Run that journey after changing the setting and verify the reconnect
-through Session and Server observations.
+through Session and the backend's [Players](../../../actions/players/index.md) capability.
 
 To verify online logins against another session server than Mojang's, declare `.sessionServer(uri)` on the
 proxy; see [Sign in through another session server](../../../../players/authentication/index.md#sign-in-through-another-session-server).

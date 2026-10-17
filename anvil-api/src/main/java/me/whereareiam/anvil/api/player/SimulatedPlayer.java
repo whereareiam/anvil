@@ -4,11 +4,13 @@ import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.player.Expectation;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.model.player.PlayerState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
+import java.util.List;
 
 /**
  * A real network client exposed through version-independent capabilities.
@@ -45,6 +47,36 @@ public interface SimulatedPlayer extends CapabilityOwner<PlayerCapability> {
 	 * @return client version
 	 */
 	@NotNull String clientVersion();
+
+	/**
+	 * Returns the profile the client asks for when it logs in: its offline profile, or the profile of the online
+	 * account it signs in with.
+	 *
+	 * @return requested profile
+	 */
+	@NotNull PlayerProfile requestedProfile();
+
+	/**
+	 * Returns the profile the process the player joined granted at the latest login. A proxy or a login plugin may
+	 * have changed it, such as a proxy that renames {@code Steve} to {@code Steve_Premium}. What a server or proxy
+	 * knows about the player belongs to that process's Players capability.
+	 *
+	 * @return granted profile, or null before the player logged in and after it disconnected
+	 */
+	@Nullable PlayerProfile grantedProfile();
+
+	/**
+	 * Returns every profile a process granted the client at its logins, oldest first and without repeats, also after
+	 * the player disconnected. A process capability finds the player by them in what the process reported, whatever
+	 * UUID an earlier connection had. The default keeps no history and returns the current granted profile, or
+	 * nothing while there is none.
+	 *
+	 * @return immutable list of the granted profiles
+	 */
+	default @NotNull List<PlayerProfile> grantedProfiles() {
+		PlayerProfile granted = grantedProfile();
+		return granted == null ? List.of() : List.of(granted);
+	}
 
 	/**
 	 * Resolves a typed behavior available on this player.

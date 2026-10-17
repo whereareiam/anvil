@@ -17,8 +17,8 @@ This example prepares one Paper server and a connected player named `GuideBot`. 
 player in its journey, or a human can join a manual variant with the participant already present.
 
 Use the dependencies from [Installation](../../../getting-started/installation/index.md): Paper,
-MCProtocol, and the Session and Server capabilities, which the explicitly selected default capability unit includes. Save the
-class as `com/example/test/PreparedEnvironment.java` in the source set used by your integration. With
+MCProtocol, and the Session and Players capabilities, which the explicitly selected default capability unit
+includes. Save the class as `com/example/test/PreparedEnvironment.java` in the source set used by your integration. With
 the Anvil Gradle plugin, the complete path is `src/anvil/java/com/example/test/PreparedEnvironment.java`.
 
 ```java
@@ -29,7 +29,8 @@ import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.scenario.AnvilScenarioDefinition;
 import me.whereareiam.anvil.api.type.Platforms;
-import me.whereareiam.anvil.capability.server.Server;
+import me.whereareiam.anvil.capability.players.PlayerWatch;
+import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 import org.jetbrains.annotations.NotNull;
 
@@ -47,11 +48,13 @@ public final class PreparedEnvironment implements AnvilScenarioDefinition {
 				.entrypoint(server.getName())
 				.server(server)
 				.setupHook(access -> {
+					PlayerWatch arrivals = access.processes().server(server.getName())
+							.capability(Players.class).watch();
 					var guide = access.players().create("GuideBot");
 					var session = guide.capability(Session.class);
 					session.connect();
 					session.connected();
-					guide.capability(Server.class).joined(server.getName());
+					arrivals.joined(guide);
 				})
 				.build();
 	}
@@ -62,7 +65,7 @@ public final class PreparedEnvironment implements AnvilScenarioDefinition {
 selects the default connection target for newly created players. Use distinct process names and
 select the proxy as the entrypoint when the behavior must pass through a proxy.
 
-The setup waits establish a native connection and agent-observed presence on this direct server.
+The setup waits establish a native connection and that the server reports GuideBot on it.
 They make GuideBot part of the starting state; they do not verify your plugin's behavior. A journey
 can retrieve the existing player with `anvil.players().get("GuideBot")`, or create another player with
 a different name. An environment that needs only processes can omit the setup hook.
@@ -147,7 +150,7 @@ The callback receives `ScenarioAccess`, exposing the declaration, process lookup
 It does not receive a `ScenarioContext` to close. The engine and the caller's integration own that
 lifetime; see [Running context](../../../getting-started/concepts/context/index.md).
 
-Wait for the precondition your hook creates. The example uses Session and Server waits; a hook that
+Wait for the precondition your hook creates. The example uses Session and Players waits; a hook that
 sends console commands should use [bounded console observations](../actions/console/index.md).
 Submitting a command alone does not establish that the requested setup finished.
 

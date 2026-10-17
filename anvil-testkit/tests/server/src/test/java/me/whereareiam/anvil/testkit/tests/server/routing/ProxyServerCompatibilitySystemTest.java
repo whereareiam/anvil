@@ -1,14 +1,16 @@
 package me.whereareiam.anvil.testkit.tests.server.routing;
 
-import me.whereareiam.anvil.api.model.player.PlayerIdentity;
+import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
+import me.whereareiam.anvil.api.scenario.ScenarioEngine;
+import me.whereareiam.anvil.api.type.Platforms;
+import me.whereareiam.anvil.capability.console.Console;
 import me.whereareiam.anvil.capability.messages.Messages;
-import me.whereareiam.anvil.capability.server.Server;
+import me.whereareiam.anvil.capability.players.PlayerWatch;
+import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
-import me.whereareiam.anvil.api.scenario.ScenarioEngine;
-import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.testkit.tests.server.extension.FixtureAgentProbeProvider;
 import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
 import org.junit.jupiter.api.DynamicTest;
@@ -16,9 +18,11 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestFactory;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("compatibility")
 class ProxyServerCompatibilitySystemTest {
@@ -38,24 +42,41 @@ class ProxyServerCompatibilitySystemTest {
 			FixtureAgentProbeProvider.Probe probe = alice.capability(FixtureAgentProbeProvider.Probe.class);
 			for (var process : context.processes().servers())
 				assertEquals("external:matrix", probe.echo(process.name(), "matrix"));
+			for (var process : context.processes().servers())
+				assertTrue(process.capability(Console.class).execute("list"), process.name() + " must accept a console command");
+			for (var proxy : scenario.getProxies()) {
+				String command = proxy.getPlatform().equals(Platforms.VELOCITY) ? "velocity version" : "glist";
+				assertTrue(context.processes().get(proxy.getName()).capability(Console.class).execute(command),
+						proxy.getName() + " must accept a console command");
+			}
 			Session session = alice.capability(Session.class);
 			Messages messages = alice.capability(Messages.class);
-			Server server = alice.capability(Server.class);
+			Players first = context.processes().server(scenario.getProxies().isEmpty() ? "server" : "lobby").capability(Players.class);
+			PlayerWatch arrivals = first.watch();
+			Players proxy = scenario.getProxies().isEmpty() ? null
+					: context.processes().proxy(scenario.getProxies().getFirst().getName()).capability(Players.class);
+			PlayerWatch moves = proxy == null ? null : proxy.watch();
 			session.connect();
 			session.connected(Duration.ofSeconds(30));
 			messages.received("anvil:welcome", Duration.ofSeconds(20));
 			messages.command("anvil-fixture ping");
 			messages.received("anvil:pong", Duration.ofSeconds(10));
+			arrivals.joined(alice, Duration.ofSeconds(10));
+			assertEquals("Alice", first.profile(alice).orElseThrow().getUsername());
+			if (scenario.getProxies().isEmpty()) return;
 
-			if (scenario.getProxies().isEmpty()) {
-				assertEquals("server", server.joined("server", Duration.ofSeconds(10)).getRoute().getServer());
-				return;
-			}
-
-			PlayerIdentity initial = server.joined("lobby", Duration.ofSeconds(10));
-			assertEquals("lobby", initial.getRoute().getServer());
+			moves.joined(alice, Duration.ofSeconds(10));
+			moves.joined(alice, "lobby", Duration.ofSeconds(10));
+			assertEquals(Optional.of("lobby"), proxy.backend(alice));
+			PlayerWatch transfers = context.processes().server("game").capability(Players.class).watch();
 			messages.command("anvil-fixture transfer game");
-			server.joined("game", Duration.ofSeconds(15));
+			transfers.joined(alice, Duration.ofSeconds(15));
+			arrivals.left(alice, Duration.ofSeconds(10));
+			moves.left(alice, "lobby", Duration.ofSeconds(10));
+			moves.joined(alice, "game", Duration.ofSeconds(10));
+			moves.neverJoined(alice, "lobby", Duration.ofSeconds(1));
+			assertEquals(Optional.of("game"), proxy.backend(alice));
+			assertEquals("Alice", proxy.profile(alice).orElseThrow().getUsername());
 			messages.command("anvil-fixture ping");
 			messages.received("anvil:pong", Duration.ofSeconds(10));
 		}

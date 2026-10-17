@@ -1,7 +1,8 @@
 package me.whereareiam.anvil.capability.session;
 
+import me.whereareiam.anvil.api.model.player.PlayerConnection;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
-import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.protocol.api.model.EventDescriptor;
 import me.whereareiam.anvil.capability.protocol.api.model.player.PlayerConnectionEvent;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
@@ -78,7 +80,7 @@ class SessionProviderTest {
 	}
 
 	/**
-	 * Supplies only the channel; the session needs no services, capabilities or observations.
+	 * Supplies only the channel; the session needs no services or capabilities.
 	 */
 	private record ChannelContext(CapabilityChannel channel) implements ProtocolPlayerCapabilityContext {
 		@Override
@@ -97,9 +99,20 @@ class SessionProviderTest {
 		}
 
 		@Override
-		public @NotNull PlayerObservation observation() {
-			throw new AssertionError("The session does not observe the player");
+		public @NotNull PlayerProfile requestedProfile() {
+			return new PlayerProfile("Alice", UUID.nameUUIDFromBytes("Alice".getBytes()));
 		}
+
+		@Override
+		public @Nullable PlayerProfile grantedProfile() {
+			return null;
+		}
+
+		@Override
+		public @NotNull PlayerConnection connection() {
+			return PlayerConnection.to("proxy");
+		}
+
 
 		@Override
 		public void onDestroy(@NotNull Runnable action) {

@@ -23,8 +23,9 @@ the player default timeout of ten seconds; add `import java.time.Duration;` to s
 session.connected(Duration.ofSeconds(20));
 ```
 
-Use [`Server.joined(...)`](../server/index.md) after login to await an agent-observed route to a named
-backend. A proxy can supply that route; it is not necessarily an observation from the backend itself.
+To await arrival on a named backend, watch that backend's
+[Players](../../../environments/actions/players/index.md) capability before `connect()` and call
+`joined(player)` on the watch after login.
 
 ## Disconnect and rejoin
 
@@ -42,9 +43,9 @@ Disconnecting keeps the player object registered. Rejoining retains that player 
 instances, uses its configured identity and target, and resets Session's connection and kick state.
 It does not create a replacement player or prove that plugin data survived. Other capabilities can
 retain observations; see [Messages history](../messages/index.md#match-the-intended-operation).
-After login, wait for the expected agent-observed route and assert the application state you need.
-A proxy or backend may report an identity different from the configured one; see
-[server observations](../server/index.md).
+After login, wait for the player's join on the expected backend and assert the application state you
+need. A proxy or backend may report a profile different from the configured one; see
+[watching players on a process](../../../environments/actions/players/index.md#read-what-a-process-knows-now).
 
 ## Observe a kick
 

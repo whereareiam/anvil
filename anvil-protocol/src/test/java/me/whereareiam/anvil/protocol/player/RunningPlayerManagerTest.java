@@ -4,19 +4,17 @@ import me.whereareiam.anvil.api.exception.AnvilException;
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
+import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
-import me.whereareiam.anvil.api.model.player.PlayerIdentity;
-import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.model.player.PlayerLogin;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
-import me.whereareiam.anvil.api.model.player.Expectation;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.model.player.PlayerState;
 import me.whereareiam.anvil.api.model.player.SessionIdentity;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerCapability;
-import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.player.account.AccountPool.AccountLease;
 import me.whereareiam.anvil.api.process.RunningProcess;
@@ -44,8 +42,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -124,10 +122,25 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
+	void composesThePlayerWithTheProcessItConnectsTo() {
+		StubLibrary library = new StubLibrary();
+		AtomicReference<String> target = new AtomicReference<>();
+		ProtocolPlayerComposer composer = (player, connection, metadata, onDestroyed) -> {
+			target.set(connection.getTarget());
+			return composer().compose(player, connection, metadata, onDestroyed);
+		};
+
+		manager(scenario(), library, new StubScenarioProcesses("server", temporary.resolve("server")), composer, ignored -> { })
+				.create("alice");
+
+		assertEquals("server", target.get());
+	}
+
+	@Test
 	void aSourceAddressIsRefusedWhenTheExecutionTranslatesConnections() {
 		StubLibrary library = new StubLibrary();
 		RunningPlayerManager manager = new RunningPlayerManager(scenario(), selector(library), ignored -> library,
-				new StubScenarioProcesses("server", temporary.resolve("server")), (player, connectedTo) -> observation(player),
+				new StubScenarioProcesses("server", temporary.resolve("server")),
 				composer(), ignored -> { }, List::of, new AccountReservations(), false);
 
 		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create(PlayerOptions.builder()
@@ -214,7 +227,7 @@ class RunningPlayerManagerTest {
 		StubLibrary library = new StubLibrary();
 		IllegalStateException failure = new IllegalStateException("composition failed");
 		library.destructionFailure = new IllegalStateException("destruction failed");
-		ProtocolPlayerComposer composer = (player, observation, metadata, onDestroyed) -> { throw failure; };
+		ProtocolPlayerComposer composer = (player, connection, metadata, onDestroyed) -> { throw failure; };
 		RunningPlayerManager manager = manager(scenario(), library, new StubScenarioProcesses("server", temporary), composer, ignored -> { });
 
 		assertSame(failure, assertThrows(IllegalStateException.class, () -> manager.create("Alice")));
@@ -289,7 +302,7 @@ class RunningPlayerManagerTest {
 		StubLibrary library = new StubLibrary();
 		AuthenticationAccount account = new AuthenticationAccount("alice", "test", "Alice", null);
 		RunningPlayerManager manager = new RunningPlayerManager(scenario(), selector(library), ignored -> library,
-				new StubScenarioProcesses("server", temporary.resolve("server")), (player, connectedTo) -> observation(player), composer(),
+				new StubScenarioProcesses("server", temporary.resolve("server")), composer(),
 				ignored -> { }, () -> List.of(account), new AccountReservations(), true);
 
 		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create(online("alice")));
@@ -444,7 +457,7 @@ class RunningPlayerManagerTest {
 		return new RunningPlayerManager(scenario, selector, selected -> {
 			library.lastSelectedId = selected;
 			return library;
-		}, new StubScenarioProcesses("server", temporary.resolve("server")), (player, connectedTo) -> observation(player), composer(),
+		}, new StubScenarioProcesses("server", temporary.resolve("server")), composer(),
 				ignored -> { }, () -> List.of(accounts), reservations, true);
 	}
 
@@ -467,7 +480,7 @@ class RunningPlayerManagerTest {
 			Consumer<RunningPlayerManager> onClosed
 	) {
 		return new RunningPlayerManager(scenario, selector(library), ignored -> library, processes,
-				(player, connectedTo) -> observation(player), composer, onClosed, List::of, new AccountReservations(), true);
+				composer, onClosed, List::of, new AccountReservations(), true);
 	}
 
 	private static ProtocolRelease release(String libraryVersion, String minecraft) {
@@ -500,15 +513,8 @@ class RunningPlayerManagerTest {
 				.build();
 	}
 
-	private PlayerObservation observation(ProtocolPlayer player) {
-		return new PlayerObservation() {
-			public PlayerIdentity identity() { return player.identity(); }
-			public PlayerIdentity await(Predicate<PlayerIdentity> condition, Duration timeout) { return identity(); }
-		};
-	}
-
 	private ProtocolPlayerComposer composer() {
-		return (player, observation, metadata, onDestroyed) -> new SimulatedPlayer() {
+		return (player, connection, metadata, onDestroyed) -> new SimulatedPlayer() {
 			@Override
 			public @NotNull String name() {
 				return player.name();
@@ -517,6 +523,16 @@ class RunningPlayerManagerTest {
 			@Override
 			public @NotNull String clientVersion() {
 				return player.clientVersion();
+			}
+
+			@Override
+			public @NotNull PlayerProfile requestedProfile() {
+				return player.requestedProfile();
+			}
+
+			@Override
+			public @Nullable PlayerProfile grantedProfile() {
+				return player.grantedProfile();
 			}
 
 			@Override
@@ -618,7 +634,7 @@ class RunningPlayerManagerTest {
 	private static final class StubPlayer implements ProtocolPlayer {
 		private final PlayerRequest request;
 		private final ProtocolRelease release;
-		private final PlayerIdentity identity;
+		private final PlayerProfile requested;
 		private final RuntimeException destructionFailure;
 		private boolean destroyed;
 
@@ -626,10 +642,8 @@ class RunningPlayerManagerTest {
 			this.request = request;
 			this.release = release;
 			this.destructionFailure = destructionFailure;
-			this.identity = PlayerIdentity.builder()
-					.requested(new PlayerProfile(request.getName(), UUID.nameUUIDFromBytes(("OfflinePlayer:" + request.getName())
-							.getBytes(StandardCharsets.UTF_8))))
-					.build();
+			this.requested = new PlayerProfile(request.getName(), UUID.nameUUIDFromBytes(("OfflinePlayer:" + request.getName())
+					.getBytes(StandardCharsets.UTF_8)));
 		}
 
 		@Override
@@ -653,8 +667,13 @@ class RunningPlayerManagerTest {
 		}
 
 		@Override
-		public @NotNull PlayerIdentity identity() {
-			return identity;
+		public @NotNull PlayerProfile requestedProfile() {
+			return requested;
+		}
+
+		@Override
+		public @Nullable PlayerProfile grantedProfile() {
+			return null;
 		}
 
 		@Override

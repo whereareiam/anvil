@@ -1,14 +1,16 @@
 package me.whereareiam.anvil.capability.player;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.model.player.PlayerConnection;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
-import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.capability.agent.api.player.AgentPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.agent.api.player.AgentPlayerCapabilityProvider;
 import me.whereareiam.anvil.capability.api.channel.RequestChannel;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
+import me.whereareiam.anvil.capability.api.model.platform.PlatformEvent;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -64,6 +67,9 @@ class AgentPlayerCapabilityProviderAdapterTest {
 			assertThrows(CapabilityException.class, () -> context.requireCapability(Unrelated.class));
 			assertEquals("Alice", context.playerName());
 			assertEquals("1.21.11", context.clientVersion());
+			assertEquals("Alice", context.requestedProfile().getUsername());
+			assertNull(context.grantedProfile());
+			assertEquals("lobby", context.connection().getTarget());
 			return new Feature(context.channel("server"));
 		});
 		var adapter = new AgentPlayerCapabilityProviderAdapter<>(provider, name -> new Channel("first"));
@@ -141,9 +147,20 @@ class AgentPlayerCapabilityProviderAdapterTest {
 		}
 
 		@Override
-		public @NotNull PlayerObservation observation() {
-			throw new UnsupportedOperationException();
+		public @NotNull PlayerProfile requestedProfile() {
+			return new PlayerProfile(name, UUID.nameUUIDFromBytes(name.getBytes()));
 		}
+
+		@Override
+		public @Nullable PlayerProfile grantedProfile() {
+			return null;
+		}
+
+		@Override
+		public @NotNull PlayerConnection connection() {
+			return PlayerConnection.to("lobby");
+		}
+
 
 		@Override
 		public @NotNull <C extends PlayerCapability> Optional<C> findCapability(@NotNull Class<C> type) {

@@ -36,16 +36,16 @@ class AgentSessionTest {
 			assertEquals("127.0.0.1", environment.get("ANVIL_AGENT_BIND"));
 			assertThrows(UnsupportedOperationException.class, () -> environment.put("new", "value"));
 			assertTrue(tokens.isEmpty());
-			assertThrows(AgentException.class, () -> client.executeCommand("before-start"));
+			assertThrows(AgentException.class, () -> client.request("before-start", null, Boolean.class));
 
 			session.connect();
 			session.connect();
 			assertEquals(List.of(token), tokens);
-			assertTrue(client.executeCommand("ready"));
+			assertTrue(client.request("ready", null, Boolean.class));
 		}
 
 		assertEquals(List.of("first:ready", "first:close"), calls);
-		assertThrows(AgentException.class, () -> client.executeCommand("after-cleanup"));
+		assertThrows(AgentException.class, () -> client.request("after-cleanup", null, Boolean.class));
 	}
 
 	@Test
@@ -82,7 +82,7 @@ class AgentSessionTest {
 			client.close();
 			second.connect();
 			first.close();
-			assertTrue(client.executeCommand("current"));
+			assertTrue(client.request("current", null, Boolean.class));
 		}
 
 		assertEquals(List.of("first:close", "second:current", "second:close"), calls);
@@ -108,7 +108,7 @@ class AgentSessionTest {
 			var failure = assertThrows(IllegalStateException.class, second::connect);
 			assertArrayEquals(new Throwable[]{cleanupFailure}, failure.getSuppressed());
 			second.close();
-			assertTrue(client.executeCommand("still-connected"));
+			assertTrue(client.request("still-connected", null, Boolean.class));
 		}
 
 		assertEquals(1, rejectedCloses.get());
@@ -123,7 +123,7 @@ class AgentSessionTest {
 			throw connectionFailure;
 		})) {
 			assertSame(connectionFailure, assertThrows(AgentException.class, session::connect));
-			assertThrows(AgentException.class, () -> client.executeCommand("unavailable"));
+			assertThrows(AgentException.class, () -> client.request("unavailable", null, Boolean.class));
 		}
 	}
 
@@ -147,7 +147,7 @@ class AgentSessionTest {
 			assertSame(cleanupFailure, assertThrows(AgentException.class, first::close));
 			first.close();
 			second.connect();
-			assertTrue(client.executeCommand("current"));
+			assertTrue(client.request("current", null, Boolean.class));
 		}
 
 		assertEquals(1, failedCloses.get());
@@ -169,7 +169,7 @@ class AgentSessionTest {
 				(proxy, method, arguments) -> {
 					if (method.getName().equals("available")) return true;
 					calls.add(generation + ":" + (arguments == null ? method.getName() : arguments[0]));
-					return method.getName().equals("executeCommand") ? true : null;
+					return method.getName().equals("request") ? true : null;
 				});
 	}
 }

@@ -55,7 +55,8 @@ package com.example.test;
 
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.messages.Messages;
-import me.whereareiam.anvil.capability.server.Server;
+import me.whereareiam.anvil.capability.players.PlayerWatch;
+import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.integration.junit.AnvilTest;
 import org.junit.jupiter.api.Test;
@@ -67,13 +68,16 @@ class PlayerJoinTest {
 	@Test
 	@AnvilTest(PaperScenario.class)
 	void aliceReceivesTheServerMessage(ScenarioContext anvil) {
+		var players = anvil.processes().server("server").capability(Players.class);
+		PlayerWatch arrivals = players.watch();
+
 		var alice = anvil.players().create("Alice");
 		var session = alice.capability(Session.class);
 		session.connect();
 		session.connected();
 
-		var identity = alice.capability(Server.class).joined("server");
-		assertEquals("Alice", identity.getObserved().getUsername());
+		var visit = arrivals.joined(alice);
+		assertEquals("Alice", visit.getProfile().getUsername());
 
 		anvil.processes().server("server").console()
 				.sendCommand("say anvil-first-test");
@@ -83,9 +87,11 @@ class PlayerJoinTest {
 }
 ```
 
-Creating Alice allocates the player; `connect()` starts login. The two waits establish different
-facts: `connected()` waits for the protocol session, while `joined("server")` waits for the server
-agent to observe Alice. The final assertion checks a message delivered to the client.
+The server's `Players` capability reports who is on `server`. Its watch starts before the login, so
+the join cannot happen before the test looks for it. Creating Alice allocates the player; `connect()`
+starts login. The two waits establish different facts: `connected()` waits for the client's protocol
+session, while `arrivals.joined(alice)` waits until the server reports that Alice joined it. The final
+assertion checks a message delivered to the client.
 
 ## Run and inspect the result [step]
 
@@ -96,8 +102,8 @@ Run from your project root:
 ```
 
 The first run downloads the pinned runtime artifacts and prepares a workspace. A passing test means
-that Paper started, the native player joined, the agent observed its identity, and the client received
-the console message. Gradle writes the JUnit report to `build/reports/tests/anvilTest/index.html`.
+that Paper started, the native player joined, the server reported her under the expected name, and the
+client received the console message. Gradle writes the JUnit report to `build/reports/tests/anvilTest/index.html`.
 The extension closes the players and processes at the end of the test.
 
 If a distribution cannot be resolved, check the configured repositories and

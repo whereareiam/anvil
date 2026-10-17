@@ -1,13 +1,9 @@
 package me.whereareiam.anvil.agent.client;
 
-import me.whereareiam.anvil.agent.api.model.AgentIdentity;
 import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.agent.client.api.exception.AgentUnavailableException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Stable borrowed connection whose transport is replaced when its process restarts.
@@ -43,16 +39,6 @@ public final class ProcessAgentClient implements AgentClient {
 			@NotNull Class<T> responseType
 	) {
 		return connection().request(operation, arguments, responseType);
-	}
-
-	@Override
-	public synchronized @NotNull Optional<AgentIdentity> identity(@NotNull UUID uniqueId) {
-		return connection().identity(uniqueId);
-	}
-
-	@Override
-	public synchronized boolean executeCommand(@NotNull String command) {
-		return connection().executeCommand(command);
 	}
 
 	@Override

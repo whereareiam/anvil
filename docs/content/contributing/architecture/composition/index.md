@@ -85,15 +85,35 @@ capability owner makes lookups fail and availability checks return `false`.
 Agent directory entries identify registered process clients, including processes that have not
 started. `AgentConnection.available()` reports whether a connection is attached and locally open;
 it does not probe remote health or guarantee a later request succeeds. Requests made without an
-open connection throw `AgentUnavailableException`. An empty `AgentClient.identity()` result means
-that a connected platform does not observe the player. Player observation skips unavailable agents
-and tolerates disconnection before a query begins, while communication and remote operation failures
-remain visible to the caller.
+open connection throw `AgentUnavailableException`, which a capability's request channel reports as
+`ChannelUnavailableException`; communication and remote operation failures stay visible as they are.
 
-`PlayerObservation` is a global player contract, so the built-in `Server` capability can observe
-identity and route information through a neutral `PlayerCapabilityProvider`, without depending on
-`Session` or the protocol capability API. External protocol libraries may expose their
-own stable SDK service interfaces through the protocol player's explicit extension hook.
+Every platform agent provides a few general facts once, so capabilities do not each reimplement them: `ping`
+for readiness, `command` for the platform console, and `player-events`, the players' joins and leaves.
+Platform agents report the events to the `PlayerEvents` of their endpoint, which keeps a bounded number of
+them for one process generation and says whether the process is a proxy. Launcher assembly reads them through
+`ScenarioPlatforms`: one `ProcessPlatform` per process, which numbers the events itself, ends the stays a
+restarted generation left open, and leaves out what a retained process reported before the scenario began.
+Process capabilities reach their own process's platform through `ProcessCapabilityContext.platform()`; its
+`events()` are that process's events only. Player capabilities get no event feed: what a process knows is
+read from that process.
+
+Built-in capabilities are owned by whoever can normally do or know the thing. What a client can do or see
+belongs to the simulated player; what a server or proxy can do or know belongs to the running process, and
+a proxy counts as server side. The implementation never decides it. What a server or proxy knows about the
+players on it therefore belongs to the built-in `Players` process capability, not to core and not to the
+player. Its agent-backed provider reads `platform().events()` of its own process and finds a simulated
+player by the UUIDs of `SimulatedPlayer.grantedProfiles()`, every profile the client was granted at its
+logins. It does not depend on `Session` or the protocol capability API. Core keeps only what the client
+knows itself: the requested and granted profiles. The built-in Console capability runs its commands through
+`platform().execute(...)`. External protocol libraries may expose their own stable
+SDK service interfaces through the protocol player's explicit extension hook.
+
+Anything else a capability needs from a platform goes through an agent extension. An agent-backed provider
+can declare the extension JARs its capability needs through `agentExtensions()`: platform IDs and a class
+each JAR contains. Launcher assembly collects them from every installed provider, finds each JAR on the
+runtime class path as it finds platform agents, and platform planning adds them to the workspace of every
+process of those platforms under `plugins/anvil-agent-extensions`.
 
 ## Bind preparation to execution
 

@@ -8,6 +8,7 @@ import me.whereareiam.anvil.capability.api.CapabilityContext;
 import me.whereareiam.anvil.capability.api.CapabilityProvider;
 import me.whereareiam.anvil.capability.api.channel.RequestChannel;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
+import me.whereareiam.anvil.capability.api.platform.ProcessPlatform;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -21,6 +22,7 @@ public final class AgentProcessCapabilityProviderAdapter<C extends ProcessCapabi
 	private final @NotNull String processName;
 	private final @NotNull String platformId;
 	private final @NotNull RequestChannel channel;
+	private final @NotNull ProcessPlatform platform;
 
 	@Override
 	public @NotNull CapabilityDescriptor descriptor() {
@@ -49,6 +51,11 @@ public final class AgentProcessCapabilityProviderAdapter<C extends ProcessCapabi
 		@Override
 		public @NotNull String platformId() {
 			return platformId;
+		}
+
+		@Override
+		public @NotNull ProcessPlatform platform() {
+			return platform;
 		}
 
 		@Override

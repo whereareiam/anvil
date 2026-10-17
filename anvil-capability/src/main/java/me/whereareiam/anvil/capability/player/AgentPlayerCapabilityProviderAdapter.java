@@ -1,8 +1,9 @@
 package me.whereareiam.anvil.capability.player;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.model.player.PlayerConnection;
+import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
-import me.whereareiam.anvil.api.player.PlayerObservation;
 import me.whereareiam.anvil.capability.agent.api.player.AgentPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.agent.api.player.AgentPlayerCapabilityProvider;
 import me.whereareiam.anvil.capability.api.channel.RequestChannel;
@@ -10,6 +11,7 @@ import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityContext;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityProvider;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -53,8 +55,18 @@ public final class AgentPlayerCapabilityProviderAdapter<C extends PlayerCapabili
 		}
 
 		@Override
-		public @NotNull PlayerObservation observation() {
-			return player.observation();
+		public @NotNull PlayerProfile requestedProfile() {
+			return player.requestedProfile();
+		}
+
+		@Override
+		public @Nullable PlayerProfile grantedProfile() {
+			return player.grantedProfile();
+		}
+
+		@Override
+		public @NotNull PlayerConnection connection() {
+			return player.connection();
 		}
 
 		@Override

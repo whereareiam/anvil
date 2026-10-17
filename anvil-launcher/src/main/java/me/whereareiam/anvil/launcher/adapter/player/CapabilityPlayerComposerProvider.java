@@ -41,12 +41,15 @@ public final class CapabilityPlayerComposerProvider implements ProtocolPlayerCom
 	 * @param agents borrowed scenario agent directory
 	 * @return composer bound to the scenario's agents
 	 */
-	public @NotNull ProtocolPlayerComposer create(@NotNull Collection<String> libraries, @NotNull AgentDirectory agents) {
+	public @NotNull ProtocolPlayerComposer create(
+			@NotNull Collection<String> libraries,
+			@NotNull AgentDirectory agents
+	) {
 		var runtimes = new LibraryCapabilityRuntimes(libraries, processName ->
 				agents.find(processName).<RequestChannel>map(AgentRequestChannel::new)
 						.orElseThrow(() -> new CapabilityException("Process '" + processName + "' has no agent request channel")));
 
-		return (player, observation, metadata, onDestroyed) -> runtimes.of(player.libraryId())
-				.compose(new ProtocolPlayerAdapter(player, metadata), observation, onDestroyed);
+		return (player, connection, metadata, onDestroyed) -> runtimes.of(player.libraryId())
+				.compose(new ProtocolPlayerAdapter(player, metadata), connection, onDestroyed);
 	}
 }

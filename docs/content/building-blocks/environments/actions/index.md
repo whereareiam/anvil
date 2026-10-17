@@ -54,6 +54,7 @@ Choose the operation your test needs to perform against an existing server or pr
 
 - [Running console commands](./console/index.md) shows bounded log observations.
 - [Interacting through agents](./agents/index.md) explains typed capabilities and native work inside a server or proxy.
+- [Watching players on a process](./players/index.md) waits until a player is on a server and reads what a server or proxy knows about it.
 - [Restarting processes](./restarts/index.md) covers workspace preservation and explicit player reconnection.
 - [Killing processes](./kills/index.md) ends a server or proxy as if it had crashed, without its shutdown.
 - [Cleanup diagnostics](../../../help/troubleshooting/cleanup/index.md) explains lifecycle failures and retention.

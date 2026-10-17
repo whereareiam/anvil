@@ -37,7 +37,8 @@ accepted the command. It does not return console output or prove that the reques
 work finished. Use a typed observation or [captured process output](../console/index.md) to establish
 that outcome.
 
-The built-in `Console` requires an enabled platform agent. Capability retrieval fails with
+The built-in `Console` requires an enabled platform agent, which runs the command through the platform's
+console. Capability retrieval fails with
 `CapabilityUnavailableException` when the installed providers do not supply the requested type.
 Use `process.hasCapability(type)` only when absence is an intentional supported case; it reports
 whether the capability is installed, not whether its next request will succeed.
@@ -49,13 +50,13 @@ whether the capability is installed, not whether its next request will succeed.
 | Dispatch a command through the native platform API | The process's `Console` capability |
 | Send console input or inspect captured process output | The process's [console](../console/index.md) |
 | Read or change plugin state with a typed result | An installed process capability calling a native operation |
-| Observe one player's identity or route through agents | The player's [Server capability](../../../players/capabilities/server/index.md) |
+| Know who is on a server or proxy, the profile it sees, or a player's backend | The process's [Players capability](../players/index.md) |
 | Restart one process | [Restarting processes](../restarts/index.md) |
 
-A capability's owner and its implementation mechanism are separate choices. `Server` belongs to a
-player because its observations concern that player. `Console` belongs to the process because the
-command concerns that server or proxy. A custom process capability can use another implementation
-without exposing an agent in its public API.
+A capability's owner follows who can normally do or know the thing, not how it is implemented.
+`Console` and `Players` belong to the process because running a console command and knowing who is
+on it are what a server or proxy does; both happen to use its agent. A custom process capability can
+use another implementation without exposing an agent in its public API.
 
 ## Call an external capability
 

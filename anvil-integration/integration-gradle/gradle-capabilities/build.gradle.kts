@@ -31,11 +31,11 @@ gradlePlugin {
 			displayName = "Anvil Console Capability"
 			description = "Includes the agent-owned Console capability"
 		}
-		create("anvilCapabilityServer") {
-			id = "me.whereareiam.anvil.capability.server"
-			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.ServerPlugin"
-			displayName = "Anvil Server Capability"
-			description = "Includes the built-in Server capability"
+		create("anvilCapabilityPlayers") {
+			id = "me.whereareiam.anvil.capability.players"
+			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.PlayersPlugin"
+			displayName = "Anvil Players Capability"
+			description = "Includes the built-in Players capability"
 		}
 		create("anvilCapabilityMessages") {
 			id = "me.whereareiam.anvil.capability.messages"

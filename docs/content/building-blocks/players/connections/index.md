@@ -57,7 +57,7 @@ var alice = anvil.players().create(PlayerOptions.builder()
 
 You must still connect through `Session`. The connection's `target` selects an initial endpoint; it does
 not request a backend transfer after login. For that, exercise your proxy plugin's routing behavior and
-observe the resulting [server route](../capabilities/server/index.md).
+watch the backend's [Players](../../environments/actions/players/index.md) capability for the player's join.
 
 ## Announce a virtual host
 
@@ -123,8 +123,9 @@ var again = anvil.players().create(PlayerOptions.builder()
 		.build());
 ```
 
-Both log in as `Alice` with the same offline UUID, and each keeps its own session, messages, and
-[server route](../capabilities/server/index.md). Retrieve the second one with
+Both log in as `Alice` with the same offline UUID, and each keeps its own session and messages. The
+[Players](../../environments/actions/players/index.md) capability of each proxy lists the one that
+connected through it in `online()`. Retrieve the second one with
 `anvil.players().get("alice-again")`.
 
 A username belongs to offline logins only. A player that signs in with an account takes the account's

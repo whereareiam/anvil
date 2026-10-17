@@ -22,7 +22,7 @@ command and verifying its reply belong in the test that promises to exercise tha
 
 The following example runs the same small message-delivery journey for two player names. It uses
 `PaperScenario` from the [first test](../../../getting-started/first-test/index.mdx), including its
-direct process named `server` and installed Session, Messages, and Server capabilities.
+direct process named `server` and installed Session, Messages, and Players capabilities.
 
 Place `AnnouncementJourneyTest.java` in package `com.example.test` among the sources executed by your
 JUnit runner. With the Anvil Gradle plugin, its location is
@@ -33,7 +33,8 @@ package com.example.test;
 
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.messages.Messages;
-import me.whereareiam.anvil.capability.server.Server;
+import me.whereareiam.anvil.capability.players.PlayerWatch;
+import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.integration.junit.AnvilTest;
 import org.junit.jupiter.api.Test;
@@ -54,12 +55,13 @@ class AnnouncementJourneyTest {
 	}
 
 	private void verifyMessageDelivery(ScenarioContext anvil, String playerName) {
+		PlayerWatch arrivals = anvil.processes().server("server").capability(Players.class).watch();
 		var player = anvil.players().create(playerName);
 		var session = player.capability(Session.class);
 		session.connect();
 		session.connected();
-		var identity = player.capability(Server.class).joined("server");
-		assertEquals(playerName, identity.getObserved().getUsername());
+		var visit = arrivals.joined(player);
+		assertEquals(playerName, visit.getProfile().getUsername());
 
 		String marker = "announcement-for-" + playerName;
 		anvil.processes().server("server").console().sendCommand("say " + marker);
@@ -70,7 +72,7 @@ class AnnouncementJourneyTest {
 ```
 
 Each test receives its own fresh execution and creates its own player. The helper establishes login,
-agent-observed presence in this direct-server environment, and receipt of the announcement. Replace
+the server's report that the player joined it, and receipt of the announcement. Replace
 the announcement step with your application's command or event and assert the result it promises.
 The runner closes remaining players and processes after each method.
 

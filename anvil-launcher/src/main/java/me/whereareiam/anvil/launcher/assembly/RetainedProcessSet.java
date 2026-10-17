@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
 import me.whereareiam.anvil.api.process.ProcessGroup;
+import me.whereareiam.anvil.launcher.adapter.platform.ScenarioPlatforms;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,7 +37,7 @@ public final class RetainedProcessSet implements ProcessGroup {
 	 */
 	static @NotNull RetainedProcessSet start(@NotNull PlatformPlan plan, @NotNull ProcessLauncher execution) {
 		var agents = new ScenarioAgentDirectory();
-		var capabilities = ProcessComposition.discover(plan, agents);
+		var capabilities = ProcessComposition.discover(plan, agents, new ScenarioPlatforms(agents));
 		ProcessGroup processes = execution.prepare(plan, agents, capabilities, null, Map.of());
 		try {
 			processes = capabilities.bind(processes);

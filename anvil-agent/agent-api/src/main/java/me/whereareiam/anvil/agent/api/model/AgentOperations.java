@@ -6,13 +6,15 @@ import me.whereareiam.anvil.agent.api.model.AgentOperation;
 import me.whereareiam.anvil.agent.api.model.transport.AgentPingResponse;
 import me.whereareiam.anvil.agent.api.model.transport.command.AgentCommandRequest;
 import me.whereareiam.anvil.agent.api.model.transport.command.AgentCommandResponse;
-import me.whereareiam.anvil.agent.api.model.transport.identity.AgentIdentityRequest;
-import me.whereareiam.anvil.agent.api.model.transport.identity.AgentIdentityResponse;
+import me.whereareiam.anvil.agent.api.model.transport.event.AgentPlayerEventsRequest;
+import me.whereareiam.anvil.agent.api.model.transport.event.AgentPlayerEventsResponse;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Built-in wire contracts shared by agent clients and embedded operation handlers.
- * These reserved names remain stable across agent transports and platform implementations.
+ * Built-in wire contracts shared by agent clients and embedded operation handlers: the few general facts every
+ * platform agent provides once, so capabilities and tests do not each reimplement them. The vocabulary stays small on
+ * purpose, readiness, console commands and the joins and leaves of players' connections; anything else belongs to an
+ * agent extension. These reserved names remain stable across agent transports and platform implementations.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class AgentOperations {
@@ -37,12 +39,12 @@ public final class AgentOperations {
 					.build();
 
 	/**
-	 * Looks up the platform's observed player identity. An absent player produces a null response.
+	 * Lists the players' joins and leaves the platform agent recorded after a position.
 	 */
-	public static final @NotNull AgentOperation<AgentIdentityRequest, AgentIdentityResponse> IDENTITY =
-			AgentOperation.<AgentIdentityRequest, AgentIdentityResponse>builder()
-					.name("identity")
-					.requestType(AgentIdentityRequest.class)
-					.responseType(AgentIdentityResponse.class)
+	public static final @NotNull AgentOperation<AgentPlayerEventsRequest, AgentPlayerEventsResponse> PLAYER_EVENTS =
+			AgentOperation.<AgentPlayerEventsRequest, AgentPlayerEventsResponse>builder()
+					.name("player-events")
+					.requestType(AgentPlayerEventsRequest.class)
+					.responseType(AgentPlayerEventsResponse.class)
 					.build();
 }

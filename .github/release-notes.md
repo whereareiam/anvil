@@ -1,17 +1,18 @@
 ---
-version: 1.0.0
+version: 2.0.0
 ---
 
-# Anvil 1.0.0 - Many versions, one workbench
+# Anvil 2.0.0 - Players known to each server and proxy
 
-Anvil 1.0.0 runs NeoForge and several Minecraft versions per platform, locally or in Docker, lets players read commands and answer dialogs, and brings an IntelliJ plugin that starts and inspects scenarios. Most modules, APIs and Gradle tasks changed since 0.0.1, so follow the current documentation rather than upgrading step by step.
+Anvil 2.0.0 asks each server and proxy what it knows about its players: the new Players capability of a process reports who is on it, the profile it sees and, on a proxy, the backend it connected each player to, from the joins and leaves every platform agent now reports. Tests that used the player's Server capability, extension providers, and custom protocol libraries must follow the upgrade notes below.
 
-## Highlights
+## Upgrade notes
 
-* NeoForge servers, several Minecraft versions per platform, and processes run in Docker.
-* An IntelliJ plugin on JetBrains Marketplace that lists a project's scenarios, starts them from the tool window or the editor, and shows their processes, consoles, players and accounts.
-* Players read the command tree they received, check commands as the client does, and see and answer dialogs on Minecraft 1.21.11 and 26.1.2.
-* JUnit environments declared with annotations, scenario factories that hand objects to their tests, tests that require stored accounts, and live-test suites with their own Gradle tasks.
-* Players verify online logins against another session server, optionally an Yggdrasil mock, choose their virtual host and source address, and report why a connection ended.
-* Processes can keep running across scenarios, restart, be killed without a clean shutdown, and run with limited processors and priority.
-
+* The player-owned `Server` capability is replaced by the process-owned `Players` capability (`me.whereareiam.anvil.capability.players`), retrieved with `process.capability(Players.class)`: `online()`, `profile(player)`, `backend(player)` and `watch()`, which returns a `PlayerWatch` with `joined`, `left`, `neverJoined` and `expectJoined`. On a proxy's watch, each also takes a backend's scenario name, such as `joined(alice, "lobby")` and `left(alice, "lobby")`, to wait for the proxy connecting the player to that backend or moving it away; without one, they mean the proxy itself. Apply the `me.whereareiam.anvil.capability.players` Gradle unit instead of `me.whereareiam.anvil.capability.server`; the default unit includes it.
+* `alice.capability(Server.class).joined("lobby")`: create `PlayerWatch arrivals = anvil.processes().server("lobby").capability(Players.class).watch()` before the action, then call `arrivals.joined(alice)`. `Server.stayed("auth", duration)`: use `neverJoined(alice, duration)` on a watch of each server the player must not reach, or `neverJoined(alice, "game", duration)` on the proxy's watch.
+* `Server.identity()`'s observed profile: `players.profile(alice)` on the process whose view you need. Its route's server: create the proxy's watch before the action and wait for `joined(alice, "lobby")`, or read the proxy's `backend(alice)` once the player has settled; `backend(alice)` is a snapshot that can lag a moment behind a move, so do not read it straight after an action. `PlayerRoute`, `PlayerIdentity` and `PlayerObservation` are removed; the profiles the client requested and was granted are on the player: `SimulatedPlayer.requestedProfile()`, `grantedProfile()` and the new `grantedProfiles()`, every profile granted at its logins.
+* Player capability providers read `requestedProfile()`, `grantedProfile()` and `connection()` from their context instead of `observation()`; `connection()` is the player's `PlayerConnection`, with its target process always named. `PlayerCapabilityContext` has no player event feed: what a server or proxy knows is read from that process.
+* Protocol libraries implement `ProtocolPlayer.requestedProfile()` and `grantedProfile()` instead of `identity()`, and `grantedProfiles()` when they keep every profile granted at earlier logins; without it, a player's events are found only under the current one. A custom `ProtocolPlayerComposer` receives the player's `PlayerConnection` instead of an observation.
+* `AgentOperationProvider.install` receives the platform agent: `install(PlatformAgent platform, AgentOperationRegistry registry)`.
+* Platform agents built outside Anvil no longer implement `identity(UUID)`. Instead they report every player joining and leaving to `AgentServer.playerEvents()` (`PlayerEvents`), on a proxy for the proxy itself and for every backend; the agent answers them through the new `player-events` operation, next to `ping` and `command`. `AgentClient.identity(UUID)` and `executeCommand(command)` are removed with the `identity` operation and its models.
+* Process capability providers reach the platform's general facts through `ProcessCapabilityContext.platform()`: `execute(command)` and `events()`, the joins and leaves of that process only.

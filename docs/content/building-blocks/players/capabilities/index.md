@@ -7,21 +7,23 @@ Retrieve player behavior by its public capability type with `player.capability(T
 these instances with that player and retrieve new ones after creating a replacement.
 
 The capabilities in this section extend `PlayerCapability`; a provider creates each instance for
-one player. This scope does not require a connected session: `Server`, for example, uses platform agents
-to observe that player's identity and route independently of `Session`. General server or proxy
-control uses the context's [process API](../../environments/actions/index.md) or a capability owned
-by its [agent](../../environments/actions/agents/index.md), such as `Console`.
+one player. They cover what a Minecraft client can normally do or see: its connection, the chat it
+receives, its inventory, the dialogs it is shown. What a server or proxy knows about a player, such as
+whether the player is on it, the profile it sees, or the backend a proxy connected the player to,
+belongs to that process's [Players](../../environments/actions/players/index.md) capability. General
+server or proxy control uses the context's [process API](../../environments/actions/index.md) or a
+capability owned by its [agent](../../environments/actions/agents/index.md), such as `Console`.
 
 ## Choose the behavior
 
-For the first journey, use Session to connect, Server to observe arrival, and Messages to trigger
-commands and check replies. Movement, Inventory, Interaction, Commands, and Dialogs cover additional game actions.
+For the first journey, use Session to connect, the server's
+[Players](../../environments/actions/players/index.md) to observe arrival, and Messages to trigger commands
+and check replies. Movement, Inventory, Interaction, Commands, and Dialogs cover additional game actions.
 Each capability is optional unless the test or another installed capability requires it.
 
 | Capability | Use it to | Bundled requirement |
 | --- | --- | --- |
 | [Session](./session/index.md) | Connect, disconnect, rejoin, and observe kicks. | MCProtocol |
-| [Server](./server/index.md) | Inspect agent-observed routes, presence, and identity. | Platform agents |
 | [Messages](./messages/index.md) | Send chat and commands; await received text. | MCProtocol and Session |
 | [Movement](./movement/index.md) | Send absolute position and view changes. | MCProtocol and Session |
 | [Inventory](./inventory/index.md) | Observe inventory or containers and perform clicks. | MCProtocol and Session |
@@ -29,15 +31,15 @@ Each capability is optional unless the test or another installed capability requ
 | [Commands](./commands/index.md) | Read the command tree and check commands as the client does. | MCProtocol and Session |
 | [Dialogs](./dialogs/index.md) | Observe dialogs, fill their inputs, and press their buttons. | MCProtocol and Session, Minecraft 1.21.6+; Commands for buttons that run commands |
 
-The `Server` capability does not depend on `Session`. Its observations come from the scenario's
-platform agents, while packet-backed capabilities operate through the player's protocol library. The
-built-in capabilities are installed on every MCProtocolLib release Anvil ships, from Minecraft 1.18.2
-to 26.1.2, except Dialogs, which needs a release with dialogs: 1.21.11 and 26.1.2.
+Packet-backed capabilities operate through the player's protocol library. The built-in capabilities
+are installed on every MCProtocolLib release Anvil ships, from Minecraft 1.18.2 to 26.1.2,
+except Dialogs, which needs a release with dialogs: 1.21.11 and 26.1.2.
 
 ## Install built-in capabilities
 
 The `me.whereareiam.anvil.capability.default` Gradle plugin includes these player capabilities. For a smaller JUnit setup,
-this plugin block selects connection, messages, and server-observation behavior:
+this plugin block selects connection and messages behavior, and the process-owned Players capability
+that reports who is on each server:
 
 ```kotlin
 plugins {
@@ -45,7 +47,7 @@ plugins {
 	id("me.whereareiam.anvil.junit") version "0.0.1"
 	id("me.whereareiam.anvil.capability.session") version "0.0.1"
 	id("me.whereareiam.anvil.capability.messages") version "0.0.1"
-	id("me.whereareiam.anvil.capability.server") version "0.0.1"
+	id("me.whereareiam.anvil.capability.players") version "0.0.1"
 	id("me.whereareiam.anvil.platform.paper") version "0.0.1"
 }
 ```
