@@ -8,16 +8,17 @@ import java.io.Serializable
  * A built-in capability family, such as `movement` in the folder `builtin-movement`: the folder whose project only
  * wires its member projects.
  *
- * - `<name>-api` holds the public capability API and, for packet capabilities, its library-neutral port;
- * - `<name>-common` holds the library-neutral host provider and worker binding;
- * - `<name>-<edition>` adapts the family to one protocol edition, such as `<name>-java` over the Java Edition
- *   protocol.
+ * - `<name>-api` holds the public capability API and, for capabilities with a worker side, the channel its host and
+ *   worker share;
+ * - `<name>-common` holds the host provider, which no protocol edition changes;
+ * - `<name>-<edition>` holds the worker extension of one protocol edition, such as `<name>-java` over the Java
+ *   Edition protocol.
  *
  * A family root holds no code, an agent-backed provider included: that lives in `<name>-common` as well.
  *
  * @property name feature name, the family folder's name without the `builtin-` prefix
  * @property api project name of the family API
- * @property common project name of the library-neutral code, or `null` when the family has none
+ * @property common project name of the edition-neutral code, or `null` when the family has none
  * @property sides project names of the edition sides, ordered by name
  */
 data class CapabilityFamily(

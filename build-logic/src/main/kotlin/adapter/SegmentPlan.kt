@@ -16,6 +16,8 @@ import java.io.Serializable
  * @property segment the segment's name and start version
  * @property release the release the segment compiles against, whose key is the segment's start version
  * @property laterReleases releases the segment also serves, ordered by key
+ * @property earlierReleases releases of the earlier sibling segments, ordered by key, against which the classes the
+ * segment takes from a base chain were compiled
  */
 data class SegmentPlan(
 	val library: String,
@@ -23,6 +25,7 @@ data class SegmentPlan(
 	val segment: SegmentName,
 	val release: LibraryRelease,
 	val laterReleases: List<LibraryRelease>,
+	val earlierReleases: List<LibraryRelease>,
 ) : Serializable {
 	companion object {
 		private const val serialVersionUID = 1L
@@ -39,9 +42,13 @@ data class SegmentPlan(
 			)
 			val starts = side.segments.map(SegmentName::since)
 			val later = releases
-				.filter { it.key > segment.since && MinecraftVersion.floor(starts, { start -> start }, it.key) == segment.since }
+				.filter { it.key > segment.since }
+				.filter { MinecraftVersion.floor(starts, { start -> start }, it.key) == segment.since }
 				.sortedBy(LibraryRelease::key)
-			return SegmentPlan(side.library, side.name, segment, release, later)
+			val earlier = releases
+				.filter { it.key < segment.since && it.key in starts }
+				.sortedBy(LibraryRelease::key)
+			return SegmentPlan(side.library, side.name, segment, release, later, earlier)
 		}
 	}
 }

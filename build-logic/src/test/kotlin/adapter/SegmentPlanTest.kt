@@ -42,6 +42,8 @@ class SegmentPlanTest {
 		assertEquals(listOf("1.17.1-2"), first.laterReleases.map(LibraryRelease::version))
 		assertEquals(listOf("1.19.4-1"), middle.laterReleases.map(LibraryRelease::version))
 		assertEquals(listOf("26.1"), last.laterReleases.map(LibraryRelease::version))
+		assertEquals(emptyList<String>(), first.earlierReleases.map(LibraryRelease::version))
+		assertEquals(listOf("1.16.5-2", "1.18.2-1"), last.earlierReleases.map(LibraryRelease::version))
 		assertEquals("messages-mcprotocol", last.owner)
 		assertEquals("mcprotocol", last.library)
 	}
