@@ -131,15 +131,19 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 - A player speaks its edition's protocol: `protocol-java-api`'s `JavaProtocol` (`listen` by packet class, `send`,
   `listenSent` for the packets bindings send, `supports`), which a worker extension gets from
   `PlayerBindingContext.protocol(JavaProtocol.class)`. Packets are immutable values grouped by area under
-  `packet.<area>`, one class per game packet; the protocol owns the data types they need (`model.<area>`, enums in
-  `type`) and carries text flattened to plain strings. A listener follows the player's current connection.
+  `packet.<area>`, one class per game packet in the game's shape; the protocol owns the data types they need
+  (`model.<area>`, enums in `type`) and carries text flattened to plain strings. Where a packet holds NBT, such as a
+  dialog or a registry entry, the protocol carries it as `model.nbt` tags (`NbtTag`, `NbtCompound`), never as SNBT
+  text, and the feature interprets it: `dialogs-java` reads dialogs, flattens their text components itself and
+  keeps custom payloads in the worker, where a click names them by handle. A listener follows the player's current
+  connection.
   Release-specific packet code lives only in the library's client segments: one `PacketTranslation` per area and
   segment, registered in the segment's `JavaPackets`, with components flattened by `mcprotocol-api`'s
-  `AdventureText`. Each session decodes through a table of its own, so the entity translation can remember the types
-  of the session's entities: entity data is decoded by entity type from a typed table of the release's indexes, never
-  by guessing from value types. A release without a packet leaves it out of the table; a feature checks `supports`
-  and throws `ProtocolUnavailableException` when it cannot work without it. Features never touch native sessions or
-  library packets.
+  `AdventureText` and NBT translated by the segment's one `NbtTranslator`. Each session decodes through a table of
+  its own, so the entity translation can remember the types of the session's entities: entity data is decoded by
+  entity type from a typed table of the release's indexes, never by guessing from value types. A release without a
+  packet leaves it out of the table; a feature checks `supports` and throws `ProtocolUnavailableException` when it
+  cannot work without it. Features never touch native sessions or library packets.
   The worker contracts belong to the player family: `player-api`'s `WorkerExtension`, `PlayerBindingContext`,
   `OperationRegistry` and `WorkerBinding` under `protocol.api.worker`, and the typed `ProtocolChannel` with
   `OperationDescriptor`/`EventDescriptor` that both ends of a player's channel share. Capabilities implement and

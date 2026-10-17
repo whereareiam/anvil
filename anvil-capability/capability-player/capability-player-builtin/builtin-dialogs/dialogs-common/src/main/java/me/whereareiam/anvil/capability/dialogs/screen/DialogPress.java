@@ -35,7 +35,8 @@ public final class DialogPress {
 	 * @return the click to send, or {@code null} when the action sends nothing to the server, which includes opening
 	 * another dialog
 	 * @throws IllegalArgumentException when a value does not fit its input, a key names no input, a template names an
-	 *                                  input the dialog does not have, or the action's type is unknown
+	 *                                  input the dialog does not have, the action's type is unknown, or a custom action
+	 *                                  has no handle
 	 */
 	public static @Nullable DialogClick click(
 			@Nullable DialogAction action,
@@ -48,13 +49,21 @@ public final class DialogPress {
 		return switch (action.getType()) {
 			case RUN_COMMAND -> DialogClick.command(withoutSlash(action.getValue()));
 			case DYNAMIC_RUN_COMMAND -> DialogClick.command(withoutSlash(substitute(action.getValue(), filled)));
-			case CUSTOM -> DialogClick.custom(action.getValue(), action.getPayload(), List.of());
-			case DYNAMIC_CUSTOM -> DialogClick.custom(action.getValue(), action.getPayload(), filled.values().stream()
+			case CUSTOM -> DialogClick.custom(handle(action), List.of());
+			case DYNAMIC_CUSTOM -> DialogClick.custom(handle(action), filled.values().stream()
 					.map(Filled::value)
 					.toList());
 			case SUGGEST_COMMAND, OPEN_URL, COPY_TO_CLIPBOARD, CHANGE_PAGE, SHOW_DIALOG -> null;
 			case OTHER -> throw new IllegalArgumentException("The button runs the action " + action.getValue() + ", which Anvil does not know");
 		};
+	}
+
+	private static long handle(DialogAction action) {
+		if (action.getHandle() == null)
+			throw new IllegalArgumentException("The custom action " + action.getValue()
+					+ " has no handle; only actions of a dialog the server showed can be pressed");
+
+		return action.getHandle();
 	}
 
 	private static Map<String, Filled> fill(List<DialogInput> inputs, Map<String, String> values) {

@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ChatPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.CommandPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ConfigurationPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ConnectionPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.CookiePackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.DialogPackets;
@@ -36,6 +37,7 @@ public final class McProtocolClientAdapter extends JavaClient {
 		return new JavaPackets(List.of(
 				new ChatPackets(),
 				new CommandPackets(),
+				new ConfigurationPackets(),
 				new ConnectionPackets(),
 				new CookiePackets(),
 				new DialogPackets(),

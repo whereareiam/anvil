@@ -165,6 +165,11 @@ Subscription chat = protocol.listen(ClientboundSystemChat.class, packet -> recei
 protocol.send(new ServerboundChatCommand("spawn"));
 ```
 
+Text arrives flattened to plain strings. NBT, such as the dialog of a show-dialog packet or the entries of a
+registry the server sends during configuration (`packet.configuration.ClientboundRegistryData`), arrives as the
+protocol's tags in `model.nbt`: `NbtCompound` keeps its entries in order, finds a typed tag by key, such as
+`dialog.string("title")`, and `with(key, tag)` returns a changed copy. Your capability interprets that NBT itself.
+
 The protocol belongs to the player, not to one connection: a listener receives the packets of whichever connection
 is current, never a late packet of a replaced one, and `send` uses the current connection and fails while the
 player is disconnected. `protocol.listenSent(type, listener)` observes the packets the player sends through the

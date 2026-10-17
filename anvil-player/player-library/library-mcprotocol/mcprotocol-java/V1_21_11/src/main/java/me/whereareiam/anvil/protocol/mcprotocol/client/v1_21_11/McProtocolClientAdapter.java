@@ -48,6 +48,7 @@ public final class McProtocolClientAdapter extends JavaClient {
 		return new JavaPackets(List.of(
 				new ChatPackets(),
 				new CommandPackets(),
+				new ConfigurationPackets(),
 				new ConnectionPackets(),
 				new CookiePackets(),
 				new DialogPackets(),

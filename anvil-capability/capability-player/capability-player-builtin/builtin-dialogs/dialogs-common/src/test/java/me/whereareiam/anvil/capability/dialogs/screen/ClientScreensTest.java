@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClientScreensTest {
@@ -62,6 +63,13 @@ class ClientScreensTest {
 		assertSame(open, screens.after(open, DialogAfterAction.NONE));
 		assertSame(open.previous(), screens.after(open, DialogAfterAction.CLOSE));
 		assertEquals(new WaitingScreen(open.previous(), START), screens.after(open, DialogAfterAction.WAIT_FOR_RESPONSE));
+	}
+
+	@Test
+	void refusesAnAfterActionAnvilDoesNotKnow() {
+		DialogScreen open = new DialogScreen(SECOND, null);
+
+		assertThrows(IllegalArgumentException.class, () -> screens(START).after(open, DialogAfterAction.OTHER));
 	}
 
 	@Test

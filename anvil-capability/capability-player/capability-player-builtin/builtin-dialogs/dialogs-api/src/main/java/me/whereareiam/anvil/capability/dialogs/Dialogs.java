@@ -124,7 +124,8 @@ public interface Dialogs extends PlayerCapability {
 	 *     {@link me.whereareiam.anvil.capability.commands.Commands} capability. During the configuration phase the
 	 *     client runs no commands, and the dialog stays as it is;</li>
 	 *     <li>{@code custom} sends its ID and payload, and {@code dynamic/custom} sends its ID with every input value
-	 *     put into its additions;</li>
+	 *     put into its additions; the action must still belong to a dialog the server shows, or to its dialog
+	 *     registry;</li>
 	 *     <li>{@code show_dialog} opens its dialog in place of this one;</li>
 	 *     <li>a button without an action, {@code suggest_command}, {@code open_url}, {@code copy_to_clipboard} and
 	 *     {@code change_page} send nothing.</li>
@@ -135,7 +136,8 @@ public interface Dialogs extends PlayerCapability {
 	 * @param button the button's label, matched exactly
 	 * @param inputs values by input key, written as {@link me.whereareiam.anvil.capability.dialogs.model.dialog.DialogInput#getInitial()}
 	 *               writes them; inputs left out keep their initial value
-	 * @throws IllegalStateException when no dialog is open or it has no such button
+	 * @throws IllegalStateException when no dialog is open or it has no such button, or when the server replaced or
+	 *                               cleared the dialog of a pressed custom action before its click was sent
 	 * @throws IllegalArgumentException when an input does not exist or does not accept its value, a template names an
 	 *                                  input the dialog does not have, or the button opens a dialog Anvil does not know
 	 */

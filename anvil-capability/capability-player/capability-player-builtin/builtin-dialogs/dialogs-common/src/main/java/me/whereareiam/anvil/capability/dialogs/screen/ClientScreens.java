@@ -95,12 +95,15 @@ public final class ClientScreens {
 	 * @param open the open dialog
 	 * @param afterAction what the button does with the dialog
 	 * @return the open dialog, the screen below it, or a waiting screen above the screen below it
+	 * @throws IllegalArgumentException for an after-action Anvil does not know
 	 */
 	public @Nullable Screen after(@NotNull DialogScreen open, @NotNull DialogAfterAction afterAction) {
 		return switch (afterAction) {
 			case NONE -> open;
 			case CLOSE -> open.previous();
 			case WAIT_FOR_RESPONSE -> new WaitingScreen(open.previous(), clock.instant());
+			case OTHER -> throw new IllegalArgumentException("The dialog '" + open.dialog().getTitle()
+					+ "' has an after-action Anvil does not know");
 		};
 	}
 
