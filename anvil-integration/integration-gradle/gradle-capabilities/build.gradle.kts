@@ -91,6 +91,12 @@ gradlePlugin {
 			displayName = "Anvil Sounds Capability"
 			description = "Includes the built-in Sounds capability"
 		}
+		create("anvilCapabilityEntities") {
+			id = "me.whereareiam.anvil.capability.entities"
+			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.EntitiesPlugin"
+			displayName = "Anvil Entities Capability"
+			description = "Includes the built-in Entities capability"
+		}
 	}
 }
 
