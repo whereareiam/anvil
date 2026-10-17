@@ -85,6 +85,12 @@ gradlePlugin {
 			displayName = "Anvil Screen Capability"
 			description = "Includes the built-in Screen capability"
 		}
+		create("anvilCapabilitySounds") {
+			id = "me.whereareiam.anvil.capability.sounds"
+			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.SoundsPlugin"
+			displayName = "Anvil Sounds Capability"
+			description = "Includes the built-in Sounds capability"
+		}
 	}
 }
 

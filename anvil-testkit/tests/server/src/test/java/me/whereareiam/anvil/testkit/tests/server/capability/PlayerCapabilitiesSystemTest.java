@@ -34,6 +34,9 @@ import me.whereareiam.anvil.capability.screen.TitleWatch;
 import me.whereareiam.anvil.capability.screen.model.BossBar;
 import me.whereareiam.anvil.capability.screen.model.Title;
 import me.whereareiam.anvil.capability.session.Session;
+import me.whereareiam.anvil.capability.sounds.SoundWatch;
+import me.whereareiam.anvil.capability.sounds.Sounds;
+import me.whereareiam.anvil.capability.sounds.type.SoundCategory;
 import me.whereareiam.anvil.engine.config.EngineProperties;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
 import me.whereareiam.anvil.testkit.tests.server.extension.FixtureAgentProbeProvider;
@@ -176,6 +179,7 @@ class PlayerCapabilitiesSystemTest {
 		verifyDialogs(alice, messages, dialogs);
 		verifyCookies(anvil, alice, messages, cookies);
 		verifyScreen(anvil, alice);
+		verifySounds(anvil, alice);
 
 		messages.command("anvil-fixture kick");
 		assertEquals("anvil:requested-kick", session.kicked(Duration.ofSeconds(10)));
@@ -261,6 +265,19 @@ class PlayerCapabilitiesSystemTest {
 		console(anvil, "bossbar remove anvil:screen");
 		bossBars.removed(removed -> removed.getId().equals(bar.getId()), Duration.ofSeconds(10));
 		assertTrue(screen.bossBars().isEmpty());
+	}
+
+	/**
+	 * Plays Alice a built-in sound, which the server refers to by its registry ID, and a sound it names, through the
+	 * vanilla command.
+	 */
+	private void verifySounds(ScenarioContext anvil, SimulatedPlayer alice) {
+		SoundWatch sounds = alice.capability(Sounds.class).watch();
+
+		console(anvil, "playsound minecraft:entity.experience_orb.pickup player Alice");
+		assertEquals(SoundCategory.PLAYERS, sounds.heard("entity.experience_orb.pickup", Duration.ofSeconds(10)).getCategory());
+		console(anvil, "playsound anvil:announcement master Alice");
+		assertEquals(SoundCategory.MASTER, sounds.heard("anvil:announcement", Duration.ofSeconds(10)).getCategory());
 	}
 
 	private static void console(ScenarioContext anvil, String command) {

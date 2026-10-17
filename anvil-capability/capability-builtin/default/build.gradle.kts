@@ -14,6 +14,7 @@ dependencies {
 	api(projects.anvilCapability.capabilityBuiltin.client.movement)
 	api(projects.anvilCapability.capabilityBuiltin.client.screen)
 	api(projects.anvilCapability.capabilityBuiltin.client.session)
+	api(projects.anvilCapability.capabilityBuiltin.client.sounds)
 	api(projects.anvilCapability.capabilityBuiltin.server.dispatch)
 	api(projects.anvilCapability.capabilityBuiltin.server.players)
 }
