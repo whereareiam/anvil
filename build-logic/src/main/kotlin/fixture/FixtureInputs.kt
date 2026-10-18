@@ -7,6 +7,7 @@ import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.testing.Test
+import org.gradle.process.CommandLineArgumentProvider
 
 /** Declares fixture artifacts consumed as tracked files, outside the parent test classpath. */
 open class FixtureInputs(private val project: Project) {
@@ -20,6 +21,35 @@ open class FixtureInputs(private val project: Project) {
 	fun brokenExtension() = register("extension-broken", "test-extension", "broken")
 	fun observationExtension() = register("extension-observation", "test-extension", "observation")
 	fun javaLibrary() = register("java-library", "test-java-library")
+
+	/**
+	 * Declares a third-party JAR, such as a server plugin a live test runs against, downloaded from its pinned URL and
+	 * checked against its pinned SHA-256 by a `download<Key>Fixture` task. Unlike the fixtures this build produces,
+	 * it reaches only the test tasks that add the returned provider to their `jvmArgumentProviders`, as
+	 * `anvil.testkit.fixture.<key>`, so other tasks never download it; it is not one of [artifacts].
+	 *
+	 * @param key suffix of the JVM property, such as `grim`
+	 * @param url where the JAR is downloaded from
+	 * @param sha256 SHA-256 of the JAR, in lower-case hex
+	 * @return the argument provider that downloads the JAR before a test task starts
+	 */
+	fun remote(key: String, url: String, sha256: String): CommandLineArgumentProvider {
+		require(registered.add(key)) { "Fixture '$key' is declared twice" }
+
+		val taskName = "download" + key.split('-').joinToString("") { part -> part.replaceFirstChar(Char::uppercase) } + "Fixture"
+		val fileName = url.substringAfterLast('/')
+		val download = project.tasks.register(taskName, DownloadRemoteFixture::class.java) {
+			description = "Downloads the pinned $fileName that live tests run as the '$key' fixture."
+			this.url.set(url)
+			this.sha256.set(sha256)
+			output.set(project.layout.buildDirectory.file("remote-fixtures/$key/$fileName"))
+		}
+
+		return project.objects.newInstance(FixtureJvmArguments::class.java).apply {
+			propertyName.set("anvil.testkit.fixture.$key")
+			artifactFiles.from(download.flatMap { task -> task.output })
+		}
+	}
 
 	/**
 	 * Returns declared fixture files for another task or tooling launch without resolving their artifacts.
