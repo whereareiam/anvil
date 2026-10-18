@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
 import com.github.steveice10.mc.auth.data.GameProfile;
 import com.github.steveice10.mc.protocol.data.game.MessageType;
+import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
 import com.github.steveice10.mc.protocol.data.game.entity.player.HandPreference;
 import com.github.steveice10.mc.protocol.data.game.setting.ChatVisibility;
 import com.github.steveice10.mc.protocol.data.game.setting.SkinPart;
@@ -16,6 +17,8 @@ import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundCl
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
+import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+import com.github.steveice10.opennbt.tag.builtin.IntTag;
 import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.event.session.PacketSendingEvent;
 import com.github.steveice10.packetlib.packet.Packet;
@@ -31,7 +34,6 @@ import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,9 +60,13 @@ class ClientPacketListenerTest {
 			McProtocolClientAdapter.packets(), McProtocolClientAdapter::reason);
 
 	@Test
-	void answersTheLoginWithClientInformationBeforeReportingItWithTheGrantedProfile() throws Exception {
+	void answersTheLoginWithClientInformationBeforeReportingItWithTheGrantedProfile() {
 		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed")));
-		receive(allocate(ClientboundLoginPacket.class));
+		CompoundTag type = new CompoundTag("");
+		type.put(new IntTag("min_y", -64));
+		type.put(new IntTag("height", 384));
+		receive(new ClientboundLoginPacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL, 1, new String[0],
+				new CompoundTag(""), type, "minecraft:overworld", 0, 20, 10, 10, false, true, false, false));
 
 		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ServerboundClientInformationPacket", "logged in as Alice_Renamed " + GRANTED), events);
 		ServerboundClientInformationPacket information = assertInstanceOf(ServerboundClientInformationPacket.class, sent.getFirst());
@@ -149,16 +155,6 @@ class ClientPacketListenerTest {
 		});
 	}
 
-	/**
-	 * Creates a packet without running its constructor, for packets the listener only recognizes by type and whose
-	 * constructors differ in every release.
-	 */
-	private static <T> T allocate(Class<T> type) throws ReflectiveOperationException {
-		Class<?> unsafe = Class.forName("sun.misc.Unsafe");
-		Field instance = unsafe.getDeclaredField("theUnsafe");
-		instance.setAccessible(true);
-		return type.cast(unsafe.getMethod("allocateInstance", Class.class).invoke(instance.get(null), type));
-	}
 
 	private final class RecordingListener implements ClientListener<Session> {
 		@Override

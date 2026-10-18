@@ -17,6 +17,7 @@ import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
+import me.whereareiam.anvil.protocol.java.api.model.world.Dimension;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
@@ -59,6 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JavaEntitiesExtensionTest {
+	private static final Dimension OVERWORLD = new Dimension("minecraft:overworld", -64, 384);
 	private static final int PLAYER = 42;
 
 	private final JavaEntitiesExtension extension = new JavaEntitiesExtension();
@@ -86,7 +88,7 @@ class JavaEntitiesExtensionTest {
 		protocol.deliver(spawn(7, "armor_stand", 0, 0, 0));
 		player.open();
 		protocol.deliver(spawn(7, "zombie", 0, 0, 0));
-		protocol.deliver(new ClientboundRespawn());
+		protocol.deliver(new ClientboundRespawn(OVERWORLD));
 
 		assertEquals(List.of(1, 1, 2, 2), player.emitted.stream().map(change -> change.getEntity().getConnection()).toList());
 		assertEquals(List.of(EntityChangeKind.APPEARED, EntityChangeKind.DISAPPEARED, EntityChangeKind.APPEARED,
@@ -149,7 +151,7 @@ class JavaEntitiesExtensionTest {
 		extension.bind(player, new RecordingOperations());
 		player.open();
 
-		protocol.deliver(new ClientboundLogin(PLAYER));
+		protocol.deliver(new ClientboundLogin(PLAYER, OVERWORLD));
 		protocol.deliver(spawn(7, "armor_stand", 0, 0, 0));
 		protocol.deliver(new ClientboundSetEntityData(7, List.of(new CustomName("Alice: hello"))));
 		protocol.deliver(new ClientboundSetPassengers(PLAYER, List.of(7)));
@@ -211,7 +213,7 @@ class JavaEntitiesExtensionTest {
 		player.open();
 
 		protocol.deliver(spawn(7, "zombie", 0, 0, 0));
-		protocol.deliver(new ClientboundLogin(PLAYER));
+		protocol.deliver(new ClientboundLogin(PLAYER, OVERWORLD));
 		protocol.deliver(spawn(8, "zombie", 0, 0, 0));
 		protocol.deliver(new ClientboundStartConfiguration());
 

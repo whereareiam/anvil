@@ -1,42 +1,27 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
-import org.geysermc.mcprotocollib.network.packet.Packet;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundStartConfigurationPacket;
+import me.whereareiam.anvil.protocol.mcprotocol.client.ConnectionLevel;
+import org.cloudburstmc.nbt.NbtMap;
+import org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Set;
-
 /**
- * The moments the MCProtocolLib releases from 1.20.5 on join a level, respawn and return to the configuration phase.
+ * The moments the MCProtocolLib releases from 1.20.5 until 26.2 join a level, respawn and return to the configuration
+ * phase; their registry entries carry their data as a compound.
  */
-public final class ConnectionPackets implements PacketTranslation<Packet> {
-	@Override
-	public @NotNull Set<Class<? extends JavaPacket>> packets() {
-		return Set.of(ClientboundLogin.class, ClientboundRespawn.class, ClientboundStartConfiguration.class);
+public final class ConnectionPackets extends ConnectionTranslation {
+	/**
+	 * Creates the translation of one connection.
+	 *
+	 * @param level the connection's level, which the translation records from each login and respawn
+	 */
+	public ConnectionPackets(@NotNull ConnectionLevel level) {
+		super(level);
 	}
 
 	@Override
-	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
-		return switch (packet) {
-			case ClientboundLoginPacket login -> new ClientboundLogin(login.getEntityId());
-			case ClientboundRespawnPacket ignored -> new ClientboundRespawn();
-			case ClientboundStartConfigurationPacket ignored -> new ClientboundStartConfiguration();
-			default -> null;
-		};
-	}
-
-	@Override
-	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
-		return null;
+	protected @Nullable NbtMap data(@NotNull RegistryEntry entry) {
+		return entry.getData();
 	}
 }

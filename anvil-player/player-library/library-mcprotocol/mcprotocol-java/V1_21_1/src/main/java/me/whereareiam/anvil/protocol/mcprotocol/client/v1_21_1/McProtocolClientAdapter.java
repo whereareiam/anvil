@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1;
 
+import me.whereareiam.anvil.protocol.mcprotocol.client.ConnectionLevel;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ChatPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.CommandPackets;
@@ -11,6 +12,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.PlayerPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ScreenPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SoundPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.WorldPackets;
 import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 
@@ -35,17 +37,19 @@ public final class McProtocolClientAdapter extends JavaClient<Session> {
 	 * @return the 1.20.6 translations with this release's interaction translation
 	 */
 	static PacketTable<Packet> packets() {
+		ConnectionLevel level = new ConnectionLevel();
 		return new PacketTable<>(List.of(
 				new ChatPackets(),
 				new CommandPackets(),
-				new ConnectionPackets(),
+				new ConnectionPackets(level),
 				new CookiePackets(),
 				new EntityPackets(),
 				new InteractionPackets(),
 				new InventoryPackets(),
 				new PlayerPackets(),
 				new ScreenPackets(),
-				new SoundPackets()
+				new SoundPackets(),
+				new WorldPackets(level)
 		));
 	}
 }

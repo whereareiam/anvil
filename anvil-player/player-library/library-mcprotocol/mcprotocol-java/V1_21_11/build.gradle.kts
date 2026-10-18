@@ -16,6 +16,7 @@ segment {
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.InventoryPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.PlayerPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SoundPackets",
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.WorldPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.InteractionPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.TcpClientSessions",
 	)
