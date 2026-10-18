@@ -45,6 +45,9 @@ final class SpigotConfiguration {
 				properties.load(reader);
 			}
 
+		// Minecraft 26.3 enables the whitelist of a new server; a server keeps it off, as earlier versions did, unless
+		// its settings or its own earlier state say otherwise.
+		properties.putIfAbsent("white-list", "false");
 		server.getSettings().forEach(properties::setProperty);
 		properties.setProperty("server-ip", context.getBindAddress());
 		properties.setProperty("server-port", Integer.toString(context.getPort()));

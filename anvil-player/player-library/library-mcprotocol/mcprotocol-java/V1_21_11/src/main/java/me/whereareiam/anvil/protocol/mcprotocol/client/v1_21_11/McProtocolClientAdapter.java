@@ -18,7 +18,7 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 	 * Creates the client of the MCProtocolLib 1.21.11 release.
 	 */
 	public McProtocolClientAdapter() {
-		super(new NetworkClientSessions(), McProtocolClientAdapter::packets);
+		super(new NetworkClientSessions(TeleportListener::new), McProtocolClientAdapter::packets);
 	}
 
 	/**

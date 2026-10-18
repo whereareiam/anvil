@@ -2,7 +2,6 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_19_4;
 
 import com.github.steveice10.packetlib.event.session.DisconnectedEvent;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ConnectionPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.InventoryPackets;
@@ -11,6 +10,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.PlayerPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ScreenPackets;
 
 import java.util.List;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ValueTranslator;
 
 /**
  * The client segment's adapter for the MCProtocolLib 1.19.4 release: the 1.18.2 {@link JavaClient} with the release's
@@ -32,7 +32,7 @@ public final class McProtocolClientAdapter extends JavaClient {
 	 * @return the reason flattened to plain text, or an empty text when the connection closed without one
 	 */
 	static String reason(DisconnectedEvent event) {
-		return event.getReason() == null ? "" : AdventureText.plain(event.getReason());
+		return event.getReason() == null ? "" : ValueTranslator.plain(event.getReason());
 	}
 
 	/**

@@ -50,5 +50,11 @@ Import `me.whereareiam.anvil.capability.interaction.type.EntityInteraction`. Use
 action. The identifier is the protocol entity ID, not a UUID, and must refer to the current entity
 instance. This capability does not discover nearby entities or choose targets automatically.
 
+## Arm swings
+
+Each action swings the player's arm as the vanilla client does: before an item use, after a block or
+entity interaction. From Minecraft 26.3 on the server plays the swing itself, so a player on 26.3
+sends no swing and instead follows each attack with the punch that version's client sends.
+
 Use [messages](../messages/index.md), [inventory observations](../inventory/index.md), or a custom
 [agent operation](../../../../extending/agent-operations/index.md) to verify the application result.

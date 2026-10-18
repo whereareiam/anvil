@@ -31,7 +31,6 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEnt
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
-import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.EntityDataLayout;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.type.EntityDataField;
@@ -198,7 +197,7 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 			case SHOWN_ITEM -> value == null || value instanceof ItemStack
 					? new ShownItem(ValueTranslator.item((ItemStack) value))
 					: null;
-			case DISPLAY_TEXT -> value instanceof Component text ? new DisplayText(AdventureText.plain(text)) : null;
+			case DISPLAY_TEXT -> value instanceof Component text ? new DisplayText(ValueTranslator.plain(text)) : null;
 		};
 	}
 
@@ -206,6 +205,6 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 		if (name.isEmpty()) return new CustomName(null);
 		if (!(name.get() instanceof Component text)) return null;
 
-		return new CustomName(AdventureText.plain(text));
+		return new CustomName(ValueTranslator.plain(text));
 	}
 }

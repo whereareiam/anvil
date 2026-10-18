@@ -3,7 +3,6 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -74,9 +73,9 @@ public final class ClientPacketListener extends SessionAdapter {
 		// one.
 		if (packet instanceof ClientboundPingPacket ping) session.send(new ServerboundPongPacket(ping.getId()));
 		if (packet instanceof ClientboundDisconnectPacket disconnect)
-			listener.disconnected(session, DisconnectCause.SERVER, AdventureText.plain(disconnect.getReason()));
+			listener.disconnected(session, DisconnectCause.SERVER, ValueTranslator.plain(disconnect.getReason()));
 		if (packet instanceof ClientboundLoginDisconnectPacket disconnect)
-			listener.disconnected(session, DisconnectCause.SERVER, AdventureText.plain(disconnect.getReason()));
+			listener.disconnected(session, DisconnectCause.SERVER, ValueTranslator.plain(disconnect.getReason()));
 
 		ClientboundPacket translated = packets.decode(packet);
 		if (translated != null) listener.received(session, translated);
@@ -96,7 +95,7 @@ public final class ClientPacketListener extends SessionAdapter {
 
 	@Override
 	public void disconnected(DisconnectedEvent event) {
-		String reason = event.getReason() == null ? "" : AdventureText.plain(event.getReason());
+		String reason = event.getReason() == null ? "" : ValueTranslator.plain(event.getReason());
 		listener.disconnected(event.getSession(), cause(event), reason);
 	}
 

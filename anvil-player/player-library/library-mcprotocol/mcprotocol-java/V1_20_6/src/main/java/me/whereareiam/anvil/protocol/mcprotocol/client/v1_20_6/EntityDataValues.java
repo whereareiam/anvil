@@ -8,7 +8,6 @@ import me.whereareiam.anvil.protocol.java.api.model.entity.DisplayText;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityDataValue;
 import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
 import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
-import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.type.EntityDataField;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack;
@@ -40,7 +39,7 @@ public final class EntityDataValues {
 			case SHOWN_ITEM -> value == null || value instanceof ItemStack
 					? new ShownItem(ValueTranslator.item((ItemStack) value))
 					: null;
-			case DISPLAY_TEXT -> value instanceof Component text ? new DisplayText(AdventureText.plain(text)) : null;
+			case DISPLAY_TEXT -> value instanceof Component text ? new DisplayText(ValueTranslator.plain(text)) : null;
 		};
 	}
 
@@ -48,6 +47,6 @@ public final class EntityDataValues {
 		if (name.isEmpty()) return new CustomName(null);
 		if (!(name.get() instanceof Component text)) return null;
 
-		return new CustomName(AdventureText.plain(text));
+		return new CustomName(ValueTranslator.plain(text));
 	}
 }

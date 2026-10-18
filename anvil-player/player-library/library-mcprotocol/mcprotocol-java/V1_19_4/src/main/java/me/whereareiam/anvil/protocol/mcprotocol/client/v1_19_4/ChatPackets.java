@@ -14,8 +14,8 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundPlayerChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
-import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ValueTranslator;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -62,14 +62,14 @@ public final class ChatPackets implements PacketTranslation<Packet> {
 	@Override
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (packet instanceof ClientboundSystemChatPacket chat)
-			return new ClientboundSystemChat(AdventureText.plain(chat.getContent()), chat.isOverlay());
+			return new ClientboundSystemChat(ValueTranslator.plain(chat.getContent()), chat.isOverlay());
 		if (packet instanceof ClientboundDisguisedChatPacket chat)
-			return new ClientboundDisguisedChat(AdventureText.plain(chat.getMessage()));
+			return new ClientboundDisguisedChat(ValueTranslator.plain(chat.getMessage()));
 		if (!(packet instanceof ClientboundPlayerChatPacket chat)) return null;
 
 		Component unsigned = chat.getUnsignedContent();
 
-		return new ClientboundPlayerChat(unsigned == null ? chat.getContent() : AdventureText.plain(unsigned));
+		return new ClientboundPlayerChat(unsigned == null ? chat.getContent() : ValueTranslator.plain(unsigned));
 	}
 
 	@Override

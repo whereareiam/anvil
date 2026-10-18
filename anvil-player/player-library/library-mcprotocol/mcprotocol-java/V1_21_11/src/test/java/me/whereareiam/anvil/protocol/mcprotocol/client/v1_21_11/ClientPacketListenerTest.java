@@ -23,9 +23,6 @@ import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.Serverbound
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundPongPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.ServerboundPlayerLoadedPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginFinishedPacket;
 import org.jetbrains.annotations.NotNull;
@@ -68,15 +65,6 @@ class ClientPacketListenerTest {
 		assertEquals(Arrays.asList(SkinPart.values()), information.getVisibleParts());
 		assertEquals(HandPreference.RIGHT_HAND, information.getMainHand());
 		assertEquals(ParticleStatus.ALL, information.getParticleStatus());
-	}
-
-	@Test
-	void reportsATeleportBeforeAcceptingItAndAnnouncingThatThePlayerLoaded() {
-		receive(new ClientboundPlayerPositionPacket(7, 1, 64, -2, 0, 0, 0, 90, -15));
-
-		assertEquals(List.of("teleported 90.0 -15.0", "sent ServerboundAcceptTeleportationPacket", "sent ServerboundPlayerLoadedPacket"), events);
-		assertEquals(7, assertInstanceOf(ServerboundAcceptTeleportationPacket.class, sent.getFirst()).getId());
-		assertEquals(ServerboundPlayerLoadedPacket.INSTANCE, sent.get(1));
 	}
 
 	@Test

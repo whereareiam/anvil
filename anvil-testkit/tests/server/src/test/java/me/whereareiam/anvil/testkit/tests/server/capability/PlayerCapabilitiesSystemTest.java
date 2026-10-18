@@ -280,14 +280,15 @@ class PlayerCapabilitiesSystemTest {
 
 	/**
 	 * Plays Alice a built-in sound, which the server refers to by its registry ID, and a sound it names, through the
-	 * vanilla command.
+	 * vanilla command. The sounds play where Alice stands: the console plays a sound at the world spawn, which a
+	 * player may spawn too far from to hear it.
 	 */
 	private void verifySounds(ScenarioContext anvil, SimulatedPlayer alice) {
 		SoundWatch sounds = alice.capability(Sounds.class).watch();
 
-		console(anvil, "playsound minecraft:entity.experience_orb.pickup player Alice");
+		console(anvil, "execute at Alice run playsound minecraft:entity.experience_orb.pickup player Alice");
 		assertEquals(SoundCategory.PLAYERS, sounds.heard("entity.experience_orb.pickup", Duration.ofSeconds(10)).getCategory());
-		console(anvil, "playsound anvil:announcement master Alice");
+		console(anvil, "execute at Alice run playsound anvil:announcement master Alice");
 		assertEquals(SoundCategory.MASTER, sounds.heard("anvil:announcement", Duration.ofSeconds(10)).getCategory());
 	}
 

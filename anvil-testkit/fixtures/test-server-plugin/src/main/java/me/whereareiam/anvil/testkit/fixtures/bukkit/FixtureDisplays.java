@@ -38,13 +38,6 @@ public interface FixtureDisplays {
 	 * Tells whether a Bukkit version, such as {@code 1.21.1-R0.1-SNAPSHOT}, has text displays.
 	 */
 	static boolean supported(String bukkitVersion) {
-		String[] parts = bukkitVersion.split("-")[0].split("\\.");
-		int major = Integer.parseInt(parts[0]);
-		int minor = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
-		int patch = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
-		if (major != 1) return major > 1;
-		if (minor != 19) return minor > 19;
-
-		return patch >= 4;
+		return BukkitVersion.atLeast(bukkitVersion, 1, 19, 4);
 	}
 }

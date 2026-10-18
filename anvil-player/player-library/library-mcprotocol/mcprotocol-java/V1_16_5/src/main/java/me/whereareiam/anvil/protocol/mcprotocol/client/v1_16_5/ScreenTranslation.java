@@ -22,7 +22,6 @@ import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleT
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitlesAnimation;
 import me.whereareiam.anvil.protocol.java.api.type.BossEventColor;
 import me.whereareiam.anvil.protocol.java.api.type.BossEventOverlay;
-import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -70,7 +69,7 @@ public abstract class ScreenTranslation implements PacketTranslation<Packet> {
 	private static BossEventOperation operation(ServerBossBarPacket packet) {
 		return switch (packet.getAction()) {
 			case ADD -> BossEventAdd.builder()
-					.name(AdventureText.plain(packet.getTitle()))
+					.name(ValueTranslator.plain(packet.getTitle()))
 					.progress(packet.getHealth())
 					.color(color(packet.getColor()))
 					.overlay(overlay(packet.getDivision()))
@@ -80,7 +79,7 @@ public abstract class ScreenTranslation implements PacketTranslation<Packet> {
 					.build();
 			case REMOVE -> new BossEventRemove();
 			case UPDATE_HEALTH -> new BossEventUpdateProgress(packet.getHealth());
-			case UPDATE_TITLE -> new BossEventUpdateName(AdventureText.plain(packet.getTitle()));
+			case UPDATE_TITLE -> new BossEventUpdateName(ValueTranslator.plain(packet.getTitle()));
 			case UPDATE_STYLE -> new BossEventUpdateStyle(color(packet.getColor()), overlay(packet.getDivision()));
 			case UPDATE_FLAGS ->
 					new BossEventUpdateProperties(packet.isDarkenSky(), packet.isPlayEndMusic(), packet.isShowFog());

@@ -40,6 +40,9 @@ server/client version. Local and named Paper executable artifacts are also suppo
 prepare `config/paper-global.yml` (or `paper.yml` before 1.19) or other configuration files as
 workspace assets. Anvil updates its runtime fields structurally after copying those assets.
 
+Minecraft 26.3 enables the whitelist of a new server. Anvil keeps it off, as on earlier versions,
+unless `.setting("white-list", "true")` or the server's own `server.properties` turns it on.
+
 Paper supports modern forwarding from Velocity and legacy forwarding from Velocity or BungeeCord.
 Anvil configures `spigot.yml` and the file Paper reads for the server version: `paper.yml`
 `settings.velocity-support` before 1.19, and `config/paper-global.yml` `proxies.velocity` from 1.19.
