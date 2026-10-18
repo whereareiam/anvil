@@ -60,7 +60,7 @@ class JavaMessagesExtensionTest {
 
 		protocol.deliver(new ClientboundSystemChat("multiplayer.player.joined Alice", false));
 		protocol.deliver(new ClientboundSystemChat("anvil:action-bar", true));
-		protocol.deliver(new ClientboundPlayerChat("decorated hello"));
+		protocol.deliver(ClientboundPlayerChat.unsigned("decorated hello"));
 		protocol.deliver(new ClientboundDisguisedChat("journey-ready-1"));
 
 		assertEquals(List.of(

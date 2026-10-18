@@ -37,7 +37,7 @@ final class ChatPackets implements PacketTranslation<Packet> {
 
 		String text = ValueTranslator.plain(chat.getMessage());
 		return switch (chat.getType()) {
-			case CHAT -> new ClientboundPlayerChat(text);
+			case CHAT -> ClientboundPlayerChat.unsigned(text);
 			case SYSTEM -> new ClientboundSystemChat(text, false);
 			case NOTIFICATION -> new ClientboundSystemChat(text, true);
 		};

@@ -36,7 +36,7 @@ final class EchoServer {
 	 */
 	@NotNull List<ClientboundPacket> answer(@NotNull String player, @NotNull ServerboundPacket packet) {
 		if (packet instanceof ServerboundChat chat)
-			return List.of(new ClientboundPlayerChat("<" + player + "> " + chat.getText()));
+			return List.of(ClientboundPlayerChat.unsigned("<" + player + "> " + chat.getText()));
 		if (packet instanceof ServerboundChatCommand command)
 			return List.of(new ClientboundSystemChat("ran /" + command.getCommand(), false));
 

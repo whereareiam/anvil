@@ -25,7 +25,7 @@ class ChatPacketsTest {
 	void decodesEachMessageTypeAsTheProtocolsChat() {
 		Component joined = Component.translatable("multiplayer.player.joined", Component.text("Alice"));
 
-		assertEquals(new ClientboundPlayerChat("chat.type.text Alice hello"), packets.decode(new ServerChatPacket(
+		assertEquals(ClientboundPlayerChat.unsigned("chat.type.text Alice hello"), packets.decode(new ServerChatPacket(
 				Component.translatable("chat.type.text", Component.text("Alice"), Component.text("hello")),
 				MessageType.CHAT, new UUID(0, 1))));
 		assertEquals(new ClientboundSystemChat("multiplayer.player.joined Alice", false),

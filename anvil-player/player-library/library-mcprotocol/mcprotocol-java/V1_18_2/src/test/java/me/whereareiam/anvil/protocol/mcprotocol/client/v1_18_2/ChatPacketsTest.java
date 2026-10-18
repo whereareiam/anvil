@@ -26,7 +26,7 @@ class ChatPacketsTest {
 		Component message = Component.translatable("chat.type.text", Component.text("Alice"), Component.text("hello"))
 				.append(Component.text("!"));
 
-		assertEquals(new ClientboundPlayerChat("chat.type.text Alice hello!"), packets.decode(new ClientboundChatPacket(message, MessageType.CHAT)));
+		assertEquals(ClientboundPlayerChat.unsigned("chat.type.text Alice hello!"), packets.decode(new ClientboundChatPacket(message, MessageType.CHAT)));
 	}
 
 	@Test

@@ -1,16 +1,22 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
+import me.whereareiam.anvil.protocol.java.api.model.chat.MessageSignature;
+import me.whereareiam.anvil.protocol.java.api.model.chat.PackedMessageSignature;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundDeleteChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundDisguisedChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundPlayerChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
+import me.whereareiam.anvil.protocol.java.api.type.FilterMaskType;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.network.packet.Packet;
+import org.geysermc.mcprotocollib.protocol.data.game.chat.ChatFilterType;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundDeleteChatPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundDisguisedChatPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundPlayerChatPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket;
@@ -21,7 +27,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Set;
 
 /**
- * Chat of the MCProtocolLib releases from 1.20.5 on: system, player and disguised messages in, chat and commands out.
+ * Chat of the MCProtocolLib releases from 1.20.5 on: system, player and disguised messages and the server's deletions
+ * in, chat and commands out.
  * The player sends chat unsigned, as a client without a profile key does; each release's {@code ChatPackets} builds
  * the chat packet, whose fields change between releases.
  */
@@ -49,6 +56,7 @@ public abstract class ChatTranslation implements PacketTranslation<Packet> {
 				ClientboundSystemChat.class,
 				ClientboundPlayerChat.class,
 				ClientboundDisguisedChat.class,
+				ClientboundDeleteChat.class,
 				ServerboundChat.class,
 				ServerboundChatCommand.class
 		);
@@ -60,11 +68,37 @@ public abstract class ChatTranslation implements PacketTranslation<Packet> {
 			return new ClientboundSystemChat(ValueTranslator.plain(chat.getContent()), chat.isOverlay());
 		if (packet instanceof ClientboundDisguisedChatPacket chat)
 			return new ClientboundDisguisedChat(ValueTranslator.plain(chat.getMessage()));
+		if (packet instanceof ClientboundDeleteChatPacket delete)
+			return new ClientboundDeleteChat(packed(delete.getMessageSignature()));
 		if (!(packet instanceof ClientboundPlayerChatPacket chat)) return null;
 
 		Component unsigned = chat.getUnsignedContent();
+		byte[] signature = chat.getMessageSignature();
 
-		return new ClientboundPlayerChat(unsigned == null ? chat.getContent() : ValueTranslator.plain(unsigned));
+		return new ClientboundPlayerChat(
+				unsigned == null ? chat.getContent() : ValueTranslator.plain(unsigned),
+				filterMask(chat.getFilterMask()),
+				signature == null ? null : new MessageSignature(signature),
+				chat.getLastSeenMessages().stream().map(ChatTranslation::packed).toList()
+		);
+	}
+
+	/**
+	 * Packs a signature as the release read it: the index into the client's signature cache, or the whole signature
+	 * when the release reads the index {@code -1}.
+	 */
+	private static PackedMessageSignature packed(org.geysermc.mcprotocollib.protocol.data.game.chat.MessageSignature signature) {
+		if (signature.getId() < 0) return PackedMessageSignature.full(new MessageSignature(signature.getMessageSignature()));
+
+		return PackedMessageSignature.cached(signature.getId());
+	}
+
+	private static FilterMaskType filterMask(ChatFilterType filter) {
+		return switch (filter) {
+			case PASS_THROUGH -> FilterMaskType.PASS_THROUGH;
+			case FULLY_FILTERED -> FilterMaskType.FULLY_FILTERED;
+			case PARTIALLY_FILTERED -> FilterMaskType.PARTIALLY_FILTERED;
+		};
 	}
 
 	@Override
