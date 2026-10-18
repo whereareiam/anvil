@@ -20,6 +20,13 @@ public class PlayerConnectionEvent {
 			"player.connection", PlayerConnectionEvent.class
 	);
 	/**
+	 * The profile the server or proxy granted in its login success, reported as soon as it arrives: before the client
+	 * enters the game, and also while a proxy keeps the client on the loading screen without a server.
+	 */
+	public static final @NotNull EventDescriptor<PlayerProfile> GRANTED = new EventDescriptor<>(
+			"player.granted", PlayerProfile.class
+	);
+	/**
 	 * Permanent destruction event emitted after the protocol library releases its resources.
 	 */
 	public static final @NotNull EventDescriptor<Void> DESTROYED = new EventDescriptor<>("player.destroyed", Void.class);

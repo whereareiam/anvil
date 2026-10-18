@@ -16,6 +16,17 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface ClientListener<S> {
 	/**
+	 * Reports the profile the server or proxy granted in its login success, which arrives before the game starts. A
+	 * proxy can keep the client on the loading screen for a while before it starts the game, or never start it.
+	 *
+	 * @param session session whose login succeeded
+	 * @param granted profile the server or proxy granted, which a proxy or login plugin may have changed from the
+	 * profile the client asked for
+	 */
+	default void granted(@NotNull S session, @NotNull ClientProfile granted) {
+	}
+
+	/**
 	 * Reports that the server accepted the login and the client sent its client information.
 	 *
 	 * @param session session that logged in
