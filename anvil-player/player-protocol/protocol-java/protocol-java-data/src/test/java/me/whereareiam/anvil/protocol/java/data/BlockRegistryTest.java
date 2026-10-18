@@ -132,6 +132,11 @@ class BlockRegistryTest {
 		assertEquals(new StuckSpeed(0.25, (double) 0.05F), block(registry, "minecraft:cobweb").getStuckSpeed());
 		assertNull(block(registry, "minecraft:stone").getStuckSpeed());
 		assertTrue(block(registry, "minecraft:ladder").hasTrait(BlockTrait.CLIMBABLE));
+		assertTrue(block(registry, "minecraft:oak_fence").hasTrait(BlockTrait.FENCE));
+		assertTrue(block(registry, "minecraft:cobblestone_wall").hasTrait(BlockTrait.WALL));
+		assertTrue(block(registry, "minecraft:spruce_fence_gate").hasTrait(BlockTrait.FENCE_GATE));
+		assertTrue(block(registry, "minecraft:iron_trapdoor").hasTrait(BlockTrait.TRAPDOOR));
+		assertFalse(block(registry, "minecraft:stone").hasTrait(BlockTrait.FENCE));
 		assertTrue(block(registry, "minecraft:scaffolding").getTraits().containsAll(List.of(BlockTrait.CLIMBABLE, BlockTrait.DYNAMIC_COLLISION)));
 		assertTrue(block(registry, "minecraft:bamboo").hasTrait(BlockTrait.OFFSET_COLLISION));
 	}

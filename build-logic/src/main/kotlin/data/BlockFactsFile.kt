@@ -20,7 +20,7 @@ object BlockFactsFile {
 	/**
 	 * The trait names the Java `BlockTrait` enum declares.
 	 */
-	val traits = setOf("AIR", "CLIMBABLE", "SLIME_STEP", "HONEY_SLIDE", "BUBBLE_COLUMN", "DYNAMIC_COLLISION", "OFFSET_COLLISION")
+	val traits = setOf("AIR", "CLIMBABLE", "SLIME_STEP", "HONEY_SLIDE", "BUBBLE_COLUMN", "DYNAMIC_COLLISION", "OFFSET_COLLISION", "FENCE", "WALL", "FENCE_GATE", "TRAPDOOR")
 
 	private val fluids = setOf("WATER", "LAVA")
 	private val fields = setOf("names", "source", "friction", "speed-factor", "jump-factor", "bounce", "stuck", "fluid", "traits", "property-start")

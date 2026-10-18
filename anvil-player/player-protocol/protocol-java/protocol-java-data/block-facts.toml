@@ -6,9 +6,10 @@
 # widens to a double is widened the same way. Absent values keep vanilla's defaults: friction 0.6F, speed and jump
 # factors 1.0F, no bounce, no stuck slowdown, no fluid besides a waterlogged state's water.
 #
-# Traits: AIR, CLIMBABLE, SLIME_STEP, HONEY_SLIDE, BUBBLE_COLUMN, DYNAMIC_COLLISION, OFFSET_COLLISION; the Java
-# BlockTrait enum documents each. property-start gives the lowest value of an integer property that does not start
-# at 0, which minecraft-data leaves out for 1.16 and 1.18; releases whose data lists the values check it.
+# Traits: AIR, CLIMBABLE, SLIME_STEP, HONEY_SLIDE, BUBBLE_COLUMN, DYNAMIC_COLLISION, OFFSET_COLLISION, FENCE, WALL,
+# FENCE_GATE, TRAPDOOR; the Java BlockTrait enum documents each. property-start gives the lowest value of an integer
+# property that does not start at 0, which minecraft-data leaves out for 1.16 and 1.18; releases whose data lists the
+# values check it.
 
 [[block]]
 names = ["minecraft:air", "minecraft:cave_air", "minecraft:void_air"]
@@ -126,6 +127,55 @@ fluid = "WATER"
 names = ["minecraft:lava"]
 source = "Blocks.LAVA is LiquidBlock(Fluids.LAVA)"
 fluid = "LAVA"
+
+[[block]]
+names = [
+	"minecraft:acacia_fence", "minecraft:bamboo_fence", "minecraft:birch_fence", "minecraft:cherry_fence",
+	"minecraft:crimson_fence", "minecraft:dark_oak_fence", "minecraft:jungle_fence", "minecraft:mangrove_fence",
+	"minecraft:oak_fence", "minecraft:pale_oak_fence", "minecraft:spruce_fence", "minecraft:warped_fence",
+	"minecraft:nether_brick_fence",
+]
+source = "Block tag minecraft:fences, data/minecraft/tags/blocks/fences.json (tags/block/ since 1.21)"
+traits = ["FENCE"]
+
+[[block]]
+names = [
+	"minecraft:andesite_wall", "minecraft:blackstone_wall", "minecraft:brick_wall",
+	"minecraft:cobbled_deepslate_wall", "minecraft:cobblestone_wall", "minecraft:deepslate_brick_wall",
+	"minecraft:deepslate_tile_wall", "minecraft:diorite_wall", "minecraft:end_stone_brick_wall",
+	"minecraft:granite_wall", "minecraft:mossy_cobblestone_wall", "minecraft:mossy_stone_brick_wall",
+	"minecraft:mud_brick_wall", "minecraft:nether_brick_wall", "minecraft:polished_blackstone_brick_wall",
+	"minecraft:polished_blackstone_wall", "minecraft:polished_deepslate_wall", "minecraft:polished_tuff_wall",
+	"minecraft:prismarine_wall", "minecraft:red_nether_brick_wall", "minecraft:red_sandstone_wall",
+	"minecraft:resin_brick_wall", "minecraft:sandstone_wall", "minecraft:stone_brick_wall",
+	"minecraft:tuff_brick_wall", "minecraft:tuff_wall",
+]
+source = "Block tag minecraft:walls, data/minecraft/tags/blocks/walls.json (tags/block/ since 1.21)"
+traits = ["WALL"]
+
+[[block]]
+names = [
+	"minecraft:acacia_fence_gate", "minecraft:bamboo_fence_gate", "minecraft:birch_fence_gate",
+	"minecraft:cherry_fence_gate", "minecraft:crimson_fence_gate", "minecraft:dark_oak_fence_gate",
+	"minecraft:jungle_fence_gate", "minecraft:mangrove_fence_gate", "minecraft:oak_fence_gate",
+	"minecraft:pale_oak_fence_gate", "minecraft:spruce_fence_gate", "minecraft:warped_fence_gate",
+]
+source = "Blocks.*_FENCE_GATE are FenceGateBlock"
+traits = ["FENCE_GATE"]
+
+[[block]]
+names = [
+	"minecraft:acacia_trapdoor", "minecraft:bamboo_trapdoor", "minecraft:birch_trapdoor",
+	"minecraft:cherry_trapdoor", "minecraft:copper_trapdoor", "minecraft:crimson_trapdoor",
+	"minecraft:dark_oak_trapdoor", "minecraft:exposed_copper_trapdoor", "minecraft:iron_trapdoor",
+	"minecraft:jungle_trapdoor", "minecraft:mangrove_trapdoor", "minecraft:oak_trapdoor",
+	"minecraft:oxidized_copper_trapdoor", "minecraft:pale_oak_trapdoor", "minecraft:spruce_trapdoor",
+	"minecraft:warped_trapdoor", "minecraft:waxed_copper_trapdoor", "minecraft:waxed_exposed_copper_trapdoor",
+	"minecraft:waxed_oxidized_copper_trapdoor", "minecraft:waxed_weathered_copper_trapdoor",
+	"minecraft:weathered_copper_trapdoor",
+]
+source = "Blocks.*_TRAPDOOR are TrapDoorBlock"
+traits = ["TRAPDOOR"]
 
 [[block]]
 names = ["minecraft:bubble_column"]
