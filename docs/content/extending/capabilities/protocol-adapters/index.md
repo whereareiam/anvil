@@ -15,7 +15,7 @@ The protocol library owns serialization and transport; your extension owns the o
 and the listeners.
 
 Packet classes differ between releases of a client library: MCProtocolLib renamed its packets and moved them
-between packages from Minecraft 1.18.2 to 1.21.11. Your extension does not see them. It speaks the Java Edition
+between packages from Minecraft 1.16.5 to 1.21.11. Your extension does not see them. It speaks the Java Edition
 protocol, `me.whereareiam.anvil:protocol-java-api`, whose packets are the same for every release; the library
 translates them for the release the player runs. Where releases say the same thing in different packets, the library
 reports the current packet for every release: a release that spawns mobs through a packet of their own reports a

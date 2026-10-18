@@ -62,6 +62,8 @@ class McProtocolWorkerContractTest {
 	 * Every built-in release key with its protocol number and the client segment that serves it.
 	 */
 	private static final List<ReleaseExpectation> RELEASES = List.of(
+			new ReleaseExpectation("1.16.5", 754, "1.16.5"),
+			new ReleaseExpectation("1.17.1", 756, "1.17.1"),
 			new ReleaseExpectation("1.18.2", 758, "1.18.2"),
 			new ReleaseExpectation("1.19.4", 762, "1.19.4"),
 			new ReleaseExpectation("1.20.6", 766, "1.20.6"),

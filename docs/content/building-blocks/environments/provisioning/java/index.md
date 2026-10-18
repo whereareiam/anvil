@@ -17,8 +17,8 @@ fails when this table and that data differ. Versions are written in their canoni
 
 | Platform | Versions | Range | Default | Verified by the live matrix |
 |---|---|---|---|---|
-| Paper | `1.16.5` | Java 11 to 16; newer with `-DPaper.IgnoreJavaVersion=true` | 11 | None |
-| Paper | `1.17` to `1.17.1` | Java 17; newer with `-DPaper.IgnoreJavaVersion=true` | 17 | None |
+| Paper | `1.16.5` | Java 11 to 16; newer with `-DPaper.IgnoreJavaVersion=true` | 11 | `1.16.5` on 11 |
+| Paper | `1.17` to `1.17.1` | Java 17; newer with `-DPaper.IgnoreJavaVersion=true` | 17 | `1.17.1` on 17 |
 | Paper | `1.18` to `1.20.4` | Java 17 or newer | 17 | `1.18.2` and `1.19.4` on 17 |
 | Paper | `1.20.5` to `1.21.11` | Java 21 or newer | 21 | `1.20.6`, `1.21.1` and `1.21.11` on 21 |
 | Paper | `26.1` and newer | Java 25 or newer | 25 | `26.1.2` on 25 |

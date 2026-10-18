@@ -1,0 +1,36 @@
+package me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5;
+
+import com.github.steveice10.mc.protocol.data.game.entity.type.EntityType;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import me.whereareiam.anvil.protocol.mcprotocol.client.EntityDataLayout;
+import me.whereareiam.anvil.protocol.mcprotocol.client.type.EntityDataField;
+
+import java.util.Map;
+
+/**
+ * The entity data indexes of the MCProtocolLib 1.16.5 release that carry a value the protocol models, by entity type.
+ * Every entity keeps seven values, so dropped items, item frames, thrown items, eyes of ender, fireballs and fireworks
+ * keep the item they show at 7, one index before Minecraft 1.17 added the ticks an entity has been frozen.
+ */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+final class EntityDataTable {
+	private static final Map<Integer, EntityDataField> ITEM_AT_7 = Map.of(7, EntityDataField.SHOWN_ITEM);
+
+	/**
+	 * The release's layout.
+	 */
+	static final EntityDataLayout<EntityType> LAYOUT = new EntityDataLayout<>(Map.ofEntries(
+			Map.entry(EntityType.ITEM, ITEM_AT_7),
+			Map.entry(EntityType.ITEM_FRAME, ITEM_AT_7),
+			Map.entry(EntityType.SNOWBALL, ITEM_AT_7),
+			Map.entry(EntityType.THROWN_EGG, ITEM_AT_7),
+			Map.entry(EntityType.THROWN_ENDERPEARL, ITEM_AT_7),
+			Map.entry(EntityType.THROWN_EXP_BOTTLE, ITEM_AT_7),
+			Map.entry(EntityType.THROWN_POTION, ITEM_AT_7),
+			Map.entry(EntityType.EYE_OF_ENDER, ITEM_AT_7),
+			Map.entry(EntityType.FIREBALL, ITEM_AT_7),
+			Map.entry(EntityType.SMALL_FIREBALL, ITEM_AT_7),
+			Map.entry(EntityType.FIREWORK_ROCKET, ITEM_AT_7)
+	));
+}
