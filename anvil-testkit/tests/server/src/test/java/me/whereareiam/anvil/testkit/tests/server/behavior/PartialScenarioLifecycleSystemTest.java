@@ -1,18 +1,20 @@
-package me.whereareiam.anvil.testkit.tests.server.routing;
+package me.whereareiam.anvil.testkit.tests.server.behavior;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerLogin;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.process.RunningProcess;
+import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.capability.players.PlayerWatch;
 import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
-import me.whereareiam.anvil.testkit.tests.server.extension.FixtureAgentProbeProvider;
+import me.whereareiam.anvil.testkit.tests.server.fixture.FixtureAgentProbeProvider;
 import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
 import org.junit.jupiter.api.Test;
 
@@ -28,9 +30,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class PartialScenarioLifecycleSystemTest {
 	@Test
 	void controlsIndividualProcessesThenCompletesTwoProxyThreeServerEnvironment() throws Exception {
-		AnvilScenario original = CompatibilityScenarioFactory.fixtureScenarios().stream()
-				.filter(scenario -> scenario.getName().equals("velocity-paper-1.21.11"))
-				.findFirst().orElseThrow();
+		AnvilScenario original = CompatibilityScenarioFactory.proxyScenario(Platforms.VELOCITY, Platforms.PAPER,
+				MinecraftVersion.parse("1.21.11"));
 		var auxiliary = original.getServers().getFirst().toBuilder().name("auxiliary").build();
 		var proxy = original.getProxies().getFirst().toBuilder()
 				.server("auxiliary").setting("advanced.login-ratelimit", "0").build();

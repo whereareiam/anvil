@@ -1,12 +1,14 @@
-package me.whereareiam.anvil.testkit.tests.server.routing;
+package me.whereareiam.anvil.testkit.tests.server.behavior;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.process.console.ConsoleLine;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.process.ConsoleWatch;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.type.DisconnectCause;
+import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.capability.players.PlayerWatch;
 import me.whereareiam.anvil.capability.players.Players;
@@ -36,9 +38,8 @@ class ProcessKillSystemTest {
 
 	@Test
 	void killsAProxyWithoutItsShutdownAndStartsItAgain() throws Exception {
-		AnvilScenario original = CompatibilityScenarioFactory.fixtureScenarios().stream()
-				.filter(scenario -> scenario.getName().equals("velocity-paper-1.21.11"))
-				.findFirst().orElseThrow();
+		AnvilScenario original = CompatibilityScenarioFactory.proxyScenario(Platforms.VELOCITY, Platforms.PAPER,
+				MinecraftVersion.parse("1.21.11"));
 		var proxy = original.getProxies().getFirst().toBuilder().setting("advanced.login-ratelimit", "0").build();
 		AnvilScenario scenario = original.toBuilder().name("process-kill").clearProxies().proxy(proxy).build();
 

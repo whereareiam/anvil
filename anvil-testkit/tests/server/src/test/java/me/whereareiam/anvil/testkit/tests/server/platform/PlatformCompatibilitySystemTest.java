@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.testkit.tests.server.routing;
+package me.whereareiam.anvil.testkit.tests.server.platform;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
@@ -11,10 +11,9 @@ import me.whereareiam.anvil.capability.players.PlayerWatch;
 import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
-import me.whereareiam.anvil.testkit.tests.server.extension.FixtureAgentProbeProvider;
+import me.whereareiam.anvil.testkit.tests.server.fixture.FixtureAgentProbeProvider;
 import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestFactory;
 
 import java.time.Duration;
@@ -24,14 +23,14 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("compatibility")
-class ProxyServerCompatibilitySystemTest {
+/**
+ * Logs a player in on Spigot and behind each proxy, runs console commands and an agent extension on every process,
+ * and moves the player between the backends of a proxy.
+ */
+class PlatformCompatibilitySystemTest {
 	@TestFactory
-	Stream<DynamicTest> runsEveryNativePlatformAndVersion() {
-		String filter = System.getProperty("anvil.matrix.filter", ".*");
-
-		return CompatibilityScenarioFactory.fixtureScenarios().stream()
-				.filter(scenario -> scenario.getName().matches(filter))
+	Stream<DynamicTest> runsEveryPlatformScenario() {
+		return PlatformSelection.select(CompatibilityScenarioFactory.platformScenarios()).stream()
 				.map(scenario -> DynamicTest.dynamicTest(scenario.getName(), () -> verify(scenario)));
 	}
 

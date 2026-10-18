@@ -1,13 +1,14 @@
-package me.whereareiam.anvil.testkit.tests.server.session;
+package me.whereareiam.anvil.testkit.tests.server.behavior;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
 import me.whereareiam.anvil.runner.RunnerSession;
 import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
-import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionRequest;
 import me.whereareiam.anvil.tooling.api.model.action.binding.ActionTarget;
+import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionRequest;
 import me.whereareiam.anvil.tooling.api.type.action.ActionTargetType;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -21,10 +22,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ToolingCapabilitiesSystemTest {
 	@ParameterizedTest
-	@ValueSource(strings = {"paper-1.21.11", "paper-26.1.2"})
-	void discoversBuiltinControlsAndObservesNativeConnectionChanges(String name) {
-		var scenario = CompatibilityScenarioFactory.fixtureScenarios().stream()
-				.filter(candidate -> candidate.getName().equals(name)).findFirst().orElseThrow();
+	@ValueSource(strings = {"1.21.11", "26.1.2"})
+	void discoversBuiltinControlsAndObservesNativeConnectionChanges(String version) {
+		var scenario = CompatibilityScenarioFactory.releaseScenario(MinecraftVersion.parse(version));
 		AtomicReference<Session> connection = new AtomicReference<>();
 		AtomicReference<Messages> messages = new AtomicReference<>();
 		scenario = scenario.toBuilder().setupHook(context -> {

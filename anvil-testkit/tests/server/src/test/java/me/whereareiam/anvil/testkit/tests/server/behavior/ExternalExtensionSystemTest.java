@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.testkit.tests.server.extension;
+package me.whereareiam.anvil.testkit.tests.server.behavior;
 
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
 import me.whereareiam.anvil.api.model.EngineOptions;

@@ -153,19 +153,19 @@ when they differ:
 
 ## Cover the version in the live matrix
 
-`VERIFIED` means that Anvil's live matrix runs the combination. The matrix is
-`anvil-testkit/tests/server/src/anvil/java/me/whereareiam/anvil/testkit/tests/server/scenario/CompatibilityScenarioFactory.java`:
+`VERIFIED` means that Anvil's live matrix runs the combination. The matrix is the data file
+`anvil-testkit/tests/server/live-matrix.toml`:
 
-- A release key runs directly on Paper: add a `PaperBuild` with the version and its pinned Paper build
-  to `DIRECT_PAPER`. A version the IDE should list as its own scenario instead gets a
-  `Paper<version>SystemScenario` definition, such as `Paper2612SystemScenario`, registered in
-  `paperReleaseScenarios()`. Either way `PlayerCapabilitiesSystemTest` runs the full player journey on it.
-- A current version also runs on Spigot and behind Velocity and BungeeCord: register it with
-  `registerVersion(...)`, which takes the Paper build and the Spigot JAR's SHA-256 and adds only the Spigot
-  and proxy scenarios.
-- A version NeoForge supports also runs directly on NeoForge: add a `NeoForgeRelease` with the version and its
-  pinned NeoForge release to `NEOFORGE`. `NeoForgeServerSystemTest` runs it without the fixture plugin, which
-  NeoForge cannot load.
+- A release key runs directly on Paper: add a `[[release]]` row with the version and its pinned Paper build, in
+  version order. The build registers its `releaseTest-<minecraft>` task, which runs the release suite against it,
+  and CI gives it a job of its own. A version the IDE should list as its own scenario also gets a
+  `Paper<version>SystemScenario` definition, such as `Paper2612SystemScenario`, that returns
+  `CompatibilityScenarioFactory.releaseScenario(...)`.
+- A current version also runs on Spigot and behind Velocity and BungeeCord: add a `[[platform]]` row naming the
+  release and the Spigot JAR's SHA-256.
+- A version NeoForge supports also runs directly on NeoForge: add a `[[neoforge]]` row with the version and its
+  pinned NeoForge release. `NeoForgeServerSystemTest` runs it without the fixture plugin, which NeoForge cannot
+  load.
 
 Then list exactly the matrix's combinations as verified: the release's `verified` versions in
 `mcprotocol-releases.toml`, and each platform's `[verified]` table with the Java versions the matrix
@@ -176,15 +176,18 @@ the data and the matrix differ; every build runs it through the server suite's `
 ./gradlew :anvil-testkit:tests:server:matrixTest
 ```
 
-Run the live scenarios for the new version, then the player behavior suites when the version runs
-them:
+Run the release suite against the new version, then the platform suite when the version runs on the other
+platforms:
 
 ```shell
-./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*ProxyServerCompatibilitySystemTest' -PanvilMatrixFilter='.*-1\.21\.11'
-./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*PlayerCapabilitiesSystemTest' -PanvilMatrixFilter='paper-1\.21\.11'
+./gradlew :anvil-testkit:tests:server:releaseTest-1.21.11 -Panvil.testMode=full
+./gradlew :anvil-testkit:tests:server:platformTest -Panvil.testMode=full
 ```
 
-Replace `1\.21\.11` with the new version. Read [Live tests](../testing/live/index.md) for the other
+A capability the version adds or removes, such as dialogs in `1.21.6`, is gated in its release test class with
+`TestedRelease.isAtLeast(...)`.
+
+Replace `1.21.11` with the new version. Read [Live tests](../testing/live/index.md) for the other
 suites and for retained diagnostics.
 
 ## Update the documentation

@@ -1,11 +1,13 @@
-package me.whereareiam.anvil.testkit.tests.server.routing;
+package me.whereareiam.anvil.testkit.tests.server.behavior;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.process.ConsoleWatch;
+import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.capability.players.PlayerWatch;
 import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
@@ -30,9 +32,8 @@ class PlayerConnectionRoutingSystemTest {
 
 	@Test
 	void velocitySeesTheAnnouncedVirtualHostAndTheChosenSourceAddress() {
-		AnvilScenario original = CompatibilityScenarioFactory.fixtureScenarios().stream()
-				.filter(scenario -> scenario.getName().equals("velocity-paper-1.21.11"))
-				.findFirst().orElseThrow();
+		AnvilScenario original = CompatibilityScenarioFactory.proxyScenario(Platforms.VELOCITY, Platforms.PAPER,
+				MinecraftVersion.parse("1.21.11"));
 		var proxy = original.getProxies().getFirst().toBuilder()
 				.setting("advanced.login-ratelimit", "0")
 				.setting("enable-player-address-logging", "true")
