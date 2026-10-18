@@ -58,6 +58,9 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 		var entity = getCommand("anvil-entity");
 		if (entity != null)
 			entity.setExecutor((sender, ignored, label, arguments) -> entity(arguments));
+		var block = getCommand("anvil-block");
+		if (block != null)
+			block.setExecutor((sender, ignored, label, arguments) -> block(arguments));
 		var auth = getCommand("auth");
 		if (auth != null)
 			auth.setExecutor((sender, ignored, label, arguments) -> authenticate(player(sender)));
@@ -237,6 +240,21 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 			default:
 				return false;
 		}
+	}
+
+	/**
+	 * Tells a player named by the console which block it stands on, as {@code anvil:below:<x>:<y>:<z>:<block>}, so a
+	 * test compares the block the player's client knows with the one the server holds.
+	 */
+	private boolean block(String[] arguments) {
+		Player player = arguments.length != 2 ? null : Bukkit.getPlayerExact(arguments[0]);
+		if (player == null || !arguments[1].equals("below"))
+			return false;
+
+		Block below = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
+		player.sendMessage("anvil:below:" + below.getX() + ":" + below.getY() + ":" + below.getZ() + ":"
+				+ below.getType().getKey());
+		return true;
 	}
 
 	private static Player player(CommandSender sender) {

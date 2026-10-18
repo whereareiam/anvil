@@ -72,7 +72,9 @@ differs fails the task.
 
 When minecraft-data has no block data for any version of a row, the row keeps no pins. The build still succeeds,
 and `JavaBlockData.require` reports the version as having no block data, naming the minecraft-data release; it
-never serves another release's data. Pin again once minecraft-data publishes the release.
+never serves another release's data. Pin again once minecraft-data publishes the release. Until then, the
+[World](../../building-blocks/players/capabilities/world/index.md) capability knows that release's blocks by their
+state IDs only, and `WorldReleaseTest` names the first release without block data; move it once the data arrives.
 
 What minecraft-data does not carry is maintained by hand in `block-facts.toml` beside it: friction, speed and
 jump factors, bounce, stuck slowdowns, fluids, movement traits such as climbable blocks, and the lowest value of

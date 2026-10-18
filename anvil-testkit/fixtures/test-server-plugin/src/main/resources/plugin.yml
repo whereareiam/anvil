@@ -16,3 +16,6 @@ commands:
   anvil-entity:
     description: Shows text above a player as an armor stand or a text display, drops a glowing item, or removes an entity, from the console
     usage: /anvil-entity <player> <bubble <text>|display <text>|drop|remove <id>>
+  anvil-block:
+    description: Tells a player which block it stands on, from the console
+    usage: /anvil-block <player> below
