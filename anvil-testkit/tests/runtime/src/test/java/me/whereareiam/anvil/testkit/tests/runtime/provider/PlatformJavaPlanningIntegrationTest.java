@@ -26,6 +26,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.jar.JarFile;
@@ -185,7 +186,7 @@ class PlatformJavaPlanningIntegrationTest {
 			}
 		};
 		var planner = new DefaultPlatformPlanner(EngineOptions.builder().supportPolicy(policy).build(), PROVIDERS,
-				artifacts, agent -> Path.of("agent.jar"));
+				artifacts, agent -> Path.of("agent.jar"), source -> OptionalInt.empty());
 		var scenario = AnvilScenario.builder().name("java").entrypoint(process.getName());
 		if (process instanceof MinecraftProxy proxy)
 			scenario.proxy(proxy).server(server(Platforms.PAPER, "1.21.11", null));

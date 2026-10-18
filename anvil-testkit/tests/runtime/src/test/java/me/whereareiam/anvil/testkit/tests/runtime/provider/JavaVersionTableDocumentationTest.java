@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
@@ -176,7 +177,7 @@ class JavaVersionTableDocumentationTest {
 		};
 
 		return new DefaultPlatformPlanner(EngineOptions.builder().supportPolicy(SupportPolicy.LENIENT).build(), PROVIDERS,
-				artifacts, agent -> Path.of("agent.jar"));
+				artifacts, agent -> Path.of("agent.jar"), source -> OptionalInt.empty());
 	}
 
 	private static String verified(MinecraftVersion since, MinecraftVersion next, PlatformVersions versions) {

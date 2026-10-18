@@ -7,6 +7,7 @@ import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.platform.api.PlatformAgentSource;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
+import me.whereareiam.anvil.platform.api.PlatformJavaSource;
 import me.whereareiam.anvil.platform.api.PlatformPlanner;
 import me.whereareiam.anvil.platform.api.PlatformPreparer;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
@@ -47,10 +48,11 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 			@NotNull EngineOptions options,
 			@NotNull Map<String, PlatformProvider> providers,
 			@NotNull PlatformArtifactSource downloads,
-			@NotNull PlatformAgentSource agents
+			@NotNull PlatformAgentSource agents,
+			@NotNull PlatformJavaSource javaSources
 	) {
 		this.options = options;
-		this.javaPlanner = new JavaRequirementPlanner(options, providers, System.err);
+		this.javaPlanner = new JavaRequirementPlanner(options, providers, javaSources, System.err);
 		this.providers = Map.copyOf(providers);
 		this.downloads = downloads;
 		this.artifacts = new ScenarioArtifactResolver(options.getArtifacts(), agents);

@@ -5,11 +5,13 @@ import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
+import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import me.whereareiam.anvil.api.type.SupportPolicy;
+import me.whereareiam.anvil.platform.api.PlatformJavaSource;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.planning.version.JavaCompatibility;
@@ -22,6 +24,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,11 +36,12 @@ import java.util.stream.Collectors;
  *
  * <p>Each provider's version data is read once, when a process first needs it. The effective
  * minimum is the platform row's minimum, raised to the agent's minimum Java when the provider
- * installs an agent. Without a request, the process runs the row's preferred LTS, raised to the
- * smallest LTS at or above the effective minimum; a raised default above the row's maximum is
- * refused. A request must be an LTS release at or above the effective minimum. Above the row's
- * maximum, a platform with a bypass property runs with {@code -D<property>=true}; one without a
- * bypass is refused.</p>
+ * installs an agent. Without a request, a process whose selection declares a local Java, a home or an
+ * executable, runs that Java's version, as if it requested it; otherwise it runs the row's preferred LTS,
+ * raised to the smallest LTS at or above the effective minimum, and a raised default above the row's maximum is
+ * refused. A request, or a declared Java, must be an LTS release at or above the effective minimum. Above the
+ * row's maximum, a platform with a bypass property runs with {@code -D<property>=true}; one without a bypass is
+ * refused.</p>
  *
  * <p>The process's {@link SupportLevel} is the weakest of its platform version's level and its
  * Java level. Java is {@link SupportLevel#VERIFIED} when the data verifies it for the platform
@@ -49,6 +53,7 @@ final class JavaRequirementPlanner {
 	private final EngineOptions options;
 	private final JavaSelection defaults;
 	private final Map<String, PlatformProvider> providers;
+	private final PlatformJavaSource sources;
 	private final PrintStream diagnostics;
 	private final PlatformVersionsReader reader = new PlatformVersionsReader();
 	private final Map<String, PlatformVersions> versionsByPlatform = new ConcurrentHashMap<>();
@@ -58,11 +63,13 @@ final class JavaRequirementPlanner {
 	 *
 	 * @param options engine options supplying the default Java selection and support policy
 	 * @param providers installed platform providers keyed by platform identifier
+	 * @param sources the versions of declared Java sources
 	 * @param diagnostics stream receiving information and warning lines
 	 */
 	JavaRequirementPlanner(
 			@NotNull EngineOptions options,
 			@NotNull Map<String, PlatformProvider> providers,
+			@NotNull PlatformJavaSource sources,
 			@NotNull PrintStream diagnostics
 	) {
 		this.options = options;
@@ -70,6 +77,7 @@ final class JavaRequirementPlanner {
 				.requirement(JavaRequirement.builder().build())
 				.build());
 		this.providers = new TreeMap<>(providers);
+		this.sources = sources;
 		this.diagnostics = diagnostics;
 	}
 
@@ -97,8 +105,16 @@ final class JavaRequirementPlanner {
 		JavaRange range = range(subject);
 		SupportPolicy policy = scenario.getSupportPolicy() == null ? options.getSupportPolicy() : scenario.getSupportPolicy();
 		Integer requested = requested(subject, requirement);
-		int java = requested == null ? preferred(subject, range) : requested;
-		if (requested != null) refuseUnsupportedJava(subject, range, java, policy);
+		Integer declared = requested == null ? declared(selection.getSource()) : null;
+		Integer asked = requested != null ? requested : declared;
+		int java = asked == null ? preferred(subject, range) : asked;
+		if (requested != null)
+			refuseUnsupportedJava(subject, range, java, policy, "requests Java " + java + " ("
+					+ subject.requestedBy() + ")", "Remove the Java requirement", subject.overrideHint());
+		if (declared != null)
+			refuseUnsupportedJava(subject, range, java, policy, "runs the Java declared as its source ("
+					+ sourceOrigin(scenario, declaration) + "), which is Java " + java, "Point the Java source at Java "
+					+ range.preferred() + " or remove it", sourceHint(scenario, declaration));
 
 		boolean bypass = range.row().exceedsMaximum(java);
 		SupportLevel level = versionLevel.weakest(javaLevel(subject.versions(), subject.version(), java, bypass));
@@ -167,6 +183,32 @@ final class JavaRequirementPlanner {
 		return feature;
 	}
 
+	/**
+	 * Returns the version of a declared local Java, or null without one, or for an archive, whose version is known only
+	 * once execution downloads it.
+	 */
+	private @Nullable Integer declared(@Nullable JavaSource source) {
+		if (source == null) return null;
+
+		OptionalInt version = sources.featureVersion(source);
+		return version.isPresent() ? version.getAsInt() : null;
+	}
+
+	private static String sourceOrigin(AnvilScenario scenario, MinecraftProcess declaration) {
+		if (declaration.getJavaSelection().getSource() != null)
+			return "declared by process '" + declaration.getName() + "'";
+		if (scenario.getJavaSelection().getSource() != null) return "declared by scenario '" + scenario.getName() + "'";
+
+		return "declared by the engine Java selection";
+	}
+
+	private static String sourceHint(AnvilScenario scenario, MinecraftProcess declaration) {
+		if (declaration.getJavaSelection().getSource() != null) return "";
+
+		return " The source applies to every process without its own; declare a JavaSelection on process '"
+				+ declaration.getName() + "' to override it, or request a Java version for it.";
+	}
+
 	private @Nullable Integer releaseFeature(String release) {
 		try {
 			return Runtime.Version.parse(release).feature();
@@ -186,10 +228,25 @@ final class JavaRequirementPlanner {
 				+ range.agentMinimum() + " or newer, so no LTS release runs both by default." + bypass);
 	}
 
-	private void refuseUnsupportedJava(Subject subject, JavaRange range, int java, SupportPolicy policy) {
+	/**
+	 * Refuses a Java the process asks for, through a request or a declared source, that its platform does not run.
+	 *
+	 * @param asked what the process asks for, after its name
+	 * @param removal the remedy that returns the process to the platform's default
+	 * @param hint where an inherited request or source can be overridden, or empty
+	 */
+	private void refuseUnsupportedJava(
+			Subject subject,
+			JavaRange range,
+			int java,
+			SupportPolicy policy,
+			String asked,
+			String removal,
+			String hint
+	) {
 		JavaCompatibility row = range.row();
-		String request = "Process '" + subject.name() + "' requests Java " + java + " (" + subject.requestedBy() + ")";
-		String accepted = " " + subject.label() + " " + describe(range) + "." + subject.overrideHint();
+		String request = "Process '" + subject.name() + "' " + asked;
+		String accepted = " " + subject.label() + " " + describe(range) + "." + hint;
 		if (!JavaCompatibility.isLongTermSupport(java))
 			throw new ScenarioValidationException(request + ", which is not an LTS release. Anvil runs processes on LTS "
 					+ "releases only: 11, 17, 21, 25, then every fourth release." + accepted);
@@ -202,12 +259,12 @@ final class JavaRequirementPlanner {
 		if (!row.exceedsMaximum(java) || row.getMaximumBypassProperty() != null) return;
 
 		List<String> remedies = new ArrayList<>();
-		if (range.defaultFits()) remedies.add("Remove the Java requirement to use Java " + range.preferred() + " (default)");
+		if (range.defaultFits()) remedies.add(removal + " to use Java " + range.preferred() + " (default)");
 		List<String> platforms = alternatives(subject, java, policy);
 		if (!platforms.isEmpty()) remedies.add((remedies.isEmpty() ? "Use " : "use ") + String.join(" or ", platforms));
 		String remedy = remedies.isEmpty() ? "" : " " + String.join(", or ", remedies) + ".";
 		throw new ScenarioValidationException(request + ", but " + subject.label() + " refuses Java above "
-				+ row.getMaximum() + " and has no bypass." + remedy + subject.overrideHint());
+				+ row.getMaximum() + " and has no bypass." + remedy + hint);
 	}
 
 	private List<String> alternatives(Subject subject, int java, SupportPolicy policy) {

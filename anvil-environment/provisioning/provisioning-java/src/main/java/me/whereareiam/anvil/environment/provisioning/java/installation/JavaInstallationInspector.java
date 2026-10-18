@@ -50,9 +50,20 @@ public final class JavaInstallationInspector {
 	}
 
 	public JavaInstallation require(@NotNull Path executable, @NotNull JavaRequirement requirement) {
-		JavaInstallation installation = installations.computeIfAbsent(executable.toAbsolutePath().normalize(), this::inspect);
+		JavaInstallation installation = installation(executable);
 		validate(installation, requirement);
 		return installation;
+	}
+
+	/**
+	 * Returns the identity of an executable, which it inspects by running it once.
+	 *
+	 * @param executable the Java executable
+	 * @return its identity
+	 * @throws ProvisioningException when it cannot be run or inspected
+	 */
+	public JavaInstallation installation(@NotNull Path executable) {
+		return installations.computeIfAbsent(executable.toAbsolutePath().normalize(), this::inspect);
 	}
 
 	public boolean matches(Path executable, JavaRequirement requirement) {

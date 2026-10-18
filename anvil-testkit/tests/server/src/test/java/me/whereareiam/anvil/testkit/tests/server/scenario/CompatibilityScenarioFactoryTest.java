@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
@@ -150,6 +151,6 @@ class CompatibilityScenarioFactoryTest {
 		};
 
 		return new DefaultPlatformPlanner(EngineOptions.builder().eulaAccepted(true).build(), PLATFORMS, artifacts,
-				agent -> Path.of("agent.jar"));
+				agent -> Path.of("agent.jar"), source -> OptionalInt.empty());
 	}
 }
