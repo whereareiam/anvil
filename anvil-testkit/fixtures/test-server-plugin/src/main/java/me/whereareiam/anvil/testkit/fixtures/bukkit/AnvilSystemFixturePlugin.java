@@ -20,6 +20,7 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -101,6 +102,21 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 	public void onMove(PlayerMoveEvent event) {
 		if (event.getFrom().distanceSquared(event.getTo()) > 0.0001D)
 			event.getPlayer().sendMessage("anvil:move");
+	}
+
+	/**
+	 * Logs each position the server forces on a player because it refused the player's movement, such as a move into
+	 * a block or one too far: the server then teleports the player back without a cause, while commands, portals and
+	 * plugins name theirs.
+	 */
+	@EventHandler
+	public void onTeleport(PlayerTeleportEvent event) {
+		if (event.getCause() != PlayerTeleportEvent.TeleportCause.UNKNOWN)
+			return;
+
+		Location to = event.getTo();
+		getLogger().info("anvil:correction:" + event.getPlayer().getName() + ":"
+				+ (to == null ? "none" : to.getX() + ":" + to.getY() + ":" + to.getZ()));
 	}
 
 	@EventHandler
