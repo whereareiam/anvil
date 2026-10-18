@@ -14,9 +14,8 @@ import java.util.List;
  *
  * <p>Each kind has its own history, kept in order and across reconnects, and its own watch, which follows only
  * what arrives after it was created. Text is flattened to plain text as {@code Messages} flattens chat. Action bars
- * are the text the server sends through the separate action-bar packet; action-bar text sent as chat, which is
- * game-info chat before Minecraft 1.19 and overlay system chat from 1.19, belongs to the {@code Messages} history
- * instead.</p>
+ * are the text the server sends through the separate action-bar packet and the action-bar text it sends as chat, which
+ * is game-info chat before Minecraft 1.19 and overlay system chat from 1.19.</p>
  *
  * <pre>{@code
  * Screen screen = alice.capability(Screen.class);

@@ -4,7 +4,9 @@ import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.messages.channel.MessagesChannel;
 import me.whereareiam.anvil.capability.messages.model.ChatLines;
 import me.whereareiam.anvil.capability.messages.model.ChatMessage;
+import me.whereareiam.anvil.capability.messages.model.DroppedChat;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
+import me.whereareiam.anvil.capability.messages.type.ChatDropReason;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
@@ -54,13 +56,15 @@ class ChannelMessagesTest {
 	}
 
 	@Test
-	void keepsEveryReceivedMessageInOrder() {
+	void keepsEveryMessageTheChatShowedInOrder() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelMessages messages = new ChannelMessages(channel);
 		assertTrue(messages.history().isEmpty());
 
-		channel.publish(MessagesChannel.RECEIVED, new MessageText("anvil:welcome"));
-		channel.publish(MessagesChannel.RECEIVED, new MessageText("anvil:pong"));
+		drop(channel, "anvil:configuring", ChatDropReason.NO_PLAYER);
+		show(channel, 0, "anvil:welcome");
+		channel.publish(MessagesChannel.CHAT_CLEARED, null);
+		show(channel, 1, "anvil:pong");
 
 		assertEquals(List.of("anvil:welcome", "anvil:pong"), messages.history());
 		assertThrows(UnsupportedOperationException.class, () -> messages.history().add("changed"));
@@ -71,52 +75,52 @@ class ChannelMessagesTest {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelMessages messages = new ChannelMessages(channel);
 
-		channel.publish(MessagesChannel.CHAT_ADDED, new ChatMessage(0, "before"));
+		show(channel, 0, "before");
 		channel.publish(MessagesChannel.CHAT_CLEARED, null);
-		channel.publish(MessagesChannel.CHAT_ADDED, new ChatMessage(1, "hello\nthere"));
-		channel.publish(MessagesChannel.CHAT_ADDED, new ChatMessage(2, "insult"));
+		show(channel, 1, "hello\nthere");
+		show(channel, 2, "insult");
 		channel.publish(MessagesChannel.CHAT_DELETED, 2L);
 
 		assertEquals(new ChatLines(List.of("hello", "there", ChatLines.DELETED_MARKER)), messages.chatLines());
-		assertEquals(List.of(), messages.history());
 	}
 
 	@Test
-	void returnsTheLatestReceivedMessageContainingTheText() {
+	void returnsTheLatestShownMessageContainingTheText() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelMessages messages = new ChannelMessages(channel);
-		channel.publish(MessagesChannel.RECEIVED, new MessageText("anvil:pong 1"));
-		channel.publish(MessagesChannel.RECEIVED, new MessageText("anvil:welcome"));
-		channel.publish(MessagesChannel.RECEIVED, new MessageText("anvil:pong 2"));
+		show(channel, 0, "anvil:pong 1");
+		show(channel, 1, "anvil:welcome");
+		show(channel, 2, "anvil:pong 2");
 
 		assertEquals("anvil:pong 2", messages.received("pong", TIMEOUT));
 		assertEquals("anvil:welcome", messages.received("welcome"));
 	}
 
 	@Test
-	void waitsThroughTheChannelUntilAMessageContainsTheText() {
+	void waitsThroughTheChannelUntilTheChatShowsTheText() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelMessages messages = new ChannelMessages(channel);
-		channel.publish(MessagesChannel.RECEIVED, new MessageText("anvil:welcome"));
+		drop(channel, "anvil:ping", ChatDropReason.NO_PLAYER);
 
 		IllegalStateException failure = assertThrows(IllegalStateException.class, () -> messages.received("pong", TIMEOUT));
 
-		assertEquals("Player did not receive a message containing 'pong'", failure.getMessage());
+		assertEquals("Player did not see a message containing 'pong' in chat", failure.getMessage());
 	}
 
 	@Test
-	void watchesOnlyMessagesReceivedSinceItAndContinuesAfterEachMatch() {
+	void watchesOnlyMessagesShownSinceItAndContinuesAfterEachMatch() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelMessages messages = new ChannelMessages(channel);
-		channel.publish(MessagesChannel.RECEIVED, new MessageText("Use /login"));
+		show(channel, 0, "Use /login");
 		MessageWatch chat = messages.watch();
 
-		assertEquals("Player did not receive a matching message", assertThrows(IllegalStateException.class,
+		assertEquals("Player did not see a matching message in chat", assertThrows(IllegalStateException.class,
 				() -> chat.received("/login", TIMEOUT)).getMessage());
 
-		channel.publish(MessagesChannel.RECEIVED, new MessageText("Invalid password"));
-		channel.publish(MessagesChannel.RECEIVED, new MessageText("Use /login"));
-		channel.publish(MessagesChannel.RECEIVED, new MessageText("Use /login"));
+		show(channel, 1, "Invalid password");
+		show(channel, 2, "Use /login");
+		show(channel, 3, "Use /login");
+		channel.publish(MessagesChannel.CHAT_DELETED, 3L);
 		assertEquals(List.of("Invalid password", "Use /login", "Use /login"), chat.unread());
 		assertEquals("Use /login", chat.received("/login", TIMEOUT));
 		assertEquals(List.of("Use /login"), chat.unread());
@@ -129,34 +133,72 @@ class ChannelMessagesTest {
 	void expectsAMatchingMessageOnlySinceTheWatchStarted() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelMessages messages = new ChannelMessages(channel);
-		channel.publish(MessagesChannel.RECEIVED, new MessageText("Invalid code"));
+		show(channel, 0, "Invalid code");
 		MessageWatch chat = messages.watch();
 		Expectation invalid = chat.expectReceived(text -> text.contains("Invalid code"));
 
 		assertFalse(invalid.met());
-		assertEquals("receive a matching message", invalid.getDescription());
+		assertEquals("see a matching message in chat", invalid.getDescription());
 
-		channel.publish(MessagesChannel.RECEIVED, new MessageText("Invalid code"));
+		show(channel, 1, "Invalid code");
 		assertTrue(invalid.met());
 		assertEquals("Invalid code", chat.received(text -> text.contains("Invalid code"), TIMEOUT));
 	}
 
 	@Test
-	void failsWhenAForbiddenMessageArrivesSinceThePreviousWaitOnly() {
+	void failsWhenTheChatShowsAForbiddenMessageSinceThePreviousWaitOnly() {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelMessages messages = new ChannelMessages(channel);
-		channel.publish(MessagesChannel.RECEIVED, new MessageText("Invalid password."));
+		show(channel, 0, "Invalid password.");
 		MessageWatch chat = messages.watch();
 
+		drop(channel, "Invalid password.", ChatDropReason.NO_PLAYER);
 		chat.neverReceived("Invalid", TIMEOUT);
 
-		channel.publish(MessagesChannel.RECEIVED, new MessageText("Invalid password."));
-		assertEquals("Player received a message it must not receive: Invalid password.", assertThrows(IllegalStateException.class,
+		show(channel, 1, "Invalid password.");
+		assertEquals("Player saw a message in chat it must not see: Invalid password.", assertThrows(IllegalStateException.class,
 				() -> chat.neverReceived("Invalid", TIMEOUT)).getMessage());
 
-		channel.publish(MessagesChannel.RECEIVED, new MessageText("Welcome back"));
+		show(channel, 2, "Welcome back");
 		chat.received("Welcome", TIMEOUT);
 		chat.neverReceived("Invalid", TIMEOUT);
+	}
+
+	@Test
+	void namesTheMatchingMessagesTheChatLeftOutWhenAWaitFails() {
+		RecordingChannel channel = new RecordingChannel();
+		ChannelMessages messages = new ChannelMessages(channel);
+		drop(channel, "Use /login", ChatDropReason.NO_PLAYER);
+		MessageWatch chat = messages.watch();
+		drop(channel, "Use /register", ChatDropReason.NO_PLAYER);
+		drop(channel, "hidden /register", ChatDropReason.FULLY_FILTERED);
+		drop(channel, "unrelated", ChatDropReason.NO_PLAYER);
+
+		assertEquals("""
+				Player did not see a matching message in chat
+				The chat left out matching messages that reached the client: 'Use /register' (the client had no player), \
+				'hidden /register' (the server's filter hid it)""", assertThrows(IllegalStateException.class,
+				() -> chat.received("/register", TIMEOUT)).getMessage());
+		assertEquals("Player did not see a matching message in chat", assertThrows(IllegalStateException.class,
+				() -> chat.received("/login", TIMEOUT)).getMessage());
+		assertEquals("""
+				Player did not see a message containing '/login' in chat
+				The chat left out matching messages that reached the client: 'Use /login' (the client had no player)""",
+				assertThrows(IllegalStateException.class, () -> messages.received("/login", TIMEOUT)).getMessage());
+
+		show(channel, 0, "Use /register");
+		chat.received("/register", TIMEOUT);
+		assertEquals("Player did not see a matching message in chat", assertThrows(IllegalStateException.class,
+				() -> chat.received("/register", TIMEOUT)).getMessage());
+		assertEquals(List.of("Use /register"), messages.history());
+	}
+
+	private static void show(RecordingChannel channel, long id, String text) {
+		channel.publish(MessagesChannel.CHAT_ADDED, new ChatMessage(id, text));
+	}
+
+	private static void drop(RecordingChannel channel, String text, ChatDropReason reason) {
+		channel.publish(MessagesChannel.CHAT_DROPPED, new DroppedChat(text, reason));
 	}
 
 	/**

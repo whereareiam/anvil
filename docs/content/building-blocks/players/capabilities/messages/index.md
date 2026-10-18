@@ -1,9 +1,10 @@
 ---
 title: Messages
-description: Send player chat or commands, await a matching message in captured history, and check what the chat still shows.
+description: Send player chat or commands, await a message the player's chat shows, and check what the chat still holds.
 ---
 
-`Messages` sends chat and commands as the connected player and captures received plain text. Install
+`Messages` sends chat and commands as the connected player and records, as plain text, the chat messages the
+player sees. Install
 the messages unit and its Session dependency, or explicitly select the default capability unit.
 
 ## Send and await a response
@@ -16,7 +17,7 @@ import me.whereareiam.anvil.capability.messages.Messages;
 import java.time.Duration;
 ```
 
-Send a message through the server console and wait for the player to receive it:
+Send a message through the server console and wait for the player's chat to show it:
 
 ```java
 Messages messages = alice.capability(Messages.class);
@@ -30,12 +31,13 @@ the reply it documents. Commands accept either a leading slash or no slash. Publ
 protocol has no command packet, so the server runs a `chat` text that starts with `/` as a command;
 use `command(...)` whenever you mean a command, so the step behaves the same on every version.
 
-## Read received text
+## Read what the chat showed
 
-Each received chat message becomes one plain-text history entry: player chat, system messages and, on
-Minecraft 1.19.4 and later, disguised chat such as `say` from the console. Action-bar text that the
-server sends as chat is included too: the game-info chat type before Minecraft 1.19 and overlay system
-chat from 1.19. Titles and text sent through the separate title or action-bar packets are not recorded;
+Each chat message the player's chat shows becomes one plain-text history entry: player chat, system
+messages and, on Minecraft 1.19.4 and later, disguised chat such as `say` from the console. The history
+follows the vanilla client's chat, so a message the client drops is not part of it, such as one that
+arrives while the client still configures; a [failed wait names those](#inspect-failures).
+Action-bar text is not chat, even when the server sends it as chat, and neither are titles;
 [Screen](../screen/index.md) records them.
 
 Plain text joins every part of the message in order, because the client's language file is not
@@ -57,7 +59,7 @@ would add.
 
 ## Match the intended operation
 
-`received(text)` matches messages containing the supplied text. It searches captured history, so a
+`received(text)` matches messages containing the supplied text. It searches the whole history, so a
 message received before the current operation can satisfy the wait. The bundled implementation keeps
 that history across reconnects of the same player.
 
@@ -65,11 +67,11 @@ When an action repeats, [watch the messages](#watch-what-arrives-next) so that a
 cannot satisfy the wait. For console assertions that must ignore earlier output, use a
 [console watch](../../../../workflows/testing/assertions/index.md).
 
-## Watch what arrives next
+## Watch what the chat shows next
 
 When a text repeats, such as a prompt shown again after a reconnect, start a watch before the action. A watch
-sees only the messages received after it was created, and each wait continues after the message the previous
-one found:
+sees only the messages the chat showed after it was created, and each wait continues after the message the
+previous one found:
 
 ```java
 MessageWatch chat = messages.watch();
@@ -79,12 +81,12 @@ String welcome = chat.received("Welcome back", Duration.ofSeconds(10));
 
 `received` also takes any predicate on the message's plain text, so one wait can require several texts in one
 message or accept alternatives: `chat.received(text -> text.contains("Welcome") && text.contains("Alice"), timeout)`.
-Import `me.whereareiam.anvil.capability.messages.MessageWatch`. `unread()` lists the messages received since
+Import `me.whereareiam.anvil.capability.messages.MessageWatch`. `unread()` lists the messages shown since
 the previous wait without moving the watch. Several watches on one player are independent.
 
 ## Expect that a message does not arrive
 
-`neverReceived(...)` watches for a duration and fails as soon as a matching message has arrived since the
+`neverReceived(...)` watches for a duration and fails as soon as the chat has shown a matching message since the
 previous wait, naming it:
 
 ```java
@@ -102,7 +104,7 @@ shortest duration in which the server would have sent the message.
 
 ## Check what the chat still shows
 
-The history keeps everything that arrived. `chatLines()` instead models the chat a vanilla client keeps, so you
+The history keeps every message the chat showed. `chatLines()` models what the chat still holds of them, so you
 can check what the player could still find by scrolling up, such as whether a plugin's clear-chat command pushed
 earlier messages out:
 
@@ -120,6 +122,7 @@ contains the text. It follows the client's rules, which are the same on every su
 | The client | The model |
 |---|---|
 | Adds system messages, player chat and disguised chat | Adds the same, and never action-bar text or player chat the server's text filter hides completely |
+| Adds a message only while it has a player: from the server's login until a proxy returns it to configuration | Does the same, so a message that arrives before the login, such as while the client configures, is in the history but not in the chat |
 | Splits each message at its line breaks, then wraps each part at the chat's width | Splits at line breaks, so `"a\n"` is two lines and an empty message is one blank line; it cannot wrap |
 | Keeps the newest 100 lines (`ChatLines.MAX_LINES`), rebuilt from the newest 100 messages | Keeps the same |
 | Replaces a message the server deletes (Minecraft 1.19.1 and later) with `chat.deleted_marker` once it is three seconds old | Replaces it at once, with the marker's translation key as its text |
@@ -140,7 +143,17 @@ counts with its whole text.
 
 ## Inspect failures
 
-`history()` returns an immutable snapshot without waiting. Include relevant received text in a failed
+`history()` returns an immutable snapshot of what the chat showed, without waiting. Include it in a failed
 assertion to see whether the command was rejected, the plugin returned another response, or no response
-arrived. Check that the player is connected and has the application's required permissions before
+was shown.
+
+When a wait fails, its message also names the matching messages that reached the client but that the chat
+left out, with the reason: the client had no player yet, as for a message a proxy sends while the client
+still configures, or the server's filter hid it. So a failure tells a message the server never sent from
+one the player could not see:
+
+```text
+Player did not see a matching message in chat
+The chat left out matching messages that reached the client: 'Please register' (the client had no player)
+``` Check that the player is connected and has the application's required permissions before
 increasing the timeout.

@@ -3,14 +3,15 @@ package me.whereareiam.anvil.capability.messages.channel;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.capability.messages.model.ChatMessage;
+import me.whereareiam.anvil.capability.messages.model.DroppedChat;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 
 /**
  * The channel contract between the host messages capability and its worker extensions: the capability ID both
- * register under, the operations the host requests and the events the worker emits: every received message for the
- * history, and what the client's chat does with them.
+ * register under, the operations the host requests and the events the worker emits: what the client's chat does with
+ * the chat messages that reach it.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class MessagesChannel {
@@ -31,16 +32,17 @@ public final class MessagesChannel {
 			"messages.command", MessageText.class, Void.class
 	);
 	/**
-	 * A message the player's current connection received, as plain text.
-	 */
-	public static final EventDescriptor<MessageText> RECEIVED = new EventDescriptor<>(
-			"messages.received", MessageText.class
-	);
-	/**
-	 * A message the client adds to its chat; action-bar text and fully filtered player chat never are.
+	 * A message the client adds to its chat; fully filtered player chat and messages that arrive while the client has no
+	 * player never are.
 	 */
 	public static final EventDescriptor<ChatMessage> CHAT_ADDED = new EventDescriptor<>(
 			"messages.chat-added", ChatMessage.class
+	);
+	/**
+	 * A chat message that reached the client but that its chat left out, with the reason.
+	 */
+	public static final EventDescriptor<DroppedChat> CHAT_DROPPED = new EventDescriptor<>(
+			"messages.chat-dropped", DroppedChat.class
 	);
 	/**
 	 * The server deleted the chat message with this identity, which the client replaces with its deleted marker.

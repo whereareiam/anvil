@@ -50,9 +50,9 @@ actionBar.shown("+1 follower", Duration.ofSeconds(10));
 ```
 
 Import `me.whereareiam.anvil.capability.screen.ActionBarWatch`. The action-bar history holds the text a
-server sends through the action-bar packet, which the vanilla `title <player> actionbar` command uses.
-Action-bar text sent as chat, which is game-info chat before Minecraft 1.19 and overlay system chat from
-1.19, reaches [Messages](../messages/index.md) instead; check how your platform's API sends it.
+server sends through the action-bar packet, which the vanilla `title <player> actionbar` command uses, and
+the action-bar text it sends as chat, which is game-info chat before Minecraft 1.19 and overlay system chat
+from 1.19. Either way it is an action bar, never part of [Messages](../messages/index.md).
 
 ## Follow a boss bar
 

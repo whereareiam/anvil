@@ -9,9 +9,10 @@ import java.util.List;
 import java.util.function.Predicate;
 
 /**
- * Follows the messages a player receives from the moment the watch was created. Each wait continues after the
- * message the previous one found, so a text that repeats, such as a prompt shown again after a wrong answer, is
- * matched once per wait and never by an occurrence from before the watch.
+ * Follows the messages a player's chat shows from the moment the watch was created. Each wait continues after the
+ * message the previous one found, so a text that repeats, such as a prompt shown again after a wrong answer, is matched
+ * once per wait and never by an occurrence from before the watch. A wait that fails names the matching messages the
+ * chat left out since the previous wait, such as one that arrived while the client had no player.
  *
  * <pre>{@code
  * MessageWatch chat = messages.watch();

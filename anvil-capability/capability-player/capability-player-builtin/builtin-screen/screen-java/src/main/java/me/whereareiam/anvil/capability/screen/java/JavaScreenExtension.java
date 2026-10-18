@@ -7,6 +7,7 @@ import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundBossEvent;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundClearTitles;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetActionBarText;
@@ -20,8 +21,9 @@ import java.util.function.LongSupplier;
 
 /**
  * Installs the built-in screen capability for players that speak the Java Edition protocol: it emits each title the
- * player's current connection shows, through {@link ClientTitles}, each action bar it receives, and each change of its
- * boss bars, through {@link ClientBossBars}. Each connection starts without a title and without boss bars, and the
+ * player's current connection shows, through {@link ClientTitles}, each action bar it receives, whether through the
+ * action-bar packet or as a system message shown as an overlay, and each change of its boss bars, through
+ * {@link ClientBossBars}. Each connection starts without a title and without boss bars, and the
  * bars still shown when it ends are emitted as removed. The screen registers no operations.
  */
 public final class JavaScreenExtension implements WorkerExtension<Object> {
@@ -65,6 +67,9 @@ public final class JavaScreenExtension implements WorkerExtension<Object> {
 				protocol.listen(ClientboundClearTitles.class, packet -> titles.get().cleared(packet)),
 				protocol.listen(ClientboundSetActionBarText.class, packet ->
 						player.emit(ScreenChannel.ACTION_BAR, packet.getText())),
+				protocol.listen(ClientboundSystemChat.class, packet -> {
+					if (packet.isOverlay()) player.emit(ScreenChannel.ACTION_BAR, packet.getText());
+				}),
 				protocol.listen(ClientboundBossEvent.class, bossBars::apply),
 				bossBars::discard,
 				connections

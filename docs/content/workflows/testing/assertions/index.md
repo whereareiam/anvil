@@ -13,7 +13,7 @@ command, and requesting an interaction do not imply their server-side effects ha
 | Native login completed | `Session.connected()` |
 | Current session disconnected | `Session.disconnected()` |
 | Server kicked the session with a reason | `Session.kicked()` |
-| Player received text | `Messages.received(text)` |
+| Player's chat showed text | `Messages.received(text)` |
 | Player joined a server or proxy | `PlayerWatch.joined(player)` on that process's `Players.watch()` |
 | Player left a server or proxy | `PlayerWatch.left(player)` |
 | Proxy connected the player to a backend | `PlayerWatch.joined(player, backend)` on the proxy's `Players.watch()` |
@@ -48,7 +48,7 @@ if (outcome == 1) assertTrue(session.kicked().contains("Reconnect"));
 
 | Expectation | Met when |
 | --- | --- |
-| `MessageWatch.expectReceived(matcher)` | a message received since the watch's previous wait matches |
+| `MessageWatch.expectReceived(matcher)` | a message the chat showed since the watch's previous wait matches |
 | `DialogWatch.expectShown(matcher)` | a dialog shown since the watch's previous wait matches |
 | `CookieWatch.expectRequested(key)` | the server asked for the cookie since the watch's previous wait |
 | `TitleWatch.expectShown(matcher)`, `ActionBarWatch.expectShown(matcher)` | a title or action bar shown since the watch's previous wait matches |
@@ -84,7 +84,7 @@ belongs to one process console; watch the new console after a
 
 ## Avoid old messages satisfying new steps
 
-`Messages.received(text)` searches captured history. If you send the same command twice and wait for
+`Messages.received(text)` searches the whole history of the chat. If you send the same command twice and wait for
 the same text, the first reply can satisfy both waits. Use a unique request/response token, a state
 change your application exposes, or a new player where a fresh history fits the journey.
 
