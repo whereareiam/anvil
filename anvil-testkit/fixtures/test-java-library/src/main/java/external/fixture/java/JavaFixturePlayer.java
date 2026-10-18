@@ -1,5 +1,6 @@
 package external.fixture.java;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
@@ -193,6 +194,11 @@ final class JavaFixturePlayer implements ProtocolPlayer, PlayerBindingContext<Ob
 	@Override
 	public <P> @NotNull P adapter(@NotNull Class<P> port) {
 		throw new ProtocolUnavailableException("the " + JavaFixtureLibraryProvider.ID + " library has no segments");
+	}
+
+	@Override
+	public @NotNull MinecraftVersion minecraftVersion() {
+		return request.getClientVersion();
 	}
 
 	@Override

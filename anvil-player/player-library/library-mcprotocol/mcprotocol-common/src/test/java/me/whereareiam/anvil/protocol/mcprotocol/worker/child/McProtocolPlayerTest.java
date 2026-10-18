@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
@@ -81,6 +82,19 @@ class McProtocolPlayerTest {
 			assertEquals("127.0.0.2", login.getConnection().getSourceAddress());
 			assertFalse(login.toString().contains("token"));
 			assertSame(client.sessions().getFirst(), player.nativeSession());
+		}
+	}
+
+	@Test
+	void namesTheClientVersionTheHostCreatedThePlayerForToItsBindings() {
+		List<MinecraftVersion> versions = new ArrayList<>();
+		WorkerExtension<Object> reading = extension("reading", (player, operations) -> {
+			versions.add(player.minecraftVersion());
+			return () -> { };
+		});
+
+		try (McProtocolPlayer ignored = player(null, reading)) {
+			assertEquals(List.of(MinecraftVersion.parse("1.21.11")), versions);
 		}
 	}
 
@@ -318,6 +332,7 @@ class McProtocolPlayerTest {
 	private McProtocolPlayer player(String accessToken, WorkerExtension<?>... extensions) {
 		var options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder().name("Alice").uniqueId(uuid).build())
+				.clientVersion("1.21.11")
 				.credentials(accessToken == null ? null : WorkerCredentials.builder().accessToken(accessToken).build())
 				.connection(WorkerConnection.builder().host("localhost").port(25565)
 						.virtualHost("lobby.example.test").sourceAddress("127.0.0.2").build())

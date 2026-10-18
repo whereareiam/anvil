@@ -85,6 +85,7 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 						.name(requested.getUsername())
 						.uniqueId(requested.getUniqueId())
 						.build())
+				.clientVersion(request.getClientVersion().toString())
 				.credentials(authentication == null ? null : WorkerCredentials.builder()
 						.accessToken(authentication.getAccessToken())
 						.sessionServer(authentication.getSessionServer())

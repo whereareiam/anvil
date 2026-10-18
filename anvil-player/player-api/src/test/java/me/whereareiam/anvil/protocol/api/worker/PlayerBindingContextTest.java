@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.api.worker;
 
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
 import org.jetbrains.annotations.NotNull;
@@ -14,6 +15,7 @@ import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class PlayerBindingContextTest {
 	@Test
@@ -32,6 +34,14 @@ class PlayerBindingContextTest {
 		assertEquals(List.of("opened", "ended", "opened"), events);
 		assertEquals(List.of("first", "second"), player.sessions);
 		assertFalse(player.bound);
+	}
+
+	@Test
+	void namesNoClientVersionOutsideALibraryWorker() {
+		ProtocolUnavailableException failure = assertThrows(ProtocolUnavailableException.class,
+				() -> new RecordingContext().minecraftVersion());
+
+		assertEquals("This player binding context has no client version", failure.getMessage());
 	}
 
 	/**

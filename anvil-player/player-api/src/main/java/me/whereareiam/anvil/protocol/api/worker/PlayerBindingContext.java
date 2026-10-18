@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.api.worker;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
@@ -174,5 +175,27 @@ public interface PlayerBindingContext<S> {
 	 */
 	default <P> @NotNull P adapter(@NotNull Class<P> port) {
 		throw new ProtocolUnavailableException("This player binding context provides no adapter for " + port.getName());
+	}
+
+	/**
+	 * Returns the Minecraft version of the player's client, the one the player was created for, which the host's
+	 * capability context names as its client version. A binding looks up what differs between versions by it, such
+	 * as the block data of the version or how its client moves.
+	 *
+	 * <pre>{@code
+	 * public WorkerBinding bind(PlayerBindingContext<Object> player, OperationRegistry operations) {
+	 *     boolean playerInput = player.minecraftVersion().isAtLeast(MinecraftVersion.parse("1.21.2"));
+	 *     ...
+	 * }
+	 * }</pre>
+	 *
+	 * <p>A context outside a library worker, such as a test double, has no client; this default reports that.</p>
+	 *
+	 * @return the client's Minecraft version
+	 * @throws ProtocolUnavailableException when the context has no client version; the worker reports the
+	 * binding's capability as unavailable with the exception's message
+	 */
+	default @NotNull MinecraftVersion minecraftVersion() {
+		throw new ProtocolUnavailableException("This player binding context has no client version");
 	}
 }

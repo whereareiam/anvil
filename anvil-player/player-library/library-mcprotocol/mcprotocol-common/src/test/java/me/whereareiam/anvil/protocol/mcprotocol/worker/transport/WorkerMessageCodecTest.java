@@ -63,6 +63,7 @@ class WorkerMessageCodecTest {
 	void carriesCredentialsPrivatelyWithoutIncludingThemInModelDiagnostics() {
 		var options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder().name("Alice").uniqueId(UUID.randomUUID()).build())
+				.clientVersion("1.21.11")
 				.credentials(WorkerCredentials.builder().accessToken("private-token").build())
 				.connection(WorkerConnection.builder().host("localhost").port(25565)
 						.virtualHost("lobby.example.test").sourceAddress("127.0.0.2").build())

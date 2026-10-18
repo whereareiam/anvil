@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.experimental.Accessors;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
@@ -238,6 +239,11 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	@Override
 	public <P> @NotNull P adapter(@NotNull Class<P> port) {
 		return segments.adapter(port);
+	}
+
+	@Override
+	public @NotNull MinecraftVersion minecraftVersion() {
+		return MinecraftVersion.parse(options.getClientVersion());
 	}
 
 	@Override
