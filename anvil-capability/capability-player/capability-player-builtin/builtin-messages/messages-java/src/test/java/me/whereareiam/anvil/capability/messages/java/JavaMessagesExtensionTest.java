@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.capability.messages.java;
 
 import me.whereareiam.anvil.capability.messages.channel.MessagesChannel;
+import me.whereareiam.anvil.capability.messages.model.ChatMessage;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
@@ -11,14 +12,19 @@ import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.model.chat.MessageSignature;
+import me.whereareiam.anvil.protocol.java.api.model.chat.PackedMessageSignature;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundDeleteChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundDisguisedChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundPlayerChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
+import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.protocol.java.api.type.FilterMaskType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -34,10 +40,12 @@ import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JavaMessagesExtensionTest {
+	private static final MessageSignature FIRST = signature(1);
+	private static final MessageSignature SECOND = signature(2);
+
 	private final JavaMessagesExtension extension = new JavaMessagesExtension();
 
 	@Test
@@ -68,15 +76,100 @@ class JavaMessagesExtensionTest {
 				new MessageText("anvil:action-bar"),
 				new MessageText("decorated hello"),
 				new MessageText("journey-ready-1")
-		), player.emitted);
+		), player.payloads(MessagesChannel.RECEIVED));
 	}
 
 	@Test
-	void leavesDisguisedChatAloneOnAReleaseWithoutIt() {
+	void addsChatMessagesButNeitherOverlaysNorFullyFilteredPlayerChat() {
+		RecordingProtocol protocol = new RecordingProtocol(true);
+		RecordingPlayer player = new RecordingPlayer(protocol);
+		extension.bind(player, new RecordingOperations());
+
+		protocol.deliver(new ClientboundSystemChat("welcome", false));
+		protocol.deliver(new ClientboundSystemChat("anvil:action-bar", true));
+		protocol.deliver(new ClientboundPlayerChat("hidden", FilterMaskType.FULLY_FILTERED, null, List.of()));
+		protocol.deliver(ClientboundPlayerChat.unsigned("hello"));
+		protocol.deliver(new ClientboundDisguisedChat("journey-ready-1"));
+
+		assertEquals(List.of(new ChatMessage(0, "welcome"), new ChatMessage(1, "hello"), new ChatMessage(2, "journey-ready-1")),
+				player.payloads(MessagesChannel.CHAT_ADDED));
+	}
+
+	@Test
+	void clearsTheChatWhenANewConnectionStarts() {
+		RecordingProtocol protocol = new RecordingProtocol(true);
+		RecordingPlayer player = new RecordingPlayer(protocol);
+		extension.bind(player, new RecordingOperations());
+
+		player.startConnection();
+		protocol.deliver(new ClientboundSystemChat("welcome", false));
+		player.startConnection();
+
+		assertEquals(List.of("messages.chat-cleared", "messages.received", "messages.chat-added", "messages.chat-cleared"),
+				player.events);
+	}
+
+	@Test
+	void deletesAShownMessageByItsWholeSignature() {
+		RecordingProtocol protocol = new RecordingProtocol(true);
+		RecordingPlayer player = new RecordingPlayer(protocol);
+		extension.bind(player, new RecordingOperations());
+
+		protocol.deliver(signed("first", FIRST));
+		protocol.deliver(signed("second", SECOND));
+		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.full(SECOND)));
+
+		assertEquals(List.of(1L), player.payloads(MessagesChannel.CHAT_DELETED));
+	}
+
+	@Test
+	void unpacksADeletionByTheIndexTheMessagesPushedIntoTheSignatureCache() {
+		RecordingProtocol protocol = new RecordingProtocol(true);
+		RecordingPlayer player = new RecordingPlayer(protocol);
+		extension.bind(player, new RecordingOperations());
+
+		protocol.deliver(signed("first", FIRST));
+		protocol.deliver(new ClientboundPlayerChat("second", FilterMaskType.PASS_THROUGH, SECOND,
+				List.of(PackedMessageSignature.cached(0))));
+		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.cached(1)));
+
+		assertEquals(List.of(0L), player.payloads(MessagesChannel.CHAT_DELETED));
+	}
+
+	@Test
+	void startsANewSignatureCacheWithEveryLoginButKeepsTheShownMessages() {
+		RecordingProtocol protocol = new RecordingProtocol(true);
+		RecordingPlayer player = new RecordingPlayer(protocol);
+		extension.bind(player, new RecordingOperations());
+
+		protocol.deliver(signed("first", FIRST));
+		protocol.deliver(new ClientboundLogin(7));
+		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.cached(0)));
+		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.full(FIRST)));
+
+		assertEquals(List.of(0L), player.payloads(MessagesChannel.CHAT_DELETED));
+	}
+
+	@Test
+	void ignoresDeletionsOfMessagesTheChatNeverShowed() {
+		RecordingProtocol protocol = new RecordingProtocol(true);
+		RecordingPlayer player = new RecordingPlayer(protocol);
+		extension.bind(player, new RecordingOperations());
+
+		protocol.deliver(new ClientboundPlayerChat("hidden", FilterMaskType.FULLY_FILTERED, FIRST, List.of()));
+		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.full(FIRST)));
+		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.full(SECOND)));
+
+		assertEquals(List.of(), player.payloads(MessagesChannel.CHAT_DELETED));
+	}
+
+	@Test
+	void leavesDisguisedChatAndDeletionsAloneOnAReleaseWithoutThem() {
 		RecordingProtocol protocol = new RecordingProtocol(false);
 		extension.bind(new RecordingPlayer(protocol), new RecordingOperations());
 
-		assertEquals(Set.of(ClientboundSystemChat.class, ClientboundPlayerChat.class), protocol.listeners.keySet());
+		assertEquals(Set.of(ClientboundLogin.class, ClientboundSystemChat.class, ClientboundPlayerChat.class),
+				protocol.listeners.keySet());
 	}
 
 	@Test
@@ -87,9 +180,10 @@ class JavaMessagesExtensionTest {
 
 		binding.close();
 		protocol.deliver(new ClientboundSystemChat("after close", false));
+		player.startConnection();
 
 		assertEquals(Map.of(), protocol.listeners);
-		assertEquals(List.of(), player.emitted);
+		assertEquals(List.of(), player.events);
 	}
 
 	@Test
@@ -99,16 +193,27 @@ class JavaMessagesExtensionTest {
 		assertThrows(ProtocolUnavailableException.class, () -> extension.bind(player, new RecordingOperations()));
 	}
 
+	private static ClientboundPlayerChat signed(String text, MessageSignature signature) {
+		return new ClientboundPlayerChat(text, FilterMaskType.PASS_THROUGH, signature, List.of());
+	}
+
+	private static MessageSignature signature(int seed) {
+		byte[] bytes = new byte[256];
+		bytes[0] = (byte) seed;
+
+		return new MessageSignature(bytes);
+	}
+
 	/**
 	 * Records sent packets and hands delivered packets to the listener of their class.
 	 */
 	private static final class RecordingProtocol implements JavaProtocol {
-		private final boolean disguisedChat;
+		private final boolean signedChat;
 		private final List<ServerboundPacket> sent = new ArrayList<>();
 		private final Map<Class<?>, Consumer<Object>> listeners = new LinkedHashMap<>();
 
-		private RecordingProtocol(boolean disguisedChat) {
-			this.disguisedChat = disguisedChat;
+		private RecordingProtocol(boolean signedChat) {
+			this.signedChat = signedChat;
 		}
 
 		@Override
@@ -135,7 +240,7 @@ class JavaMessagesExtensionTest {
 
 		@Override
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
-			return disguisedChat || type != ClientboundDisguisedChat.class;
+			return signedChat || type != ClientboundDisguisedChat.class && type != ClientboundDeleteChat.class;
 		}
 
 		private void deliver(ClientboundPacket packet) {
@@ -159,14 +264,30 @@ class JavaMessagesExtensionTest {
 	}
 
 	/**
-	 * A player that speaks the given protocol, or none, and records what the binding emits.
+	 * A player that speaks the given protocol, or none, and records what the binding emits;
+	 * {@link #startConnection()} runs the connection listener as the worker does before a new session connects.
 	 */
 	private static final class RecordingPlayer implements PlayerBindingContext<Object> {
 		private final @Nullable JavaProtocol protocol;
-		private final List<MessageText> emitted = new ArrayList<>();
+		private final List<String> events = new ArrayList<>();
+		private final List<Object> payloads = new ArrayList<>();
+		private @Nullable Function<Object, Subscription> connections;
 
 		private RecordingPlayer(@Nullable JavaProtocol protocol) {
 			this.protocol = protocol;
+		}
+
+		private void startConnection() {
+			if (connections != null) connections.apply(new Object());
+		}
+
+		private <E> List<E> payloads(EventDescriptor<E> event) {
+			List<E> matching = new ArrayList<>();
+			for (int index = 0; index < events.size(); index++) {
+				if (events.get(index).equals(event.getId())) matching.add(event.getPayloadType().cast(payloads.get(index)));
+			}
+
+			return matching;
 		}
 
 		@Override
@@ -213,7 +334,8 @@ class JavaMessagesExtensionTest {
 
 		@Override
 		public @NotNull Subscription bindNativeSession(@NotNull Function<Object, Subscription> listener) {
-			throw new AssertionError("Messages use the protocol, not the native session");
+			connections = listener;
+			return () -> connections = null;
 		}
 
 		@Override
@@ -228,8 +350,8 @@ class JavaMessagesExtensionTest {
 
 		@Override
 		public <E> void emit(@NotNull EventDescriptor<E> event, @Nullable E payload) {
-			assertSame(MessagesChannel.RECEIVED, event);
-			emitted.add((MessageText) payload);
+			events.add(event.getId());
+			payloads.add(payload);
 		}
 	}
 }

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.api.history.HistoryCursor;
 import me.whereareiam.anvil.capability.messages.channel.MessagesChannel;
+import me.whereareiam.anvil.capability.messages.model.ChatLines;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
@@ -16,16 +17,22 @@ import java.util.function.Predicate;
 
 /**
  * Messages capability driven over a player's typed channel: chat and commands go to the worker's messages binding,
- * and every received-message event the worker emits is kept in the player's history, across reconnects. The
- * channel releases the event subscription together with the player.
+ * and every received-message event the worker emits is kept in the player's history, across reconnects. What the
+ * worker reports of the client's chat, the messages it adds, the server's deletions and the empty chat of a new
+ * connection, is kept in a {@link ChatBuffer}. The channel releases the event subscriptions together with the
+ * player.
  */
 final class ChannelMessages implements Messages {
 	private final ProtocolChannel channel;
 	private final CopyOnWriteArrayList<String> history = new CopyOnWriteArrayList<>();
+	private final ChatBuffer chat = new ChatBuffer();
 
 	ChannelMessages(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
 		channel.subscribe(MessagesChannel.RECEIVED, message -> history.add(message.getText()));
+		channel.subscribe(MessagesChannel.CHAT_ADDED, message -> chat.add(message.getId(), message.getText()));
+		channel.subscribe(MessagesChannel.CHAT_DELETED, chat::delete);
+		channel.subscribe(MessagesChannel.CHAT_CLEARED, ignored -> chat.clear());
 	}
 
 	@Override
@@ -52,6 +59,11 @@ final class ChannelMessages implements Messages {
 				.filter(message -> message.contains(text))
 				.findFirst()
 				.orElseThrow();
+	}
+
+	@Override
+	public @NotNull ChatLines chatLines() {
+		return chat.lines();
 	}
 
 	@Override

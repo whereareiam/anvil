@@ -43,7 +43,8 @@ class MessagesProviderTest {
 	void observesReceivedMessagesAndSendsThroughThePlayersChannelWithoutRequestingOnCreation() {
 		RecordingChannel channel = new RecordingChannel();
 		Messages messages = new MessagesProvider().create(new ChannelContext(channel));
-		assertEquals(List.of(MessagesChannel.RECEIVED.getId()), channel.subscriptions);
+		assertEquals(List.of(MessagesChannel.RECEIVED.getId(), MessagesChannel.CHAT_ADDED.getId(),
+				MessagesChannel.CHAT_DELETED.getId(), MessagesChannel.CHAT_CLEARED.getId()), channel.subscriptions);
 		assertTrue(channel.requests.isEmpty());
 
 		messages.chat("hello");

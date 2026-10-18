@@ -1,6 +1,6 @@
 ---
 title: Messages
-description: Send player chat or commands and await a matching message in captured history.
+description: Send player chat or commands, await a matching message in captured history, and check what the chat still shows.
 ---
 
 `Messages` sends chat and commands as the connected player and captures received plain text. Install
@@ -99,6 +99,44 @@ shortest duration in which the server would have sent the message.
 `chat.expectReceived(matcher)` describes the next matching message without waiting. Pass it to
 `player.awaitFirst(...)` together with other expectations when the message is only one correct outcome; see
 [waiting for whichever outcome comes first](../../../../workflows/testing/assertions/index.md#wait-for-whichever-outcome-comes-first).
+
+## Check what the chat still shows
+
+The history keeps everything that arrived. `chatLines()` instead models the chat a vanilla client keeps, so you
+can check what the player could still find by scrolling up, such as whether a plugin's clear-chat command pushed
+earlier messages out:
+
+```java
+MessageWatch chat = messages.watch();
+messages.command("clearchat");
+chat.received("Chat cleared");
+assertFalse(messages.chatLines().contains("secret"));
+```
+
+Import `me.whereareiam.anvil.capability.messages.model.ChatLines` to use its constants. `chatLines()` returns a
+snapshot without waiting: `getLines()` lists the lines oldest first, and `contains(text)` tells whether any line
+contains the text. It follows the client's rules, which are the same on every supported version:
+
+| The client | The model |
+|---|---|
+| Adds system messages, player chat and disguised chat | Adds the same, and never action-bar text or player chat the server's text filter hides completely |
+| Splits each message at its line breaks, then wraps each part at the chat's width | Splits at line breaks, so `"a\n"` is two lines and an empty message is one blank line; it cannot wrap |
+| Keeps the newest 100 lines (`ChatLines.MAX_LINES`), rebuilt from the newest 100 messages | Keeps the same |
+| Replaces a message the server deletes (Minecraft 1.19.1 and later) with `chat.deleted_marker` once it is three seconds old | Replaces it at once, with the marker's translation key as its text |
+| Starts a new connection with an empty chat and keeps it when a proxy returns the player to configuration | Does the same |
+
+Because wrapping only adds lines, the model never keeps fewer old lines than a real client:
+
+- A line missing from `chatLines()` is gone from every vanilla client's chat, however wide. A server that sends
+  100 blank lines leaves nothing older to find.
+- A line `chatLines()` still holds is in the chat of a client wide enough not to wrap the lines after it. A narrow
+  chat or a large chat scale may already have pushed it out, so the model cannot prove that a line is still
+  visible.
+
+The model assumes a client with default chat settings that shows every message it receives. The client also shows
+a validation error instead of a player message it cannot verify, which a server with working chat signing never
+causes. MCProtocolLib cannot read which characters a partially filtered player message hides, so such a message
+counts with its whole text.
 
 ## Inspect failures
 
