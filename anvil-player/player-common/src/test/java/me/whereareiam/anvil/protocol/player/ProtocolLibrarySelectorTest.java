@@ -6,6 +6,7 @@ import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.model.scenario.RemoteEndpoint;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import me.whereareiam.anvil.api.type.SupportPolicy;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
@@ -178,6 +179,31 @@ class ProtocolLibrarySelectorTest {
 	}
 
 	@Test
+	void theVersionOfARemoteSelectsTheLibrariesOfItsPlayersAsAServersDoes() {
+		library("verified", verified());
+		library("old", release("old", "1.20.6", true, false));
+		AnvilScenario remotes = scenario(null, null).toBuilder()
+				.remote(remote("network", "1.20.6"))
+				.remote(remote("invalid", "1.21-pre1"))
+				.build();
+
+		assertEquals(List.of("old"), selector(null, SupportPolicy.LENIENT).scenarioLibraries(remotes));
+		assertEquals(List.of("verified", "old"), selector(null, SupportPolicy.LENIENT).scenarioLibraries(remotes.toBuilder()
+				.server(server("current", Distribution.remote("1.21.11", "1"))).build()));
+	}
+
+	@Test
+	void anUnlaunchableDefaultReleaseOfARemoteWarnsWhileTheScenarioIsPrepared() {
+		String refusal = unpinned();
+
+		selector(null, SupportPolicy.LENIENT).validate(scenario(null, null).toBuilder()
+				.remote(remote("network", VERSION.toString())).build());
+
+		assertEquals(List.of("[Anvil] Warning: scenario 'versions' cannot create players for remote 'network' unless they "
+				+ "declare another protocol library: " + refusal), notices);
+	}
+
+	@Test
 	void unlaunchableDefaultReleasesWarnWhileTheScenarioIsPreparedAndRefuseThePlayersThatSelectThem() {
 		String refusal = unpinned();
 		AnvilScenario scenario = scenario(null, null).toBuilder()
@@ -280,6 +306,10 @@ class ProtocolLibrarySelectorTest {
 
 	private MinecraftServer server(String name, Distribution distribution) {
 		return MinecraftServer.builder().name(name).platform("test").distribution(distribution).build();
+	}
+
+	private RemoteEndpoint remote(String name, String version) {
+		return RemoteEndpoint.builder().name(name).address("play.example.test").minecraftVersion(version).build();
 	}
 
 	private AnvilScenario scenario(@Nullable String library, @Nullable SupportPolicy policy) {

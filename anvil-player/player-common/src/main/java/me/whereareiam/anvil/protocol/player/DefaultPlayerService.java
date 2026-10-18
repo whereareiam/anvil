@@ -14,6 +14,8 @@ import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.player.account.AccountReservations;
 import me.whereareiam.anvil.protocol.player.account.ProtocolAccountManager;
+import me.whereareiam.anvil.protocol.player.remote.DnsLookup;
+import me.whereareiam.anvil.protocol.player.remote.RemoteAddressResolver;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -39,6 +41,7 @@ public final class DefaultPlayerService implements AutoCloseable {
 	private final List<RunningPlayerManager> managers = new CopyOnWriteArrayList<>();
 	// One engine: pools and directly selected accounts of every scenario share these reservations.
 	private final AccountReservations reservations = new AccountReservations();
+	private final RemoteAddressResolver remoteAddresses = new RemoteAddressResolver(new DnsLookup());
 	private final Map<String, List<ProtocolRelease>> releases = new ConcurrentHashMap<>();
 	// Guarded by itself rather than this service, so player creation never waits behind closing managers.
 	private final Map<String, ProtocolLibrary> created = new LinkedHashMap<>();
@@ -86,7 +89,7 @@ public final class DefaultPlayerService implements AutoCloseable {
 
 	/**
 	 * Returns the libraries the scenario's players select when they declare none: the scenario's library,
-	 * else the engine's, else, for the native version of each server, the one library ranked strongest
+	 * else the engine's, else, for the native version of each server and remote, the one library ranked strongest
 	 * whose release the effective support policy permits. Callers validate these libraries before any
 	 * process starts and leave every other library to the first player that selects it.
 	 *
@@ -106,9 +109,9 @@ public final class DefaultPlayerService implements AutoCloseable {
 
 	/**
 	 * Validates the scenario's library declaration before any process starts. A release that players would use by
-	 * default for one of its servers but that cannot be launched, such as one without pinned checksums, prints a
-	 * warning to standard error instead: a scenario that never creates such a player still runs, and creating one
-	 * is refused.
+	 * default for one of its servers or remotes but that cannot be launched, such as one without pinned checksums,
+	 * prints a warning to standard error instead: a scenario that never creates such a player still runs, and
+	 * creating one is refused.
 	 *
 	 * @param scenario scenario about to be prepared
 	 * @throws ScenarioValidationException when the scenario names a library that is not installed
@@ -144,6 +147,7 @@ public final class DefaultPlayerService implements AutoCloseable {
 				managers::remove,
 				accounts,
 				reservations,
+				remoteAddresses,
 				sourceAddressesPreserved
 		);
 		managers.add(manager);

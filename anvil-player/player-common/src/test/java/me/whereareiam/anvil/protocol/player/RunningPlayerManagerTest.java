@@ -14,6 +14,7 @@ import me.whereareiam.anvil.api.model.player.SessionIdentity;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.model.scenario.RemoteEndpoint;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.player.account.AccountPool.AccountLease;
@@ -27,16 +28,20 @@ import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.api.type.ProtocolFeature;
 import me.whereareiam.anvil.protocol.player.account.AccountReservations;
+import me.whereareiam.anvil.protocol.player.remote.RemoteAddressResolver;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,6 +58,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RunningPlayerManagerTest {
+	private final StubLookup lookup = new StubLookup();
+
 	@TempDir
 	Path temporary;
 
@@ -141,7 +148,7 @@ class RunningPlayerManagerTest {
 		StubLibrary library = new StubLibrary();
 		RunningPlayerManager manager = new RunningPlayerManager(scenario(), selector(library), ignored -> library,
 				new StubScenarioProcesses("server", temporary.resolve("server")),
-				composer(), ignored -> { }, List::of, new AccountReservations(), false);
+				composer(), ignored -> { }, List::of, new AccountReservations(), remoteAddresses(), false);
 
 		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create(PlayerOptions.builder()
 				.name("alice").connection(PlayerConnection.builder().sourceAddress("127.0.0.2").build()).build()));
@@ -303,7 +310,7 @@ class RunningPlayerManagerTest {
 		AuthenticationAccount account = new AuthenticationAccount("alice", "test", "Alice", null);
 		RunningPlayerManager manager = new RunningPlayerManager(scenario(), selector(library), ignored -> library,
 				new StubScenarioProcesses("server", temporary.resolve("server")), composer(),
-				ignored -> { }, () -> List.of(account), new AccountReservations(), true);
+				ignored -> { }, () -> List.of(account), new AccountReservations(), remoteAddresses(), true);
 
 		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create(online("alice")));
 		assertEquals("Online player 'alice' requires an online-mode entrypoint; use AuthenticationMode.ON_REQUEST when a "
@@ -429,6 +436,115 @@ class RunningPlayerManagerTest {
 		return onlineManager(selector(library), library, reservations, accounts);
 	}
 
+	@Test
+	void aPlayerJoinsARemoteWhereTheVanillaClientWouldAndAnnouncesItsHost() throws Exception {
+		StubLibrary library = new StubLibrary();
+		lookup.records.put("_minecraft._tcp.example.test", "5 25698 25570 play.example.test.");
+		lookup.addresses.put("play.example.test.", InetAddress.getByAddress("play.example.test.", new byte[]{(byte) 203, 0, 113, 7}));
+		AtomicReference<String> target = new AtomicReference<>();
+		ProtocolPlayerComposer composer = (player, connection, metadata, onDestroyed) -> {
+			target.set(connection.getTarget());
+			return composer().compose(player, connection, metadata, onDestroyed);
+		};
+		RunningPlayerManager manager = manager(remoteScenario("example.test"), library,
+				new StubScenarioProcesses("server", temporary.resolve("server")), composer, ignored -> { });
+
+		SimulatedPlayer alice = manager.create("alice");
+
+		assertEquals("1.21.11", alice.clientVersion());
+		assertEquals("network", target.get());
+		assertEquals("203.0.113.7", library.lastRequest.getConnection().getAddress().getHostString());
+		assertEquals(25570, library.lastRequest.getConnection().getAddress().getPort());
+		assertEquals("play.example.test.", library.lastRequest.getConnection().getVirtualHost());
+		assertNull(library.lastRequest.getConnection().getSourceAddress());
+	}
+
+	@Test
+	void aDeclaredVirtualHostReplacesTheHostARemotePlayerWouldAnnounce() throws Exception {
+		StubLibrary library = new StubLibrary();
+		lookup.addresses.put("example.test", InetAddress.getByAddress("example.test", new byte[]{(byte) 203, 0, 113, 7}));
+		RunningPlayerManager manager = manager(remoteScenario("example.test"), library,
+				new StubScenarioProcesses("server", temporary.resolve("server")), composer(), ignored -> { });
+
+		manager.create(PlayerOptions.builder().name("alice")
+				.connection(PlayerConnection.builder().virtualHost("lobby.example.test").build()).build());
+
+		assertEquals("lobby.example.test", library.lastRequest.getConnection().getVirtualHost());
+		assertEquals(25565, library.lastRequest.getConnection().getAddress().getPort());
+	}
+
+	@Test
+	void aRemotePlayerCannotDeclareASourceAddress() {
+		StubLibrary library = new StubLibrary();
+		RunningPlayerManager manager = manager(remoteScenario("example.test"), library,
+				new StubScenarioProcesses("server", temporary.resolve("server")), composer(), ignored -> { });
+
+		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create(PlayerOptions.builder()
+				.name("alice").connection(PlayerConnection.builder().sourceAddress("127.0.0.2").build()).build()));
+
+		assertEquals("Player 'alice' declares the source address 127.0.0.2, but its target 'network' is a remote that "
+				+ "Anvil does not run; a loopback source address only reaches a process of the scenario. Declare no "
+				+ "source address", refused.getMessage());
+		assertNull(library.lastRequest);
+	}
+
+	@Test
+	void aRemotePlayerMustSpeakTheRemotesVersion() {
+		StubLibrary library = new StubLibrary();
+		RunningPlayerManager manager = manager(remoteScenario("example.test"), library,
+				new StubScenarioProcesses("server", temporary.resolve("server")), composer(), ignored -> { });
+
+		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create(PlayerOptions.builder()
+				.name("alice").clientVersion("1.20.6").build()));
+
+		assertEquals("Native client version '1.20.6' does not match remote 'network' using version '1.21.11'",
+				refused.getMessage());
+	}
+
+	@Test
+	void theLoginOfARemotePlayerDecidesHowItSignsIn() throws Exception {
+		StubLibrary library = new StubLibrary();
+		lookup.addresses.put("example.test", InetAddress.getByAddress("example.test", new byte[]{(byte) 203, 0, 113, 7}));
+		AuthenticationAccount account = new AuthenticationAccount("alice", "test", "Alice", null);
+		RunningPlayerManager manager = new RunningPlayerManager(remoteScenario("example.test"), selector(library),
+				ignored -> library, new StubScenarioProcesses("server", temporary.resolve("server")), composer(),
+				ignored -> { }, () -> List.of(account), new AccountReservations(), remoteAddresses(), true);
+
+		manager.create("bob");
+		assertEquals(AuthenticationMode.OFFLINE, library.lastRequest.getLogin().getAuthentication());
+
+		manager.create(online("alice"));
+		assertEquals(AuthenticationMode.ONLINE, library.lastRequest.getLogin().getAuthentication());
+
+		var missing = assertThrows(ScenarioValidationException.class, () -> manager.create(online("carol")));
+		assertEquals("Authenticated account 'carol' is not available", missing.getMessage());
+	}
+
+	@Test
+	void aRemoteWhoseHostDoesNotResolveRefusesThePlayer() {
+		StubLibrary library = new StubLibrary();
+		RunningPlayerManager manager = manager(remoteScenario("missing.example.test:25570"), library,
+				new StubScenarioProcesses("server", temporary.resolve("server")), composer(), ignored -> { });
+
+		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create("alice"));
+
+		assertEquals("Remote 'network' at 'missing.example.test:25570' cannot be reached: the host "
+				+ "'missing.example.test' does not resolve", refused.getMessage());
+		assertTrue(lookup.queried.isEmpty(), "An explicit port other than 25565 looks no SRV record up");
+	}
+
+	private AnvilScenario remoteScenario(String address) {
+		return AnvilScenario.builder()
+				.name("remote")
+				.entrypoint("network")
+				.remote(RemoteEndpoint.builder().name("network").address(address).minecraftVersion("1.21.11").build())
+				.build();
+	}
+
+	private RemoteAddressResolver remoteAddresses() {
+		return new RemoteAddressResolver(lookup);
+	}
+
 	private RunningPlayerManager onlineManager(
 			ProtocolLibrarySelector selector,
 			StubLibrary library,
@@ -458,7 +574,7 @@ class RunningPlayerManagerTest {
 			library.lastSelectedId = selected;
 			return library;
 		}, new StubScenarioProcesses("server", temporary.resolve("server")), composer(),
-				ignored -> { }, () -> List.of(accounts), reservations, true);
+				ignored -> { }, () -> List.of(accounts), reservations, remoteAddresses(), true);
 	}
 
 	private PlayerOptions online(String accountId) {
@@ -480,7 +596,7 @@ class RunningPlayerManagerTest {
 			Consumer<RunningPlayerManager> onClosed
 	) {
 		return new RunningPlayerManager(scenario, selector(library), ignored -> library, processes,
-				composer, onClosed, List::of, new AccountReservations(), true);
+				composer, onClosed, List::of, new AccountReservations(), remoteAddresses(), true);
 	}
 
 	private static ProtocolRelease release(String libraryVersion, String minecraft) {
@@ -561,6 +677,29 @@ class RunningPlayerManagerTest {
 				onDestroyed.accept(this);
 			}
 		};
+	}
+
+	/**
+	 * Name lookups answering from maps, which records every SRV name it is asked for.
+	 */
+	private static final class StubLookup implements RemoteAddressResolver.Lookup {
+		private final Map<String, String> records = new HashMap<>();
+		private final Map<String, InetAddress> addresses = new HashMap<>();
+		private final List<String> queried = new ArrayList<>();
+
+		@Override
+		public @Nullable String serviceRecord(@NotNull String name) {
+			queried.add(name);
+			return records.get(name);
+		}
+
+		@Override
+		public @NotNull InetAddress address(@NotNull String host) throws UnknownHostException {
+			InetAddress address = addresses.get(host);
+			if (address == null) throw new UnknownHostException(host);
+
+			return address;
+		}
 	}
 
 	/**

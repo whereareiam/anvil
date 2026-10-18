@@ -5,6 +5,7 @@ import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.model.scenario.RemoteEndpoint;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import me.whereareiam.anvil.api.type.SupportPolicy;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
@@ -13,13 +14,16 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Selects the protocol library and exact release for each simulated player.
@@ -64,9 +68,9 @@ final class ProtocolLibrarySelector {
 
 	/**
 	 * Checks a scenario before any process starts. A library the scenario names must be installed. A release that
-	 * cannot be launched, but that players would use by default for one of the scenario's servers, only produces a
-	 * warning: the release of the scenario's or engine's library for the server's native version, else the release
-	 * of the one strongest library. The scenario may never create such a player, and each player may declare
+	 * cannot be launched, but that players would use by default for one of the scenario's servers or remotes, only
+	 * produces a warning: the release of the scenario's or engine's library for the target's native version, else the
+	 * release of the one strongest library. The scenario may never create such a player, and each player may declare
 	 * another library, so creating a player that selects the release is what fails.
 	 *
 	 * @param scenario scenario about to be prepared
@@ -76,31 +80,28 @@ final class ProtocolLibrarySelector {
 		if (scenario.getProtocolLibrary() != null)
 			requireInstalled(scenario.getProtocolLibrary(), "Scenario '" + scenario.getName() + "'");
 
-		for (MinecraftServer server : scenario.getServers()) {
-			Optional<MinecraftVersion> version = nativeVersion(server);
-			if (version.isEmpty()) continue;
-
-			Optional<Selection> selection = defaultSelection(scenario, version.get());
+		for (Map.Entry<String, MinecraftVersion> target : nativeVersions(scenario).entrySet()) {
+			Optional<Selection> selection = defaultSelection(scenario, target.getValue());
 			if (selection.isEmpty() || selection.get().release().isLaunchable()) continue;
 
-			notices.accept("[Anvil] Warning: scenario '" + scenario.getName() + "' cannot create players for server '"
-					+ server.getName() + "' unless they declare another protocol library: "
+			notices.accept("[Anvil] Warning: scenario '" + scenario.getName() + "' cannot create players for "
+					+ target.getKey() + " unless they declare another protocol library: "
 					+ selection.get().release().getLaunchRefusal());
 		}
 	}
 
 	/**
 	 * Returns the libraries the scenario's players select when they declare none: the scenario's library,
-	 * else the engine's, else, for the native version of each of the scenario's servers, the one library
+	 * else the engine's, else, for the native version of each of the scenario's servers and remotes, the one library
 	 * ranked strongest when the effective support policy permits its release. A tie, a release the policy
-	 * refuses and a server without a valid native version add nothing, because no player selects a library
+	 * refuses and a target without a valid native version add nothing, because no player selects a library
 	 * that way without declaring one; such a player reports the reason when it is created.
 	 *
 	 * <p>Ranking reads the release data of every installed library, so a library whose release data cannot
 	 * be read fails the scenario here, even before any player exists.</p>
 	 *
 	 * @param scenario validated scenario
-	 * @return distinct library identifiers, ranked libraries in the order of the servers
+	 * @return distinct library identifiers, ranked libraries in the order of the servers, then the remotes
 	 */
 	@NotNull List<String> scenarioLibraries(@NotNull AnvilScenario scenario) {
 		if (scenario.getProtocolLibrary() != null) return List.of(scenario.getProtocolLibrary());
@@ -108,11 +109,8 @@ final class ProtocolLibrarySelector {
 
 		SupportPolicy policy = policy(scenario);
 		Set<String> ranked = new LinkedHashSet<>();
-		for (MinecraftServer server : scenario.getServers()) {
-			Optional<MinecraftVersion> version = nativeVersion(server);
-			if (version.isEmpty()) continue;
-
-			List<Selection> strongest = strongest(version.get());
+		for (MinecraftVersion version : nativeVersions(scenario).values()) {
+			List<Selection> strongest = strongest(version);
 			if (strongest.size() != 1 || !policy.permits(strongest.getFirst().level())) continue;
 
 			ranked.add(strongest.getFirst().library());
@@ -200,9 +198,23 @@ final class ProtocolLibrarySelector {
 		return strongest;
 	}
 
-	private static Optional<MinecraftVersion> nativeVersion(MinecraftServer server) {
+	/**
+	 * Returns the valid native version of each server and remote, the targets whose version a player adopts, keyed
+	 * by a label naming the target.
+	 */
+	private static Map<String, MinecraftVersion> nativeVersions(AnvilScenario scenario) {
+		Map<String, MinecraftVersion> versions = new LinkedHashMap<>();
+		for (MinecraftServer server : scenario.getServers())
+			nativeVersion(server::nativeVersion).ifPresent(version -> versions.put("server '" + server.getName() + "'", version));
+		for (RemoteEndpoint remote : scenario.getRemotes())
+			nativeVersion(remote::nativeVersion).ifPresent(version -> versions.put("remote '" + remote.getName() + "'", version));
+
+		return versions;
+	}
+
+	private static Optional<MinecraftVersion> nativeVersion(Supplier<MinecraftVersion> version) {
 		try {
-			return Optional.ofNullable(server.nativeVersion());
+			return Optional.ofNullable(version.get());
 		} catch (IllegalArgumentException invalid) {
 			return Optional.empty();
 		}

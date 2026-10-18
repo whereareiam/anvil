@@ -11,6 +11,7 @@ import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.model.scenario.RemoteEndpoint;
 import me.whereareiam.anvil.api.player.PlayerManager;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.player.account.AccountManager;
@@ -27,6 +28,8 @@ import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.api.type.ProtocolFeature;
 import me.whereareiam.anvil.protocol.player.ProtocolLibrarySelector.Selection;
 import me.whereareiam.anvil.protocol.player.account.AccountReservations;
+import me.whereareiam.anvil.protocol.player.remote.RemoteAddressResolver;
+import me.whereareiam.anvil.protocol.player.remote.RemoteAddressResolver.Resolution;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -52,6 +55,11 @@ import java.util.stream.Collectors;
 
 /**
  * Default context-owned simulated-player factory and registry.
+ *
+ * <p>A player joins a server or proxy the scenario runs at its listener's address, or a remote at the address the
+ * vanilla client resolves from the remote's typed address. A remote has no process: Anvil knows neither how it
+ * authenticates nor where it listens, so the player's own login decides how it signs in and no source address
+ * applies.</p>
  */
 final class RunningPlayerManager implements PlayerManager, AccountManager {
 	private final AnvilScenario scenario;
@@ -60,6 +68,8 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	private final ScenarioProcesses processes;
 	private final Map<String, MinecraftProcess> declarations;
 	private final Map<String, MinecraftServer> servers;
+	private final Map<String, RemoteEndpoint> remotes;
+	private final RemoteAddressResolver remoteAddresses;
 	private final ProtocolPlayerComposer playerComposer;
 	private final Consumer<RunningPlayerManager> onClosed;
 	private final AccountManager accounts;
@@ -82,6 +92,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 			@NotNull Consumer<RunningPlayerManager> onClosed,
 			@NotNull AccountManager accounts,
 			@NotNull AccountReservations reservations,
+			@NotNull RemoteAddressResolver remoteAddresses,
 			boolean sourceAddressesPreserved
 	) {
 		this.scenario = scenario;
@@ -92,10 +103,13 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		this.onClosed = onClosed;
 		this.accounts = accounts;
 		this.reservations = reservations;
+		this.remoteAddresses = remoteAddresses;
 		this.sourceAddressesPreserved = sourceAddressesPreserved;
 		this.declarations = declarations(scenario);
 		this.servers = scenario.getServers().stream()
 				.collect(Collectors.toUnmodifiableMap(MinecraftServer::getName, Function.identity()));
+		this.remotes = scenario.getRemotes().stream()
+				.collect(Collectors.toUnmodifiableMap(RemoteEndpoint::getName, Function.identity()));
 	}
 
 	@Override
@@ -163,18 +177,21 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		PlayerConnection connection = options.getConnection();
 		String targetName = connection.getTarget() == null ? scenario.getEntrypoint() : connection.getTarget();
 		MinecraftProcess target = declarations.get(targetName);
-		if (target == null)
-			throw new ScenarioValidationException("Player '" + options.getName() + "' cannot connect to unknown process '"
-					+ targetName + "'. Available: " + declarations.keySet());
+		RemoteEndpoint remote = remotes.get(targetName);
+		if (target == null && remote == null)
+			throw new ScenarioValidationException("Player '" + options.getName() + "' cannot connect to unknown target '"
+					+ targetName + "'. Available: " + targetNames());
 		if (options.getLogin().isLeased())
 			throw new ScenarioValidationException("Player '" + options.getName() + "' declares a leased login; create it "
 					+ "with PlayerManager.create(PlayerOptions, AccountLease)");
 
-		RunningProcess runningTarget = processes.get(targetName);
-		MinecraftVersion version = selectVersion(options, target);
+		MinecraftVersion version = remote == null ? selectVersion(options, target) : selectVersion(options, remote);
 		Selection selection = selector.select(options, scenario, version);
-		validateAuthentication(options, target, selection, version);
-		InetAddress sourceAddress = sourceAddress(options, runningTarget);
+		if (remote == null) validateProcessAuthentication(options, target);
+		validateAccount(options, selection, version);
+		GameConnection gameConnection = remote == null
+				? processConnection(options, processes.get(targetName))
+				: remoteConnection(options, remote);
 		ProtocolLibrary library = libraries.apply(selection.library());
 		Runnable directReturn = reserveDirectly(options);
 
@@ -186,11 +203,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 					.name(options.getName())
 					.login(options.getLogin())
 					.clientVersion(version)
-					.connection(GameConnection.builder()
-							.address(runningTarget.address())
-							.virtualHost(connection.getVirtualHost())
-							.sourceAddress(sourceAddress)
-							.build())
+					.connection(gameConnection)
 					.build());
 			player = playerComposer.compose(
 					driven,
@@ -310,6 +323,22 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		return compatible;
 	}
 
+	private MinecraftVersion selectVersion(PlayerOptions options, RemoteEndpoint remote) {
+		MinecraftVersion version;
+		try {
+			version = remote.nativeVersion();
+		} catch (IllegalArgumentException invalid) {
+			throw new ScenarioValidationException(invalid.getMessage(), invalid);
+		}
+
+		if (options.getClientVersion() == null) return version;
+		if (!version.equals(clientVersion(options)))
+			throw new ScenarioValidationException("Native client version '" + options.getClientVersion()
+					+ "' does not match remote '" + remote.getName() + "' using version '" + version + "'");
+
+		return version;
+	}
+
 	private Collection<MinecraftServer> reachableServers(MinecraftProcess target) {
 		if (target instanceof MinecraftServer server)
 			return List.of(server);
@@ -354,12 +383,10 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 					+ "; declare the same sessionServer on the process");
 	}
 
-	private void validateAuthentication(
-			PlayerOptions options,
-			MinecraftProcess target,
-			Selection selection,
-			MinecraftVersion version
-	) {
+	/**
+	 * A process declares how it authenticates, so a login it would refuse fails before the player connects.
+	 */
+	private void validateProcessAuthentication(PlayerOptions options, MinecraftProcess target) {
 		PlayerLogin login = options.getLogin();
 		if (login.getAuthentication() == AuthenticationMode.OFFLINE && target.isOnlineMode())
 			throw new ScenarioValidationException("Offline player '" + options.getName()
@@ -369,10 +396,18 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 			throw new ScenarioValidationException("Online player '" + options.getName()
 					+ "' requires an online-mode entrypoint; use AuthenticationMode.ON_REQUEST when a plugin of an "
 					+ "offline-mode entrypoint requests authentication itself");
-		if (login.getSessionIdentity() != null) {
+		if (login.getSessionIdentity() != null)
 			validateSessionIdentity(options, login.getSessionIdentity(), target);
-			return;
-		}
+	}
+
+	/**
+	 * A login with an account needs that account in the player's selected library, and a release that signs in.
+	 * A session identity names its own session server and needs no stored account.
+	 */
+	private void validateAccount(PlayerOptions options, Selection selection, MinecraftVersion version) {
+		PlayerLogin login = options.getLogin();
+		if (!login.getAuthentication().usesAccount()) return;
+		if (login.getSessionIdentity() != null) return;
 
 		// Account IDs are library-local: the player needs the account its selected library stores under that ID.
 		String accountId = login.getAccountId();
@@ -389,6 +424,35 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		if (!selection.release().getFeatures().contains(ProtocolFeature.ONLINE_AUTHENTICATION))
 			throw new ScenarioValidationException("Protocol library '" + selection.library()
 					+ "' does not support online authentication for client version '" + version + "'");
+	}
+
+	private GameConnection processConnection(PlayerOptions options, RunningProcess target) {
+		return GameConnection.builder()
+				.address(target.address())
+				.virtualHost(options.getConnection().getVirtualHost())
+				.sourceAddress(sourceAddress(options, target))
+				.build();
+	}
+
+	/**
+	 * Connects where the vanilla client would and announces the host it would, unless the player's connection
+	 * declares a virtual host. A remote's listener is not on this machine's loopback interface, so a source address
+	 * could not reach it.
+	 */
+	private GameConnection remoteConnection(PlayerOptions options, RemoteEndpoint remote) {
+		String declared = options.getConnection().getSourceAddress();
+		if (declared != null)
+			throw new ScenarioValidationException("Player '" + options.getName() + "' declares the source address "
+					+ declared + ", but its target '" + remote.getName() + "' is a remote that Anvil does not run; a "
+					+ "loopback source address only reaches a process of the scenario. Declare no source address");
+
+		Resolution resolution = remoteAddresses.resolve(remote);
+		String virtualHost = options.getConnection().getVirtualHost();
+
+		return GameConnection.builder()
+				.address(resolution.address())
+				.virtualHost(virtualHost == null ? resolution.announcedHost() : virtualHost)
+				.build();
 	}
 
 	/**
@@ -437,6 +501,13 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		scenario.getServers().forEach(server -> result.put(server.getName(), server));
 		scenario.getProxies().forEach(proxy -> result.put(proxy.getName(), proxy));
 		return Map.copyOf(result);
+	}
+
+	private List<String> targetNames() {
+		List<String> names = new ArrayList<>(declarations.keySet());
+		names.addAll(remotes.keySet());
+
+		return names;
 	}
 
 	private void ensureOpen() {
