@@ -7,7 +7,7 @@ plugins {
 segment {
 	extends(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolJava.v12111)
 	replaces(
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.InteractionTranslation",
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.InteractionTranslation",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.InteractionPackets",
 	)
 }

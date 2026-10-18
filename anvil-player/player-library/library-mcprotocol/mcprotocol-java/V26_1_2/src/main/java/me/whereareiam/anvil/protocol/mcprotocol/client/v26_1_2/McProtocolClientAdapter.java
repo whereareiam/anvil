@@ -1,9 +1,9 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.ConnectionPackets;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.JavaClient;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.ScreenPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConnectionPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.JavaClient;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ScreenPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ChatPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.CommandPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ConfigurationPackets;

@@ -28,6 +28,8 @@ public final class CompatibilityScenarioFactory {
 	private static final String BUNGEE_BUILD = "2085";
 	private static final List<PaperBuild> DIRECT_PAPER = List.of(
 			new PaperBuild("1.18.2", "388"),
+			new PaperBuild("1.19.4", "550"),
+			new PaperBuild("1.20.6", "151"),
 			new PaperBuild("1.21.1", "133")
 	);
 	private static final List<NeoForgeRelease> NEOFORGE = List.of(

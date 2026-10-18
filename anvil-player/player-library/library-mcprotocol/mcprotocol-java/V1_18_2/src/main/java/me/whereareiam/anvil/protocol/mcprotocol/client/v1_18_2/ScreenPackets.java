@@ -39,7 +39,7 @@ import java.util.Set;
  * bars have packets of their own since Minecraft 1.17, and boss bars share one packet whose action says which part it
  * changes.
  */
-final class ScreenPackets implements PacketTranslation<Packet> {
+public final class ScreenPackets implements PacketTranslation<Packet> {
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(

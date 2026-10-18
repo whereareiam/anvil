@@ -4,8 +4,8 @@ description: Hold the cookies a server stores on the player, answer its requests
 ---
 
 `Cookies` holds the cookies a server stores on the player and answers the server's cookie requests as
-the Minecraft client does. Cookies arrived in Minecraft 1.20.5, so players on 1.21.1, 1.21.11 and 26.1.2
-get this capability; players on 1.18.2 do not, and retrieving it fails with
+the Minecraft client does. Cookies arrived in Minecraft 1.20.5, so players on 1.20.6, 1.21.1, 1.21.11 and
+26.1.2 get this capability; players on 1.18.2 and 1.19.4 do not, and retrieving it fails with
 `CapabilityUnavailableException`. Install the cookies unit and its Session dependency, or explicitly
 select the default capability unit.
 

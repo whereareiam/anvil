@@ -1,9 +1,9 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.ConnectionPackets;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.JavaClient;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.ScreenPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConnectionPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.JavaClient;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ScreenPackets;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 

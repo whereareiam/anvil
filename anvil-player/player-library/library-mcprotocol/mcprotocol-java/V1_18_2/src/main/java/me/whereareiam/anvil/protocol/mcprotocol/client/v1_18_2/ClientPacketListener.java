@@ -28,17 +28,20 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
- * Answers the packets a client of the MCProtocolLib 1.18.2 release must answer on its own and reports login, teleports
- * and disconnects with their reason flattened to plain text. The login reports the profile the server granted in its
- * login success, which arrives before the game starts.
+ * Answers the packets a client of the MCProtocolLib releases from 1.18.2 until 1.19.4 must answer on its own and
+ * reports login, teleports and disconnects with their reason flattened to plain text. The login reports the profile the
+ * server granted in its login success, which arrives before the game starts. Each release's adapter reads the reason
+ * of a closed connection, which packetlib turned from a string into a component.
  */
 @RequiredArgsConstructor
 final class ClientPacketListener extends SessionAdapter {
 	private final ClientLogin login;
 	private final ClientListener<? super Session> listener;
 	private final PacketTable<Packet> packets;
+	private final Function<DisconnectedEvent, String> reasons;
 	private volatile ClientProfile granted;
 
 	@Override
@@ -64,7 +67,7 @@ final class ClientPacketListener extends SessionAdapter {
 	}
 
 	/**
-	 * MCProtocolLib 1.18.2 announces the host it connects to; packetlib lets a listener replace a packet before
+	 * MCProtocolLib announces the host it connects to; packetlib lets a listener replace a packet before
 	 * it is written, which announces the virtual host without changing where the session connects.
 	 */
 	@Override
@@ -77,7 +80,7 @@ final class ClientPacketListener extends SessionAdapter {
 
 	@Override
 	public void disconnected(DisconnectedEvent event) {
-		listener.disconnected(event.getSession(), cause(event), Objects.requireNonNullElse(event.getReason(), ""));
+		listener.disconnected(event.getSession(), cause(event), reasons.apply(event));
 	}
 
 	/**
