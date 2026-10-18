@@ -2,6 +2,7 @@ package me.whereareiam.anvil.capability.messages;
 
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
+import me.whereareiam.anvil.capability.messages.model.ChatLines;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -15,6 +16,8 @@ import java.util.List;
  * sends as chat, which is game-info chat before Minecraft 1.19 and overlay system chat from 1.19, is part of the
  * history as well, so {@link #received(String)} also matches it. Text sent through the separate title or action-bar
  * packets is not recorded.</p>
+ *
+ * <p>The history records what arrived; {@link #chatLines()} models what the player's chat still shows of it.</p>
  */
 public interface Messages extends PlayerCapability {
 	/**
@@ -75,4 +78,20 @@ public interface Messages extends PlayerCapability {
 	 * @return a watch that starts after the last message received so far
 	 */
 	@NotNull MessageWatch watch();
+
+	/**
+	 * Returns the lines of chat the player could still scroll back to, without waiting: the chat messages received
+	 * since the player's latest connection began, split at their line breaks, with the server's deletions applied, and
+	 * only the newest {@value ChatLines#MAX_LINES} lines. {@link ChatLines} says what the model guarantees about a real client.
+	 *
+	 * <pre>{@code
+	 * MessageWatch chat = messages.watch();
+	 * messages.command("clearchat");
+	 * chat.received("Chat cleared");
+	 * assertFalse(messages.chatLines().contains("secret"));
+	 * }</pre>
+	 *
+	 * @return the chat's lines now, oldest first
+	 */
+	@NotNull ChatLines chatLines();
 }

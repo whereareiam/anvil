@@ -28,7 +28,7 @@ Each capability is optional unless the test or another installed capability requ
 | Capability | Use it to | Bundled requirement |
 | --- | --- | --- |
 | [Session](./session/index.md) | Connect, disconnect, rejoin, and observe kicks. | MCProtocol |
-| [Messages](./messages/index.md) | Send chat and commands; await received text. | MCProtocol and Session |
+| [Messages](./messages/index.md) | Send chat and commands; await received text; check what the chat still shows. | MCProtocol and Session |
 | [Movement](./movement/index.md) | Send absolute position and view changes. | MCProtocol and Session |
 | [Inventory](./inventory/index.md) | Observe inventory or containers and perform clicks. | MCProtocol and Session |
 | [Interaction](./interaction/index.md) | Use items and interact with blocks or entities. | MCProtocol and Session |

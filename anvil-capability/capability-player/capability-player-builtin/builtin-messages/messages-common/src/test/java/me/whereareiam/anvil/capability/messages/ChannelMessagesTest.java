@@ -2,6 +2,8 @@ package me.whereareiam.anvil.capability.messages;
 
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.messages.channel.MessagesChannel;
+import me.whereareiam.anvil.capability.messages.model.ChatLines;
+import me.whereareiam.anvil.capability.messages.model.ChatMessage;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
@@ -62,6 +64,21 @@ class ChannelMessagesTest {
 
 		assertEquals(List.of("anvil:welcome", "anvil:pong"), messages.history());
 		assertThrows(UnsupportedOperationException.class, () -> messages.history().add("changed"));
+	}
+
+	@Test
+	void keepsTheChatTheWorkerReports() {
+		RecordingChannel channel = new RecordingChannel();
+		ChannelMessages messages = new ChannelMessages(channel);
+
+		channel.publish(MessagesChannel.CHAT_ADDED, new ChatMessage(0, "before"));
+		channel.publish(MessagesChannel.CHAT_CLEARED, null);
+		channel.publish(MessagesChannel.CHAT_ADDED, new ChatMessage(1, "hello\nthere"));
+		channel.publish(MessagesChannel.CHAT_ADDED, new ChatMessage(2, "insult"));
+		channel.publish(MessagesChannel.CHAT_DELETED, 2L);
+
+		assertEquals(new ChatLines(List.of("hello", "there", ChatLines.DELETED_MARKER)), messages.chatLines());
+		assertEquals(List.of(), messages.history());
 	}
 
 	@Test
