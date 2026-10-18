@@ -7,8 +7,9 @@ import java.util.List;
 
 /**
  * The lines of chat a player can still scroll back to, modelled on the vanilla client's chat. The client keeps the
- * chat messages it receives, never action-bar text, as lines, and only the newest {@value #MAX_LINES} of them: it
- * splits each message at its line breaks and wraps each part at the chat's width. A message the server deletes is
+ * chat messages it receives while it has a player, from the server's login until a return to configuration, never
+ * action-bar text, as lines, and only the newest {@value #MAX_LINES} of them: it splits each message at its line breaks
+ * and wraps each part at the chat's width. A message the server deletes is
  * replaced by the client's deleted marker, {@value #DELETED_MARKER}, and a new connection starts with an empty chat.
  *
  * <p>The model splits at line breaks but cannot wrap, because wrapping depends on the client's font, chat width and

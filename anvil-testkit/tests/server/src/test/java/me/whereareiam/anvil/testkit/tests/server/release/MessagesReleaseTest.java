@@ -17,7 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Sends chat and commands, receives the server's messages and models the chat lines a player can scroll back to.
+ * Sends chat and commands, receives the server's messages, follows what the chat shows and models the chat lines a
+ * player can scroll back to.
  */
 @Release
 class MessagesReleaseTest {
@@ -37,6 +38,17 @@ class MessagesReleaseTest {
 		messages.command("anvil-fixture ping");
 
 		messages.received("anvil:pong", Duration.ofSeconds(10));
+	}
+
+	@Test
+	void showsTheServersMessagesInTheChatOnceThePlayerJoined(ScenarioContext anvil) {
+		FixtureServer server = new FixtureServer(anvil);
+		SimulatedPlayer player = server.join();
+		MessageWatch chat = player.capability(Messages.class).watch();
+
+		server.console("tellraw " + player.name() + " \"anvil:shown\"");
+
+		chat.received("anvil:shown", Duration.ofSeconds(10));
 	}
 
 	@Test

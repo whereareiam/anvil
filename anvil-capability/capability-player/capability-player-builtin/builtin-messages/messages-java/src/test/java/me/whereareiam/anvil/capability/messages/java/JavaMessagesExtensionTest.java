@@ -2,7 +2,9 @@ package me.whereareiam.anvil.capability.messages.java;
 
 import me.whereareiam.anvil.capability.messages.channel.MessagesChannel;
 import me.whereareiam.anvil.capability.messages.model.ChatMessage;
+import me.whereareiam.anvil.capability.messages.model.DroppedChat;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
+import me.whereareiam.anvil.capability.messages.type.ChatDropReason;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
@@ -24,6 +26,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
 import me.whereareiam.anvil.protocol.java.api.type.FilterMaskType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -61,30 +64,12 @@ class JavaMessagesExtensionTest {
 	}
 
 	@Test
-	void emitsTheTextOfEveryKindOfChatTheProtocolDelivers() {
+	void addsChatMessagesButNeitherActionBarsNorFullyFilteredPlayerChat() {
 		RecordingProtocol protocol = new RecordingProtocol(true);
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 
-		protocol.deliver(new ClientboundSystemChat("multiplayer.player.joined Alice", false));
-		protocol.deliver(new ClientboundSystemChat("anvil:action-bar", true));
-		protocol.deliver(ClientboundPlayerChat.unsigned("decorated hello"));
-		protocol.deliver(new ClientboundDisguisedChat("journey-ready-1"));
-
-		assertEquals(List.of(
-				new MessageText("multiplayer.player.joined Alice"),
-				new MessageText("anvil:action-bar"),
-				new MessageText("decorated hello"),
-				new MessageText("journey-ready-1")
-		), player.payloads(MessagesChannel.RECEIVED));
-	}
-
-	@Test
-	void addsChatMessagesButNeitherOverlaysNorFullyFilteredPlayerChat() {
-		RecordingProtocol protocol = new RecordingProtocol(true);
-		RecordingPlayer player = new RecordingPlayer(protocol);
-		extension.bind(player, new RecordingOperations());
-
+		protocol.deliver(new ClientboundLogin(7));
 		protocol.deliver(new ClientboundSystemChat("welcome", false));
 		protocol.deliver(new ClientboundSystemChat("anvil:action-bar", true));
 		protocol.deliver(new ClientboundPlayerChat("hidden", FilterMaskType.FULLY_FILTERED, null, List.of()));
@@ -93,6 +78,8 @@ class JavaMessagesExtensionTest {
 
 		assertEquals(List.of(new ChatMessage(0, "welcome"), new ChatMessage(1, "hello"), new ChatMessage(2, "journey-ready-1")),
 				player.payloads(MessagesChannel.CHAT_ADDED));
+		assertEquals(List.of(new DroppedChat("hidden", ChatDropReason.FULLY_FILTERED)),
+				player.payloads(MessagesChannel.CHAT_DROPPED));
 	}
 
 	@Test
@@ -102,10 +89,11 @@ class JavaMessagesExtensionTest {
 		extension.bind(player, new RecordingOperations());
 
 		player.startConnection();
+		protocol.deliver(new ClientboundLogin(7));
 		protocol.deliver(new ClientboundSystemChat("welcome", false));
 		player.startConnection();
 
-		assertEquals(List.of("messages.chat-cleared", "messages.received", "messages.chat-added", "messages.chat-cleared"),
+		assertEquals(List.of("messages.chat-cleared", "messages.chat-added", "messages.chat-cleared"),
 				player.events);
 	}
 
@@ -115,6 +103,7 @@ class JavaMessagesExtensionTest {
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 
+		protocol.deliver(new ClientboundLogin(7));
 		protocol.deliver(signed("first", FIRST));
 		protocol.deliver(signed("second", SECOND));
 		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.full(SECOND)));
@@ -128,6 +117,7 @@ class JavaMessagesExtensionTest {
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 
+		protocol.deliver(new ClientboundLogin(7));
 		protocol.deliver(signed("first", FIRST));
 		protocol.deliver(new ClientboundPlayerChat("second", FilterMaskType.PASS_THROUGH, SECOND,
 				List.of(PackedMessageSignature.cached(0))));
@@ -142,8 +132,9 @@ class JavaMessagesExtensionTest {
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 
-		protocol.deliver(signed("first", FIRST));
 		protocol.deliver(new ClientboundLogin(7));
+		protocol.deliver(signed("first", FIRST));
+		protocol.deliver(new ClientboundLogin(8));
 		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.cached(0)));
 		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.full(FIRST)));
 
@@ -156,6 +147,7 @@ class JavaMessagesExtensionTest {
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 
+		protocol.deliver(new ClientboundLogin(7));
 		protocol.deliver(new ClientboundPlayerChat("hidden", FilterMaskType.FULLY_FILTERED, FIRST, List.of()));
 		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.full(FIRST)));
 		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.full(SECOND)));
@@ -168,8 +160,71 @@ class JavaMessagesExtensionTest {
 		RecordingProtocol protocol = new RecordingProtocol(false);
 		extension.bind(new RecordingPlayer(protocol), new RecordingOperations());
 
-		assertEquals(Set.of(ClientboundLogin.class, ClientboundSystemChat.class, ClientboundPlayerChat.class),
-				protocol.listeners.keySet());
+		assertEquals(Set.of(ClientboundLogin.class, ClientboundStartConfiguration.class, ClientboundSystemChat.class,
+				ClientboundPlayerChat.class), protocol.listeners.keySet());
+	}
+
+	@Test
+	void dropsChatThatArrivesBeforeTheLogin() {
+		RecordingProtocol protocol = new RecordingProtocol(true);
+		RecordingPlayer player = new RecordingPlayer(protocol);
+		extension.bind(player, new RecordingOperations());
+
+		protocol.deliver(new ClientboundSystemChat("configuring", false));
+		protocol.deliver(ClientboundPlayerChat.unsigned("player configuring"));
+		protocol.deliver(new ClientboundDisguisedChat("disguised configuring"));
+		protocol.deliver(new ClientboundLogin(7));
+		protocol.deliver(new ClientboundSystemChat("welcome", false));
+
+		assertEquals(List.of(
+				new DroppedChat("configuring", ChatDropReason.NO_PLAYER),
+				new DroppedChat("player configuring", ChatDropReason.NO_PLAYER),
+				new DroppedChat("disguised configuring", ChatDropReason.NO_PLAYER)
+		), player.payloads(MessagesChannel.CHAT_DROPPED));
+		assertEquals(List.of(new ChatMessage(0, "welcome")), player.payloads(MessagesChannel.CHAT_ADDED));
+	}
+
+	@Test
+	void showsNoChatFromAReturnToConfigurationUntilTheNextLogin() {
+		RecordingProtocol protocol = new RecordingProtocol(true);
+		RecordingPlayer player = new RecordingPlayer(protocol);
+		extension.bind(player, new RecordingOperations());
+
+		protocol.deliver(new ClientboundLogin(7));
+		protocol.deliver(new ClientboundSystemChat("on auth", false));
+		protocol.deliver(new ClientboundStartConfiguration());
+		protocol.deliver(new ClientboundSystemChat("switching", false));
+		protocol.deliver(new ClientboundLogin(8));
+		protocol.deliver(new ClientboundSystemChat("on lobby", false));
+
+		assertEquals(List.of(new ChatMessage(0, "on auth"), new ChatMessage(1, "on lobby")),
+				player.payloads(MessagesChannel.CHAT_ADDED));
+		assertEquals(List.of(new DroppedChat("switching", ChatDropReason.NO_PLAYER)),
+				player.payloads(MessagesChannel.CHAT_DROPPED));
+	}
+
+	@Test
+	void startsEveryConnectionWithoutAPlayer() {
+		RecordingProtocol protocol = new RecordingProtocol(true);
+		RecordingPlayer player = new RecordingPlayer(protocol);
+		extension.bind(player, new RecordingOperations());
+
+		protocol.deliver(new ClientboundLogin(7));
+		player.startConnection();
+		protocol.deliver(new ClientboundSystemChat("before the login", false));
+
+		assertEquals(List.of(), player.payloads(MessagesChannel.CHAT_ADDED));
+	}
+
+	@Test
+	void showsEveryMessageOnAProtocolWithoutLogins() {
+		RecordingProtocol protocol = new RecordingProtocol(true, ClientboundLogin.class, ClientboundStartConfiguration.class);
+		RecordingPlayer player = new RecordingPlayer(protocol);
+		extension.bind(player, new RecordingOperations());
+
+		protocol.deliver(new ClientboundSystemChat("welcome", false));
+
+		assertEquals(List.of(new ChatMessage(0, "welcome")), player.payloads(MessagesChannel.CHAT_ADDED));
 	}
 
 	@Test
@@ -209,11 +264,14 @@ class JavaMessagesExtensionTest {
 	 */
 	private static final class RecordingProtocol implements JavaProtocol {
 		private final boolean signedChat;
+		private final Set<Class<? extends JavaPacket>> missing;
 		private final List<ServerboundPacket> sent = new ArrayList<>();
 		private final Map<Class<?>, Consumer<Object>> listeners = new LinkedHashMap<>();
 
-		private RecordingProtocol(boolean signedChat) {
+		@SafeVarargs
+		private RecordingProtocol(boolean signedChat, Class<? extends JavaPacket>... missing) {
 			this.signedChat = signedChat;
+			this.missing = Set.of(missing);
 		}
 
 		@Override
@@ -240,6 +298,8 @@ class JavaMessagesExtensionTest {
 
 		@Override
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
+			if (missing.contains(type)) return false;
+
 			return signedChat || type != ClientboundDisguisedChat.class && type != ClientboundDeleteChat.class;
 		}
 

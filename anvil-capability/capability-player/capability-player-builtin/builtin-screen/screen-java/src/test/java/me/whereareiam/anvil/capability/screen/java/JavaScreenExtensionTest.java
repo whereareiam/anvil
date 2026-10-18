@@ -27,6 +27,7 @@ import me.whereareiam.anvil.protocol.java.api.model.screen.BossEventUpdateStyle;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundBossEvent;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundClearTitles;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetActionBarText;
@@ -169,6 +170,16 @@ class JavaScreenExtensionTest {
 		protocol.deliver(new ClientboundSetActionBarText("+1 follower"));
 
 		assertEquals(List.of("+1 follower", "+1 follower"), player.emitted(ScreenChannel.ACTION_BAR));
+	}
+
+	@Test
+	void emitsActionBarTextSentAsChatButNoOtherChat() {
+		connect();
+
+		protocol.deliver(new ClientboundSystemChat("+1 follower", true));
+		protocol.deliver(new ClientboundSystemChat("Welcome", false));
+
+		assertEquals(List.of("+1 follower"), player.emitted(ScreenChannel.ACTION_BAR));
 	}
 
 	@Test
