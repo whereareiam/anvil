@@ -6,6 +6,7 @@ import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.model.scenario.RemoteEndpoint;
 import me.whereareiam.anvil.api.type.ProcessLifetime;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
@@ -38,6 +39,7 @@ class LifetimeSplitTest {
 		assertEquals("engine-lobby-auth", retained.getScenario().getName());
 		assertEquals("lobby", retained.getScenario().getEntrypoint(), "The scenario's proxy entrypoint is not part of the kept processes");
 		assertEquals(List.of(), retained.getScenario().getProxies());
+		assertEquals(List.of(), retained.getScenario().getRemotes(), "Remotes stay with the scenario");
 		assertNull(retained.getScenario().getSetupHook());
 	}
 
@@ -81,7 +83,9 @@ class LifetimeSplitTest {
 		MinecraftProxy proxy = MinecraftProxy.builder().name("proxy").platform("test").distribution(Distribution.remote("1", "1"))
 				.server("lobby").server("auth").server("fresh").defaultServer("lobby").build();
 		AnvilScenario scenario = AnvilScenario.builder().name(name).entrypoint("proxy")
-				.server(lobby).server(authServer).server(fresh).proxy(proxy).build();
+				.server(lobby).server(authServer).server(fresh).proxy(proxy)
+				.remote(RemoteEndpoint.builder().name("network").address("play.example.test").minecraftVersion("1.21.11").build())
+				.build();
 		ForwardingConfiguration forwarding = ForwardingConfiguration.builder().mode(ForwardingMode.MODERN).secret(name).build();
 
 		PlatformPlan.PlatformPlanBuilder plan = PlatformPlan.builder().scenario(scenario);

@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.model.scenario.RemoteEndpoint;
 import me.whereareiam.anvil.api.type.ProcessLifetime;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,7 +16,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Validates scenario declarations, process references, and launch requirements before scoped execution.
+ * Validates scenario declarations, process and remote references, and launch requirements before scoped execution.
  */
 public final class ScenarioValidator {
 	/**
@@ -37,8 +38,8 @@ public final class ScenarioValidator {
 	private void validateDeclaration(@NotNull AnvilScenario scenario) {
 		if (blank(scenario.getName()))
 			throw new ScenarioValidationException("Scenario name must not be blank");
-		if (scenario.getServers().isEmpty() && scenario.getProxies().isEmpty())
-			throw new ScenarioValidationException("Scenario '" + scenario.getName() + "' has no servers or proxies");
+		if (scenario.getServers().isEmpty() && scenario.getProxies().isEmpty() && scenario.getRemotes().isEmpty())
+			throw new ScenarioValidationException("Scenario '" + scenario.getName() + "' has no servers, proxies or remotes");
 	}
 
 	private void validateTimeout(String name, @Nullable Duration timeout) {
@@ -70,13 +71,17 @@ public final class ScenarioValidator {
 		for (MinecraftServer server : scenario.getServers())
 			registerProcessName(server.getName(), serverNames);
 
-		Set<String> processNames = new HashSet<>(serverNames);
+		Set<String> targetNames = new HashSet<>(serverNames);
 		for (MinecraftProxy proxy : scenario.getProxies())
-			registerProcessName(proxy.getName(), processNames);
+			registerProcessName(proxy.getName(), targetNames);
+		for (RemoteEndpoint remote : scenario.getRemotes()) {
+			registerRemoteName(remote.getName(), targetNames);
+			validateRemote(remote);
+		}
 
-		if (!processNames.contains(entrypoint))
+		if (!targetNames.contains(entrypoint))
 			throw new ScenarioValidationException("Scenario entrypoint '" + entrypoint
-					+ "' does not reference a server or proxy");
+					+ "' does not reference a server, proxy or remote");
 
 		for (MinecraftProxy proxy : scenario.getProxies())
 			validateProxyRoutes(proxy, serverNames);
@@ -106,6 +111,26 @@ public final class ScenarioValidator {
 			throw new ScenarioValidationException("Every server and proxy needs a non-blank name");
 		if (!names.add(name))
 			throw new ScenarioValidationException("Duplicate server or proxy name: " + name);
+	}
+
+	private void registerRemoteName(@NotNull String name, @NotNull Set<String> names) {
+		if (name.isBlank())
+			throw new ScenarioValidationException("Every remote needs a non-blank name");
+		if (!names.add(name))
+			throw new ScenarioValidationException("Remote '" + name + "' shares its name with another server, proxy or remote");
+	}
+
+	/**
+	 * Parses what players need from a remote before they connect: its host and port, and the version they speak.
+	 */
+	private void validateRemote(@NotNull RemoteEndpoint remote) {
+		try {
+			remote.host();
+			remote.port();
+			remote.nativeVersion();
+		} catch (IllegalArgumentException invalid) {
+			throw new ScenarioValidationException(invalid.getMessage(), invalid);
+		}
 	}
 
 	private void validateProxyRoutes(@NotNull MinecraftProxy proxy, @NotNull Set<String> serverNames) {

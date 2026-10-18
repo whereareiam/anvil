@@ -17,7 +17,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * A complete named Minecraft environment together with its lifecycle policy and hooks.
+ * A complete named Minecraft environment together with its lifecycle policy and hooks: the servers and proxies
+ * Anvil runs, the remotes it only connects players to, and the entrypoint players join by default.
  */
 @Value
 @Builder(toBuilder = true)
@@ -29,6 +30,9 @@ public class AnvilScenario {
 	 */
 	@Nullable PresentationMetadata metadata;
 
+	/**
+	 * Name of the server, proxy or remote that players join unless their connection names another target.
+	 */
 	@NotNull String entrypoint;
 
 	@NotNull
@@ -38,6 +42,14 @@ public class AnvilScenario {
 	@NotNull
 	@Singular
 	List<MinecraftProxy> proxies;
+
+	/**
+	 * Servers and proxies that Anvil does not run, which players may join by name; a scenario may consist of
+	 * remotes alone and then starts no process.
+	 */
+	@NotNull
+	@Singular
+	List<RemoteEndpoint> remotes;
 
 	/**
 	 * Execution provider used for the whole topology: local or docker.

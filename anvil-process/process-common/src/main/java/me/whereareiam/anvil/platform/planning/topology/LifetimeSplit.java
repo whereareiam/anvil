@@ -35,7 +35,8 @@ public final class LifetimeSplit {
 	private final @NotNull PlatformPlan retained;
 
 	/**
-	 * Divides a plan by the declared lifetime of its processes.
+	 * Divides a plan by the declared lifetime of its processes. Remotes run outside Anvil, so they stay with the
+	 * scenario.
 	 *
 	 * @param scenario plan of the whole scenario
 	 * @return the division, or null when no process of the scenario outlives it
@@ -57,6 +58,7 @@ public final class LifetimeSplit {
 				.servers(servers)
 				.clearProxies()
 				.proxies(proxies)
+				.clearRemotes()
 				.setupHook(null)
 				.build();
 		PlatformPlan.PlatformPlanBuilder retained = PlatformPlan.builder().scenario(own);
