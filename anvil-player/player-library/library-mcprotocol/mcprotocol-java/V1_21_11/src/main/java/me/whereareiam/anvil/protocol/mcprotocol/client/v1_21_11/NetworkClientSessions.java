@@ -6,7 +6,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientCredentials;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.ClientSessions;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ClientSessions;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.RedirectedSessionService;
 import org.geysermc.mcprotocollib.auth.GameProfile;
 import org.geysermc.mcprotocollib.network.ClientSession;

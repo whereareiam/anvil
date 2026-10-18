@@ -18,17 +18,19 @@ import java.util.Locale;
 
 /**
  * Translates the values that several areas of the protocol share between the Java Edition protocol and the
- * MCProtocolLib 1.18.2 release: hands, block faces, item stacks and the registry keys of entity types.
+ * MCProtocolLib releases from 1.18.2 until 1.19.4, which keep them unchanged: hands, block faces, item stacks and the
+ * registry keys of entity types. The translations of this segment and of the segments extending it use it instead of
+ * translating these values on their own.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-final class ValueTranslator {
+public final class ValueTranslator {
 	/**
 	 * Translates a hand to the library's.
 	 *
 	 * @param hand the protocol's hand
 	 * @return the library's hand
 	 */
-	static @NotNull Hand hand(@NotNull InteractionHand hand) {
+	public static @NotNull Hand hand(@NotNull InteractionHand hand) {
 		return switch (hand) {
 			case MAIN_HAND -> Hand.MAIN_HAND;
 			case OFF_HAND -> Hand.OFF_HAND;
@@ -41,7 +43,7 @@ final class ValueTranslator {
 	 * @param face the protocol's direction
 	 * @return the library's direction
 	 */
-	static @NotNull Direction direction(@NotNull me.whereareiam.anvil.protocol.java.api.type.Direction face) {
+	public static @NotNull Direction direction(@NotNull me.whereareiam.anvil.protocol.java.api.type.Direction face) {
 		return switch (face) {
 			case DOWN -> Direction.DOWN;
 			case UP -> Direction.UP;
@@ -58,7 +60,7 @@ final class ValueTranslator {
 	 * @param stack the library's stack, or {@code null} for an empty slot
 	 * @return the protocol's stack, or {@code null} for an empty slot or a stack of no items
 	 */
-	static @Nullable ItemStack item(
+	public static @Nullable ItemStack item(
 			com.github.steveice10.mc.protocol.data.game.entity.metadata.@Nullable ItemStack stack
 	) {
 		if (stack == null || stack.getAmount() <= 0) return null;
@@ -72,7 +74,7 @@ final class ValueTranslator {
 	 * @param stacks the library's stacks
 	 * @return the protocol's stacks, {@code null} for each empty slot
 	 */
-	static @NotNull List<@Nullable ItemStack> items(
+	public static @NotNull List<@Nullable ItemStack> items(
 			com.github.steveice10.mc.protocol.data.game.entity.metadata.@Nullable ItemStack @NotNull [] stacks
 	) {
 		List<ItemStack> items = new ArrayList<>(stacks.length);
@@ -86,7 +88,7 @@ final class ValueTranslator {
 	 * @param type the library's entity type
 	 * @return the type's key in the {@code minecraft} namespace
 	 */
-	static @NotNull EntityTypeKey entityType(@NotNull EntityType type) {
+	public static @NotNull EntityTypeKey entityType(@NotNull EntityType type) {
 		return EntityTypeKey.minecraft(type.name().toLowerCase(Locale.ROOT));
 	}
 }

@@ -20,13 +20,16 @@ protocol and lists every Minecraft version that speaks it; its highest version i
 | Release key | MCProtocolLib release | Protocol | Minecraft versions | Verified by the live matrix |
 |---|---|---|---|---|
 | `1.18.2` | `1.18.2-1` | 758 | `1.18.2` | `1.18.2` |
+| `1.19.4` | `1.19.4-2-20230503.145414-3` | 762 | `1.19.4` | `1.19.4` |
+| `1.20.6` | `1.20.6-2-20240610.212238-11` | 766 | `1.20.5`, `1.20.6` | `1.20.6` |
 | `1.21.1` | `1.21-20241010.155958-24` | 767 | `1.21`, `1.21.1` | `1.21.1` |
 | `1.21.11` | `1.21.11-20260512.221357-18` | 774 | `1.21.11` | `1.21.11` |
 | `26.1.2` | `26.1-20260708.090514-22` | 775 | `26.1`, `26.1.1`, `26.1.2` | `26.1.2` |
 
-The last three releases are MCProtocolLib snapshot builds, pinned to exact timestamps. A player uses the
-release that lists its exact Minecraft version, never a neighboring one, so a version that no release
-lists, such as `1.20.6` or `1.21.10`, has no player support even when the server platform runs it.
+The releases from `1.19.4` on are MCProtocolLib snapshot builds, pinned to exact timestamps. A player uses
+the release that lists its exact Minecraft version, never a neighboring one, so a version that no release
+lists, such as `1.20.4` or `1.21.10`, has no player support even when the server platform runs it.
+The table keeps the latest patch of each Minecraft major.
 Every built-in player capability is installed on every release in the table.
 
 Each player's worker downloads its release's runtime JARs and checks them against their recorded
@@ -38,7 +41,7 @@ it is refused with the reason.
 
 | Platform | Supported versions | Verified by the live matrix |
 |---|---|---|
-| Paper | `1.16.5` and newer | `1.18.2`, `1.21.1`, `1.21.11`, and `26.1.2` |
+| Paper | `1.16.5` and newer | `1.18.2`, `1.19.4`, `1.20.6`, `1.21.1`, `1.21.11`, and `26.1.2` |
 | Spigot | `1.16.5` and newer | `1.21.11` and `26.1.2` |
 | NeoForge | `1.21.1` and newer | `1.21.1`, `1.21.11`, and `26.1.2` |
 | Velocity | `3.3.0` and newer | `3.5.1` |

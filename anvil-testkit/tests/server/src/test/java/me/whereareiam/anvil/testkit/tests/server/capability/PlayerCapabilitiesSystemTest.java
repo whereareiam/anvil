@@ -69,11 +69,12 @@ class PlayerCapabilitiesSystemTest {
 	/**
 	 * Scenarios whose Minecraft version predates dialogs, which arrived in 1.21.6.
 	 */
-	private static final Set<String> RELEASES_WITHOUT_DIALOGS = Set.of("paper-1.18.2", "paper-1.21.1");
+	private static final Set<String> RELEASES_WITHOUT_DIALOGS =
+			Set.of("paper-1.18.2", "paper-1.19.4", "paper-1.20.6", "paper-1.21.1");
 	/**
 	 * Scenarios whose Minecraft version predates cookies, which arrived in 1.20.5.
 	 */
-	private static final Set<String> RELEASES_WITHOUT_COOKIES = Set.of("paper-1.18.2");
+	private static final Set<String> RELEASES_WITHOUT_COOKIES = Set.of("paper-1.18.2", "paper-1.19.4");
 	/**
 	 * Scenarios whose Minecraft version predates text displays, which arrived in 1.19.4.
 	 */

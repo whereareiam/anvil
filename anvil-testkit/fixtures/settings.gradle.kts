@@ -17,6 +17,7 @@ include(
     "test-java-library",
     "test-process",
     "test-server-plugin",
+    "test-server-plugin:V1_19_4",
     "test-server-plugin:V1_21_1",
     "test-tooling-extension",
 )

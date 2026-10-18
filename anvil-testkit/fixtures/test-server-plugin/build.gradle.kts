@@ -21,6 +21,7 @@ dependencies {
 	compileOnly(anvil.agent.server.api)
 	compileOnly(libs.bukkit.paper)
 
+	"releases"(project(":test-server-plugin:V1_19_4"))
 	"releases"(project(":test-server-plugin:V1_21_1"))
 }
 

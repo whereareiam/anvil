@@ -55,7 +55,7 @@ class ClientPacketListenerTest {
 	private final List<ClientboundPacket> received = new ArrayList<>();
 	private final Session session = session();
 	private final ClientPacketListener listener = new ClientPacketListener(LOGIN, new RecordingListener(),
-			McProtocolClientAdapter.packets());
+			McProtocolClientAdapter.packets(), McProtocolClientAdapter::reason);
 
 	@Test
 	void answersTheLoginWithClientInformationBeforeReportingItWithTheGrantedProfile() throws Exception {
@@ -97,7 +97,8 @@ class ClientPacketListenerTest {
 				.build();
 		PacketSendingEvent handshake = new PacketSendingEvent(session, new ClientIntentionPacket(1, "127.0.0.1", 25577, HandshakeIntent.LOGIN));
 
-		new ClientPacketListener(virtual, new RecordingListener(), McProtocolClientAdapter.packets())
+		new ClientPacketListener(virtual, new RecordingListener(), McProtocolClientAdapter.packets(),
+				McProtocolClientAdapter::reason)
 				.packetSending(handshake);
 
 		ClientIntentionPacket announced = assertInstanceOf(ClientIntentionPacket.class, handshake.getPacket());

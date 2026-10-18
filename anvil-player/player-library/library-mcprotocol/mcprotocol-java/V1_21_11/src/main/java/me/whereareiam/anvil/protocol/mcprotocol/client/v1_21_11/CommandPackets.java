@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.CommandTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.CommandTranslation;
 import org.geysermc.mcprotocollib.protocol.data.game.command.CommandNode;
 import org.jetbrains.annotations.NotNull;
 

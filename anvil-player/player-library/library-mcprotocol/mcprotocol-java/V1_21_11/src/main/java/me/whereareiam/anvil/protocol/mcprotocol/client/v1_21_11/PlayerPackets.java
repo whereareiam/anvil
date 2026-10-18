@@ -8,7 +8,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPos
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundMovePlayerPosRot;
 import me.whereareiam.anvil.protocol.java.api.type.Relative;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.ValueTranslator;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ValueTranslator;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PositionElement;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;

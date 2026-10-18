@@ -11,7 +11,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwin
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.ValueTranslator;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ValueTranslator;
 import org.cloudburstmc.math.vector.Vector3d;
 import org.cloudburstmc.math.vector.Vector3i;
 import org.geysermc.mcprotocollib.network.packet.Packet;

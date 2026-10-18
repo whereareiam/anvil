@@ -2,7 +2,7 @@ plugins {
 	id("module-java")
 }
 
-description = "Cookie and text display commands of the server fixture plugin, compiled against the Paper release that has both"
+description = "Cookie commands of the server fixture plugin, compiled against the oldest Paper release with cookies"
 
 dependencies {
 	// The plugin's classes, not its JAR, which embeds this module.

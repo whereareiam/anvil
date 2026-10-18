@@ -8,7 +8,8 @@ import java.util.ServiceLoader;
 
 /**
  * Spawns text displays, which Minecraft 1.19.4 added. The plugin compiles against an older API, so the module
- * {@code V1_21_1}, compiled against Paper 1.21.1, implements it, and only servers from 1.19.4 on load it.
+ * {@code V1_19_4}, compiled against Paper 1.19.4 for the Java 17 that its servers run on, implements it, and only
+ * servers from 1.19.4 on load it.
  */
 public interface FixtureDisplays {
 	/**

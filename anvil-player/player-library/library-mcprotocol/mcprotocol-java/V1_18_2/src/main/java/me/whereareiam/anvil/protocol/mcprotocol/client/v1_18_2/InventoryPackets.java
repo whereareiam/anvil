@@ -45,7 +45,7 @@ import java.util.Set;
  * <p>The library names menu types as the game's registry does, so their keys are the lowercase constant names in the
  * {@code minecraft} namespace; only the cartography table's menu has a shorter constant.</p>
  */
-final class InventoryPackets implements PacketTranslation<Packet> {
+public final class InventoryPackets implements PacketTranslation<Packet> {
 	/**
 	 * The container whose slot packet addresses a slot of the player's inventory by its inventory index.
 	 */

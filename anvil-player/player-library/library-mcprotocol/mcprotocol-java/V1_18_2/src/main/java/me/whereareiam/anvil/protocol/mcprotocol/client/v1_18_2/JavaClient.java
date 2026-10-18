@@ -6,6 +6,7 @@ import com.github.steveice10.mc.protocol.MinecraftConstants;
 import com.github.steveice10.mc.protocol.MinecraftProtocol;
 import com.github.steveice10.mc.protocol.codec.MinecraftCodec;
 import com.github.steveice10.packetlib.Session;
+import com.github.steveice10.packetlib.event.session.DisconnectedEvent;
 import com.github.steveice10.packetlib.packet.Packet;
 import com.github.steveice10.packetlib.tcp.TcpClientSession;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
@@ -19,15 +20,16 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Client of the MCProtocolLib 1.18.2 release, which the segment's adapter completes with the release's packet table:
- * packetlib 2.1 TCP sessions, the codec and clientbound/serverbound packet names, plain-string disconnect events and
- * adventure 4.9 without its plain-text serializer. The session binds the source address through packetlib's
- * bind-address constructor; the handshake always announces the session host, so {@link ClientPacketListener} rewrites
- * the handshake for a virtual host. Each session decodes through a table of its own, since a translation may remember
- * what earlier packets of the session said, such as the types of its entities.
+ * Client of the MCProtocolLib releases from 1.18.2 until 1.19.4, which every adapter of this segment and of the
+ * segments extending it completes with its release's disconnect reasons and packet table: packetlib TCP sessions,
+ * mcauthlib's profiles and session service, the codec and clientbound/serverbound packet names. The session binds the
+ * source address through packetlib's bind-address constructor; the handshake always announces the session host, so
+ * {@link ClientPacketListener} rewrites the handshake for a virtual host. Each session decodes through a table of its
+ * own, since a translation may remember what earlier packets of the session said, such as the types of its entities.
  */
 public class JavaClient implements McProtocolClient<Session> {
 	private static final int ANY_PORT = 0;
@@ -36,15 +38,21 @@ public class JavaClient implements McProtocolClient<Session> {
 	 */
 	private static final String PATH_SEPARATOR = "/";
 
+	private final Function<DisconnectedEvent, String> reasons;
 	private final Supplier<PacketTable<Packet>> tables;
 	private final PacketTable<Packet> packets;
 
 	/**
-	 * Creates the client of the release.
+	 * Creates the client of a release.
 	 *
+	 * @param reasons flattens the reason of a closed connection to plain text, or to an empty text when it has none
 	 * @param tables creates a new packet table of the release
 	 */
-	protected JavaClient(@NotNull Supplier<PacketTable<Packet>> tables) {
+	protected JavaClient(
+			@NotNull Function<DisconnectedEvent, String> reasons,
+			@NotNull Supplier<PacketTable<Packet>> tables
+	) {
+		this.reasons = reasons;
 		this.tables = tables;
 		this.packets = tables.get();
 	}
@@ -75,7 +83,7 @@ public class JavaClient implements McProtocolClient<Session> {
 			sessionService.setBaseUri(credentials.getSessionServer() + PATH_SEPARATOR);
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, sessionService);
 		}
-		session.addListener(new ClientPacketListener(login, listener, tables.get()));
+		session.addListener(new ClientPacketListener(login, listener, tables.get(), reasons));
 
 		return session;
 	}
