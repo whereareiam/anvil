@@ -15,8 +15,8 @@ The examples use runtime access named `anvil`: a `ScenarioContext` in a test or 
 var alice = anvil.players().create("Alice");
 ```
 
-The player uses the scenario's entrypoint, which names a direct server or proxy. Anvil resolves its
-actual endpoint, so the caller does not need to discover the allocated port. Creation registers the
+The player uses the scenario's entrypoint, which names a direct server, a proxy or a remote. Anvil resolves
+its actual endpoint, so the caller does not need to discover the allocated port. Creation registers the
 player but does not connect it. Use [Session](../capabilities/session/index.md) for login,
 disconnection, reconnects, and kick observations.
 
@@ -80,6 +80,39 @@ instead of the proxy's first `try` server. Without `virtualHost`, the handshake 
 real host, as before. The host must not be blank, must not contain whitespace, and is at most 255
 characters long.
 
+## Join a remote
+
+A player whose target is a [remote](../../environments/definitions/index.md#join-a-network-anvil-does-not-run)
+connects the way the vanilla Java Edition client connects to the remote's address:
+
+1. The address splits into host and port; without a port it means `25565`.
+2. On port `25565`, typed or not, the client looks up the host's `_minecraft._tcp` SRV record and follows the
+   first record of the answer to its target host and port. Another port looks no record up.
+3. The host, or the SRV record's target, resolves to an IP address through the system resolver.
+4. The handshake announces the resolved host name as it was resolved and the port the player connects to.
+
+The announced host keeps letter case and the trailing dot DNS writes after an SRV target. A player joining
+`example.com`, whose record `_minecraft._tcp.example.com` points to `play.example.com.` on port `25570`,
+connects to the address of `play.example.com.` on port `25570` and announces `play.example.com.`. A proxy that
+routes by host, such as Velocity with `forced-hosts`, decides from that value whether the player matches an
+entry. An IP literal carries no host name, so the client announces the name a reverse lookup finds for the
+address, or the literal itself. A `virtualHost` still replaces the announced host.
+
+```java
+var visitor = anvil.players().create(PlayerOptions.builder()
+		.name("Visitor")
+		.connection(PlayerConnection.to("network"))
+		.build());
+```
+
+Anvil resolves the address when it creates the player and refuses it when the host does not resolve. The
+player keeps that address when it reconnects. A remote declares nothing about authentication, so the player's
+own login decides: an offline player joins as it would join an offline-mode server, and a player with an
+account signs in against Mojang's session service. A remote in online mode disconnects an offline player at
+login. The player speaks the remote's Minecraft version, and every capability the client owns works on it;
+what a server or proxy knows, through its process capabilities, does not exist for a remote. A remote player
+cannot declare a `sourceAddress`.
+
 ## Connect from another loopback address
 
 `sourceAddress` binds the player's socket to a local address before it connects, so the joined process
@@ -103,6 +136,7 @@ when the address cannot be used:
 | A target that does not listen on loopback, or listens on another address family | A loopback source only reaches a loopback listener of the same family |
 | An address this machine cannot bind | Linux routes all of `127.0.0.0/8` to loopback, so `127.0.0.2` and later addresses work without setup. macOS configures only `127.0.0.1`; add an alias first, for example `sudo ifconfig lo0 alias 127.0.0.2` |
 | Docker execution | Docker forwards published ports through its own network, so the container sees the bridge gateway instead of the source address. Use local execution |
+| A remote target | A remote does not listen on this machine's loopback interface |
 
 A proxy sees the source address; a backend behind it sees the proxy unless the proxy forwards player
 information to it.
@@ -135,7 +169,8 @@ Anvil only makes the second connection possible.
 
 ## Select a native version
 
-Anvil selects a supported native client compatible with every server reachable from the target.
+Anvil selects a supported native client compatible with every server reachable from the target, or
+the version a remote target declares.
 You can request a specific version with `PlayerOptions.clientVersion(...)`; that version must also
 be supported and compatible. Conflicting reachable server versions fail validation, and no protocol
 translation plugin is inserted automatically.

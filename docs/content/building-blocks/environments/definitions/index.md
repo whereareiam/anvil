@@ -140,6 +140,34 @@ Use the hook for operations that require ready processes or players. Keep the ac
 that define the actual test result in the [testing journey](../../../workflows/testing/journeys/index.md).
 This lets several tests reuse the same prepared state while checking different behavior.
 
+## Join a network Anvil does not run
+
+A scenario can name servers and proxies that run elsewhere, such as an existing network you have
+permission to test against. Declare each one as a `RemoteEndpoint` with its address, written as a player
+types it into the multiplayer screen, and the Minecraft version it speaks:
+
+```java
+import me.whereareiam.anvil.api.model.scenario.RemoteEndpoint;
+
+AnvilScenario scenario = AnvilScenario.builder()
+		.name("public-network")
+		.entrypoint("network")
+		.remote(RemoteEndpoint.builder()
+				.name("network")
+				.address("play.example.com")
+				.minecraftVersion("1.21.11")
+				.build())
+		.build();
+```
+
+A remote shares the namespace of the scenario's servers and proxies, so it can be the entrypoint or a
+player's [connection target](../../players/connections/index.md#join-a-remote). A scenario may consist of
+remotes alone: it then starts no process and needs no EULA acceptance. Anvil starts, stops, configures and
+observes nothing on a remote's side, so a remote is not among `processes()`, has no console and no process
+capabilities, and a proxy cannot register it as a backend. Validation refuses a remote without a name that
+is unique among servers, proxies and remotes, an address that cannot be parsed, and a blank or invalid
+Minecraft version.
+
 ## Prepare live state
 
 When the environment starts, Anvil validates its declaration, prepares its inputs, starts servers
