@@ -54,7 +54,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-capability/capability-default`                                 | Aggregate of every built-in player and process capability (artifact `default`) |
 | `anvil-player/player-api`                                         | Protocol library providers and releases, player creation/composition, the typed player channel and worker extension contracts, pinned runtime resolution, and optional authentication                       |
 | `anvil-player/player-common`                                         | Player registration, version selection, authentication compatibility, composition, and observations                                                                                 |
+| `anvil-player/player-worker`                                         | Worker runtime kit every library embeds to run worker extensions: `WorkerExtensions`, `NativeSessionBindings`, `WorkerProtocols` and `WorkerOperation` |
 | `anvil-player/player-protocol/protocol-java/protocol-java-api` | Java Edition protocol of simulated players: `JavaProtocol` and the packets, models and types it carries, as release-neutral values |
+| `anvil-player/player-protocol/protocol-java/protocol-java-worker` | Java Edition worker kit: `JavaPacketDispatcher`, the player's `JavaProtocol` over the `JavaConnection` a library implements |
 | `anvil-player/player-library/library-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port and the client segments; owns `mcprotocol-releases.toml` and `pinLibraryReleases`  |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell, and what their translations share: `PacketTranslation`, `PacketTable` and `EntityDataLayout` |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-adventure`             | `AdventureText` for the segments of releases whose components are Adventure's; each such segment declares it, and Adventure comes from the release's closure |
@@ -111,7 +113,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   a wrapper or pass Anvil family services through untyped service lookup.
 - Implementations/adapters consume APIs and external libraries, not sibling implementations.
   Do not disguise source dependencies as external Maven coordinates or classify implementations as
-  assemblies to evade verification. The launcher owns internal composition and packaging;
+  assemblies to evade verification. The worker kits `player-worker` and `protocol-java-worker` are API modules that
+  carry behaviour by design: every protocol library, Anvil's or another project's, embeds them to run worker
+  extensions, so they hold only what is the same for every library and nothing of a library's transport. The launcher owns internal composition and packaging;
   `anvil-integration` is reserved for external integrations.
 - Use `ServiceLoader` for the existing provider SPIs. Preserve service descriptors and merge them
   when shading. Do not add broad reflection scanning as an alternative discovery path.
@@ -121,8 +125,11 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   creates one capability runtime per selected library.
 - Public capabilities extend `PlayerCapability` or `ProcessCapability`, both rooted in the neutral
   `Capability` contract. Dependencies remain within the same owner. Neutral player providers use
-  shared observations and dependencies. Protocol-backed providers declare library support through
-  `supportedLibraries()`; agent process providers select supported platform IDs.
+  shared observations and dependencies. Protocol-backed providers declare what they need from the player's library,
+  never the library itself: `requiredProtocols()`, which the library's `ProtocolLibraryProvider.protocols()` must
+  contain, and `workerBacked()` for a worker extension without an edition protocol, such as Session's;
+  `supportedLibraries()` is only for a capability that uses one library's own services. Agent process providers
+  select supported platform IDs.
 - Retrieve only declared capability dependencies. The agent-backed `Players` capability must remain
   independent of `Session`.
 - A built-in capability belongs to whoever can normally do or know the thing: what a client can do or see
@@ -154,9 +161,12 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   The worker contracts belong to the player family: `player-api`'s `WorkerExtension`, `PlayerBindingContext`,
   `OperationRegistry` and `WorkerBinding` under `protocol.api.worker`, and the typed `ProtocolChannel` with
   `OperationDescriptor`/`EventDescriptor` that both ends of a player's channel share. Capabilities implement and
-  call them directly; nothing mirrors them on the capability side or bridges them in the launcher. The library's
-  worker discovers extensions, enforces the registration phase, namespaced uniqueness and cleanup
-  (`WorkerCapabilityRegistry`), and owns the typed encoding on both ends of its transport (`WorkerMessageCodec`).
+  call them directly; nothing mirrors them on the capability side or bridges them in the launcher. Every library's
+  worker runs extensions through the kits: `WorkerExtensions` discovers them, enforces the registration phase,
+  namespaced uniqueness, unavailability and cleanup, and `JavaPacketDispatcher` is the player's `JavaProtocol`. A
+  library supplies its `JavaConnection`, its packet translation and its transport; MCProtocolLib's owns the typed
+  encoding on both ends of its worker process (`WorkerMessageCodec`). The in-process fixture `test-java-library`
+  runs the built-in capabilities on the kits alone.
   Never add feature branches or an opaque universal packet abstraction to the MCProtocol worker.
 - Built-in families live below the group of their participant, decided by who can normally do or know it, never by
   how it is implemented: `capability-player/capability-player-builtin` for what a client can do or see
@@ -179,10 +189,12 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   disables only that capability. An external capability that needs library code Anvil's protocol does not cover may
   still keep a segmented library side: its extension takes the port's adapter only through
   `PlayerBindingContext.adapter(Class)` while binding, never through `ServiceLoader` (`checkAdapterLookup`).
-  For a player with a native worker, composition skips every protocol-backed provider whose capability the
-  worker does not install, and its dependents, with the worker's reason or "not installed by the <library>
-  worker"; host providers do not check installation themselves. Players without a native worker compose
-  every provider of their library.
+  Composition skips a protocol-backed provider, and its dependents, with the reason: when the library lacks one of
+  its `requiredProtocols()`; for a player without a native worker, when it is worker-backed; and for a player with
+  one, when the worker does not install its capability, with the worker's reason or "not installed by the <library>
+  worker". A provider that cannot apply to a library, for its protocols or its worker, yields to an applicable
+  provider of the same capability, such as a library's own Session. Host providers do not check installation
+  themselves.
 - `PlayerBindingContext` supplies an existing player's lifecycle, edition protocol, native session generations and
   release adapters to a binding; it is not another player entity, and the library's worker player implements it. `PlayerConnectionEvent`
   and `ViewRotation` live under `protocol.api.model.player`, `OperationDescriptor<Q, R>` and `EventDescriptor<E>`
@@ -462,7 +474,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   grouped by behavior. The whole task requires `-Panvil.testMode=full`; only its `matrixTest` task, which
   checks `CompatibilityScenarioFactoryTest` without starting a server, runs in every build.
 - The independent `anvil-test-fixtures` consumer build under `anvil-testkit/fixtures` contains
-  `test-process`, `test-server-plugin`, and `test-extension`. They use `src/main`; dependencies on Anvil
+  `test-process`, `test-server-plugin`, `test-extension`, and `test-java-library`. They use `src/main`; dependencies on Anvil
   use public artifact aliases, with current source projects substituted in the root composite build.
   Gradle produces fixture variants and supplies their exact artifacts to tests. Keep JAR construction
   out of Java test helpers; `TestExtensionLoader` owns discovery isolation and classloader cleanup.

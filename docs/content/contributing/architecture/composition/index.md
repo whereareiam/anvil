@@ -31,8 +31,11 @@ individual controls retain one wired environment across server/proxy starts and 
 Every installed `ProtocolLibraryProvider` can serve players. Player management selects a library and
 an exact release for each player: its declared `protocolLibrary`, else the scenario's or the engine's,
 else the installed library with the strongest support level for its Minecraft version. Launcher
-composition keeps one `PlayerCapabilityRuntime` per selected library, created on demand, and filters
-protocol-backed providers by their `supportedLibraries()`. Agent-backed process capability selection
+composition keeps one `PlayerCapabilityRuntime` per selected library, created on demand. It filters
+protocol-backed providers by their `supportedLibraries()`, which only capabilities using one library's own services
+declare, and skips those whose `requiredProtocols()` the library's `ProtocolLibraryProvider.protocols()` lacks, with
+that reason. A provider that cannot apply to a library yields to an applicable provider of the same capability,
+such as a library's own Session, instead of competing with it. Agent-backed process capability selection
 uses each process's declared platform, independently of player creation.
 
 Shared capability composition validates dependencies, rejects competing providers for one capability
@@ -40,8 +43,8 @@ type within an owner, and orders creation by declared predecessors. Before capab
 created, neutral and protocol-backed player factories contribute to one validated
 player dependency graph. Filtering protocol adapters does not skip duplicate or dependency checks
 for the remaining providers. For a player whose native worker does not install a protocol-backed
-provider's capability, composition skips that provider and every provider depending on it, and records
-the worker's reason for `CapabilityUnavailableException`. `CapabilityPlayerComposerProvider` composes players and
+provider's capability, and for a worker-backed provider of a player without a worker, composition skips that
+provider and every provider depending on it, and records the reason for `CapabilityUnavailableException`. `CapabilityPlayerComposerProvider` composes players and
 the launcher binds process factories to their agents:
 
 | Provider | Owner and context |
@@ -161,10 +164,13 @@ the release-specific port implementation of the segment selected for the worker'
 implementations own the actual packets, state, and listeners; feature APIs keep domain models free of transport
 types.
 
-`OperationRegistry` registers a typed handler for an `OperationDescriptor`. The worker's
-`WorkerCapabilityRegistry` enforces binding-time registration, unique namespaced operation IDs, and cleanup.
-`WorkerMessageCodec` owns request decoding, response type checks, and encoding on both ends of the worker's
-transport, so the host's `ProtocolChannel` and the worker's handlers operate on typed values.
+`OperationRegistry` registers a typed handler for an `OperationDescriptor`. Every library's worker runs extensions
+through the player family's worker kits: `player-worker`'s `WorkerExtensions` enforces binding-time registration,
+unique namespaced operation IDs, unavailability and cleanup, `NativeSessionBindings` follows session generations,
+and `protocol-java-worker`'s `JavaPacketDispatcher` is the player's `JavaProtocol` over the library's
+`JavaConnection`. The MCProtocol worker adds only its client, segments and transport: `WorkerMessageCodec` owns
+request decoding, response type checks, and encoding on both ends of the worker's transport, so the host's
+`ProtocolChannel` and the worker's handlers operate on typed values.
 
 Each binding owns one player's state. Native listeners attach before login and are replaced with
 their connection generation. The binding survives reconnects until player destruction; old native

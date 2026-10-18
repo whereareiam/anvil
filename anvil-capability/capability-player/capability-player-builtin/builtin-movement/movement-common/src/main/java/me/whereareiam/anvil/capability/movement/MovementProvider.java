@@ -5,6 +5,7 @@ import me.whereareiam.anvil.capability.movement.channel.MovementChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
@@ -23,8 +24,8 @@ public final class MovementProvider implements ProtocolPlayerCapabilityProvider<
 	}
 
 	@Override
-	public @NotNull Set<String> supportedLibraries() {
-		return Set.of("mcprotocol");
+	public @NotNull Set<Class<?>> requiredProtocols() {
+		return Set.of(JavaProtocol.class);
 	}
 
 	@Override

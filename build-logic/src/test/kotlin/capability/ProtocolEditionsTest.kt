@@ -19,6 +19,11 @@ class ProtocolEditionsTest {
 	}
 
 	@Test
+	fun `names the project of an edition's protocol api`() {
+		assertEquals(":anvil-player:player-protocol:protocol-java:protocol-java-api", ProtocolEditions.apiPath("java"))
+	}
+
+	@Test
 	fun `finds no edition in a build without the player family`() {
 		assertEquals(listOf<String>(), ProtocolEditions.discover(root))
 	}

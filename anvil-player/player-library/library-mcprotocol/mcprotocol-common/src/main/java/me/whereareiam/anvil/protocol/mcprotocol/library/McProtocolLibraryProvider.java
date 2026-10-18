@@ -5,6 +5,7 @@ import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
 import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
+import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.mcprotocol.authentication.MicrosoftAuthentication;
 import me.whereareiam.anvil.protocol.mcprotocol.catalog.McProtocolReleaseCatalog;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
@@ -15,6 +16,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -31,6 +33,16 @@ public final class McProtocolLibraryProvider implements ProtocolLibraryProvider 
 	@Override
 	public @NotNull String id() {
 		return McProtocolClient.LIBRARY_ID;
+	}
+
+	/**
+	 * Every release's players speak the Java Edition protocol, which the release's client segment translates.
+	 *
+	 * @return the Java Edition protocol
+	 */
+	@Override
+	public @NotNull Set<Class<?>> protocols() {
+		return Set.of(JavaProtocol.class);
 	}
 
 	/**

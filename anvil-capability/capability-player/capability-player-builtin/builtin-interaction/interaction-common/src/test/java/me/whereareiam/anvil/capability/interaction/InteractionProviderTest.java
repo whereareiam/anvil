@@ -11,6 +11,7 @@ import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,7 @@ class InteractionProviderTest {
 		assertEquals("me.whereareiam.anvil.interaction", InteractionChannel.ID);
 		assertEquals(InteractionChannel.ID, provider.descriptor().getId());
 		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
-		assertEquals(Set.of("mcprotocol"), provider.supportedLibraries());
+		assertEquals(Set.of(JavaProtocol.class), provider.requiredProtocols());
 		assertEquals(Interaction.class, provider.capability());
 	}
 

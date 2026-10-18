@@ -34,6 +34,12 @@ data class CapabilityFamily(
 	val published: List<String>
 		get() = listOf(api) + sides
 
+	/**
+	 * The protocol editions the family's sides adapt it to, such as `java` for `<name>-java`.
+	 */
+	val editions: List<String>
+		get() = sides.map { side -> side.removePrefix("$name-") }
+
 	companion object {
 		private const val serialVersionUID = 1L
 		private const val PREFIX = "builtin-"

@@ -7,15 +7,18 @@ import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
+import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerCapabilities;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerRequest;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerResponse;
+import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerControlOperation;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.fixture.RecordingClient;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageWriter;
+import me.whereareiam.anvil.protocol.worker.WorkerExtensions;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -57,7 +60,12 @@ class McProtocolWorkerTest {
 		);
 		var output = new ByteArrayOutputStream();
 		var writer = new WorkerMessageWriter(new PrintStream(output, true, StandardCharsets.UTF_8));
-		var registry = new WorkerCapabilityRegistry(Object.class, List.of(new IdentityExtension()));
+		var registry = new WorkerExtensions(
+				McProtocolClient.LIBRARY_ID,
+				Object.class,
+				WorkerControlOperation.wireNames(),
+				List.of(new IdentityExtension())
+		);
 		try (var worker = new McProtocolWorker(new RecordingClient(), SegmentRoots.none(), registry, writer)) {
 			worker.run(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
 		}

@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
+package me.whereareiam.anvil.protocol.worker;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
@@ -10,15 +10,33 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * Rebinds capability listeners across native session generations and owns their cleanup: a generation's listeners
- * are released when its connection ends or a new session replaces it.
+ * Rebinds one player's connection listeners across its native session generations and owns their cleanup: a
+ * generation's listeners are released when its connection ends or a new session replaces it. A library's player
+ * implements {@code PlayerBindingContext.bindNativeSession} with {@link #register(Function)}, attaches each session
+ * it opens before connecting it, and ends the session when its connection ends.
+ *
+ * <pre>{@code
+ * Object session = client.open(login, listener);
+ * bindings.attach(session);
+ * client.connect(session);
+ * ...
+ * bindings.end(session); // when the connection ended
+ * }</pre>
  */
-final class NativeSessionBindings implements AutoCloseable {
+public final class NativeSessionBindings implements AutoCloseable {
 	private final List<Registration> registrations = new ArrayList<>();
 	private @Nullable Object current;
 	private boolean closed;
 
-	synchronized @NotNull Subscription register(@NotNull Function<Object, Subscription> listener) {
+	/**
+	 * Registers a listener that runs for the current session, if any, and for every session attached later; the
+	 * subscription it returns for a session closes when that session's generation ends.
+	 *
+	 * @param listener binds the listener to one native session
+	 * @return subscription removing the listener and closing its current binding
+	 * @throws IllegalStateException when the bindings are closed
+	 */
+	public synchronized @NotNull Subscription register(@NotNull Function<Object, Subscription> listener) {
 		if (closed) throw new IllegalStateException("Native session bindings are closed");
 
 		Registration registration = new Registration(listener);
@@ -28,7 +46,15 @@ final class NativeSessionBindings implements AutoCloseable {
 		return registration;
 	}
 
-	synchronized void attach(@NotNull Object session) {
+	/**
+	 * Makes a session the current generation: the previous generation's bindings close and every listener binds to
+	 * the session. Attaching the current session again changes nothing. When a listener fails, the bindings made for
+	 * the session are closed and the failure is rethrown.
+	 *
+	 * @param session the native session the player opened
+	 * @throws IllegalStateException when the bindings are closed
+	 */
+	public synchronized void attach(@NotNull Object session) {
 		if (closed) throw new IllegalStateException("Native session bindings are closed");
 		if (session == current) return;
 
@@ -56,13 +82,16 @@ final class NativeSessionBindings implements AutoCloseable {
 	 *
 	 * @param session the session whose connection ended
 	 */
-	synchronized void end(@NotNull Object session) {
+	public synchronized void end(@NotNull Object session) {
 		if (closed || session != current) return;
 
 		current = null;
 		detach();
 	}
 
+	/**
+	 * Closes every current binding and refuses later registrations and sessions.
+	 */
 	@Override
 	public synchronized void close() {
 		if (closed) return;

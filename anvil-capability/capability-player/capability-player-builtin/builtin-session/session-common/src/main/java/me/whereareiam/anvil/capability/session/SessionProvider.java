@@ -5,13 +5,11 @@ import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabil
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Set;
 
 /**
- * Host-side provider of the standard session capability over the player's typed channel, for the libraries
- * whose workers the built-in capabilities serve. Composition creates it only for players whose worker
- * installed {@link SessionBinding}; another library, such as one without a native worker, provides its own
- * session capability.
+ * Host-side provider of the standard session capability over the player's typed channel. Its worker side,
+ * {@link SessionBinding}, needs no edition protocol, so composition creates it for the players of every library
+ * whose worker installed it; a library without a native worker provides its own session capability.
  */
 public final class SessionProvider implements ProtocolPlayerCapabilityProvider<Session> {
 	static final String ID = "me.whereareiam.anvil.session";
@@ -22,8 +20,8 @@ public final class SessionProvider implements ProtocolPlayerCapabilityProvider<S
 	}
 
 	@Override
-	public @NotNull Set<String> supportedLibraries() {
-		return Set.of("mcprotocol");
+	public boolean workerBacked() {
+		return true;
 	}
 
 	@Override

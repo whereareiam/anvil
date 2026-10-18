@@ -22,6 +22,7 @@ class CapabilityFamilyTest {
 
 		assertEquals(CapabilityFamily("movement", "movement-api", "movement-common", listOf("movement-java")), read)
 		assertEquals(listOf("movement-api", "movement-java"), read.published)
+		assertEquals(listOf("java"), read.editions)
 	}
 
 	@Test

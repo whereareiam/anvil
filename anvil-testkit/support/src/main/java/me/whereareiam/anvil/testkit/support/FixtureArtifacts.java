@@ -33,6 +33,10 @@ public final class FixtureArtifacts {
 		return artifact("extension-observation");
 	}
 
+	public static @NotNull Path javaLibrary() {
+		return artifact("java-library");
+	}
+
 	private static Path artifact(String name) {
 		String property = PROPERTY_PREFIX + name;
 		String configured = System.getProperty(property);

@@ -19,6 +19,7 @@ open class FixtureInputs(private val project: Project) {
 	fun extension() = register("extension-normal", "test-extension", "normal")
 	fun brokenExtension() = register("extension-broken", "test-extension", "broken")
 	fun observationExtension() = register("extension-observation", "test-extension", "observation")
+	fun javaLibrary() = register("java-library", "test-java-library")
 
 	/**
 	 * Returns declared fixture files for another task or tooling launch without resolving their artifacts.

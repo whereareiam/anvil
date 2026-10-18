@@ -119,34 +119,58 @@ every library with additional release data, when it is created; it checks a scen
 any of the scenario's processes start. The [versions page](../../building-blocks/environments/platforms/versions/index.md)
 describes the policies from a test author's view.
 
-## Expose execution services
+## Run worker extensions
 
-For typed worker operations, implement the player API's `ProtocolChannel` and expose it through
-`ProtocolPlayer.channel()`; capability composition hands that same channel to
-`ProtocolPlayerCapabilityContext.channel()`. The library owns serialization and transport, and decodes only the
-schemas an `OperationDescriptor` or `EventDescriptor` declares; feature wiring owns operation descriptors and the
-public feature API owns domain payload models.
+Capabilities do their client-side work in worker extensions (`WorkerExtension`), which speak an edition's protocol
+rather than a library's packets. A library that runs them gets every capability built on that protocol, the built-in
+ones included, without code of its own for any of them. Declare what your players speak in
+`ProtocolLibraryProvider.protocols()`, such as `Set.of(JavaProtocol.class)`. Composition skips a capability whose
+`requiredProtocols()` your library lacks before any player exists, and requesting it names the missing protocol.
 
-The channel's `installedCapabilities()` and `unavailableCapabilities()` report what the player's
-native worker installs and why the rest is missing. Composition skips every protocol-backed provider
-whose capability the worker does not install, together with the providers that depend on it, and
-reports the worker's reason, or `not installed by the <library> worker`, when the capability is
-requested. A player without a channel composes every provider that accepts its library.
+Two kits hold the runtime, so a library supplies only its connection and its packet translation:
 
-A native worker loads the `WorkerExtension` implementations on its class path through `ServiceLoader`. It installs
-those that target its library, or every library, and accept its native session type, and binds each of them to
-every player: your worker player implements `PlayerBindingContext<S>`, which supplies the current native session,
-generation-scoped listener registration through `bindNativeSession(...)`, on which the default
-`bindConnection(...)` that protocol extensions use is built, typed event emission, and the release-specific adapter
-of a port through `adapter(Class)`. The worker registers each extension's typed
-handlers through its own `OperationRegistry`, accepts registrations only while binding, and reports an extension
-that fails to link or finds no adapter as unavailable with the reason. MCProtocol's worker transport and dispatch
-remain private implementation details of that library.
+| Artifact | Use |
+| --- | --- |
+| `player-worker` | `WorkerExtensions` discovers the extensions on the class path, keeps those that target your library or every library and accept your native session type, binds them to each player, buffers operations while binding, and reports each unavailable one with its reason. `NativeSessionBindings` runs `bindNativeSession(...)`, and the `bindConnection(...)` built on it, across your sessions. `WorkerProtocols` lists the protocols a player speaks. |
+| `protocol-java-worker` | `JavaPacketDispatcher` is the player's `JavaProtocol` over the `JavaConnection` you implement: send a packet in your release's form, and say which packets your release carries. Hand every packet your player receives, already translated, to `deliver(...)`. |
+
+A worker player implements `PlayerBindingContext<Object>` with them:
+
+```java
+JavaPacketDispatcher java = new JavaPacketDispatcher("example", connection);
+WorkerProtocols protocols = WorkerProtocols.builder("example")
+		.speak(JavaProtocol.class, java, java::scoped)
+		.build();
+WorkerExtensions extensions = WorkerExtensions.discover("example", Object.class, Set.of());
+WorkerExtensions.PlayerBindings bindings = extensions.bind(player, protocols);
+```
+
+The player's `protocol(Class)` returns `protocols.protocol(type)`, and `bindNativeSession(...)` registers with its
+`NativeSessionBindings`, which it attaches to each session it opens and ends when that session's connection ends.
+A host request names an operation: `bindings.operation(id)` returns it with its `OperationDescriptor`, whose request
+and response types your transport decodes and encodes.
+
+For the host's side, implement `ProtocolChannel` and expose it through `ProtocolPlayer.channel()`; capability
+composition hands that same channel to `ProtocolPlayerCapabilityContext.channel()`. Its
+`installedCapabilities()` and `unavailableCapabilities()` report `WorkerExtensions.capabilities()` and
+`unavailable()`. Composition skips every capability your worker does not install, together with the ones that
+depend on it, with the worker's reason; a worker-backed capability of a player without a channel is skipped with
+the note that your players run no worker extensions. A library that runs extensions in the host's JVM calls the
+operations directly; one with worker processes, as MCProtocolLib has, owns its own transport and codec.
+
+The independent fixture library `test-java-library` in Anvil's test modules is a complete in-process example: it
+speaks the Java Edition protocol to a server that echoes chat, and Anvil's runtime tests compose the built-in
+capabilities on it.
+
+A worker extension needing a packet the protocol does not model belongs in the protocol: add the packet to
+`protocol-java-api` and to the area translations of every library. Code that is tied to one library still reaches
+its release-specific implementation through `PlayerBindingContext.adapter(Class)`, which your worker answers with
+the adapters its segments provide.
 
 For another library-specific service, implement a stable interface and return it from
 `ProtocolPlayer.findService(Class<T>)`. A provider can resolve that service through
 `ProtocolPlayerCapabilityContext.requireService(...)`, and declares your library ID in
-`supportedLibraries()`. Player observations use the shared `PlayerCapabilityContext.observation()`
+`supportedLibraries()`, since it works only with your library. Player observations use the shared `PlayerCapabilityContext.observation()`
 contract. Providers that need only those observations and capability dependencies use
 `PlayerCapabilityProvider` from `capability-api`; they do not need a protocol-specific context.
 Process capabilities backed by agents use `AgentProcessCapabilityProvider` and its own-process `channel()`,
@@ -206,9 +230,9 @@ anvil {
 ```
 
 `protocolLibrary("example")` makes your library the engine default; without it, each player uses
-the installed library with the strongest support for its version. Protocol-backed capability
-adapters declare your ID in `supportedLibraries()` where their implementation depends on it; an
-empty set accepts every library.
+the installed library with the strongest support for its version. Capabilities served by worker
+extensions apply to your players through the protocols you declare; only a capability that uses your library's own
+services declares your ID in `supportedLibraries()`.
 
 ## Verify selection and cleanup
 

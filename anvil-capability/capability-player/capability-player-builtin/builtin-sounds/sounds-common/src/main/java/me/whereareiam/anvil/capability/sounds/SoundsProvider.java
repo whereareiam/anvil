@@ -4,6 +4,7 @@ import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
 import me.whereareiam.anvil.capability.sounds.channel.SoundsChannel;
+import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
@@ -21,8 +22,8 @@ public final class SoundsProvider implements ProtocolPlayerCapabilityProvider<So
 	}
 
 	@Override
-	public @NotNull Set<String> supportedLibraries() {
-		return Set.of("mcprotocol");
+	public @NotNull Set<Class<?>> requiredProtocols() {
+		return Set.of(JavaProtocol.class);
 	}
 
 	@Override

@@ -131,8 +131,8 @@ com.example.roundtrip.java.RoundTripExtension
 ```
 
 The host `ProtocolPlayerCapabilityProvider` needs its own [service descriptor](../../packaging/index.md).
-Give its descriptor the matching capability ID `com.example.roundtrip` and return `Set.of("mcprotocol")`
-from `supportedLibraries()`.
+Give its descriptor the matching capability ID `com.example.roundtrip` and return `Set.of(JavaProtocol.class)`
+from `requiredProtocols()`, so it applies to the players of every library that speaks the Java Edition protocol.
 Obtain `ProtocolChannel channel = context.channel()` from `protocol.api.channel` during
 its `create` method and construct the host capability over it. Do not check
 `channel.installedCapabilities()` yourself: composition creates the provider only for players whose worker

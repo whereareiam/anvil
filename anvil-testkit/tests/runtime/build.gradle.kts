@@ -19,6 +19,8 @@ dependencies {
 	testCompileOnly(projects.anvilProcess.processCommon)
 
 	testRuntimeOnly(projects.anvilPlayer.playerLibrary.libraryMcprotocol)
+	testRuntimeOnly(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker)
+	testRuntimeOnly(projects.anvilPlayer.playerWorker)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.bukkitAgent)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.paperProvider)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.spigotProvider)
@@ -30,6 +32,7 @@ dependencies {
 fixtures {
 	extension()
 	brokenExtension()
+	javaLibrary()
 }
 
 // The Java guide's table of Java versions per platform version must equal the providers' version data.

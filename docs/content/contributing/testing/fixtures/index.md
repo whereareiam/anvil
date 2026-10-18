@@ -11,6 +11,7 @@ compiling and loading a real JAR is part of the behavior being verified.
 | `test-process` | A small executable for process startup, output, and lifecycle assertions |
 | `test-server-plugin` | Commands and native observations installed in real servers |
 | `test-extension` | External protocol library, capabilities, and agent operations loaded from real JARs |
+| `test-java-library` | External in-process library speaking the Java Edition protocol through the public worker kits, on which the built-in capabilities run |
 
 These projects belong to the independent `anvil-test-fixtures` consumer build. They use ordinary
 `src/main/java` and `src/main/resources` and produce real JARs. They are internal test artifacts and

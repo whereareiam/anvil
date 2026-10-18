@@ -1,23 +1,36 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
+import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
+import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
+import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
+import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
+import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerCredentials;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerEvent;
+import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerCapabilities;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerProfile;
+import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerControlOperation;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.fixture.RecordingClient;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageWriter;
+import me.whereareiam.anvil.protocol.worker.WorkerExtensions;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -25,7 +38,10 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiFunction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -180,11 +196,79 @@ class McProtocolPlayerTest {
 		try (McProtocolPlayer player = player(null)) {
 			ProtocolUnavailableException refused = assertThrows(ProtocolUnavailableException.class, () -> player.protocol(Runnable.class));
 
-			assertTrue(refused.getMessage().contains(Runnable.class.getName()), refused.getMessage());
+			assertEquals("the mcprotocol worker speaks " + JavaProtocol.class.getName() + ", not java.lang.Runnable",
+					refused.getMessage());
 		}
 	}
 
-	private McProtocolPlayer player(String accessToken) {
+	@Test
+	void executesOperationsAndEmitsEventsThroughTheWorkerTransport() {
+		var echo = new OperationDescriptor<>("example.echo", String.class, String.class);
+		var changed = new EventDescriptor<>("example.changed", String.class);
+		WorkerExtension<Object> extension = extension("example", (player, operations) -> {
+			operations.register(echo, request -> {
+				player.emit(changed, player.name() + ":" + request);
+				return player.name() + ":" + request;
+			});
+			return () -> { };
+		});
+		var codec = new WorkerMessageCodec();
+
+		try (McProtocolPlayer player = player(null, extension)) {
+			JsonNode response = player.execute(echo.getId(), codec.envelope("hello"));
+
+			assertEquals("Alice:hello", codec.open(response, String.class));
+			String line = output.toString(StandardCharsets.UTF_8).strip();
+			WorkerEvent event = (WorkerEvent) codec.decodeMessage(line).orElseThrow();
+			assertEquals(changed.getId(), event.getEvent());
+			assertEquals("Alice:hello", codec.open(event.getPayload(), String.class));
+		}
+	}
+
+	@Test
+	void makesAnExtensionUnavailableWhenNoSelectedSegmentProvidesItsAdapter() {
+		WorkerExtension<Object> extension = extension("adapted", (player, operations) -> {
+			player.adapter(Runnable.class);
+			return () -> { };
+		});
+
+		try (McProtocolPlayer player = player(null, extension)) {
+			WorkerPlayerCapabilities report = player.initialize();
+
+			assertEquals(Set.of(), report.getCapabilities());
+			String reason = "no mcprotocol segment selected for Minecraft 1.21.11 provides an adapter for "
+					+ Runnable.class.getName();
+			assertEquals(Map.of("adapted", reason), report.getUnavailable());
+		}
+	}
+
+	@Test
+	void releasesTheProtocolListenersOfAnExtensionThatFailsToLink() {
+		List<String> received = new ArrayList<>();
+		WorkerExtension<Object> partial = extension("partial", (player, operations) -> {
+			player.protocol(JavaProtocol.class)
+					.listen(ClientboundSystemChat.class, packet -> received.add("partial " + packet.getText()));
+			throw new NoClassDefFoundError("org/example/MissingPacket");
+		});
+		WorkerExtension<Object> listening = extension("listening", (player, operations) -> {
+			JavaProtocol protocol = player.protocol(JavaProtocol.class);
+
+			Subscription subscription = protocol.listen(ClientboundSystemChat.class,
+					packet -> received.add("listening " + packet.getText()));
+
+			return subscription::close;
+		});
+
+		try (McProtocolPlayer player = player(null, partial, listening)) {
+			player.connect();
+			Object session = client.sessions().getFirst();
+			client.listener(session).received(session, new ClientboundSystemChat("welcome", false));
+
+			assertEquals(List.of("listening welcome"), received);
+		}
+	}
+
+	private McProtocolPlayer player(String accessToken, WorkerExtension<?>... extensions) {
 		var options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder().name("Alice").uniqueId(uuid).build())
 				.credentials(accessToken == null ? null : WorkerCredentials.builder().accessToken(accessToken).build())
@@ -193,9 +277,35 @@ class McProtocolPlayerTest {
 				.build();
 		var player = new McProtocolPlayer("player", options, client, SegmentRoots.none(),
 				new WorkerMessageWriter(new PrintStream(output, true, StandardCharsets.UTF_8)),
-				new WorkerCapabilityRegistry(Object.class, List.of()));
+				new WorkerExtensions(McProtocolClient.LIBRARY_ID, Object.class, WorkerControlOperation.wireNames(),
+						List.of(extensions)));
 		player.initialize();
 		return player;
+	}
+
+	private static WorkerExtension<Object> extension(
+			String id,
+			BiFunction<PlayerBindingContext<Object>, OperationRegistry, WorkerBinding> binding
+	) {
+		return new WorkerExtension<>() {
+			@Override
+			public @NotNull String id() {
+				return id;
+			}
+
+			@Override
+			public @NotNull Class<Object> nativeSessionType() {
+				return Object.class;
+			}
+
+			@Override
+			public @NotNull WorkerBinding bind(
+					@NotNull PlayerBindingContext<Object> player,
+					@NotNull OperationRegistry operations
+			) {
+				return binding.apply(player, operations);
+			}
+		};
 	}
 
 	private ClientProfile granted(String name) {

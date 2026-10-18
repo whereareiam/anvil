@@ -17,6 +17,8 @@ dependencies {
 	compileOnly(projects.anvilPlayer.playerApi)
 	compileOnly(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolApi)
 	compileOnly(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
+	compileOnly(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker)
+	compileOnly(projects.anvilPlayer.playerWorker)
 
 	testImplementation(projects.anvilApi)
 	testImplementation(projects.anvilCapability.capabilityCommon)
@@ -26,6 +28,8 @@ dependencies {
 	testImplementation(projects.anvilPlayer.playerApi)
 	testImplementation(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolApi)
 	testImplementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
+	testImplementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker)
+	testImplementation(projects.anvilPlayer.playerWorker)
 
 	testRuntimeOnly(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolJava)
 	testRuntimeOnly(libs.slf4j.simple)

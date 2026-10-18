@@ -9,6 +9,7 @@ import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ class SoundsProviderTest {
 		assertEquals("me.whereareiam.anvil.sounds", SoundsChannel.ID);
 		assertEquals(SoundsChannel.ID, provider.descriptor().getId());
 		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
-		assertEquals(Set.of("mcprotocol"), provider.supportedLibraries());
+		assertEquals(Set.of(JavaProtocol.class), provider.requiredProtocols());
 		assertEquals(Sounds.class, provider.capability());
 	}
 
