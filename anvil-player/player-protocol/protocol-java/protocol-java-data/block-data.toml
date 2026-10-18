@@ -1,0 +1,58 @@
+# Block data of every Minecraft release Anvil supports, generated at build time from PrismarineJS minecraft-data
+# (https://github.com/PrismarineJS/minecraft-data, MIT). Each [[release]] lists the Minecraft versions that speak
+# one protocol, and so share one block registry, and pins the minecraft-data files of those versions. A row without
+# files has no block data: minecraft-data names none of its versions in data/dataPaths.json.
+# Change [source] version to another minecraft-data release, or add a row, then run
+# ./gradlew :anvil-player:player-protocol:protocol-java:protocol-java-data:pinBlockData, which resolves the
+# commit and rewrites every pin. Pins never change silently while the commit stays the same.
+
+[source]
+repository = "PrismarineJS/minecraft-data"
+version = "3.117.0"
+commit = "15411f050f040e4c5df09352a75a9912ad8c3eeb"
+
+[[release]]
+minecraft = ["1.16.4", "1.16.5"]
+blocks = { path = "data/pc/1.16.2/blocks.json", sha256 = "f2e55725444d6ad679d498051412eec28b629c8e66873fc5351fd6de623603f4" }
+collision-shapes = { path = "data/pc/1.16.1/blockCollisionShapes.json", sha256 = "55c0879170b8d265c43497ec5f2d092a180164dbbae2d1a2ff5c6a18f43c9e09" }
+
+[[release]]
+minecraft = ["1.17.1"]
+blocks = { path = "data/pc/1.17/blocks.json", sha256 = "8cbd43bdab30c26198d256314c675044bc0b0319b15ea0f88f94381c061d0c0f" }
+collision-shapes = { path = "data/pc/1.17/blockCollisionShapes.json", sha256 = "266d4041643c3f50f2477a3b58976f70a2e955cc85bd9c0ec180ff0148197166" }
+
+[[release]]
+minecraft = ["1.18.2"]
+blocks = { path = "data/pc/1.18/blocks.json", sha256 = "6f6afb0bdcd6b867a6c2d57cab19b2b9a66e0fd52c14761c03614dd50ce0de24" }
+collision-shapes = { path = "data/pc/1.17/blockCollisionShapes.json", sha256 = "266d4041643c3f50f2477a3b58976f70a2e955cc85bd9c0ec180ff0148197166" }
+
+[[release]]
+minecraft = ["1.19.4"]
+blocks = { path = "data/pc/1.19.4/blocks.json", sha256 = "e761ca070ad67cb6353f83c429a70960e0262b1c6eeecb74fed107e2013c12dd" }
+collision-shapes = { path = "data/pc/1.19.4/blockCollisionShapes.json", sha256 = "b862630074f6093fb92afedd3dfb14fe801071ea9da4e1df33aaf926659ad28f" }
+
+[[release]]
+minecraft = ["1.20.5", "1.20.6"]
+blocks = { path = "data/pc/1.20.5/blocks.json", sha256 = "e9b54c8c46147382398f0b765040432aae706960eed58eb4de062c6889cd4be3" }
+collision-shapes = { path = "data/pc/1.20.5/blockCollisionShapes.json", sha256 = "fac384f740f14ab24b7c422a30a5fbb742e715433a07cae726ef8f9bfbde8036" }
+
+[[release]]
+minecraft = ["1.21", "1.21.1"]
+blocks = { path = "data/pc/1.21.1/blocks.json", sha256 = "7d1d95c4e0255f9f269293e8077c7923c9ec0ff902a9a475ed131da8b26bc654" }
+collision-shapes = { path = "data/pc/1.20.5/blockCollisionShapes.json", sha256 = "fac384f740f14ab24b7c422a30a5fbb742e715433a07cae726ef8f9bfbde8036" }
+
+[[release]]
+minecraft = ["1.21.11"]
+blocks = { path = "data/pc/1.21.11/blocks.json", sha256 = "894b926701b73047f1e24ad9650356d8d6f4c1a6d79f65143facbc9c58598a47" }
+collision-shapes = { path = "data/pc/1.21.11/blockCollisionShapes.json", sha256 = "21c70a180500e6cb564d6e9e4aedfe571fa496c77c5a6f8ed1335ba3d25f88aa" }
+
+[[release]]
+minecraft = ["26.1", "26.1.1", "26.1.2"]
+blocks = { path = "data/pc/26.1/blocks.json", sha256 = "573e172619f3c1ca64e15d07799ab646e1fd9ad19d759d9ceca65ac4fc7440a9" }
+collision-shapes = { path = "data/pc/26.1/blockCollisionShapes.json", sha256 = "cf43f91636ace49e6a4ead1e96b1b9246291294949fa052fe14fb5ad022393bf" }
+
+[[release]]
+minecraft = ["26.2"]
+
+[[release]]
+minecraft = ["26.3"]

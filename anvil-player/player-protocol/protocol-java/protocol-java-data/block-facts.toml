@@ -1,0 +1,190 @@
+# Block facts that PrismarineJS minecraft-data does not carry, maintained by hand from vanilla's code (Mojang's
+# mappings) and merged into the generated block data of every release. A block a release does not have is skipped
+# there; a name no release has fails the build. Each [[block]] names the vanilla `source` of its values.
+#
+# Numbers are Java literals with vanilla's precision: "0.98F" is a float, "0.25D" a double, so a float that vanilla
+# widens to a double is widened the same way. Absent values keep vanilla's defaults: friction 0.6F, speed and jump
+# factors 1.0F, no bounce, no stuck slowdown, no fluid besides a waterlogged state's water.
+#
+# Traits: AIR, CLIMBABLE, SLIME_STEP, HONEY_SLIDE, BUBBLE_COLUMN, DYNAMIC_COLLISION, OFFSET_COLLISION; the Java
+# BlockTrait enum documents each. property-start gives the lowest value of an integer property that does not start
+# at 0, which minecraft-data leaves out for 1.16 and 1.18; releases whose data lists the values check it.
+
+[[block]]
+names = ["minecraft:air", "minecraft:cave_air", "minecraft:void_air"]
+source = "Blocks.AIR, CAVE_AIR and VOID_AIR are AirBlock, whose states are air: BlockBehaviour.Properties.air()"
+traits = ["AIR"]
+
+[[block]]
+names = ["minecraft:ice", "minecraft:packed_ice", "minecraft:frosted_ice"]
+source = "Blocks.ICE, PACKED_ICE and FROSTED_ICE: BlockBehaviour.Properties.friction(0.98F)"
+friction = "0.98F"
+
+[[block]]
+names = ["minecraft:blue_ice"]
+source = "Blocks.BLUE_ICE: BlockBehaviour.Properties.friction(0.989F)"
+friction = "0.989F"
+
+[[block]]
+names = ["minecraft:slime_block"]
+source = """Blocks.SLIME_BLOCK: friction(0.8F); SlimeBlock.bounceUp reverses the fall speed times 1.0D (0.8D for an \
+entity that is not living) unless the entity suppresses bouncing; SlimeBlock.stepOn slows a walking entity"""
+friction = "0.8F"
+bounce = "1.0D"
+traits = ["SLIME_STEP"]
+
+[[block]]
+names = ["minecraft:honey_block"]
+source = """Blocks.HONEY_BLOCK: speedFactor(0.4F).jumpFactor(0.5F); HoneyBlock.entityInside slides an entity down its \
+sides"""
+speed-factor = "0.4F"
+jump-factor = "0.5F"
+traits = ["HONEY_SLIDE"]
+
+[[block]]
+names = ["minecraft:soul_sand"]
+source = "Blocks.SOUL_SAND: BlockBehaviour.Properties.speedFactor(0.4F)"
+speed-factor = "0.4F"
+
+[[block]]
+names = [
+	"minecraft:white_bed", "minecraft:orange_bed", "minecraft:magenta_bed", "minecraft:light_blue_bed",
+	"minecraft:yellow_bed", "minecraft:lime_bed", "minecraft:pink_bed", "minecraft:gray_bed",
+	"minecraft:light_gray_bed", "minecraft:cyan_bed", "minecraft:purple_bed", "minecraft:blue_bed",
+	"minecraft:brown_bed", "minecraft:green_bed", "minecraft:red_bed", "minecraft:black_bed",
+]
+source = """BedBlock.bounceUp reverses the fall speed times 0.66F (and 0.8D for an entity that is not living) unless the \
+entity suppresses bouncing"""
+bounce = "0.66F"
+
+[[block]]
+names = ["minecraft:cobweb"]
+source = "WebBlock.entityInside: entity.makeStuckInBlock(state, new Vec3(0.25D, 0.05F, 0.25D))"
+stuck = { horizontal = "0.25D", vertical = "0.05F" }
+
+[[block]]
+names = ["minecraft:sweet_berry_bush"]
+source = "SweetBerryBushBlock.entityInside: entity.makeStuckInBlock(state, new Vec3(0.8F, 0.75D, 0.8F))"
+stuck = { horizontal = "0.8F", vertical = "0.75D" }
+
+[[block]]
+names = ["minecraft:powder_snow"]
+source = """PowderSnowBlock.entityInside: entity.makeStuckInBlock(state, new Vec3(0.9F, 1.5D, 0.9F)) for an entity \
+not on leather boots; PowderSnowBlock.getCollisionShape is solid only for a falling entity and one that can walk on \
+powder snow"""
+stuck = { horizontal = "0.9F", vertical = "1.5D" }
+traits = ["DYNAMIC_COLLISION"]
+
+[[block]]
+names = [
+	"minecraft:ladder", "minecraft:vine", "minecraft:scaffolding", "minecraft:weeping_vines",
+	"minecraft:weeping_vines_plant", "minecraft:twisting_vines", "minecraft:twisting_vines_plant",
+	"minecraft:cave_vines", "minecraft:cave_vines_plant",
+]
+source = "Block tag minecraft:climbable, data/minecraft/tags/blocks/climbable.json (tags/block/ since 1.21)"
+traits = ["CLIMBABLE"]
+
+[[block]]
+names = ["minecraft:scaffolding"]
+source = """ScaffoldingBlock.getCollisionShape: the stable shape only for an entity above the block that is not \
+descending, the unstable bottom for a hanging bottom block, nothing otherwise"""
+traits = ["DYNAMIC_COLLISION"]
+
+[[block]]
+names = [
+	"minecraft:shulker_box", "minecraft:white_shulker_box", "minecraft:orange_shulker_box",
+	"minecraft:magenta_shulker_box", "minecraft:light_blue_shulker_box", "minecraft:yellow_shulker_box",
+	"minecraft:lime_shulker_box", "minecraft:pink_shulker_box", "minecraft:gray_shulker_box",
+	"minecraft:light_gray_shulker_box", "minecraft:cyan_shulker_box", "minecraft:purple_shulker_box",
+	"minecraft:blue_shulker_box", "minecraft:brown_shulker_box", "minecraft:green_shulker_box",
+	"minecraft:red_shulker_box", "minecraft:black_shulker_box",
+]
+source = "ShulkerBoxBlock.getShape follows the block entity's opening lid"
+traits = ["DYNAMIC_COLLISION"]
+
+[[block]]
+names = ["minecraft:moving_piston"]
+source = "MovingPistonBlock.getCollisionShape comes from the moving block's PistonMovingBlockEntity"
+traits = ["DYNAMIC_COLLISION"]
+
+[[block]]
+names = ["minecraft:bamboo", "minecraft:pointed_dripstone"]
+source = """Blocks.BAMBOO and POINTED_DRIPSTONE: offsetType(OffsetType.XZ); BlockState.getOffset moves their shapes by \
+a hash of the block's position"""
+traits = ["OFFSET_COLLISION"]
+
+[[block]]
+names = [
+	"minecraft:water", "minecraft:bubble_column", "minecraft:kelp", "minecraft:kelp_plant", "minecraft:seagrass",
+	"minecraft:tall_seagrass",
+]
+source = """getFluidState: Blocks.WATER is LiquidBlock(Fluids.WATER); BubbleColumnBlock, KelpBlock, KelpPlantBlock, \
+SeagrassBlock and TallSeagrassBlock return Fluids.WATER.getSource(false)"""
+fluid = "WATER"
+
+[[block]]
+names = ["minecraft:lava"]
+source = "Blocks.LAVA is LiquidBlock(Fluids.LAVA)"
+fluid = "LAVA"
+
+[[block]]
+names = ["minecraft:bubble_column"]
+source = """BubbleColumnBlock.entityInside pushes an entity up, or drags it down where its drag property is true \
+(Entity.onInsideBubbleColumn, onAboveBubbleCol)"""
+traits = ["BUBBLE_COLUMN"]
+
+[[block]]
+names = [
+	"minecraft:oak_leaves", "minecraft:spruce_leaves", "minecraft:birch_leaves", "minecraft:jungle_leaves",
+	"minecraft:acacia_leaves", "minecraft:dark_oak_leaves", "minecraft:azalea_leaves",
+	"minecraft:flowering_azalea_leaves", "minecraft:mangrove_leaves", "minecraft:cherry_leaves",
+	"minecraft:pale_oak_leaves",
+]
+source = "LeavesBlock.DISTANCE is BlockStateProperties.DISTANCE, IntegerProperty.create(\"distance\", 1, 7)"
+property-start = { distance = 1 }
+
+[[block]]
+names = ["minecraft:snow"]
+source = "SnowLayerBlock.LAYERS is IntegerProperty.create(\"layers\", 1, 8)"
+property-start = { layers = 1 }
+
+[[block]]
+names = ["minecraft:repeater"]
+source = "RepeaterBlock.DELAY is IntegerProperty.create(\"delay\", 1, 4)"
+property-start = { delay = 1 }
+
+[[block]]
+names = ["minecraft:water_cauldron", "minecraft:powder_snow_cauldron"]
+source = "LayeredCauldronBlock.LEVEL is BlockStateProperties.LEVEL_CAULDRON, IntegerProperty.create(\"level\", 1, 3)"
+property-start = { level = 1 }
+
+[[block]]
+names = ["minecraft:turtle_egg"]
+source = "TurtleEggBlock.EGGS is IntegerProperty.create(\"eggs\", 1, 4)"
+property-start = { eggs = 1 }
+
+[[block]]
+names = ["minecraft:sea_pickle"]
+source = "SeaPickleBlock.PICKLES is IntegerProperty.create(\"pickles\", 1, 4)"
+property-start = { pickles = 1 }
+
+[[block]]
+names = [
+	"minecraft:candle", "minecraft:white_candle", "minecraft:orange_candle", "minecraft:magenta_candle",
+	"minecraft:light_blue_candle", "minecraft:yellow_candle", "minecraft:lime_candle", "minecraft:pink_candle",
+	"minecraft:gray_candle", "minecraft:light_gray_candle", "minecraft:cyan_candle", "minecraft:purple_candle",
+	"minecraft:blue_candle", "minecraft:brown_candle", "minecraft:green_candle", "minecraft:red_candle",
+	"minecraft:black_candle",
+]
+source = "CandleBlock.CANDLES is IntegerProperty.create(\"candles\", 1, 4)"
+property-start = { candles = 1 }
+
+[[block]]
+names = ["minecraft:pink_petals", "minecraft:wildflowers"]
+source = "FlowerBedBlock.AMOUNT is BlockStateProperties.FLOWER_AMOUNT, IntegerProperty.create(\"flower_amount\", 1, 4)"
+property-start = { flower_amount = 1 }
+
+[[block]]
+names = ["minecraft:leaf_litter"]
+source = "LeafLitterBlock.AMOUNT is BlockStateProperties.SEGMENT_AMOUNT, IntegerProperty.create(\"segment_amount\", 1, 4)"
+property-start = { segment_amount = 1 }
