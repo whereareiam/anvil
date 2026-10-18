@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.testkit.tests.server.extension;
+package me.whereareiam.anvil.testkit.tests.server.fixture;
 
 import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityContext;

@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.testkit.tests.server.routing;
+package me.whereareiam.anvil.testkit.tests.server.platform;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
@@ -12,7 +12,6 @@ import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
 import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestFactory;
 
 import java.time.Duration;
@@ -23,13 +22,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("compatibility")
+/**
+ * Logs a player in on every NeoForge release, which loads no fixture plugin, and drives it with vanilla commands.
+ */
 class NeoForgeServerSystemTest {
 	@TestFactory
-	Stream<DynamicTest> runsEveryNeoForgeVersion() {
-		String filter = System.getProperty("anvil.matrix.filter", ".*");
-		return CompatibilityScenarioFactory.neoForgeScenarios().stream()
-				.filter(scenario -> scenario.getName().matches(filter))
+	Stream<DynamicTest> runsEveryNeoForgeRelease() {
+		return PlatformSelection.select(CompatibilityScenarioFactory.neoForgeScenarios()).stream()
 				.map(scenario -> DynamicTest.dynamicTest(scenario.getName(), () -> verify(scenario)));
 	}
 

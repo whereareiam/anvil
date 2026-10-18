@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.testkit.tests.server.scenario;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
@@ -10,144 +11,151 @@ import me.whereareiam.anvil.api.model.workspace.WorkspaceAsset;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.testkit.support.FixtureArtifacts;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 /**
- * Internal scenario factory defining Anvil's live matrix: every platform, Minecraft version and Java
- * combination these scenarios run is what the platforms' and protocol libraries' version data call
- * verified. Every Minecraft version runs direct on Paper, one release key of each MCProtocolLib release, and
- * player capability tests run their full journey on those servers; current versions also run on Spigot and behind
- * both proxies.
+ * Internal scenario factory defining Anvil's live matrix from {@code live-matrix.toml}: every platform, Minecraft
+ * version and Java combination these scenarios run is what the platforms' and protocol libraries' version data call
+ * verified. Every release runs direct on Paper, where the release suite drives every player capability; the
+ * platform releases also run on Spigot and behind both proxies, and NeoForge runs direct.
  */
 public final class CompatibilityScenarioFactory {
-	private static final String VELOCITY_VERSION = "3.5.1";
-	private static final String VELOCITY_BUILD = "615";
-	private static final String BUNGEE_BUILD = "2085";
-	private static final List<PaperBuild> DIRECT_PAPER = List.of(
-			new PaperBuild("1.16.5", "794"),
-			new PaperBuild("1.17.1", "411"),
-			new PaperBuild("1.18.2", "388"),
-			new PaperBuild("1.19.4", "550"),
-			new PaperBuild("1.20.6", "151"),
-			new PaperBuild("1.21.1", "133"),
-			new PaperBuild("26.2", "134"),
-			new PaperBuild("26.3", "202")
-	);
-	private static final List<NeoForgeRelease> NEOFORGE = List.of(
-			new NeoForgeRelease("1.21.1", "21.1.256"),
-			new NeoForgeRelease("1.21.11", "21.11.45"),
-			new NeoForgeRelease("26.1.2", "26.1.2.114")
-	);
+	private static final LiveMatrix MATRIX = LiveMatrix.read();
+
+	private CompatibilityScenarioFactory() {
+	}
 
 	/**
-	 * Returns every scenario of the live matrix: the fixture scenarios and the NeoForge scenarios.
+	 * Returns every scenario of the live matrix.
 	 *
 	 * @return all scenarios whose combinations the version data calls verified
 	 */
-	public static List<AnvilScenario> scenarios() {
-		List<AnvilScenario> scenarios = new ArrayList<>(fixtureScenarios());
+	public static @NotNull List<AnvilScenario> scenarios() {
+		List<AnvilScenario> scenarios = new ArrayList<>(releaseScenarios());
+		scenarios.addAll(platformScenarios());
 		scenarios.addAll(neoForgeScenarios());
 		return List.copyOf(scenarios);
 	}
 
 	/**
-	 * Returns the direct NeoForge scenario of each Minecraft version NeoForge is verified on. NeoForge loads
-	 * no Bukkit plugin, so these servers carry no fixture and their test uses vanilla commands only.
+	 * Returns the Minecraft versions of the releases, one per MCProtocolLib release key, oldest first.
+	 *
+	 * @return release versions
+	 */
+	public static @NotNull List<MinecraftVersion> releases() {
+		return MATRIX.getReleases().stream().map(LiveMatrix.Release::minecraft).toList();
+	}
+
+	/**
+	 * Returns the direct Paper scenario of every release, oldest first, on the Java that planning selects by default.
+	 *
+	 * @return one direct Paper scenario per release
+	 */
+	public static @NotNull List<AnvilScenario> releaseScenarios() {
+		return MATRIX.getReleases().stream().map(CompatibilityScenarioFactory::paperScenario).toList();
+	}
+
+	/**
+	 * Returns the direct Paper scenario of one release, whose server loads the fixture plugin.
+	 *
+	 * @param version Minecraft version of the release
+	 * @return the release's scenario
+	 * @throws IllegalArgumentException when the live matrix has no such release
+	 */
+	public static @NotNull AnvilScenario releaseScenario(@NotNull MinecraftVersion version) {
+		LiveMatrix.Release release = MATRIX.release(version)
+				.orElseThrow(() -> new IllegalArgumentException("The live matrix has no release " + version
+						+ "; it runs " + releases()));
+
+		return paperScenario(release);
+	}
+
+	/**
+	 * Returns the scenarios of the platform releases: a direct Spigot server, and Paper and Spigot servers behind
+	 * Velocity and BungeeCord.
+	 *
+	 * @return the platform scenarios
+	 */
+	public static @NotNull List<AnvilScenario> platformScenarios() {
+		List<AnvilScenario> scenarios = new ArrayList<>();
+		for (LiveMatrix.PlatformRelease platform : MATRIX.getPlatforms()) {
+			MinecraftVersion version = platform.release().minecraft();
+			scenarios.add(directScenario("spigot-" + version, Platforms.SPIGOT, spigot(platform)));
+			for (String proxy : List.of(Platforms.VELOCITY, Platforms.BUNGEECORD))
+				for (String server : List.of(Platforms.PAPER, Platforms.SPIGOT))
+					scenarios.add(proxyScenario(proxy, server, platform));
+		}
+
+		return List.copyOf(scenarios);
+	}
+
+	/**
+	 * Returns the scenario of one platform release with two servers of one platform behind a proxy.
+	 *
+	 * @param proxyPlatform proxy platform, {@link Platforms#VELOCITY} or {@link Platforms#BUNGEECORD}
+	 * @param serverPlatform server platform, {@link Platforms#PAPER} or {@link Platforms#SPIGOT}
+	 * @param version Minecraft version of a platform release
+	 * @return the routed scenario
+	 * @throws IllegalArgumentException when the live matrix has no such platform release
+	 */
+	public static @NotNull AnvilScenario proxyScenario(
+			@NotNull String proxyPlatform,
+			@NotNull String serverPlatform,
+			@NotNull MinecraftVersion version
+	) {
+		LiveMatrix.PlatformRelease platform = MATRIX.getPlatforms().stream()
+				.filter(candidate -> candidate.release().minecraft().equals(version))
+				.findFirst()
+				.orElseThrow(() -> new IllegalArgumentException("The live matrix runs no platforms on " + version));
+
+		return proxyScenario(proxyPlatform, serverPlatform, platform);
+	}
+
+	/**
+	 * Returns the direct NeoForge scenario of each Minecraft version NeoForge is verified on. NeoForge loads no Bukkit
+	 * plugin, so these servers carry no fixture and their test uses vanilla commands only.
 	 *
 	 * @return one direct NeoForge scenario per verified Minecraft version
 	 */
-	public static List<AnvilScenario> neoForgeScenarios() {
-		return NEOFORGE.stream().map(release -> neoForgeScenario(release.version(), release.release())).toList();
+	public static @NotNull List<AnvilScenario> neoForgeScenarios() {
+		return MATRIX.getNeoForge().stream().map(CompatibilityScenarioFactory::neoForgeScenario).toList();
 	}
 
-	/**
-	 * Returns pinned direct and routed environments whose servers load the fixture plugin, which compatibility
-	 * and restart tests drive through its commands and agent operations.
-	 *
-	 * @return all Paper, Spigot and proxy scenarios
-	 */
-	public static List<AnvilScenario> fixtureScenarios() {
-		List<AnvilScenario> scenarios = new ArrayList<>(paperReleaseScenarios());
-		registerVersion("1.21.11", "132",
-				"6481503fca2838776b3da5a3f1c030e1328abc2fd77d9ea1bb4814889b540dcd", scenarios);
-		registerVersion("26.1.2", "74",
-				"95f871fd6d055ba10b5a058768ddad43b0be0286480c8eba435c835c95d5f19c", scenarios);
-		return List.copyOf(scenarios);
+	private static AnvilScenario paperScenario(LiveMatrix.Release release) {
+		Distribution paper = Distribution.remote(release.minecraft().toString(), release.paper());
+		return directScenario("paper-" + release.minecraft(), Platforms.PAPER, paper);
 	}
 
-	/**
-	 * Returns the direct Paper scenario of each Minecraft version in the matrix, oldest first, on the Java that
-	 * planning selects by default. Player capability tests run their full journey on these scenarios, so that the
-	 * capability code of every protocol library release meets a real server.
-	 *
-	 * @return one direct Paper scenario per Minecraft version of the matrix
-	 */
-	public static List<AnvilScenario> paperReleaseScenarios() {
-		List<AnvilScenario> scenarios = new ArrayList<>();
-		DIRECT_PAPER.forEach(paper -> register(scenarios, paperScenario(paper.version(), paper.build())));
-		register(scenarios, new Paper12111SystemScenario().define());
-		register(scenarios, new Paper2612SystemScenario().define());
-		scenarios.sort(Comparator.comparing(scenario -> scenario.getServers().getFirst().nativeVersion()));
-		return List.copyOf(scenarios);
+	private static Distribution spigot(LiveMatrix.PlatformRelease platform) {
+		return Distribution.pinned(platform.release().minecraft().toString(), platform.spigotSha256());
 	}
 
-	private static void registerVersion(
-			String version,
-			String paperBuild,
-			String spigotSha256,
-			List<AnvilScenario> matrix
+	private static AnvilScenario proxyScenario(
+			String proxyPlatform,
+			String serverPlatform,
+			LiveMatrix.PlatformRelease platform
 	) {
-		Distribution paper = Distribution.remote(version, paperBuild);
-		Distribution spigot = Distribution.pinned(version, spigotSha256);
-		register(matrix, directScenario(
-				"spigot-" + version,
-				Platforms.SPIGOT,
-				spigot
-		));
-		register(matrix, proxyScenario(
-				"velocity-paper-" + version,
-				Platforms.VELOCITY,
-				Platforms.PAPER,
-				paper
-		));
-		register(matrix, proxyScenario(
-				"velocity-spigot-" + version,
-				Platforms.VELOCITY,
-				Platforms.SPIGOT,
-				spigot
-		));
-		register(matrix, proxyScenario(
-				"bungee-paper-" + version,
-				Platforms.BUNGEECORD,
-				Platforms.PAPER,
-				paper
-		));
-		register(matrix, proxyScenario(
-				"bungee-spigot-" + version,
-				Platforms.BUNGEECORD,
-				Platforms.SPIGOT,
-				spigot
-		));
+		LiveMatrix.Release release = platform.release();
+		Distribution distribution = serverPlatform.equals(Platforms.SPIGOT)
+				? spigot(platform)
+				: Distribution.remote(release.minecraft().toString(), release.paper());
+		String name = (proxyPlatform.equals(Platforms.VELOCITY) ? "velocity-" : "bungee-") + serverPlatform + "-"
+				+ release.minecraft();
+
+		return proxyScenario(name, proxyPlatform, serverPlatform, distribution);
 	}
 
-	private static void register(List<AnvilScenario> scenarios, AnvilScenario scenario) {
-		scenarios.add(scenario);
-	}
-
-	static AnvilScenario paperScenario(String version, String build) {
-		return directScenario("paper-" + version, Platforms.PAPER, Distribution.remote(version, build));
-	}
-
-	private static AnvilScenario neoForgeScenario(String version, String release) {
+	private static AnvilScenario neoForgeScenario(LiveMatrix.NeoForgeRelease release) {
+		String version = release.minecraft().toString();
 		MinecraftServer server = MinecraftServer.builder()
 				.name("server")
 				.metadata(serverMetadata("server"))
 				.platform(Platforms.NEOFORGE)
-				.distribution(Distribution.remote(version, release))
+				.distribution(Distribution.remote(version, release.release()))
 				.memoryMegabytes(1536)
 				.build();
 		return AnvilScenario.builder()
@@ -227,9 +235,10 @@ public final class CompatibilityScenarioFactory {
 	}
 
 	private static MinecraftProxy proxy(String name, String platform, String defaultServer, String otherServer) {
+		LiveMatrix.Proxies proxies = MATRIX.getProxies();
 		Distribution distribution = Platforms.VELOCITY.equals(platform)
-				? Distribution.remote(VELOCITY_VERSION, VELOCITY_BUILD)
-				: Distribution.remote("BungeeCord", BUNGEE_BUILD);
+				? Distribution.remote(proxies.velocityVersion(), proxies.velocityBuild())
+				: Distribution.remote("BungeeCord", proxies.bungeeCordBuild());
 		return MinecraftProxy.builder()
 				.name(name)
 				.metadata(PresentationMetadata.builder()
@@ -264,22 +273,6 @@ public final class CompatibilityScenarioFactory {
 					.build();
 		};
 	}
-
-	/**
-	 * Pinned Paper build of one Minecraft version.
-	 *
-	 * @param version Minecraft version
-	 * @param build Paper build number
-	 */
-	private record PaperBuild(String version, String build) { }
-
-	/**
-	 * Pinned NeoForge release of one Minecraft version.
-	 *
-	 * @param version Minecraft version
-	 * @param release NeoForge release
-	 */
-	private record NeoForgeRelease(String version, String release) { }
 
 	private static String platformLabel(String platform) {
 		return switch (platform) {

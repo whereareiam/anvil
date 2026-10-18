@@ -1,15 +1,16 @@
 package me.whereareiam.anvil.testkit.tests.server.scenario;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.scenario.AnvilScenarioDefinition;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Direct Paper 1.21.11 fixture for live Anvil system tests.
+ * Direct Paper 1.21.11 release of the live matrix, which behaviour tests and the IDE start on its own.
  */
 public final class Paper12111SystemScenario implements AnvilScenarioDefinition {
 	@Override
 	public @NotNull AnvilScenario define() {
-		return CompatibilityScenarioFactory.paperScenario("1.21.11", "132");
+		return CompatibilityScenarioFactory.releaseScenario(MinecraftVersion.parse("1.21.11"));
 	}
 }

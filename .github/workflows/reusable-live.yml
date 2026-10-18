@@ -22,34 +22,56 @@ permissions:
   checks: write
 
 jobs:
+  plan:
+    name: Plan live suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      suites: ${{ steps.suites.outputs.suites }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.commit }}
+          persist-credentials: false
+          sparse-checkout: anvil-testkit/tests/server/live-matrix.toml
+          sparse-checkout-cone-mode: false
+
+      # One job per release of the live matrix, which runs the release suite against that release's server, then
+      # the platform suite per platform group and the behaviour suite.
+      - name: List the suites
+        id: suites
+        run: |
+          python3 - >> "$GITHUB_OUTPUT" <<'PYTHON'
+          import json
+          import tomllib
+
+          with open("anvil-testkit/tests/server/live-matrix.toml", "rb") as file:
+              releases = [row["minecraft"] for row in tomllib.load(file)["release"]]
+
+          suites = [
+              {"name": f"Release {release}", "shard": f"release-{release}", "task": f"releaseTest-{release}", "platforms": ""}
+              for release in releases
+          ]
+          suites += [
+              {"name": "Platforms · Spigot and NeoForge", "shard": "platform-direct", "task": "platformTest",
+               "platforms": "spigot,neoforge"},
+              {"name": "Platforms · Velocity", "shard": "platform-velocity", "task": "platformTest", "platforms": "velocity"},
+              {"name": "Platforms · BungeeCord", "shard": "platform-bungeecord", "task": "platformTest",
+               "platforms": "bungeecord"},
+              {"name": "Sessions, routing and extensions", "shard": "behavior", "task": "behaviorTest", "platforms": ""},
+          ]
+          print("suites=" + json.dumps(suites))
+          PYTHON
+
   suites:
     name: ${{ matrix.name }}
+    needs: plan
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - name: Direct servers
-            shard: direct
-            tags: compatibility
-            filter: "^(?!velocity-|bungee-).*"
-          - name: Velocity
-            shard: velocity
-            tags: compatibility
-            filter: "^velocity-.*"
-          - name: BungeeCord
-            shard: bungeecord
-            tags: compatibility
-            filter: "^bungee-.*"
-          - name: Player capabilities
-            shard: capabilities
-            tags: capabilities
-            filter: ".*"
-          - name: Sessions, routing and extensions
-            shard: behavior
-            tags: "!compatibility & !capabilities"
-            filter: ".*"
+        include: ${{ fromJSON(needs.plan.outputs.suites) }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -68,13 +90,12 @@ jobs:
       - name: Run live tests
         env:
           ANVIL_VERSION: ${{ inputs.version }}
-          TEST_TAGS: ${{ matrix.tags }}
-          MATRIX_FILTER: ${{ matrix.filter }}
+          TASK: ${{ matrix.task }}
+          PLATFORMS: ${{ matrix.platforms }}
         run: >-
-          ./gradlew --no-daemon :anvil-testkit:tests:server:test
+          ./gradlew --no-daemon ":anvil-testkit:tests:server:$TASK"
           -Panvil.testMode=full -Panvil.intellij=false
-          -PanvilTestTags="$TEST_TAGS"
-          -PanvilMatrixFilter="$MATRIX_FILTER"
+          -PanvilPlatforms="$PLATFORMS"
           -PanvilVersion="$ANVIL_VERSION"
           -Dmaven.repo.local="$RUNNER_TEMP/anvil-maven"
 

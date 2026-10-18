@@ -273,9 +273,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   settings plugin fails the configuration of any project whose main resources ship version data with an
   `[agent]` table unless it applies the convention. The `platformAgent` configuration only feeds that check, so
   it is intentionally outside the architecture verifier's production configurations even though it names
-  another family's agent. VERIFIED means run by the live matrix: a platform's and a protocol library's
-  verified data list exactly the combinations `CompatibilityScenarioFactory` runs (checked in every build by
-  `CompatibilityScenarioFactoryTest` through the server suite's `matrixTest`), and every other supported
+  another family's agent. VERIFIED means run by the live matrix: a platform's and a protocol library's verified data
+  list exactly the combinations `live-matrix.toml` lists and `CompatibilityScenarioFactory` runs (checked in every
+  build by `CompatibilityScenarioFactoryTest` through the server suite's `matrixTest`), and every other supported
   version is only known (COMPATIBLE). Docs keep one Java-per-version table in the Java provisioning guide,
   which `JavaVersionTableDocumentationTest` compares with the installed providers' version data and the
   planner's defaults.
@@ -470,9 +470,16 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   such as `SwingTestSupport` and `ControlledToolingProcess`, through `intellij-common/src/testFixtures`,
   never through production artifacts or another module's whole test tree.
 - `anvil-testkit/tests/runtime/src/test`: cross-module discovery/composition without live Minecraft.
-- `anvil-testkit/tests/server/src/test`: real sessions, capabilities, routes, and external agents,
-  grouped by behavior. The whole task requires `-Panvil.testMode=full`; only its `matrixTest` task, which
-  checks `CompatibilityScenarioFactoryTest` without starting a server, runs in every build.
+- `anvil-testkit/tests/server/src/test`: real servers in three suites, one package and task each, all requiring
+  `-Panvil.testMode=full`. `release` runs one test class per capability, annotated `@Release`, against the direct
+  Paper server of the release `releaseTest-<minecraft>` names; the server is kept for the task's JVM, each test
+  joins its own player through `FixtureServer`, and capabilities a release predates are gated with
+  `TestedRelease.isAtLeast`. `platform` (`platformTest`, `-PanvilPlatforms`) runs Spigot, the proxies and NeoForge,
+  and `behavior` (`behaviorTest`) lifecycles, sessions, routing, tooling and extensions, which pick scenarios
+  through typed `CompatibilityScenarioFactory` lookups, never by name. `test` runs all three. The live matrix is the
+  data file `live-matrix.toml`: the build registers one release task per release from it and CI one job per
+  release. Only `matrixTest`, which checks `CompatibilityScenarioFactoryTest` without starting a server, runs in
+  every build.
 - The independent `anvil-test-fixtures` consumer build under `anvil-testkit/fixtures` contains
   `test-process`, `test-server-plugin`, `test-extension`, and `test-java-library`. They use `src/main`; dependencies on Anvil
   use public artifact aliases, with current source projects substituted in the root composite build.
@@ -513,7 +520,8 @@ failures.
 
 ~~~shell
 ./gradlew test -Panvil.testMode=full
-./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full --tests '*ProxyServerCompatibilitySystemTest' -PanvilMatrixFilter='.*spigot.*'
+./gradlew :anvil-testkit:tests:server:releaseTest-1.21.11 -Panvil.testMode=full
+./gradlew :anvil-testkit:tests:server:platformTest -Panvil.testMode=full -PanvilPlatforms=spigot
 ~~~
 
 ## Documentation and delivery

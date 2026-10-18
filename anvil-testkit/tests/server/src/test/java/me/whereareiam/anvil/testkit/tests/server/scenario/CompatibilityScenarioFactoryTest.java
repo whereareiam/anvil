@@ -37,8 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Keeps the verified data of the bundled platforms and of MCProtocolLib equal to the live matrix these
  * scenarios define: a combination is VERIFIED exactly when a matrix scenario runs it. It also keeps one direct
- * Paper scenario, which player capability tests run their full journey on, for every MCProtocolLib release. The
- * test plans the scenarios without starting any process.
+ * Paper release scenario, which the release suite runs every player capability against, for every MCProtocolLib
+ * release key. The test plans the scenarios without starting any process.
  */
 class CompatibilityScenarioFactoryTest {
 	private static final Map<String, PlatformProvider> PLATFORMS = ServiceLoader.load(PlatformProvider.class).stream()
@@ -83,8 +83,8 @@ class CompatibilityScenarioFactoryTest {
 	}
 
 	@Test
-	void paperReleaseScenariosRunEveryMcprotocolReleaseDirectOnPaperWithinTheMatrix() {
-		List<AnvilScenario> releases = CompatibilityScenarioFactory.paperReleaseScenarios();
+	void releaseScenariosRunEveryMcprotocolReleaseDirectOnPaperWithinTheMatrix() {
+		List<AnvilScenario> releases = CompatibilityScenarioFactory.releaseScenarios();
 		Set<String> matrix = CompatibilityScenarioFactory.scenarios().stream()
 				.map(AnvilScenario::getName)
 				.collect(Collectors.toSet());
@@ -105,6 +105,7 @@ class CompatibilityScenarioFactoryTest {
 				.toList();
 
 		assertEquals(releaseKeys, versions, "Minecraft versions of the direct Paper scenarios");
+		assertEquals(releaseKeys, CompatibilityScenarioFactory.releases(), "Releases of the live matrix, oldest first");
 	}
 
 	private List<ProtocolRelease> mcprotocolReleases() {

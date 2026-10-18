@@ -1,0 +1,75 @@
+# Anvil's live matrix: every combination listed here runs against real servers, and the version data of the
+# platforms and of MCProtocolLib call exactly these combinations verified, which CompatibilityScenarioFactoryTest
+# checks in every build. The scenario factory builds the scenarios from this file, and the build registers one
+# releaseTest-<minecraft> task per release from it, which CI runs as one job each.
+
+# One direct Paper server per MCProtocolLib release key, oldest first. The release suite runs every player
+# capability against it.
+[[release]]
+minecraft = "1.16.5"
+paper = "794"
+
+[[release]]
+minecraft = "1.17.1"
+paper = "411"
+
+[[release]]
+minecraft = "1.18.2"
+paper = "388"
+
+[[release]]
+minecraft = "1.19.4"
+paper = "550"
+
+[[release]]
+minecraft = "1.20.6"
+paper = "151"
+
+[[release]]
+minecraft = "1.21.1"
+paper = "133"
+
+[[release]]
+minecraft = "1.21.11"
+paper = "132"
+
+[[release]]
+minecraft = "26.1.2"
+paper = "74"
+
+[[release]]
+minecraft = "26.2"
+paper = "134"
+
+[[release]]
+minecraft = "26.3"
+paper = "202"
+
+# Releases that also run on Spigot, and on Paper and Spigot behind Velocity and BungeeCord. Each names a release
+# above, whose Paper build its proxied Paper servers use.
+[[platform]]
+minecraft = "1.21.11"
+spigot-sha256 = "6481503fca2838776b3da5a3f1c030e1328abc2fd77d9ea1bb4814889b540dcd"
+
+[[platform]]
+minecraft = "26.1.2"
+spigot-sha256 = "95f871fd6d055ba10b5a058768ddad43b0be0286480c8eba435c835c95d5f19c"
+
+# The proxies in front of the platform releases.
+[proxy]
+velocity-version = "3.5.1"
+velocity-build = "615"
+bungeecord-build = "2085"
+
+# Direct NeoForge servers, which load no Bukkit plugin.
+[[neoforge]]
+minecraft = "1.21.1"
+release = "21.1.256"
+
+[[neoforge]]
+minecraft = "1.21.11"
+release = "21.11.45"
+
+[[neoforge]]
+minecraft = "26.1.2"
+release = "26.1.2.114"

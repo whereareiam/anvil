@@ -1,3 +1,5 @@
+import me.whereareiam.anvil.buildlogic.fixture.LiveMatrixReleases
+
 plugins {
 	id("module-java")
 	id("test-fixtures-consumer")
@@ -7,6 +9,8 @@ plugins {
 description = "Sessions, capabilities, extensions, and routing against real Minecraft servers and proxies"
 
 dependencies {
+	"anvilImplementation"(libs.jackson.toml)
+
 	testImplementation(projects.anvilCapability.capabilityDefault)
 	testImplementation(projects.anvilCapability.capabilityProcess.capabilityProcessApi)
 	testImplementation(projects.anvilIntegration.integrationJunit)
@@ -33,24 +37,56 @@ dependencies {
 
 val fullTesting = providers.gradleProperty("anvil.testMode").orElse("unit")
 	.map { it.equals("full", ignoreCase = true) }
-val matrixFilter = providers.gradleProperty("anvilMatrixFilter").orElse(".*")
-val testTags = providers.gradleProperty("anvilTestTags")
+val platforms = providers.gradleProperty("anvilPlatforms").orElse("")
+// The live matrix lists the releases, Spigot and proxy versions and NeoForge releases that run against real servers.
+val liveMatrix = layout.projectDirectory.file("live-matrix.toml")
+val releases = LiveMatrixReleases.parse(providers.fileContents(liveMatrix).asText.get())
 // Plans the live matrix without starting a process to check that verified data lists exactly what it runs.
 val matrixDataTest = "*.CompatibilityScenarioFactoryTest"
 
-tasks.test {
+// Each suite is one package of the tests and runs only with -Panvil.testMode=full: `release` against the server of
+// one release, `platform` on Spigot, the proxies and NeoForge, and `behavior` for lifecycles, sessions and extensions.
+fun Test.liveSuite(suite: String) {
+	group = LifecycleBasePlugin.VERIFICATION_GROUP
+	testClassesDirs = sourceSets.test.get().output.classesDirs
+	classpath = sourceSets.test.get().runtimeClasspath
 	val enabledForRun = fullTesting.get()
 	onlyIf("Real server tests require -Panvil.testMode=full") { enabledForRun }
 	inputs.property("anvilTestMode", fullTesting)
-	inputs.property("anvilMatrixFilter", matrixFilter)
-	useJUnitPlatform {
-		testTags.orNull?.let { includeTags(it) }
-	}
 	filter {
-		excludeTestsMatching(matrixDataTest)
+		includeTestsMatching("me.whereareiam.anvil.testkit.tests.server.$suite.*")
 	}
-	systemProperty("anvil.matrix.filter", matrixFilter.get())
 	systemProperty("anvil.eula.accepted", "true")
+}
+
+// One task per release, so each runs in a JVM of its own that keeps one server for the whole release suite.
+val releaseTests = releases.map { release ->
+	tasks.register<Test>("releaseTest-$release") {
+		description = "Runs every player capability against the Paper server of Minecraft $release."
+		liveSuite("release")
+		systemProperty("anvil.release", release)
+	}
+}
+val releaseTest = tasks.register("releaseTest") {
+	group = LifecycleBasePlugin.VERIFICATION_GROUP
+	description = "Runs the release suite against every release of the live matrix, one release at a time."
+	dependsOn(releaseTests)
+}
+val platformTest = tasks.register<Test>("platformTest") {
+	description = "Runs the platform suite on Spigot, the proxies and NeoForge, or on those -PanvilPlatforms lists."
+	liveSuite("platform")
+	inputs.property("anvilPlatforms", platforms)
+	systemProperty("anvil.platforms", platforms.get())
+}
+val behaviorTest = tasks.register<Test>("behaviorTest") {
+	description = "Runs the behaviour suite: lifecycles, sessions, routing and extensions."
+	liveSuite("behavior")
+}
+
+// The live suites have tasks of their own; `test` runs them all with -Panvil.testMode=full.
+tasks.test {
+	onlyIf("The live suites run in releaseTest, platformTest and behaviorTest") { false }
+	dependsOn(releaseTest, platformTest, behaviorTest)
 }
 
 // The matrix data check starts no server, so every build runs it, unlike the real-server tests above.
@@ -86,6 +122,13 @@ configurations.configureEach {
 		substitute(module("me.whereareiam.anvil:launcher")).using(project(":anvil-launcher"))
 		substitute(module("me.whereareiam.anvil:tooling-launcher")).using(project(":anvil-tooling:tooling-launcher"))
 		substitute(module("me.whereareiam.anvil:tooling-builtin")).using(project(":anvil-tooling:tooling-builtin"))
+	}
+}
+
+// The scenario factory reads the live matrix beside its own class.
+tasks.named<ProcessResources>("processAnvilResources") {
+	from(liveMatrix) {
+		into("me/whereareiam/anvil/testkit/tests/server/scenario")
 	}
 }
 

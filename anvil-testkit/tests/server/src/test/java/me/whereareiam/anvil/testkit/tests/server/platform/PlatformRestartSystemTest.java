@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.testkit.tests.server.routing;
+package me.whereareiam.anvil.testkit.tests.server.platform;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
@@ -11,7 +11,7 @@ import me.whereareiam.anvil.capability.players.PlayerWatch;
 import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
-import me.whereareiam.anvil.testkit.tests.server.extension.FixtureAgentProbeProvider;
+import me.whereareiam.anvil.testkit.tests.server.fixture.FixtureAgentProbeProvider;
 import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
@@ -23,11 +23,14 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ProcessRestartSystemTest {
+/**
+ * Restarts the entrypoint of every platform scenario, and the backend of a proxy, and checks that the player
+ * reconnects with the same identity, address, workspace and capabilities.
+ */
+class PlatformRestartSystemTest {
 	@TestFactory
-	Stream<DynamicTest> restartsEverySupportedPlatformAndNativeVersion() {
-		String filter = System.getProperty("anvil.matrix.filter", ".*");
-		return CompatibilityScenarioFactory.fixtureScenarios().stream().filter(scenario -> scenario.getName().matches(filter))
+	Stream<DynamicTest> restartsEveryPlatformScenario() {
+		return PlatformSelection.select(CompatibilityScenarioFactory.platformScenarios()).stream()
 				.map(scenario -> DynamicTest.dynamicTest(scenario.getName(), () -> verify(scenario)));
 	}
 
