@@ -29,6 +29,9 @@ import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.Serverbound
 import org.geysermc.mcprotocollib.protocol.packet.configuration.clientbound.ClientboundRegistryDataPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchFinishedPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchStartPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundChunkBatchReceivedPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginFinishedPacket;
 import org.jetbrains.annotations.NotNull;
@@ -42,6 +45,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClientPacketListenerTest {
 	private static final UUID GRANTED = new UUID(0, 2);
@@ -76,6 +80,21 @@ class ClientPacketListenerTest {
 		assertEquals(Arrays.asList(SkinPart.values()), information.getVisibleParts());
 		assertEquals(HandPreference.RIGHT_HAND, information.getMainHand());
 		assertEquals(ParticleStatus.ALL, information.getParticleStatus());
+	}
+
+	@Test
+	void acknowledgesEveryChunkBatchWithTheRateItWantsNext() {
+		receive(new ClientboundChunkBatchStartPacket());
+		receive(new ClientboundChunkBatchFinishedPacket(9));
+		receive(new ClientboundChunkBatchStartPacket());
+		receive(new ClientboundChunkBatchFinishedPacket(0));
+
+		assertEquals(List.of("sent ServerboundChunkBatchReceivedPacket", "sent ServerboundChunkBatchReceivedPacket"),
+				events);
+		float first = assertInstanceOf(ServerboundChunkBatchReceivedPacket.class, sent.getFirst()).getDesiredChunksPerTick();
+		assertTrue(first > 0);
+		assertEquals(first, assertInstanceOf(ServerboundChunkBatchReceivedPacket.class, sent.get(1))
+				.getDesiredChunksPerTick());
 	}
 
 	@Test
