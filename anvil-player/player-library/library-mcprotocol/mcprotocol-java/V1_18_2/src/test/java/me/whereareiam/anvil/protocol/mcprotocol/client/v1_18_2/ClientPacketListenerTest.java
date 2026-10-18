@@ -62,7 +62,7 @@ class ClientPacketListenerTest {
 		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed")));
 		receive(allocate(ClientboundLoginPacket.class));
 
-		assertEquals(List.of("sent ServerboundClientInformationPacket", "logged in as Alice_Renamed " + GRANTED), events);
+		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ServerboundClientInformationPacket", "logged in as Alice_Renamed " + GRANTED), events);
 		ServerboundClientInformationPacket information = assertInstanceOf(ServerboundClientInformationPacket.class, sent.getFirst());
 		assertEquals("en_us", information.getLocale());
 		assertEquals(8, information.getRenderDistance());
@@ -126,6 +126,13 @@ class ClientPacketListenerTest {
 		assertEquals(List.of(), events);
 	}
 
+	@Test
+	void reportsTheGrantedProfileAsSoonAsTheLoginSucceeds() {
+		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed")));
+
+		assertEquals(List.of("granted Alice_Renamed " + GRANTED), events);
+	}
+
 	private void receive(Packet packet) {
 		listener.packetReceived(session, packet);
 	}
@@ -154,6 +161,11 @@ class ClientPacketListenerTest {
 	}
 
 	private final class RecordingListener implements ClientListener<Session> {
+		@Override
+		public void granted(@NotNull Session session, @NotNull ClientProfile granted) {
+			events.add("granted " + granted.getName() + " " + granted.getUniqueId());
+		}
+
 		@Override
 		public void loggedIn(@NotNull Session session, @NotNull ClientProfile granted) {
 			events.add("logged in as " + granted.getName() + " " + granted.getUniqueId());

@@ -96,7 +96,9 @@ either one, just as a library that cannot redirect its session service refuses a
 Create a disconnected client; connection behavior is supplied through the
 appropriate capability. `ProtocolPlayer.requestedProfile()` returns the profile the client requests, and
 `grantedProfile()` returns, while it is connected, the profile the server or proxy granted in its login
-success. Each process's Players capability finds the player by the UUIDs of its granted profiles, so the
+success, from the moment that arrives: before the client enters the game, and while a proxy keeps the client
+on the loading screen. The MCProtocol worker reports it as the `player.granted` event
+(`PlayerConnectionEvent.GRANTED`) as soon as the login succeeds. Each process's Players capability finds the player by the UUIDs of its granted profiles, so the
 Players capability of no server or proxy finds a player whose library never reports a granted profile.
 Implement `grantedProfiles()` when the library keeps every profile granted at earlier logins; without
 it, a player is found only under the current one. Destroying a player releases its client resources,

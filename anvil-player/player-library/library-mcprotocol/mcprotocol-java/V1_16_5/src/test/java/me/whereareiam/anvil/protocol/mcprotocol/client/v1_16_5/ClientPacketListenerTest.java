@@ -62,7 +62,7 @@ class ClientPacketListenerTest {
 		receive(new LoginSuccessPacket(new GameProfile(GRANTED, "Alice_Renamed")));
 		receive(allocate(ServerJoinGamePacket.class));
 
-		assertEquals(List.of("sent ClientSettingsPacket", "logged in as Alice_Renamed " + GRANTED), events);
+		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ClientSettingsPacket", "logged in as Alice_Renamed " + GRANTED), events);
 		ClientSettingsPacket settings = assertInstanceOf(ClientSettingsPacket.class, sent.getFirst());
 		assertEquals("en_us", settings.getLocale());
 		assertEquals(8, settings.getRenderDistance());
@@ -136,6 +136,13 @@ class ClientPacketListenerTest {
 		assertEquals(List.of(new ClientboundSystemChat("anvil:welcome", false)), received);
 	}
 
+	@Test
+	void reportsTheGrantedProfileAsSoonAsTheLoginSucceeds() {
+		receive(new LoginSuccessPacket(new GameProfile(GRANTED, "Alice_Renamed")));
+
+		assertEquals(List.of("granted Alice_Renamed " + GRANTED), events);
+	}
+
 	private void receive(Packet packet) {
 		listener.packetReceived(new PacketReceivedEvent(session, packet));
 	}
@@ -163,6 +170,11 @@ class ClientPacketListenerTest {
 	}
 
 	private final class RecordingListener implements ClientListener<Session> {
+		@Override
+		public void granted(@NotNull Session session, @NotNull ClientProfile granted) {
+			events.add("granted " + granted.getName() + " " + granted.getUniqueId());
+		}
+
 		@Override
 		public void loggedIn(@NotNull Session session, @NotNull ClientProfile granted) {
 			events.add("logged in as " + granted.getName() + " " + granted.getUniqueId());

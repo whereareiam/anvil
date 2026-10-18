@@ -267,6 +267,12 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	 */
 	private final class Listener implements ClientListener<Object> {
 		@Override
+		public void granted(@NotNull Object current, @NotNull ClientProfile granted) {
+			if (current != session) return;
+			emit(PlayerConnectionEvent.GRANTED, new PlayerProfile(granted.getName(), granted.getUniqueId()));
+		}
+
+		@Override
 		public void loggedIn(@NotNull Object current, @NotNull ClientProfile granted) {
 			if (current != session) return;
 			PlayerProfile profile = new PlayerProfile(granted.getName(), granted.getUniqueId());

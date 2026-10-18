@@ -45,8 +45,10 @@ final class ClientPacketListener extends SessionAdapter {
 
 	@Override
 	public void packetReceived(Session session, Packet packet) {
-		if (packet instanceof ClientboundGameProfilePacket success)
+		if (packet instanceof ClientboundGameProfilePacket success) {
 			granted = ClientProfile.builder().name(success.getProfile().getName()).uniqueId(success.getProfile().getId()).build();
+			listener.granted(session, granted);
+		}
 		if (packet instanceof ClientboundLoginPacket) {
 			session.send(new ServerboundClientInformationPacket(login.getSettings().getLocale(), login.getSettings().getViewDistance(), ChatVisibility.FULL,
 					true, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, false, true));

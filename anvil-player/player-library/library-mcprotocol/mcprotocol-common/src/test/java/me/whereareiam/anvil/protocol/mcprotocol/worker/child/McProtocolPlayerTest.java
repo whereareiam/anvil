@@ -102,6 +102,21 @@ class McProtocolPlayerTest {
 	}
 
 	@Test
+	void reportsTheProfileGrantedAtTheLoginSuccessOnlyForTheCurrentSession() {
+		try (McProtocolPlayer player = player(null)) {
+			player.connect();
+			Object first = client.sessions().getFirst();
+			player.rejoin();
+			Object second = client.sessions().get(1);
+
+			client.listener(first).granted(first, granted("Alice"));
+			client.listener(second).granted(second, granted("Alice_Renamed"));
+
+			assertEquals(List.of(new PlayerProfile("Alice_Renamed", uuid)), grants());
+		}
+	}
+
+	@Test
 	void prefersTheServersReasonOverAConnectionThatClosedFirst() throws Exception {
 		try (McProtocolPlayer player = player(null)) {
 			player.connect();
@@ -310,6 +325,18 @@ class McProtocolPlayerTest {
 
 	private ClientProfile granted(String name) {
 		return ClientProfile.builder().name(name).uniqueId(uuid).build();
+	}
+
+	private List<PlayerProfile> grants() {
+		WorkerMessageCodec codec = new WorkerMessageCodec();
+		List<PlayerProfile> grants = new ArrayList<>();
+		for (String line : output.toString(StandardCharsets.UTF_8).lines().toList()) {
+			WorkerEvent event = (WorkerEvent) codec.decodeMessage(line).orElseThrow();
+			assertEquals(PlayerConnectionEvent.GRANTED.getId(), event.getEvent());
+			grants.add(codec.open(event.getPayload(), PlayerProfile.class));
+		}
+
+		return grants;
 	}
 
 	private List<PlayerConnectionEvent> events() {

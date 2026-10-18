@@ -49,11 +49,13 @@ final class ClientPacketListener extends SessionAdapter {
 		Session session = event.getSession();
 		Packet packet = event.getPacket();
 		if (packet instanceof EncryptionRequestPacket && login.getCredentials() == null) authenticationRequired = true;
-		if (packet instanceof LoginSuccessPacket success)
+		if (packet instanceof LoginSuccessPacket success) {
 			granted = ClientProfile.builder()
 					.name(success.getProfile().getName())
 					.uniqueId(success.getProfile().getId())
 					.build();
+			listener.granted(session, granted);
+		}
 		if (packet instanceof ServerJoinGamePacket) {
 			session.send(answers.clientInformation(login.getSettings()));
 			listener.loggedIn(session,

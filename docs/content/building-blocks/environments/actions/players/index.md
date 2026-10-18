@@ -189,7 +189,8 @@ before: after a restart, `online()` lists only players that joined the new gener
 created before the restart waits for the player to join again.
 
 A player is found by every profile its client was granted at its logins, which
-`alice.grantedProfiles()` returns. A player that a proxy or login plugin renamed, or gave another UUID,
+`alice.grantedProfiles()` returns. The client knows a profile from the login success on, so a proxy that holds
+a player on the loading screen, before any server, finds them too. A player that a proxy or login plugin renamed, or gave another UUID,
 is therefore still found, also after reconnecting with a different profile. Players are matched by
 the UUIDs of those profiles, never by username, so players whose usernames differ only in letter case
 are not confused with each other.

@@ -102,10 +102,16 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 	}
 
 	/**
-	 * Records the profile a connection event grants before subscribers see the event, so that the granted profile
-	 * read after the session reports its connection is already the new one.
+	 * Records the profile a login grants before subscribers see the event, so that the granted profile read after the
+	 * session reports its connection is already the new one. The profile arrives with the login success, before the
+	 * client enters the game, and again with the connection.
 	 */
 	void event(@NotNull String type, @NotNull JsonNode payload) {
+		if (type.equals(PlayerConnectionEvent.GRANTED.getId())) {
+			PlayerProfile login = codec.open(payload, PlayerProfile.class);
+			granted = login;
+			if (login != null) grantedProfiles.addIfAbsent(login);
+		}
 		if (type.equals(PlayerConnectionEvent.CHANGED.getId())) {
 			PlayerProfile login = codec.open(payload, PlayerConnectionEvent.class).getGranted();
 			granted = login;

@@ -58,10 +58,11 @@ public interface SimulatedPlayer extends CapabilityOwner<PlayerCapability> {
 
 	/**
 	 * Returns the profile the process the player joined granted at the latest login. A proxy or a login plugin may
-	 * have changed it, such as a proxy that renames {@code Steve} to {@code Steve_Premium}. What a server or proxy
-	 * knows about the player belongs to that process's Players capability.
+	 * have changed it, such as a proxy that renames {@code Steve} to {@code Steve_Premium}. It is known from the
+	 * login success on, before the client enters the game, so also while a proxy keeps the client on the loading
+	 * screen. What a server or proxy knows about the player belongs to that process's Players capability.
 	 *
-	 * @return granted profile, or null before the player logged in and after it disconnected
+	 * @return granted profile, or null before the login succeeded and after the player disconnected
 	 */
 	@Nullable PlayerProfile grantedProfile();
 
