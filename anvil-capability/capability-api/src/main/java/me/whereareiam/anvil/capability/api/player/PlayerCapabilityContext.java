@@ -43,9 +43,10 @@ public interface PlayerCapabilityContext extends CapabilityContext<PlayerCapabil
 	@Nullable PlayerProfile grantedProfile();
 
 	/**
-	 * Returns how the player connects, as its options declare it: the scenario server or proxy it joins, where a
-	 * capability that follows the player's connection through the scenario's processes starts, the host it announces
-	 * and the address it connects from. The target is always named, also when the player joins the entrypoint.
+	 * Returns how the player connects, as its options declare it: the scenario server, proxy or remote it joins, where
+	 * a capability that follows the player's connection through the scenario's processes starts, the host it
+	 * announces and the address it connects from. The target is always named, also when the player joins the
+	 * entrypoint. A remote is none of the scenario's processes.
 	 *
 	 * @return the player's connection, with its target process
 	 */

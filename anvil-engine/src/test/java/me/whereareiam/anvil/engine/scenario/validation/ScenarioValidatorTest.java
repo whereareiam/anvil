@@ -8,6 +8,7 @@ import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.model.scenario.RemoteEndpoint;
 import me.whereareiam.anvil.api.type.ProcessLifetime;
 import me.whereareiam.anvil.engine.scenario.ScenarioValidator;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,18 @@ class ScenarioValidatorTest {
 	@ValueSource(strings = {"server", "proxy"})
 	void acceptsServerAndProxyEntrypoints(String entrypoint) {
 		var scenario = scenario().toBuilder().proxy(proxy()).entrypoint(entrypoint).build();
+		assertDoesNotThrow(() -> validator.validate(scenario, true));
+	}
+
+	@Test
+	void acceptsAScenarioOfRemotesAloneWithoutEulaAcceptance() {
+		var scenario = AnvilScenario.builder().name("test").entrypoint("network").remote(remote()).build();
+		assertDoesNotThrow(() -> validator.validate(scenario, false));
+	}
+
+	@Test
+	void acceptsARemoteBesideTheScenariosProcesses() {
+		var scenario = scenario().toBuilder().remote(remote()).build();
 		assertDoesNotThrow(() -> validator.validate(scenario, true));
 	}
 
@@ -117,10 +130,10 @@ class ScenarioValidatorTest {
 	private static Stream<Arguments> invalidDeclarations() {
 		return Stream.of(
 				Arguments.of(scenario().toBuilder().name(" ").build(), "Scenario name must not be blank"),
-				Arguments.of(scenario().toBuilder().clearServers().build(), "Scenario 'test' has no servers or proxies"),
+				Arguments.of(scenario().toBuilder().clearServers().build(), "Scenario 'test' has no servers, proxies or remotes"),
 				Arguments.of(scenario().toBuilder().entrypoint(" ").build(), "Scenario 'test' must declare an entrypoint"),
 				Arguments.of(scenario().toBuilder().entrypoint("missing").build(),
-						"Scenario entrypoint 'missing' does not reference a server or proxy"),
+						"Scenario entrypoint 'missing' does not reference a server, proxy or remote"),
 				Arguments.of(scenario().toBuilder().clearServers().server(server().toBuilder().name(" ").build()).build(),
 						"Every server and proxy needs a non-blank name"),
 				Arguments.of(scenario().toBuilder().proxy(proxy().toBuilder().name(" ").build()).build(),
@@ -139,6 +152,19 @@ class ScenarioValidatorTest {
 						"Proxy 'proxy' references missing server 'proxy'"),
 				Arguments.of(scenario().toBuilder().proxy(proxy().toBuilder().defaultServer(" ").build()).build(),
 						"Proxy 'proxy' must declare a default server"),
+				Arguments.of(scenario().toBuilder().remote(remote().toBuilder().name(" ").build()).build(),
+						"Every remote needs a non-blank name"),
+				Arguments.of(scenario().toBuilder().remote(remote().toBuilder().name("server").build()).build(),
+						"Remote 'server' shares its name with another server, proxy or remote"),
+				Arguments.of(scenario().toBuilder().remote(remote()).remote(remote()).build(),
+						"Remote 'network' shares its name with another server, proxy or remote"),
+				Arguments.of(scenario().toBuilder().remote(remote().toBuilder().address("example.test:port").build()).build(),
+						"Remote 'network' declares the address 'example.test:port', which cannot be parsed: its port "
+								+ "'port' is not a number"),
+				Arguments.of(scenario().toBuilder().remote(remote().toBuilder().address(" ").build()).build(),
+						"Remote 'network' declares no address"),
+				Arguments.of(scenario().toBuilder().remote(remote().toBuilder().minecraftVersion("").build()).build(),
+						"Remote 'network' declares no Minecraft version"),
 				Arguments.of(scenario().toBuilder().server(server().toBuilder().name("other-server").build())
 						.proxy(proxy().toBuilder().defaultServer("other-server").build()).build(),
 						"Proxy 'proxy' default server 'other-server' is not registered with that proxy")
@@ -152,6 +178,10 @@ class ScenarioValidatorTest {
 	private static MinecraftServer server() {
 		return MinecraftServer.builder().name("server").platform("test")
 				.distribution(Distribution.remote("1", "1")).build();
+	}
+
+	private static RemoteEndpoint remote() {
+		return RemoteEndpoint.builder().name("network").address("play.example.test").minecraftVersion("1.21.11").build();
 	}
 
 	private static MinecraftProxy proxy() {
