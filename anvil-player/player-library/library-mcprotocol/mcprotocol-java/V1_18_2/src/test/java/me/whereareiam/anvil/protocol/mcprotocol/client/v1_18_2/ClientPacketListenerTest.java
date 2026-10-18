@@ -14,6 +14,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKe
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientInformationPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundCustomPayloadPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
@@ -25,6 +26,7 @@ import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
+import me.whereareiam.anvil.protocol.mcprotocol.client.ClientBrand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -40,9 +42,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClientPacketListenerTest {
 	private static final UUID GRANTED = new UUID(0, 2);
@@ -60,7 +65,7 @@ class ClientPacketListenerTest {
 			McProtocolClientAdapter.packets(), McProtocolClientAdapter::reason);
 
 	@Test
-	void answersTheLoginWithClientInformationBeforeReportingItWithTheGrantedProfile() {
+	void answersTheLoginWithClientInformationAndTheBrandBeforeReportingItWithTheGrantedProfile() {
 		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed")));
 		CompoundTag type = new CompoundTag("");
 		type.put(new IntTag("min_y", -64));
@@ -68,13 +73,19 @@ class ClientPacketListenerTest {
 		receive(new ClientboundLoginPacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL, 1, new String[0],
 				new CompoundTag(""), type, "minecraft:overworld", 0, 20, 10, 10, false, true, false, false));
 
-		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ServerboundClientInformationPacket", "logged in as Alice_Renamed " + GRANTED), events);
+		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ServerboundClientInformationPacket",
+				"sent ServerboundCustomPayloadPacket", "logged in as Alice_Renamed " + GRANTED), events);
 		ServerboundClientInformationPacket information = assertInstanceOf(ServerboundClientInformationPacket.class, sent.getFirst());
 		assertEquals("en_us", information.getLocale());
 		assertEquals(8, information.getRenderDistance());
 		assertEquals(ChatVisibility.FULL, information.getChatVisibility());
 		assertEquals(Arrays.asList(SkinPart.values()), information.getVisibleParts());
 		assertEquals(HandPreference.RIGHT_HAND, information.getMainHand());
+		assertFalse(information.isTextFilteringEnabled());
+		assertTrue(information.isAllowsListing());
+		ServerboundCustomPayloadPacket brand = assertInstanceOf(ServerboundCustomPayloadPacket.class, sent.get(1));
+		assertEquals("minecraft:brand", brand.getChannel());
+		assertArrayEquals(ClientBrand.payload(), brand.getData());
 	}
 
 	@Test

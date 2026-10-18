@@ -5,6 +5,7 @@ import com.github.steveice10.mc.protocol.data.game.MessageType;
 import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
 import com.github.steveice10.mc.protocol.data.handshake.HandshakeIntent;
 import com.github.steveice10.mc.protocol.packet.handshake.client.HandshakePacket;
+import com.github.steveice10.mc.protocol.packet.ingame.client.ClientPluginMessagePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.ClientSettingsPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.window.ClientConfirmTransactionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.world.ClientTeleportConfirmPacket;
@@ -24,6 +25,7 @@ import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
+import me.whereareiam.anvil.protocol.mcprotocol.client.ClientBrand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -39,6 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -59,15 +62,19 @@ class ClientPacketListenerTest {
 			McProtocolClientAdapter.packets(), new ReleaseAnswers());
 
 	@Test
-	void answersTheJoinWithClientSettingsBeforeReportingTheLoginWithTheGrantedProfile() {
+	void answersTheJoinWithClientSettingsAndTheBrandBeforeReportingTheLoginWithTheGrantedProfile() {
 		receive(new LoginSuccessPacket(new GameProfile(GRANTED, "Alice_Renamed")));
 		receive(new ServerJoinGamePacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL, 1, new String[0],
 				new CompoundTag(""), new CompoundTag(""), "minecraft:overworld", 0, 20, 10, false, true, false, false));
 
-		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ClientSettingsPacket", "logged in as Alice_Renamed " + GRANTED), events);
+		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ClientSettingsPacket", "sent ClientPluginMessagePacket",
+				"logged in as Alice_Renamed " + GRANTED), events);
 		ClientSettingsPacket settings = assertInstanceOf(ClientSettingsPacket.class, sent.getFirst());
 		assertEquals("en_us", settings.getLocale());
 		assertEquals(8, settings.getRenderDistance());
+		ClientPluginMessagePacket brand = assertInstanceOf(ClientPluginMessagePacket.class, sent.get(1));
+		assertEquals("minecraft:brand", brand.getChannel());
+		assertArrayEquals(ClientBrand.payload(), brand.getData());
 	}
 
 	@Test

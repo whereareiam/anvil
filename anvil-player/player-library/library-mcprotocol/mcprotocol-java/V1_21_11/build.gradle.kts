@@ -10,6 +10,7 @@ segment {
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ChatPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ClientPacketListener",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.CommandPackets",
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConfigurationListener",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.CookiePackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.EntityDataTable",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.EntityPackets",

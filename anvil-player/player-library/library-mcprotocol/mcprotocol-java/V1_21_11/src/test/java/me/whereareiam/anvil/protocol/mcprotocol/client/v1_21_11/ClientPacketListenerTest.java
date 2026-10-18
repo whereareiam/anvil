@@ -4,10 +4,7 @@ import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.cloudburstmc.nbt.NbtMap;
@@ -16,15 +13,10 @@ import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.GameMode;
-import org.geysermc.mcprotocollib.protocol.data.game.entity.player.HandPreference;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerSpawnInfo;
-import org.geysermc.mcprotocollib.protocol.data.game.setting.ChatVisibility;
-import org.geysermc.mcprotocollib.protocol.data.game.setting.ParticleStatus;
-import org.geysermc.mcprotocollib.protocol.data.game.setting.SkinPart;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundDisconnectPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundPingPacket;
-import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundClientInformationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundPongPacket;
 import org.geysermc.mcprotocollib.protocol.packet.configuration.clientbound.ClientboundRegistryDataPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
@@ -39,7 +31,6 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -49,11 +40,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClientPacketListenerTest {
 	private static final UUID GRANTED = new UUID(0, 2);
-	private static final ClientLogin LOGIN = ClientLogin.builder()
-			.profile(ClientProfile.builder().name("Alice").uniqueId(new UUID(0, 1)).build())
-			.settings(ClientSettings.builder().locale("en_us").viewDistance(8).build())
-			.connection(ClientConnection.builder().host("localhost").port(25565).build())
-			.build();
 	private static final ClientboundRegistryDataPacket DIMENSION_TYPES = new ClientboundRegistryDataPacket(
 			Key.key("minecraft:dimension_type"), List.of(new RegistryEntry(Key.key("minecraft:overworld"),
 					NbtMap.builder().putInt("min_y", -64).putInt("height", 384).build())));
@@ -62,24 +48,18 @@ class ClientPacketListenerTest {
 	private final List<Packet> sent = new ArrayList<>();
 	private final List<ClientboundPacket> received = new ArrayList<>();
 	private final ClientSession session = session();
-	private final ClientPacketListener listener = new ClientPacketListener(session, LOGIN, new RecordingListener(), McProtocolClientAdapter.packets());
+	private final ClientPacketListener listener = new ClientPacketListener(session, new RecordingListener(), McProtocolClientAdapter.packets());
 
 	@Test
-	void answersTheLoginWithClientInformationBeforeReportingItWithTheGrantedProfile() {
+	void reportsTheGameStartWithTheGrantedProfileAndSendsNothing() {
 		receive(new ClientboundLoginFinishedPacket(new GameProfile(GRANTED, "Alice_Renamed")));
 		receive(DIMENSION_TYPES);
 		receive(new ClientboundLoginPacket(42, false, new Key[0], 20, 10, 10, false, true, false,
 				new PlayerSpawnInfo(0, Key.key("minecraft:overworld"), 0, GameMode.SURVIVAL, GameMode.SURVIVAL, false,
 						false, null, 0, 63), false));
 
-		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ServerboundClientInformationPacket", "logged in as Alice_Renamed " + GRANTED), events);
-		ServerboundClientInformationPacket information = assertInstanceOf(ServerboundClientInformationPacket.class, sent.getFirst());
-		assertEquals("en_us", information.getLocale());
-		assertEquals(8, information.getRenderDistance());
-		assertEquals(ChatVisibility.FULL, information.getChatVisibility());
-		assertEquals(Arrays.asList(SkinPart.values()), information.getVisibleParts());
-		assertEquals(HandPreference.RIGHT_HAND, information.getMainHand());
-		assertEquals(ParticleStatus.ALL, information.getParticleStatus());
+		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "logged in as Alice_Renamed " + GRANTED), events);
+		assertEquals(List.of(), sent);
 	}
 
 	@Test

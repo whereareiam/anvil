@@ -157,7 +157,9 @@ isolated worker per release. A release with an unpinned artifact cannot be launc
 for each server whose default players would use it, so a scenario whose players all choose another library still
 runs. A player that selects such a release is refused when it is created. The worker
 shell never links against MCProtocolLib: the release's client segment implements the `mcprotocol-api`
-client port and owns login, client information, teleport and disconnect packets.
+client port and owns login, teleport and disconnect packets and what a vanilla client of the release sends on its
+own, in the same phase and order: its brand and client information, from Minecraft 1.20.2 on at the start of the
+configuration and before that when the game starts, and the answers to keep-alives and pings in every phase.
 Feature wiring implements `player-api`'s `WorkerExtension` directly; the worker discovers it. Its
 `PlayerBindingContext` supplies SDK/session access for the existing native player and, through `adapter(Class)`,
 the release-specific port implementation of the segment selected for the worker's release. Native

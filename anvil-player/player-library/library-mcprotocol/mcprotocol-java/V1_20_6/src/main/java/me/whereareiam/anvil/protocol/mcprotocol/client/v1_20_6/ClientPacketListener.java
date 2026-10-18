@@ -13,12 +13,8 @@ import org.geysermc.mcprotocollib.network.event.session.PacketSendingEvent;
 import org.geysermc.mcprotocollib.network.event.session.SessionAdapter;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.UnexpectedEncryptionException;
-import org.geysermc.mcprotocollib.protocol.data.game.entity.player.HandPreference;
-import org.geysermc.mcprotocollib.protocol.data.game.setting.ChatVisibility;
-import org.geysermc.mcprotocollib.protocol.data.game.setting.SkinPart;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundDisconnectPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundPingPacket;
-import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundClientInformationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundPongPacket;
 import org.geysermc.mcprotocollib.protocol.packet.handshake.serverbound.ClientIntentionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
@@ -30,7 +26,6 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.Serve
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -39,7 +34,8 @@ import java.util.function.Function;
  * them each chunk batch with the rate {@link ChunkBatchPacing} wants next, and reports login, teleports and disconnects
  * with their reason flattened to plain text. The login reports the profile the
  * server granted in its login success, which arrives before the game starts; each release's sessions read that profile,
- * since MCProtocolLib 1.21 replaced mcauthlib's profile with its own.
+ * since MCProtocolLib 1.21 replaced mcauthlib's profile with its own. The client information goes out at the start of
+ * the configuration, which {@link ConfigurationListener} sends, so the game's start is only reported.
  */
 @RequiredArgsConstructor
 public final class ClientPacketListener extends SessionAdapter {
@@ -68,11 +64,8 @@ public final class ClientPacketListener extends SessionAdapter {
 			granted = profiles.apply(success);
 			listener.granted(session, granted);
 		}
-		if (packet instanceof ClientboundLoginPacket) {
-			session.send(new ServerboundClientInformationPacket(login.getSettings().getLocale(), login.getSettings().getViewDistance(), ChatVisibility.FULL,
-					true, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, false, true));
+		if (packet instanceof ClientboundLoginPacket)
 			listener.loggedIn(session, Objects.requireNonNull(granted, "The server started the game before it granted a profile"));
-		}
 		if (packet instanceof ClientboundPlayerPositionPacket position) {
 			listener.teleported(session, position.getYaw(), position.getPitch());
 			session.send(new ServerboundAcceptTeleportationPacket(position.getTeleportId()));
