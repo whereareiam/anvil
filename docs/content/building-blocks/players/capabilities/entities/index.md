@@ -12,7 +12,7 @@ who chats. Install the
 entities unit and its Session dependency, or explicitly select the default capability unit.
 
 Every MCProtocolLib release Anvil ships has the capability. Text displays arrived in Minecraft 1.19.4,
-so players on 1.18.2 see armor stands and other entities with custom names, but no text displays.
+so players on 1.16.5 to 1.18.2 see armor stands and other entities with custom names, but no text displays.
 
 ## Wait for text above the player
 

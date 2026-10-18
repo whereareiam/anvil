@@ -66,6 +66,10 @@ The `check` task runs the same verification. A segment's report is
 `build/reports/segment/linkage.txt` in its project.
 
 - **Everything links:** the new release reuses the newest segment of each side; no code changes.
+- **The release is older than every segment of a side:** no segment serves it. Add one named after its key that
+  starts a chain of its own, as `V1_16_5` does for the client and server packet names, or becomes the new start of
+  the chain it shares packages with: move the chain's shared code into it and let the next segment extend it,
+  replacing what changed, as `V1_21_1` extends `V1_20_6`.
 - **A segment does not link:** the failure names the missing or changed class, field, or method. Add
   a segment named after the new release key in that side only, such as `V26_1_2` beside `V1_21_11`, with
   its classes in the package named after its folder in lower case, such as `.v26_1_2`. Let it extend the

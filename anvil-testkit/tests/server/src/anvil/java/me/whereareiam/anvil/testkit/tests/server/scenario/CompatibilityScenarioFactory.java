@@ -27,6 +27,8 @@ public final class CompatibilityScenarioFactory {
 	private static final String VELOCITY_BUILD = "615";
 	private static final String BUNGEE_BUILD = "2085";
 	private static final List<PaperBuild> DIRECT_PAPER = List.of(
+			new PaperBuild("1.16.5", "794"),
+			new PaperBuild("1.17.1", "411"),
 			new PaperBuild("1.18.2", "388"),
 			new PaperBuild("1.19.4", "550"),
 			new PaperBuild("1.20.6", "151"),

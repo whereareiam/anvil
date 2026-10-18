@@ -75,7 +75,7 @@ Anvil targets Java 21. Each managed process runs on the LTS Java release its pla
 prefers; the [Java guide](./building-blocks/environments/provisioning/java/index.md#java-per-platform-version)
 lists those versions and explains selection and provisioning.
 The bundled platforms are Paper, Spigot, and NeoForge servers, plus Velocity and BungeeCord proxies.
-MCProtocolLib is the bundled protocol library for native players, from Minecraft 1.18.2 to 26.1.2.
+MCProtocolLib is the bundled protocol library for native players, from Minecraft 1.16.5 to 26.1.2.
 See the [version and route matrix](./building-blocks/environments/platforms/versions/index.md) for
 supported versions and tested combinations.
 

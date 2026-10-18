@@ -49,10 +49,11 @@ class McProtocolReleaseCatalogTest {
 		McProtocolReleaseCatalog catalog = McProtocolReleaseCatalog.load(null);
 
 		Map<String, Integer> protocols = Map.of(
-				"1.18.2", 758, "1.19.4", 762, "1.20.6", 766, "1.21.1", 767, "1.21.11", 774, "26.1.2", 775
+				"1.16.5", 754, "1.17.1", 756, "1.18.2", 758, "1.19.4", 762, "1.20.6", 766, "1.21.1", 767,
+				"1.21.11", 774, "26.1.2", 775
 		);
 		List<ProtocolRelease> releases = catalog.releases();
-		assertEquals(List.of("1.18.2", "1.19.4", "1.20.6", "1.21.1", "1.21.11", "26.1.2"),
+		assertEquals(List.of("1.16.5", "1.17.1", "1.18.2", "1.19.4", "1.20.6", "1.21.1", "1.21.11", "26.1.2"),
 				releases.stream().map(release -> release.version().toString()).toList());
 		for (ProtocolRelease release : releases) {
 			assertEquals(protocols.get(release.version().toString()), release.getProtocolNumber());
