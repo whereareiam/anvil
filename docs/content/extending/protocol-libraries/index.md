@@ -149,7 +149,8 @@ WorkerExtensions.PlayerBindings bindings = extensions.bind(player, protocols);
 ```
 
 The player's `protocol(Class)` returns `protocols.protocol(type)`, so extensions reach the world the same way as the
-protocol, and `bindNativeSession(...)` registers with its
+protocol, its `minecraftVersion()` returns the Minecraft version the host created the player for, by which
+extensions look up what differs between versions, such as the block data client physics reads, and `bindNativeSession(...)` registers with its
 `NativeSessionBindings`, which it attaches to each session it opens and ends when that session's connection ends.
 A host request names an operation: `bindings.operation(id)` returns it with its `OperationDescriptor`, whose request
 and response types your transport decodes and encodes.
