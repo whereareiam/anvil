@@ -12,25 +12,34 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEnt
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.type.Relative;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.EntityTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ValueTranslator;
 import org.cloudburstmc.math.vector.Vector3d;
 import org.geysermc.mcprotocollib.network.packet.Packet;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PositionElement;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAddEntityPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundEntityPositionSyncPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundTeleportEntityPacket;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 /**
  * Entities of the MCProtocolLib releases from 1.21.11 on, which read entity data with the 1.21.11 layout. Every
  * entity, experience orbs included, spawns through the add-entity packet; teleports name each relative coordinate and
- * angle, and the position sync places and turns an entity absolutely. Each release's {@code EntityPackets} reads where
+ * angle, while their relative velocity is left out, since the protocol models no entity velocity, and the position sync
+ * places and turns an entity absolutely. Each release's {@code EntityPackets} reads where
  * the position sync places the entity, which Minecraft 26.3 may reach in steps.
  */
 public abstract class SyncedEntityTranslation extends EntityTranslation {
+	private static final Set<Relative> VELOCITY = EnumSet.of(Relative.DELTA_X, Relative.DELTA_Y, Relative.DELTA_Z,
+			Relative.ROTATE_DELTA);
+
 	/**
 	 * Creates the translation of one session.
 	 */
@@ -63,7 +72,7 @@ public abstract class SyncedEntityTranslation extends EntityTranslation {
 					.position(ValueTranslator.vec3d(teleport.getPosition()))
 					.yaw(teleport.getYRot())
 					.pitch(teleport.getXRot())
-					.relatives(PlayerPackets.relatives(teleport.getRelatives()))
+					.relatives(placement(teleport.getRelatives()))
 					.build();
 			case ClientboundEntityPositionSyncPacket sync -> ClientboundEntityPositionSync.builder()
 					.entityId(sync.getId())
@@ -73,6 +82,16 @@ public abstract class SyncedEntityTranslation extends EntityTranslation {
 					.build();
 			default -> null;
 		};
+	}
+
+	/**
+	 * Names the coordinates and angles an entity teleport adds to the current ones.
+	 */
+	private static Set<Relative> placement(List<PositionElement> elements) {
+		Set<Relative> relatives = EnumSet.noneOf(Relative.class);
+		relatives.addAll(PlayerPackets.relatives(elements));
+		relatives.removeAll(VELOCITY);
+		return Collections.unmodifiableSet(relatives);
 	}
 
 	/**
