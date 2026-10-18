@@ -192,6 +192,22 @@ unavailable with that message, and the player keeps its other capabilities. `lis
 for a packet the release cannot carry. A player of a library that does not speak the Java Edition protocol throws it
 from `protocol(JavaProtocol.class)`.
 
+`player.protocol(JavaWorld.class)` returns what the player's client knows of the world: the level it is in, as
+`dimension()` with the level's key and height range, and the block states of the chunk columns the server sent it,
+kept up to date by the block updates that followed. A block state is its global ID in the release's block state
+registry, and `0` is air:
+
+```java
+JavaWorld world = player.protocol(JavaWorld.class);
+OptionalInt below = world.blockState(x, y - 1, z);
+```
+
+`blockState` returns nothing for a block whose column the client does not have and for a height outside the level.
+The view follows the current connection: a login replaces it, a respawn into a level of another key empties it, and
+so do a return to the configuration phase and a closed connection. You may read it from any thread, and a packet
+listener already sees the packet it receives applied. The chunk and block packets themselves are in `packet.world`
+for a capability that wants to react to them.
+
 `player.bindConnection(...)` tells you when a connection starts: its callback runs before each connection logs in
 and returns a `Subscription` that is closed when that connection ends or a new one replaces it. Use it for state
 that belongs to one connection, such as cookies:

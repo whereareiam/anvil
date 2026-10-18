@@ -14,6 +14,7 @@ import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.JavaWorld;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.worker.JavaConnection;
@@ -71,6 +72,7 @@ final class JavaFixturePlayer implements ProtocolPlayer, PlayerBindingContext<Ob
 		this.protocol = new JavaPacketDispatcher(JavaFixtureLibraryProvider.ID, new EchoConnection());
 		this.protocols = WorkerProtocols.builder(JavaFixtureLibraryProvider.ID)
 				.speak(JavaProtocol.class, protocol, protocol::scoped)
+				.speak(JavaWorld.class, protocol.world(), track -> protocol.world())
 				.build();
 		this.bindings = extensions.bind(this, protocols);
 	}
@@ -138,6 +140,7 @@ final class JavaFixturePlayer implements ProtocolPlayer, PlayerBindingContext<Ob
 
 		session = null;
 		granted = null;
+		protocol.disconnected();
 		sessions.end(current);
 		var ended = new PlayerConnectionEvent(false, "Disconnected by Anvil", DisconnectCause.CLIENT, null);
 		emit(PlayerConnectionEvent.CHANGED, ended);

@@ -10,6 +10,7 @@ import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.JavaWorld;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -47,7 +48,8 @@ import java.util.function.Function;
  * One worker player, which binds the worker's extensions as their {@code PlayerBindingContext}. Native sessions come
  * from the release's client segment and stay opaque here; this player owns their generations, the connection
  * events and the view rotation, and its Java Edition protocol, a {@link JavaPacketDispatcher} over the release's
- * client, follows the current session. Adapters come from the worker's verified segments.
+ * client, follows the current session, as does the world the dispatcher keeps, which forgets its chunks once the
+ * session closes. Adapters come from the worker's verified segments.
  */
 @Accessors(fluent = true)
 final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoCloseable {
@@ -99,6 +101,7 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 		this.protocol = new JavaPacketDispatcher(McProtocolClient.LIBRARY_ID, new SessionConnection());
 		this.protocols = WorkerProtocols.builder(McProtocolClient.LIBRARY_ID)
 				.speak(JavaProtocol.class, protocol, protocol::scoped)
+				.speak(JavaWorld.class, protocol.world(), track -> protocol.world())
 				.build();
 	}
 
@@ -288,6 +291,8 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 		@Override
 		public void disconnected(@NotNull Object current, @NotNull DisconnectCause cause, @NotNull String reason) {
 			if (current != session) return;
+
+			protocol.disconnected();
 			if (disconnecting) {
 				report(current, DisconnectCause.CLIENT, reason);
 				return;

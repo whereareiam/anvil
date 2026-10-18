@@ -134,7 +134,7 @@ Two kits hold the runtime, so a library supplies only its connection and its pac
 | Artifact | Use |
 | --- | --- |
 | `player-worker` | `WorkerExtensions` discovers the extensions on the class path, keeps those that target your library or every library and accept your native session type, binds them to each player, buffers operations while binding, and reports each unavailable one with its reason. `NativeSessionBindings` runs `bindNativeSession(...)`, and the `bindConnection(...)` built on it, across your sessions. `WorkerProtocols` lists the protocols a player speaks. |
-| `protocol-java-worker` | `JavaPacketDispatcher` is the player's `JavaProtocol` over the `JavaConnection` you implement: send a packet in your release's form, and say which packets your release carries. Hand every packet your player receives, already translated, to `deliver(...)`. |
+| `protocol-java-worker` | `JavaPacketDispatcher` is the player's `JavaProtocol` over the `JavaConnection` you implement: send a packet in your release's form, and say which packets your release carries. Hand every packet your player receives, already translated, to `deliver(...)`, and call `disconnected()` once its connection closes. Its `world()` is the player's `JavaWorld`, which the delivered packets keep up to date. |
 
 A worker player implements `PlayerBindingContext<Object>` with them:
 
@@ -142,12 +142,14 @@ A worker player implements `PlayerBindingContext<Object>` with them:
 JavaPacketDispatcher java = new JavaPacketDispatcher("example", connection);
 WorkerProtocols protocols = WorkerProtocols.builder("example")
 		.speak(JavaProtocol.class, java, java::scoped)
+		.speak(JavaWorld.class, java.world(), track -> java.world())
 		.build();
 WorkerExtensions extensions = WorkerExtensions.discover("example", Object.class, Set.of());
 WorkerExtensions.PlayerBindings bindings = extensions.bind(player, protocols);
 ```
 
-The player's `protocol(Class)` returns `protocols.protocol(type)`, and `bindNativeSession(...)` registers with its
+The player's `protocol(Class)` returns `protocols.protocol(type)`, so extensions reach the world the same way as the
+protocol, and `bindNativeSession(...)` registers with its
 `NativeSessionBindings`, which it attaches to each session it opens and ends when that session's connection ends.
 A host request names an operation: `bindings.operation(id)` returns it with its `OperationDescriptor`, whose request
 and response types your transport decodes and encodes.
