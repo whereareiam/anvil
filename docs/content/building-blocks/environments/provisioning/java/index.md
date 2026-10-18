@@ -102,9 +102,30 @@ SHA-256; Anvil validates both the artifact bytes and the Java installation extra
 A process declaration overrides the scenario, which overrides the engine. Omitted requirements and
 sources inherit independently: configuring only a source does not reset the inherited requirement.
 An explicitly empty `JavaRequirement.builder().build()` overrides an inherited version and uses the
-platform's preferred LTS, while still inheriting the source. With no requirement at any level,
-planning uses the preferred LTS. A source without a feature version must therefore contain exactly
-that preferred release.
+platform's preferred LTS, while still inheriting the source.
+
+When no feature version is requested at any level, a local source decides it: planning runs the
+version of the JDK that `JavaSource.home(...)` or `JavaSource.executable(...)` names, if the
+process's platform runs it, so this is enough to run Paper `1.21.11` on Java 25:
+
+```java
+.javaSelection(JavaSelection.builder()
+		.source(JavaSource.home(Path.of("/opt/jdk-25")))
+		.build())
+```
+
+Planning accepts or refuses the source's version like a request, and a refusal names the source and
+where it was declared:
+
+```text
+Process 'server' runs the Java declared as its source (declared by process 'server'), which is Java 17, but spigot 1.16.5 refuses Java above 16 and has no bypass. Point the Java source at Java 11 or remove it to use Java 11 (default), or use 'paper', which runs Minecraft 1.16.5 on Java 17 with -DPaper.IgnoreJavaVersion=true.
+```
+
+A requested feature version wins over the source, which must then contain exactly that version; a
+mismatch suggests requesting the source's version instead. An archive's version is known only after
+its download, so a process with an archive source and no request runs the platform's preferred LTS,
+and the archive must contain it. With no requirement and no source at any level, planning uses the
+preferred LTS.
 
 An engine or scenario version applies to every process that does not declare its own. When it does
 not fit one process, for example `anvil.java.version=21` with a Spigot `1.16.5` server, the refusal

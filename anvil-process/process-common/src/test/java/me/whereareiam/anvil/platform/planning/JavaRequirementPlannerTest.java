@@ -5,6 +5,8 @@ import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
+import me.whereareiam.anvil.api.model.java.JavaSource;
+import me.whereareiam.anvil.api.model.java.local.LocalJavaHome;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
@@ -14,6 +16,7 @@ import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import me.whereareiam.anvil.api.type.SupportPolicy;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
+import me.whereareiam.anvil.platform.api.PlatformJavaSource;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
 import me.whereareiam.anvil.platform.api.model.PlatformAgentDescriptor;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
@@ -33,6 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -51,6 +55,13 @@ class JavaRequirementPlannerTest {
 			"velocity", new TablePlatform("velocity", MinecraftProxy.class, true, true),
 			"bungeecord", new TablePlatform("bungeecord", MinecraftProxy.class, false, true)
 	);
+	private static final PlatformJavaSource NO_SOURCES = source -> OptionalInt.empty();
+	/**
+	 * Local Java homes whose directory name is their feature version, such as {@code /opt/jdk-25}.
+	 */
+	private static final PlatformJavaSource LOCAL_JDKS = source -> source instanceof LocalJavaHome home
+			? OptionalInt.of(Integer.parseInt(home.getHome().getFileName().toString().substring("jdk-".length())))
+			: OptionalInt.empty();
 	private static final Map<String, PlatformProvider> UNUSUAL_PROVIDERS = Map.of(
 			"legacy", new TablePlatform("legacy", MinecraftServer.class, true, true),
 			"legacy-proxy", new TablePlatform("legacy-proxy", MinecraftProxy.class, false, false),
@@ -96,6 +107,54 @@ class JavaRequirementPlannerTest {
 		assertEquals(java, planned.selection().getRequirement().getFeatureVersion());
 		assertEquals(level, planned.support());
 		assertEquals(bypass ? List.of(BYPASS) : List.of(), planned.jvmArguments());
+	}
+
+	@Test
+	void runsTheVersionOfADeclaredLocalJavaWhenNoneIsRequested() {
+		var server = declaring("paper", "1.21.11", JavaSource.home(Path.of("/opt/jdk-25")), null);
+
+		assertEquals(25, planWithSources(server).selection().getRequirement().getFeatureVersion());
+	}
+
+	@Test
+	void runsARequestedVersionOverTheVersionOfADeclaredJava() {
+		var server = declaring("paper", "1.21.11", JavaSource.home(Path.of("/opt/jdk-25")), 21);
+
+		assertEquals(21, planWithSources(server).selection().getRequirement().getFeatureVersion());
+	}
+
+	@Test
+	void runsThePreferredVersionForADeclaredArchiveWhoseVersionIsUnknownUntilItsDownload() {
+		var archive = JavaSource.archive(URI.create("https://example.test/jdk.tar.gz"), "0".repeat(64));
+		var server = declaring("paper", "1.21.11", archive, null);
+
+		assertEquals(21, planWithSources(server).selection().getRequirement().getFeatureVersion());
+	}
+
+	@Test
+	void refusesADeclaredJavaThePlatformDoesNotRunAndNamesTheSource() {
+		var server = declaring("spigot", "1.16.5", JavaSource.home(Path.of("/opt/jdk-17")), null);
+		var planner = new JavaRequirementPlanner(EngineOptions.builder().supportPolicy(SupportPolicy.LENIENT).build(),
+				PROVIDERS, LOCAL_JDKS, new PrintStream(new ByteArrayOutputStream()));
+
+		var failure = assertThrows(ScenarioValidationException.class, () -> planner.plan(scenario(server), server));
+
+		assertEquals("Process 'spigot' runs the Java declared as its source (declared by process 'spigot'), "
+				+ "which is Java 17, but spigot 1.16.5 refuses Java above 16 and has no bypass. Point the Java source "
+				+ "at Java 11 or remove it to use Java 11 (default), or use 'paper', which runs Minecraft 1.16.5 on "
+				+ "Java 17 with -DPaper.IgnoreJavaVersion=true.", failure.getMessage());
+	}
+
+	@Test
+	void refusesADeclaredJavaThatIsNotAnLtsRelease() {
+		var server = declaring("paper", "1.21.11", JavaSource.home(Path.of("/opt/jdk-23")), null);
+		var planner = new JavaRequirementPlanner(EngineOptions.builder().build(), PROVIDERS, LOCAL_JDKS,
+				new PrintStream(new ByteArrayOutputStream()));
+
+		var failure = assertThrows(ScenarioValidationException.class, () -> planner.plan(scenario(server), server));
+
+		assertTrue(failure.getMessage().startsWith("Process 'paper' runs the Java declared as its source (declared by "
+				+ "process 'paper'), which is Java 23, which is not an LTS release."), failure.getMessage());
 	}
 
 	@Test
@@ -226,7 +285,8 @@ class JavaRequirementPlannerTest {
 		var options = EngineOptions.builder()
 				.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().featureVersion(21).build()).build())
 				.build();
-		var planner = new JavaRequirementPlanner(options, PROVIDERS, new PrintStream(new ByteArrayOutputStream()));
+		var planner = new JavaRequirementPlanner(options, PROVIDERS, NO_SOURCES,
+				new PrintStream(new ByteArrayOutputStream()));
 		var legacy = server("spigot", "1.16.5", null);
 		var modern = server("paper", "1.21.11", null);
 		var scenario = scenario(legacy);
@@ -266,7 +326,7 @@ class JavaRequirementPlannerTest {
 	void appliesTheScenarioPolicyBeforeTheEnginePolicy() {
 		var process = process("paper", "1.16.5", 21);
 		var strictEngine = new JavaRequirementPlanner(EngineOptions.builder().supportPolicy(SupportPolicy.STRICT).build(),
-				PROVIDERS, new PrintStream(new ByteArrayOutputStream()));
+				PROVIDERS, NO_SOURCES, new PrintStream(new ByteArrayOutputStream()));
 
 		assertThrows(ScenarioValidationException.class, () -> strictEngine.plan(scenario(process), process));
 		assertEquals(SupportLevel.UNTESTED, strictEngine.plan(scenario(process).toBuilder()
@@ -288,7 +348,8 @@ class JavaRequirementPlannerTest {
 		};
 		var options = EngineOptions.builder().consoleColors(true)
 				.processScheduling(ProcessScheduling.builder().processors(4).build()).build();
-		var planner = new DefaultPlatformPlanner(options, PROVIDERS, artifacts, agent -> Path.of("agent.jar"));
+		var planner = new DefaultPlatformPlanner(options, PROVIDERS, artifacts, agent -> Path.of("agent.jar"),
+				NO_SOURCES);
 		var server = server("paper", "1.16.5", 17).toBuilder().jvmArgument("-Ddeclared=true").build();
 
 		ProcessPlan plan = planner.plan(scenario(server)).getProcesses().get("paper");
@@ -304,13 +365,30 @@ class JavaRequirementPlannerTest {
 			ByteArrayOutputStream output
 	) {
 		var planner = new JavaRequirementPlanner(EngineOptions.builder().supportPolicy(policy).build(), providers,
-				new PrintStream(output, true, StandardCharsets.UTF_8));
+				NO_SOURCES, new PrintStream(output, true, StandardCharsets.UTF_8));
 		return planner.plan(scenario(process), process);
+	}
+
+	private static JavaRequirementPlanner.PlannedJava planWithSources(MinecraftProcess process) {
+		var planner = new JavaRequirementPlanner(EngineOptions.builder().build(), PROVIDERS, LOCAL_JDKS,
+				new PrintStream(new ByteArrayOutputStream()));
+		return planner.plan(scenario(process), process);
+	}
+
+	private static MinecraftServer declaring(
+			String platform,
+			String version,
+			JavaSource source,
+			@Nullable Integer requested
+	) {
+		return server(platform, version, requested).toBuilder()
+				.javaSelection(selection(requested).toBuilder().source(source).build())
+				.build();
 	}
 
 	private static ScenarioValidationException refuse(Map<String, PlatformProvider> providers, MinecraftProcess process, SupportPolicy policy) {
 		var planner = new JavaRequirementPlanner(EngineOptions.builder().supportPolicy(policy).build(), providers,
-				new PrintStream(new ByteArrayOutputStream()));
+				NO_SOURCES, new PrintStream(new ByteArrayOutputStream()));
 		return assertThrows(ScenarioValidationException.class, () -> planner.plan(scenario(process), process));
 	}
 

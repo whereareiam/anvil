@@ -21,6 +21,7 @@ import me.whereareiam.anvil.launcher.adapter.execution.CacheImageLocks;
 import me.whereareiam.anvil.launcher.adapter.execution.ExecutionPlanMapper;
 import me.whereareiam.anvil.launcher.adapter.execution.JavaExecutionRuntime;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ArtifactPlatformSource;
+import me.whereareiam.anvil.launcher.adapter.provisioning.ProvisionedPlatformJavaSource;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
 import me.whereareiam.anvil.platform.api.model.PlatformAgentDescriptor;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
@@ -96,7 +97,8 @@ class ProcessLauncherIntegrationTest {
 		};
 		try (var provisioning = new ProvisioningServices(options)) {
 			var platforms = new DefaultPlatformPlanner(options, Map.of(provider.id(), provider),
-					new ArtifactPlatformSource(provisioning.getArtifacts()), descriptor -> executable);
+					new ArtifactPlatformSource(provisioning.getArtifacts()), descriptor -> executable,
+					new ProvisionedPlatformJavaSource(provisioning.getJava()));
 			var launcher = ProcessLauncher.builder()
 					.options(options)
 					.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider())))

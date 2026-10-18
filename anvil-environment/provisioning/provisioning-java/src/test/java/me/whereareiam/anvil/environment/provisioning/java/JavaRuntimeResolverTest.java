@@ -53,17 +53,29 @@ class JavaRuntimeResolverTest {
 	}
 
 	@Test
-	void namesTheDeclaredSourceAsTheRemedyForAnExplicitJavaOfAnotherVersion() {
+	void namesTheRequestAndTheDeclaredSourceAsRemediesForAnExplicitJavaOfAnotherVersion() {
 		var java = resolver();
-		int other = Runtime.version().feature() == 21 ? 25 : 21;
+		int current = Runtime.version().feature();
+		int other = current == 21 ? 25 : 21;
 		JavaRequirement selection = JavaRequirement.builder().featureVersion(other).build();
 
 		var failure = assertThrows(ProvisioningException.class,
 				() -> java.resolve(selection, JavaSource.executable(JavaExecutables.current())));
 
 		assertTrue(failure.getMessage().contains("but the process requires exactly Java " + other), failure.getMessage());
-		assertTrue(failure.getMessage().endsWith("; point the Java source at Java " + other + ", or remove it so Anvil uses JAVA_"
-				+ other + "_HOME, the cache or a download"), failure.getMessage());
+		String remedies = "; request Java " + current + " instead, point the Java source at Java " + other
+				+ ", or remove the source so Anvil uses JAVA_" + other + "_HOME, the cache or a download";
+		assertTrue(failure.getMessage().endsWith(remedies), failure.getMessage());
+	}
+
+	@Test
+	void inspectsALocalSourceAndLeavesAnArchiveToItsDownload() {
+		var java = resolver();
+		var archive = JavaSource.archive(URI.create("https://example.test/jdk.tar.gz"), "0".repeat(64));
+
+		assertEquals(Runtime.version().feature(),
+				java.inspect(JavaSource.executable(JavaExecutables.current())).orElseThrow().getFeatureVersion());
+		assertTrue(java.inspect(archive).isEmpty());
 	}
 
 	@Test

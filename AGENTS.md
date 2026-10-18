@@ -253,11 +253,13 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   not aggregate engine usage; its `processors` becomes each process's `-XX:ActiveProcessorCount` and its
   `priority` reaches the execution provider, which applies it or refuses the environment.
   Keep artifact download concurrency separate.
-- `JavaSelection` groups Java requirement and source in engine, scenario, and process declarations.
-  Omitted members inherit independently; an explicit empty requirement overrides an inherited version
-  and selects the platform's preferred LTS. `JavaRequirementPlanner` supplies execution a selection with
-  an exact feature version. Scenario listener binding and LAN permission belong to `NetworkPolicy`,
-  alongside exposure and access policy.
+- `JavaSelection` groups Java requirement and source in engine, scenario, and process declarations. Omitted members
+  inherit independently; an explicit empty requirement overrides an inherited version and selects the platform's
+  preferred LTS, unless a declared local source (home or executable) names a JDK: planning then runs that JDK's
+  version, which it reads through `PlatformJavaSource` (bound by the launcher to `JavaProvisioner.inspect`), and
+  accepts or refuses it like a request. `JavaRequirementPlanner` supplies execution a selection with an exact feature
+  version. Scenario listener binding and LAN permission belong to `NetworkPolicy`, alongside exposure and access
+  policy.
 - Processes run on LTS releases only (11, 17, 21, 25, then every fourth); Java 8 is not one of them.
   Each provider owns `<platform>-versions.toml` (Java rows, `[agent] minimumJava`, verified and known
   versions) and exposes it through `PlatformProvider.versionData()`; process-common reads it, so

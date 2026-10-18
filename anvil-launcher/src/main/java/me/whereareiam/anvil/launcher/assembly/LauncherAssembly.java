@@ -15,6 +15,7 @@ import me.whereareiam.anvil.launcher.adapter.execution.ExecutionPlanMapper;
 import me.whereareiam.anvil.launcher.adapter.execution.JavaExecutionRuntime;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ArtifactPlatformSource;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ClasspathPlatformAgentSource;
+import me.whereareiam.anvil.launcher.adapter.provisioning.ProvisionedPlatformJavaSource;
 import me.whereareiam.anvil.platform.planning.DefaultPlatformPlanner;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.protocol.player.DefaultPlayerService;
@@ -66,7 +67,8 @@ public final class LauncherAssembly implements AutoCloseable {
 			var locator = discovery.required(AgentArtifactLocator.class, "agent artifact locator");
 			var platforms = new DefaultPlatformPlanner(options, discovery.platforms(),
 					new ArtifactPlatformSource(provisioning.getArtifacts()),
-					new ClasspathPlatformAgentSource(locator, AgentExtensions.discover()));
+					new ClasspathPlatformAgentSource(locator, AgentExtensions.discover()),
+					new ProvisionedPlatformJavaSource(provisioning.getJava()));
 			var execution = ProcessLauncher.builder()
 					.options(options)
 					.processes(new ManagedProcessService(discovery.executions(executions)))

@@ -32,12 +32,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -107,7 +108,7 @@ class DefaultPlatformPlannerTest {
 		EngineOptions options = EngineOptions.builder().cacheDirectory(directory.resolve("cache"))
 				.eulaAccepted(true).artifact("server", jar).build();
 		DefaultPlatformPlanner planner = new DefaultPlatformPlanner(options, Map.of("test", provider), artifacts,
-				entrypoint -> { throw new AssertionError("No agent is requested"); });
+				entrypoint -> { throw new AssertionError("No agent is requested"); }, source -> OptionalInt.empty());
 		MinecraftServer server = MinecraftServer.builder().name("server").platform("test")
 				.distribution(Distribution.artifact("server")).minecraftVersion("1.21.11").build();
 		AnvilScenario scenario = AnvilScenario.builder().name("test").entrypoint("server").server(server).build();
@@ -262,7 +263,7 @@ class DefaultPlatformPlannerTest {
 			}
 		};
 		return new DefaultPlatformPlanner(options, Map.of("test", provider), artifacts,
-				entrypoint -> { throw new AssertionError("No agent is requested"); });
+				entrypoint -> { throw new AssertionError("No agent is requested"); }, source -> OptionalInt.empty());
 	}
 
 }

@@ -7,10 +7,10 @@ import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.model.java.local.LocalJavaExecutable;
 import me.whereareiam.anvil.api.model.java.local.LocalJavaHome;
-import me.whereareiam.anvil.environment.provisioning.java.api.installatiion.JavaInstallationAccess;
-import me.whereareiam.anvil.environment.provisioning.java.api.installatiion.JavaInstallationStorage;
 import me.whereareiam.anvil.environment.provisioning.java.api.JavaPackageSource;
 import me.whereareiam.anvil.environment.provisioning.java.api.JavaProvisioner;
+import me.whereareiam.anvil.environment.provisioning.java.api.installatiion.JavaInstallationAccess;
+import me.whereareiam.anvil.environment.provisioning.java.api.installatiion.JavaInstallationStorage;
 import me.whereareiam.anvil.environment.provisioning.java.api.model.JavaInstallation;
 import me.whereareiam.anvil.environment.provisioning.java.archive.JavaArchiveInstaller;
 import me.whereareiam.anvil.environment.provisioning.java.catalog.FoojayJavaCatalog;
@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Resolves one process Java requirement to a verified executable of exactly its feature version.
@@ -144,16 +145,30 @@ public final class JavaRuntimeResolver implements JavaProvisioner {
 		}
 	}
 
+	@Override
+	public @NotNull Optional<JavaInstallation> inspect(@NotNull JavaSource source) {
+		if (source instanceof LocalJavaHome home)
+			return Optional.of(inspector.installation(JavaExecutables.atHome(home.getHome())));
+		if (source instanceof LocalJavaExecutable executable)
+			return Optional.of(inspector.installation(executable.getExecutable()));
+
+		return Optional.empty();
+	}
+
 	/**
 	 * Requires an explicitly declared local Java. Anvil uses nothing else while the source is declared, so a
-	 * mismatch names the fix in the declaration rather than the variables of the automatic lookup.
+	 * mismatch names the fixes in the declaration rather than the variables of the automatic lookup: planning runs the
+	 * source's own version unless a Java version was requested, so a mismatch means the request and the source differ.
 	 */
 	private Path requireSource(Path executable, JavaRequirement selection, int version) {
+		JavaInstallation installation = inspector.installation(executable);
 		try {
-			return inspector.require(executable, selection).getExecutable();
+			inspector.validate(installation, selection);
+			return installation.getExecutable();
 		} catch (JavaVersionMismatchException mismatch) {
-			throw new ProvisioningException(mismatch.getMessage() + "; point the Java source at Java " + version
-					+ ", or remove it so Anvil uses JAVA_" + version + "_HOME, the cache or a download", mismatch);
+			throw new ProvisioningException(mismatch.getMessage() + "; request Java " + installation.getFeatureVersion()
+					+ " instead, point the Java source at Java " + version + ", or remove the source so Anvil uses "
+					+ "JAVA_" + version + "_HOME, the cache or a download", mismatch);
 		}
 	}
 
