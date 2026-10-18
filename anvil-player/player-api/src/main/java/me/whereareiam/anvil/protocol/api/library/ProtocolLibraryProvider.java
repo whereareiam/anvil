@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 
 /**
  * Service-provider interface for one simulated-player protocol library, such as MCProtocolLib.
@@ -54,6 +55,26 @@ public interface ProtocolLibraryProvider {
 	 * @return library instance closed by the engine
 	 */
 	@NotNull ProtocolLibrary create(@NotNull ProtocolLibraryContext context);
+
+	/**
+	 * Returns the edition protocols this library's players speak to worker extensions, such as {@code JavaProtocol}
+	 * for the Java Edition. A worker extension reaches each of them through
+	 * {@code PlayerBindingContext.protocol(Class)}, and capability composition skips, before any player of the library
+	 * exists, every capability that requires a protocol missing here. Like the release data, it is read without
+	 * creating the library.
+	 *
+	 * <pre>{@code
+	 * public Set<Class<?>> protocols() {
+	 *     return Set.of(JavaProtocol.class);
+	 * }
+	 * }</pre>
+	 *
+	 * @return protocol interfaces the players speak, or an empty set for a library whose players run no worker
+	 *         extensions
+	 */
+	default @NotNull Set<Class<?>> protocols() {
+		return Set.of();
+	}
 
 	/**
 	 * Provides an optional login/logout workflow without creating the library or a player.

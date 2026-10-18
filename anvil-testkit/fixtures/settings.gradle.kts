@@ -12,7 +12,14 @@ pluginManagement {
 
 rootProject.name = "anvil-test-fixtures"
 
-include("test-extension", "test-process", "test-server-plugin", "test-server-plugin:V1_21_1", "test-tooling-extension")
+include(
+    "test-extension",
+    "test-java-library",
+    "test-process",
+    "test-server-plugin",
+    "test-server-plugin:V1_21_1",
+    "test-tooling-extension",
+)
 
 val repositoryVersion = providers.fileContents(layout.settingsDirectory.file("../../gradle.properties"))
     .asText.map { text -> Properties().apply { load(text.reader()) }.getProperty("anvilVersion") }
@@ -47,8 +54,11 @@ dependencyResolutionManagement {
             library("agent-server-api", "me.whereareiam.anvil", module("agent-server-api", "protocol-agent-api")).versionRef("anvil")
             library("capability-agent-api", "me.whereareiam.anvil", module("capability-agent-api", "capability-process-api")).versionRef("anvil")
             library("capability-protocol-api", "me.whereareiam.anvil", module("capability-protocol-api", "capability-player-api")).versionRef("anvil")
+            library("player-worker", "me.whereareiam.anvil", "player-worker").versionRef("anvil")
             library("movement-api", "me.whereareiam.anvil", module("builtin-movement-api", "movement-api")).versionRef("anvil")
             library("protocol-api", "me.whereareiam.anvil", module("protocol-api", "player-api")).versionRef("anvil")
+            library("protocol-java-api", "me.whereareiam.anvil", "protocol-java-api").versionRef("anvil")
+            library("protocol-java-worker", "me.whereareiam.anvil", "protocol-java-worker").versionRef("anvil")
             library("session-api", "me.whereareiam.anvil", module("builtin-session-api", "session-api")).versionRef("anvil")
         }
     }

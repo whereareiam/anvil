@@ -10,10 +10,12 @@ dependencies {
 	compileOnly(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi)
 	compileOnly(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinMovement.movementApi)
 	compileOnly(projects.anvilPlayer.playerApi)
+	compileOnly(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
 
 	testImplementation(projects.anvilApi)
 	testImplementation(projects.anvilCapability.capabilityApi)
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi)
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinMovement.movementApi)
 	testImplementation(projects.anvilPlayer.playerApi)
+	testImplementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
 }

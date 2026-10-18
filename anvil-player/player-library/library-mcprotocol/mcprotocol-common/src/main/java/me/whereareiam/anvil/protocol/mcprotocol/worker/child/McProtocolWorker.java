@@ -10,6 +10,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerRequest;
 import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerControlOperation;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageWriter;
+import me.whereareiam.anvil.protocol.worker.WorkerExtensions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +30,7 @@ import java.util.Map;
 final class McProtocolWorker implements AutoCloseable {
 	private final @NotNull McProtocolClient<Object> client;
 	private final @NotNull WorkerSegments segments;
-	private final @NotNull WorkerCapabilityRegistry capabilities;
+	private final @NotNull WorkerExtensions capabilities;
 	private final @NotNull WorkerMessageWriter responses;
 
 	private final WorkerMessageCodec codec = new WorkerMessageCodec();

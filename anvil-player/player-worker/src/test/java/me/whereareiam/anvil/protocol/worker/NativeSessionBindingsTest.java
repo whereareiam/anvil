@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
+package me.whereareiam.anvil.protocol.worker;
 
 import org.junit.jupiter.api.Test;
 

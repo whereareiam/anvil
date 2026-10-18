@@ -59,7 +59,7 @@ releases and support levels.
 | A capability reports `not installed by the <library> worker` | The library's worker has no wiring for it: install the capability's bundle, which brings its worker sides, or select a library whose edition it supports |
 | A capability reports a missing class, member or packet | The player's release cannot carry what it needs: a client segment does not link, or the release lacks the packet; the reason names it |
 | The same capability has competing providers | Keep one selected implementation for that type and protocol library |
-| An external adapter is ignored | Check its `supportedLibraries()` and service descriptor |
+| An external capability is ignored | Check its service descriptor, its `requiredProtocols()` against the library's `protocols()`, and any `supportedLibraries()` |
 | An agent operation is unknown | Install the extension JAR under `plugins/anvil-agent-extensions` and verify its operation namespace |
 
 Library selection happens before capability composition. MCProtocol-specific adapters do not

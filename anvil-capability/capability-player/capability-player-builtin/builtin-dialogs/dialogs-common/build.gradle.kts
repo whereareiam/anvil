@@ -11,6 +11,7 @@ dependencies {
 	compileOnly(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinCommands.commandsApi)
 	compileOnly(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinDialogs.dialogsApi)
 	compileOnly(projects.anvilPlayer.playerApi)
+	compileOnly(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
 
 	testImplementation(projects.anvilApi)
 	testImplementation(projects.anvilCapability.capabilityApi)
@@ -18,4 +19,5 @@ dependencies {
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinCommands.commandsApi)
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinDialogs.dialogsApi)
 	testImplementation(projects.anvilPlayer.playerApi)
+	testImplementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
 }

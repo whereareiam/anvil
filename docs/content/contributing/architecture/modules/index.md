@@ -19,6 +19,8 @@ a family's API describes its services and extension points. The launcher binds t
 | `anvil-process/process-platform/platform-<name>` | One family per platform: its provider and, where it installs one, its platform agent assembly                |
 | `anvil-player/player-common/src`                            | Player registration, per-player library and release selection, authentication compatibility, and observations     |
 | `anvil-player/player-api`                   | Protocol library contracts, releases, players, protocol-owned channels and native worker contracts                 |
+| `anvil-player/player-worker`                | Worker runtime kit every library embeds: extension discovery and binding, session generations, and the protocols a player speaks |
+| `anvil-player/player-protocol/protocol-java` | The Java Edition protocol (`protocol-java-api`) and its worker kit (`protocol-java-worker`), which dispatches the protocol over a library's connection |
 | `anvil-player/player-library/library-mcprotocol`            | The MCProtocolLib library: release data, client port, client segments, worker host and shell, and account storage |
 | `anvil-capability/capability-api`                | Generic composition, neutral player contracts, descriptors, exceptions, and typed requests |
 | `anvil-capability/capability-common`             | Dependency validation, agent-provider adaptation and agent extensions, logical process owners, player facades, and capability cleanup |

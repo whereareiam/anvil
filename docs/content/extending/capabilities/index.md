@@ -77,10 +77,12 @@ needs only player identity/version, observations, declared dependencies, and cle
 
 Protocol-backed player providers use `capability-protocol-api`, and their native worker extensions implement
 `WorkerExtension` from `protocol-api`, which it includes.
-`ProtocolPlayerCapabilityProvider` adds `supportedLibraries()`; its creation context supplies the
-protocol channel and the services of the player's protocol library. An empty set accepts every
-library. When the player's worker does not install the provider's capability, composition skips the
-provider and its dependents for that player. Declare `Session` only when the implementation uses it.
+`ProtocolPlayerCapabilityProvider` names what it needs from the player's library: `requiredProtocols()`, the edition
+protocols its worker extension speaks, such as `JavaProtocol`, and `workerBacked()` for an extension that needs no
+edition protocol. Only a capability that uses one library's own services restricts `supportedLibraries()`. Its
+creation context supplies the protocol channel and the services of the player's protocol library. Composition skips
+the provider and its dependents for players whose library lacks a required protocol, whose library runs no worker
+extensions while the provider is worker-backed, or whose worker does not install its capability. Declare `Session` only when the implementation uses it.
 
 Agent-backed process providers use `capability-agent-api`, which includes the shared
 capability contracts. Its process context adds a scoped request channel for native agent work.

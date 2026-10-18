@@ -14,6 +14,9 @@ import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabil
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
+import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
+import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
@@ -200,6 +203,112 @@ class PlayerCapabilityRuntimeTest {
 		assertTrue(player.hasCapability(DependentCapability.class));
 		assertEquals("service", player.capability(DependentCapability.class).value());
 		player.destroy();
+	}
+
+	@Test
+	void skipsCapabilitiesRequiringAProtocolTheLibraryDoesNotSpeakTogetherWithTheirDependents() {
+		var edition = editionProvider("edition", BaseCapability.class, Set.of(), context -> {
+			throw new AssertionError("A capability whose protocol the library lacks must not be created");
+		});
+		var summary = sharedProvider("summary", SummaryCapability.class, Set.of(BaseCapability.class), context -> {
+			throw new AssertionError("A dependent of an unsupported capability must not be created");
+		});
+		StubPlayer stub = new StubPlayer();
+		stub.channel = channel(Set.of("edition"), Map.of());
+
+		var runtime = new PlayerCapabilityRuntime(List.of(summary), List.of(edition), library(Set.of()));
+
+		SimulatedPlayer player = quietly(() -> runtime.compose(stub, null, PlayerConnection.to("proxy"), removed -> { }));
+
+		var missing = assertThrows(CapabilityUnavailableException.class, () -> player.capability(BaseCapability.class));
+		String reason = ": requires EditionProtocol, which the players of the stub library do not speak";
+		assertTrue(missing.getMessage().endsWith(reason), missing.getMessage());
+		assertFalse(player.hasCapability(SummaryCapability.class));
+		player.destroy();
+	}
+
+	@Test
+	void composesCapabilitiesWhoseProtocolsTheLibrarySpeaks() {
+		var edition = editionProvider("edition", BaseCapability.class, Set.of(), context -> () -> "edition");
+		StubPlayer stub = new StubPlayer();
+		stub.channel = channel(Set.of("edition"), Map.of());
+
+		var runtime = new PlayerCapabilityRuntime(List.of(), List.of(edition), library(Set.of(EditionProtocol.class)));
+
+		SimulatedPlayer player = runtime.compose(stub, null, PlayerConnection.to("proxy"), ignored -> { });
+
+		assertEquals("edition", player.capability(BaseCapability.class).value());
+		player.destroy();
+	}
+
+	@Test
+	void skipsWorkerBackedCapabilitiesForPlayersWithoutANativeWorker() {
+		var edition = editionProvider("edition", BaseCapability.class, Set.of(), context -> {
+			throw new AssertionError("A worker-backed capability of a player without a worker must not be created");
+		});
+
+		var runtime = new PlayerCapabilityRuntime(List.of(), List.of(edition), library(Set.of(EditionProtocol.class)));
+
+		StubPlayer stub = new StubPlayer();
+
+		SimulatedPlayer player = quietly(() -> runtime.compose(stub, null, PlayerConnection.to("proxy"), removed -> { }));
+
+		var missing = assertThrows(CapabilityUnavailableException.class, () -> player.capability(BaseCapability.class));
+		assertTrue(missing.getMessage().endsWith(": the players of the stub library run no worker extensions"),
+				missing.getMessage());
+		player.destroy();
+	}
+
+	@Test
+	void aCapabilityThatCannotApplyYieldsToTheLibrarysOwnProviderOfIt() {
+		var edition = editionProvider("edition", BaseCapability.class, Set.of(), context -> {
+			throw new AssertionError("A capability that cannot apply to the library must not be created");
+		});
+		var own = provider("own", BaseCapability.class, Set.of(), context -> () -> "own");
+		var runtime = new PlayerCapabilityRuntime(List.of(), List.of(edition, own), library(Set.of()));
+
+		SimulatedPlayer player = runtime.compose(new StubPlayer(), null, PlayerConnection.to("proxy"), removed -> { });
+
+		assertEquals(List.of("own"), runtime.providers().stream().map(CapabilityDescriptor::getId).toList());
+		assertEquals("own", player.capability(BaseCapability.class).value());
+		player.destroy();
+	}
+
+	private static <T> T quietly(Supplier<T> action) {
+		var previous = System.err;
+		System.setErr(new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
+		try {
+			return action.get();
+		} finally {
+			System.setErr(previous);
+		}
+	}
+
+	private static ProtocolLibraryProvider library(Set<Class<?>> protocols) {
+		return new ProtocolLibraryProvider() {
+			@Override
+			public @NotNull String id() {
+				return "stub";
+			}
+
+			@Override
+			public @NotNull List<ProtocolRelease> releases(@NotNull ProtocolLibraryContext context) {
+				return List.of();
+			}
+
+			@Override
+			public @NotNull ProtocolLibrary create(@NotNull ProtocolLibraryContext context) {
+				throw new AssertionError("Composition must not create the library");
+			}
+
+			@Override
+			public @NotNull Set<Class<?>> protocols() {
+				return protocols;
+			}
+		};
+	}
+
+	private interface EditionProtocol {
 	}
 
 	private static ProtocolChannel channel(Set<String> installed, Map<String, String> unavailable) {
@@ -405,6 +514,36 @@ class PlayerCapabilityRuntimeTest {
 			@Override
 			public @NotNull C create(@NotNull ProtocolPlayerCapabilityContext context) {
 				return factory.apply(context);
+			}
+		};
+	}
+
+	private <C extends PlayerCapability> ProtocolPlayerCapabilityProvider<C> editionProvider(
+			String id,
+			Class<C> type,
+			Set<Class<? extends PlayerCapability>> dependencies,
+			Function<ProtocolPlayerCapabilityContext, C> factory
+	) {
+		ProtocolPlayerCapabilityProvider<C> provider = provider(id, type, dependencies, factory);
+		return new ProtocolPlayerCapabilityProvider<>() {
+			@Override
+			public @NotNull CapabilityDescriptor descriptor() {
+				return provider.descriptor();
+			}
+
+			@Override
+			public @NotNull Class<C> capability() {
+				return type;
+			}
+
+			@Override
+			public @NotNull Set<Class<?>> requiredProtocols() {
+				return Set.of(EditionProtocol.class);
+			}
+
+			@Override
+			public @NotNull C create(@NotNull ProtocolPlayerCapabilityContext context) {
+				return provider.create(context);
 			}
 		};
 	}

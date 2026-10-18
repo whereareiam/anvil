@@ -1,6 +1,5 @@
-package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
+package me.whereareiam.anvil.protocol.worker;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
@@ -11,14 +10,6 @@ import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
-import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
-import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerCapabilities;
-import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerControlOperation;
-import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,33 +23,47 @@ import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Selects the worker's extensions and owns each player's operation table.
+ * The worker extensions one library's worker runs, and each player's bindings of them. A library creates it once
+ * per worker and binds every player it creates; it then reports {@link #capabilities()} and {@link #unavailable()} to
+ * the host, which composes only the capabilities installed.
  *
  * <p>An extension is installed when it targets this library, or every library, and accepts the worker's native
- * session type. Each extension binds a player through its own scope: its operations are buffered and its native
- * listeners tracked until its binding returns. An extension whose session type is missing from the loaded release,
- * whose binding fails to link against the release, finds no adapter for its port, or fails its own service lookup
- * leaves nothing behind, is reported unavailable with the reason for this and later players, and does not fail the
+ * session type. Each extension binds a player through its own scope: its operations are buffered and its listeners
+ * tracked until its binding returns. An extension whose session type is missing from the loaded release, whose
+ * binding fails to link, whose protocol or adapter the player lacks, or whose own service lookup fails leaves
+ * nothing behind and is reported unavailable with the reason, for this and every later player, without failing the
  * player.</p>
+ *
+ * <pre>{@code
+ * WorkerExtensions extensions = WorkerExtensions.discover(LIBRARY_ID, client.sessionType(), Set.of("create"));
+ * WorkerExtensions.PlayerBindings bindings = extensions.bind(player, protocols);
+ * }</pre>
  */
-final class WorkerCapabilityRegistry {
+public final class WorkerExtensions {
+	private final String libraryId;
+	private final Set<String> reservedOperations;
 	private final Map<String, WorkerExtension<Object>> extensions = new LinkedHashMap<>();
 	private final Map<String, String> unavailable = new LinkedHashMap<>();
-	private final WorkerMessageCodec codec = new WorkerMessageCodec();
 
 	/**
 	 * Discovers the extensions on the worker's class path. A provider class that cannot be loaded is skipped with a
 	 * diagnostic on standard error naming the provider where the failure does, because its capability ID is unknown.
 	 * A failure to read the provider configuration itself ends the discovery with the same diagnostic.
 	 *
+	 * @param libraryId the library whose worker runs the extensions
 	 * @param nativeSessionType class of the worker's native sessions
-	 * @return registry of the extensions selected for this worker
+	 * @param reservedOperations operation IDs the library's own transport uses, which no extension may register
+	 * @return the extensions selected for this worker
+	 * @throws IllegalStateException when two selected extensions share a capability ID
 	 */
-	static @NotNull WorkerCapabilityRegistry discover(@NotNull Class<?> nativeSessionType) {
+	public static @NotNull WorkerExtensions discover(
+			@NotNull String libraryId,
+			@NotNull Class<?> nativeSessionType,
+			@NotNull Set<String> reservedOperations
+	) {
 		List<WorkerExtension<?>> discovered = new ArrayList<>();
 		Iterator<ServiceLoader.Provider<WorkerExtension>> providers = ServiceLoader.load(WorkerExtension.class)
 				.stream()
@@ -71,7 +76,7 @@ final class WorkerCapabilityRegistry {
 			}
 		}
 
-		return new WorkerCapabilityRegistry(nativeSessionType, discovered);
+		return new WorkerExtensions(libraryId, nativeSessionType, reservedOperations, discovered);
 	}
 
 	private static boolean hasNext(Iterator<?> providers) {
@@ -91,18 +96,22 @@ final class WorkerCapabilityRegistry {
 	/**
 	 * Selects extensions from explicit candidates.
 	 *
+	 * @param libraryId the library whose worker runs the extensions
 	 * @param nativeSessionType class of the worker's native sessions
+	 * @param reservedOperations operation IDs the library's own transport uses, which no extension may register
 	 * @param candidates extensions of any library
 	 * @throws IllegalStateException when two candidates of this worker share a capability ID
 	 */
-	WorkerCapabilityRegistry(
+	public WorkerExtensions(
+			@NotNull String libraryId,
 			@NotNull Class<?> nativeSessionType,
+			@NotNull Set<String> reservedOperations,
 			@NotNull Collection<? extends WorkerExtension<?>> candidates
 	) {
+		this.libraryId = libraryId;
+		this.reservedOperations = Set.copyOf(reservedOperations);
 		for (WorkerExtension<?> candidate : candidates) {
-			boolean otherLibrary = candidate.libraryId()
-					.filter(library -> !library.equals(McProtocolClient.LIBRARY_ID))
-					.isPresent();
+			boolean otherLibrary = candidate.libraryId().filter(library -> !library.equals(libraryId)).isPresent();
 			if (otherLibrary) continue;
 			if (extensions.containsKey(candidate.id()) || unavailable.containsKey(candidate.id()))
 				throw new IllegalStateException("Duplicate worker capability: " + candidate.id());
@@ -116,7 +125,7 @@ final class WorkerCapabilityRegistry {
 			}
 			if (!required.isAssignableFrom(nativeSessionType)) {
 				unavailable.put(candidate.id(), "requires native session " + required.getName() + ", but the "
-						+ McProtocolClient.LIBRARY_ID + " worker provides " + nativeSessionType.getName());
+						+ libraryId + " worker provides " + nativeSessionType.getName());
 				continue;
 			}
 
@@ -127,17 +136,21 @@ final class WorkerCapabilityRegistry {
 	}
 
 	/**
-	 * Binds every installed extension to a player. An extension that is unavailable on this release is removed
-	 * from the registry; any other failure closes the completed bindings and is rethrown.
+	 * Binds every installed extension to a player. An extension that is unavailable to the player is removed from
+	 * the installed extensions; any other failure closes the completed bindings and is rethrown.
 	 *
-	 * @param player the player's lifecycle, session access and event delivery
-	 * @return the player's bindings and operation table
+	 * @param player the player's lifecycle, sessions, events and adapters
+	 * @param protocols the protocols the player speaks, whose scoped views each extension receives
+	 * @return the player's bindings and operations
 	 */
-	synchronized @NotNull PlayerBindings bind(@NotNull PlayerBindingContext<Object> player) {
+	public synchronized @NotNull PlayerBindings bind(
+			@NotNull PlayerBindingContext<Object> player,
+			@NotNull WorkerProtocols protocols
+	) {
 		var bindings = new PlayerBindings();
 		try {
 			for (WorkerExtension<Object> extension : List.copyOf(extensions.values())) {
-				String failure = bindings.bind(extension, player);
+				String failure = bindings.bind(extension, player, protocols);
 				if (failure == null) continue;
 
 				extensions.remove(extension.id());
@@ -162,29 +175,17 @@ final class WorkerCapabilityRegistry {
 	 *
 	 * @return immutable capability IDs
 	 */
-	synchronized @NotNull Set<String> capabilities() {
+	public synchronized @NotNull Set<String> capabilities() {
 		return Set.copyOf(extensions.keySet());
 	}
 
 	/**
-	 * Returns capabilities that cannot be installed, with the reason for each.
+	 * Returns the capabilities that cannot be installed, with the reason for each.
 	 *
 	 * @return immutable reasons keyed by capability ID
 	 */
-	synchronized @NotNull Map<String, String> unavailable() {
+	public synchronized @NotNull Map<String, String> unavailable() {
 		return Map.copyOf(unavailable);
-	}
-
-	/**
-	 * Reports the capabilities bound for players created from now on, including the one just bound.
-	 *
-	 * @return installed and unavailable capabilities
-	 */
-	synchronized @NotNull WorkerPlayerCapabilities report() {
-		return WorkerPlayerCapabilities.builder()
-				.capabilities(capabilities())
-				.unavailable(unavailable())
-				.build();
 	}
 
 	private static String reason(Throwable failure) {
@@ -202,27 +203,35 @@ final class WorkerCapabilityRegistry {
 		return reason(failure) + " (" + reason(cause) + ")";
 	}
 
-	private static void validate(String id) {
-		if (WorkerControlOperation.find(id).isPresent()) throw new IllegalArgumentException("Reserved lifecycle operation: " + id);
-		if (id.isBlank() || (!id.contains(".") && !id.contains(":"))) throw new IllegalArgumentException("Worker operation must be namespaced: " + id);
+	private void validate(String id) {
+		if (reservedOperations.contains(id)) throw new IllegalArgumentException("Reserved lifecycle operation: " + id);
+		if (id.isBlank() || (!id.contains(".") && !id.contains(":")))
+			throw new IllegalArgumentException("Worker operation must be namespaced: " + id);
 	}
 
 	/**
-	 * One player's operation table and extension bindings. Operations are registered only through each
-	 * extension's scope while the player binds.
+	 * One player's operations and extension bindings. Operations are registered only through each extension's scope
+	 * while the player binds.
 	 */
-	final class PlayerBindings implements AutoCloseable {
-		private final Map<String, Function<JsonNode, JsonNode>> operations = new LinkedHashMap<>();
+	public final class PlayerBindings implements AutoCloseable {
+		private final Map<String, WorkerOperation<?, ?>> operations = new LinkedHashMap<>();
 		private final List<WorkerBinding> bindings = new ArrayList<>();
 		private boolean installing = true;
 
+		private PlayerBindings() {
+		}
+
 		/**
-		 * Binds one extension through its own scope, forwarding its operations only when the binding returns.
+		 * Binds one extension through its own scope, keeping its operations only when the binding returns.
 		 *
-		 * @return the linkage, service configuration or adapter failure reason, or null when the extension was bound
+		 * @return the linkage, service configuration or protocol failure reason, or null when the extension was bound
 		 */
-		private @Nullable String bind(WorkerExtension<Object> extension, PlayerBindingContext<Object> player) {
-			ExtensionScope scope = new ExtensionScope(player);
+		private @Nullable String bind(
+				WorkerExtension<Object> extension,
+				PlayerBindingContext<Object> player,
+				WorkerProtocols protocols
+		) {
+			ExtensionScope scope = new ExtensionScope(player, protocols);
 			WorkerBinding binding;
 			try {
 				binding = extension.bind(scope, scope);
@@ -241,19 +250,22 @@ final class WorkerCapabilityRegistry {
 		}
 
 		/**
-		 * Executes one registered operation.
+		 * Returns an operation an extension registered for the player.
 		 *
-		 * @param operation operation ID
-		 * @param request request envelope
-		 * @return response envelope
+		 * @param id operation ID
+		 * @return the operation with its descriptor
+		 * @throws IllegalArgumentException when no extension registered the operation
 		 */
-		@NotNull JsonNode execute(@NotNull String operation, @NotNull JsonNode request) {
-			Function<JsonNode, JsonNode> handler = operations.get(operation);
-			if (handler == null) throw new IllegalArgumentException("Unknown protocol operation: " + operation);
+		public @NotNull WorkerOperation<?, ?> operation(@NotNull String id) {
+			WorkerOperation<?, ?> operation = operations.get(id);
+			if (operation == null) throw new IllegalArgumentException("Unknown protocol operation: " + id);
 
-			return handler.apply(request);
+			return operation;
 		}
 
+		/**
+		 * Closes every binding in reverse order, preserving the first failure and suppressing later ones.
+		 */
 		@Override
 		public void close() {
 			Throwable failure = null;
@@ -275,24 +287,27 @@ final class WorkerCapabilityRegistry {
 		}
 
 		/**
-		 * One extension's view of the player while it binds: operations are buffered and native listener
-		 * registrations tracked, so a binding that fails to link can be released completely.
+		 * One extension's view of the player while it binds: operations are buffered and listener registrations
+		 * tracked, so a binding that fails can be released completely.
 		 */
 		@RequiredArgsConstructor
 		private final class ExtensionScope implements PlayerBindingContext<Object>, OperationRegistry {
 			private final PlayerBindingContext<Object> player;
-			private final Map<String, Function<JsonNode, JsonNode>> pending = new LinkedHashMap<>();
+			private final WorkerProtocols protocols;
+			private final Map<String, WorkerOperation<?, ?>> pending = new LinkedHashMap<>();
 			private final List<Subscription> subscriptions = new ArrayList<>();
 			private boolean open = true;
 
 			@Override
 			public <Q, R> void register(@NotNull OperationDescriptor<Q, R> operation, @NotNull Function<Q, R> handler) {
-				if (!installing || !open) throw new IllegalStateException("Worker operations may only be registered while binding a player");
+				if (!installing || !open)
+					throw new IllegalStateException("Worker operations may only be registered while binding a player");
 
 				String id = operation.getId();
 				validate(id);
-				if (operations.containsKey(id) || pending.putIfAbsent(id, codec.handler(operation, handler)) != null)
-					throw new IllegalStateException("Duplicate worker operation: " + id);
+				boolean duplicate = operations.containsKey(id)
+						|| pending.putIfAbsent(id, new WorkerOperation<>(operation, handler)) != null;
+				if (duplicate) throw new IllegalStateException("Duplicate worker operation: " + id);
 			}
 
 			private void discard(@Nullable Throwable failure) {
@@ -306,6 +321,10 @@ final class WorkerCapabilityRegistry {
 					}
 				}
 				subscriptions.clear();
+			}
+
+			private void track(Subscription subscription) {
+				if (open) subscriptions.add(subscription);
 			}
 
 			@Override
@@ -346,7 +365,7 @@ final class WorkerCapabilityRegistry {
 			@Override
 			public @NotNull Subscription bindNativeSession(@NotNull Function<Object, Subscription> listener) {
 				Subscription subscription = player.bindNativeSession(listener);
-				if (open) subscriptions.add(subscription);
+				track(subscription);
 
 				return subscription;
 			}
@@ -368,55 +387,12 @@ final class WorkerCapabilityRegistry {
 
 			@Override
 			public <P> @NotNull P protocol(@NotNull Class<P> type) {
-				if (type != JavaProtocol.class) return player.protocol(type);
-
-				return type.cast(new ScopedJavaProtocol(player.protocol(JavaProtocol.class)));
+				return protocols.protocol(type, this::track);
 			}
 
 			@Override
 			public <P> @NotNull P adapter(@NotNull Class<P> port) {
 				return player.adapter(port);
-			}
-
-			/**
-			 * The player's protocol as the extension sees it while binding: its listeners are released with the scope
-			 * when the binding fails.
-			 */
-			@RequiredArgsConstructor
-			private final class ScopedJavaProtocol implements JavaProtocol {
-				private final JavaProtocol protocol;
-
-				@Override
-				public <T extends ClientboundPacket> @NotNull Subscription listen(
-						@NotNull Class<T> type,
-						@NotNull Consumer<? super T> listener
-				) {
-					Subscription subscription = protocol.listen(type, listener);
-					if (open) subscriptions.add(subscription);
-
-					return subscription;
-				}
-
-				@Override
-				public void send(@NotNull ServerboundPacket packet) {
-					protocol.send(packet);
-				}
-
-				@Override
-				public <T extends ServerboundPacket> @NotNull Subscription listenSent(
-						@NotNull Class<T> type,
-						@NotNull Consumer<? super T> listener
-				) {
-					Subscription subscription = protocol.listenSent(type, listener);
-					if (open) subscriptions.add(subscription);
-
-					return subscription;
-				}
-
-				@Override
-				public boolean supports(@NotNull Class<? extends JavaPacket> type) {
-					return protocol.supports(type);
-				}
 			}
 		}
 	}

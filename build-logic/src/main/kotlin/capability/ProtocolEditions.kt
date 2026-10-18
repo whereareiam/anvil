@@ -20,4 +20,14 @@ object ProtocolEditions {
 		.listFiles { file -> file.isDirectory && file.name.startsWith(PREFIX) }.orEmpty()
 		.map { directory -> directory.name.removePrefix(PREFIX) }
 		.sorted()
+
+	/**
+	 * Names the project of an edition's protocol API, such as
+	 * `:anvil-player:player-protocol:protocol-java:protocol-java-api` for `java`.
+	 *
+	 * @param edition edition name
+	 * @return the API project's path
+	 */
+	fun apiPath(edition: String): String =
+		":" + DIRECTORY.replace('/', ':') + ":$PREFIX$edition:$PREFIX$edition-api"
 }

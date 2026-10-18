@@ -5,13 +5,16 @@ import lombok.experimental.Accessors;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.java.worker.JavaConnection;
+import me.whereareiam.anvil.protocol.java.worker.JavaPacketDispatcher;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
@@ -26,6 +29,10 @@ import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageWriter;
+import me.whereareiam.anvil.protocol.worker.NativeSessionBindings;
+import me.whereareiam.anvil.protocol.worker.WorkerExtensions;
+import me.whereareiam.anvil.protocol.worker.WorkerOperation;
+import me.whereareiam.anvil.protocol.worker.WorkerProtocols;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,8 +46,8 @@ import java.util.function.Function;
 /**
  * One worker player, which binds the worker's extensions as their {@code PlayerBindingContext}. Native sessions come
  * from the release's client segment and stay opaque here; this player owns their generations, the connection
- * events and the view rotation, and its Java Edition protocol follows the current session. Adapters come from the
- * worker's verified segments.
+ * events and the view rotation, and its Java Edition protocol, a {@link JavaPacketDispatcher} over the release's
+ * client, follows the current session. Adapters come from the worker's verified segments.
  */
 @Accessors(fluent = true)
 final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoCloseable {
@@ -62,15 +69,16 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	private final McProtocolClient<Object> client;
 	private final WorkerSegments segments;
 	private final WorkerMessageWriter events;
-	private final WorkerCapabilityRegistry capabilities;
-	private final JavaPacketChannel protocol;
+	private final WorkerExtensions capabilities;
+	private final JavaPacketDispatcher protocol;
+	private final WorkerProtocols protocols;
 
 	private final @NotNull WorkerMessageCodec codec = new WorkerMessageCodec();
 	private final AtomicBoolean disconnectNotified = new AtomicBoolean();
 	private volatile boolean disconnecting;
 	private final NativeSessionBindings nativeBindings = new NativeSessionBindings();
 
-	private WorkerCapabilityRegistry.PlayerBindings bindings;
+	private WorkerExtensions.PlayerBindings bindings;
 	private volatile @Nullable Object session;
 	private volatile @NotNull ViewRotation rotation = new ViewRotation(0, 0);
 
@@ -80,7 +88,7 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 			McProtocolClient<Object> client,
 			WorkerSegments segments,
 			WorkerMessageWriter events,
-			WorkerCapabilityRegistry capabilities
+			WorkerExtensions capabilities
 	) {
 		this.id = id;
 		this.options = options;
@@ -88,7 +96,10 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 		this.segments = segments;
 		this.events = events;
 		this.capabilities = capabilities;
-		this.protocol = new JavaPacketChannel(client, this::nativeSession);
+		this.protocol = new JavaPacketDispatcher(McProtocolClient.LIBRARY_ID, new SessionConnection());
+		this.protocols = WorkerProtocols.builder(McProtocolClient.LIBRARY_ID)
+				.speak(JavaProtocol.class, protocol, protocol::scoped)
+				.build();
 	}
 
 	/**
@@ -98,8 +109,11 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	 */
 	@NotNull WorkerPlayerCapabilities initialize() {
 		try {
-			bindings = capabilities.bind(this);
-			return capabilities.report();
+			bindings = capabilities.bind(this, protocols);
+			return WorkerPlayerCapabilities.builder()
+					.capabilities(capabilities.capabilities())
+					.unavailable(capabilities.unavailable())
+					.build();
 		} catch (RuntimeException | Error failure) {
 			try {
 				close();
@@ -111,7 +125,11 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	}
 
 	@NotNull JsonNode execute(@NotNull String operation, @NotNull JsonNode arguments) {
-		return bindings.execute(operation, arguments);
+		return execute(bindings.operation(operation), arguments);
+	}
+
+	private <Q, R> JsonNode execute(WorkerOperation<Q, R> operation, JsonNode arguments) {
+		return codec.handler(operation.getDescriptor(), operation::apply).apply(arguments);
 	}
 
 	@Override
@@ -211,11 +229,7 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 
 	@Override
 	public <P> @NotNull P protocol(@NotNull Class<P> type) {
-		if (type != JavaProtocol.class)
-			throw new ProtocolUnavailableException("the " + McProtocolClient.LIBRARY_ID + " worker speaks " + JavaProtocol.class.getName()
-					+ ", not " + type.getName());
-
-		return type.cast(protocol);
+		return protocols.protocol(type);
 	}
 
 	@Override
@@ -229,6 +243,21 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 			disconnect();
 		} finally {
 			session = null;
+		}
+	}
+
+	/**
+	 * Sends the player's packets on its current session through the release's client segment.
+	 */
+	private final class SessionConnection implements JavaConnection {
+		@Override
+		public void send(@NotNull ServerboundPacket packet) {
+			client.send(nativeSession(), packet);
+		}
+
+		@Override
+		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
+			return client.supports(type);
 		}
 	}
 

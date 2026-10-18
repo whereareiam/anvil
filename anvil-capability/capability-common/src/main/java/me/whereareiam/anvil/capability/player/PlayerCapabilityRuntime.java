@@ -11,6 +11,7 @@ import me.whereareiam.anvil.capability.api.player.PlayerCapabilityProvider;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,20 +26,22 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Discovers, validates, orders, and composes dependency-provided player capabilities for the players
  * of one protocol library.
  *
- * <p>For a player with a native worker, a protocol-backed provider whose capability the worker does not
- * install is skipped together with every provider depending on it. The skipped capability reports the
- * worker's reason, such as the member missing from the loaded release, or that the library's worker does not
- * install it at all; one warning line per player lists what was skipped. A player without a native worker,
- * such as one whose library works only through its own services, is composed with every provider.</p>
+ * <p>A protocol-backed provider is skipped, together with every provider depending on it, when the player's library
+ * does not speak a protocol it requires; when the player has no native worker and the provider is worker-backed; and,
+ * for a player with a native worker, when the worker does not install its capability. The skipped capability reports
+ * why, such as the protocol the library lacks or the member missing from the loaded release; one warning line per
+ * player lists what was skipped.</p>
  */
 public final class PlayerCapabilityRuntime {
 	private final CapabilityRuntime<PlayerCapability, ProtocolPlayerCapabilityContext> runtime;
-	private final Set<String> protocolProviders;
+	private final List<ProtocolPlayerCapabilityProvider<?>> protocolProviders;
+	private final Map<String, String> unsupported;
 
 	/**
 	 * Discovers every provider from the current thread context class loader.
@@ -78,7 +81,20 @@ public final class PlayerCapabilityRuntime {
 	 * @return validated provider runtime
 	 */
 	public static @NotNull PlayerCapabilityRuntime discover(@NotNull ClassLoader loader, @Nullable String libraryId) {
-		return new PlayerCapabilityRuntime(loadProviders(loader), loadProtocolProviders(loader, libraryId));
+		ProtocolLibraryProvider library = libraryId == null ? null : findLibrary(loader, libraryId);
+
+		return new PlayerCapabilityRuntime(loadProviders(loader), loadProtocolProviders(loader, libraryId), library);
+	}
+
+	private static @Nullable ProtocolLibraryProvider findLibrary(
+			@NotNull ClassLoader loader,
+			@NotNull String libraryId
+	) {
+		return ServiceLoader.load(ProtocolLibraryProvider.class, loader).stream()
+				.map(ServiceLoader.Provider::get)
+				.filter(library -> library.id().equals(libraryId))
+				.findFirst()
+				.orElse(null);
 	}
 
 	private static ClassLoader contextLoader() {
@@ -117,7 +133,7 @@ public final class PlayerCapabilityRuntime {
 	}
 
 	/**
-	 * Combines shared and already selected protocol factories into one dependency graph.
+	 * Combines shared and already selected protocol factories into one dependency graph, for players of any library.
 	 * Capability creation remains deferred until the player is composed.
 	 *
 	 * @param providers shared player factories
@@ -127,15 +143,87 @@ public final class PlayerCapabilityRuntime {
 			@NotNull Collection<? extends PlayerCapabilityProvider<?>> providers,
 			@NotNull Collection<? extends ProtocolPlayerCapabilityProvider<?>> protocolProviders
 	) {
+		this(providers, protocolProviders, null);
+	}
+
+	/**
+	 * Combines shared and already selected protocol factories into one dependency graph for the players of one
+	 * library. A protocol factory that cannot apply to the library, because it requires a protocol the library's
+	 * players do not speak or a worker the library does not run, yields to an applicable factory of the same
+	 * capability, such as the library's own Session; without one it stays in the graph and is skipped with its reason.
+	 * Capability creation remains deferred until the player is composed.
+	 *
+	 * @param providers shared player factories
+	 * @param protocolProviders protocol factories selected for the library
+	 * @param library the library whose players are composed, or {@code null} when it is not installed here
+	 */
+	public PlayerCapabilityRuntime(
+			@NotNull Collection<? extends PlayerCapabilityProvider<?>> providers,
+			@NotNull Collection<? extends ProtocolPlayerCapabilityProvider<?>> protocolProviders,
+			@Nullable ProtocolLibraryProvider library
+	) {
+		Map<String, String> unsupported = library == null ? Map.of() : unsupported(protocolProviders, library);
+		List<ProtocolPlayerCapabilityProvider<?>> selected = withoutYielding(providers, protocolProviders, unsupported);
 		List<CapabilityProvider<? extends PlayerCapability, ? super ProtocolPlayerCapabilityContext>> combined =
 				new ArrayList<>(providers);
-		combined.addAll(protocolProviders);
-		Set<String> protocol = new LinkedHashSet<>();
-		for (ProtocolPlayerCapabilityProvider<?> provider : protocolProviders)
-			protocol.add(provider.descriptor().getId());
+		combined.addAll(selected);
 
 		this.runtime = new CapabilityRuntime<>(PlayerCapability.class, combined);
-		this.protocolProviders = Set.copyOf(protocol);
+		this.protocolProviders = List.copyOf(selected);
+		this.unsupported = Map.copyOf(unsupported);
+	}
+
+	private static Map<String, String> unsupported(
+			Collection<? extends ProtocolPlayerCapabilityProvider<?>> protocolProviders,
+			ProtocolLibraryProvider library
+	) {
+		Map<String, String> unsupported = new LinkedHashMap<>();
+		for (ProtocolPlayerCapabilityProvider<?> provider : protocolProviders) {
+			String reason = unsupportedReason(provider, library);
+			if (reason != null) unsupported.put(provider.descriptor().getId(), reason);
+		}
+
+		return unsupported;
+	}
+
+	private static @Nullable String unsupportedReason(
+			ProtocolPlayerCapabilityProvider<?> provider,
+			ProtocolLibraryProvider library
+	) {
+		Set<Class<?>> missing = new LinkedHashSet<>(provider.requiredProtocols());
+		missing.removeAll(library.protocols());
+		if (!missing.isEmpty()) {
+			String names = missing.stream().map(Class::getSimpleName).collect(Collectors.joining(", "));
+			return "requires " + names + ", which the players of the " + library.id() + " library do not speak";
+		}
+		if (provider.workerBacked() && library.protocols().isEmpty())
+			return "the players of the " + library.id() + " library run no worker extensions";
+
+		return null;
+	}
+
+	/**
+	 * Drops each protocol factory that cannot apply to the library when an applicable factory provides its
+	 * capability, so the two do not compete.
+	 */
+	private static List<ProtocolPlayerCapabilityProvider<?>> withoutYielding(
+			Collection<? extends PlayerCapabilityProvider<?>> providers,
+			Collection<? extends ProtocolPlayerCapabilityProvider<?>> protocolProviders,
+			Map<String, String> unsupported
+	) {
+		Set<Class<?>> applicable = new LinkedHashSet<>();
+		for (PlayerCapabilityProvider<?> provider : providers) applicable.add(provider.capability());
+		for (ProtocolPlayerCapabilityProvider<?> provider : protocolProviders)
+			if (!unsupported.containsKey(provider.descriptor().getId())) applicable.add(provider.capability());
+
+		List<ProtocolPlayerCapabilityProvider<?>> selected = new ArrayList<>();
+		for (ProtocolPlayerCapabilityProvider<?> provider : protocolProviders) {
+			boolean yields = unsupported.containsKey(provider.descriptor().getId())
+					&& applicable.contains(provider.capability());
+			if (!yields) selected.add(provider);
+		}
+
+		return selected;
 	}
 
 	/**
@@ -150,9 +238,9 @@ public final class PlayerCapabilityRuntime {
 	/**
 	 * Composes all discovered capabilities around one library-owned player.
 	 * Protocol factories receive the player's channel and library services; shared factories need only the
-	 * player lifetime and its connection. All matching factories share one dependency graph. When the
-	 * player has a native channel, protocol factories whose capability its worker does not install are
-	 * skipped with the worker's reason, or with the note that the library's worker does not install them,
+	 * player lifetime and its connection. All matching factories share one dependency graph. Protocol factories
+	 * that require a protocol the library does not speak, worker-backed factories of a player without a native
+	 * worker, and factories whose capability the player's worker does not install are skipped with their reason,
 	 * together with their dependents.
 	 *
 	 * @param player library-owned player
@@ -171,14 +259,22 @@ public final class PlayerCapabilityRuntime {
 	}
 
 	private Map<String, String> unavailable(ProtocolPlayer player) {
+		Map<String, String> skipped = new LinkedHashMap<>(unsupported);
 		Optional<ProtocolChannel> channel = player.channel();
-		if (channel.isEmpty()) return Map.of();
+		if (channel.isEmpty()) {
+			for (ProtocolPlayerCapabilityProvider<?> provider : protocolProviders)
+				if (provider.workerBacked())
+					skipped.putIfAbsent(provider.descriptor().getId(), "the players of the " + player.libraryId()
+							+ " library run no worker extensions");
+
+			return skipped;
+		}
 
 		Set<String> installed = channel.get().installedCapabilities();
 		Map<String, String> reported = channel.get().unavailableCapabilities();
-		Map<String, String> skipped = new LinkedHashMap<>();
-		for (String id : protocolProviders) {
-			if (installed.contains(id)) continue;
+		for (ProtocolPlayerCapabilityProvider<?> provider : protocolProviders) {
+			String id = provider.descriptor().getId();
+			if (installed.contains(id) || skipped.containsKey(id)) continue;
 
 			String reason = reported.get(id);
 			skipped.put(id, reason == null ? "not installed by the " + player.libraryId() + " worker" : reason);
