@@ -27,8 +27,10 @@ protocol and lists every Minecraft version that speaks it; its highest version i
 | `1.21.1` | `1.21-20241010.155958-24` | 767 | `1.21`, `1.21.1` | `1.21.1` |
 | `1.21.11` | `1.21.11-20260512.221357-18` | 774 | `1.21.11` | `1.21.11` |
 | `26.1.2` | `26.1-20260708.090514-22` | 775 | `26.1`, `26.1.1`, `26.1.2` | `26.1.2` |
+| `26.2` | `26.2` | 776 | `26.2` | `26.2` |
+| `26.3` | `26.3` | 777 | `26.3` | `26.3` |
 
-The releases from `1.19.4` on are MCProtocolLib snapshot builds, pinned to exact timestamps. A player uses
+The releases from `1.19.4` to `26.1.2` are MCProtocolLib snapshot builds, pinned to exact timestamps. A player uses
 the release that lists its exact Minecraft version, never a neighboring one, so a version that no release
 lists, such as `1.20.4` or `1.21.10`, has no player support even when the server platform runs it.
 The table keeps the latest patch of each Minecraft major. Players on releases before `1.18` cannot swap a
@@ -44,7 +46,7 @@ it is refused with the reason.
 
 | Platform | Supported versions | Verified by the live matrix |
 |---|---|---|
-| Paper | `1.16.5` and newer | `1.16.5`, `1.17.1`, `1.18.2`, `1.19.4`, `1.20.6`, `1.21.1`, `1.21.11`, and `26.1.2` |
+| Paper | `1.16.5` and newer | `1.16.5`, `1.17.1`, `1.18.2`, `1.19.4`, `1.20.6`, `1.21.1`, `1.21.11`, `26.1.2`, `26.2`, and `26.3` |
 | Spigot | `1.16.5` and newer | `1.21.11` and `26.1.2` |
 | NeoForge | `1.21.1` and newer | `1.21.1`, `1.21.11`, and `26.1.2` |
 | Velocity | `3.3.0` and newer | `3.5.1` |
@@ -185,6 +187,8 @@ current versions also run directly on Spigot and behind Velocity and BungeeCord,
 | `1.21.1` | `133` | Not in the live matrix | `21.1.256` |
 | `1.21.11` | `132` | [Pinned GetBukkit JAR](../servers/spigot/index.md#recorded-content-pins) | `21.11.45` |
 | `26.1.2` | `74` | [Pinned GetBukkit JAR](../servers/spigot/index.md#recorded-content-pins) | `26.1.2.114` |
+| `26.2` | `134` | Not in the live matrix | Not in the live matrix |
+| `26.3` | `202` | Not in the live matrix | Not in the live matrix |
 
 The proxy selections in that matrix are Velocity `3.5.1` build `615` and BungeeCord Jenkins build
 `2085`. These are the repository's pinned compatibility selections, not moving recommendations to use

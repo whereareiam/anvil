@@ -462,7 +462,7 @@ each process's console, commands, and players one click away. Install it from Je
 | Direct server            | NeoForge             |
 | Proxy                    | Velocity, BungeeCord |
 
-Players speak Minecraft `1.16.5`, `1.17.1`, `1.18.2`, `1.19.4`, `1.20.6`, `1.21.1`, `1.21.11`, and `26.1.2`
+Players speak Minecraft `1.16.5`, `1.17.1`, `1.18.2`, `1.19.4`, `1.20.6`, `1.21.1`, `1.21.11`, `26.1.2`, `26.2`, and `26.3`
 through MCProtocolLib, plus `1.16.4`, `1.20.5`, `1.21`, `26.1`, and `26.1.1`, which share those protocols. The
 live matrix runs those versions on Paper and `1.21.1` and newer on NeoForge, and verifies `1.21.11`
 and `26.1.2` on Spigot and across every supported proxy/backend combination; the other supported

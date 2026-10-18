@@ -5,9 +5,12 @@ import com.github.steveice10.mc.protocol.data.game.entity.player.Hand;
 import com.github.steveice10.mc.protocol.data.game.entity.type.EntityType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TranslatableComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,6 +27,19 @@ import java.util.Locale;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ValueTranslator {
+	private static final AdventureText TEXT = new AdventureText(TranslatableComponent::args);
+
+	/**
+	 * Flattens a component of the chain's releases to plain text, reading a translation's arguments through
+	 * {@code args()}, which every Adventure 4 release of the chain has.
+	 *
+	 * @param component component to flatten
+	 * @return the component as plain text
+	 */
+	public static @NotNull String plain(@NotNull Component component) {
+		return TEXT.plain(component);
+	}
+
 	/**
 	 * Translates a hand to the library's.
 	 *

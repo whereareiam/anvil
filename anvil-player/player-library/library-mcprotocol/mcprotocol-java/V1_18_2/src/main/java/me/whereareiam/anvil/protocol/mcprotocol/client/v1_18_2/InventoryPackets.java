@@ -26,7 +26,6 @@ import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundOpenSc
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
-import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.NotNull;
@@ -81,7 +80,7 @@ public final class InventoryPackets implements PacketTranslation<Packet> {
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (packet instanceof ClientboundOpenScreenPacket open)
 			return new ClientboundOpenScreen(open.getContainerId(), menuType(open.getType()),
-					AdventureText.plain(open.getTitle()));
+					ValueTranslator.plain(open.getTitle()));
 		if (packet instanceof ClientboundContainerSetContentPacket content)
 			return new ClientboundContainerSetContent(content.getContainerId(), content.getStateId(),
 					ValueTranslator.items(content.getItems()), ValueTranslator.item(content.getCarriedItem()));

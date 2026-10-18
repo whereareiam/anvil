@@ -73,6 +73,7 @@ class SpigotPlatformProviderTest {
 
 		assertTrue(Files.readString(work.resolve("spigot.yml")).contains("bungeecord: true"));
 		assertTrue(Files.readString(work.resolve("server.properties")).contains("server-port=25566"));
+		assertTrue(Files.readString(work.resolve("server.properties")).contains("white-list=false"));
 		provider.configure(server, context);
 		assertEquals("retained", new YAMLMapper().readTree(work.resolve("spigot.yml").toFile()).at("/settings/sample").asText());
 		provider.configure(server, context.toBuilder().forwarding(ForwardingConfiguration.builder().build()).build());

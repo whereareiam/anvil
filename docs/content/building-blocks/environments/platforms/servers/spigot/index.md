@@ -67,6 +67,8 @@ that Java under the active support policy. See
 `.setting(...)` updates `server.properties`. Anvil manages the listener, authentication, EULA, and
 legacy forwarding settings. Spigot supports legacy forwarding and cannot participate in modern
 forwarding; both bundled proxy providers can form a compatible route to it.
+Minecraft 26.3 enables the whitelist of a new server; Anvil keeps it off unless
+`.setting("white-list", "true")` or the server's own `server.properties` turns it on.
 
 Downloaded JARs are cached under
 `<cacheDirectory>/distributions/getbukkit/spigot/<version>/<sha256>/spigot-<version>.jar`.

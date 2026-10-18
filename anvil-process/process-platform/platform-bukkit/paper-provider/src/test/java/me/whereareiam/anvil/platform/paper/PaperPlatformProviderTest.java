@@ -80,6 +80,7 @@ class PaperPlatformProviderTest {
 		assertEquals("25566", properties.getProperty("server-port"));
 		assertEquals("present", properties.getProperty("overlay-value"));
 		assertEquals("present", properties.getProperty("declared-value"));
+		assertEquals("false", properties.getProperty("white-list"));
 		assertTrue(Files.readString(work.resolve("config/paper-global.yml")).contains("online-mode: true"));
 		assertTrue(Files.readString(work.resolve("eula.txt")).contains("eula=true"));
 		provider.configure(server, context);

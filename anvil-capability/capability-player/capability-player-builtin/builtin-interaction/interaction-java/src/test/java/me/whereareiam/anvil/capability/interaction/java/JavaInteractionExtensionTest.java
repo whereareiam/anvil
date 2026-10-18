@@ -23,6 +23,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInteract;
+import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundPunch;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwing;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
@@ -157,6 +158,30 @@ class JavaInteractionExtensionTest {
 				ServerboundInteract.builder().entityId(43).action(InteractAction.INTERACT).hand(InteractionHand.OFF_HAND).build(),
 				new ServerboundSwing(InteractionHand.OFF_HAND),
 				new ServerboundSwing(InteractionHand.MAIN_HAND),
+				ServerboundUseItem.builder().hand(InteractionHand.MAIN_HAND).sequence(1).build()
+		), protocol.sent);
+	}
+
+	@Test
+	void followsAnAttackWithAPunchAndSendsNoSwingWhereTheServerPlaysIt() {
+		RecordingProtocol protocol = new RecordingProtocol(Set.of(
+				ServerboundUseItem.class,
+				ServerboundUseItemOn.class,
+				ServerboundInteract.class,
+				ServerboundAttack.class,
+				ServerboundPunch.class
+		));
+		RecordingOperations operations = new RecordingOperations();
+		extension.bind(new RecordingPlayer(protocol), operations);
+
+		operations.execute(InteractionChannel.ENTITY, new EntityUse(42, EntityInteraction.ATTACK, Hand.MAIN));
+		operations.execute(InteractionChannel.ENTITY, new EntityUse(43, EntityInteraction.INTERACT, Hand.OFF));
+		operations.execute(InteractionChannel.ITEM, new ItemUse(Hand.MAIN));
+
+		assertEquals(List.of(
+				new ServerboundAttack(42),
+				new ServerboundPunch(),
+				ServerboundInteract.builder().entityId(43).action(InteractAction.INTERACT).hand(InteractionHand.OFF_HAND).build(),
 				ServerboundUseItem.builder().hand(InteractionHand.MAIN_HAND).sequence(1).build()
 		), protocol.sent);
 	}

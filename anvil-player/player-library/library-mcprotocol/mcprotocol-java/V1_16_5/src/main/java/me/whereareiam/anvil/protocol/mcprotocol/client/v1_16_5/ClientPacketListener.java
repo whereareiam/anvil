@@ -17,7 +17,6 @@ import com.github.steveice10.packetlib.packet.Packet;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -65,9 +64,9 @@ final class ClientPacketListener extends SessionAdapter {
 			session.send(new ClientTeleportConfirmPacket(position.getTeleportId()));
 		}
 		if (packet instanceof ServerDisconnectPacket disconnect)
-			listener.disconnected(session, DisconnectCause.SERVER, AdventureText.plain(disconnect.getReason()));
+			listener.disconnected(session, DisconnectCause.SERVER, ValueTranslator.plain(disconnect.getReason()));
 		if (packet instanceof LoginDisconnectPacket disconnect)
-			listener.disconnected(session, DisconnectCause.SERVER, AdventureText.plain(disconnect.getReason()));
+			listener.disconnected(session, DisconnectCause.SERVER, ValueTranslator.plain(disconnect.getReason()));
 		Packet answer = answers.answer(packet);
 		if (answer != null) session.send(answer);
 

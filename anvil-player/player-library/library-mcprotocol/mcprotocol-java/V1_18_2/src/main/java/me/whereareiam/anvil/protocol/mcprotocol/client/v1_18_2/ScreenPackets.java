@@ -27,7 +27,6 @@ import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleT
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitlesAnimation;
 import me.whereareiam.anvil.protocol.java.api.type.BossEventColor;
 import me.whereareiam.anvil.protocol.java.api.type.BossEventOverlay;
-import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -55,14 +54,14 @@ public final class ScreenPackets implements PacketTranslation<Packet> {
 	@Override
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (packet instanceof ClientboundSetTitleTextPacket title)
-			return new ClientboundSetTitleText(AdventureText.plain(title.getText()));
+			return new ClientboundSetTitleText(ValueTranslator.plain(title.getText()));
 		if (packet instanceof ClientboundSetSubtitleTextPacket subtitle)
-			return new ClientboundSetSubtitleText(AdventureText.plain(subtitle.getText()));
+			return new ClientboundSetSubtitleText(ValueTranslator.plain(subtitle.getText()));
 		if (packet instanceof ClientboundSetTitlesAnimationPacket times)
 			return new ClientboundSetTitlesAnimation(times.getFadeIn(), times.getStay(), times.getFadeOut());
 		if (packet instanceof ClientboundClearTitlesPacket clear) return new ClientboundClearTitles(clear.isResetTimes());
 		if (packet instanceof ClientboundSetActionBarTextPacket actionBar)
-			return new ClientboundSetActionBarText(AdventureText.plain(actionBar.getText()));
+			return new ClientboundSetActionBarText(ValueTranslator.plain(actionBar.getText()));
 		if (!(packet instanceof ClientboundBossEventPacket bossEvent)) return null;
 
 		return new ClientboundBossEvent(bossEvent.getUuid(), operation(bossEvent));
@@ -76,7 +75,7 @@ public final class ScreenPackets implements PacketTranslation<Packet> {
 	private static BossEventOperation operation(ClientboundBossEventPacket packet) {
 		return switch (packet.getAction()) {
 			case ADD -> BossEventAdd.builder()
-					.name(AdventureText.plain(packet.getTitle()))
+					.name(ValueTranslator.plain(packet.getTitle()))
 					.progress(packet.getHealth())
 					.color(color(packet.getColor()))
 					.overlay(overlay(packet.getDivision()))
@@ -86,7 +85,7 @@ public final class ScreenPackets implements PacketTranslation<Packet> {
 					.build();
 			case REMOVE -> new BossEventRemove();
 			case UPDATE_HEALTH -> new BossEventUpdateProgress(packet.getHealth());
-			case UPDATE_TITLE -> new BossEventUpdateName(AdventureText.plain(packet.getTitle()));
+			case UPDATE_TITLE -> new BossEventUpdateName(ValueTranslator.plain(packet.getTitle()));
 			case UPDATE_STYLE -> new BossEventUpdateStyle(color(packet.getColor()), overlay(packet.getDivision()));
 			case UPDATE_FLAGS ->
 					new BossEventUpdateProperties(packet.isDarkenSky(), packet.isPlayEndMusic(), packet.isShowFog());

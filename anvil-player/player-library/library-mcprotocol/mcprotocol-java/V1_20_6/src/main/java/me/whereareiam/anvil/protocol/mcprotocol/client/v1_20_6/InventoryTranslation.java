@@ -10,7 +10,6 @@ import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPla
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
 import me.whereareiam.anvil.protocol.java.api.type.ClickType;
-import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import net.kyori.adventure.key.Key;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -61,7 +60,7 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 	public final @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (packet instanceof ClientboundOpenScreenPacket open)
 			return new ClientboundOpenScreen(open.getContainerId(), menuType(open.getType()),
-					AdventureText.plain(open.getTitle()));
+					ValueTranslator.plain(open.getTitle()));
 		if (packet instanceof ClientboundContainerSetContentPacket content)
 			return new ClientboundContainerSetContent(content.getContainerId(), content.getStateId(),
 					ValueTranslator.items(content.getItems()), ValueTranslator.item(content.getCarriedItem()));

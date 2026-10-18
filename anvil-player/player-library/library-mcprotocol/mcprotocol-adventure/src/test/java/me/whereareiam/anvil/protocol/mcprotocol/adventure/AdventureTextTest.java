@@ -1,24 +1,29 @@
 package me.whereareiam.anvil.protocol.mcprotocol.adventure;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AdventureTextTest {
+	private static final AdventureText TEXT = new AdventureText(TranslatableComponent::args);
+
 	@Test
 	void keepsTextAsWrittenWithItsChildrenInOrder() {
 		Component message = Component.text("anvil:")
 				.append(Component.text("wel"))
 				.append(Component.text("come").append(Component.text("!")));
 
-		assertEquals("anvil:welcome!", AdventureText.plain(message));
+		assertEquals("anvil:welcome!", TEXT.plain(message));
 	}
 
 	@Test
 	void ignoresStyle() {
-		assertEquals("ready", AdventureText.plain(Component.text("ready", NamedTextColor.GREEN)));
+		assertEquals("ready", TEXT.plain(Component.text("ready", NamedTextColor.GREEN)));
 	}
 
 	@Test
@@ -26,7 +31,7 @@ class AdventureTextTest {
 		Component message = Component.translatable("chat.type.text", Component.text("Alice"), Component.text("hello"))
 				.append(Component.text("!"));
 
-		assertEquals("chat.type.text Alice hello!", AdventureText.plain(message));
+		assertEquals("chat.type.text Alice hello!", TEXT.plain(message));
 	}
 
 	@Test
@@ -34,12 +39,12 @@ class AdventureTextTest {
 		Component message = Component.translatable("multiplayer.disconnect.kicked",
 				Component.translatable("commands.kick.success", Component.text("Alice").append(Component.text("_2"))));
 
-		assertEquals("multiplayer.disconnect.kicked commands.kick.success Alice_2", AdventureText.plain(message));
+		assertEquals("multiplayer.disconnect.kicked commands.kick.success Alice_2", TEXT.plain(message));
 	}
 
 	@Test
 	void writesATranslationWithoutArgumentsAsItsKey() {
-		assertEquals("disconnect.timeout", AdventureText.plain(Component.translatable("disconnect.timeout")));
+		assertEquals("disconnect.timeout", TEXT.plain(Component.translatable("disconnect.timeout")));
 	}
 
 	@Test
@@ -51,11 +56,18 @@ class AdventureTextTest {
 				.append(Component.score("Alice", "kills"))
 				.append(Component.text("!"));
 
-		assertEquals("press key.jump near @p!", AdventureText.plain(message));
+		assertEquals("press key.jump near @p!", TEXT.plain(message));
+	}
+
+	@Test
+	void readsTranslationArgumentsThroughTheGivenAccessor() {
+		AdventureText text = new AdventureText(component -> List.of(Component.text("read")));
+
+		assertEquals("chat.type.text read", text.plain(Component.translatable("chat.type.text", Component.text("Alice"))));
 	}
 
 	@Test
 	void flattensAnEmptyComponentToEmptyText() {
-		assertEquals("", AdventureText.plain(Component.empty()));
+		assertEquals("", TEXT.plain(Component.empty()));
 	}
 }

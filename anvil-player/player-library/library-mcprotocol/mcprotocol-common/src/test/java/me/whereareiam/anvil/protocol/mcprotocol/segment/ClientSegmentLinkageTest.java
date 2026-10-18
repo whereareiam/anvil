@@ -35,7 +35,7 @@ class ClientSegmentLinkageTest {
 	@Test
 	void everyClientSegmentLinksAgainstEachReleaseItServesWithEveryRecordedRequirement() throws Exception {
 		Map<MinecraftVersion, String> segments = clientSegments();
-		assertEquals(List.of("1.16.5", "1.17.1", "1.18.2", "1.19.4", "1.20.6", "1.21.1", "1.21.11", "26.1.2"),
+		assertEquals(List.of("1.16.5", "1.17.1", "1.18.2", "1.19.4", "1.20.6", "1.21.1", "1.21.11", "26.1.2", "26.3"),
 				segments.keySet().stream().map(MinecraftVersion::toString).toList());
 
 		for (ProtocolRelease release : McProtocolReleaseCatalog.load(null).releases()) {

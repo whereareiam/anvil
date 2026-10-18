@@ -14,6 +14,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.InventoryPackets
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.NetworkClientSessions;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.PlayerPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.SoundPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.TeleportListener;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 
@@ -29,7 +30,7 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 	 * Creates the client of the MCProtocolLib 26.1 release.
 	 */
 	public McProtocolClientAdapter() {
-		super(new NetworkClientSessions(), McProtocolClientAdapter::packets);
+		super(new NetworkClientSessions(TeleportListener::new), McProtocolClientAdapter::packets);
 	}
 
 	/**

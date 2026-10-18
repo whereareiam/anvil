@@ -6,6 +6,7 @@ import me.whereareiam.anvil.capability.interaction.model.BlockUse;
 import me.whereareiam.anvil.capability.interaction.model.EntityUse;
 import me.whereareiam.anvil.capability.interaction.model.ItemUse;
 import me.whereareiam.anvil.capability.interaction.type.BlockFace;
+import me.whereareiam.anvil.capability.interaction.type.EntityInteraction;
 import me.whereareiam.anvil.capability.interaction.type.Hand;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
@@ -17,6 +18,7 @@ import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInteract;
+import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundPunch;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwing;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
@@ -34,8 +36,11 @@ import java.util.function.IntFunction;
  *     <li>the player's block-change sequence, numbering every item use and block use the player sent;</li>
  *     <li>the shared view rotation sent with an item use;</li>
  *     <li>the center of the face a block use targets;</li>
- *     <li>the order of the arm swing: before an item use, after a block use and after an entity interaction.</li>
+ *     <li>the order of the arm swing: before an item use, after a block use and after an entity interaction;</li>
+ *     <li>the punch that follows an attack.</li>
  * </ul>
+ * A release whose server plays arm swings itself, from Minecraft 26.3 on, carries no swing, so the player sends none;
+ * a release without a punch sends none either.
  * An action of a disconnected player sends nothing and takes no sequence number.
  */
 public final class JavaInteractionExtension implements WorkerExtension<Object> {
@@ -101,7 +106,7 @@ public final class JavaInteractionExtension implements WorkerExtension<Object> {
 		private void useItem(ItemUse use) {
 			InteractionHand hand = hand(use.getHand());
 			ViewRotation view = player.viewRotation();
-			protocol.send(new ServerboundSwing(hand));
+			swing(hand);
 			sendNumbered(next -> ServerboundUseItem.builder()
 					.hand(hand)
 					.sequence(next)
@@ -121,13 +126,19 @@ public final class JavaInteractionExtension implements WorkerExtension<Object> {
 					.cursorZ(FACE_CENTER)
 					.sequence(next)
 					.build());
-			protocol.send(new ServerboundSwing(hand));
+			swing(hand);
 		}
 
 		private void useEntity(EntityUse use) {
 			InteractionHand hand = hand(use.getHand());
 			protocol.send(entity(use, hand));
-			protocol.send(new ServerboundSwing(hand));
+			if (use.getInteraction() == EntityInteraction.ATTACK && protocol.supports(ServerboundPunch.class))
+				protocol.send(new ServerboundPunch());
+			swing(hand);
+		}
+
+		private void swing(InteractionHand hand) {
+			if (protocol.supports(ServerboundSwing.class)) protocol.send(new ServerboundSwing(hand));
 		}
 
 		private ServerboundPacket entity(EntityUse use, InteractionHand hand) {

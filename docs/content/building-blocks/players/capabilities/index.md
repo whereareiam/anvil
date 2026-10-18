@@ -40,9 +40,9 @@ Each capability is optional unless the test or another installed capability requ
 | [Entities](./entities/index.md) | Follow the entities the server shows: positions, passengers, names, display text, items and flags. | MCProtocol and Session |
 
 Packet-backed capabilities operate through the player's protocol library. The built-in capabilities
-are installed on every MCProtocolLib release Anvil ships, from Minecraft 1.16.5 to 26.1.2,
-except Dialogs, which needs a release with dialogs: 1.21.11 and 26.1.2, and Cookies, which needs a
-release with cookies: 1.20.6, 1.21.1, 1.21.11 and 26.1.2.
+are installed on every MCProtocolLib release Anvil ships, from Minecraft 1.16.5 to 26.3,
+except Dialogs, which needs a release with dialogs: 1.21.11 and newer, and Cookies, which needs a
+release with cookies: 1.20.6 and newer.
 
 ## Install built-in capabilities
 

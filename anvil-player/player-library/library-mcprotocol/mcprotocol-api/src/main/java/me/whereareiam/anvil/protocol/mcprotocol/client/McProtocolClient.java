@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
  * <pre>{@code
  * public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
  *     public McProtocolClientAdapter() {
- *         super(new NetworkClientSessions(), McProtocolClientAdapter::packets);
+ *         super(new NetworkClientSessions(TeleportListener::new), McProtocolClientAdapter::packets);
  *     }
  *
  *     static PacketTable<Packet> packets() {
