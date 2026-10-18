@@ -24,7 +24,10 @@ import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.Serverbound
 import org.geysermc.mcprotocollib.protocol.packet.handshake.serverbound.ClientIntentionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchFinishedPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchStartPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundChunkBatchReceivedPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 
@@ -33,10 +36,11 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Answers the packets a client of the MCProtocolLib releases from 1.20.5 until 1.21.1 must answer on its own and
- * reports login, teleports and disconnects with their reason flattened to plain text. The login reports the profile the
- * server granted in its login success, which arrives before the game starts; each release's sessions read that profile,
- * since MCProtocolLib 1.21 replaced mcauthlib's profile with its own. Like a vanilla client, it sends the player's
+ * Answers the packets a client of the MCProtocolLib releases from 1.20.5 until 1.21.1 must answer on its own, among
+ * them each chunk batch with the rate {@link ChunkBatchPacing} wants next, and reports login, teleports and disconnects
+ * with their reason flattened to plain text. The login reports the profile the server granted in its login success,
+ * which arrives before the game starts; each release's sessions read that profile, since MCProtocolLib 1.21 replaced
+ * mcauthlib's profile with its own. Like a vanilla client, it sends the player's
  * settings, its language among them, at the start of the configuration, so the server knows them before the player
  * joins.
  */
@@ -62,6 +66,10 @@ public final class ClientPacketListener extends SessionAdapter {
 	 * Translates the release's text components.
 	 */
 	private final ComponentTranslator text;
+	/**
+	 * Paces the chunk batches the session acknowledges, as the vanilla client does.
+	 */
+	private final ChunkBatchPacing chunkBatches = new ChunkBatchPacing();
 	private volatile ClientProfile granted;
 	private volatile boolean settingsDue;
 
@@ -86,6 +94,9 @@ public final class ClientPacketListener extends SessionAdapter {
 			listener.teleported(session, position.getYaw(), position.getPitch());
 			session.send(new ServerboundAcceptTeleportationPacket(position.getTeleportId()));
 		}
+		if (packet instanceof ClientboundChunkBatchStartPacket) chunkBatches.started();
+		if (packet instanceof ClientboundChunkBatchFinishedPacket finished)
+			session.send(new ServerboundChunkBatchReceivedPacket(chunkBatches.finished(finished.getBatchSize())));
 		// A vanilla client answers every ping; NeoForge waits for the answer to tell a vanilla client from a modded
 		// one.
 		if (packet instanceof ClientboundPingPacket ping) session.send(new ServerboundPongPacket(ping.getId()));
