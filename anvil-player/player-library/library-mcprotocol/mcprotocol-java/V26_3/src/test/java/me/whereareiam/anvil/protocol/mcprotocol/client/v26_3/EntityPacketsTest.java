@@ -6,17 +6,22 @@ import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundEntityPositionSync;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSwingAnimation;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
 import me.whereareiam.anvil.protocol.java.api.type.Relative;
 import net.kyori.adventure.text.Component;
 import org.cloudburstmc.math.vector.Vector3d;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.MetadataTypes;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.type.ObjectEntityMetadata;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Hand;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PositionElement;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
+import org.geysermc.mcprotocollib.protocol.data.game.item.component.SwingAnimation;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAddEntityPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundEntityPositionSyncPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSwingAnimationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundTeleportEntityPacket;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +32,17 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class EntityPacketsTest {
+	private static final SwingAnimation WHACK = new SwingAnimation(SwingAnimation.Type.WHACK, 6);
+
 	private final EntityPackets packets = new EntityPackets();
+
+	@Test
+	void readsTheSwingOfAnArmFromItsOwnPacket() {
+		assertEquals(new ClientboundSwingAnimation(7, InteractionHand.MAIN_HAND),
+				packets.decode(new ClientboundSwingAnimationPacket(7, Hand.MAIN_HAND, WHACK)));
+		assertEquals(new ClientboundSwingAnimation(8, InteractionHand.OFF_HAND),
+				packets.decode(new ClientboundSwingAnimationPacket(8, Hand.OFF_HAND, WHACK)));
+	}
 
 	@Test
 	void decodesASpawnAndTheDataOfADisplayWithThe1_21_11Layout() {

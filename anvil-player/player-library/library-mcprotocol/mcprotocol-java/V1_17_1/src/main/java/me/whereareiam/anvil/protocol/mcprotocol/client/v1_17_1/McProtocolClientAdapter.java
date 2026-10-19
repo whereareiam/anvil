@@ -4,17 +4,17 @@ import com.github.steveice10.mc.protocol.MinecraftConstants;
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ChatPackets;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ConnectionPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.InteractionPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.PlayerPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.SoundPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.WorldPackets;
 
 import java.util.List;
 
 /**
  * The client segment's adapter for the MCProtocolLib 1.17.1 release: the 1.16.5 {@link JavaClient} with the release's
- * answers and packet table, which keeps the 1.16.5 chat, connection, interaction, player and sound translations.
+ * answers and packet table, which keeps the 1.16.5 chat, interaction, player, sound and world translations.
  */
 public final class McProtocolClientAdapter extends JavaClient {
 	/**
@@ -48,7 +48,8 @@ public final class McProtocolClientAdapter extends JavaClient {
 				new InventoryPackets(),
 				new PlayerPackets(),
 				new ScreenPackets(),
-				new SoundPackets()
+				new SoundPackets(),
+				new WorldPackets()
 		));
 	}
 }

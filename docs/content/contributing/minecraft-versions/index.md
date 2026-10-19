@@ -50,6 +50,45 @@ The workers download exactly this closure. A release with an empty pin is listed
 launched: preparation prints a warning, and creating a player that selects it is refused with the
 pin task as the remedy.
 
+## Add the block data
+
+Simulated players read block facts, such as collision shapes and friction, from `protocol-java-data`, which
+generates them at build time from [PrismarineJS minecraft-data](https://github.com/PrismarineJS/minecraft-data)
+(MIT; the notice ships as `META-INF/LICENSE-minecraft-data.txt`). Its
+`anvil-player/player-protocol/protocol-java/protocol-java-data/block-data.toml` pins one minecraft-data release
+and, per `[[release]]` row, the `blocks.json` and `blockCollisionShapes.json` of Minecraft versions that speak one
+protocol, with their SHA-256. Add the new version to the row of its protocol, or add a row for a new protocol,
+then pin it:
+
+```shell
+./gradlew :anvil-player:player-protocol:protocol-java:protocol-java-data:pinBlockData
+```
+
+The task resolves the commit of the file's minecraft-data `version` tag, reads `data/dataPaths.json` there and
+rewrites the commit and every row's pins. The versions of a row that dataPaths names must agree on their files; a
+version it does not name, such as a patch release, shares them through its row. To move to a newer minecraft-data
+release, change `version` first; while the commit stays the same, a pin never changes, and a file whose checksum
+differs fails the task.
+
+When minecraft-data has no block data for any version of a row, the row keeps no pins. The build still succeeds,
+and `JavaBlockData.require` reports the version as having no block data, naming the minecraft-data release; it
+never serves another release's data. Pin again once minecraft-data publishes the release. Until then, the
+[World](../../building-blocks/players/capabilities/world/index.md) capability knows that release's blocks by their
+state IDs only, and `WorldReleaseTest` names the first release without block data; move it once the data arrives.
+
+What minecraft-data does not carry is maintained by hand in `block-facts.toml` beside it: friction, speed and
+jump factors, bounce, stuck slowdowns, fluids, movement traits such as climbable blocks, and the lowest value of
+integer properties that do not start at `0`. Each entry names the vanilla code its values come from; check new
+blocks of the release against vanilla's code and add them. The generator fails on a name no release has, and on an
+integer property whose listed values disagree with the file. Then run the data's tests, which check known facts,
+such as the state count and collision shapes, for every release:
+
+```shell
+./gradlew :anvil-player:player-protocol:protocol-java:protocol-java-data:test
+```
+
+Add the new release to the state counts `BlockRegistryTest` expects.
+
 ## Let linkage decide about segments
 
 Release-specific code lives only in segments: projects named `V<major>_<minor>[_<patch>]` after the

@@ -16,7 +16,8 @@ shows a small environment before adding plugin-specific assertions.
 ## Is a simulated player a full game client?
 
 It speaks the native protocol through the selected protocol library. It does not render the game or
-supply autonomous movement, pathfinding, or crafting. Installed [capabilities](../../building-blocks/players/capabilities/index.md)
+supply autonomous movement, pathfinding, or crafting; with [client physics](../../building-blocks/players/capabilities/movement/index.md#walk-with-client-physics)
+on, it walks, jumps and falls as the vanilla client does with the keys your test holds. Installed [capabilities](../../building-blocks/players/capabilities/index.md)
 provide the actions your test can request.
 
 ## Does the Anvil plugin install every runtime?

@@ -31,6 +31,7 @@ import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtInt;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtList;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtTag;
+import me.whereareiam.anvil.protocol.java.api.model.world.Dimension;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -65,6 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JavaDialogsExtensionTest {
+	private static final Dimension OVERWORLD = new Dimension("minecraft:overworld", -64, 384);
 	private static final NbtCompound NOTICE = NbtCompound.builder()
 			.put("type", new NbtString("minecraft:notice"))
 			.put("title", new NbtString("Log in"))
@@ -166,8 +168,8 @@ class JavaDialogsExtensionTest {
 		List<ClientboundPacket> endings = List.of(
 				new ClientboundShowDialog(null, NOTICE, false),
 				new ClientboundClearDialog(),
-				new ClientboundLogin(42),
-				new ClientboundRespawn(),
+				new ClientboundLogin(42, OVERWORLD),
+				new ClientboundRespawn(OVERWORLD),
 				new ClientboundStartConfiguration()
 		);
 
@@ -232,8 +234,8 @@ class JavaDialogsExtensionTest {
 		player.startConnection();
 		protocol.deliver(new ClientboundShowDialog(null, NOTICE, false));
 		protocol.deliver(new ClientboundClearDialog());
-		protocol.deliver(new ClientboundLogin(42));
-		protocol.deliver(new ClientboundRespawn());
+		protocol.deliver(new ClientboundLogin(42, OVERWORLD));
+		protocol.deliver(new ClientboundRespawn(OVERWORLD));
 		protocol.deliver(new ClientboundStartConfiguration());
 		player.startConnection();
 

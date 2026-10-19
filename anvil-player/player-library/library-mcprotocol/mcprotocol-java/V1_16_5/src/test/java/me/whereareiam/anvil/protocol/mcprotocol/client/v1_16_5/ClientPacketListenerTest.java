@@ -2,8 +2,10 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5;
 
 import com.github.steveice10.mc.auth.data.GameProfile;
 import com.github.steveice10.mc.protocol.data.game.MessageType;
+import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
 import com.github.steveice10.mc.protocol.data.handshake.HandshakeIntent;
 import com.github.steveice10.mc.protocol.packet.handshake.client.HandshakePacket;
+import com.github.steveice10.mc.protocol.packet.ingame.client.ClientPluginMessagePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.ClientSettingsPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.window.ClientConfirmTransactionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.world.ClientTeleportConfirmPacket;
@@ -14,6 +16,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.Serv
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerConfirmTransactionPacket;
 import com.github.steveice10.mc.protocol.packet.login.server.EncryptionRequestPacket;
 import com.github.steveice10.mc.protocol.packet.login.server.LoginSuccessPacket;
+import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.event.session.DisconnectedEvent;
 import com.github.steveice10.packetlib.event.session.PacketReceivedEvent;
@@ -22,6 +25,7 @@ import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
+import me.whereareiam.anvil.protocol.mcprotocol.client.ClientBrand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -31,13 +35,13 @@ import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.security.KeyPairGenerator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -58,14 +62,19 @@ class ClientPacketListenerTest {
 			McProtocolClientAdapter.packets(), new ReleaseAnswers());
 
 	@Test
-	void answersTheJoinWithClientSettingsBeforeReportingTheLoginWithTheGrantedProfile() throws Exception {
+	void answersTheJoinWithClientSettingsAndTheBrandBeforeReportingTheLoginWithTheGrantedProfile() {
 		receive(new LoginSuccessPacket(new GameProfile(GRANTED, "Alice_Renamed")));
-		receive(allocate(ServerJoinGamePacket.class));
+		receive(new ServerJoinGamePacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL, 1, new String[0],
+				new CompoundTag(""), new CompoundTag(""), "minecraft:overworld", 0, 20, 10, false, true, false, false));
 
-		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ClientSettingsPacket", "logged in as Alice_Renamed " + GRANTED), events);
+		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ClientSettingsPacket", "sent ClientPluginMessagePacket",
+				"logged in as Alice_Renamed " + GRANTED), events);
 		ClientSettingsPacket settings = assertInstanceOf(ClientSettingsPacket.class, sent.getFirst());
 		assertEquals("en_us", settings.getLocale());
 		assertEquals(8, settings.getRenderDistance());
+		ClientPluginMessagePacket brand = assertInstanceOf(ClientPluginMessagePacket.class, sent.get(1));
+		assertEquals("minecraft:brand", brand.getChannel());
+		assertArrayEquals(ClientBrand.payload(), brand.getData());
 	}
 
 	@Test
@@ -159,15 +168,6 @@ class ClientPacketListenerTest {
 		});
 	}
 
-	/**
-	 * Creates a packet without running its constructor, for packets the listener only recognizes by type.
-	 */
-	private static <T> T allocate(Class<T> type) throws ReflectiveOperationException {
-		Class<?> unsafe = Class.forName("sun.misc.Unsafe");
-		Field instance = unsafe.getDeclaredField("theUnsafe");
-		instance.setAccessible(true);
-		return type.cast(unsafe.getMethod("allocateInstance", Class.class).invoke(instance.get(null), type));
-	}
 
 	private final class RecordingListener implements ClientListener<Session> {
 		@Override

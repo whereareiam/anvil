@@ -18,9 +18,12 @@ import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
+import me.whereareiam.anvil.protocol.java.api.model.world.Dimension;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSwingAnimation;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInteract;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundPunch;
@@ -59,6 +62,8 @@ class JavaInteractionExtensionTest {
 			ServerboundInteract.class,
 			ServerboundAttack.class
 	);
+
+	private static final Dimension OVERWORLD = new Dimension("minecraft:overworld", -64, 384);
 
 	private final JavaInteractionExtension extension = new JavaInteractionExtension();
 
@@ -228,6 +233,40 @@ class JavaInteractionExtensionTest {
 	}
 
 	@Test
+	void swingsItsOwnArmWhenTheServerSwingsItAndNotForOtherEntities() {
+		RecordingProtocol protocol = new RecordingProtocol(INTERACTION_PACKETS);
+		extension.bind(new RecordingPlayer(protocol), new RecordingOperations());
+
+		protocol.deliver(new ClientboundSwingAnimation(7, InteractionHand.MAIN_HAND));
+		protocol.deliver(new ClientboundLogin(-7, OVERWORLD));
+		protocol.deliver(new ClientboundSwingAnimation(-7, InteractionHand.OFF_HAND));
+		protocol.deliver(new ClientboundSwingAnimation(7, InteractionHand.MAIN_HAND));
+
+		assertEquals(List.of(new ServerboundSwing(InteractionHand.OFF_HAND)), protocol.sent);
+	}
+
+	@Test
+	void tellsNoSwingWhereTheServerPlaysIt() {
+		RecordingProtocol protocol = new RecordingProtocol(Set.of(ServerboundUseItem.class));
+		extension.bind(new RecordingPlayer(protocol), new RecordingOperations());
+
+		protocol.deliver(new ClientboundLogin(7, OVERWORLD));
+		protocol.deliver(new ClientboundSwingAnimation(7, InteractionHand.MAIN_HAND));
+
+		assertEquals(List.of(), protocol.sent);
+	}
+
+	@Test
+	void stopsListeningWhenClosed() {
+		RecordingProtocol protocol = new RecordingProtocol(INTERACTION_PACKETS);
+		WorkerBinding binding = extension.bind(new RecordingPlayer(protocol), new RecordingOperations());
+
+		binding.close();
+
+		assertEquals(Map.of(), protocol.listeners);
+	}
+
+	@Test
 	void isUnavailableForAPlayerThatDoesNotSpeakTheJavaProtocol() {
 		RecordingOperations operations = new RecordingOperations();
 
@@ -236,11 +275,13 @@ class JavaInteractionExtensionTest {
 	}
 
 	/**
-	 * Records the packets sent while connected and refuses them otherwise; it carries the given packets.
+	 * Records the packets sent while connected and refuses them otherwise; it carries the given packets and hands each
+	 * delivered packet to the listener of its class.
 	 */
 	private static final class RecordingProtocol implements JavaProtocol {
 		private final Set<Class<? extends JavaPacket>> supported;
 		private final List<ServerboundPacket> sent = new ArrayList<>();
+		private final Map<Class<?>, Consumer<ClientboundPacket>> listeners = new LinkedHashMap<>();
 		private boolean connected = true;
 
 		private RecordingProtocol(Set<Class<? extends JavaPacket>> supported) {
@@ -252,7 +293,13 @@ class JavaInteractionExtensionTest {
 				@NotNull Class<P> type,
 				@NotNull Consumer<? super P> listener
 		) {
-			throw new AssertionError("Interaction listens to no packets");
+			listeners.put(type, packet -> listener.accept(type.cast(packet)));
+			return () -> listeners.remove(type);
+		}
+
+		private void deliver(ClientboundPacket packet) {
+			Consumer<ClientboundPacket> listener = listeners.get(packet.getClass());
+			if (listener != null) listener.accept(packet);
 		}
 
 		@Override

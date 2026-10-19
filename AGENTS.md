@@ -56,6 +56,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-player/player-common`                                         | Player registration, version selection, authentication compatibility, composition, observations, and resolving a remote's address as the vanilla client does |
 | `anvil-player/player-worker`                                         | Worker runtime kit every library embeds to run worker extensions: `WorkerExtensions`, `NativeSessionBindings`, `WorkerProtocols` and `WorkerOperation` |
 | `anvil-player/player-protocol/protocol-java/protocol-java-api` | Java Edition protocol of simulated players: `JavaProtocol` and the packets, models and types it carries, as release-neutral values |
+| `anvil-player/player-protocol/protocol-java/protocol-java-data` | Block data of every supported release by global block state ID (`JavaBlockData`, `BlockRegistry`), generated at build time from the PrismarineJS minecraft-data files `block-data.toml` pins (`pinBlockData`) and the hand-maintained vanilla facts of `block-facts.toml`; a release minecraft-data lacks is reported missing, never served another release's data |
 | `anvil-player/player-protocol/protocol-java/protocol-java-worker` | Java Edition worker kit: `JavaPacketDispatcher`, the player's `JavaProtocol` over the `JavaConnection` a library implements |
 | `anvil-player/player-library/library-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port and the client segments; owns `mcprotocol-releases.toml` and `pinLibraryReleases`  |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell, and what their translations share: `PacketTranslation`, `PacketTable` and `EntityDataLayout` |
@@ -89,7 +90,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-testkit/fixtures`                                              | Independent consumer build for process, server-plugin, and extension fixture JARs                                                                                                   |
 | `anvil-testkit/support`                                               | Host-side fixture artifact access and scoped extension loading                                                                                                                      |
 | `examples/proof-of-patience`                                          | Standalone consumer example, not a home for framework system assertions                                                                                                             |
-| `build-logic`                                                         | Shared conventions grouped by `module/`, `packaging/`, `adapter/`, `library/`, `platform/`, `capability/`, `integration/`, and `fixture/`                                           |
+| `build-logic`                                                         | Shared conventions grouped by `module/`, `packaging/`, `adapter/`, `library/`, `platform/`, `capability/`, `integration/`, `fixture/`, and `data/` (the block data generator and its pin task) |
 | `build-logic/settings`                                                | Lean settings conventions loaded by every project's parent classloader: library registry, library repositories, and library and platform layout checks                             |
 | `docs/content`                                                        | Task-oriented Scriptorium guides for using, extending, and contributing to Anvil                                                                                                    |
 | `scriptorium.project.json`                                            | Scriptorium project metadata and version policy                                                                                                                                     |
@@ -454,9 +455,11 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 - Adding a Minecraft version follows the contributing guide `docs/content/contributing/minecraft-versions`.
   Add the version to the `mcprotocol-releases.toml` release that speaks its protocol, or a `[[release]]` row
   for a new protocol (version, module, protocol, Minecraft versions, verified versions, Java, features), and
-  pin its closure with `pinLibraryReleases`. Add a segment only to a side whose newest segment fails
-  `checkSegmentLinkage` against the new closure, named after the new release key; a segment folder must name
-  a release key, so raising a key renames that segment. A new segment extends the side's newest one
+  pin its closure with `pinLibraryReleases`. Add it to the `block-data.toml` row of its protocol in
+  `protocol-java-data`, or a new row, and pin it with `pinBlockData`; check `block-facts.toml` for the release's
+  new blocks. Add a segment only to a side whose newest segment fails `checkSegmentLinkage` against the new
+  closure, named after the new release key; a segment folder must name a release key, so raising a key renames
+  that segment. A new segment extends the side's newest one
   (`segment { extends(...) }`) and names each base class it brings its own version of in `replaces("<binary
   name>")`, which the build validates; code a chain shares, its public `JavaClient` base and abstract bases of
   translations whose bulk does not change, lives in the chain's earliest segment, and each segment has its own

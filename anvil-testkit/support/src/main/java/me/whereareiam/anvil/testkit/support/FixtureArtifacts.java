@@ -37,6 +37,26 @@ public final class FixtureArtifacts {
 		return artifact("java-library");
 	}
 
+	/**
+	 * Returns the pinned GrimAC plugin JAR the physics suite runs on a Paper server. The build downloads it only for the
+	 * tasks that run against it, and it reaches only test workspaces.
+	 *
+	 * @return the verified GrimAC JAR
+	 */
+	public static @NotNull Path grim() {
+		return artifact("grim");
+	}
+
+	/**
+	 * Returns the pinned Sonar plugin JAR the physics suite runs on a Velocity proxy. The build downloads it only for
+	 * the tasks that run against it, and it reaches only test workspaces.
+	 *
+	 * @return the verified Sonar JAR
+	 */
+	public static @NotNull Path sonar() {
+		return artifact("sonar");
+	}
+
 	private static Path artifact(String name) {
 		String property = PROPERTY_PREFIX + name;
 		String configured = System.getProperty(property);

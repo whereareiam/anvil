@@ -11,6 +11,7 @@ import com.github.steveice10.mc.protocol.data.game.inventory.MoveToHotbarAction;
 import com.github.steveice10.mc.protocol.data.game.inventory.ShiftClickItemAction;
 import com.github.steveice10.mc.protocol.data.game.inventory.SpreadItemAction;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKeepAlivePacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundSetCarriedItemPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.inventory.ClientboundContainerSetContentPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.inventory.ClientboundContainerSetSlotPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.inventory.ClientboundOpenScreenPacket;
@@ -21,6 +22,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetContent;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundOpenScreen;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetHeldSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
@@ -129,12 +131,18 @@ class InventoryPacketsTest {
 	}
 
 	@Test
+	void readsTheHeldSlotTheServerSelects() {
+		assertEquals(new ClientboundSetHeldSlot(6), packets.decode(new ClientboundSetCarriedItemPacket(6)));
+	}
+
+	@Test
 	void carriesEveryInventoryPacketOfTheRelease() {
 		assertEquals(Set.of(
 				ClientboundOpenScreen.class,
 				ClientboundContainerSetContent.class,
 				ClientboundContainerSetSlot.class,
 				ClientboundSetPlayerInventory.class,
+				ClientboundSetHeldSlot.class,
 				ServerboundSetCarriedItem.class,
 				ServerboundContainerClick.class
 		), packets.packets());

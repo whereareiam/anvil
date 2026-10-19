@@ -17,12 +17,16 @@ import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
+import me.whereareiam.anvil.protocol.java.api.model.world.Dimension;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetContent;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundOpenScreen;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetHeldSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
@@ -49,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JavaInventoryExtensionTest {
 	private static final InventoryItem DIAMONDS = item(4, 3);
+	private static final Dimension OVERWORLD = new Dimension("minecraft:overworld", -64, 384);
 
 	private final JavaInventoryExtension extension = new JavaInventoryExtension();
 
@@ -73,6 +78,44 @@ class JavaInventoryExtensionTest {
 
 		assertEquals(List.of("inventory.select", "inventory.click"), List.copyOf(fixture.operations.handlers.keySet()));
 		assertEquals(List.of(new ServerboundSetCarriedItem(3)), fixture.protocol.sent);
+	}
+
+	@Test
+	void tellsNothingForTheSlotThePlayerHoldsAlready() {
+		Fixture fixture = new Fixture();
+
+		fixture.operations.execute(InventoryChannel.SELECT, new SlotSelection(0));
+		fixture.operations.execute(InventoryChannel.SELECT, new SlotSelection(2));
+		fixture.operations.execute(InventoryChannel.SELECT, new SlotSelection(2));
+
+		assertEquals(List.of(new ServerboundSetCarriedItem(2)), fixture.protocol.sent);
+	}
+
+	@Test
+	void holdsTheHotbarSlotTheServerSelectsAndTellsIt() {
+		Fixture fixture = new Fixture();
+
+		fixture.protocol.deliver(new ClientboundSetHeldSlot(0));
+		fixture.protocol.deliver(new ClientboundSetHeldSlot(5));
+		fixture.protocol.deliver(new ClientboundSetHeldSlot(5));
+		fixture.protocol.deliver(new ClientboundSetHeldSlot(9));
+		fixture.protocol.deliver(new ClientboundSetHeldSlot(-1));
+
+		assertEquals(List.of(new ServerboundSetCarriedItem(5)), fixture.protocol.sent);
+	}
+
+	@Test
+	void startsEachLoginWithTheFirstSlotToldAndEachRespawnWithItSelected() {
+		Fixture fixture = new Fixture();
+		fixture.operations.execute(InventoryChannel.SELECT, new SlotSelection(4));
+
+		fixture.protocol.deliver(new ClientboundRespawn(OVERWORLD));
+		fixture.protocol.deliver(new ClientboundSetHeldSlot(4));
+		fixture.protocol.deliver(new ClientboundLogin(1, OVERWORLD));
+		fixture.protocol.deliver(new ClientboundSetHeldSlot(0));
+		fixture.protocol.deliver(new ClientboundSetHeldSlot(4));
+
+		assertEquals(List.of(new ServerboundSetCarriedItem(4), new ServerboundSetCarriedItem(4)), fixture.protocol.sent);
 	}
 
 	@Test
@@ -140,7 +183,7 @@ class JavaInventoryExtensionTest {
 		fixture.protocol.connected = false;
 
 		IllegalStateException failure = assertThrows(IllegalStateException.class,
-				() -> fixture.operations.execute(InventoryChannel.SELECT, new SlotSelection(0)));
+				() -> fixture.operations.execute(InventoryChannel.SELECT, new SlotSelection(3)));
 		assertThrows(IllegalStateException.class,
 				() -> fixture.click(InventoryClick.LEFT, 0));
 

@@ -157,7 +157,9 @@ isolated worker per release. A release with an unpinned artifact cannot be launc
 for each server whose default players would use it, so a scenario whose players all choose another library still
 runs. A player that selects such a release is refused when it is created. The worker
 shell never links against MCProtocolLib: the release's client segment implements the `mcprotocol-api`
-client port and owns login, client information, teleport and disconnect packets.
+client port and owns login, teleport and disconnect packets and what a vanilla client of the release sends on its
+own, in the same phase and order: its brand and client information, from Minecraft 1.20.2 on at the start of the
+configuration and before that when the game starts, and the answers to keep-alives and pings in every phase.
 Feature wiring implements `player-api`'s `WorkerExtension` directly; the worker discovers it. Its
 `PlayerBindingContext` supplies SDK/session access for the existing native player and, through `adapter(Class)`,
 the release-specific port implementation of the segment selected for the worker's release. Native
@@ -168,7 +170,7 @@ types.
 through the player family's worker kits: `player-worker`'s `WorkerExtensions` enforces binding-time registration,
 unique namespaced operation IDs, unavailability and cleanup, `NativeSessionBindings` follows session generations,
 and `protocol-java-worker`'s `JavaPacketDispatcher` is the player's `JavaProtocol` over the library's
-`JavaConnection`. The MCProtocol worker adds only its client, segments and transport: `WorkerMessageCodec` owns
+`JavaConnection`, and keeps the player's `JavaWorld` from the packets it delivers. The MCProtocol worker adds only its client, segments and transport: `WorkerMessageCodec` owns
 request decoding, response type checks, and encoding on both ends of the worker's transport, so the host's
 `ProtocolChannel` and the worker's handlers operate on typed values.
 

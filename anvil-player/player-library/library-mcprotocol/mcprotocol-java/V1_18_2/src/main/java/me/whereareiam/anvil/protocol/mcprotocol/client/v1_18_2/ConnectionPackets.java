@@ -2,12 +2,16 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
+import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+import com.github.steveice10.opennbt.tag.builtin.IntTag;
 import com.github.steveice10.packetlib.packet.Packet;
+import me.whereareiam.anvil.protocol.java.api.model.world.Dimension;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.protocol.mcprotocol.client.ConnectionLevel;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,10 +19,22 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Set;
 
 /**
- * The moments the MCProtocolLib 1.18.2 release joins a level and respawns. The release has no configuration phase,
- * so it never returns to one.
+ * The moments the MCProtocolLib 1.18.2 release joins a level and respawns, naming the level by its key and reading its
+ * height range from the dimension type that both packets carry whole, which it records as the connection's level. The
+ * release has no configuration phase, so it never returns to one.
  */
 public final class ConnectionPackets implements PacketTranslation<Packet> {
+	private final ConnectionLevel level;
+
+	/**
+	 * Creates the translation of one connection.
+	 *
+	 * @param level the connection's level, which the translation records from each login and respawn
+	 */
+	public ConnectionPackets(@NotNull ConnectionLevel level) {
+		this.level = level;
+	}
+
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(ClientboundLogin.class, ClientboundRespawn.class);
@@ -26,8 +42,10 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 
 	@Override
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
-		if (packet instanceof ClientboundLoginPacket login) return new ClientboundLogin(login.getEntityId());
-		if (packet instanceof ClientboundRespawnPacket) return new ClientboundRespawn();
+		if (packet instanceof ClientboundLoginPacket login)
+			return new ClientboundLogin(login.getEntityId(), dimension(login.getWorldName(), login.getDimension()));
+		if (packet instanceof ClientboundRespawnPacket respawn)
+			return new ClientboundRespawn(dimension(respawn.getWorldName(), respawn.getDimension()));
 
 		return null;
 	}
@@ -35,5 +53,17 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 	@Override
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		return null;
+	}
+
+	/**
+	 * Reads a level's height range from its dimension type.
+	 */
+	private Dimension dimension(String key, CompoundTag type) {
+		IntTag minY = type.get("min_y");
+		IntTag height = type.get("height");
+		Dimension dimension = new Dimension(key, minY.getValue(), height.getValue());
+		level.enter(dimension);
+
+		return dimension;
 	}
 }
