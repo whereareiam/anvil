@@ -14,6 +14,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntit
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityMetadataPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityTeleportPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityVelocityPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.ServerSpawnEntityPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.ServerSpawnExpOrbPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.ServerSpawnLivingEntityPacket;
@@ -30,6 +31,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPos;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityMotion;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSwingAnimation;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
 import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
@@ -48,6 +50,11 @@ class EntityPacketsTest {
 	private static final UUID STAND = new UUID(0, 7);
 
 	private final EntityPackets packets = new EntityPackets();
+
+	@Test
+	void readsTheVelocityTheServerGivesAnEntity() {
+		assertEquals(new ClientboundSetEntityMotion(7, new Vec3d(0.125, -0.5, 0.0)), packets.decode(new ServerEntityVelocityPacket(7, 0.125, -0.5, 0.0)));
+	}
 
 	@Test
 	void readsTheSwingOfAnArmWhoseOffHandAnimationTheLibraryNamesAfterEating() {

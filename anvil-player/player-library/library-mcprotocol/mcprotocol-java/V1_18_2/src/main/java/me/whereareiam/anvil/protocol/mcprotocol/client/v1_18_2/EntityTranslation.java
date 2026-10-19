@@ -12,6 +12,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.Client
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityRotPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundRemoveEntitiesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityMotionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundSetPassengersPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundTeleportEntityPacket;
 import com.github.steveice10.packetlib.packet.Packet;
@@ -31,6 +32,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntit
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityRot;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityMotion;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSwingAnimation;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
@@ -84,6 +86,7 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 				ClientboundMoveEntityRot.class,
 				ClientboundTeleportEntity.class,
 				ClientboundSetEntityData.class,
+				ClientboundSetEntityMotion.class,
 				ClientboundSetPassengers.class,
 				ClientboundSwingAnimation.class,
 				ClientboundRemoveEntities.class
@@ -118,6 +121,8 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 			case ClientboundSetPassengersPacket passengers -> new ClientboundSetPassengers(passengers.getEntityId(),
 					Arrays.stream(passengers.getPassengerIds()).boxed().toList());
 			case ClientboundRemoveEntitiesPacket removed -> removed(removed.getEntityIds());
+			case ClientboundSetEntityMotionPacket motion -> new ClientboundSetEntityMotion(motion.getEntityId(),
+					new Vec3d(motion.getMotionX(), motion.getMotionY(), motion.getMotionZ()));
 			case ClientboundAnimatePacket animation -> swing(animation.getEntityId(), animation.getAnimation());
 			default -> decodeSpawn(packet);
 		};

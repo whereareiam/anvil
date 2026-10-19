@@ -14,6 +14,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntit
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityRot;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityMotion;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSwingAnimation;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
@@ -38,6 +39,7 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.Clie
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityRotPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundRemoveEntitiesPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityMotionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetPassengersPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundTeleportEntityPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
@@ -56,6 +58,11 @@ class EntityPacketsTest {
 	private static final UUID STAND = new UUID(0, 7);
 
 	private final EntityPackets packets = new EntityPackets();
+
+	@Test
+	void readsTheVelocityTheServerGivesAnEntity() {
+		assertEquals(new ClientboundSetEntityMotion(7, new Vec3d(0.125, -0.5, 0.0)), packets.decode(new ClientboundSetEntityMotionPacket(7, 0.125, -0.5, 0.0)));
+	}
 
 	@Test
 	void decodesSpawnsWithTheNamespacedTypeAndOrbsWithoutUniqueIdOrDirection() {
@@ -215,6 +222,7 @@ class EntityPacketsTest {
 				ClientboundMoveEntityRot.class,
 				ClientboundTeleportEntity.class,
 				ClientboundSetEntityData.class,
+				ClientboundSetEntityMotion.class,
 				ClientboundSetPassengers.class,
 				ClientboundSwingAnimation.class,
 				ClientboundRemoveEntities.class
