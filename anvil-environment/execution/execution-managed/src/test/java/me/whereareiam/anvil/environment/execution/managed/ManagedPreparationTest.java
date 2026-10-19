@@ -66,6 +66,19 @@ class ManagedPreparationTest {
 	}
 
 	@Test
+	void opensTheEnvironmentInTheSessionsNetworkBeforeTargetsAndClosesItBetweenTargetsAndSession() {
+		ExecutionFixture fixture = new ExecutionFixture(directory);
+		var group = fixture.service().prepare(fixture.plan(fixture.spec("server", false)), fixture.preparation, null);
+		group.finish(true);
+
+		List<String> calls = fixture.calls;
+		assertTrue(calls.indexOf("session-open") < calls.indexOf("environment-open:fixture-network"));
+		assertTrue(calls.indexOf("environment-open:fixture-network") < calls.indexOf("target:server"));
+		assertTrue(calls.indexOf("target-close:server") < calls.indexOf("environment-close"));
+		assertTrue(calls.indexOf("environment-close") < calls.indexOf("session-close"));
+	}
+
+	@Test
 	void launchFailureIsDeferredToSelectedStartAndRetainsInputsForRetry() {
 		ExecutionFixture fixture = new ExecutionFixture(directory);
 		fixture.failingConfiguration = "server";

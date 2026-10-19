@@ -118,6 +118,11 @@ final class ExecutionFixture {
 				}
 
 				@Override
+				public String containerNetwork() {
+					return "fixture-network";
+				}
+
+				@Override
 				public void close() {
 					calls.add("session-close");
 					if (sessionCleanupFailure != null) throw sessionCleanupFailure;
@@ -131,6 +136,12 @@ final class ExecutionFixture {
 
 		@Override
 		public void open() { calls.add("open"); }
+
+		@Override
+		public void openEnvironment(String containerNetwork) { calls.add("environment-open:" + containerNetwork); }
+
+		@Override
+		public void closeEnvironment() { calls.add("environment-close"); }
 
 		@Override
 		public @NotNull PreparedProcess prepare(@NotNull ProcessSpec process, @NotNull ProcessTarget target,

@@ -33,6 +33,7 @@ final class ManagedProcessGroup implements ProcessGroup {
 	@Delegate(types = ScenarioProcesses.class, excludes = CompleteStartup.class)
 	private final ProcessRegistry processes = new ProcessRegistry();
 	private @Nullable ExecutionSession session;
+	private boolean environmentOpened;
 	private boolean closed;
 
 	ManagedProcessGroup(
@@ -53,6 +54,9 @@ final class ManagedProcessGroup implements ProcessGroup {
 		preparation.open();
 		ExecutionSession opened = execution.open(plan.getContext());
 		session = opened;
+		environmentOpened = true;
+		preparation.openEnvironment(opened.containerNetwork());
+
 		ProcessScheduler tasks = new ProcessScheduler(plan.getProcessScheduling().getParallelism(), plan.getProcessScheduling().getStartupMemoryMegabytes());
 		tasks.run(plan.getProcesses(), process -> {
 			ProcessTarget target = opened.prepare(process.getRequest());
@@ -102,6 +106,7 @@ final class ManagedProcessGroup implements ProcessGroup {
 			ProcessTarget target = targets.remove(process.getRequest().getName());
 			if (target != null) attempt(target::close, failures);
 		}
+		if (environmentOpened) attempt(preparation::closeEnvironment, failures);
 		if (session != null) attempt(session::close, failures);
 		attempt(() -> processes.finish(successful && failures.isEmpty()), failures);
 		attempt(() -> preparation.finish(successful && !processes.failed() && failures.isEmpty()), failures);

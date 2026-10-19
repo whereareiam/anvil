@@ -72,6 +72,11 @@ final class DockerExecutionSession implements ExecutionSession {
 		}
 	}
 
+	@Override
+	public @NotNull String containerNetwork() {
+		return dockerNetwork.id();
+	}
+
 	private int port(String address) {
 		int port = context.getPorts().reserve(address);
 		ports.add(port);

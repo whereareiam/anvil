@@ -30,7 +30,7 @@ class ManagedProcessServiceTest {
 		group.finish(true);
 		group.finish(true);
 		assertTrue(fixture.calls.indexOf("stop:proxy") < fixture.calls.indexOf("stop:server"));
-		assertEquals(List.of("target-close:proxy", "target-close:server", "session-close",
+		assertEquals(List.of("target-close:proxy", "target-close:server", "environment-close", "session-close",
 				"prepared-finish:proxy:true", "prepared-finish:server:true", "finish:true"),
 				fixture.calls.subList(fixture.calls.indexOf("target-close:proxy"), fixture.calls.size()));
 	}
@@ -99,7 +99,8 @@ class ManagedProcessServiceTest {
 		fixture.sessionCleanupFailure = new IllegalStateException("session cleanup");
 		var plan = fixture.plan(fixture.spec("server", false), fixture.spec("proxy", true, "server"));
 		assertSame(fixture.failure, assertThrows(IllegalStateException.class, () -> fixture.service().start(plan, fixture.preparation)));
-		assertEquals(List.of("open", "session-open", "target:server", "target:proxy", "target-close:server", "session-close", "finish:false"), fixture.calls);
+		assertEquals(List.of("open", "session-open", "environment-open:fixture-network", "target:server", "target:proxy",
+				"target-close:server", "environment-close", "session-close", "finish:false"), fixture.calls);
 		assertSame(fixture.targetCleanupFailure, fixture.failure.getSuppressed()[0]);
 		assertSame(fixture.sessionCleanupFailure, fixture.targetCleanupFailure.getSuppressed()[0]);
 	}
