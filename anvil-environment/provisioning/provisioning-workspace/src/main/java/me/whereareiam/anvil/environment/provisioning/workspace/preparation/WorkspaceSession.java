@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 /**
  * Owns a process workspace and its persistent lock from preparation through finalization.
@@ -38,6 +39,7 @@ public final class WorkspaceSession implements PreparedWorkspace {
 	private final WorkspacePlan plan;
 	private final String snapshotIdentity;
 	private final String processIdentity;
+	private final UnaryOperator<String> text;
 	private final WorkspaceFiles files;
 	private final WorkspaceSnapshotCache snapshots;
 
@@ -54,6 +56,7 @@ public final class WorkspaceSession implements PreparedWorkspace {
 	 * @param declared declared assets, caches, and cleanup
 	 * @param providerDefaults provider-contributed cache defaults
 	 * @param process process declaration used to select compatible snapshots
+	 * @param text fills in the text of text assets before they are written
 	 * @param snapshots borrowed workspace snapshot storage
 	 * @param files confined workspace operations
 	 * @return prepared workspace session
@@ -64,6 +67,7 @@ public final class WorkspaceSession implements PreparedWorkspace {
 			@NotNull WorkspacePlan declared,
 			@NotNull List<WorkspaceCache> providerDefaults,
 			@NotNull MinecraftProcess process,
+			@NotNull UnaryOperator<String> text,
 			@NotNull WorkspaceSnapshotCache snapshots,
 			@NotNull WorkspaceFiles files
 	) {
@@ -76,6 +80,7 @@ public final class WorkspaceSession implements PreparedWorkspace {
 				plan,
 				snapshots.identity(process, plan.getAssets()),
 				snapshots.identity(process),
+				text,
 				files,
 				snapshots
 		);
@@ -191,7 +196,7 @@ public final class WorkspaceSession implements PreparedWorkspace {
 				continue;
 			AssetSource source = asset.getSource();
 			if (source.isText()) {
-				files.write(source.getText(), workspace, asset.getTarget());
+				files.write(text.apply(source.getText()), workspace, asset.getTarget());
 				continue;
 			}
 

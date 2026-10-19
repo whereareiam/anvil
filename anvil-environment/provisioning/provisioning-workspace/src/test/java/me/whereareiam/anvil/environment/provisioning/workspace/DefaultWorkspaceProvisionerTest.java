@@ -442,6 +442,28 @@ class DefaultWorkspaceProvisionerTest {
 	}
 
 	@Test
+	void writesTextAssetsThroughTheRequestsTextFilter() throws Exception {
+		Path root = temporary.resolve("work");
+		Path workspace = root.resolve("scenario/run/server");
+		WorkspacePlan plan = WorkspacePlan.builder()
+				.asset(WorkspaceAsset.builder()
+						.source(AssetSource.text("host: ${address}"))
+						.target(Path.of("config.yml"))
+						.build())
+				.build();
+
+		try (PreparedWorkspace ignored = workspaces.prepare(WorkspaceRequest.builder()
+				.root(root)
+				.directory(workspace)
+				.plan(plan)
+				.process(PROCESS)
+				.text(text -> text.replace("${address}", "10.0.0.2"))
+				.build())) {
+			assertEquals("host: 10.0.0.2", Files.readString(workspace.resolve("config.yml")));
+		}
+	}
+
+	@Test
 	void runFinalizationRemovesNestedSymbolicLinksWithoutFollowingThem() throws Exception {
 		Path root = temporary.resolve("work");
 		Path run = Files.createDirectories(root.resolve("scenario/run"));

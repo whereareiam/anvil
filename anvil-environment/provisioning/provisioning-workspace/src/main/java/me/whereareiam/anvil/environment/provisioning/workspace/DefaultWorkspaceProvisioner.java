@@ -35,7 +35,7 @@ public final class DefaultWorkspaceProvisioner implements WorkspaceProvisioner {
 	@Override
 	public @NotNull PreparedWorkspace prepare(@NotNull WorkspaceRequest request) {
 		return WorkspaceSession.prepare(request.getRoot(), request.getDirectory(), request.getPlan(),
-				request.getProviderDefaults(), request.getProcess(), snapshots, files);
+				request.getProviderDefaults(), request.getProcess(), request.getText(), snapshots, files);
 	}
 
 	@Override
