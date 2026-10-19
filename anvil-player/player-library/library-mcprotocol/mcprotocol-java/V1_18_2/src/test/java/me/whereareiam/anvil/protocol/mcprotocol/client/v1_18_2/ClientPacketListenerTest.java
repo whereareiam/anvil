@@ -12,9 +12,11 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundCh
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundDisconnectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundPingPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientInformationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundCustomPayloadPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundPongPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
@@ -94,6 +96,15 @@ class ClientPacketListenerTest {
 
 		assertEquals(List.of("teleported 90.0 -15.0", "sent ServerboundAcceptTeleportationPacket"), events);
 		assertEquals(7, assertInstanceOf(ServerboundAcceptTeleportationPacket.class, sent.getFirst()).getId());
+	}
+
+	@Test
+	void answersEachPingWithItsPong() {
+		receive(new ClientboundPingPacket(-12));
+		receive(new ClientboundPingPacket(13));
+
+		assertEquals(List.of(-12, 13), sent.stream().map(packet -> assertInstanceOf(ServerboundPongPacket.class, packet).getId())
+				.toList());
 	}
 
 	@Test
