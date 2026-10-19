@@ -2,6 +2,7 @@ package me.whereareiam.anvil.api.process;
 
 import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
+import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.type.ProcessState;
 import org.jetbrains.annotations.NotNull;
 
@@ -61,6 +62,26 @@ public interface RunningProcess extends CapabilityOwner<ProcessCapability> {
 	 * @return process console
 	 */
 	@NotNull ProcessConsole console();
+
+	/**
+	 * Returns where the test reaches one of the process's {@link MinecraftProcess#getListeners() listeners}.
+	 *
+	 * @param name the listener's name
+	 * @return the listener's address on the host
+	 * @throws IllegalArgumentException when the process declares no such listener
+	 */
+	default @NotNull InetSocketAddress listener(@NotNull String name) {
+		throw new IllegalArgumentException("Process '" + name() + "' declares no listener '" + name + "'");
+	}
+
+	/**
+	 * Returns whether this generation is {@link ScenarioProcesses#freeze(String) frozen}.
+	 *
+	 * @return whether the process is suspended
+	 */
+	default boolean frozen() {
+		return false;
+	}
 
 	/**
 	 * Resolves a capability belonging to this logical process.

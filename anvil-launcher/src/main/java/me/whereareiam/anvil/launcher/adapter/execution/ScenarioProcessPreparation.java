@@ -5,6 +5,7 @@ import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
 import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.process.ProcessAddresses;
 import me.whereareiam.anvil.capability.process.ProcessCapabilityRuntime;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessSpec;
@@ -25,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 /**
  * Binds complete execution topology to scoped workspace and platform preparation.
@@ -60,11 +62,13 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 	public @NotNull PreparedProcess prepare(
 			@NotNull ProcessSpec process,
 			@NotNull ProcessTarget target,
-			@NotNull Map<String, InetSocketAddress> peers
+			@NotNull Map<String, InetSocketAddress> peers,
+			@NotNull ProcessAddresses processes
 	) {
 		var planned = plan.getProcesses().get(process.getRequest().getName());
 		var declaration = planned.getDeclaration();
-		var addresses = services.processAddresses();
+		var serviceAddresses = services.processAddresses();
+		UnaryOperator<String> addresses = text -> processes.resolve(serviceAddresses.resolve(text));
 		var request = PlatformRequest.builder()
 				.scenario(plan.getScenario())
 				.workDirectory(process.getRequest().getWorkspace())
@@ -79,15 +83,15 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 				.process(declaration)
 				.plan(planned.getWorkspace())
 				.providerDefaults(planned.getDefaultCaches())
-				.text(addresses::resolve)
+				.text(addresses)
 				.build());
 		try {
 			var jar = platforms.resolve(planned, request);
 			var command = JavaCommand.builder()
 					.jar(jar)
 					.memoryMegabytes(declaration.getMemoryMegabytes())
-					.jvmArguments(planned.getJvmArguments().stream().map(addresses::resolve).toList())
-					.arguments(planned.getProgramArguments().stream().map(addresses::resolve).toList())
+					.jvmArguments(planned.getJvmArguments().stream().map(addresses).toList())
+					.arguments(planned.getProgramArguments().stream().map(addresses).toList())
 					.build();
 
 			return new PreparedPlatformProcess(

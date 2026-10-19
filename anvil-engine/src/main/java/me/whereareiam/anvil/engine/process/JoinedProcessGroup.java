@@ -91,6 +91,22 @@ public final class JoinedProcessGroup implements ProcessGroup {
 	}
 
 	@Override
+	public void freeze(@NotNull String name) {
+		change(name, (processes, process) -> {
+			processes.freeze(process);
+			return null;
+		});
+	}
+
+	@Override
+	public void thaw(@NotNull String name) {
+		change(name, (processes, process) -> {
+			processes.thaw(process);
+			return null;
+		});
+	}
+
+	@Override
 	public @NotNull RunningProcess restart(@NotNull String name) {
 		return change(name, ScenarioProcesses::restart);
 	}

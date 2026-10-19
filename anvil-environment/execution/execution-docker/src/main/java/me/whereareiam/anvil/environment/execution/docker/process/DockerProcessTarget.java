@@ -14,7 +14,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -30,6 +32,14 @@ public final class DockerProcessTarget implements ProcessTarget {
 	private final ProcessRequest request;
 	private final InetSocketAddress address;
 	private final InetSocketAddress agentAddress;
+	/**
+	 * Host addresses of the process's listeners, by listener name.
+	 */
+	private final Map<String, InetSocketAddress> listeners;
+	/**
+	 * The port each listener binds inside the container, by listener name.
+	 */
+	private final Map<String, Integer> listenerPorts;
 
 	private @Nullable Container container;
 
@@ -37,10 +47,11 @@ public final class DockerProcessTarget implements ProcessTarget {
 	public synchronized @NotNull ProcessExecution start(@NotNull JavaCommand command) {
 		close();
 
-		PortBindings ports = PortBindings.builder()
+		PortBindings.PortBindingsBuilder ports = PortBindings.builder()
 				.game(request.isPublishGame() ? address : null)
-				.agent(request.isAgent() ? agentAddress : null)
-				.build();
+				.agent(request.isAgent() ? agentAddress : null);
+		listenerPorts.forEach((listener, port) -> ports.listener(port, listeners.get(listener)));
+
 
 		Container created = docker.create(ContainerConfiguration.builder()
 				.name("anvil-process-" + UUID.randomUUID())
@@ -49,7 +60,7 @@ public final class DockerProcessTarget implements ProcessTarget {
 				.image(image)
 				.workspace(request.getWorkspace())
 				.jar(command.getJar())
-				.ports(ports)
+				.ports(ports.build())
 				.command(javaArguments(command))
 				.environment(command.getEnvironment())
 				.build());
@@ -98,6 +109,19 @@ public final class DockerProcessTarget implements ProcessTarget {
 	@Override
 	public @NotNull String agentBindAddress() {
 		return "0.0.0.0";
+	}
+
+	@Override
+	public @NotNull Map<String, InetSocketAddress> listeners() {
+		return listeners;
+	}
+
+	@Override
+	public @NotNull Map<String, InetSocketAddress> peerListeners() {
+		Map<String, InetSocketAddress> peers = new LinkedHashMap<>();
+		listenerPorts.forEach((listener, port) -> peers.put(listener, InetSocketAddress.createUnresolved(alias, port)));
+
+		return peers;
 	}
 
 	@Override

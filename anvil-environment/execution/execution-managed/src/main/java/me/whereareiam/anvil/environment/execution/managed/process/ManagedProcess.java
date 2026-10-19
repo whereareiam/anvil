@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +30,7 @@ public abstract class ManagedProcess implements RunningProcess {
 	private final UUID executionId = UUID.randomUUID();
 	private final @Nullable CapabilityOwner<ProcessCapability> capabilities;
 	private final InetSocketAddress address;
+	private final Map<String, InetSocketAddress> listeners;
 	private final Path workDirectory;
 	private final ManagedProcessConsole console;
 	private final AtomicReference<ProcessState> state = new AtomicReference<>(ProcessState.CREATED);
@@ -37,6 +39,7 @@ public abstract class ManagedProcess implements RunningProcess {
 	private @Nullable ProcessExecution process;
 	private volatile boolean failed;
 	private volatile boolean cancelled;
+	private volatile boolean frozen;
 	private String stopCommand = "stop";
 
 	/**
@@ -45,12 +48,14 @@ public abstract class ManagedProcess implements RunningProcess {
 	protected ManagedProcess(
 			@NotNull String name,
 			@NotNull InetSocketAddress address,
+			@NotNull Map<String, InetSocketAddress> listeners,
 			@NotNull Path workDirectory,
 			@Nullable CapabilityOwner<ProcessCapability> capabilities
 	) {
 		this.name = name;
 		this.capabilities = capabilities;
 		this.address = address;
+		this.listeners = Map.copyOf(listeners);
 		this.workDirectory = workDirectory;
 		this.console = new ManagedProcessConsole(name, workDirectory);
 	}
@@ -116,6 +121,7 @@ public abstract class ManagedProcess implements RunningProcess {
 	 * A broken command channel does not prevent termination and is reported after the process stops.
 	 */
 	public synchronized void stop(@NotNull Duration timeout) {
+		thawForEnding();
 		ProcessExecution current = process;
 		if (current == null || !current.isAlive()) {
 			ProcessState previous = state.getAndSet(ProcessState.STOPPED);
@@ -164,6 +170,7 @@ public abstract class ManagedProcess implements RunningProcess {
 	 * @throws ProcessException when the workload does not exit after it is killed
 	 */
 	public synchronized void kill(@NotNull Duration timeout) {
+		thawForEnding();
 		ProcessExecution current = process;
 		if (current == null || !current.isAlive()) {
 			stop(timeout);
@@ -272,6 +279,57 @@ public abstract class ManagedProcess implements RunningProcess {
 		if (commandFailure != null) failure.addSuppressed(commandFailure);
 
 		return failure;
+	}
+
+	/**
+	 * Suspends the running workload while it keeps its connections; the console records it.
+	 *
+	 * @throws IllegalStateException         when the process is not running
+	 * @throws UnsupportedOperationException when its execution provider cannot suspend it
+	 */
+	public synchronized void freeze() {
+		ProcessExecution current = process;
+		if (current == null || !current.isAlive() || state.get() != ProcessState.READY)
+			throw new IllegalStateException("Process '" + name + "' is not running, so it cannot be frozen");
+		if (frozen) return;
+
+		current.freeze();
+		frozen = true;
+		console.record("[Anvil] Process '" + name + "' was frozen on request");
+	}
+
+	/**
+	 * Resumes a frozen workload; the console records it.
+	 */
+	public synchronized void thaw() {
+		if (!frozen) return;
+
+		ProcessExecution current = process;
+		if (current != null) current.thaw();
+		frozen = false;
+		console.record("[Anvil] Process '" + name + "' was thawed on request");
+	}
+
+	@Override
+	public boolean frozen() {
+		return frozen;
+	}
+
+	// A frozen workload takes no stop command and Docker refuses to stop a paused container.
+	private void thawForEnding() {
+		if (!frozen) return;
+
+		ProcessExecution current = process;
+		if (current != null) current.thaw();
+		frozen = false;
+	}
+
+	@Override
+	public @NotNull InetSocketAddress listener(@NotNull String name) {
+		InetSocketAddress listener = listeners.get(name);
+		if (listener == null) throw new IllegalArgumentException("Process '" + this.name + "' declares no listener '" + name + "'");
+
+		return listener;
 	}
 
 	@Override

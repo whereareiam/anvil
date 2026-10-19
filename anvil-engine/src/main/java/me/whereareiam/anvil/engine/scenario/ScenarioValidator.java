@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.engine.scenario;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
@@ -22,6 +23,7 @@ import java.util.regex.PatternSyntaxException;
  * Validates scenario declarations, process and remote references, and launch requirements before scoped execution.
  */
 public final class ScenarioValidator {
+	/** Names of services and listeners, which their address placeholders and host names carry. */
 	private static final Pattern SERVICE_NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
 
 	/**
@@ -75,6 +77,8 @@ public final class ScenarioValidator {
 		Set<String> serverNames = new HashSet<>();
 		for (MinecraftServer server : scenario.getServers())
 			registerProcessName(server.getName(), serverNames);
+		scenario.getServers().forEach(this::validateListeners);
+		scenario.getProxies().forEach(this::validateListeners);
 
 		Set<String> targetNames = new HashSet<>(serverNames);
 		for (MinecraftProxy proxy : scenario.getProxies())
@@ -126,6 +130,20 @@ public final class ScenarioValidator {
 			throw new ScenarioValidationException("Every remote needs a non-blank name");
 		if (!names.add(name))
 			throw new ScenarioValidationException("Remote '" + name + "' shares its name with another server, proxy or remote");
+	}
+
+	/**
+	 * A listener's name is part of its address placeholder.
+	 */
+	private void validateListeners(@NotNull MinecraftProcess process) {
+		Set<String> listeners = new HashSet<>();
+		for (String listener : process.getListeners()) {
+			if (!SERVICE_NAME.matcher(listener).matches())
+				throw new ScenarioValidationException("Listener '" + listener + "' of process '" + process.getName()
+						+ "' must be lowercase letters, digits and dashes, starting with a letter or digit");
+			if (!listeners.add(listener))
+				throw new ScenarioValidationException("Process '" + process.getName() + "' declares listener '" + listener + "' twice");
+		}
 	}
 
 	/**

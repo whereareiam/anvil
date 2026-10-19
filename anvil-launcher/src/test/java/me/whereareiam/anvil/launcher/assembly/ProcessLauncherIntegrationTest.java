@@ -151,13 +151,19 @@ class ProcessLauncherIntegrationTest {
 	}
 
 	@Test
-	void startsServicesWithTheEnvironmentAndFillsTheirHostAddressesIntoTextAssets() throws Exception {
+	void startsServicesWithTheEnvironmentAndFillsServiceAndListenerAddressesIntoTextAssets() throws Exception {
 		Path executable = FixtureArtifacts.process();
 		var declaration = MinecraftServer.builder().name("server").platform("test")
 				.distribution(Distribution.remote("1.21.11", "1"))
-				.workspace(WorkspacePlan.builder().asset(WorkspaceAsset.builder()
-						.source(AssetSource.text("redis://${anvil.service.redis.host}:${anvil.service.redis.port}"))
-						.target(Path.of("redis.txt")).build()).build())
+				.listener("link")
+				.workspace(WorkspacePlan.builder()
+						.asset(WorkspaceAsset.builder()
+								.source(AssetSource.text("redis://${anvil.service.redis.host}:${anvil.service.redis.port}"))
+								.target(Path.of("redis.txt")).build())
+						.asset(WorkspaceAsset.builder()
+								.source(AssetSource.text("${anvil.process.server.host}:${anvil.process.server.listener.link}"))
+								.target(Path.of("link.txt")).build())
+						.build())
 				.build();
 		var service = ServiceContainer.builder().name("redis").image("redis:7.2-alpine").port(6379).build();
 		var scenario = AnvilScenario.builder().name("test").entrypoint("server").server(declaration).service(service).build();
@@ -201,9 +207,14 @@ class ProcessLauncherIntegrationTest {
 					.services(new RecordingServices(calls))
 					.build();
 			var services = launcher.services(scenario.getServices());
-			try (var ignored = launcher.prepare(platforms.plan(scenario), new ScenarioAgentDirectory(), null, null, Map.of(), services)) {
+			try (var group = launcher.prepare(platforms.plan(scenario), new ScenarioAgentDirectory(), null, null, Map.of(), services)) {
 				assertEquals("redis", services.get("redis").name());
 				calls.add("prepared");
+
+				group.startAll();
+				var server = group.server("server");
+				assertEquals("127.0.0.1:" + server.listener("link").getPort(),
+						Files.readString(server.workDirectory().resolve("link.txt")));
 			}
 			assertTrue(services.all().isEmpty());
 		}

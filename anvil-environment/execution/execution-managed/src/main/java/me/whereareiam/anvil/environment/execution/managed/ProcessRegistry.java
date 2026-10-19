@@ -65,6 +65,20 @@ public final class ProcessRegistry {
 		});
 	}
 
+	public void freeze(@NotNull String name) {
+		mutate(name, ProcessSlot::requireRunning, process -> {
+			process.freezeGeneration();
+			return null;
+		});
+	}
+
+	public void thaw(@NotNull String name) {
+		mutate(name, process -> { }, process -> {
+			process.thawGeneration();
+			return null;
+		});
+	}
+
 	/**
 	 * Applies a lifecycle action to one process. Caller mistakes, such as an unknown name or a violated
 	 * precondition, are reported without failing the run; failures of the action itself fail it.

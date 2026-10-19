@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Retains a host workspace, executable, and endpoints across process replacements.
@@ -24,6 +25,10 @@ public final class LocalProcessTarget implements ProcessTarget {
 	private final Path executable;
 	private final InetSocketAddress address;
 	private final InetSocketAddress agentAddress;
+	/**
+	 * Host addresses of the process's listeners, which its peers on the host reach at the same address.
+	 */
+	private final Map<String, InetSocketAddress> listeners;
 	/**
 	 * Command the Java executable is started through, such as {@code nice}; empty to start it directly.
 	 */
@@ -81,6 +86,16 @@ public final class LocalProcessTarget implements ProcessTarget {
 	@Override
 	public @NotNull String agentBindAddress() {
 		return "127.0.0.1";
+	}
+
+	@Override
+	public @NotNull Map<String, InetSocketAddress> listeners() {
+		return listeners;
+	}
+
+	@Override
+	public @NotNull Map<String, InetSocketAddress> peerListeners() {
+		return listeners;
 	}
 
 	@Override

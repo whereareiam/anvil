@@ -7,6 +7,7 @@
     "agents",
     "players",
     "restarts",
-    "kills"
+    "kills",
+    "freezes"
   ]
 }

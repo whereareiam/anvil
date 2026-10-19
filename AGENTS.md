@@ -288,7 +288,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 - Execution providers own network topology and endpoint translation. A local loopback bind is host exposure
   control, not process isolation; strict proxy-only isolation is rejected unless the provider can enforce it.
 - Execution sessions reserve host listener ports through the engine's `PortReservations` and release them when
-  they close. Managed execution's `PortSelection` picks them below the ephemeral ranges, because a process
+  they close, the ports of a process's declared listeners included; a target names where peers reach each
+  listener (`peerListeners`) at the host of its `peerAddress`, and `ProcessAddresses` fills the
+  `${anvil.process...}` placeholders from them. Managed execution's `PortSelection` picks them below the ephemeral ranges, because a process
   binds its port seconds after preparation selected it; do not probe port 0 in a provider.
 - A simulated player's name is its unique identity within the scenario; its Minecraft username defaults to
   the name and may be shared by several players. The client records the profile its login success granted,
