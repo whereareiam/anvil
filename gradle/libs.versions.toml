@@ -66,7 +66,7 @@ annotations = { group = "org.jetbrains", name = "annotations", version.ref = "an
 
 # general
 commons-compress = { group = "org.apache.commons", name = "commons-compress", version.ref = "compress" }
-docker-java = { group = "com.github.docker-java", name = "docker-java", version.ref = "dockerJava" }
+docker-java-core = { group = "com.github.docker-java", name = "docker-java-core", version.ref = "dockerJava" }
 docker-java-transport-zerodep = { group = "com.github.docker-java", name = "docker-java-transport-zerodep", version.ref = "dockerJava" }
 jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
 jackson-parameters = { group = "com.fasterxml.jackson.module", name = "jackson-module-parameter-names", version.ref = "jackson" }

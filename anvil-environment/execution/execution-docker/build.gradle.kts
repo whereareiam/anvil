@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-	implementation(libs.docker.java)
+	implementation(libs.docker.java.core)
 	implementation(libs.docker.java.transport.zerodep)
 	implementation(libs.jackson.databind)
 
