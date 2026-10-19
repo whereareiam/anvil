@@ -101,7 +101,8 @@ take. A server sizes its thread pools from the processors it sees, so a few serv
 ask for far more than a machine has; `processors` passes each process `-XX:ActiveProcessorCount`, and a
 process's own JVM argument of that name wins. `priority` set to `low` starts processes through `nice`,
 so they yield to other work on the machine while scenarios run. Local execution supports it on Linux
-and macOS and refuses it on Windows; Docker execution refuses it.
+and macOS and refuses it on Windows; Docker execution gives its containers a quarter of Docker's default CPU
+weight instead.
 
 For direct embedding, configure the groups explicitly:
 

@@ -41,6 +41,10 @@ public final class DockerProcessTarget implements ProcessTarget {
 	 * The port each listener binds inside the container, by listener name.
 	 */
 	private final Map<String, Integer> listenerPorts;
+	/**
+	 * The containers' CPU weight, or null for Docker's default.
+	 */
+	private final @Nullable Integer cpuShares;
 
 	private @Nullable Container container;
 
@@ -66,6 +70,7 @@ public final class DockerProcessTarget implements ProcessTarget {
 				.ports(ports.build())
 				.command(javaArguments(command))
 				.environment(command.getEnvironment())
+				.cpuShares(cpuShares)
 				.build());
 
 		container = created;

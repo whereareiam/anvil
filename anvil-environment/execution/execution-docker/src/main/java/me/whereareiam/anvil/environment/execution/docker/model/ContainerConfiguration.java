@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -30,4 +31,10 @@ public class ContainerConfiguration {
 
 	@Singular("environment")
 	Map<String, String> environment;
+
+	/**
+	 * The container's CPU weight against the others, or null for Docker's default; a low weight lets it yield to
+	 * other work on the machine.
+	 */
+	@Nullable Integer cpuShares;
 }

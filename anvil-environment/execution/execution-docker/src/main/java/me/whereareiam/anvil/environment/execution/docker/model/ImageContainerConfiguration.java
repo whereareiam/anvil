@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -37,4 +38,10 @@ public class ImageContainerConfiguration {
 	@NotNull
 	@Singular("argument")
 	List<String> command;
+
+	/**
+	 * The container's CPU weight against the others, or null for Docker's default; a low weight lets it yield to
+	 * other work on the machine.
+	 */
+	@Nullable Integer cpuShares;
 }
