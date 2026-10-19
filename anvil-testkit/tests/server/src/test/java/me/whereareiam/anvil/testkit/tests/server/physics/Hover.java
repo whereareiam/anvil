@@ -13,20 +13,30 @@ import java.time.Instant;
 import java.util.function.BooleanSupplier;
 
 /**
- * Holds a player without client physics in the air, as a bot does: once per tick it sends the same position, where
- * gravity would have pulled a client down. Every judge must refuse such a player.
+ * Moves a player without client physics through the air, as a bot does: once per tick it sends a position a tenth of a
+ * block further along its view at the same height, where gravity would have pulled a client down. Every judge must
+ * refuse such a player.
+ *
+ * <p>The player moves on because Grim takes a position with its rotation within its movement threshold of the last
+ * one, which a client from Minecraft 1.17 until 1.20.6 sends in addition to its tick's own, for that duplicate and
+ * checks none of them ({@code CheckManagerListener.isDuplicatePacket}): a player that sent the same position over and
+ * over would never be judged.</p>
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Hover {
 	private static final Duration TICK = Duration.ofMillis(50);
+	/**
+	 * How far the player moves each tick, more than Grim's movement threshold of {@code 0.03}.
+	 */
+	private static final double STEP = 0.1D;
 	private static final Duration DISCONNECT_REPORT = Duration.ofSeconds(2);
 
 	/**
-	 * Sends the start of a lane as the player's position once per tick, claiming to fall, until a condition holds, the
-	 * player is disconnected, or the timeout passes.
+	 * Moves the player from the start of a lane along it, claiming to fall, until a condition holds, the player is
+	 * disconnected, or the timeout passes.
 	 *
 	 * @param player the player, whose client physics is off
-	 * @param lane the lane whose start the player hovers at
+	 * @param lane the lane whose start the player hovers from
 	 * @param until the condition that ends the hover, such as a judge's refusal
 	 * @param timeout how long the player hovers at most
 	 * @return whether the condition held
@@ -49,11 +59,11 @@ public final class Hover {
 	}
 
 	/**
-	 * Sends a position as the player's position once per tick, claiming to fall, until a condition holds, the player is
-	 * disconnected, or the timeout passes.
+	 * Moves the player from a position along its view at that height, claiming to fall, until a condition holds, the
+	 * player is disconnected, or the timeout passes.
 	 *
 	 * @param player the player, whose client physics is off
-	 * @param at where the player hovers and which way it looks; its ground state is replaced by falling
+	 * @param at where the player starts and which way it looks; its ground state is replaced by falling
 	 * @param until the condition that ends the hover, such as a judge's refusal
 	 * @param timeout how long the player hovers at most
 	 * @return whether the condition held
@@ -66,6 +76,9 @@ public final class Hover {
 	) {
 		Movement movement = player.capability(Movement.class);
 		Session session = player.capability(Session.class);
+		double yaw = Math.toRadians(at.getYaw());
+		double stepX = -Math.sin(yaw) * STEP;
+		double stepZ = Math.cos(yaw) * STEP;
 		Position hovering = at.toBuilder().onGround(false).build();
 		Instant deadline = Instant.now().plus(timeout);
 		while (Instant.now().isBefore(deadline)) {
@@ -73,6 +86,7 @@ public final class Hover {
 			if (!session.state().connected()) return false;
 
 			send(movement, session, hovering);
+			hovering = hovering.toBuilder().x(hovering.getX() + stepX).z(hovering.getZ() + stepZ).build();
 			pause();
 		}
 
