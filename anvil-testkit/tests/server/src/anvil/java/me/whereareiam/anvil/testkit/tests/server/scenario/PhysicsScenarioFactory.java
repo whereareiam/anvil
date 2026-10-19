@@ -56,6 +56,11 @@ public final class PhysicsScenarioFactory {
 
 	private static final PhysicsMatrix MATRIX = PhysicsMatrix.read();
 	private static final List<String> ENGLISH = List.of("-Duser.language=en", "-Duser.country=US");
+	/**
+	 * Sonar closes a connection whose packets it cannot read without a word; with its traces on, it says why.
+	 */
+	private static final List<String> SONAR_DIAGNOSTICS = List.of("-Duser.language=en", "-Duser.country=US",
+			"-Dsonar.debug-traces=true");
 
 	/**
 	 * Returns the Minecraft versions of the physics suite's releases, oldest first.
@@ -182,7 +187,8 @@ public final class PhysicsScenarioFactory {
 		String configuration = edit(read(sonar, "assets/config/en.yml"), "Sonar's config.yml",
 				new Edit("check-for-updates: true", "check-for-updates: false"),
 				new Edit("    vehicle:\n      # Should Sonar check if the player properly enters a boat?\n      timing: ALWAYS",
-						"    vehicle:\n      # Should Sonar check if the player properly enters a boat?\n      timing: NEVER"));
+						"    vehicle:\n      # Should Sonar check if the player properly enters a boat?\n      timing: NEVER"),
+				new Edit("debug-xyz-positions: false", "debug-xyz-positions: true"));
 		LiveMatrix.Proxies proxies = LiveMatrix.read().getProxies();
 		MinecraftProxy proxy = MinecraftProxy.builder()
 				.name(PROXY)
@@ -193,7 +199,7 @@ public final class PhysicsScenarioFactory {
 						.build())
 				.platform(Platforms.VELOCITY)
 				.distribution(Distribution.remote(proxies.velocityVersion(), proxies.velocityBuild()))
-				.jvmArguments(ENGLISH)
+				.jvmArguments(SONAR_DIAGNOSTICS)
 				.workspace(WorkspacePlan.builder()
 						.asset(WorkspaceAsset.builder()
 								.group("sonar")

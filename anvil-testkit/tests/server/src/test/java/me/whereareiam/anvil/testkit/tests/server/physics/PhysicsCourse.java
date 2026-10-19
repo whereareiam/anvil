@@ -93,7 +93,8 @@ public final class PhysicsCourse {
 
 	/**
 	 * Creates a player with a name no earlier test of this run used, lets the test configure it before it connects,
-	 * connects it and waits for the fixture's welcome.
+	 * connects it and waits for the fixture's welcome. With Grim as the judge, Grim prints what it predicted, what the
+	 * player did and the offset of every movement of the player to the console from then on.
 	 *
 	 * @param configure what to set on the player before it connects
 	 * @return the connected player
@@ -104,6 +105,7 @@ public final class PhysicsCourse {
 		player.capability(Session.class).connect();
 		player.capability(Session.class).connected(TIMEOUT);
 		player.capability(Messages.class).received("anvil:welcome", TIMEOUT);
+		if (judge == PhysicsEnvironment.Judge.GRIM) console().sendCommand("grim consoledebug " + player.name());
 
 		return player;
 	}
