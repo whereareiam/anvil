@@ -9,6 +9,7 @@ import me.whereareiam.anvil.capability.movement.model.Position;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -182,10 +183,8 @@ public abstract class CourseJourneyTest {
 		double[] highest = new double[1];
 
 		journey.walkFor(MovementInput.NONE, 20);
-		journey.walk(MovementInput.builder().jump(true).build(), position -> {
-			highest[0] = Math.max(highest[0], position.getY());
-			return false;
-		}, 80);
+		journey.holdFor(MovementInput.builder().jump(true).build(), 80,
+				position -> highest[0] = Math.max(highest[0], position.getY()));
 		journey.movement().input(MovementInput.NONE);
 
 		assertTrue(highest[0] > PhysicsCourse.FLOOR + 2, "The player swam up only to y = " + highest[0]);
@@ -196,7 +195,8 @@ public abstract class CourseJourneyTest {
 	void climbsALadderOntoTheColumn(ScenarioContext anvil) {
 		Journey journey = start(anvil, PhysicsCourse.Lane.LADDER);
 
-		journey.walk(FORWARD, position -> position.isOnGround()
+		// A climbing player stands on the column as soon as its box overlaps the top, before its centre is over it.
+		journey.walk(FORWARD, position -> position.isOnGround() && position.getX() > 8.3
 				&& Math.abs(position.getY() - (PhysicsCourse.FLOOR + 6)) < EXACT, 400);
 		journey.settle(MovementInput.NONE);
 
@@ -259,6 +259,17 @@ public abstract class CourseJourneyTest {
 			}
 
 			fail("The player did not get there in " + maximumTicks + " ticks; it is at " + movement.position());
+		}
+
+		/**
+		 * Holds an input for a number of ticks, showing each tick's position to an observer.
+		 */
+		void holdFor(MovementInput input, int ticks, Consumer<Position> observer) {
+			movement.input(input);
+			for (int tick = 0; tick < ticks; tick++) {
+				movement.awaitTicks(1);
+				observer.accept(movement.position());
+			}
 		}
 
 		/**
