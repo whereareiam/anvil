@@ -6,6 +6,8 @@ import com.intellij.openapi.project.Project;
 import lombok.Value;
 import me.whereareiam.anvil.integration.intellij.model.source.ScenarioSource;
 import me.whereareiam.anvil.integration.intellij.scenario.ScenarioDataKeys;
+import me.whereareiam.anvil.integration.intellij.scenario.catalog.ScenarioCatalog;
+import me.whereareiam.anvil.integration.intellij.scenario.catalog.source.SourceDiscovery;
 import me.whereareiam.anvil.integration.intellij.scenario.environment.EnvironmentSession;
 import me.whereareiam.anvil.tooling.api.model.process.ProcessDefinition;
 import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
@@ -40,6 +42,18 @@ class Selection {
 		if (project == null || source == null || scenario == null) return null;
 
 		return new Selection(project, source, scenario, event.getData(ScenarioDataKeys.PROCESS), event.getData(ScenarioDataKeys.SESSION));
+	}
+
+	/**
+	 * Returns why nothing can start until the project has settled, or null when it has.
+	 */
+	@Nullable String waiting() {
+		if (SourceDiscovery.getInstance(project).snapshot().getState() == SourceDiscovery.State.SYNCING)
+			return "Wait until the project sync has finished";
+		if (ScenarioCatalog.getInstance(project).snapshot().getState() == ScenarioCatalog.State.LOADING && session == null)
+			return "Wait until the scenarios have loaded";
+
+		return null;
 	}
 
 	/**

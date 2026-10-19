@@ -6,8 +6,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.DumbAwareAction;
 
 import me.whereareiam.anvil.integration.intellij.scenario.ScenarioNotifications;
-import me.whereareiam.anvil.integration.intellij.scenario.catalog.ScenarioCatalog;
-import me.whereareiam.anvil.integration.intellij.scenario.catalog.source.SourceDiscovery;
 import me.whereareiam.anvil.integration.intellij.scenario.environment.EnvironmentLifecycle;
 import me.whereareiam.anvil.integration.intellij.scenario.environment.EnvironmentSession;
 import me.whereareiam.anvil.integration.intellij.scenario.window.ToolWindowController;
@@ -66,11 +64,8 @@ public final class RunAction extends DumbAwareAction {
 	}
 
 	private static @Nullable String refusal(@NotNull Selection selection) {
-		var discovery = SourceDiscovery.getInstance(selection.getProject()).snapshot();
-		if (discovery.getState() == SourceDiscovery.State.SYNCING) return "Wait until the project sync has finished";
-		if (ScenarioCatalog.getInstance(selection.getProject()).snapshot().getState() == ScenarioCatalog.State.LOADING
-				&& selection.getSession() == null)
-			return "Wait until the scenarios have loaded";
+		String waiting = selection.waiting();
+		if (waiting != null) return waiting;
 
 		EnvironmentSession running = selection.runningSession();
 		var availability = running != null

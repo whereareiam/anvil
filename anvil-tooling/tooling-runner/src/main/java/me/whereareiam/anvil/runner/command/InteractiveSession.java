@@ -62,7 +62,7 @@ public final class InteractiveSession {
 	 * @throws IOException when command input cannot be read
 	 */
 	public void run() throws IOException {
-		session.start(initial, null);
+		session.start(initial, null, false);
 		terminal.showScenario(session.snapshot());
 		terminal.showHelp();
 
@@ -131,7 +131,7 @@ public final class InteractiveSession {
 		requireArguments(command, 1, "Usage: start <scenario-or-definition>");
 		String selection = command.getArguments().getFirst();
 		scenarios.require(selection);
-		session.start(selection, null);
+		session.start(selection, null, false);
 		terminal.showScenario(session.snapshot());
 	}
 
@@ -140,7 +140,7 @@ public final class InteractiveSession {
 		if (current.getState() != SessionState.RUNNING)
 			throw new IllegalStateException("No scenario is running. Use start <scenario> first");
 
-		session.start(current.getDefinition(), null);
+		session.start(current.getDefinition(), null, false);
 		terminal.showScenario(session.snapshot());
 	}
 
