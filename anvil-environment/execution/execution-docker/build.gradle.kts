@@ -22,7 +22,8 @@ fixtures {
 testing {
 	suites {
 		// Starts containers on the machine's Docker engine, so test and build leave it out and need no Docker. The
-		// anvil.docker.testImage property names the image they run in, which CI caches under the same reference.
+		// anvil.docker.testImage property names the image they run in and anvil.docker.containerTestImage the Redis they run
+		// as a container process, which CI caches under the same references.
 		register<JvmTestSuite>("dockerTest") {
 			useJUnitJupiter(libs.versions.junit)
 			dependencies {
@@ -37,9 +38,11 @@ testing {
 			targets.configureEach {
 				testTask.configure {
 					val image = providers.gradleProperty("anvil.docker.testImage")
+					val containerImage = providers.gradleProperty("anvil.docker.containerTestImage")
 					inputs.property("dockerImage", image)
+					inputs.property("containerImage", containerImage)
 					jvmArgumentProviders.add(CommandLineArgumentProvider {
-						listOf("-Danvil.docker.testImage=${image.get()}")
+						listOf("-Danvil.docker.testImage=${image.get()}", "-Danvil.docker.containerTestImage=${containerImage.get()}")
 					})
 				}
 			}

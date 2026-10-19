@@ -14,7 +14,7 @@ import java.util.Map;
  */
 @Value
 @Builder(toBuilder = true)
-public class JavaCommand {
+public class JavaCommand implements ProcessLaunch {
 	@NotNull Path jar;
 	int memoryMegabytes;
 	@NotNull

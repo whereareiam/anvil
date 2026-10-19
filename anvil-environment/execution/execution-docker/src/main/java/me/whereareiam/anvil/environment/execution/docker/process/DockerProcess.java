@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.environment.execution.docker.process;
 
+import me.whereareiam.anvil.api.process.type.RunningContainer;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import me.whereareiam.anvil.environment.execution.docker.DockerContainerFactory;
 import me.whereareiam.anvil.environment.execution.docker.container.ContainerAttachment;
@@ -65,6 +66,14 @@ final class DockerProcess implements ProcessExecution {
 		// Docker refuses to stop a paused container.
 		thaw();
 		if (isAlive()) container.stop(force);
+	}
+
+	@Override
+	public @NotNull RunningContainer.CommandResult execute(@NotNull Duration timeout, @NotNull String... command) {
+		if (!isAlive()) throw new IllegalStateException("The container is not running");
+		if (frozen) throw new IllegalStateException("The container is frozen; thaw it to run a command in it");
+
+		return container.execute(timeout, command);
 	}
 
 	@Override

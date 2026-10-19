@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
+import me.whereareiam.anvil.api.process.type.RunningContainer;
 import me.whereareiam.anvil.api.process.type.RunningProxy;
 import me.whereareiam.anvil.api.process.type.RunningServer;
 import org.jetbrains.annotations.NotNull;
@@ -67,6 +68,16 @@ public final class JoinedProcessGroup implements ProcessGroup {
 	@Override
 	public @NotNull RunningProxy proxy(@NotNull String name) {
 		return owner(name).proxy(name);
+	}
+
+	@Override
+	public @NotNull Collection<RunningContainer> containers() {
+		return both(ScenarioProcesses::containers);
+	}
+
+	@Override
+	public @NotNull RunningContainer container(@NotNull String name) {
+		return owner(name).container(name);
 	}
 
 	@Override

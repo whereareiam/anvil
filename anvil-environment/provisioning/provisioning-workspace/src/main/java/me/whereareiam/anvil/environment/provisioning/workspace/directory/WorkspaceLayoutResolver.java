@@ -41,6 +41,15 @@ public final class WorkspaceLayoutResolver {
 						+ "' resolve to the same workspace directory: " + directory);
 			layout.processDirectory(process.getName(), directory);
 		});
+		// A container keeps no files of its own; its directory holds its console log for the run.
+		scenario.getContainers().forEach(container -> {
+			Path directory = runDirectory.resolve(safeName(container.getName()));
+			String previous = names.putIfAbsent(directory, container.getName());
+			if (previous != null)
+				throw new ScenarioValidationException("Processes '" + previous + "' and '" + container.getName()
+						+ "' resolve to the same workspace directory: " + directory);
+			layout.processDirectory(container.getName(), directory);
+		});
 
 		return layout.build();
 	}

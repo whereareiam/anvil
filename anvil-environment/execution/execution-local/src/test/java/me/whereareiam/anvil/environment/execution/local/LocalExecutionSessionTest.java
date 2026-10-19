@@ -13,6 +13,7 @@ import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.PortReservations;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
+import me.whereareiam.anvil.environment.execution.api.model.process.ContainerImage;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.api.runtime.LocalRuntimePreparation;
 import org.jetbrains.annotations.NotNull;
@@ -84,6 +85,17 @@ class LocalExecutionSessionTest {
 		}
 
 		assertTrue(ports.released.containsAll(reserved));
+	}
+
+	@Test
+	void refusesAContainerImageWithTheProviderToUseInstead() {
+		try (ExecutionSession session = new LocalExecutionProvider().open(context((request, source) -> Path.of("java")))) {
+			var image = ProcessRequest.builder().name("redis").workspace(directory.resolve("redis"))
+					.image(ContainerImage.builder().image("redis:7.2-alpine").port(6379).build()).build();
+
+			var refused = assertThrows(ProvisioningException.class, () -> session.prepare(image));
+			assertTrue(refused.getMessage().contains("executionProviderId(\"docker\")"), refused.getMessage());
+		}
 	}
 
 	@Test

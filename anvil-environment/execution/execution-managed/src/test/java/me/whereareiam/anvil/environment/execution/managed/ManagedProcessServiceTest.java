@@ -88,7 +88,7 @@ class ManagedProcessServiceTest {
 		assertTrue(service.preservesClientAddress("fixture"));
 		assertTrue(service.connectsEnvironments("fixture"));
 		var unknown = assertThrows(IllegalArgumentException.class, () -> service.preservesClientAddress("docker"));
-		assertEquals("No execution provider 'docker'. Available: [fixture]", unknown.getMessage());
+		assertEquals("No execution provider 'docker'. Available: [fixture, other]", unknown.getMessage());
 	}
 
 	@Test

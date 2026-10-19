@@ -42,8 +42,10 @@ jobs:
           ACTOR: ${{ github.actor }}
         run: echo "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
 
-      - name: Pull the test image
-        run: docker pull "$(sed -n 's/^anvil\.docker\.testImage=//p' gradle.properties)"
+      - name: Pull the test images
+        run: |
+          docker pull "$(sed -n 's/^anvil\.docker\.testImage=//p' gradle.properties)"
+          docker pull "$(sed -n 's/^anvil\.docker\.containerTestImage=//p' gradle.properties)"
 
       - name: Run the Docker engine tests
         run: ./gradlew --no-daemon :anvil-environment:execution:execution-docker:dockerTest -Panvil.intellij=false

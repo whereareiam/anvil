@@ -4,13 +4,16 @@ import me.whereareiam.anvil.api.exception.ProcessException;
 import me.whereareiam.anvil.api.process.ConsoleWatch;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.environment.execution.local.process.LocalProcess;
+import me.whereareiam.anvil.environment.execution.managed.process.type.ManagedContainer;
 import me.whereareiam.anvil.environment.execution.managed.process.type.ManagedServer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -194,6 +197,44 @@ class ManagedProcessTest {
 
 	private ManagedServer process(String name) {
 		return new ManagedServer(name, new InetSocketAddress("127.0.0.1", 25565), Map.of(), temporary.resolve(name), null);
+	}
+
+	@Test
+	void aProcessWithoutAReadinessLineIsReadyOnceItsPortsListenAndStopsWithoutAStopCommand() throws IOException {
+		try (ServerSocket listener = new ServerSocket(0, 50, InetAddress.getLoopbackAddress())) {
+			InetSocketAddress port = new InetSocketAddress("127.0.0.1", listener.getLocalPort());
+			Thread.ofVirtual().start(() -> {
+				while (!listener.isClosed()) {
+					try (var accepted = listener.accept()) {
+						Thread.sleep(500);
+					} catch (IOException | InterruptedException ignored) {
+						return;
+					}
+				}
+			});
+			ManagedContainer container = new ManagedContainer("probed", port, Map.of(Integer.toString(port.getPort()), port),
+					temporary.resolve("probed"));
+			container.start(() -> new LocalProcess(launch(List.of("sh", "-c", "exec sleep 60"))), null, null, Duration.ofSeconds(5));
+			try {
+				assertEquals(ProcessState.READY, container.state());
+				assertEquals(port, container.port(port.getPort()));
+				assertThrows(IllegalArgumentException.class, () -> container.port(1));
+			} finally {
+				container.stop(Duration.ofSeconds(5));
+			}
+
+			assertEquals(ProcessState.STOPPED, container.state());
+			assertFalse(container.failed());
+		}
+	}
+
+	private Process launch(List<String> command) {
+		try {
+			Files.createDirectories(temporary.resolve("probed"));
+			return new ProcessBuilder(command).directory(temporary.resolve("probed").toFile()).redirectErrorStream(true).start();
+		} catch (IOException failure) {
+			throw new UncheckedIOException(failure);
+		}
 	}
 
 	@Test

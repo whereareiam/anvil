@@ -13,12 +13,14 @@ import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.environment.execution.docker.container.ContainerAttachment;
 import me.whereareiam.anvil.environment.execution.docker.model.Container;
 import me.whereareiam.anvil.environment.execution.docker.model.ContainerConfiguration;
+import me.whereareiam.anvil.environment.execution.docker.model.ImageContainerConfiguration;
 
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -76,6 +78,36 @@ public final class DockerContainerFactory {
 				.getId();
 
 		return new Container(client, id);
+	}
+
+	/**
+	 * Creates a stopped container that runs its own image, with stdin open for console commands.
+	 */
+	public Container createImage(ImageContainerConfiguration configuration) {
+		Ports bindings = new Ports();
+		List<ExposedPort> exposed = new ArrayList<>();
+		configuration.getPorts().forEach((port, published) -> {
+			ExposedPort exposedPort = ExposedPort.tcp(port);
+			bindings.bind(exposedPort, Ports.Binding.bindIpAndPort(published.getHostString(), published.getPort()));
+			exposed.add(exposedPort);
+		});
+
+		var create = client.createContainerCmd(configuration.getImage())
+				.withName(configuration.getName())
+				.withLabels(Map.of("me.whereareiam.anvil", "true"))
+				.withHostConfig(HostConfig.newHostConfig()
+						.withNetworkMode(configuration.getNetwork())
+						.withPortBindings(bindings)
+						.withAutoRemove(false))
+				.withAliases(configuration.getAlias())
+				.withExposedPorts(exposed.toArray(ExposedPort[]::new))
+				.withStdinOpen(true)
+				.withEnv(configuration.getEnvironment().entrySet().stream()
+						.map(entry -> entry.getKey() + "=" + entry.getValue())
+						.toList());
+		if (!configuration.getCommand().isEmpty()) create.withCmd(configuration.getCommand());
+
+		return new Container(client, create.exec().getId());
 	}
 
 	/** Attaches process streams to a container and starts its exit watcher. */

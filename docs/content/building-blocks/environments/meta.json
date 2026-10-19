@@ -4,6 +4,7 @@
     "index",
     "definitions",
     "lifetimes",
+    "containers",
     "listeners",
     "platforms",
     "provisioning",

@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.engine.scenario;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
+import me.whereareiam.anvil.api.model.process.ContainerProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
@@ -16,12 +17,13 @@ import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Validates scenario declarations, process and remote references, and launch requirements before scoped execution.
  */
 public final class ScenarioValidator {
-	/** Names of listeners, which their address placeholders carry. */
+	/** Names of containers and listeners, which their address placeholders carry. */
 	private static final Pattern NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
 
 	/**
@@ -85,6 +87,9 @@ public final class ScenarioValidator {
 			registerRemoteName(remote.getName(), targetNames);
 			validateRemote(remote);
 		}
+		Set<String> names = new HashSet<>(targetNames);
+		for (ContainerProcess container : scenario.getContainers())
+			validateContainer(container, names);
 
 		if (!targetNames.contains(entrypoint))
 			throw new ScenarioValidationException("Scenario entrypoint '" + entrypoint
@@ -125,6 +130,36 @@ public final class ScenarioValidator {
 			throw new ScenarioValidationException("Every remote needs a non-blank name");
 		if (!names.add(name))
 			throw new ScenarioValidationException("Remote '" + name + "' shares its name with another server, proxy or remote");
+	}
+
+	/**
+	 * A container is a process the other processes reach by its name.
+	 */
+	private void validateContainer(@NotNull ContainerProcess container, @NotNull Set<String> names) {
+		String name = container.getName();
+		if (!NAME.matcher(name).matches())
+			throw new ScenarioValidationException("Container name '" + name
+					+ "' must be lowercase letters, digits and dashes, starting with a letter or digit");
+		if (!names.add(name))
+			throw new ScenarioValidationException("Container '" + name + "' shares its name with another process or remote");
+		if (blank(container.getImage()))
+			throw new ScenarioValidationException("Container '" + name + "' needs an image");
+		if (container.getPorts().isEmpty())
+			throw new ScenarioValidationException("Container '" + name + "' needs at least one port");
+		if (container.getMemoryMegabytes() < 1)
+			throw new ScenarioValidationException("Container '" + name + "' needs a positive memory");
+
+		Set<Integer> ports = new HashSet<>();
+		for (int port : container.getPorts())
+			if (port < 1 || port > 65535 || !ports.add(port))
+				throw new ScenarioValidationException("Container '" + name + "' declares port " + port + " twice or outside 1-65535");
+
+		if (container.getReadyLog() == null) return;
+		try {
+			Pattern.compile(container.getReadyLog());
+		} catch (PatternSyntaxException invalid) {
+			throw new ScenarioValidationException("Container '" + name + "' has an invalid ready log pattern", invalid);
+		}
 	}
 
 	/**

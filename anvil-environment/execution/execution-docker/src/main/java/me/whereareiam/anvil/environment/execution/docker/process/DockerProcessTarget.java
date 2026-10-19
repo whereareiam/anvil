@@ -2,6 +2,7 @@ package me.whereareiam.anvil.environment.execution.docker.process;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
+import me.whereareiam.anvil.environment.execution.api.model.ProcessLaunch;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
@@ -44,7 +45,9 @@ public final class DockerProcessTarget implements ProcessTarget {
 	private @Nullable Container container;
 
 	@Override
-	public synchronized @NotNull ProcessExecution start(@NotNull JavaCommand command) {
+	public synchronized @NotNull ProcessExecution start(@NotNull ProcessLaunch launch) {
+		if (!(launch instanceof JavaCommand command))
+			throw new IllegalArgumentException("Process '" + request.getName() + "' starts a Java application, not an image");
 		close();
 
 		PortBindings.PortBindingsBuilder ports = PortBindings.builder()

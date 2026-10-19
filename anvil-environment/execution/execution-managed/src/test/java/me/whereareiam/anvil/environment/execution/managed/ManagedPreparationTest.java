@@ -2,6 +2,8 @@ package me.whereareiam.anvil.environment.execution.managed;
 
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.process.RunningProcess;
+import me.whereareiam.anvil.api.process.type.RunningContainer;
+import me.whereareiam.anvil.environment.execution.api.model.ImageLaunch;
 import me.whereareiam.anvil.api.type.ProcessState;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -79,6 +81,29 @@ class ManagedPreparationTest {
 			assertEquals(fixture.targets.get("proxy").listeners().get("link"), group.get("proxy").listener("link"));
 			assertThrows(IllegalArgumentException.class, () -> group.get("proxy").listener("missing"));
 		}
+	}
+
+	@Test
+	void runsAContainerWithItsOwnExecutionProviderAndNamesItsHostAddressToTheOthers() {
+		ExecutionFixture fixture = new ExecutionFixture(directory);
+		var group = fixture.service().prepare(fixture.plan(fixture.container("redis", "other"), fixture.spec("server", false, "redis")),
+				fixture.preparation, null);
+		try (group) {
+			int redis = fixture.targets.get("redis").index;
+			assertEquals("127.0.0.1:" + (20000 + redis), fixture.preparation.observedAddresses.get("server")
+					.resolve("${anvil.process.redis.host}:${anvil.process.redis.port}"));
+			assertEquals("127.0.0.1:" + (30000 + redis), fixture.preparation.observedAddresses.get("redis")
+					.resolve("${anvil.process.redis.host}:${anvil.process.redis.port}"));
+
+			group.startAll();
+			RunningContainer container = group.container("redis");
+			assertEquals(List.of(container), List.copyOf(group.containers()));
+			assertInstanceOf(ImageLaunch.class, fixture.targets.get("redis").launches.getFirst());
+			assertThrows(IllegalArgumentException.class, () -> group.container("server"));
+			assertTrue(fixture.calls.indexOf("start:redis") < fixture.calls.indexOf("start:server"));
+		}
+
+		assertTrue(fixture.calls.containsAll(List.of("session-open:other", "session-close:other", "session-open", "session-close")));
 	}
 
 	@Test

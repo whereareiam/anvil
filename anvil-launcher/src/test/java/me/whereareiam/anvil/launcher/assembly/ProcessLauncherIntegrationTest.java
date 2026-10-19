@@ -4,6 +4,16 @@ import me.whereareiam.anvil.agent.api.exception.AgentException;
 import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
 import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.process.ContainerProcess;
+import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
+import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
+import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
+import me.whereareiam.anvil.environment.execution.api.model.ImageLaunch;
+import me.whereareiam.anvil.environment.execution.api.model.ProcessLaunch;
+import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
+import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
+import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
+import me.whereareiam.anvil.environment.execution.local.process.LocalProcess;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
@@ -33,6 +43,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -172,6 +184,111 @@ class ProcessLauncherIntegrationTest {
 				assertEquals("127.0.0.1:" + server.listener("link").getPort(),
 						Files.readString(server.workDirectory().resolve("link.txt")));
 			}
+		}
+	}
+
+	@Test
+	void runsAContainerWithItsProviderBeforeTheServerAndNamesEachToTheOther() throws Exception {
+		Path executable = FixtureArtifacts.process();
+		var declaration = MinecraftServer.builder().name("server").platform("test")
+				.distribution(Distribution.remote("1.21.11", "1"))
+				.workspace(WorkspacePlan.builder().asset(WorkspaceAsset.builder()
+						.source(AssetSource.text("${anvil.process.redis.host}:${anvil.process.redis.port}"))
+						.target(Path.of("redis.txt")).build()).build())
+				.build();
+		var container = ContainerProcess.builder().name("redis").image("redis:7.2-alpine").port(6379)
+				.environment("SERVER", "${anvil.process.server.host}:${anvil.process.server.port}")
+				.readyLog("READY")
+				.executionProviderId("images")
+				.build();
+		var scenario = AnvilScenario.builder().name("test").entrypoint("server").server(declaration).container(container).build();
+		var options = EngineDefaults.resolve(EngineOptions.builder().workDirectory(directory.resolve("work"))
+				.cacheDirectory(directory.resolve("cache")).eulaAccepted(true).build());
+		var images = new ShellImages();
+		try (var provisioning = new ProvisioningServices(options)) {
+			var platforms = new DefaultPlatformPlanner(options, Map.of("test", fixtureProvider(executable)),
+					new ArtifactPlatformSource(provisioning.getArtifacts()), descriptor -> executable,
+					new ProvisionedPlatformJavaSource(provisioning.getJava()));
+			var launcher = ProcessLauncher.builder()
+					.options(options)
+					.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider(), "images", images)))
+					.workspaces(provisioning.getWorkspaces())
+					.platforms(platforms)
+					.connections((port, token, timeout) -> agent(1, new ArrayList<>()))
+					.plans(new ExecutionPlanMapper(options, new JavaExecutionRuntime(provisioning.getJava()),
+							new CacheImageLocks(provisioning.getCache()), new PortSelection()))
+					.build();
+			try (var group = launcher.prepare(platforms.plan(scenario), new ScenarioAgentDirectory(), null, null, Map.of())) {
+				group.startAll();
+				var redis = group.container("redis");
+				var server = group.server("server");
+
+				assertEquals("127.0.0.1:" + redis.port(6379).getPort(), Files.readString(server.workDirectory().resolve("redis.txt")));
+				assertEquals(server.address().getHostString() + ":" + server.address().getPort(), images.environment.get("SERVER"));
+				assertEquals(1, images.started.get());
+			}
+		}
+	}
+
+	/**
+	 * Runs a container's image as a shell that prints its readiness line, as an execution provider for images would.
+	 */
+	private static final class ShellImages implements ExecutionProvider {
+		private final PortSelection ports = new PortSelection();
+		private final AtomicInteger started = new AtomicInteger();
+		private volatile Map<String, String> environment = Map.of();
+
+		@Override
+		public @NotNull String id() { return "images"; }
+		@Override
+		public boolean preservesClientAddress() { return true; }
+		@Override
+		public boolean connectsEnvironments() { return true; }
+		@Override
+		public @NotNull ExecutionSession open(@NotNull ExecutionContext context) {
+			return new ExecutionSession() {
+				@Override
+				public @NotNull ProcessTarget prepare(@NotNull ProcessRequest request) {
+					assertNotNull(request.getImage());
+					var address = new InetSocketAddress("127.0.0.1", ports.reserve("127.0.0.1"));
+					return new ProcessTarget() {
+						@Override
+						public @NotNull InetSocketAddress address() { return address; }
+						@Override
+						public @NotNull InetSocketAddress peerAddress() { return InetSocketAddress.createUnresolved("redis-alias", 6379); }
+						@Override
+						public @NotNull String bindAddress() { return "0.0.0.0"; }
+						@Override
+						public @NotNull InetSocketAddress agentAddress() { throw new UnsupportedOperationException(); }
+						@Override
+						public int agentPort() { throw new UnsupportedOperationException(); }
+						@Override
+						public @NotNull String agentBindAddress() { throw new UnsupportedOperationException(); }
+						@Override
+						public @NotNull Map<String, InetSocketAddress> listeners() { return Map.of("6379", address); }
+						@Override
+						public @NotNull Map<String, InetSocketAddress> peerListeners() { return Map.of("6379", peerAddress()); }
+						@Override
+						public @NotNull ProcessExecution start(@NotNull ProcessLaunch launch) {
+							environment = ((ImageLaunch) launch).getEnvironment();
+							started.incrementAndGet();
+							try {
+								return new LocalProcess(new ProcessBuilder("sh", "-c", "echo READY; exec sleep 60").redirectErrorStream(true).start());
+							} catch (IOException failure) {
+								throw new UncheckedIOException(failure);
+							}
+						}
+						@Override
+						public void close() {
+							ports.release(address.getPort());
+						}
+					};
+				}
+
+				@Override
+				public void close() {
+				}
+			};
 		}
 	}
 

@@ -283,6 +283,12 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   planner's defaults.
 - Java requirements are execution-agnostic. Local homes and verified archives belong to Java provisioning;
   Docker image mappings belong to the Docker execution provider.
+- A scenario's processes are servers, proxies and containers. A container runs an image instead of a platform:
+  it goes through no platform planning and has no agent or capabilities, but shares the managed lifecycle, the
+  console, readiness and failure actions with the others. Targets start a `ProcessLaunch`, a `JavaCommand` or an
+  `ImageLaunch`, and a provider refuses what it cannot run with the provider to use instead.
+- Each process may name its execution provider; the managed group opens one session per provider in use. A process
+  reaches another inside their environment when one session runs both, else at the other's host address.
 - Execution providers own network topology and endpoint translation. A local loopback bind is host exposure
   control, not process isolation; strict proxy-only isolation is rejected unless the provider can enforce it.
 - Execution sessions reserve host listener ports through the engine's `PortReservations` and release them when

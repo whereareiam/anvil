@@ -59,6 +59,8 @@ public final class LifetimeSplit {
 				.clearProxies()
 				.proxies(proxies)
 				.clearRemotes()
+				// Containers belong to the scenario that declares them; processes kept for the engine outlive them.
+				.clearContainers()
 				.setupHook(null)
 				.build();
 		PlatformPlan.PlatformPlanBuilder retained = PlatformPlan.builder().scenario(own);

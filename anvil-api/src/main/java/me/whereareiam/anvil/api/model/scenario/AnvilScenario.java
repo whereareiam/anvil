@@ -3,6 +3,7 @@ package me.whereareiam.anvil.api.model.scenario;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
+import me.whereareiam.anvil.api.model.process.ContainerProcess;
 import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.NetworkPolicy;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
@@ -50,6 +51,14 @@ public class AnvilScenario {
 	@NotNull
 	@Singular
 	List<RemoteEndpoint> remotes;
+
+	/**
+	 * Containers the scenario runs as processes beside its servers and proxies, such as a database they connect to;
+	 * started before them.
+	 */
+	@NotNull
+	@Singular
+	List<ContainerProcess> containers;
 
 	/**
 	 * Execution provider used for the whole topology: local or docker.

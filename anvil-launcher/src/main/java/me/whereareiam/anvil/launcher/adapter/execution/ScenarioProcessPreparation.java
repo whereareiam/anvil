@@ -5,6 +5,7 @@ import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
 import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.process.ContainerProcess;
 import me.whereareiam.anvil.api.model.process.ProcessAddresses;
 import me.whereareiam.anvil.capability.process.ProcessCapabilityRuntime;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
@@ -53,6 +54,8 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 			@NotNull Map<String, InetSocketAddress> peers,
 			@NotNull ProcessAddresses processes
 	) {
+		if (process.isContainer()) return PreparedContainer.prepare(container(process.getRequest().getName()), process, processes);
+
 		var planned = plan.getProcesses().get(process.getRequest().getName());
 		var declaration = planned.getDeclaration();
 		UnaryOperator<String> addresses = processes::resolve;
@@ -101,6 +104,13 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 			rollback(workspace, failure);
 			throw failure;
 		}
+	}
+
+	private ContainerProcess container(String name) {
+		return plan.getScenario().getContainers().stream()
+				.filter(container -> container.getName().equals(name))
+				.findFirst()
+				.orElseThrow(() -> new IllegalStateException("The scenario declares no container '" + name + "'"));
 	}
 
 	@Override

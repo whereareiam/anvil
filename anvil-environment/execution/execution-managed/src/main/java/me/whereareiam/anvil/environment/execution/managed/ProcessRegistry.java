@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.environment.execution.managed;
 
 import me.whereareiam.anvil.api.process.RunningProcess;
+import me.whereareiam.anvil.api.process.type.RunningContainer;
 import me.whereareiam.anvil.api.process.type.RunningProxy;
 import me.whereareiam.anvil.api.process.type.RunningServer;
 import me.whereareiam.anvil.environment.execution.managed.slot.ProcessSlot;
@@ -160,6 +161,22 @@ public final class ProcessRegistry {
 			throw new IllegalArgumentException("Process '" + name + "' is not a Minecraft proxy");
 
 		return proxy;
+	}
+
+	public synchronized @NotNull Collection<RunningContainer> containers() {
+		return processes.values().stream()
+				.map(ProcessSlot::currentOrNull)
+				.filter(RunningContainer.class::isInstance)
+				.map(RunningContainer.class::cast)
+				.toList();
+	}
+
+	public synchronized @NotNull RunningContainer container(@NotNull String name) {
+		RunningProcess process = get(name);
+		if (!(process instanceof RunningContainer container))
+			throw new IllegalArgumentException("Process '" + name + "' is not a container");
+
+		return container;
 	}
 
 	public @NotNull RunningProcess restart(@NotNull String name) {

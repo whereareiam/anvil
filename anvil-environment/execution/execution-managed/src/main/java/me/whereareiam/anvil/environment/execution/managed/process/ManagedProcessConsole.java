@@ -48,7 +48,7 @@ final class ManagedProcessConsole implements ProcessConsole {
 
 	void attach(
 			@NotNull ProcessExecution process,
-			@NotNull Pattern readinessPattern,
+			@Nullable Pattern readinessPattern,
 			@NotNull Runnable onReady,
 			@NotNull Runnable onOutputEnded
 	) {
@@ -205,7 +205,7 @@ final class ManagedProcessConsole implements ProcessConsole {
 		return tail.isEmpty() ? "" : "\nLast output:\n" + String.join("\n", tail);
 	}
 
-	private void capture(ProcessExecution process, Pattern readinessPattern, Runnable onReady, Runnable onOutputEnded) {
+	private void capture(ProcessExecution process, @Nullable Pattern readinessPattern, Runnable onReady, Runnable onOutputEnded) {
 		try (BufferedReader reader = new BufferedReader(
 				new InputStreamReader(process.output(), StandardCharsets.UTF_8));
 		     BufferedWriter log = Files.newBufferedWriter(
@@ -217,7 +217,7 @@ final class ManagedProcessConsole implements ProcessConsole {
 				log.newLine();
 				log.flush();
 
-				if (readinessPattern.matcher(line).find()) onReady.run();
+				if (readinessPattern != null && readinessPattern.matcher(line).find()) onReady.run();
 			}
 		} catch (IOException failure) {
 			append("[Anvil] Failed to capture process output: " + failure.getMessage());

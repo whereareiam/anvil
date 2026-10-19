@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.environment.execution.api.process;
 
-import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
+import me.whereareiam.anvil.environment.execution.api.model.ProcessLaunch;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
@@ -72,12 +72,15 @@ public interface ProcessTarget extends AutoCloseable {
 	}
 
 	/**
-	 * Starts one generation using the resolved JAR and fresh environment values.
+	 * Starts one generation with fresh runtime values: a Java application from its JAR, or the target's container
+	 * image.
 	 *
-	 * @param command Java arguments and the host-side JAR location
+	 * @param launch the Java command, or the image launch of a container process
 	 * @return owned execution, including streams and termination
+	 * @throws IllegalArgumentException when the launch does not fit the target, such as an image launch for a Java
+	 *                                  application
 	 */
-	@NotNull ProcessExecution start(@NotNull JavaCommand command);
+	@NotNull ProcessExecution start(@NotNull ProcessLaunch launch);
 
 	/**
 	 * Releases process-specific resources after its last generation has stopped.

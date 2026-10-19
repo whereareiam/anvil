@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.environment.execution.api.preparation;
 
-import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
+import me.whereareiam.anvil.environment.execution.api.model.ProcessLaunch;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -12,7 +12,7 @@ public interface PreparedLaunch extends AutoCloseable {
 	 *
 	 * @return immutable command used once for this generation
 	 */
-	@NotNull JavaCommand command();
+	@NotNull ProcessLaunch command();
 
 	/**
 	 * Attaches dependent services after the process reports readiness.

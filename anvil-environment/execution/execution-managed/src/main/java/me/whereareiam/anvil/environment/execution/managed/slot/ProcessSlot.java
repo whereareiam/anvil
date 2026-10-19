@@ -11,6 +11,7 @@ import me.whereareiam.anvil.environment.execution.api.preparation.PreparedLaunch
 import me.whereareiam.anvil.environment.execution.api.preparation.PreparedProcess;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
 import me.whereareiam.anvil.environment.execution.managed.process.ManagedProcess;
+import me.whereareiam.anvil.environment.execution.managed.process.type.ManagedContainer;
 import me.whereareiam.anvil.environment.execution.managed.process.type.ManagedProxy;
 import me.whereareiam.anvil.environment.execution.managed.process.type.ManagedServer;
 import org.jetbrains.annotations.NotNull;
@@ -61,9 +62,7 @@ public final class ProcessSlot {
 			if (current != null && (launch != null || current.state() != ProcessState.STOPPED)) stopGeneration();
 			PreparedLaunch preparedLaunch = prepared.launch();
 			launch = preparedLaunch;
-			current = spec.isProxy()
-					? new ManagedProxy(name(), target.address(), target.listeners(), spec.getRequest().getWorkspace(), prepared.capabilities())
-					: new ManagedServer(name(), target.address(), target.listeners(), spec.getRequest().getWorkspace(), prepared.capabilities());
+			current = create(prepared);
 
 			// A cancellation that read the previous generation is caught here; a later one sees this one.
 			if (cancelled) current.cancelStart();
@@ -86,6 +85,15 @@ public final class ProcessSlot {
 			}
 			throw failure;
 		}
+	}
+
+	private ManagedProcess create(PreparedProcess prepared) {
+		if (spec.isContainer())
+			return new ManagedContainer(name(), target.address(), target.listeners(), spec.getRequest().getWorkspace());
+		if (spec.isProxy())
+			return new ManagedProxy(name(), target.address(), target.listeners(), spec.getRequest().getWorkspace(), prepared.capabilities());
+
+		return new ManagedServer(name(), target.address(), target.listeners(), spec.getRequest().getWorkspace(), prepared.capabilities());
 	}
 
 	/**
