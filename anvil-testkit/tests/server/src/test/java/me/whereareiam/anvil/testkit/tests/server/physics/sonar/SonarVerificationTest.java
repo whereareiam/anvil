@@ -19,12 +19,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A player with client physics falls and lands in Sonar's verification world as a client does, passes the
- * verification, and reaches the backend when it connects again.
+ * verification, and reaches the backend when it connects again once the proxy's login rate limit lets the address log
+ * in again, as a player that reconnects by hand does.
  */
 @Tag("sonar")
 @PhysicsEnvironment(PhysicsEnvironment.Judge.SONAR)
 class SonarVerificationTest {
 	private static final Duration VERIFICATION = Duration.ofSeconds(30);
+	/**
+	 * Velocity refuses a login from an address that logged in less than this ago, its default {@code login-ratelimit}.
+	 */
+	private static final Duration LOGIN_RATE_LIMIT = Duration.ofSeconds(3);
 
 	@Test
 	void passesAPlayerWithPhysicsAndLetsItThrough(ScenarioContext anvil) {
@@ -40,8 +45,19 @@ class SonarVerificationTest {
 		assertTrue(reason.contains("You have successfully passed the verification"),
 				"Sonar disconnected the player with: " + reason);
 		proxy.printed(player.name() + " has been verified successfully", PhysicsCourse.TIMEOUT);
+		// The player logged in before Sonar disconnected it, so the limit has passed once as long again passed since.
+		pause(LOGIN_RATE_LIMIT);
 		session.rejoin();
 		session.connected(PhysicsCourse.TIMEOUT);
 		backend.joined(player, PhysicsCourse.TIMEOUT);
+	}
+
+	private static void pause(Duration duration) {
+		try {
+			Thread.sleep(duration);
+		} catch (InterruptedException interrupted) {
+			Thread.currentThread().interrupt();
+			throw new IllegalStateException("Interrupted while the proxy's login rate limit passes", interrupted);
+		}
 	}
 }
