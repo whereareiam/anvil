@@ -352,9 +352,16 @@ public final class ClientMovement implements WorkerBinding {
 		if (current != null) current.close();
 	}
 
+	/**
+	 * Stops the ticks and closes the listeners. The listeners close outside the movement's monitor: the player's
+	 * connection ends its bindings under a lock of its own and then calls the movement, so holding the monitor while
+	 * closing them would deadlock with a connection that ends at the same time.
+	 */
 	@Override
-	public synchronized void close() {
-		stopTicking();
+	public void close() {
+		synchronized (this) {
+			stopTicking();
+		}
 		subscriptions.close();
 	}
 

@@ -124,6 +124,15 @@ class ClientMovementTest {
 	}
 
 	@Test
+	void closesItsConnectionBindingOutsideItsMonitor() {
+		Fixture fixture = new Fixture("1.21.11");
+
+		fixture.movement.close();
+
+		assertFalse(fixture.player.closedUnderTheMovementsMonitor);
+	}
+
+	@Test
 	void runsThePhysicsOfAPlayerWhoseEntityIdIsNegative() {
 		Fixture fixture = new Fixture("1.21.11");
 		fixture.protocol.receive(new ClientboundLogin(-39858984, new Dimension("minecraft:overworld", -64, 384)));
@@ -304,6 +313,7 @@ class ClientMovementTest {
 			this.world = new TestWorld(version.startsWith("26.") ? "26.1.2" : version).load(0, 0);
 			this.player = new RecordingPlayer(protocol, world, MinecraftVersion.parse(version));
 			this.movement = ClientMovement.bind(player, operations, clock);
+			this.player.movement = movement;
 		}
 
 		private @NotNull MovementState state() {
@@ -380,6 +390,8 @@ class ClientMovementTest {
 		private final List<Supplier<Subscription>> connections = new ArrayList<>();
 		private final List<Subscription> current = new ArrayList<>();
 		private @Nullable ViewRotation rotation;
+		private @Nullable ClientMovement movement;
+		private boolean closedUnderTheMovementsMonitor;
 
 		private RecordingPlayer(@NotNull RecordingProtocol protocol, @NotNull JavaWorld world, @NotNull MinecraftVersion version) {
 			this.protocol = protocol;
@@ -410,7 +422,10 @@ class ClientMovementTest {
 		public @NotNull Subscription bindConnection(@NotNull Supplier<Subscription> listener) {
 			connections.add(listener);
 			current.add(listener.get());
-			return () -> connections.remove(listener);
+			return () -> {
+				if (movement != null && Thread.holdsLock(movement)) closedUnderTheMovementsMonitor = true;
+				connections.remove(listener);
+			};
 		}
 
 		@Override
