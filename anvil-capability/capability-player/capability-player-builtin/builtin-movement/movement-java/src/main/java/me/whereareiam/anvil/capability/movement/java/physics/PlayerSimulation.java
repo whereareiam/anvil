@@ -80,7 +80,6 @@ final class PlayerSimulation {
 	private boolean jumping;
 	private float xxa;
 	private float zza;
-	private float speed;
 	private float legacyFlyingSpeed = 0.02F;
 
 	PlayerSimulation(@NotNull MovementRules rules, @NotNull BlockView view, double x, double y, double z, float yaw, float pitch) {
@@ -289,7 +288,6 @@ final class PlayerSimulation {
 
 		livingAiStep();
 		if (!rules.liveFlyingSpeed()) legacyFlyingSpeed = sprinting ? 0.02F + 0.006F : 0.02F;
-		speed = (float) movementSpeed();
 	}
 
 	/**
@@ -526,8 +524,14 @@ final class PlayerSimulation {
 		return movement;
 	}
 
+	/**
+	 * {@code LivingEntity.getFrictionInfluencedSpeed}. On the ground it scales the player's speed, which
+	 * {@code Player.getSpeed} reads from the movement speed attribute at that moment, so the sprint that started in
+	 * the same tick already counts; the speed {@code Player.aiStep} stores after the movement is never read for a
+	 * player.
+	 */
 	private float frictionInfluencedSpeed(float friction) {
-		if (onGround) return speed * (0.21600002F / (friction * friction * friction));
+		if (onGround) return (float) movementSpeed() * (0.21600002F / (friction * friction * friction));
 		if (!rules.liveFlyingSpeed()) return legacyFlyingSpeed;
 
 		return sprinting ? 0.025999999F : 0.02F;
