@@ -85,8 +85,9 @@ WorkspaceAsset.builder()
 Anvil writes the text as given. Produce structured formats such as YAML or JSON with a serializer
 rather than by joining strings, so that values are quoted and escaped correctly.
 
-The default `AssetInstallMode.ALWAYS` replaces the target when workspace preparation runs. For a
-directory source, replacement removes the existing target directory first, so files absent from the
+The default `AssetInstallMode.ALWAYS` replaces the target before every process start: when the
+workspace is prepared, and again whenever the process starts after a stop or restart. A restart
+therefore picks up a plugin JAR rebuilt since the scenario started. For a directory source, replacement removes the existing target directory first, so files absent from the
 source are not preserved. Choose `SEED_ONCE` when existing generated state should survive; see
 [persistent workspaces](../persistence/index.md).
 

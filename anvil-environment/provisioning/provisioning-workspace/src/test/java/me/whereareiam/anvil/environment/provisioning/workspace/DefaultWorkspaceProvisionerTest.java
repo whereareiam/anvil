@@ -89,6 +89,39 @@ class DefaultWorkspaceProvisionerTest {
 	}
 
 	@Test
+	void replacesAssetsFromTheirCurrentSourcesBeforeEveryLaterStart() throws Exception {
+		Path plugin = Files.writeString(temporary.resolve("plugin.jar"), "built");
+		Path world = Files.writeString(temporary.resolve("world.dat"), "seed");
+		Path root = temporary.resolve("work");
+		Path workspace = root.resolve("scenario/run/server");
+		WorkspacePlan plan = WorkspacePlan.builder()
+				.asset(WorkspaceAsset.builder()
+						.source(AssetSource.path(plugin))
+						.target(Path.of("plugins/plugin.jar"))
+						.build())
+				.asset(WorkspaceAsset.builder()
+						.source(AssetSource.path(world))
+						.target(Path.of("world.dat"))
+						.mode(AssetInstallMode.SEED_ONCE)
+						.build())
+				.build();
+
+		try (PreparedWorkspace prepared = prepare(root, workspace, plan, List.of())) {
+			Files.writeString(plugin, "rebuilt");
+			Files.writeString(workspace.resolve("world.dat"), "played");
+			prepared.beforeStart();
+			assertEquals("built", Files.readString(workspace.resolve("plugins/plugin.jar")), "The first start uses the prepared assets");
+
+			prepared.beforeStart();
+			assertEquals("rebuilt", Files.readString(workspace.resolve("plugins/plugin.jar")));
+			assertEquals("played", Files.readString(workspace.resolve("world.dat")));
+
+			prepared.finish(true);
+			assertThrows(IllegalStateException.class, prepared::beforeStart);
+		}
+	}
+
+	@Test
 	void writesInlineTextWithSeedAndAlwaysModes() throws Exception {
 		Path root = temporary.resolve("work");
 		Path workspace = root.resolve("scenario/run/server");

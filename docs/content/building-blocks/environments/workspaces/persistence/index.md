@@ -52,8 +52,8 @@ Persistence retains files, not live objects. A subsequent execution starts new p
 Reconnect and read the application's stored state to verify persistence; a successful connection
 alone does not prove that world data, account progress, or plugin configuration survived.
 
-A process restart inside one scenario also uses its prepared workspace. It does not create a new
-scenario execution or rerun the scenario setup hook. See
+A process restart inside one scenario also uses its prepared workspace. It installs `ALWAYS` assets
+again, but does not create a new scenario execution or rerun the scenario setup hook. See
 [process restarts](../../actions/index.md).
 
 ## Reset deliberately
