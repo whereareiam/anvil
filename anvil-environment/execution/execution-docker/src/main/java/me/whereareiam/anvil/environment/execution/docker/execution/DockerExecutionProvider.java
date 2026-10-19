@@ -1,7 +1,5 @@
 package me.whereareiam.anvil.environment.execution.docker.execution;
 
-import me.whereareiam.anvil.api.exception.ProvisioningException;
-import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
@@ -57,9 +55,6 @@ public final class DockerExecutionProvider implements ExecutionProvider {
 
 	@Override
 	public @NotNull ExecutionSession open(@NotNull ExecutionContext context) {
-		if (context.getProcessPriority() == ProcessPriority.LOW)
-			throw new ProvisioningException("Docker execution cannot lower the priority of its containers");
-
 		DockerEngine docker = new DockerEngine();
 		try {
 			return new DockerExecutionSession(context, docker, settings);

@@ -62,6 +62,7 @@ public final class DockerContainerFactory {
 				.withBinds(new Bind(configuration.getWorkspace().toAbsolutePath().toString(), new Volume("/workspace")),
 						new Bind(configuration.getJar().toAbsolutePath().toString(), new Volume("/anvil/application.jar")))
 				.withAutoRemove(false);
+		if (configuration.getCpuShares() != null) host.withCpuShares(configuration.getCpuShares());
 
 		String id = client.createContainerCmd(configuration.getImage())
 				.withName(configuration.getName())
@@ -92,13 +93,16 @@ public final class DockerContainerFactory {
 			exposed.add(exposedPort);
 		});
 
+		HostConfig host = HostConfig.newHostConfig()
+				.withNetworkMode(configuration.getNetwork())
+				.withPortBindings(bindings)
+				.withAutoRemove(false);
+		if (configuration.getCpuShares() != null) host.withCpuShares(configuration.getCpuShares());
+
 		var create = client.createContainerCmd(configuration.getImage())
 				.withName(configuration.getName())
 				.withLabels(Map.of("me.whereareiam.anvil", "true"))
-				.withHostConfig(HostConfig.newHostConfig()
-						.withNetworkMode(configuration.getNetwork())
-						.withPortBindings(bindings)
-						.withAutoRemove(false))
+				.withHostConfig(host)
 				.withAliases(configuration.getAlias())
 				.withExposedPorts(exposed.toArray(ExposedPort[]::new))
 				.withStdinOpen(true)

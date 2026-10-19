@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.environment.execution.docker.execution;
 
 import me.whereareiam.anvil.api.exception.ProvisioningException;
+import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.api.type.network.NetworkServerAccess;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
@@ -15,6 +16,7 @@ import me.whereareiam.anvil.environment.execution.docker.image.DockerImageResolv
 import me.whereareiam.anvil.environment.execution.docker.process.DockerImageTarget;
 import me.whereareiam.anvil.environment.execution.docker.process.DockerProcessTarget;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -33,6 +35,8 @@ import java.util.UUID;
 final class DockerExecutionSession implements ExecutionSession {
 	/** Listeners bind from here inside their container, after the game port 25565 and the agent's 25566. */
 	private static final int FIRST_LISTENER_PORT = 25570;
+	/** A quarter of Docker's default CPU weight of 1024, so low-priority containers yield as {@code nice} processes do. */
+	private static final int LOW_PRIORITY_CPU_SHARES = 256;
 
 	private final ExecutionContext context;
 	private final DockerEngine docker;
@@ -87,7 +91,8 @@ final class DockerExecutionSession implements ExecutionSession {
 					new InetSocketAddress(bindAddress, port(bindAddress)),
 					new InetSocketAddress("127.0.0.1", port("127.0.0.1")),
 					Map.copyOf(listeners),
-					Map.copyOf(listenerPorts));
+					Map.copyOf(listenerPorts),
+					cpuShares());
 			targets.add(target);
 			return target;
 		}
@@ -103,10 +108,14 @@ final class DockerExecutionSession implements ExecutionSession {
 			image.getPorts().forEach(port -> published.put(port, new InetSocketAddress(bindAddress, port(bindAddress))));
 
 			DockerImageTarget target = new DockerImageTarget(containers, dockerNetwork.id(), alias(request), request,
-					Collections.unmodifiableMap(published));
+					Collections.unmodifiableMap(published), cpuShares());
 			targets.add(target);
 			return target;
 		}
+	}
+
+	private @Nullable Integer cpuShares() {
+		return context.getProcessPriority() == ProcessPriority.LOW ? LOW_PRIORITY_CPU_SHARES : null;
 	}
 
 	private static String alias(ProcessRequest request) {

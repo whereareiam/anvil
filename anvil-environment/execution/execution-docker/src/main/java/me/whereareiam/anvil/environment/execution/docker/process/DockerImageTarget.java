@@ -33,6 +33,10 @@ public final class DockerImageTarget implements ProcessTarget {
 	 * Host addresses of the container's ports, by container port, in their declared order.
 	 */
 	private final Map<Integer, InetSocketAddress> published;
+	/**
+	 * The containers' CPU weight, or null for Docker's default.
+	 */
+	private final @Nullable Integer cpuShares;
 
 	private @Nullable Container container;
 
@@ -50,6 +54,7 @@ public final class DockerImageTarget implements ProcessTarget {
 				.ports(published)
 				.environment(image.getEnvironment())
 				.command(image.getCommand())
+				.cpuShares(cpuShares)
 				.build());
 
 		container = created;
