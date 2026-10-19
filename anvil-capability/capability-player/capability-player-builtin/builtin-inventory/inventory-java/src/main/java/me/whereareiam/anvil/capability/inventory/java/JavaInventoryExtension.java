@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.inventory.java;
 
+import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.capability.inventory.channel.InventoryChannel;
 import me.whereareiam.anvil.capability.inventory.model.InventoryAction;
 import me.whereareiam.anvil.capability.inventory.model.InventoryItem;
@@ -13,9 +14,12 @@ import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.PlayerInventoryLayout;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
+import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetContent;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundOpenScreen;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetHeldSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
@@ -33,6 +37,13 @@ import java.util.TreeMap;
  * Installs the built-in inventory capability for players that speak the Java Edition protocol: it registers hotbar
  * selection and container clicks, keeps the container the player's packets describe and emits every change of it as
  * an {@link InventorySnapshot}. The observed container and its state ID belong to the player and survive reconnects.
+ *
+ * <p>The player holds a hotbar slot as the vanilla client does: a test's selection and the server's selection of a
+ * hotbar slot select it, and the player tells the server the selected slot whenever it differs from the one the server
+ * was last told ({@code MultiPlayerGameMode.ensureHasSentCarriedItem}). A login starts with the first slot selected
+ * and told; a respawn selects the first slot of the new player's inventory again, and the server's selection that
+ * follows every respawn decides what the player tells. The vanilla client tells the slot with its next tick, the
+ * player at once.</p>
  *
  * <p>The observed container is the one the server last opened or filled. Slot updates of other containers and of
  * the cursor are ignored, and changes addressed to the player's own inventory are applied only while the player's
@@ -54,8 +65,9 @@ public final class JavaInventoryExtension implements WorkerExtension<Object> {
 	public @NotNull WorkerBinding bind(@NotNull PlayerBindingContext<Object> player, @NotNull OperationRegistry operations) {
 		JavaProtocol protocol = player.protocol(JavaProtocol.class);
 		ObservedContainer container = new ObservedContainer();
+		HeldSlot held = new HeldSlot(protocol);
 		operations.register(InventoryChannel.SELECT, selection -> {
-			protocol.send(new ServerboundSetCarriedItem(selection.getSlot()));
+			held.select(selection.getSlot());
 			return null;
 		});
 		operations.register(InventoryChannel.CLICK, action -> {
@@ -64,6 +76,9 @@ public final class JavaInventoryExtension implements WorkerExtension<Object> {
 		});
 
 		Subscription listening = Subscription.all(
+				protocol.listen(ClientboundLogin.class, ignored -> held.joined()),
+				protocol.listen(ClientboundRespawn.class, ignored -> held.respawned()),
+				protocol.listen(ClientboundSetHeldSlot.class, selection -> held.selectedByServer(selection.getSlot())),
 				protocol.listen(ClientboundOpenScreen.class, open ->
 						publish(player, container.open(open.getContainerId()))),
 				protocol.listen(ClientboundContainerSetContent.class, content -> publish(player,
@@ -123,6 +138,42 @@ public final class JavaInventoryExtension implements WorkerExtension<Object> {
 				.protocolId(stack.getId())
 				.amount(stack.getCount())
 				.build();
+	}
+
+	/**
+	 * The hotbar slot a player selected and the one it last told the server. Packet listeners and operations run on
+	 * different threads, so every access holds the monitor.
+	 */
+	@RequiredArgsConstructor
+	private static final class HeldSlot {
+		private final JavaProtocol protocol;
+		private int selected;
+		private int told;
+
+		private synchronized void select(int slot) {
+			selected = slot;
+			tell();
+		}
+
+		private synchronized void selectedByServer(int slot) {
+			if (PlayerInventoryLayout.hotbar(slot)) select(slot);
+		}
+
+		private synchronized void joined() {
+			selected = PlayerInventoryLayout.HOTBAR;
+			told = PlayerInventoryLayout.HOTBAR;
+		}
+
+		private synchronized void respawned() {
+			selected = PlayerInventoryLayout.HOTBAR;
+		}
+
+		private void tell() {
+			if (selected == told) return;
+
+			protocol.send(new ServerboundSetCarriedItem(selected));
+			told = selected;
+		}
 	}
 
 	/**
