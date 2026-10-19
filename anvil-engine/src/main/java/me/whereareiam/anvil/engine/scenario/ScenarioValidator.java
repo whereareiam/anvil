@@ -5,6 +5,7 @@ import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.model.scenario.RemoteEndpoint;
+import me.whereareiam.anvil.api.model.service.ServiceContainer;
 import me.whereareiam.anvil.api.type.ProcessLifetime;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,11 +15,15 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Validates scenario declarations, process and remote references, and launch requirements before scoped execution.
  */
 public final class ScenarioValidator {
+	private static final Pattern SERVICE_NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
+
 	/**
 	 * Checks the complete scenario structure without acquiring process resources.
 	 *
@@ -78,6 +83,9 @@ public final class ScenarioValidator {
 			registerRemoteName(remote.getName(), targetNames);
 			validateRemote(remote);
 		}
+		Set<String> names = new HashSet<>(targetNames);
+		for (ServiceContainer service : scenario.getServices())
+			validateService(service, names);
 
 		if (!targetNames.contains(entrypoint))
 			throw new ScenarioValidationException("Scenario entrypoint '" + entrypoint
@@ -118,6 +126,32 @@ public final class ScenarioValidator {
 			throw new ScenarioValidationException("Every remote needs a non-blank name");
 		if (!names.add(name))
 			throw new ScenarioValidationException("Remote '" + name + "' shares its name with another server, proxy or remote");
+	}
+
+	/**
+	 * A service's name is a host name inside the processes' network and part of its address placeholders.
+	 */
+	private void validateService(@NotNull ServiceContainer service, @NotNull Set<String> names) {
+		if (!SERVICE_NAME.matcher(service.getName()).matches())
+			throw new ScenarioValidationException("Service name '" + service.getName()
+					+ "' must be lowercase letters, digits and dashes, starting with a letter or digit");
+		if (!names.add(service.getName()))
+			throw new ScenarioValidationException("Service '" + service.getName() + "' shares its name with another server, proxy, remote or service");
+		if (blank(service.getImage()))
+			throw new ScenarioValidationException("Service '" + service.getName() + "' needs an image");
+
+		Set<Integer> ports = new HashSet<>();
+		for (int port : service.getPorts())
+			if (port < 1 || port > 65535 || !ports.add(port))
+				throw new ScenarioValidationException("Service '" + service.getName() + "' declares port " + port
+						+ " twice or outside 1-65535");
+
+		if (service.getReadyLog() == null) return;
+		try {
+			Pattern.compile(service.getReadyLog());
+		} catch (PatternSyntaxException invalid) {
+			throw new ScenarioValidationException("Service '" + service.getName() + "' has an invalid ready log pattern", invalid);
+		}
 	}
 
 	/**

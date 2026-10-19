@@ -4,6 +4,7 @@
     "index",
     "definitions",
     "lifetimes",
+    "services",
     "platforms",
     "provisioning",
     "workspaces",

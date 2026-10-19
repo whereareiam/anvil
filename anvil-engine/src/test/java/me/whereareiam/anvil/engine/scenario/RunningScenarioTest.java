@@ -3,6 +3,7 @@ package me.whereareiam.anvil.engine.scenario;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerManager;
 import me.whereareiam.anvil.api.process.ProcessGroup;
+import me.whereareiam.anvil.api.service.ScenarioServices;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
@@ -30,7 +31,7 @@ class RunningScenarioTest {
 					throw processesFailure;
 				});
 		var scenario = new RunningScenario(AnvilScenario.builder().name("test").entrypoint("server").build(),
-				processes, players);
+				processes, players, ScenarioServices.NONE);
 
 		assertSame(playersFailure, assertThrows(AssertionError.class, scenario::close));
 		scenario.close();

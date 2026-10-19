@@ -7,6 +7,7 @@ import me.whereareiam.anvil.api.player.account.AccountManager;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
+import me.whereareiam.anvil.api.service.ScenarioServices;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,6 +19,7 @@ public final class RunningScenario implements ScenarioContext {
 	private final @NotNull AnvilScenario definition;
 	private final @NotNull ProcessGroup processes;
 	private final @NotNull PlayerManager players;
+	private final @NotNull ScenarioServices services;
 
 	private boolean closed;
 
@@ -54,6 +56,11 @@ public final class RunningScenario implements ScenarioContext {
 	@Override
 	public @NotNull PlayerManager players() {
 		return players;
+	}
+
+	@Override
+	public @NotNull ScenarioServices services() {
+		return services;
 	}
 
 	@Override

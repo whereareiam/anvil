@@ -12,6 +12,7 @@ import me.whereareiam.anvil.capability.process.ProcessCapabilityRuntime;
 import me.whereareiam.anvil.engine.process.RetainedProcesses;
 import me.whereareiam.anvil.engine.scenario.RunningScenario;
 import me.whereareiam.anvil.launcher.adapter.process.ScenarioPlatforms;
+import me.whereareiam.anvil.launcher.adapter.service.ScenarioServiceSet;
 import me.whereareiam.anvil.platform.api.PlatformPlanner;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
@@ -43,10 +44,11 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 		ProcessCapabilityRuntime capabilities;
 		ProtocolPlayerComposer composer;
 		ProcessGroup processes;
+		ScenarioServiceSet services = execution.services(own.getScenario().getServices());
 		try {
 			capabilities = ProcessComposition.discover(own, agents, platforms);
 			composer = PlayerComposition.create(players.scenarioLibraries(plan.getScenario()));
-			processes = lease.join(execution.prepare(own, agents, capabilities, observer, lease.addresses()));
+			processes = lease.join(execution.prepare(own, agents, capabilities, observer, lease.addresses(), services));
 		} catch (RuntimeException | Error failure) {
 			try {
 				lease.release(true);
@@ -61,7 +63,7 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 			lease.announce(observer);
 			var manager = players.open(plan.getScenario(), processes, composer, execution.preservesClientAddress(plan));
 
-			return new RunningScenario(plan.getScenario(), processes, manager);
+			return new RunningScenario(plan.getScenario(), processes, manager, services);
 		} catch (RuntimeException | Error failure) {
 			try {
 				processes.finish(false);

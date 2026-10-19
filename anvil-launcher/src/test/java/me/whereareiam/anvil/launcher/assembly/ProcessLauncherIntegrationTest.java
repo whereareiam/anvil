@@ -9,14 +9,21 @@ import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.model.service.ServiceContainer;
 import me.whereareiam.anvil.api.model.workspace.AssetSource;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceAsset;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
+import me.whereareiam.anvil.api.service.ServiceCommandResult;
 import me.whereareiam.anvil.api.type.ProcessState;
+import me.whereareiam.anvil.api.type.ServiceState;
 import me.whereareiam.anvil.engine.config.EngineDefaults;
 import me.whereareiam.anvil.environment.execution.local.LocalExecutionProvider;
 import me.whereareiam.anvil.environment.execution.managed.ManagedProcessService;
 import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
+import me.whereareiam.anvil.environment.service.api.ServiceInstance;
+import me.whereareiam.anvil.environment.service.api.ServiceProvider;
+import me.whereareiam.anvil.environment.service.api.ServiceSession;
+import me.whereareiam.anvil.environment.service.api.model.ServiceContext;
 import me.whereareiam.anvil.launcher.adapter.execution.CacheImageLocks;
 import me.whereareiam.anvil.launcher.adapter.execution.ExecutionPlanMapper;
 import me.whereareiam.anvil.launcher.adapter.execution.JavaExecutionRuntime;
@@ -33,6 +40,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -99,6 +107,7 @@ class ProcessLauncherIntegrationTest {
 			var platforms = new DefaultPlatformPlanner(options, Map.of(provider.id(), provider),
 					new ArtifactPlatformSource(provisioning.getArtifacts()), descriptor -> executable,
 					new ProvisionedPlatformJavaSource(provisioning.getJava()));
+			var reservations = new PortSelection();
 			var launcher = ProcessLauncher.builder()
 					.options(options)
 					.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider())))
@@ -111,10 +120,11 @@ class ProcessLauncherIntegrationTest {
 						return agent(tokens.size(), calls);
 					})
 					.plans(new ExecutionPlanMapper(options, new JavaExecutionRuntime(provisioning.getJava()),
-							new CacheImageLocks(provisioning.getCache()), new PortSelection()))
+							new CacheImageLocks(provisioning.getCache()), reservations))
+					.ports(reservations)
 					.build();
 			var agents = new ScenarioAgentDirectory();
-			try (var group = launcher.prepare(platforms.plan(scenario), agents, null, null, Map.of())) {
+			try (var group = launcher.prepare(platforms.plan(scenario), agents, null, null, Map.of(), launcher.services(List.of()))) {
 				assertEquals(List.of("resolve"), preparation);
 				assertTrue(tokens.isEmpty());
 				assertTrue(group.all().isEmpty());
@@ -140,6 +150,67 @@ class ProcessLauncherIntegrationTest {
 		assertEquals(List.of("resolve", "configure", "configure"), preparation);
 	}
 
+	@Test
+	void startsServicesWithTheEnvironmentAndFillsTheirHostAddressesIntoTextAssets() throws Exception {
+		Path executable = FixtureArtifacts.process();
+		var declaration = MinecraftServer.builder().name("server").platform("test")
+				.distribution(Distribution.remote("1.21.11", "1"))
+				.workspace(WorkspacePlan.builder().asset(WorkspaceAsset.builder()
+						.source(AssetSource.text("redis://${anvil.service.redis.host}:${anvil.service.redis.port}"))
+						.target(Path.of("redis.txt")).build()).build())
+				.build();
+		var service = ServiceContainer.builder().name("redis").image("redis:7.2-alpine").port(6379).build();
+		var scenario = AnvilScenario.builder().name("test").entrypoint("server").server(declaration).service(service).build();
+		var options = EngineDefaults.resolve(EngineOptions.builder().workDirectory(directory.resolve("work"))
+				.cacheDirectory(directory.resolve("cache")).eulaAccepted(true).build());
+		List<String> calls = new ArrayList<>();
+		PlatformProvider provider = new PlatformProvider() {
+			@Override
+			public @NotNull String id() { return "test"; }
+			@Override
+			public @NotNull Class<? extends MinecraftProcess> configurationType() { return MinecraftServer.class; }
+			@Override
+			public @NotNull ResolvedDistribution resolve(@NotNull MinecraftProcess process, @NotNull PlatformContext context) throws IOException {
+				calls.add("resolve:" + Files.readString(context.getWorkDirectory().resolve("redis.txt")));
+				return ResolvedDistribution.builder().jar(executable).description("fixture").build();
+			}
+			@Override
+			public void configure(@NotNull MinecraftProcess process, @NotNull PlatformContext context) {
+			}
+			@Override
+			public @NotNull Pattern readinessPattern() { return Pattern.compile("READY"); }
+			@Override
+			public @NotNull URL versionData() {
+				return ProcessLauncherIntegrationTest.class.getResource("/me/whereareiam/anvil/launcher/assembly/fixture-versions.toml");
+			}
+		};
+		try (var provisioning = new ProvisioningServices(options)) {
+			var platforms = new DefaultPlatformPlanner(options, Map.of(provider.id(), provider),
+					new ArtifactPlatformSource(provisioning.getArtifacts()), descriptor -> executable,
+					new ProvisionedPlatformJavaSource(provisioning.getJava()));
+			var reservations = new PortSelection();
+			var launcher = ProcessLauncher.builder()
+					.options(options)
+					.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider())))
+					.workspaces(provisioning.getWorkspaces())
+					.platforms(platforms)
+					.connections((port, token, timeout) -> agent(1, new ArrayList<>()))
+					.plans(new ExecutionPlanMapper(options, new JavaExecutionRuntime(provisioning.getJava()),
+							new CacheImageLocks(provisioning.getCache()), reservations))
+					.ports(reservations)
+					.services(new RecordingServices(calls))
+					.build();
+			var services = launcher.services(scenario.getServices());
+			try (var ignored = launcher.prepare(platforms.plan(scenario), new ScenarioAgentDirectory(), null, null, Map.of(), services)) {
+				assertEquals("redis", services.get("redis").name());
+				calls.add("prepared");
+			}
+			assertTrue(services.all().isEmpty());
+		}
+
+		assertEquals(List.of("open:null", "start:redis", "resolve:redis://127.0.0.1:16379", "prepared", "close"), calls);
+	}
+
 	private AgentClient agent(int generation, List<String> calls) {
 		return new AgentClient() {
 			@Override
@@ -155,5 +226,72 @@ class ProcessLauncherIntegrationTest {
 			@Override
 			public void close() { calls.add(generation + ":close"); }
 		};
+	}
+
+	private record RecordingServices(List<String> calls) implements ServiceProvider {
+		@Override
+		public @NotNull String id() {
+			return "recording";
+		}
+
+		@Override
+		public @NotNull ServiceSession open(@NotNull ServiceContext context) {
+			calls.add("open:" + context.getNetwork());
+			return new ServiceSession() {
+				@Override
+				public @NotNull ServiceInstance start(@NotNull ServiceContainer declaration) {
+					calls.add("start:" + declaration.getName());
+					return new HostService(declaration.getName());
+				}
+
+				@Override
+				public void close() {
+					calls.add("close");
+				}
+			};
+		}
+	}
+
+	private record HostService(String name) implements ServiceInstance {
+		@Override
+		public @NotNull ServiceState state() {
+			return ServiceState.RUNNING;
+		}
+
+		@Override
+		public @NotNull InetSocketAddress address(int containerPort) {
+			return new InetSocketAddress("127.0.0.1", 10000 + containerPort);
+		}
+
+		@Override
+		public InetSocketAddress networkAddress(int containerPort) {
+			return null;
+		}
+
+		@Override
+		public void pause() {
+		}
+
+		@Override
+		public void resume() {
+		}
+
+		@Override
+		public void kill() {
+		}
+
+		@Override
+		public void restart() {
+		}
+
+		@Override
+		public @NotNull ServiceCommandResult execute(@NotNull String... command) {
+			return new ServiceCommandResult(0, "");
+		}
+
+		@Override
+		public @NotNull ServiceCommandResult execute(@NotNull Duration timeout, @NotNull String... command) {
+			return new ServiceCommandResult(0, "");
+		}
 	}
 }

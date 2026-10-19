@@ -34,11 +34,17 @@ public final class ProviderDiscovery {
 	 * Loads the first provider without constructing unused alternatives.
 	 */
 	public <T> @NotNull T required(@NotNull Class<T> type, @NotNull String description) {
+		return optional(type).orElseThrow(() -> new IllegalStateException("No Anvil " + description + " is installed"));
+	}
+
+	/**
+	 * Loads the first provider without constructing unused alternatives, or none when none is installed.
+	 */
+	public <T> @NotNull Optional<T> optional(@NotNull Class<T> type) {
 		ClassLoader context = Thread.currentThread().getContextClassLoader();
 		Optional<T> selected = context == null ? Optional.empty() : ServiceLoader.load(type, context).findFirst();
 
-		return selected.or(() -> ServiceLoader.load(type, ProviderDiscovery.class.getClassLoader()).findFirst())
-				.orElseThrow(() -> new IllegalStateException("No Anvil " + description + " is installed"));
+		return selected.or(() -> ServiceLoader.load(type, ProviderDiscovery.class.getClassLoader()).findFirst());
 	}
 
 	private <T> @NotNull List<T> all(@NotNull Class<T> type) {

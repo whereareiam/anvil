@@ -11,6 +11,7 @@ import me.whereareiam.anvil.api.player.account.AccountManager;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.scenario.ScenarioAttachment;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
+import me.whereareiam.anvil.api.service.ScenarioServices;
 import me.whereareiam.anvil.api.scenario.ScenarioExtension;
 import org.jetbrains.annotations.NotNull;
 
@@ -106,6 +107,11 @@ public final class ScenarioSession implements ScenarioContext {
 	@Override
 	public @NotNull PlayerManager players() {
 		return context.players();
+	}
+
+	@Override
+	public @NotNull ScenarioServices services() {
+		return context.services();
 	}
 
 	@Override

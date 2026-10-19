@@ -10,6 +10,7 @@ import me.whereareiam.anvil.launcher.adapter.process.ScenarioPlatforms;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,7 +39,7 @@ public final class RetainedProcessSet implements ProcessGroup {
 	static @NotNull RetainedProcessSet start(@NotNull PlatformPlan plan, @NotNull ProcessLauncher execution) {
 		var agents = new ScenarioAgentDirectory();
 		var capabilities = ProcessComposition.discover(plan, agents, new ScenarioPlatforms(agents));
-		ProcessGroup processes = execution.prepare(plan, agents, capabilities, null, Map.of());
+		ProcessGroup processes = execution.prepare(plan, agents, capabilities, null, Map.of(), execution.services(List.of()));
 		try {
 			processes = capabilities.bind(processes);
 			processes.startAll();

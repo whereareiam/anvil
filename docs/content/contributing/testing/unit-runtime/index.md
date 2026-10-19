@@ -26,6 +26,7 @@ TestKit without starting Minecraft. Its location follows the owner of the behavi
 | Workspace policies and snapshots                        | `:anvil-environment:provisioning:provisioning-workspace:test` |
 | Process lifecycle and restarts                          | `:anvil-environment:execution:execution-managed:test`         |
 | Docker execution settings and image resolution          | `:anvil-environment:execution:execution-docker:test`; containers on a real engine: `dockerTest` |
+| Service containers: readiness, addresses, pause, kill    | `:anvil-environment:service:service-docker:dockerTest`        |
 | Platform planning and forwarding                        | `:anvil-process:process-common:test`                      |
 | Player registration, library selection, and observations | `:anvil-player:player-common:test`                                       |
 | Agent clients, sessions, and observations                | `:anvil-process:process-protocol:protocol-host:protocol-host-common:test`                              |

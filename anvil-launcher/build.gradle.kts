@@ -43,6 +43,7 @@ dependencies {
     implementation(projects.anvilEnvironment.provisioning.provisioningArtifact.artifactApi)
     implementation(projects.anvilEnvironment.provisioning.provisioningJava.javaApi)
     implementation(projects.anvilEnvironment.provisioning.provisioningWorkspace.workspaceApi)
+    implementation(projects.anvilEnvironment.service.serviceApi)
     implementation(projects.anvilPlayer.playerApi)
     implementation(projects.anvilProcess.processApi)
     implementation(projects.anvilProcess.processProtocol.protocolHost.protocolHostApi)
@@ -67,6 +68,7 @@ dependencies {
     embedded(projects.anvilEnvironment.provisioning.provisioningArtifact) { isTransitive = false }
     embedded(projects.anvilEnvironment.provisioning.provisioningJava) { isTransitive = false }
     embedded(projects.anvilEnvironment.provisioning.provisioningWorkspace) { isTransitive = false }
+    embedded(projects.anvilEnvironment.service.serviceDocker) { isTransitive = false }
     embedded(projects.anvilPlayer.playerCommon) { isTransitive = false }
     embedded(projects.anvilProcess.processCommon) { isTransitive = false }
     embedded(projects.anvilProcess.processProtocol.protocolHost.protocolHostCommon) { isTransitive = false }
@@ -86,6 +88,7 @@ dependencies {
     testImplementation(projects.anvilEnvironment.provisioning.provisioningArtifact)
     testImplementation(projects.anvilEnvironment.provisioning.provisioningJava)
     testImplementation(projects.anvilEnvironment.provisioning.provisioningWorkspace)
+    testImplementation(projects.anvilEnvironment.service.serviceApi)
     testImplementation(projects.anvilPlayer.playerCommon)
     testImplementation(projects.anvilProcess.processCommon)
     testImplementation(projects.anvilProcess.processProtocol.protocolHost.protocolHostCommon)

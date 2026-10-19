@@ -9,6 +9,7 @@ import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.model.scenario.RemoteEndpoint;
+import me.whereareiam.anvil.api.model.service.ServiceContainer;
 import me.whereareiam.anvil.api.type.ProcessLifetime;
 import me.whereareiam.anvil.engine.scenario.ScenarioValidator;
 import org.junit.jupiter.api.Test;
@@ -127,6 +128,16 @@ class ScenarioValidatorTest {
 		assertDoesNotThrow(() -> validator.validate(scenario, true));
 	}
 
+	@Test
+	void acceptsAServiceBesideTheScenariosProcesses() {
+		var scenario = scenario().toBuilder().service(service()).build();
+		assertDoesNotThrow(() -> validator.validate(scenario, true));
+	}
+
+	private static ServiceContainer service() {
+		return ServiceContainer.builder().name("redis").image("redis:7.2-alpine").port(6379).build();
+	}
+
 	private static Stream<Arguments> invalidDeclarations() {
 		return Stream.of(
 				Arguments.of(scenario().toBuilder().name(" ").build(), "Scenario name must not be blank"),
@@ -139,6 +150,18 @@ class ScenarioValidatorTest {
 				Arguments.of(scenario().toBuilder().proxy(proxy().toBuilder().name(" ").build()).build(),
 						"Every server and proxy needs a non-blank name"),
 				Arguments.of(scenario().toBuilder().server(server()).build(), "Duplicate server or proxy name: server"),
+				Arguments.of(scenario().toBuilder().service(service().toBuilder().name("Redis").build()).build(),
+						"Service name 'Redis' must be lowercase letters, digits and dashes, starting with a letter or digit"),
+				Arguments.of(scenario().toBuilder().service(service().toBuilder().name("server").build()).build(),
+						"Service 'server' shares its name with another server, proxy, remote or service"),
+				Arguments.of(scenario().toBuilder().service(service()).service(service()).build(),
+						"Service 'redis' shares its name with another server, proxy, remote or service"),
+				Arguments.of(scenario().toBuilder().service(service().toBuilder().image(" ").build()).build(),
+						"Service 'redis' needs an image"),
+				Arguments.of(scenario().toBuilder().service(service().toBuilder().port(6379).build()).build(),
+						"Service 'redis' declares port 6379 twice or outside 1-65535"),
+				Arguments.of(scenario().toBuilder().service(service().toBuilder().readyLog("(").build()).build(),
+						"Service 'redis' has an invalid ready log pattern"),
 				Arguments.of(scenario().toBuilder().proxy(proxy()).proxy(proxy()).build(), "Duplicate server or proxy name: proxy"),
 				Arguments.of(scenario().toBuilder().proxy(proxy().toBuilder().name("server").build()).build(),
 						"Duplicate server or proxy name: server"),

@@ -9,6 +9,7 @@ import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
+import me.whereareiam.anvil.api.model.service.ServiceContainer;
 import me.whereareiam.anvil.api.scenario.ScenarioHook;
 import me.whereareiam.anvil.api.type.SupportPolicy;
 import org.jetbrains.annotations.NotNull;
@@ -50,6 +51,14 @@ public class AnvilScenario {
 	@NotNull
 	@Singular
 	List<RemoteEndpoint> remotes;
+
+	/**
+	 * Containers the scenario runs next to its processes, such as a database they connect to; started before them
+	 * and stopped after them.
+	 */
+	@NotNull
+	@Singular
+	List<ServiceContainer> services;
 
 	/**
 	 * Execution provider used for the whole topology: local or docker.

@@ -781,6 +781,7 @@ class DefaultScenarioFactoryIntegrationTest {
 		var platforms = new DefaultPlatformPlanner(options, Map.of(provider.id(), provider),
 				new ArtifactPlatformSource(provisioning.getArtifacts()), descriptor -> executable,
 				new ProvisionedPlatformJavaSource(provisioning.getJava()));
+		var ports = new PortSelection();
 		var processes = ProcessLauncher.builder()
 				.options(options)
 				.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider())))
@@ -788,7 +789,8 @@ class DefaultScenarioFactoryIntegrationTest {
 				.platforms(platforms)
 				.connections(connections)
 				.plans(new ExecutionPlanMapper(options, new JavaExecutionRuntime(provisioning.getJava()),
-						new CacheImageLocks(provisioning.getCache()), new PortSelection()))
+						new CacheImageLocks(provisioning.getCache()), ports))
+				.ports(ports)
 				.build();
 		var players = new DefaultPlayerService(new ProtocolLibraryRegistry(libraries), options, provisioning.getArtifacts()::obtain);
 		var retained = new RetainedProcesses<RetainedProcessSet>();

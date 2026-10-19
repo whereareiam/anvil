@@ -1,8 +1,8 @@
 name: Docker test image
 run-name: "Docker test image from ${{ github.ref_name }}"
 
-# Copies the image the Docker execution provider maps temurin:21 to onto the GitHub Container Registry, where the
-# Docker engine tests pull it in CI. It runs when dev changes the reference, weekly and on demand. Only this workflow
+# Copies the image the Docker execution provider maps temurin:21 to, and the Redis image the service tests start, onto
+# the GitHub Container Registry, where the Docker engine tests pull them in CI. It runs when dev changes the reference, weekly and on demand. Only this workflow
 # pulls from Docker Hub, about once a week, so its anonymous limit is never reached; if Docker Hub refuses it anyway,
 # the copy stays as it is and the next run updates it.
 # After the first run, the package's visibility is set to Public once in its settings, so it is free and pulls without
@@ -28,6 +28,7 @@ permissions:
 
 env:
   SOURCE: docker.io/library/eclipse-temurin:21-jdk
+  SERVICE_SOURCE: docker.io/library/redis:7.2-alpine
 
 jobs:
   copy:
@@ -52,3 +53,8 @@ jobs:
         run: |
           target="$(sed -n 's/^anvil\.docker\.testImage=//p' gradle.properties)"
           docker buildx imagetools create --tag "$target" "$SOURCE"
+
+      - name: Copy the service image
+        run: |
+          target="$(sed -n 's/^anvil\.docker\.serviceTestImage=//p' gradle.properties)"
+          docker buildx imagetools create --tag "$target" "$SERVICE_SOURCE"

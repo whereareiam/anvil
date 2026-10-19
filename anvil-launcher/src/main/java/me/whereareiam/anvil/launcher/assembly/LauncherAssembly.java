@@ -8,6 +8,7 @@ import me.whereareiam.anvil.api.scenario.ScenarioFactory;
 import me.whereareiam.anvil.capability.AgentExtensions;
 import me.whereareiam.anvil.engine.process.RetainedProcesses;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
+import me.whereareiam.anvil.environment.service.api.ServiceProvider;
 import me.whereareiam.anvil.environment.execution.managed.ManagedProcessService;
 import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
 import me.whereareiam.anvil.launcher.adapter.execution.CacheImageLocks;
@@ -69,6 +70,7 @@ public final class LauncherAssembly implements AutoCloseable {
 					new ArtifactPlatformSource(provisioning.getArtifacts()),
 					new ClasspathPlatformAgentSource(locator, AgentExtensions.discover()),
 					new ProvisionedPlatformJavaSource(provisioning.getJava()));
+			var ports = new PortSelection();
 			var execution = ProcessLauncher.builder()
 					.options(options)
 					.processes(new ManagedProcessService(discovery.executions(executions)))
@@ -76,7 +78,9 @@ public final class LauncherAssembly implements AutoCloseable {
 					.platforms(platforms)
 					.connections(discovery.required(AgentConnectionProvider.class, "agent connection provider"))
 					.plans(new ExecutionPlanMapper(options, new JavaExecutionRuntime(provisioning.getJava()),
-							new CacheImageLocks(provisioning.getCache()), new PortSelection()))
+							new CacheImageLocks(provisioning.getCache()), ports))
+					.ports(ports)
+					.services(discovery.optional(ServiceProvider.class).orElse(null))
 					.build();
 
 			return new DefaultScenarioFactory(platforms, execution, players, retained);

@@ -98,7 +98,7 @@ Two workflows start by themselves on a pull request:
 |---|---|
 | **Pull request · Metadata** | The `Area: Title` title and the release label |
 | **Pull request · Checks** | `./gradlew build -Panvil.intellij=false`: architecture, segment linkage, unit and runtime tests, and the live matrix data |
-| **Pull request · Checks**, Docker engine tests | `./gradlew :anvil-environment:execution:execution-docker:dockerTest`, with the test image pulled from the GitHub Container Registry |
+| **Pull request · Checks**, Docker engine tests | `./gradlew dockerTest`: Docker execution and service containers, with the test images pulled from the GitHub Container Registry |
 | **Pull request · Checks**, IntelliJ | The IntelliJ integration's build and tests, in a run of its own |
 
 The checks start no server and do not verify the IntelliJ plugin distribution. The Docker engine tests run in

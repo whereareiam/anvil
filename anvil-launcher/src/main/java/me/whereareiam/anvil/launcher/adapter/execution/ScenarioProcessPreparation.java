@@ -15,6 +15,7 @@ import me.whereareiam.anvil.environment.provisioning.workspace.api.PreparedWorks
 import me.whereareiam.anvil.environment.provisioning.workspace.api.WorkspaceProvisioner;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceLayout;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceRequest;
+import me.whereareiam.anvil.launcher.adapter.service.ScenarioServiceSet;
 import me.whereareiam.anvil.platform.api.PlatformPreparer;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import me.whereareiam.anvil.platform.api.model.PlatformRequest;
@@ -38,10 +39,21 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 	private final @NotNull AgentConnectionProvider connections;
 	private final @NotNull ScenarioAgentDirectory agents;
 	private final @Nullable ProcessCapabilityRuntime capabilities;
+	private final @NotNull ScenarioServiceSet services;
 
 	@Override
 	public void open() {
 		workspaces.recreateRunDirectory(options.getWorkDirectory(), layout.getRunDirectory());
+	}
+
+	@Override
+	public void openEnvironment(@Nullable String containerNetwork) {
+		services.open(containerNetwork);
+	}
+
+	@Override
+	public void closeEnvironment() {
+		services.close();
 	}
 
 	@Override
@@ -52,6 +64,7 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 	) {
 		var planned = plan.getProcesses().get(process.getRequest().getName());
 		var declaration = planned.getDeclaration();
+		var addresses = services.processAddresses();
 		var request = PlatformRequest.builder()
 				.scenario(plan.getScenario())
 				.workDirectory(process.getRequest().getWorkspace())
@@ -66,14 +79,15 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 				.process(declaration)
 				.plan(planned.getWorkspace())
 				.providerDefaults(planned.getDefaultCaches())
+				.text(addresses::resolve)
 				.build());
 		try {
 			var jar = platforms.resolve(planned, request);
 			var command = JavaCommand.builder()
 					.jar(jar)
 					.memoryMegabytes(declaration.getMemoryMegabytes())
-					.jvmArguments(planned.getJvmArguments())
-					.arguments(planned.getProgramArguments())
+					.jvmArguments(planned.getJvmArguments().stream().map(addresses::resolve).toList())
+					.arguments(planned.getProgramArguments().stream().map(addresses::resolve).toList())
 					.build();
 
 			return new PreparedPlatformProcess(
