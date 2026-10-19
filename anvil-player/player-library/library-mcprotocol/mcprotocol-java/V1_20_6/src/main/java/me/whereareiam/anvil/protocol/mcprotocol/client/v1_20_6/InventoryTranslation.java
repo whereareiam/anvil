@@ -6,6 +6,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetContent;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundOpenScreen;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetHeldSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
@@ -36,8 +37,9 @@ import java.util.Set;
 /**
  * Containers and the held item of the MCProtocolLib releases from 1.20.5 on, which open and fill containers alike. Each
  * release's {@code InventoryPackets} reads the slot packets, which address the player's own inventory differently
- * between releases, and builds the click packet, whose stacks change between releases; the click's action, which the
- * library looks up by click type and button, does not.
+ * between releases, and the hotbar slot the server selects, whose packet Minecraft 1.21.2 renamed, and builds the click
+ * packet, whose stacks change between releases; the click's action, which the library looks up by click type and
+ * button, does not.
  *
  * <p>The library names menu types as the game's registry does, so their keys are the lowercase constant names in the
  * {@code minecraft} namespace; only the cartography table's menu has a shorter constant.</p>
@@ -66,6 +68,7 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 				ClientboundContainerSetContent.class,
 				ClientboundContainerSetSlot.class,
 				ClientboundSetPlayerInventory.class,
+				ClientboundSetHeldSlot.class,
 				ServerboundSetCarriedItem.class,
 				ServerboundContainerClick.class
 		);
@@ -79,6 +82,9 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 		if (packet instanceof ClientboundContainerSetContentPacket content)
 			return new ClientboundContainerSetContent(content.getContainerId(), content.getStateId(),
 					ValueTranslator.items(content.getItems()), ValueTranslator.item(content.getCarriedItem()));
+
+		ClientboundPacket held = decodeHeldSlot(packet);
+		if (held != null) return held;
 
 		return decodeSlot(packet);
 	}
@@ -99,6 +105,14 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 	 * @return the protocol's packet, or {@code null} when the packet changes no slot
 	 */
 	protected abstract @Nullable ClientboundPacket decodeSlot(@NotNull Packet packet);
+
+	/**
+	 * Reads the packet with which the server selects the hotbar slot the player holds.
+	 *
+	 * @param packet a packet the release received
+	 * @return the protocol's packet, or {@code null} when the packet selects no slot
+	 */
+	protected abstract @Nullable ClientboundPacket decodeHeldSlot(@NotNull Packet packet);
 
 	/**
 	 * Builds the release's click packet, which predicts no changed slots and no carried stack.
