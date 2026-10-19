@@ -40,7 +40,7 @@ public abstract class ManagedProcess implements RunningProcess {
 	private volatile boolean failed;
 	private volatile boolean cancelled;
 	private volatile boolean frozen;
-	private String stopCommand = "stop";
+	private @Nullable String stopCommand = "stop";
 
 	/**
 	 * Creates a not-yet-started process generation.
@@ -76,13 +76,16 @@ public abstract class ManagedProcess implements RunningProcess {
 	}
 
 	/**
-	 * Launches the JVM and waits for its readiness line.
-	 * The scenario owner remains responsible for stopping a failed startup attempt.
+	 * Launches the process and waits until it is ready: until it prints its readiness line, or, without one, until
+	 * each of its listeners reaches a listener. The scenario owner remains responsible for stopping a failed startup
+	 * attempt.
+	 *
+	 * @param stopCommand the console command that stops the process, or null to have its execution stop it
 	 */
 	public synchronized void start(
 			@NotNull Supplier<ProcessExecution> launch,
-			@NotNull Pattern readinessPattern,
-			@NotNull String stopCommand,
+			@Nullable Pattern readinessPattern,
+			@Nullable String stopCommand,
 			@NotNull Duration timeout
 	) {
 		if (!state.compareAndSet(ProcessState.CREATED, ProcessState.STARTING))
@@ -96,6 +99,7 @@ public abstract class ManagedProcess implements RunningProcess {
 			process = launched;
 			console.attach(launched, readinessPattern, this::becameReady, this::outputEnded);
 			launched.onExit().thenRun(this::exited);
+			if (readinessPattern == null) probeListeners();
 			awaitReadiness(launched, timeout);
 		} catch (InterruptedException failure) {
 			Thread.currentThread().interrupt();
@@ -139,7 +143,7 @@ public abstract class ManagedProcess implements RunningProcess {
 
 		ProcessState previous = state.getAndSet(ProcessState.STOPPING);
 		if (previous == ProcessState.FAILED) failed = true;
-		boolean graceful = previous == ProcessState.READY;
+		boolean graceful = previous == ProcessState.READY && stopCommand != null;
 		ProcessException commandFailure = graceful ? requestStop() : null;
 		try {
 			stopAndAwait(current, timeout, !graceful || commandFailure != null);
@@ -216,6 +220,24 @@ public abstract class ManagedProcess implements RunningProcess {
 		markFailed();
 
 		return new ProcessException(name, "Start of process '" + name + "' was cancelled because the scenario is finishing");
+	}
+
+	private void probeListeners() {
+		ListenerProbe probe = new ListenerProbe(listeners.values());
+		Thread.ofVirtual().name("anvil-readiness-" + name).start(() -> {
+			try {
+				if (probe.await(() -> state.get() == ProcessState.STARTING && !cancelled)) becameReady();
+			} catch (InterruptedException ignored) {
+				Thread.currentThread().interrupt();
+			}
+		});
+	}
+
+	/**
+	 * Returns the execution of this generation, or null before it launched.
+	 */
+	protected @Nullable ProcessExecution currentExecution() {
+		return process;
 	}
 
 	private void becameReady() {

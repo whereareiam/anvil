@@ -15,6 +15,7 @@ import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.process.ProcessConsole;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
+import me.whereareiam.anvil.api.process.type.RunningContainer;
 import me.whereareiam.anvil.api.process.type.RunningProxy;
 import me.whereareiam.anvil.api.process.type.RunningServer;
 import me.whereareiam.anvil.api.type.Platforms;
@@ -214,6 +215,16 @@ class ExternalProviderDiscoveryIntegrationTest {
 
 		@Override
 		public @NotNull RunningProxy proxy(@NotNull String name) {
+			throw new NoSuchElementException(name);
+		}
+
+		@Override
+		public @NotNull Collection<RunningContainer> containers() {
+			return List.of();
+		}
+
+		@Override
+		public @NotNull RunningContainer container(@NotNull String name) {
 			throw new NoSuchElementException(name);
 		}
 

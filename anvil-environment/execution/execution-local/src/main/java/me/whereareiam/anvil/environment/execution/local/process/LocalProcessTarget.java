@@ -3,6 +3,7 @@ package me.whereareiam.anvil.environment.execution.local.process;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.exception.ProcessException;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
+import me.whereareiam.anvil.environment.execution.api.model.ProcessLaunch;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
@@ -35,7 +36,10 @@ public final class LocalProcessTarget implements ProcessTarget {
 	private final List<String> wrapper;
 
 	@Override
-	public @NotNull ProcessExecution start(@NotNull JavaCommand command) {
+	public @NotNull ProcessExecution start(@NotNull ProcessLaunch launch) {
+		if (!(launch instanceof JavaCommand command))
+			throw new IllegalArgumentException("Local execution starts Java applications, not " + launch.getClass().getSimpleName());
+
 		List<String> arguments = new ArrayList<>(wrapper);
 		arguments.add(executable.toString());
 		arguments.add("-Xms256m");

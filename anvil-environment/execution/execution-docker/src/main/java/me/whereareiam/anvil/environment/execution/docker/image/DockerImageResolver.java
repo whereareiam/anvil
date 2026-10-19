@@ -76,6 +76,16 @@ public final class DockerImageResolver {
 		}
 	}
 
+	/**
+	 * Makes sure a container process's own image is present: pulled when it is missing, or on every run when
+	 * refreshing, and never while offline.
+	 *
+	 * @param image the image reference
+	 */
+	public void ensure(String image) {
+		obtain(image);
+	}
+
 	private DockerImageClient.DockerImageMetadata obtain(String reference) {
 		if (context.isRefresh() && !reference.startsWith("sha256:")) docker.pull(reference);
 

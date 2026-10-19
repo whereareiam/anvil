@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.environment.execution.api.process;
 
+import me.whereareiam.anvil.api.process.type.RunningContainer;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
@@ -68,5 +69,18 @@ public interface ProcessExecution {
 	 * Resumes a workload {@link #freeze() frozen} before; a workload that is not frozen is left as it is.
 	 */
 	default void thaw() {
+	}
+
+	/**
+	 * Runs a command inside the workload, such as a tool its container image brings, and waits for it to finish.
+	 *
+	 * @param timeout how long to wait
+	 * @param command the command and its arguments
+	 * @return its exit code and output
+	 * @throws UnsupportedOperationException when the execution cannot run a command inside its workload
+	 * @throws IllegalStateException         when the command does not finish in time
+	 */
+	default @NotNull RunningContainer.CommandResult execute(@NotNull Duration timeout, @NotNull String... command) {
+		throw new UnsupportedOperationException("This execution cannot run a command inside its process");
 	}
 }

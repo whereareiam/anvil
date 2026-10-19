@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.api.process;
 
 import me.whereareiam.anvil.api.exception.ProcessException;
+import me.whereareiam.anvil.api.process.type.RunningContainer;
 import me.whereareiam.anvil.api.process.type.RunningProxy;
 import me.whereareiam.anvil.api.process.type.RunningServer;
 import org.jetbrains.annotations.NotNull;
@@ -72,6 +73,22 @@ public interface ScenarioProcesses {
 	 * @throws IllegalArgumentException if the name identifies a server
 	 */
 	@NotNull RunningProxy proxy(@NotNull String name);
+
+	/**
+	 * Returns the running containers.
+	 *
+	 * @return running containers
+	 */
+	@NotNull Collection<RunningContainer> containers();
+
+	/**
+	 * Returns one running container.
+	 *
+	 * @param name scenario process name
+	 * @return the container
+	 * @throws NoSuchElementException if no container of that name runs
+	 */
+	@NotNull RunningContainer container(@NotNull String name);
 
 	/**
 	 * Starts one prepared process without starting its peers or executing the scenario setup hook.

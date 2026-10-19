@@ -3,7 +3,9 @@ package me.whereareiam.anvil.environment.execution.docker.execution;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
+import me.whereareiam.anvil.environment.execution.api.model.ImageLaunch;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
+import me.whereareiam.anvil.environment.execution.api.model.process.ContainerImage;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
@@ -152,6 +154,41 @@ class DockerEngineTest {
 				socket.connect(published, 2000);
 			}
 		});
+	}
+
+	@Test
+	void runsAContainerImageThatPeersReachByAliasAndTheTestOnItsPublishedPort() throws Exception {
+		String redis = System.getProperty("anvil.docker.containerTestImage", "redis:7.2-alpine");
+		try (var docker = new DockerEngine();
+		     DockerExecutionSession session = new DockerExecutionSession(plainContext(), docker,
+				     DockerExecutionSettings.builder().image("temurin:21", IMAGE).build())) {
+			var request = ProcessRequest.builder().name("redis").workspace(directory.resolve("redis"))
+					.image(ContainerImage.builder().image(redis).port(6379).build()).build();
+			try (var target = session.prepare(request)) {
+				var process = target.start(ImageLaunch.builder().build());
+				try {
+					var output = new BufferedReader(new InputStreamReader(process.output(), StandardCharsets.UTF_8));
+					String line;
+					while ((line = output.readLine()) != null && !line.contains("Ready to accept connections")) {
+						// Waits for Redis's ready line, which the console attached to.
+					}
+					assertNotNull(line, "Redis did not print its ready line");
+
+					assertEquals(6379, target.peerAddress().getPort());
+					assertEquals(target.address(), target.listeners().get("6379"));
+					assertEquals("PONG", process.execute(Duration.ofSeconds(30), "redis-cli", "PING").output().trim());
+					try (Socket socket = new Socket()) {
+						socket.connect(target.address(), 2000);
+					}
+
+					process.freeze();
+					assertThrows(IllegalStateException.class, () -> process.execute(Duration.ofSeconds(2), "redis-cli", "PING"));
+					process.thaw();
+				} finally {
+					process.terminate(true);
+				}
+			}
+		}
 	}
 
 	private ExecutionContext plainContext() {

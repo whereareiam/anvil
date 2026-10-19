@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.NetworkPolicy;
 import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import java.time.Duration;
+import me.whereareiam.anvil.api.model.process.ContainerProcess;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
@@ -127,6 +128,16 @@ class ScenarioValidatorTest {
 		assertDoesNotThrow(() -> validator.validate(scenario, true));
 	}
 
+	@Test
+	void acceptsAContainerBesideTheScenariosProcesses() {
+		var scenario = scenario().toBuilder().container(container()).build();
+		assertDoesNotThrow(() -> validator.validate(scenario, true));
+	}
+
+	private static ContainerProcess container() {
+		return ContainerProcess.builder().name("redis").image("redis:7.2-alpine").port(6379).build();
+	}
+
 	private static Stream<Arguments> invalidDeclarations() {
 		return Stream.of(
 				Arguments.of(scenario().toBuilder().name(" ").build(), "Scenario name must not be blank"),
@@ -139,6 +150,20 @@ class ScenarioValidatorTest {
 				Arguments.of(scenario().toBuilder().proxy(proxy().toBuilder().name(" ").build()).build(),
 						"Every server and proxy needs a non-blank name"),
 				Arguments.of(scenario().toBuilder().server(server()).build(), "Duplicate server or proxy name: server"),
+				Arguments.of(scenario().toBuilder().container(container().toBuilder().name("Redis").build()).build(),
+						"Container name 'Redis' must be lowercase letters, digits and dashes, starting with a letter or digit"),
+				Arguments.of(scenario().toBuilder().container(container().toBuilder().name("server").build()).build(),
+						"Container 'server' shares its name with another process or remote"),
+				Arguments.of(scenario().toBuilder().container(container()).container(container()).build(),
+						"Container 'redis' shares its name with another process or remote"),
+				Arguments.of(scenario().toBuilder().container(container().toBuilder().image(" ").build()).build(),
+						"Container 'redis' needs an image"),
+				Arguments.of(scenario().toBuilder().container(container().toBuilder().clearPorts().build()).build(),
+						"Container 'redis' needs at least one port"),
+				Arguments.of(scenario().toBuilder().container(container().toBuilder().port(6379).build()).build(),
+						"Container 'redis' declares port 6379 twice or outside 1-65535"),
+				Arguments.of(scenario().toBuilder().container(container().toBuilder().readyLog("(").build()).build(),
+						"Container 'redis' has an invalid ready log pattern"),
 				Arguments.of(scenario().toBuilder().clearServers().server(server().toBuilder().listener("Link").build()).build(),
 						"Listener 'Link' of process 'server' must be lowercase letters, digits and dashes, starting with a letter or digit"),
 				Arguments.of(scenario().toBuilder().clearServers().server(server().toBuilder().listener("link").listener("link").build()).build(),

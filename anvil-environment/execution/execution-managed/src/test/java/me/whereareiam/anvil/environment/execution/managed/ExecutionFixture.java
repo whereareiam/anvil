@@ -9,7 +9,10 @@ import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionPlan;
+import me.whereareiam.anvil.environment.execution.api.model.ImageLaunch;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
+import me.whereareiam.anvil.environment.execution.api.model.ProcessLaunch;
+import me.whereareiam.anvil.environment.execution.api.model.process.ContainerImage;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessSpec;
 import me.whereareiam.anvil.environment.execution.api.preparation.ExecutionPreparation;
@@ -55,7 +58,9 @@ final class ExecutionFixture {
 	final List<String> calls = Collections.synchronizedList(new ArrayList<>());
 	final Map<String, Target> targets = new LinkedHashMap<>();
 	final Preparation preparation = new Preparation();
-	final Provider provider = new Provider();
+	final Provider provider = new Provider("fixture");
+	/** A second execution provider, such as one that runs the containers of a scenario whose servers run locally. */
+	final Provider other = new Provider("other");
 	String failingTarget;
 	String failingPreparation;
 	String failingConfiguration;
@@ -75,7 +80,7 @@ final class ExecutionFixture {
 	}
 
 	ManagedProcessService service() {
-		return new ManagedProcessService(Map.of("fixture", provider));
+		return new ManagedProcessService(Map.of("fixture", provider, "other", other));
 	}
 
 	ExecutionPlan plan(ProcessSpec... processes) {
@@ -95,9 +100,23 @@ final class ExecutionFixture {
 				.stopCommand("stop").memoryMegabytes(256).build();
 	}
 
+	/**
+	 * A container process that prints its readiness line, run by the given provider.
+	 */
+	ProcessSpec container(String name, String executionProviderId) {
+		return ProcessSpec.builder().request(ProcessRequest.builder().name(name).workspace(directory.resolve(name))
+						.image(ContainerImage.builder().image("redis:7.2-alpine").port(6379).build()).build())
+				.container(true).readinessPattern(Pattern.compile("READY")).memoryMegabytes(64)
+				.executionProviderId(executionProviderId).build();
+	}
+
 	final class Provider implements ExecutionProvider {
+		private final String id;
+
+		Provider(String id) { this.id = id; }
+
 		@Override
-		public @NotNull String id() { return "fixture"; }
+		public @NotNull String id() { return id; }
 
 		@Override
 		public boolean preservesClientAddress() { return true; }
@@ -107,7 +126,7 @@ final class ExecutionFixture {
 
 		@Override
 		public @NotNull ExecutionSession open(@NotNull ExecutionContext context) {
-			calls.add("session-open");
+			calls.add(id.equals("fixture") ? "session-open" : "session-open:" + id);
 			return new ExecutionSession() {
 				@Override
 				public @NotNull ProcessTarget prepare(@NotNull ProcessRequest request) {
@@ -120,7 +139,7 @@ final class ExecutionFixture {
 
 				@Override
 				public void close() {
-					calls.add("session-close");
+					calls.add(id.equals("fixture") ? "session-close" : "session-close:" + id);
 					if (sessionCleanupFailure != null) throw sessionCleanupFailure;
 				}
 			};
@@ -157,7 +176,10 @@ final class ExecutionFixture {
 					if (name.equals(failingConfiguration)) throw failure;
 					return new PreparedLaunch() {
 						@Override
-						public @NotNull JavaCommand command() {
+						public @NotNull ProcessLaunch command() {
+							if (process.isContainer())
+								return ImageLaunch.builder().environmentVariable("GENERATION", Integer.toString(current)).build();
+
 							return JavaCommand.builder().jar(directory.resolve("input.jar")).memoryMegabytes(256)
 									.environmentVariable("GENERATION", Integer.toString(current)).build();
 						}
@@ -190,6 +212,7 @@ final class ExecutionFixture {
 		final String name;
 		final int index;
 		final List<JavaCommand> commands = new ArrayList<>();
+		final List<ProcessLaunch> launches = new ArrayList<>();
 		ProcessExecution current;
 
 		Target(String name, int index) {
@@ -214,9 +237,10 @@ final class ExecutionFixture {
 		@Override
 		public @NotNull Map<String, InetSocketAddress> peerListeners() { return Map.of("link", new InetSocketAddress("127.0.0.1", 25570)); }
 		@Override
-		public @NotNull ProcessExecution start(@NotNull JavaCommand command) {
+		public @NotNull ProcessExecution start(@NotNull ProcessLaunch launch) {
 			calls.add("start:" + name);
-			commands.add(command);
+			launches.add(launch);
+			if (launch instanceof JavaCommand command) commands.add(command);
 			current = new Running(name, calls, !silent.contains(name), stopping -> beforeStop.accept(stopping), forcedTerminations::add);
 			return current;
 		}

@@ -5,18 +5,21 @@ import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.api.type.network.NetworkServerAccess;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
+import me.whereareiam.anvil.environment.execution.api.model.process.ContainerImage;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
 import me.whereareiam.anvil.environment.execution.docker.DockerContainerFactory;
 import me.whereareiam.anvil.environment.execution.docker.DockerEngine;
 import me.whereareiam.anvil.environment.execution.docker.DockerNetwork;
 import me.whereareiam.anvil.environment.execution.docker.image.DockerImageResolver;
+import me.whereareiam.anvil.environment.execution.docker.process.DockerImageTarget;
 import me.whereareiam.anvil.environment.execution.docker.process.DockerProcessTarget;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,7 +40,7 @@ final class DockerExecutionSession implements ExecutionSession {
 	private final DockerNetwork dockerNetwork;
 	private final DockerImageResolver images;
 
-	private final List<DockerProcessTarget> targets = new ArrayList<>();
+	private final List<ProcessTarget> targets = new ArrayList<>();
 	private final Set<Integer> ports = new HashSet<>();
 	private boolean closed;
 
@@ -61,11 +64,14 @@ final class DockerExecutionSession implements ExecutionSession {
 
 	@Override
 	public @NotNull ProcessTarget prepare(@NotNull ProcessRequest request) {
+		if (request.getImage() != null) return prepareImage(request, request.getImage());
+		if (request.getJavaSelection() == null)
+			throw new ProvisioningException("Process '" + request.getName() + "' names neither Java nor an image");
 		if (request.getJavaSelection().getSource() != null)
 			throw new ProvisioningException("Docker execution does not support explicit host Java sources; configure a Docker image instead");
 
 		String image = images.resolve(request);
-		String alias = "p-" + UUID.nameUUIDFromBytes(request.getName().getBytes(StandardCharsets.UTF_8));
+		String alias = alias(request);
 		synchronized (this) {
 			if (closed) throw new IllegalStateException("Docker environment is closed");
 
@@ -87,6 +93,26 @@ final class DockerExecutionSession implements ExecutionSession {
 		}
 	}
 
+	private ProcessTarget prepareImage(ProcessRequest request, ContainerImage image) {
+		images.ensure(image.getImage());
+		synchronized (this) {
+			if (closed) throw new IllegalStateException("Docker environment is closed");
+
+			String bindAddress = context.getNetworkPolicy().getBindAddress();
+			Map<Integer, InetSocketAddress> published = new LinkedHashMap<>();
+			image.getPorts().forEach(port -> published.put(port, new InetSocketAddress(bindAddress, port(bindAddress))));
+
+			DockerImageTarget target = new DockerImageTarget(containers, dockerNetwork.id(), alias(request), request,
+					Collections.unmodifiableMap(published));
+			targets.add(target);
+			return target;
+		}
+	}
+
+	private static String alias(ProcessRequest request) {
+		return "p-" + UUID.nameUUIDFromBytes(request.getName().getBytes(StandardCharsets.UTF_8));
+	}
+
 	private int port(String address) {
 		int port = context.getPorts().reserve(address);
 		ports.add(port);
@@ -100,7 +126,7 @@ final class DockerExecutionSession implements ExecutionSession {
 		closed = true;
 
 		RuntimeException failure = null;
-		for (DockerProcessTarget target : targets.reversed())
+		for (ProcessTarget target : targets.reversed())
 			failure = close(target::close, failure);
 
 		failure = close(dockerNetwork::close, failure);

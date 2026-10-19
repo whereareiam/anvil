@@ -16,7 +16,8 @@ import java.util.regex.Pattern;
  *
  * <ul>
  *   <li>{@code ${anvil.process.<name>.host}}: the host the process is reached at;</li>
- *   <li>{@code ${anvil.process.<name>.port}}: its game port;</li>
+ *   <li>{@code ${anvil.process.<name>.port}}: its game port, or a container's main port;</li>
+ *   <li>{@code ${anvil.process.<name>.port.<port>}}: the port that reaches one of a container's ports;</li>
  *   <li>{@code ${anvil.process.<name>.listener.<listener>}}: the port of one of its listeners, which the process
  *   itself binds.</li>
  * </ul>
@@ -43,7 +44,7 @@ public final class ProcessAddresses {
 	public static final @NotNull ProcessAddresses NONE = new ProcessAddresses(Map.of(), Map.of());
 
 	private static final Pattern PLACEHOLDER = Pattern.compile(
-			"\\$\\{anvil\\.process\\.([A-Za-z0-9_-]+)\\.(host|port|listener\\.([a-z0-9-]+))}");
+			"\\$\\{anvil\\.process\\.([A-Za-z0-9_-]+)\\.(host|port|port\\.(\\d+)|listener\\.([a-z0-9-]+))}");
 
 	private final Map<String, InetSocketAddress> games;
 	private final Map<String, Map<String, InetSocketAddress>> listeners;
@@ -57,7 +58,8 @@ public final class ProcessAddresses {
 	 * Creates the addresses of processes.
 	 *
 	 * @param games     where peers reach each process's game port, by process name
-	 * @param listeners where peers reach each process's listeners, by process name and then listener name
+	 * @param listeners where peers reach each process's listeners, by process name and then listener name; a
+	 *                  container's ports are its listeners, named by their numbers
 	 * @return the addresses
 	 */
 	public static @NotNull ProcessAddresses of(
@@ -102,11 +104,11 @@ public final class ProcessAddresses {
 		StringBuilder resolved = new StringBuilder();
 		while (matcher.find()) {
 			String process = matcher.group(1);
-			String value = switch (matcher.group(2)) {
-				case "host" -> game(process).getHostString();
-				case "port" -> Integer.toString(game(process).getPort());
-				default -> Integer.toString(listener(process, matcher.group(3)).getPort());
-			};
+			String value;
+			if (matcher.group(2).equals("host")) value = game(process).getHostString();
+			else if (matcher.group(2).equals("port")) value = Integer.toString(game(process).getPort());
+			else if (matcher.group(3) != null) value = Integer.toString(listener(process, matcher.group(3)).getPort());
+			else value = Integer.toString(listener(process, matcher.group(4)).getPort());
 			matcher.appendReplacement(resolved, Matcher.quoteReplacement(value));
 		}
 		matcher.appendTail(resolved);

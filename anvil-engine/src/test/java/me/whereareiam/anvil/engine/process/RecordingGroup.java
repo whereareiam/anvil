@@ -3,6 +3,7 @@ package me.whereareiam.anvil.engine.process;
 import me.whereareiam.anvil.api.process.ProcessConsole;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.process.RunningProcess;
+import me.whereareiam.anvil.api.process.type.RunningContainer;
 import me.whereareiam.anvil.api.process.type.RunningProxy;
 import me.whereareiam.anvil.api.process.type.RunningServer;
 import me.whereareiam.anvil.api.type.ProcessState;
@@ -71,6 +72,16 @@ final class RecordingGroup implements ProcessGroup {
 
 	@Override
 	public @NotNull RunningProxy proxy(@NotNull String name) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public @NotNull Collection<RunningContainer> containers() {
+		return List.of();
+	}
+
+	@Override
+	public @NotNull RunningContainer container(@NotNull String name) {
 		throw new UnsupportedOperationException();
 	}
 

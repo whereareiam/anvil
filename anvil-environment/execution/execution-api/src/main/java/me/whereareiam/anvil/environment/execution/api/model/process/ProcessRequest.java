@@ -5,6 +5,7 @@ import lombok.Singular;
 import lombok.Value;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -20,9 +21,14 @@ public class ProcessRequest {
 
 	/**
 	 * Planned Java selection whose requirement carries the exact feature version to run, with an
-	 * optional explicit installation source.
+	 * optional explicit installation source; null for a process that runs a container {@link #image}.
 	 */
-	@NotNull JavaSelection javaSelection;
+	@Nullable JavaSelection javaSelection;
+
+	/**
+	 * The image the process runs instead of a Java application; null for a Java application.
+	 */
+	@Nullable ContainerImage image;
 
 	boolean agent;
 	@Builder.Default

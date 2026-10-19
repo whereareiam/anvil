@@ -25,6 +25,19 @@ class ProcessAddressesTest {
 	}
 
 	@Test
+	void fillsTheHostPortOfAContainersPortByItsNumber() {
+		var containers = ProcessAddresses.of(
+				Map.of("database", new InetSocketAddress("127.0.0.1", 21010)),
+				Map.of("database", Map.of(
+						"5432", new InetSocketAddress("127.0.0.1", 21010),
+						"8080", new InetSocketAddress("127.0.0.1", 21011)
+				))
+		);
+
+		assertEquals("21010 21011", containers.resolve("${anvil.process.database.port} ${anvil.process.database.port.8080}"));
+	}
+
+	@Test
 	void returnsATextWithoutPlaceholdersAsItIs() {
 		String text = "port: 25565";
 		assertSame(text, addresses.resolve(text));

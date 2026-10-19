@@ -2,6 +2,7 @@ package me.whereareiam.anvil.environment.execution.local;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.api.type.network.NetworkExposure;
@@ -19,6 +20,7 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,13 +39,15 @@ final class LocalExecutionSession implements ExecutionSession {
 
 	@Override
 	public @NotNull ProcessTarget prepare(@NotNull ProcessRequest request) {
+		if (request.getImage() != null)
+			throw new ProvisioningException("Local execution runs no container images; run container '" + request.getName()
+					+ "' with an execution provider that does, such as executionProviderId(\"docker\")");
 		if (context.getNetworkPolicy().getNetworkServerAccess() == NetworkServerAccess.PROXY_ONLY
 				&& context.getNetworkPolicy().getBackendNetworkExposure() == NetworkExposure.PRIVATE)
 			throw new ProvisioningException("Local execution cannot enforce proxy-only private backend access");
 
-		JavaSource source = request.getJavaSelection().getSource() == null
-				? settings.source(request.getJavaSelection().getRequirement())
-				: request.getJavaSelection().getSource();
+		JavaSelection java = Objects.requireNonNull(request.getJavaSelection(), "A Java process needs a Java selection");
+		JavaSource source = java.getSource() == null ? settings.source(java.getRequirement()) : java.getSource();
 
 		Path executable = runtime.executable(request, source);
 		String bindAddress = context.getNetworkPolicy().getBindAddress();

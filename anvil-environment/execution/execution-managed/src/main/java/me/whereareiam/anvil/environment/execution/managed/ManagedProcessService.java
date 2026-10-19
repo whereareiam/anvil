@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Executes prepared process plans with explicit input and generation lifecycle ownership.
@@ -55,9 +56,13 @@ public final class ManagedProcessService {
 	 * @return owned prepared process group
 	 */
 	public @NotNull ProcessGroup prepare(@NotNull ExecutionPlan plan, @NotNull ExecutionPreparation preparation, @Nullable ScenarioObserver observer) {
-		ExecutionProvider execution = provider(plan.getExecutionProviderId());
+		Map<String, ExecutionProvider> used = new LinkedHashMap<>();
+		used.put(plan.getExecutionProviderId(), provider(plan.getExecutionProviderId()));
+		for (ProcessSpec process : plan.getProcesses())
+			if (process.getExecutionProviderId() != null)
+				used.put(process.getExecutionProviderId(), provider(process.getExecutionProviderId()));
 		List<List<ProcessSpec>> order = startupOrder(plan);
-		ManagedProcessGroup group = new ManagedProcessGroup(plan, execution, preparation, order, observer);
+		ManagedProcessGroup group = new ManagedProcessGroup(plan, used, preparation, order, observer);
 		try {
 			group.prepare();
 			return group;
@@ -96,7 +101,7 @@ public final class ManagedProcessService {
 	private ExecutionProvider provider(String executionProviderId) {
 		ExecutionProvider execution = executions.get(executionProviderId);
 		if (execution == null)
-			throw new IllegalArgumentException("No execution provider '" + executionProviderId + "'. Available: " + executions.keySet());
+			throw new IllegalArgumentException("No execution provider '" + executionProviderId + "'. Available: " + new TreeSet<>(executions.keySet()));
 		return execution;
 	}
 

@@ -26,25 +26,31 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 final class ManagedProcessGroup implements ProcessGroup {
 	private final ExecutionPlan plan;
-	private final ExecutionProvider execution;
+	/**
+	 * The execution providers the plan's processes run with, by identifier.
+	 */
+	private final Map<String, ExecutionProvider> executions;
 	private final ExecutionPreparation preparation;
 	private final List<List<ProcessSpec>> startupOrder;
 	private final @Nullable ScenarioObserver observer;
 	private final Map<String, ProcessTarget> targets = new ConcurrentHashMap<>();
 	@Delegate(types = ScenarioProcesses.class, excludes = CompleteStartup.class)
 	private final ProcessRegistry processes = new ProcessRegistry();
-	private @Nullable ExecutionSession session;
+	/**
+	 * The open session of each execution provider in use, in the order they opened.
+	 */
+	private final Map<String, ExecutionSession> sessions = new LinkedHashMap<>();
 	private boolean closed;
 
 	ManagedProcessGroup(
 			ExecutionPlan plan,
-			ExecutionProvider execution,
+			Map<String, ExecutionProvider> executions,
 			ExecutionPreparation preparation,
 			List<List<ProcessSpec>> startupOrder,
 			@Nullable ScenarioObserver observer
 	) {
 		this.plan = plan;
-		this.execution = execution;
+		this.executions = Map.copyOf(executions);
 		this.preparation = preparation;
 		this.startupOrder = startupOrder;
 		this.observer = observer;
@@ -52,30 +58,55 @@ final class ManagedProcessGroup implements ProcessGroup {
 
 	void prepare() {
 		preparation.open();
-		ExecutionSession opened = execution.open(plan.getContext());
-		session = opened;
+		for (ProcessSpec process : plan.getProcesses())
+			sessions.computeIfAbsent(executionOf(process), id -> executions.get(id).open(plan.getContext()));
+
 		ProcessScheduler tasks = new ProcessScheduler(plan.getProcessScheduling().getParallelism(), plan.getProcessScheduling().getStartupMemoryMegabytes());
 		tasks.run(plan.getProcesses(), process -> {
-			ProcessTarget target = opened.prepare(process.getRequest());
+			ProcessTarget target = sessions.get(executionOf(process)).prepare(process.getRequest());
 			targets.put(process.getRequest().getName(), target);
 		});
 
-		Map<String, InetSocketAddress> addresses = new LinkedHashMap<>(plan.getPeers());
-		for (ProcessSpec process : plan.getProcesses()) {
-			String name = process.getRequest().getName();
-			addresses.put(name, targets.get(name).peerAddress());
-		}
-		Map<String, InetSocketAddress> peers = Map.copyOf(addresses);
-		Map<String, Map<String, InetSocketAddress>> listeners = new LinkedHashMap<>();
-		targets.forEach((name, target) -> listeners.put(name, target.peerListeners()));
-		ProcessAddresses processAddresses = ProcessAddresses.of(peers, listeners);
 		for (ProcessSpec process : orderedProcesses()) {
 			String name = process.getRequest().getName();
-			processes.register(new ProcessSlot(process, targets.get(name), preparation, peers, processAddresses,
+			Map<String, InetSocketAddress> peers = peersOf(process);
+			processes.register(new ProcessSlot(process, targets.get(name), preparation, peers, addressesOf(process, peers),
 					plan.getProcessTimeouts().getStartup(), plan.getProcessTimeouts().getShutdown(), observer));
 		}
 
 		tasks.run(plan.getProcesses(), process -> processes.prepare(process.getRequest().getName()));
+	}
+
+	private String executionOf(ProcessSpec process) {
+		return process.getExecutionProviderId() == null ? plan.getExecutionProviderId() : process.getExecutionProviderId();
+	}
+
+	/**
+	 * Returns where a process reaches each other process: inside their environment when both run in the same
+	 * execution session, else at the other's host address, together with the running peers outside the plan.
+	 */
+	private Map<String, InetSocketAddress> peersOf(ProcessSpec reader) {
+		Map<String, InetSocketAddress> peers = new LinkedHashMap<>(plan.getPeers());
+		for (ProcessSpec process : plan.getProcesses()) {
+			ProcessTarget target = targets.get(process.getRequest().getName());
+			peers.put(process.getRequest().getName(), sameSession(reader, process) ? target.peerAddress() : target.address());
+		}
+
+		return Map.copyOf(peers);
+	}
+
+	private ProcessAddresses addressesOf(ProcessSpec reader, Map<String, InetSocketAddress> peers) {
+		Map<String, Map<String, InetSocketAddress>> listeners = new LinkedHashMap<>();
+		for (ProcessSpec process : plan.getProcesses()) {
+			ProcessTarget target = targets.get(process.getRequest().getName());
+			listeners.put(process.getRequest().getName(), sameSession(reader, process) ? target.peerListeners() : target.listeners());
+		}
+
+		return ProcessAddresses.of(peers, listeners);
+	}
+
+	private boolean sameSession(ProcessSpec reader, ProcessSpec process) {
+		return executionOf(reader).equals(executionOf(process));
 	}
 
 	@Override
@@ -106,7 +137,7 @@ final class ManagedProcessGroup implements ProcessGroup {
 			ProcessTarget target = targets.remove(process.getRequest().getName());
 			if (target != null) attempt(target::close, failures);
 		}
-		if (session != null) attempt(session::close, failures);
+		for (ExecutionSession session : List.copyOf(sessions.values()).reversed()) attempt(session::close, failures);
 		attempt(() -> processes.finish(successful && failures.isEmpty()), failures);
 		attempt(() -> preparation.finish(successful && !processes.failed() && failures.isEmpty()), failures);
 		if (failures.isEmpty()) return;

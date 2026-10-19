@@ -2,10 +2,16 @@ package me.whereareiam.anvil.environment.execution.docker.model;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.WaitResponse;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
+import me.whereareiam.anvil.api.process.type.RunningContainer;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -56,6 +62,40 @@ public final class Container {
 	 */
 	public void unpause() {
 		client.unpauseContainerCmd(id).exec();
+	}
+
+	/**
+	 * Runs a command inside this running container and waits for it to finish.
+	 *
+	 * @param timeout how long to wait
+	 * @param command the command and its arguments
+	 * @return its exit code and output
+	 */
+	public RunningContainer.CommandResult execute(Duration timeout, String... command) {
+		String exec = client.execCreateCmd(id)
+				.withCmd(command)
+				.withAttachStdout(true)
+				.withAttachStderr(true)
+				.exec()
+				.getId();
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		try (ResultCallback.Adapter<Frame> callback = client.execStartCmd(exec).exec(new ResultCallback.Adapter<>() {
+			@Override
+			public void onNext(Frame frame) {
+				output.writeBytes(frame.getPayload());
+			}
+		})) {
+			if (!callback.awaitCompletion(timeout.toMillis(), TimeUnit.MILLISECONDS))
+				throw new IllegalStateException("'" + String.join(" ", command) + "' did not finish within " + timeout);
+		} catch (InterruptedException failure) {
+			Thread.currentThread().interrupt();
+			throw new IllegalStateException("Interrupted running a command in container " + id, failure);
+		} catch (IOException failure) {
+			throw new ProvisioningException("Could not close the command stream of container " + id, failure);
+		}
+
+		Long exitCode = client.inspectExecCmd(exec).exec().getExitCodeLong();
+		return new RunningContainer.CommandResult(exitCode == null ? -1 : exitCode.intValue(), output.toString(StandardCharsets.UTF_8));
 	}
 
 	/**
