@@ -8,7 +8,6 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ClientPacketListener;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConfigurationListener;
 import org.geysermc.mcprotocollib.auth.GameProfile;
 import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.event.session.SessionListener;
@@ -22,7 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TcpClientSessionsTest {
 	private static final ClientLogin LOGIN = ClientLogin.builder()
@@ -42,7 +41,7 @@ class TcpClientSessionsTest {
 	}
 
 	@Test
-	void startsTheConfigurationAfterTheLibraryAcknowledgedTheLoginAndAnswersKeepAlivesItself() {
+	void startsTheConfigurationAfterTheLibraryAcknowledgedTheLoginAndLeavesKeepAlivesToTheLibrary() {
 		Session session = new TcpClientSessions().open(LOGIN, new IgnoringListener(), McProtocolClientAdapter.packets());
 
 		((MinecraftProtocol) session.getPacketProtocol()).newClientSession(session, false);
@@ -53,7 +52,7 @@ class TcpClientSessionsTest {
 		// MCProtocolLib's own listener shares its simple name with Anvil's client listener.
 		assertEquals(List.of(ClientPacketListener.class, org.geysermc.mcprotocollib.protocol.ClientListener.class,
 				ConfigurationListener.class), listeners);
-		assertFalse(session.getFlag(MinecraftConstants.AUTOMATIC_KEEP_ALIVE_MANAGEMENT, true));
+		assertTrue(session.getFlag(MinecraftConstants.AUTOMATIC_KEEP_ALIVE_MANAGEMENT, true));
 	}
 
 	private static final class IgnoringListener implements ClientListener<Session> {

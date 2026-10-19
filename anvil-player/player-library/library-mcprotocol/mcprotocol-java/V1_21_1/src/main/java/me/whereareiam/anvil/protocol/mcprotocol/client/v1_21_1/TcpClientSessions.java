@@ -8,7 +8,6 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ClientPacketListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ClientSessions;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConfigurationListener;
 import org.geysermc.mcprotocollib.auth.GameProfile;
 import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -57,7 +56,6 @@ final class TcpClientSessions implements ClientSessions<Session> {
 		if (credentials != null && credentials.getSessionServer() != null)
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY,
 					new RedirectedSessionService(credentials.getSessionServer()));
-		ConfigurationListener.disableLibraryKeepAlives(session);
 		session.addListener(new ClientPacketListener(login, listener, packets, TcpClientSessions::granted));
 
 		return session;

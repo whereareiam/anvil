@@ -10,7 +10,6 @@ segment {
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ChatPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ClientPacketListener",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.CommandPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConfigurationListener",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.CookiePackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.EntityDataTable",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.EntityPackets",
@@ -18,6 +17,7 @@ segment {
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.PlayerPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SoundPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.WorldPackets",
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.ConfigurationListener",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.InteractionPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.TcpClientSessions",
 	)

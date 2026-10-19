@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 
 /**
- * Starts the configuration of the MCProtocolLib releases from 1.20.5 until 1.21.1 as a vanilla client does and answers
+ * Starts the configuration of the MCProtocolLib 1.20.6 release as a vanilla client does and answers
  * every keep-alive. Once the login is acknowledged, a vanilla client sends its {@link ClientBrand} and then its client
  * information, and it sends neither again: not when the server starts another configuration, nor when the game
  * starts.
