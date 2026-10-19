@@ -2,7 +2,7 @@ package me.whereareiam.anvil.environment.execution.docker;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
-import com.github.dockerjava.core.DockerClientBuilder;
+import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.transport.DockerHttpClient;
 import com.github.dockerjava.zerodep.ZerodepDockerHttpClient;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
@@ -32,7 +32,7 @@ public final class DockerEngine implements AutoCloseable {
 				.responseTimeout(Duration.ofMinutes(5))
 				.build();
 
-		client = DockerClientBuilder.getInstance(config).withDockerHttpClient(transport).build();
+		client = DockerClientImpl.getInstance(config, transport);
 		images = new DockerImageClient(client);
 		containers = new DockerContainerFactory(client);
 	}
