@@ -137,6 +137,13 @@ final class PlayerSimulation {
 		return keys;
 	}
 
+	/**
+	 * Sets the player's delta movement, as {@code Entity.setDeltaMovement} does.
+	 */
+	void deltaMovement(@NotNull Vector deltaMovement) {
+		this.deltaMovement = deltaMovement;
+	}
+
 	@NotNull Vector deltaMovement() {
 		return deltaMovement;
 	}

@@ -19,6 +19,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityMotion;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundClientTickEnd;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundMovePlayerPos;
@@ -104,6 +105,22 @@ class ClientMovementTest {
 		assertEquals(0.0, fixture.state().getMotion().getZ());
 		fixture.protocol.receive(teleport(new Vec3d(8.5, 120.0, 8.5), 0.0F, 0.0F, EnumSet.of(Relative.YAW)));
 		assertEquals(0.0, fixture.state().getMotion().getY());
+	}
+
+	@Test
+	void takesTheVelocityTheServerGivesItsOwnEntityAndNoOther() {
+		Fixture fixture = new Fixture("1.21.11");
+		fixture.protocol.receive(new ClientboundLogin(7, new Dimension("minecraft:overworld", -64, 384)));
+		fixture.operations.execute(MovementChannel.PHYSICS, true);
+		fixture.protocol.receive(teleport(new Vec3d(8.5, 120.0, 8.5), 0.0F, 0.0F, Set.of()));
+		fixture.movement.tick();
+
+		fixture.protocol.receive(new ClientboundSetEntityMotion(8, new Vec3d(1.0, 1.0, 1.0)));
+		fixture.protocol.receive(new ClientboundSetEntityMotion(7, new Vec3d(0.25, 0.5, -0.125)));
+
+		assertEquals(0.25, fixture.state().getMotion().getX());
+		assertEquals(0.5, fixture.state().getMotion().getY());
+		assertEquals(-0.125, fixture.state().getMotion().getZ());
 	}
 
 	@Test

@@ -17,6 +17,7 @@ import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityMotion;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundClientTickEnd;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundMovePlayerPosRot;
@@ -82,6 +83,7 @@ public final class ClientMovement implements WorkerBinding {
 				protocol.listen(ClientboundLogin.class, this::login),
 				protocol.listen(ClientboundRespawn.class, ignored -> respawn()),
 				protocol.listen(ClientboundPlayerPosition.class, this::teleport),
+				protocol.listen(ClientboundSetEntityMotion.class, this::motion),
 				player.bindConnection(() -> this::disconnected)
 		);
 	}
@@ -236,6 +238,18 @@ public final class ClientMovement implements WorkerBinding {
 		known = null;
 		simulation = null;
 		reporter = null;
+	}
+
+	/**
+	 * Sets the velocity the server gives the player's own entity, as {@code ClientPacketListener.handleSetEntityMotion}
+	 * does through {@code Entity.lerpMotion}; the server sends it, for example, when it hurt the player.
+	 */
+	private synchronized void motion(@NotNull ClientboundSetEntityMotion motion) {
+		Integer own = entityId;
+		if (simulation == null || own == null || own != motion.getEntityId()) return;
+
+		Vec3d movement = motion.getMovement();
+		simulation.deltaMovement(new Vector(movement.getX(), movement.getY(), movement.getZ()));
 	}
 
 	/**
