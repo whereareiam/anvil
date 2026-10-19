@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
+import java.util.Map;
 
 /**
  * Process-backed runtime view of a Minecraft server.
@@ -20,9 +21,10 @@ public final class ManagedServer extends ManagedProcess implements RunningServer
 	public ManagedServer(
 			@NotNull String name,
 			@NotNull InetSocketAddress address,
+			@NotNull Map<String, InetSocketAddress> listeners,
 			@NotNull Path workDirectory,
 			@Nullable CapabilityOwner<ProcessCapability> capabilities
 	) {
-		super(name, address, workDirectory, capabilities);
+		super(name, address, listeners, workDirectory, capabilities);
 	}
 }

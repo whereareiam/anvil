@@ -103,4 +103,14 @@ public interface MinecraftProcess {
 	 * @return JVM arguments
 	 */
 	@NotNull List<String> getJvmArguments();
+
+	/**
+	 * Returns the names of the listeners the process binds besides its game port, such as a plugin's own server
+	 * that other processes of the scenario connect to. Anvil reserves a port for each and names it to every process
+	 * through {@code ${anvil.process.<name>.host}} and {@code ${anvil.process.<name>.listener.<listener>}}; see
+	 * {@link ProcessAddresses}.
+	 *
+	 * @return listener names, lowercase letters, digits and dashes
+	 */
+	@NotNull List<String> getListeners();
 }

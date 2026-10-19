@@ -54,4 +54,19 @@ public interface ProcessExecution {
 	 * @param force whether to escalate immediately
 	 */
 	void terminate(boolean force);
+
+	/**
+	 * Suspends the workload, including its descendants or container, while it keeps its connections and memory.
+	 *
+	 * @throws UnsupportedOperationException when the execution cannot suspend its workload, with the reason
+	 */
+	default void freeze() {
+		throw new UnsupportedOperationException("This execution provider cannot freeze a process");
+	}
+
+	/**
+	 * Resumes a workload {@link #freeze() frozen} before; a workload that is not frozen is left as it is.
+	 */
+	default void thaw() {
+	}
 }

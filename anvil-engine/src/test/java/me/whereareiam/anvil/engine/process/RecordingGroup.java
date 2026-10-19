@@ -91,6 +91,16 @@ final class RecordingGroup implements ProcessGroup {
 	}
 
 	@Override
+	public void freeze(@NotNull String name) {
+		calls.add(label + ":freeze:" + name);
+	}
+
+	@Override
+	public void thaw(@NotNull String name) {
+		calls.add(label + ":thaw:" + name);
+	}
+
+	@Override
 	public @NotNull RunningProcess restart(@NotNull String name) {
 		calls.add(label + ":restart:" + name);
 		return get(name);

@@ -125,6 +125,38 @@ public interface ScenarioProcesses {
 	void kill(@NotNull String name);
 
 	/**
+	 * Suspends one running process while it keeps its connections, as a server does that hangs: its players stay
+	 * connected but it answers nobody, runs no tick and renews nothing until {@link #thaw(String) thawed}. Use it to
+	 * test what a plugin does when a server stops answering without crashing, such as taking over its work once its
+	 * leases expire.
+	 *
+	 * <p>Locally the process and its children are stopped by a signal, under Docker its container is paused. Stopping,
+	 * killing or restarting a frozen process thaws it first. Freezing a frozen process has no effect.</p>
+	 *
+	 * <pre>{@code
+	 * anvil.processes().freeze("lobby");
+	 * // ... the proxy takes over within the lease time
+	 * anvil.processes().thaw("lobby");
+	 * }</pre>
+	 *
+	 * @param name scenario process name
+	 * @throws NoSuchElementException        if the process name is unknown
+	 * @throws IllegalStateException         if the scenario is closed or the process is not running
+	 * @throws UnsupportedOperationException if the execution provider cannot suspend a process, with the reason
+	 */
+	void freeze(@NotNull String name);
+
+	/**
+	 * Resumes a {@link #freeze(String) frozen} process, which carries on where it stopped. Thawing a process that is
+	 * not frozen has no effect.
+	 *
+	 * @param name scenario process name
+	 * @throws NoSuchElementException if the process name is unknown
+	 * @throws IllegalStateException  if the scenario is closed
+	 */
+	void thaw(@NotNull String name);
+
+	/**
 	 * Restarts one managed process with its current workspace and listener address.
 	 * Other processes remain running. Existing players remain registered, but clients
 	 * disconnected by the restart must explicitly reconnect. The platform agent is

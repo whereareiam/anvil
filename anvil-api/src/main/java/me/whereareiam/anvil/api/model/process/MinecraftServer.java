@@ -71,6 +71,13 @@ public class MinecraftServer implements MinecraftProcess {
 	List<String> jvmArguments;
 
 	/**
+	 * Listeners the process binds besides its game port; see {@link MinecraftProcess#getListeners()}.
+	 */
+	@NotNull
+	@Singular
+	List<String> listeners;
+
+	/**
 	 * Returns the Minecraft version this server speaks: the remote distribution version, or the
 	 * declared {@link #getMinecraftVersion() minecraftVersion} for local and artifact distributions.
 	 *

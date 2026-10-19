@@ -2,6 +2,7 @@ package me.whereareiam.anvil.environment.execution.managed.slot;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.exception.ProcessException;
+import me.whereareiam.anvil.api.model.process.ProcessAddresses;
 import me.whereareiam.anvil.api.scenario.ScenarioObserver;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessSpec;
@@ -29,6 +30,7 @@ public final class ProcessSlot {
 	private final ProcessTarget target;
 	private final ExecutionPreparation preparation;
 	private final Map<String, InetSocketAddress> peers;
+	private final ProcessAddresses addresses;
 	private final Duration startupTimeout;
 	private final Duration stopTimeout;
 	private final @Nullable ScenarioObserver observer;
@@ -46,7 +48,7 @@ public final class ProcessSlot {
 
 	public void prepare() {
 		if (prepared != null) throw new IllegalStateException("Process is already prepared: " + name());
-		prepared = preparation.prepare(spec, target, peers);
+		prepared = preparation.prepare(spec, target, peers, addresses);
 	}
 
 	public synchronized @NotNull ManagedProcess start() {
@@ -60,8 +62,8 @@ public final class ProcessSlot {
 			PreparedLaunch preparedLaunch = prepared.launch();
 			launch = preparedLaunch;
 			current = spec.isProxy()
-					? new ManagedProxy(name(), target.address(), spec.getRequest().getWorkspace(), prepared.capabilities())
-					: new ManagedServer(name(), target.address(), spec.getRequest().getWorkspace(), prepared.capabilities());
+					? new ManagedProxy(name(), target.address(), target.listeners(), spec.getRequest().getWorkspace(), prepared.capabilities())
+					: new ManagedServer(name(), target.address(), target.listeners(), spec.getRequest().getWorkspace(), prepared.capabilities());
 
 			// A cancellation that read the previous generation is caught here; a later one sees this one.
 			if (cancelled) current.cancelStart();
@@ -115,6 +117,32 @@ public final class ProcessSlot {
 	 */
 	public synchronized void killGeneration() {
 		endGeneration(this::killProcess);
+	}
+
+	/**
+	 * Checks that the current generation runs, as freezing it needs.
+	 *
+	 * @throws IllegalStateException when no generation is running
+	 */
+	public void requireRunning() {
+		ManagedProcess process = current;
+		if (process == null || process.state() != ProcessState.READY)
+			throw new IllegalStateException("Process '" + name() + "' is not running");
+	}
+
+	/**
+	 * Suspends the current generation while it keeps its connections.
+	 */
+	public synchronized void freezeGeneration() {
+		current().freeze();
+	}
+
+	/**
+	 * Resumes the current generation when it is frozen.
+	 */
+	public synchronized void thawGeneration() {
+		ManagedProcess process = current;
+		if (process != null) process.thaw();
 	}
 
 	private void endGeneration(Runnable ending) {

@@ -66,6 +66,42 @@ class ManagedPreparationTest {
 	}
 
 	@Test
+	void namesEveryProcessesListenersToEachPreparationAndToItsRunningProcess() {
+		ExecutionFixture fixture = new ExecutionFixture(directory);
+		var group = fixture.service().prepare(fixture.plan(fixture.spec("proxy", true, "lobby"), fixture.spec("lobby", false)),
+				fixture.preparation, null);
+		try (group) {
+			var lobbyAddresses = fixture.preparation.observedAddresses.get("lobby");
+			assertEquals("127.0.0.1:25570", lobbyAddresses.resolve("${anvil.process.proxy.host}:${anvil.process.proxy.listener.link}"));
+			assertEquals(30000 + fixture.targets.get("proxy").index, Integer.parseInt(lobbyAddresses.resolve("${anvil.process.proxy.port}")));
+
+			group.startAll();
+			assertEquals(fixture.targets.get("proxy").listeners().get("link"), group.get("proxy").listener("link"));
+			assertThrows(IllegalArgumentException.class, () -> group.get("proxy").listener("missing"));
+		}
+	}
+
+	@Test
+	void freezingSuspendsTheRunningGenerationAndStoppingThawsItFirst() {
+		ExecutionFixture fixture = new ExecutionFixture(directory);
+		var group = fixture.service().prepare(fixture.plan(fixture.spec("server", false)), fixture.preparation, null);
+		try (group) {
+			assertThrows(IllegalStateException.class, () -> group.freeze("server"));
+
+			RunningProcess server = group.start("server");
+			group.freeze("server");
+			group.freeze("server");
+			assertTrue(server.frozen());
+
+			group.stop("server");
+			assertFalse(server.frozen());
+		}
+
+		List<String> calls = fixture.calls.stream().filter(call -> call.matches("(freeze|thaw|stop):server")).toList();
+		assertEquals(List.of("freeze:server", "thaw:server", "stop:server"), calls);
+	}
+
+	@Test
 	void launchFailureIsDeferredToSelectedStartAndRetainsInputsForRetry() {
 		ExecutionFixture fixture = new ExecutionFixture(directory);
 		fixture.failingConfiguration = "server";

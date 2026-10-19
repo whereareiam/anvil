@@ -17,7 +17,9 @@ import org.jetbrains.annotations.NotNull;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -44,9 +46,14 @@ final class LocalExecutionSession implements ExecutionSession {
 				: request.getJavaSelection().getSource();
 
 		Path executable = runtime.executable(request, source);
+		String bindAddress = context.getNetworkPolicy().getBindAddress();
+		Map<String, InetSocketAddress> listeners = new LinkedHashMap<>();
+		request.getListeners().forEach(listener -> listeners.put(listener, new InetSocketAddress(bindAddress, port(bindAddress))));
+
 		return new LocalProcessTarget(request, executable,
-				new InetSocketAddress(context.getNetworkPolicy().getBindAddress(), port(context.getNetworkPolicy().getBindAddress())),
+				new InetSocketAddress(bindAddress, port(bindAddress)),
 				new InetSocketAddress("127.0.0.1", port("127.0.0.1")),
+				Map.copyOf(listeners),
 				context.getProcessPriority() == ProcessPriority.LOW ? LOW_PRIORITY : List.of());
 	}
 
