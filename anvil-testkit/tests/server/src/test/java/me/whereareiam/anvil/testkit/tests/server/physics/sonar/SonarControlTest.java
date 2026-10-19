@@ -19,26 +19,23 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Shows that Sonar verifies players on the release: a player without client physics that hovers where Sonar placed it
- * is never verified and never reaches the backend. From Minecraft 1.21.2 Sonar fails such a player for a position
- * without the end of a client tick; before, it lets the player hover until it closes the connection, at the latest
- * after the most packets a verification may take, without a verdict.
+ * Shows that Sonar verifies players on the release: a player without client physics that moves through the air where
+ * Sonar placed it fails the verification for its movement and never reaches the backend. From Minecraft 1.21.2 Sonar
+ * fails it for a position without the end of a client tick; before, for moving away from the platform without falling.
  */
 @Tag("sonar")
 @PhysicsEnvironment(PhysicsEnvironment.Judge.SONAR)
 class SonarControlTest {
 	private static final Duration VERIFICATION = Duration.ofSeconds(30);
 	private static final String VERIFYING = "You are being verified";
-	private static final String PASSED = "You have successfully passed the verification";
-	private static final String FAILED_CHECK = "has failed the bot check for";
 	private static final List<String> MOVEMENT_FAILURES = List.of("position", "gravity", "motion", "collision",
 			"fell through blocks", "offset");
 
 	@Test
-	void neverLetsThroughAPlayerWithoutPhysics(ScenarioContext anvil) {
+	void failsAPlayerWithoutPhysics(ScenarioContext anvil) {
 		ConsoleWatch proxy = anvil.processes().proxy(PhysicsScenarioFactory.PROXY).console().watch();
 		PlayerWatch backend = anvil.processes().server(PhysicsScenarioFactory.BACKEND).capability(Players.class).watch();
 		SimulatedPlayer player = anvil.players().create("SonarControl");
@@ -49,12 +46,13 @@ class SonarControlTest {
 		Position placed = player.capability(Movement.class).position();
 		Hover.hold(player, placed, () -> false, VERIFICATION);
 
-		assertFalse(session.state().connected(), "Sonar kept the hovering player for " + VERIFICATION);
-		String reason = session.state().kickReason();
-		assertFalse(reason != null && reason.contains(PASSED), "Sonar verified the hovering player");
-		// Sonar must refuse the player for its movement, if it names a reason, not for anything else a client sends.
-		proxy.neverPrinted(line -> line.contains(player.name() + "/") && line.contains(FAILED_CHECK)
-				&& MOVEMENT_FAILURES.stream().noneMatch(line::contains), Duration.ofSeconds(1));
+		String reason = session.kicked(PhysicsCourse.TIMEOUT);
+		assertTrue(reason.contains("You have failed the bot verification"), "Sonar disconnected the player with: " + reason);
+		String failure = proxy.printed(line -> line.contains(player.name() + "/")
+				&& line.contains("has failed the bot check for"), PhysicsCourse.TIMEOUT);
+		// Sonar must fail the player for its movement, not for anything else a client sends.
+		assertTrue(MOVEMENT_FAILURES.stream().anyMatch(failure::contains),
+				"Sonar must fail the player for its movement, but logged: " + failure);
 		backend.neverJoined(player, Duration.ofSeconds(2));
 	}
 }
