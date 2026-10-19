@@ -2,12 +2,14 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetHeldSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.inventory.ContainerAction;
 import org.geysermc.mcprotocollib.protocol.data.game.inventory.ContainerActionType;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundSetCarriedItemPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.inventory.ClientboundContainerSetSlotPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.inventory.ServerboundContainerClickPacket;
 import org.jetbrains.annotations.NotNull;
@@ -49,6 +51,13 @@ public final class InventoryPackets extends InventoryTranslation {
 
 		return new ClientboundContainerSetSlot(containerId, slot.getStateId(), slot.getSlot(),
 				ValueTranslator.item(slot.getItem()));
+	}
+
+	@Override
+	protected @Nullable ClientboundPacket decodeHeldSlot(@NotNull Packet packet) {
+		if (!(packet instanceof ClientboundSetCarriedItemPacket held)) return null;
+
+		return new ClientboundSetHeldSlot(held.getSlot());
 	}
 
 	@Override
