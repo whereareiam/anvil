@@ -107,6 +107,19 @@ class ClientMovementTest {
 	}
 
 	@Test
+	void runsThePhysicsOfAPlayerWhoseEntityIdIsNegative() {
+		Fixture fixture = new Fixture("1.21.11");
+		fixture.protocol.receive(new ClientboundLogin(-39858984, new Dimension("minecraft:overworld", -64, 384)));
+		fixture.operations.execute(MovementChannel.PHYSICS, true);
+		fixture.protocol.receive(teleport(new Vec3d(8.5, 120.0, 8.5), 0.0F, 0.0F, Set.of()));
+
+		fixture.movement.tick();
+
+		assertEquals(1, fixture.state().getTicks());
+		assertTrue(fixture.state().getMotion().getY() < 0.0);
+	}
+
+	@Test
 	void answersATeleportWithPhysicsOnAtOnceAndBeforeItsNextTick() {
 		Fixture fixture = new Fixture("1.16.5");
 		fixture.world.floor(0, 15, 64, 0, 15, "minecraft:stone");

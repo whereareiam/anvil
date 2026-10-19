@@ -52,7 +52,11 @@ public final class ClientMovement implements WorkerBinding {
 	private boolean enabled;
 	private long ticks;
 	private @NotNull MovementInput input = MovementInput.NONE;
-	private int entityId = -1;
+	/**
+	 * The protocol ID of the player's own entity, which the server may choose negative, or {@code null} until the
+	 * player joined a level.
+	 */
+	private @Nullable Integer entityId;
 	private @Nullable Position known;
 	private @Nullable PlayerSimulation simulation;
 	private @Nullable PositionReporter reporter;
@@ -199,7 +203,7 @@ public final class ClientMovement implements WorkerBinding {
 	 * end of the client tick while it is in a world.
 	 */
 	synchronized void tick() {
-		if (!enabled || physics == null || entityId < 0 || physics.world().dimension().isEmpty()) return;
+		if (!enabled || physics == null || entityId == null || physics.world().dimension().isEmpty()) return;
 
 		PlayerSimulation current = simulation();
 		if (current != null && physics.view().hasChunkAt(Fluids.floor(current.x()), Fluids.floor(current.z()))) {
@@ -224,7 +228,7 @@ public final class ClientMovement implements WorkerBinding {
 	}
 
 	private synchronized void disconnected() {
-		entityId = -1;
+		entityId = null;
 		forget();
 	}
 
@@ -293,7 +297,7 @@ public final class ClientMovement implements WorkerBinding {
 	}
 
 	private @Nullable PlayerSimulation simulation() {
-		if (simulation != null || physics == null || known == null || entityId < 0) return simulation;
+		if (simulation != null || physics == null || known == null || entityId == null) return simulation;
 
 		Position at = known;
 		placeNew(at.getX(), at.getY(), at.getZ(), Vector.ZERO, at.getYaw(), at.getPitch());
@@ -310,7 +314,8 @@ public final class ClientMovement implements WorkerBinding {
 	}
 
 	private @NotNull PositionReporter reporter() {
-		if (reporter == null && physics != null) reporter = new PositionReporter(physics.rules(), entityId);
+		if (reporter == null && physics != null && entityId != null)
+			reporter = new PositionReporter(physics.rules(), entityId);
 		if (reporter == null) throw new IllegalStateException("Client physics is unavailable: " + unavailable);
 
 		return reporter;
