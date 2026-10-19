@@ -34,7 +34,10 @@ Do not assume a numeric protocol ID is stable across Minecraft versions.
 
 ## Select a slot or click a menu
 
-`inventory.selectSlot(0)` selects the first hotbar slot; valid values are `0..8`.
+`inventory.selectSlot(0)` selects the first hotbar slot; valid values are `0..8`. As the vanilla client does,
+the player tells the server a selection only when it differs from the slot the server was last told, holds the
+hotbar slot the server selects and tells the server that one as well. Each login starts with the first slot
+selected; a respawn selects it again, and the server's selection that follows every respawn decides the slot.
 For a plugin that opens a known menu, first wait for its expected slot content, then click that slot.
 This fragment assumes `int expectedMenuItemProtocolId` comes from your fixture for the selected native
 version and identifies the item the menu places in slot `4`:
