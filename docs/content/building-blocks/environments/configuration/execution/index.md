@@ -26,10 +26,14 @@ module does not bring these client libraries into the assembly:
 
 ```kotlin
 dependencies {
-	runtimeOnly("com.github.docker-java:docker-java:3.7.1")
+	runtimeOnly("com.github.docker-java:docker-java-core:3.7.1")
 	runtimeOnly("com.github.docker-java:docker-java-transport-zerodep:3.7.1")
 }
 ```
+
+Use `docker-java-core`, not the `docker-java` aggregate: the aggregate also brings its Jersey and Netty
+transports, and Netty beside Anvil stops the MCProtocolLib player workers, which take Netty only from their
+library.
 
 `3.7.1` is the Docker client version in the current Anvil dependency catalog. Keep these dependencies
 aligned with the Anvil release you embed.
