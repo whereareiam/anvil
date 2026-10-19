@@ -48,6 +48,7 @@ public final class PhysicsCourse {
 
 	private static final AtomicInteger PLAYERS = new AtomicInteger();
 	private static final String READY = "anvil:course-ready";
+	private static final String PLACED = "anvil:placed:";
 	private static final String NOT_LOADED = "That position is not loaded";
 	private static final List<String> FAILURES = List.of(NOT_LOADED, "<--[HERE]", "Unknown or incomplete command",
 			"Incorrect argument", "Unknown block type");
@@ -108,16 +109,19 @@ public final class PhysicsCourse {
 	}
 
 	/**
-	 * Teleports a player to the start of a lane, facing along it, and waits until the server confirmed it.
+	 * Teleports a player to the start of a lane, facing along it, and waits until the server did. The fixture plugin
+	 * teleports the player at the start of a tick: the console's own {@code tp} runs after the server ticked its
+	 * players' connections, and before Minecraft 1.21.2 the server would then check a vanilla client's confirmation of
+	 * the teleport against the position before it and find that the client moved too quickly.
 	 *
 	 * @param player the player
 	 * @param lane the lane
 	 */
 	public void place(@NotNull SimulatedPlayer player, @NotNull Lane lane) {
 		ConsoleWatch output = console().watch();
-		console().sendCommand(String.format(Locale.ROOT, "tp %s %.4f %.4f %.4f %.1f %.1f", player.name(), lane.getX(),
-				lane.getY(), lane.getZ(), lane.getYaw(), 0.0F));
-		output.printed("Teleported " + player.name(), TIMEOUT);
+		console().sendCommand(String.format(Locale.ROOT, "anvil-place %s %.4f %.4f %.4f %.1f %.1f", player.name(),
+				lane.getX(), lane.getY(), lane.getZ(), lane.getYaw(), 0.0F));
+		output.printed(PLACED + player.name(), TIMEOUT);
 	}
 
 	/**

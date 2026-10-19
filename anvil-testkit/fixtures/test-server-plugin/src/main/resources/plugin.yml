@@ -19,3 +19,6 @@ commands:
   anvil-block:
     description: Tells a player which block it stands on, from the console
     usage: /anvil-block <player> below
+  anvil-place:
+    description: Teleports a player at the start of the next tick, from the console
+    usage: /anvil-place <player> <x> <y> <z> <yaw> <pitch>

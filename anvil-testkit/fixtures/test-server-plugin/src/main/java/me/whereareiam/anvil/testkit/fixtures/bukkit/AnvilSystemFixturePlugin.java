@@ -62,6 +62,9 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 		var block = getCommand("anvil-block");
 		if (block != null)
 			block.setExecutor((sender, ignored, label, arguments) -> block(arguments));
+		var place = getCommand("anvil-place");
+		if (place != null)
+			place.setExecutor((sender, ignored, label, arguments) -> place(arguments));
 		var auth = getCommand("auth");
 		if (auth != null)
 			auth.setExecutor((sender, ignored, label, arguments) -> authenticate(player(sender)));
@@ -262,6 +265,27 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 	 * Tells a player named by the console which block it stands on, as {@code anvil:below:<x>:<y>:<z>:<block>}, so a
 	 * test compares the block the player's client knows with the one the server holds.
 	 */
+	/**
+	 * Teleports a player named by the console to a position in its world at the start of the next tick and logs
+	 * {@code anvil:placed:<player>} once it did. A command from the console runs after the server ticked its players'
+	 * connections, and before Minecraft 1.21.2 a teleport does not move the position the server checks the player's next
+	 * move from, so a vanilla client that confirms such a teleport before the next tick moves "too quickly"; the start
+	 * of a tick comes before the connections' tick, which takes the new position.
+	 */
+	private boolean place(String[] arguments) {
+		Player player = arguments.length != 6 ? null : Bukkit.getPlayerExact(arguments[0]);
+		if (player == null)
+			return false;
+
+		Location target = new Location(player.getWorld(), Double.parseDouble(arguments[1]), Double.parseDouble(arguments[2]),
+				Double.parseDouble(arguments[3]), Float.parseFloat(arguments[4]), Float.parseFloat(arguments[5]));
+		Bukkit.getScheduler().runTask(this, () -> {
+			player.teleport(target);
+			getLogger().info("anvil:placed:" + player.getName());
+		});
+		return true;
+	}
+
 	private boolean block(String[] arguments) {
 		Player player = arguments.length != 2 ? null : Bukkit.getPlayerExact(arguments[0]);
 		if (player == null || !arguments[1].equals("below"))
