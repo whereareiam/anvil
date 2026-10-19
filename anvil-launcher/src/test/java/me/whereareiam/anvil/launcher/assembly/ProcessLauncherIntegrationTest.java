@@ -140,6 +140,63 @@ class ProcessLauncherIntegrationTest {
 		assertEquals(List.of("resolve", "configure", "configure"), preparation);
 	}
 
+	@Test
+	void fillsTheAddressOfAProcessListenerIntoTextAssets() throws Exception {
+		Path executable = FixtureArtifacts.process();
+		var declaration = MinecraftServer.builder().name("server").platform("test")
+				.distribution(Distribution.remote("1.21.11", "1"))
+				.listener("link")
+				.workspace(WorkspacePlan.builder().asset(WorkspaceAsset.builder()
+						.source(AssetSource.text("${anvil.process.server.host}:${anvil.process.server.listener.link}"))
+						.target(Path.of("link.txt")).build()).build())
+				.build();
+		var scenario = AnvilScenario.builder().name("test").entrypoint("server").server(declaration).build();
+		var options = EngineDefaults.resolve(EngineOptions.builder().workDirectory(directory.resolve("work"))
+				.cacheDirectory(directory.resolve("cache")).eulaAccepted(true).build());
+		try (var provisioning = new ProvisioningServices(options)) {
+			var platforms = new DefaultPlatformPlanner(options, Map.of("test", fixtureProvider(executable)),
+					new ArtifactPlatformSource(provisioning.getArtifacts()), descriptor -> executable,
+					new ProvisionedPlatformJavaSource(provisioning.getJava()));
+			var launcher = ProcessLauncher.builder()
+					.options(options)
+					.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider())))
+					.workspaces(provisioning.getWorkspaces())
+					.platforms(platforms)
+					.connections((port, token, timeout) -> agent(1, new ArrayList<>()))
+					.plans(new ExecutionPlanMapper(options, new JavaExecutionRuntime(provisioning.getJava()),
+							new CacheImageLocks(provisioning.getCache()), new PortSelection()))
+					.build();
+			try (var group = launcher.prepare(platforms.plan(scenario), new ScenarioAgentDirectory(), null, null, Map.of())) {
+				group.startAll();
+				var server = group.server("server");
+				assertEquals("127.0.0.1:" + server.listener("link").getPort(),
+						Files.readString(server.workDirectory().resolve("link.txt")));
+			}
+		}
+	}
+
+	private static PlatformProvider fixtureProvider(Path executable) {
+		return new PlatformProvider() {
+			@Override
+			public @NotNull String id() { return "test"; }
+			@Override
+			public @NotNull Class<? extends MinecraftProcess> configurationType() { return MinecraftServer.class; }
+			@Override
+			public @NotNull ResolvedDistribution resolve(@NotNull MinecraftProcess process, @NotNull PlatformContext context) {
+				return ResolvedDistribution.builder().jar(executable).description("fixture").build();
+			}
+			@Override
+			public void configure(@NotNull MinecraftProcess process, @NotNull PlatformContext context) {
+			}
+			@Override
+			public @NotNull Pattern readinessPattern() { return Pattern.compile("READY"); }
+			@Override
+			public @NotNull URL versionData() {
+				return ProcessLauncherIntegrationTest.class.getResource("/me/whereareiam/anvil/launcher/assembly/fixture-versions.toml");
+			}
+		};
+	}
+
 	private AgentClient agent(int generation, List<String> calls) {
 		return new AgentClient() {
 			@Override

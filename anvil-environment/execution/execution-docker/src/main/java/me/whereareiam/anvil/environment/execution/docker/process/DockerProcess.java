@@ -21,6 +21,7 @@ import java.util.concurrent.TimeoutException;
 final class DockerProcess implements ProcessExecution {
 	private final Container container;
 	private final ContainerAttachment attachment;
+	private volatile boolean frozen;
 
 	DockerProcess(DockerContainerFactory containers, Container container) {
 		this.container = container;
@@ -61,6 +62,24 @@ final class DockerProcess implements ProcessExecution {
 
 	@Override
 	public void terminate(boolean force) {
+		// Docker refuses to stop a paused container.
+		thaw();
 		if (isAlive()) container.stop(force);
+	}
+
+	@Override
+	public synchronized void freeze() {
+		if (frozen || !isAlive()) return;
+
+		container.pause();
+		frozen = true;
+	}
+
+	@Override
+	public synchronized void thaw() {
+		if (!frozen) return;
+
+		container.unpause();
+		frozen = false;
 	}
 }

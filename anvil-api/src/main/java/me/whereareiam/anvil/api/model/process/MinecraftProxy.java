@@ -67,6 +67,13 @@ public class MinecraftProxy implements MinecraftProcess {
 	@Singular("jvmArgument")
 	List<String> jvmArguments;
 
+	/**
+	 * Listeners the process binds besides its game port; see {@link MinecraftProcess#getListeners()}.
+	 */
+	@NotNull
+	@Singular
+	List<String> listeners;
+
 	@NotNull
 	@Singular("server")
 	List<String> servers;

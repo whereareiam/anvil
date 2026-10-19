@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.environment.execution.api.preparation;
 
+import me.whereareiam.anvil.api.model.process.ProcessAddresses;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessSpec;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
 import org.jetbrains.annotations.NotNull;
@@ -24,12 +25,14 @@ public interface ExecutionPreparation {
 	 * @param process execution declaration
 	 * @param target allocated execution location and endpoints
 	 * @param peers complete immutable map of process names to peer-visible addresses
+	 * @param addresses peer-visible game and listener addresses of the processes prepared together
 	 * @return owned preparation retained until execution resources are closed
 	 */
 	@NotNull PreparedProcess prepare(
 			@NotNull ProcessSpec process,
 			@NotNull ProcessTarget target,
-			@NotNull Map<String, InetSocketAddress> peers
+			@NotNull Map<String, InetSocketAddress> peers,
+			@NotNull ProcessAddresses addresses
 	);
 
 	/**

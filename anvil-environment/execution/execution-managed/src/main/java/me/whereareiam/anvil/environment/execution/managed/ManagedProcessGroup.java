@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.environment.execution.managed;
 
 import lombok.experimental.Delegate;
+import me.whereareiam.anvil.api.model.process.ProcessAddresses;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.scenario.ScenarioObserver;
@@ -65,9 +66,12 @@ final class ManagedProcessGroup implements ProcessGroup {
 			addresses.put(name, targets.get(name).peerAddress());
 		}
 		Map<String, InetSocketAddress> peers = Map.copyOf(addresses);
+		Map<String, Map<String, InetSocketAddress>> listeners = new LinkedHashMap<>();
+		targets.forEach((name, target) -> listeners.put(name, target.peerListeners()));
+		ProcessAddresses processAddresses = ProcessAddresses.of(peers, listeners);
 		for (ProcessSpec process : orderedProcesses()) {
 			String name = process.getRequest().getName();
-			processes.register(new ProcessSlot(process, targets.get(name), preparation, peers,
+			processes.register(new ProcessSlot(process, targets.get(name), preparation, peers, processAddresses,
 					plan.getProcessTimeouts().getStartup(), plan.getProcessTimeouts().getShutdown(), observer));
 		}
 

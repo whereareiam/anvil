@@ -48,6 +48,12 @@ public final class DockerContainerFactory {
 			exposed.add(agent);
 		}
 
+		configuration.getPorts().getListeners().forEach((port, published) -> {
+			ExposedPort listener = ExposedPort.tcp(port);
+			bindings.bind(listener, Ports.Binding.bindIpAndPort(published.getHostString(), published.getPort()));
+			exposed.add(listener);
+		});
+
 		HostConfig host = HostConfig.newHostConfig()
 				.withNetworkMode(configuration.getNetwork())
 				.withPortBindings(bindings)

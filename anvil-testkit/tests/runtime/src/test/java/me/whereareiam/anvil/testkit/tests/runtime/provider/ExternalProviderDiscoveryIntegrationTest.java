@@ -233,6 +233,16 @@ class ExternalProviderDiscoveryIntegrationTest {
 		}
 
 		@Override
+		public void freeze(@NotNull String name) {
+			get(name);
+		}
+
+		@Override
+		public void thaw(@NotNull String name) {
+			get(name);
+		}
+
+		@Override
 		public @NotNull RunningProcess restart(@NotNull String name) {
 			return get(name);
 		}

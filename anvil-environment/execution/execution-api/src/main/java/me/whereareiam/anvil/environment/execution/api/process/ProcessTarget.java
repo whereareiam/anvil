@@ -4,6 +4,7 @@ import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
+import java.util.Map;
 
 /**
  * Prepared process location with stable addresses across JVM replacements.
@@ -50,6 +51,25 @@ public interface ProcessTarget extends AutoCloseable {
 	 * @return process-local agent bind address
 	 */
 	@NotNull String agentBindAddress();
+
+	/**
+	 * Returns where host-side clients, such as the test, reach the process's listeners.
+	 *
+	 * @return host addresses by listener name
+	 */
+	default @NotNull Map<String, InetSocketAddress> listeners() {
+		return Map.of();
+	}
+
+	/**
+	 * Returns where peer processes reach the process's listeners: at the host of {@link #peerAddress()}, each on a
+	 * port of its own. The process binds each listener on the port of this address, at its {@link #bindAddress()}.
+	 *
+	 * @return peer-visible addresses by listener name
+	 */
+	default @NotNull Map<String, InetSocketAddress> peerListeners() {
+		return Map.of();
+	}
 
 	/**
 	 * Starts one generation using the resolved JAR and fresh environment values.

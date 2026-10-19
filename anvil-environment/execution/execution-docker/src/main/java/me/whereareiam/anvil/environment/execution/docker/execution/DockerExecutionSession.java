@@ -18,7 +18,9 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -26,6 +28,9 @@ import java.util.UUID;
  * Owns a private container network and every prepared target, including partial startup.
  */
 final class DockerExecutionSession implements ExecutionSession {
+	/** Listeners bind from here inside their container, after the game port 25565 and the agent's 25566. */
+	private static final int FIRST_LISTENER_PORT = 25570;
+
 	private final ExecutionContext context;
 	private final DockerEngine docker;
 	private final DockerContainerFactory containers;
@@ -64,9 +69,19 @@ final class DockerExecutionSession implements ExecutionSession {
 		synchronized (this) {
 			if (closed) throw new IllegalStateException("Docker environment is closed");
 
+			String bindAddress = context.getNetworkPolicy().getBindAddress();
+			Map<String, InetSocketAddress> listeners = new LinkedHashMap<>();
+			Map<String, Integer> listenerPorts = new LinkedHashMap<>();
+			for (String listener : request.getListeners()) {
+				listeners.put(listener, new InetSocketAddress(bindAddress, port(bindAddress)));
+				listenerPorts.put(listener, FIRST_LISTENER_PORT + listenerPorts.size());
+			}
+
 			DockerProcessTarget target = new DockerProcessTarget(containers, dockerNetwork.id(), alias, image, request,
-					new InetSocketAddress(context.getNetworkPolicy().getBindAddress(), port(context.getNetworkPolicy().getBindAddress())),
-					new InetSocketAddress("127.0.0.1", port("127.0.0.1")));
+					new InetSocketAddress(bindAddress, port(bindAddress)),
+					new InetSocketAddress("127.0.0.1", port("127.0.0.1")),
+					Map.copyOf(listeners),
+					Map.copyOf(listenerPorts));
 			targets.add(target);
 			return target;
 		}

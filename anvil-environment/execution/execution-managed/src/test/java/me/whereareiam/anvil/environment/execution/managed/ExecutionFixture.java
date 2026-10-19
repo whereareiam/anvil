@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.environment.execution.managed;
 
+import me.whereareiam.anvil.api.model.process.ProcessAddresses;
 import me.whereareiam.anvil.api.model.process.lifecycle.ProcessScheduling;
 import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
@@ -128,16 +129,18 @@ final class ExecutionFixture {
 
 	final class Preparation implements ExecutionPreparation {
 		final Map<String, Map<String, InetSocketAddress>> observedPeers = new LinkedHashMap<>();
+		final Map<String, ProcessAddresses> observedAddresses = new LinkedHashMap<>();
 
 		@Override
 		public void open() { calls.add("open"); }
 
 		@Override
 		public @NotNull PreparedProcess prepare(@NotNull ProcessSpec process, @NotNull ProcessTarget target,
-				@NotNull Map<String, InetSocketAddress> peers) {
+				@NotNull Map<String, InetSocketAddress> peers, @NotNull ProcessAddresses addresses) {
 			String name = process.getRequest().getName();
 			calls.add("prepare:" + name);
 			observedPeers.put(name, peers);
+			observedAddresses.put(name, addresses);
 			if (name.equals(failingPreparation)) throw failure;
 			try {
 				Files.createDirectories(process.getRequest().getWorkspace());
@@ -206,6 +209,10 @@ final class ExecutionFixture {
 		public int agentPort() { return 40000 + index; }
 		@Override
 		public @NotNull String agentBindAddress() { return "127.0.0.1"; }
+		@Override
+		public @NotNull Map<String, InetSocketAddress> listeners() { return Map.of("link", new InetSocketAddress("127.0.0.1", 50000 + index)); }
+		@Override
+		public @NotNull Map<String, InetSocketAddress> peerListeners() { return Map.of("link", new InetSocketAddress("127.0.0.1", 25570)); }
 		@Override
 		public @NotNull ProcessExecution start(@NotNull JavaCommand command) {
 			calls.add("start:" + name);
@@ -278,6 +285,10 @@ final class ExecutionFixture {
 			if (force) forcedTermination.accept(name);
 			end();
 		}
+		@Override
+		public void freeze() { calls.add("freeze:" + name); }
+		@Override
+		public void thaw() { calls.add("thaw:" + name); }
 
 		private void end() {
 			if (!alive.compareAndSet(true, false)) return;

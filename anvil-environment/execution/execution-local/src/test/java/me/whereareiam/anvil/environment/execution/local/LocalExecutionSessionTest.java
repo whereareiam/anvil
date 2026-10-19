@@ -21,11 +21,13 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -65,6 +67,23 @@ class LocalExecutionSessionTest {
 		}
 
 		assertEquals(reserved, ports.released);
+	}
+
+	@Test
+	void reservesAPortForEachListenerThatPeersReachAtTheSameAddress() {
+		List<Integer> reserved = new ArrayList<>();
+		try (ExecutionSession session = new LocalExecutionProvider().open(context((request, source) -> Path.of("java")))) {
+			var target = session.prepare(request("proxy", JavaRequirement.builder().featureVersion(21).build(), null)
+					.toBuilder().listener("link").build());
+			InetSocketAddress link = target.listeners().get("link");
+			reserved.add(link.getPort());
+
+			assertEquals(target.peerAddress().getHostString(), link.getHostString());
+			assertEquals(Map.of("link", link), target.peerListeners());
+			assertNotEquals(target.address().getPort(), link.getPort());
+		}
+
+		assertTrue(ports.released.containsAll(reserved));
 	}
 
 	@Test

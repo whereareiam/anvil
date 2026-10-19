@@ -45,6 +45,20 @@ public final class Container {
 	}
 
 	/**
+	 * Pauses this container: its processes keep their state and sockets but run nothing.
+	 */
+	public void pause() {
+		client.pauseContainerCmd(id).exec();
+	}
+
+	/**
+	 * Resumes this paused container.
+	 */
+	public void unpause() {
+		client.unpauseContainerCmd(id).exec();
+	}
+
+	/**
 	 * Starts this container.
 	 */
 	public void start() {

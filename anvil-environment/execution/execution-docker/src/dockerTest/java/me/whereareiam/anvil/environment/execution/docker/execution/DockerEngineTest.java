@@ -6,6 +6,7 @@ import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
+import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
 import me.whereareiam.anvil.environment.execution.docker.DockerEngine;
 import me.whereareiam.anvil.environment.execution.docker.DockerNetwork;
 import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
@@ -17,11 +18,14 @@ import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.time.Duration;
+import java.util.function.UnaryOperator;
 import java.util.UUID;
 import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -120,10 +124,52 @@ class DockerEngineTest {
 		});
 	}
 
+	@Test
+	void aPausedContainerTakesNoCommandUntilItIsThawed() throws Exception {
+		run(plainContext(), process -> {
+			var output = new BufferedReader(new InputStreamReader(process.output(), StandardCharsets.UTF_8));
+			assertEquals("READY", output.readLine());
+
+			process.freeze();
+			process.input().write("stop\n".getBytes(StandardCharsets.UTF_8));
+			process.input().flush();
+			assertFalse(process.await(Duration.ofSeconds(2)), "a paused container acted on its stop command");
+
+			process.thaw();
+			assertTrue(process.await(Duration.ofSeconds(30)), "the thawed container did not take its stop command");
+		});
+	}
+
+	@Test
+	void publishesEachListenerAndNamesItToPeersAtTheProcessAlias() throws Exception {
+		run(plainContext(), request -> request.toBuilder().listener("link").build(), (target, process) -> {
+			InetSocketAddress published = target.listeners().get("link");
+			InetSocketAddress peer = target.peerListeners().get("link");
+
+			assertEquals(target.peerAddress().getHostString(), peer.getHostString());
+			assertEquals(25570, peer.getPort());
+			try (Socket socket = new Socket()) {
+				socket.connect(published, 2000);
+			}
+		});
+	}
+
+	private ExecutionContext plainContext() {
+		return ExecutionContext.builder().cacheDirectory(directory)
+				.localRuntime((request, source) -> { throw new AssertionError("Docker must not acquire host Java"); })
+				.imageLocks(path -> () -> { })
+				.runtimeValidator((properties, request) -> { })
+				.ports(new PortSelection()).build();
+	}
+
 	/**
 	 * Prepares the process fixture in a container, runs the action against its execution and kills what remains.
 	 */
 	private void run(ExecutionContext context, ProcessAction action) throws Exception {
+		run(context, UnaryOperator.identity(), (target, process) -> action.run(process));
+	}
+
+	private void run(ExecutionContext context, UnaryOperator<ProcessRequest> change, TargetAction action) throws Exception {
 		try (var docker = new DockerEngine()) {
 			try (DockerExecutionSession session = new DockerExecutionSession(context, docker,
 					DockerExecutionSettings.builder().image("temurin:21", IMAGE).build())) {
@@ -132,10 +178,10 @@ class DockerEngineTest {
 				Path jar = Files.copy(FixtureArtifacts.process(), workspace.resolve("process.jar"));
 				var request = ProcessRequest.builder().name("smoke").workspace(workspace)
 						.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().featureVersion(21).build()).build()).build();
-				try (var target = session.prepare(request)) {
+				try (var target = session.prepare(change.apply(request))) {
 					var process = target.start(JavaCommand.builder().jar(jar).memoryMegabytes(256).build());
 					try {
-						action.run(process);
+						action.run(target, process);
 					} finally {
 						process.terminate(true);
 					}
@@ -146,5 +192,9 @@ class DockerEngineTest {
 
 	private interface ProcessAction {
 		void run(ProcessExecution process) throws Exception;
+	}
+
+	private interface TargetAction {
+		void run(ProcessTarget target, ProcessExecution process) throws Exception;
 	}
 }
