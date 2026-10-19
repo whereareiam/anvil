@@ -8,12 +8,14 @@ import com.github.steveice10.mc.protocol.data.game.entity.metadata.type.BooleanE
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.type.ByteEntityMetadata;
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.type.ObjectEntityMetadata;
 import com.github.steveice10.mc.protocol.data.game.entity.object.Direction;
+import com.github.steveice10.mc.protocol.data.game.entity.player.Animation;
 import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
 import com.github.steveice10.mc.protocol.data.game.entity.type.EntityType;
 import com.github.steveice10.mc.protocol.data.game.entity.type.PaintingType;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityPosPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityPosRotPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityRotPacket;
@@ -41,7 +43,9 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntit
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSwingAnimation;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;
 
@@ -201,6 +205,15 @@ class EntityPacketsTest {
 	}
 
 	@Test
+	void readsTheSwingOfAnArmAndNoOtherAnimation() {
+		assertEquals(new ClientboundSwingAnimation(7, InteractionHand.MAIN_HAND),
+				packets.decode(new ClientboundAnimatePacket(7, Animation.SWING_ARM)));
+		assertEquals(new ClientboundSwingAnimation(8, InteractionHand.OFF_HAND),
+				packets.decode(new ClientboundAnimatePacket(8, Animation.SWING_OFFHAND)));
+		assertNull(packets.decode(new ClientboundAnimatePacket(9, Animation.DAMAGE)));
+	}
+
+	@Test
 	void carriesEveryEntityPacketOfTheRelease() {
 		assertEquals(Set.of(
 				ClientboundAddEntity.class,
@@ -210,6 +223,7 @@ class EntityPacketsTest {
 				ClientboundTeleportEntity.class,
 				ClientboundSetEntityData.class,
 				ClientboundSetPassengers.class,
+				ClientboundSwingAnimation.class,
 				ClientboundRemoveEntities.class
 		), packets.packets());
 	}

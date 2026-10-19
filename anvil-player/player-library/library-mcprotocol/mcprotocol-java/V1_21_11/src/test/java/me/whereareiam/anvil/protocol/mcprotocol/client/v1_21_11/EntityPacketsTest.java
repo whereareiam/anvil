@@ -16,7 +16,9 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntit
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSwingAnimation;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
 import me.whereareiam.anvil.protocol.java.api.type.Relative;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
@@ -26,6 +28,7 @@ import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.MetadataTyp
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.type.BooleanEntityMetadata;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.type.ByteEntityMetadata;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.type.ObjectEntityMetadata;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Animation;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PositionElement;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
 import org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack;
@@ -34,6 +37,7 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.Clientbound
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundStartConfigurationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAddEntityPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundEntityPositionSyncPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityPosPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityPosRotPacket;
@@ -217,6 +221,15 @@ class EntityPacketsTest {
 	}
 
 	@Test
+	void readsTheSwingOfAnArmAndNoOtherAnimation() {
+		assertEquals(new ClientboundSwingAnimation(7, InteractionHand.MAIN_HAND),
+				packets.decode(new ClientboundAnimatePacket(7, Animation.SWING_ARM)));
+		assertEquals(new ClientboundSwingAnimation(8, InteractionHand.OFF_HAND),
+				packets.decode(new ClientboundAnimatePacket(8, Animation.SWING_OFFHAND)));
+		assertNull(packets.decode(new ClientboundAnimatePacket(9, Animation.CRITICAL_HIT)));
+	}
+
+	@Test
 	void carriesEveryEntityPacketOfTheRelease() {
 		assertEquals(Set.of(
 				ClientboundAddEntity.class,
@@ -227,6 +240,7 @@ class EntityPacketsTest {
 				ClientboundEntityPositionSync.class,
 				ClientboundSetEntityData.class,
 				ClientboundSetPassengers.class,
+				ClientboundSwingAnimation.class,
 				ClientboundRemoveEntities.class
 		), packets.packets());
 	}

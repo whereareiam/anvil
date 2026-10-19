@@ -5,9 +5,11 @@ import com.github.steveice10.mc.protocol.data.game.entity.metadata.ItemStack;
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.MetadataType;
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.Position;
 import com.github.steveice10.mc.protocol.data.game.entity.object.HangingDirection;
+import com.github.steveice10.mc.protocol.data.game.entity.player.Animation;
 import com.github.steveice10.mc.protocol.data.game.entity.type.EntityType;
 import com.github.steveice10.mc.protocol.data.game.entity.type.PaintingType;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerKeepAlivePacket;
+import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityAnimationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityDestroyPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityMetadataPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityPositionPacket;
@@ -28,7 +30,9 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPos;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSwingAnimation;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;
 
@@ -44,6 +48,15 @@ class EntityPacketsTest {
 	private static final UUID STAND = new UUID(0, 7);
 
 	private final EntityPackets packets = new EntityPackets();
+
+	@Test
+	void readsTheSwingOfAnArmWhoseOffHandAnimationTheLibraryNamesAfterEating() {
+		assertEquals(new ClientboundSwingAnimation(7, InteractionHand.MAIN_HAND),
+				packets.decode(new ServerEntityAnimationPacket(7, Animation.SWING_ARM)));
+		assertEquals(new ClientboundSwingAnimation(8, InteractionHand.OFF_HAND),
+				packets.decode(new ServerEntityAnimationPacket(8, Animation.EAT_FOOD)));
+		assertNull(packets.decode(new ServerEntityAnimationPacket(9, Animation.DAMAGE)));
+	}
 
 	@Test
 	void decodesEachSpawnPacketAsAnAddedEntityWithTheRegistryKey() {

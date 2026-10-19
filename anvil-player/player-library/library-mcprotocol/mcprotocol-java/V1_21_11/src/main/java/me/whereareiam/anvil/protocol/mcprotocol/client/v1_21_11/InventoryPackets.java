@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetHeldSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.InventoryTranslation;
@@ -9,6 +10,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ValueTranslator;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.inventory.ContainerAction;
 import org.geysermc.mcprotocollib.protocol.data.game.inventory.ContainerActionType;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundSetHeldSlotPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.inventory.ClientboundContainerSetSlotPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.inventory.ClientboundSetPlayerInventoryPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.inventory.ServerboundContainerClickPacket;
@@ -27,6 +29,7 @@ public final class InventoryPackets extends InventoryTranslation {
 		if (packet instanceof ClientboundContainerSetSlotPacket slot)
 			return new ClientboundContainerSetSlot(slot.getContainerId(), slot.getStateId(), slot.getSlot(),
 					ValueTranslator.item(slot.getItem()));
+		if (packet instanceof ClientboundSetHeldSlotPacket held) return new ClientboundSetHeldSlot(held.getSlot());
 		if (packet instanceof ClientboundSetPlayerInventoryPacket inventory)
 			return new ClientboundSetPlayerInventory(inventory.getSlot(),
 					ValueTranslator.item(inventory.getContents()));

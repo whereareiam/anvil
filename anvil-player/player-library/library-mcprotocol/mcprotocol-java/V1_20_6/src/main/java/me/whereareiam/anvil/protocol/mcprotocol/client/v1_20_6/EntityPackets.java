@@ -10,9 +10,13 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntit
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSwingAnimation;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
 import org.geysermc.mcprotocollib.network.packet.Packet;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Animation;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundTeleportEntityPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddExperienceOrbPacket;
@@ -46,6 +50,7 @@ public final class EntityPackets extends EntityTranslation {
 				ClientboundTeleportEntity.class,
 				ClientboundSetEntityData.class,
 				ClientboundSetPassengers.class,
+				ClientboundSwingAnimation.class,
 				ClientboundRemoveEntities.class
 		);
 	}
@@ -64,7 +69,18 @@ public final class EntityPackets extends EntityTranslation {
 					.pitch(teleport.getPitch())
 					.relatives(Set.of())
 					.build();
+			case ClientboundAnimatePacket animation -> swing(animation.getEntityId(), animation.getAnimation());
 			default -> null;
 		};
+	}
+
+	/**
+	 * Reads an animation that swings an arm.
+	 */
+	private static @Nullable ClientboundPacket swing(int entityId, Animation animation) {
+		if (animation == Animation.SWING_ARM) return new ClientboundSwingAnimation(entityId, InteractionHand.MAIN_HAND);
+		if (animation == Animation.SWING_OFFHAND) return new ClientboundSwingAnimation(entityId, InteractionHand.OFF_HAND);
+
+		return null;
 	}
 }
