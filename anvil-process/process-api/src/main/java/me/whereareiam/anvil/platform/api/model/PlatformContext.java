@@ -26,6 +26,10 @@ public class PlatformContext {
 	// Scenario and artifact acquisition.
 	@NotNull AnvilScenario scenario;
 	@NotNull PlatformArtifactSource artifactSource;
+
+	/**
+	 * Cache root on the workbench that runs the process, below which providers place what they obtain.
+	 */
 	@NotNull Path cacheDirectory;
 
 	// Prepared workspace locations.
@@ -35,7 +39,9 @@ public class PlatformContext {
 	@NotNull ProcessFiles files;
 
 	/**
-	 * The workspace on this machine, for installations linked into it.
+	 * The workspace on the workbench's machine. Only a provider that changes the workspace with the machine's own
+	 * file operations uses it, such as NeoForge's, which links its installation into it; such a platform runs only on
+	 * the workbench in the engine's own JVM.
 	 */
 	@NotNull Path workDirectory;
 

@@ -26,7 +26,7 @@ final class VelocityDistributionResolver {
 				throw new PlatformException("Velocity JAR does not exist: " + jar);
 			}
 
-			return ResolvedDistribution.builder().jar(jar).description("local Velocity").build();
+			return ResolvedDistribution.builder().jar(context.getArtifactSource().store(jar)).description("local Velocity").build();
 		}
 
 		String version = required(distribution.getVersion(), "Velocity version");

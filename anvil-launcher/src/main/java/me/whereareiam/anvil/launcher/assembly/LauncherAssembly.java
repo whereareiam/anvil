@@ -60,11 +60,12 @@ public final class LauncherAssembly implements AutoCloseable {
 		try {
 			var locator = discovery.required(AgentArtifactLocator.class, "agent artifact locator");
 			var platforms = new DefaultPlatformPlanner(options, discovery.platforms(),
-					new ArtifactPlatformSource(workbench.artifacts()),
+					new ArtifactPlatformSource(workbench),
 					new ClasspathPlatformAgentSource(locator, AgentExtensions.discover()),
 					new ProvisionedPlatformJavaSource(workbench.java()));
 			var execution = ProcessLauncher.builder()
 					.options(options)
+					.workbench(workbench)
 					.processes(new ManagedProcessService(workbench.executions()))
 					.workspaces(workbench.workspaces())
 					.platforms(platforms)

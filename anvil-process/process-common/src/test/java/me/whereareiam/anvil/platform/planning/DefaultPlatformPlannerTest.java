@@ -124,6 +124,7 @@ class DefaultPlatformPlannerTest {
 		PlatformRequest request = PlatformRequest.builder().scenario(plan.getScenario())
 				.workDirectory(directory.resolve("work/server")).workspaceGroupDirectory(directory.resolve("work"))
 				.files(new WorkspaceProcessFiles(directory.resolve("work/server"), new WorkspaceFiles()))
+				.cacheDirectory(directory.resolve("cache"))
 				.bindAddress("0.0.0.0").port(25565)
 				.processAddress("server", InetSocketAddress.createUnresolved("server-container", 25565)).build();
 

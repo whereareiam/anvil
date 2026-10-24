@@ -15,6 +15,7 @@ import me.whereareiam.anvil.workbench.local.adapter.execution.JavaExecutionRunti
 import me.whereareiam.anvil.workbench.requirement.MachineCapacity;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Path;
 import java.util.Map;
 
 /**
@@ -93,6 +94,24 @@ public final class LocalWorkbench implements Workbench {
 				.refresh(options.isRefresh())
 				.networkPolicy(networkPolicy)
 				.build();
+	}
+
+	@Override
+	public @NotNull Path workDirectory() {
+		return options.getWorkDirectory();
+	}
+
+	@Override
+	public @NotNull Path cacheDirectory() {
+		return options.getCacheDirectory();
+	}
+
+	/**
+	 * The engine's machine is this workbench's, so a file stays where it is.
+	 */
+	@Override
+	public @NotNull Path store(@NotNull Path file) {
+		return file.toAbsolutePath().normalize();
 	}
 
 	@Override

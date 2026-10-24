@@ -776,10 +776,11 @@ class DefaultScenarioFactoryIntegrationTest {
 		options = EngineDefaults.resolve(options);
 		var workbench = new LocalWorkbench(options, Map.of("local", new LocalExecutionProvider()));
 		var platforms = new DefaultPlatformPlanner(options, Map.of(provider.id(), provider),
-				new ArtifactPlatformSource(workbench.artifacts()), descriptor -> executable,
+				new ArtifactPlatformSource(workbench), descriptor -> executable,
 				new ProvisionedPlatformJavaSource(workbench.java()));
 		var processes = ProcessLauncher.builder()
 				.options(options)
+				.workbench(workbench)
 				.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider())))
 				.workspaces(workbench.workspaces())
 				.platforms(platforms)
