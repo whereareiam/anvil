@@ -76,6 +76,9 @@ class ExternalJavaLibraryIntegrationTest {
 
 	private ProtocolLibraryContext context() {
 		return ProtocolLibraryContext.builder()
+				.workers(launch -> {
+					throw new AssertionError("The in-process library starts no worker");
+				})
 				.cacheDirectory(temporary.resolve("cache"))
 				.accountsDirectory(temporary.resolve("accounts"))
 				.artifacts((uri, destination, sha256) -> {

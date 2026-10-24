@@ -157,7 +157,7 @@ class PlayerChannelEventIsolationTest {
 
 	private ProtocolWorkerProcess worker(String version) {
 		ProtocolRelease release = release(version);
-		return new ProtocolWorkerProcess(release, GradleReleaseClosures.of(release));
+		return new ProtocolWorkerProcess(release, GradleReleaseClosures.of(release), new LocalWorkerLauncher());
 	}
 
 	private ProtocolRelease release(String version) {

@@ -97,7 +97,7 @@ class McProtocolWorkerContractTest {
 		ProtocolRelease release = release(version);
 		assertEquals(protocol, release.getProtocolNumber());
 
-		try (ProtocolWorkerProcess worker = new ProtocolWorkerProcess(release, GradleReleaseClosures.of(release))) {
+		try (ProtocolWorkerProcess worker = new ProtocolWorkerProcess(release, GradleReleaseClosures.of(release), new LocalWorkerLauncher())) {
 			assertTrue(worker.diagnosticTail().contains("mcprotocol-java=" + clientSegment), worker.diagnosticTail());
 
 			ProtocolPlayer player = worker.create(request(release, "Alice"), null);
@@ -178,7 +178,7 @@ class McProtocolWorkerContractTest {
 		ClassLoader previous = thread.getContextClassLoader();
 		try (URLClassLoader withProbe = new URLClassLoader(new URL[]{probe.toUri().toURL()}, previous)) {
 			thread.setContextClassLoader(withProbe);
-			return new ProtocolWorkerProcess(release, GradleReleaseClosures.of(release));
+			return new ProtocolWorkerProcess(release, GradleReleaseClosures.of(release), new LocalWorkerLauncher());
 		} finally {
 			thread.setContextClassLoader(previous);
 		}
