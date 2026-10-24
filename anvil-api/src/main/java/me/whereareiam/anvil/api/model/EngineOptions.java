@@ -31,6 +31,13 @@ public class EngineOptions {
 	String executionProviderId = "local";
 
 	/**
+	 * Name of the paired workbench scenarios run on, or {@code local} for the engine's own machine. Omitted, the
+	 * engine uses the workbench the {@code ANVIL_WORKBENCH} environment variable names, else its paired default, else
+	 * its own machine.
+	 */
+	@Nullable String workbench;
+
+	/**
 	 * Default protocol library for simulated players, overridden by a scenario or player declaration.
 	 * When no declaration names a library, each player uses the installed library with the strongest
 	 * support for its Minecraft version.

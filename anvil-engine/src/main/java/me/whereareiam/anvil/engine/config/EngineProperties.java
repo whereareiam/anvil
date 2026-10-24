@@ -170,6 +170,16 @@ public final class EngineProperties {
 	public static final String REQUIREMENTS_PROPERTY = "anvil.requirements";
 
 	/**
+	 * Paired workbench scenarios run on, or {@code local} for the engine's own machine.
+	 */
+	public static final String WORKBENCH_PROPERTY = "anvil.workbench";
+
+	/**
+	 * Directory holding the engine's workbench pairings, such as one a sync tool shares between machines.
+	 */
+	public static final String WORKBENCHES_PROPERTY = "anvil.workbenches";
+
+	/**
 	 * Reads a snapshot of the current process properties.
 	 *
 	 * @return immutable engine options
@@ -193,6 +203,7 @@ public final class EngineProperties {
 		var builder = EngineOptions.builder()
 				.executionProviderId(properties.getProperty(EXECUTION_PROPERTY, defaults.getExecutionProviderId()))
 				.protocolLibrary(properties.getProperty(PROTOCOL_LIBRARY_PROPERTY))
+				.workbench(properties.getProperty(WORKBENCH_PROPERTY))
 				.supportPolicy(supportPolicy(properties, defaults.getSupportPolicy()))
 				.javaSelection(javaSelection(properties))
 				.downloadJava(booleanValue(properties, AUTO_DOWNLOAD_JAVA_PROPERTY, defaults.isDownloadJava()))

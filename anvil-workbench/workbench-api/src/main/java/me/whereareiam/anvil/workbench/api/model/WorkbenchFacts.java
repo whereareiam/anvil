@@ -22,6 +22,12 @@ public class WorkbenchFacts {
 	@NotNull String workbenchName;
 
 	/**
+	 * Whether the workbench shares the engine's machine, so that paths and installations on the engine's machine are
+	 * its own.
+	 */
+	boolean local;
+
+	/**
 	 * Processors the workbench's processes may use together.
 	 */
 	int processors;
