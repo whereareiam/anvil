@@ -3,8 +3,10 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.host;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import me.whereareiam.anvil.protocol.api.library.ProtocolWorkerLauncher;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
+import me.whereareiam.anvil.protocol.api.model.WorkerLaunch;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.mcprotocol.model.AuthenticationSession;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerEvent;
@@ -17,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -25,7 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
@@ -57,12 +57,13 @@ public final class ProtocolWorkerProcess implements AutoCloseable {
 	 *
 	 * @param release release the worker loads
 	 * @param closure the release's verified runtime closure in classpath order
+	 * @param launcher starts the worker JVM where the scenario's processes run
 	 * @throws IllegalStateException when the worker would run on a Java version below the release's minimum, its
 	 * class path is invalid, or it does not become ready
 	 */
-	public ProtocolWorkerProcess(@NotNull ProtocolRelease release, @NotNull List<Path> closure) {
+	public ProtocolWorkerProcess(@NotNull ProtocolRelease release, @NotNull List<Path> closure, @NotNull ProtocolWorkerLauncher launcher) {
 		this.release = release;
-		process = launch(closure);
+		process = launch(closure, launcher);
 		requests = new WorkerRpcClient(process.getOutputStream());
 
 		try {
@@ -141,30 +142,26 @@ public final class ProtocolWorkerProcess implements AutoCloseable {
 		return diagnostics.tail();
 	}
 
-	private Process launch(List<Path> closure) {
-		int java = Runtime.version().feature();
-		if (java < release.getJavaVersion())
-			throw new IllegalStateException("MCProtocolLib release " + release.getLibraryVersion() + " requires Java "
-					+ release.getJavaVersion() + ", but its worker would run on Java " + java);
-
-		String executable = System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win") ? "java.exe" : "java";
+	private Process launch(List<Path> closure, ProtocolWorkerLauncher launcher) {
 		List<Path> hostEntries = WorkerClasspath.hostEntries(Thread.currentThread().getContextClassLoader());
 		List<Path> classpath = new WorkerClasspath().resolve(release, closure, hostEntries);
-		List<String> command = List.of(
-				Path.of(System.getProperty("java.home"), "bin", executable).toString(),
-				"-Dorg.slf4j.simpleLogger.logFile=System.err",
-				"-Dorg.slf4j.simpleLogger.defaultLogLevel=warn",
+		List<Path> resolvedClosure = closure.stream().map(Path::toAbsolutePath).toList();
+		WorkerLaunch launch = WorkerLaunch.builder()
+				.closure(resolvedClosure)
+				.engineEntries(classpath.stream().filter(entry -> !resolvedClosure.contains(entry)).toList())
+				.mainClass(McProtocolWorkerMain.class.getName())
+				.jvmArgument("-Dorg.slf4j.simpleLogger.logFile=System.err")
+				.jvmArgument("-Dorg.slf4j.simpleLogger.defaultLogLevel=warn")
 				// Netty defaults to two event loops per processor. Older MCProtocolLib releases open one io_uring
 				// ring per loop, which exhausts the locked-memory limit on machines with many processors.
-				"-Dio.netty.eventLoopThreads=" + EVENT_LOOP_THREADS,
-				"-cp", String.join(File.pathSeparator, classpath.stream().map(Path::toString).toList()),
-				McProtocolWorkerMain.class.getName(),
-				release.version().toString(),
-				Integer.toString(release.getProtocolNumber())
-		);
+				.jvmArgument("-Dio.netty.eventLoopThreads=" + EVENT_LOOP_THREADS)
+				.argument(release.version().toString())
+				.argument(Integer.toString(release.getProtocolNumber()))
+				.javaVersion(release.getJavaVersion())
+				.build();
 
 		try {
-			return new ProcessBuilder(command).start();
+			return launcher.launch(launch);
 		} catch (IOException exception) {
 			throw startupFailure(exception);
 		}

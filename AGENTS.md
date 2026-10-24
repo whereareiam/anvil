@@ -270,6 +270,14 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   preparation stores every path asset, providers store local distribution JARs, and layouts and caches are rooted
   at `Workbench.workDirectory()` and `cacheDirectory()`, never at the engine options' directories. The host never
   opens a workbench path.
+- Protocol libraries start their worker JVMs through `ProtocolLibraryContext.getWorkers()` (`ProtocolWorkerLauncher`),
+  never with their own `ProcessBuilder`: the launcher binds it to `Workbench.launch`, which runs the worker where the
+  scenario's processes run, so players' game traffic stays on the workbench. A `WorkerLaunch` keeps the library's
+  closure, resolved through the context's artifacts on the workbench, apart from the engine's own class path
+  entries, which the launcher stores first. The local workbench runs workers on the engine's own Java runtime.
+- A process's addresses mean the same on the engine's machine and on its workbench: a workbench on another machine
+  makes every address it hands out reachable at the same host and port on the engine's loopback, so agent
+  connections, readiness probes and tests connect as they do locally.
 - `executionProviderId` selects providers in declarations and execution plans; `RunningProcess.executionId()`
   identifies one execution attempt. Engine `ProcessTimeouts` defaults are overridden independently by scenario
   startup/shutdown values. Engine `ProcessScheduling` parallelism and startup memory govern each scenario operation,

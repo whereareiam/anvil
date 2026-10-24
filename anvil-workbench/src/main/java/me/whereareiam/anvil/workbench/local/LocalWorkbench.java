@@ -9,13 +9,19 @@ import me.whereareiam.anvil.environment.provisioning.artifact.api.ArtifactResolv
 import me.whereareiam.anvil.environment.provisioning.java.api.JavaProvisioner;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.WorkspaceProvisioner;
 import me.whereareiam.anvil.workbench.api.Workbench;
+import me.whereareiam.anvil.workbench.api.model.JavaMainLaunch;
 import me.whereareiam.anvil.workbench.api.model.WorkbenchFacts;
 import me.whereareiam.anvil.workbench.local.adapter.execution.CacheImageLocks;
 import me.whereareiam.anvil.workbench.local.adapter.execution.JavaExecutionRuntime;
 import me.whereareiam.anvil.workbench.requirement.MachineCapacity;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -112,6 +118,28 @@ public final class LocalWorkbench implements Workbench {
 	@Override
 	public @NotNull Path store(@NotNull Path file) {
 		return file.toAbsolutePath().normalize();
+	}
+
+	/**
+	 * Starts the JVM with the engine's own Java runtime, which must be recent enough.
+	 */
+	@Override
+	public @NotNull Process launch(@NotNull JavaMainLaunch launch) throws IOException {
+		int java = Runtime.version().feature();
+		if (java < launch.getJavaVersion())
+			throw new IllegalStateException(launch.getMainClass() + " requires Java " + launch.getJavaVersion()
+					+ ", but the local workbench runs Java " + java);
+
+		String executable = System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win") ? "java.exe" : "java";
+		List<String> command = new ArrayList<>();
+		command.add(Path.of(System.getProperty("java.home"), "bin", executable).toString());
+		command.addAll(launch.getJvmArguments());
+		command.add("-cp");
+		command.add(String.join(File.pathSeparator, launch.getClasspath().stream().map(Path::toString).toList()));
+		command.add(launch.getMainClass());
+		command.addAll(launch.getArguments());
+
+		return new ProcessBuilder(command).start();
 	}
 
 	@Override

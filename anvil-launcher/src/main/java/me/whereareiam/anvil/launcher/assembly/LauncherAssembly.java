@@ -10,6 +10,8 @@ import me.whereareiam.anvil.engine.process.RetainedProcesses;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
 import me.whereareiam.anvil.environment.execution.managed.ManagedProcessService;
 import me.whereareiam.anvil.launcher.adapter.execution.ExecutionPlanMapper;
+import me.whereareiam.anvil.launcher.adapter.player.WorkbenchProtocolArtifacts;
+import me.whereareiam.anvil.launcher.adapter.player.WorkbenchWorkerLauncher;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ArtifactPlatformSource;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ClasspathPlatformAgentSource;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ProvisionedPlatformJavaSource;
@@ -47,7 +49,8 @@ public final class LauncherAssembly implements AutoCloseable {
 		ProviderDiscovery discovery = new ProviderDiscovery();
 		workbench = new LocalWorkbench(options, discovery.executions(executions));
 		try {
-			players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(), options, workbench.artifacts()::obtain);
+			players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(), options, workbench.cacheDirectory(),
+					new WorkbenchProtocolArtifacts(workbench), new WorkbenchWorkerLauncher(workbench));
 			scenarioFactory = assemble(options, discovery);
 		} catch (RuntimeException | Error failure) {
 			try (workbench) {

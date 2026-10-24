@@ -66,7 +66,8 @@ class ExternalProviderDiscoveryIntegrationTest {
 	void explicitPlayerScenarioAndEngineChoicesSelectALibraryWhileAnUndeclaredTieIsRefused() throws Exception {
 		try (var ignored = new TestExtensionLoader(FixtureArtifacts.extension(), true)) {
 			List<String> composed = new ArrayList<>();
-			try (var players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(), options(), artifacts())) {
+			try (var players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(), options(), options().getCacheDirectory(), artifacts(),
+					launch -> { throw new AssertionError("No worker starts before a player connects"); })) {
 				AnvilScenario scenario = scenario();
 				players.prepare(scenario);
 				PlayerManager manager = players.open(scenario, new Processes(), composer(composed), true);
@@ -86,7 +87,8 @@ class ExternalProviderDiscoveryIntegrationTest {
 			}
 
 			try (var players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(),
-					options().toBuilder().protocolLibrary("fixture").build(), artifacts())) {
+					options().toBuilder().protocolLibrary("fixture").build(), options().getCacheDirectory(), artifacts(),
+					launch -> { throw new AssertionError("The fixture library starts no worker"); })) {
 				players.open(scenario(), new Processes(), composer(composed), true).create("EngineChoice");
 			}
 

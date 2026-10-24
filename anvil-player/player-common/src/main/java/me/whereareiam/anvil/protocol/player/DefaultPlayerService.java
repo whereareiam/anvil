@@ -7,6 +7,7 @@ import me.whereareiam.anvil.api.player.PlayerManager;
 import me.whereareiam.anvil.api.player.account.AccountManager;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.protocol.api.library.ProtocolArtifactResolver;
+import me.whereareiam.anvil.protocol.api.library.ProtocolWorkerLauncher;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
@@ -36,6 +37,7 @@ public final class DefaultPlayerService implements AutoCloseable {
 	private final @NotNull Path cacheDirectory;
 	private final @NotNull Path accountsDirectory;
 	private final @NotNull ProtocolArtifactResolver artifacts;
+	private final @NotNull ProtocolWorkerLauncher workers;
 	private final @NotNull ProtocolLibrarySelector selector;
 	private final @NotNull AccountManager accounts;
 	private final List<RunningPlayerManager> managers = new CopyOnWriteArrayList<>();
@@ -52,8 +54,10 @@ public final class DefaultPlayerService implements AutoCloseable {
 	 * Creates the player service for one engine without creating any protocol library.
 	 *
 	 * @param libraries installed protocol libraries
-	 * @param options resolved engine options with cache and account directories
-	 * @param artifacts verified artifact resolution shared by the engine
+	 * @param options resolved engine options with an account directory
+	 * @param cacheDirectory cache root where the scenarios' processes run, below which libraries cache artifacts
+	 * @param artifacts verified artifact resolution where the scenarios' processes run
+	 * @param workers starts the libraries' worker JVMs where the scenarios' processes run
 	 * @throws IllegalArgumentException when the cache or account directory is unresolved, or when the
 	 * engine's library or a library with additional release data is not installed, or when additional
 	 * release data is invalid
@@ -61,18 +65,21 @@ public final class DefaultPlayerService implements AutoCloseable {
 	public DefaultPlayerService(
 			@NotNull ProtocolLibraryRegistry libraries,
 			@NotNull EngineOptions options,
-			@NotNull ProtocolArtifactResolver artifacts
+			@NotNull Path cacheDirectory,
+			@NotNull ProtocolArtifactResolver artifacts,
+			@NotNull ProtocolWorkerLauncher workers
 	) {
-		if (options.getCacheDirectory() == null || options.getAccountsDirectory() == null)
-			throw new IllegalArgumentException("The player service requires resolved cache and account directories");
+		if (options.getAccountsDirectory() == null)
+			throw new IllegalArgumentException("The player service requires a resolved account directory");
 		if (options.getProtocolLibrary() != null) libraries.require(options.getProtocolLibrary());
 		for (String library : options.getProtocolReleases().keySet()) libraries.require(library);
 
 		this.libraries = libraries;
 		this.options = options;
-		this.cacheDirectory = options.getCacheDirectory();
+		this.cacheDirectory = cacheDirectory;
 		this.accountsDirectory = options.getAccountsDirectory();
 		this.artifacts = artifacts;
+		this.workers = workers;
 		this.selector = new ProtocolLibrarySelector(libraries.ids(), this::releases, options.getProtocolLibrary(),
 				options.getSupportPolicy(), System.err::println);
 		this.accounts = new ProtocolAccountManager(libraries, accountsDirectory, reservations);
@@ -207,6 +214,7 @@ public final class DefaultPlayerService implements AutoCloseable {
 				.cacheDirectory(cacheDirectory)
 				.accountsDirectory(accountsDirectory)
 				.artifacts(artifacts)
+				.workers(workers)
 				.additionalReleases(options.getProtocolReleases().get(id))
 				.build();
 	}

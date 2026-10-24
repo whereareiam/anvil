@@ -115,6 +115,9 @@ class CompatibilityScenarioFactoryTest {
 				.filter(library -> library.id().equals("mcprotocol"))
 				.findFirst().orElseThrow();
 		ProtocolLibraryContext context = ProtocolLibraryContext.builder()
+				.workers(launch -> {
+					throw new AssertionError("Reading release data must not start a worker");
+				})
 				.cacheDirectory(directory)
 				.accountsDirectory(directory.resolve("accounts"))
 				.artifacts((artifact, destination, sha256) -> {

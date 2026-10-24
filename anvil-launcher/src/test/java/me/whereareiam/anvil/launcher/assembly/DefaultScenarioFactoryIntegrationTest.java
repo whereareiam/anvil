@@ -44,6 +44,8 @@ import me.whereareiam.anvil.engine.scenario.ScenarioSession;
 import me.whereareiam.anvil.environment.execution.local.LocalExecutionProvider;
 import me.whereareiam.anvil.environment.execution.managed.ManagedProcessService;
 import me.whereareiam.anvil.launcher.adapter.execution.ExecutionPlanMapper;
+import me.whereareiam.anvil.launcher.adapter.player.WorkbenchProtocolArtifacts;
+import me.whereareiam.anvil.launcher.adapter.player.WorkbenchWorkerLauncher;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ArtifactPlatformSource;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ProvisionedPlatformJavaSource;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
@@ -787,7 +789,8 @@ class DefaultScenarioFactoryIntegrationTest {
 				.connections(connections)
 				.plans(new ExecutionPlanMapper(options, workbench))
 				.build();
-		var players = new DefaultPlayerService(new ProtocolLibraryRegistry(libraries), options, workbench.artifacts()::obtain);
+		var players = new DefaultPlayerService(new ProtocolLibraryRegistry(libraries), options, workbench.cacheDirectory(),
+				new WorkbenchProtocolArtifacts(workbench), new WorkbenchWorkerLauncher(workbench));
 		var retained = new RetainedProcesses<RetainedProcessSet>();
 		var engine = new AnvilEngineBuilder(new DefaultScenarioFactory(workbench, options.getExecutionProviderId(), platforms, processes, players, retained)).options(options).extension(registration -> {
 			registration.own(workbench);

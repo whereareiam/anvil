@@ -60,7 +60,7 @@ public final class McProtocolLibraryProvider implements ProtocolLibraryProvider 
 	@Override
 	public @NotNull ProtocolLibrary create(@NotNull ProtocolLibraryContext context) {
 		return new McProtocolClientPool(context.getCacheDirectory(), catalog(context.getAdditionalReleases()),
-				new MicrosoftAuthentication(context.getAccountsDirectory()), context.getArtifacts());
+				new MicrosoftAuthentication(context.getAccountsDirectory()), context.getArtifacts(), context.getWorkers());
 	}
 
 	@Override

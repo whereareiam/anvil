@@ -206,7 +206,8 @@ class DefaultPlayerServiceTest {
 	}
 
 	private DefaultPlayerService service(EngineOptions options, StubProvider... providers) {
-		return new DefaultPlayerService(new ProtocolLibraryRegistry(List.of(providers)), options, artifacts());
+		return new DefaultPlayerService(new ProtocolLibraryRegistry(List.of(providers)), options, directory, artifacts(),
+				launch -> { throw new AssertionError("Stub libraries start no worker"); });
 	}
 
 	private EngineOptions options() {

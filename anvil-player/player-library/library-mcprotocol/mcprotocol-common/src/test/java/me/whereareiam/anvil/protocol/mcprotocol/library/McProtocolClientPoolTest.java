@@ -102,6 +102,9 @@ class McProtocolClientPoolTest {
 
 	private ProtocolLibraryContext context(Path additionalReleases) {
 		return ProtocolLibraryContext.builder()
+				.workers(launch -> {
+					throw new IllegalStateException("stopped before launch");
+				})
 				.cacheDirectory(temporary.resolve("cache"))
 				.accountsDirectory(temporary.resolve("accounts"))
 				.artifacts((URI artifact, Path destination, String sha256) -> {

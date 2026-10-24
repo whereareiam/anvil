@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.player.PlayerLogin;
 import me.whereareiam.anvil.api.model.player.SessionIdentity;
 import me.whereareiam.anvil.protocol.api.library.ProtocolArtifactResolver;
+import me.whereareiam.anvil.protocol.api.library.ProtocolWorkerLauncher;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
@@ -33,6 +34,7 @@ final class McProtocolClientPool implements ProtocolLibrary {
 	private final McProtocolReleaseCatalog catalog;
 	private final MicrosoftAuthentication authentication;
 	private final ProtocolArtifactResolver artifacts;
+	private final ProtocolWorkerLauncher launcher;
 
 	private final Map<String, ProtocolWorkerProcess> workers = new LinkedHashMap<>();
 	private boolean closed;
@@ -58,7 +60,7 @@ final class McProtocolClientPool implements ProtocolLibrary {
 
 		AuthenticationSession session = session(request);
 		ProtocolWorkerProcess worker = workers.computeIfAbsent(release.getLibraryVersion(),
-				ignored -> new ProtocolWorkerProcess(definition.getRelease(), closure(definition)));
+				ignored -> new ProtocolWorkerProcess(definition.getRelease(), closure(definition), launcher));
 
 		return worker.create(request, session);
 	}

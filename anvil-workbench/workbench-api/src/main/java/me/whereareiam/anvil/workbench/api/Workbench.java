@@ -6,9 +6,11 @@ import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.provisioning.artifact.api.ArtifactResolver;
 import me.whereareiam.anvil.environment.provisioning.java.api.JavaProvisioner;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.WorkspaceProvisioner;
+import me.whereareiam.anvil.workbench.api.model.JavaMainLaunch;
 import me.whereareiam.anvil.workbench.api.model.WorkbenchFacts;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 
@@ -77,6 +79,17 @@ public interface Workbench extends AutoCloseable {
 	 * @return the same content on the workbench
 	 */
 	@NotNull Path store(@NotNull Path file);
+
+	/**
+	 * Starts a JVM on the workbench outside managed execution, such as a protocol library's player worker, so that
+	 * it reaches the scenario's processes where they run.
+	 *
+	 * @param launch class path on the workbench, main class, arguments and minimum Java version
+	 * @return the started JVM, owned by the caller, whose standard streams reach the engine
+	 * @throws IOException when it cannot be started
+	 * @throws IllegalStateException when no Java runtime of the required version is available
+	 */
+	@NotNull Process launch(@NotNull JavaMainLaunch launch) throws IOException;
 
 	/**
 	 * Returns how this workbench downloads and stores artifacts such as distributions.

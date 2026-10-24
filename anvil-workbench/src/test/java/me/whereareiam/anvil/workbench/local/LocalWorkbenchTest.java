@@ -7,6 +7,7 @@ import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
+import me.whereareiam.anvil.workbench.api.model.JavaMainLaunch;
 import me.whereareiam.anvil.workbench.api.model.WorkbenchFacts;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,6 +50,27 @@ class LocalWorkbenchTest {
 			assertSame(policy, context.getNetworkPolicy());
 			assertEquals(temporary.resolve("cache"), context.getCacheDirectory());
 			assertSame(context.getPorts(), workbench.context(policy).getPorts(), "One workbench reserves ports once");
+		}
+	}
+
+	@Test
+	void refusesToLaunchAJvmThatNeedsANewerJavaThanItsOwn() {
+		int current = Runtime.version().feature();
+		var launch = JavaMainLaunch.builder().mainClass("example.Worker").javaVersion(current + 4).build();
+
+		try (var workbench = new LocalWorkbench(options(), Map.of())) {
+			IllegalStateException failure = assertThrows(IllegalStateException.class, () -> workbench.launch(launch));
+			assertEquals("example.Worker requires Java " + (current + 4) + ", but the local workbench runs Java " + current,
+					failure.getMessage());
+		}
+	}
+
+	@Test
+	void keepsTheEnginesFilesWhereTheyAre() {
+		try (var workbench = new LocalWorkbench(options(), Map.of())) {
+			assertEquals(temporary.resolve("plugin.jar"), workbench.store(temporary.resolve("build/../plugin.jar")));
+			assertEquals(temporary.resolve("work"), workbench.workDirectory());
+			assertEquals(temporary.resolve("cache"), workbench.cacheDirectory());
 		}
 	}
 
