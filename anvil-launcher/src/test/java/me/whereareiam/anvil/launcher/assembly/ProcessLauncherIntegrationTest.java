@@ -108,10 +108,11 @@ class ProcessLauncherIntegrationTest {
 		};
 		try (var workbench = new LocalWorkbench(options, Map.of("local", new LocalExecutionProvider()))) {
 			var platforms = new DefaultPlatformPlanner(options, Map.of(provider.id(), provider),
-					new ArtifactPlatformSource(workbench.artifacts()), descriptor -> executable,
+					new ArtifactPlatformSource(workbench), descriptor -> executable,
 					new ProvisionedPlatformJavaSource(workbench.java()));
 			var launcher = ProcessLauncher.builder()
 					.options(options)
+					.workbench(workbench)
 					.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider())))
 					.workspaces(workbench.workspaces())
 					.platforms(platforms)
@@ -165,10 +166,11 @@ class ProcessLauncherIntegrationTest {
 				.cacheDirectory(directory.resolve("cache")).eulaAccepted(true).build());
 		try (var workbench = new LocalWorkbench(options, Map.of("local", new LocalExecutionProvider()))) {
 			var platforms = new DefaultPlatformPlanner(options, Map.of("test", fixtureProvider(executable)),
-					new ArtifactPlatformSource(workbench.artifacts()), descriptor -> executable,
+					new ArtifactPlatformSource(workbench), descriptor -> executable,
 					new ProvisionedPlatformJavaSource(workbench.java()));
 			var launcher = ProcessLauncher.builder()
 					.options(options)
+					.workbench(workbench)
 					.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider())))
 					.workspaces(workbench.workspaces())
 					.platforms(platforms)
@@ -204,10 +206,11 @@ class ProcessLauncherIntegrationTest {
 		var images = new ShellImages();
 		try (var workbench = new LocalWorkbench(options, Map.of("local", new LocalExecutionProvider()))) {
 			var platforms = new DefaultPlatformPlanner(options, Map.of("test", fixtureProvider(executable)),
-					new ArtifactPlatformSource(workbench.artifacts()), descriptor -> executable,
+					new ArtifactPlatformSource(workbench), descriptor -> executable,
 					new ProvisionedPlatformJavaSource(workbench.java()));
 			var launcher = ProcessLauncher.builder()
 					.options(options)
+					.workbench(workbench)
 					.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider(), "images", images)))
 					.workspaces(workbench.workspaces())
 					.platforms(platforms)

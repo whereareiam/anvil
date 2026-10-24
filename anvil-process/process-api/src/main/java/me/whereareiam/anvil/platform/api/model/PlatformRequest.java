@@ -26,6 +26,11 @@ public class PlatformRequest {
 	 */
 	@NotNull ProcessFiles files;
 
+	/**
+	 * Cache root on the workbench that runs the process, below which providers place obtained artifacts.
+	 */
+	@NotNull Path cacheDirectory;
+
 	@NotNull Path workspaceGroupDirectory;
 	@NotNull String bindAddress;
 	int port;

@@ -9,6 +9,7 @@ import me.whereareiam.anvil.environment.provisioning.workspace.api.WorkspaceProv
 import me.whereareiam.anvil.workbench.api.model.WorkbenchFacts;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Path;
 import java.util.Map;
 
 /**
@@ -51,6 +52,31 @@ public interface Workbench extends AutoCloseable {
 	 * @return execution context for the scenario's sessions
 	 */
 	@NotNull ExecutionContext context(@NotNull NetworkPolicy networkPolicy);
+
+	/**
+	 * Returns the directory below which this workbench lays out scenario runs and their process workspaces.
+	 * Like every path a workbench hands out, it names a directory on the workbench's machine.
+	 *
+	 * @return work root on the workbench
+	 */
+	@NotNull Path workDirectory();
+
+	/**
+	 * Returns the directory this workbench caches distributions, Java installations and snapshots in.
+	 *
+	 * @return cache root on the workbench
+	 */
+	@NotNull Path cacheDirectory();
+
+	/**
+	 * Makes a file or directory of the engine's machine available to the workbench's processes, such as a plugin
+	 * JAR a build produced, and returns where the workbench keeps it. The engine passes no path of its own machine
+	 * to the workbench in any other way.
+	 *
+	 * @param file existing file or directory on the engine's machine
+	 * @return the same content on the workbench
+	 */
+	@NotNull Path store(@NotNull Path file);
 
 	/**
 	 * Returns how this workbench downloads and stores artifacts such as distributions.

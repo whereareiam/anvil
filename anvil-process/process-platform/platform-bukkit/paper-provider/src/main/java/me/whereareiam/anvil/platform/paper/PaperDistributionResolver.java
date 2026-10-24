@@ -25,7 +25,7 @@ final class PaperDistributionResolver {
 			if (!Files.isRegularFile(jar))
 				throw new PlatformException("Paper JAR does not exist: " + jar);
 
-			return ResolvedDistribution.builder().jar(jar).description("local Paper").build();
+			return ResolvedDistribution.builder().jar(context.getArtifactSource().store(jar)).description("local Paper").build();
 		}
 
 		String version = required(distribution.getVersion(), "Paper version");

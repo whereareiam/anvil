@@ -128,7 +128,7 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 	private PlatformContext context(ProcessPlan process, PlatformRequest request) {
 		return PlatformContext.builder()
 				.scenario(request.getScenario())
-				.cacheDirectory(options.getCacheDirectory())
+				.cacheDirectory(request.getCacheDirectory())
 				.files(request.getFiles())
 				.workDirectory(request.getWorkDirectory())
 				.workspaceGroupDirectory(request.getWorkspaceGroupDirectory())

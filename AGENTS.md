@@ -262,8 +262,14 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `PreparedProcess.files()`), never through a local path, because its workbench may keep it on another machine.
   Platform providers write configuration only through it; `WorkspaceProvisioner.files(workspace)` opens the local
   implementation, `WorkspaceProcessFiles`, which confines paths as scenario-declared paths are. `PlatformContext`
-  still carries `workDirectory` for installations linked into the workspace, such as NeoForge's, until stored
-  artifacts replace it.
+  still carries `workDirectory` for installations the machine links into the workspace, such as NeoForge's, so
+  NeoForge runs only on the local workbench.
+- Every path a machine-side contract takes or returns (execution, provisioning, `PlatformArtifactSource`,
+  `PlatformContext.cacheDirectory`, `JavaCommand.jar`, workspace assets) is the workbench's. A file of the engine's
+  machine reaches it only through `Workbench.store` (`PlatformArtifactSource.store` for providers): the scenario's
+  preparation stores every path asset, providers store local distribution JARs, and layouts and caches are rooted
+  at `Workbench.workDirectory()` and `cacheDirectory()`, never at the engine options' directories. The host never
+  opens a workbench path.
 - `executionProviderId` selects providers in declarations and execution plans; `RunningProcess.executionId()`
   identifies one execution attempt. Engine `ProcessTimeouts` defaults are overridden independently by scenario
   startup/shutdown values. Engine `ProcessScheduling` parallelism and startup memory govern each scenario operation,

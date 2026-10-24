@@ -33,21 +33,20 @@ final class SpigotDistributionResolver {
 	@NotNull ResolvedDistribution resolve(@NotNull MinecraftServer server, @NotNull PlatformContext context) throws IOException {
 		validate(server);
 		var distribution = server.getDistribution();
-		if (distribution.isLocal())
-			return requireJar(distribution.getLocalJar().toAbsolutePath().normalize(), "local Spigot");
+		if (distribution.isLocal()) {
+			Path jar = distribution.getLocalJar().toAbsolutePath().normalize();
+			if (!Files.isRegularFile(jar))
+				throw new PlatformException("Expected Spigot artifact does not exist: " + jar);
+			return ResolvedDistribution.builder().jar(context.getArtifactSource().store(jar)).description("local Spigot").build();
+		}
 
 		String version = distribution.getVersion();
 		String checksum = distribution.getSha256().toLowerCase(Locale.ROOT);
 		URI source = URI.create("https://cdn.getbukkit.org/spigot/spigot-" + version + ".jar");
 		Path destination = context.getCacheDirectory().resolve("distributions/getbukkit/spigot")
 				.resolve(version).resolve(checksum).resolve("spigot-" + version + ".jar");
+		// The obtained JAR lies on the workbench, which verified it against the pin.
 		Path jar = context.getArtifactSource().obtain(source, destination, checksum);
-		return requireJar(jar, "GetBukkit Spigot " + version + " (SHA-256 " + checksum + ")");
-	}
-
-	private ResolvedDistribution requireJar(Path jar, String description) {
-		if (!Files.isRegularFile(jar))
-			throw new PlatformException("Expected Spigot artifact does not exist: " + jar);
-		return ResolvedDistribution.builder().jar(jar).description(description).build();
+		return ResolvedDistribution.builder().jar(jar).description("GetBukkit Spigot " + version + " (SHA-256 " + checksum + ")").build();
 	}
 }

@@ -21,7 +21,7 @@ final class BungeeCordDistributionResolver {
 			if (!Files.isRegularFile(jar))
 				throw new PlatformException("BungeeCord JAR does not exist: " + jar);
 
-			return ResolvedDistribution.builder().jar(jar).description("local BungeeCord").build();
+			return ResolvedDistribution.builder().jar(context.getArtifactSource().store(jar)).description("local BungeeCord").build();
 		}
 		String build = distribution.getBuild();
 		if (build == null || build.isBlank()) {

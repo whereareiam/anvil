@@ -7,6 +7,9 @@ import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.process.ContainerProcess;
 import me.whereareiam.anvil.api.model.process.ProcessAddresses;
+import me.whereareiam.anvil.api.model.workspace.AssetSource;
+import me.whereareiam.anvil.api.model.workspace.WorkspaceAsset;
+import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.capability.process.ProcessCapabilityRuntime;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
@@ -21,11 +24,13 @@ import me.whereareiam.anvil.environment.provisioning.workspace.api.model.Workspa
 import me.whereareiam.anvil.platform.api.PlatformPreparer;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import me.whereareiam.anvil.platform.api.model.PlatformRequest;
+import me.whereareiam.anvil.workbench.api.Workbench;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 
@@ -35,6 +40,7 @@ import java.util.function.UnaryOperator;
 @RequiredArgsConstructor
 public final class ScenarioProcessPreparation implements ExecutionPreparation {
 	private final @NotNull EngineOptions options;
+	private final @NotNull Workbench workbench;
 	private final @NotNull PlatformPlan plan;
 	private final @NotNull WorkspaceLayout layout;
 	private final @NotNull WorkspaceProvisioner workspaces;
@@ -45,7 +51,7 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 
 	@Override
 	public void open() {
-		workspaces.recreateRunDirectory(options.getWorkDirectory(), layout.getRunDirectory());
+		workspaces.recreateRunDirectory(workbench.workDirectory(), layout.getRunDirectory());
 	}
 
 	@Override
@@ -66,16 +72,17 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 				.scenario(plan.getScenario())
 				.workDirectory(process.getRequest().getWorkspace())
 				.files(files)
+				.cacheDirectory(workbench.cacheDirectory())
 				.workspaceGroupDirectory(layout.getRunDirectory())
 				.bindAddress(target.bindAddress())
 				.port(target.peerAddress().getPort())
 				.processAddresses(peers)
 				.build();
 		var workspace = workspaces.prepare(WorkspaceRequest.builder()
-				.root(options.getWorkDirectory())
+				.root(workbench.workDirectory())
 				.directory(request.getWorkDirectory())
 				.process(declaration)
-				.plan(planned.getWorkspace())
+				.plan(stored(planned.getWorkspace()))
 				.providerDefaults(planned.getDefaultCaches())
 				.text(addresses)
 				.build());
@@ -110,6 +117,20 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 		}
 	}
 
+	/**
+	 * Hands the files a workspace copies from the engine's machine, such as plugin JARs and the platform agent, to
+	 * the workbench, and points the assets at the workbench's copies.
+	 */
+	private WorkspacePlan stored(WorkspacePlan plan) {
+		List<WorkspaceAsset> assets = plan.getAssets().stream()
+				.map(asset -> asset.getSource().isPath()
+						? asset.toBuilder().source(AssetSource.path(workbench.store(asset.getSource().getPath()))).build()
+						: asset)
+				.toList();
+
+		return plan.toBuilder().clearAssets().assets(assets).build();
+	}
+
 	private ContainerProcess container(String name) {
 		return plan.getScenario().getContainers().stream()
 				.filter(container -> container.getName().equals(name))
@@ -119,7 +140,7 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 
 	@Override
 	public void finish(boolean successful) {
-		workspaces.finishRunDirectory(options.getWorkDirectory(), layout.getRunDirectory(),
+		workspaces.finishRunDirectory(workbench.workDirectory(), layout.getRunDirectory(),
 				successful, options.isKeepFailedWorkspaces());
 	}
 

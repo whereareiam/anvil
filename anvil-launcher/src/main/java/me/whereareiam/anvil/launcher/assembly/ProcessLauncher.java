@@ -13,6 +13,7 @@ import me.whereareiam.anvil.launcher.adapter.execution.ExecutionPlanMapper;
 import me.whereareiam.anvil.launcher.adapter.execution.ScenarioProcessPreparation;
 import me.whereareiam.anvil.platform.api.PlatformPreparer;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
+import me.whereareiam.anvil.workbench.api.Workbench;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,6 +26,7 @@ import java.util.Map;
 @Builder
 public final class ProcessLauncher {
 	private final @NotNull EngineOptions options;
+	private final @NotNull Workbench workbench;
 	private final @NotNull ManagedProcessService processes;
 	private final @NotNull WorkspaceProvisioner workspaces;
 	private final @NotNull PlatformPreparer platforms;
@@ -48,9 +50,10 @@ public final class ProcessLauncher {
 			@Nullable ScenarioObserver observer,
 			@NotNull Map<String, InetSocketAddress> peers
 	) {
-		var layout = workspaces.layout(options.getWorkDirectory(), platformPlan.getScenario());
+		var layout = workspaces.layout(workbench.workDirectory(), platformPlan.getScenario());
 		var preparation = new ScenarioProcessPreparation(
 				options,
+				workbench,
 				platformPlan,
 				layout,
 				workspaces,
