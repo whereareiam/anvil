@@ -5,6 +5,7 @@ import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.docker.DockerEngine;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Executes a scenario in containers on the local Docker daemon.
@@ -51,6 +52,19 @@ public final class DockerExecutionProvider implements ExecutionProvider {
 	@Override
 	public boolean connectsEnvironments() {
 		return false;
+	}
+
+	/**
+	 * Docker is unavailable while its daemon does not answer, for example on a machine without Docker, and when
+	 * docker-java, which the test runtime supplies, is missing.
+	 */
+	@Override
+	public @Nullable String unavailableReason() {
+		try {
+			return DockerEngine.unreachable();
+		} catch (LinkageError missing) {
+			return "docker-java is not on the runtime class path (" + missing.getMessage() + ")";
+		}
 	}
 
 	@Override

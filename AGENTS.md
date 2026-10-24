@@ -4,7 +4,8 @@
 
 Anvil is a Java 21 testing framework for local Minecraft Java Edition processes and native-protocol
 players. Preserve reproducibility, protocol fidelity, complete cleanup, and useful failure diagnostics.
-NeoForge is the supported mod loader. Kubernetes, SSH/hosted orchestration, Fabric, Sponge, Bedrock, rendering,
+NeoForge is the supported mod loader. A scenario runs on a workbench; today that is the local workbench in the
+engine's own JVM, and workbenches on other machines are planned. Kubernetes, Fabric, Sponge, Bedrock, rendering,
 pathfinding, autonomous AI, and crafting automation are outside the current project scope.
 
 ## Working in this repository
@@ -26,7 +27,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 |-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `anvil-api`                                                           | Global engine registration, scenario definitions/lifecycles, public process/player handles, and capability owner identities; no scoped services or project dependencies             |
 | `anvil-engine`                                                        | Global builder/registration, the process-property contract and host defaults for engine options, scenario structure validation, extensions, setup hooks, default ready contexts, active contexts, retention of process groups that outlive a scenario, and owned-resource cleanup; depends only on anvil-api |
-| `anvil-environment`                                                   | Organizational grouping for independent cache, provisioning, and execution families                                                                                                 |
+| `anvil-environment`                                                   | Organizational grouping for independent cache, provisioning, and execution families: the building blocks a workbench is assembled from, which a runner may add to or replace                                                                                                 |
 | `anvil-environment/cache/cache-api`                                   | Independently consumable cache entry and staged-publication contracts; no anvil-api dependency                                                                                      |
 | `anvil-environment/cache`                                             | Filesystem cache locations, cross-process entry coordination, and staged publication                                                                                                |
 | `anvil-environment/provisioning/provisioning-artifact/artifact-api`   | Independently consumable artifact resolution, acquisition, and storage contracts; no anvil-api or cache-api dependency                                                              |
@@ -40,6 +41,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-environment/execution/execution-local`                         | Host process execution and local endpoints                                                                                                                                          |
 | `anvil-environment/execution/execution-docker`                        | Typed Docker Engine execution, images, networks, and container endpoints                                                                                                            |
 | `anvil-environment/yggdrasil-mock`                                    | Optional test-only Yggdrasil session server and profile lookup; one possible target of the session-server declarations, depends only on anvil-api                                   |
+| `anvil-workbench/workbench-api`                                       | The workbench contract: execution providers, the execution context of a scenario's sessions, provisioning, and `WorkbenchFacts`; carries the environment APIs it hands out |
+| `anvil-workbench/workbench-common`                                    | `RequirementCheck`, which refuses a scenario whose declared and implied requirements a workbench's facts cannot meet, and the machine's capacity                          |
+| `anvil-workbench`                                                     | The local workbench: the filesystem cache, artifact, Java and workspace provisioning, ports, image locks and execution providers assembled in the engine's JVM; assembly only |
 | `anvil-launcher`                                                      | Public default builder, scoped-service adapters, default ScenarioFactory/per-run assembly, and shaded packaging; wiring only, no rules of its own |
 | `anvil-capability/capability-api`                                     | Owner-neutral composition, typed process requests, and neutral player identity/dependency/lifetime contracts                                              |
 | `anvil-capability/capability-common`                                  | Shared dependency validation/composition/cleanup for capability owners, agent extensions of installed process providers, per-library player runtimes and the player composer, and process/player facades |
@@ -247,6 +251,13 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   agent JARs; anything else a capability needs from a platform belongs to an agent extension.
 - Platform agents expose native services and their scheduling rules. The endpoint owns its extension
   class loader; the scenario owns host connections.
+- A workbench holds a scenario's machine side; the host keeps planning and managed execution. The launcher builds
+  one `LocalWorkbench` from installed and supplied execution providers and takes the execution context, artifacts,
+  Java and workspaces from it, never from the environment's implementations directly. `DefaultScenarioFactory.create`
+  checks `AnvilScenario.requirements`, and the execution providers its processes imply, through
+  `RequirementCheck` before planning; an unmet requirement throws `ScenarioRequirementsException` with every reason,
+  which JUnit turns into a skip unless `anvil.requirements=strict`. An execution provider reports why it cannot run
+  processes through `unavailableReason()`; Docker's pings its daemon.
 - `executionProviderId` selects providers in declarations and execution plans; `RunningProcess.executionId()`
   identifies one execution attempt. Engine `ProcessTimeouts` defaults are overridden independently by scenario
   startup/shutdown values. Engine `ProcessScheduling` parallelism and startup memory govern each scenario operation,

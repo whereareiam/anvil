@@ -163,6 +163,13 @@ public final class EngineProperties {
 	public static final String CONSOLE_COLORS_PROPERTY = "anvil.console.colors";
 
 	/**
+	 * What a test run does with a scenario the workbench cannot run: {@code skip}, the default, skips the test with
+	 * the unmet requirements, and {@code strict} fails it, so that a run on an unsuitable workbench cannot pass
+	 * with tests quietly left out.
+	 */
+	public static final String REQUIREMENTS_PROPERTY = "anvil.requirements";
+
+	/**
 	 * Reads a snapshot of the current process properties.
 	 *
 	 * @return immutable engine options

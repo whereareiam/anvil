@@ -73,5 +73,6 @@ object AnvilEngineProperties {
         EngineProperties.STARTUP_TIMEOUT_PROPERTY,
         EngineProperties.STOP_TIMEOUT_PROPERTY,
         EngineProperties.CONSOLE_COLORS_PROPERTY,
+        EngineProperties.REQUIREMENTS_PROPERTY,
     )
 }

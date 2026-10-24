@@ -86,6 +86,13 @@ public class AnvilScenario {
 	@Builder.Default
 	NetworkPolicy networkPolicy = NetworkPolicy.builder().build();
 
+	/**
+	 * What the scenario needs from the workbench that runs it; checked before any process is prepared.
+	 */
+	@NotNull
+	@Builder.Default
+	ScenarioRequirements requirements = ScenarioRequirements.builder().build();
+
 	@Builder.Default
 	boolean manual = false;
 

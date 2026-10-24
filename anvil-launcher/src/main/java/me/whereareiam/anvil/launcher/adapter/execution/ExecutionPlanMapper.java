@@ -5,9 +5,6 @@ import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.process.ContainerProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
-import me.whereareiam.anvil.environment.execution.api.PortReservations;
-import me.whereareiam.anvil.environment.execution.api.image.ImageLocks;
-import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionPlan;
 import me.whereareiam.anvil.environment.execution.api.model.process.ContainerImage;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
@@ -15,6 +12,7 @@ import me.whereareiam.anvil.environment.execution.api.model.process.ProcessSpec;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceLayout;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import me.whereareiam.anvil.platform.api.model.ProcessPlan;
+import me.whereareiam.anvil.workbench.api.Workbench;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
@@ -30,9 +28,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public final class ExecutionPlanMapper {
 	private final @NotNull EngineOptions options;
-	private final @NotNull JavaExecutionRuntime javaRuntime;
-	private final @NotNull ImageLocks imageLocks;
-	private final @NotNull PortReservations ports;
+	private final @NotNull Workbench workbench;
 
 	/**
 	 * Returns the execution provider a scenario runs on: its own choice, or else the engine's.
@@ -60,7 +56,7 @@ public final class ExecutionPlanMapper {
 		AnvilScenario scenario = platforms.getScenario();
 		var plan = ExecutionPlan.builder()
 				.executionProviderId(executionProviderId(scenario))
-				.context(context(scenario))
+				.context(workbench.context(scenario.getNetworkPolicy()))
 				.processTimeouts(scenario.getProcessTimeouts().withDefaults(options.getProcessTimeouts()))
 				.processScheduling(options.getProcessScheduling())
 				.peers(peers);
@@ -70,20 +66,6 @@ public final class ExecutionPlanMapper {
 				plan.process(process(name, process, layout, platforms.getProcesses().keySet(), containers)));
 
 		return plan.build();
-	}
-
-	private @NotNull ExecutionContext context(@NotNull AnvilScenario scenario) {
-		return ExecutionContext.builder()
-				.cacheDirectory(options.getCacheDirectory())
-				.localRuntime(javaRuntime)
-				.runtimeValidator(javaRuntime)
-				.imageLocks(imageLocks)
-				.ports(ports)
-				.processPriority(options.getProcessScheduling().getPriority())
-				.offline(options.isOffline())
-				.refresh(options.isRefresh())
-				.networkPolicy(scenario.getNetworkPolicy())
-				.build();
 	}
 
 	private @NotNull ProcessSpec process(
