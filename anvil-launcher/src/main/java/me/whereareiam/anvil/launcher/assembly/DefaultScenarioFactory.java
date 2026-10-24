@@ -16,14 +16,19 @@ import me.whereareiam.anvil.platform.api.PlatformPlanner;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayerComposer;
 import me.whereareiam.anvil.protocol.player.DefaultPlayerService;
+import me.whereareiam.anvil.workbench.api.Workbench;
+import me.whereareiam.anvil.workbench.requirement.RequirementCheck;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Prepares each scenario through scoped services and joins its process and player lifetimes.
+ * Prepares each scenario through scoped services and joins its process and player lifetimes. A scenario the
+ * workbench cannot run is refused before anything of it is planned.
  */
 @RequiredArgsConstructor
 public final class DefaultScenarioFactory implements ScenarioFactory {
+	private final @NotNull Workbench workbench;
+	private final @NotNull String defaultExecutionProviderId;
 	private final @NotNull PlatformPlanner platforms;
 	private final @NotNull ProcessLauncher execution;
 	private final @NotNull DefaultPlayerService players;
@@ -31,6 +36,7 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 
 	@Override
 	public @NotNull ScenarioContext create(@NotNull AnvilScenario scenario, @Nullable ScenarioObserver observer) {
+		RequirementCheck.require(scenario, defaultExecutionProviderId, workbench.facts());
 		var plan = platforms.plan(scenario);
 		players.prepare(plan.getScenario());
 

@@ -2,6 +2,7 @@ package me.whereareiam.anvil.environment.execution.api;
 
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Creates an execution environment for one scenario topology.
@@ -31,6 +32,17 @@ public interface ExecutionProvider {
 	 * @return true when processes of separate environments reach each other's host listener addresses
 	 */
 	boolean connectsEnvironments();
+
+	/**
+	 * Returns why this provider cannot run processes on this machine right now, such as a Docker daemon that does
+	 * not answer. A workbench reports the reason, and a scenario whose processes need the provider is refused with
+	 * it before anything is prepared. The default is always available.
+	 *
+	 * @return the reason in one sentence, or null when the provider can run processes
+	 */
+	default @Nullable String unavailableReason() {
+		return null;
+	}
 
 	/**
 	 * Acquires a scenario execution environment, owned until all its processes are finalized.

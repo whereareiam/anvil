@@ -39,24 +39,22 @@ dependencies {
     implementation(projects.anvilCapability.capabilityApi)
     implementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi)
     implementation(projects.anvilCapability.capabilityProcess.capabilityProcessApi)
-    implementation(projects.anvilEnvironment.cache.cacheApi)
     implementation(projects.anvilEnvironment.provisioning.provisioningArtifact.artifactApi)
     implementation(projects.anvilEnvironment.provisioning.provisioningJava.javaApi)
     implementation(projects.anvilEnvironment.provisioning.provisioningWorkspace.workspaceApi)
     implementation(projects.anvilPlayer.playerApi)
     implementation(projects.anvilProcess.processApi)
     implementation(projects.anvilProcess.processProtocol.protocolHost.protocolHostApi)
+    implementation(projects.anvilWorkbench.workbenchApi)
 
     compileOnly(projects.anvilCapability.capabilityCommon)
     compileOnly(projects.anvilEngine)
-    compileOnly(projects.anvilEnvironment.cache)
     compileOnly(projects.anvilEnvironment.execution.executionManaged)
-    compileOnly(projects.anvilEnvironment.provisioning.provisioningArtifact)
-    compileOnly(projects.anvilEnvironment.provisioning.provisioningJava)
-    compileOnly(projects.anvilEnvironment.provisioning.provisioningWorkspace)
     compileOnly(projects.anvilPlayer.playerCommon)
     compileOnly(projects.anvilProcess.processCommon)
     compileOnly(projects.anvilProcess.processProtocol.protocolHost.protocolHostCommon)
+    compileOnly(projects.anvilWorkbench)
+    compileOnly(projects.anvilWorkbench.workbenchCommon)
 
     embedded(projects.anvilCapability.capabilityCommon) { isTransitive = false }
     embedded(projects.anvilEngine) { isTransitive = false }
@@ -70,12 +68,17 @@ dependencies {
     embedded(projects.anvilPlayer.playerCommon) { isTransitive = false }
     embedded(projects.anvilProcess.processCommon) { isTransitive = false }
     embedded(projects.anvilProcess.processProtocol.protocolHost.protocolHostCommon) { isTransitive = false }
+    embedded(projects.anvilWorkbench) { isTransitive = false }
+    embedded(projects.anvilWorkbench.workbenchCommon) { isTransitive = false }
     embedded(libs.commons.compress)
     embedded(libs.jackson.databind)
     embedded(libs.jackson.parameters)
     embedded(libs.jackson.toml)
     embedded(libs.slf4j.api)
     embedded(libs.slf4j.simple)
+
+    // The embedded local workbench opens its cache through this API; the launcher itself names none of it.
+    runtimeOnly(projects.anvilEnvironment.cache.cacheApi)
 
     testImplementation(projects.anvilCapability.capabilityCommon)
     testImplementation(projects.anvilCapability.capabilityDefault)
@@ -89,6 +92,8 @@ dependencies {
     testImplementation(projects.anvilPlayer.playerCommon)
     testImplementation(projects.anvilProcess.processCommon)
     testImplementation(projects.anvilProcess.processProtocol.protocolHost.protocolHostCommon)
+    testImplementation(projects.anvilWorkbench)
+    testImplementation(projects.anvilWorkbench.workbenchCommon)
 
     testRuntimeOnly(projects.anvilPlayer.playerLibrary.libraryMcprotocol)
     testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.bukkitAgent)

@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.integration.junit;
 
 import lombok.Getter;
+import me.whereareiam.anvil.api.exception.scenario.ScenarioRequirementsException;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.account.AccountPool;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
@@ -54,12 +55,29 @@ final class ScenarioInvocation implements AutoCloseable {
 			@Nullable AccountRequirement requirement,
 			@NotNull OwnedResources resources
 	) {
+		this(engine, scenario, successful, requirement, resources, RequirementMode.SKIP);
+	}
+
+	/**
+	 * Ends the test as the run's requirement mode says when the workbench refuses the scenario for unmet
+	 * requirements; nothing of the scenario was prepared then.
+	 */
+	ScenarioInvocation(
+			@NotNull ScenarioEngine engine,
+			@NotNull AnvilScenario scenario,
+			@NotNull BooleanSupplier successful,
+			@Nullable AccountRequirement requirement,
+			@NotNull OwnedResources resources,
+			@NotNull RequirementMode requirements
+	) {
 		this.successful = successful;
 		this.resources = resources;
 
 		ScenarioContext prepared;
 		try {
 			prepared = engine.prepare(scenario);
+		} catch (ScenarioRequirementsException refused) {
+			try (resources) { throw requirements.refuse(refused); }
 		} catch (RuntimeException | Error failure) {
 			try (resources) { throw failure; }
 		}

@@ -9,16 +9,14 @@ import me.whereareiam.anvil.capability.AgentExtensions;
 import me.whereareiam.anvil.engine.process.RetainedProcesses;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
 import me.whereareiam.anvil.environment.execution.managed.ManagedProcessService;
-import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
-import me.whereareiam.anvil.launcher.adapter.execution.CacheImageLocks;
 import me.whereareiam.anvil.launcher.adapter.execution.ExecutionPlanMapper;
-import me.whereareiam.anvil.launcher.adapter.execution.JavaExecutionRuntime;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ArtifactPlatformSource;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ClasspathPlatformAgentSource;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ProvisionedPlatformJavaSource;
 import me.whereareiam.anvil.platform.planning.DefaultPlatformPlanner;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.protocol.player.DefaultPlayerService;
+import me.whereareiam.anvil.workbench.local.LocalWorkbench;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -27,7 +25,7 @@ import java.util.List;
  * Assembles shared launcher services and owns them until engine shutdown or failed construction.
  */
 public final class LauncherAssembly implements AutoCloseable {
-	private final @NotNull ProvisioningServices provisioning;
+	private final @NotNull LocalWorkbench workbench;
 	private final @NotNull DefaultPlayerService players;
 	private final @NotNull RetainedProcesses<RetainedProcessSet> retained = new RetainedProcesses<>();
 
@@ -47,39 +45,35 @@ public final class LauncherAssembly implements AutoCloseable {
 	 */
 	public LauncherAssembly(@NotNull EngineOptions options, @NotNull List<ExecutionProvider> executions) {
 		ProviderDiscovery discovery = new ProviderDiscovery();
-		provisioning = new ProvisioningServices(options);
+		workbench = new LocalWorkbench(options, discovery.executions(executions));
 		try {
-			players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(), options, provisioning.getArtifacts()::obtain);
-			scenarioFactory = assemble(options, executions, discovery);
+			players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(), options, workbench.artifacts()::obtain);
+			scenarioFactory = assemble(options, discovery);
 		} catch (RuntimeException | Error failure) {
-			try (provisioning) {
+			try (workbench) {
 				throw failure;
 			}
 		}
 	}
 
-	private ScenarioFactory assemble(
-			EngineOptions options,
-			List<ExecutionProvider> executions,
-			ProviderDiscovery discovery
-	) {
+	private ScenarioFactory assemble(EngineOptions options, ProviderDiscovery discovery) {
 		try {
 			var locator = discovery.required(AgentArtifactLocator.class, "agent artifact locator");
 			var platforms = new DefaultPlatformPlanner(options, discovery.platforms(),
-					new ArtifactPlatformSource(provisioning.getArtifacts()),
+					new ArtifactPlatformSource(workbench.artifacts()),
 					new ClasspathPlatformAgentSource(locator, AgentExtensions.discover()),
-					new ProvisionedPlatformJavaSource(provisioning.getJava()));
+					new ProvisionedPlatformJavaSource(workbench.java()));
 			var execution = ProcessLauncher.builder()
 					.options(options)
-					.processes(new ManagedProcessService(discovery.executions(executions)))
-					.workspaces(provisioning.getWorkspaces())
+					.processes(new ManagedProcessService(workbench.executions()))
+					.workspaces(workbench.workspaces())
 					.platforms(platforms)
 					.connections(discovery.required(AgentConnectionProvider.class, "agent connection provider"))
-					.plans(new ExecutionPlanMapper(options, new JavaExecutionRuntime(provisioning.getJava()),
-							new CacheImageLocks(provisioning.getCache()), new PortSelection()))
+					.plans(new ExecutionPlanMapper(options, workbench))
 					.build();
 
-			return new DefaultScenarioFactory(platforms, execution, players, retained);
+			return new DefaultScenarioFactory(workbench, options.getExecutionProviderId(), platforms, execution, players,
+					retained);
 		} catch (RuntimeException | Error failure) {
 			try (players) {
 				throw failure;
@@ -88,7 +82,7 @@ public final class LauncherAssembly implements AutoCloseable {
 	}
 
 	/**
-	 * Stops the processes kept for the engine, then closes players before provisioning. Repeated calls
+	 * Stops the processes kept for the engine, then closes players before the workbench. Repeated calls
 	 * have no effect, even after cleanup fails.
 	 */
 	@Override
@@ -96,7 +90,7 @@ public final class LauncherAssembly implements AutoCloseable {
 		if (closed) return;
 
 		closed = true;
-		try (provisioning; players) {
+		try (workbench; players) {
 			retained.close();
 		}
 	}

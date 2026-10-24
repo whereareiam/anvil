@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.integration.junit;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.exception.scenario.ScenarioRequirementsException;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.account.AccountManager;
@@ -151,6 +152,24 @@ class ScenarioInvocationTest {
 	}
 
 	@Test
+	void skipsAScenarioTheWorkbenchRefusesAndClosesItsResources() {
+		List<String> actions = new ArrayList<>();
+		var resources = new OwnedResources();
+		resources.own((AutoCloseable) () -> actions.add("resource"));
+
+		TestAbortedException skipped = assertThrows(TestAbortedException.class, () -> new ScenarioInvocation(
+				refusing(), definition, () -> true, null, resources, RequirementMode.SKIP));
+		assertTrue(skipped.getMessage().contains("may not reach api.mojang.com"), skipped.getMessage());
+		assertEquals(List.of("resource"), actions);
+	}
+
+	@Test
+	void failsAScenarioTheWorkbenchRefusesInStrictMode() {
+		assertThrows(ScenarioRequirementsException.class, () -> new ScenarioInvocation(
+				refusing(), definition, () -> true, null, new OwnedResources(), RequirementMode.STRICT));
+	}
+
+	@Test
 	void rejectsARequirementBelowOneAccount() {
 		assertThrows(ExtensionConfigurationException.class, () -> requirement("noAccounts"));
 	}
@@ -171,6 +190,18 @@ class ScenarioInvocationTest {
 		@AnvilAccounts(0)
 		void noAccounts() {
 		}
+	}
+
+	/**
+	 * An engine whose workbench refuses every scenario, as one that may not reach Mojang would.
+	 */
+	private ScenarioEngine refusing() {
+		return new ScenarioEngine() {
+			public @NotNull ScenarioContext prepare(@NotNull AnvilScenario scenario, @Nullable ScenarioObserver observer) {
+				throw new ScenarioRequirementsException(scenario.getName(), "local", List.of("its processes may not reach api.mojang.com"));
+			}
+			public void close() { throw new AssertionError("The invocation borrows its engine"); }
+		};
 	}
 
 	/**

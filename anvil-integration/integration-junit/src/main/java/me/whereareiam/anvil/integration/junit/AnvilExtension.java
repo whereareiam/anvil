@@ -33,7 +33,7 @@ public final class AnvilExtension implements BeforeEachCallback, ParameterResolv
 			AnvilScenario scenario = ScenarioSelection.scenario(method, context.getRequiredTestClass(), resources);
 			AccountRequirement accounts = AccountRequirement.of(method, context.getRequiredTestClass());
 			invocation = new ScenarioInvocation(engine(context), scenario, () -> context.getExecutionException().isEmpty(),
-					accounts, resources);
+					accounts, resources, RequirementMode.fromSystemProperties());
 		} catch (RuntimeException | Error failure) {
 			// A failed invocation has closed the resources already; closing again finds none left.
 			try (resources) { throw failure; }

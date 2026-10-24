@@ -27,9 +27,7 @@ import me.whereareiam.anvil.engine.config.EngineDefaults;
 import me.whereareiam.anvil.environment.execution.local.LocalExecutionProvider;
 import me.whereareiam.anvil.environment.execution.managed.ManagedProcessService;
 import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
-import me.whereareiam.anvil.launcher.adapter.execution.CacheImageLocks;
 import me.whereareiam.anvil.launcher.adapter.execution.ExecutionPlanMapper;
-import me.whereareiam.anvil.launcher.adapter.execution.JavaExecutionRuntime;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ArtifactPlatformSource;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ProvisionedPlatformJavaSource;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
@@ -38,6 +36,7 @@ import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.model.ResolvedDistribution;
 import me.whereareiam.anvil.platform.planning.DefaultPlatformPlanner;
 import me.whereareiam.anvil.testkit.support.FixtureArtifacts;
+import me.whereareiam.anvil.workbench.local.LocalWorkbench;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -107,14 +106,14 @@ class ProcessLauncherIntegrationTest {
 			@Override
 			public PlatformAgentDescriptor platformAgent() { return PlatformAgentDescriptor.builder().entrypointClassName("fixture").build(); }
 		};
-		try (var provisioning = new ProvisioningServices(options)) {
+		try (var workbench = new LocalWorkbench(options, Map.of("local", new LocalExecutionProvider()))) {
 			var platforms = new DefaultPlatformPlanner(options, Map.of(provider.id(), provider),
-					new ArtifactPlatformSource(provisioning.getArtifacts()), descriptor -> executable,
-					new ProvisionedPlatformJavaSource(provisioning.getJava()));
+					new ArtifactPlatformSource(workbench.artifacts()), descriptor -> executable,
+					new ProvisionedPlatformJavaSource(workbench.java()));
 			var launcher = ProcessLauncher.builder()
 					.options(options)
 					.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider())))
-					.workspaces(provisioning.getWorkspaces())
+					.workspaces(workbench.workspaces())
 					.platforms(platforms)
 					.connections((port, token, timeout) -> {
 						ports.add(port);
@@ -122,8 +121,7 @@ class ProcessLauncherIntegrationTest {
 
 						return agent(tokens.size(), calls);
 					})
-					.plans(new ExecutionPlanMapper(options, new JavaExecutionRuntime(provisioning.getJava()),
-							new CacheImageLocks(provisioning.getCache()), new PortSelection()))
+					.plans(new ExecutionPlanMapper(options, workbench))
 					.build();
 			var agents = new ScenarioAgentDirectory();
 			try (var group = launcher.prepare(platforms.plan(scenario), agents, null, null, Map.of())) {
@@ -165,18 +163,17 @@ class ProcessLauncherIntegrationTest {
 		var scenario = AnvilScenario.builder().name("test").entrypoint("server").server(declaration).build();
 		var options = EngineDefaults.resolve(EngineOptions.builder().workDirectory(directory.resolve("work"))
 				.cacheDirectory(directory.resolve("cache")).eulaAccepted(true).build());
-		try (var provisioning = new ProvisioningServices(options)) {
+		try (var workbench = new LocalWorkbench(options, Map.of("local", new LocalExecutionProvider()))) {
 			var platforms = new DefaultPlatformPlanner(options, Map.of("test", fixtureProvider(executable)),
-					new ArtifactPlatformSource(provisioning.getArtifacts()), descriptor -> executable,
-					new ProvisionedPlatformJavaSource(provisioning.getJava()));
+					new ArtifactPlatformSource(workbench.artifacts()), descriptor -> executable,
+					new ProvisionedPlatformJavaSource(workbench.java()));
 			var launcher = ProcessLauncher.builder()
 					.options(options)
 					.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider())))
-					.workspaces(provisioning.getWorkspaces())
+					.workspaces(workbench.workspaces())
 					.platforms(platforms)
 					.connections((port, token, timeout) -> agent(1, new ArrayList<>()))
-					.plans(new ExecutionPlanMapper(options, new JavaExecutionRuntime(provisioning.getJava()),
-							new CacheImageLocks(provisioning.getCache()), new PortSelection()))
+					.plans(new ExecutionPlanMapper(options, workbench))
 					.build();
 			try (var group = launcher.prepare(platforms.plan(scenario), new ScenarioAgentDirectory(), null, null, Map.of())) {
 				group.startAll();
@@ -205,18 +202,17 @@ class ProcessLauncherIntegrationTest {
 		var options = EngineDefaults.resolve(EngineOptions.builder().workDirectory(directory.resolve("work"))
 				.cacheDirectory(directory.resolve("cache")).eulaAccepted(true).build());
 		var images = new ShellImages();
-		try (var provisioning = new ProvisioningServices(options)) {
+		try (var workbench = new LocalWorkbench(options, Map.of("local", new LocalExecutionProvider()))) {
 			var platforms = new DefaultPlatformPlanner(options, Map.of("test", fixtureProvider(executable)),
-					new ArtifactPlatformSource(provisioning.getArtifacts()), descriptor -> executable,
-					new ProvisionedPlatformJavaSource(provisioning.getJava()));
+					new ArtifactPlatformSource(workbench.artifacts()), descriptor -> executable,
+					new ProvisionedPlatformJavaSource(workbench.java()));
 			var launcher = ProcessLauncher.builder()
 					.options(options)
 					.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider(), "images", images)))
-					.workspaces(provisioning.getWorkspaces())
+					.workspaces(workbench.workspaces())
 					.platforms(platforms)
 					.connections((port, token, timeout) -> agent(1, new ArrayList<>()))
-					.plans(new ExecutionPlanMapper(options, new JavaExecutionRuntime(provisioning.getJava()),
-							new CacheImageLocks(provisioning.getCache()), new PortSelection()))
+					.plans(new ExecutionPlanMapper(options, workbench))
 					.build();
 			try (var group = launcher.prepare(platforms.plan(scenario), new ScenarioAgentDirectory(), null, null, Map.of())) {
 				group.startAll();

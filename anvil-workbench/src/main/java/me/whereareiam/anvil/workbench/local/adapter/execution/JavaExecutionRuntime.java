@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.launcher.adapter.execution;
+package me.whereareiam.anvil.workbench.local.adapter.execution;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.java.JavaSource;

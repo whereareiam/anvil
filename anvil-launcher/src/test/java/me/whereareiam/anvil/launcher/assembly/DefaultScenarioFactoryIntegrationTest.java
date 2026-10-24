@@ -43,10 +43,7 @@ import me.whereareiam.anvil.engine.process.RetainedProcesses;
 import me.whereareiam.anvil.engine.scenario.ScenarioSession;
 import me.whereareiam.anvil.environment.execution.local.LocalExecutionProvider;
 import me.whereareiam.anvil.environment.execution.managed.ManagedProcessService;
-import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
-import me.whereareiam.anvil.launcher.adapter.execution.CacheImageLocks;
 import me.whereareiam.anvil.launcher.adapter.execution.ExecutionPlanMapper;
-import me.whereareiam.anvil.launcher.adapter.execution.JavaExecutionRuntime;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ArtifactPlatformSource;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ProvisionedPlatformJavaSource;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
@@ -65,6 +62,7 @@ import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.protocol.player.DefaultPlayerService;
 import me.whereareiam.anvil.testkit.support.FixtureArtifacts;
+import me.whereareiam.anvil.workbench.local.LocalWorkbench;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -777,23 +775,22 @@ class DefaultScenarioFactoryIntegrationTest {
 				.processTimeouts(ProcessTimeouts.builder().shutdown(Duration.ofSeconds(2)).build())
 				.build();
 		options = EngineDefaults.resolve(options);
-		var provisioning = new ProvisioningServices(options);
+		var workbench = new LocalWorkbench(options, Map.of("local", new LocalExecutionProvider()));
 		var platforms = new DefaultPlatformPlanner(options, Map.of(provider.id(), provider),
-				new ArtifactPlatformSource(provisioning.getArtifacts()), descriptor -> executable,
-				new ProvisionedPlatformJavaSource(provisioning.getJava()));
+				new ArtifactPlatformSource(workbench.artifacts()), descriptor -> executable,
+				new ProvisionedPlatformJavaSource(workbench.java()));
 		var processes = ProcessLauncher.builder()
 				.options(options)
 				.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider())))
-				.workspaces(provisioning.getWorkspaces())
+				.workspaces(workbench.workspaces())
 				.platforms(platforms)
 				.connections(connections)
-				.plans(new ExecutionPlanMapper(options, new JavaExecutionRuntime(provisioning.getJava()),
-						new CacheImageLocks(provisioning.getCache()), new PortSelection()))
+				.plans(new ExecutionPlanMapper(options, workbench))
 				.build();
-		var players = new DefaultPlayerService(new ProtocolLibraryRegistry(libraries), options, provisioning.getArtifacts()::obtain);
+		var players = new DefaultPlayerService(new ProtocolLibraryRegistry(libraries), options, workbench.artifacts()::obtain);
 		var retained = new RetainedProcesses<RetainedProcessSet>();
-		var engine = new AnvilEngineBuilder(new DefaultScenarioFactory(platforms, processes, players, retained)).options(options).extension(registration -> {
-			registration.own(provisioning);
+		var engine = new AnvilEngineBuilder(new DefaultScenarioFactory(workbench, options.getExecutionProviderId(), platforms, processes, players, retained)).options(options).extension(registration -> {
+			registration.own(workbench);
 			registration.own(players);
 			registration.own(retained);
 		}).build();

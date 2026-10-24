@@ -14,6 +14,9 @@ a family's API describes its services and extension points. The launcher binds t
 | `anvil-environment/provisioning`                | Separate artifact, Java, and workspace APIs with acquisition, installation, layout, snapshots, and retention policy |
 | `anvil-environment/execution/execution-managed` | Execution plans, preparation handoff, readiness, consoles, generation replacement, and ordered finalization         |
 | Other `anvil-environment/execution` modules     | Execution-provider contracts, local processes, and Docker execution                                                 |
+| `anvil-workbench/workbench-api`                 | The workbench a scenario's processes run on: its execution providers, provisioning, execution context, and facts    |
+| `anvil-workbench/workbench-common`              | Checking a scenario's declared and implied requirements against a workbench's facts, and the machine's capacity     |
+| `anvil-workbench`                               | The local workbench: cache, provisioning, and execution providers assembled in the engine's own JVM                 |
 | `anvil-process/process-common`              | Distribution validation, effective Java/topology requirements, forwarding, and provider preparation/configuration                             |
 | `anvil-process/process-api`                     | Platform-provider contracts, version data, artifact sources, and configuration contracts                            |
 | `anvil-process/process-platform/platform-<name>` | One family per platform: its provider and, where it installs one, its platform agent assembly                |
@@ -230,12 +233,19 @@ not import another family's API through either a direct dependency or an API re-
 `anvil-environment` groups directories; it does not combine cache, execution, artifacts, Java, and
 workspaces into one API family. Cache operations remain in `cache-api`, HTTP acquisition in
 `artifact-api`, Java installation in `java-api`, and workspace lifecycle in `workspace-api`.
-The engine has no dependency on these APIs. Concrete SDKs, serialization, and transports also stay
+The engine has no dependency on these APIs.
+
+These families are the building blocks a workbench is assembled from. A workbench is the place a scenario's
+processes run: the host plans a scenario and orchestrates its processes through managed execution, and
+everything it plans against or runs is held by the workbench. `workbench-api` therefore carries the environment
+APIs it hands out, declared through `architecture.dependsOnApis` on the `anvil-workbench` family. The launcher
+assembles one `LocalWorkbench` from the installed and supplied execution providers, and the scenario factory
+refuses a scenario through `RequirementCheck` before planning it when the workbench's facts cannot meet it. Concrete SDKs, serialization, and transports also stay
 outside the global contract.
 
 When another family needs part of a service, define a focused input or preparation boundary in the
 consumer's API. For example, execution requests a local executable through `LocalRuntimePreparation`
-and guards image metadata through `ImageLocks`; launcher adapters bind those requests to Java and
+and guards image metadata through `ImageLocks`; the local workbench's adapters bind those requests to Java and
 cache APIs. Docker keeps its image selection, cache layout, and validation order.
 
 Implementations depend on APIs and external libraries, not sibling implementations. Introduce a
