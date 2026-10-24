@@ -17,7 +17,7 @@ var processes = anvil.processes();
 var proxy = processes.proxy("proxy");
 var lobby = processes.server("lobby");
 System.out.println(proxy.address());
-System.out.println(lobby.workDirectory());
+System.out.println(lobby.files().read("server.properties"));
 ```
 
 Names are the ones declared in the scenario. Lookups return current handles; typed lookups also
@@ -32,7 +32,27 @@ check whether the named process has the expected role.
 | `restart(name)` | Replacement process after readiness |
 | `kill(name)` | Stopped process, ended without its shutdown sequence |
 
-Every handle exposes `name()`, `address()`, `workDirectory()`, `state()`, and `console()`.
+Every handle exposes `name()`, `address()`, `files()`, `state()`, and `console()`.
+
+## Read and change a process's files
+
+`files()` reaches the process's workspace wherever its workbench keeps it. Paths are relative to the workspace and
+separated by `/`; a path that leaves the workspace is refused. Its methods throw `IOException`.
+
+```java
+import me.whereareiam.anvil.api.process.ProcessFiles;
+```
+
+```java
+ProcessFiles files = lobby.files();
+String properties = files.read("server.properties");
+files.write("plugins/Example/config.yml", "enabled: false\n");
+List<String> plugins = files.list("plugins");
+files.delete("plugins/Example");
+```
+
+Restarts keep the files: every generation of a process shares one workspace. `location()` describes where the
+workspace is for diagnostics, such as its path on the local machine.
 Use `capability(Type.class)` for installed process behavior, including
 [capabilities backed by agents](./agents/index.md).
 After a restart, request a fresh lookup or use the returned replacement handle.

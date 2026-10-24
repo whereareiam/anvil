@@ -41,7 +41,7 @@ must prove that she received the message.
 
 The context's typed lookup checks the role as well as the name: `server("server")` expects a server.
 Use `get(name)` when the role does not matter, or `proxy(name)` for a proxy. The handle's `address()`
-and `workDirectory()` help you inspect the allocated endpoint and the process's files without
+and `files()` help you inspect the allocated endpoint and the process's files without
 hard-coding ports or guessing generated paths.
 
 ## Understand a process replacement

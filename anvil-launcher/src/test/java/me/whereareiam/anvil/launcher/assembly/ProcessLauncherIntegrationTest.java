@@ -143,7 +143,7 @@ class ProcessLauncherIntegrationTest {
 				assertNotEquals(tokens.get(0), tokens.get(1));
 				assertEquals(ports.get(0), ports.get(1));
 				assertNotEquals(original.address().getPort(), ports.getFirst());
-				assertEquals("first", Files.readString(replacement.workDirectory().resolve("installed.txt")));
+				assertEquals("first", replacement.files().read("installed.txt"));
 			}
 		}
 		assertEquals(List.of("1:before", "1:close", "2:after", "2:close"), calls);
@@ -179,7 +179,7 @@ class ProcessLauncherIntegrationTest {
 				group.startAll();
 				var server = group.server("server");
 				assertEquals("127.0.0.1:" + server.listener("link").getPort(),
-						Files.readString(server.workDirectory().resolve("link.txt")));
+						server.files().read("link.txt"));
 			}
 		}
 	}
@@ -219,7 +219,7 @@ class ProcessLauncherIntegrationTest {
 				var redis = group.container("redis");
 				var server = group.server("server");
 
-				assertEquals("127.0.0.1:" + redis.port(6379).getPort(), Files.readString(server.workDirectory().resolve("redis.txt")));
+				assertEquals("127.0.0.1:" + redis.port(6379).getPort(), server.files().read("redis.txt"));
 				assertEquals(server.address().getHostString() + ":" + server.address().getPort(), images.environment.get("SERVER"));
 				assertEquals(1, images.started.get());
 			}

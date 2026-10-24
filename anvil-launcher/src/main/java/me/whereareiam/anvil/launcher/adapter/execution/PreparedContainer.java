@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.model.process.ContainerProcess;
 import me.whereareiam.anvil.api.model.process.ProcessAddresses;
+import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.environment.execution.api.model.ImageLaunch;
 import me.whereareiam.anvil.environment.execution.api.model.ProcessLaunch;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessSpec;
@@ -21,18 +22,21 @@ import java.nio.file.Files;
 @RequiredArgsConstructor
 final class PreparedContainer implements PreparedProcess {
 	private final ImageLaunch launch;
+	private final ProcessFiles files;
 
 	/**
 	 * Prepares a container process.
 	 *
 	 * @param container the container's declaration
 	 * @param process   its execution declaration
+	 * @param files     the files of its directory
 	 * @param addresses where the container reaches the other processes
 	 * @return the prepared container
 	 */
 	static @NotNull PreparedContainer prepare(
 			@NotNull ContainerProcess container,
 			@NotNull ProcessSpec process,
+			@NotNull ProcessFiles files,
 			@NotNull ProcessAddresses addresses
 	) {
 		try {
@@ -45,7 +49,7 @@ final class PreparedContainer implements PreparedProcess {
 		container.getEnvironment().forEach((name, value) -> launch.environmentVariable(name, addresses.resolve(value)));
 		container.getCommand().forEach(argument -> launch.argument(addresses.resolve(argument)));
 
-		return new PreparedContainer(launch.build());
+		return new PreparedContainer(launch.build(), files);
 	}
 
 	@Override
@@ -64,6 +68,11 @@ final class PreparedContainer implements PreparedProcess {
 			public void close() {
 			}
 		};
+	}
+
+	@Override
+	public @NotNull ProcessFiles files() {
+		return files;
 	}
 
 	@Override

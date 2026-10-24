@@ -6,6 +6,8 @@ import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.type.Platforms;
+import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceFiles;
+import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceProcessFiles;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
@@ -56,6 +58,7 @@ class BungeeCordPlatformProviderTest {
 				.scenario(scenario)
 				.cacheDirectory(temporary.resolve("cache"))
 				.workDirectory(work)
+				.files(new WorkspaceProcessFiles(work, new WorkspaceFiles()))
 				.bindAddress("127.0.0.1")
 				.port(25565)
 				.processAddresses(Map.of("proxy", new java.net.InetSocketAddress("127.0.0.1", 25565), "lobby", new java.net.InetSocketAddress("127.0.0.1", 25566)))

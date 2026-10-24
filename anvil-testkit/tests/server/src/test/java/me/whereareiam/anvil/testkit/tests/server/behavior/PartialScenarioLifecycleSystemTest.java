@@ -18,7 +18,6 @@ import me.whereareiam.anvil.testkit.tests.server.fixture.FixtureAgentProbeProvid
 import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
@@ -56,7 +55,7 @@ class PartialScenarioLifecycleSystemTest {
 				assertEquals(1, context.processes().all().size());
 				var lobby = context.processes().start("lobby");
 				assertNotNull(lobby.executionId());
-				Files.writeString(lobby.workDirectory().resolve("partial-marker"), "retained");
+				lobby.files().write("partial-marker", "retained");
 				var alice = context.players().create("PartialAlice");
 				Session connection = alice.capability(Session.class);
 				PlayerWatch arrivals = lobby.capability(Players.class).watch();
@@ -75,7 +74,7 @@ class PartialScenarioLifecycleSystemTest {
 				assertNotEquals(lobby.executionId(), replacement.executionId());
 				assertNotNull(lobby.executionId());
 				assertEquals(lobby.address(), replacement.address());
-				assertEquals("retained", Files.readString(replacement.workDirectory().resolve("partial-marker")));
+				assertEquals("retained", replacement.files().read("partial-marker"));
 				connection.rejoin();
 				connection.connected(Duration.ofSeconds(30));
 				arrivals.joined(alice, Duration.ofSeconds(20));

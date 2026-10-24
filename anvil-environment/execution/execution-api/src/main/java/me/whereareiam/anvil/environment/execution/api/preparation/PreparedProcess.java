@@ -2,6 +2,7 @@ package me.whereareiam.anvil.environment.execution.api.preparation;
 
 import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.process.ProcessCapability;
+import me.whereareiam.anvil.api.process.ProcessFiles;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,6 +20,13 @@ public interface PreparedProcess {
 	 * @return owned command and attachment lifecycle for one generation
 	 */
 	@NotNull PreparedLaunch launch();
+
+	/**
+	 * Returns the files of the process's workspace, which every execution generation shares.
+	 *
+	 * @return workspace files
+	 */
+	@NotNull ProcessFiles files();
 
 	/**
 	 * Returns the logical process's capability owner, which every execution generation borrows.

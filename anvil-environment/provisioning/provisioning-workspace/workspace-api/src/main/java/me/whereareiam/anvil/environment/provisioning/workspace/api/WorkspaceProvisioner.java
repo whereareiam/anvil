@@ -2,6 +2,7 @@ package me.whereareiam.anvil.environment.provisioning.workspace.api;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceLayout;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceRequest;
 import org.jetbrains.annotations.NotNull;
@@ -62,4 +63,13 @@ public interface WorkspaceProvisioner {
 	 * @param directory completed run directory strictly beneath the root
 	 */
 	void deleteRunDirectory(@NotNull Path root, @NotNull Path directory);
+
+	/**
+	 * Opens the files of one process workspace of a run layout, through which providers configure the process and
+	 * tests read and change it. The workspace need not exist yet.
+	 *
+	 * @param workspace process directory of a layout this provisioner resolved
+	 * @return files confined to the workspace
+	 */
+	@NotNull ProcessFiles files(@NotNull Path workspace);
 }

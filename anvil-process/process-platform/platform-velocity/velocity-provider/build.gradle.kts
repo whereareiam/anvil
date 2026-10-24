@@ -16,4 +16,6 @@ dependencies {
 	implementation(libs.jackson.toml)
 
 	platformAgent(projects.anvilProcess.processPlatform.platformVelocity.velocityAgent)
+
+	testImplementation(projects.anvilEnvironment.provisioning.provisioningWorkspace)
 }

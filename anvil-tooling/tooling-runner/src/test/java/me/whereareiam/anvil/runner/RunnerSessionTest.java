@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.runner;
 
 import me.whereareiam.anvil.api.model.PresentationMetadata;
+import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionRequest;
 import me.whereareiam.anvil.tooling.api.model.action.binding.ActionTarget;
 import me.whereareiam.anvil.tooling.api.type.action.ActionTargetType;
@@ -27,7 +28,6 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -385,7 +385,10 @@ class RunnerSessionTest {
 				case "name" -> "server";
 				case "executionId" -> currentExecutionId;
 				case "address" -> new InetSocketAddress("127.0.0.1", 25565);
-				case "workDirectory" -> Path.of("workspace");
+				case "files" -> proxy(ProcessFiles.class, (files, call, values) -> switch (call.getName()) {
+					case "location" -> "workspace";
+					default -> throw new AssertionError(call);
+				});
 				case "state" -> active && processFailed ? ProcessState.FAILED
 						: ignored == process && active && processReady ? ProcessState.READY : ProcessState.STOPPED;
 				case "console" -> console;

@@ -15,4 +15,6 @@ dependencies {
 	implementation(libs.jackson.yaml)
 
 	platformAgent(projects.anvilProcess.processPlatform.platformBungeecord.bungeecordAgent)
+
+	testImplementation(projects.anvilEnvironment.provisioning.provisioningWorkspace)
 }

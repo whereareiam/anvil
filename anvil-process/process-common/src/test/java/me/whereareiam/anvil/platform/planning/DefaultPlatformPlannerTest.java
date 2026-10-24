@@ -11,6 +11,8 @@ import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.type.network.NetworkExposure;
+import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceFiles;
+import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceProcessFiles;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
@@ -121,6 +123,7 @@ class DefaultPlatformPlannerTest {
 		assertEquals(jar, process.getDeclaration().getDistribution().getLocalJar());
 		PlatformRequest request = PlatformRequest.builder().scenario(plan.getScenario())
 				.workDirectory(directory.resolve("work/server")).workspaceGroupDirectory(directory.resolve("work"))
+				.files(new WorkspaceProcessFiles(directory.resolve("work/server"), new WorkspaceFiles()))
 				.bindAddress("0.0.0.0").port(25565)
 				.processAddress("server", InetSocketAddress.createUnresolved("server-container", 25565)).build();
 

@@ -17,7 +17,6 @@ import me.whereareiam.anvil.launcher.AnvilLauncher;
 import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
@@ -62,7 +61,7 @@ class ProcessKillSystemTest {
 
 				RunningProcess killed = context.processes().get("proxy");
 				ConsoleWatch console = killed.console().watch();
-				Files.writeString(killed.workDirectory().resolve("kill-marker"), "retained");
+				killed.files().write("kill-marker", "retained");
 				context.processes().kill("proxy");
 
 				session.disconnected(TIMEOUT);
@@ -79,7 +78,7 @@ class ProcessKillSystemTest {
 				RunningProcess replacement = context.processes().start("proxy");
 				assertNotEquals(killed.executionId(), replacement.executionId());
 				assertEquals(killed.address(), replacement.address());
-				assertEquals("retained", Files.readString(replacement.workDirectory().resolve("kill-marker")));
+				assertEquals("retained", replacement.files().read("kill-marker"));
 				session.rejoin();
 				session.connected(TIMEOUT);
 				arrivals.joined(alice, TIMEOUT);

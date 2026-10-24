@@ -93,7 +93,7 @@ public final class ProxyRestartChecks {
 		assertEquals(ProcessState.STOPPED, original.state());
 		assertEquals(ProcessState.READY, replacement.state());
 		assertEquals(original.address(), replacement.address());
-		assertEquals(original.workDirectory(), replacement.workDirectory());
+		assertEquals(original.files().location(), replacement.files().location());
 		assertSame(lobby, processes.server("lobby"));
 
 		session.disconnected();

@@ -16,7 +16,6 @@ import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioF
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 
-import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -55,7 +54,7 @@ class PlatformRestartSystemTest {
 			for (var process : context.processes().all())
 				if (!process.name().equals(before.name()))
 					assertNotSame(dispatch, process.capability(Dispatch.class));
-			Files.writeString(before.workDirectory().resolve("restart-marker"), "preserved");
+			before.files().write("restart-marker", "preserved");
 			var after = context.processes().restart(before.name());
 			assertNotSame(before, after);
 			assertEquals(ProcessState.STOPPED, before.state());
@@ -63,8 +62,8 @@ class PlatformRestartSystemTest {
 			assertSame(dispatch, after.capability(Dispatch.class));
 			assertSame(dispatch, before.capability(Dispatch.class));
 			assertEquals(before.address(), after.address());
-			assertEquals(before.workDirectory(), after.workDirectory());
-			assertEquals("preserved", Files.readString(after.workDirectory().resolve("restart-marker")));
+			assertEquals(before.files().location(), after.files().location());
+			assertEquals("preserved", after.files().read("restart-marker"));
 			session.disconnected();
 			session.rejoin();
 			session.connected(Duration.ofSeconds(30));

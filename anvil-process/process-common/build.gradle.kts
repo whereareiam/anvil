@@ -12,5 +12,6 @@ dependencies {
 	compileOnly(projects.anvilProcess.processApi)
 
 	testImplementation(projects.anvilApi)
+	testImplementation(projects.anvilEnvironment.provisioning.provisioningWorkspace)
 	testImplementation(projects.anvilProcess.processApi)
 }

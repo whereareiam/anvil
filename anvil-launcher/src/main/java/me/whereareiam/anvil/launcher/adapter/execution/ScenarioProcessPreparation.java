@@ -7,6 +7,7 @@ import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.process.ContainerProcess;
 import me.whereareiam.anvil.api.model.process.ProcessAddresses;
+import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.capability.process.ProcessCapabilityRuntime;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessSpec;
@@ -54,7 +55,9 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 			@NotNull Map<String, InetSocketAddress> peers,
 			@NotNull ProcessAddresses processes
 	) {
-		if (process.isContainer()) return PreparedContainer.prepare(container(process.getRequest().getName()), process, processes);
+		ProcessFiles files = workspaces.files(process.getRequest().getWorkspace());
+		if (process.isContainer())
+			return PreparedContainer.prepare(container(process.getRequest().getName()), process, files, processes);
 
 		var planned = plan.getProcesses().get(process.getRequest().getName());
 		var declaration = planned.getDeclaration();
@@ -62,6 +65,7 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 		var request = PlatformRequest.builder()
 				.scenario(plan.getScenario())
 				.workDirectory(process.getRequest().getWorkspace())
+				.files(files)
 				.workspaceGroupDirectory(layout.getRunDirectory())
 				.bindAddress(target.bindAddress())
 				.port(target.peerAddress().getPort())

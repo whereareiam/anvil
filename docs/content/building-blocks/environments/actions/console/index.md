@@ -45,7 +45,7 @@ output; it remains available independently of installed process capabilities.
 ## Read a bounded tail
 
 `console.tail(50)` returns up to fifty of the most recently captured lines.
-For full retained process output, inspect `anvil-console.log` in `workDirectory()` while the workspace
+For full retained process output, read `anvil-console.log` through `files()` while the workspace
 exists. Avoid printing unlimited logs into routine test output.
 
 A watch belongs to one process generation. After restarting a process, use the replacement

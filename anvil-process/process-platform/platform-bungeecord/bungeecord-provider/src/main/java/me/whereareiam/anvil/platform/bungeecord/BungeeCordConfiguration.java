@@ -6,19 +6,19 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
+import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.type.ForwardingMode;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Set;
 
 /**
  * Writes typed BungeeCord routing into an existing YAML mapping.
  */
 final class BungeeCordConfiguration {
+	private static final String CONFIGURATION = "config.yml";
 	private static final Set<String> OWNED = Set.of("online_mode", "ip_forward", "listeners", "servers",
 			"network_compression_threshold");
 
@@ -34,8 +34,8 @@ final class BungeeCordConfiguration {
 			if (OWNED.contains(key))
 				throw new PlatformException("BungeeCord setting '" + key + "' is owned by Anvil runtime configuration");
 
-		Path file = context.getWorkDirectory().resolve("config.yml");
-		ObjectNode config = read(file);
+		ProcessFiles files = context.getFiles();
+		ObjectNode config = read(files);
 		for (var setting : proxy.getSettings().entrySet())
 			config.set(setting.getKey(), yaml.readTree(setting.getValue()));
 
@@ -49,7 +49,7 @@ final class BungeeCordConfiguration {
 			servers.putObject(server).put("address", context.getProcessAddresses().get(server).getHostString() + ":" + context.getProcessAddresses().get(server).getPort())
 					.put("motd", "Anvil server " + server).put("restricted", false);
 
-		yaml.writeValue(file.toFile(), config);
+		files.write(CONFIGURATION, yaml.writeValueAsString(config));
 	}
 
 	private ObjectNode listener(MinecraftProxy proxy, PlatformContext context) {
@@ -69,13 +69,13 @@ final class BungeeCordConfiguration {
 		return listener;
 	}
 
-	private ObjectNode read(Path file) throws IOException {
-		if (!Files.exists(file)) return yaml.createObjectNode();
+	private ObjectNode read(ProcessFiles files) throws IOException {
+		if (!files.exists(CONFIGURATION)) return yaml.createObjectNode();
 
-		JsonNode document = yaml.readTree(file.toFile());
-		if (document == null) return yaml.createObjectNode();
+		JsonNode document = yaml.readTree(files.read(CONFIGURATION));
+		if (document == null || document.isMissingNode()) return yaml.createObjectNode();
 		if (document instanceof ObjectNode object) return object;
 
-		throw new PlatformException("BungeeCord configuration must contain a YAML mapping: " + file);
+		throw new PlatformException("BungeeCord configuration must contain a YAML mapping: " + CONFIGURATION);
 	}
 }
