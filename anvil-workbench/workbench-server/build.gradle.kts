@@ -58,6 +58,34 @@ dependencies {
 	testImplementation(projects.anvilWorkbench.workbenchRemote)
 }
 
+testing {
+	suites {
+		// Starts containers on the machine's Docker engine through a workbench, so test and build need no Docker. The
+		// anvil.docker.containerTestImage property names the image, which CI caches under the same reference.
+		register<JvmTestSuite>("dockerTest") {
+			useJUnitJupiter(libs.versions.junit)
+			dependencies {
+				implementation(project())
+				implementation(projects.anvilApi)
+				implementation(projects.anvilEnvironment.execution.executionApi)
+				implementation(projects.anvilWorkbench.workbenchApi)
+				implementation(projects.anvilWorkbench.workbenchRemote)
+
+				compileOnly(libs.annotations)
+			}
+			targets.configureEach {
+				testTask.configure {
+					val containerImage = providers.gradleProperty("anvil.docker.containerTestImage")
+					inputs.property("containerImage", containerImage)
+					jvmArgumentProviders.add(CommandLineArgumentProvider {
+						listOf("-Danvil.docker.containerTestImage=${containerImage.get()}")
+					})
+				}
+			}
+		}
+	}
+}
+
 tasks.named<Jar>("shadowJar") {
 	archiveBaseName.set("anvil-workbench")
 	manifest {

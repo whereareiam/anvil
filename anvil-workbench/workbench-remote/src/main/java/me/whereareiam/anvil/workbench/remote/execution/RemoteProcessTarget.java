@@ -6,6 +6,7 @@ import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
 import me.whereareiam.anvil.workbench.remote.PortMirror;
 import me.whereareiam.anvil.workbench.remote.WorkbenchConnection;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -21,8 +22,9 @@ final class RemoteProcessTarget implements ProcessTarget {
 	private final @NotNull InetSocketAddress address;
 	private final @NotNull InetSocketAddress peerAddress;
 	private final @NotNull String bindAddress;
-	private final @NotNull InetSocketAddress agentAddress;
+	private final @Nullable InetSocketAddress agentAddress;
 	private final int agentPort;
+	private final @Nullable String noAgent;
 	private final @NotNull String agentBindAddress;
 	private final @NotNull Map<String, InetSocketAddress> listeners;
 	private final @NotNull Map<String, InetSocketAddress> peerListeners;
@@ -34,8 +36,9 @@ final class RemoteProcessTarget implements ProcessTarget {
 			@NotNull InetSocketAddress address,
 			@NotNull InetSocketAddress peerAddress,
 			@NotNull String bindAddress,
-			@NotNull InetSocketAddress agentAddress,
+			@Nullable InetSocketAddress agentAddress,
 			int agentPort,
+			@Nullable String noAgent,
 			@NotNull String agentBindAddress,
 			@NotNull Map<String, InetSocketAddress> listeners,
 			@NotNull Map<String, InetSocketAddress> peerListeners,
@@ -48,13 +51,14 @@ final class RemoteProcessTarget implements ProcessTarget {
 		this.bindAddress = bindAddress;
 		this.agentAddress = agentAddress;
 		this.agentPort = agentPort;
+		this.noAgent = noAgent;
 		this.agentBindAddress = agentBindAddress;
 		this.listeners = Map.copyOf(listeners);
 		this.peerListeners = Map.copyOf(peerListeners);
 		this.mirror = new PortMirror(connection, mirrorAddress);
 		try {
 			mirror.mirror(address);
-			mirror.mirror(agentAddress);
+			if (agentAddress != null) mirror.mirror(agentAddress);
 			listeners.values().forEach(mirror::mirror);
 		} catch (RuntimeException failure) {
 			close();
@@ -79,16 +83,19 @@ final class RemoteProcessTarget implements ProcessTarget {
 
 	@Override
 	public @NotNull InetSocketAddress agentAddress() {
+		if (agentAddress == null) throw new UnsupportedOperationException(noAgent);
 		return agentAddress;
 	}
 
 	@Override
 	public int agentPort() {
+		if (agentAddress == null) throw new UnsupportedOperationException(noAgent);
 		return agentPort;
 	}
 
 	@Override
 	public @NotNull String agentBindAddress() {
+		if (agentAddress == null) throw new UnsupportedOperationException(noAgent);
 		return agentBindAddress;
 	}
 
