@@ -129,6 +129,7 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 		return PlatformContext.builder()
 				.scenario(request.getScenario())
 				.cacheDirectory(options.getCacheDirectory())
+				.files(request.getFiles())
 				.workDirectory(request.getWorkDirectory())
 				.workspaceGroupDirectory(request.getWorkspaceGroupDirectory())
 				.bindAddress(request.getBindAddress())

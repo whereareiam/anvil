@@ -258,6 +258,12 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `RequirementCheck` before planning; an unmet requirement throws `ScenarioRequirementsException` with every reason,
   which JUnit turns into a skip unless `anvil.requirements=strict`. An execution provider reports why it cannot run
   processes through `unavailableReason()`; Docker's pings its daemon.
+- A process's workspace is reached through `ProcessFiles` (`RunningProcess.files()`, `PlatformContext.getFiles()`,
+  `PreparedProcess.files()`), never through a local path, because its workbench may keep it on another machine.
+  Platform providers write configuration only through it; `WorkspaceProvisioner.files(workspace)` opens the local
+  implementation, `WorkspaceProcessFiles`, which confines paths as scenario-declared paths are. `PlatformContext`
+  still carries `workDirectory` for installations linked into the workspace, such as NeoForge's, until stored
+  artifacts replace it.
 - `executionProviderId` selects providers in declarations and execution plans; `RunningProcess.executionId()`
   identifies one execution attempt. Engine `ProcessTimeouts` defaults are overridden independently by scenario
   startup/shutdown values. Engine `ProcessScheduling` parallelism and startup memory govern each scenario operation,

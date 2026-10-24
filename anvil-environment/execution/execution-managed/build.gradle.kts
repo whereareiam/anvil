@@ -11,4 +11,5 @@ dependencies {
 	testImplementation(projects.anvilApi)
 	testImplementation(projects.anvilEnvironment.execution.executionApi)
 	testImplementation(projects.anvilEnvironment.execution.executionLocal)
+	testImplementation(projects.anvilEnvironment.provisioning.provisioningWorkspace)
 }

@@ -16,4 +16,6 @@ dependencies {
 	implementation(libs.jackson.yaml)
 
 	platformAgent(projects.anvilProcess.processPlatform.platformBukkit.bukkitAgent)
+
+	testImplementation(projects.anvilEnvironment.provisioning.provisioningWorkspace)
 }

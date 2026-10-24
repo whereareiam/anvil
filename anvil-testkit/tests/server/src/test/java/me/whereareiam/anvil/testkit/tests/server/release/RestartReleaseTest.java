@@ -13,7 +13,6 @@ import me.whereareiam.anvil.testkit.tests.server.fixture.FixtureAgentProbeProvid
 import me.whereareiam.anvil.testkit.tests.server.fixture.FixtureServer;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,7 +34,7 @@ class RestartReleaseTest {
 		PlayerProfile identity = arrivals.joined(player, Duration.ofSeconds(10)).getProfile();
 		RunningProcess before = anvil.processes().server("server");
 		Dispatch dispatch = before.capability(Dispatch.class);
-		Files.writeString(before.workDirectory().resolve("restart-marker"), "preserved");
+		before.files().write("restart-marker", "preserved");
 
 		RunningProcess after = anvil.processes().restart(before.name());
 
@@ -44,8 +43,8 @@ class RestartReleaseTest {
 		assertEquals(ProcessState.READY, after.state());
 		assertSame(dispatch, after.capability(Dispatch.class));
 		assertEquals(before.address(), after.address());
-		assertEquals(before.workDirectory(), after.workDirectory());
-		assertEquals("preserved", Files.readString(after.workDirectory().resolve("restart-marker")));
+		assertEquals(before.files().location(), after.files().location());
+		assertEquals("preserved", after.files().read("restart-marker"));
 		session.disconnected();
 		session.rejoin();
 		session.connected(Duration.ofSeconds(30));

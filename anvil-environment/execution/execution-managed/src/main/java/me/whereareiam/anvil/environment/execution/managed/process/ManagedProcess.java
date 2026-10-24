@@ -3,6 +3,7 @@ package me.whereareiam.anvil.environment.execution.managed.process;
 import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.exception.ProcessException;
 import me.whereareiam.anvil.api.process.ProcessCapability;
+import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.api.process.ProcessConsole;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.type.ProcessState;
@@ -32,6 +33,7 @@ public abstract class ManagedProcess implements RunningProcess {
 	private final InetSocketAddress address;
 	private final Map<String, InetSocketAddress> listeners;
 	private final Path workDirectory;
+	private final ProcessFiles files;
 	private final ManagedProcessConsole console;
 	private final AtomicReference<ProcessState> state = new AtomicReference<>(ProcessState.CREATED);
 	private final CountDownLatch readiness = new CountDownLatch(1);
@@ -50,6 +52,7 @@ public abstract class ManagedProcess implements RunningProcess {
 			@NotNull InetSocketAddress address,
 			@NotNull Map<String, InetSocketAddress> listeners,
 			@NotNull Path workDirectory,
+			@NotNull ProcessFiles files,
 			@Nullable CapabilityOwner<ProcessCapability> capabilities
 	) {
 		this.name = name;
@@ -57,6 +60,7 @@ public abstract class ManagedProcess implements RunningProcess {
 		this.address = address;
 		this.listeners = Map.copyOf(listeners);
 		this.workDirectory = workDirectory;
+		this.files = files;
 		this.console = new ManagedProcessConsole(name, workDirectory);
 	}
 
@@ -365,6 +369,15 @@ public abstract class ManagedProcess implements RunningProcess {
 	}
 
 	@Override
+	public @NotNull ProcessFiles files() {
+		return files;
+	}
+
+	/**
+	 * Returns the directory on this machine that the process's console log is written to.
+	 *
+	 * @return console log directory
+	 */
 	public @NotNull Path workDirectory() {
 		return workDirectory;
 	}

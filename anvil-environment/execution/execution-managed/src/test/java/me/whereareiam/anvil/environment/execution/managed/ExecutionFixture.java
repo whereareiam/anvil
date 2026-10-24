@@ -5,6 +5,7 @@ import me.whereareiam.anvil.api.model.process.lifecycle.ProcessScheduling;
 import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
+import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
@@ -21,6 +22,8 @@ import me.whereareiam.anvil.environment.execution.api.preparation.PreparedProces
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
 import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
+import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceFiles;
+import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceProcessFiles;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayOutputStream;
@@ -166,8 +169,14 @@ final class ExecutionFixture {
 			} catch (IOException failure) {
 				throw new UncheckedIOException(failure);
 			}
+			ProcessFiles files = new WorkspaceProcessFiles(process.getRequest().getWorkspace(), new WorkspaceFiles());
 			return new PreparedProcess() {
 				private int generation;
+
+				@Override
+				public @NotNull ProcessFiles files() {
+					return files;
+				}
 
 				@Override
 				public @NotNull PreparedLaunch launch() {

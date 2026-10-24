@@ -7,6 +7,8 @@ import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.type.Platforms;
+import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceFiles;
+import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceProcessFiles;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
@@ -136,6 +138,7 @@ class VelocityPlatformProviderTest {
 				.scenario(scenario)
 				.cacheDirectory(temporary.resolve("cache"))
 				.workDirectory(work)
+				.files(new WorkspaceProcessFiles(work, new WorkspaceFiles()))
 				.bindAddress("127.0.0.1")
 				.port(25565)
 				.processAddresses(Map.of("proxy", new InetSocketAddress("127.0.0.1", 25565), "server", new InetSocketAddress("127.0.0.1", 25566)))

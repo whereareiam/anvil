@@ -6,6 +6,7 @@ import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
 import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.exception.ProcessException;
 import me.whereareiam.anvil.api.process.ProcessCapability;
+import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.preparation.PreparedLaunch;
 import me.whereareiam.anvil.environment.execution.api.preparation.PreparedProcess;
@@ -45,6 +46,11 @@ final class PreparedPlatformProcess implements PreparedProcess {
 		}
 
 		return new ProcessLaunch(command, target, connections, agent, ready);
+	}
+
+	@Override
+	public @NotNull ProcessFiles files() {
+		return request.getFiles();
 	}
 
 	@Override

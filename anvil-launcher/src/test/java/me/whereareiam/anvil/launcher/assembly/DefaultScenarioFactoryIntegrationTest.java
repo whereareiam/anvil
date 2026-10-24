@@ -126,7 +126,7 @@ class DefaultScenarioFactoryIntegrationTest {
 			assertEquals(ProcessState.READY, anvil.processes().server("server").state());
 		}), this::library);
 		var process = context.processes().server("server");
-		Path run = process.workDirectory().getParent();
+		Path run = Path.of(process.files().location()).getParent();
 		assertTrue(Files.isDirectory(run));
 		context.close();
 
@@ -157,7 +157,7 @@ class DefaultScenarioFactoryIntegrationTest {
 				() -> start(true, new TestPlatform(), scenario, this::library)));
 		var process = captured.get().processes().server("server");
 		assertEquals(ProcessState.STOPPED, process.state());
-		assertTrue(Files.exists(process.workDirectory()));
+		assertTrue(Files.exists(Path.of(process.files().location())));
 		assertFalse(libraryClosed);
 	}
 
@@ -174,7 +174,7 @@ class DefaultScenarioFactoryIntegrationTest {
 				() -> start(false, new TestPlatform(), scenario, this::library));
 		assertEquals("test", failure.getScenarioName());
 		assertSame(cause, failure.getCause());
-		assertFalse(Files.exists(captured.get().processes().server("server").workDirectory().getParent()));
+		assertFalse(Files.exists(Path.of(captured.get().processes().server("server").files().location()).getParent()));
 	}
 
 	@Test
@@ -333,7 +333,7 @@ class DefaultScenarioFactoryIntegrationTest {
 			assertThrows(NoSuchElementException.class, () -> processes.get("missing"));
 			assertThrows(IllegalArgumentException.class, () -> processes.server("proxy"));
 			assertThrows(IllegalArgumentException.class, () -> processes.proxy("server"));
-			Files.writeString(original.workDirectory().resolve("marker"), "preserved");
+			original.files().write("marker", "preserved");
 
 			var replacement = processes.restart("proxy");
 			assertEquals(2, resolves.get(), "Restart must not resolve either distribution again");
@@ -346,8 +346,8 @@ class DefaultScenarioFactoryIntegrationTest {
 			assertSame(replacement, processes.proxy("proxy"));
 			assertSame(replacement, processes.get("proxy"));
 			assertEquals(original.address(), replacement.address());
-			assertEquals(original.workDirectory(), replacement.workDirectory());
-			assertEquals("preserved", Files.readString(replacement.workDirectory().resolve("marker")));
+			assertEquals(original.files().location(), replacement.files().location());
+			assertEquals("preserved", replacement.files().read("marker"));
 			assertEquals(ProcessState.STOPPED, original.state());
 			assertEquals(ProcessState.READY, replacement.state());
 			assertEquals(ProcessState.READY, server.state());
@@ -369,15 +369,14 @@ class DefaultScenarioFactoryIntegrationTest {
 		var scenario = withWorkspace(scenario(null));
 		var run = start(true, provider, scenario, this::library);
 		var process = run.processes().server("server");
-		Files.createDirectories(process.workDirectory().resolve("data"));
-		Files.writeString(process.workDirectory().resolve("data/value"), "unsuccessful");
-		Files.writeString(process.workDirectory().resolve("failure-marker"), "remove on failure");
+		process.files().write("data/value", "unsuccessful");
+		process.files().write("failure-marker", "remove on failure");
 		assertThrows(IllegalStateException.class, () -> run.processes().restart("server"));
 		run.close();
 
 		assertEquals(ProcessState.STOPPED, process.state());
-		assertTrue(Files.exists(process.workDirectory()));
-		assertFalse(Files.exists(process.workDirectory().resolve("failure-marker")));
+		assertTrue(Files.exists(Path.of(process.files().location())));
+		assertFalse(process.files().exists("failure-marker"));
 		assertFalse(Files.exists(temporary.resolve("cache/workspaces")));
 	}
 
@@ -465,7 +464,7 @@ class DefaultScenarioFactoryIntegrationTest {
 		});
 		var processes = run.processes().all();
 		for (var process : processes)
-			Files.writeString(process.workDirectory().resolve("failure-marker"), "remove on failure");
+			process.files().write("failure-marker", "remove on failure");
 		Throwable cleanup = assertThrows(Throwable.class, run::close);
 		assertTrue(cleanup == first || cleanup == second);
 		assertTrue(List.of(cleanup.getSuppressed()).contains(first) || cleanup == first);
@@ -475,7 +474,7 @@ class DefaultScenarioFactoryIntegrationTest {
 		assertEquals(Set.of("second", "server"), Set.copyOf(Files.readAllLines(order)));
 		for (var process : processes) {
 			assertEquals(ProcessState.STOPPED, process.state());
-			assertFalse(Files.exists(process.workDirectory().resolve("failure-marker")));
+			assertFalse(process.files().exists("failure-marker"));
 		}
 		run.close();
 		assertEquals(2, closed.size());
@@ -543,7 +542,7 @@ class DefaultScenarioFactoryIntegrationTest {
 		run.close();
 		assertEquals(ProcessState.STOPPED, original.state());
 		assertEquals(ProcessState.STOPPED, replacement.state());
-		assertTrue(Files.exists(replacement.workDirectory()));
+		assertTrue(Files.exists(Path.of(replacement.files().location())));
 	}
 
 	@Test
@@ -599,7 +598,7 @@ class DefaultScenarioFactoryIntegrationTest {
 		failed.finish(false);
 
 		assertEquals(ProcessState.STOPPED, kept.state());
-		assertTrue(Files.isDirectory(kept.workDirectory()), "The workspace of a failed run is kept for diagnosis");
+		assertTrue(Files.isDirectory(Path.of(kept.files().location())), "The workspace of a failed run is kept for diagnosis");
 		try (var next = engine.start(network(ProcessLifetime.ENGINE))) {
 			assertNotEquals(kept.executionId(), next.processes().server("server").executionId());
 		}

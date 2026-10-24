@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.process.ProcessFiles;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
@@ -19,6 +20,12 @@ import java.util.Map;
 public class PlatformRequest {
 	@NotNull AnvilScenario scenario;
 	@NotNull Path workDirectory;
+
+	/**
+	 * The files of the process's workspace, through which its configuration is written.
+	 */
+	@NotNull ProcessFiles files;
+
 	@NotNull Path workspaceGroupDirectory;
 	@NotNull String bindAddress;
 	int port;

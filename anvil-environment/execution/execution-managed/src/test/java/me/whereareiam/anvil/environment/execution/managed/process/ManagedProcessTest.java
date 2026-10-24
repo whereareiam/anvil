@@ -6,6 +6,8 @@ import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.environment.execution.local.process.LocalProcess;
 import me.whereareiam.anvil.environment.execution.managed.process.type.ManagedContainer;
 import me.whereareiam.anvil.environment.execution.managed.process.type.ManagedServer;
+import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceFiles;
+import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceProcessFiles;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -196,7 +198,8 @@ class ManagedProcessTest {
 	}
 
 	private ManagedServer process(String name) {
-		return new ManagedServer(name, new InetSocketAddress("127.0.0.1", 25565), Map.of(), temporary.resolve(name), null);
+		return new ManagedServer(name, new InetSocketAddress("127.0.0.1", 25565), Map.of(), temporary.resolve(name),
+				new WorkspaceProcessFiles(temporary.resolve(name), new WorkspaceFiles()), null);
 	}
 
 	@Test
@@ -213,7 +216,7 @@ class ManagedProcessTest {
 				}
 			});
 			ManagedContainer container = new ManagedContainer("probed", port, Map.of(Integer.toString(port.getPort()), port),
-					temporary.resolve("probed"));
+					temporary.resolve("probed"), new WorkspaceProcessFiles(temporary.resolve("probed"), new WorkspaceFiles()));
 			container.start(() -> new LocalProcess(launch(List.of("sh", "-c", "exec sleep 60"))), null, null, Duration.ofSeconds(5));
 			try {
 				assertEquals(ProcessState.READY, container.state());

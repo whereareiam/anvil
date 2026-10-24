@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.environment.provisioning.workspace;
 
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.PreparedWorkspace;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.WorkspaceProvisioner;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceLayout;
@@ -8,6 +9,7 @@ import me.whereareiam.anvil.environment.provisioning.workspace.api.model.Workspa
 import me.whereareiam.anvil.environment.provisioning.workspace.api.snapshot.WorkspaceSnapshotStore;
 import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceFiles;
 import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceLayoutResolver;
+import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceProcessFiles;
 import me.whereareiam.anvil.environment.provisioning.workspace.preparation.WorkspaceSession;
 import me.whereareiam.anvil.environment.provisioning.workspace.snapshot.WorkspaceSnapshotCache;
 import org.jetbrains.annotations.NotNull;
@@ -53,5 +55,10 @@ public final class DefaultWorkspaceProvisioner implements WorkspaceProvisioner {
 	@Override
 	public void deleteRunDirectory(@NotNull Path root, @NotNull Path directory) {
 		files.deleteAbsolute(files.resolveDirectory(root, directory));
+	}
+
+	@Override
+	public @NotNull ProcessFiles files(@NotNull Path workspace) {
+		return new WorkspaceProcessFiles(workspace, files);
 	}
 }

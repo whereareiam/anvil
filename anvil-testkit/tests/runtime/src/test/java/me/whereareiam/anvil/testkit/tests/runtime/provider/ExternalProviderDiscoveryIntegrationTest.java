@@ -13,6 +13,7 @@ import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.PlayerManager;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.process.ProcessConsole;
+import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.process.type.RunningContainer;
@@ -278,8 +279,8 @@ class ExternalProviderDiscoveryIntegrationTest {
 		}
 
 		@Override
-		public @NotNull Path workDirectory() {
-			return Path.of("server");
+		public @NotNull ProcessFiles files() {
+			throw new UnsupportedOperationException("The fixture process has no files");
 		}
 
 		@Override

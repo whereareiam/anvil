@@ -13,4 +13,6 @@ dependencies {
 	api(projects.anvilProcess.processApi)
 
 	platformAgent(projects.anvilProcess.processPlatform.platformNeoforge.neoforgeAgent)
+
+	testImplementation(projects.anvilEnvironment.provisioning.provisioningWorkspace)
 }

@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.environment.execution.managed.process.type;
 
+import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.api.process.type.RunningContainer;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import me.whereareiam.anvil.environment.execution.managed.process.ManagedProcess;
@@ -21,9 +22,10 @@ public final class ManagedContainer extends ManagedProcess implements RunningCon
 			@NotNull String name,
 			@NotNull InetSocketAddress address,
 			@NotNull Map<String, InetSocketAddress> ports,
-			@NotNull Path workDirectory
+			@NotNull Path workDirectory,
+			@NotNull ProcessFiles files
 	) {
-		super(name, address, ports, workDirectory, null);
+		super(name, address, ports, workDirectory, files, null);
 	}
 
 	@Override

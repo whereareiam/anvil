@@ -61,7 +61,7 @@ public final class SessionConsole {
 				return ProcessSnapshot.builder().name(process.name()).executionId(process.executionId())
 						.displayName(DisplayNameResolver.resolve(process.name(), metadata.get(process.name())))
 						.state(me.whereareiam.anvil.tooling.api.type.ProcessState.fromWireValue(process.state().name())).host(process.address().getHostString()).port(process.address().getPort())
-						.workDirectory(process.workDirectory().toString()).build();
+						.workDirectory(process.files().location()).build();
 			}).toList();
 		}
 	}

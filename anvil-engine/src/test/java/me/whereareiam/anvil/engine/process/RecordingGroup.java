@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.engine.process;
 
 import me.whereareiam.anvil.api.process.ProcessConsole;
+import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.type.RunningContainer;
@@ -10,7 +11,6 @@ import me.whereareiam.anvil.api.type.ProcessState;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -129,7 +129,7 @@ final class RecordingGroup implements ProcessGroup {
 			public @NotNull InetSocketAddress address() { return new InetSocketAddress("127.0.0.1", 25565); }
 
 			@Override
-			public @NotNull Path workDirectory() { return Path.of(label, name); }
+			public @NotNull ProcessFiles files() { throw new UnsupportedOperationException(); }
 
 			@Override
 			public @NotNull ProcessState state() { return state; }

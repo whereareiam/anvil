@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.player;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.process.ProcessConsole;
+import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.process.type.RunningContainer;
@@ -93,7 +94,7 @@ final class StubScenarioProcesses implements ScenarioProcesses {
 	@Override
 	public @NotNull RunningProcess restart(@NotNull String name) {
 		RunningServer previous = server(name);
-		server = new StubServer(name, previous.workDirectory(),
+		server = new StubServer(name, ((StubServer) previous).workspace,
 				new InetSocketAddress("127.0.0.1", previous.address().getPort() + 1));
 		return server;
 	}
@@ -119,8 +120,8 @@ final class StubScenarioProcesses implements ScenarioProcesses {
 		}
 
 		@Override
-		public @NotNull Path workDirectory() {
-			return workspace;
+		public @NotNull ProcessFiles files() {
+			throw new UnsupportedOperationException("Player tests do not touch process files");
 		}
 
 		@Override

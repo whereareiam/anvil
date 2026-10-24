@@ -7,7 +7,6 @@ import me.whereareiam.anvil.api.type.ProcessState;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
-import java.nio.file.Path;
 import java.util.UUID;
 
 /**
@@ -43,11 +42,12 @@ public interface RunningProcess extends CapabilityOwner<ProcessCapability> {
 	@NotNull InetSocketAddress address();
 
 	/**
-	 * Returns the disposable process workspace.
+	 * Returns the files of the process's workspace, wherever the workbench running it keeps them. Restarts keep
+	 * them; every generation of the process shares one workspace.
 	 *
-	 * @return process workspace
+	 * @return workspace files
 	 */
-	@NotNull Path workDirectory();
+	@NotNull ProcessFiles files();
 
 	/**
 	 * Returns the lifecycle state of this process generation.

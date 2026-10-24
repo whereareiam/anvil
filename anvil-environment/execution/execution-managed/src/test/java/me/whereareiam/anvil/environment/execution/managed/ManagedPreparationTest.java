@@ -55,7 +55,7 @@ class ManagedPreparationTest {
 			RunningProcess next = group.start("proxy");
 			assertNotSame(first, next);
 			assertEquals(first.address(), next.address());
-			assertEquals(first.workDirectory(), next.workDirectory());
+			assertSame(first.files(), next.files(), "Every generation of a process shares its workspace files");
 			assertEquals(1, fixture.calls.stream().filter("prepare:proxy"::equals).count());
 			assertEquals(List.of("1", "2"), fixture.targets.get("proxy").commands.stream()
 					.map(command -> command.getEnvironment().get("GENERATION")).toList());

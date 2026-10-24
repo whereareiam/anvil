@@ -3,6 +3,8 @@ package me.whereareiam.anvil.platform.spigot;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceFiles;
+import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceProcessFiles;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
@@ -84,6 +86,7 @@ class SpigotDistributionResolverTest {
 		return PlatformContext.builder()
 				.scenario(AnvilScenario.builder().name("supplier").entrypoint("server").server(server).build())
 				.cacheDirectory(temporary).workDirectory(temporary.resolve("work"))
+				.files(new WorkspaceProcessFiles(temporary.resolve("work"), new WorkspaceFiles()))
 				.bindAddress("127.0.0.1").port(25565)
 
 				.artifactSource(artifacts).build();

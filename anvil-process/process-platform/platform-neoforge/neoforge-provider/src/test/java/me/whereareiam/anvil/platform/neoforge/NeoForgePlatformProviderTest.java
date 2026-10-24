@@ -4,6 +4,8 @@ import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.type.Platforms;
+import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceFiles;
+import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceProcessFiles;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
@@ -142,6 +144,7 @@ class NeoForgePlatformProviderTest {
 				.scenario(AnvilScenario.builder().name("neoforge").entrypoint(server.getName()).server(server).build())
 				.cacheDirectory(temporary.resolve("cache"))
 				.workDirectory(work)
+				.files(new WorkspaceProcessFiles(work, new WorkspaceFiles()))
 				.bindAddress("127.0.0.1")
 				.port(25566)
 				.eulaAccepted(true)
