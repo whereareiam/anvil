@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Immutable engine configuration shared by direct embedding, JUnit, and the foreground runner.
@@ -36,6 +37,20 @@ public class EngineOptions {
 	 * its own machine.
 	 */
 	@Nullable String workbench;
+
+	/**
+	 * Servers and proxies, by name, whose JVMs accept a debugger on a listener named {@code debug}; {@code *} names
+	 * every one. The listener's port is reserved like any other and mirrored from a workbench on another machine,
+	 * so a debugger attaches at the address the process's {@code listener("debug")} returns.
+	 */
+	@NotNull
+	@Singular("debugProcess")
+	Set<String> debugProcesses;
+
+	/**
+	 * Whether a debugged process waits for a debugger before it starts.
+	 */
+	boolean debugSuspend;
 
 	/**
 	 * Default protocol library for simulated players, overridden by a scenario or player declaration.

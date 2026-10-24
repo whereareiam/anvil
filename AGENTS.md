@@ -44,6 +44,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-workbench/workbench-api`                                       | The workbench contract: execution providers, the execution context of a scenario's sessions, provisioning, and `WorkbenchFacts`; carries the environment APIs it hands out |
 | `anvil-workbench/workbench-common`                                    | `RequirementCheck`, which refuses a scenario whose declared and implied requirements a workbench's facts cannot meet, and the machine's capacity                          |
 | `anvil-workbench`                                                     | The local workbench: the filesystem cache, artifact, Java and workspace provisioning, ports, image locks and execution providers assembled in the engine's JVM; assembly only |
+| `anvil-workbench/workbench-protocol`                                  | The protocol between an engine and a workbench on another machine: JSON lines over TLS, connection kinds, the mapper for Anvil's models, error translation and certificate pinning; an API that carries behaviour by design, like the worker kits |
+| `anvil-workbench/workbench-remote`                                    | `RemoteWorkbench`, the engine's side of a workbench on another machine: proxies for execution, provisioning and files, port mirroring, uploads, pairings and `WorkbenchChoice` |
+| `anvil-workbench/workbench-server`                                    | The `anvil-workbench` JAR and image: serves engines over TLS from a data directory under its operator's `workbench.toml`, and on an engine's machine runs the pairing commands; assembly only |
 | `anvil-launcher`                                                      | Public default builder, scoped-service adapters, default ScenarioFactory/per-run assembly, and shaded packaging; wiring only, no rules of its own |
 | `anvil-capability/capability-api`                                     | Owner-neutral composition, typed process requests, and neutral player identity/dependency/lifetime contracts                                              |
 | `anvil-capability/capability-common`                                  | Shared dependency validation/composition/cleanup for capability owners, agent extensions of installed process providers, per-library player runtimes and the player composer, and process/player facades |
@@ -278,6 +281,16 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 - A process's addresses mean the same on the engine's machine and on its workbench: a workbench on another machine
   makes every address it hands out reachable at the same host and port on the engine's loopback, so agent
   connections, readiness probes and tests connect as they do locally.
+- The launcher chooses the workbench through `WorkbenchChoice` (`anvil.workbench`, `ANVIL_WORKBENCH`, the pairings'
+  default, else local) and fails when the chosen one is unreachable, never falling back. `RemoteWorkbench` mirrors
+  each loopback address of a remote target in `RemoteProcessTarget` and carries connections through `TUNNEL`
+  streams; `Workbench.expose` carries a workbench process's connections to an engine service back through
+  `REVERSE` streams. A workbench on another machine reports `local = false`, and `RequirementCheck` then refuses
+  NeoForge and Java installations named by an engine path. Every remote handle is released when its engine's
+  control connection ends. Keep the server's operations in `EngineOperations` one per `Workbench` method.
+- `anvil.debug` names processes whose JVMs accept a debugger: platform planning (`ProcessDebugging`) gives each a
+  `debug` listener and a JDWP agent bound to it, so the port is reserved, published and mirrored like any listener's,
+  and `DebuggerAnnouncement` prints where to attach.
 - `executionProviderId` selects providers in declarations and execution plans; `RunningProcess.executionId()`
   identifies one execution attempt. Engine `ProcessTimeouts` defaults are overridden independently by scenario
   startup/shutdown values. Engine `ProcessScheduling` parallelism and startup memory govern each scenario operation,

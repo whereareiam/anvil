@@ -44,7 +44,9 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -182,6 +184,38 @@ class ProcessLauncherIntegrationTest {
 				var server = group.server("server");
 				assertEquals("127.0.0.1:" + server.listener("link").getPort(),
 						server.files().read("link.txt"));
+			}
+		}
+	}
+
+	@Test
+	void acceptsADebuggerOnTheDebugListenerOfADebuggedProcess() throws Exception {
+		Path executable = FixtureArtifacts.process();
+		var declaration = MinecraftServer.builder().name("server").platform("test")
+				.distribution(Distribution.remote("1.21.11", "1")).build();
+		var scenario = AnvilScenario.builder().name("test").entrypoint("server").server(declaration).build();
+		var options = EngineDefaults.resolve(EngineOptions.builder().workDirectory(directory.resolve("work"))
+				.cacheDirectory(directory.resolve("cache")).eulaAccepted(true).debugProcess("server").build());
+		try (var workbench = new LocalWorkbench(options, Map.of("local", new LocalExecutionProvider()))) {
+			var platforms = new DefaultPlatformPlanner(options, Map.of("test", fixtureProvider(executable)),
+					new ArtifactPlatformSource(workbench), descriptor -> executable,
+					new ProvisionedPlatformJavaSource(workbench.java()));
+			var launcher = ProcessLauncher.builder()
+					.options(options)
+					.workbench(workbench)
+					.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider())))
+					.workspaces(workbench.workspaces())
+					.platforms(platforms)
+					.connections((port, token, timeout) -> agent(1, new ArrayList<>()))
+					.plans(new ExecutionPlanMapper(options, workbench))
+					.build();
+			try (var group = launcher.prepare(platforms.plan(scenario), new ScenarioAgentDirectory(), null, null, Map.of())) {
+				group.startAll();
+				var debugger = group.server("server").listener("debug");
+				try (var socket = new Socket(debugger.getAddress(), debugger.getPort())) {
+					socket.getOutputStream().write("JDWP-Handshake".getBytes(StandardCharsets.US_ASCII));
+					assertEquals("JDWP-Handshake", new String(socket.getInputStream().readNBytes(14), StandardCharsets.US_ASCII));
+				}
 			}
 		}
 	}
