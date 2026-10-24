@@ -14,7 +14,9 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Makes ports on the workbench's loopback reachable at the same port on the engine's loopback, so a process's
@@ -25,6 +27,7 @@ public final class PortMirror implements Closeable {
 	private final @NotNull WorkbenchConnection connection;
 	private final @NotNull InetAddress loopback;
 	private final List<ServerSocket> listeners = new ArrayList<>();
+	private final Set<Integer> mirrored = new HashSet<>();
 	private boolean closed;
 
 	/**
@@ -50,10 +53,13 @@ public final class PortMirror implements Closeable {
 		if (address.isUnresolved() || address.getAddress() == null || !address.getAddress().isLoopbackAddress()) return;
 
 		int port = address.getPort();
+		// A container's main port is its address and one of its listeners too.
+		if (!mirrored.add(port)) return;
 		ServerSocket listener;
 		try {
 			listener = new ServerSocket(port, 50, loopback);
 		} catch (IOException taken) {
+			mirrored.remove(port);
 			throw new WorkbenchException("Port " + port + " of the workbench cannot be mirrored, because something on this machine "
 					+ "listens on it already", taken);
 		}
@@ -109,5 +115,6 @@ public final class PortMirror implements Closeable {
 			}
 		}
 		listeners.clear();
+		mirrored.clear();
 	}
 }

@@ -212,9 +212,14 @@ final class EngineOperations {
 		result.set("address", mapper.valueToTree(target.address()));
 		result.set("peerAddress", mapper.valueToTree(target.peerAddress()));
 		result.put("bindAddress", target.bindAddress());
-		result.set("agentAddress", mapper.valueToTree(target.agentAddress()));
-		result.put("agentPort", target.agentPort());
-		result.put("agentBindAddress", target.agentBindAddress());
+		try {
+			result.set("agentAddress", mapper.valueToTree(target.agentAddress()));
+			result.put("agentPort", target.agentPort());
+			result.put("agentBindAddress", target.agentBindAddress());
+		} catch (UnsupportedOperationException noAgent) {
+			// A container runs no agent; the engine refuses agent requests for it as a local target would.
+			result.put("noAgent", noAgent.getMessage());
+		}
 		result.set("listeners", mapper.valueToTree(target.listeners()));
 		result.set("peerListeners", mapper.valueToTree(target.peerListeners()));
 		return result;
