@@ -6,6 +6,7 @@ import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.engine.AnvilEngineBuilder;
 import me.whereareiam.anvil.engine.config.EngineDefaults;
+import me.whereareiam.anvil.engine.scenario.DebuggerAnnouncement;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
 import me.whereareiam.anvil.launcher.assembly.LauncherAssembly;
 import org.jetbrains.annotations.NotNull;
@@ -60,6 +61,7 @@ final class LauncherBuilder implements EngineBuilder {
 		try {
 			EngineBuilder engine = new AnvilEngineBuilder(assembly.getScenarioFactory()).options(effective)
 					.extension(registration -> registration.own(assembly));
+			if (!effective.getDebugProcesses().isEmpty()) engine.extension(new DebuggerAnnouncement(System.err));
 			extensions.forEach(engine::extension);
 
 			return engine.build();

@@ -3,10 +3,10 @@ title: Requirements
 description: Declare what a scenario needs from the machine that runs it, so that a machine lacking it skips the test instead of failing it.
 ---
 
-A scenario runs on a workbench: the place that holds its downloads, Java installations and workspaces and runs
-its processes. Today that is always the machine the tests run on. Before Anvil plans anything of a scenario, it
-checks what the scenario needs against what the workbench offers, and refuses it with every unmet requirement at
-once. Nothing is downloaded or started for a refused scenario.
+A scenario runs on a [workbench](../workbenches/index.md): the place that holds its downloads, Java installations
+and workspaces and runs its processes, this machine unless you choose another. Before Anvil plans anything of a
+scenario, it checks what the scenario needs against what the workbench offers, and refuses it with every unmet
+requirement at once. Nothing is downloaded or started for a refused scenario.
 
 ## Declare requirements
 
@@ -42,10 +42,12 @@ does when its daemon does not answer, for example on a machine without Docker.
 
 A scenario of remotes alone runs no process and needs no execution provider.
 
-## What the local workbench offers
+## What a workbench offers
 
 The workbench in the engine's own JVM offers the machine's processors and physical memory, lets its processes
-reach every host, and reports each installed execution provider that cannot run processes now.
+reach every host, and reports each installed execution provider that cannot run processes now. A workbench on
+another machine offers what its operator's [policy](../workbenches/index.md#decide-what-the-workbench-allows)
+allows, and cannot run NeoForge or a Java installation named by its path on this machine.
 
 ## In JUnit
 

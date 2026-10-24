@@ -76,5 +76,7 @@ object AnvilEngineProperties {
         EngineProperties.REQUIREMENTS_PROPERTY,
         EngineProperties.WORKBENCH_PROPERTY,
         EngineProperties.WORKBENCHES_PROPERTY,
+        EngineProperties.DEBUG_PROPERTY,
+        EngineProperties.DEBUG_SUSPEND_PROPERTY,
     )
 }

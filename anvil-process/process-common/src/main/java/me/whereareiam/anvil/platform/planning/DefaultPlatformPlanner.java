@@ -60,7 +60,7 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 
 	@Override
 	public @NotNull PlatformPlan plan(@NotNull AnvilScenario scenario) {
-		AnvilScenario resolved = artifacts.resolve(scenario);
+		AnvilScenario resolved = artifacts.resolve(ProcessDebugging.apply(scenario, options));
 		var declarations = new ProcessDeclarationValidator().validate(resolved, providers);
 		ForwardingPlan topology = new ForwardingNegotiator().negotiate(ProcessTopology.from(resolved), providers);
 		Map<String, ForwardingConfiguration> forwarding = forwarding(topology);

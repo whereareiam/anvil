@@ -17,6 +17,8 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -180,6 +182,16 @@ public final class EngineProperties {
 	public static final String WORKBENCHES_PROPERTY = "anvil.workbenches";
 
 	/**
+	 * Comma-separated servers and proxies whose JVMs accept a debugger, or {@code *} for every one.
+	 */
+	public static final String DEBUG_PROPERTY = "anvil.debug";
+
+	/**
+	 * Whether debugged processes wait for a debugger before they start.
+	 */
+	public static final String DEBUG_SUSPEND_PROPERTY = "anvil.debug.suspend";
+
+	/**
 	 * Reads a snapshot of the current process properties.
 	 *
 	 * @return immutable engine options
@@ -204,6 +216,8 @@ public final class EngineProperties {
 				.executionProviderId(properties.getProperty(EXECUTION_PROPERTY, defaults.getExecutionProviderId()))
 				.protocolLibrary(properties.getProperty(PROTOCOL_LIBRARY_PROPERTY))
 				.workbench(properties.getProperty(WORKBENCH_PROPERTY))
+				.debugProcesses(names(properties.getProperty(DEBUG_PROPERTY)))
+				.debugSuspend(booleanValue(properties, DEBUG_SUSPEND_PROPERTY, false))
 				.supportPolicy(supportPolicy(properties, defaults.getSupportPolicy()))
 				.javaSelection(javaSelection(properties))
 				.downloadJava(booleanValue(properties, AUTO_DOWNLOAD_JAVA_PROPERTY, defaults.isDownloadJava()))
@@ -344,6 +358,11 @@ public final class EngineProperties {
 		return value == null
 				? fallback
 				: Path.of(value);
+	}
+
+	private static List<String> names(String value) {
+		if (value == null) return List.of();
+		return Arrays.stream(value.split(",")).map(String::trim).filter(name -> !name.isEmpty()).toList();
 	}
 
 	private static boolean booleanValue(Properties properties, String key, boolean fallback) {
