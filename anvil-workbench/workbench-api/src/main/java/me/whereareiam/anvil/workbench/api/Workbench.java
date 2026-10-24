@@ -81,6 +81,16 @@ public interface Workbench extends AutoCloseable {
 	@NotNull Path store(@NotNull Path file);
 
 	/**
+	 * Makes a service on the engine's loopback reachable from the workbench's processes at the same port, such as a
+	 * session server a test runs. A workbench in the engine's own JVM reaches it already; exposing a port again has
+	 * no further effect.
+	 *
+	 * @param port loopback port the service listens on
+	 * @throws IOException when the workbench cannot offer the port
+	 */
+	void expose(int port) throws IOException;
+
+	/**
 	 * Starts a JVM on the workbench outside managed execution, such as a protocol library's player worker, so that
 	 * it reaches the scenario's processes where they run.
 	 *

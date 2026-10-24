@@ -18,16 +18,21 @@ import me.whereareiam.anvil.launcher.adapter.provisioning.ProvisionedPlatformJav
 import me.whereareiam.anvil.platform.planning.DefaultPlatformPlanner;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.protocol.player.DefaultPlayerService;
+import me.whereareiam.anvil.workbench.api.Workbench;
 import me.whereareiam.anvil.workbench.local.LocalWorkbench;
+import me.whereareiam.anvil.workbench.remote.RemoteWorkbench;
+import me.whereareiam.anvil.workbench.remote.pairing.Pairings;
+import me.whereareiam.anvil.workbench.remote.pairing.WorkbenchChoice;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Assembles shared launcher services and owns them until engine shutdown or failed construction.
  */
 public final class LauncherAssembly implements AutoCloseable {
-	private final @NotNull LocalWorkbench workbench;
+	private final @NotNull Workbench workbench;
 	private final @NotNull DefaultPlayerService players;
 	private final @NotNull RetainedProcesses<RetainedProcessSet> retained = new RetainedProcesses<>();
 
@@ -43,11 +48,11 @@ public final class LauncherAssembly implements AutoCloseable {
 	 * Failed construction releases every acquired service.
 	 *
 	 * @param options resolved engine options
-	 * @param executions explicitly supplied execution providers
+	 * @param executions explicitly supplied execution providers, which serve only the workbench in this JVM
 	 */
 	public LauncherAssembly(@NotNull EngineOptions options, @NotNull List<ExecutionProvider> executions) {
 		ProviderDiscovery discovery = new ProviderDiscovery();
-		workbench = new LocalWorkbench(options, discovery.executions(executions));
+		workbench = workbench(options, discovery.executions(executions));
 		try {
 			players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(), options, workbench.cacheDirectory(),
 					new WorkbenchProtocolArtifacts(workbench), new WorkbenchWorkerLauncher(workbench));
@@ -57,6 +62,19 @@ public final class LauncherAssembly implements AutoCloseable {
 				throw failure;
 			}
 		}
+	}
+
+	/**
+	 * Opens the workbench the options, the environment or the pairings choose: a paired one on another machine, or
+	 * the one in this JVM, which alone has the runner's own execution providers.
+	 */
+	private static Workbench workbench(EngineOptions options, Map<String, ExecutionProvider> executions) {
+		return WorkbenchChoice.chosen(options.getWorkbench(), System.getenv(WorkbenchChoice.ENVIRONMENT), Pairings.standard())
+				.<Workbench>map(pairing -> {
+					System.err.println("[Anvil] Running scenarios on workbench '" + pairing.getName() + "' at " + pairing.getAddress());
+					return RemoteWorkbench.connect(pairing, options.getProcessScheduling().getPriority());
+				})
+				.orElseGet(() -> new LocalWorkbench(options, executions));
 	}
 
 	private ScenarioFactory assemble(EngineOptions options, ProviderDiscovery discovery) {

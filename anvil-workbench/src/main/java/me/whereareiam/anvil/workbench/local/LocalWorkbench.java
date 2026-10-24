@@ -70,6 +70,7 @@ public final class LocalWorkbench implements Workbench {
 	public @NotNull WorkbenchFacts facts() {
 		var facts = WorkbenchFacts.builder()
 				.workbenchName(NAME)
+				.local(true)
 				.processors(MachineCapacity.processors())
 				.memoryMegabytes(MachineCapacity.memoryMegabytes())
 				.executions(executions.keySet())
@@ -118,6 +119,13 @@ public final class LocalWorkbench implements Workbench {
 	@Override
 	public @NotNull Path store(@NotNull Path file) {
 		return file.toAbsolutePath().normalize();
+	}
+
+	/**
+	 * The engine's loopback is this workbench's, so the service is reachable already.
+	 */
+	@Override
+	public void expose(int port) {
 	}
 
 	/**

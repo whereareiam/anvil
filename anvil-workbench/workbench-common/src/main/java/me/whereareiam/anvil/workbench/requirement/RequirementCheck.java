@@ -3,7 +3,11 @@ package me.whereareiam.anvil.workbench.requirement;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.api.exception.scenario.ScenarioRequirementsException;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
+import me.whereareiam.anvil.api.model.java.local.LocalJavaExecutable;
+import me.whereareiam.anvil.api.model.java.local.LocalJavaHome;
 import me.whereareiam.anvil.api.model.process.ContainerProcess;
+import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.model.scenario.ScenarioRequirements;
 import me.whereareiam.anvil.workbench.api.model.WorkbenchFacts;
@@ -19,6 +23,8 @@ import java.util.Set;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class RequirementCheck {
+	private static final String NEOFORGE = "neoforge";
+
 	/**
 	 * Refuses a scenario the workbench cannot run, naming every unmet requirement at once.
 	 *
@@ -56,6 +62,8 @@ public final class RequirementCheck {
 			if (reason != null) unmet.add("execution provider '" + execution + "' is unavailable: " + reason);
 		}
 
+		if (!facts.isLocal()) unmet.addAll(localOnly(scenario));
+
 		ScenarioRequirements requirements = scenario.getRequirements();
 		for (String host : requirements.getReaches())
 			if (facts.getReachableHosts().stream().noneMatch(pattern -> HostPattern.matches(pattern, host)))
@@ -70,6 +78,27 @@ public final class RequirementCheck {
 			unmet.add("it needs " + memory + " MiB of memory, but " + facts.getMemoryMegabytes() + " MiB are available");
 
 		return List.copyOf(unmet);
+	}
+
+	/**
+	 * What only a workbench on the engine's own machine can do: link NeoForge's installation with the machine's own
+	 * file operations, and run a Java installation the declaration names by its path on the engine's machine.
+	 */
+	private static List<String> localOnly(AnvilScenario scenario) {
+		List<String> unmet = new ArrayList<>();
+		List<MinecraftProcess> processes = new ArrayList<>(scenario.getServers());
+		processes.addAll(scenario.getProxies());
+		for (MinecraftProcess process : processes) {
+			if (process.getPlatform().equals(NEOFORGE))
+				unmet.add("NeoForge process '" + process.getName() + "' runs only on the workbench in the engine's own JVM");
+			if (localJava(process.getJavaSelection()) || localJava(scenario.getJavaSelection()))
+				unmet.add("process '" + process.getName() + "' names a Java installation by its path on the engine's machine");
+		}
+		return unmet;
+	}
+
+	private static boolean localJava(JavaSelection selection) {
+		return selection.getSource() instanceof LocalJavaHome || selection.getSource() instanceof LocalJavaExecutable;
 	}
 
 	/**

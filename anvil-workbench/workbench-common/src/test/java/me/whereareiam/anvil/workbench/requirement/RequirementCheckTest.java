@@ -1,6 +1,8 @@
 package me.whereareiam.anvil.workbench.requirement;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioRequirementsException;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
+import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.model.process.ContainerProcess;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
@@ -10,6 +12,7 @@ import me.whereareiam.anvil.api.model.scenario.ScenarioRequirements;
 import me.whereareiam.anvil.workbench.api.model.WorkbenchFacts;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -87,6 +90,24 @@ class RequirementCheckTest {
 				.build();
 
 		assertEquals(List.of(), RequirementCheck.unmet(remotes, "local", nothingAvailable));
+	}
+
+	@Test
+	void keepsNeoForgeAndJavaInstallationsOfThisMachineOnTheLocalWorkbench() {
+		AnvilScenario scenario = AnvilScenario.builder()
+				.name("modded")
+				.entrypoint("server")
+				.server(MinecraftServer.builder().name("server").platform("neoforge")
+						.distribution(Distribution.remote("1.21.1", "21.1.200"))
+						.javaSelection(JavaSelection.builder().source(JavaSource.home(Path.of("/opt/jdk-21"))).build())
+						.build())
+				.build();
+
+		assertEquals(List.of(), RequirementCheck.unmet(scenario, "local", facts.toBuilder().local(true).build()));
+		assertEquals(List.of(
+				"NeoForge process 'server' runs only on the workbench in the engine's own JVM",
+				"process 'server' names a Java installation by its path on the engine's machine"
+		), RequirementCheck.unmet(scenario, "local", facts.toBuilder().local(false).build()));
 	}
 
 	private static AnvilScenario.AnvilScenarioBuilder server() {

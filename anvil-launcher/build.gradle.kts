@@ -55,6 +55,7 @@ dependencies {
     compileOnly(projects.anvilProcess.processProtocol.protocolHost.protocolHostCommon)
     compileOnly(projects.anvilWorkbench)
     compileOnly(projects.anvilWorkbench.workbenchCommon)
+    compileOnly(projects.anvilWorkbench.workbenchRemote)
 
     embedded(projects.anvilCapability.capabilityCommon) { isTransitive = false }
     embedded(projects.anvilEngine) { isTransitive = false }
@@ -70,6 +71,8 @@ dependencies {
     embedded(projects.anvilProcess.processProtocol.protocolHost.protocolHostCommon) { isTransitive = false }
     embedded(projects.anvilWorkbench) { isTransitive = false }
     embedded(projects.anvilWorkbench.workbenchCommon) { isTransitive = false }
+    embedded(projects.anvilWorkbench.workbenchProtocol) { isTransitive = false }
+    embedded(projects.anvilWorkbench.workbenchRemote) { isTransitive = false }
     embedded(libs.commons.compress)
     embedded(libs.jackson.databind)
     embedded(libs.jackson.parameters)
@@ -94,6 +97,7 @@ dependencies {
     testImplementation(projects.anvilProcess.processProtocol.protocolHost.protocolHostCommon)
     testImplementation(projects.anvilWorkbench)
     testImplementation(projects.anvilWorkbench.workbenchCommon)
+    testImplementation(projects.anvilWorkbench.workbenchRemote)
 
     testRuntimeOnly(projects.anvilPlayer.playerLibrary.libraryMcprotocol)
     testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.bukkitAgent)
