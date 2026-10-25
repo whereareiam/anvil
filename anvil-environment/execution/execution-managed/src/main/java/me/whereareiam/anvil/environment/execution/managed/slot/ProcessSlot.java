@@ -89,12 +89,12 @@ public final class ProcessSlot {
 
 	private ManagedProcess create(PreparedProcess prepared) {
 		if (spec.isContainer())
-			return new ManagedContainer(name(), target.address(), target.listeners(), spec.getRequest().getWorkspace(), prepared.files());
+			return new ManagedContainer(name(), target.address(), target.listeners(), spec.consoleDirectory(), prepared.files());
 		if (spec.isProxy())
-			return new ManagedProxy(name(), target.address(), target.listeners(), spec.getRequest().getWorkspace(), prepared.files(),
+			return new ManagedProxy(name(), target.address(), target.listeners(), spec.consoleDirectory(), prepared.files(),
 					prepared.capabilities());
 
-		return new ManagedServer(name(), target.address(), target.listeners(), spec.getRequest().getWorkspace(), prepared.files(),
+		return new ManagedServer(name(), target.address(), target.listeners(), spec.consoleDirectory(), prepared.files(),
 				prepared.capabilities());
 	}
 

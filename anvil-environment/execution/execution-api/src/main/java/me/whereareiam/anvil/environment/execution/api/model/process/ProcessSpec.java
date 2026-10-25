@@ -6,6 +6,7 @@ import lombok.Value;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -37,4 +38,19 @@ public class ProcessSpec {
 	 * The execution provider that runs the process; null for the plan's.
 	 */
 	@Nullable String executionProviderId;
+
+	/**
+	 * Directory on the engine's machine the process's console log is written to; null for its workspace, which is
+	 * on the engine's machine when the workbench is.
+	 */
+	@Nullable Path consoleDirectory;
+
+	/**
+	 * Returns the directory on the engine's machine the process's console log is written to.
+	 *
+	 * @return console directory
+	 */
+	public @NotNull Path consoleDirectory() {
+		return consoleDirectory == null ? request.getWorkspace() : consoleDirectory;
+	}
 }

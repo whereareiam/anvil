@@ -206,6 +206,12 @@ final class ManagedProcessConsole implements ProcessConsole {
 	}
 
 	private void capture(ProcessExecution process, @Nullable Pattern readinessPattern, Runnable onReady, Runnable onOutputEnded) {
+		try {
+			// On a workbench of another machine the log's directory is the engine's own and may not exist yet.
+			Files.createDirectories(logFile.getParent());
+		} catch (IOException failure) {
+			append("[Anvil] Failed to capture process output: " + failure.getMessage());
+		}
 		try (BufferedReader reader = new BufferedReader(
 				new InputStreamReader(process.output(), StandardCharsets.UTF_8));
 		     BufferedWriter log = Files.newBufferedWriter(
