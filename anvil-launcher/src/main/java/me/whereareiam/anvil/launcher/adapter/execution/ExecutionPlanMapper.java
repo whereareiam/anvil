@@ -16,6 +16,7 @@ import me.whereareiam.anvil.workbench.api.Workbench;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -87,6 +88,7 @@ public final class ExecutionPlanMapper {
 
 		return ProcessSpec.builder()
 				.request(request)
+				.consoleDirectory(consoleDirectory(request))
 				.proxy(plan.isProxy())
 				// A dependency outside the plan is a peer that already runs.
 				.dependencies(plan.getDependencies().stream().filter(planned::contains).toList())
@@ -96,6 +98,18 @@ public final class ExecutionPlanMapper {
 				.stopCommand(plan.getStopCommand())
 				.memoryMegabytes(declaration.getMemoryMegabytes())
 				.build();
+	}
+
+	/**
+	 * The engine writes a process's console log; on a workbench of another machine it goes below the engine's work
+	 * directory, at the place the workspace has below the workbench's.
+	 */
+	private @NotNull Path consoleDirectory(@NotNull ProcessRequest request) {
+		Path workspace = request.getWorkspace();
+		if (workbench.workDirectory().equals(options.getWorkDirectory()) || !workspace.startsWith(workbench.workDirectory()))
+			return workspace;
+
+		return options.getWorkDirectory().resolve(workbench.workDirectory().relativize(workspace).toString());
 	}
 
 	private @NotNull ProcessSpec container(@NotNull ContainerProcess container, @NotNull WorkspaceLayout layout) {
@@ -110,6 +124,7 @@ public final class ExecutionPlanMapper {
 
 		return ProcessSpec.builder()
 				.request(request)
+				.consoleDirectory(consoleDirectory(request))
 				.container(true)
 				.readinessPattern(container.getReadyLog() == null ? null : Pattern.compile(container.getReadyLog()))
 				.memoryMegabytes(container.getMemoryMegabytes())
