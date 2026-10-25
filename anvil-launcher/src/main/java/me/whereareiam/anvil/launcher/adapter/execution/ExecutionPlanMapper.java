@@ -5,6 +5,7 @@ import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.process.ContainerProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionPlan;
 import me.whereareiam.anvil.environment.execution.api.model.process.ContainerImage;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
@@ -57,7 +58,12 @@ public final class ExecutionPlanMapper {
 		AnvilScenario scenario = platforms.getScenario();
 		var plan = ExecutionPlan.builder()
 				.executionProviderId(executionProviderId(scenario))
-				.context(workbench.context(scenario.getNetworkPolicy()))
+				.context(ExecutionContext.builder()
+						.processPriority(options.getProcessScheduling().getPriority())
+						.offline(options.isOffline())
+						.refresh(options.isRefresh())
+						.networkPolicy(scenario.getNetworkPolicy())
+						.build())
 				.processTimeouts(scenario.getProcessTimeouts().withDefaults(options.getProcessTimeouts()))
 				.processScheduling(options.getProcessScheduling())
 				.peers(peers);

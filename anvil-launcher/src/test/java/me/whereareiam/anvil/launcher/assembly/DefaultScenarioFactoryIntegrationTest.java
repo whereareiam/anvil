@@ -783,7 +783,7 @@ class DefaultScenarioFactoryIntegrationTest {
 		var processes = ProcessLauncher.builder()
 				.options(options)
 				.workbench(workbench)
-				.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider())))
+				.processes(new ManagedProcessService(workbench.executions()))
 				.workspaces(workbench.workspaces())
 				.platforms(platforms)
 				.connections(connections)

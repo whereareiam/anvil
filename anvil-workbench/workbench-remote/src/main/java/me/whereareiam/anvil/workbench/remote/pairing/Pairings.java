@@ -1,8 +1,7 @@
 package me.whereareiam.anvil.workbench.remote.pairing;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import me.whereareiam.anvil.workbench.protocol.WireMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,9 +10,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
 /**
  * The workbenches an engine paired with, kept in {@code workbenches.json} of one directory: by default
@@ -32,7 +32,7 @@ public final class Pairings {
 	private static final String FILE = "workbenches.json";
 
 	private final @NotNull Path directory;
-	private final @NotNull ObjectMapper mapper = new ObjectMapper();
+	private final @NotNull ObjectMapper mapper = WireMapper.create();
 
 	/**
 	 * Opens the pairings in a directory, which need not exist yet.
@@ -74,15 +74,7 @@ public final class Pairings {
 	 * @throws IOException when the pairings cannot be read
 	 */
 	public synchronized @NotNull Optional<Pairing> find(@NotNull String name) throws IOException {
-		JsonNode entry = read().path("workbenches").path(name);
-		if (entry.isMissingNode()) return Optional.empty();
-
-		return Optional.of(Pairing.builder()
-				.name(name)
-				.address(entry.path("address").asText())
-				.fingerprint(entry.path("fingerprint").asText())
-				.token(entry.path("token").asText())
-				.build());
+		return Optional.ofNullable(read().workbenches().get(name));
 	}
 
 	/**
@@ -92,9 +84,7 @@ public final class Pairings {
 	 * @throws IOException when the pairings cannot be read
 	 */
 	public synchronized @NotNull List<Pairing> all() throws IOException {
-		List<Pairing> pairings = new ArrayList<>();
-		for (var name : read().path("workbenches").properties()) pairings.add(find(name.getKey()).orElseThrow());
-		return pairings;
+		return List.copyOf(read().workbenches().values());
 	}
 
 	/**
@@ -104,8 +94,7 @@ public final class Pairings {
 	 * @throws IOException when the pairings cannot be read
 	 */
 	public synchronized @NotNull Optional<String> defaultName() throws IOException {
-		JsonNode name = read().path("default");
-		return name.isTextual() && !name.asText().isBlank() ? Optional.of(name.asText()) : Optional.empty();
+		return Optional.ofNullable(read().defaultName());
 	}
 
 	/**
@@ -115,12 +104,10 @@ public final class Pairings {
 	 * @throws IOException when the pairings cannot be written
 	 */
 	public synchronized void save(@NotNull Pairing pairing) throws IOException {
-		ObjectNode root = read();
-		root.withObject("/workbenches").putObject(pairing.getName())
-				.put("address", pairing.getAddress())
-				.put("fingerprint", pairing.getFingerprint())
-				.put("token", pairing.getToken());
-		write(root);
+		Stored stored = read();
+		Map<String, Pairing> workbenches = new TreeMap<>(stored.workbenches());
+		workbenches.put(pairing.getName(), pairing);
+		write(new Stored(stored.defaultName(), workbenches));
 	}
 
 	/**
@@ -131,10 +118,10 @@ public final class Pairings {
 	 * @throws IOException when the pairings cannot be written
 	 */
 	public synchronized boolean remove(@NotNull String name) throws IOException {
-		ObjectNode root = read();
-		boolean removed = root.withObject("/workbenches").remove(name) != null;
-		if (name.equals(root.path("default").asText())) root.remove("default");
-		write(root);
+		Stored stored = read();
+		Map<String, Pairing> workbenches = new TreeMap<>(stored.workbenches());
+		boolean removed = workbenches.remove(name) != null;
+		write(new Stored(name.equals(stored.defaultName()) ? null : stored.defaultName(), workbenches));
 		return removed;
 	}
 
@@ -146,32 +133,33 @@ public final class Pairings {
 	 * @throws IllegalArgumentException when no workbench of that name is paired
 	 */
 	public synchronized void setDefault(@Nullable String name) throws IOException {
-		ObjectNode root = read();
-		if (name == null) {
-			root.remove("default");
-		} else {
-			if (root.path("workbenches").path(name).isMissingNode())
-				throw new IllegalArgumentException("No workbench named '" + name + "' is paired");
-			root.put("default", name);
-		}
-		write(root);
+		Stored stored = read();
+		if (name != null && !stored.workbenches().containsKey(name))
+			throw new IllegalArgumentException("No workbench named '" + name + "' is paired");
+		write(new Stored(name, stored.workbenches()));
 	}
 
-	private ObjectNode read() throws IOException {
+	private Stored read() throws IOException {
 		Path file = directory.resolve(FILE);
-		return Files.exists(file) ? (ObjectNode) mapper.readTree(file.toFile()) : mapper.createObjectNode();
+		return Files.exists(file) ? mapper.readValue(file.toFile(), Stored.class) : new Stored(null, Map.of());
 	}
 
-	private void write(ObjectNode root) throws IOException {
+	private void write(Stored stored) throws IOException {
 		Files.createDirectories(directory);
 		Path file = directory.resolve(FILE);
 		Path staged = directory.resolve(FILE + ".tmp");
-		mapper.writerWithDefaultPrettyPrinter().writeValue(staged.toFile(), root);
+		mapper.writerWithDefaultPrettyPrinter().writeValue(staged.toFile(), stored);
 		try {
 			Files.setPosixFilePermissions(staged, PosixFilePermissions.fromString("rw-------"));
 		} catch (UnsupportedOperationException notPosix) {
 			// Windows keeps the file to its user through the profile directory's own permissions.
 		}
 		Files.move(staged, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+	}
+
+	/**
+	 * The content of the pairings file: the default workbench and every pairing by name.
+	 */
+	private record Stored(@Nullable String defaultName, @NotNull Map<String, Pairing> workbenches) {
 	}
 }

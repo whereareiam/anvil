@@ -1,17 +1,27 @@
 package me.whereareiam.anvil.workbench.remote;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import me.whereareiam.anvil.workbench.api.exception.WorkbenchException;
 import me.whereareiam.anvil.workbench.protocol.PinnedTrustManager;
 import me.whereareiam.anvil.workbench.protocol.WireErrors;
 import me.whereareiam.anvil.workbench.protocol.WireLines;
 import me.whereareiam.anvil.workbench.protocol.WireMapper;
 import me.whereareiam.anvil.workbench.protocol.WireProtocol;
+import me.whereareiam.anvil.workbench.protocol.model.WorkbenchRequest;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Accepted;
+import me.whereareiam.anvil.workbench.protocol.model.connection.ConnectionAnswer;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Control;
+import me.whereareiam.anvil.workbench.protocol.model.connection.EngineConnection;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Pair;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Paired;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Refused;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Uploaded;
+import me.whereareiam.anvil.workbench.protocol.model.message.Request;
+import me.whereareiam.anvil.workbench.protocol.model.message.Response;
+import me.whereareiam.anvil.workbench.protocol.model.message.ReverseConnection;
+import me.whereareiam.anvil.workbench.protocol.model.message.ServerMessage;
 import me.whereareiam.anvil.workbench.remote.pairing.Pairing;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -28,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * An engine's connection to one paired workbench: a control connection for requests, and further TLS connections
@@ -41,16 +52,17 @@ public final class WorkbenchConnection implements AutoCloseable {
 	private final @NotNull ObjectMapper mapper = WireMapper.create();
 	private final @NotNull SSLContext tls;
 	private final @NotNull SSLSocket control;
-	private final @NotNull Consumer<JsonNode> events;
-	private final Map<Long, CompletableFuture<JsonNode>> pending = new ConcurrentHashMap<>();
+	private final @NotNull Consumer<ReverseConnection> reverseConnections;
+	private final Map<Long, CompletableFuture<Response>> pending = new ConcurrentHashMap<>();
 	private final AtomicLong ids = new AtomicLong();
 	private volatile boolean closed;
 
-	private WorkbenchConnection(@NotNull Pairing pairing, @NotNull SSLContext tls, @NotNull Consumer<JsonNode> events) throws IOException {
+	private WorkbenchConnection(@NotNull Pairing pairing, @NotNull SSLContext tls, @NotNull Consumer<ReverseConnection> reverseConnections)
+			throws IOException {
 		this.pairing = pairing;
 		this.tls = tls;
-		this.events = events;
-		this.control = stream(WireProtocol.CONTROL, mapper.createObjectNode());
+		this.reverseConnections = reverseConnections;
+		this.control = stream(Control::new);
 		Thread.ofPlatform().daemon().name("anvil-workbench-" + pairing.getName()).start(this::receive);
 	}
 
@@ -58,13 +70,13 @@ public final class WorkbenchConnection implements AutoCloseable {
 	 * Connects to a paired workbench.
 	 *
 	 * @param pairing the engine's pairing with it
-	 * @param events receives the events the workbench sends unasked
+	 * @param reverseConnections receives the connections workbench processes make to exposed ports
 	 * @return the open connection
 	 * @throws WorkbenchException when the workbench cannot be reached or refuses the engine
 	 */
-	public static @NotNull WorkbenchConnection open(@NotNull Pairing pairing, @NotNull Consumer<JsonNode> events) {
+	public static @NotNull WorkbenchConnection open(@NotNull Pairing pairing, @NotNull Consumer<ReverseConnection> reverseConnections) {
 		try {
-			return new WorkbenchConnection(pairing, tls(pairing.getFingerprint(), new PinnedTrustManager(pairing.getFingerprint())), events);
+			return new WorkbenchConnection(pairing, tls(new PinnedTrustManager(pairing.getFingerprint())), reverseConnections);
 		} catch (IOException failure) {
 			throw new WorkbenchException("Could not reach workbench '" + pairing.getName() + "' at " + pairing.getAddress()
 					+ ": " + failure.getMessage(), failure);
@@ -86,14 +98,14 @@ public final class WorkbenchConnection implements AutoCloseable {
 		PinnedTrustManager trust = new PinnedTrustManager(null);
 		Pairing unpaired = Pairing.builder().name(name).address(address).fingerprint("").token("").build();
 		ObjectMapper mapper = WireMapper.create();
-		try (SSLSocket socket = socket(unpaired, tls(null, trust))) {
-			WireLines.write(mapper, socket.getOutputStream(), mapper.createObjectNode()
-					.put(WireProtocol.KIND, WireProtocol.PAIR).put("code", code).put("engine", engine));
-			JsonNode answer = WireLines.read(mapper, socket.getInputStream());
-			if (answer == null) throw new IOException("The workbench closed the connection while pairing");
-			if (answer.has("error")) throw new IOException(answer.path("error").asText());
-
-			return unpaired.toBuilder().fingerprint(trust.seen()).token(answer.path("token").asText()).build();
+		try (SSLSocket socket = socket(unpaired, tls(trust))) {
+			WireLines.write(mapper, socket.getOutputStream(), new Pair(code, engine));
+			return switch (answer(mapper, socket, "the pairing")) {
+				case Paired paired -> unpaired.toBuilder().fingerprint(trust.seen()).token(paired.getToken()).build();
+				case Refused refused -> throw new IOException(refused.getReason());
+				case Accepted ignored -> throw new IOException("The workbench accepted a pairing without pairing");
+				case Uploaded ignored -> throw new IOException("The workbench answered a pairing with an upload");
+			};
 		}
 	}
 
@@ -116,41 +128,41 @@ public final class WorkbenchConnection implements AutoCloseable {
 	}
 
 	/**
-	 * Sends a request and waits for its result; a failure on the workbench is thrown as the engine would see it
+	 * Sends a request and waits for its answer; a failure on the workbench is thrown as the engine would see it
 	 * locally, an I/O failure wrapped in {@link UncheckedIOException}.
 	 *
-	 * @param operation operation name
-	 * @param arguments its arguments
-	 * @return its result
+	 * @param request the request
+	 * @param <R> type of its answer
+	 * @return its answer
 	 */
-	public @NotNull JsonNode call(@NotNull String operation, @NotNull ObjectNode arguments) {
+	public <R> @NotNull R call(@NotNull WorkbenchRequest<R> request) {
 		try {
-			return request(operation, arguments);
+			return request(request);
 		} catch (IOException failure) {
 			throw new UncheckedIOException(failure);
 		}
 	}
 
 	/**
-	 * Sends a request whose failures include {@link IOException}, such as a file operation, and waits for it.
+	 * Sends a request whose failures include {@link IOException}, such as a file operation, and waits for its answer.
 	 *
-	 * @param operation operation name
-	 * @param arguments its arguments
-	 * @return its result
-	 * @throws IOException when the operation failed with one, or the connection failed
+	 * @param request the request
+	 * @param <R> type of its answer
+	 * @return its answer
+	 * @throws IOException when the request failed with one, or the connection failed
 	 */
-	public @NotNull JsonNode request(@NotNull String operation, @NotNull ObjectNode arguments) throws IOException {
+	public <R> @NotNull R request(@NotNull WorkbenchRequest<R> request) throws IOException {
 		if (closed) throw new WorkbenchException("The connection to workbench '" + pairing.getName() + "' is closed");
 
 		long id = ids.incrementAndGet();
-		CompletableFuture<JsonNode> response = new CompletableFuture<>();
-		pending.put(id, response);
+		CompletableFuture<Response> answer = new CompletableFuture<>();
+		pending.put(id, answer);
 		try {
-			WireLines.write(mapper, control.getOutputStream(), mapper.createObjectNode().put("id", id).put("op", operation).set("args", arguments));
-			JsonNode answer = response.get();
-			if (!answer.has("error")) return answer.path("result");
+			WireLines.write(mapper, control.getOutputStream(), new Request(id, request));
+			Response response = answer.get();
+			if (response.getFailure() == null) return mapper.treeToValue(response.getResult(), request.responseType());
 
-			Exception failure = WireErrors.restore(answer.path("error"));
+			Exception failure = WireErrors.restore(response.getFailure());
 			if (failure instanceof IOException io) throw io;
 			throw (RuntimeException) failure;
 		} catch (InterruptedException interrupted) {
@@ -164,20 +176,23 @@ public final class WorkbenchConnection implements AutoCloseable {
 	}
 
 	/**
-	 * Opens a further connection of a kind, such as the standard streams of a process.
+	 * Opens a further connection, such as the standard streams of a process.
 	 *
-	 * @param kind connection kind
-	 * @param header members the kind needs besides the token
+	 * @param header creates the connection's header from the engine's token
 	 * @return the accepted connection, positioned after the workbench's answer
 	 * @throws IOException when the workbench cannot be reached or refuses the connection
 	 */
-	public @NotNull SSLSocket stream(@NotNull String kind, @NotNull ObjectNode header) throws IOException {
+	public @NotNull SSLSocket stream(@NotNull Function<String, EngineConnection> header) throws IOException {
 		SSLSocket socket = socket(pairing, tls);
 		try {
-			WireLines.write(mapper, socket.getOutputStream(), header.put(WireProtocol.KIND, kind).put(WireProtocol.TOKEN, pairing.getToken()));
-			JsonNode answer = WireLines.read(mapper, socket.getInputStream());
-			if (answer == null) throw new IOException("Workbench '" + pairing.getName() + "' closed the connection");
-			if (answer.has("error")) throw new IOException(answer.path("error").asText());
+			WireLines.write(mapper, socket.getOutputStream(), header.apply(pairing.getToken()));
+			switch (answer(mapper, socket, "a connection")) {
+				case Accepted ignored -> {
+				}
+				case Refused refused -> throw new IOException(refused.getReason());
+				case Paired ignored -> throw new IOException("Workbench '" + pairing.getName() + "' answered a connection with a pairing");
+				case Uploaded ignored -> throw new IOException("Workbench '" + pairing.getName() + "' answered a connection with an upload");
+			}
 			return socket;
 		} catch (IOException | RuntimeException failure) {
 			socket.close();
@@ -185,17 +200,33 @@ public final class WorkbenchConnection implements AutoCloseable {
 		}
 	}
 
+	/**
+	 * Reads the answer a connection's header received.
+	 *
+	 * @param mapper mapper of the connection
+	 * @param socket the connection
+	 * @param purpose what the connection is for, for the failure
+	 * @return the workbench's answer
+	 * @throws IOException when the workbench closed the connection instead
+	 */
+	static @NotNull ConnectionAnswer answer(@NotNull ObjectMapper mapper, @NotNull Socket socket, @NotNull String purpose) throws IOException {
+		ConnectionAnswer answer = WireLines.read(mapper, socket.getInputStream(), ConnectionAnswer.class);
+		if (answer == null) throw new IOException("The workbench closed " + purpose);
+		return answer;
+	}
+
 	private void receive() {
 		Throwable cause = null;
 		try {
-			JsonNode message;
-			while ((message = WireLines.read(mapper, control.getInputStream())) != null) {
-				if (message.has("event")) {
-					events.accept(message);
-					continue;
+			ServerMessage message;
+			while ((message = WireLines.read(mapper, control.getInputStream(), ServerMessage.class)) != null) {
+				switch (message) {
+					case Response response -> {
+						CompletableFuture<Response> answer = pending.get(response.getId());
+						if (answer != null) answer.complete(response);
+					}
+					case ReverseConnection reverse -> reverseConnections.accept(reverse);
 				}
-				CompletableFuture<JsonNode> response = pending.get(message.path("id").asLong());
-				if (response != null) response.complete(message);
 			}
 		} catch (IOException failure) {
 			cause = failure;
@@ -203,7 +234,7 @@ public final class WorkbenchConnection implements AutoCloseable {
 
 		closed = true;
 		IOException lost = new IOException(cause == null ? "the workbench closed the connection" : cause.getMessage(), cause);
-		pending.values().forEach(response -> response.completeExceptionally(lost));
+		pending.values().forEach(answer -> answer.completeExceptionally(lost));
 	}
 
 	@Override
@@ -212,13 +243,13 @@ public final class WorkbenchConnection implements AutoCloseable {
 		control.close();
 	}
 
-	private static SSLContext tls(@Nullable String pinned, PinnedTrustManager trust) throws IOException {
+	private static SSLContext tls(PinnedTrustManager trust) throws IOException {
 		try {
 			SSLContext context = SSLContext.getInstance("TLS");
 			context.init(null, new TrustManager[]{trust}, null);
 			return context;
 		} catch (GeneralSecurityException failure) {
-			throw new IOException("TLS is not available" + (pinned == null ? "" : " for " + pinned), failure);
+			throw new IOException("TLS is not available", failure);
 		}
 	}
 

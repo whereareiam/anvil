@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.api.type.network.NetworkServerAccess;
+import me.whereareiam.anvil.environment.execution.api.ExecutionServices;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.process.ContainerImage;
@@ -39,6 +40,7 @@ final class DockerExecutionSession implements ExecutionSession {
 	private static final int LOW_PRIORITY_CPU_SHARES = 256;
 
 	private final ExecutionContext context;
+	private final ExecutionServices services;
 	private final DockerEngine docker;
 	private final DockerContainerFactory containers;
 	private final DockerNetwork dockerNetwork;
@@ -48,11 +50,12 @@ final class DockerExecutionSession implements ExecutionSession {
 	private final Set<Integer> ports = new HashSet<>();
 	private boolean closed;
 
-	DockerExecutionSession(ExecutionContext context, DockerEngine docker, DockerExecutionSettings settings) {
+	DockerExecutionSession(ExecutionContext context, ExecutionServices services, DockerEngine docker, DockerExecutionSettings settings) {
 		this.context = context;
+		this.services = services;
 		this.docker = docker;
 		this.containers = docker.containers();
-		this.images = new DockerImageResolver(context, docker.images(), settings);
+		this.images = new DockerImageResolver(context, services, docker.images(), settings);
 
 		String host = System.getenv("DOCKER_HOST");
 		if (host == null) host = "unix://local";
@@ -123,7 +126,7 @@ final class DockerExecutionSession implements ExecutionSession {
 	}
 
 	private int port(String address) {
-		int port = context.getPorts().reserve(address);
+		int port = services.getPorts().reserve(address);
 		ports.add(port);
 
 		return port;
@@ -146,7 +149,7 @@ final class DockerExecutionSession implements ExecutionSession {
 	}
 
 	private void releasePorts() {
-		ports.forEach(context.getPorts()::release);
+		ports.forEach(services.getPorts()::release);
 		ports.clear();
 	}
 

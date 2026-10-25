@@ -5,8 +5,11 @@ import me.whereareiam.anvil.api.model.NetworkPolicy;
 import me.whereareiam.anvil.api.model.process.lifecycle.ProcessScheduling;
 import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
+import me.whereareiam.anvil.environment.execution.api.ExecutionServices;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
+import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
+import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
 import me.whereareiam.anvil.workbench.api.model.JavaMainLaunch;
 import me.whereareiam.anvil.workbench.api.model.WorkbenchFacts;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,15 +45,32 @@ class LocalWorkbenchTest {
 	}
 
 	@Test
-	void opensSessionsWithItsOwnServicesAndTheScenariosNetworkPolicy() {
-		NetworkPolicy policy = NetworkPolicy.builder().bindAddress("127.0.0.2").build();
+	void opensSessionsWithItsOwnServicesAndTheScenariosContext() {
+		ExecutionContext context = ExecutionContext.builder()
+				.networkPolicy(NetworkPolicy.builder().bindAddress("127.0.0.2").build()).build();
+		List<ExecutionContext> contexts = new ArrayList<>();
+		List<ExecutionServices> services = new ArrayList<>();
 
-		try (var workbench = new LocalWorkbench(options(), Map.of())) {
-			ExecutionContext context = workbench.context(policy);
+		try (var workbench = new LocalWorkbench(options(), Map.of("recording", new ExecutionProvider() {
+			public @NotNull String id() { return "recording"; }
+			public boolean preservesClientAddress() { return true; }
+			public boolean connectsEnvironments() { return true; }
+			public @Nullable String unavailableReason() { return null; }
+			public @NotNull ExecutionSession open(@NotNull ExecutionContext opened, @NotNull ExecutionServices with) {
+				contexts.add(opened);
+				services.add(with);
+				return new ExecutionSession() {
+					public @NotNull ProcessTarget prepare(@NotNull ProcessRequest request) { throw new AssertionError("No process is prepared"); }
+					public void close() { }
+				};
+			}
+		}))) {
+			workbench.executions().get("recording").open(context);
+			workbench.executions().get("recording").open(context);
 
-			assertSame(policy, context.getNetworkPolicy());
-			assertEquals(temporary.resolve("cache"), context.getCacheDirectory());
-			assertSame(context.getPorts(), workbench.context(policy).getPorts(), "One workbench reserves ports once");
+			assertSame(context, contexts.getFirst());
+			assertEquals(temporary.resolve("cache"), services.getFirst().getCacheDirectory());
+			assertSame(services.get(0).getPorts(), services.get(1).getPorts(), "One workbench reserves ports once");
 		}
 	}
 
@@ -92,7 +113,7 @@ class LocalWorkbenchTest {
 			public boolean preservesClientAddress() { return true; }
 			public boolean connectsEnvironments() { return true; }
 			public @Nullable String unavailableReason() { return unavailable; }
-			public @NotNull ExecutionSession open(@NotNull ExecutionContext context) { throw new AssertionError("No session is opened"); }
+			public @NotNull ExecutionSession open(@NotNull ExecutionContext context, @NotNull ExecutionServices services) { throw new AssertionError("No session is opened"); }
 		};
 	}
 }

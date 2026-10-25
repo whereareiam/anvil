@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.exception.JavaVersionMismatchException;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
+import me.whereareiam.anvil.environment.execution.api.ExecutionServices;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.docker.execution.DockerExecutionSettings;
@@ -48,7 +49,7 @@ class DockerImageResolverTest {
 	}
 
 	private DockerImageResolver resolver(ProvisioningException validation) {
-		ExecutionContext context = ExecutionContext.builder()
+		ExecutionServices services = ExecutionServices.builder()
 				.cacheDirectory(directory)
 				.localRuntime((request, source) -> {
 					throw new AssertionError("A Docker image needs no local Java");
@@ -63,7 +64,7 @@ class DockerImageResolverTest {
 				.build();
 		DockerExecutionSettings settings = DockerExecutionSettings.builder().image("temurin:21", "eclipse-temurin:17-jdk").build();
 
-		return new DockerImageResolver(context, null, settings);
+		return new DockerImageResolver(ExecutionContext.builder().build(), services, null, settings);
 	}
 
 	private ProcessRequest request() {

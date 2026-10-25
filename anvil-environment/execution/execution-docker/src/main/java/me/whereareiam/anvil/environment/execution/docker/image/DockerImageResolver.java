@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.exception.JavaVersionMismatchException;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.environment.execution.api.ExecutionServices;
 import me.whereareiam.anvil.environment.execution.api.image.ImageLease;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
@@ -21,15 +22,16 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public final class DockerImageResolver {
 	private final ExecutionContext context;
+	private final ExecutionServices services;
 	private final DockerImageClient docker;
 	private final DockerExecutionSettings settings;
 
 	public String resolve(ProcessRequest request) {
 		String requested = settings.image(request.getJavaSelection().getRequirement());
 		String key = UUID.nameUUIDFromBytes(requested.getBytes(StandardCharsets.UTF_8)).toString();
-		Path directory = context.getCacheDirectory().resolve("docker-images").resolve(key);
+		Path directory = services.getCacheDirectory().resolve("docker-images").resolve(key);
 
-		try (ImageLease ignored = context.getImageLocks().acquire(directory)) {
+		try (ImageLease ignored = services.getImageLocks().acquire(directory)) {
 			Path lock = directory.resolve("image");
 			String reference = !context.isRefresh() && Files.isRegularFile(lock)
 					? Files.readString(lock)
@@ -66,7 +68,7 @@ public final class DockerImageResolver {
 	 */
 	void validate(String details, ProcessRequest request, String image) {
 		try {
-			context.getRuntimeValidator().validate(details, request);
+			services.getRuntimeValidator().validate(details, request);
 		} catch (JavaVersionMismatchException mismatch) {
 			JavaRequirement requirement = request.getJavaSelection().getRequirement();
 			String key = settings.key(requirement);

@@ -3,10 +3,12 @@ package me.whereareiam.anvil.workbench.remote.execution;
 import me.whereareiam.anvil.environment.execution.api.model.ProcessLaunch;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
+import me.whereareiam.anvil.workbench.protocol.model.execution.CloseTarget;
+import me.whereareiam.anvil.workbench.protocol.model.execution.PreparedTarget;
+import me.whereareiam.anvil.workbench.protocol.model.execution.StartProcess;
 import me.whereareiam.anvil.workbench.remote.PortMirror;
 import me.whereareiam.anvil.workbench.remote.WorkbenchConnection;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -18,48 +20,17 @@ import java.util.Map;
  */
 final class RemoteProcessTarget implements ProcessTarget {
 	private final @NotNull WorkbenchConnection connection;
-	private final @NotNull String handle;
-	private final @NotNull InetSocketAddress address;
-	private final @NotNull InetSocketAddress peerAddress;
-	private final @NotNull String bindAddress;
-	private final @Nullable InetSocketAddress agentAddress;
-	private final int agentPort;
-	private final @Nullable String noAgent;
-	private final @NotNull String agentBindAddress;
-	private final @NotNull Map<String, InetSocketAddress> listeners;
-	private final @NotNull Map<String, InetSocketAddress> peerListeners;
+	private final @NotNull PreparedTarget prepared;
 	private final @NotNull PortMirror mirror;
 
-	RemoteProcessTarget(
-			@NotNull WorkbenchConnection connection,
-			@NotNull String handle,
-			@NotNull InetSocketAddress address,
-			@NotNull InetSocketAddress peerAddress,
-			@NotNull String bindAddress,
-			@Nullable InetSocketAddress agentAddress,
-			int agentPort,
-			@Nullable String noAgent,
-			@NotNull String agentBindAddress,
-			@NotNull Map<String, InetSocketAddress> listeners,
-			@NotNull Map<String, InetSocketAddress> peerListeners,
-			@NotNull InetAddress mirrorAddress
-	) {
+	RemoteProcessTarget(@NotNull WorkbenchConnection connection, @NotNull PreparedTarget prepared, @NotNull InetAddress mirrorAddress) {
 		this.connection = connection;
-		this.handle = handle;
-		this.address = address;
-		this.peerAddress = peerAddress;
-		this.bindAddress = bindAddress;
-		this.agentAddress = agentAddress;
-		this.agentPort = agentPort;
-		this.noAgent = noAgent;
-		this.agentBindAddress = agentBindAddress;
-		this.listeners = Map.copyOf(listeners);
-		this.peerListeners = Map.copyOf(peerListeners);
+		this.prepared = prepared;
 		this.mirror = new PortMirror(connection, mirrorAddress);
 		try {
-			mirror.mirror(address);
-			if (agentAddress != null) mirror.mirror(agentAddress);
-			listeners.values().forEach(mirror::mirror);
+			mirror.mirror(prepared.getAddress());
+			if (prepared.getAgentAddress() != null) mirror.mirror(prepared.getAgentAddress());
+			prepared.getListeners().values().forEach(mirror::mirror);
 		} catch (RuntimeException failure) {
 			close();
 			throw failure;
@@ -68,59 +39,56 @@ final class RemoteProcessTarget implements ProcessTarget {
 
 	@Override
 	public @NotNull InetSocketAddress address() {
-		return address;
+		return prepared.getAddress();
 	}
 
 	@Override
 	public @NotNull InetSocketAddress peerAddress() {
-		return peerAddress;
+		return prepared.getPeerAddress();
 	}
 
 	@Override
 	public @NotNull String bindAddress() {
-		return bindAddress;
+		return prepared.getBindAddress();
 	}
 
 	@Override
 	public @NotNull InetSocketAddress agentAddress() {
-		if (agentAddress == null) throw new UnsupportedOperationException(noAgent);
-		return agentAddress;
+		if (prepared.getAgentAddress() == null) throw new UnsupportedOperationException(prepared.getNoAgent());
+		return prepared.getAgentAddress();
 	}
 
 	@Override
 	public int agentPort() {
-		if (agentAddress == null) throw new UnsupportedOperationException(noAgent);
-		return agentPort;
+		agentAddress();
+		return prepared.getAgentPort();
 	}
 
 	@Override
 	public @NotNull String agentBindAddress() {
-		if (agentAddress == null) throw new UnsupportedOperationException(noAgent);
-		return agentBindAddress;
+		if (prepared.getAgentBindAddress() == null) throw new UnsupportedOperationException(prepared.getNoAgent());
+		return prepared.getAgentBindAddress();
 	}
 
 	@Override
 	public @NotNull Map<String, InetSocketAddress> listeners() {
-		return listeners;
+		return prepared.getListeners();
 	}
 
 	@Override
 	public @NotNull Map<String, InetSocketAddress> peerListeners() {
-		return peerListeners;
+		return prepared.getPeerListeners();
 	}
 
 	@Override
 	public @NotNull ProcessExecution start(@NotNull ProcessLaunch launch) {
-		var arguments = connection.mapper().createObjectNode().put("target", handle);
-		arguments.set("launch", connection.mapper().valueToTree(launch));
-
-		return RemoteProcessExecution.attach(connection, connection.call("target.start", arguments).asText());
+		return RemoteProcessExecution.attach(connection, connection.call(new StartProcess(prepared.getHandle(), launch)).getHandle());
 	}
 
 	@Override
 	public void close() {
 		try (mirror) {
-			connection.call("target.close", connection.mapper().createObjectNode().put("handle", handle));
+			connection.call(new CloseTarget(prepared.getHandle()));
 		}
 	}
 }

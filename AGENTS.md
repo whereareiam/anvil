@@ -4,8 +4,8 @@
 
 Anvil is a Java 21 testing framework for local Minecraft Java Edition processes and native-protocol
 players. Preserve reproducibility, protocol fidelity, complete cleanup, and useful failure diagnostics.
-NeoForge is the supported mod loader. A scenario runs on a workbench; today that is the local workbench in the
-engine's own JVM, and workbenches on other machines are planned. Kubernetes, Fabric, Sponge, Bedrock, rendering,
+NeoForge is the supported mod loader. A scenario runs on a workbench: the local workbench in the engine's own JVM,
+or a paired workbench on another machine. Kubernetes, Fabric, Sponge, Bedrock, rendering,
 pathfinding, autonomous AI, and crafting automation are outside the current project scope.
 
 ## Working in this repository
@@ -41,10 +41,10 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-environment/execution/execution-local`                         | Host process execution and local endpoints                                                                                                                                          |
 | `anvil-environment/execution/execution-docker`                        | Typed Docker Engine execution, images, networks, and container endpoints                                                                                                            |
 | `anvil-environment/yggdrasil-mock`                                    | Optional test-only Yggdrasil session server and profile lookup; one possible target of the session-server declarations, depends only on anvil-api                                   |
-| `anvil-workbench/workbench-api`                                       | The workbench contract: execution providers, the execution context of a scenario's sessions, provisioning, and `WorkbenchFacts`; carries the environment APIs it hands out |
+| `anvil-workbench/workbench-api`                                       | The workbench contract: its bound execution providers, provisioning, and `WorkbenchFacts`; carries the environment APIs it hands out |
 | `anvil-workbench/workbench-common`                                    | `RequirementCheck`, which refuses a scenario whose declared and implied requirements a workbench's facts cannot meet, and the machine's capacity                          |
 | `anvil-workbench`                                                     | The local workbench: the filesystem cache, artifact, Java and workspace provisioning, ports, image locks and execution providers assembled in the engine's JVM; assembly only |
-| `anvil-workbench/workbench-protocol`                                  | The protocol between an engine and a workbench on another machine: JSON lines over TLS, connection kinds, the mapper for Anvil's models, error translation and certificate pinning; an API that carries behaviour by design, like the worker kits |
+| `anvil-workbench/workbench-protocol`                                  | The protocol between an engine and a workbench on another machine: typed requests, answers and connection headers as JSON lines over TLS, the mapper for Anvil's models, `WireFailure` error translation and certificate pinning; an API that carries behaviour by design, like the worker kits |
 | `anvil-workbench/workbench-remote`                                    | `RemoteWorkbench`, the engine's side of a workbench on another machine: proxies for execution, provisioning and files, port mirroring, uploads, pairings and `WorkbenchChoice` |
 | `anvil-workbench/workbench-server`                                    | The `anvil-workbench` JAR and image: serves engines over TLS from a data directory under its operator's `workbench.toml`, and on an engine's machine runs the pairing commands; assembly only |
 | `anvil-launcher`                                                      | Public default builder, scoped-service adapters, default ScenarioFactory/per-run assembly, and shaded packaging; wiring only, no rules of its own |
@@ -255,8 +255,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 - Platform agents expose native services and their scheduling rules. The endpoint owns its extension
   class loader; the scenario owns host connections.
 - A workbench holds a scenario's machine side; the host keeps planning and managed execution. The launcher builds
-  one `LocalWorkbench` from installed and supplied execution providers and takes the execution context, artifacts,
-  Java and workspaces from it, never from the environment's implementations directly. `DefaultScenarioFactory.create`
+  one `LocalWorkbench` from installed and supplied execution providers and takes its bound execution providers,
+  artifacts, Java and workspaces from it, never from the environment's implementations directly. `DefaultScenarioFactory.create`
   checks `AnvilScenario.requirements`, and the execution providers its processes imply, through
   `RequirementCheck` before planning; an unmet requirement throws `ScenarioRequirementsException` with every reason,
   which JUnit turns into a skip unless `anvil.requirements=strict`. An execution provider reports why it cannot run
@@ -287,7 +287,17 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   streams; `Workbench.expose` carries a workbench process's connections to an engine service back through
   `REVERSE` streams. A workbench on another machine reports `local = false`, and `RequirementCheck` then refuses
   NeoForge and Java installations named by an engine path. Every remote handle is released when its engine's
-  control connection ends. Keep the server's operations in `EngineOperations` one per `Workbench` method.
+  control connection ends.
+- An `ExecutionContext` is a scenario's data only (priority, offline, refresh, network policy); the machine's
+  services (cache, runtimes, image locks, ports) are `ExecutionServices`, which a workbench binds to each
+  `ExecutionProvider` and hands out as a `BoundExecutionProvider`, so a context crosses the wire and services never
+  do.
+- Every request of the workbench protocol is a `WorkbenchRequest<R>` model under `protocol.model.<subject>` naming
+  its answer type; each subject is a sealed interface listed in `WireMapper`, and the server dispatches each with an
+  exhaustive switch (`EngineOperations`, `ProvisioningOperations`, `ExecutionOperations`), never on strings.
+  Connection headers, answers and server messages are sealed the same way, and a failure crosses as a `WireFailure`
+  kind with structured members, never as a class name. Files the workbench keeps (pairings, server identity) are
+  typed models, never maps.
 - `anvil.debug` names processes whose JVMs accept a debugger: platform planning (`ProcessDebugging`) gives each a
   `debug` listener and a JDWP agent bound to it, so the port is reserved, published and mirrored like any listener's,
   and `DebuggerAnnouncement` prints where to attach.

@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.workbench.protocol;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -12,25 +11,24 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 
 /**
- * Reads and writes the JSON lines of a workbench connection without buffering past a line, so the raw bytes that
- * follow a header stay in the stream.
+ * Reads and writes the messages of a workbench connection, one JSON value per line, without buffering past a line,
+ * so the raw bytes that follow a header stay in the stream.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class WireLines {
 	private static final int MAXIMUM_LINE = 64 * 1024 * 1024;
 
 	/**
-	 * Writes one JSON value as a line and flushes it.
+	 * Writes one message as a line and flushes it.
 	 *
 	 * @param mapper mapper of the connection
 	 * @param output connection's output
-	 * @param message value to write
+	 * @param message message to write
 	 * @throws IOException when the connection fails
 	 */
-	public static void write(@NotNull ObjectMapper mapper, @NotNull OutputStream output, @NotNull JsonNode message) throws IOException {
+	public static void write(@NotNull ObjectMapper mapper, @NotNull OutputStream output, @NotNull Object message) throws IOException {
 		byte[] line = mapper.writeValueAsBytes(message);
 		synchronized (output) {
 			output.write(line);
@@ -40,14 +38,16 @@ public final class WireLines {
 	}
 
 	/**
-	 * Reads one JSON line.
+	 * Reads one message.
 	 *
 	 * @param mapper mapper of the connection
 	 * @param input connection's input
-	 * @return the value, or null when the connection ended before a line began
-	 * @throws IOException when the connection fails or ends inside a line
+	 * @param type type of the message
+	 * @param <T> type of the message
+	 * @return the message, or null when the connection ended before a line began
+	 * @throws IOException when the connection fails, ends inside a line, or carries no such message
 	 */
-	public static @Nullable JsonNode read(@NotNull ObjectMapper mapper, @NotNull InputStream input) throws IOException {
+	public static <T> @Nullable T read(@NotNull ObjectMapper mapper, @NotNull InputStream input, @NotNull Class<T> type) throws IOException {
 		ByteArrayOutputStream line = new ByteArrayOutputStream();
 		int next;
 		while ((next = input.read()) != '\n') {
@@ -59,6 +59,6 @@ public final class WireLines {
 			line.write(next);
 		}
 
-		return mapper.readTree(line.toString(StandardCharsets.UTF_8));
+		return mapper.readValue(line.toByteArray(), type);
 	}
 }

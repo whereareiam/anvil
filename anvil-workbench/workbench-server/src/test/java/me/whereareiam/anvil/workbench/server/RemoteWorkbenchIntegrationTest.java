@@ -1,12 +1,11 @@
 package me.whereareiam.anvil.workbench.server;
 
-import me.whereareiam.anvil.api.model.NetworkPolicy;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.process.ProcessFiles;
-import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
+import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
@@ -70,14 +69,14 @@ class RemoteWorkbenchIntegrationTest {
 		assertThrows(IOException.class, () -> WorkbenchConnection.pair("bench", "127.0.0.1:" + server.port(), "WRONGCODE00", "intruder"));
 
 		Pairing forged = pairing.toBuilder().fingerprint("0".repeat(64)).build();
-		assertThrows(WorkbenchException.class, () -> RemoteWorkbench.connect(forged, ProcessPriority.NORMAL));
+		assertThrows(WorkbenchException.class, () -> RemoteWorkbench.connect(forged));
 		Pairing stolen = pairing.toBuilder().token("f".repeat(64)).build();
-		assertThrows(WorkbenchException.class, () -> RemoteWorkbench.connect(stolen, ProcessPriority.NORMAL));
+		assertThrows(WorkbenchException.class, () -> RemoteWorkbench.connect(stolen));
 	}
 
 	@Test
 	void reportsItsFactsAndRootsAndStoresEngineFilesOnce() throws Exception {
-		try (RemoteWorkbench workbench = RemoteWorkbench.connect(pairing, ProcessPriority.NORMAL)) {
+		try (RemoteWorkbench workbench = RemoteWorkbench.connect(pairing)) {
 			WorkbenchFacts facts = workbench.facts();
 			assertEquals("bench", facts.getWorkbenchName());
 			assertTrue(facts.getExecutions().contains("local"));
@@ -98,7 +97,7 @@ class RemoteWorkbenchIntegrationTest {
 
 	@Test
 	void readsAndWritesAProcessWorkspaceOnTheWorkbench() throws Exception {
-		try (RemoteWorkbench workbench = RemoteWorkbench.connect(pairing, ProcessPriority.NORMAL)) {
+		try (RemoteWorkbench workbench = RemoteWorkbench.connect(pairing)) {
 			ProcessFiles files = workbench.workspaces().files(workbench.workDirectory().resolve("run/lobby"));
 			files.write("config/server.properties", "motd=Anvil\n");
 
@@ -112,7 +111,7 @@ class RemoteWorkbenchIntegrationTest {
 
 	@Test
 	void launchesAJvmOnTheWorkbenchAndCarriesItsStreams() throws Exception {
-		try (RemoteWorkbench workbench = RemoteWorkbench.connect(pairing, ProcessPriority.NORMAL)) {
+		try (RemoteWorkbench workbench = RemoteWorkbench.connect(pairing)) {
 			Process process = workbench.launch(JavaMainLaunch.builder()
 					.classpathEntry(workbench.store(testClasses()))
 					.mainClass(EchoWorker.class.getName())
@@ -138,8 +137,8 @@ class RemoteWorkbenchIntegrationTest {
 		InetAddress mirror = bindable(InetAddress.getByName("127.0.0.2")) ? InetAddress.getByName("127.0.0.2") : InetAddress.getByName("::1");
 		assumeTrue(bindable(mirror), "This machine's loopback offers no second address to mirror ports at");
 
-		try (RemoteWorkbench workbench = RemoteWorkbench.connect(pairing, ProcessPriority.NORMAL, mirror);
-		     ExecutionSession session = workbench.executions().get("local").open(workbench.context(NetworkPolicy.builder().build()))) {
+		try (RemoteWorkbench workbench = RemoteWorkbench.connect(pairing, mirror);
+		     ExecutionSession session = workbench.executions().get("local").open(ExecutionContext.builder().build())) {
 			ProcessTarget target = session.prepare(ProcessRequest.builder()
 					.name("listener")
 					.workspace(workbench.workDirectory().resolve("run/listener"))

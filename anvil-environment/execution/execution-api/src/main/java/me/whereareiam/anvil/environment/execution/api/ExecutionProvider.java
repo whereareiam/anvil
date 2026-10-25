@@ -47,8 +47,9 @@ public interface ExecutionProvider {
 	/**
 	 * Acquires a scenario execution environment, owned until all its processes are finalized.
 	 *
-	 * @param context host resources and runtime validation policy
+	 * @param context the engine's decisions about the scenario's sessions
+	 * @param services the services of the machine the sessions run on
 	 * @return caller-owned execution environment
 	 */
-	@NotNull ExecutionSession open(@NotNull ExecutionContext context);
+	@NotNull ExecutionSession open(@NotNull ExecutionContext context, @NotNull ExecutionServices services);
 }

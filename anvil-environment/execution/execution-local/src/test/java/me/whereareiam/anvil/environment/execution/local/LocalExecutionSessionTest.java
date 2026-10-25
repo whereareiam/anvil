@@ -11,6 +11,7 @@ import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.api.type.network.NetworkServerAccess;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.PortReservations;
+import me.whereareiam.anvil.environment.execution.api.ExecutionServices;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.model.process.ContainerImage;
@@ -48,7 +49,7 @@ class LocalExecutionSessionTest {
 		JavaRequirement graal = JavaRequirement.builder().distribution("graalvm-community").featureVersion(21).build();
 		ProcessRequest first = request("temurin", temurin, null);
 		ProcessRequest second = request("graal", graal, null);
-		try (ExecutionSession session = new LocalExecutionProvider().open(context(runtime))) {
+		try (ExecutionSession session = new LocalExecutionProvider().open(ExecutionContext.builder().build(), services(runtime))) {
 			var a = session.prepare(first);
 			var b = session.prepare(second);
 			assertNotEquals(a.address(), b.address());
@@ -60,7 +61,7 @@ class LocalExecutionSessionTest {
 	@Test
 	void releasesTheReservedPortsOfItsProcessesWhenItCloses() {
 		List<Integer> reserved = new ArrayList<>();
-		try (ExecutionSession session = new LocalExecutionProvider().open(context((request, source) -> Path.of("java")))) {
+		try (ExecutionSession session = new LocalExecutionProvider().open(ExecutionContext.builder().build(), services((request, source) -> Path.of("java")))) {
 			var target = session.prepare(request("server", JavaRequirement.builder().featureVersion(21).build(), null));
 			reserved.add(target.address().getPort());
 			reserved.add(target.agentAddress().getPort());
@@ -73,7 +74,7 @@ class LocalExecutionSessionTest {
 	@Test
 	void reservesAPortForEachListenerThatPeersReachAtTheSameAddress() {
 		List<Integer> reserved = new ArrayList<>();
-		try (ExecutionSession session = new LocalExecutionProvider().open(context((request, source) -> Path.of("java")))) {
+		try (ExecutionSession session = new LocalExecutionProvider().open(ExecutionContext.builder().build(), services((request, source) -> Path.of("java")))) {
 			var target = session.prepare(request("proxy", JavaRequirement.builder().featureVersion(21).build(), null)
 					.toBuilder().listener("link").build());
 			InetSocketAddress link = target.listeners().get("link");
@@ -89,7 +90,7 @@ class LocalExecutionSessionTest {
 
 	@Test
 	void refusesAContainerImageWithTheProviderToUseInstead() {
-		try (ExecutionSession session = new LocalExecutionProvider().open(context((request, source) -> Path.of("java")))) {
+		try (ExecutionSession session = new LocalExecutionProvider().open(ExecutionContext.builder().build(), services((request, source) -> Path.of("java")))) {
 			var image = ProcessRequest.builder().name("redis").workspace(directory.resolve("redis"))
 					.image(ContainerImage.builder().image("redis:7.2-alpine").port(6379).build()).build();
 
@@ -108,7 +109,7 @@ class LocalExecutionSessionTest {
 		Path fallback = directory.resolve("provider-jdk");
 		JavaSource explicit = JavaSource.executable(directory.resolve("explicit/bin/java"));
 		var provider = new LocalExecutionProvider(LocalExecutionSettings.builder().javaHome("default:21", fallback).build(), runtime);
-		try (ExecutionSession session = provider.open(context((request, source) -> { throw new AssertionError("Override must win"); }))) {
+		try (ExecutionSession session = provider.open(ExecutionContext.builder().build(), services((request, source) -> { throw new AssertionError("Override must win"); }))) {
 			JavaRequirement requirement = JavaRequirement.builder().featureVersion(21).build();
 			session.prepare(request("explicit", requirement, explicit));
 			session.prepare(request("fallback", requirement, null));
@@ -118,20 +119,21 @@ class LocalExecutionSessionTest {
 
 	@Test
 	void rejectsIsolationItCannotEnforceBeforeAcquiringTheRuntime() {
-		ExecutionContext context = context((request, source) -> { throw new AssertionError("Must reject first"); }).toBuilder()
+		ExecutionContext context = ExecutionContext.builder()
 				.networkPolicy(NetworkPolicy.builder().networkServerAccess(NetworkServerAccess.PROXY_ONLY)
 						.backendNetworkExposure(NetworkExposure.PRIVATE).build()).build();
-		try (ExecutionSession session = new LocalExecutionProvider().open(context)) {
+		try (ExecutionSession session = new LocalExecutionProvider().open(context,
+				services((request, source) -> { throw new AssertionError("Must reject first"); }))) {
 			assertThrows(ProvisioningException.class, () -> session.prepare(request("server", JavaRequirement.builder().featureVersion(21).build(), null)));
 		}
 	}
 
 	@Test
 	void usesTheGroupedNetworkBindingWithoutChangingAgentExposure() {
-		var context = context((request, source) -> Path.of("java")).toBuilder()
+		var context = ExecutionContext.builder()
 				.networkPolicy(NetworkPolicy.builder().bindAddress("127.0.0.2").build())
 				.build();
-		try (ExecutionSession session = new LocalExecutionProvider().open(context)) {
+		try (ExecutionSession session = new LocalExecutionProvider().open(context, services((request, source) -> Path.of("java")))) {
 			var target = session.prepare(request("server", JavaRequirement.builder().featureVersion(21).build(), null));
 			assertEquals("127.0.0.2", target.address().getHostString());
 			assertTrue(target.agentAddress().getAddress().isLoopbackAddress());
@@ -153,8 +155,8 @@ class LocalExecutionSessionTest {
 		Files.writeString(executable, "#!/bin/sh\nnice > '" + report + "'\n");
 		assertTrue(executable.toFile().setExecutable(true));
 
-		var context = context((request, source) -> executable).toBuilder().processPriority(priority).build();
-		try (ExecutionSession session = new LocalExecutionProvider().open(context)) {
+		var context = ExecutionContext.builder().processPriority(priority).build();
+		try (ExecutionSession session = new LocalExecutionProvider().open(context, services((request, source) -> executable))) {
 			var target = session.prepare(request(priority.name(), JavaRequirement.builder().featureVersion(21).build(), null));
 			var process = target.start(JavaCommand.builder().jar(directory.resolve("server.jar")).memoryMegabytes(64).build());
 			assertTrue(process.await(Duration.ofSeconds(10)));
@@ -163,8 +165,8 @@ class LocalExecutionSessionTest {
 		return Integer.parseInt(Files.readString(report).strip());
 	}
 
-	private ExecutionContext context(LocalRuntimePreparation runtime) {
-		return ExecutionContext.builder().cacheDirectory(directory).localRuntime(runtime)
+	private ExecutionServices services(LocalRuntimePreparation runtime) {
+		return ExecutionServices.builder().cacheDirectory(directory).localRuntime(runtime)
 				.runtimeValidator((properties, request) -> { throw new AssertionError("Local execution must not inspect images"); })
 				.imageLocks(path -> { throw new AssertionError("Local execution must not access images"); })
 				.ports(ports).build();

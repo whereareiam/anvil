@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.environment.execution.docker.execution;
 
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
+import me.whereareiam.anvil.environment.execution.api.ExecutionServices;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.docker.DockerEngine;
@@ -68,10 +69,10 @@ public final class DockerExecutionProvider implements ExecutionProvider {
 	}
 
 	@Override
-	public @NotNull ExecutionSession open(@NotNull ExecutionContext context) {
+	public @NotNull ExecutionSession open(@NotNull ExecutionContext context, @NotNull ExecutionServices services) {
 		DockerEngine docker = new DockerEngine();
 		try {
-			return new DockerExecutionSession(context, docker, settings);
+			return new DockerExecutionSession(context, services, docker, settings);
 		} catch (RuntimeException failure) {
 			try {
 				docker.close();

@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.cfg.ConstructorDetector;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.jsontype.NamedType;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import lombok.AccessLevel;
@@ -25,12 +26,22 @@ import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.environment.execution.api.model.ProcessLaunch;
+import me.whereareiam.anvil.workbench.protocol.model.artifact.ArtifactRequest;
+import me.whereareiam.anvil.workbench.protocol.model.execution.ExecutionRequest;
+import me.whereareiam.anvil.workbench.protocol.model.file.FileRequest;
+import me.whereareiam.anvil.workbench.protocol.model.java.JavaRequest;
+import me.whereareiam.anvil.workbench.protocol.model.launch.LaunchRequest;
+import me.whereareiam.anvil.workbench.protocol.model.store.StoreRequest;
+import me.whereareiam.anvil.workbench.protocol.model.workbench.WorkbenchSetupRequest;
+import me.whereareiam.anvil.workbench.protocol.model.workspace.WorkspaceProvisioningRequest;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -44,6 +55,8 @@ import java.util.stream.StreamSupport;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class WireMapper {
 	private static final String ANVIL_PACKAGES = "me.whereareiam.anvil.";
+	private static final List<Class<?>> SUBJECTS = List.of(WorkbenchSetupRequest.class, StoreRequest.class, LaunchRequest.class,
+			ArtifactRequest.class, JavaRequest.class, WorkspaceProvisioningRequest.class, FileRequest.class, ExecutionRequest.class);
 
 	/**
 	 * Creates a mapper; it is thread-safe once created.
@@ -51,7 +64,7 @@ public final class WireMapper {
 	 * @return mapper for workbench messages
 	 */
 	public static @NotNull ObjectMapper create() {
-		return JsonMapper.builder()
+		ObjectMapper mapper = JsonMapper.builder()
 				.addModule(new ParameterNamesModule())
 				.addModule(values())
 				.constructorDetector(ConstructorDetector.USE_PROPERTIES_BASED)
@@ -66,6 +79,18 @@ public final class WireMapper {
 				.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 				.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
 				.build();
+		mapper.registerSubtypes(requests());
+		return mapper;
+	}
+
+	/**
+	 * Names every request by its class's simple name; the subjects' sealed interfaces list them.
+	 */
+	private static NamedType[] requests() {
+		return SUBJECTS.stream()
+				.flatMap(subject -> Arrays.stream(subject.getPermittedSubclasses()))
+				.map(request -> new NamedType(request, request.getSimpleName()))
+				.toArray(NamedType[]::new);
 	}
 
 	private static SimpleModule values() {

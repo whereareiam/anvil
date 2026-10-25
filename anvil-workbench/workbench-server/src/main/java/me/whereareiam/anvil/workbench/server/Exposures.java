@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.workbench.server;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import me.whereareiam.anvil.workbench.protocol.model.message.ReverseConnection;
+import me.whereareiam.anvil.workbench.protocol.model.message.ServerMessage;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -19,8 +20,7 @@ import java.util.function.Consumer;
  * opens a reverse stream for it.
  */
 final class Exposures implements AutoCloseable {
-	private final @NotNull Consumer<ObjectNode> events;
-	private final @NotNull ObjectNodeFactory nodes;
+	private final @NotNull Consumer<ServerMessage> events;
 	private final @NotNull Map<String, Socket> waiting;
 	private final List<ServerSocket> listeners = new ArrayList<>();
 	private final List<String> announced = new ArrayList<>();
@@ -29,12 +29,10 @@ final class Exposures implements AutoCloseable {
 	 * Creates the exposures of one engine connection.
 	 *
 	 * @param events sends an event to the engine
-	 * @param nodes creates event objects
 	 * @param waiting connections waiting for their reverse stream, shared by every engine connection
 	 */
-	Exposures(@NotNull Consumer<ObjectNode> events, @NotNull ObjectNodeFactory nodes, @NotNull Map<String, Socket> waiting) {
+	Exposures(@NotNull Consumer<ServerMessage> events, @NotNull Map<String, Socket> waiting) {
 		this.events = events;
-		this.nodes = nodes;
 		this.waiting = waiting;
 	}
 
@@ -56,7 +54,7 @@ final class Exposures implements AutoCloseable {
 					synchronized (this) {
 						announced.add(id);
 					}
-					events.accept(nodes.create().put("event", "reverse").put("id", id).put("port", port));
+					events.accept(new ReverseConnection(id, port));
 				} catch (IOException closed) {
 					return;
 				}
@@ -84,13 +82,5 @@ final class Exposures implements AutoCloseable {
 			}
 		}
 		announced.clear();
-	}
-
-	/**
-	 * Creates the JSON objects events are made of.
-	 */
-	@FunctionalInterface
-	interface ObjectNodeFactory {
-		@NotNull ObjectNode create();
 	}
 }

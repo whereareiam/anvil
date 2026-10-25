@@ -6,6 +6,7 @@ import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.process.ContainerProcess;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
+import me.whereareiam.anvil.environment.execution.api.ExecutionServices;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.ImageLaunch;
@@ -115,7 +116,7 @@ class ProcessLauncherIntegrationTest {
 			var launcher = ProcessLauncher.builder()
 					.options(options)
 					.workbench(workbench)
-					.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider())))
+					.processes(new ManagedProcessService(workbench.executions()))
 					.workspaces(workbench.workspaces())
 					.platforms(platforms)
 					.connections((port, token, timeout) -> {
@@ -173,7 +174,7 @@ class ProcessLauncherIntegrationTest {
 			var launcher = ProcessLauncher.builder()
 					.options(options)
 					.workbench(workbench)
-					.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider())))
+					.processes(new ManagedProcessService(workbench.executions()))
 					.workspaces(workbench.workspaces())
 					.platforms(platforms)
 					.connections((port, token, timeout) -> agent(1, new ArrayList<>()))
@@ -203,7 +204,7 @@ class ProcessLauncherIntegrationTest {
 			var launcher = ProcessLauncher.builder()
 					.options(options)
 					.workbench(workbench)
-					.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider())))
+					.processes(new ManagedProcessService(workbench.executions()))
 					.workspaces(workbench.workspaces())
 					.platforms(platforms)
 					.connections((port, token, timeout) -> agent(1, new ArrayList<>()))
@@ -238,14 +239,14 @@ class ProcessLauncherIntegrationTest {
 		var options = EngineDefaults.resolve(EngineOptions.builder().workDirectory(directory.resolve("work"))
 				.cacheDirectory(directory.resolve("cache")).eulaAccepted(true).build());
 		var images = new ShellImages();
-		try (var workbench = new LocalWorkbench(options, Map.of("local", new LocalExecutionProvider()))) {
+		try (var workbench = new LocalWorkbench(options, Map.of("local", new LocalExecutionProvider(), "images", images))) {
 			var platforms = new DefaultPlatformPlanner(options, Map.of("test", fixtureProvider(executable)),
 					new ArtifactPlatformSource(workbench), descriptor -> executable,
 					new ProvisionedPlatformJavaSource(workbench.java()));
 			var launcher = ProcessLauncher.builder()
 					.options(options)
 					.workbench(workbench)
-					.processes(new ManagedProcessService(Map.of("local", new LocalExecutionProvider(), "images", images)))
+					.processes(new ManagedProcessService(workbench.executions()))
 					.workspaces(workbench.workspaces())
 					.platforms(platforms)
 					.connections((port, token, timeout) -> agent(1, new ArrayList<>()))
@@ -278,7 +279,7 @@ class ProcessLauncherIntegrationTest {
 		@Override
 		public boolean connectsEnvironments() { return true; }
 		@Override
-		public @NotNull ExecutionSession open(@NotNull ExecutionContext context) {
+		public @NotNull ExecutionSession open(@NotNull ExecutionContext context, @NotNull ExecutionServices services) {
 			return new ExecutionSession() {
 				@Override
 				public @NotNull ProcessTarget prepare(@NotNull ProcessRequest request) {

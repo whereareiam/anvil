@@ -7,6 +7,7 @@ import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.api.type.network.NetworkServerAccess;
+import me.whereareiam.anvil.environment.execution.api.ExecutionServices;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
@@ -33,6 +34,7 @@ final class LocalExecutionSession implements ExecutionSession {
 	private static final List<String> LOW_PRIORITY = List.of("nice", "-n", "10");
 
 	private final ExecutionContext context;
+	private final ExecutionServices services;
 	private final LocalExecutionSettings settings;
 	private final LocalRuntimePreparation runtime;
 	private final Set<Integer> ports = new HashSet<>();
@@ -62,7 +64,7 @@ final class LocalExecutionSession implements ExecutionSession {
 	}
 
 	private synchronized int port(String address) {
-		int port = context.getPorts().reserve(address);
+		int port = services.getPorts().reserve(address);
 		ports.add(port);
 
 		return port;
@@ -73,7 +75,7 @@ final class LocalExecutionSession implements ExecutionSession {
 	 */
 	@Override
 	public synchronized void close() {
-		ports.forEach(context.getPorts()::release);
+		ports.forEach(services.getPorts()::release);
 		ports.clear();
 	}
 }

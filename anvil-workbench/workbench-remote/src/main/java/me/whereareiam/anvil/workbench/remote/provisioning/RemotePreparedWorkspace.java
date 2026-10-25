@@ -2,6 +2,7 @@ package me.whereareiam.anvil.workbench.remote.provisioning;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.PreparedWorkspace;
+import me.whereareiam.anvil.workbench.protocol.model.workspace.FinishWorkspace;
 import me.whereareiam.anvil.workbench.remote.WorkbenchConnection;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,6 +24,6 @@ final class RemotePreparedWorkspace implements PreparedWorkspace {
 
 	@Override
 	public void finish(boolean successful) {
-		connection.call("workspaces.finish", connection.mapper().createObjectNode().put("handle", handle).put("successful", successful));
+		connection.call(new FinishWorkspace(handle, successful));
 	}
 }

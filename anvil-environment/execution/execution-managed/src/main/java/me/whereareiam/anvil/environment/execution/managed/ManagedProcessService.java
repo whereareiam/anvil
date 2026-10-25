@@ -2,7 +2,7 @@ package me.whereareiam.anvil.environment.execution.managed;
 
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.scenario.ScenarioObserver;
-import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
+import me.whereareiam.anvil.environment.execution.api.BoundExecutionProvider;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionPlan;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessSpec;
 import me.whereareiam.anvil.environment.execution.api.preparation.ExecutionPreparation;
@@ -21,9 +21,9 @@ import java.util.TreeSet;
  * Executes prepared process plans with explicit input and generation lifecycle ownership.
  */
 public final class ManagedProcessService {
-	private final Map<String, ExecutionProvider> executions;
+	private final Map<String, BoundExecutionProvider> executions;
 
-	public ManagedProcessService(@NotNull Map<String, ExecutionProvider> executions) {
+	public ManagedProcessService(@NotNull Map<String, BoundExecutionProvider> executions) {
 		this.executions = Map.copyOf(executions);
 	}
 
@@ -56,7 +56,7 @@ public final class ManagedProcessService {
 	 * @return owned prepared process group
 	 */
 	public @NotNull ProcessGroup prepare(@NotNull ExecutionPlan plan, @NotNull ExecutionPreparation preparation, @Nullable ScenarioObserver observer) {
-		Map<String, ExecutionProvider> used = new LinkedHashMap<>();
+		Map<String, BoundExecutionProvider> used = new LinkedHashMap<>();
 		used.put(plan.getExecutionProviderId(), provider(plan.getExecutionProviderId()));
 		for (ProcessSpec process : plan.getProcesses())
 			if (process.getExecutionProviderId() != null)
@@ -98,8 +98,8 @@ public final class ManagedProcessService {
 		return provider(executionProviderId).connectsEnvironments();
 	}
 
-	private ExecutionProvider provider(String executionProviderId) {
-		ExecutionProvider execution = executions.get(executionProviderId);
+	private BoundExecutionProvider provider(String executionProviderId) {
+		BoundExecutionProvider execution = executions.get(executionProviderId);
 		if (execution == null)
 			throw new IllegalArgumentException("No execution provider '" + executionProviderId + "'. Available: " + new TreeSet<>(executions.keySet()));
 		return execution;
