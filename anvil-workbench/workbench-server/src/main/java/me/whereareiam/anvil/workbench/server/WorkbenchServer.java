@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.workbench.server;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.engine.config.EngineDefaults;
@@ -9,7 +8,19 @@ import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import me.whereareiam.anvil.workbench.local.LocalWorkbench;
 import me.whereareiam.anvil.workbench.protocol.WireLines;
 import me.whereareiam.anvil.workbench.protocol.WireMapper;
-import me.whereareiam.anvil.workbench.protocol.WireProtocol;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Accepted;
+import me.whereareiam.anvil.workbench.protocol.model.connection.ConnectionHeader;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Control;
+import me.whereareiam.anvil.workbench.protocol.model.connection.EngineConnection;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Pair;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Paired;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Refused;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Reverse;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Stderr;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Stdio;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Tunnel;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Upload;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Uploaded;
 import org.jetbrains.annotations.NotNull;
 
 import javax.net.ssl.SSLServerSocket;
@@ -129,37 +140,11 @@ public final class WorkbenchServer implements AutoCloseable {
 	private void route(SSLSocket socket) {
 		try {
 			socket.setTcpNoDelay(true);
-			InputStream input = socket.getInputStream();
-			JsonNode header = WireLines.read(mapper, input);
-			if (header == null) {
-				socket.close();
-				return;
-			}
-
-			String kind = header.path(WireProtocol.KIND).asText();
-			if (kind.equals(WireProtocol.PAIR)) {
-				pair(socket, header);
-				return;
-			}
-
-			String token = header.path(WireProtocol.TOKEN).asText();
-			String engine = identity.engine(token);
-			if (engine == null) {
-				refuse(socket, "This workbench is not paired with the engine; pair it again");
-				return;
-			}
-
-			switch (kind) {
-				case WireProtocol.CONTROL -> {
-					accept(socket);
-					new EngineSession(socket, mapper, token, engine, workbench, settings, handles, uploads, waitingReverse).serve();
-				}
-				case WireProtocol.STDIO -> stdio(socket, token, header.path("handle").asText());
-				case WireProtocol.STDERR -> stderr(socket, token, header.path("handle").asText());
-				case WireProtocol.UPLOAD -> upload(socket, header);
-				case WireProtocol.TUNNEL -> tunnel(socket, header);
-				case WireProtocol.REVERSE -> reverse(socket, header.path("id").asText());
-				default -> refuse(socket, "Unknown connection kind '" + kind + "'");
+			ConnectionHeader header = WireLines.read(mapper, socket.getInputStream(), ConnectionHeader.class);
+			switch (header) {
+				case null -> socket.close();
+				case Pair pair -> pair(socket, pair);
+				case EngineConnection connection -> serve(socket, connection);
 			}
 		} catch (IOException | RuntimeException failure) {
 			try {
@@ -170,18 +155,38 @@ public final class WorkbenchServer implements AutoCloseable {
 		}
 	}
 
-	private void pair(Socket socket, JsonNode header) throws IOException {
+	private void serve(SSLSocket socket, EngineConnection connection) throws IOException {
+		String token = connection.getToken();
+		String engine = identity.engine(token);
+		if (engine == null) {
+			refuse(socket, "This workbench is not paired with the engine; pair it again");
+			return;
+		}
+
+		switch (connection) {
+			case Control ignored -> {
+				accept(socket);
+				new EngineSession(socket, mapper, token, engine, workbench, settings, handles, uploads, waitingReverse).serve();
+			}
+			case Stdio stdio -> stdio(socket, token, stdio.getHandle());
+			case Stderr stderr -> stderr(socket, token, stderr.getHandle());
+			case Upload upload -> upload(socket, upload);
+			case Tunnel tunnel -> tunnel(socket, tunnel.getPort());
+			case Reverse reverse -> reverse(socket, reverse.getId());
+		}
+	}
+
+	private void pair(Socket socket, Pair pair) throws IOException {
 		try (socket) {
-			String token = identity.pair(header.path("code").asText(), header.path("engine").asText("engine"));
+			String token = identity.pair(pair.getCode(), pair.getEngine());
 			if (token == null) {
-				WireLines.write(mapper, socket.getOutputStream(), mapper.createObjectNode()
-						.put("error", "The pairing code is wrong or expired; create a new one with 'pair' on the workbench"));
+				WireLines.write(mapper, socket.getOutputStream(),
+						new Refused("The pairing code is wrong or expired; create a new one with 'pair' on the workbench"));
 				return;
 			}
 
-			System.out.println("Paired with engine '" + header.path("engine").asText("engine") + "'");
-			WireLines.write(mapper, socket.getOutputStream(), mapper.createObjectNode()
-					.put("token", token).put("name", settings.getName()));
+			System.out.println("Paired with engine '" + pair.getEngine() + "'");
+			WireLines.write(mapper, socket.getOutputStream(), new Paired(token, settings.getName()));
 		}
 	}
 
@@ -215,20 +220,19 @@ public final class WorkbenchServer implements AutoCloseable {
 		}
 	}
 
-	private void upload(Socket socket, JsonNode header) throws IOException {
+	private void upload(Socket socket, Upload upload) throws IOException {
 		try (socket) {
 			accept(socket);
-			Path stored = uploads.receive(header.path("sha256").asText(), header.path("name").asText(),
-					header.path("directory").asBoolean(), new BoundedInput(socket.getInputStream(), header.path("size").asLong()));
-			WireLines.write(mapper, socket.getOutputStream(), mapper.createObjectNode().put("path", stored.toString()));
+			Path stored = uploads.receive(upload.getSha256(), upload.getName(), upload.isDirectory(),
+					new BoundedInput(socket.getInputStream(), upload.getSize()));
+			WireLines.write(mapper, socket.getOutputStream(), new Uploaded(stored));
 		}
 	}
 
 	/**
 	 * Connects to an address on the workbench's own loopback, such as a process's game or agent port, and relays it.
 	 */
-	private void tunnel(Socket socket, JsonNode header) throws IOException {
-		int port = header.path("port").asInt();
+	private void tunnel(Socket socket, int port) throws IOException {
 		Socket target = new Socket();
 		try {
 			target.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), 5000);
@@ -259,12 +263,12 @@ public final class WorkbenchServer implements AutoCloseable {
 	}
 
 	private void accept(Socket socket) throws IOException {
-		WireLines.write(mapper, socket.getOutputStream(), mapper.createObjectNode().put("accepted", true));
+		WireLines.write(mapper, socket.getOutputStream(), new Accepted());
 	}
 
 	private void refuse(Socket socket, String reason) throws IOException {
 		try (socket) {
-			WireLines.write(mapper, socket.getOutputStream(), mapper.createObjectNode().put("error", reason));
+			WireLines.write(mapper, socket.getOutputStream(), new Refused(reason));
 		}
 	}
 

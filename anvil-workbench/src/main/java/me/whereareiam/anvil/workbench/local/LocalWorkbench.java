@@ -1,9 +1,9 @@
 package me.whereareiam.anvil.workbench.local;
 
 import me.whereareiam.anvil.api.model.EngineOptions;
-import me.whereareiam.anvil.api.model.NetworkPolicy;
+import me.whereareiam.anvil.environment.execution.api.BoundExecutionProvider;
 import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
-import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
+import me.whereareiam.anvil.environment.execution.api.ExecutionServices;
 import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
 import me.whereareiam.anvil.environment.provisioning.artifact.api.ArtifactResolver;
 import me.whereareiam.anvil.environment.provisioning.java.api.JavaProvisioner;
@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -39,11 +41,8 @@ public final class LocalWorkbench implements Workbench {
 	private static final String ANY_HOST = "*";
 
 	private final @NotNull EngineOptions options;
-	private final @NotNull Map<String, ExecutionProvider> executions;
 	private final @NotNull ProvisioningServices provisioning;
-	private final @NotNull JavaExecutionRuntime javaRuntime;
-	private final @NotNull CacheImageLocks imageLocks;
-	private final @NotNull PortSelection ports = new PortSelection();
+	private final @NotNull Map<String, BoundExecutionProvider> executions;
 	private boolean closed;
 
 	/**
@@ -55,10 +54,18 @@ public final class LocalWorkbench implements Workbench {
 	 */
 	public LocalWorkbench(@NotNull EngineOptions options, @NotNull Map<String, ExecutionProvider> executions) {
 		this.options = options;
-		this.executions = Map.copyOf(executions);
 		provisioning = new ProvisioningServices(options);
-		javaRuntime = new JavaExecutionRuntime(provisioning.getJava());
-		imageLocks = new CacheImageLocks(provisioning.getCache());
+		JavaExecutionRuntime java = new JavaExecutionRuntime(provisioning.getJava());
+		ExecutionServices services = ExecutionServices.builder()
+				.cacheDirectory(options.getCacheDirectory())
+				.localRuntime(java)
+				.runtimeValidator(java)
+				.imageLocks(new CacheImageLocks(provisioning.getCache()))
+				.ports(new PortSelection())
+				.build();
+		Map<String, BoundExecutionProvider> bound = new LinkedHashMap<>();
+		executions.forEach((id, provider) -> bound.put(id, new ServicedExecutionProvider(provider, services)));
+		this.executions = Collections.unmodifiableMap(bound);
 	}
 
 	@Override
@@ -84,23 +91,8 @@ public final class LocalWorkbench implements Workbench {
 	}
 
 	@Override
-	public @NotNull Map<String, ExecutionProvider> executions() {
+	public @NotNull Map<String, BoundExecutionProvider> executions() {
 		return executions;
-	}
-
-	@Override
-	public @NotNull ExecutionContext context(@NotNull NetworkPolicy networkPolicy) {
-		return ExecutionContext.builder()
-				.cacheDirectory(options.getCacheDirectory())
-				.localRuntime(javaRuntime)
-				.runtimeValidator(javaRuntime)
-				.imageLocks(imageLocks)
-				.ports(ports)
-				.processPriority(options.getProcessScheduling().getPriority())
-				.offline(options.isOffline())
-				.refresh(options.isRefresh())
-				.networkPolicy(networkPolicy)
-				.build();
 	}
 
 	@Override

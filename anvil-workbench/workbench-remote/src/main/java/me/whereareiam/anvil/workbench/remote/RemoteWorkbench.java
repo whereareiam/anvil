@@ -1,11 +1,6 @@
 package me.whereareiam.anvil.workbench.remote;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import me.whereareiam.anvil.api.model.NetworkPolicy;
-import me.whereareiam.anvil.api.type.ProcessPriority;
-import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
-import me.whereareiam.anvil.environment.execution.api.PortReservations;
-import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
+import me.whereareiam.anvil.environment.execution.api.BoundExecutionProvider;
 import me.whereareiam.anvil.environment.provisioning.artifact.api.ArtifactResolver;
 import me.whereareiam.anvil.environment.provisioning.java.api.JavaProvisioner;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.WorkspaceProvisioner;
@@ -14,6 +9,14 @@ import me.whereareiam.anvil.workbench.api.exception.WorkbenchException;
 import me.whereareiam.anvil.workbench.api.model.JavaMainLaunch;
 import me.whereareiam.anvil.workbench.api.model.WorkbenchFacts;
 import me.whereareiam.anvil.workbench.protocol.WireProtocol;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Reverse;
+import me.whereareiam.anvil.workbench.protocol.model.launch.Launch;
+import me.whereareiam.anvil.workbench.protocol.model.message.ReverseConnection;
+import me.whereareiam.anvil.workbench.protocol.model.workbench.Expose;
+import me.whereareiam.anvil.workbench.protocol.model.workbench.Greeting;
+import me.whereareiam.anvil.workbench.protocol.model.workbench.Hello;
+import me.whereareiam.anvil.workbench.protocol.model.workbench.OfferedExecution;
+import me.whereareiam.anvil.workbench.protocol.model.workbench.ReadFacts;
 import me.whereareiam.anvil.workbench.remote.execution.RemoteExecutionProvider;
 import me.whereareiam.anvil.workbench.remote.pairing.Pairing;
 import me.whereareiam.anvil.workbench.remote.provisioning.RemoteArtifacts;
@@ -39,32 +42,28 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class RemoteWorkbench implements Workbench {
 	private final @NotNull WorkbenchConnection connection;
-	private final @NotNull ProcessPriority priority;
 	private final @NotNull String name;
 	private final @NotNull Path workDirectory;
 	private final @NotNull Path cacheDirectory;
-	private final @NotNull Map<String, ExecutionProvider> executions;
+	private final @NotNull Map<String, BoundExecutionProvider> executions;
 	private final @NotNull Uploads uploads;
 	private final @NotNull RemoteArtifacts artifacts;
 	private final @NotNull RemoteJava java;
 	private final @NotNull RemoteWorkspaces workspaces;
 	private final Set<Integer> exposed = ConcurrentHashMap.newKeySet();
 
-	private RemoteWorkbench(@NotNull Pairing pairing, @NotNull ProcessPriority priority, @NotNull InetAddress mirrorAddress) {
-		this.priority = priority;
-		this.connection = WorkbenchConnection.open(pairing, this::event);
+	private RemoteWorkbench(@NotNull Pairing pairing, @NotNull InetAddress mirrorAddress) {
+		this.connection = WorkbenchConnection.open(pairing, this::carryBack);
 		try {
-			JsonNode hello = connection.call("hello", connection.mapper().createObjectNode().put("version", WireProtocol.VERSION));
+			Greeting greeting = connection.call(new Hello(WireProtocol.VERSION));
 			name = pairing.getName();
-			workDirectory = Path.of(hello.path("workDirectory").asText());
-			cacheDirectory = Path.of(hello.path("cacheDirectory").asText());
+			workDirectory = greeting.getWorkDirectory();
+			cacheDirectory = greeting.getCacheDirectory();
 
-			Map<String, ExecutionProvider> providers = new LinkedHashMap<>();
-			connection.call("executions", connection.mapper().createObjectNode()).forEach(provider -> {
-				String id = provider.path("id").asText();
-				providers.put(id, new RemoteExecutionProvider(connection, id, provider.path("preservesClientAddress").asBoolean(),
-						provider.path("connectsEnvironments").asBoolean(), () -> facts().getUnavailableExecutions().get(id), mirrorAddress));
-			});
+			Map<String, BoundExecutionProvider> providers = new LinkedHashMap<>();
+			for (OfferedExecution offered : greeting.getExecutions())
+				providers.put(offered.getId(), new RemoteExecutionProvider(connection, offered,
+						() -> facts().getUnavailableExecutions().get(offered.getId()), mirrorAddress));
 			executions = Map.copyOf(providers);
 		} catch (RuntimeException failure) {
 			try {
@@ -84,12 +83,11 @@ public final class RemoteWorkbench implements Workbench {
 	 * Connects to a paired workbench and checks that it speaks this engine's protocol.
 	 *
 	 * @param pairing the engine's pairing
-	 * @param priority priority of the processes this engine starts there
 	 * @return the connected workbench
 	 * @throws WorkbenchException when it cannot be reached, refuses the engine or speaks another protocol
 	 */
-	public static @NotNull RemoteWorkbench connect(@NotNull Pairing pairing, @NotNull ProcessPriority priority) {
-		return new RemoteWorkbench(pairing, priority, InetAddress.getLoopbackAddress());
+	public static @NotNull RemoteWorkbench connect(@NotNull Pairing pairing) {
+		return new RemoteWorkbench(pairing, InetAddress.getLoopbackAddress());
 	}
 
 	/**
@@ -97,13 +95,12 @@ public final class RemoteWorkbench implements Workbench {
 	 * engine and a workbench on the same machine need, as both would otherwise take the same port.
 	 *
 	 * @param pairing the engine's pairing
-	 * @param priority priority of the processes this engine starts there
 	 * @param mirrorAddress loopback address to mirror ports at, such as {@code 127.0.0.2}
 	 * @return the connected workbench
 	 * @throws WorkbenchException when it cannot be reached, refuses the engine or speaks another protocol
 	 */
-	public static @NotNull RemoteWorkbench connect(@NotNull Pairing pairing, @NotNull ProcessPriority priority, @NotNull InetAddress mirrorAddress) {
-		return new RemoteWorkbench(pairing, priority, mirrorAddress);
+	public static @NotNull RemoteWorkbench connect(@NotNull Pairing pairing, @NotNull InetAddress mirrorAddress) {
+		return new RemoteWorkbench(pairing, mirrorAddress);
 	}
 
 	@Override
@@ -113,45 +110,12 @@ public final class RemoteWorkbench implements Workbench {
 
 	@Override
 	public @NotNull WorkbenchFacts facts() {
-		return connection.mapper().convertValue(connection.call("facts", connection.mapper().createObjectNode()), WorkbenchFacts.class);
+		return connection.call(new ReadFacts());
 	}
 
 	@Override
-	public @NotNull Map<String, ExecutionProvider> executions() {
+	public @NotNull Map<String, BoundExecutionProvider> executions() {
 		return executions;
-	}
-
-	/**
-	 * Returns a context carrying the scenario's network policy and the engine's priority to the workbench; the
-	 * ports, image locks and Java runtimes its sessions use are the workbench's own.
-	 */
-	@Override
-	public @NotNull ExecutionContext context(@NotNull NetworkPolicy networkPolicy) {
-		return ExecutionContext.builder()
-				.cacheDirectory(cacheDirectory)
-				.localRuntime((request, source) -> {
-					throw new IllegalStateException("Java runtimes of workbench '" + name + "' resolve on the workbench");
-				})
-				.runtimeValidator((properties, request) -> {
-					throw new IllegalStateException("Images of workbench '" + name + "' are validated on the workbench");
-				})
-				.imageLocks(image -> {
-					throw new IllegalStateException("Images of workbench '" + name + "' are locked on the workbench");
-				})
-				.ports(new PortReservations() {
-					@Override
-					public int reserve(@NotNull String bindAddress) {
-						throw new IllegalStateException("Ports of workbench '" + name + "' are reserved on the workbench");
-					}
-
-					@Override
-					public void release(int port) {
-						throw new IllegalStateException("Ports of workbench '" + name + "' are released on the workbench");
-					}
-				})
-				.processPriority(priority)
-				.networkPolicy(networkPolicy)
-				.build();
 	}
 
 	@Override
@@ -173,7 +137,7 @@ public final class RemoteWorkbench implements Workbench {
 	public void expose(int port) throws IOException {
 		if (!exposed.add(port)) return;
 		try {
-			connection.request("expose", connection.mapper().createObjectNode().put("port", port));
+			connection.request(new Expose(port));
 		} catch (IOException | RuntimeException failure) {
 			exposed.remove(port);
 			throw failure;
@@ -182,9 +146,7 @@ public final class RemoteWorkbench implements Workbench {
 
 	@Override
 	public @NotNull Process launch(@NotNull JavaMainLaunch launch) throws IOException {
-		var arguments = connection.mapper().createObjectNode();
-		arguments.set("launch", connection.mapper().valueToTree(launch));
-		return new RemoteProcess(connection, connection.request("launch", arguments).asText());
+		return new RemoteProcess(connection, connection.request(new Launch(launch)).getHandle());
 	}
 
 	@Override
@@ -205,14 +167,12 @@ public final class RemoteWorkbench implements Workbench {
 	/**
 	 * Carries a connection a workbench process made to an exposed port back to the service on this machine.
 	 */
-	private void event(JsonNode event) {
-		if (!event.path("event").asText().equals("reverse")) return;
-
+	private void carryBack(ReverseConnection reverse) {
 		Thread.ofVirtual().name("anvil-reverse").start(() -> {
 			try {
 				Socket local = new Socket();
-				local.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), event.path("port").asInt()), 5000);
-				Socket remote = connection.stream(WireProtocol.REVERSE, connection.mapper().createObjectNode().put("id", event.path("id").asText()));
+				local.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), reverse.getPort()), 5000);
+				Socket remote = connection.stream(token -> new Reverse(token, reverse.getId()));
 				relay(local, remote);
 				relay(remote, local);
 			} catch (IOException unreachable) {

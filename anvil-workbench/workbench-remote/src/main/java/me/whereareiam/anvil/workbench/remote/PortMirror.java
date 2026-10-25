@@ -1,8 +1,7 @@
 package me.whereareiam.anvil.workbench.remote;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import me.whereareiam.anvil.workbench.api.exception.WorkbenchException;
-import me.whereareiam.anvil.workbench.protocol.WireProtocol;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Tunnel;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
@@ -81,8 +80,7 @@ public final class PortMirror implements Closeable {
 
 	private void tunnel(Socket local, int port) {
 		try {
-			ObjectMapper mapper = connection.mapper();
-			Socket remote = connection.stream(WireProtocol.TUNNEL, mapper.createObjectNode().put("port", port));
+			Socket remote = connection.stream(token -> new Tunnel(token, port));
 			relay(local.getInputStream(), remote.getOutputStream(), remote);
 			relay(remote.getInputStream(), local.getOutputStream(), local);
 		} catch (IOException unreachable) {

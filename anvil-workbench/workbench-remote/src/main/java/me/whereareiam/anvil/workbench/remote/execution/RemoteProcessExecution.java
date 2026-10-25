@@ -1,11 +1,16 @@
 package me.whereareiam.anvil.workbench.remote.execution;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import me.whereareiam.anvil.api.process.type.RunningContainer;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import me.whereareiam.anvil.workbench.api.exception.WorkbenchException;
-import me.whereareiam.anvil.workbench.protocol.WireProtocol;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Stdio;
+import me.whereareiam.anvil.workbench.protocol.model.execution.AwaitProcess;
+import me.whereareiam.anvil.workbench.protocol.model.execution.CheckProcess;
+import me.whereareiam.anvil.workbench.protocol.model.execution.CommandOutput;
+import me.whereareiam.anvil.workbench.protocol.model.execution.ExecuteInProcess;
+import me.whereareiam.anvil.workbench.protocol.model.execution.FreezeProcess;
+import me.whereareiam.anvil.workbench.protocol.model.execution.TerminateProcess;
+import me.whereareiam.anvil.workbench.protocol.model.execution.ThawProcess;
 import me.whereareiam.anvil.workbench.remote.WorkbenchConnection;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -44,10 +50,9 @@ final class RemoteProcessExecution implements ProcessExecution {
 	 */
 	static @NotNull RemoteProcessExecution attach(@NotNull WorkbenchConnection connection, @NotNull String handle) {
 		try {
-			return new RemoteProcessExecution(connection, handle,
-					connection.stream(WireProtocol.STDIO, connection.mapper().createObjectNode().put("handle", handle)));
+			return new RemoteProcessExecution(connection, handle, connection.stream(token -> new Stdio(token, handle)));
 		} catch (IOException failure) {
-			connection.call("process.terminate", connection.mapper().createObjectNode().put("handle", handle).put("force", true));
+			connection.call(new TerminateProcess(handle, true));
 			throw new WorkbenchException("Could not attach to a process on workbench '" + connection.pairing().getName() + "'", failure);
 		}
 	}
@@ -85,7 +90,7 @@ final class RemoteProcessExecution implements ProcessExecution {
 
 	@Override
 	public boolean isAlive() {
-		return !exit.isDone() && connection.call("process.alive", arguments()).asBoolean();
+		return !exit.isDone() && connection.call(new CheckProcess(handle)).isAlive();
 	}
 
 	@Override
@@ -98,35 +103,27 @@ final class RemoteProcessExecution implements ProcessExecution {
 		if (exit.isDone()) return true;
 		if (Thread.interrupted()) throw new InterruptedException();
 
-		return connection.call("process.await", arguments().put("timeoutMillis", timeout.toMillis())).asBoolean();
+		return connection.call(new AwaitProcess(handle, timeout.toMillis())).isEnded();
 	}
 
 	@Override
 	public void terminate(boolean force) {
-		connection.call("process.terminate", arguments().put("force", force));
+		connection.call(new TerminateProcess(handle, force));
 	}
 
 	@Override
 	public void freeze() {
-		connection.call("process.freeze", arguments());
+		connection.call(new FreezeProcess(handle));
 	}
 
 	@Override
 	public void thaw() {
-		connection.call("process.thaw", arguments());
+		connection.call(new ThawProcess(handle));
 	}
 
 	@Override
 	public @NotNull RunningContainer.CommandResult execute(@NotNull Duration timeout, @NotNull String... command) {
-		var arguments = arguments().put("timeoutMillis", timeout.toMillis());
-		var parts = arguments.putArray("command");
-		for (String part : command) parts.add(part);
-		JsonNode result = connection.call("process.execute", arguments);
-
-		return new RunningContainer.CommandResult(result.path("exitCode").asInt(), result.path("output").asText());
-	}
-
-	private ObjectNode arguments() {
-		return connection.mapper().createObjectNode().put("handle", handle);
+		CommandOutput result = connection.call(new ExecuteInProcess(handle, timeout.toMillis(), List.of(command)));
+		return new RunningContainer.CommandResult(result.getExitCode(), result.getOutput());
 	}
 }

@@ -1,8 +1,7 @@
 package me.whereareiam.anvil.workbench.server;
 
-import me.whereareiam.anvil.api.model.NetworkPolicy;
-import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
+import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.ImageLaunch;
 import me.whereareiam.anvil.environment.execution.api.model.process.ContainerImage;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
@@ -44,8 +43,8 @@ class RemoteContainerIntegrationTest {
 			// The engine shares this machine with the workbench, so the mirror takes the IPv6 loopback.
 			InetAddress mirror = InetAddress.getByName("::1");
 
-			try (RemoteWorkbench workbench = RemoteWorkbench.connect(pairing, ProcessPriority.NORMAL, mirror);
-			     ExecutionSession session = workbench.executions().get("docker").open(workbench.context(NetworkPolicy.builder().build()))) {
+			try (RemoteWorkbench workbench = RemoteWorkbench.connect(pairing, mirror);
+			     ExecutionSession session = workbench.executions().get("docker").open(ExecutionContext.builder().build())) {
 				assertSame(workbench.executions().get("docker").getClass(), workbench.executions().get("local").getClass(),
 						"A Docker-only workbench runs locally declared processes in containers too");
 				Path workspace = workbench.workDirectory().resolve("run/redis");

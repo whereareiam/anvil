@@ -1,11 +1,12 @@
 package me.whereareiam.anvil.workbench.server;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import me.whereareiam.anvil.workbench.api.Workbench;
 import me.whereareiam.anvil.workbench.protocol.WireErrors;
 import me.whereareiam.anvil.workbench.protocol.WireLines;
+import me.whereareiam.anvil.workbench.protocol.model.message.Request;
+import me.whereareiam.anvil.workbench.protocol.model.message.Response;
+import me.whereareiam.anvil.workbench.protocol.model.message.ServerMessage;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -15,8 +16,8 @@ import java.net.Socket;
 import java.util.Map;
 
 /**
- * One engine's control connection: requests arrive as JSON lines and run each on a virtual thread of its own, so a
- * long one, such as waiting for a process, never holds up the others; responses carry the request's id. When the
+ * One engine's control connection: requests arrive one per line and run each on a virtual thread of its own, so a
+ * long one, such as waiting for a process, never holds up the others; answers carry the request's number. When the
  * connection ends, everything the engine still holds on the workbench is released.
  */
 final class EngineSession {
@@ -46,8 +47,8 @@ final class EngineSession {
 		this.engine = engine;
 		this.handles = handles;
 		this.output = socket.getOutputStream();
-		this.exposures = new Exposures(this::send, mapper::createObjectNode, waitingReverse);
-		this.operations = new EngineOperations(workbench, settings, handles, uploads, mapper, owner, exposures);
+		this.exposures = new Exposures(this::send, waitingReverse);
+		this.operations = new EngineOperations(workbench, settings, handles, uploads, owner, exposures);
 	}
 
 	/**
@@ -57,9 +58,9 @@ final class EngineSession {
 		System.out.println("Engine '" + engine + "' connected from " + socket.getRemoteSocketAddress());
 		try (socket; exposures) {
 			InputStream input = socket.getInputStream();
-			JsonNode request;
-			while ((request = WireLines.read(mapper, input)) != null) {
-				JsonNode current = request;
+			Request request;
+			while ((request = WireLines.read(mapper, input, Request.class)) != null) {
+				Request current = request;
 				Thread.ofVirtual().name("anvil-engine-" + engine).start(() -> answer(current));
 			}
 		} catch (IOException ended) {
@@ -71,17 +72,15 @@ final class EngineSession {
 		}
 	}
 
-	private void answer(JsonNode request) {
-		ObjectNode response = mapper.createObjectNode().put("id", request.path("id").asLong());
+	private void answer(Request request) {
 		try {
-			response.set("result", operations.handle(request.path("op").asText(), request.path("args")));
+			send(new Response(request.getId(), mapper.valueToTree(operations.handle(request.getRequest())), null));
 		} catch (Throwable failure) {
-			response.set("error", WireErrors.describe(failure));
+			send(new Response(request.getId(), null, WireErrors.describe(failure)));
 		}
-		send(response);
 	}
 
-	private void send(ObjectNode message) {
+	private void send(ServerMessage message) {
 		try {
 			WireLines.write(mapper, output, message);
 		} catch (IOException ended) {

@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.workbench.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import me.whereareiam.anvil.workbench.protocol.CertificateFingerprint;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,7 +22,8 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
-import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.Locale;
 
 /**
@@ -107,7 +107,7 @@ final class ServerIdentity {
 	 * @throws IOException when the engines cannot be read
 	 */
 	synchronized boolean paired() throws IOException {
-		return engines().size() > 0;
+		return !engines().byTokenHash().isEmpty();
 	}
 
 	/**
@@ -118,10 +118,7 @@ final class ServerIdentity {
 	 */
 	synchronized @NotNull String newPairingCode() throws IOException {
 		String code = HexFormat.of().formatHex(bytes(5)).toUpperCase(Locale.ROOT);
-		ObjectNode pairing = mapper.createObjectNode()
-				.put("code", hash(code))
-				.put("expires", Instant.now().plus(PAIRING_VALIDITY).toString());
-		write(directory.resolve(PAIRING), pairing);
+		write(directory.resolve(PAIRING), new PairingCode(hash(code), Instant.now().plus(PAIRING_VALIDITY).toString()));
 
 		return code;
 	}
@@ -138,17 +135,17 @@ final class ServerIdentity {
 		Path file = directory.resolve(PAIRING);
 		if (!Files.exists(file)) return null;
 
-		ObjectNode pairing = (ObjectNode) mapper.readTree(file.toFile());
-		if (Instant.parse(pairing.path("expires").asText()).isBefore(Instant.now())) return null;
+		PairingCode pairing = mapper.readValue(file.toFile(), PairingCode.class);
+		if (Instant.parse(pairing.expires()).isBefore(Instant.now())) return null;
 		if (!MessageDigest.isEqual(hash(code.trim().toUpperCase(Locale.ROOT)).getBytes(StandardCharsets.UTF_8),
-				pairing.path("code").asText().getBytes(StandardCharsets.UTF_8)))
+				pairing.codeHash().getBytes(StandardCharsets.UTF_8)))
 			return null;
 
 		Files.delete(file);
 		String token = HexFormat.of().formatHex(bytes(32));
-		ObjectNode engines = engines();
-		engines.putObject(hash(token)).put("engine", engine).put("paired", Instant.now().toString());
-		write(directory.resolve(ENGINES), engines);
+		Map<String, PairedEngine> engines = new TreeMap<>(engines().byTokenHash());
+		engines.put(hash(token), new PairedEngine(engine, Instant.now().toString()));
+		write(directory.resolve(ENGINES), new Engines(engines));
 
 		return token;
 	}
@@ -163,26 +160,16 @@ final class ServerIdentity {
 	synchronized @Nullable String engine(@Nullable String token) throws IOException {
 		if (token == null || token.isBlank()) return null;
 
-		var entry = engines().get(hash(token));
-		return entry == null ? null : entry.path("engine").asText();
+		PairedEngine paired = engines().byTokenHash().get(hash(token));
+		return paired == null ? null : paired.engine();
 	}
 
-	/**
-	 * Lists the names of the paired engines.
-	 *
-	 * @return engine names
-	 * @throws IOException when the engines cannot be read
-	 */
-	synchronized @NotNull List<String> engineNames() throws IOException {
-		return engines().properties().stream().map(entry -> entry.getValue().path("engine").asText()).toList();
-	}
-
-	private ObjectNode engines() throws IOException {
+	private Engines engines() throws IOException {
 		Path file = directory.resolve(ENGINES);
-		return Files.exists(file) ? (ObjectNode) mapper.readTree(file.toFile()) : mapper.createObjectNode();
+		return Files.exists(file) ? mapper.readValue(file.toFile(), Engines.class) : new Engines(Map.of());
 	}
 
-	private void write(Path file, ObjectNode content) throws IOException {
+	private void write(Path file, Object content) throws IOException {
 		Path staged = file.resolveSibling(file.getFileName() + ".tmp");
 		mapper.writerWithDefaultPrettyPrinter().writeValue(staged.toFile(), content);
 		ownerOnly(staged);
@@ -237,5 +224,23 @@ final class ServerIdentity {
 		} catch (GeneralSecurityException failure) {
 			throw new IllegalStateException("SHA-256 is not available", failure);
 		}
+	}
+
+	/**
+	 * The current one-time pairing code, kept as its SHA-256, and when it expires.
+	 */
+	private record PairingCode(@NotNull String codeHash, @NotNull String expires) {
+	}
+
+	/**
+	 * The paired engines, by the SHA-256 of their tokens.
+	 */
+	private record Engines(@NotNull Map<String, PairedEngine> byTokenHash) {
+	}
+
+	/**
+	 * One paired engine: the name it gave itself and when it paired.
+	 */
+	private record PairedEngine(@NotNull String engine, @NotNull String paired) {
 	}
 }

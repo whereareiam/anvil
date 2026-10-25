@@ -1,7 +1,9 @@
 package me.whereareiam.anvil.workbench.remote;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import me.whereareiam.anvil.workbench.protocol.WireProtocol;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Stderr;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Stdio;
+import me.whereareiam.anvil.workbench.protocol.model.launch.AwaitLaunched;
+import me.whereareiam.anvil.workbench.protocol.model.launch.DestroyLaunched;
 import org.jetbrains.annotations.NotNull;
 
 import javax.net.ssl.SSLSocket;
@@ -26,9 +28,9 @@ final class RemoteProcess extends Process {
 	RemoteProcess(@NotNull WorkbenchConnection connection, @NotNull String handle) throws IOException {
 		this.connection = connection;
 		this.handle = handle;
-		this.stdio = connection.stream(WireProtocol.STDIO, connection.mapper().createObjectNode().put("handle", handle));
+		this.stdio = connection.stream(token -> new Stdio(token, handle));
 		try {
-			this.stderr = connection.stream(WireProtocol.STDERR, connection.mapper().createObjectNode().put("handle", handle));
+			this.stderr = connection.stream(token -> new Stderr(token, handle));
 		} catch (IOException failure) {
 			stdio.close();
 			throw failure;
@@ -75,11 +77,10 @@ final class RemoteProcess extends Process {
 		if (exitCode != null) return true;
 		if (Thread.interrupted()) throw new InterruptedException();
 
-		JsonNode code = connection.call("launched.waitFor", connection.mapper().createObjectNode()
-				.put("handle", handle).put("timeoutMillis", unit.toMillis(timeout)));
-		if (code.isNull()) return false;
+		Integer code = connection.call(new AwaitLaunched(handle, unit.toMillis(timeout))).getExitCode();
+		if (code == null) return false;
 
-		exitCode = code.asInt();
+		exitCode = code;
 		return true;
 	}
 
@@ -117,7 +118,7 @@ final class RemoteProcess extends Process {
 
 	private void destroy(boolean force) {
 		try {
-			connection.call("launched.destroy", connection.mapper().createObjectNode().put("handle", handle).put("force", force));
+			connection.call(new DestroyLaunched(handle, force));
 		} catch (RuntimeException gone) {
 			// The workbench or the process is gone already.
 		}

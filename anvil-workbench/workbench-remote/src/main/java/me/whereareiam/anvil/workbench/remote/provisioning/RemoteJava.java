@@ -1,16 +1,20 @@
 package me.whereareiam.anvil.workbench.remote.provisioning;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.environment.provisioning.java.api.JavaProvisioner;
 import me.whereareiam.anvil.environment.provisioning.java.api.model.JavaInstallation;
+import me.whereareiam.anvil.workbench.protocol.model.java.InspectJava;
+import me.whereareiam.anvil.workbench.protocol.model.java.InspectJavaSource;
+import me.whereareiam.anvil.workbench.protocol.model.java.ResolveJava;
+import me.whereareiam.anvil.workbench.protocol.model.java.ValidateJava;
 import me.whereareiam.anvil.workbench.remote.WorkbenchConnection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -22,33 +26,22 @@ public final class RemoteJava implements JavaProvisioner {
 
 	@Override
 	public @NotNull Path resolve(@NotNull JavaRequirement requirement, @Nullable JavaSource source) {
-		var arguments = connection.mapper().createObjectNode();
-		arguments.set("requirement", connection.mapper().valueToTree(requirement));
-		if (source != null) arguments.set("source", connection.mapper().valueToTree(source));
-
-		return Path.of(connection.call("java.resolve", arguments).asText());
+		return connection.call(new ResolveJava(requirement, source)).getExecutable();
 	}
 
 	@Override
 	public @NotNull Optional<JavaInstallation> inspect(@NotNull JavaSource source) {
-		var arguments = connection.mapper().createObjectNode();
-		arguments.set("source", connection.mapper().valueToTree(source));
-		JsonNode installation = connection.call("java.inspectSource", arguments);
-
-		return installation.isNull() ? Optional.empty() : Optional.of(connection.mapper().convertValue(installation, JavaInstallation.class));
+		return Optional.ofNullable(connection.call(new InspectJavaSource(source)).getInstallation());
 	}
 
 	@Override
 	public @NotNull JavaInstallation inspect(@NotNull String properties, @NotNull Path executable) {
-		var arguments = connection.mapper().createObjectNode().put("properties", properties).put("executable", executable.toString());
-		return connection.mapper().convertValue(connection.call("java.inspect", arguments), JavaInstallation.class);
+		return Objects.requireNonNull(connection.call(new InspectJava(properties, executable)).getInstallation(),
+				"The workbench inspected no installation at " + executable);
 	}
 
 	@Override
 	public void validate(@NotNull JavaInstallation installation, @NotNull JavaRequirement requirement) {
-		var arguments = connection.mapper().createObjectNode();
-		arguments.set("installation", connection.mapper().valueToTree(installation));
-		arguments.set("requirement", connection.mapper().valueToTree(requirement));
-		connection.call("java.validate", arguments);
+		connection.call(new ValidateJava(installation, requirement));
 	}
 }

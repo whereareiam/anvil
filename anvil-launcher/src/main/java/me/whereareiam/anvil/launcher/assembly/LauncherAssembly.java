@@ -72,7 +72,7 @@ public final class LauncherAssembly implements AutoCloseable {
 		return WorkbenchChoice.chosen(options.getWorkbench(), System.getenv(WorkbenchChoice.ENVIRONMENT), Pairings.standard())
 				.<Workbench>map(pairing -> {
 					System.err.println("[Anvil] Running scenarios on workbench '" + pairing.getName() + "' at " + pairing.getAddress());
-					return RemoteWorkbench.connect(pairing, options.getProcessScheduling().getPriority());
+					return RemoteWorkbench.connect(pairing);
 				})
 				.orElseGet(() -> new LocalWorkbench(options, executions));
 	}

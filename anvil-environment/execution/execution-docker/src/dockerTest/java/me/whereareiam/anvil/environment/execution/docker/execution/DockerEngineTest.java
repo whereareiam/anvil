@@ -2,6 +2,7 @@ package me.whereareiam.anvil.environment.execution.docker.execution;
 
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
+import me.whereareiam.anvil.environment.execution.api.ExecutionServices;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.ImageLaunch;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
@@ -83,7 +84,7 @@ class DockerEngineTest {
 	void coordinatesAndValidatesTheImageThenRunsThePreparedCommand() throws Exception {
 		ReentrantLock metadata = new ReentrantLock();
 		AtomicBoolean validated = new AtomicBoolean();
-		ExecutionContext context = ExecutionContext.builder().cacheDirectory(directory)
+		ExecutionServices services = ExecutionServices.builder().cacheDirectory(directory)
 				.localRuntime((request, source) -> { throw new AssertionError("Docker must not acquire host Java"); })
 				.imageLocks(path -> {
 					assertTrue(path.startsWith(directory.resolve("docker-images")));
@@ -97,7 +98,7 @@ class DockerEngineTest {
 					validated.set(true);
 				})
 				.ports(new PortSelection()).build();
-		run(context, process -> {
+		run(services, process -> {
 			assertTrue(validated.get());
 			assertFalse(metadata.isLocked());
 			var output = new BufferedReader(new InputStreamReader(process.output(), StandardCharsets.UTF_8));
@@ -110,12 +111,12 @@ class DockerEngineTest {
 
 	@Test
 	void killsTheContainerWithoutItsStopCommand() throws Exception {
-		ExecutionContext context = ExecutionContext.builder().cacheDirectory(directory)
+		ExecutionServices services = ExecutionServices.builder().cacheDirectory(directory)
 				.localRuntime((request, source) -> { throw new AssertionError("Docker must not acquire host Java"); })
 				.imageLocks(path -> () -> { })
 				.runtimeValidator((properties, request) -> { })
 				.ports(new PortSelection()).build();
-		run(context, process -> {
+		run(services, process -> {
 			var output = new BufferedReader(new InputStreamReader(process.output(), StandardCharsets.UTF_8));
 			assertEquals("READY", output.readLine());
 
@@ -128,7 +129,7 @@ class DockerEngineTest {
 
 	@Test
 	void aPausedContainerTakesNoCommandUntilItIsThawed() throws Exception {
-		run(plainContext(), process -> {
+		run(plainServices(), process -> {
 			var output = new BufferedReader(new InputStreamReader(process.output(), StandardCharsets.UTF_8));
 			assertEquals("READY", output.readLine());
 
@@ -144,12 +145,14 @@ class DockerEngineTest {
 
 	@Test
 	void publishesEachListenerAndNamesItToPeersAtTheProcessAlias() throws Exception {
-		run(plainContext(), request -> request.toBuilder().listener("link").build(), (target, process) -> {
+		run(plainServices(), request -> request.toBuilder().listener("link").build(), (target, process) -> {
 			InetSocketAddress published = target.listeners().get("link");
 			InetSocketAddress peer = target.peerListeners().get("link");
 
 			assertEquals(target.peerAddress().getHostString(), peer.getHostString());
 			assertEquals(25570, peer.getPort());
+			// Docker forwards the published port once the container runs, which its readiness line proves.
+			assertEquals("READY", new BufferedReader(new InputStreamReader(process.output(), StandardCharsets.UTF_8)).readLine());
 			try (Socket socket = new Socket()) {
 				socket.connect(published, 2000);
 			}
@@ -160,7 +163,7 @@ class DockerEngineTest {
 	void runsAContainerImageThatPeersReachByAliasAndTheTestOnItsPublishedPort() throws Exception {
 		String redis = System.getProperty("anvil.docker.containerTestImage", "redis:7.2-alpine");
 		try (var docker = new DockerEngine();
-		     DockerExecutionSession session = new DockerExecutionSession(plainContext(), docker,
+		     DockerExecutionSession session = new DockerExecutionSession(ExecutionContext.builder().build(), plainServices(), docker,
 				     DockerExecutionSettings.builder().image("temurin:21", IMAGE).build())) {
 			var request = ProcessRequest.builder().name("redis").workspace(directory.resolve("redis"))
 					.image(ContainerImage.builder().image(redis).port(6379).build()).build();
@@ -191,8 +194,8 @@ class DockerEngineTest {
 		}
 	}
 
-	private ExecutionContext plainContext() {
-		return ExecutionContext.builder().cacheDirectory(directory)
+	private ExecutionServices plainServices() {
+		return ExecutionServices.builder().cacheDirectory(directory)
 				.localRuntime((request, source) -> { throw new AssertionError("Docker must not acquire host Java"); })
 				.imageLocks(path -> () -> { })
 				.runtimeValidator((properties, request) -> { })
@@ -202,13 +205,13 @@ class DockerEngineTest {
 	/**
 	 * Prepares the process fixture in a container, runs the action against its execution and kills what remains.
 	 */
-	private void run(ExecutionContext context, ProcessAction action) throws Exception {
-		run(context, UnaryOperator.identity(), (target, process) -> action.run(process));
+	private void run(ExecutionServices services, ProcessAction action) throws Exception {
+		run(services, UnaryOperator.identity(), (target, process) -> action.run(process));
 	}
 
-	private void run(ExecutionContext context, UnaryOperator<ProcessRequest> change, TargetAction action) throws Exception {
+	private void run(ExecutionServices services, UnaryOperator<ProcessRequest> change, TargetAction action) throws Exception {
 		try (var docker = new DockerEngine()) {
-			try (DockerExecutionSession session = new DockerExecutionSession(context, docker,
+			try (DockerExecutionSession session = new DockerExecutionSession(ExecutionContext.builder().build(), services, docker,
 					DockerExecutionSettings.builder().image("temurin:21", IMAGE).build())) {
 				Path workspace = directory.resolve("work");
 				Files.createDirectories(workspace);

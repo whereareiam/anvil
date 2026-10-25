@@ -6,7 +6,7 @@ import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.process.ProcessFiles;
-import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
+import me.whereareiam.anvil.environment.execution.api.BoundExecutionProvider;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionPlan;
@@ -21,7 +21,6 @@ import me.whereareiam.anvil.environment.execution.api.preparation.PreparedLaunch
 import me.whereareiam.anvil.environment.execution.api.preparation.PreparedProcess;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
-import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
 import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceFiles;
 import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceProcessFiles;
 import org.jetbrains.annotations.NotNull;
@@ -87,11 +86,7 @@ final class ExecutionFixture {
 	}
 
 	ExecutionPlan plan(ProcessSpec... processes) {
-		ExecutionContext context = ExecutionContext.builder().cacheDirectory(directory)
-				.localRuntime((request, source) -> { throw new AssertionError("Not a local runtime"); })
-				.runtimeValidator((properties, request) -> { throw new AssertionError("No image probe"); })
-				.imageLocks(path -> { throw new AssertionError("No image coordination"); })
-				.ports(new PortSelection()).build();
+		ExecutionContext context = ExecutionContext.builder().build();
 		return ExecutionPlan.builder().executionProviderId("fixture").context(context).processes(List.of(processes))
 				.processScheduling(ProcessScheduling.builder().parallelism(1).startupMemoryMegabytes(1024).build()).processTimeouts(ProcessTimeouts.builder().startup(Duration.ofSeconds(3)).shutdown(Duration.ofSeconds(1)).build()).build();
 	}
@@ -113,7 +108,7 @@ final class ExecutionFixture {
 				.executionProviderId(executionProviderId).build();
 	}
 
-	final class Provider implements ExecutionProvider {
+	final class Provider implements BoundExecutionProvider {
 		private final String id;
 
 		Provider(String id) { this.id = id; }
@@ -126,6 +121,9 @@ final class ExecutionFixture {
 
 		@Override
 		public boolean connectsEnvironments() { return true; }
+
+		@Override
+		public String unavailableReason() { return null; }
 
 		@Override
 		public @NotNull ExecutionSession open(@NotNull ExecutionContext context) {

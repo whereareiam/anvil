@@ -1,8 +1,12 @@
 package me.whereareiam.anvil.workbench.remote;
 
 import me.whereareiam.anvil.workbench.api.exception.WorkbenchException;
-import me.whereareiam.anvil.workbench.protocol.WireLines;
-import me.whereareiam.anvil.workbench.protocol.WireProtocol;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Accepted;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Paired;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Refused;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Upload;
+import me.whereareiam.anvil.workbench.protocol.model.connection.Uploaded;
+import me.whereareiam.anvil.workbench.protocol.model.store.FindStored;
 import org.jetbrains.annotations.NotNull;
 
 import javax.net.ssl.SSLSocket;
@@ -56,8 +60,8 @@ final class Uploads {
 			try {
 				String sha256 = sha256(content);
 				String name = absolute.getFileName().toString();
-				var found = connection.call("store.find", connection.mapper().createObjectNode().put("sha256", sha256).put("name", name));
-				Path path = found.isNull() ? upload(content, sha256, name, directory) : Path.of(found.asText());
+				Path found = connection.call(new FindStored(sha256, name)).getPath();
+				Path path = found == null ? upload(content, sha256, name, directory) : found;
 				if (!directory) stored.put(key, path);
 				return path;
 			} finally {
@@ -70,16 +74,18 @@ final class Uploads {
 	}
 
 	private Path upload(Path content, String sha256, String name, boolean directory) throws IOException {
-		try (SSLSocket socket = connection.stream(WireProtocol.UPLOAD, connection.mapper().createObjectNode()
-				.put("sha256", sha256).put("name", name).put("directory", directory).put("size", Files.size(content)))) {
+		long size = Files.size(content);
+		try (SSLSocket socket = connection.stream(token -> new Upload(token, sha256, name, directory, size))) {
 			OutputStream output = socket.getOutputStream();
 			Files.copy(content, output);
 			output.flush();
 
-			var answer = WireLines.read(connection.mapper(), socket.getInputStream());
-			if (answer == null || !answer.has("path"))
-				throw new IOException(answer == null ? "the workbench closed the upload" : answer.path("error").asText());
-			return Path.of(answer.path("path").asText());
+			return switch (WorkbenchConnection.answer(connection.mapper(), socket, "the upload of " + name)) {
+				case Uploaded uploaded -> uploaded.getPath();
+				case Refused refused -> throw new IOException(refused.getReason());
+				case Accepted ignored -> throw new IOException("the workbench did not say where it keeps " + name);
+				case Paired ignored -> throw new IOException("the workbench answered an upload with a pairing");
+			};
 		}
 	}
 

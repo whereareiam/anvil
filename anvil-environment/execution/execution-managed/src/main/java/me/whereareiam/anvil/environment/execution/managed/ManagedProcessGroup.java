@@ -5,7 +5,7 @@ import me.whereareiam.anvil.api.model.process.ProcessAddresses;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.scenario.ScenarioObserver;
-import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
+import me.whereareiam.anvil.environment.execution.api.BoundExecutionProvider;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionPlan;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessSpec;
@@ -29,7 +29,7 @@ final class ManagedProcessGroup implements ProcessGroup {
 	/**
 	 * The execution providers the plan's processes run with, by identifier.
 	 */
-	private final Map<String, ExecutionProvider> executions;
+	private final Map<String, BoundExecutionProvider> executions;
 	private final ExecutionPreparation preparation;
 	private final List<List<ProcessSpec>> startupOrder;
 	private final @Nullable ScenarioObserver observer;
@@ -44,7 +44,7 @@ final class ManagedProcessGroup implements ProcessGroup {
 
 	ManagedProcessGroup(
 			ExecutionPlan plan,
-			Map<String, ExecutionProvider> executions,
+			Map<String, BoundExecutionProvider> executions,
 			ExecutionPreparation preparation,
 			List<List<ProcessSpec>> startupOrder,
 			@Nullable ScenarioObserver observer

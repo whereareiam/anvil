@@ -1,8 +1,6 @@
 package me.whereareiam.anvil.workbench.api;
 
-import me.whereareiam.anvil.api.model.NetworkPolicy;
-import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
-import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
+import me.whereareiam.anvil.environment.execution.api.BoundExecutionProvider;
 import me.whereareiam.anvil.environment.provisioning.artifact.api.ArtifactResolver;
 import me.whereareiam.anvil.environment.provisioning.java.api.JavaProvisioner;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.WorkspaceProvisioner;
@@ -40,20 +38,12 @@ public interface Workbench extends AutoCloseable {
 	@NotNull WorkbenchFacts facts();
 
 	/**
-	 * Returns the execution providers this workbench runs processes with, by identifier.
+	 * Returns the execution providers this workbench runs processes with, by identifier, each bound to the
+	 * workbench's own ports, image locks, Java runtimes and cache.
 	 *
-	 * @return installed execution providers
+	 * @return the workbench's execution providers
 	 */
-	@NotNull Map<String, ExecutionProvider> executions();
-
-	/**
-	 * Returns the context an execution session of one scenario opens with: the workbench's own ports, image
-	 * locks, Java runtimes and cache, together with the scenario's network policy.
-	 *
-	 * @param networkPolicy the scenario's network policy
-	 * @return execution context for the scenario's sessions
-	 */
-	@NotNull ExecutionContext context(@NotNull NetworkPolicy networkPolicy);
+	@NotNull Map<String, BoundExecutionProvider> executions();
 
 	/**
 	 * Returns the directory below which this workbench lays out scenario runs and their process workspaces.
