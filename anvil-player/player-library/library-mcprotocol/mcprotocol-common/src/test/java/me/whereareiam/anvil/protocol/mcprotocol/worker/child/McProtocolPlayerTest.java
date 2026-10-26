@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
@@ -14,8 +15,14 @@ import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.JavaWorld;
+import me.whereareiam.anvil.protocol.java.api.model.world.ChunkPosition;
+import me.whereareiam.anvil.protocol.java.api.model.world.Dimension;
+import me.whereareiam.anvil.protocol.java.api.model.world.LevelChunkSection;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
+import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundLevelChunkWithLight;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
@@ -39,6 +46,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -73,6 +82,19 @@ class McProtocolPlayerTest {
 			assertEquals("127.0.0.2", login.getConnection().getSourceAddress());
 			assertFalse(login.toString().contains("token"));
 			assertSame(client.sessions().getFirst(), player.nativeSession());
+		}
+	}
+
+	@Test
+	void namesTheClientVersionTheHostCreatedThePlayerForToItsBindings() {
+		List<MinecraftVersion> versions = new ArrayList<>();
+		WorkerExtension<Object> reading = extension("reading", (player, operations) -> {
+			versions.add(player.minecraftVersion());
+			return () -> { };
+		});
+
+		try (McProtocolPlayer ignored = player(null, reading)) {
+			assertEquals(List.of(MinecraftVersion.parse("1.21.11")), versions);
 		}
 	}
 
@@ -207,12 +229,36 @@ class McProtocolPlayerTest {
 	}
 
 	@Test
-	void speaksOnlyTheJavaEditionProtocol() {
+	void keepsTheWorldOfTheCurrentSessionAndForgetsItOnceTheSessionCloses() {
+		try (McProtocolPlayer player = player(null)) {
+			JavaWorld world = player.protocol(JavaWorld.class);
+			player.connect();
+			Object first = client.sessions().getFirst();
+			player.rejoin();
+			Object second = client.sessions().get(1);
+			Dimension overworld = new Dimension("minecraft:overworld", -64, 384);
+			ClientboundLevelChunkWithLight chunk = new ClientboundLevelChunkWithLight(new ChunkPosition(0, 0),
+					List.of(LevelChunkSection.uniform(1)));
+
+			client.listener(first).received(first, new ClientboundLogin(1, new Dimension("minecraft:the_end", 0, 256)));
+			client.listener(second).received(second, new ClientboundLogin(2, overworld));
+			client.listener(second).received(second, chunk);
+			assertEquals(Optional.of(overworld), world.dimension());
+			assertEquals(OptionalInt.of(1), world.blockState(0, -64, 0));
+
+			client.listener(second).disconnected(second, DisconnectCause.SERVER, "kicked");
+			assertEquals(Optional.empty(), world.dimension());
+			assertEquals(OptionalInt.empty(), world.blockState(0, -64, 0));
+		}
+	}
+
+	@Test
+	void speaksOnlyTheJavaEditionProtocolAndItsWorld() {
 		try (McProtocolPlayer player = player(null)) {
 			ProtocolUnavailableException refused = assertThrows(ProtocolUnavailableException.class, () -> player.protocol(Runnable.class));
 
-			assertEquals("the mcprotocol worker speaks " + JavaProtocol.class.getName() + ", not java.lang.Runnable",
-					refused.getMessage());
+			assertEquals("the mcprotocol worker speaks " + JavaProtocol.class.getName() + ", " + JavaWorld.class.getName()
+					+ ", not java.lang.Runnable", refused.getMessage());
 		}
 	}
 
@@ -286,6 +332,7 @@ class McProtocolPlayerTest {
 	private McProtocolPlayer player(String accessToken, WorkerExtension<?>... extensions) {
 		var options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder().name("Alice").uniqueId(uuid).build())
+				.clientVersion("1.21.11")
 				.credentials(accessToken == null ? null : WorkerCredentials.builder().accessToken(accessToken).build())
 				.connection(WorkerConnection.builder().host("localhost").port(25565)
 						.virtualHost("lobby.example.test").sourceAddress("127.0.0.2").build())

@@ -10,6 +10,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ClientSessions;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.RedirectedSessionService;
 import org.geysermc.mcprotocollib.auth.GameProfile;
 import org.geysermc.mcprotocollib.network.ClientSession;
+import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.event.session.SessionListener;
 import org.geysermc.mcprotocollib.network.factory.ClientNetworkSessionFactory;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -25,7 +26,8 @@ import java.util.function.BiFunction;
  * built-in profiles. The handshake announces a virtual host through the client-host flag, and the session binds the
  * source address as its bind socket address; the factory's {@code setBindAddress} is avoided because it replaces the
  * remote address instead. How a client accepts a teleport changed in Minecraft 26.3, so each segment's adapter hands
- * over its release's teleport listener.
+ * over its release's teleport listener. MCProtocolLib adds its own listener when a session connects, and the session's
+ * protocol adds the {@link ConfigurationListener} right after it.
  */
 public final class NetworkClientSessions implements ClientSessions<ClientSession> {
 	private static final int ANY_PORT = 0;
@@ -61,11 +63,18 @@ public final class NetworkClientSessions implements ClientSessions<ClientSession
 		InetSocketAddress source = connection.getSourceAddress() == null
 				? null
 				: new InetSocketAddress(connection.getSourceAddress(), ANY_PORT);
+		MinecraftProtocol protocol = new MinecraftProtocol(new GameProfile(profile.getUniqueId(), profile.getName()),
+				credentials == null ? null : credentials.getAccessToken()) {
+			@Override
+			public void newClientSession(Session client) {
+				super.newClientSession(client);
+				client.addListener(new ConfigurationListener(login.getSettings()));
+			}
+		};
 		ClientSession session = ClientNetworkSessionFactory.factory()
 				.setAddress(connection.getHost(), connection.getPort())
 				.setBindSocketAddress(source)
-				.setProtocol(new MinecraftProtocol(new GameProfile(profile.getUniqueId(), profile.getName()),
-						credentials == null ? null : credentials.getAccessToken()))
+				.setProtocol(protocol)
 				.create();
 		if (connection.getVirtualHost() != null)
 			session.setFlag(MinecraftConstants.CLIENT_HOST, connection.getVirtualHost());
@@ -73,7 +82,7 @@ public final class NetworkClientSessions implements ClientSessions<ClientSession
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY,
 					new RedirectedSessionService(credentials.getSessionServer()));
 		session.addListener(teleports.apply(session, listener));
-		session.addListener(new ClientPacketListener(session, login, listener, packets));
+		session.addListener(new ClientPacketListener(session, listener, packets));
 
 		return session;
 	}

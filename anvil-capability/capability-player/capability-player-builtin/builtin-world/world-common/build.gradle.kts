@@ -1,0 +1,23 @@
+plugins {
+	id("module-java")
+}
+
+description = "Host provider of the built-in world capability"
+
+dependencies {
+	compileOnly(projects.anvilApi)
+	compileOnly(projects.anvilCapability.capabilityApi)
+	compileOnly(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi)
+	compileOnly(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinWorld.worldApi)
+	compileOnly(projects.anvilPlayer.playerApi)
+	compileOnly(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
+	compileOnly(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaData)
+
+	testImplementation(projects.anvilApi)
+	testImplementation(projects.anvilCapability.capabilityApi)
+	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi)
+	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinWorld.worldApi)
+	testImplementation(projects.anvilPlayer.playerApi)
+	testImplementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
+	testImplementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaData)
+}

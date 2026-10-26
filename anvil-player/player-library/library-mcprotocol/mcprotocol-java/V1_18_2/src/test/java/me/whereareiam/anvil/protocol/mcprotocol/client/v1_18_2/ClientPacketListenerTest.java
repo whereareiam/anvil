@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
 import com.github.steveice10.mc.auth.data.GameProfile;
 import com.github.steveice10.mc.protocol.data.game.MessageType;
+import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
 import com.github.steveice10.mc.protocol.data.game.entity.player.HandPreference;
 import com.github.steveice10.mc.protocol.data.game.setting.ChatVisibility;
 import com.github.steveice10.mc.protocol.data.game.setting.SkinPart;
@@ -11,17 +12,23 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundCh
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundDisconnectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundPingPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientInformationPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundCustomPayloadPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundPongPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
+import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+import com.github.steveice10.opennbt.tag.builtin.IntTag;
 import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.event.session.PacketSendingEvent;
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
+import me.whereareiam.anvil.protocol.mcprotocol.client.ClientBrand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -31,16 +38,18 @@ import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClientPacketListenerTest {
 	private static final UUID GRANTED = new UUID(0, 2);
@@ -58,17 +67,27 @@ class ClientPacketListenerTest {
 			McProtocolClientAdapter.packets(), McProtocolClientAdapter::reason);
 
 	@Test
-	void answersTheLoginWithClientInformationBeforeReportingItWithTheGrantedProfile() throws Exception {
+	void answersTheLoginWithClientInformationAndTheBrandBeforeReportingItWithTheGrantedProfile() {
 		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed")));
-		receive(allocate(ClientboundLoginPacket.class));
+		CompoundTag type = new CompoundTag("");
+		type.put(new IntTag("min_y", -64));
+		type.put(new IntTag("height", 384));
+		receive(new ClientboundLoginPacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL, 1, new String[0],
+				new CompoundTag(""), type, "minecraft:overworld", 0, 20, 10, 10, false, true, false, false));
 
-		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ServerboundClientInformationPacket", "logged in as Alice_Renamed " + GRANTED), events);
+		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ServerboundClientInformationPacket",
+				"sent ServerboundCustomPayloadPacket", "logged in as Alice_Renamed " + GRANTED), events);
 		ServerboundClientInformationPacket information = assertInstanceOf(ServerboundClientInformationPacket.class, sent.getFirst());
 		assertEquals("en_us", information.getLocale());
 		assertEquals(8, information.getRenderDistance());
 		assertEquals(ChatVisibility.FULL, information.getChatVisibility());
 		assertEquals(Arrays.asList(SkinPart.values()), information.getVisibleParts());
 		assertEquals(HandPreference.RIGHT_HAND, information.getMainHand());
+		assertFalse(information.isTextFilteringEnabled());
+		assertTrue(information.isAllowsListing());
+		ServerboundCustomPayloadPacket brand = assertInstanceOf(ServerboundCustomPayloadPacket.class, sent.get(1));
+		assertEquals("minecraft:brand", brand.getChannel());
+		assertArrayEquals(ClientBrand.payload(), brand.getData());
 	}
 
 	@Test
@@ -77,6 +96,15 @@ class ClientPacketListenerTest {
 
 		assertEquals(List.of("teleported 90.0 -15.0", "sent ServerboundAcceptTeleportationPacket"), events);
 		assertEquals(7, assertInstanceOf(ServerboundAcceptTeleportationPacket.class, sent.getFirst()).getId());
+	}
+
+	@Test
+	void answersEachPingWithItsPong() {
+		receive(new ClientboundPingPacket(-12));
+		receive(new ClientboundPingPacket(13));
+
+		assertEquals(List.of(-12, 13), sent.stream().map(packet -> assertInstanceOf(ServerboundPongPacket.class, packet).getId())
+				.toList());
 	}
 
 	@Test
@@ -149,16 +177,6 @@ class ClientPacketListenerTest {
 		});
 	}
 
-	/**
-	 * Creates a packet without running its constructor, for packets the listener only recognizes by type and whose
-	 * constructors differ in every release.
-	 */
-	private static <T> T allocate(Class<T> type) throws ReflectiveOperationException {
-		Class<?> unsafe = Class.forName("sun.misc.Unsafe");
-		Field instance = unsafe.getDeclaredField("theUnsafe");
-		instance.setAccessible(true);
-		return type.cast(unsafe.getMethod("allocateInstance", Class.class).invoke(instance.get(null), type));
-	}
 
 	private final class RecordingListener implements ClientListener<Session> {
 		@Override

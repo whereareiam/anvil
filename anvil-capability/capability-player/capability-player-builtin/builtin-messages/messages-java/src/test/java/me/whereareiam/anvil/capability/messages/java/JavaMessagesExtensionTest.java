@@ -16,6 +16,7 @@ import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.model.chat.MessageSignature;
 import me.whereareiam.anvil.protocol.java.api.model.chat.PackedMessageSignature;
+import me.whereareiam.anvil.protocol.java.api.model.world.Dimension;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -46,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JavaMessagesExtensionTest {
+	private static final Dimension OVERWORLD = new Dimension("minecraft:overworld", -64, 384);
 	private static final MessageSignature FIRST = signature(1);
 	private static final MessageSignature SECOND = signature(2);
 
@@ -69,7 +71,7 @@ class JavaMessagesExtensionTest {
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 
-		protocol.deliver(new ClientboundLogin(7));
+		protocol.deliver(new ClientboundLogin(7, OVERWORLD));
 		protocol.deliver(new ClientboundSystemChat("welcome", false));
 		protocol.deliver(new ClientboundSystemChat("anvil:action-bar", true));
 		protocol.deliver(new ClientboundPlayerChat("hidden", FilterMaskType.FULLY_FILTERED, null, List.of()));
@@ -89,7 +91,7 @@ class JavaMessagesExtensionTest {
 		extension.bind(player, new RecordingOperations());
 
 		player.startConnection();
-		protocol.deliver(new ClientboundLogin(7));
+		protocol.deliver(new ClientboundLogin(7, OVERWORLD));
 		protocol.deliver(new ClientboundSystemChat("welcome", false));
 		player.startConnection();
 
@@ -103,7 +105,7 @@ class JavaMessagesExtensionTest {
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 
-		protocol.deliver(new ClientboundLogin(7));
+		protocol.deliver(new ClientboundLogin(7, OVERWORLD));
 		protocol.deliver(signed("first", FIRST));
 		protocol.deliver(signed("second", SECOND));
 		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.full(SECOND)));
@@ -117,7 +119,7 @@ class JavaMessagesExtensionTest {
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 
-		protocol.deliver(new ClientboundLogin(7));
+		protocol.deliver(new ClientboundLogin(7, OVERWORLD));
 		protocol.deliver(signed("first", FIRST));
 		protocol.deliver(new ClientboundPlayerChat("second", FilterMaskType.PASS_THROUGH, SECOND,
 				List.of(PackedMessageSignature.cached(0))));
@@ -132,9 +134,9 @@ class JavaMessagesExtensionTest {
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 
-		protocol.deliver(new ClientboundLogin(7));
+		protocol.deliver(new ClientboundLogin(7, OVERWORLD));
 		protocol.deliver(signed("first", FIRST));
-		protocol.deliver(new ClientboundLogin(8));
+		protocol.deliver(new ClientboundLogin(8, OVERWORLD));
 		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.cached(0)));
 		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.full(FIRST)));
 
@@ -147,7 +149,7 @@ class JavaMessagesExtensionTest {
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 
-		protocol.deliver(new ClientboundLogin(7));
+		protocol.deliver(new ClientboundLogin(7, OVERWORLD));
 		protocol.deliver(new ClientboundPlayerChat("hidden", FilterMaskType.FULLY_FILTERED, FIRST, List.of()));
 		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.full(FIRST)));
 		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.full(SECOND)));
@@ -173,7 +175,7 @@ class JavaMessagesExtensionTest {
 		protocol.deliver(new ClientboundSystemChat("configuring", false));
 		protocol.deliver(ClientboundPlayerChat.unsigned("player configuring"));
 		protocol.deliver(new ClientboundDisguisedChat("disguised configuring"));
-		protocol.deliver(new ClientboundLogin(7));
+		protocol.deliver(new ClientboundLogin(7, OVERWORLD));
 		protocol.deliver(new ClientboundSystemChat("welcome", false));
 
 		assertEquals(List.of(
@@ -190,11 +192,11 @@ class JavaMessagesExtensionTest {
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 
-		protocol.deliver(new ClientboundLogin(7));
+		protocol.deliver(new ClientboundLogin(7, OVERWORLD));
 		protocol.deliver(new ClientboundSystemChat("on auth", false));
 		protocol.deliver(new ClientboundStartConfiguration());
 		protocol.deliver(new ClientboundSystemChat("switching", false));
-		protocol.deliver(new ClientboundLogin(8));
+		protocol.deliver(new ClientboundLogin(8, OVERWORLD));
 		protocol.deliver(new ClientboundSystemChat("on lobby", false));
 
 		assertEquals(List.of(new ChatMessage(0, "on auth"), new ChatMessage(1, "on lobby")),
@@ -209,7 +211,7 @@ class JavaMessagesExtensionTest {
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 
-		protocol.deliver(new ClientboundLogin(7));
+		protocol.deliver(new ClientboundLogin(7, OVERWORLD));
 		player.startConnection();
 		protocol.deliver(new ClientboundSystemChat("before the login", false));
 

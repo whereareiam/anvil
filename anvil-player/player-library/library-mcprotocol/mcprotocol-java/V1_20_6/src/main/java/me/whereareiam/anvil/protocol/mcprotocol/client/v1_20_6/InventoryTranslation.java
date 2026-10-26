@@ -6,6 +6,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetContent;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundOpenScreen;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetHeldSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
@@ -35,7 +36,7 @@ import java.util.Set;
 /**
  * Containers and the held item of the MCProtocolLib releases from 1.20.5 on, which open and fill containers alike. Each
  * release's {@code InventoryPackets} reads the slot packets, which address the player's own inventory differently
- * between releases, and builds the click packet, whose stacks change between releases; the click's action, which the
+ * between releases, and the held slot the server selects, whose packet Minecraft 1.21.2 renamed, and builds the click packet, whose stacks change between releases; the click's action, which the
  * library looks up by click type and button, does not.
  *
  * <p>The library names menu types as the game's registry does, so their keys are the lowercase constant names in the
@@ -51,6 +52,7 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 				ClientboundContainerSetContent.class,
 				ClientboundContainerSetSlot.class,
 				ClientboundSetPlayerInventory.class,
+				ClientboundSetHeldSlot.class,
 				ServerboundSetCarriedItem.class,
 				ServerboundContainerClick.class
 		);
@@ -78,7 +80,8 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 	}
 
 	/**
-	 * Reads a packet that changes one slot: of a container, of the cursor or of the player's own inventory.
+	 * Reads a packet that changes one slot: of a container, of the cursor or of the player's own inventory, or the
+	 * hotbar slot the player holds.
 	 *
 	 * @param packet a packet the release received
 	 * @return the protocol's packet, or {@code null} when the packet changes no slot

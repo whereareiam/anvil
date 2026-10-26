@@ -5,26 +5,31 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKe
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+import com.github.steveice10.opennbt.tag.builtin.IntTag;
+import me.whereareiam.anvil.protocol.java.api.model.world.Dimension;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.protocol.mcprotocol.client.ConnectionLevel;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ConnectionPacketsTest {
-	private final ConnectionPackets packets = new ConnectionPackets();
+	private final ConnectionPackets packets = new ConnectionPackets(new ConnectionLevel());
 
 	@Test
-	void decodesJoiningALevelAndRespawning() throws Exception {
-		assertEquals(new ClientboundLogin(42), packets.decode(new ClientboundLoginPacket(42, false, GameMode.SURVIVAL,
-				GameMode.SURVIVAL, 1, new String[0], new CompoundTag(""), new CompoundTag(""), "minecraft:overworld", 0, 20, 10,
-				10, false, true, false, false)));
-		assertEquals(new ClientboundRespawn(), packets.decode(allocate(ClientboundRespawnPacket.class)));
+	void decodesJoiningALevelAndRespawningWithTheLevelsHeightRange() {
+		assertEquals(new ClientboundLogin(42, new Dimension("minecraft:overworld", -64, 384)),
+				packets.decode(new ClientboundLoginPacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL, 1,
+						new String[0], new CompoundTag(""), type(-64, 384), "minecraft:overworld", 0, 20, 10, 10, false,
+						true, false, false)));
+		assertEquals(new ClientboundRespawn(new Dimension("minecraft:the_nether", 0, 256)),
+				packets.decode(new ClientboundRespawnPacket(type(0, 256), "minecraft:the_nether", 0, GameMode.SURVIVAL,
+						GameMode.SURVIVAL, false, false, false)));
 	}
 
 	@Test
@@ -38,14 +43,11 @@ class ConnectionPacketsTest {
 		assertEquals(Set.of(ClientboundLogin.class, ClientboundRespawn.class), packets.packets());
 	}
 
-	/**
-	 * Creates a packet without running its constructor, whose arguments describe a whole level.
-	 */
-	private static <T> T allocate(Class<T> type) throws ReflectiveOperationException {
-		Class<?> unsafe = Class.forName("sun.misc.Unsafe");
-		Field instance = unsafe.getDeclaredField("theUnsafe");
-		instance.setAccessible(true);
-		return type.cast(unsafe.getMethod("allocateInstance", Class.class).invoke(instance.get(null), type));
+	private static CompoundTag type(int minY, int height) {
+		CompoundTag type = new CompoundTag("");
+		type.put(new IntTag("min_y", minY));
+		type.put(new IntTag("height", height));
+		return type;
 	}
 
 	private static final class UnknownPacket implements ServerboundPacket {

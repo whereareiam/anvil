@@ -2,14 +2,17 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.EntityMetadata;
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.ItemStack;
+import com.github.steveice10.mc.protocol.data.game.entity.player.Animation;
 import com.github.steveice10.mc.protocol.data.game.entity.type.EntityType;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityPosPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityPosRotPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityRotPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundRemoveEntitiesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityMotionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundSetPassengersPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundTeleportEntityPacket;
 import com.github.steveice10.packetlib.packet.Packet;
@@ -29,8 +32,11 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntit
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityRot;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityMotion;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSwingAnimation;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.EntityDataLayout;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.type.EntityDataField;
@@ -80,7 +86,9 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 				ClientboundMoveEntityRot.class,
 				ClientboundTeleportEntity.class,
 				ClientboundSetEntityData.class,
+				ClientboundSetEntityMotion.class,
 				ClientboundSetPassengers.class,
+				ClientboundSwingAnimation.class,
 				ClientboundRemoveEntities.class
 		);
 	}
@@ -113,12 +121,25 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 			case ClientboundSetPassengersPacket passengers -> new ClientboundSetPassengers(passengers.getEntityId(),
 					Arrays.stream(passengers.getPassengerIds()).boxed().toList());
 			case ClientboundRemoveEntitiesPacket removed -> removed(removed.getEntityIds());
+			case ClientboundSetEntityMotionPacket motion -> new ClientboundSetEntityMotion(motion.getEntityId(),
+					new Vec3d(motion.getMotionX(), motion.getMotionY(), motion.getMotionZ()));
+			case ClientboundAnimatePacket animation -> swing(animation.getEntityId(), animation.getAnimation());
 			default -> decodeSpawn(packet);
 		};
 	}
 
 	@Override
 	public final @Nullable Packet encode(@NotNull ServerboundPacket packet) {
+		return null;
+	}
+
+	/**
+	 * Reads an animation that swings an arm.
+	 */
+	private static @Nullable ClientboundPacket swing(int entityId, Animation animation) {
+		if (animation == Animation.SWING_ARM) return new ClientboundSwingAnimation(entityId, InteractionHand.MAIN_HAND);
+		if (animation == Animation.SWING_OFFHAND) return new ClientboundSwingAnimation(entityId, InteractionHand.OFF_HAND);
+
 		return null;
 	}
 

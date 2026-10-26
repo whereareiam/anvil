@@ -20,7 +20,8 @@ import org.jetbrains.annotations.NotNull;
  * Sessions of the MCProtocolLib 1.20.6 release: TCP sessions whose profiles and session service still come from
  * mcauthlib, which MCProtocolLib 1.21 replaced with its own. A session binds the source address through its
  * bind-address constructor; the handshake always announces the session host, so {@link ClientPacketListener}
- * rewrites the handshake for a virtual host.
+ * rewrites the handshake for a virtual host. MCProtocolLib adds its own listener when a session connects, and the
+ * session's protocol adds the {@link ConfigurationListener} right after it.
  */
 final class TcpClientSessions implements ClientSessions<Session> {
 	private static final int ANY_PORT = 0;
@@ -44,7 +45,13 @@ final class TcpClientSessions implements ClientSessions<Session> {
 		ClientCredentials credentials = login.getCredentials();
 		ClientConnection connection = login.getConnection();
 		MinecraftProtocol protocol = new MinecraftProtocol(new GameProfile(profile.getUniqueId(), profile.getName()),
-				credentials == null ? null : credentials.getAccessToken());
+				credentials == null ? null : credentials.getAccessToken()) {
+			@Override
+			public void newClientSession(Session session, boolean transferring) {
+				super.newClientSession(session, transferring);
+				session.addListener(new ConfigurationListener(login.getSettings()));
+			}
+		};
 		Session session = connection.getSourceAddress() == null
 				? new TcpClientSession(connection.getHost(), connection.getPort(), protocol)
 				: new TcpClientSession(connection.getHost(), connection.getPort(), connection.getSourceAddress(),
@@ -54,6 +61,7 @@ final class TcpClientSessions implements ClientSessions<Session> {
 			sessionService.setBaseUri(credentials.getSessionServer() + PATH_SEPARATOR);
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, sessionService);
 		}
+		ConfigurationListener.disableLibraryKeepAlives(session);
 		session.addListener(new ClientPacketListener(login, listener, packets, TcpClientSessions::granted));
 
 		return session;

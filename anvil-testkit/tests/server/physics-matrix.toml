@@ -1,0 +1,65 @@
+# The physics suite's matrix: the releases of live-matrix.toml whose simulated players run vanilla client physics,
+# each checked by three judges: the release's own Paper server, the Grim anti-cheat on a Paper server, and the Sonar
+# anti-bot on a Velocity proxy in front of a Paper server. The build registers one physicsTest-<minecraft> task per
+# release from it, and PhysicsScenarioFactory builds the scenarios from it.
+#
+# 26.2 and 26.3 are left out: minecraft-data has no block data for them, so client physics refuses to run there.
+#
+# Grim and Sonar are GPL-licensed. The build downloads them from the pinned URL, checks the pinned sha256 and puts them
+# only into the workspaces of test processes; no Anvil artifact carries them.
+
+# GrimAC's Bukkit build. The build names Minecraft 1.7.2 to 26.2 as its servers; its classes need Java 17.
+[grim]
+version = "2.3.74-61117c2"
+url = "https://cdn.modrinth.com/data/LJNGWSvH/versions/DSF6d2bg/grimac-bukkit-2.3.74-61117c2.jar"
+sha256 = "051eb8fad9ee7d725ce06a5b2e2e8b06a10341828cc35ae23629ef3eec33d16b"
+
+# Sonar's Velocity build. Its verification world speaks Minecraft 1.7.2 to 26.2. It is the newest build that runs on
+# the Velocity of live-matrix.toml: from 2.1.49 Sonar needs Adventure 5, and from 2.1.50 Velocity 3.6.0 or 4.0.0.
+[sonar]
+version = "2.1.48"
+url = "https://cdn.modrinth.com/data/I2qO6xbc/versions/gddwtCE2/Sonar-Velocity.jar"
+sha256 = "8d315382f3f1ee61a8945b9aa2246ad020ef8375880652d0c1f3cc636f2b26ed"
+
+# One row per release, oldest first. `grim` and `sonar` say whether that judge supports the release; `grim-java` is the
+# Java the release's Grim server runs on where the release's own default is older than Grim's classes need.
+[[release]]
+minecraft = "1.16.5"
+grim = true
+grim-java = 17
+sonar = true
+
+[[release]]
+minecraft = "1.17.1"
+grim = true
+sonar = true
+
+[[release]]
+minecraft = "1.18.2"
+grim = true
+sonar = true
+
+[[release]]
+minecraft = "1.19.4"
+grim = true
+sonar = true
+
+[[release]]
+minecraft = "1.20.6"
+grim = true
+sonar = true
+
+[[release]]
+minecraft = "1.21.1"
+grim = true
+sonar = true
+
+[[release]]
+minecraft = "1.21.11"
+grim = true
+sonar = true
+
+[[release]]
+minecraft = "26.1.2"
+grim = true
+sonar = true

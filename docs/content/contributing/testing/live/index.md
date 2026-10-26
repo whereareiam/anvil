@@ -4,7 +4,7 @@ description: Verify native workers and real server/proxy behavior across the sup
 ---
 
 Real platform tests live in `anvil-testkit/tests/server/src/test`. They start pinned distributions and run players
-or agent operations against them. They form three suites, one package each, with a task of its own, and run only
+or agent operations against them. They form four suites, one package each, with tasks of their own, and run only
 with `-Panvil.testMode=full`:
 
 | Suite | Package | Task | What it checks |
@@ -12,6 +12,7 @@ with `-Panvil.testMode=full`:
 | Release | `release` | `releaseTest-<minecraft>`, `releaseTest` for all | Every built-in player capability, the server's agent and a restart, against the direct Paper server of one release |
 | Platform | `platform` | `platformTest` | Login, commands, routes and restarts on Spigot, behind Velocity and BungeeCord, and on NeoForge |
 | Behaviour | `behavior` | `behaviorTest` | Lifecycles, sessions, kills, partial starts, routing, tooling and external extensions |
+| Physics | `physics` | `physicsTest-<minecraft>`, `physicsTest` for all | Client physics of one release, judged by its Paper server, the Grim anti-cheat and the Sonar anti-bot |
 
 ```shell
 ./gradlew :anvil-testkit:tests:server:releaseTest-1.21.11 -Panvil.testMode=full
@@ -20,7 +21,8 @@ with `-Panvil.testMode=full`:
 ./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full
 ```
 
-`test` runs every suite: each release one after another, then the platform and behaviour suites. The first run may
+`test` runs the release, platform and behaviour suites: each release one after another, then the platform and
+behaviour suites. The physics suite runs only on demand; neither `test` nor `check` starts it. The first run may
 provision distribution JARs, protocol runtimes, and the Java installations required by the selected versions. These
 checks accept the EULA through their test configuration. Do not add real online-account authentication to this
 suite.
@@ -69,6 +71,62 @@ name.
 | `GrantedProfileObservationSystemTest` | Players whose usernames differ only in letter case, each observed by the profile the server granted it |
 | `ExternalExtensionSystemTest` | Externally packaged capabilities and platform-agent operations |
 | `PartialScenarioLifecycleSystemTest` | Individual starts in a wired two-proxy, three-server environment; setup once, retained endpoints/workspaces, agent reconnection, and cleanup |
+
+## Test client physics
+
+The physics suite checks that a player with client physics moves as a vanilla client does, so that servers and
+anti-cheats accept it. `anvil-testkit/tests/server/physics-matrix.toml` lists its releases, those of the live matrix
+whose block data Anvil has, and pins the two plugins it runs as judges; the build registers one
+`physicsTest-<minecraft>` task per release from it. Each test class carries the JUnit tag of its judge, and
+`-PanvilPhysicsJudges` selects judges as a comma-separated list; without it a task runs all three:
+
+| Judge | Tag | Package | What it checks |
+|---|---|---|---|
+| The release's Paper server | `vanilla` | `physics.vanilla` | No position forced on the player, no "moved wrongly" or "moved too quickly", vanilla's fall damage, and the server seeing the player where its client is |
+| Grim on a Paper server | `grim` | `physics.grim` | Everything the server checks, and not one flag from Grim's exact movement prediction |
+| Sonar on a Velocity proxy | `sonar` | `physics.sonar` | Sonar's gravity and collision verification passes, and the player then reaches the backend |
+
+```shell
+./gradlew :anvil-testkit:tests:server:physicsTest-1.21.11 -Panvil.testMode=full
+./gradlew :anvil-testkit:tests:server:physicsTest-1.16.5 -Panvil.testMode=full -PanvilPhysicsJudges=grim
+./gradlew :anvil-testkit:tests:server:physicsTest -Panvil.testMode=full
+```
+
+The journeys run across a course that `PhysicsCourse` builds through the server console at `y = 150`, above every
+release's own terrain: falls from 3, 10 and 24 blocks, a walk across stone, ice, slime and honey, a slab and stairs, a
+fence and a wall to walk into, a block to jump onto, a lane to sprint-jump along, an edge to sneak to, a pool to swim
+up and a ladder to climb. `CourseJourneyTest` holds them, and `VanillaJourneyTest` and `GrimJourneyTest` run them
+against their judge. The server's console reports each position it forces on a player, which the fixture plugin logs
+as `anvil:correction:<player>`, and tells where it sees the player and how much health it has left through
+`data get entity`.
+
+Each judge also has a control test whose player has client physics off and hovers where a client would fall:
+`VanillaControlTest` expects the server to kick it for flying, `GrimControlTest` expects Grim to flag it, and
+`SonarControlTest` expects Sonar to fail it. A control that passes shows that its judge is active on the release, so
+a journey that the judge accepts proves something.
+
+### Grim and Sonar
+
+Grim and Sonar are GPL-licensed. The build downloads the pinned JAR of each from `physics-matrix.toml`, checks its
+SHA-256, and passes it only to the physics tasks, which put it into the workspaces of their test processes; no Anvil
+artifact carries either. Both run with their own default configuration, read from the pinned JAR, with these changes
+only: neither looks for updates, Grim prints every flag to the console, and Sonar leaves out its vehicle check,
+because a player with client physics does not steer a boat. Both run with an English locale, so their console lines
+and messages are the ones the tests read.
+
+| Judge | Pinned build | Releases it supports |
+|---|---|---|
+| GrimAC (Bukkit) | `2.3.74-61117c2` | Every release of the physics matrix; Paper 1.16.5 runs on Java 17 for it, since Grim's classes need Java 17 |
+| Sonar (Velocity) | `2.1.48` | Every release of the physics matrix, behind the Velocity build of the live matrix; later builds need Adventure 5 and Velocity 3.6.0 or 4.0.0 |
+
+`SonarControlTest` accepts only a failure of Sonar's movement checks. On releases from 1.20.5, Sonar disconnects
+Anvil's players before those checks: from 1.20.5 to 1.20.6 it times out waiting for the client, and from 1.21 it
+reports `didn't send client settings`, because Anvil's client sends its client information only once the game has
+started, while a vanilla client sends it in the configuration phase. The Sonar tests of
+those releases fail until the client does.
+
+To change a pin, take the URL and the SHA-256 of the new build, check the `grim` and `sonar` columns of every release,
+and run the control tests of each judge on every release before the journeys.
 
 ## Exercise exact protocol workers
 

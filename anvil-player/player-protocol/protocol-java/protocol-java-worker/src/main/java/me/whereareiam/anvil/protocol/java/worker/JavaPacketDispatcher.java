@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.JavaWorld;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -19,12 +20,18 @@ import java.util.function.Consumer;
  * One worker player's Java Edition protocol over a library's {@link JavaConnection}: it hands the packets the library
  * delivers to their listeners, sends packets through the connection and then hands each sent packet to the listeners
  * of sent packets. The connection refuses a packet its release cannot send; a listener of a packet the release never
- * carries is refused here, since no delivered packet would tell.
+ * carries is refused here, since no delivered packet would tell. Every delivered packet first updates the player's
+ * {@link JavaWorld}, which the library offers its extensions beside the protocol.
  *
  * <pre>{@code
  * JavaPacketDispatcher protocol = new JavaPacketDispatcher(LIBRARY_ID, connection);
+ * WorkerProtocols protocols = WorkerProtocols.builder(LIBRARY_ID)
+ *         .speak(JavaProtocol.class, protocol, protocol::scoped)
+ *         .speak(JavaWorld.class, protocol.world(), track -> protocol.world())
+ *         .build();
  * ...
  * protocol.deliver(packet); // for each packet the player's connection receives
+ * protocol.disconnected(); // once the player's connection closed
  * }</pre>
  */
 @RequiredArgsConstructor
@@ -33,6 +40,7 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 	private final @NotNull JavaConnection connection;
 	private final Map<Class<?>, List<Consumer<Object>>> listeners = new ConcurrentHashMap<>();
 	private final Map<Class<?>, List<Consumer<Object>>> sentListeners = new ConcurrentHashMap<>();
+	private final JavaChunkStore world = new JavaChunkStore();
 
 	@Override
 	public <P extends ClientboundPacket> @NotNull Subscription listen(
@@ -62,13 +70,30 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 	}
 
 	/**
-	 * Hands a packet of the player's current connection to the listeners of its class. A failing listener is reported
-	 * on standard error and does not keep the packet from the others.
+	 * Hands a packet of the player's current connection to the listeners of its class, once the player's world
+	 * applied it. A failing listener is reported on standard error and does not keep the packet from the others.
 	 *
 	 * @param packet received packet
 	 */
 	public void deliver(@NotNull ClientboundPacket packet) {
+		world.receive(packet);
 		handOut(listeners, packet);
+	}
+
+	/**
+	 * Tells that the player's current connection closed, so the player's world forgets its level and its chunks.
+	 */
+	public void disconnected() {
+		world.clear();
+	}
+
+	/**
+	 * Returns the world the player's client knows, which the packets delivered to this protocol keep up to date.
+	 *
+	 * @return the player's world, the same for every connection
+	 */
+	public @NotNull JavaWorld world() {
+		return world;
 	}
 
 	/**

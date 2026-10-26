@@ -14,8 +14,11 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntit
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityRot;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityMotion;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSwingAnimation;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.EntityMetadata;
@@ -23,17 +26,20 @@ import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.MetadataTyp
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.type.BooleanEntityMetadata;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.type.ByteEntityMetadata;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.type.ObjectEntityMetadata;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Animation;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
 import org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundStartConfigurationPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityPosPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityPosRotPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityRotPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundRemoveEntitiesPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityMotionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetPassengersPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundTeleportEntityPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
@@ -52,6 +58,11 @@ class EntityPacketsTest {
 	private static final UUID STAND = new UUID(0, 7);
 
 	private final EntityPackets packets = new EntityPackets();
+
+	@Test
+	void readsTheVelocityTheServerGivesAnEntity() {
+		assertEquals(new ClientboundSetEntityMotion(7, new Vec3d(0.125, -0.5, 0.0)), packets.decode(new ClientboundSetEntityMotionPacket(7, 0.125, -0.5, 0.0)));
+	}
 
 	@Test
 	void decodesSpawnsWithTheNamespacedTypeAndOrbsWithoutUniqueIdOrDirection() {
@@ -194,6 +205,15 @@ class EntityPacketsTest {
 	}
 
 	@Test
+	void readsTheSwingOfAnArmAndNoOtherAnimation() {
+		assertEquals(new ClientboundSwingAnimation(7, InteractionHand.MAIN_HAND),
+				packets.decode(new ClientboundAnimatePacket(7, Animation.SWING_ARM)));
+		assertEquals(new ClientboundSwingAnimation(8, InteractionHand.OFF_HAND),
+				packets.decode(new ClientboundAnimatePacket(8, Animation.SWING_OFFHAND)));
+		assertNull(packets.decode(new ClientboundAnimatePacket(9, Animation.CRITICAL_HIT)));
+	}
+
+	@Test
 	void carriesEveryEntityPacketOfTheRelease() {
 		assertEquals(Set.of(
 				ClientboundAddEntity.class,
@@ -202,7 +222,9 @@ class EntityPacketsTest {
 				ClientboundMoveEntityRot.class,
 				ClientboundTeleportEntity.class,
 				ClientboundSetEntityData.class,
+				ClientboundSetEntityMotion.class,
 				ClientboundSetPassengers.class,
+				ClientboundSwingAnimation.class,
 				ClientboundRemoveEntities.class
 		), packets.packets());
 	}

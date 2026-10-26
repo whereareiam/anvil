@@ -20,6 +20,7 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -58,6 +59,12 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 		var entity = getCommand("anvil-entity");
 		if (entity != null)
 			entity.setExecutor((sender, ignored, label, arguments) -> entity(arguments));
+		var block = getCommand("anvil-block");
+		if (block != null)
+			block.setExecutor((sender, ignored, label, arguments) -> block(arguments));
+		var place = getCommand("anvil-place");
+		if (place != null)
+			place.setExecutor((sender, ignored, label, arguments) -> place(arguments));
 		var auth = getCommand("auth");
 		if (auth != null)
 			auth.setExecutor((sender, ignored, label, arguments) -> authenticate(player(sender)));
@@ -98,6 +105,21 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 	public void onMove(PlayerMoveEvent event) {
 		if (event.getFrom().distanceSquared(event.getTo()) > 0.0001D)
 			event.getPlayer().sendMessage("anvil:move");
+	}
+
+	/**
+	 * Logs each position the server forces on a player because it refused the player's movement, such as a move into
+	 * a block or one too far: the server then teleports the player back without a cause, while commands, portals and
+	 * plugins name theirs.
+	 */
+	@EventHandler
+	public void onTeleport(PlayerTeleportEvent event) {
+		if (event.getCause() != PlayerTeleportEvent.TeleportCause.UNKNOWN)
+			return;
+
+		Location to = event.getTo();
+		getLogger().info("anvil:correction:" + event.getPlayer().getName() + ":"
+				+ (to == null ? "none" : to.getX() + ":" + to.getY() + ":" + to.getZ()));
 	}
 
 	@EventHandler
@@ -237,6 +259,42 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 			default:
 				return false;
 		}
+	}
+
+	/**
+	 * Tells a player named by the console which block it stands on, as {@code anvil:below:<x>:<y>:<z>:<block>}, so a
+	 * test compares the block the player's client knows with the one the server holds.
+	 */
+	/**
+	 * Teleports a player named by the console to a position in its world at the start of the next tick and logs
+	 * {@code anvil:placed:<player>} once it did. A command from the console runs after the server ticked its players'
+	 * connections, and before Minecraft 1.21.2 a teleport does not move the position the server checks the player's next
+	 * move from, so a vanilla client that confirms such a teleport before the next tick moves "too quickly"; the start
+	 * of a tick comes before the connections' tick, which takes the new position.
+	 */
+	private boolean place(String[] arguments) {
+		Player player = arguments.length != 6 ? null : Bukkit.getPlayerExact(arguments[0]);
+		if (player == null)
+			return false;
+
+		Location target = new Location(player.getWorld(), Double.parseDouble(arguments[1]), Double.parseDouble(arguments[2]),
+				Double.parseDouble(arguments[3]), Float.parseFloat(arguments[4]), Float.parseFloat(arguments[5]));
+		Bukkit.getScheduler().runTask(this, () -> {
+			player.teleport(target);
+			getLogger().info("anvil:placed:" + player.getName());
+		});
+		return true;
+	}
+
+	private boolean block(String[] arguments) {
+		Player player = arguments.length != 2 ? null : Bukkit.getPlayerExact(arguments[0]);
+		if (player == null || !arguments[1].equals("below"))
+			return false;
+
+		Block below = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
+		player.sendMessage("anvil:below:" + below.getX() + ":" + below.getY() + ":" + below.getZ() + ":"
+				+ below.getType().getKey());
+		return true;
 	}
 
 	private static Player player(CommandSender sender) {

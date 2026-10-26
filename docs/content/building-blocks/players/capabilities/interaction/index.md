@@ -53,7 +53,8 @@ instance. This capability does not discover nearby entities or choose targets au
 ## Arm swings
 
 Each action swings the player's arm as the vanilla client does: before an item use, after a block or
-entity interaction. From Minecraft 26.3 on the server plays the swing itself, so a player on 26.3
+entity interaction. When the server swings the player's own arm, the player tells the server that swing, as the
+vanilla client does when it plays it. From Minecraft 26.3 on the server plays the swing itself, so a player on 26.3
 sends no swing and instead follows each attack with the punch that version's client sends.
 
 Use [messages](../messages/index.md), [inventory observations](../inventory/index.md), or a custom

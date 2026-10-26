@@ -8,6 +8,7 @@ import me.whereareiam.anvil.capability.interaction.model.ItemUse;
 import me.whereareiam.anvil.capability.interaction.type.BlockFace;
 import me.whereareiam.anvil.capability.interaction.type.EntityInteraction;
 import me.whereareiam.anvil.capability.interaction.type.Hand;
+import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
@@ -16,6 +17,8 @@ import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSwingAnimation;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInteract;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundPunch;
@@ -26,6 +29,7 @@ import me.whereareiam.anvil.protocol.java.api.type.Direction;
 import me.whereareiam.anvil.protocol.java.api.type.InteractAction;
 import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.IntFunction;
 
@@ -37,7 +41,9 @@ import java.util.function.IntFunction;
  *     <li>the shared view rotation sent with an item use;</li>
  *     <li>the center of the face a block use targets;</li>
  *     <li>the order of the arm swing: before an item use, after a block use and after an entity interaction;</li>
- *     <li>the punch that follows an attack.</li>
+ *     <li>the punch that follows an attack;</li>
+ *     <li>the swing the player tells the server when the server swings the player's own arm, as the vanilla client's
+ *     {@code LocalPlayer.swing} does.</li>
  * </ul>
  * A release whose server plays arm swings itself, from Minecraft 26.3 on, carries no swing, so the player sends none;
  * a release without a punch sends none either.
@@ -73,7 +79,12 @@ public final class JavaInteractionExtension implements WorkerExtension<Object> {
 			return null;
 		});
 
-		return () -> { };
+		Subscription listening = Subscription.all(
+				protocol.listen(ClientboundLogin.class, login -> interactions.joined(login.getEntityId())),
+				protocol.listen(ClientboundSwingAnimation.class, interactions::swungByServer)
+		);
+
+		return listening::close;
 	}
 
 	private static InteractionHand hand(Hand hand) {
@@ -102,6 +113,24 @@ public final class JavaInteractionExtension implements WorkerExtension<Object> {
 		private final PlayerBindingContext<Object> player;
 		private final JavaProtocol protocol;
 		private int sequence;
+		/**
+		 * The protocol ID of the player's own entity, which the server may choose negative, or {@code null} until the
+		 * player joined a level.
+		 */
+		private volatile @Nullable Integer entityId;
+
+		private void joined(int entityId) {
+			this.entityId = entityId;
+		}
+
+		/**
+		 * Swings the arm the server swings, when it swings the player's own: the vanilla client plays the swing through
+		 * the player's own swing, which tells the server.
+		 */
+		private void swungByServer(ClientboundSwingAnimation swing) {
+			Integer own = entityId;
+			if (own != null && own == swing.getEntityId()) swing(swing.getHand());
+		}
 
 		private void useItem(ItemUse use) {
 			InteractionHand hand = hand(use.getHand());

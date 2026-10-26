@@ -42,7 +42,8 @@ public final class McProtocolClientAdapter extends JavaClient {
 				new InventoryPackets(),
 				new PlayerPackets(),
 				new ScreenPackets(),
-				new SoundPackets()
+				new SoundPackets(),
+				new WorldPackets()
 		));
 	}
 }

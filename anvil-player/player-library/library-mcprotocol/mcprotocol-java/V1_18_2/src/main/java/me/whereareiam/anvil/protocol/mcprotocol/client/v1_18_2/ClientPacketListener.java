@@ -7,8 +7,11 @@ import com.github.steveice10.mc.protocol.data.game.setting.SkinPart;
 import com.github.steveice10.mc.protocol.packet.handshake.serverbound.ClientIntentionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundDisconnectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundPingPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientInformationPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundCustomPayloadPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundPongPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
@@ -20,6 +23,7 @@ import com.github.steveice10.packetlib.packet.Packet;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.mcprotocol.client.ClientBrand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -30,10 +34,12 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Answers the packets a client of the MCProtocolLib releases from 1.18.2 until 1.19.4 must answer on its own and
- * reports login, teleports and disconnects with their reason flattened to plain text. The login reports the profile the
- * server granted in its login success, which arrives before the game starts. Each release's adapter reads the reason
- * of a closed connection, which packetlib turned from a string into a component.
+ * Answers the packets a client of the MCProtocolLib releases from 1.18.2 until 1.19.4 must answer on its own, each ping
+ * with its pong as the vanilla client does, and reports login, teleports and disconnects with their reason flattened to
+ * plain text. The login reports the profile the
+ * server granted in its login success, which arrives before the game starts. A vanilla client of these releases answers
+ * the game's start with its client information followed by its {@link ClientBrand}. Each release's adapter reads the
+ * reason of a closed connection, which packetlib turned from a string into a component.
  */
 @RequiredArgsConstructor
 final class ClientPacketListener extends SessionAdapter {
@@ -52,8 +58,10 @@ final class ClientPacketListener extends SessionAdapter {
 		if (packet instanceof ClientboundLoginPacket) {
 			session.send(new ServerboundClientInformationPacket(login.getSettings().getLocale(), login.getSettings().getViewDistance(), ChatVisibility.FULL,
 					true, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, false, true));
+			session.send(new ServerboundCustomPayloadPacket(ClientBrand.CHANNEL, ClientBrand.payload()));
 			listener.loggedIn(session, Objects.requireNonNull(granted, "The server started the game before it granted a profile"));
 		}
+		if (packet instanceof ClientboundPingPacket ping) session.send(new ServerboundPongPacket(ping.getId()));
 		if (packet instanceof ClientboundPlayerPositionPacket position) {
 			listener.teleported(session, position.getYaw(), position.getPitch());
 			session.send(new ServerboundAcceptTeleportationPacket(position.getTeleportId()));

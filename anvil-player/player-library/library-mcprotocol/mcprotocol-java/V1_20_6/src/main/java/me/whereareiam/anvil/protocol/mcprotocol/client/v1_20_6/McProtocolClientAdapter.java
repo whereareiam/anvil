@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
+import me.whereareiam.anvil.protocol.mcprotocol.client.ConnectionLevel;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -24,17 +25,19 @@ public final class McProtocolClientAdapter extends JavaClient<Session> {
 	 * @return the release's translations
 	 */
 	static PacketTable<Packet> packets() {
+		ConnectionLevel level = new ConnectionLevel();
 		return new PacketTable<>(List.of(
 				new ChatPackets(),
 				new CommandPackets(),
-				new ConnectionPackets(),
+				new ConnectionPackets(level),
 				new CookiePackets(),
 				new EntityPackets(),
 				new InteractionPackets(),
 				new InventoryPackets(),
 				new PlayerPackets(),
 				new ScreenPackets(),
-				new SoundPackets()
+				new SoundPackets(),
+				new WorldPackets(level)
 		));
 	}
 }

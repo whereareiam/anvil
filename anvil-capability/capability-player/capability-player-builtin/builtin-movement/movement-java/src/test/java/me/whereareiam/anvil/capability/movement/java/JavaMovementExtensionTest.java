@@ -66,7 +66,8 @@ class JavaMovementExtensionTest {
 
 		assertNull(operations.execute(MovementChannel.MOVE, POSITION));
 
-		assertEquals(List.of("movement.move"), List.copyOf(operations.handlers.keySet()));
+		assertEquals(List.of("movement.move", "movement.physics", "movement.input", "movement.look", "movement.state"),
+				List.copyOf(operations.handlers.keySet()));
 		assertEquals(List.of(ServerboundMovePlayerPosRot.builder()
 				.position(new Vec3d(1.5, 64, -2.5))
 				.yaw(90)
@@ -117,7 +118,7 @@ class JavaMovementExtensionTest {
 				@NotNull Class<P> type,
 				@NotNull Consumer<? super P> listener
 		) {
-			throw new AssertionError("Movement listens to no packets");
+			return () -> { };
 		}
 
 		@Override
@@ -168,7 +169,7 @@ class JavaMovementExtensionTest {
 
 		@Override
 		public <P> @NotNull P protocol(@NotNull Class<P> type) {
-			if (protocol == null) return PlayerBindingContext.super.protocol(type);
+			if (protocol == null || type != JavaProtocol.class) return PlayerBindingContext.super.protocol(type);
 
 			return type.cast(protocol);
 		}
@@ -210,7 +211,7 @@ class JavaMovementExtensionTest {
 
 		@Override
 		public @NotNull Subscription bindNativeSession(@NotNull Function<Object, Subscription> listener) {
-			throw new AssertionError("Movement keeps no native listeners");
+			return listener.apply(new Object());
 		}
 
 		@Override
