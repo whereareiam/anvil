@@ -27,13 +27,13 @@ intellij-idea = "2025.2.5"
 intellij-verify = "2026.2.2"
 
 # platform api
-paper = "1.21.11-R0.1-SNAPSHOT"
+paper = "26.3.build.227-stable"
 # The oldest Bukkit API that in-server code compiles against.
 bukkit = "1.16.5-R0.1-SNAPSHOT"
 # The oldest Paper API with text displays, which arrived in Minecraft 1.19.4, for the server fixture's displays.
-bukkit-displays = "1.19.4-R0.1-SNAPSHOT"
+bukkit-displays = "26.3.build.227-stable"
 # The oldest Paper API with cookies, which arrived in Minecraft 1.20.5, for the server fixture's cookie commands.
-bukkit-cookies = "1.21.1-R0.1-SNAPSHOT"
+bukkit-cookies = "26.3.build.227-stable"
 velocity = "3.5.1"
 # The oldest NeoForge release the NeoForge agent compiles against.
 neoforge = "21.1.256"
