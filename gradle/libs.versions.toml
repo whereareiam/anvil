@@ -5,7 +5,7 @@ java = "21"
 # Main classes loaded by Minecraft servers run on the oldest supported server's Java.
 java-legacy = "11"
 asm = "9.9.1"
-kotlin = "2.4.0"
+kotlin = "2.4.21"
 shadow = "9.6.1"
 freefair = "9.5.0"
 toolkit = "0.3.0"
