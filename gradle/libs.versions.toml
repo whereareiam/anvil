@@ -42,7 +42,7 @@ bungeecord = "26.1-R0.1-SNAPSHOT"
 # minecraft protocol
 # The oldest Adventure that a pinned MCProtocolLib release brings; release-neutral client code compiles against it.
 adventure = "4.9.3"
-mcprotocol = "26.1-SNAPSHOT"
+mcprotocol = "26.3-2"
 minecraft-auth = "5.0.2"
 
 # testing
