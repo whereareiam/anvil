@@ -34,7 +34,7 @@ bukkit = "1.16.5-R0.1-SNAPSHOT"
 bukkit-displays = "1.19.4-R0.1-SNAPSHOT"
 # The oldest Paper API with cookies, which arrived in Minecraft 1.20.5, for the server fixture's cookie commands.
 bukkit-cookies = "1.21.1-R0.1-SNAPSHOT"
-velocity = "3.5.1"
+velocity = "4.3.1"
 # The oldest NeoForge release the NeoForge agent compiles against.
 neoforge = "21.1.256"
 bungeecord = "26.1-R0.1-SNAPSHOT"
