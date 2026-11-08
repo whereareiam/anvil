@@ -10,12 +10,11 @@ import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
-import me.whereareiam.anvil.protocol.api.model.text.TextClick;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.api.model.text.TextColor;
-import me.whereareiam.anvil.protocol.api.model.text.TextSpan;
 import me.whereareiam.anvil.protocol.api.model.text.TextStyle;
-import me.whereareiam.anvil.protocol.api.type.ClickAction;
+import me.whereareiam.anvil.protocol.api.model.text.click.RunCommandClick;
+import me.whereareiam.anvil.protocol.api.model.text.content.LiteralContent;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
@@ -47,6 +46,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static me.whereareiam.anvil.protocol.api.type.TextDecoration.BOLD;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -76,16 +76,16 @@ class JavaMessagesExtensionTest {
 		extension.bind(player, new RecordingOperations());
 
 		protocol.deliver(new ClientboundLogin(7));
-		protocol.deliver(new ClientboundSystemChat(StyledText.unstyled("welcome"), false));
-		protocol.deliver(new ClientboundSystemChat(StyledText.unstyled("anvil:action-bar"), true));
-		protocol.deliver(new ClientboundPlayerChat(StyledText.unstyled("hidden"), FilterMaskType.FULLY_FILTERED, null, List.of()));
-		protocol.deliver(ClientboundPlayerChat.unsigned(StyledText.unstyled("hello")));
-		protocol.deliver(new ClientboundDisguisedChat(StyledText.unstyled("journey-ready-1")));
+		protocol.deliver(new ClientboundSystemChat(Text.literal("welcome"), false));
+		protocol.deliver(new ClientboundSystemChat(Text.literal("anvil:action-bar"), true));
+		protocol.deliver(new ClientboundPlayerChat(Text.literal("hidden"), FilterMaskType.FULLY_FILTERED, null, List.of()));
+		protocol.deliver(ClientboundPlayerChat.unsigned(Text.literal("hello")));
+		protocol.deliver(new ClientboundDisguisedChat(Text.literal("journey-ready-1")));
 
 		assertEquals(List.of(
-				new ChatMessage(0, StyledText.unstyled("welcome")),
-				new ChatMessage(1, StyledText.unstyled("hello")),
-				new ChatMessage(2, StyledText.unstyled("journey-ready-1"))
+				new ChatMessage(0, Text.literal("welcome")),
+				new ChatMessage(1, Text.literal("hello")),
+				new ChatMessage(2, Text.literal("journey-ready-1"))
 		), player.payloads(MessagesChannel.CHAT_ADDED));
 		assertEquals(List.of(new DroppedChat("hidden", ChatDropReason.FULLY_FILTERED)),
 				player.payloads(MessagesChannel.CHAT_DROPPED));
@@ -96,11 +96,15 @@ class JavaMessagesExtensionTest {
 		RecordingProtocol protocol = new RecordingProtocol(true);
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
-		StyledText welcome = new StyledText(List.of(
-				new TextSpan("Welcome to ", TextStyle.builder().color(TextColor.GRAY).build()),
-				new TextSpan("Arbor", TextStyle.builder().color(TextColor.GOLD).bold(true)
-						.click(new TextClick(ClickAction.RUN_COMMAND, "/arbor help")).build())
-		));
+		Text welcome = Text.builder()
+				.content(new LiteralContent("Welcome to "))
+				.style(TextStyle.builder().color(TextColor.GRAY).build())
+				.child(Text.builder()
+						.content(new LiteralContent("Arbor"))
+						.style(TextStyle.builder().color(TextColor.GOLD).decoration(BOLD, true)
+								.click(new RunCommandClick("/arbor help")).build())
+						.build())
+				.build();
 
 		protocol.deliver(new ClientboundSystemChat(welcome, false));
 		protocol.deliver(new ClientboundLogin(7));
@@ -119,7 +123,7 @@ class JavaMessagesExtensionTest {
 
 		player.startConnection();
 		protocol.deliver(new ClientboundLogin(7));
-		protocol.deliver(new ClientboundSystemChat(StyledText.unstyled("welcome"), false));
+		protocol.deliver(new ClientboundSystemChat(Text.literal("welcome"), false));
 		player.startConnection();
 
 		assertEquals(List.of("messages.chat-cleared", "messages.chat-added", "messages.chat-cleared"),
@@ -148,7 +152,7 @@ class JavaMessagesExtensionTest {
 
 		protocol.deliver(new ClientboundLogin(7));
 		protocol.deliver(signed("first", FIRST));
-		protocol.deliver(new ClientboundPlayerChat(StyledText.unstyled("second"), FilterMaskType.PASS_THROUGH, SECOND,
+		protocol.deliver(new ClientboundPlayerChat(Text.literal("second"), FilterMaskType.PASS_THROUGH, SECOND,
 				List.of(PackedMessageSignature.cached(0))));
 		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.cached(1)));
 
@@ -177,7 +181,7 @@ class JavaMessagesExtensionTest {
 		extension.bind(player, new RecordingOperations());
 
 		protocol.deliver(new ClientboundLogin(7));
-		protocol.deliver(new ClientboundPlayerChat(StyledText.unstyled("hidden"), FilterMaskType.FULLY_FILTERED, FIRST, List.of()));
+		protocol.deliver(new ClientboundPlayerChat(Text.literal("hidden"), FilterMaskType.FULLY_FILTERED, FIRST, List.of()));
 		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.full(FIRST)));
 		protocol.deliver(new ClientboundDeleteChat(PackedMessageSignature.full(SECOND)));
 
@@ -199,18 +203,18 @@ class JavaMessagesExtensionTest {
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 
-		protocol.deliver(new ClientboundSystemChat(StyledText.unstyled("configuring"), false));
-		protocol.deliver(ClientboundPlayerChat.unsigned(StyledText.unstyled("player configuring")));
-		protocol.deliver(new ClientboundDisguisedChat(StyledText.unstyled("disguised configuring")));
+		protocol.deliver(new ClientboundSystemChat(Text.literal("configuring"), false));
+		protocol.deliver(ClientboundPlayerChat.unsigned(Text.literal("player configuring")));
+		protocol.deliver(new ClientboundDisguisedChat(Text.literal("disguised configuring")));
 		protocol.deliver(new ClientboundLogin(7));
-		protocol.deliver(new ClientboundSystemChat(StyledText.unstyled("welcome"), false));
+		protocol.deliver(new ClientboundSystemChat(Text.literal("welcome"), false));
 
 		assertEquals(List.of(
 				new DroppedChat("configuring", ChatDropReason.NO_PLAYER),
 				new DroppedChat("player configuring", ChatDropReason.NO_PLAYER),
 				new DroppedChat("disguised configuring", ChatDropReason.NO_PLAYER)
 		), player.payloads(MessagesChannel.CHAT_DROPPED));
-		assertEquals(List.of(new ChatMessage(0, StyledText.unstyled("welcome"))), player.payloads(MessagesChannel.CHAT_ADDED));
+		assertEquals(List.of(new ChatMessage(0, Text.literal("welcome"))), player.payloads(MessagesChannel.CHAT_ADDED));
 	}
 
 	@Test
@@ -220,13 +224,13 @@ class JavaMessagesExtensionTest {
 		extension.bind(player, new RecordingOperations());
 
 		protocol.deliver(new ClientboundLogin(7));
-		protocol.deliver(new ClientboundSystemChat(StyledText.unstyled("on auth"), false));
+		protocol.deliver(new ClientboundSystemChat(Text.literal("on auth"), false));
 		protocol.deliver(new ClientboundStartConfiguration());
-		protocol.deliver(new ClientboundSystemChat(StyledText.unstyled("switching"), false));
+		protocol.deliver(new ClientboundSystemChat(Text.literal("switching"), false));
 		protocol.deliver(new ClientboundLogin(8));
-		protocol.deliver(new ClientboundSystemChat(StyledText.unstyled("on lobby"), false));
+		protocol.deliver(new ClientboundSystemChat(Text.literal("on lobby"), false));
 
-		assertEquals(List.of(new ChatMessage(0, StyledText.unstyled("on auth")), new ChatMessage(1, StyledText.unstyled("on lobby"))),
+		assertEquals(List.of(new ChatMessage(0, Text.literal("on auth")), new ChatMessage(1, Text.literal("on lobby"))),
 				player.payloads(MessagesChannel.CHAT_ADDED));
 		assertEquals(List.of(new DroppedChat("switching", ChatDropReason.NO_PLAYER)),
 				player.payloads(MessagesChannel.CHAT_DROPPED));
@@ -240,7 +244,7 @@ class JavaMessagesExtensionTest {
 
 		protocol.deliver(new ClientboundLogin(7));
 		player.startConnection();
-		protocol.deliver(new ClientboundSystemChat(StyledText.unstyled("before the login"), false));
+		protocol.deliver(new ClientboundSystemChat(Text.literal("before the login"), false));
 
 		assertEquals(List.of(), player.payloads(MessagesChannel.CHAT_ADDED));
 	}
@@ -251,9 +255,9 @@ class JavaMessagesExtensionTest {
 		RecordingPlayer player = new RecordingPlayer(protocol);
 		extension.bind(player, new RecordingOperations());
 
-		protocol.deliver(new ClientboundSystemChat(StyledText.unstyled("welcome"), false));
+		protocol.deliver(new ClientboundSystemChat(Text.literal("welcome"), false));
 
-		assertEquals(List.of(new ChatMessage(0, StyledText.unstyled("welcome"))), player.payloads(MessagesChannel.CHAT_ADDED));
+		assertEquals(List.of(new ChatMessage(0, Text.literal("welcome"))), player.payloads(MessagesChannel.CHAT_ADDED));
 	}
 
 	@Test
@@ -263,7 +267,7 @@ class JavaMessagesExtensionTest {
 		WorkerBinding binding = extension.bind(player, new RecordingOperations());
 
 		binding.close();
-		protocol.deliver(new ClientboundSystemChat(StyledText.unstyled("after close"), false));
+		protocol.deliver(new ClientboundSystemChat(Text.literal("after close"), false));
 		player.startConnection();
 
 		assertEquals(Map.of(), protocol.listeners);
@@ -278,7 +282,7 @@ class JavaMessagesExtensionTest {
 	}
 
 	private static ClientboundPlayerChat signed(String text, MessageSignature signature) {
-		return new ClientboundPlayerChat(StyledText.unstyled(text), FilterMaskType.PASS_THROUGH, signature, List.of());
+		return new ClientboundPlayerChat(Text.literal(text), FilterMaskType.PASS_THROUGH, signature, List.of());
 	}
 
 	private static MessageSignature signature(int seed) {

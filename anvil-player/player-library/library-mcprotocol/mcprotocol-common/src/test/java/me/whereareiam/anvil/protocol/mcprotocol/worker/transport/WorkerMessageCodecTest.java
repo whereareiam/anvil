@@ -21,12 +21,34 @@ import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
-import me.whereareiam.anvil.protocol.api.model.text.TextClick;
+import me.whereareiam.anvil.protocol.api.model.text.ShadowColor;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.api.model.text.TextColor;
-import me.whereareiam.anvil.protocol.api.model.text.TextSpan;
 import me.whereareiam.anvil.protocol.api.model.text.TextStyle;
-import me.whereareiam.anvil.protocol.api.type.ClickAction;
+import me.whereareiam.anvil.protocol.api.model.text.click.ChangePageClick;
+import me.whereareiam.anvil.protocol.api.model.text.click.CopyToClipboardClick;
+import me.whereareiam.anvil.protocol.api.model.text.click.CustomClick;
+import me.whereareiam.anvil.protocol.api.model.text.click.OpenFileClick;
+import me.whereareiam.anvil.protocol.api.model.text.click.OpenUrlClick;
+import me.whereareiam.anvil.protocol.api.model.text.click.RunCommandClick;
+import me.whereareiam.anvil.protocol.api.model.text.click.ShowDialogClick;
+import me.whereareiam.anvil.protocol.api.model.text.click.SuggestCommandClick;
+import me.whereareiam.anvil.protocol.api.model.text.click.TextClick;
+import me.whereareiam.anvil.protocol.api.model.text.content.KeybindContent;
+import me.whereareiam.anvil.protocol.api.model.text.content.LiteralContent;
+import me.whereareiam.anvil.protocol.api.model.text.content.NbtContent;
+import me.whereareiam.anvil.protocol.api.model.text.content.PlayerHeadContent;
+import me.whereareiam.anvil.protocol.api.model.text.content.ScoreContent;
+import me.whereareiam.anvil.protocol.api.model.text.content.SelectorContent;
+import me.whereareiam.anvil.protocol.api.model.text.content.SpriteContent;
+import me.whereareiam.anvil.protocol.api.model.text.content.TextContent;
+import me.whereareiam.anvil.protocol.api.model.text.content.TranslatedContent;
+import me.whereareiam.anvil.protocol.api.model.text.hover.ShowEntityHover;
+import me.whereareiam.anvil.protocol.api.model.text.hover.ShowItemHover;
+import me.whereareiam.anvil.protocol.api.model.text.hover.ShowTextHover;
+import me.whereareiam.anvil.protocol.api.model.text.hover.TextHover;
+import me.whereareiam.anvil.protocol.api.type.NbtSource;
+import me.whereareiam.anvil.protocol.api.type.TextDecoration;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerCredentials;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerEvent;
@@ -36,6 +58,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerReady;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerRequest;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerResponse;
 import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerControlOperation;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -123,19 +146,27 @@ class WorkerMessageCodecTest {
 				.build());
 		roundTrip(new PlayerConnectionEvent(true, null, null, new PlayerProfile("Steve_Premium", UUID.randomUUID())));
 		roundTrip(new PlayerConnectionEvent(false, "kicked", DisconnectCause.SERVER, null));
-		roundTrip(new ChatMessage(4, new StyledText(List.of(
-				new TextSpan("Welcome to ", TextStyle.builder().color(TextColor.GRAY).build()),
-				new TextSpan("Arbor", TextStyle.builder()
+		roundTrip(new ChatMessage(4, Text.builder()
+				.content(new TranslatedContent("arbor.welcome", "Welcome", List.of(Text.literal("Ivan"))))
+				.style(TextStyle.builder()
 						.color(new TextColor(0x12ab34))
-						.bold(true)
-						.italic(true)
+						.shadowColor(new ShadowColor(0x80000000))
+						.decoration(TextDecoration.BOLD, true)
+						.decoration(TextDecoration.ITALIC, false)
 						.font("minecraft:uniform")
 						.insertion("Arbor")
-						.click(new TextClick(ClickAction.RUN_COMMAND, "/arbor help"))
-						.hover(StyledText.unstyled("Open the help"))
-						.build()),
-				new TextSpan("!", TextStyle.builder().click(new TextClick(ClickAction.SHOW_DIALOG, null)).build())
-		))));
+						.click(new RunCommandClick("/arbor help"))
+						.hover(new ShowTextHover(Text.literal("Open the help")))
+						.build())
+				.child(text(new KeybindContent("key.jump"), new OpenUrlClick("https://example.test"), new ShowItemHover("minecraft:diamond", 2)))
+				.child(text(new SelectorContent("@p", Text.literal(", ")), new SuggestCommandClick("/vote "),
+						new ShowEntityHover("minecraft:zombie", UUID.randomUUID(), null)))
+				.child(text(new ScoreContent("Alice", "kills"), new ChangePageClick(2), null))
+				.child(text(new NbtContent("Items", true, null, NbtSource.STORAGE, "arbor:state"), new CopyToClipboardClick("x"), null))
+				.child(text(new SpriteContent("minecraft:blocks", "minecraft:block/stone"), new ShowDialogClick(), null))
+				.child(text(new PlayerHeadContent("Alice", UUID.randomUUID(), null, true), new CustomClick("arbor:vote"), null))
+				.child(text(new LiteralContent("!"), new OpenFileClick("screenshot.png"), null))
+				.build()));
 	}
 
 	@Test
@@ -204,6 +235,10 @@ class WorkerMessageCodecTest {
 
 		assertThrows(ClassCastException.class, () -> handler.apply(codec.envelope(new MessageText("hello"))));
 		assertEquals(1, invoked.get());
+	}
+
+	private static Text text(TextContent content, TextClick click, @Nullable TextHover hover) {
+		return Text.builder().content(content).style(TextStyle.builder().click(click).hover(hover).build()).build();
 	}
 
 	private void roundTrip(Object value) {

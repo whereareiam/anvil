@@ -5,7 +5,7 @@ import me.whereareiam.anvil.capability.messages.model.ChatMessage;
 import me.whereareiam.anvil.capability.messages.model.DroppedChat;
 import me.whereareiam.anvil.capability.messages.type.ChatDropReason;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Installs the built-in messages capability for players that speak the Java Edition protocol: it sends chat and
  * commands and reports what the vanilla client's chat does with each chat message that reaches it: a shown message as
- * the chat shows it, with its styles, and a dropped one as plain text. A
+ * the server sent it, and a dropped one as plain text. A
  * system message shown as an overlay is action-bar text, which the screen capability follows, not chat.
  *
  * <p>The chat shows the other system messages, disguised chat and player chat, but only while the client has a player:
@@ -124,7 +124,7 @@ public final class JavaMessagesExtension implements WorkerExtension<Object> {
 			PlayerBindingContext<Object> player,
 			ConnectionChat connection,
 			AtomicLong ids,
-			StyledText text
+			Text text
 	) {
 		if (!connection.hasPlayer()) {
 			dropped(player, text.plain(), ChatDropReason.NO_PLAYER);

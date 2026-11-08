@@ -3,7 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5;
 import com.github.steveice10.mc.protocol.packet.ingame.client.ClientChatPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerChatPacket;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -26,6 +26,7 @@ public final class ChatPackets implements PacketTranslation<Packet> {
 	 * What a chat message starts with to run the rest as a command.
 	 */
 	private static final String COMMAND_PREFIX = "/";
+	private static final ReleaseAdventure ADVENTURE = new ReleaseAdventure();
 
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
@@ -37,7 +38,7 @@ public final class ChatPackets implements PacketTranslation<Packet> {
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (!(packet instanceof ServerChatPacket chat)) return null;
 
-		StyledText text = ValueTranslator.styled(chat.getMessage());
+		Text text = ValueTranslator.text(chat.getMessage(), ADVENTURE);
 		return switch (chat.getType()) {
 			case CHAT -> ClientboundPlayerChat.unsigned(text);
 			case SYSTEM -> new ClientboundSystemChat(text, false);

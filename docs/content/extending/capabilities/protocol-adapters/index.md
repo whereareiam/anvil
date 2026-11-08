@@ -163,9 +163,9 @@ Subscription chat = protocol.listen(ClientboundSystemChat.class, packet -> recei
 protocol.send(new ServerboundChatCommand("spawn"));
 ```
 
-Chat messages arrive as `StyledText` from `player-api`'s `model.text`: spans in reading order, each with its
-resolved colour, decorations, click and hover text, and `plain()` for the text alone; other text arrives flattened
-to plain strings. NBT, such as the dialog of a show-dialog packet or the entries of a
+Chat messages arrive as `Text` from `player-api`'s `model.text`: the text component the server sent, with
+`spans()` for what the player sees and `plain()` for the text alone; other text arrives flattened to plain
+strings. NBT, such as the dialog of a show-dialog packet or the entries of a
 registry the server sends during configuration (`packet.configuration.ClientboundRegistryData`), arrives as the
 protocol's tags in `model.nbt`: `NbtCompound` keeps its entries in order, finds a typed tag by key, such as
 `dialog.string("title")`, and `with(key, tag)` returns a changed copy. Your capability interprets that NBT itself.

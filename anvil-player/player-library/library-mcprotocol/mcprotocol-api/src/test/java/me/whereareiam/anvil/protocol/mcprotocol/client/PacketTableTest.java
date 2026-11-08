@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client;
 
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -36,7 +36,7 @@ class PacketTableTest {
 
 	@Test
 	void decodesThroughTheTranslationThatKnowsThePacket() {
-		assertEquals(new ClientboundSystemChat(StyledText.unstyled("hello"), false), table.decode("chat:hello"));
+		assertEquals(new ClientboundSystemChat(Text.literal("hello"), false), table.decode("chat:hello"));
 		assertEquals(new ClientboundCookieRequest("minecraft:session"), table.decode("cookie:minecraft:session"));
 		assertNull(table.decode("keep-alive"));
 	}
@@ -73,7 +73,7 @@ class PacketTableTest {
 
 		@Override
 		public @Nullable ClientboundPacket decode(@NotNull String packet) {
-			return packet.startsWith(PREFIX) ? new ClientboundSystemChat(StyledText.unstyled(packet.substring(PREFIX.length())), false)
+			return packet.startsWith(PREFIX) ? new ClientboundSystemChat(Text.literal(packet.substring(PREFIX.length())), false)
 					: null;
 		}
 

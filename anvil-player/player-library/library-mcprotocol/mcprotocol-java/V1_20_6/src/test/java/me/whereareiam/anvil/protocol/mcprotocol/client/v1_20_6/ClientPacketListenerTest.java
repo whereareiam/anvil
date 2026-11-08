@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import com.github.steveice10.mc.auth.data.GameProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
@@ -46,7 +46,7 @@ class ClientPacketListenerTest {
 	private static final UUID GRANTED = new UUID(0, 2);
 	private static final ClientLogin LOGIN = ClientLogin.builder()
 			.profile(ClientProfile.builder().name("Alice").uniqueId(new UUID(0, 1)).build())
-			.settings(ClientSettings.builder().locale("en_us").viewDistance(8).build())
+			.settings(ClientSettings.builder().locale("ru_ru").viewDistance(8).build())
 			.connection(ClientConnection.builder().host("localhost").port(25565).build())
 			.build();
 
@@ -58,17 +58,28 @@ class ClientPacketListenerTest {
 			McProtocolClientAdapter.packets(), TcpClientSessions::granted);
 
 	@Test
-	void answersTheLoginWithClientInformationBeforeReportingItWithTheGrantedProfile() throws Exception {
+	void answersTheConfigurationsFirstPacketWithThePlayersSettings() {
 		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed"), false));
-		receive(allocate(ClientboundLoginPacket.class));
+		events.clear();
+		receive(new ClientboundKeepAlivePacket(7));
+		receive(new ClientboundKeepAlivePacket(8));
 
-		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ServerboundClientInformationPacket", "logged in as Alice_Renamed " + GRANTED), events);
 		ServerboundClientInformationPacket information = assertInstanceOf(ServerboundClientInformationPacket.class, sent.getFirst());
-		assertEquals("en_us", information.getLocale());
+		assertEquals(List.of("sent ServerboundClientInformationPacket"), events);
+		assertEquals("ru_ru", information.getLocale());
 		assertEquals(8, information.getRenderDistance());
 		assertEquals(ChatVisibility.FULL, information.getChatVisibility());
 		assertEquals(Arrays.asList(SkinPart.values()), information.getVisibleParts());
 		assertEquals(HandPreference.RIGHT_HAND, information.getMainHand());
+	}
+
+	@Test
+	void reportsTheLoginWithTheGrantedProfileAfterTheSettings() throws Exception {
+		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed"), false));
+		receive(allocate(ClientboundLoginPacket.class));
+
+		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ServerboundClientInformationPacket",
+				"logged in as Alice_Renamed " + GRANTED), events);
 	}
 
 	@Test
@@ -122,7 +133,7 @@ class ClientPacketListenerTest {
 		receive(new ClientboundSystemChatPacket(Component.text("anvil:welcome"), false));
 		receive(new ClientboundKeepAlivePacket(7));
 
-		assertEquals(List.of(new ClientboundSystemChat(StyledText.unstyled("anvil:welcome"), false)), received);
+		assertEquals(List.of(new ClientboundSystemChat(Text.literal("anvil:welcome"), false)), received);
 		assertEquals(List.of(), events);
 	}
 

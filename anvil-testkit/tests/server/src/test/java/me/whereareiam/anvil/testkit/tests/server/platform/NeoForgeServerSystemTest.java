@@ -10,10 +10,10 @@ import me.whereareiam.anvil.capability.players.PlayerWatch;
 import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.SpanStyle;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.api.model.text.TextColor;
 import me.whereareiam.anvil.protocol.api.model.text.TextSpan;
-import me.whereareiam.anvil.protocol.api.model.text.TextStyle;
 import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
@@ -53,11 +53,11 @@ class NeoForgeServerSystemTest {
 
 			assertTrue(dispatch.execute("tellraw Alice [\"anvil:\",{\"text\":\"neoforge\",\"color\":\"gold\","
 					+ "\"bold\":true,\"insertion\":\"neoforge\"}]"));
-			StyledText message = messages.received("anvil:neoforge", Duration.ofSeconds(10));
+			Text message = messages.received("anvil:neoforge", Duration.ofSeconds(10));
 			assertEquals(List.of(
-					new TextSpan("anvil:", TextStyle.NONE),
-					new TextSpan("neoforge", TextStyle.builder().color(TextColor.GOLD).bold(true).insertion("neoforge").build())
-			), message.getSpans());
+					new TextSpan("anvil:", SpanStyle.NONE),
+					new TextSpan("neoforge", SpanStyle.builder().color(TextColor.GOLD).bold(true).insertion("neoforge").build())
+			), message.spans());
 
 			assertTrue(dispatch.execute("kick Alice anvil:kicked"));
 			assertEquals("anvil:kicked", session.kicked());

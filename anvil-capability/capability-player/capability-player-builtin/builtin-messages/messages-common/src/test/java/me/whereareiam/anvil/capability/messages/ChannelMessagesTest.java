@@ -11,12 +11,12 @@ import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
-import me.whereareiam.anvil.protocol.api.model.text.TextClick;
+import me.whereareiam.anvil.protocol.api.model.text.SpanStyle;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.api.model.text.TextColor;
-import me.whereareiam.anvil.protocol.api.model.text.TextSpan;
 import me.whereareiam.anvil.protocol.api.model.text.TextStyle;
-import me.whereareiam.anvil.protocol.api.type.ClickAction;
+import me.whereareiam.anvil.protocol.api.model.text.click.RunCommandClick;
+import me.whereareiam.anvil.protocol.api.model.text.content.LiteralContent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
+import static me.whereareiam.anvil.protocol.api.type.TextDecoration.BOLD;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -73,7 +74,7 @@ class ChannelMessagesTest {
 		show(channel, 1, "anvil:pong");
 
 		assertEquals(List.of("anvil:welcome", "anvil:pong"), plain(messages.history()));
-		assertThrows(UnsupportedOperationException.class, () -> messages.history().add(StyledText.unstyled("changed")));
+		assertThrows(UnsupportedOperationException.class, () -> messages.history().add(Text.literal("changed")));
 	}
 
 	@Test
@@ -81,19 +82,22 @@ class ChannelMessagesTest {
 		RecordingChannel channel = new RecordingChannel();
 		ChannelMessages messages = new ChannelMessages(channel);
 		MessageWatch chat = messages.watch();
-		TextStyle arbor = TextStyle.builder().color(TextColor.GOLD).bold(true)
-				.click(new TextClick(ClickAction.RUN_COMMAND, "/arbor help"))
+		Text welcome = Text.builder()
+				.content(new LiteralContent("Welcome to "))
+				.style(TextStyle.builder().color(TextColor.GRAY).build())
+				.child(Text.builder()
+						.content(new LiteralContent("Arbor"))
+						.style(TextStyle.builder().color(TextColor.GOLD).decoration(BOLD, true)
+								.click(new RunCommandClick("/arbor help")).build())
+						.build())
 				.build();
-		StyledText welcome = new StyledText(List.of(
-				new TextSpan("Welcome to ", TextStyle.builder().color(TextColor.GRAY).build()),
-				new TextSpan("Arbor", arbor)
-		));
 		channel.publish(MessagesChannel.CHAT_ADDED, new ChatMessage(0, welcome));
 
-		StyledText received = chat.received("Welcome to Arbor", TIMEOUT);
+		Text received = chat.received("Welcome to Arbor", TIMEOUT);
 
 		assertEquals(welcome, received);
-		assertEquals(arbor, received.span("Arbor").orElseThrow().getStyle());
+		assertEquals(SpanStyle.builder().color(TextColor.GOLD).bold(true).click(new RunCommandClick("/arbor help")).build(),
+				received.span("Arbor").orElseThrow().getStyle());
 		assertEquals(welcome, messages.received("Arbor", TIMEOUT));
 	}
 
@@ -221,7 +225,7 @@ class ChannelMessagesTest {
 	}
 
 	private static void show(RecordingChannel channel, long id, String text) {
-		channel.publish(MessagesChannel.CHAT_ADDED, new ChatMessage(id, StyledText.unstyled(text)));
+		channel.publish(MessagesChannel.CHAT_ADDED, new ChatMessage(id, Text.literal(text)));
 	}
 
 	private static void drop(RecordingChannel channel, String text, ChatDropReason reason) {
@@ -266,7 +270,7 @@ class ChannelMessagesTest {
 		}
 	}
 
-	private static List<String> plain(List<StyledText> messages) {
-		return messages.stream().map(StyledText::plain).toList();
+	private static List<String> plain(List<Text> messages) {
+		return messages.stream().map(Text::plain).toList();
 	}
 }

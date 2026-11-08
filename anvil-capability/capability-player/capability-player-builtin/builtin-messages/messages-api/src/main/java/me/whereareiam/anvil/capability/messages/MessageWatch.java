@@ -2,7 +2,7 @@ package me.whereareiam.anvil.capability.messages;
 
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -15,13 +15,13 @@ import java.util.function.Predicate;
  * once per wait and never by an occurrence from before the watch. A wait that fails names the matching messages the
  * chat left out since the previous wait, such as one that arrived while the client had no player.
  *
- * <p>Conditions look at a message's plain text; a message that satisfies one is returned as the chat shows it, with
- * the colours, decorations, clicks and hover text of its parts.</p>
+ * <p>Conditions look at a message's plain text; a message that satisfies one is returned as the {@link Text} the
+ * server sent, whose spans tell the colour, decorations, click and hover of each part.</p>
  *
  * <pre>{@code
  * MessageWatch chat = messages.watch();
  * messages.command("login secret");
- * StyledText welcome = chat.received("Welcome back");
+ * Text welcome = chat.received("Welcome back");
  * assertEquals(TextColor.GREEN, welcome.span("Welcome back").orElseThrow().getStyle().getColor());
  * chat.neverReceived("Invalid password", Duration.ofSeconds(3));
  * }</pre>
@@ -31,9 +31,9 @@ public interface MessageWatch {
 	 * Waits, using the default timeout, for the next message containing the supplied text.
 	 *
 	 * @param text required message content
-	 * @return the matching message, as the chat shows it
+	 * @return the matching message, as the server sent it
 	 */
-	default @NotNull StyledText received(@NotNull String text) {
+	default @NotNull Text received(@NotNull String text) {
 		return received(text, SimulatedPlayer.DEFAULT_TIMEOUT);
 	}
 
@@ -42,10 +42,10 @@ public interface MessageWatch {
 	 *
 	 * @param text required message content
 	 * @param timeout maximum wait
-	 * @return the matching message, as the chat shows it
+	 * @return the matching message, as the server sent it
 	 * @throws IllegalStateException when no such message arrives in time
 	 */
-	default @NotNull StyledText received(@NotNull String text, @NotNull Duration timeout) {
+	default @NotNull Text received(@NotNull String text, @NotNull Duration timeout) {
 		return received(message -> message.contains(text), timeout);
 	}
 
@@ -54,10 +54,10 @@ public interface MessageWatch {
 	 *
 	 * @param matcher condition on the message's plain text
 	 * @param timeout maximum wait
-	 * @return the matching message, as the chat shows it
+	 * @return the matching message, as the server sent it
 	 * @throws IllegalStateException when no such message arrives in time
 	 */
-	@NotNull StyledText received(@NotNull Predicate<String> matcher, @NotNull Duration timeout);
+	@NotNull Text received(@NotNull Predicate<String> matcher, @NotNull Duration timeout);
 
 	/**
 	 * Expects that no message containing the supplied text arrives for a duration.
@@ -101,5 +101,5 @@ public interface MessageWatch {
 	 *
 	 * @return unread messages, oldest first
 	 */
-	@NotNull List<StyledText> unread();
+	@NotNull List<Text> unread();
 }

@@ -5,12 +5,12 @@ import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.messages.MessageWatch;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.messages.model.ChatLines;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
-import me.whereareiam.anvil.protocol.api.model.text.TextClick;
+import me.whereareiam.anvil.protocol.api.model.text.SpanStyle;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.api.model.text.TextColor;
 import me.whereareiam.anvil.protocol.api.model.text.TextSpan;
-import me.whereareiam.anvil.protocol.api.model.text.TextStyle;
-import me.whereareiam.anvil.protocol.api.type.ClickAction;
+import me.whereareiam.anvil.protocol.api.model.text.click.RunCommandClick;
+import me.whereareiam.anvil.protocol.api.model.text.content.TranslatedContent;
 import me.whereareiam.anvil.testkit.tests.server.fixture.FixtureServer;
 import org.junit.jupiter.api.Test;
 
@@ -70,15 +70,32 @@ class MessagesReleaseTest {
 		server.console("tellraw " + player.name() + " [{\"text\":\"anvil:styled \",\"color\":\"gray\"},"
 				+ "{\"text\":\"ping\",\"color\":\"gold\",\"bold\":true," + click + "}]");
 
-		StyledText message = chat.received("anvil:styled ping", Duration.ofSeconds(10));
-		assertEquals(new StyledText(List.of(
-				new TextSpan("anvil:styled ", TextStyle.builder().color(TextColor.GRAY).build()),
-				new TextSpan("ping", TextStyle.builder()
+		Text message = chat.received("anvil:styled ping", Duration.ofSeconds(10));
+		assertEquals(List.of(
+				new TextSpan("anvil:styled ", SpanStyle.builder().color(TextColor.GRAY).build()),
+				new TextSpan("ping", SpanStyle.builder()
 						.color(TextColor.GOLD)
 						.bold(true)
-						.click(new TextClick(ClickAction.RUN_COMMAND, "/anvil-fixture ping"))
+						.click(new RunCommandClick("/anvil-fixture ping"))
 						.build())
-		)), message);
+		), message.spans());
+	}
+
+	@Test
+	void receivesATranslationWithItsKeyAndArguments(ScenarioContext anvil) {
+		FixtureServer server = new FixtureServer(anvil);
+		SimulatedPlayer player = server.join();
+		MessageWatch chat = player.capability(Messages.class).watch();
+
+		server.console("tellraw " + player.name() + " [\"anvil:translated \",{\"translate\":\"multiplayer.player.joined\","
+				+ "\"with\":[{\"text\":\"Ivan\",\"color\":\"aqua\"}]}]");
+
+		Text message = chat.received("anvil:translated", Duration.ofSeconds(10));
+		TranslatedContent joined = message.find(TranslatedContent.class).orElseThrow();
+		assertEquals("multiplayer.player.joined", joined.getKey());
+		assertEquals("Ivan", joined.getArguments().getFirst().plain());
+		assertEquals(TextColor.AQUA, message.span("Ivan").orElseThrow().getStyle().getColor());
+		assertEquals("anvil:translated multiplayer.player.joined Ivan", message.plain());
 	}
 
 	@Test

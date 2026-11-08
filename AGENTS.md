@@ -148,8 +148,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `PlayerBindingContext.protocol(JavaProtocol.class)`. Packets are immutable values grouped by area under
   `packet.<area>`, one class per game packet in the game's shape; the protocol owns the data types they need
   (`model.<area>`, enums in `type`) and carries text flattened to plain strings, except chat, which it carries as
-  `player-api`'s `StyledText` (`protocol.api.model.text`): spans in reading order with their resolved styles, built by
-  `AdventureText.styled` with the click reader each release's chat translation supplies.
+  `player-api`'s `Text` (`protocol.api.model.text`): the component tree the server sent, whose `spans()` resolve what
+  the player sees, built by `AdventureText.text` with the `AdventureRelease` each chain's `ReleaseAdventure` implements.
   Where a packet holds NBT, such as a
   dialog or a registry entry, the protocol carries it as `model.nbt` tags (`NbtTag`, `NbtCompound`), never as SNBT
   text, and the feature interprets it: `dialogs-java` reads dialogs, flattens their text components itself and

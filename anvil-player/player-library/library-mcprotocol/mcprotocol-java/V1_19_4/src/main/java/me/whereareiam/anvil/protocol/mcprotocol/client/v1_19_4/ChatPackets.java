@@ -10,7 +10,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundCh
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.protocol.java.api.model.chat.MessageSignature;
 import me.whereareiam.anvil.protocol.java.api.model.chat.PackedMessageSignature;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -22,6 +22,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.protocol.java.api.type.FilterMaskType;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ReleaseAdventure;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ValueTranslator;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
@@ -39,6 +40,8 @@ import java.util.Set;
  * salt and nothing acknowledged; a command carries no argument signatures.
  */
 public final class ChatPackets implements PacketTranslation<Packet> {
+	private static final ReleaseAdventure ADVENTURE = new ReleaseAdventure();
+
 	/**
 	 * Number of last seen messages a chat message acknowledges.
 	 */
@@ -71,9 +74,9 @@ public final class ChatPackets implements PacketTranslation<Packet> {
 	@Override
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (packet instanceof ClientboundSystemChatPacket chat)
-			return new ClientboundSystemChat(ValueTranslator.styled(chat.getContent()), chat.isOverlay());
+			return new ClientboundSystemChat(ValueTranslator.text(chat.getContent(), ADVENTURE), chat.isOverlay());
 		if (packet instanceof ClientboundDisguisedChatPacket chat)
-			return new ClientboundDisguisedChat(ValueTranslator.styled(chat.getMessage()));
+			return new ClientboundDisguisedChat(ValueTranslator.text(chat.getMessage(), ADVENTURE));
 		if (packet instanceof ClientboundDeleteChatPacket delete)
 			return new ClientboundDeleteChat(packed(delete.getMessageSignature()));
 		if (!(packet instanceof ClientboundPlayerChatPacket chat)) return null;
@@ -82,7 +85,7 @@ public final class ChatPackets implements PacketTranslation<Packet> {
 		byte[] signature = chat.getMessageSignature();
 
 		return new ClientboundPlayerChat(
-				unsigned == null ? StyledText.unstyled(chat.getContent()) : ValueTranslator.styled(unsigned),
+				unsigned == null ? Text.literal(chat.getContent()) : ValueTranslator.text(unsigned, ADVENTURE),
 				filterMask(chat.getFilterMask()),
 				signature == null ? null : new MessageSignature(signature),
 				chat.getLastSeenMessages().stream().map(ChatPackets::packed).toList()

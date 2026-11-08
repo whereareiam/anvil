@@ -35,7 +35,9 @@ import java.util.function.Function;
  * Answers the packets a client of the MCProtocolLib releases from 1.20.5 until 1.21.1 must answer on its own and
  * reports login, teleports and disconnects with their reason flattened to plain text. The login reports the profile the
  * server granted in its login success, which arrives before the game starts; each release's sessions read that profile,
- * since MCProtocolLib 1.21 replaced mcauthlib's profile with its own.
+ * since MCProtocolLib 1.21 replaced mcauthlib's profile with its own. Like a vanilla client, it sends the player's
+ * settings, its language among them, at the start of the configuration, so the server knows them before the player
+ * joins.
  */
 @RequiredArgsConstructor
 public final class ClientPacketListener extends SessionAdapter {
@@ -56,18 +58,25 @@ public final class ClientPacketListener extends SessionAdapter {
 	 */
 	private final Function<ClientboundGameProfilePacket, ClientProfile> profiles;
 	private volatile ClientProfile granted;
+	private volatile boolean settingsDue;
 
 	@Override
 	public void packetReceived(Session session, Packet packet) {
+		if (settingsDue) {
+			// The server's first packet after the login success is a configuration packet, so MCProtocolLib, whose own
+			// listener may run after this one, has entered the configuration by now; the settings answer it before the
+			// configuration ends, which a server waits for before the player joins.
+			settingsDue = false;
+			session.send(new ServerboundClientInformationPacket(login.getSettings().getLocale(), login.getSettings().getViewDistance(),
+					ChatVisibility.FULL, true, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, false, true));
+		}
 		if (packet instanceof ClientboundGameProfilePacket success) {
 			granted = profiles.apply(success);
 			listener.granted(session, granted);
+			settingsDue = true;
 		}
-		if (packet instanceof ClientboundLoginPacket) {
-			session.send(new ServerboundClientInformationPacket(login.getSettings().getLocale(), login.getSettings().getViewDistance(), ChatVisibility.FULL,
-					true, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, false, true));
+		if (packet instanceof ClientboundLoginPacket)
 			listener.loggedIn(session, Objects.requireNonNull(granted, "The server started the game before it granted a profile"));
-		}
 		if (packet instanceof ClientboundPlayerPositionPacket position) {
 			listener.teleported(session, position.getYaw(), position.getPitch());
 			session.send(new ServerboundAcceptTeleportationPacket(position.getTeleportId()));

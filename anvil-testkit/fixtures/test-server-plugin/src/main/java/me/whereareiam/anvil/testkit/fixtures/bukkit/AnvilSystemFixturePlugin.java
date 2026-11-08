@@ -29,6 +29,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -40,6 +41,7 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 	private static final String AUTH_STARTED = "anvil:auth:started";
 	private static final String AUTH_REJOIN_FORBIDDEN = "anvil:auth:rejoin-forbidden:";
 	private final Map<String, AtomicInteger> authenticationAttempts = new ConcurrentHashMap<>();
+	private final Map<UUID, String> joinLocales = new ConcurrentHashMap<>();
 	private FixtureCookies cookies;
 	private FixtureDisplays displays;
 
@@ -83,6 +85,7 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 
 	@EventHandler
 	public void onJoin(PlayerJoinEvent event) {
+		joinLocales.put(event.getPlayer().getUniqueId(), event.getPlayer().getLocale());
 		event.getPlayer().sendMessage("anvil:welcome:" + event.getPlayer().getUniqueId());
 	}
 
@@ -128,6 +131,9 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 				break;
 			case "locale":
 				player.sendMessage("anvil:locale:" + player.getLocale());
+				break;
+			case "join-locale":
+				player.sendMessage("anvil:join-locale:" + joinLocales.get(player.getUniqueId()));
 				break;
 			case "gui":
 				openInventory(player);

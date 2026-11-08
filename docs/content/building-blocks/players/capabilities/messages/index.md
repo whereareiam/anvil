@@ -14,7 +14,7 @@ This fragment belongs in a live test after Alice has connected and joined `serve
 
 ```java
 import me.whereareiam.anvil.capability.messages.Messages;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import java.time.Duration;
 ```
 
@@ -23,12 +23,12 @@ Send a message through the server console and wait for the player's chat to show
 ```java
 Messages messages = alice.capability(Messages.class);
 anvil.processes().server("server").console().sendCommand("say journey-ready-1");
-StyledText response = messages.received("journey-ready-1", Duration.ofSeconds(10));
+Text response = messages.received("journey-ready-1", Duration.ofSeconds(10));
 String text = response.plain();
 ```
 
 A wait matches the message's plain text and returns the message as the chat showed it; `plain()` is its text,
-and [its spans](#check-how-a-message-looks) carry the style of each part.
+and [its spans and components](#check-how-a-message-looks) tell how each part looks and what the server sent.
 
 For your own plugin, send its command with `messages.command("your-command arguments")` and wait for
 the reply it documents. Commands accept either a leading slash or no slash. Public chat uses
@@ -66,37 +66,61 @@ another.
 
 ## Check how a message looks
 
-A received message is a `StyledText`: its spans in reading order, each a run of text in one style, with the style
-it inherits from the components around it resolved. Take the span that holds a word and check its style:
+A received message is a `Text`: the text component the server sent, with what each component contributes, the
+style it sets and its children. Two views answer most questions. `spans()` is what the player sees: runs of text in
+reading order, each in the style it inherits from the components around it. `find(...)` reaches the components
+themselves, such as a translation and its arguments.
 
 ```java
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
-import me.whereareiam.anvil.protocol.api.model.text.TextClick;
+import me.whereareiam.anvil.protocol.api.model.text.SpanStyle;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.api.model.text.TextColor;
-import me.whereareiam.anvil.protocol.api.model.text.TextStyle;
-import me.whereareiam.anvil.protocol.api.type.ClickAction;
+import me.whereareiam.anvil.protocol.api.model.text.click.RunCommandClick;
+import me.whereareiam.anvil.protocol.api.model.text.content.TranslatedContent;
 
-StyledText welcome = chat.received("Welcome to Arbor", Duration.ofSeconds(10));
-TextStyle arbor = welcome.span("Arbor").orElseThrow().getStyle();
+Text welcome = chat.received("Welcome to Arbor", Duration.ofSeconds(10));
+SpanStyle arbor = welcome.span("Arbor").orElseThrow().getStyle();
 assertEquals(TextColor.GOLD, arbor.getColor());
 assertTrue(arbor.isBold());
-assertEquals(new TextClick(ClickAction.RUN_COMMAND, "/arbor help"), arbor.getClick());
+assertEquals(new RunCommandClick("/arbor help"), arbor.getClick());
 ```
 
 `span(text)` returns the first span containing the text; text that crosses a change of style is in no span, so
-look up a word that has one style. `getSpans()` lists them all for an exact comparison. A style holds:
+look up a word that has one style. `spans()` lists them all for an exact comparison. A span's style holds:
 
 | Member | Holds |
 |---|---|
 | `getColor()` | The colour, a `TextColor` such as `TextColor.GOLD` or `new TextColor(0x12ab34)`, or `null` for the chat's default colour |
-| `isBold()`, `isItalic()`, `isUnderlined()`, `isStrikethrough()`, `isObfuscated()` | Each decoration, `false` unless the part or a part around it sets it |
-| `getClick()` | What a click does: a `ClickAction` and its value, such as the command, URL or text; `null` without a click |
-| `getHover()` | The `StyledText` shown on hover, or `null` when the part shows none or shows an item or entity |
-| `getFont()`, `getInsertion()` | The font's key and the text a shift-click inserts, or `null` |
+| `isBold()`, `isItalic()`, `isUnderlined()`, `isStrikethrough()`, `isObfuscated()` | Each decoration, `false` unless the part or a part around it turns it on |
+| `getClick()` | What a click does, such as `RunCommandClick`, `SuggestCommandClick`, `OpenUrlClick`, `CopyToClipboardClick` or `ChangePageClick`; `null` without a click |
+| `getHover()` | What the game shows on hover: `ShowTextHover` with its `Text`, `ShowItemHover` or `ShowEntityHover`; `null` without one |
+| `getShadowColor()`, `getFont()`, `getInsertion()` | The shadow colour (Minecraft 1.21.4 and later), the font's key and the text a shift-click inserts, or `null` |
 
-A named colour and the same colour sent as `#rrggbb` are equal. A player chat message holds the content its sender
-or the server sent, without the decoration the game draws around it, such as the sender's name; content the
-server's chat signing protects arrives without styles.
+A named colour and the same colour sent as `#rrggbb` are equal. A click on a dialog (`ShowDialogClick`) or a custom
+action (`CustomClick`, by its identifier) keeps its payload in the player's worker, as the
+[Dialogs](../dialogs/index.md) capability does.
+
+### Check a translation
+
+A server that leaves translation to the client sends a translation key with arguments. The player has no
+language files, so its plain text and spans show the key followed by each argument, and `find` returns the
+translation itself:
+
+```java
+Text joined = chat.received("multiplayer.player.joined", Duration.ofSeconds(10));
+TranslatedContent translation = joined.find(TranslatedContent.class).orElseThrow();
+assertEquals("multiplayer.player.joined", translation.getKey());
+assertEquals("Ivan", translation.getArguments().getFirst().plain());
+```
+
+`find(type)` returns the first content of that kind in reading order, a translation's arguments before what follows
+the translation. The kinds of content are in `me.whereareiam.anvil.protocol.api.model.text.content`:
+`LiteralContent`, `TranslatedContent`, `KeybindContent`, `SelectorContent`, `ScoreContent`, `NbtContent`, and the
+`SpriteContent` and `PlayerHeadContent` of Minecraft 1.21.9. `getContent()`, `getStyle()` and `getChildren()` walk
+the components as the server sent them; a component's `TextStyle` holds only what it sets itself.
+
+A player chat message holds the content its sender or the server sent, without the decoration the game draws
+around it, such as the sender's name; content the server's chat signing protects arrives as literal text.
 
 ## Match the intended operation
 
@@ -117,7 +141,7 @@ previous one found:
 ```java
 MessageWatch chat = messages.watch();
 messages.command("login secret");
-StyledText welcome = chat.received("Welcome back", Duration.ofSeconds(10));
+Text welcome = chat.received("Welcome back", Duration.ofSeconds(10));
 ```
 
 `received` also takes any predicate on the message's plain text, so one wait can require several texts in one

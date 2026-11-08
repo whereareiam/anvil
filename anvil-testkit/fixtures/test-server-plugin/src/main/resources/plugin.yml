@@ -9,7 +9,7 @@ commands:
     usage: /auth
   anvil-fixture:
     description: Exposes behavior observed by Anvil's simulated player
-    usage: /anvil-fixture [ping|locale|gui|item|position|block|entity|kick|transfer]
+    usage: /anvil-fixture [ping|locale|join-locale|gui|item|position|block|entity|kick|transfer]
   anvil-cookie:
     description: Stores a cookie on a player or asks the player for one, from the console
     usage: /anvil-cookie <player> <store <key> <value>|request <key>>

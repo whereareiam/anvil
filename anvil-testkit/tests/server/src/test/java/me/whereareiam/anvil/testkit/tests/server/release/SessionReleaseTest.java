@@ -31,8 +31,13 @@ class SessionReleaseTest {
 		SimulatedPlayer player = server.join("ru_ru");
 
 		player.capability(Messages.class).command("anvil-fixture locale");
-
 		assertEquals("ru_ru", server.reply(player, "anvil:locale:"));
+
+		// From Minecraft 1.20.2 the client sends its settings while it configures, so the server knows the language
+		// when the player joins; before, they follow the join.
+		if (!TestedRelease.isAtLeast("1.20.2")) return;
+		player.capability(Messages.class).command("anvil-fixture join-locale");
+		assertEquals("ru_ru", server.reply(player, "anvil:join-locale:"));
 	}
 
 	@Test

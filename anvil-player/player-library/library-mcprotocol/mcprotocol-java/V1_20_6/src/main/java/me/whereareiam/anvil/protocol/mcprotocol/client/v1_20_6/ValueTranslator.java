@@ -2,7 +2,8 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureRelease;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
@@ -10,7 +11,6 @@ import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TranslatableComponent;
-import net.kyori.adventure.text.event.ClickEvent;
 import org.cloudburstmc.math.vector.Vector3d;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.object.Direction;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Hand;
@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.function.Function;
 
 /**
  * Translates the values that several areas of the protocol share between the Java Edition protocol and the
@@ -46,20 +45,16 @@ public final class ValueTranslator {
 	}
 
 	/**
-	 * Flattens a component of the chain's releases to styled text. Adventure 4.22 moved a click's value from
-	 * {@code value()} to {@code payload()} and Adventure 5 removed {@code value()}, so the caller supplies how its
-	 * release reads it.
+	 * Translates a component of the chain's releases to the text the server sent.
 	 *
-	 * @param component component to flatten
-	 * @param clickValue reads what a click acts on, or {@code null} when it acts on no text
-	 * @return the component as the game shows it
+	 * @param component component to translate
+	 * @param release what the release's Adventure keeps differently
+	 * @return the component as text
 	 */
-	public static @NotNull StyledText styled(
-			@NotNull Component component,
-			@NotNull Function<ClickEvent, @Nullable String> clickValue
-	) {
-		return TEXT.styled(component, clickValue);
+	public static @NotNull Text text(@NotNull Component component, @NotNull AdventureRelease release) {
+		return TEXT.text(component, release);
 	}
+
 
 	/**
 	 * Translates a hand to the library's.
