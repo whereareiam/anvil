@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.chat;
 
 import lombok.Value;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 @Value
 public class ClientboundDisguisedChat implements ClientboundPacket {
 	/**
-	 * The message as plain text.
+	 * The message's content as the game shows it, without the chat type's decoration around it.
 	 */
-	@NotNull String text;
+	@NotNull StyledText text;
 }

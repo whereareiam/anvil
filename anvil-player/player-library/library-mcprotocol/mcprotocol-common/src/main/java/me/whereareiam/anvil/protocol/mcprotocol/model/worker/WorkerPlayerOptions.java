@@ -7,8 +7,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Resolved login of one worker player, grouped as the client login it becomes: who logs in and where to. The
- * client settings are the worker's own. Credentials travel only through private worker stdin.
+ * Resolved login of one worker player, grouped as the client login it becomes: who logs in, in which game language,
+ * and where to. The other client settings are the worker's own. Credentials travel only through private worker stdin.
  */
 @Value
 @Builder
@@ -16,5 +16,6 @@ import org.jetbrains.annotations.Nullable;
 public class WorkerPlayerOptions {
 	@NotNull WorkerProfile profile;
 	@Nullable WorkerCredentials credentials;
+	@NotNull String language;
 	@NotNull WorkerConnection connection;
 }

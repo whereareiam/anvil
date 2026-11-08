@@ -4,6 +4,7 @@ import com.github.steveice10.mc.protocol.data.game.MessageType;
 import com.github.steveice10.mc.protocol.packet.ingame.client.ClientChatPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerChatPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerKeepAlivePacket;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundPlayerChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
@@ -25,12 +26,12 @@ class ChatPacketsTest {
 	void decodesEachMessageTypeAsTheProtocolsChat() {
 		Component joined = Component.translatable("multiplayer.player.joined", Component.text("Alice"));
 
-		assertEquals(ClientboundPlayerChat.unsigned("chat.type.text Alice hello"), packets.decode(new ServerChatPacket(
+		assertEquals(ClientboundPlayerChat.unsigned(StyledText.unstyled("chat.type.text Alice hello")), packets.decode(new ServerChatPacket(
 				Component.translatable("chat.type.text", Component.text("Alice"), Component.text("hello")),
 				MessageType.CHAT, new UUID(0, 1))));
-		assertEquals(new ClientboundSystemChat("multiplayer.player.joined Alice", false),
+		assertEquals(new ClientboundSystemChat(StyledText.unstyled("multiplayer.player.joined Alice"), false),
 				packets.decode(new ServerChatPacket(joined, MessageType.SYSTEM)));
-		assertEquals(new ClientboundSystemChat("anvil:action-bar", true),
+		assertEquals(new ClientboundSystemChat(StyledText.unstyled("anvil:action-bar"), true),
 				packets.decode(new ServerChatPacket(Component.text("anvil:action-bar"), MessageType.NOTIFICATION)));
 	}
 

@@ -10,6 +10,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundCh
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.protocol.java.api.model.chat.MessageSignature;
 import me.whereareiam.anvil.protocol.java.api.model.chat.PackedMessageSignature;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -70,9 +71,9 @@ public final class ChatPackets implements PacketTranslation<Packet> {
 	@Override
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (packet instanceof ClientboundSystemChatPacket chat)
-			return new ClientboundSystemChat(ValueTranslator.plain(chat.getContent()), chat.isOverlay());
+			return new ClientboundSystemChat(ValueTranslator.styled(chat.getContent()), chat.isOverlay());
 		if (packet instanceof ClientboundDisguisedChatPacket chat)
-			return new ClientboundDisguisedChat(ValueTranslator.plain(chat.getMessage()));
+			return new ClientboundDisguisedChat(ValueTranslator.styled(chat.getMessage()));
 		if (packet instanceof ClientboundDeleteChatPacket delete)
 			return new ClientboundDeleteChat(packed(delete.getMessageSignature()));
 		if (!(packet instanceof ClientboundPlayerChatPacket chat)) return null;
@@ -81,7 +82,7 @@ public final class ChatPackets implements PacketTranslation<Packet> {
 		byte[] signature = chat.getMessageSignature();
 
 		return new ClientboundPlayerChat(
-				unsigned == null ? chat.getContent() : ValueTranslator.plain(unsigned),
+				unsigned == null ? StyledText.unstyled(chat.getContent()) : ValueTranslator.styled(unsigned),
 				filterMask(chat.getFilterMask()),
 				signature == null ? null : new MessageSignature(signature),
 				chat.getLastSeenMessages().stream().map(ChatPackets::packed).toList()

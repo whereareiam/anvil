@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.java.worker;
 
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundDisguisedChat;
@@ -28,11 +29,11 @@ class JavaPacketDispatcherTest {
 	@Test
 	void deliversAPacketOnlyToTheListenersOfItsClass() {
 		List<String> received = new ArrayList<>();
-		protocol.listen(ClientboundSystemChat.class, packet -> received.add("first " + packet.getText()));
-		protocol.listen(ClientboundSystemChat.class, packet -> received.add("second " + packet.getText()));
-		protocol.listen(ClientboundPlayerChat.class, packet -> received.add("player " + packet.getText()));
+		protocol.listen(ClientboundSystemChat.class, packet -> received.add("first " + packet.getText().plain()));
+		protocol.listen(ClientboundSystemChat.class, packet -> received.add("second " + packet.getText().plain()));
+		protocol.listen(ClientboundPlayerChat.class, packet -> received.add("player " + packet.getText().plain()));
 
-		protocol.deliver(new ClientboundSystemChat("welcome", false));
+		protocol.deliver(new ClientboundSystemChat(StyledText.unstyled("welcome"), false));
 
 		assertEquals(List.of("first welcome", "second welcome"), received);
 	}
@@ -43,7 +44,7 @@ class JavaPacketDispatcherTest {
 		List<ClientboundSystemChat> open = new ArrayList<>();
 		Subscription subscription = protocol.listen(ClientboundSystemChat.class, closed::add);
 		protocol.listen(ClientboundSystemChat.class, open::add);
-		ClientboundSystemChat message = new ClientboundSystemChat("welcome", false);
+		ClientboundSystemChat message = new ClientboundSystemChat(StyledText.unstyled("welcome"), false);
 
 		subscription.close();
 		protocol.deliver(message);
@@ -59,7 +60,7 @@ class JavaPacketDispatcherTest {
 			throw new IllegalStateException("listener failed");
 		});
 		protocol.listen(ClientboundSystemChat.class, received::add);
-		ClientboundSystemChat message = new ClientboundSystemChat("welcome", false);
+		ClientboundSystemChat message = new ClientboundSystemChat(StyledText.unstyled("welcome"), false);
 
 		protocol.deliver(message);
 
@@ -106,12 +107,12 @@ class JavaPacketDispatcherTest {
 		List<String> received = new ArrayList<>();
 		var view = protocol.scoped(tracked::add);
 
-		view.listen(ClientboundSystemChat.class, packet -> received.add(packet.getText()));
+		view.listen(ClientboundSystemChat.class, packet -> received.add(packet.getText().plain()));
 		view.listenSent(ServerboundChat.class, packet -> received.add(packet.getText()));
 		view.send(new ServerboundChat("sent"));
-		protocol.deliver(new ClientboundSystemChat("received", false));
+		protocol.deliver(new ClientboundSystemChat(StyledText.unstyled("received"), false));
 		tracked.forEach(Subscription::close);
-		protocol.deliver(new ClientboundSystemChat("after close", false));
+		protocol.deliver(new ClientboundSystemChat(StyledText.unstyled("after close"), false));
 
 		assertEquals(2, tracked.size());
 		assertEquals(List.of("sent", "received"), received);

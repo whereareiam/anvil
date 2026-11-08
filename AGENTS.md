@@ -59,7 +59,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-capability/capability-process/capability-process-builtin/builtin-<feature>` | Process capability family: `<feature>-api` and `<feature>-common` holding the agent-backed provider, independent of simulated players |
 | `anvil-capability/capability-process/capability-process-builtin/builtin-players` | Players family: what one server or proxy knows about the players on it, from its own agent's events, with `players-api` and `players-common` |
 | `anvil-capability/capability-default`                                 | Aggregate of every built-in player and process capability (artifact `default`) |
-| `anvil-player/player-api`                                         | Protocol library providers and releases, player creation/composition, the typed player channel and worker extension contracts, pinned runtime resolution, and optional authentication                       |
+| `anvil-player/player-api`                                         | Protocol library providers and releases, player creation/composition, the typed player channel and worker extension contracts, the styled text a player sees (`model.text`), pinned runtime resolution, and optional authentication                       |
 | `anvil-player/player-common`                                         | Player registration, version selection, authentication compatibility, composition, observations, and resolving a remote's address as the vanilla client does |
 | `anvil-player/player-worker`                                         | Worker runtime kit every library embeds to run worker extensions: `WorkerExtensions`, `NativeSessionBindings`, `WorkerProtocols` and `WorkerOperation` |
 | `anvil-player/player-protocol/protocol-java/protocol-java-api` | Java Edition protocol of simulated players: `JavaProtocol` and the packets, models and types it carries, as release-neutral values |
@@ -147,7 +147,10 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `listenSent` for the packets bindings send, `supports`), which a worker extension gets from
   `PlayerBindingContext.protocol(JavaProtocol.class)`. Packets are immutable values grouped by area under
   `packet.<area>`, one class per game packet in the game's shape; the protocol owns the data types they need
-  (`model.<area>`, enums in `type`) and carries text flattened to plain strings. Where a packet holds NBT, such as a
+  (`model.<area>`, enums in `type`) and carries text flattened to plain strings, except chat, which it carries as
+  `player-api`'s `StyledText` (`protocol.api.model.text`): spans in reading order with their resolved styles, built by
+  `AdventureText.styled` with the click reader each release's chat translation supplies.
+  Where a packet holds NBT, such as a
   dialog or a registry entry, the protocol carries it as `model.nbt` tags (`NbtTag`, `NbtCompound`), never as SNBT
   text, and the feature interprets it: `dialogs-java` reads dialogs, flattens their text components itself and
   keeps custom payloads in the worker, where a click names them by handle. A listener follows the player's current

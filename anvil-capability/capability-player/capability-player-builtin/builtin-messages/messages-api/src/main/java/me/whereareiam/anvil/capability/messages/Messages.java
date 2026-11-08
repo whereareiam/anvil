@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.messages;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.messages.model.ChatLines;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -11,12 +12,14 @@ import java.util.List;
 /**
  * Sends player chat and commands and observes the chat messages the player sees.
  *
- * <p>The history holds every message the player's chat showed, in order and across reconnects, flattened to plain
- * text: player and system chat and, where the protocol has it, disguised chat, by the vanilla client's rules. The
+ * <p>The history holds every message the player's chat showed, in order and across reconnects, as the chat showed
+ * it: player and system chat and, where the protocol has it, disguised chat, by the vanilla client's rules. The
  * client's chat leaves out player chat the server's filter hides completely and every message that arrives while the
  * client has no player: before the server's login, such as while the client configures, and from a return to
  * configuration until the next login. {@link #received(String)} and {@link #watch()} follow this history, and
- * {@link #chatLines()} models what the chat still holds of it.</p>
+ * {@link #chatLines()} models what the chat still holds of it. Waits match a message's plain text and return the
+ * message as {@link StyledText}, whose spans carry the colour, decorations, click and hover text of each part, and
+ * whose {@link StyledText#plain()} is the plain text.</p>
  *
  * <p>Action-bar text is not chat, even when the server sends it as chat; the screen capability follows it with the
  * other action bars. A message the chat left out is not part of the history, but a wait that fails names the matching
@@ -46,16 +49,16 @@ public interface Messages extends PlayerCapability {
 	 *
 	 * @return the messages the chat showed, oldest first
 	 */
-	@NotNull List<String> history();
+	@NotNull List<StyledText> history();
 
 	/**
 	 * Waits, using the default timeout, for a message containing the supplied text in the history of what the chat
 	 * showed.
 	 *
 	 * @param text required message content
-	 * @return matching message
+	 * @return the matching message, as the chat shows it
 	 */
-	default @NotNull String received(@NotNull String text) {
+	default @NotNull StyledText received(@NotNull String text) {
 		return received(text, SimulatedPlayer.DEFAULT_TIMEOUT);
 	}
 
@@ -64,9 +67,9 @@ public interface Messages extends PlayerCapability {
 	 *
 	 * @param text required message content
 	 * @param timeout maximum wait
-	 * @return matching message
+	 * @return the matching message, as the chat shows it
 	 */
-	@NotNull String received(@NotNull String text, @NotNull Duration timeout);
+	@NotNull StyledText received(@NotNull String text, @NotNull Duration timeout);
 
 	/**
 	 * Starts following the messages the player's chat shows from now on. Each watch keeps its own position, so several
@@ -82,7 +85,6 @@ public interface Messages extends PlayerCapability {
 	 * @return a watch that starts after the last message the chat showed so far
 	 */
 	@NotNull MessageWatch watch();
-
 
 	/**
 	 * Returns the lines of chat the player could still scroll back to, without waiting: the messages the chat showed

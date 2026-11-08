@@ -1,5 +1,11 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.TextClick;
+import me.whereareiam.anvil.protocol.api.model.text.TextColor;
+import me.whereareiam.anvil.protocol.api.model.text.TextSpan;
+import me.whereareiam.anvil.protocol.api.model.text.TextStyle;
+import me.whereareiam.anvil.protocol.api.type.ClickAction;
 import me.whereareiam.anvil.protocol.java.api.model.chat.MessageSignature;
 import me.whereareiam.anvil.protocol.java.api.model.chat.PackedMessageSignature;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -11,6 +17,9 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.protocol.java.api.type.FilterMaskType;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.geysermc.mcprotocollib.protocol.data.game.chat.ChatFilterType;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundDeleteChatPacket;
@@ -40,26 +49,41 @@ class ChatPacketsTest {
 	void decodesSystemChatWithTranslationArgumentsAndChildren() {
 		Component message = Component.translatable("multiplayer.player.joined", Component.text("Alice")).append(Component.text("!"));
 
-		assertEquals(new ClientboundSystemChat("multiplayer.player.joined Alice!", false), packets.decode(new ClientboundSystemChatPacket(message, false)));
+		assertEquals(new ClientboundSystemChat(StyledText.unstyled("multiplayer.player.joined Alice!"), false), packets.decode(new ClientboundSystemChatPacket(message, false)));
+	}
+
+	@Test
+	void decodesSystemChatWithTheStyleOfEachPartAndTheValueOfItsClick() {
+		Component message = Component.text("Welcome to ", NamedTextColor.GRAY)
+				.append(Component.text("Arbor", NamedTextColor.GOLD, TextDecoration.BOLD)
+						.clickEvent(ClickEvent.runCommand("/arbor help")));
+		TextStyle gray = TextStyle.builder().color(TextColor.GRAY).build();
+		TextStyle arbor = gray.toBuilder().color(TextColor.GOLD).bold(true)
+				.click(new TextClick(ClickAction.RUN_COMMAND, "/arbor help"))
+				.build();
+
+		var decoded = (ClientboundSystemChat) packets.decode(new ClientboundSystemChatPacket(message, false));
+
+		assertEquals(List.of(new TextSpan("Welcome to ", gray), new TextSpan("Arbor", arbor)), decoded.getText().getSpans());
 	}
 
 	@Test
 	void decodesOverlaySystemChatShownAboveTheHotbar() {
 		ClientboundSystemChatPacket overlay = new ClientboundSystemChatPacket(Component.text("anvil:action-bar"), true);
 
-		assertEquals(new ClientboundSystemChat("anvil:action-bar", true), packets.decode(overlay));
+		assertEquals(new ClientboundSystemChat(StyledText.unstyled("anvil:action-bar"), true), packets.decode(overlay));
 	}
 
 	@Test
 	void decodesPlayerChatAsItsSignedContentWithoutUnsignedContent() {
-		assertEquals(ClientboundPlayerChat.unsigned("signed hello"), packets.decode(playerChat("signed hello", null)));
+		assertEquals(ClientboundPlayerChat.unsigned(StyledText.unstyled("signed hello")), packets.decode(playerChat("signed hello", null)));
 	}
 
 	@Test
 	void decodesPlayerChatAsItsUnsignedContentWhenTheServerDecoratedIt() {
 		Component decorated = Component.text("decorated ").append(Component.text("hello"));
 
-		assertEquals(ClientboundPlayerChat.unsigned("decorated hello"), packets.decode(playerChat("signed hello", decorated)));
+		assertEquals(ClientboundPlayerChat.unsigned(StyledText.unstyled("decorated hello")), packets.decode(playerChat("signed hello", decorated)));
 	}
 
 	@Test
@@ -70,7 +94,7 @@ class ChatPacketsTest {
 						new org.geysermc.mcprotocollib.protocol.data.game.chat.MessageSignature(-1, signature(9))),
 				null, ChatFilterType.FULLY_FILTERED, 0, Component.text("Alice"), null);
 
-		assertEquals(new ClientboundPlayerChat("hello", FilterMaskType.FULLY_FILTERED, new MessageSignature(signature(7)),
+		assertEquals(new ClientboundPlayerChat(StyledText.unstyled("hello"), FilterMaskType.FULLY_FILTERED, new MessageSignature(signature(7)),
 				List.of(PackedMessageSignature.cached(3), PackedMessageSignature.full(new MessageSignature(signature(9))))),
 				packets.decode(chat));
 	}
@@ -89,7 +113,7 @@ class ChatPacketsTest {
 		ClientboundDisguisedChatPacket disguised = new ClientboundDisguisedChatPacket(Component.text("journey-ready-1"), 1,
 				Component.text("Server"), null);
 
-		assertEquals(new ClientboundDisguisedChat("journey-ready-1"), packets.decode(disguised));
+		assertEquals(new ClientboundDisguisedChat(StyledText.unstyled("journey-ready-1")), packets.decode(disguised));
 	}
 
 	@Test
@@ -98,7 +122,7 @@ class ChatPacketsTest {
 				.append(Component.text(" near ")).append(Component.selector("@p"))
 				.append(Component.score("Alice", "kills")).append(Component.text("!"));
 
-		assertEquals(new ClientboundSystemChat("press key.jump near @p!", false), packets.decode(new ClientboundSystemChatPacket(message, false)));
+		assertEquals(new ClientboundSystemChat(StyledText.unstyled("press key.jump near @p!"), false), packets.decode(new ClientboundSystemChatPacket(message, false)));
 	}
 
 	@Test

@@ -1,5 +1,6 @@
 package external.fixture.java;
 
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -36,9 +37,9 @@ final class EchoServer {
 	 */
 	@NotNull List<ClientboundPacket> answer(@NotNull String player, @NotNull ServerboundPacket packet) {
 		if (packet instanceof ServerboundChat chat)
-			return List.of(ClientboundPlayerChat.unsigned("<" + player + "> " + chat.getText()));
+			return List.of(ClientboundPlayerChat.unsigned(StyledText.unstyled("<" + player + "> " + chat.getText())));
 		if (packet instanceof ServerboundChatCommand command)
-			return List.of(new ClientboundSystemChat("ran /" + command.getCommand(), false));
+			return List.of(new ClientboundSystemChat(StyledText.unstyled("ran /" + command.getCommand()), false));
 
 		return List.of();
 	}

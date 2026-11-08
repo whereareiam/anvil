@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
 import me.whereareiam.anvil.api.type.DisconnectCause;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
@@ -89,7 +90,7 @@ class ClientPacketListenerTest {
 		receive(new ClientboundSystemChatPacket(Component.text("anvil:welcome"), false));
 		receive(new ClientboundKeepAlivePacket(7));
 
-		assertEquals(List.of(new ClientboundSystemChat("anvil:welcome", false)), received);
+		assertEquals(List.of(new ClientboundSystemChat(StyledText.unstyled("anvil:welcome"), false)), received);
 		assertEquals(List.of(), events);
 	}
 

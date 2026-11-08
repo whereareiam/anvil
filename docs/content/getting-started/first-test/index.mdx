@@ -81,7 +81,7 @@ class PlayerJoinTest {
 
 		anvil.processes().server("server").console()
 				.sendCommand("say anvil-first-test");
-		String message = alice.capability(Messages.class).received("anvil-first-test");
+		String message = alice.capability(Messages.class).received("anvil-first-test").plain();
 		assertTrue(message.contains("anvil-first-test"));
 	}
 }

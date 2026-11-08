@@ -16,10 +16,17 @@ import me.whereareiam.anvil.capability.inventory.model.InventoryItem;
 import me.whereareiam.anvil.capability.inventory.model.InventorySnapshot;
 import me.whereareiam.anvil.capability.inventory.model.SlotSelection;
 import me.whereareiam.anvil.capability.inventory.type.InventoryClick;
+import me.whereareiam.anvil.capability.messages.model.ChatMessage;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.TextClick;
+import me.whereareiam.anvil.protocol.api.model.text.TextColor;
+import me.whereareiam.anvil.protocol.api.model.text.TextSpan;
+import me.whereareiam.anvil.protocol.api.model.text.TextStyle;
+import me.whereareiam.anvil.protocol.api.type.ClickAction;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerCredentials;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerEvent;
@@ -64,6 +71,7 @@ class WorkerMessageCodecTest {
 		var options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder().name("Alice").uniqueId(UUID.randomUUID()).build())
 				.credentials(WorkerCredentials.builder().accessToken("private-token").build())
+				.language("ru_ru")
 				.connection(WorkerConnection.builder().host("localhost").port(25565)
 						.virtualHost("lobby.example.test").sourceAddress("127.0.0.2").build())
 				.build();
@@ -115,6 +123,19 @@ class WorkerMessageCodecTest {
 				.build());
 		roundTrip(new PlayerConnectionEvent(true, null, null, new PlayerProfile("Steve_Premium", UUID.randomUUID())));
 		roundTrip(new PlayerConnectionEvent(false, "kicked", DisconnectCause.SERVER, null));
+		roundTrip(new ChatMessage(4, new StyledText(List.of(
+				new TextSpan("Welcome to ", TextStyle.builder().color(TextColor.GRAY).build()),
+				new TextSpan("Arbor", TextStyle.builder()
+						.color(new TextColor(0x12ab34))
+						.bold(true)
+						.italic(true)
+						.font("minecraft:uniform")
+						.insertion("Arbor")
+						.click(new TextClick(ClickAction.RUN_COMMAND, "/arbor help"))
+						.hover(StyledText.unstyled("Open the help"))
+						.build()),
+				new TextSpan("!", TextStyle.builder().click(new TextClick(ClickAction.SHOW_DIALOG, null)).build())
+		))));
 	}
 
 	@Test

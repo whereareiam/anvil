@@ -3,9 +3,9 @@ title: Messages
 description: Send player chat or commands, await a message the player's chat shows, and check what the chat still holds.
 ---
 
-`Messages` sends chat and commands as the connected player and records, as plain text, the chat messages the
-player sees. Install
-the messages unit and its Session dependency, or explicitly select the default capability unit.
+`Messages` sends chat and commands as the connected player and records the chat messages the player sees, with
+the colours, decorations and clicks of their parts. Install the messages unit and its Session dependency, or
+explicitly select the default capability unit.
 
 ## Send and await a response
 
@@ -14,6 +14,7 @@ This fragment belongs in a live test after Alice has connected and joined `serve
 
 ```java
 import me.whereareiam.anvil.capability.messages.Messages;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import java.time.Duration;
 ```
 
@@ -22,8 +23,12 @@ Send a message through the server console and wait for the player's chat to show
 ```java
 Messages messages = alice.capability(Messages.class);
 anvil.processes().server("server").console().sendCommand("say journey-ready-1");
-String response = messages.received("journey-ready-1", Duration.ofSeconds(10));
+StyledText response = messages.received("journey-ready-1", Duration.ofSeconds(10));
+String text = response.plain();
 ```
+
+A wait matches the message's plain text and returns the message as the chat showed it; `plain()` is its text,
+and [its spans](#check-how-a-message-looks) carry the style of each part.
 
 For your own plugin, send its command with `messages.command("your-command arguments")` and wait for
 the reply it documents. Commands accept either a leading slash or no slash. Public chat uses
@@ -33,14 +38,14 @@ use `command(...)` whenever you mean a command, so the step behaves the same on 
 
 ## Read what the chat showed
 
-Each chat message the player's chat shows becomes one plain-text history entry: player chat, system
-messages and, on Minecraft 1.19.4 and later, disguised chat such as `say` from the console. The history
+Each chat message the player's chat shows becomes one history entry: player chat, system messages and, on
+Minecraft 1.19.4 and later, disguised chat such as `say` from the console. The history
 follows the vanilla client's chat, so a message the client drops is not part of it, such as one that
 arrives while the client still configures; a [failed wait names those](#inspect-failures).
 Action-bar text is not chat, even when the server sends it as chat, and neither are titles;
 [Screen](../screen/index.md) records them.
 
-Plain text joins every part of the message in order, because the client's language file is not
+A message's plain text joins every part of the message in order, because the client's language file is not
 available:
 
 | Part | Contributes |
@@ -55,7 +60,43 @@ For example, on Paper or vanilla `1.18.2` a player's chat line arrives as `chat.
 a server or plugin that formats chat itself sends its own text instead. On 1.19.4 and later, a
 player-chat entry holds the message without the sender, `hello`, unless the server replaced its
 content. Match on the text your server or plugin sends rather than on formatting that the client
-would add.
+would add. A plugin that translates its messages for each player sends the text of the player's
+[game language](../../connections/index.md#set-the-games-language), which is `en_us` unless the player declares
+another.
+
+## Check how a message looks
+
+A received message is a `StyledText`: its spans in reading order, each a run of text in one style, with the style
+it inherits from the components around it resolved. Take the span that holds a word and check its style:
+
+```java
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.TextClick;
+import me.whereareiam.anvil.protocol.api.model.text.TextColor;
+import me.whereareiam.anvil.protocol.api.model.text.TextStyle;
+import me.whereareiam.anvil.protocol.api.type.ClickAction;
+
+StyledText welcome = chat.received("Welcome to Arbor", Duration.ofSeconds(10));
+TextStyle arbor = welcome.span("Arbor").orElseThrow().getStyle();
+assertEquals(TextColor.GOLD, arbor.getColor());
+assertTrue(arbor.isBold());
+assertEquals(new TextClick(ClickAction.RUN_COMMAND, "/arbor help"), arbor.getClick());
+```
+
+`span(text)` returns the first span containing the text; text that crosses a change of style is in no span, so
+look up a word that has one style. `getSpans()` lists them all for an exact comparison. A style holds:
+
+| Member | Holds |
+|---|---|
+| `getColor()` | The colour, a `TextColor` such as `TextColor.GOLD` or `new TextColor(0x12ab34)`, or `null` for the chat's default colour |
+| `isBold()`, `isItalic()`, `isUnderlined()`, `isStrikethrough()`, `isObfuscated()` | Each decoration, `false` unless the part or a part around it sets it |
+| `getClick()` | What a click does: a `ClickAction` and its value, such as the command, URL or text; `null` without a click |
+| `getHover()` | The `StyledText` shown on hover, or `null` when the part shows none or shows an item or entity |
+| `getFont()`, `getInsertion()` | The font's key and the text a shift-click inserts, or `null` |
+
+A named colour and the same colour sent as `#rrggbb` are equal. A player chat message holds the content its sender
+or the server sent, without the decoration the game draws around it, such as the sender's name; content the
+server's chat signing protects arrives without styles.
 
 ## Match the intended operation
 
@@ -76,7 +117,7 @@ previous one found:
 ```java
 MessageWatch chat = messages.watch();
 messages.command("login secret");
-String welcome = chat.received("Welcome back", Duration.ofSeconds(10));
+StyledText welcome = chat.received("Welcome back", Duration.ofSeconds(10));
 ```
 
 `received` also takes any predicate on the message's plain text, so one wait can require several texts in one

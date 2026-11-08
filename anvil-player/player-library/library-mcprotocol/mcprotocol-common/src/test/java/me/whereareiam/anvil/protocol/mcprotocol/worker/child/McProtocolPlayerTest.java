@@ -9,6 +9,7 @@ import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
@@ -55,7 +56,7 @@ class McProtocolPlayerTest {
 	private final UUID uuid = UUID.randomUUID();
 
 	@Test
-	void opensSessionsThroughTheClientWithLoginAndClientSettings() {
+	void opensSessionsThroughTheClientWithLoginAndThePlayersLanguage() {
 		try (McProtocolPlayer player = player("token")) {
 			player.connect();
 			player.connect();
@@ -65,7 +66,7 @@ class McProtocolPlayerTest {
 			assertEquals("Alice", login.getProfile().getName());
 			assertEquals(uuid, login.getProfile().getUniqueId());
 			assertEquals("token", login.getCredentials().getAccessToken());
-			assertEquals("en_us", login.getSettings().getLocale());
+			assertEquals("ru_ru", login.getSettings().getLocale());
 			assertEquals(8, login.getSettings().getViewDistance());
 			assertEquals("localhost", login.getConnection().getHost());
 			assertEquals(25565, login.getConnection().getPort());
@@ -185,10 +186,10 @@ class McProtocolPlayerTest {
 			player.rejoin();
 			Object second = client.sessions().get(1);
 
-			client.listener(first).received(first, new ClientboundSystemChat("replaced", false));
-			client.listener(second).received(second, new ClientboundSystemChat("current", false));
+			client.listener(first).received(first, new ClientboundSystemChat(StyledText.unstyled("replaced"), false));
+			client.listener(second).received(second, new ClientboundSystemChat(StyledText.unstyled("current"), false));
 
-			assertEquals(List.of(new ClientboundSystemChat("current", false)), received);
+			assertEquals(List.of(new ClientboundSystemChat(StyledText.unstyled("current"), false)), received);
 		}
 	}
 
@@ -262,14 +263,14 @@ class McProtocolPlayerTest {
 		List<String> received = new ArrayList<>();
 		WorkerExtension<Object> partial = extension("partial", (player, operations) -> {
 			player.protocol(JavaProtocol.class)
-					.listen(ClientboundSystemChat.class, packet -> received.add("partial " + packet.getText()));
+					.listen(ClientboundSystemChat.class, packet -> received.add("partial " + packet.getText().plain()));
 			throw new NoClassDefFoundError("org/example/MissingPacket");
 		});
 		WorkerExtension<Object> listening = extension("listening", (player, operations) -> {
 			JavaProtocol protocol = player.protocol(JavaProtocol.class);
 
 			Subscription subscription = protocol.listen(ClientboundSystemChat.class,
-					packet -> received.add("listening " + packet.getText()));
+					packet -> received.add("listening " + packet.getText().plain()));
 
 			return subscription::close;
 		});
@@ -277,7 +278,7 @@ class McProtocolPlayerTest {
 		try (McProtocolPlayer player = player(null, partial, listening)) {
 			player.connect();
 			Object session = client.sessions().getFirst();
-			client.listener(session).received(session, new ClientboundSystemChat("welcome", false));
+			client.listener(session).received(session, new ClientboundSystemChat(StyledText.unstyled("welcome"), false));
 
 			assertEquals(List.of("listening welcome"), received);
 		}
@@ -286,6 +287,7 @@ class McProtocolPlayerTest {
 	private McProtocolPlayer player(String accessToken, WorkerExtension<?>... extensions) {
 		var options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder().name("Alice").uniqueId(uuid).build())
+				.language("ru_ru")
 				.credentials(accessToken == null ? null : WorkerCredentials.builder().accessToken(accessToken).build())
 				.connection(WorkerConnection.builder().host("localhost").port(25565)
 						.virtualHost("lobby.example.test").sourceAddress("127.0.0.2").build())

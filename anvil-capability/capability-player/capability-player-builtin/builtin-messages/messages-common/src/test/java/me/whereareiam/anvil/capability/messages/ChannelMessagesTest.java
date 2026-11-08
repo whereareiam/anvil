@@ -11,6 +11,12 @@ import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.TextClick;
+import me.whereareiam.anvil.protocol.api.model.text.TextColor;
+import me.whereareiam.anvil.protocol.api.model.text.TextSpan;
+import me.whereareiam.anvil.protocol.api.model.text.TextStyle;
+import me.whereareiam.anvil.protocol.api.type.ClickAction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -66,8 +72,29 @@ class ChannelMessagesTest {
 		channel.publish(MessagesChannel.CHAT_CLEARED, null);
 		show(channel, 1, "anvil:pong");
 
-		assertEquals(List.of("anvil:welcome", "anvil:pong"), messages.history());
-		assertThrows(UnsupportedOperationException.class, () -> messages.history().add("changed"));
+		assertEquals(List.of("anvil:welcome", "anvil:pong"), plain(messages.history()));
+		assertThrows(UnsupportedOperationException.class, () -> messages.history().add(StyledText.unstyled("changed")));
+	}
+
+	@Test
+	void returnsAMatchingMessageAsTheChatShowedIt() {
+		RecordingChannel channel = new RecordingChannel();
+		ChannelMessages messages = new ChannelMessages(channel);
+		MessageWatch chat = messages.watch();
+		TextStyle arbor = TextStyle.builder().color(TextColor.GOLD).bold(true)
+				.click(new TextClick(ClickAction.RUN_COMMAND, "/arbor help"))
+				.build();
+		StyledText welcome = new StyledText(List.of(
+				new TextSpan("Welcome to ", TextStyle.builder().color(TextColor.GRAY).build()),
+				new TextSpan("Arbor", arbor)
+		));
+		channel.publish(MessagesChannel.CHAT_ADDED, new ChatMessage(0, welcome));
+
+		StyledText received = chat.received("Welcome to Arbor", TIMEOUT);
+
+		assertEquals(welcome, received);
+		assertEquals(arbor, received.span("Arbor").orElseThrow().getStyle());
+		assertEquals(welcome, messages.received("Arbor", TIMEOUT));
 	}
 
 	@Test
@@ -92,8 +119,8 @@ class ChannelMessagesTest {
 		show(channel, 1, "anvil:welcome");
 		show(channel, 2, "anvil:pong 2");
 
-		assertEquals("anvil:pong 2", messages.received("pong", TIMEOUT));
-		assertEquals("anvil:welcome", messages.received("welcome"));
+		assertEquals("anvil:pong 2", messages.received("pong", TIMEOUT).plain());
+		assertEquals("anvil:welcome", messages.received("welcome").plain());
 	}
 
 	@Test
@@ -121,12 +148,12 @@ class ChannelMessagesTest {
 		show(channel, 2, "Use /login");
 		show(channel, 3, "Use /login");
 		channel.publish(MessagesChannel.CHAT_DELETED, 3L);
-		assertEquals(List.of("Invalid password", "Use /login", "Use /login"), chat.unread());
-		assertEquals("Use /login", chat.received("/login", TIMEOUT));
-		assertEquals(List.of("Use /login"), chat.unread());
-		assertEquals("Use /login", chat.received("/login", TIMEOUT));
+		assertEquals(List.of("Invalid password", "Use /login", "Use /login"), plain(chat.unread()));
+		assertEquals("Use /login", chat.received("/login", TIMEOUT).plain());
+		assertEquals(List.of("Use /login"), plain(chat.unread()));
+		assertEquals("Use /login", chat.received("/login", TIMEOUT).plain());
 		assertThrows(IllegalStateException.class, () -> chat.received("/login", TIMEOUT));
-		assertEquals(List.of(), messages.watch().unread());
+		assertEquals(List.of(), plain(messages.watch().unread()));
 	}
 
 	@Test
@@ -142,7 +169,7 @@ class ChannelMessagesTest {
 
 		show(channel, 1, "Invalid code");
 		assertTrue(invalid.met());
-		assertEquals("Invalid code", chat.received(text -> text.contains("Invalid code"), TIMEOUT));
+		assertEquals("Invalid code", chat.received(text -> text.contains("Invalid code"), TIMEOUT).plain());
 	}
 
 	@Test
@@ -190,11 +217,11 @@ class ChannelMessagesTest {
 		chat.received("/register", TIMEOUT);
 		assertEquals("Player did not see a matching message in chat", assertThrows(IllegalStateException.class,
 				() -> chat.received("/register", TIMEOUT)).getMessage());
-		assertEquals(List.of("Use /register"), messages.history());
+		assertEquals(List.of("Use /register"), plain(messages.history()));
 	}
 
 	private static void show(RecordingChannel channel, long id, String text) {
-		channel.publish(MessagesChannel.CHAT_ADDED, new ChatMessage(id, text));
+		channel.publish(MessagesChannel.CHAT_ADDED, new ChatMessage(id, StyledText.unstyled(text)));
 	}
 
 	private static void drop(RecordingChannel channel, String text, ChatDropReason reason) {
@@ -237,5 +264,9 @@ class ChannelMessagesTest {
 		public @NotNull Set<String> installedCapabilities() {
 			return Set.of(MessagesChannel.ID);
 		}
+	}
+
+	private static List<String> plain(List<StyledText> messages) {
+		return messages.stream().map(StyledText::plain).toList();
 	}
 }

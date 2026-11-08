@@ -184,6 +184,26 @@ selects it for one player, overriding `AnvilScenario.protocolLibrary(...)` and t
 `protocolLibrary`. Without a declaration, Anvil uses the installed library with the strongest support
 for the version and refuses a tie.
 
+## Set the game's language
+
+A player's game reports its language to the server at login, in its client information, and a server or plugin
+that translates its messages for each player picks the player's language by it. Every player reports `en_us`
+unless it declares another Minecraft language code through `PlayerOptions.language(...)`:
+
+```java
+var ivan = anvil.players().create(PlayerOptions.builder()
+		.name("Ivan")
+		.language("ru_ru")
+		.build());
+```
+
+Once Ivan has connected, the server sees `ru_ru` as his locale, for example in Paper's `Player.getLocale()`, and
+a plugin that translates per player sends him its Russian text, which
+[Messages](../capabilities/messages/index.md) records as it arrives. A code that is not shaped like the game's
+language codes, lowercase letters with an optional region such as `pt_br` or `zlm_arab`, fails when the player
+is created. The game's own translations, such as vanilla join messages, still arrive as translation keys,
+because the server leaves them to the client's language files.
+
 ## Use an online account deliberately
 
 Offline authentication is the default. An online player requires a configured private authentication

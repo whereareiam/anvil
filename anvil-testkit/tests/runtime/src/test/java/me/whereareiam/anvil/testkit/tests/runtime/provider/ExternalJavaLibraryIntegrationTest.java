@@ -59,8 +59,8 @@ class ExternalJavaLibraryIntegrationTest {
 			messages.chat("hello");
 			messages.command("anvil ping");
 
-			assertEquals("<Alice> hello", messages.received("<Alice> hello"));
-			assertEquals("ran /anvil ping", messages.received("ran /anvil ping"));
+			assertEquals("<Alice> hello", messages.received("<Alice> hello").plain());
+			assertEquals("ran /anvil ping", messages.received("ran /anvil ping").plain());
 			session.disconnect();
 			session.disconnected();
 			assertFalse(session.state().connected());

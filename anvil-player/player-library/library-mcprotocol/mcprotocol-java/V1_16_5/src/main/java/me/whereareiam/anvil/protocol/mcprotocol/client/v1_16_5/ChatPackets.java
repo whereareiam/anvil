@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5;
 import com.github.steveice10.mc.protocol.packet.ingame.client.ClientChatPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerChatPacket;
 import com.github.steveice10.packetlib.packet.Packet;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -36,7 +37,7 @@ public final class ChatPackets implements PacketTranslation<Packet> {
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (!(packet instanceof ServerChatPacket chat)) return null;
 
-		String text = ValueTranslator.plain(chat.getMessage());
+		StyledText text = ValueTranslator.styled(chat.getMessage());
 		return switch (chat.getType()) {
 			case CHAT -> ClientboundPlayerChat.unsigned(text);
 			case SYSTEM -> new ClientboundSystemChat(text, false);
