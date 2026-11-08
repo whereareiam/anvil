@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.java.api.model.chat.MessageSignature;
 import me.whereareiam.anvil.protocol.java.api.model.chat.PackedMessageSignature;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
@@ -13,9 +13,9 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.protocol.java.api.type.FilterMaskType;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureRelease;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.chat.ChatFilterType;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundDeleteChatPacket;
@@ -32,7 +32,7 @@ import java.util.Set;
  * Chat of the MCProtocolLib releases from 1.20.5 on: system, player and disguised messages and the server's deletions
  * in, chat and commands out.
  * The player sends chat unsigned, as a client without a profile key does; each release's {@code ChatPackets} builds
- * the chat packet, whose fields change between releases, and reads a click's value, which Adventure 4.22 moved.
+ * the chat packet, whose fields change between releases, and supplies what its Adventure keeps differently.
  */
 public abstract class ChatTranslation implements PacketTranslation<Packet> {
 	/**
@@ -67,9 +67,9 @@ public abstract class ChatTranslation implements PacketTranslation<Packet> {
 	@Override
 	public final @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (packet instanceof ClientboundSystemChatPacket chat)
-			return new ClientboundSystemChat(styled(chat.getContent()), chat.isOverlay());
+			return new ClientboundSystemChat(text(chat.getContent()), chat.isOverlay());
 		if (packet instanceof ClientboundDisguisedChatPacket chat)
-			return new ClientboundDisguisedChat(styled(chat.getMessage()));
+			return new ClientboundDisguisedChat(text(chat.getMessage()));
 		if (packet instanceof ClientboundDeleteChatPacket delete)
 			return new ClientboundDeleteChat(packed(delete.getMessageSignature()));
 		if (!(packet instanceof ClientboundPlayerChatPacket chat)) return null;
@@ -78,15 +78,15 @@ public abstract class ChatTranslation implements PacketTranslation<Packet> {
 		byte[] signature = chat.getMessageSignature();
 
 		return new ClientboundPlayerChat(
-				unsigned == null ? StyledText.unstyled(chat.getContent()) : styled(unsigned),
+				unsigned == null ? Text.literal(chat.getContent()) : text(unsigned),
 				filterMask(chat.getFilterMask()),
 				signature == null ? null : new MessageSignature(signature),
 				chat.getLastSeenMessages().stream().map(ChatTranslation::packed).toList()
 		);
 	}
 
-	private StyledText styled(Component component) {
-		return ValueTranslator.styled(component, this::clickValue);
+	private Text text(Component component) {
+		return ValueTranslator.text(component, adventure());
 	}
 
 	/**
@@ -125,10 +125,9 @@ public abstract class ChatTranslation implements PacketTranslation<Packet> {
 	protected abstract @NotNull Packet chat(@NotNull ServerboundChat chat);
 
 	/**
-	 * Reads what a click acts on as the release's Adventure keeps it.
+	 * Returns what the release's Adventure keeps differently, such as how it reads a click's value.
 	 *
-	 * @param click the click of a received component
-	 * @return the URL, command, text, page or identifier the click acts on, or {@code null} when it acts on no text
+	 * @return the release's Adventure
 	 */
-	protected abstract @Nullable String clickValue(@NotNull ClickEvent click);
+	protected abstract @NotNull AdventureRelease adventure();
 }

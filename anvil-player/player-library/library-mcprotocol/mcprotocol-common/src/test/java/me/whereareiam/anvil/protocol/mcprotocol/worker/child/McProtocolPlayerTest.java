@@ -9,7 +9,7 @@ import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
@@ -186,10 +186,10 @@ class McProtocolPlayerTest {
 			player.rejoin();
 			Object second = client.sessions().get(1);
 
-			client.listener(first).received(first, new ClientboundSystemChat(StyledText.unstyled("replaced"), false));
-			client.listener(second).received(second, new ClientboundSystemChat(StyledText.unstyled("current"), false));
+			client.listener(first).received(first, new ClientboundSystemChat(Text.literal("replaced"), false));
+			client.listener(second).received(second, new ClientboundSystemChat(Text.literal("current"), false));
 
-			assertEquals(List.of(new ClientboundSystemChat(StyledText.unstyled("current"), false)), received);
+			assertEquals(List.of(new ClientboundSystemChat(Text.literal("current"), false)), received);
 		}
 	}
 
@@ -278,7 +278,7 @@ class McProtocolPlayerTest {
 		try (McProtocolPlayer player = player(null, partial, listening)) {
 			player.connect();
 			Object session = client.sessions().getFirst();
-			client.listener(session).received(session, new ClientboundSystemChat(StyledText.unstyled("welcome"), false));
+			client.listener(session).received(session, new ClientboundSystemChat(Text.literal("welcome"), false));
 
 			assertEquals(List.of("listening welcome"), received);
 		}

@@ -4,7 +4,7 @@ import lombok.Value;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * One run of {@link StyledText}: text the game draws in one style.
+ * One run of what a player sees of a {@link Text}: text the game draws in one style.
  */
 @Value
 public class TextSpan {
@@ -15,5 +15,5 @@ public class TextSpan {
 	/**
 	 * The style the game draws the text in, with everything it inherits resolved.
 	 */
-	@NotNull TextStyle style;
+	@NotNull SpanStyle style;
 }

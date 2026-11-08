@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.chat;
 
 import lombok.Value;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.java.api.model.chat.MessageSignature;
 import me.whereareiam.anvil.protocol.java.api.model.chat.PackedMessageSignature;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
@@ -21,7 +21,7 @@ public class ClientboundPlayerChat implements ClientboundPacket {
 	 * The message as the game shows it, without the chat type's decoration around it: the server's unsigned
 	 * replacement when it sent one, otherwise the signed content, which is unstyled.
 	 */
-	@NotNull StyledText text;
+	@NotNull Text text;
 	/**
 	 * How much of the message the server's text filter hides.
 	 */
@@ -45,7 +45,7 @@ public class ClientboundPlayerChat implements ClientboundPacket {
 	 * @param lastSeen the signatures the sender had seen, oldest first
 	 */
 	public ClientboundPlayerChat(
-			@NotNull StyledText text,
+			@NotNull Text text,
 			@NotNull FilterMaskType filterMask,
 			@Nullable MessageSignature signature,
 			@NotNull List<PackedMessageSignature> lastSeen
@@ -62,7 +62,7 @@ public class ClientboundPlayerChat implements ClientboundPacket {
 	 * @param text the message as the game shows it
 	 * @return the message
 	 */
-	public static @NotNull ClientboundPlayerChat unsigned(@NotNull StyledText text) {
+	public static @NotNull ClientboundPlayerChat unsigned(@NotNull Text text) {
 		return new ClientboundPlayerChat(text, FilterMaskType.PASS_THROUGH, null, List.of());
 	}
 }

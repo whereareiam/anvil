@@ -1,66 +1,65 @@
 package me.whereareiam.anvil.protocol.api.model.text;
 
 import lombok.Builder;
+import lombok.Singular;
 import lombok.Value;
+import me.whereareiam.anvil.protocol.api.model.text.click.TextClick;
+import me.whereareiam.anvil.protocol.api.model.text.hover.TextHover;
+import me.whereareiam.anvil.protocol.api.type.TextDecoration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
+
 /**
- * The style one {@link TextSpan} is drawn in, with what it inherits from the components around it resolved: a
- * decoration nobody sets is off, and a colour, font, insertion, click or hover nobody sets is {@code null}, which the
- * game draws in its defaults, such as white chat text.
+ * The style one {@link Text} component sets, as the server sent it. What it leaves unset, a {@code null} member or a
+ * decoration missing from {@link #getDecorations()}, the component inherits from its parent; {@link SpanStyle} is the
+ * style with everything inherited resolved.
  *
  * <pre>{@code
- * TextStyle style = TextStyle.builder().color(TextColor.GOLD).bold(true).build();
+ * TextStyle style = TextStyle.builder()
+ *         .color(TextColor.GOLD)
+ *         .decoration(TextDecoration.BOLD, true)
+ *         .click(new RunCommandClick("/arbor help"))
+ *         .build();
  * }</pre>
  */
 @Value
 @Builder(toBuilder = true)
 public class TextStyle {
 	/**
-	 * The style of text nothing styles.
+	 * The style of a component that sets nothing.
 	 */
 	public static final TextStyle NONE = TextStyle.builder().build();
 
 	/**
-	 * The text's colour, or {@code null} for the game's default colour of where the text is shown.
+	 * The text's colour, or {@code null} to inherit it.
 	 */
 	@Nullable TextColor color;
 	/**
-	 * Whether the text is bold.
+	 * The colour of the text's shadow, from Minecraft 1.21.4, or {@code null} to inherit it.
 	 */
-	boolean bold;
+	@Nullable ShadowColor shadowColor;
 	/**
-	 * Whether the text is italic.
+	 * The decorations the component turns on ({@code true}) or off ({@code false}); one it does not name is inherited.
 	 */
-	boolean italic;
+	@NotNull
+	@Singular
+	Map<TextDecoration, Boolean> decorations;
 	/**
-	 * Whether the text is underlined.
-	 */
-	boolean underlined;
-	/**
-	 * Whether the text is struck through.
-	 */
-	boolean strikethrough;
-	/**
-	 * Whether the text is obfuscated, drawn as changing random characters.
-	 */
-	boolean obfuscated;
-	/**
-	 * The resource key of the text's font, such as {@code minecraft:uniform}, or {@code null} for the default font.
+	 * The resource key of the text's font, such as {@code minecraft:uniform}, or {@code null} to inherit it.
 	 */
 	@Nullable String font;
 	/**
-	 * Text a shift-click inserts into the chat input, or {@code null} when a shift-click inserts nothing.
+	 * Text a shift-click inserts into the chat input, or {@code null} to inherit it.
 	 */
 	@Nullable String insertion;
 	/**
-	 * What a click on the text does, or {@code null} when a click does nothing.
+	 * What a click on the text does, or {@code null} to inherit it.
 	 */
 	@Nullable TextClick click;
 	/**
-	 * Text shown while the pointer is over the text, or {@code null} when the text shows none. Only text is modelled;
-	 * an item or entity the server shows instead leaves it {@code null}.
+	 * What the game shows while the pointer is over the text, or {@code null} to inherit it.
 	 */
-	@Nullable StyledText hover;
+	@Nullable TextHover hover;
 }

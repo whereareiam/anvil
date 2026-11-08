@@ -4,7 +4,8 @@ import com.github.steveice10.mc.protocol.data.game.MessageType;
 import com.github.steveice10.mc.protocol.packet.ingame.client.ClientChatPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerChatPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerKeepAlivePacket;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.protocol.api.model.text.content.TranslatedContent;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundPlayerChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
@@ -12,6 +13,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -26,12 +28,16 @@ class ChatPacketsTest {
 	void decodesEachMessageTypeAsTheProtocolsChat() {
 		Component joined = Component.translatable("multiplayer.player.joined", Component.text("Alice"));
 
-		assertEquals(ClientboundPlayerChat.unsigned(StyledText.unstyled("chat.type.text Alice hello")), packets.decode(new ServerChatPacket(
+		assertEquals(ClientboundPlayerChat.unsigned(Text.builder()
+				.content(new TranslatedContent("chat.type.text", null, List.of(Text.literal("Alice"), Text.literal("hello"))))
+				.build()), packets.decode(new ServerChatPacket(
 				Component.translatable("chat.type.text", Component.text("Alice"), Component.text("hello")),
 				MessageType.CHAT, new UUID(0, 1))));
-		assertEquals(new ClientboundSystemChat(StyledText.unstyled("multiplayer.player.joined Alice"), false),
+		assertEquals(new ClientboundSystemChat(Text.builder()
+				.content(new TranslatedContent("multiplayer.player.joined", null, List.of(Text.literal("Alice"))))
+				.build(), false),
 				packets.decode(new ServerChatPacket(joined, MessageType.SYSTEM)));
-		assertEquals(new ClientboundSystemChat(StyledText.unstyled("anvil:action-bar"), true),
+		assertEquals(new ClientboundSystemChat(Text.literal("anvil:action-bar"), true),
 				packets.decode(new ServerChatPacket(Component.text("anvil:action-bar"), MessageType.NOTIFICATION)));
 	}
 

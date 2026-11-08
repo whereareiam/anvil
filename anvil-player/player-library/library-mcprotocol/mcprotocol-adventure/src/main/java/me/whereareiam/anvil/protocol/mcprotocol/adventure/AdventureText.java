@@ -1,15 +1,37 @@
 package me.whereareiam.anvil.protocol.mcprotocol.adventure;
 
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
-import me.whereareiam.anvil.protocol.api.model.text.TextClick;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.api.model.text.TextColor;
-import me.whereareiam.anvil.protocol.api.model.text.TextSpan;
 import me.whereareiam.anvil.protocol.api.model.text.TextStyle;
-import me.whereareiam.anvil.protocol.api.type.ClickAction;
+import me.whereareiam.anvil.protocol.api.model.text.click.ChangePageClick;
+import me.whereareiam.anvil.protocol.api.model.text.click.CopyToClipboardClick;
+import me.whereareiam.anvil.protocol.api.model.text.click.CustomClick;
+import me.whereareiam.anvil.protocol.api.model.text.click.OpenFileClick;
+import me.whereareiam.anvil.protocol.api.model.text.click.OpenUrlClick;
+import me.whereareiam.anvil.protocol.api.model.text.click.RunCommandClick;
+import me.whereareiam.anvil.protocol.api.model.text.click.ShowDialogClick;
+import me.whereareiam.anvil.protocol.api.model.text.click.SuggestCommandClick;
+import me.whereareiam.anvil.protocol.api.model.text.click.TextClick;
+import me.whereareiam.anvil.protocol.api.model.text.content.KeybindContent;
+import me.whereareiam.anvil.protocol.api.model.text.content.LiteralContent;
+import me.whereareiam.anvil.protocol.api.model.text.content.NbtContent;
+import me.whereareiam.anvil.protocol.api.model.text.content.ScoreContent;
+import me.whereareiam.anvil.protocol.api.model.text.content.SelectorContent;
+import me.whereareiam.anvil.protocol.api.model.text.content.TextContent;
+import me.whereareiam.anvil.protocol.api.model.text.content.TranslatedContent;
+import me.whereareiam.anvil.protocol.api.model.text.hover.ShowEntityHover;
+import me.whereareiam.anvil.protocol.api.model.text.hover.ShowItemHover;
+import me.whereareiam.anvil.protocol.api.model.text.hover.ShowTextHover;
+import me.whereareiam.anvil.protocol.api.model.text.hover.TextHover;
+import me.whereareiam.anvil.protocol.api.type.NbtSource;
+import net.kyori.adventure.text.BlockNBTComponent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
+import net.kyori.adventure.text.EntityNBTComponent;
 import net.kyori.adventure.text.KeybindComponent;
+import net.kyori.adventure.text.ScoreComponent;
 import net.kyori.adventure.text.SelectorComponent;
+import net.kyori.adventure.text.StorageNBTComponent;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -19,29 +41,27 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Translates the Adventure components of MCProtocolLib releases to the text the Java Edition protocol carries: plain
- * text, or {@link StyledText} whose spans carry the style each part inherits. Text appears as written, keybinds and
- * selectors as their names, and a translation as its key followed by each argument, separated by spaces, since a
- * client without the game's language files cannot translate it.
+ * text, or the {@link Text} the server sent, with every component's content, style and children. Plain text joins the
+ * text as written, keybinds and selectors as their names, and a translation as its key followed by each argument,
+ * separated by spaces, since a client without the game's language files cannot translate it.
  *
  * <p>Only segments of releases whose components are Adventure's use it; Adventure comes from the release's own
  * closure. Adventure 4.15 added a translation's {@code arguments()} and Adventure 5 removed its {@code args()}, so the
  * earliest segment of each chain creates the text with the accessor its releases share, which
- * {@code checkSegmentLinkage} verifies. A click's value moved the same way, from {@code value()} to Adventure 4.22's
- * {@code payload()}, so the segment that styles text supplies how its releases read it. Everything else calls only
- * Adventure API that has not changed since Adventure 4.0.</p>
+ * {@code checkSegmentLinkage} verifies. What else moved, such as a click's value or the shadow colour, the segment
+ * supplies as an {@link AdventureRelease}. Everything here calls only Adventure API that has not changed since
+ * Adventure 4.0.</p>
  *
  * <pre>{@code
  * private static final AdventureText TEXT = new AdventureText(TranslatableComponent::arguments);
  *
  * String reason = TEXT.plain(disconnect.getReason());
- * StyledText message = TEXT.styled(chat.getContent(), ClickEvent::value);
+ * Text message = TEXT.text(chat.getContent(), new ReleaseAdventure());
  * }</pre>
  */
 public final class AdventureText {
@@ -64,123 +84,141 @@ public final class AdventureText {
 	 * @return the component as plain text
 	 */
 	public @NotNull String plain(@NotNull Component component) {
-		List<TextSpan> spans = new ArrayList<>();
-		append(component, TextStyle.NONE, null, spans);
+		StringBuilder text = new StringBuilder();
+		append(component, text);
 
-		return spans.stream().map(TextSpan::getText).collect(Collectors.joining());
+		return text.toString();
 	}
 
-	/**
-	 * Flattens a component with its children to spans in reading order, each with the style it inherits resolved;
-	 * neighbouring parts of one style become one span. Text shown on hover is styled on its own, as the game draws it.
-	 *
-	 * @param component component to flatten
-	 * @param clickValue reads what a click acts on, {@code ClickEvent::value} before Adventure 4.22 and the click's
-	 * {@code payload()} from it on; {@code null} when the click's payload is no text, such as a dialog
-	 * @return the component as styled text
-	 */
-	public @NotNull StyledText styled(
-			@NotNull Component component,
-			@NotNull Function<ClickEvent, @Nullable String> clickValue
-	) {
-		List<TextSpan> spans = new ArrayList<>();
-		append(component, TextStyle.NONE, clickValue, spans);
-
-		return new StyledText(spans);
-	}
-
-	/**
-	 * Appends a component's own text and then its children's. Without a click reader the text stays unstyled, so
-	 * flattening to plain text reads no style.
-	 */
-	private void append(
-			Component component,
-			TextStyle inherited,
-			@Nullable Function<ClickEvent, String> clickValue,
-			List<TextSpan> spans
-	) {
-		TextStyle style = clickValue == null ? inherited : resolve(component.style(), inherited, clickValue);
-		if (component instanceof TextComponent value) add(value.content(), style, spans);
-		if (component instanceof KeybindComponent value) add(value.keybind(), style, spans);
-		if (component instanceof SelectorComponent value) add(value.pattern(), style, spans);
+	private void append(Component component, StringBuilder text) {
+		if (component instanceof TextComponent value) text.append(value.content());
+		if (component instanceof KeybindComponent value) text.append(value.keybind());
+		if (component instanceof SelectorComponent value) text.append(value.pattern());
 		if (component instanceof TranslatableComponent value) {
-			add(value.key(), style, spans);
+			text.append(value.key());
 			for (ComponentLike argument : arguments.apply(value)) {
-				add(" ", style, spans);
-				append(argument.asComponent(), style, clickValue, spans);
+				text.append(' ');
+				append(argument.asComponent(), text);
 			}
 		}
-		for (Component child : component.children()) append(child, style, clickValue, spans);
+		for (Component child : component.children()) append(child, text);
 	}
 
 	/**
-	 * Adds text to the spans, continuing the last span when it has the same style, so neighbouring spans always
-	 * differ in style.
+	 * Translates a component with its children, keeping the content, style and children of each.
+	 *
+	 * @param component component to translate
+	 * @param release what the release's Adventure keeps differently
+	 * @return the component as text
+	 * @throws IllegalArgumentException when the component is of a kind neither Adventure 4.0 nor the release has
 	 */
-	private static void add(String text, TextStyle style, List<TextSpan> spans) {
-		if (text.isEmpty()) return;
+	public @NotNull Text text(@NotNull Component component, @NotNull AdventureRelease release) {
+		return Text.builder()
+				.content(content(component, release))
+				.style(style(component.style(), release))
+				.children(component.children().stream().map(child -> text(child, release)).toList())
+				.build();
+	}
 
-		TextSpan last = spans.isEmpty() ? null : spans.getLast();
-		if (last != null && last.getStyle().equals(style)) {
-			spans.set(spans.size() - 1, new TextSpan(last.getText() + text, style));
-			return;
+	private TextContent content(Component component, AdventureRelease release) {
+		if (component instanceof TextComponent value) return new LiteralContent(value.content());
+		if (component instanceof TranslatableComponent value)
+			return new TranslatedContent(value.key(), release.fallback(value), arguments.apply(value).stream()
+					.map(argument -> text(argument.asComponent(), release))
+					.toList());
+		if (component instanceof KeybindComponent value) return new KeybindContent(value.keybind());
+		if (component instanceof SelectorComponent value)
+			return new SelectorContent(value.pattern(), optional(release.separator(value), release));
+		if (component instanceof ScoreComponent value) return new ScoreContent(value.name(), value.objective());
+		if (component instanceof BlockNBTComponent value)
+			return nbt(value.nbtPath(), value.interpret(), release.separator(value), NbtSource.BLOCK, value.pos().asString(), release);
+		if (component instanceof EntityNBTComponent value)
+			return nbt(value.nbtPath(), value.interpret(), release.separator(value), NbtSource.ENTITY, value.selector(), release);
+		if (component instanceof StorageNBTComponent value)
+			return nbt(value.nbtPath(), value.interpret(), release.separator(value), NbtSource.STORAGE, value.storage().asString(), release);
+
+		TextContent added = release.content(component);
+		if (added == null) throw new IllegalArgumentException("Unknown text component " + component.getClass().getName());
+
+		return added;
+	}
+
+	private NbtContent nbt(
+			String path,
+			boolean interpret,
+			@Nullable Component separator,
+			NbtSource source,
+			String target,
+			AdventureRelease release
+	) {
+		return new NbtContent(path, interpret, optional(separator, release), source, target);
+	}
+
+	private @Nullable Text optional(@Nullable Component component, AdventureRelease release) {
+		return component == null ? null : text(component, release);
+	}
+
+	private TextStyle style(Style style, AdventureRelease release) {
+		TextStyle.TextStyleBuilder sent = TextStyle.builder()
+				.color(style.color() == null ? null : new TextColor(style.color().value()))
+				.shadowColor(release.shadowColor(style))
+				.font(style.font() == null ? null : style.font().asString())
+				.insertion(style.insertion())
+				.click(style.clickEvent() == null ? null : click(style.clickEvent(), release))
+				.hover(style.hoverEvent() == null ? null : hover(style.hoverEvent(), release));
+		for (TextDecoration decoration : TextDecoration.values()) {
+			TextDecoration.State state = style.decoration(decoration);
+			if (state != TextDecoration.State.NOT_SET)
+				sent.decoration(decoration(decoration), state == TextDecoration.State.TRUE);
 		}
-		spans.add(new TextSpan(text, style));
+
+		return sent.build();
+	}
+
+	private static me.whereareiam.anvil.protocol.api.type.TextDecoration decoration(TextDecoration decoration) {
+		return switch (decoration) {
+			case OBFUSCATED -> me.whereareiam.anvil.protocol.api.type.TextDecoration.OBFUSCATED;
+			case BOLD -> me.whereareiam.anvil.protocol.api.type.TextDecoration.BOLD;
+			case STRIKETHROUGH -> me.whereareiam.anvil.protocol.api.type.TextDecoration.STRIKETHROUGH;
+			case UNDERLINED -> me.whereareiam.anvil.protocol.api.type.TextDecoration.UNDERLINED;
+			case ITALIC -> me.whereareiam.anvil.protocol.api.type.TextDecoration.ITALIC;
+		};
 	}
 
 	/**
-	 * Resolves a component's style against the style it inherits: what the component sets wins, what it leaves unset
-	 * is inherited.
+	 * Reads a click by the action's name, which Adventure keeps while its action type changes, and the value the
+	 * release reads; an action the protocol does not know leaves the text without a click.
 	 */
-	private TextStyle resolve(Style style, TextStyle inherited, Function<ClickEvent, String> clickValue) {
-		TextStyle.TextStyleBuilder resolved = inherited.toBuilder()
-				.bold(decorated(style, TextDecoration.BOLD, inherited.isBold()))
-				.italic(decorated(style, TextDecoration.ITALIC, inherited.isItalic()))
-				.underlined(decorated(style, TextDecoration.UNDERLINED, inherited.isUnderlined()))
-				.strikethrough(decorated(style, TextDecoration.STRIKETHROUGH, inherited.isStrikethrough()))
-				.obfuscated(decorated(style, TextDecoration.OBFUSCATED, inherited.isObfuscated()));
-		if (style.color() != null) resolved.color(new TextColor(style.color().value()));
-		if (style.font() != null) resolved.font(style.font().asString());
-		if (style.insertion() != null) resolved.insertion(style.insertion());
-		if (style.clickEvent() != null) resolved.click(click(style.clickEvent(), clickValue));
-		if (style.hoverEvent() != null) resolved.hover(hover(style.hoverEvent(), clickValue));
+	private static @Nullable TextClick click(ClickEvent click, AdventureRelease release) {
+		String action = ClickEvent.Action.NAMES.key(click.action());
+		if (action == null) return null;
 
-		return resolved.build();
-	}
-
-	private static boolean decorated(Style style, TextDecoration decoration, boolean inherited) {
-		TextDecoration.State state = style.decoration(decoration);
-		if (state == TextDecoration.State.NOT_SET) return inherited;
-
-		return state == TextDecoration.State.TRUE;
-	}
-
-	/**
-	 * Reads a click by the action's name, which Adventure keeps while its action type changes; an action the protocol
-	 * does not know leaves the text without a click.
-	 */
-	private static @Nullable TextClick click(ClickEvent click, Function<ClickEvent, String> clickValue) {
-		String name = ClickEvent.Action.NAMES.key(click.action());
-		if (name == null) return null;
-
-		ClickAction action = switch (name) {
-			case "open_url" -> ClickAction.OPEN_URL;
-			case "open_file" -> ClickAction.OPEN_FILE;
-			case "run_command" -> ClickAction.RUN_COMMAND;
-			case "suggest_command" -> ClickAction.SUGGEST_COMMAND;
-			case "change_page" -> ClickAction.CHANGE_PAGE;
-			case "copy_to_clipboard" -> ClickAction.COPY_TO_CLIPBOARD;
-			case "show_dialog" -> ClickAction.SHOW_DIALOG;
-			case "custom" -> ClickAction.CUSTOM;
+		String value = release.clickValue(click);
+		return switch (action) {
+			case "open_url" -> new OpenUrlClick(value);
+			case "open_file" -> new OpenFileClick(value);
+			case "run_command" -> new RunCommandClick(value);
+			case "suggest_command" -> new SuggestCommandClick(value);
+			case "change_page" -> new ChangePageClick(Integer.parseInt(value));
+			case "copy_to_clipboard" -> new CopyToClipboardClick(value);
+			case "show_dialog" -> new ShowDialogClick();
+			case "custom" -> new CustomClick(value);
 			default -> null;
 		};
-
-		return action == null ? null : new TextClick(action, clickValue.apply(click));
 	}
 
-	private @Nullable StyledText hover(HoverEvent<?> hover, Function<ClickEvent, String> clickValue) {
-		if (hover.action() != HoverEvent.Action.SHOW_TEXT) return null;
+	private @Nullable TextHover hover(HoverEvent<?> hover, AdventureRelease release) {
+		if (hover.action() == HoverEvent.Action.SHOW_TEXT)
+			return new ShowTextHover(text((Component) hover.value(), release));
+		if (hover.action() == HoverEvent.Action.SHOW_ITEM) {
+			HoverEvent.ShowItem item = (HoverEvent.ShowItem) hover.value();
+			return new ShowItemHover(item.item().asString(), item.count());
+		}
+		if (hover.action() == HoverEvent.Action.SHOW_ENTITY) {
+			HoverEvent.ShowEntity entity = (HoverEvent.ShowEntity) hover.value();
+			return new ShowEntityHover(entity.type().asString(), entity.id(), optional(entity.name(), release));
+		}
 
-		return styled((Component) hover.value(), clickValue);
+		return null;
 	}
 }

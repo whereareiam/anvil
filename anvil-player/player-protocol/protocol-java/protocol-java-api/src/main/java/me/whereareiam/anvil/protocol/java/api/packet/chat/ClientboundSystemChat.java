@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.chat;
 
 import lombok.Value;
-import me.whereareiam.anvil.protocol.api.model.text.StyledText;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,7 +13,7 @@ public class ClientboundSystemChat implements ClientboundPacket {
 	/**
 	 * The message as the game shows it.
 	 */
-	@NotNull StyledText text;
+	@NotNull Text text;
 	/**
 	 * Whether the message is shown above the hotbar instead of in the chat.
 	 */
