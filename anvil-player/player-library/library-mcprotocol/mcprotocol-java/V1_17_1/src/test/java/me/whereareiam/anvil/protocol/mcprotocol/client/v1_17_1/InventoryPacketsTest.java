@@ -11,6 +11,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContai
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.type.ClickType;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.TextTranslator;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -21,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class InventoryPacketsTest {
-	private final InventoryPackets packets = new InventoryPackets();
+	private final InventoryPackets packets = new InventoryPackets(new TextTranslator());
 
 	@Test
 	void reportsContainersWithTheirStateIdsAndCarriedStack() {

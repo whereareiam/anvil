@@ -4,6 +4,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.InventoryTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ValueTranslator;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -22,6 +23,15 @@ import java.util.Map;
  * inventory with a packet of its own and whose clicks describe items as hashed stacks.
  */
 public final class InventoryPackets extends InventoryTranslation {
+	/**
+	 * Creates the inventory translation of the release.
+	 *
+	 * @param text translates the release's text components
+	 */
+	public InventoryPackets(@NotNull ComponentTranslator text) {
+		super(text);
+	}
+
 	@Override
 	protected @Nullable ClientboundPacket decodeSlot(@NotNull Packet packet) {
 		if (packet instanceof ClientboundContainerSetSlotPacket slot)

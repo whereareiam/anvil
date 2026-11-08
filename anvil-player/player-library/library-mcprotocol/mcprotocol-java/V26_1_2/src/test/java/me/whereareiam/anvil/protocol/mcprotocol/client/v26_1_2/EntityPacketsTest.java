@@ -10,6 +10,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntity
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
 import me.whereareiam.anvil.protocol.java.api.type.Relative;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.EntityPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.TextTranslator;
 import net.kyori.adventure.text.Component;
 import org.cloudburstmc.math.vector.Vector3d;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.MetadataTypes;
@@ -33,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * Runs the 1.21.11 entity translation, which this segment reuses, against the packets of MCProtocolLib 26.1.
  */
 class EntityPacketsTest {
-	private final EntityPackets packets = new EntityPackets();
+	private final EntityPackets packets = new EntityPackets(new TextTranslator());
 
 	@Test
 	void decodesASpawnAndTheDataOfADisplayAndAnItemFrameAsIn1_21_11() {

@@ -10,6 +10,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.Serve
 import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.TextTranslator;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -18,7 +19,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class EntityPacketsTest {
-	private final EntityPackets packets = new EntityPackets();
+	private final EntityPackets packets = new EntityPackets(new TextTranslator());
 
 	@Test
 	void decodesTheItemOfAGlowItemFrameAtIndex8AfterTheFrozenTicks() {

@@ -17,6 +17,7 @@ import com.github.steveice10.packetlib.packet.Packet;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -41,6 +42,7 @@ final class ClientPacketListener extends SessionAdapter {
 	private final ClientListener<? super Session> listener;
 	private final PacketTable<Packet> packets;
 	private final ClientAnswers answers;
+	private final ComponentTranslator text;
 	private volatile ClientProfile granted;
 	private volatile boolean authenticationRequired;
 
@@ -66,9 +68,9 @@ final class ClientPacketListener extends SessionAdapter {
 			session.send(new ClientTeleportConfirmPacket(position.getTeleportId()));
 		}
 		if (packet instanceof ServerDisconnectPacket disconnect)
-			listener.disconnected(session, DisconnectCause.SERVER, ValueTranslator.plain(disconnect.getReason()));
+			listener.disconnected(session, DisconnectCause.SERVER, text.translate(disconnect.getReason()).plain());
 		if (packet instanceof LoginDisconnectPacket disconnect)
-			listener.disconnected(session, DisconnectCause.SERVER, ValueTranslator.plain(disconnect.getReason()));
+			listener.disconnected(session, DisconnectCause.SERVER, text.translate(disconnect.getReason()).plain());
 		Packet answer = answers.answer(packet);
 		if (answer != null) session.send(answer);
 

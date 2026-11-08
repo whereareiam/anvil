@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class ScreenPacketsTest {
 	private static final UUID BAR = new UUID(0, 3);
 
-	private final ScreenPackets packets = new ScreenPackets();
+	private final ScreenPackets packets = new ScreenPackets(new TextTranslator());
 
 	@Test
 	void reportsEachActionOfTheTitlePacketAsItsOwnPacket() {

@@ -12,6 +12,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEnt
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.EntityTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ValueTranslator;
 import org.cloudburstmc.math.vector.Vector3d;
@@ -33,9 +34,11 @@ import java.util.Set;
 public abstract class SyncedEntityTranslation extends EntityTranslation {
 	/**
 	 * Creates the translation of one session.
+	 *
+	 * @param text translates the release's text components
 	 */
-	protected SyncedEntityTranslation() {
-		super(EntityDataTable.LAYOUT);
+	protected SyncedEntityTranslation(@NotNull ComponentTranslator text) {
+		super(EntityDataTable.LAYOUT, text);
 	}
 
 	@Override

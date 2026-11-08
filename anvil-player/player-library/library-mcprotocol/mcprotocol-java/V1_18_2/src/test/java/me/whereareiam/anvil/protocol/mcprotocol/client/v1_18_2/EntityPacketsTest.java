@@ -56,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class EntityPacketsTest {
 	private static final UUID STAND = new UUID(0, 7);
 
-	private final EntityPackets packets = new EntityPackets();
+	private final EntityPackets packets = new EntityPackets(new TextTranslator());
 
 	@Test
 	void decodesEachSpawnPacketAsAnAddedEntityWithTheNamespacedType() {

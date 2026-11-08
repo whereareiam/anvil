@@ -21,6 +21,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.protocol.java.api.type.FilterMaskType;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.TextTranslator;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ChatPacketsTest {
-	private final ChatPackets packets = new ChatPackets();
+	private final ChatPackets packets = new ChatPackets(new TextTranslator());
 
 	@Test
 	void decodesSystemChatWithTranslationArgumentsAndChildren() {

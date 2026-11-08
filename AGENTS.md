@@ -66,7 +66,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-player/player-protocol/protocol-java/protocol-java-worker` | Java Edition worker kit: `JavaPacketDispatcher`, the player's `JavaProtocol` over the `JavaConnection` a library implements |
 | `anvil-player/player-library/library-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port and the client segments; owns `mcprotocol-releases.toml` and `pinLibraryReleases`  |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell, and what their translations share: `PacketTranslation`, `PacketTable` and `EntityDataLayout` |
-| `anvil-player/player-library/library-mcprotocol/mcprotocol-adventure`             | `AdventureText` for the segments of releases whose components are Adventure's; each such segment declares it, the earliest segment of a chain creates it with the translation-argument accessor its releases share, and Adventure comes from the release's closure |
+| `anvil-player/player-library/library-mcprotocol/mcprotocol-adventure`             | `ComponentTranslator`, which translates Adventure components to the protocol's `Text` through Adventure API stable since 4.0, for the segments of releases whose components are Adventure's; each chain extends it once as its `TextTranslator` with the accessors its releases' Adventure keeps differently, a later segment whose Adventure moved further replaces that subclass, and Adventure comes from the release's closure |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-common`                | MCProtocolLib library provider, release data, worker host and segment selection, MCProtocolLib-free worker shell with its extension registry and typed transport, and private authentication store                                  |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-java`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-java/V*`             | Client segments `V1_16_5`, `V1_17_1`, `V1_18_2`, `V1_19_4`, `V1_20_6`, `V1_21_1`, `V1_21_11`, `V26_1_2` and `V26_3`, each implementing only `McProtocolClient` from its release key on through an adapter over its chain's `JavaClient` base; `V1_17_1` extends `V1_16_5`, `V1_19_4` extends `V1_18_2`, `V1_21_1` extends `V1_20_6`, `V1_21_11` extends `V1_21_1`, `V26_1_2` extends `V1_21_11` and `V26_3` extends `V26_1_2`, each replacing the base classes that changed |
@@ -149,7 +149,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `packet.<area>`, one class per game packet in the game's shape; the protocol owns the data types they need
   (`model.<area>`, enums in `type`) and carries text flattened to plain strings, except chat, which it carries as
   `player-api`'s `Text` (`protocol.api.model.text`): the component tree the server sent, whose `spans()` resolve what
-  the player sees, built by `AdventureText.text` with the `AdventureRelease` each chain's `ReleaseAdventure` implements.
+  the player sees, translated by the segment's `TextTranslator`.
   Where a packet holds NBT, such as a
   dialog or a registry entry, the protocol carries it as `model.nbt` tags (`NbtTag`, `NbtCompound`), never as SNBT
   text, and the feature interprets it: `dialogs-java` reads dialogs, flattens their text components itself and
@@ -157,8 +157,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   connection.
   Release-specific packet code lives only in the library's client segments: one `PacketTranslation` per area, listed
   by the segment's adapter in `mcprotocol-api`'s `PacketTable`, which alone refuses to send a packet the release
-  cannot carry, with Adventure components flattened by `mcprotocol-adventure`'s `AdventureText` and NBT translated by
-  the segment's one `NbtTranslator`. Each session decodes through a table of its own, so the entity translation can
+  cannot carry, with Adventure components translated by the segment's one `TextTranslator`, which extends
+  `mcprotocol-adventure`'s `ComponentTranslator` and which the segment's adapter hands to every translation that reads
+  text, and NBT translated by the segment's one `NbtTranslator`. Each session decodes through a table of its own, so the entity translation can
   remember the types of the session's entities: entity data is decoded by entity type from the release's
   `EntityDataLayout`, never by guessing from value types. Release quirks stay in the segments: where releases say the
   same thing in different packets, every release reports the current packet (spawns as `ClientboundAddEntity`, the

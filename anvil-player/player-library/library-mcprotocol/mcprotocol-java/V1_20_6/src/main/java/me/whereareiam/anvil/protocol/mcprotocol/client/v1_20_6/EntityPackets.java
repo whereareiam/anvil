@@ -11,6 +11,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEnt
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundTeleportEntityPacket;
@@ -32,8 +33,8 @@ public final class EntityPackets extends EntityTranslation {
 	/**
 	 * Creates the translation.
 	 */
-	public EntityPackets() {
-		super(EntityDataTable.LAYOUT);
+	public EntityPackets(@NotNull ComponentTranslator text) {
+		super(EntityDataTable.LAYOUT, text);
 	}
 
 	@Override

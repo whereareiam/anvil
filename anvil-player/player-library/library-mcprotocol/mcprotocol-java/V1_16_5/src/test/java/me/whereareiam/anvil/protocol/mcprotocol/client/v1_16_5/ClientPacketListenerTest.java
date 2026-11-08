@@ -56,7 +56,7 @@ class ClientPacketListenerTest {
 	private final List<ClientboundPacket> received = new ArrayList<>();
 	private final Session session = session();
 	private final ClientPacketListener listener = new ClientPacketListener(LOGIN, new RecordingListener(),
-			McProtocolClientAdapter.packets(), new ReleaseAnswers());
+			McProtocolClientAdapter.packets(), new ReleaseAnswers(), new TextTranslator());
 
 	@Test
 	void answersTheJoinWithClientSettingsBeforeReportingTheLoginWithTheGrantedProfile() throws Exception {
@@ -123,7 +123,7 @@ class ClientPacketListenerTest {
 				new HandshakePacket(754, "127.0.0.1", 25577, HandshakeIntent.LOGIN));
 
 		new ClientPacketListener(virtual, new RecordingListener(), McProtocolClientAdapter.packets(),
-				new ReleaseAnswers()).packetSending(handshake);
+				new ReleaseAnswers(), new TextTranslator()).packetSending(handshake);
 
 		HandshakePacket announced = assertInstanceOf(HandshakePacket.class, handshake.getPacket());
 		assertEquals("lobby.example.test", announced.getHostname());

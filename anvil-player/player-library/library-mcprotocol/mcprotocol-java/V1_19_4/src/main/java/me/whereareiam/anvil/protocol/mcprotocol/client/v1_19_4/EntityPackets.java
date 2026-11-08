@@ -7,6 +7,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.EntityTranslation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,8 +23,8 @@ public final class EntityPackets extends EntityTranslation {
 	/**
 	 * Creates the translation of the release's entities.
 	 */
-	public EntityPackets() {
-		super(EntityDataTable.LAYOUT);
+	public EntityPackets(@NotNull ComponentTranslator text) {
+		super(EntityDataTable.LAYOUT, text);
 	}
 
 	@Override

@@ -9,6 +9,7 @@ import com.github.steveice10.packetlib.packet.Packet;
 import com.github.steveice10.packetlib.tcp.TcpClientSession;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
@@ -38,6 +39,7 @@ public abstract class JavaClient implements McProtocolClient<Session> {
 	private static final String PATH_SEPARATOR = "/";
 
 	private final ClientAnswers answers;
+	private final ComponentTranslator text;
 	private final Supplier<PacketTable<Packet>> tables;
 	private final PacketTable<Packet> packets;
 
@@ -45,10 +47,16 @@ public abstract class JavaClient implements McProtocolClient<Session> {
 	 * Creates the client of a release.
 	 *
 	 * @param answers the packets the release's client sends on its own
+	 * @param text translates the release's text components
 	 * @param tables creates a new packet table of the release
 	 */
-	protected JavaClient(@NotNull ClientAnswers answers, @NotNull Supplier<PacketTable<Packet>> tables) {
+	protected JavaClient(
+			@NotNull ClientAnswers answers,
+			@NotNull ComponentTranslator text,
+			@NotNull Supplier<PacketTable<Packet>> tables
+	) {
 		this.answers = answers;
+		this.text = text;
 		this.tables = tables;
 		this.packets = tables.get();
 	}
@@ -74,7 +82,7 @@ public abstract class JavaClient implements McProtocolClient<Session> {
 			sessionService.setBaseUri(credentials.getSessionServer() + PATH_SEPARATOR);
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, sessionService);
 		}
-		session.addListener(new ClientPacketListener(login, listener, tables.get(), answers));
+		session.addListener(new ClientPacketListener(login, listener, tables.get(), answers, text));
 
 		return session;
 	}

@@ -8,6 +8,7 @@ import me.whereareiam.anvil.protocol.java.api.model.entity.DisplayText;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityDataValue;
 import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
 import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.type.EntityDataField;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack;
@@ -29,24 +30,29 @@ public final class EntityDataValues {
 	 *
 	 * @param field what the index carries for the entity's type
 	 * @param value the value the library decoded
+	 * @param text translates the release's text components
 	 * @return the protocol's value, or {@code null} when the value is of another kind
 	 */
-	public static @Nullable EntityDataValue value(@NotNull EntityDataField field, @Nullable Object value) {
+	public static @Nullable EntityDataValue value(
+			@NotNull EntityDataField field,
+			@Nullable Object value,
+			@NotNull ComponentTranslator text
+	) {
 		return switch (field) {
 			case SHARED_FLAGS -> value instanceof Byte flags ? SharedFlags.of(flags) : null;
-			case CUSTOM_NAME -> value instanceof Optional<?> name ? customName(name) : null;
+			case CUSTOM_NAME -> value instanceof Optional<?> name ? customName(name, text) : null;
 			case CUSTOM_NAME_VISIBLE -> value instanceof Boolean visible ? new CustomNameVisible(visible) : null;
 			case SHOWN_ITEM -> value == null || value instanceof ItemStack
 					? new ShownItem(ValueTranslator.item((ItemStack) value))
 					: null;
-			case DISPLAY_TEXT -> value instanceof Component text ? new DisplayText(ValueTranslator.plain(text)) : null;
+			case DISPLAY_TEXT -> value instanceof Component component ? new DisplayText(text.translate(component).plain()) : null;
 		};
 	}
 
-	private static @Nullable CustomName customName(Optional<?> name) {
+	private static @Nullable CustomName customName(Optional<?> name, ComponentTranslator text) {
 		if (name.isEmpty()) return new CustomName(null);
-		if (!(name.get() instanceof Component text)) return null;
+		if (!(name.get() instanceof Component component)) return null;
 
-		return new CustomName(ValueTranslator.plain(text));
+		return new CustomName(text.translate(component).plain());
 	}
 }

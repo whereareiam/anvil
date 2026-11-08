@@ -12,6 +12,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.InventoryPackets
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.NetworkClientSessions;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.PlayerPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.SoundPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.TextTranslator;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 
@@ -23,11 +24,13 @@ import java.util.List;
  * with this release's configuration, entity and interaction translations.
  */
 public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
+	private static final TextTranslator TEXT = new TextTranslator();
+
 	/**
 	 * Creates the client of the MCProtocolLib 26.3 release.
 	 */
 	public McProtocolClientAdapter() {
-		super(new NetworkClientSessions(TeleportListener::new), McProtocolClientAdapter::packets);
+		super(new NetworkClientSessions(TEXT, TeleportListener::new), McProtocolClientAdapter::packets);
 	}
 
 	/**
@@ -37,17 +40,17 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 	 */
 	static PacketTable<Packet> packets() {
 		return new PacketTable<>(List.of(
-				new ChatPackets(),
+				new ChatPackets(TEXT),
 				new CommandPackets(),
 				new ConfigurationPackets(),
 				new ConnectionPackets(),
 				new CookiePackets(),
 				new DialogPackets(),
-				new EntityPackets(),
+				new EntityPackets(TEXT),
 				new InteractionPackets(),
-				new InventoryPackets(),
+				new InventoryPackets(TEXT),
 				new PlayerPackets(),
-				new ScreenPackets(),
+				new ScreenPackets(TEXT),
 				new SoundPackets()
 		));
 	}

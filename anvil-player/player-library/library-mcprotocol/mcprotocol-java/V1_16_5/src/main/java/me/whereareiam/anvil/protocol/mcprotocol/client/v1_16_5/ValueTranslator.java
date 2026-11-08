@@ -5,15 +5,10 @@ import com.github.steveice10.mc.protocol.data.game.entity.type.EntityType;
 import com.github.steveice10.mc.protocol.data.game.world.block.BlockFace;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureRelease;
-import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.java.api.type.Direction;
 import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TranslatableComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,30 +26,6 @@ import java.util.Map;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ValueTranslator {
-	private static final AdventureText TEXT = new AdventureText(TranslatableComponent::args);
-
-	/**
-	 * Flattens a component of the chain's releases to plain text, reading a translation's arguments through
-	 * {@code args()}, which every Adventure 4 release of the chain has.
-	 *
-	 * @param component component to flatten
-	 * @return the component as plain text
-	 */
-	public static @NotNull String plain(@NotNull Component component) {
-		return TEXT.plain(component);
-	}
-
-	/**
-	 * Translates a component of the chain's releases to the text the server sent.
-	 *
-	 * @param component component to translate
-	 * @param release what the release's Adventure keeps differently
-	 * @return the component as text
-	 */
-	public static @NotNull Text text(@NotNull Component component, @NotNull AdventureRelease release) {
-		return TEXT.text(component, release);
-	}
-
 
 	/**
 	 * The entity types whose constants these releases name differently from the game's registry: thrown items, primed

@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class InventoryPacketsTest {
-	private final InventoryPackets packets = new InventoryPackets();
+	private final InventoryPackets packets = new InventoryPackets(new TextTranslator());
 
 	@Test
 	void decodesAnOpenedContainerWithItsMenuTypeAndPlainTitle() {

@@ -12,11 +12,13 @@ import java.util.Objects;
  * plain-string disconnect reasons and packet table.
  */
 public final class McProtocolClientAdapter extends JavaClient {
+	private static final TextTranslator TEXT = new TextTranslator();
+
 	/**
 	 * Creates the client of the MCProtocolLib 1.18.2 release.
 	 */
 	public McProtocolClientAdapter() {
-		super(McProtocolClientAdapter::reason, McProtocolClientAdapter::packets);
+		super(McProtocolClientAdapter::reason, TEXT, McProtocolClientAdapter::packets);
 	}
 
 	/**
@@ -36,14 +38,14 @@ public final class McProtocolClientAdapter extends JavaClient {
 	 */
 	static PacketTable<Packet> packets() {
 		return new PacketTable<>(List.of(
-				new ChatPackets(),
+				new ChatPackets(TEXT),
 				new CommandPackets(),
 				new ConnectionPackets(),
-				new EntityPackets(),
+				new EntityPackets(TEXT),
 				new InteractionPackets(),
-				new InventoryPackets(),
+				new InventoryPackets(TEXT),
 				new PlayerPackets(),
-				new ScreenPackets(),
+				new ScreenPackets(TEXT),
 				new SoundPackets()
 		));
 	}

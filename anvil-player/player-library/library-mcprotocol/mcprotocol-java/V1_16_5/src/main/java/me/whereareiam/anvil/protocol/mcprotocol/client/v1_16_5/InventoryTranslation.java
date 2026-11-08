@@ -25,6 +25,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundOpenSc
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.NotNull;
@@ -56,6 +57,20 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 	private static final String CARTOGRAPHY_TABLE = "cartography_table";
 	private static final DropItemParam[] DROPS = {DropItemParam.DROP_FROM_SELECTED, DropItemParam.DROP_SELECTED_STACK};
 
+	/**
+	 * Translates the release's text components.
+	 */
+	protected final @NotNull ComponentTranslator text;
+
+	/**
+	 * Creates the translation of a release.
+	 *
+	 * @param text translates the release's text components
+	 */
+	protected InventoryTranslation(@NotNull ComponentTranslator text) {
+		this.text = text;
+	}
+
 	@Override
 	public final @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(
@@ -72,7 +87,7 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 	public final @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (packet instanceof ServerOpenWindowPacket open)
 			return new ClientboundOpenScreen(open.getWindowId(), menuType(open.getType()),
-					ValueTranslator.plain(DefaultComponentSerializer.get().deserialize(open.getName())));
+					text.translate(DefaultComponentSerializer.get().deserialize(open.getName())).plain());
 
 		return decodeContents(packet);
 	}

@@ -10,7 +10,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.PlayerPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ScreenPackets;
 
 import java.util.List;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ValueTranslator;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.TextTranslator;
 
 /**
  * The client segment's adapter for the MCProtocolLib 1.19.4 release: the 1.18.2 {@link JavaClient} with the release's
@@ -18,11 +18,13 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ValueTranslator;
  * translations.
  */
 public final class McProtocolClientAdapter extends JavaClient {
+	private static final TextTranslator TEXT = new TextTranslator();
+
 	/**
 	 * Creates the client of the MCProtocolLib 1.19.4 release.
 	 */
 	public McProtocolClientAdapter() {
-		super(McProtocolClientAdapter::reason, McProtocolClientAdapter::packets);
+		super(McProtocolClientAdapter::reason, TEXT, McProtocolClientAdapter::packets);
 	}
 
 	/**
@@ -32,7 +34,7 @@ public final class McProtocolClientAdapter extends JavaClient {
 	 * @return the reason flattened to plain text, or an empty text when the connection closed without one
 	 */
 	static String reason(DisconnectedEvent event) {
-		return event.getReason() == null ? "" : ValueTranslator.plain(event.getReason());
+		return event.getReason() == null ? "" : TEXT.translate(event.getReason()).plain();
 	}
 
 	/**
@@ -42,14 +44,14 @@ public final class McProtocolClientAdapter extends JavaClient {
 	 */
 	static PacketTable<Packet> packets() {
 		return new PacketTable<>(List.of(
-				new ChatPackets(),
+				new ChatPackets(TEXT),
 				new CommandPackets(),
 				new ConnectionPackets(),
-				new EntityPackets(),
+				new EntityPackets(TEXT),
 				new InteractionPackets(),
-				new InventoryPackets(),
+				new InventoryPackets(TEXT),
 				new PlayerPackets(),
-				new ScreenPackets(),
+				new ScreenPackets(TEXT),
 				new SoundPackets()
 		));
 	}

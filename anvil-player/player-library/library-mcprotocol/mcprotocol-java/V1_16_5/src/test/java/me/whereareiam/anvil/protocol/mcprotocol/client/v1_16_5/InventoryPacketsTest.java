@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class InventoryPacketsTest {
-	private final InventoryPackets packets = new InventoryPackets();
+	private final InventoryPackets packets = new InventoryPackets(new TextTranslator());
 
 	@Test
 	void opensAScreenWithItsMenuKeyAndTheTitleFlattenedFromTheServersText() {

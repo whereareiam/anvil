@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -57,6 +58,10 @@ public final class ClientPacketListener extends SessionAdapter {
 	 * Reads the profile a login success grants, in the release's own profile type.
 	 */
 	private final Function<ClientboundGameProfilePacket, ClientProfile> profiles;
+	/**
+	 * Translates the release's text components.
+	 */
+	private final ComponentTranslator text;
 	private volatile ClientProfile granted;
 	private volatile boolean settingsDue;
 
@@ -85,9 +90,9 @@ public final class ClientPacketListener extends SessionAdapter {
 		// one.
 		if (packet instanceof ClientboundPingPacket ping) session.send(new ServerboundPongPacket(ping.getId()));
 		if (packet instanceof ClientboundDisconnectPacket disconnect)
-			listener.disconnected(session, DisconnectCause.SERVER, ValueTranslator.plain(disconnect.getReason()));
+			listener.disconnected(session, DisconnectCause.SERVER, text.translate(disconnect.getReason()).plain());
 		if (packet instanceof ClientboundLoginDisconnectPacket disconnect)
-			listener.disconnected(session, DisconnectCause.SERVER, ValueTranslator.plain(disconnect.getReason()));
+			listener.disconnected(session, DisconnectCause.SERVER, text.translate(disconnect.getReason()).plain());
 
 		ClientboundPacket translated = packets.decode(packet);
 		if (translated != null) listener.received(session, translated);
@@ -107,7 +112,7 @@ public final class ClientPacketListener extends SessionAdapter {
 
 	@Override
 	public void disconnected(DisconnectedEvent event) {
-		String reason = event.getReason() == null ? "" : ValueTranslator.plain(event.getReason());
+		String reason = event.getReason() == null ? "" : text.translate(event.getReason()).plain();
 		listener.disconnected(event.getSession(), cause(event), reason);
 	}
 

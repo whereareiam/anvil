@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import com.github.steveice10.mc.auth.data.GameProfile;
 import com.github.steveice10.mc.auth.service.SessionService;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
@@ -29,6 +30,17 @@ final class TcpClientSessions implements ClientSessions<Session> {
 	 */
 	private static final String PATH_SEPARATOR = "/";
 
+	private final ComponentTranslator text;
+
+	/**
+	 * Creates the sessions of the release.
+	 *
+	 * @param text translates the release's text components
+	 */
+	TcpClientSessions(@NotNull ComponentTranslator text) {
+		this.text = text;
+	}
+
 	@Override
 	public @NotNull Class<Session> type() {
 		return Session.class;
@@ -54,7 +66,7 @@ final class TcpClientSessions implements ClientSessions<Session> {
 			sessionService.setBaseUri(credentials.getSessionServer() + PATH_SEPARATOR);
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, sessionService);
 		}
-		session.addListener(new ClientPacketListener(login, listener, packets, TcpClientSessions::granted));
+		session.addListener(new ClientPacketListener(login, listener, packets, TcpClientSessions::granted, text));
 
 		return session;
 	}

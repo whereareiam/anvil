@@ -55,7 +55,7 @@ class ClientPacketListenerTest {
 	private final List<ClientboundPacket> received = new ArrayList<>();
 	private final Session session = session();
 	private final ClientPacketListener listener = new ClientPacketListener(LOGIN, new RecordingListener(),
-			McProtocolClientAdapter.packets(), TcpClientSessions::granted);
+			McProtocolClientAdapter.packets(), TcpClientSessions::granted, new TextTranslator());
 
 	@Test
 	void answersTheConfigurationsFirstPacketWithThePlayersSettings() {
@@ -109,7 +109,7 @@ class ClientPacketListenerTest {
 		PacketSendingEvent handshake = new PacketSendingEvent(session, new ClientIntentionPacket(1, "127.0.0.1", 25577, HandshakeIntent.LOGIN));
 
 		new ClientPacketListener(virtual, new RecordingListener(), McProtocolClientAdapter.packets(),
-				TcpClientSessions::granted)
+				TcpClientSessions::granted, new TextTranslator())
 				.packetSending(handshake);
 
 		ClientIntentionPacket announced = assertInstanceOf(ClientIntentionPacket.class, handshake.getPacket());

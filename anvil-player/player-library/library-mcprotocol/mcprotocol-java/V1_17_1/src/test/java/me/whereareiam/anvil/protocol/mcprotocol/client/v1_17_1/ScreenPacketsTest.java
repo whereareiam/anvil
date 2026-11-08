@@ -10,13 +10,14 @@ import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetAction
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetSubtitleText;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleText;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitlesAnimation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.TextTranslator;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ScreenPacketsTest {
-	private final ScreenPackets packets = new ScreenPackets();
+	private final ScreenPackets packets = new ScreenPackets(new TextTranslator());
 
 	@Test
 	void decodesTheTitlePacketsOfTheRelease() {

@@ -22,6 +22,7 @@ import me.whereareiam.anvil.protocol.api.type.NbtSource;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.BlockNBTComponent;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.SelectorComponent;
 import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -31,6 +32,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,10 +42,10 @@ import static net.kyori.adventure.text.BlockNBTComponent.WorldPos.Coordinate.abs
 import static net.kyori.adventure.text.BlockNBTComponent.WorldPos.Coordinate.relative;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class AdventureTextTest {
-	private static final AdventureText TEXT = new AdventureText(TranslatableComponent::args);
-	private static final AdventureRelease RELEASE = ClickEvent::value;
+class ComponentTranslatorTest {
+	private static final ComponentTranslator TEXT = new Translator();
 
 	@Test
 	void keepsTextAsWrittenWithItsChildrenInOrder() {
@@ -51,12 +53,12 @@ class AdventureTextTest {
 				.append(Component.text("wel"))
 				.append(Component.text("come").append(Component.text("!")));
 
-		assertEquals("anvil:welcome!", TEXT.plain(message));
+		assertEquals("anvil:welcome!", TEXT.translate(message).plain());
 	}
 
 	@Test
 	void ignoresStyle() {
-		assertEquals("ready", TEXT.plain(Component.text("ready", NamedTextColor.GREEN)));
+		assertEquals("ready", TEXT.translate(Component.text("ready", NamedTextColor.GREEN)).plain());
 	}
 
 	@Test
@@ -64,7 +66,7 @@ class AdventureTextTest {
 		Component message = Component.translatable("chat.type.text", Component.text("Alice"), Component.text("hello"))
 				.append(Component.text("!"));
 
-		assertEquals("chat.type.text Alice hello!", TEXT.plain(message));
+		assertEquals("chat.type.text Alice hello!", TEXT.translate(message).plain());
 	}
 
 	@Test
@@ -72,12 +74,12 @@ class AdventureTextTest {
 		Component message = Component.translatable("multiplayer.disconnect.kicked",
 				Component.translatable("commands.kick.success", Component.text("Alice").append(Component.text("_2"))));
 
-		assertEquals("multiplayer.disconnect.kicked commands.kick.success Alice_2", TEXT.plain(message));
+		assertEquals("multiplayer.disconnect.kicked commands.kick.success Alice_2", TEXT.translate(message).plain());
 	}
 
 	@Test
 	void writesATranslationWithoutArgumentsAsItsKey() {
-		assertEquals("disconnect.timeout", TEXT.plain(Component.translatable("disconnect.timeout")));
+		assertEquals("disconnect.timeout", TEXT.translate(Component.translatable("disconnect.timeout")).plain());
 	}
 
 	@Test
@@ -89,19 +91,12 @@ class AdventureTextTest {
 				.append(Component.score("Alice", "kills"))
 				.append(Component.text("!"));
 
-		assertEquals("press key.jump near @p!", TEXT.plain(message));
-	}
-
-	@Test
-	void readsTranslationArgumentsThroughTheGivenAccessor() {
-		AdventureText text = new AdventureText(component -> List.of(Component.text("read")));
-
-		assertEquals("chat.type.text read", text.plain(Component.translatable("chat.type.text", Component.text("Alice"))));
+		assertEquals("press key.jump near @p!", TEXT.translate(message).plain());
 	}
 
 	@Test
 	void flattensAnEmptyComponentToEmptyText() {
-		assertEquals("", TEXT.plain(Component.empty()));
+		assertEquals("", TEXT.translate(Component.empty()).plain());
 	}
 
 	@Test
@@ -117,7 +112,7 @@ class AdventureTextTest {
 						.content(new LiteralContent("Arbor"))
 						.style(TextStyle.builder().color(TextColor.GOLD).decoration(ITALIC, false).build())
 						.build())
-				.build(), TEXT.text(message, RELEASE));
+				.build(), TEXT.translate(message));
 	}
 
 	@Test
@@ -125,7 +120,7 @@ class AdventureTextTest {
 		Component message = Component.translatable("multiplayer.player.joined", NamedTextColor.YELLOW,
 				Component.text("Ivan", NamedTextColor.AQUA));
 
-		Text text = TEXT.text(message, RELEASE);
+		Text text = TEXT.translate(message);
 
 		TranslatedContent joined = text.find(TranslatedContent.class).orElseThrow();
 		assertEquals("multiplayer.player.joined", joined.getKey());
@@ -146,7 +141,7 @@ class AdventureTextTest {
 				.append(Component.entityNBT("Health", "@s"))
 				.append(Component.storageNBT("value", Key.key("arbor", "state")));
 
-		Text text = TEXT.text(message, RELEASE);
+		Text text = TEXT.translate(message);
 
 		assertEquals(new KeybindContent("key.jump"), text.getContent());
 		assertEquals(List.of(
@@ -167,7 +162,7 @@ class AdventureTextTest {
 				.append(Component.text("5").clickEvent(ClickEvent.copyToClipboard("copied")))
 				.append(Component.text("6").clickEvent(ClickEvent.openFile("screenshot.png")));
 
-		Text text = TEXT.text(message, RELEASE);
+		Text text = TEXT.translate(message);
 
 		assertEquals(List.of(
 				new OpenUrlClick("https://example.test"),
@@ -187,7 +182,7 @@ class AdventureTextTest {
 				.append(Component.text("c").hoverEvent(HoverEvent.showEntity(Key.key("minecraft", "zombie"), zombie,
 						Component.text("Bob"))));
 
-		Text text = TEXT.text(message, RELEASE);
+		Text text = TEXT.translate(message);
 
 		assertEquals(List.of(
 				new ShowTextHover(Text.builder()
@@ -205,46 +200,61 @@ class AdventureTextTest {
 				.style(style -> style.font(Key.key("minecraft", "uniform")))
 				.insertion("/vote");
 
-		TextStyle style = TEXT.text(message, RELEASE).getStyle();
+		TextStyle style = TEXT.translate(message).getStyle();
 
 		assertEquals("minecraft:uniform", style.getFont());
 		assertEquals("/vote", style.getInsertion());
 	}
 
 	@Test
-	void asksTheReleaseForWhatItsAdventureKeepsDifferently() {
-		AdventureRelease release = new AdventureRelease() {
+	void readsWhatTheReleasesAdventureKeepsDifferentlyThroughTheSubclass() {
+		ComponentTranslator release = new Translator() {
 			@Override
-			public String clickValue(@NotNull ClickEvent click) {
+			protected String clickValue(@NotNull ClickEvent click) {
 				return "read " + click.value();
 			}
 
 			@Override
-			public String fallback(@NotNull TranslatableComponent translation) {
+			protected String fallback(@NotNull TranslatableComponent translation) {
 				return "Hello";
 			}
 
 			@Override
-			public Component separator(@NotNull SelectorComponent selector) {
+			protected Component separator(@NotNull SelectorComponent selector) {
 				return Component.text(" & ");
 			}
 		};
-		Component message = Component.translatable("arbor.hello").clickEvent(ClickEvent.runCommand("/hi"))
+		Component message = Component.translatable("arbor.hello", Component.text("Ivan"))
+				.clickEvent(ClickEvent.runCommand("/hi"))
 				.append(Component.selector("@a"));
 
-		Text text = TEXT.text(message, release);
+		Text text = release.translate(message);
 
-		assertEquals(new TranslatedContent("arbor.hello", "Hello", List.of()), text.getContent());
+		assertEquals(new TranslatedContent("arbor.hello", "Hello", List.of(Text.literal("Ivan"))), text.getContent());
 		assertEquals(new RunCommandClick("read /hi"), text.getStyle().getClick());
 		assertEquals(new SelectorContent("@a", Text.literal(" & ")), text.getChildren().getFirst().getContent());
 	}
 
 	@Test
-	void flattensTextToTheSamePlainTextAsItsSpans() {
-		Component message = Component.translatable("multiplayer.player.joined", NamedTextColor.YELLOW, Component.text("Alice"))
-				.append(Component.keybind("key.jump", NamedTextColor.RED))
-				.append(Component.score("Alice", "kills"));
+	void refusesAComponentOfAKindNeitherAdventureNorTheReleaseHas() {
+		Component unknown = (Component) Proxy.newProxyInstance(Component.class.getClassLoader(),
+				new Class<?>[]{Component.class}, (proxy, method, arguments) -> null);
 
-		assertEquals(TEXT.plain(message), TEXT.text(message, RELEASE).plain());
+		assertThrows(IllegalArgumentException.class, () -> TEXT.translate(unknown));
+	}
+
+	/**
+	 * Reads what moved as Adventure 4.9, the closure these tests compile against, keeps it.
+	 */
+	private static class Translator extends ComponentTranslator {
+		@Override
+		protected @NotNull List<? extends ComponentLike> arguments(@NotNull TranslatableComponent translation) {
+			return translation.args();
+		}
+
+		@Override
+		protected String clickValue(@NotNull ClickEvent click) {
+			return click.value();
+		}
 	}
 }
