@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.testkit.tests.server.fixture;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.messages.Messages;
@@ -29,7 +30,21 @@ public final class FixtureServer {
 	 * @return the connected player
 	 */
 	public @NotNull SimulatedPlayer join() {
-		SimulatedPlayer player = anvil.players().create("Player" + PLAYERS.incrementAndGet());
+		return join(PlayerOptions.DEFAULT_LANGUAGE);
+	}
+
+	/**
+	 * Creates a player whose game is set to a language, with a name no earlier test of this run used, connects it and
+	 * waits for the fixture's welcome.
+	 *
+	 * @param language the Minecraft language code of the player's game, such as {@code ru_ru}
+	 * @return the connected player
+	 */
+	public @NotNull SimulatedPlayer join(@NotNull String language) {
+		SimulatedPlayer player = anvil.players().create(PlayerOptions.builder()
+				.name("Player" + PLAYERS.incrementAndGet())
+				.language(language)
+				.build());
 		player.capability(Session.class).connect();
 		player.capability(Session.class).connected(TIMEOUT);
 		player.capability(Messages.class).received("anvil:welcome", TIMEOUT);
@@ -65,6 +80,6 @@ public final class FixtureServer {
 	 * @return the rest of the message
 	 */
 	public @NotNull String reply(@NotNull SimulatedPlayer player, @NotNull String prefix) {
-		return player.capability(Messages.class).received(prefix, TIMEOUT).substring(prefix.length());
+		return player.capability(Messages.class).received(prefix, TIMEOUT).plain().substring(prefix.length());
 	}
 }

@@ -12,6 +12,7 @@ import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
@@ -176,8 +177,8 @@ class JavaScreenExtensionTest {
 	void emitsActionBarTextSentAsChatButNoOtherChat() {
 		connect();
 
-		protocol.deliver(new ClientboundSystemChat("+1 follower", true));
-		protocol.deliver(new ClientboundSystemChat("Welcome", false));
+		protocol.deliver(new ClientboundSystemChat(StyledText.unstyled("+1 follower"), true));
+		protocol.deliver(new ClientboundSystemChat(StyledText.unstyled("Welcome"), false));
 
 		assertEquals(List.of("+1 follower"), player.emitted(ScreenChannel.ACTION_BAR));
 	}

@@ -4,13 +4,14 @@ import lombok.Builder;
 import lombok.Value;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerLogin;
+import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Connection request supplied by the engine to the {@link ProtocolLibrary} selected for one player: who logs in,
- * with which client, and where to. The engine validates it first; the login suits the joined process, and the
- * source address of the connection can be used.
+ * with which client and game language, and where to. The engine validates it first; the login suits the joined
+ * process, and the source address of the connection can be used.
  *
  * <pre>{@code
  * PlayerRequest request = PlayerRequest.builder()
@@ -43,6 +44,14 @@ public class PlayerRequest {
 	 * one release, so the library resolves the release from it through its own release data.
 	 */
 	@NotNull MinecraftVersion clientVersion;
+
+	/**
+	 * Minecraft language code the client reports in its client information, such as {@code ru_ru}, at login and
+	 * whenever it sends its settings again.
+	 */
+	@NotNull
+	@Builder.Default
+	String language = PlayerOptions.DEFAULT_LANGUAGE;
 
 	/**
 	 * Game listener the client connects to, with the host it announces and the address it connects from. A library

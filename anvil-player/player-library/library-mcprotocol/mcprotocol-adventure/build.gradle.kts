@@ -5,6 +5,8 @@ plugins {
 description = "Adventure text shared by the MCProtocolLib client segments of releases whose components are Adventure's"
 
 dependencies {
+	api(projects.anvilPlayer.playerApi)
+
 	compileOnly(libs.adventure.api)
 
 	testImplementation(libs.adventure.api)

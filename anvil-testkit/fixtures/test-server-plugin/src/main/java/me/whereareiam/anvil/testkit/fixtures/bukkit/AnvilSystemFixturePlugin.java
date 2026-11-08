@@ -126,6 +126,9 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 			case "ping":
 				player.sendMessage("anvil:pong");
 				break;
+			case "locale":
+				player.sendMessage("anvil:locale:" + player.getLocale());
+				break;
 			case "gui":
 				openInventory(player);
 				break;

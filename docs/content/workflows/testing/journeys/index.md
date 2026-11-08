@@ -65,7 +65,7 @@ class AnnouncementJourneyTest {
 
 		String marker = "announcement-for-" + playerName;
 		anvil.processes().server("server").console().sendCommand("say " + marker);
-		String message = player.capability(Messages.class).received(marker);
+		String message = player.capability(Messages.class).received(marker).plain();
 		assertTrue(message.contains(marker));
 	}
 }

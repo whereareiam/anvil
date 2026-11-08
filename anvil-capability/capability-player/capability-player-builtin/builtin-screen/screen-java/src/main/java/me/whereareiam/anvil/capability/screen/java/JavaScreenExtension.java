@@ -68,7 +68,7 @@ public final class JavaScreenExtension implements WorkerExtension<Object> {
 				protocol.listen(ClientboundSetActionBarText.class, packet ->
 						player.emit(ScreenChannel.ACTION_BAR, packet.getText())),
 				protocol.listen(ClientboundSystemChat.class, packet -> {
-					if (packet.isOverlay()) player.emit(ScreenChannel.ACTION_BAR, packet.getText());
+					if (packet.isOverlay()) player.emit(ScreenChannel.ACTION_BAR, packet.getText().plain());
 				}),
 				protocol.listen(ClientboundBossEvent.class, bossBars::apply),
 				bossBars::discard,

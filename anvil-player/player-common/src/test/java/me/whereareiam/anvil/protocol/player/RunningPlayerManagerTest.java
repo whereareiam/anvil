@@ -112,6 +112,31 @@ class RunningPlayerManagerTest {
 	}
 
 	@Test
+	void passesThePlayersLanguageToTheLibraryAndDefaultsToEnglish() {
+		StubLibrary library = new StubLibrary();
+		RunningPlayerManager manager = manager(library);
+
+		manager.create(PlayerOptions.builder().name("ivan").language("ru_ru").build());
+		assertEquals("ru_ru", library.lastRequest.getLanguage());
+
+		manager.create("alice");
+		assertEquals("en_us", library.lastRequest.getLanguage());
+	}
+
+	@Test
+	void aLanguageThatIsNoMinecraftLanguageCodeIsRefused() {
+		StubLibrary library = new StubLibrary();
+		RunningPlayerManager manager = manager(library);
+
+		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create(PlayerOptions.builder()
+				.name("ivan").language("ru-RU").build()));
+
+		assertEquals("Player 'ivan' declares the language 'ru-RU'; a Minecraft language code has lowercase letters "
+				+ "with an optional region, such as ru_ru", refused.getMessage());
+		assertNull(library.lastRequest);
+	}
+
+	@Test
 	void passesTheTargetVirtualHostAndSourceAddressToTheLibrary() {
 		StubLibrary library = new StubLibrary();
 		RunningPlayerManager manager = manager(library);

@@ -8,6 +8,7 @@ import me.whereareiam.anvil.capability.messages.model.DroppedChat;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.capability.messages.type.ChatDropReason;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -28,14 +29,14 @@ import java.util.stream.Collectors;
  */
 final class ChannelMessages implements Messages {
 	private final ProtocolChannel channel;
-	private final CopyOnWriteArrayList<String> history = new CopyOnWriteArrayList<>();
+	private final CopyOnWriteArrayList<StyledText> history = new CopyOnWriteArrayList<>();
 	private final CopyOnWriteArrayList<DroppedChat> dropped = new CopyOnWriteArrayList<>();
 	private final ChatBuffer chat = new ChatBuffer();
 
 	ChannelMessages(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
 		channel.subscribe(MessagesChannel.CHAT_ADDED, message -> {
-			chat.add(message.getId(), message.getText());
+			chat.add(message.getId(), message.getText().plain());
 			history.add(message.getText());
 		});
 		channel.subscribe(MessagesChannel.CHAT_DROPPED, dropped::add);
@@ -55,17 +56,17 @@ final class ChannelMessages implements Messages {
 	}
 
 	@Override
-	public @NotNull List<String> history() {
+	public @NotNull List<StyledText> history() {
 		return List.copyOf(history);
 	}
 
 	@Override
-	public @NotNull String received(@NotNull String text, @NotNull Duration timeout) {
-		await(() -> history.stream().anyMatch(message -> message.contains(text)),
+	public @NotNull StyledText received(@NotNull String text, @NotNull Duration timeout) {
+		await(() -> history.stream().anyMatch(message -> message.plain().contains(text)),
 				"see a message containing '" + text + "' in chat", timeout, () -> List.copyOf(dropped),
 				message -> message.contains(text));
 		return history.reversed().stream()
-				.filter(message -> message.contains(text))
+				.filter(message -> message.plain().contains(text))
 				.findFirst()
 				.orElseThrow();
 	}
@@ -115,37 +116,44 @@ final class ChannelMessages implements Messages {
 	 * dropped messages too, so a failed wait names only those left out since the previous wait.
 	 */
 	private final class Watch implements MessageWatch {
-		private final HistoryCursor<String> cursor = new HistoryCursor<>(ChannelMessages.this::history);
+		private final HistoryCursor<StyledText> cursor = new HistoryCursor<>(ChannelMessages.this::history);
 		private HistoryCursor<DroppedChat> droppedSince = droppedCursor();
 
 		@Override
-		public @NotNull String received(@NotNull Predicate<String> matcher, @NotNull Duration timeout) {
-			await(() -> cursor.find(matcher) != null, "see a matching message in chat", timeout, droppedSince::unread,
+		public @NotNull StyledText received(@NotNull Predicate<String> matcher, @NotNull Duration timeout) {
+			Predicate<StyledText> plain = plain(matcher);
+			await(() -> cursor.find(plain) != null, "see a matching message in chat", timeout, droppedSince::unread,
 					matcher);
 			droppedSince = droppedCursor();
-			return Objects.requireNonNull(cursor.take(matcher));
+			return Objects.requireNonNull(cursor.take(plain));
 		}
 
 		@Override
 		public void neverReceived(@NotNull Predicate<String> matcher, @NotNull Duration duration) {
+			Predicate<StyledText> plain = plain(matcher);
 			try {
-				channel.await(() -> cursor.find(matcher) != null, "see a matching message in chat", duration);
+				channel.await(() -> cursor.find(plain) != null, "see a matching message in chat", duration);
 			} catch (IllegalStateException quiet) {
-				if (cursor.find(matcher) == null) return;
+				if (cursor.find(plain) == null) return;
 			}
 
 			throw new IllegalStateException("Player saw a message in chat it must not see: "
-					+ Objects.requireNonNull(cursor.find(matcher)));
+					+ Objects.requireNonNull(cursor.find(plain)).plain());
 		}
 
 		@Override
 		public @NotNull Expectation expectReceived(@NotNull Predicate<String> matcher) {
-			return Expectation.of("see a matching message in chat", () -> cursor.find(matcher) != null);
+			Predicate<StyledText> plain = plain(matcher);
+			return Expectation.of("see a matching message in chat", () -> cursor.find(plain) != null);
 		}
 
 		@Override
-		public @NotNull List<String> unread() {
+		public @NotNull List<StyledText> unread() {
 			return cursor.unread();
+		}
+
+		private static Predicate<StyledText> plain(Predicate<String> matcher) {
+			return message -> matcher.test(message.plain());
 		}
 
 		private HistoryCursor<DroppedChat> droppedCursor() {

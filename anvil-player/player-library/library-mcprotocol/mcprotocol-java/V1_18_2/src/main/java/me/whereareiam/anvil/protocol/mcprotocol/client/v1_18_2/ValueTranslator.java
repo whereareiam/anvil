@@ -5,12 +5,14 @@ import com.github.steveice10.mc.protocol.data.game.entity.player.Hand;
 import com.github.steveice10.mc.protocol.data.game.entity.type.EntityType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TranslatableComponent;
+import net.kyori.adventure.text.event.ClickEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,6 +40,17 @@ public final class ValueTranslator {
 	 */
 	public static @NotNull String plain(@NotNull Component component) {
 		return TEXT.plain(component);
+	}
+
+	/**
+	 * Flattens a component of the chain's releases to styled text, reading a click's value through {@code value()},
+	 * which every Adventure 4 release of the chain has.
+	 *
+	 * @param component component to flatten
+	 * @return the component as the game shows it
+	 */
+	public static @NotNull StyledText styled(@NotNull Component component) {
+		return TEXT.styled(component, ClickEvent::value);
 	}
 
 	/**

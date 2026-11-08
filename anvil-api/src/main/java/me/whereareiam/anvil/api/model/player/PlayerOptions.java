@@ -8,13 +8,14 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Optional overrides used when creating one simulated player in a running scenario: who logs in, with which
- * client, and where to. How the player logs in is grouped in its {@link PlayerLogin}, and where it connects in its
- * {@link PlayerConnection}.
+ * client and game language, and where to. How the player logs in is grouped in its {@link PlayerLogin}, and where it
+ * connects in its {@link PlayerConnection}.
  *
  * <pre>{@code
  * SimulatedPlayer alice = players.create(PlayerOptions.builder()
  *         .name("alice-again")
  *         .login(PlayerLogin.offline("Alice"))
+ *         .language("ru_ru")
  *         .connection(PlayerConnection.builder().target("proxy").virtualHost("lobby.example.test").build())
  *         .build());
  * }</pre>
@@ -22,6 +23,11 @@ import org.jetbrains.annotations.Nullable;
 @Value
 @Builder(toBuilder = true)
 public class PlayerOptions {
+	/**
+	 * Language code of a player that declares no language of its own.
+	 */
+	public static final String DEFAULT_LANGUAGE = "en_us";
+
 	/**
 	 * Name that identifies the player within its scenario, unique among its players. It is also the Minecraft
 	 * username unless the {@link #getLogin() login} supplies another one.
@@ -44,6 +50,15 @@ public class PlayerOptions {
 	 * Protocol library for this player, overriding the scenario and engine defaults.
 	 */
 	@Nullable String protocolLibrary;
+
+	/**
+	 * Language the player's game is set to, as the Minecraft language code its client information reports to the
+	 * server at login, such as {@code ru_ru}; a server that translates messages for each player picks the player's
+	 * language by it. By default {@code en_us}.
+	 */
+	@NotNull
+	@Builder.Default
+	String language = DEFAULT_LANGUAGE;
 
 	/**
 	 * Process the player joins, the host it announces and the address it connects from; by default the

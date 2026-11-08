@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Connects, kicks, rejoins and destroys a player on the release.
+ * Connects, kicks, rejoins and destroys a player on the release, and tells the server the language its game is set to.
  */
 @Release
 class SessionReleaseTest {
@@ -23,6 +23,16 @@ class SessionReleaseTest {
 
 		assertTrue(player.capability(Session.class).state().connected());
 		assertEquals(player.name(), player.requestedProfile().getUsername());
+	}
+
+	@Test
+	void reportsTheLanguageItsGameIsSetTo(ScenarioContext anvil) {
+		FixtureServer server = new FixtureServer(anvil);
+		SimulatedPlayer player = server.join("ru_ru");
+
+		player.capability(Messages.class).command("anvil-fixture locale");
+
+		assertEquals("ru_ru", server.reply(player, "anvil:locale:"));
 	}
 
 	@Test

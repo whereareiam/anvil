@@ -1,11 +1,12 @@
 package me.whereareiam.anvil.capability.messages.model;
 
 import lombok.Value;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A message the player's client adds to its chat, as plain text, with the identity the worker gave it so that a
- * later deletion can name it.
+ * A message the player's client adds to its chat, as the chat shows it, with the identity the worker gave it so that
+ * a later deletion can name it.
  */
 @Value
 public class ChatMessage {
@@ -14,7 +15,7 @@ public class ChatMessage {
 	 */
 	long id;
 	/**
-	 * The message as plain text, with its line breaks.
+	 * The message as the chat shows it, with its styles and line breaks.
 	 */
-	@NotNull String text;
+	@NotNull StyledText text;
 }

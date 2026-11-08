@@ -51,7 +51,6 @@ import java.util.function.Function;
  */
 @Accessors(fluent = true)
 final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoCloseable {
-	private static final String CLIENT_LOCALE = "en_us";
 	private static final int VIEW_DISTANCE = 8;
 	/**
 	 * How long a closed connection waits for the reason of its closing. Client libraries handle packets on
@@ -156,7 +155,8 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	}
 
 	/**
-	 * Builds the client login from the resolved options, with the worker's own client settings.
+	 * Builds the client login from the resolved options, with the player's language and the worker's other client
+	 * settings.
 	 */
 	private ClientLogin login() {
 		WorkerProfile profile = options.getProfile();
@@ -168,7 +168,7 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 						.accessToken(credentials.getAccessToken())
 						.sessionServer(credentials.getSessionServer())
 						.build())
-				.settings(ClientSettings.builder().locale(CLIENT_LOCALE).viewDistance(VIEW_DISTANCE).build())
+				.settings(ClientSettings.builder().locale(options.getLanguage()).viewDistance(VIEW_DISTANCE).build())
 				.connection(ClientConnection.builder()
 						.host(connection.getHost())
 						.port(connection.getPort())

@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.chat;
 
 import lombok.Value;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import me.whereareiam.anvil.protocol.java.api.model.chat.MessageSignature;
 import me.whereareiam.anvil.protocol.java.api.model.chat.PackedMessageSignature;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
@@ -17,9 +18,10 @@ import java.util.List;
 @Value
 public class ClientboundPlayerChat implements ClientboundPacket {
 	/**
-	 * The message as plain text: the server's unsigned replacement when it sent one, otherwise the signed content.
+	 * The message as the game shows it, without the chat type's decoration around it: the server's unsigned
+	 * replacement when it sent one, otherwise the signed content, which is unstyled.
 	 */
-	@NotNull String text;
+	@NotNull StyledText text;
 	/**
 	 * How much of the message the server's text filter hides.
 	 */
@@ -37,13 +39,13 @@ public class ClientboundPlayerChat implements ClientboundPacket {
 	/**
 	 * Creates a message with a copy of the last seen signatures.
 	 *
-	 * @param text the message as plain text
+	 * @param text the message as the game shows it
 	 * @param filterMask how much of the message the server's text filter hides
 	 * @param signature the message's signature, or {@code null}
 	 * @param lastSeen the signatures the sender had seen, oldest first
 	 */
 	public ClientboundPlayerChat(
-			@NotNull String text,
+			@NotNull StyledText text,
 			@NotNull FilterMaskType filterMask,
 			@Nullable MessageSignature signature,
 			@NotNull List<PackedMessageSignature> lastSeen
@@ -57,10 +59,10 @@ public class ClientboundPlayerChat implements ClientboundPacket {
 	/**
 	 * Creates a message that passes through unsigned, as every message of a release before Minecraft 1.19 does.
 	 *
-	 * @param text the message as plain text
+	 * @param text the message as the game shows it
 	 * @return the message
 	 */
-	public static @NotNull ClientboundPlayerChat unsigned(@NotNull String text) {
+	public static @NotNull ClientboundPlayerChat unsigned(@NotNull StyledText text) {
 		return new ClientboundPlayerChat(text, FilterMaskType.PASS_THROUGH, null, List.of());
 	}
 }

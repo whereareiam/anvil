@@ -51,6 +51,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -62,6 +63,12 @@ import java.util.stream.Collectors;
  * applies.</p>
  */
 final class RunningPlayerManager implements PlayerManager, AccountManager {
+	/**
+	 * Shape of the game's language codes, such as {@code en_us}, {@code zlm_arab} or {@code tok}, within the 16
+	 * characters the client information carries.
+	 */
+	private static final Pattern LANGUAGE_CODE = Pattern.compile("[a-z]{2,8}(_[a-z]{2,7})?");
+
 	private final AnvilScenario scenario;
 	private final ProtocolLibrarySelector selector;
 	private final Function<String, ProtocolLibrary> libraries;
@@ -173,6 +180,10 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 			throw new IllegalArgumentException("Simulated player name must not be blank");
 		if (players.containsKey(options.getName()))
 			throw new IllegalArgumentException("Simulated player '" + options.getName() + "' already exists");
+		if (!LANGUAGE_CODE.matcher(options.getLanguage()).matches())
+			throw new ScenarioValidationException("Player '" + options.getName() + "' declares the language '"
+					+ options.getLanguage() + "'; a Minecraft language code has lowercase letters with an optional "
+					+ "region, such as ru_ru");
 
 		PlayerConnection connection = options.getConnection();
 		String targetName = connection.getTarget() == null ? scenario.getEntrypoint() : connection.getTarget();
@@ -203,6 +214,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 					.name(options.getName())
 					.login(options.getLogin())
 					.clientVersion(version)
+					.language(options.getLanguage())
 					.connection(gameConnection)
 					.build());
 			player = playerComposer.compose(

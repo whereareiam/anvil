@@ -4,6 +4,7 @@ import com.github.steveice10.mc.protocol.data.game.MessageType;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundChatPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundChatPacket;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundPlayerChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
@@ -26,21 +27,21 @@ class ChatPacketsTest {
 		Component message = Component.translatable("chat.type.text", Component.text("Alice"), Component.text("hello"))
 				.append(Component.text("!"));
 
-		assertEquals(ClientboundPlayerChat.unsigned("chat.type.text Alice hello!"), packets.decode(new ClientboundChatPacket(message, MessageType.CHAT)));
+		assertEquals(ClientboundPlayerChat.unsigned(StyledText.unstyled("chat.type.text Alice hello!")), packets.decode(new ClientboundChatPacket(message, MessageType.CHAT)));
 	}
 
 	@Test
 	void decodesSystemMessagesAsSystemChat() {
 		Component message = Component.text("anvil:").append(Component.text("welcome"));
 
-		assertEquals(new ClientboundSystemChat("anvil:welcome", false), packets.decode(new ClientboundChatPacket(message, MessageType.SYSTEM)));
+		assertEquals(new ClientboundSystemChat(StyledText.unstyled("anvil:welcome"), false), packets.decode(new ClientboundChatPacket(message, MessageType.SYSTEM)));
 	}
 
 	@Test
 	void decodesGameInfoShownAboveTheHotbarAsOverlaySystemChat() {
 		ClientboundChatPacket notification = new ClientboundChatPacket(Component.text("anvil:action-bar"), MessageType.NOTIFICATION);
 
-		assertEquals(new ClientboundSystemChat("anvil:action-bar", true), packets.decode(notification));
+		assertEquals(new ClientboundSystemChat(StyledText.unstyled("anvil:action-bar"), true), packets.decode(notification));
 	}
 
 	@Test
@@ -49,7 +50,7 @@ class ChatPacketsTest {
 				.append(Component.text(" near ")).append(Component.selector("@p"))
 				.append(Component.score("Alice", "kills")).append(Component.text("!"));
 
-		assertEquals(new ClientboundSystemChat("press key.jump near @p!", false), packets.decode(new ClientboundChatPacket(message, MessageType.SYSTEM)));
+		assertEquals(new ClientboundSystemChat(StyledText.unstyled("press key.jump near @p!"), false), packets.decode(new ClientboundChatPacket(message, MessageType.SYSTEM)));
 	}
 
 	@Test

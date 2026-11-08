@@ -20,6 +20,7 @@ import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.event.session.PacketSendingEvent;
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.api.type.DisconnectCause;
+import me.whereareiam.anvil.protocol.api.model.text.StyledText;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
@@ -122,7 +123,7 @@ class ClientPacketListenerTest {
 		receive(new ClientboundChatPacket(Component.text("anvil:welcome"), MessageType.SYSTEM));
 		receive(new ClientboundKeepAlivePacket(7));
 
-		assertEquals(List.of(new ClientboundSystemChat("anvil:welcome", false)), received);
+		assertEquals(List.of(new ClientboundSystemChat(StyledText.unstyled("anvil:welcome"), false)), received);
 		assertEquals(List.of(), events);
 	}
 

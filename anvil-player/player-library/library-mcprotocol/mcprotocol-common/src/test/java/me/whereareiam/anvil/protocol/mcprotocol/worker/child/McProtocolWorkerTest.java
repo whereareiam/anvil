@@ -44,6 +44,7 @@ class McProtocolWorkerTest {
 		UUID identity = UUID.randomUUID();
 		var options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder().name("Alice").uniqueId(identity).build())
+				.language("en_us")
 				.connection(WorkerConnection.builder().host("localhost").port(25565).build())
 				.build();
 		var empty = JsonNodeFactory.instance.objectNode();

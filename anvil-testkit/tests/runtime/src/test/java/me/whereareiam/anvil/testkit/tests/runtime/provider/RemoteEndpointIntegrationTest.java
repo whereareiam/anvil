@@ -51,7 +51,7 @@ class RemoteEndpointIntegrationTest {
 				session.connected();
 				Messages messages = alice.capability(Messages.class);
 				messages.chat("hello");
-				assertEquals("<Alice> hello", messages.received("<Alice> hello"));
+				assertEquals("<Alice> hello", messages.received("<Alice> hello").plain());
 				session.disconnect();
 				session.disconnected();
 				assertFalse(session.state().connected());
