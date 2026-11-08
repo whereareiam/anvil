@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1;
 
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
@@ -26,6 +27,17 @@ import org.jetbrains.annotations.NotNull;
 final class TcpClientSessions implements ClientSessions<Session> {
 	private static final int ANY_PORT = 0;
 
+	private final ComponentTranslator text;
+
+	/**
+	 * Creates the sessions of the release.
+	 *
+	 * @param text translates the release's text components
+	 */
+	TcpClientSessions(@NotNull ComponentTranslator text) {
+		this.text = text;
+	}
+
 	@Override
 	public @NotNull Class<Session> type() {
 		return Session.class;
@@ -49,7 +61,7 @@ final class TcpClientSessions implements ClientSessions<Session> {
 		if (credentials != null && credentials.getSessionServer() != null)
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY,
 					new RedirectedSessionService(credentials.getSessionServer()));
-		session.addListener(new ClientPacketListener(login, listener, packets, TcpClientSessions::granted));
+		session.addListener(new ClientPacketListener(login, listener, packets, TcpClientSessions::granted, text));
 
 		return session;
 	}

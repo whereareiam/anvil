@@ -10,6 +10,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPla
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
 import me.whereareiam.anvil.protocol.java.api.type.ClickType;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import net.kyori.adventure.key.Key;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -44,6 +45,20 @@ import java.util.Set;
 public abstract class InventoryTranslation implements PacketTranslation<Packet> {
 	private static final String CARTOGRAPHY_TABLE = "cartography_table";
 
+	/**
+	 * Translates the release's text components.
+	 */
+	protected final @NotNull ComponentTranslator text;
+
+	/**
+	 * Creates the translation of a release.
+	 *
+	 * @param text translates the release's text components
+	 */
+	protected InventoryTranslation(@NotNull ComponentTranslator text) {
+		this.text = text;
+	}
+
 	@Override
 	public final @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(
@@ -60,7 +75,7 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 	public final @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (packet instanceof ClientboundOpenScreenPacket open)
 			return new ClientboundOpenScreen(open.getContainerId(), menuType(open.getType()),
-					ValueTranslator.plain(open.getTitle()));
+					text.translate(open.getTitle()).plain());
 		if (packet instanceof ClientboundContainerSetContentPacket content)
 			return new ClientboundContainerSetContent(content.getContainerId(), content.getStateId(),
 					ValueTranslator.items(content.getItems()), ValueTranslator.item(content.getCarriedItem()));

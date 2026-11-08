@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
@@ -30,17 +31,21 @@ import java.util.function.BiFunction;
 public final class NetworkClientSessions implements ClientSessions<ClientSession> {
 	private static final int ANY_PORT = 0;
 
+	private final ComponentTranslator text;
 	private final BiFunction<ClientSession, ClientListener<? super ClientSession>, SessionListener> teleports;
 
 	/**
 	 * Creates the sessions of a release.
 	 *
+	 * @param text translates the release's text components
 	 * @param teleports creates the listener that answers the teleports of one session and reports them to the
 	 * session's listener; the sessions add it before the listener that delivers the session's packets
 	 */
 	public NetworkClientSessions(
+			@NotNull ComponentTranslator text,
 			@NotNull BiFunction<ClientSession, ClientListener<? super ClientSession>, SessionListener> teleports
 	) {
+		this.text = text;
 		this.teleports = teleports;
 	}
 
@@ -73,7 +78,7 @@ public final class NetworkClientSessions implements ClientSessions<ClientSession
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY,
 					new RedirectedSessionService(credentials.getSessionServer()));
 		session.addListener(teleports.apply(session, listener));
-		session.addListener(new ClientPacketListener(session, login, listener, packets));
+		session.addListener(new ClientPacketListener(session, login, listener, packets, text));
 
 		return session;
 	}

@@ -20,6 +20,7 @@ import com.github.steveice10.packetlib.packet.Packet;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -41,6 +42,7 @@ final class ClientPacketListener extends SessionAdapter {
 	private final ClientListener<? super Session> listener;
 	private final PacketTable<Packet> packets;
 	private final Function<DisconnectedEvent, String> reasons;
+	private final ComponentTranslator text;
 	private volatile ClientProfile granted;
 
 	@Override
@@ -59,9 +61,9 @@ final class ClientPacketListener extends SessionAdapter {
 			session.send(new ServerboundAcceptTeleportationPacket(position.getTeleportId()));
 		}
 		if (packet instanceof ClientboundDisconnectPacket disconnect)
-			listener.disconnected(session, DisconnectCause.SERVER, ValueTranslator.plain(disconnect.getReason()));
+			listener.disconnected(session, DisconnectCause.SERVER, text.translate(disconnect.getReason()).plain());
 		if (packet instanceof ClientboundLoginDisconnectPacket disconnect)
-			listener.disconnected(session, DisconnectCause.SERVER, ValueTranslator.plain(disconnect.getReason()));
+			listener.disconnected(session, DisconnectCause.SERVER, text.translate(disconnect.getReason()).plain());
 
 		ClientboundPacket translated = packets.decode(packet);
 		if (translated != null) listener.received(session, translated);

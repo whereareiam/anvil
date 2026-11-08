@@ -8,6 +8,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetAction
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetSubtitleText;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleText;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitlesAnimation;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,14 +21,18 @@ final class ScreenPackets extends ScreenTranslation {
 	private static final boolean KEEP_TIMES = false;
 	private static final boolean RESET_TIMES = true;
 
+	ScreenPackets(@NotNull ComponentTranslator text) {
+		super(text);
+	}
+
 	@Override
 	protected @Nullable ClientboundPacket decodeTitle(@NotNull Packet packet) {
 		if (!(packet instanceof ServerTitlePacket title)) return null;
 
 		return switch (title.getAction()) {
-			case TITLE -> new ClientboundSetTitleText(ValueTranslator.plain(title.getTitle()));
-			case SUBTITLE -> new ClientboundSetSubtitleText(ValueTranslator.plain(title.getTitle()));
-			case ACTION_BAR -> new ClientboundSetActionBarText(ValueTranslator.plain(title.getTitle()));
+			case TITLE -> new ClientboundSetTitleText(text.translate(title.getTitle()).plain());
+			case SUBTITLE -> new ClientboundSetSubtitleText(text.translate(title.getTitle()).plain());
+			case ACTION_BAR -> new ClientboundSetActionBarText(text.translate(title.getTitle()).plain());
 			case TIMES -> new ClientboundSetTitlesAnimation(title.getFadeIn(), title.getStay(), title.getFadeOut());
 			case CLEAR -> new ClientboundClearTitles(KEEP_TIMES);
 			case RESET -> new ClientboundClearTitles(RESET_TIMES);

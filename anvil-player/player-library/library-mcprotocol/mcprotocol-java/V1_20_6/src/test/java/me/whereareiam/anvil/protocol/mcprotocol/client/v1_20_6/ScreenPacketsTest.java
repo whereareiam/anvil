@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class ScreenPacketsTest {
 	private static final UUID BAR = new UUID(0, 1);
 
-	private final ScreenPackets packets = new ScreenPackets();
+	private final ScreenPackets packets = new ScreenPackets(new TextTranslator());
 
 	@Test
 	void decodesTitlesSubtitlesTimesClearsAndActionBarsAsPlainText() {

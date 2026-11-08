@@ -93,8 +93,10 @@ The `check` task runs the same verification. A segment's report is
   against the new release fails `checkSegmentLinkage` until the segment replaces it. Only when the release
   changes the library's packages or sessions throughout does the segment start a new chain without a base,
   as `V1_18_2` does. Every segment depends on `mcprotocol-api`, and a segment whose release's components are
-  Adventure's (MCProtocolLib for Minecraft 1.16 on) also on `mcprotocol-adventure` for `AdventureText`; an older
-  release flattens its own text components in its segment. The side's `module-adapter` convention adds the new
+  Adventure's (MCProtocolLib for Minecraft 1.16 on) also on `mcprotocol-adventure`, whose `ComponentTranslator` the
+  chain's `TextTranslator` extends with the Adventure accessors its releases share; a segment whose release's
+  Adventure moved one of them, as Adventure 4.22 moved a click's value, brings its own `TextTranslator` and replaces
+  its base's. An older release flattens its own text components in its segment. The side's `module-adapter` convention adds the new
   child automatically.
 - **The protocol cannot express the release:** add or change the packet values in `protocol-java-api`
   and the area translations of every client segment, or change `McProtocolClient` in `mcprotocol-api`

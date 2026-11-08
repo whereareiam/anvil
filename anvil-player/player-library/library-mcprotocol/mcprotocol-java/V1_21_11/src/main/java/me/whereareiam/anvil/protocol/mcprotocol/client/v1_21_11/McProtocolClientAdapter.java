@@ -14,11 +14,13 @@ import java.util.List;
  * network sessions and packet table, which keeps the 1.21 connection and screen translations.
  */
 public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
+	private static final TextTranslator TEXT = new TextTranslator();
+
 	/**
 	 * Creates the client of the MCProtocolLib 1.21.11 release.
 	 */
 	public McProtocolClientAdapter() {
-		super(new NetworkClientSessions(TeleportListener::new), McProtocolClientAdapter::packets);
+		super(new NetworkClientSessions(TEXT, TeleportListener::new), McProtocolClientAdapter::packets);
 	}
 
 	/**
@@ -28,17 +30,17 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 	 */
 	static PacketTable<Packet> packets() {
 		return new PacketTable<>(List.of(
-				new ChatPackets(),
+				new ChatPackets(TEXT),
 				new CommandPackets(),
 				new ConfigurationPackets(),
 				new ConnectionPackets(),
 				new CookiePackets(),
 				new DialogPackets(),
-				new EntityPackets(),
+				new EntityPackets(TEXT),
 				new InteractionPackets(),
-				new InventoryPackets(),
+				new InventoryPackets(TEXT),
 				new PlayerPackets(),
-				new ScreenPackets(),
+				new ScreenPackets(TEXT),
 				new SoundPackets()
 		));
 	}

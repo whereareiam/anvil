@@ -22,6 +22,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleT
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitlesAnimation;
 import me.whereareiam.anvil.protocol.java.api.type.BossEventColor;
 import me.whereareiam.anvil.protocol.java.api.type.BossEventOverlay;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +35,20 @@ import java.util.Set;
  * packet before Minecraft 1.17 and have packets of their own since.
  */
 public abstract class ScreenTranslation implements PacketTranslation<Packet> {
+	/**
+	 * Translates the release's text components.
+	 */
+	protected final @NotNull ComponentTranslator text;
+
+	/**
+	 * Creates the translation of a release.
+	 *
+	 * @param text translates the release's text components
+	 */
+	protected ScreenTranslation(@NotNull ComponentTranslator text) {
+		this.text = text;
+	}
+
 	@Override
 	public final @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(
@@ -66,10 +81,10 @@ public abstract class ScreenTranslation implements PacketTranslation<Packet> {
 	 */
 	protected abstract @Nullable ClientboundPacket decodeTitle(@NotNull Packet packet);
 
-	private static BossEventOperation operation(ServerBossBarPacket packet) {
+	private BossEventOperation operation(ServerBossBarPacket packet) {
 		return switch (packet.getAction()) {
 			case ADD -> BossEventAdd.builder()
-					.name(ValueTranslator.plain(packet.getTitle()))
+					.name(text.translate(packet.getTitle()).plain())
 					.progress(packet.getHealth())
 					.color(color(packet.getColor()))
 					.overlay(overlay(packet.getDivision()))
@@ -79,7 +94,7 @@ public abstract class ScreenTranslation implements PacketTranslation<Packet> {
 					.build();
 			case REMOVE -> new BossEventRemove();
 			case UPDATE_HEALTH -> new BossEventUpdateProgress(packet.getHealth());
-			case UPDATE_TITLE -> new BossEventUpdateName(ValueTranslator.plain(packet.getTitle()));
+			case UPDATE_TITLE -> new BossEventUpdateName(text.translate(packet.getTitle()).plain());
 			case UPDATE_STYLE -> new BossEventUpdateStyle(color(packet.getColor()), overlay(packet.getDivision()));
 			case UPDATE_FLAGS ->
 					new BossEventUpdateProperties(packet.isDarkenSky(), packet.isPlayEndMusic(), packet.isShowFog());

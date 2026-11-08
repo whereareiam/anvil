@@ -11,6 +11,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContai
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,6 +34,10 @@ final class InventoryPackets extends InventoryTranslation {
 	private static final int ACTION_NUMBERS = Short.MAX_VALUE;
 
 	private final AtomicInteger actions = new AtomicInteger();
+
+	InventoryPackets(@NotNull ComponentTranslator text) {
+		super(text);
+	}
 
 	@Override
 	protected @Nullable ClientboundPacket decodeContents(@NotNull Packet packet) {

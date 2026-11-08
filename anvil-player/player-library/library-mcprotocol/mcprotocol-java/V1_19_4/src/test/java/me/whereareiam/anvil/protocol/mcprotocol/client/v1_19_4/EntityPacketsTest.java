@@ -19,6 +19,7 @@ import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.TextTranslator;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class EntityPacketsTest {
 	private static final UUID ZOMBIE = new UUID(0, 7);
 
-	private final EntityPackets packets = new EntityPackets();
+	private final EntityPackets packets = new EntityPackets(new TextTranslator());
 
 	@Test
 	void decodesMobsAndPaintingsThroughTheEntitySpawnAndPlayersAndOrbsThroughTheirOwn() {

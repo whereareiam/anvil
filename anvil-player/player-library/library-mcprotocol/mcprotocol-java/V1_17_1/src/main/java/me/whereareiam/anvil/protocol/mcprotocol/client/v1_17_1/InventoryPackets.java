@@ -11,6 +11,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContai
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.InventoryTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ValueTranslator;
 import org.jetbrains.annotations.NotNull;
@@ -23,6 +24,10 @@ import java.util.Map;
  * carries the container's state ID and no predicted slots, so the server confirms nothing.
  */
 final class InventoryPackets extends InventoryTranslation {
+	InventoryPackets(@NotNull ComponentTranslator text) {
+		super(text);
+	}
+
 	@Override
 	protected @Nullable ClientboundPacket decodeContents(@NotNull Packet packet) {
 		if (packet instanceof ServerWindowItemsPacket content)

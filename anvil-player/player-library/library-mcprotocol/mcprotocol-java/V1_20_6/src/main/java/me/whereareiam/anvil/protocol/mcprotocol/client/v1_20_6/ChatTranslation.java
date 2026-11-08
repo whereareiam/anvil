@@ -13,7 +13,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.protocol.java.api.type.FilterMaskType;
-import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureRelease;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -32,7 +32,7 @@ import java.util.Set;
  * Chat of the MCProtocolLib releases from 1.20.5 on: system, player and disguised messages and the server's deletions
  * in, chat and commands out.
  * The player sends chat unsigned, as a client without a profile key does; each release's {@code ChatPackets} builds
- * the chat packet, whose fields change between releases, and supplies what its Adventure keeps differently.
+ * the chat packet, whose fields change between releases,.
  */
 public abstract class ChatTranslation implements PacketTranslation<Packet> {
 	/**
@@ -52,6 +52,20 @@ public abstract class ChatTranslation implements PacketTranslation<Packet> {
 	 */
 	protected static final int NO_ACKNOWLEDGED_OFFSET = 0;
 
+	/**
+	 * Translates the release's text components.
+	 */
+	protected final @NotNull ComponentTranslator text;
+
+	/**
+	 * Creates the translation of a release.
+	 *
+	 * @param text translates the release's text components
+	 */
+	protected ChatTranslation(@NotNull ComponentTranslator text) {
+		this.text = text;
+	}
+
 	@Override
 	public final @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(
@@ -67,9 +81,9 @@ public abstract class ChatTranslation implements PacketTranslation<Packet> {
 	@Override
 	public final @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (packet instanceof ClientboundSystemChatPacket chat)
-			return new ClientboundSystemChat(text(chat.getContent()), chat.isOverlay());
+			return new ClientboundSystemChat(text.translate(chat.getContent()), chat.isOverlay());
 		if (packet instanceof ClientboundDisguisedChatPacket chat)
-			return new ClientboundDisguisedChat(text(chat.getMessage()));
+			return new ClientboundDisguisedChat(text.translate(chat.getMessage()));
 		if (packet instanceof ClientboundDeleteChatPacket delete)
 			return new ClientboundDeleteChat(packed(delete.getMessageSignature()));
 		if (!(packet instanceof ClientboundPlayerChatPacket chat)) return null;
@@ -78,16 +92,13 @@ public abstract class ChatTranslation implements PacketTranslation<Packet> {
 		byte[] signature = chat.getMessageSignature();
 
 		return new ClientboundPlayerChat(
-				unsigned == null ? Text.literal(chat.getContent()) : text(unsigned),
+				unsigned == null ? Text.literal(chat.getContent()) : text.translate(unsigned),
 				filterMask(chat.getFilterMask()),
 				signature == null ? null : new MessageSignature(signature),
 				chat.getLastSeenMessages().stream().map(ChatTranslation::packed).toList()
 		);
 	}
 
-	private Text text(Component component) {
-		return ValueTranslator.text(component, adventure());
-	}
 
 	/**
 	 * Packs a signature as the release read it: the index into the client's signature cache, or the whole signature
@@ -123,11 +134,4 @@ public abstract class ChatTranslation implements PacketTranslation<Packet> {
 	 * @return the release's chat packet
 	 */
 	protected abstract @NotNull Packet chat(@NotNull ServerboundChat chat);
-
-	/**
-	 * Returns what the release's Adventure keeps differently, such as how it reads a click's value.
-	 *
-	 * @return the release's Adventure
-	 */
-	protected abstract @NotNull AdventureRelease adventure();
 }

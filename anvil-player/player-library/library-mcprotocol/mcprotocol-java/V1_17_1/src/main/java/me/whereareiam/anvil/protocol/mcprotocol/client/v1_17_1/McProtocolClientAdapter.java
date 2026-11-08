@@ -9,6 +9,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.InteractionPacket
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.PlayerPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.SoundPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.TextTranslator;
 
 import java.util.List;
 
@@ -17,11 +18,13 @@ import java.util.List;
  * answers and packet table, which keeps the 1.16.5 chat, connection, interaction, player and sound translations.
  */
 public final class McProtocolClientAdapter extends JavaClient {
+	private static final TextTranslator TEXT = new TextTranslator();
+
 	/**
 	 * Creates the client of the MCProtocolLib 1.17.1 release.
 	 */
 	public McProtocolClientAdapter() {
-		super(new ReleaseAnswers(), McProtocolClientAdapter::packets);
+		super(new ReleaseAnswers(), TEXT, McProtocolClientAdapter::packets);
 	}
 
 	/**
@@ -40,14 +43,14 @@ public final class McProtocolClientAdapter extends JavaClient {
 	 */
 	static PacketTable<Packet> packets() {
 		return new PacketTable<>(List.of(
-				new ChatPackets(),
+				new ChatPackets(TEXT),
 				new CommandPackets(),
 				new ConnectionPackets(),
-				new EntityPackets(),
+				new EntityPackets(TEXT),
 				new InteractionPackets(),
-				new InventoryPackets(),
+				new InventoryPackets(TEXT),
 				new PlayerPackets(),
-				new ScreenPackets(),
+				new ScreenPackets(TEXT),
 				new SoundPackets()
 		));
 	}

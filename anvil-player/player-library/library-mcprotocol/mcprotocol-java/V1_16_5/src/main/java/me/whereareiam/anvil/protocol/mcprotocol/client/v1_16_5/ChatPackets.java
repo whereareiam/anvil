@@ -11,6 +11,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundPlayerChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,7 +27,17 @@ public final class ChatPackets implements PacketTranslation<Packet> {
 	 * What a chat message starts with to run the rest as a command.
 	 */
 	private static final String COMMAND_PREFIX = "/";
-	private static final ReleaseAdventure ADVENTURE = new ReleaseAdventure();
+
+	private final ComponentTranslator text;
+
+	/**
+	 * Creates the chat translation of the release.
+	 *
+	 * @param text translates the release's text components
+	 */
+	public ChatPackets(@NotNull ComponentTranslator text) {
+		this.text = text;
+	}
 
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
@@ -38,11 +49,11 @@ public final class ChatPackets implements PacketTranslation<Packet> {
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (!(packet instanceof ServerChatPacket chat)) return null;
 
-		Text text = ValueTranslator.text(chat.getMessage(), ADVENTURE);
+		Text message = text.translate(chat.getMessage());
 		return switch (chat.getType()) {
-			case CHAT -> ClientboundPlayerChat.unsigned(text);
-			case SYSTEM -> new ClientboundSystemChat(text, false);
-			case NOTIFICATION -> new ClientboundSystemChat(text, true);
+			case CHAT -> ClientboundPlayerChat.unsigned(message);
+			case SYSTEM -> new ClientboundSystemChat(message, false);
+			case NOTIFICATION -> new ClientboundSystemChat(message, true);
 		};
 	}
 

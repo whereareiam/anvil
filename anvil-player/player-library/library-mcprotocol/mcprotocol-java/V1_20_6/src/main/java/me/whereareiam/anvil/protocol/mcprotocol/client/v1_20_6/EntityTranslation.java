@@ -11,6 +11,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntit
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.EntityDataLayout;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.type.EntityDataField;
@@ -49,14 +50,17 @@ import java.util.UUID;
 public abstract class EntityTranslation implements PacketTranslation<Packet> {
 	private final Map<Integer, EntityType> types = new HashMap<>();
 	private final EntityDataLayout<EntityType> layout;
+	private final ComponentTranslator text;
 
 	/**
 	 * Creates the translation of a release whose entity data indexes the layout describes.
 	 *
 	 * @param layout the release's entity data layout
+	 * @param text translates the release's text components
 	 */
-	protected EntityTranslation(@NotNull EntityDataLayout<EntityType> layout) {
+	protected EntityTranslation(@NotNull EntityDataLayout<EntityType> layout, @NotNull ComponentTranslator text) {
 		this.layout = layout;
+		this.text = text;
 	}
 
 	@Override
@@ -146,7 +150,7 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 		List<EntityDataValue> values = new ArrayList<>();
 		for (EntityMetadata<?, ?> entry : metadata) {
 			EntityDataField field = layout.field(type, entry.getId());
-			EntityDataValue value = field == null ? null : EntityDataValues.value(field, entry.getValue());
+			EntityDataValue value = field == null ? null : EntityDataValues.value(field, entry.getValue(), text);
 			if (value != null) values.add(value);
 		}
 

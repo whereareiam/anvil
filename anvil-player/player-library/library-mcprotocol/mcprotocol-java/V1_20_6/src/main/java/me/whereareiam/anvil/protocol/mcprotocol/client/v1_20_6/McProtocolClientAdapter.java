@@ -11,11 +11,13 @@ import java.util.List;
  * sessions and packet table.
  */
 public final class McProtocolClientAdapter extends JavaClient<Session> {
+	private static final TextTranslator TEXT = new TextTranslator();
+
 	/**
 	 * Creates the client of the MCProtocolLib 1.20.6 release.
 	 */
 	public McProtocolClientAdapter() {
-		super(new TcpClientSessions(), McProtocolClientAdapter::packets);
+		super(new TcpClientSessions(TEXT), McProtocolClientAdapter::packets);
 	}
 
 	/**
@@ -25,15 +27,15 @@ public final class McProtocolClientAdapter extends JavaClient<Session> {
 	 */
 	static PacketTable<Packet> packets() {
 		return new PacketTable<>(List.of(
-				new ChatPackets(),
+				new ChatPackets(TEXT),
 				new CommandPackets(),
 				new ConnectionPackets(),
 				new CookiePackets(),
-				new EntityPackets(),
+				new EntityPackets(TEXT),
 				new InteractionPackets(),
-				new InventoryPackets(),
+				new InventoryPackets(TEXT),
 				new PlayerPackets(),
-				new ScreenPackets(),
+				new ScreenPackets(TEXT),
 				new SoundPackets()
 		));
 	}

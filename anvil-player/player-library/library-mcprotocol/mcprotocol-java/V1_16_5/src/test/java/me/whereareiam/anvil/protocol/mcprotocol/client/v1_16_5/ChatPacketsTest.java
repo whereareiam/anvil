@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ChatPacketsTest {
-	private final ChatPackets packets = new ChatPackets();
+	private final ChatPackets packets = new ChatPackets(new TextTranslator());
 
 	@Test
 	void decodesEachMessageTypeAsTheProtocolsChat() {

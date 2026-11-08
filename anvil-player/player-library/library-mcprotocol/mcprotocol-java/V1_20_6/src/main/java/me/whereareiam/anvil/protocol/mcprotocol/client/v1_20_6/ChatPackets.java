@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
-import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureRelease;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.ServerboundChatPacket;
 import org.jetbrains.annotations.NotNull;
@@ -14,16 +14,18 @@ import java.util.BitSet;
  * checksum, and whose Adventure is 4.15.
  */
 public final class ChatPackets extends ChatTranslation {
-	private static final ReleaseAdventure ADVENTURE = new ReleaseAdventure();
+	/**
+	 * Creates the chat translation of the release.
+	 *
+	 * @param text translates the release's text components
+	 */
+	public ChatPackets(@NotNull ComponentTranslator text) {
+		super(text);
+	}
 
 	@Override
 	protected @NotNull Packet chat(@NotNull ServerboundChat chat) {
 		return new ServerboundChatPacket(chat.getText(), Instant.now().toEpochMilli(), UNSIGNED_SALT, NO_SIGNATURE,
 				NO_ACKNOWLEDGED_OFFSET, new BitSet(ACKNOWLEDGED_MESSAGES));
-	}
-
-	@Override
-	protected @NotNull AdventureRelease adventure() {
-		return ADVENTURE;
 	}
 }

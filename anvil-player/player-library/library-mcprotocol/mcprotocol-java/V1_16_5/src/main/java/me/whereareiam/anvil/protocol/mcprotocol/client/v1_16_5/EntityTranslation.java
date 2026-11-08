@@ -35,6 +35,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEnt
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.EntityDataLayout;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.type.EntityDataField;
@@ -68,13 +69,17 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 	private final Map<Integer, EntityType> types = new HashMap<>();
 	private final EntityDataLayout<EntityType> layout;
 
+	private final ComponentTranslator text;
+
 	/**
 	 * Creates the translation of a release whose entity data indexes the layout describes.
 	 *
 	 * @param layout the release's entity data layout
+	 * @param text translates the release's text components
 	 */
-	protected EntityTranslation(@NotNull EntityDataLayout<EntityType> layout) {
+	protected EntityTranslation(@NotNull EntityDataLayout<EntityType> layout, @NotNull ComponentTranslator text) {
 		this.layout = layout;
+		this.text = text;
 	}
 
 	@Override
@@ -207,7 +212,7 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 	 * release sends, is left out. These releases decode an absent custom name as {@code null} rather than as an empty
 	 * optional, and have no displays, so no index carries a display's text.
 	 */
-	private static @Nullable EntityDataValue value(EntityDataField field, @Nullable Object value) {
+	private @Nullable EntityDataValue value(EntityDataField field, @Nullable Object value) {
 		return switch (field) {
 			case SHARED_FLAGS -> value instanceof Byte flags ? SharedFlags.of(flags) : null;
 			case CUSTOM_NAME -> customName(value);
@@ -219,10 +224,10 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 		};
 	}
 
-	private static @Nullable CustomName customName(@Nullable Object name) {
+	private @Nullable CustomName customName(@Nullable Object name) {
 		if (name == null) return new CustomName(null);
-		if (!(name instanceof Component text)) return null;
+		if (!(name instanceof Component component)) return null;
 
-		return new CustomName(ValueTranslator.plain(text));
+		return new CustomName(text.translate(component).plain());
 	}
 }

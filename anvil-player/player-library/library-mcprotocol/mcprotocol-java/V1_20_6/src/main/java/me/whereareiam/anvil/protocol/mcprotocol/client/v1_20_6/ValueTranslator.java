@@ -2,15 +2,10 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureRelease;
-import me.whereareiam.anvil.protocol.mcprotocol.adventure.AdventureText;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TranslatableComponent;
 import org.cloudburstmc.math.vector.Vector3d;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.object.Direction;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Hand;
@@ -31,30 +26,6 @@ import java.util.Locale;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ValueTranslator {
-	private static final AdventureText TEXT = new AdventureText(TranslatableComponent::arguments);
-
-	/**
-	 * Flattens a component of the chain's releases to plain text, reading a translation's arguments through
-	 * {@code arguments()}, which Adventure 5 keeps.
-	 *
-	 * @param component component to flatten
-	 * @return the component as plain text
-	 */
-	public static @NotNull String plain(@NotNull Component component) {
-		return TEXT.plain(component);
-	}
-
-	/**
-	 * Translates a component of the chain's releases to the text the server sent.
-	 *
-	 * @param component component to translate
-	 * @param release what the release's Adventure keeps differently
-	 * @return the component as text
-	 */
-	public static @NotNull Text text(@NotNull Component component, @NotNull AdventureRelease release) {
-		return TEXT.text(component, release);
-	}
-
 
 	/**
 	 * Translates a hand to the library's.

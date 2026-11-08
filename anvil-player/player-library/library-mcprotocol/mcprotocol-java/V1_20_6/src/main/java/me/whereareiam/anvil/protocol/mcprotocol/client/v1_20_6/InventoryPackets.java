@@ -4,6 +4,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.inventory.ContainerAction;
 import org.geysermc.mcprotocollib.protocol.data.game.inventory.ContainerActionType;
@@ -20,6 +21,15 @@ import java.util.Map;
  * ClientboundSetPlayerInventory}, and clicks carry the clicked stack as a full item stack.
  */
 public final class InventoryPackets extends InventoryTranslation {
+	/**
+	 * Creates the inventory translation of the release.
+	 *
+	 * @param text translates the release's text components
+	 */
+	public InventoryPackets(@NotNull ComponentTranslator text) {
+		super(text);
+	}
+
 	/**
 	 * The container whose slot packet addresses a slot of the player's inventory by its inventory index.
 	 */

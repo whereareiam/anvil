@@ -31,6 +31,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEnt
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.EntityDataLayout;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.type.EntityDataField;
@@ -62,13 +63,17 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 	private final Map<Integer, EntityType> types = new HashMap<>();
 	private final EntityDataLayout<EntityType> layout;
 
+	private final ComponentTranslator text;
+
 	/**
 	 * Creates the translation of a release whose entity data indexes the layout describes.
 	 *
 	 * @param layout the release's entity data layout
+	 * @param text translates the release's text components
 	 */
-	protected EntityTranslation(@NotNull EntityDataLayout<EntityType> layout) {
+	protected EntityTranslation(@NotNull EntityDataLayout<EntityType> layout, @NotNull ComponentTranslator text) {
 		this.layout = layout;
+		this.text = text;
 	}
 
 	@Override
@@ -189,7 +194,7 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 	 * Reads the value an index carries; a value of another kind than the table names, which only a server of another
 	 * release sends, is left out. A release without displays names no index that carries a display's text.
 	 */
-	private static @Nullable EntityDataValue value(EntityDataField field, @Nullable Object value) {
+	private @Nullable EntityDataValue value(EntityDataField field, @Nullable Object value) {
 		return switch (field) {
 			case SHARED_FLAGS -> value instanceof Byte flags ? SharedFlags.of(flags) : null;
 			case CUSTOM_NAME -> value instanceof Optional<?> name ? customName(name) : null;
@@ -197,14 +202,14 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 			case SHOWN_ITEM -> value == null || value instanceof ItemStack
 					? new ShownItem(ValueTranslator.item((ItemStack) value))
 					: null;
-			case DISPLAY_TEXT -> value instanceof Component text ? new DisplayText(ValueTranslator.plain(text)) : null;
+			case DISPLAY_TEXT -> value instanceof Component component ? new DisplayText(text.translate(component).plain()) : null;
 		};
 	}
 
-	private static @Nullable CustomName customName(Optional<?> name) {
+	private @Nullable CustomName customName(Optional<?> name) {
 		if (name.isEmpty()) return new CustomName(null);
-		if (!(name.get() instanceof Component text)) return null;
+		if (!(name.get() instanceof Component component)) return null;
 
-		return new CustomName(ValueTranslator.plain(text));
+		return new CustomName(text.translate(component).plain());
 	}
 }
