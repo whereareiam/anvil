@@ -7,15 +7,16 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 /**
- * Downloads and verifies one complete artifact replacement before storage publishes it.
+ * Prepares one complete artifact replacement, a downloaded file or an installed directory, before storage
+ * publishes it.
  * @param <T> result derived from the prepared contents
  */
 
 public interface ArtifactContent<T> {
 	/**
-	 * Writes complete contents into the supplied empty staging file.
+	 * Writes complete contents into the supplied empty staging file or directory.
 	 *
-	 * @param staging unpublished file owned by the storage transaction
+	 * @param staging unpublished file or directory owned by the storage transaction
 	 * @return result needed by the acquisition operation
 	 * @throws IOException when content cannot be prepared
 	 */

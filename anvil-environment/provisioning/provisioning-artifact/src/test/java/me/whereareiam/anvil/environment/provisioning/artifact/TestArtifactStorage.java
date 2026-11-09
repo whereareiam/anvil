@@ -11,6 +11,7 @@ import me.whereareiam.anvil.environment.provisioning.artifact.api.storage.Artifa
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 @RequiredArgsConstructor
@@ -38,6 +39,16 @@ final class TestArtifactStorage implements ArtifactStorage {
 		@Override
 		public <T> T replace(@NotNull ArtifactContent<T> content) throws IOException {
 			try (CacheWrite write = entry.stageFile()) {
+				T result = content.write(write.path());
+				write.commit();
+				return result;
+			}
+		}
+
+		@Override
+		public <T> T replaceDirectory(@NotNull ArtifactContent<T> content) throws IOException {
+			try (CacheWrite write = entry.stageReplacement()) {
+				Files.createDirectories(write.path());
 				T result = content.write(write.path());
 				write.commit();
 				return result;

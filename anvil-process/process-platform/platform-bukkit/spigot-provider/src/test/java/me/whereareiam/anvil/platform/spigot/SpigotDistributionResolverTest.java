@@ -6,6 +6,7 @@ import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceFiles;
 import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceProcessFiles;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
+import me.whereareiam.anvil.platform.api.PlatformInstaller;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +33,11 @@ class SpigotDistributionResolverTest {
 		var server = server(Distribution.pinned(version, checksum));
 		PlatformArtifactSource artifacts = new PlatformArtifactSource() {
 			@Override
+			public @NotNull Path install(@NotNull Path destination, @NotNull PlatformInstaller installer) {
+				throw new AssertionError("No installation expected");
+			}
+
+			@Override
 			public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, String expectedSha256) {
 				assertEquals(URI.create("https://cdn.getbukkit.org/spigot/spigot-" + version + ".jar"), uri);
 				assertEquals(checksum.toLowerCase(), expectedSha256);
@@ -56,6 +62,11 @@ class SpigotDistributionResolverTest {
 	@Test
 	void rejectsUnpinnedAndLegacyBuildSelectorsBeforeDownloading() {
 		PlatformArtifactSource unused = new PlatformArtifactSource() {
+			@Override
+			public @NotNull Path install(@NotNull Path destination, @NotNull PlatformInstaller installer) {
+				throw new AssertionError("No installation expected");
+			}
+
 			@Override
 			public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, String expectedSha256) {
 				throw new AssertionError("Invalid selectors must fail before download");

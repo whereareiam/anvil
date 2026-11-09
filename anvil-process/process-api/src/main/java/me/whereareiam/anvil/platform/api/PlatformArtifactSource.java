@@ -27,6 +27,18 @@ public interface PlatformArtifactSource {
 	@NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, @Nullable String sha256);
 
 	/**
+	 * Returns a platform installation in the cache, running the installer when it is absent. Scenarios that prepare
+	 * one destination at once, in this JVM or in others sharing the cache, install it once; the others wait and use
+	 * the published installation. It is published as a whole after the installer returns, so an existing
+	 * destination is complete, and a failed installation leaves nothing behind.
+	 *
+	 * @param destination provider-selected installation directory below the cache directory
+	 * @param installer   writes the complete installation into an empty staging directory
+	 * @return installed directory
+	 */
+	@NotNull Path install(@NotNull Path destination, @NotNull PlatformInstaller installer);
+
+	/**
 	 * Reads platform catalog metadata according to the configured refresh/offline policy.
 	 * @param uri provider-selected catalog document
 	 * @return catalog content

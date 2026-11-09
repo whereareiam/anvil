@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
@@ -41,6 +42,19 @@ public final class CacheArtifactStorage implements ArtifactStorage {
 		@Override
 		public <T> @Nullable T replace(@NotNull ArtifactContent<T> content) throws IOException {
 			try (var write = entry.stageFile()) {
+				T result = content.write(write.path());
+				write.commit();
+
+				return result;
+			} catch (CacheException failure) {
+				throw new IOException("Cannot publish artifact " + path(), failure);
+			}
+		}
+
+		@Override
+		public <T> @Nullable T replaceDirectory(@NotNull ArtifactContent<T> content) throws IOException {
+			try (var write = entry.stageReplacement()) {
+				Files.createDirectories(write.path());
 				T result = content.write(write.path());
 				write.commit();
 

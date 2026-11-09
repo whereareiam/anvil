@@ -28,6 +28,17 @@ public interface ArtifactEntry extends AutoCloseable {
 	@Nullable <T> T replace(@NotNull ArtifactContent<T> content) throws IOException;
 
 	/**
+	 * Prepares and publishes a complete directory replacement while retaining exclusive access.
+	 * Failed content preparation preserves the previous destination and removes staging.
+	 *
+	 * @param content writes the complete replacement into the supplied empty staging directory
+	 * @param <T> value produced while preparing content
+	 * @return content result after successful publication
+	 * @throws IOException when staging, content preparation, or publication fails
+	 */
+	@Nullable <T> T replaceDirectory(@NotNull ArtifactContent<T> content) throws IOException;
+
+	/**
 	 * Releases exclusive access after every replacement has completed or rolled back.
 	 * @throws IOException when storage cleanup fails
 	 */

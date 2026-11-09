@@ -1,25 +1,22 @@
 package me.whereareiam.anvil.platform.neoforge;
 
+import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.DirectoryNotEmptyException;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 /**
- * One NeoForge release in the cache: its installer and the server the installer produces. The server
- * directory is published by an atomic move after a complete installation, so concurrent processes and
- * interrupted installations never expose a partial server.
+ * One NeoForge release in the cache: its installer and the server the installer produces. The server is installed
+ * through {@link PlatformArtifactSource#install}, which runs the installer once for scenarios that prepare the
+ * release at once and publishes the server only when it is complete.
  */
 final class NeoForgeInstallation {
 	private static final String SERVER_JAR = "server.jar";
@@ -46,23 +43,15 @@ final class NeoForgeInstallation {
 	}
 
 	/**
-	 * Runs the installer once. The installer downloads the Minecraft server and NeoForge's libraries itself.
+	 * Installs the server unless it is installed. The installer downloads the Minecraft server and NeoForge's
+	 * libraries itself.
 	 */
-	void install(@NotNull Path installer) throws IOException {
-		if (Files.isRegularFile(serverJar()))
-			return;
-
-		Files.createDirectories(directory);
-		Path staging = Files.createTempDirectory(directory, "installing-");
-		try {
+	void install(@NotNull Path installer, @NotNull PlatformArtifactSource artifacts) {
+		artifacts.install(server, staging -> {
 			run(installer, staging);
 			if (!Files.isRegularFile(staging.resolve(SERVER_JAR)))
 				throw new PlatformException("NeoForge installer produced no " + SERVER_JAR + ": " + installer);
-
-			publish(staging);
-		} finally {
-			delete(staging);
-		}
+		});
 	}
 
 	/**
@@ -115,30 +104,11 @@ final class NeoForgeInstallation {
 			throw new PlatformException("NeoForge installer failed with exit code " + process.exitValue() + "; see " + log);
 	}
 
-	private void publish(Path staging) throws IOException {
-		try {
-			Files.move(staging, server, StandardCopyOption.ATOMIC_MOVE);
-		} catch (AtomicMoveNotSupportedException | FileAlreadyExistsException | DirectoryNotEmptyException concurrent) {
-			if (!Files.isRegularFile(serverJar()))
-				throw concurrent;
-		}
-	}
-
 	private void link(Path file, Path target) throws IOException {
 		try {
 			Files.createLink(target, file);
 		} catch (UnsupportedOperationException | IOException unsupported) {
 			Files.copy(file, target, StandardCopyOption.COPY_ATTRIBUTES);
-		}
-	}
-
-	private void delete(Path staging) throws IOException {
-		if (!Files.exists(staging))
-			return;
-
-		try (Stream<Path> tree = Files.walk(staging)) {
-			for (Path path : tree.sorted(Comparator.reverseOrder()).toList())
-				Files.deleteIfExists(path);
 		}
 	}
 }
