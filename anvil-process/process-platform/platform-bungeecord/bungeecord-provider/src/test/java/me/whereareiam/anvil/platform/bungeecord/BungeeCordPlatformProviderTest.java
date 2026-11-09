@@ -9,6 +9,7 @@ import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceFiles;
 import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceProcessFiles;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
+import me.whereareiam.anvil.platform.api.PlatformInstaller;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
 import me.whereareiam.anvil.platform.api.type.ForwardingMode;
@@ -95,6 +96,11 @@ class BungeeCordPlatformProviderTest {
 
 	private PlatformArtifactSource artifactSource() {
 		return new PlatformArtifactSource() {
+			@Override
+			public @NotNull Path install(@NotNull Path destination, @NotNull PlatformInstaller installer) {
+				throw new AssertionError("No installation expected");
+			}
+
 			@Override
 			public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, String expectedSha256) {
 				throw new AssertionError("No remote artifact expected");

@@ -44,7 +44,8 @@ Distribution pinned = Distribution.builder()
 ## How the server is installed
 
 NeoForge publishes an installer, not a server JAR. The first scenario that uses a release runs its
-installer once with the JVM that runs Anvil. The installer downloads the Minecraft server and NeoForge's
+installer once with the JVM that runs Anvil. Scenarios that need the same release at the same time, in one
+JVM or in several sharing the cache, wait for that installation instead of running their own. The installer downloads the Minecraft server and NeoForge's
 libraries itself, so the first run needs network access even when Anvil's own downloads are cached.
 Its output is kept in `<cacheDirectory>/distributions/neoforge/<release>/install.log`.
 

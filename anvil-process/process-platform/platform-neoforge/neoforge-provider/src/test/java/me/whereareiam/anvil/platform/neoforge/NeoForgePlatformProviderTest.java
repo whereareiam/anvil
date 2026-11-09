@@ -7,6 +7,7 @@ import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceFiles;
 import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceProcessFiles;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
+import me.whereareiam.anvil.platform.api.PlatformInstaller;
 import me.whereareiam.anvil.platform.api.exception.PlatformException;
 import me.whereareiam.anvil.platform.api.model.ForwardingConfiguration;
 import me.whereareiam.anvil.platform.api.model.PlatformContext;
@@ -69,7 +70,8 @@ class NeoForgePlatformProviderTest {
 		String installer = "https://maven.neoforged.net/releases/net/neoforged/neoforge/21.1.256/neoforge-21.1.256-installer.jar";
 		assertEquals(List.of(
 				"read " + installer + ".sha256",
-				"obtain " + installer + " -> " + installation.resolve("neoforge-21.1.256-installer.jar") + " " + CHECKSUM
+				"obtain " + installer + " -> " + installation.resolve("neoforge-21.1.256-installer.jar") + " " + CHECKSUM,
+				"install " + installation.resolve("server")
 		), requests);
 	}
 
@@ -155,6 +157,14 @@ class NeoForgePlatformProviderTest {
 
 	private PlatformArtifactSource artifactSource() {
 		return new PlatformArtifactSource() {
+			@Override
+			public @NotNull Path install(@NotNull Path destination, @NotNull PlatformInstaller installer) {
+				requests.add("install " + destination);
+				if (!Files.isDirectory(destination))
+					throw new AssertionError("No installer expected");
+				return destination;
+			}
+
 			@Override
 			public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, String expectedSha256) {
 				requests.add("obtain " + uri + " -> " + destination + " " + expectedSha256);

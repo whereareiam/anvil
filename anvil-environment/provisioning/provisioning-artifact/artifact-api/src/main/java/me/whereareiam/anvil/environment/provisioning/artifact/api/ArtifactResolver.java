@@ -30,6 +30,18 @@ public interface ArtifactResolver {
 	);
 
 	/**
+	 * Returns an installed directory of the cache, running the installer when the directory is absent. Callers of
+	 * one destination, in this JVM or another sharing the cache, install it once: the others wait and receive the
+	 * published directory. The installation is published as a whole after the installer returns, so a directory
+	 * that exists is complete, and a failed installation leaves nothing behind.
+	 *
+	 * @param destination directory inside the Anvil cache
+	 * @param installer   writes the complete installation into an empty staging directory
+	 * @return installed directory
+	 */
+	@NotNull Path install(@NotNull Path destination, @NotNull ArtifactInstaller installer);
+
+	/**
 	 * Reads cached resolution metadata, refreshing it only when the configured policy requests it.
 	 *
 	 * @param uri resource location

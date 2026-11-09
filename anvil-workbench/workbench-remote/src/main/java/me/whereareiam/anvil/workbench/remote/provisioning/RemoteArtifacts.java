@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.workbench.remote.provisioning;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.environment.provisioning.artifact.api.ArtifactInstaller;
 import me.whereareiam.anvil.environment.provisioning.artifact.api.ArtifactResolver;
 import me.whereareiam.anvil.workbench.protocol.model.artifact.ObtainArtifact;
 import me.whereareiam.anvil.workbench.protocol.model.artifact.ReadArtifact;
@@ -23,6 +24,17 @@ public final class RemoteArtifacts implements ArtifactResolver {
 	@Override
 	public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, @Nullable String expectedSha256) {
 		return connection.call(new ObtainArtifact(uri, destination, expectedSha256)).getPath();
+	}
+
+	/**
+	 * Refuses an installation: its installer runs in the engine's JVM and writes with the machine's own file
+	 * operations, so it cannot install into the cache of a workbench on another machine. {@code RequirementCheck}
+	 * refuses the platforms that install, such as NeoForge, before a scenario gets here.
+	 */
+	@Override
+	public @NotNull Path install(@NotNull Path destination, @NotNull ArtifactInstaller installer) {
+		throw new UnsupportedOperationException("A workbench on another machine cannot install " + destination
+				+ "; installations run only on the workbench in the engine's own JVM");
 	}
 
 	/**

@@ -7,6 +7,7 @@ import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
+import me.whereareiam.anvil.platform.api.PlatformInstaller;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
 import me.whereareiam.anvil.platform.api.model.ProcessPlan;
 import me.whereareiam.anvil.platform.planning.DefaultPlatformPlanner;
@@ -142,6 +143,11 @@ class CompatibilityScenarioFactoryTest {
 
 	private static DefaultPlatformPlanner planner() {
 		PlatformArtifactSource artifacts = new PlatformArtifactSource() {
+			@Override
+			public @NotNull Path install(@NotNull Path destination, @NotNull PlatformInstaller installer) {
+				throw new AssertionError("No installation expected");
+			}
+
 			@Override
 			public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, @Nullable String checksum) {
 				throw new AssertionError("Planning must not download artifacts");

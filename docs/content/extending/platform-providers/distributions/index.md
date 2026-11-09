@@ -27,6 +27,13 @@ scenario values. Obtain remote content through `artifactSource` so offline polic
 checks apply to distribution artifacts and catalog metadata. The source belongs to `platform-api`;
 the provider does not need an artifact-acquisition or cache API dependency.
 
+A platform whose vendor ships an installer instead of a server JAR installs through
+`artifactSource.install(destination, installer)`. The installer writes into an empty staging directory, and
+the source publishes it at `destination` only when it returns, so an existing destination is a complete
+installation. Scenarios that prepare one destination at once, in one JVM or in several sharing the cache, run the
+installer once; the others wait and receive the published directory. Offline, only an installation made before
+can be used. NeoForge's provider installs its server this way.
+
 Return `ResolvedDistribution` with the executable JAR and a description that identifies the selected
 distribution. Use exact artifact paths; do not guess another module's `build/libs` output. Write
 provider-generated files through the supplied `files`, with workspace-relative paths such as

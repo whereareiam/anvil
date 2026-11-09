@@ -2,6 +2,7 @@ package me.whereareiam.anvil.launcher.adapter.provisioning;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
+import me.whereareiam.anvil.platform.api.PlatformInstaller;
 import me.whereareiam.anvil.workbench.api.Workbench;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,6 +20,11 @@ public final class ArtifactPlatformSource implements PlatformArtifactSource {
 	@Override
 	public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, @Nullable String checksum) {
 		return workbench.artifacts().obtain(uri, destination, checksum);
+	}
+
+	@Override
+	public @NotNull Path install(@NotNull Path destination, @NotNull PlatformInstaller installer) {
+		return workbench.artifacts().install(destination, installer::install);
 	}
 
 	@Override

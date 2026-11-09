@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 /**
- * Grants exclusive access to one downloaded artifact or metadata file.
+ * Grants exclusive access to one downloaded artifact, installed directory or metadata file.
  * Storage adapters own entry coordination and publication; acquisition owns content policy.
  */
 

@@ -57,7 +57,7 @@ final class NeoForgeDistributionResolver {
 
 		NeoForgeInstallation installation = installation(server, context);
 		Path installer = installer(server, context);
-		installation.install(installer);
+		installation.install(installer, context.getArtifactSource());
 
 		Distribution distribution = server.getDistribution();
 		String description = distribution.isLocal()

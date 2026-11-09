@@ -2,6 +2,7 @@ package me.whereareiam.anvil.environment.provisioning.artifact;
 
 import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.environment.provisioning.artifact.api.ArtifactAcquirer;
+import me.whereareiam.anvil.environment.provisioning.artifact.api.ArtifactInstaller;
 import me.whereareiam.anvil.environment.provisioning.artifact.api.storage.ArtifactEntry;
 import me.whereareiam.anvil.environment.provisioning.artifact.api.storage.ArtifactStorage;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +26,8 @@ import java.util.concurrent.Semaphore;
 import java.util.function.Predicate;
 
 /**
- * Acquires verified artifacts and metadata with bounded HTTP transfers and shared cache entries.
+ * Acquires verified artifacts and metadata with bounded HTTP transfers and shared cache entries, and publishes
+ * installed directories through the same entries.
  */
 public final class HttpArtifactAcquirer implements ArtifactAcquirer {
 	private final @NotNull Path root;
@@ -92,6 +94,30 @@ public final class HttpArtifactAcquirer implements ArtifactAcquirer {
 			});
 		} catch (IOException failure) {
 			throw new ProvisioningException("Could not cache " + uri, failure);
+		}
+	}
+
+	/**
+	 * Returns the installed directory, running the installer under the destination's exclusive entry when it is
+	 * absent. Offline, only a directory installed before can be used, because installers download what they install.
+	 *
+	 * @param destination installed directory inside the cache
+	 * @param installer   writes the complete installation into an empty staging directory
+	 * @return normalized installed directory
+	 */
+	@Override
+	public @NotNull Path install(@NotNull Path destination, @NotNull ArtifactInstaller installer) {
+		Path target = destination.toAbsolutePath().normalize();
+		try (ArtifactEntry entry = storage.open(target)) {
+			if (Files.isDirectory(target)) return target;
+			if (offline) throw new ProvisioningException("Installation is unavailable offline: " + target);
+
+			return entry.replaceDirectory(staging -> {
+				installer.install(staging);
+				return target;
+			});
+		} catch (IOException failure) {
+			throw new ProvisioningException("Could not install " + target, failure);
 		}
 	}
 

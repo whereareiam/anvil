@@ -16,6 +16,7 @@ import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.type.SupportLevel;
 import me.whereareiam.anvil.api.type.SupportPolicy;
 import me.whereareiam.anvil.platform.api.PlatformArtifactSource;
+import me.whereareiam.anvil.platform.api.PlatformInstaller;
 import me.whereareiam.anvil.platform.api.PlatformJavaSource;
 import me.whereareiam.anvil.platform.api.PlatformProvider;
 import me.whereareiam.anvil.platform.api.model.PlatformAgentDescriptor;
@@ -336,6 +337,11 @@ class JavaRequirementPlannerTest {
 	@Test
 	void ordersProcessArgumentsFromTheEngineLimitToTheDeclarationsOwn() {
 		PlatformArtifactSource artifacts = new PlatformArtifactSource() {
+			@Override
+			public @NotNull Path install(@NotNull Path destination, @NotNull PlatformInstaller installer) {
+				throw new AssertionError("No installation expected");
+			}
+
 			@Override
 			public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, @Nullable String checksum) {
 				throw new AssertionError("Planning must not download artifacts");
