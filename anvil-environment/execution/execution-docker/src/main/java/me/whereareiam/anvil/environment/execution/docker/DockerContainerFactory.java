@@ -21,13 +21,17 @@ import java.io.PipedOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Creates container handles from Anvil-owned immutable container specifications.
  */
 @RequiredArgsConstructor
 public final class DockerContainerFactory {
+	private static final Duration ATTACH_TIMEOUT = Duration.ofSeconds(30);
+
 	private final DockerClient client;
 
 	/**
@@ -136,12 +140,19 @@ public final class DockerContainerFactory {
 			};
 
 			attachment = new ContainerAttachment(output, outputWriter, input, inputWriter, callback);
+			// The attach is asynchronous. A container that prints its ready line at once, such as Redis, would print
+			// it before the stream is connected, and the line would be lost. So the stream also replays what the
+			// container printed since it started, and the container starts only once the stream is connected.
 			client.attachContainerCmd(container.id())
 					.withStdOut(true)
 					.withStdErr(true)
 					.withStdIn(input)
+					.withLogs(true)
 					.withFollowStream(true)
 					.exec(callback);
+			if (!callback.awaitStarted(ATTACH_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS))
+				throw new ProvisioningException("Docker did not connect to the output of container " + container.id()
+						+ " within " + ATTACH_TIMEOUT);
 
 			container.start();
 			ContainerAttachment attached = attachment;
@@ -157,6 +168,10 @@ public final class DockerContainerFactory {
 			});
 
 			return attached;
+		} catch (InterruptedException failure) {
+			Thread.currentThread().interrupt();
+			if (attachment != null) attachment.close();
+			throw new ProvisioningException("Interrupted while attaching to a Docker container", failure);
 		} catch (IOException | RuntimeException failure) {
 			if (attachment != null) attachment.close();
 			throw new ProvisioningException("Could not attach Docker container", failure);

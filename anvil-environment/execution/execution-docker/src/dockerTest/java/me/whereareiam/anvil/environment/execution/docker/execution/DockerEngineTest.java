@@ -17,6 +17,7 @@ import me.whereareiam.anvil.testkit.support.FixtureArtifacts;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -29,8 +30,10 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.function.UnaryOperator;
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -187,6 +190,38 @@ class DockerEngineTest {
 					process.freeze();
 					assertThrows(IllegalStateException.class, () -> process.execute(Duration.ofSeconds(2), "redis-cli", "PING"));
 					process.thaw();
+				} finally {
+					process.terminate(true);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Redis prints its first lines as soon as it starts, before a slow attach would connect. Each start must still
+	 * deliver the very first line, or a readiness line printed that early would be lost.
+	 */
+	@RepeatedTest(10)
+	void deliversWhatAContainerPrintsTheMomentItStarts() throws Exception {
+		String redis = System.getProperty("anvil.docker.containerTestImage", "redis:7.2-alpine");
+		try (var docker = new DockerEngine();
+		     DockerExecutionSession session = new DockerExecutionSession(ExecutionContext.builder().build(), plainServices(), docker,
+				     DockerExecutionSettings.builder().image("temurin:21", IMAGE).build())) {
+			var request = ProcessRequest.builder().name("redis").workspace(directory.resolve("redis"))
+					.image(ContainerImage.builder().image(redis).port(6379).build()).build();
+			try (var target = session.prepare(request)) {
+				var process = target.start(ImageLaunch.builder().build());
+				try {
+					var output = new BufferedReader(new InputStreamReader(process.output(), StandardCharsets.UTF_8));
+					List<String> lines = new ArrayList<>();
+					String line;
+					while ((line = output.readLine()) != null) {
+						lines.add(line);
+						if (line.contains("Ready to accept connections")) break;
+					}
+					assertNotNull(line, "Redis did not print its ready line: " + lines);
+					assertTrue(lines.stream().anyMatch(printed -> printed.contains("Redis is starting")),
+							"The lines Redis printed as it started were lost: " + lines);
 				} finally {
 					process.terminate(true);
 				}
