@@ -19,6 +19,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -202,6 +203,7 @@ class DockerEngineTest {
 	 * deliver the very first line, or a readiness line printed that early would be lost.
 	 */
 	@RepeatedTest(10)
+	@Timeout(60)
 	void deliversWhatAContainerPrintsTheMomentItStarts() throws Exception {
 		String redis = System.getProperty("anvil.docker.containerTestImage", "redis:7.2-alpine");
 		try (var docker = new DockerEngine();
