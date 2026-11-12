@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.MissingNode;
 import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.environment.provisioning.java.api.JavaPackageSource;
 import me.whereareiam.anvil.environment.provisioning.java.distribution.JavaDistributionDescriptor;
+import me.whereareiam.anvil.environment.provisioning.java.installation.JavaPlatform;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ public final class FoojayJavaCatalog {
 		this.distributions = Map.copyOf(distributions);
 	}
 
-	public Package select(String distribution, int version, @Nullable String release, String os, String architecture) throws IOException {
+	public Package select(String distribution, int version, @Nullable String release, JavaPlatform platform) throws IOException {
 		JavaDistributionDescriptor provider = distributions.get(distribution);
 		if (provider == null) throw new ProvisioningException("Unsupported Java distribution: " + distribution);
 		String distro = provider.catalogId();
@@ -41,8 +42,10 @@ public final class FoojayJavaCatalog {
 		String query = "https://api.foojay.io/disco/v3.0/packages?package_type=jdk&latest=available"
 				+ "&version=" + URLEncoder.encode(selectedVersion, StandardCharsets.UTF_8)
 				+ "&distro=" + URLEncoder.encode(distro, StandardCharsets.UTF_8)
-				+ "&operating_system=" + os + "&architecture=" + architecture
-				+ "&archive_type=tar.gz&libc_type=glibc&directly_downloadable=true";
+				+ "&operating_system=" + platform.os() + "&architecture=" + platform.architecture()
+				+ "&archive_type=" + platform.archiveType()
+				+ (platform.libc() == null ? "" : "&libc_type=" + platform.libc())
+				+ "&directly_downloadable=true";
 
 		JsonNode result;
 		try {
