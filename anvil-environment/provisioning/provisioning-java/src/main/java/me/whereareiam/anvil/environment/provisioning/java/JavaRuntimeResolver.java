@@ -19,6 +19,7 @@ import me.whereareiam.anvil.environment.provisioning.java.distribution.JavaDistr
 import me.whereareiam.anvil.environment.provisioning.java.distribution.TemurinDistribution;
 import me.whereareiam.anvil.environment.provisioning.java.installation.JavaExecutables;
 import me.whereareiam.anvil.environment.provisioning.java.installation.JavaInstallationInspector;
+import me.whereareiam.anvil.environment.provisioning.java.installation.JavaPlatform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -105,13 +106,12 @@ public final class JavaRuntimeResolver implements JavaProvisioner {
 		}
 
 		String distribution = selection.getDistribution() == null ? "temurin" : selection.getDistribution();
-		String os = JavaExecutables.temurinOperatingSystem(System.getProperty("os.name"));
-		String architecture = architecture();
+		JavaPlatform platform = JavaPlatform.current();
 		String release = selection.getRelease() == null ? "selected" : selection.getRelease();
 		if (!distribution.matches("[a-z0-9-]+") || !release.matches("[a-zA-Z0-9.+_-]+"))
 			throw new ProvisioningException("Invalid Java distribution or release selector");
 
-		Path installation = root.resolve("java").resolve(distribution).resolve(version + "-" + os + "-" + architecture).resolve(release);
+		Path installation = root.resolve("java").resolve(distribution).resolve(version + "-" + platform.key()).resolve(release);
 		try (JavaInstallationAccess ignored = storage.acquire(installation)) {
 			Path marker = installation.resolve("executable");
 			if (!refresh && Files.isRegularFile(marker)) {
@@ -126,7 +126,7 @@ public final class JavaRuntimeResolver implements JavaProvisioner {
 						+ ", which does not match") + ", and nothing is cached at " + installation + ". Set " + variable
 						+ " or enable downloads with anvil.java.download=true.");
 
-			FoojayJavaCatalog.Package selected = catalog.select(distribution, version, selection.getRelease(), os, architecture);
+			FoojayJavaCatalog.Package selected = catalog.select(distribution, version, selection.getRelease(), platform);
 			Path archive = packages.archive(JavaArchive.builder().uri(selected.uri()).sha256(selected.sha256()).build(),
 					root.resolve("java-archives").resolve(selected.sha256() + selected.extension()));
 			Path contents = installation.resolve(selected.sha256());
@@ -217,12 +217,5 @@ public final class JavaRuntimeResolver implements JavaProvisioner {
 		}
 	}
 
-	private String architecture() {
-		return switch (System.getProperty("os.arch", "").toLowerCase(Locale.ROOT)) {
-			case "amd64", "x86_64" -> "x64";
-			case "aarch64", "arm64" -> "aarch64";
-			default -> throw new ProvisioningException("Unsupported Java architecture: " + System.getProperty("os.arch"));
-		};
-	}
 
 }

@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.environment.provisioning.java.installation;
 
-import me.whereareiam.anvil.api.exception.ProvisioningException;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -37,12 +36,4 @@ public final class JavaExecutables {
 		return operatingSystem.toLowerCase(Locale.ROOT).startsWith("windows") ? "java.exe" : "java";
 	}
 
-	public static String temurinOperatingSystem(String operatingSystem) {
-		String value = operatingSystem.toLowerCase(Locale.ROOT);
-		if (value.startsWith("windows")) return "windows";
-		if (value.contains("mac") || value.contains("darwin")) return "mac";
-		if (value.contains("linux")) return "linux";
-
-		throw new ProvisioningException("Automatic Java provisioning does not support this operating system: " + value);
-	}
 }
