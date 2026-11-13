@@ -18,7 +18,7 @@ annotations = "26.1.0"
 compress = "1.28.0"
 dockerJava = "3.7.1"
 jackson = "2.22.2"
-slf4j = "2.0.18"
+slf4j = "2.0.20"
 
 # tooling
 ## intellij
