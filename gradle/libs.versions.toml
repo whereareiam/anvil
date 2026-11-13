@@ -7,7 +7,7 @@ java-legacy = "11"
 asm = "9.9.1"
 kotlin = "2.4.0"
 shadow = "9.6.1"
-freefair = "9.5.0"
+freefair = "9.8.3"
 toolkit = "0.3.0"
 
 # compile time processing
