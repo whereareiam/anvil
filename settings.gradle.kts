@@ -22,7 +22,7 @@ pluginManagement {
 }
 
 plugins {
-    id("org.jetbrains.intellij.platform.settings") version "2.18.1"
+    id("org.jetbrains.intellij.platform.settings") version "2.20.1"
     id("me.whereareiam.toolkit.project-discovery") version "0.3.0"
     // Adds the repositories from which the NeoForge agent's build resolves Minecraft and NeoForge.
     id("net.neoforged.moddev.repositories") version "2.0.148"

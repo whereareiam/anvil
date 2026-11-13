@@ -1,5 +1,6 @@
 import me.whereareiam.anvil.buildlogic.integration.IntellijPlatformModule
 import me.whereareiam.anvil.buildlogic.module.catalog
+import org.jetbrains.intellij.platform.gradle.Constants.Configurations.Attributes
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
@@ -30,6 +31,17 @@ plugins.withId("org.jetbrains.kotlin.jvm") {
 		compilerOptions {
 			apiVersion.set(KotlinVersion.KOTLIN_2_1)
 			languageVersion.set(KotlinVersion.KOTLIN_2_2)
+		}
+	}
+}
+
+// java-test-fixtures makes the fixtures depend on their own module, and the platform plugin requests that project
+// dependency as the composed jar. The tests reach it through the fixtures, so their compile classpath asks for the
+// composed jar too, or it selects the module a second time with incompatible library elements.
+plugins.withId("java-test-fixtures") {
+	configurations.testCompileClasspath {
+		attributes {
+			attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(Attributes.COMPOSED_JAR_NAME))
 		}
 	}
 }

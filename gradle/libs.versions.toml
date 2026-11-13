@@ -22,7 +22,7 @@ slf4j = "2.0.20"
 
 # tooling
 ## intellij
-intellij-platform = "2.18.1"
+intellij-platform = "2.20.1"
 intellij-idea = "2025.2.5"
 intellij-verify = "2026.3"
 
