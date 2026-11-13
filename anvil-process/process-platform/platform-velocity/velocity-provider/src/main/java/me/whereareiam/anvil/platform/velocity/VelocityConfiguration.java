@@ -19,9 +19,11 @@ import java.util.Set;
  */
 final class VelocityConfiguration {
 	private static final String CONFIGURATION = "velocity.toml";
+	private static final String VERSION = "config-version";
+	private static final String INITIAL_VERSION = "2.8";
 	private static final Set<String> OWNED = Set.of("bind", "motd", "show-max-players", "online-mode",
 			"force-key-authentication", "player-info-forwarding-mode", "forwarding-secret-file",
-			"announce-forge", "config-version", "servers", "try");
+			"announce-forge", VERSION, "servers", "try");
 	private final TomlMapper toml = new TomlMapper();
 
 	void write(MinecraftProxy proxy, PlatformContext context) throws IOException {
@@ -35,7 +37,9 @@ final class VelocityConfiguration {
 			applySetting(config, setting.getKey(), setting.getValue());
 		}
 
-		config.put("config-version", "2.8");
+		// Velocity migrates the file to its own version on start; a restart keeps that version, or Velocity reruns
+		// migrations its file already has, which Velocity 4 cannot do.
+		if (!config.has(VERSION)) config.put(VERSION, INITIAL_VERSION);
 		config.put("bind", context.getBindAddress() + ":" + context.getPort());
 		config.put("motd", "Anvil: " + proxy.getName());
 		config.put("show-max-players", 20);

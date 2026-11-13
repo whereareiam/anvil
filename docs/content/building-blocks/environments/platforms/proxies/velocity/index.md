@@ -4,18 +4,22 @@ description: Configure a pinned Velocity proxy and express typed TOML settings.
 ---
 
 Apply `me.whereareiam.anvil.platform.velocity` alongside the backend platform unit.
-Start with the complete [proxy environment](../index.md); it uses Velocity `3.5.1` build `615`.
+Start with the complete [proxy environment](../index.md); it uses Velocity `4.3.1` build `45`.
 The unit supplies the provider and its matching Velocity agent.
 
 ## Set the distribution
 
-Use `Distribution.remote("3.5.1", "615")` with `Platforms.VELOCITY` on a `MinecraftProxy`.
+Use `Distribution.remote("4.3.1", "45")` with `Platforms.VELOCITY` on a `MinecraftProxy`.
 The version names the Velocity release, while each backend independently declares its Minecraft version.
 The provider resolves the selected build through PaperMC Fill. Java follows the Velocity release, and
-a qualifier such as `-SNAPSHOT` is ignored. The Velocity agent needs Java 21, so releases that start
-on Java 17 also run Java 21; see
+a qualifier such as `-SNAPSHOT` is ignored. Velocity 4 releases run Java 25. The Velocity agent needs Java 21, so
+releases that start on Java 17 also run Java 21; see
 [Java per platform version](../../../provisioning/java/index.md#java-per-platform-version). A local or
 artifact JAR carries no release and uses the newest row.
+
+The same agent JAR runs on Velocity 3 and Velocity 4: it compiles against the Velocity 3.5.1 API and
+uses only events and services both majors keep. The live matrix runs Velocity 4; Velocity 3 releases,
+which PaperMC no longer supports, remain `COMPATIBLE`.
 
 ## Supply TOML values
 

@@ -169,7 +169,7 @@ URI sessionServer = URI.create("http://127.0.0.1:25580/session/minecraft");
 MinecraftProxy proxy = MinecraftProxy.builder()
 		.name("proxy")
 		.platform(Platforms.VELOCITY)
-		.distribution(Distribution.remote("3.5.1", "615"))
+		.distribution(Distribution.remote("4.3.1", "45"))
 		.onlineMode(true)
 		.sessionServer(sessionServer)
 		.server("server")

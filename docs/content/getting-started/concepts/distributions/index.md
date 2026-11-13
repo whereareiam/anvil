@@ -35,7 +35,7 @@ Here `PAPER` is the platform, `1.21.11` is the Minecraft version of that Paper r
 its build identifier. The server name is only its identity inside the scenario. The completed test
 asks the Paper provider to resolve that build and verifies the behavior against it.
 
-For Velocity, the distribution version is the proxy's release version, such as `3.5.1`; the reachable
+For Velocity, the distribution version is the proxy's release version, such as `4.3.1`; the reachable
 backend servers determine the native Minecraft version Alice needs. Keep those two version concepts
 separate when building a proxy environment.
 
