@@ -24,7 +24,7 @@ slf4j = "2.0.18"
 ## intellij
 intellij-platform = "2.18.1"
 intellij-idea = "2025.2.5"
-intellij-verify = "2026.2.2"
+intellij-verify = "2026.3"
 
 # platform api
 paper = "1.21.11-R0.1-SNAPSHOT"
