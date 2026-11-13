@@ -62,7 +62,8 @@ intellijPlatform {
 		version = project.version.toString()
 		ideaVersion {
 			sinceBuild = "252"
-			untilBuild = "262.*"
+			// Open-ended, so every new IDE release lists the plugin; the Marketplace verifier reports any break.
+			untilBuild = provider { null }
 		}
 		changeNotes = providers.fileContents(layout.projectDirectory.file("marketplace/change-notes.html")).asText
 		vendor {
