@@ -65,6 +65,7 @@ class VelocityPlatformProviderTest {
 		provider.configure(proxy, context);
 		var config = new TomlMapper().readTree(work.resolve("velocity.toml").toFile());
 		assertEquals("modern", config.path("player-info-forwarding-mode").asText());
+		assertEquals("2.8", config.path("config-version").asText());
 		assertEquals("127.0.0.1:25566", config.at("/servers/server").asText());
 		assertEquals("test-secret", Files.readString(work.resolve("forwarding.secret")));
 		assertEquals("retained", config.path("custom").asText());
@@ -78,6 +79,25 @@ class VelocityPlatformProviderTest {
 		assertThrows(PlatformException.class, () -> provider.configure(invalid, context));
 		assertThrows(PlatformException.class, () -> provider.configure(proxy.toBuilder().setting("custom", "unquoted text").build(), context));
 		assertThrows(PlatformException.class, () -> provider.configure(proxy.toBuilder().setting("servers.fake", "'localhost:1'").build(), context));
+	}
+
+	@Test
+	void keepsTheConfigurationVersionVelocityMigratedTo() throws Exception {
+		Path run = Files.createDirectory(temporary.resolve("run"));
+		Path work = Files.createDirectory(run.resolve("proxy"));
+		Files.writeString(work.resolve("velocity.toml"), "config-version = '3.0'\n[ping-passthrough]\nmode = 'disabled'\n");
+		MinecraftServer server = MinecraftServer.builder()
+				.name("server")
+				.platform(Platforms.PAPER)
+				.distribution(Distribution.remote("1.21.11", "132"))
+				.build();
+		MinecraftProxy proxy = proxy(temporary.resolve("velocity.jar"), server.getName());
+
+		new VelocityPlatformProvider().configure(proxy, context(scenario(proxy, server), work));
+
+		var config = new TomlMapper().readTree(work.resolve("velocity.toml").toFile());
+		assertEquals("3.0", config.path("config-version").asText());
+		assertEquals("disabled", config.at("/ping-passthrough/mode").asText());
 	}
 
 	@ParameterizedTest

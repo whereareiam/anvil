@@ -49,7 +49,7 @@ it is refused with the reason.
 | Paper | `1.16.5` and newer | `1.16.5`, `1.17.1`, `1.18.2`, `1.19.4`, `1.20.6`, `1.21.1`, `1.21.11`, `26.1.2`, `26.2`, and `26.3` |
 | Spigot | `1.16.5` and newer | `1.21.11` and `26.1.2` |
 | NeoForge | `1.21.1` and newer | `1.21.1`, `1.21.11`, and `26.1.2` |
-| Velocity | `3.3.0` and newer | `3.5.1` |
+| Velocity | `3.3.0` and newer | `4.3.1` |
 | BungeeCord | Every build, assessed by Java range only | None; the matrix runs build `2085` |
 
 Each platform provider ships its known versions, its Java rows, its agent's minimum Java, and the
@@ -190,7 +190,7 @@ current versions also run directly on Spigot and behind Velocity and BungeeCord,
 | `26.2` | `134` | Not in the live matrix | Not in the live matrix |
 | `26.3` | `202` | Not in the live matrix | Not in the live matrix |
 
-The proxy selections in that matrix are Velocity `3.5.1` build `615` and BungeeCord Jenkins build
+The proxy selections in that matrix are Velocity `4.3.1` build `45` and BungeeCord Jenkins build
 `2085`. These are the repository's pinned compatibility selections, not moving recommendations to use
 an upstream latest build.
 

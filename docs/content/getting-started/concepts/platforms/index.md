@@ -35,7 +35,7 @@ MinecraftServer lobby = MinecraftServer.builder()
 MinecraftProxy proxy = MinecraftProxy.builder()
 		.name("proxy")
 		.platform(Platforms.VELOCITY)
-		.distribution(Distribution.remote("3.5.1", "615"))
+		.distribution(Distribution.remote("4.3.1", "45"))
 		.server(lobby.getName())
 		.defaultServer(lobby.getName())
 		.build();

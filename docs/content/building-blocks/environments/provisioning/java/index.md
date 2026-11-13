@@ -32,8 +32,8 @@ fails when this table and that data differ. Versions are written in their canoni
 | Spigot | `1.21` to `1.21.11` | Java 21 or newer | 21 | `1.21.11` on 21 |
 | Spigot | `26.1` and newer | Java 25 or newer | 25 | `26.1.2` on 25 |
 | Velocity | `3.3` to `3.4` | Java 17 or newer; the Anvil agent needs 21 | 21 | None |
-| Velocity | `3.5` to `3.5.1` | Java 21 or newer | 21 | `3.5.1` on 21 |
-| Velocity | `4.0` and newer | Java 25 or newer | 25 | None |
+| Velocity | `3.5` to `3.5.1` | Java 21 or newer | 21 | None |
+| Velocity | `4.0` and newer | Java 25 or newer | 25 | `4.3.1` on 25 |
 | BungeeCord | every build | Java 17 or newer; the Anvil agent needs 21 | 21 | None |
 
 The range is the platform's own limit. The Anvil agent installed into every managed process needs
@@ -45,7 +45,7 @@ agent's minimum in its version data, and Anvil's build fails when the agent's cl
 The last column lists the combinations Anvil's live matrix runs; planning assesses exactly these as
 `VERIFIED`, and every other version a provider's data knows as `COMPATIBLE`. The matrix runs one
 Minecraft version of each MCProtocolLib release directly on Paper, and its current versions on
-Spigot and behind Velocity `3.5.1` and BungeeCord build `2085` as well. BungeeCord builds carry no
+Spigot and behind Velocity `4.3.1` and BungeeCord build `2085` as well. BungeeCord builds carry no
 release version, so its single row applies to every build and Anvil assesses BungeeCord by its Java
 range only.
 

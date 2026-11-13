@@ -4,20 +4,21 @@
 # newest row.
 #
 # known:    Velocity releases Anvil's data supports; Anvil assesses them as COMPATIBLE.
-# agent:    the oldest Java the Velocity agent runs on. It compiles against the current Velocity API
-#           for Java 21, so planning raises Velocity 3.3.x and 3.4.x (which run on Java 17) to Java 21,
-#           and the provider's checkAgentJava build task fails when the agent's classes need newer Java.
+# agent:    the oldest Java the Velocity agent runs on. It compiles against the Velocity 3.5.1 API
+#           for Java 21 and loads on Velocity 3 and 4 alike, so planning raises Velocity 3.3.x and
+#           3.4.x (which run on Java 17) to Java 21, and the provider's checkAgentJava build task fails
+#           when the agent's classes need newer Java.
 # verified: Velocity release -> Java feature versions Anvil's live matrix (CompatibilityScenarioFactory)
 #           runs (VERIFIED); every other supported release is listed in `known` only.
 # java:     each row applies from `since` until the next row starts.
 
-known = ["3.3.0", "3.4.0", "3.5.0", "3.5.1"]
+known = ["3.3.0", "3.4.0", "3.5.0", "3.5.1", "4.0.0", "4.1.0", "4.1.1", "4.2.0", "4.3.0", "4.3.1"]
 
 [agent]
 minimumJava = 21
 
 [verified]
-"3.5.1" = [21]
+"4.3.1" = [25]
 
 [[java]]
 since = "3.3.0"

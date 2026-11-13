@@ -57,8 +57,8 @@ spigot-sha256 = "95f871fd6d055ba10b5a058768ddad43b0be0286480c8eba435c835c95d5f19
 
 # The proxies in front of the platform releases.
 [proxy]
-velocity-version = "3.5.1"
-velocity-build = "615"
+velocity-version = "4.3.1"
+velocity-build = "45"
 bungeecord-build = "2085"
 
 # Direct NeoForge servers, which load no Bukkit plugin.
