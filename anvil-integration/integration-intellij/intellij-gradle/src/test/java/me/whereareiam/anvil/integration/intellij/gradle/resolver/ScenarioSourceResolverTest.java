@@ -3,7 +3,7 @@ package me.whereareiam.anvil.integration.intellij.gradle.resolver;
 import com.intellij.openapi.externalSystem.model.DataNode;
 import com.intellij.openapi.externalSystem.model.ExternalProjectInfo;
 import com.intellij.openapi.externalSystem.model.ProjectKeys;
-import com.intellij.openapi.externalSystem.model.internal.InternalExternalProjectInfo;
+import com.intellij.openapi.externalSystem.model.ProjectSystemId;
 import com.intellij.openapi.externalSystem.model.project.ModuleData;
 import com.intellij.openapi.externalSystem.model.project.ProjectData;
 
@@ -16,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import me.whereareiam.anvil.integration.intellij.gradle.ModuleDataRegistration;
 import me.whereareiam.anvil.integration.intellij.gradle.model.ImportedModule;
 import me.whereareiam.anvil.integration.intellij.type.source.SourceListingStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.plugins.gradle.util.GradleConstants;
 import org.jetbrains.plugins.gradle.util.GradleModuleDataKt;
@@ -166,10 +167,51 @@ class ScenarioSourceResolverTest {
 		return root.createChild(ProjectKeys.MODULE, module).createChild(ModuleDataRegistration.KEY, model);
 	}
 
-	private InternalExternalProjectInfo imported(DataNode<ProjectData> root, long successful, long latest) {
-		var info = new InternalExternalProjectInfo(GradleConstants.SYSTEM_ID, directory.toString(), root);
-		info.setLastSuccessfulImportTimestamp(successful);
-		info.setLastImportTimestamp(latest);
-		return info;
+	private ExternalProjectInfo imported(DataNode<ProjectData> root, long successful, long latest) {
+		return new Import(directory.toString(), root, successful, latest);
+	}
+
+	// IntelliJ's own InternalExternalProjectInfo reads the build number from the running application,
+	// which this plain unit test does not start.
+	private record Import(
+			String externalProjectPath,
+			DataNode<ProjectData> externalProjectStructure,
+			long lastSuccessfulImportTimestamp,
+			long lastImportTimestamp
+	) implements ExternalProjectInfo {
+		@Override
+		public @NotNull ProjectSystemId getProjectSystemId() {
+			return GradleConstants.SYSTEM_ID;
+		}
+
+		@Override
+		public @NotNull String getExternalProjectPath() {
+			return externalProjectPath;
+		}
+
+		@Override
+		public DataNode<ProjectData> getExternalProjectStructure() {
+			return externalProjectStructure;
+		}
+
+		@Override
+		public long getLastSuccessfulImportTimestamp() {
+			return lastSuccessfulImportTimestamp;
+		}
+
+		@Override
+		public long getLastImportTimestamp() {
+			return lastImportTimestamp;
+		}
+
+		@Override
+		public String getBuildNumber() {
+			return "test";
+		}
+
+		@Override
+		public @NotNull ExternalProjectInfo copy() {
+			return this;
+		}
 	}
 }
