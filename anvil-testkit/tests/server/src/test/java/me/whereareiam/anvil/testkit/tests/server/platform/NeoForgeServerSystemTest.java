@@ -14,6 +14,7 @@ import me.whereareiam.anvil.capability.world.World;
 import me.whereareiam.anvil.capability.worlds.WorldChangeWatch;
 import me.whereareiam.anvil.capability.worlds.Worlds;
 import me.whereareiam.anvil.capability.worlds.model.ServerWorld;
+import me.whereareiam.anvil.capability.worlds.model.WorldCreation;
 import me.whereareiam.anvil.capability.worlds.model.WorldLocation;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
 import me.whereareiam.anvil.protocol.api.model.text.SpanStyle;
@@ -32,6 +33,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -81,6 +83,9 @@ class NeoForgeServerSystemTest {
 			changes.changed(alice, "minecraft:the_nether", Duration.ofSeconds(10));
 			dimensions.entered("minecraft:the_nether", Duration.ofSeconds(10));
 			assertEquals("minecraft:the_nether", worlds.location(alice).orElseThrow().getWorld());
+			assertThrows(UnsupportedOperationException.class,
+					() -> worlds.create(WorldCreation.builder().key("anvil_neoforge").build()));
+			assertThrows(UnsupportedOperationException.class, () -> worlds.unload("the_end"));
 
 			assertTrue(dispatch.execute("kick Alice anvil:kicked"));
 			assertEquals("anvil:kicked", session.kicked());

@@ -5,7 +5,9 @@ import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacements;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentTransfer;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChanges;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChangesRequest;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldList;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldOutcome;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -39,6 +41,19 @@ public final class WorldsOperations {
 			AgentOperation.<AgentWorldChangesRequest, AgentWorldChanges>builder()
 					.name(NAMESPACE + ".changes").requestType(AgentWorldChangesRequest.class)
 					.responseType(AgentWorldChanges.class).build();
+	/**
+	 * Creates a world, answering the world or why it was not created.
+	 */
+	public static final @NotNull AgentOperation<AgentWorldCreation, AgentWorldOutcome> CREATE =
+			AgentOperation.<AgentWorldCreation, AgentWorldOutcome>builder()
+					.name(NAMESPACE + ".create").requestType(AgentWorldCreation.class)
+					.responseType(AgentWorldOutcome.class).build();
+	/**
+	 * Unloads the world of a key, answering whether it was unloaded or why not.
+	 */
+	public static final @NotNull AgentOperation<String, AgentWorldOutcome> UNLOAD =
+			AgentOperation.<String, AgentWorldOutcome>builder()
+					.name(NAMESPACE + ".unload").requestType(String.class).responseType(AgentWorldOutcome.class).build();
 
 	private WorldsOperations() {
 	}

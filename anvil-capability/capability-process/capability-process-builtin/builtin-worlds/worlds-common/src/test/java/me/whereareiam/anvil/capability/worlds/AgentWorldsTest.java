@@ -15,10 +15,14 @@ import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacements;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentTransfer;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorld;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChangesRequest;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldList;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldOutcome;
 import me.whereareiam.anvil.capability.worlds.model.ServerWorld;
 import me.whereareiam.anvil.capability.worlds.model.WorldChange;
+import me.whereareiam.anvil.capability.worlds.model.WorldCreation;
 import me.whereareiam.anvil.capability.worlds.model.WorldLocation;
+import me.whereareiam.anvil.capability.worlds.type.WorldGenerator;
 import me.whereareiam.anvil.capability.worlds.type.WorldKind;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -106,6 +110,73 @@ class AgentWorldsTest {
 	}
 
 	@Test
+	void createsAWorldUnderItsFullKeyAndReturnsItAsTheServerReportsIt() {
+		AgentLocation spawn = location("minecraft:arena_nether", 0.5, 64, 0.5);
+		server.outcome = AgentWorldOutcome.builder()
+				.world(AgentWorld.builder().key("minecraft:arena_nether").kind("NETHER").spawn(spawn).build())
+				.build();
+
+		ServerWorld created = worlds.create(WorldCreation.builder()
+				.key("arena_nether")
+				.kind(WorldKind.NETHER)
+				.seed(42L)
+				.generator(WorldGenerator.EMPTY)
+				.build());
+
+		assertEquals(world("minecraft:arena_nether", WorldKind.NETHER, spawn), created);
+		assertEquals(List.of(AgentWorldCreation.builder().key("minecraft:arena_nether").kind("NETHER").seed(42L)
+				.generator("EMPTY").build()), server.requests);
+	}
+
+	@Test
+	void createsAnOverworldOfTheDefaultGeneratorWithASeedTheServerPicksUnlessToldOtherwise() {
+		server.outcome = AgentWorldOutcome.builder()
+				.world(AgentWorld.builder().key("minecraft:lobby").kind("OVERWORLD").spawn(OVERWORLD_SPAWN).build())
+				.build();
+
+		worlds.create(WorldCreation.builder().key("minecraft:lobby").build());
+
+		assertEquals(List.of(AgentWorldCreation.builder().key("minecraft:lobby").kind("OVERWORLD").generator("DEFAULT")
+				.build()), server.requests);
+	}
+
+	@Test
+	void refusesACustomWorldAndAWorldTheServerHasAlreadyLoadedWithoutAskingIt() {
+		assertEquals("A server creates an OVERWORLD, NETHER or END world, not a CUSTOM one",
+				assertThrows(IllegalArgumentException.class, () -> worlds.create(WorldCreation.builder().key("dungeon")
+						.kind(WorldKind.CUSTOM).build())).getMessage());
+		assertEquals("'lobby' has already loaded the world 'minecraft:arena'", assertThrows(IllegalArgumentException.class,
+				() -> worlds.create(WorldCreation.builder().key("arena").build())).getMessage());
+		assertTrue(server.requests.isEmpty());
+	}
+
+	@Test
+	void tellsAWorldThePlatformCannotCreateFromOneTheServerRefused() {
+		WorldCreation dungeon = WorldCreation.builder().key("dungeon").build();
+
+		server.outcome = AgentWorldOutcome.builder().unsupported("NeoForge has no API").build();
+		assertEquals("'lobby' cannot create the world 'minecraft:dungeon': NeoForge has no API",
+				assertThrows(UnsupportedOperationException.class, () -> worlds.create(dungeon)).getMessage());
+		server.outcome = AgentWorldOutcome.builder().refusal("The server did not create the world").build();
+		assertEquals("'lobby' refused to create the world 'minecraft:dungeon': The server did not create the world",
+				assertThrows(IllegalStateException.class, () -> worlds.create(dungeon)).getMessage());
+	}
+
+	@Test
+	void unloadsALoadedWorldByItsFullKeyAndRefusesOneTheServerHasNotLoaded() {
+		server.outcome = AgentWorldOutcome.builder().build();
+
+		worlds.unload("arena");
+		assertEquals(List.of("minecraft:arena"), server.requests);
+
+		assertThrows(IllegalArgumentException.class, () -> worlds.unload("the_end"));
+		server.outcome = AgentWorldOutcome.builder().refusal("Players are in minecraft:arena: [Alice]").build();
+		assertEquals("'lobby' refused to unload the world 'minecraft:arena': Players are in minecraft:arena: [Alice]",
+				assertThrows(IllegalStateException.class, () -> worlds.unload("arena")).getMessage());
+		assertEquals(2, server.requests.size());
+	}
+
+	@Test
 	void watchesOnlyChangesSinceItForTheMatchingPlayer() {
 		server.log.record(forwarded.getUniqueId(), "Alice", "minecraft:overworld", "minecraft:arena");
 		WorldChangeWatch changes = worlds.watch();
@@ -166,8 +237,10 @@ class AgentWorldsTest {
 	private static final class FakeServer implements RequestChannel {
 		private final Map<UUID, AgentLocation> placements = new LinkedHashMap<>();
 		private final List<AgentTransfer> transfers = new ArrayList<>();
+		private final List<Object> requests = new ArrayList<>();
 		private WorldChangeLog log = new WorldChangeLog();
 		private boolean refuse;
+		private AgentWorldOutcome outcome;
 
 		@Override
 		public <Q, R> @Nullable R request(@NotNull ChannelOperation<Q, R> operation, @Nullable Q request) {
@@ -189,6 +262,10 @@ class AgentWorldsTest {
 					yield true;
 				}
 				case "me.whereareiam.anvil.worlds.changes" -> log.since((AgentWorldChangesRequest) request);
+				case "me.whereareiam.anvil.worlds.create", "me.whereareiam.anvil.worlds.unload" -> {
+					requests.add(request);
+					yield outcome;
+				}
 				default -> throw new AssertionError("Unknown operation " + operation.getId());
 			};
 			assertEquals(WorldsOperations.NAMESPACE, operation.getId().substring(0, operation.getId().lastIndexOf('.')));

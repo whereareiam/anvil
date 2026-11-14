@@ -5,12 +5,16 @@ import me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationRegistry;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacements;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldList;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldOutcome;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.function.Supplier;
 
 /**
  * Answers the worlds capability's operations on one platform: each platform side extends it with the
  * {@link ServerWorlds} of its platform, which it opens once the agent starts, together with the log it records the
- * platform's world changes in. Every operation that reads or changes a world runs on the platform's own thread.
+ * platform's world changes in. Every operation that reads or changes a world runs on the platform's own thread. A
+ * creation or unloading the server refuses, or the platform cannot do, is answered as such instead of as a failure.
  */
 public abstract class WorldsAgentOperations implements AgentOperationProvider {
 	@Override
@@ -30,6 +34,12 @@ public abstract class WorldsAgentOperations implements AgentOperationProvider {
 		registry.register(WorldsOperations.SEND, (agent, transfer) ->
 				agent.call(() -> worlds.teleport(transfer.getUniqueId(), transfer.getLocation())));
 		registry.register(WorldsOperations.CHANGES, (agent, request) -> changes.since(request));
+		registry.register(WorldsOperations.CREATE, (agent, creation) ->
+				agent.call(() -> outcome(() -> AgentWorldOutcome.builder().world(worlds.create(creation)).build())));
+		registry.register(WorldsOperations.UNLOAD, (agent, key) -> agent.call(() -> outcome(() -> {
+			worlds.unload(key);
+			return AgentWorldOutcome.builder().build();
+		})));
 	}
 
 	/**
@@ -40,4 +50,14 @@ public abstract class WorldsAgentOperations implements AgentOperationProvider {
 	 * @return the platform's worlds
 	 */
 	protected abstract @NotNull ServerWorlds open(@NotNull PlatformAgent platform, @NotNull WorldChangeLog changes);
+
+	private static @NotNull AgentWorldOutcome outcome(@NotNull Supplier<AgentWorldOutcome> request) {
+		try {
+			return request.get();
+		} catch (UnsupportedOperationException exception) {
+			return AgentWorldOutcome.builder().unsupported(exception.getMessage()).build();
+		} catch (IllegalStateException exception) {
+			return AgentWorldOutcome.builder().refusal(exception.getMessage()).build();
+		}
+	}
 }

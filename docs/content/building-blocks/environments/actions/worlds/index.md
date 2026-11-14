@@ -1,10 +1,10 @@
 ---
 title: Moving players between worlds
-description: List a server's worlds, find which world a player is in, move it to another one, and wait for the server to report the move.
+description: List a server's worlds, create and unload worlds, find which world a player is in, move it to another one, and wait for the server to report the move.
 ---
 
-Use a server's `Worlds` capability when a test needs what a server knows about its worlds, or needs a
-player moved to another world as a plugin would move it. Retrieve it from the process:
+Use a server's `Worlds` capability when a test needs what a server knows about its worlds, needs a
+world created or unloaded, or needs a player moved to another world as a plugin would move it. Retrieve it from the process:
 `anvil.processes().server("lobby").capability(Worlds.class)`.
 
 `Worlds` works through each platform's own API: Bukkit's on Paper and Spigot, and Minecraft's on
@@ -57,6 +57,58 @@ teleport, a portal, or a respawn in another world. Joining the server is no worl
 watch before the action. `changed(player, timeout)` waits for a move to any world,
 `neverChanged(player, duration)` fails as soon as the server moves the player, and
 `expectChanged(player, world)` gives an expectation for `alice.awaitFirst(...)`.
+
+## Create a world and unload it
+
+A test that needs a world the server does not have creates it, as a plugin creating one through
+Bukkit's `WorldCreator` does. This fragment uses the imports above and these:
+
+```java
+import me.whereareiam.anvil.capability.worlds.model.ServerWorld;
+import me.whereareiam.anvil.capability.worlds.model.WorldCreation;
+import me.whereareiam.anvil.capability.worlds.type.WorldGenerator;
+import me.whereareiam.anvil.capability.worlds.type.WorldKind;
+```
+
+```java
+ServerWorld arena = worlds.create(WorldCreation.builder()
+		.key("arena_nether")
+		.kind(WorldKind.NETHER)
+		.seed(42L)
+		.generator(WorldGenerator.FLAT)
+		.build());
+
+worlds.send(alice, arena.getKey());
+changes.changed(alice, "minecraft:arena_nether", Duration.ofSeconds(10));
+
+worlds.send(alice, "overworld");
+changes.changed(alice, "minecraft:overworld", Duration.ofSeconds(10));
+worlds.unload("arena_nether");
+```
+
+A `WorldCreation` names the world's `key`, and optionally its `kind` (`OVERWORLD` by default, `NETHER`
+or `END`), its `seed` (one the server picks by default) and its `generator`: `DEFAULT` for the kind's
+normal terrain, `FLAT` for a superflat world, or `EMPTY` for a world without blocks whose spawn is the block
+at `0, 64, 0`, where a player falls until the test places something under it. `create` returns the
+world as the server reports it, and fails with `IllegalArgumentException` when the server has already
+loaded a world of that key or the kind is `CUSTOM`.
+
+`unload(world)` saves the world and unloads it. It fails with `IllegalArgumentException` when the server
+has not loaded the world, and with `IllegalStateException` when the server refuses: for its main world,
+for a world players are still in, so send them elsewhere first, or when a plugin keeps the world loaded.
+
+A created world stays until the test unloads it or the server stops, so a server that a scenario keeps
+for later scenarios keeps it as well. Its folder stays in the server's workspace, and creating the same
+key again on that server loads what it kept.
+
+### Limitations
+
+- Only Paper and Spigot create and unload worlds. NeoForge has no API to create or unload a level while
+  the server runs, so on NeoForge both fail with `UnsupportedOperationException`. A NeoForge test that
+  needs another dimension adds it with a data pack or mod before the server starts.
+- Bukkit creates a world under a plain name and names its level after it in the `minecraft` namespace,
+  so a created key is `minecraft:<name>`, without `/`. Another namespace fails with
+  `UnsupportedOperationException`.
 
 ## Read the worlds and where a player is
 

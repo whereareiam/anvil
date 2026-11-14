@@ -16,9 +16,12 @@ import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorld;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChange;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChanges;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChangesRequest;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldList;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldOutcome;
 import me.whereareiam.anvil.capability.worlds.model.ServerWorld;
 import me.whereareiam.anvil.capability.worlds.model.WorldChange;
+import me.whereareiam.anvil.capability.worlds.model.WorldCreation;
 import me.whereareiam.anvil.capability.worlds.model.WorldLocation;
 import me.whereareiam.anvil.capability.worlds.type.WorldKind;
 import org.jetbrains.annotations.NotNull;
@@ -51,6 +54,8 @@ final class AgentWorlds implements Worlds {
 	private static final ChannelOperation<AgentTransfer, Boolean> SEND = channel(WorldsOperations.SEND);
 	private static final ChannelOperation<AgentWorldChangesRequest, AgentWorldChanges> CHANGES =
 			channel(WorldsOperations.CHANGES);
+	private static final ChannelOperation<AgentWorldCreation, AgentWorldOutcome> CREATE = channel(WorldsOperations.CREATE);
+	private static final ChannelOperation<String, AgentWorldOutcome> UNLOAD = channel(WorldsOperations.UNLOAD);
 
 	private final @NotNull String process;
 	private final @NotNull RequestChannel channel;
@@ -111,6 +116,32 @@ final class AgentWorlds implements Worlds {
 	}
 
 	@Override
+	public @NotNull ServerWorld create(@NotNull WorldCreation creation) {
+		String key = key(creation.getKey());
+		if (creation.getKind() == WorldKind.CUSTOM)
+			throw new IllegalArgumentException("A server creates an OVERWORLD, NETHER or END world, not a CUSTOM one");
+		if (world(key).isPresent()) throw new IllegalArgumentException("'" + process + "' has already loaded the world '" + key + "'");
+
+		AgentWorldOutcome outcome = Objects.requireNonNull(channel.request(CREATE, AgentWorldCreation.builder()
+				.key(key)
+				.kind(creation.getKind().name())
+				.seed(creation.getSeed())
+				.generator(creation.getGenerator().name())
+				.build()));
+		done(outcome, "create the world '" + key + "'");
+
+		return world(Objects.requireNonNull(outcome.getWorld()));
+	}
+
+	@Override
+	public void unload(@NotNull String world) {
+		String key = key(world);
+		loaded(key);
+
+		done(Objects.requireNonNull(channel.request(UNLOAD, key)), "unload the world '" + key + "'");
+	}
+
+	@Override
 	public @NotNull WorldChangeWatch watch() {
 		return new Watch(new HistoryCursor<>(this::changes));
 	}
@@ -133,6 +164,16 @@ final class AgentWorlds implements Worlds {
 		}
 
 		return List.copyOf(changes);
+	}
+
+	/**
+	 * Fails with what kept the server from doing a request, either because the platform cannot or because it refused.
+	 */
+	private void done(@NotNull AgentWorldOutcome outcome, @NotNull String request) {
+		if (outcome.getUnsupported() != null)
+			throw new UnsupportedOperationException("'" + process + "' cannot " + request + ": " + outcome.getUnsupported());
+		if (outcome.getRefusal() != null)
+			throw new IllegalStateException("'" + process + "' refused to " + request + ": " + outcome.getRefusal());
 	}
 
 	private @NotNull ServerWorld loaded(@NotNull String key) {
