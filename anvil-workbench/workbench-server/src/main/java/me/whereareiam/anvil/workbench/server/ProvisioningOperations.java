@@ -35,7 +35,7 @@ import me.whereareiam.anvil.workbench.protocol.model.workspace.LayoutWorkspaces;
 import me.whereareiam.anvil.workbench.protocol.model.workspace.PrepareWorkspace;
 import me.whereareiam.anvil.workbench.protocol.model.workspace.PreparedWorkspaceHandle;
 import me.whereareiam.anvil.workbench.protocol.model.workspace.RecreateRunDirectory;
-import me.whereareiam.anvil.workbench.protocol.model.workspace.StartWorkspace;
+import me.whereareiam.anvil.workbench.protocol.model.workspace.RefreshWorkspace;
 import me.whereareiam.anvil.workbench.protocol.model.workspace.WorkspaceProvisioningRequest;
 import org.jetbrains.annotations.NotNull;
 
@@ -88,8 +88,8 @@ final class ProvisioningOperations {
 						.build());
 				yield new PreparedWorkspaceHandle(handles.register(owner, prepared, () -> prepared.finish(false)), prepared.workspace());
 			}
-			case StartWorkspace start -> {
-				handles.get(owner, start.getHandle(), PreparedWorkspace.class).beforeStart(start.getAssets());
+			case RefreshWorkspace refresh -> {
+				handles.get(owner, refresh.getHandle(), PreparedWorkspace.class).refresh(refresh.getRefresh());
 				yield new Done();
 			}
 			case FinishWorkspace finish -> {

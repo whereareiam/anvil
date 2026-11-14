@@ -16,6 +16,8 @@ import me.whereareiam.anvil.api.type.CleanupPhase;
 import me.whereareiam.anvil.api.type.WorkspaceMode;
 import me.whereareiam.anvil.environment.cache.filesystem.FileCache;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.PreparedWorkspace;
+import me.whereareiam.anvil.environment.provisioning.workspace.api.model.AssetRefresh;
+import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceRefresh;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceRequest;
 import me.whereareiam.anvil.environment.provisioning.workspace.snapshot.TestWorkspaceSnapshotStore;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,7 +91,7 @@ class DefaultWorkspaceProvisionerTest {
 	}
 
 	@Test
-	void replacesAssetsFromTheirCurrentSourcesBeforeEveryLaterStart() throws Exception {
+	void installsTheAssetsAgainBeforeEveryLaterGeneration() throws Exception {
 		Path plugin = Files.writeString(temporary.resolve("plugin.jar"), "built");
 		Path world = Files.writeString(temporary.resolve("world.dat"), "seed");
 		Path root = temporary.resolve("work");
@@ -109,53 +111,57 @@ class DefaultWorkspaceProvisionerTest {
 		try (PreparedWorkspace prepared = prepare(root, workspace, plan, List.of())) {
 			Files.writeString(plugin, "rebuilt");
 			Files.writeString(workspace.resolve("world.dat"), "played");
-			prepared.beforeStart(plan.getAssets());
-			assertEquals("built", Files.readString(workspace.resolve("plugins/plugin.jar")), "The first start uses the prepared assets");
+			prepared.refresh(WorkspaceRefresh.builder().build());
+			assertEquals("built", Files.readString(workspace.resolve("plugins/plugin.jar")), "The first generation uses the prepared assets");
 
-			prepared.beforeStart(plan.getAssets());
-			assertEquals("rebuilt", Files.readString(workspace.resolve("plugins/plugin.jar")));
+			prepared.refresh(WorkspaceRefresh.builder().build());
+			assertEquals("rebuilt", Files.readString(workspace.resolve("plugins/plugin.jar")), "An asset not listed keeps its planned source");
 			assertEquals("played", Files.readString(workspace.resolve("world.dat")));
 
 			prepared.finish(true);
-			assertThrows(IllegalStateException.class, () -> prepared.beforeStart(plan.getAssets()));
+			assertThrows(IllegalStateException.class, () -> prepared.refresh(WorkspaceRefresh.builder().build()));
 		}
 	}
 
 	@Test
-	void installsALaterStartFromTheSourcesItIsGiven() throws Exception {
+	void installsALaterGenerationFromTheSourcesTheRefreshNames() throws Exception {
 		Path plugin = Files.writeString(temporary.resolve("plugin.jar"), "built");
 		Path copy = Files.writeString(temporary.resolve("store-copy.jar"), "rebuilt and stored again");
 		Path root = temporary.resolve("work");
 		Path workspace = root.resolve("scenario/run/server");
-		WorkspaceAsset asset = WorkspaceAsset.builder()
-				.source(AssetSource.path(plugin))
-				.target(Path.of("plugins/plugin.jar"))
+		WorkspacePlan plan = WorkspacePlan.builder()
+				.asset(WorkspaceAsset.builder().source(AssetSource.path(plugin)).target(Path.of("plugins/plugin.jar")).build())
+				.build();
+		WorkspaceRefresh refresh = WorkspaceRefresh.builder()
+				.asset(new AssetRefresh(Path.of("plugins/./plugin.jar"), AssetSource.path(copy)))
 				.build();
 
-		try (PreparedWorkspace prepared = prepare(root, workspace, WorkspacePlan.builder().asset(asset).build(), List.of())) {
-			prepared.beforeStart(List.of(asset));
-			prepared.beforeStart(List.of(asset.toBuilder().source(AssetSource.path(copy)).build()));
+		try (PreparedWorkspace prepared = prepare(root, workspace, plan, List.of())) {
+			prepared.refresh(refresh);
+			assertEquals("built", Files.readString(workspace.resolve("plugins/plugin.jar")));
 
+			prepared.refresh(refresh);
 			assertEquals("rebuilt and stored again", Files.readString(workspace.resolve("plugins/plugin.jar")));
 		}
 	}
 
 	@Test
-	void refusesAssetsThatAreNotThePreparedPlans() throws Exception {
+	void refusesARefreshOfAnAssetThePlanHasNot() throws Exception {
 		Path plugin = Files.writeString(temporary.resolve("plugin.jar"), "built");
 		Path root = temporary.resolve("work");
 		Path workspace = root.resolve("scenario/run/server");
-		WorkspaceAsset asset = WorkspaceAsset.builder()
-				.source(AssetSource.path(plugin))
-				.target(Path.of("plugins/plugin.jar"))
+		WorkspacePlan plan = WorkspacePlan.builder()
+				.asset(WorkspaceAsset.builder().source(AssetSource.path(plugin)).target(Path.of("plugins/plugin.jar")).build())
 				.build();
 
-		try (PreparedWorkspace prepared = prepare(root, workspace, WorkspacePlan.builder().asset(asset).build(), List.of())) {
-			assertThrows(IllegalArgumentException.class, () -> prepared.beforeStart(List.of()));
-			assertThrows(IllegalArgumentException.class, () -> prepared.beforeStart(List.of(asset.toBuilder()
-					.target(Path.of("plugins/other.jar")).build())));
-			assertThrows(IllegalArgumentException.class, () -> prepared.beforeStart(List.of(asset.toBuilder()
-					.mode(AssetInstallMode.SEED_ONCE).build())));
+		try (PreparedWorkspace prepared = prepare(root, workspace, plan, List.of())) {
+			assertThrows(IllegalArgumentException.class, () -> prepared.refresh(WorkspaceRefresh.builder()
+					.asset(new AssetRefresh(Path.of("plugins/other.jar"), AssetSource.path(plugin)))
+					.build()));
+			assertThrows(IllegalArgumentException.class, () -> prepared.refresh(WorkspaceRefresh.builder()
+					.asset(new AssetRefresh(Path.of("plugins/plugin.jar"), AssetSource.path(plugin)))
+					.asset(new AssetRefresh(Path.of("plugins/plugin.jar"), AssetSource.path(plugin)))
+					.build()));
 		}
 	}
 

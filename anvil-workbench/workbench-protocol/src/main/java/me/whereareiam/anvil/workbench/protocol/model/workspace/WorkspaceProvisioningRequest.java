@@ -8,5 +8,5 @@ import me.whereareiam.anvil.workbench.protocol.model.WorkbenchRequest;
  * @param <R> type of the workbench's answer
  */
 public sealed interface WorkspaceProvisioningRequest<R> extends WorkbenchRequest<R>
-		permits LayoutWorkspaces, PrepareWorkspace, StartWorkspace, FinishWorkspace, RecreateRunDirectory, FinishRunDirectory, DeleteRunDirectory {
+		permits LayoutWorkspaces, PrepareWorkspace, RefreshWorkspace, FinishWorkspace, RecreateRunDirectory, FinishRunDirectory, DeleteRunDirectory {
 }
