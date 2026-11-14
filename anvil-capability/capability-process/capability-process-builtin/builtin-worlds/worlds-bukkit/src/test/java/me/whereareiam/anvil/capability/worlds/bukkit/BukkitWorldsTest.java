@@ -8,6 +8,7 @@ import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorld;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChange;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldEvent;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldLoad;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -176,6 +177,38 @@ class BukkitWorldsTest {
 
 		refuse = true;
 		assertThrows(IllegalStateException.class, () -> bukkit.create(creation("minecraft:arena")));
+	}
+
+	@Test
+	void loadsAWorldFromItsFolderInTheWorldsFolderOrAmongTheMainWorldsDimensions() throws IOException {
+		Files.createDirectories(container.resolve("map"));
+		Files.createDirectories(container.resolve("world").resolve("dimensions").resolve("minecraft").resolve("lair"));
+		BukkitWorlds bukkit = new BukkitWorlds(server(new ArrayList<>(List.of(world("world", World.Environment.NORMAL,
+				null))), List.of()), log, events);
+
+		AgentWorld map = bukkit.load(AgentWorldLoad.builder().key("minecraft:map").kind("OVERWORLD").build());
+		bukkit.load(AgentWorldLoad.builder().key("minecraft:lair").kind("NETHER").build());
+
+		assertEquals("minecraft:map", map.getKey());
+		assertEquals(List.of("map", "lair"), creators.stream().map(WorldCreator::name).collect(Collectors.toList()));
+		assertEquals(List.of(World.Environment.NORMAL, World.Environment.NETHER),
+				creators.stream().map(WorldCreator::environment).collect(Collectors.toList()));
+		assertEquals(List.of(WorldType.NORMAL, WorldType.NORMAL),
+				creators.stream().map(WorldCreator::type).collect(Collectors.toList()));
+	}
+
+	@Test
+	void refusesToLoadAWorldItKeepsNoFolderForOrHasLoaded() {
+		BukkitWorlds bukkit = new BukkitWorlds(server(new ArrayList<>(List.of(world("world", World.Environment.NORMAL,
+				null))), List.of()), log, events);
+
+		assertThrows(IllegalArgumentException.class,
+				() -> bukkit.load(AgentWorldLoad.builder().key("minecraft:map").kind("OVERWORLD").build()));
+		assertThrows(IllegalArgumentException.class,
+				() -> bukkit.load(AgentWorldLoad.builder().key("minecraft:overworld").kind("OVERWORLD").build()));
+		assertThrows(UnsupportedOperationException.class,
+				() -> bukkit.load(AgentWorldLoad.builder().key("example:map").kind("OVERWORLD").build()));
+		assertTrue(creators.isEmpty());
 	}
 
 	@Test

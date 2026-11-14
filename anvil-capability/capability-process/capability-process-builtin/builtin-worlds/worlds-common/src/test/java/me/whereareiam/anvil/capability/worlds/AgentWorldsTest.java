@@ -18,6 +18,7 @@ import me.whereareiam.anvil.capability.worlds.agent.model.AgentTransfer;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorld;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldList;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldLoad;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldOutcome;
 import me.whereareiam.anvil.capability.worlds.model.ServerWorld;
 import me.whereareiam.anvil.capability.worlds.model.WorldChange;
@@ -145,7 +146,7 @@ class AgentWorldsTest {
 
 	@Test
 	void refusesACustomWorldAndAWorldTheServerHasAlreadyLoadedWithoutAskingIt() {
-		assertEquals("A server creates an OVERWORLD, NETHER or END world, not a CUSTOM one",
+		assertEquals("A server creates and loads OVERWORLD, NETHER or END worlds, not CUSTOM ones",
 				assertThrows(IllegalArgumentException.class, () -> worlds.create(WorldCreation.builder().key("dungeon")
 						.kind(WorldKind.CUSTOM).build())).getMessage());
 		assertEquals("'lobby' has already loaded the world 'minecraft:arena'", assertThrows(IllegalArgumentException.class,
@@ -177,6 +178,31 @@ class AgentWorldsTest {
 		assertEquals("'lobby' refused to unload the world 'minecraft:arena': Players are in minecraft:arena: [Alice]",
 				assertThrows(IllegalStateException.class, () -> worlds.unload("arena")).getMessage());
 		assertEquals(2, server.requests.size());
+	}
+
+	@Test
+	void loadsAKeptWorldOfAKindAsAnOverworldUnlessToldOtherwise() {
+		AgentLocation spawn = location("minecraft:map", 0.5, 64, 0.5);
+		server.outcome = AgentWorldOutcome.builder()
+				.world(AgentWorld.builder().key("minecraft:map").kind("NETHER").spawn(spawn).build())
+				.build();
+
+		assertEquals(world("minecraft:map", WorldKind.NETHER, spawn), worlds.load("map", WorldKind.NETHER));
+		worlds.load("minecraft:map");
+
+		assertEquals(List.of(AgentWorldLoad.builder().key("minecraft:map").kind("NETHER").build(),
+				AgentWorldLoad.builder().key("minecraft:map").kind("OVERWORLD").build()), server.requests);
+	}
+
+	@Test
+	void refusesToLoadALoadedOrCustomWorldAndTellsAWorldTheServerKeepsNoFolderFor() {
+		assertThrows(IllegalArgumentException.class, () -> worlds.load("arena"));
+		assertThrows(IllegalArgumentException.class, () -> worlds.load("map", WorldKind.CUSTOM));
+		assertTrue(server.requests.isEmpty());
+
+		server.outcome = AgentWorldOutcome.builder().missing("The server keeps no folder for the world minecraft:map").build();
+		assertEquals("'lobby' cannot load the world 'minecraft:map': The server keeps no folder for the world minecraft:map",
+				assertThrows(IllegalArgumentException.class, () -> worlds.load("map")).getMessage());
 	}
 
 	@Test
@@ -313,8 +339,8 @@ class AgentWorldsTest {
 				}
 				case "me.whereareiam.anvil.worlds.changes" -> log.since((AgentLogRequest) request);
 				case "me.whereareiam.anvil.worlds.events" -> events.since((AgentLogRequest) request);
-				case "me.whereareiam.anvil.worlds.create", "me.whereareiam.anvil.worlds.unload",
-						"me.whereareiam.anvil.worlds.delete" -> {
+				case "me.whereareiam.anvil.worlds.create", "me.whereareiam.anvil.worlds.load",
+						"me.whereareiam.anvil.worlds.unload", "me.whereareiam.anvil.worlds.delete" -> {
 					requests.add(request);
 					yield outcome;
 				}

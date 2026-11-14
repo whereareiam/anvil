@@ -5,6 +5,7 @@ import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.capability.worlds.model.ServerWorld;
 import me.whereareiam.anvil.capability.worlds.model.WorldCreation;
 import me.whereareiam.anvil.capability.worlds.model.WorldLocation;
+import me.whereareiam.anvil.capability.worlds.type.WorldKind;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -12,9 +13,10 @@ import java.util.Optional;
 
 /**
  * What one server knows about its worlds and the players in them, the worlds it loads and unloads, moving a player to
- * another world, and creating, unloading and deleting worlds, through the server's own API: Bukkit's on Paper and
+ * another world, and creating, loading, unloading and deleting worlds, through the server's own API: Bukkit's on Paper and
  * Spigot, and Minecraft's own on NeoForge. A proxy has no worlds, so it has no {@code Worlds}. NeoForge has no API to
- * create or unload a level while the server runs, so only Paper and Spigot create, unload and delete worlds.
+ * create, load or unload a level while the server runs, so only Paper and Spigot create, load, unload and delete
+ * worlds.
  *
  * <p>A world is named by the key of its level, with its namespace, such as {@code minecraft:the_nether}: the same key
  * the player's client is told, which its {@code World} capability reports. A key without a namespace, such as
@@ -84,12 +86,43 @@ public interface Worlds extends ProcessCapability {
 	 * @param creation the world's key, kind, seed and generator
 	 * @return the world the server created
 	 * @throws IllegalArgumentException when the server has already loaded a world of that key, or the kind is
-	 *         {@link me.whereareiam.anvil.capability.worlds.type.WorldKind#CUSTOM}
+	 *         {@link WorldKind#CUSTOM}
 	 * @throws UnsupportedOperationException when the server cannot create such a world: a NeoForge server, which has no
 	 *         API to create a level while it runs, or a key Paper and Spigot cannot name a world by
 	 * @throws IllegalStateException when the server refused to create the world
 	 */
 	@NotNull ServerWorld create(@NotNull WorldCreation creation);
+
+	/**
+	 * Loads an overworld from the folder the server keeps for it, such as a prepared map a scenario copies into the
+	 * server's workspace or a world a test unloaded, as {@link #load(String, WorldKind)} does.
+	 *
+	 * @param world the key of the world's level
+	 * @return the world the server loaded
+	 */
+	default @NotNull ServerWorld load(@NotNull String world) {
+		return load(world, WorldKind.OVERWORLD);
+	}
+
+	/**
+	 * Loads a world from the folder the server keeps for it, such as a prepared map a scenario copies into the
+	 * server's workspace or a world a test unloaded, as a plugin loading it through the server's API does. Unlike
+	 * {@link #create(WorldCreation)}, it never generates a new world. The kind decides how the world behaves, since the
+	 * server does not read it from the folder, so a nether map is loaded as {@link WorldKind#NETHER}.
+	 *
+	 * <p>Paper and Spigot look for the folder named after the key's path in the server's worlds' folder, or, since
+	 * Minecraft 26.1, among the dimensions of the main world, such as {@code world/dimensions/minecraft/arena}.</p>
+	 *
+	 * @param world the key of the world's level
+	 * @param kind the kind of dimension the world is
+	 * @return the world the server loaded
+	 * @throws IllegalArgumentException when the server has already loaded the world or keeps no folder for it, or the
+	 *         kind is {@link WorldKind#CUSTOM}
+	 * @throws UnsupportedOperationException when the server cannot load such a world: a NeoForge server, or a key
+	 *         Paper and Spigot cannot name a world by
+	 * @throws IllegalStateException when the server refused to load the world
+	 */
+	@NotNull ServerWorld load(@NotNull String world, @NotNull WorldKind kind);
 
 	/**
 	 * Saves a world and unloads it, as a plugin unloading it through the server's API does. The world's folder stays in

@@ -7,6 +7,7 @@ import me.whereareiam.anvil.capability.worlds.agent.model.AgentLocation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacement;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorld;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldLoad;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -28,7 +29,7 @@ import java.util.UUID;
 /**
  * The levels of a NeoForge server of Minecraft 1.21.11 and later, named by their keys. A level's spawn is the respawn data the
  * server reports for it, and its kind follows its dimension type. A teleport reports whether the server moved the
- * player. NeoForge has no API to create or unload a level while the server runs, so this side refuses both.
+ * player. NeoForge has no API to create, load or unload a level while the server runs, so this side refuses them.
  */
 final class NeoForgeWorlds implements ServerWorlds {
 	private final MinecraftServer server;
@@ -81,6 +82,12 @@ final class NeoForgeWorlds implements ServerWorlds {
 	@Override
 	public @NotNull AgentWorld create(@NotNull AgentWorldCreation creation) {
 		throw new UnsupportedOperationException("NeoForge has no API to create a level while the server runs; "
+				+ "a mod or data pack adds its dimensions before the server starts");
+	}
+
+	@Override
+	public @NotNull AgentWorld load(@NotNull AgentWorldLoad load) {
+		throw new UnsupportedOperationException("NeoForge has no API to load a level while the server runs; "
 				+ "a mod or data pack adds its dimensions before the server starts");
 	}
 

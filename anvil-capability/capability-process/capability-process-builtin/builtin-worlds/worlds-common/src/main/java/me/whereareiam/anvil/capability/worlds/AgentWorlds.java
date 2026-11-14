@@ -20,6 +20,7 @@ import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldEvent;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldEvents;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldList;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldLoad;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldOutcome;
 import me.whereareiam.anvil.capability.worlds.model.ServerWorld;
 import me.whereareiam.anvil.capability.worlds.model.WorldChange;
@@ -59,6 +60,7 @@ final class AgentWorlds implements Worlds {
 	private static final ChannelOperation<AgentLogRequest, AgentWorldChanges> CHANGES =
 			channel(WorldsOperations.CHANGES);
 	private static final ChannelOperation<AgentWorldCreation, AgentWorldOutcome> CREATE = channel(WorldsOperations.CREATE);
+	private static final ChannelOperation<AgentWorldLoad, AgentWorldOutcome> LOAD = channel(WorldsOperations.LOAD);
 	private static final ChannelOperation<String, AgentWorldOutcome> UNLOAD = channel(WorldsOperations.UNLOAD);
 	private static final ChannelOperation<String, AgentWorldOutcome> DELETE = channel(WorldsOperations.DELETE);
 	private static final ChannelOperation<AgentLogRequest, AgentWorldEvents> EVENTS = channel(WorldsOperations.EVENTS);
@@ -127,9 +129,7 @@ final class AgentWorlds implements Worlds {
 	@Override
 	public @NotNull ServerWorld create(@NotNull WorldCreation creation) {
 		String key = key(creation.getKey());
-		if (creation.getKind() == WorldKind.CUSTOM)
-			throw new IllegalArgumentException("A server creates an OVERWORLD, NETHER or END world, not a CUSTOM one");
-		if (world(key).isPresent()) throw new IllegalArgumentException("'" + process + "' has already loaded the world '" + key + "'");
+		absent(key, creation.getKind());
 
 		AgentWorldOutcome outcome = Objects.requireNonNull(channel.request(CREATE, AgentWorldCreation.builder()
 				.key(key)
@@ -138,6 +138,20 @@ final class AgentWorlds implements Worlds {
 				.generator(creation.getGenerator().name())
 				.build()));
 		done(outcome, "create the world '" + key + "'");
+
+		return world(Objects.requireNonNull(outcome.getWorld()));
+	}
+
+	@Override
+	public @NotNull ServerWorld load(@NotNull String world, @NotNull WorldKind kind) {
+		String key = key(world);
+		absent(key, kind);
+
+		AgentWorldOutcome outcome = Objects.requireNonNull(channel.request(LOAD, AgentWorldLoad.builder()
+				.key(key)
+				.kind(kind.name())
+				.build()));
+		done(outcome, "load the world '" + key + "'");
 
 		return world(Objects.requireNonNull(outcome.getWorld()));
 	}
@@ -209,9 +223,21 @@ final class AgentWorlds implements Worlds {
 	}
 
 	/**
-	 * Fails with what kept the server from doing a request, either because the platform cannot or because it refused.
+	 * Checks that a world to create or load is of a kind a server makes and is not loaded yet.
+	 */
+	private void absent(@NotNull String key, @NotNull WorldKind kind) {
+		if (kind == WorldKind.CUSTOM)
+			throw new IllegalArgumentException("A server creates and loads OVERWORLD, NETHER or END worlds, not CUSTOM ones");
+		if (world(key).isPresent()) throw new IllegalArgumentException("'" + process + "' has already loaded the world '" + key + "'");
+	}
+
+	/**
+	 * Fails with what kept the server from doing a request: a world it does not have or already has, a request the
+	 * platform cannot do, or one the server refused.
 	 */
 	private void done(@NotNull AgentWorldOutcome outcome, @NotNull String request) {
+		if (outcome.getMissing() != null)
+			throw new IllegalArgumentException("'" + process + "' cannot " + request + ": " + outcome.getMissing());
 		if (outcome.getUnsupported() != null)
 			throw new UnsupportedOperationException("'" + process + "' cannot " + request + ": " + outcome.getUnsupported());
 		if (outcome.getRefusal() != null)
