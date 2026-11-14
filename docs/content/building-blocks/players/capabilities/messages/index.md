@@ -39,13 +39,25 @@ use `command(...)` whenever you mean a command, so the step behaves the same on 
 ## When the server refuses chat and commands
 
 `chat(...)` and `command(...)` return once the player sent the message; the server decides what happens to it.
-Two of its rules catch tests that send chat:
+Three of its rules catch tests that send chat:
 
 - A server refuses the chat and commands of a player that died and has not respawned. It runs nothing and shows
   the player a refusal instead, `chat.disabled.options` on current releases, one for each message. A real client
   respawns from the death screen, but a simulated player cannot respawn, and reconnecting does not help, because
   the server saves the player dead. Keep a player that sends chat alive: spawn it where it cannot fall or take
   damage, or protect it from your plugin when it joins.
+- A server refuses the chat and commands that reach it while it moves the player to another dimension, with the
+  same refusal. Paper takes the player out of its old level, loads the new one around it and only then puts it
+  back, which takes a moment, longer the first time it generates the new level's chunks. A real client cannot type
+  until it has entered the new level, so wait for the player to arrive before it sends anything:
+
+  ```java
+  DimensionWatch dimensions = player.capability(World.class).watch();
+  console.sendCommand("execute in minecraft:the_nether run tp " + player.name() + " 0 120 0");
+  dimensions.entered("minecraft:the_nether");
+  messages.command("spawn");
+  ```
+
 - A server kicks a player who is not an operator for spam, with the reason `disconnect.spam`, when it sends more
   than about ten chat messages or commands within a second: each one adds 20 to a counter that drops by one every
   tick, and the server kicks at 200. Make the player an operator, wait for each reply before the next step, or run
@@ -232,13 +244,17 @@ counts with its whole text.
 assertion to see whether the command was rejected, the plugin returned another response, or no response
 was shown.
 
-When a wait fails, its message also names the matching messages that reached the client but that the chat
-left out, with the reason: the client had no player yet, as for a message a proxy sends while the client
-still configures, or the server's filter hid it. So a failure tells a message the server never sent from
-one the player could not see:
+When a wait fails, its message also names the latest ten messages the chat showed, since the previous wait of a
+watch, which shows a refusal such as `chat.disabled.options` or another reply the server sent instead. It names the
+matching messages that reached the client but that the chat left out too, with the reason: the client had no
+player yet, as for a message a proxy sends while the client still configures, or the server's filter hid it. So a
+failure tells a message the server never sent from one the player could not see:
 
 ```text
 Player did not see a matching message in chat
+The chat showed: 'Welcome', 'Please wait'
 The chat left out matching messages that reached the client: 'Please register' (the client had no player)
-``` Check that the player is connected and has the application's required permissions before
+```
+
+Check that the player is connected and has the application's required permissions before
 increasing the timeout.

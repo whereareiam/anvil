@@ -12,8 +12,9 @@ import java.util.function.Predicate;
 /**
  * Follows the messages a player's chat shows from the moment the watch was created. Each wait continues after the
  * message the previous one found, so a text that repeats, such as a prompt shown again after a wrong answer, is matched
- * once per wait and never by an occurrence from before the watch. A wait that fails names the matching messages the
- * chat left out since the previous wait, such as one that arrived while the client had no player.
+ * once per wait and never by an occurrence from before the watch. A wait that fails names the messages the chat
+ * showed since the previous wait, the latest ten of them, and the matching messages it left out since then, such as
+ * one that arrived while the client had no player.
  *
  * <p>Conditions look at a message's plain text; a message that satisfies one is returned as the {@link Text} the
  * server sent, whose spans tell the colour, decorations, click and hover of each part.</p>

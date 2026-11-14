@@ -23,12 +23,14 @@ import java.util.List;
  *
  * <p>Action-bar text is not chat, even when the server sends it as chat; the screen capability follows it with the
  * other action bars. A message the chat left out is not part of the history, but a wait that fails names the matching
- * ones, so a test can tell a message the server never sent from one the player could not see.</p>
+ * ones, so a test can tell a message the server never sent from one the player could not see, and the latest messages
+ * the chat showed, such as a refusal.</p>
  * <p>Sending returns once the player sent the packet; the server decides what happens to it. A server refuses the chat
  * and commands of a player that died and has not respawned, and answers each with a refusal in the player's chat,
  * {@code chat.disabled.options} on current releases. A simulated player cannot respawn, so keep a player that sends
- * chat alive. A server kicks a player who is not an operator for spam, with {@code disconnect.spam}, when it sends
- * more than about ten chat messages or commands within a second.</p>
+ * chat alive. A server refuses them with the same answer while it moves the player to another dimension, so a player
+ * that changes dimension sends once it entered the new one. A server kicks a player who is not an operator for spam,
+ * with {@code disconnect.spam}, when it sends more than about ten chat messages or commands within a second.</p>
  */
 public interface Messages extends PlayerCapability {
 	/**
