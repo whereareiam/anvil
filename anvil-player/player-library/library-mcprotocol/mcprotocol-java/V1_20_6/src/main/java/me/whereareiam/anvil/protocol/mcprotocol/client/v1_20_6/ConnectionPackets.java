@@ -28,8 +28,10 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 	@Override
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		return switch (packet) {
-			case ClientboundLoginPacket login -> new ClientboundLogin(login.getEntityId());
-			case ClientboundRespawnPacket ignored -> new ClientboundRespawn();
+			case ClientboundLoginPacket login ->
+					new ClientboundLogin(login.getEntityId(), login.getCommonPlayerSpawnInfo().getWorldName().asString());
+			case ClientboundRespawnPacket respawn ->
+					new ClientboundRespawn(respawn.getCommonPlayerSpawnInfo().getWorldName().asString());
 			case ClientboundStartConfigurationPacket ignored -> new ClientboundStartConfiguration();
 			default -> null;
 		};

@@ -9,11 +9,14 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.auth.GameProfile;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.GameMode;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.HandPreference;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerSpawnInfo;
 import org.geysermc.mcprotocollib.protocol.data.game.setting.ChatVisibility;
 import org.geysermc.mcprotocollib.protocol.data.game.setting.ParticleStatus;
 import org.geysermc.mcprotocollib.protocol.data.game.setting.SkinPart;
@@ -29,7 +32,6 @@ import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundL
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,10 +57,13 @@ class ClientPacketListenerTest {
 			new TextTranslator());
 
 	@Test
-	void answersTheConfigurationsFirstPacketWithThePlayersSettingsOnce() throws Exception {
+	void answersTheConfigurationsFirstPacketWithThePlayersSettingsOnce() {
 		receive(new ClientboundLoginFinishedPacket(new GameProfile(GRANTED, "Alice_Renamed")));
 		receive(new ClientboundKeepAlivePacket(7));
-		receive(allocate(ClientboundLoginPacket.class));
+		receive(new ClientboundLoginPacket(42, false, new Key[0], 20, 10, 10, false, true, false,
+				new PlayerSpawnInfo(0, Key.key("minecraft", "overworld"), 0, GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, null, 0,
+						63),
+				false));
 
 		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ServerboundClientInformationPacket", "logged in as Alice_Renamed " + GRANTED), events);
 		ServerboundClientInformationPacket information = assertInstanceOf(ServerboundClientInformationPacket.class, sent.getFirst());
@@ -117,17 +122,6 @@ class ClientPacketListenerTest {
 			events.add("sent " + packet.getClass().getSimpleName());
 			return null;
 		});
-	}
-
-	/**
-	 * Creates a packet without running its constructor, for packets the listener only recognizes by type and whose
-	 * constructors differ in every release.
-	 */
-	private static <T> T allocate(Class<T> type) throws ReflectiveOperationException {
-		Class<?> unsafe = Class.forName("sun.misc.Unsafe");
-		Field instance = unsafe.getDeclaredField("theUnsafe");
-		instance.setAccessible(true);
-		return type.cast(unsafe.getMethod("allocateInstance", Class.class).invoke(instance.get(null), type));
 	}
 
 	private final class RecordingListener implements ClientListener<ClientSession> {

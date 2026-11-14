@@ -166,8 +166,8 @@ class JavaDialogsExtensionTest {
 		List<ClientboundPacket> endings = List.of(
 				new ClientboundShowDialog(null, NOTICE, false),
 				new ClientboundClearDialog(),
-				new ClientboundLogin(42),
-				new ClientboundRespawn(),
+				new ClientboundLogin(42, "minecraft:overworld"),
+				new ClientboundRespawn("minecraft:overworld"),
 				new ClientboundStartConfiguration()
 		);
 
@@ -232,8 +232,8 @@ class JavaDialogsExtensionTest {
 		player.startConnection();
 		protocol.deliver(new ClientboundShowDialog(null, NOTICE, false));
 		protocol.deliver(new ClientboundClearDialog());
-		protocol.deliver(new ClientboundLogin(42));
-		protocol.deliver(new ClientboundRespawn());
+		protocol.deliver(new ClientboundLogin(42, "minecraft:overworld"));
+		protocol.deliver(new ClientboundRespawn("minecraft:overworld"));
 		protocol.deliver(new ClientboundStartConfiguration());
 		player.startConnection();
 

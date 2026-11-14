@@ -86,7 +86,7 @@ class JavaEntitiesExtensionTest {
 		protocol.deliver(spawn(7, "armor_stand", 0, 0, 0));
 		player.open();
 		protocol.deliver(spawn(7, "zombie", 0, 0, 0));
-		protocol.deliver(new ClientboundRespawn());
+		protocol.deliver(new ClientboundRespawn("minecraft:overworld"));
 
 		assertEquals(List.of(1, 1, 2, 2), player.emitted.stream().map(change -> change.getEntity().getConnection()).toList());
 		assertEquals(List.of(EntityChangeKind.APPEARED, EntityChangeKind.DISAPPEARED, EntityChangeKind.APPEARED,
@@ -149,7 +149,7 @@ class JavaEntitiesExtensionTest {
 		extension.bind(player, new RecordingOperations());
 		player.open();
 
-		protocol.deliver(new ClientboundLogin(PLAYER));
+		protocol.deliver(new ClientboundLogin(PLAYER, "minecraft:overworld"));
 		protocol.deliver(spawn(7, "armor_stand", 0, 0, 0));
 		protocol.deliver(new ClientboundSetEntityData(7, List.of(new CustomName("Alice: hello"))));
 		protocol.deliver(new ClientboundSetPassengers(PLAYER, List.of(7)));
@@ -211,7 +211,7 @@ class JavaEntitiesExtensionTest {
 		player.open();
 
 		protocol.deliver(spawn(7, "zombie", 0, 0, 0));
-		protocol.deliver(new ClientboundLogin(PLAYER));
+		protocol.deliver(new ClientboundLogin(PLAYER, "minecraft:overworld"));
 		protocol.deliver(spawn(8, "zombie", 0, 0, 0));
 		protocol.deliver(new ClientboundStartConfiguration());
 
