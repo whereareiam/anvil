@@ -49,8 +49,9 @@ class ConnectionPacketsTest {
 				.level("minecraft:overworld")
 				.dimension("minecraft:overworld")
 				.dimensionType(DimensionType.withEffects("minecraft:overworld", "minecraft:overworld"))
+				.showDeathScreen(false)
 				.build(), packets.decode(new ClientboundLoginPacket(42, false, new Key[]{Key.key("minecraft", "overworld")},
-				20, 10, 10, false, true, false, spawnIn(Key.key("minecraft", "overworld"), 0), false)));
+				20, 10, 10, false, false, false, spawnIn(Key.key("minecraft", "overworld"), 0), false)));
 		assertEquals(DimensionType.withEffects("example:void", "minecraft:the_end"),
 				((ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(spawnIn(Key.key("example", "arena"), 1),
 						false, false))).getDimensionType());

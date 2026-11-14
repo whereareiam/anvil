@@ -65,6 +65,7 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 						.dimensionType(type(spawn.getDimension()))
 						.debug(spawn.isDebug())
 						.flat(spawn.isFlat())
+						.showDeathScreen(login.isEnableRespawnScreen())
 						.build();
 			}
 			case ClientboundRespawnPacket respawn -> {

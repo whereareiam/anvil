@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConnectionPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.HealthPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ScreenPackets;
 import org.geysermc.mcprotocollib.network.ClientSession;
@@ -39,11 +40,13 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 				new CookiePackets(),
 				new DialogPackets(),
 				new EntityPackets(TEXT),
+				new HealthPackets(TEXT),
 				new InteractionPackets(),
 				new InventoryPackets(TEXT),
 				new PlayerPackets(),
 				new ScreenPackets(TEXT),
-				new SoundPackets()
+				new SoundPackets(),
+				new WorldPackets()
 		));
 	}
 }

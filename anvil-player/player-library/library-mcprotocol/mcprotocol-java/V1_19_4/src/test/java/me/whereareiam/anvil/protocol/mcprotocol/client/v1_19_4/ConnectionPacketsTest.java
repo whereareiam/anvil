@@ -16,7 +16,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConnectionPacketsTest {
 	private final ConnectionPackets packets = new ConnectionPackets();
@@ -48,6 +50,12 @@ class ConnectionPacketsTest {
 	@Test
 	void refusesATypeTheLoginDidNotList() {
 		assertThrows(IllegalStateException.class, () -> packets.decode(login("example:unknown")));
+	}
+
+	@Test
+	void carriesWhetherTheClientShowsTheDeathScreen() {
+		assertTrue(((ClientboundLogin) packets.decode(login("minecraft:overworld"))).isShowDeathScreen());
+		assertFalse(((ClientboundLogin) packets.decode(login("minecraft:overworld").withEnableRespawnScreen(false))).isShowDeathScreen());
 	}
 
 	private static ClientboundLoginPacket login(String type) {

@@ -3,13 +3,15 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_19_4;
 import com.github.steveice10.packetlib.event.session.DisconnectedEvent;
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.HealthPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.InventoryPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.PlayerPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ScreenPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.TextTranslator;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.WorldPackets;
 
 import java.util.List;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.TextTranslator;
 
 /**
  * The client segment's adapter for the MCProtocolLib 1.19.4 release: the 1.18.2 {@link JavaClient} with the release's
@@ -46,11 +48,13 @@ public final class McProtocolClientAdapter extends JavaClient {
 				new CommandPackets(),
 				new ConnectionPackets(),
 				new EntityPackets(TEXT),
+				new HealthPackets(TEXT),
 				new InteractionPackets(),
 				new InventoryPackets(TEXT),
 				new PlayerPackets(),
 				new ScreenPackets(TEXT),
-				new SoundPackets()
+				new SoundPackets(),
+				new WorldPackets()
 		));
 	}
 }

@@ -20,7 +20,9 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConnectionPacketsTest {
 	private final ConnectionPackets packets = new ConnectionPackets();
@@ -71,6 +73,12 @@ class ConnectionPacketsTest {
 	@Test
 	void carriesJoiningALevelAndRespawningButNoConfigurationPhase() {
 		assertEquals(Set.of(ClientboundLogin.class, ClientboundRespawn.class), packets.packets());
+	}
+
+	@Test
+	void carriesWhetherTheClientShowsTheDeathScreen() {
+		assertTrue(((ClientboundLogin) packets.decode(login(overworld()))).isShowDeathScreen());
+		assertFalse(((ClientboundLogin) packets.decode(login(overworld()).withEnableRespawnScreen(false))).isShowDeathScreen());
 	}
 
 	private static ServerJoinGamePacket login(CompoundTag dimension) {
