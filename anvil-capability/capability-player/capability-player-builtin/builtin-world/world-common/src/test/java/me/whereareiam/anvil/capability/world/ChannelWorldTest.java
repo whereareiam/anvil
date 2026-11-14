@@ -3,6 +3,8 @@ package me.whereareiam.anvil.capability.world;
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.world.channel.WorldChannel;
 import me.whereareiam.anvil.capability.world.model.DimensionChange;
+import me.whereareiam.anvil.capability.world.model.LevelInfo;
+import me.whereareiam.anvil.capability.world.type.Environment;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
@@ -38,49 +40,59 @@ class ChannelWorldTest {
 	void keepsEveryChangeInOrderAndTheDimensionOfTheLast() {
 		assertEquals(Optional.empty(), world.dimension());
 
-		channel.publish(WorldChannel.DIMENSION, new DimensionChange(null, OVERWORLD));
-		channel.publish(WorldChannel.DIMENSION, new DimensionChange(OVERWORLD, NETHER));
+		channel.publish(WorldChannel.DIMENSION, change(null, OVERWORLD));
+		channel.publish(WorldChannel.DIMENSION, change(OVERWORLD, NETHER));
 
 		assertEquals(Optional.of(NETHER), world.dimension());
-		assertEquals(List.of(new DimensionChange(null, OVERWORLD), new DimensionChange(OVERWORLD, NETHER)), world.changes());
+		assertEquals(List.of(change(null, OVERWORLD), change(OVERWORLD, NETHER)), world.changes());
 		assertThrows(UnsupportedOperationException.class, () -> world.changes().clear());
 	}
 
 	@Test
+	void keepsWhatTheClientWasToldAboutTheLevelOfTheLastChange() {
+		LevelInfo nether = level(NETHER).toBuilder().environment(Environment.NETHER).hardcore(true).build();
+		channel.publish(WorldChannel.DIMENSION, change(null, OVERWORLD));
+		channel.publish(WorldChannel.DIMENSION, new DimensionChange(OVERWORLD, NETHER, nether));
+
+		assertEquals(Optional.of(nether), world.level());
+	}
+
+	@Test
 	void isInNoDimensionOnceTheConnectionLeftItAndKeepsTheHistory() {
-		channel.publish(WorldChannel.DIMENSION, new DimensionChange(null, NETHER));
+		channel.publish(WorldChannel.DIMENSION, change(null, NETHER));
 		channel.publish(WorldChannel.LEFT, NETHER);
 
 		assertEquals(Optional.empty(), world.dimension());
-		assertEquals(List.of(new DimensionChange(null, NETHER)), world.changes());
+		assertEquals(Optional.empty(), world.level());
+		assertEquals(List.of(change(null, NETHER)), world.changes());
 	}
 
 	@Test
 	void entersADimensionByJoiningOrComingFromAnotherButNotByRespawningInIt() {
 		DimensionWatch dimensions = world.watch();
 
-		channel.publish(WorldChannel.DIMENSION, new DimensionChange(null, OVERWORLD));
-		assertEquals(new DimensionChange(null, OVERWORLD), dimensions.entered(OVERWORLD, TIMEOUT));
+		channel.publish(WorldChannel.DIMENSION, change(null, OVERWORLD));
+		assertEquals(change(null, OVERWORLD), dimensions.entered(OVERWORLD, TIMEOUT));
 
-		channel.publish(WorldChannel.DIMENSION, new DimensionChange(OVERWORLD, OVERWORLD));
+		channel.publish(WorldChannel.DIMENSION, change(OVERWORLD, OVERWORLD));
 		assertEquals("Player did not enter a matching dimension", assertThrows(IllegalStateException.class,
 				() -> dimensions.entered(OVERWORLD, TIMEOUT)).getMessage());
 
-		channel.publish(WorldChannel.DIMENSION, new DimensionChange(OVERWORLD, NETHER));
-		assertEquals(new DimensionChange(OVERWORLD, NETHER), dimensions.entered("the_nether", TIMEOUT));
+		channel.publish(WorldChannel.DIMENSION, change(OVERWORLD, NETHER));
+		assertEquals(change(OVERWORLD, NETHER), dimensions.entered("the_nether", TIMEOUT));
 		assertEquals(List.of(), dimensions.unread());
 	}
 
 	@Test
 	void watchesOnlyChangesSinceItAndContinuesAfterEachMatch() {
-		channel.publish(WorldChannel.DIMENSION, new DimensionChange(null, NETHER));
+		channel.publish(WorldChannel.DIMENSION, change(null, NETHER));
 		DimensionWatch dimensions = world.watch();
 
 		assertThrows(IllegalStateException.class, () -> dimensions.entered(NETHER, TIMEOUT));
 
-		channel.publish(WorldChannel.DIMENSION, new DimensionChange(NETHER, OVERWORLD));
-		channel.publish(WorldChannel.DIMENSION, new DimensionChange(OVERWORLD, NETHER));
-		assertEquals(new DimensionChange(OVERWORLD, NETHER),
+		channel.publish(WorldChannel.DIMENSION, change(NETHER, OVERWORLD));
+		channel.publish(WorldChannel.DIMENSION, change(OVERWORLD, NETHER));
+		assertEquals(change(OVERWORLD, NETHER),
 				dimensions.changed(change -> NETHER.equals(change.getTo()), TIMEOUT));
 		assertThrows(IllegalStateException.class, () -> dimensions.changed(change -> true, TIMEOUT));
 	}
@@ -88,13 +100,13 @@ class ChannelWorldTest {
 	@Test
 	void failsWhenTheForbiddenDimensionWasEnteredAndPassesOtherwise() {
 		DimensionWatch dimensions = world.watch();
-		channel.publish(WorldChannel.DIMENSION, new DimensionChange(null, OVERWORLD));
+		channel.publish(WorldChannel.DIMENSION, change(null, OVERWORLD));
 
 		dimensions.neverEntered(NETHER, TIMEOUT);
 		assertEquals("Player made a dimension change it must not make: joined minecraft:overworld",
 				assertThrows(IllegalStateException.class, () -> dimensions.neverEntered(OVERWORLD, TIMEOUT)).getMessage());
 
-		channel.publish(WorldChannel.DIMENSION, new DimensionChange(OVERWORLD, NETHER));
+		channel.publish(WorldChannel.DIMENSION, change(OVERWORLD, NETHER));
 		assertEquals("Player made a dimension change it must not make: from minecraft:overworld to minecraft:the_nether",
 				assertThrows(IllegalStateException.class, () -> dimensions.neverEntered(NETHER, TIMEOUT)).getMessage());
 		assertEquals(2, dimensions.unread().size());
@@ -106,8 +118,22 @@ class ChannelWorldTest {
 		Expectation nether = dimensions.expectChanged(DimensionWatch.entering(NETHER));
 
 		assertFalse(nether.met());
-		channel.publish(WorldChannel.DIMENSION, new DimensionChange(null, NETHER));
+		channel.publish(WorldChannel.DIMENSION, change(null, NETHER));
 		assertTrue(nether.met());
+	}
+
+	private static DimensionChange change(String from, String to) {
+		return new DimensionChange(from, to, level(to));
+	}
+
+	private static LevelInfo level(String dimension) {
+		return LevelInfo.builder()
+				.dimension(dimension)
+				.dimensionType(dimension)
+				.environment(Environment.OVERWORLD)
+				.level(OVERWORLD)
+				.level(NETHER)
+				.build();
 	}
 
 	/**

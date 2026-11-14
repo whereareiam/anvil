@@ -8,6 +8,7 @@ plugins {
 segment {
 	extends(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolJava.v2612)
 	replaces(
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConnectionPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ConfigurationPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.EntityPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.TeleportListener",

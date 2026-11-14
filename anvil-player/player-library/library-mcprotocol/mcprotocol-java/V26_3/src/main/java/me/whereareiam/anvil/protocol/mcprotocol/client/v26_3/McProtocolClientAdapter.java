@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_3;
 
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConnectionPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ScreenPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ChatPackets;
@@ -39,11 +38,13 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 	 * @return the 26.1 translations with this release's configuration, entity and interaction translations
 	 */
 	static PacketTable<Packet> packets() {
+		// The connection translation reads the dimension types of the registry data before the configuration
+		// translation decodes it.
 		return new PacketTable<>(List.of(
+				new ConnectionPackets(),
 				new ChatPackets(TEXT),
 				new CommandPackets(),
 				new ConfigurationPackets(),
-				new ConnectionPackets(),
 				new CookiePackets(),
 				new DialogPackets(),
 				new EntityPackets(TEXT),

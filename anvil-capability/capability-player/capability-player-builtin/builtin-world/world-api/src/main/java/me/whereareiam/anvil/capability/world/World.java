@@ -2,6 +2,7 @@ package me.whereareiam.anvil.capability.world;
 
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.capability.world.model.DimensionChange;
+import me.whereareiam.anvil.capability.world.model.LevelInfo;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -10,8 +11,9 @@ import java.util.Optional;
 /**
  * Observes the world the player is in as its client knows it: the dimension of the level the server put it in, named
  * by the level's key with its namespace, such as {@code minecraft:overworld}, {@code minecraft:the_nether} or, for a
- * world a plugin created, {@code minecraft:arena}. A client learns its dimension when it joins a level and each time
- * the server respawns it, which is how a server moves a player to another dimension; it never chooses one itself.
+ * world a plugin created, {@code minecraft:arena}, with the level's dimension type, its environment and its flags,
+ * and the levels the server has. A client learns them when it joins a level and each time the server respawns it,
+ * which is how a server moves a player to another dimension; it never chooses one itself.
  *
  * <p>Every change is kept in order and across reconnects. What a server knows about the worlds of its players, and
  * moving a player to another world, belongs to that server's {@code Worlds} capability.</p>
@@ -31,6 +33,19 @@ public interface World extends PlayerCapability {
 	 * @return key of the player's level, or empty while the player is not connected or has not joined a level yet
 	 */
 	@NotNull Optional<String> dimension();
+
+	/**
+	 * Returns what the client was told about the level it is in now, without waiting.
+	 *
+	 * <pre>{@code
+	 * LevelInfo level = world.level().orElseThrow();
+	 * assertEquals(Environment.NETHER, level.getEnvironment());
+	 * assertTrue(level.getLevels().contains("minecraft:arena"));
+	 * }</pre>
+	 *
+	 * @return the player's level, or empty while the player is not connected or has not joined a level yet
+	 */
+	@NotNull Optional<LevelInfo> level();
 
 	/**
 	 * Returns every dimension change so far, without waiting.

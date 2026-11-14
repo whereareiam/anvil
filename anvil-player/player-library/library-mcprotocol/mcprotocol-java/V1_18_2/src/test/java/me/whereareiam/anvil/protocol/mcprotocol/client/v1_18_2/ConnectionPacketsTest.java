@@ -4,12 +4,19 @@ import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
+import com.github.steveice10.opennbt.tag.builtin.ByteTag;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+import com.github.steveice10.opennbt.tag.builtin.IntTag;
+import com.github.steveice10.opennbt.tag.builtin.ListTag;
+import com.github.steveice10.opennbt.tag.builtin.StringTag;
+import com.github.steveice10.opennbt.tag.builtin.Tag;
+import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,12 +26,40 @@ class ConnectionPacketsTest {
 	private final ConnectionPackets packets = new ConnectionPackets();
 
 	@Test
-	void decodesJoiningALevelAndRespawningWithTheDimension() {
-		assertEquals(new ClientboundLogin(42, "minecraft:overworld"), packets.decode(new ClientboundLoginPacket(42, false,
-				GameMode.SURVIVAL, GameMode.SURVIVAL, 1, new String[0], new CompoundTag(""), new CompoundTag(""),
-				"minecraft:overworld", 0, 20, 10, 10, false, true, false, false)));
-		assertEquals(new ClientboundRespawn("minecraft:the_nether"), packets.decode(new ClientboundRespawnPacket(
-				new CompoundTag(""), "minecraft:the_nether", 0, GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, false)));
+	void decodesTheJoinedLevelWithItsTypeNamedByTheLoginsRegistry() {
+		assertEquals(ClientboundLogin.builder()
+				.entityId(42)
+				.level("minecraft:overworld")
+				.level("minecraft:the_nether")
+				.hardcore(true)
+				.dimension("minecraft:overworld")
+				.dimensionType(DimensionType.withEffects("minecraft:overworld", "minecraft:overworld"))
+				.flat(true)
+				.build(), packets.decode(login(overworld())));
+	}
+
+	@Test
+	void namesTheTypeOfARespawnByTheRegistryOfTheLogin() {
+		packets.decode(login(overworld()));
+
+		assertEquals(ClientboundRespawn.builder()
+				.dimension("example:arena")
+				.dimensionType(DimensionType.withEffects("minecraft:the_nether", "minecraft:the_nether"))
+				.debug(true)
+				.build(), packets.decode(new ClientboundRespawnPacket(nether(), "example:arena", 0, GameMode.SURVIVAL,
+				GameMode.SURVIVAL, true, false, false)));
+	}
+
+	@Test
+	void takesTheOverworldsEffectsForATypeThatDescribesNone() {
+		CompoundTag plain = new CompoundTag("");
+		plain.put(new ByteTag("ultrawarm", (byte) 0));
+		CompoundTag codec = codec(entry("example:plain", 2, plain));
+
+		assertEquals(DimensionType.withEffects("example:plain", "minecraft:overworld"),
+				((ClientboundLogin) packets.decode(new ClientboundLoginPacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL,
+						1, new String[]{"example:plain"}, codec, plain, "example:plain", 0, 20, 10, 10, false, true, false,
+						false))).getDimensionType());
 	}
 
 	@Test
@@ -36,6 +71,46 @@ class ConnectionPacketsTest {
 	@Test
 	void carriesJoiningALevelAndRespawningButNoConfigurationPhase() {
 		assertEquals(Set.of(ClientboundLogin.class, ClientboundRespawn.class), packets.packets());
+	}
+
+	private static ClientboundLoginPacket login(CompoundTag dimension) {
+		return new ClientboundLoginPacket(42, true, GameMode.SURVIVAL, GameMode.SURVIVAL, 2,
+				new String[]{"minecraft:overworld", "minecraft:the_nether"},
+				codec(entry("minecraft:overworld", 0, overworld()), entry("minecraft:the_nether", 1, nether())), dimension,
+				"minecraft:overworld", 0, 20, 10, 10, false, true, false, true);
+	}
+
+	private static CompoundTag overworld() {
+		return type("minecraft:overworld", false);
+	}
+
+	private static CompoundTag nether() {
+		return type("minecraft:the_nether", true);
+	}
+
+	private static CompoundTag type(String effects, boolean ultrawarm) {
+		CompoundTag type = new CompoundTag("");
+		type.put(new StringTag("effects", effects));
+		type.put(new ByteTag("ultrawarm", (byte) (ultrawarm ? 1 : 0)));
+		return type;
+	}
+
+	private static CompoundTag entry(String name, int id, CompoundTag type) {
+		CompoundTag element = new CompoundTag("element", type.getValue());
+		CompoundTag entry = new CompoundTag("");
+		entry.put(new StringTag("name", name));
+		entry.put(new IntTag("id", id));
+		entry.put(element);
+		return entry;
+	}
+
+	private static CompoundTag codec(CompoundTag... entries) {
+		CompoundTag registry = new CompoundTag("minecraft:dimension_type");
+		registry.put(new StringTag("type", "minecraft:dimension_type"));
+		registry.put(new ListTag("value", List.<Tag>of(entries)));
+		CompoundTag codec = new CompoundTag("");
+		codec.put(registry);
+		return codec;
 	}
 
 	private static final class UnknownPacket implements ServerboundPacket {

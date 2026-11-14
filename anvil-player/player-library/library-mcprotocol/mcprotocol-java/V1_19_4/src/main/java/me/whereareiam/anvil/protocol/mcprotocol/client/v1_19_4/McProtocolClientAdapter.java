@@ -3,7 +3,6 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_19_4;
 import com.github.steveice10.packetlib.event.session.DisconnectedEvent;
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ConnectionPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.InventoryPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.PlayerPackets;
@@ -14,8 +13,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.TextTranslator;
 
 /**
  * The client segment's adapter for the MCProtocolLib 1.19.4 release: the 1.18.2 {@link JavaClient} with the release's
- * component disconnect reasons and packet table, which keeps the 1.18.2 connection, inventory, player and screen
- * translations.
+ * component disconnect reasons and packet table, which keeps the 1.18.2 inventory, player and screen translations.
  */
 public final class McProtocolClientAdapter extends JavaClient {
 	private static final TextTranslator TEXT = new TextTranslator();

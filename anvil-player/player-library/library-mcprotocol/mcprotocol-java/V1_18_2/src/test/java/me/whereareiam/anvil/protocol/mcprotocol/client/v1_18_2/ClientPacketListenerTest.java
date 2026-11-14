@@ -18,6 +18,10 @@ import com.github.steveice10.mc.protocol.packet.ingame.serverbound.level.Serverb
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+import com.github.steveice10.opennbt.tag.builtin.IntTag;
+import com.github.steveice10.opennbt.tag.builtin.ListTag;
+import com.github.steveice10.opennbt.tag.builtin.StringTag;
+import com.github.steveice10.opennbt.tag.builtin.Tag;
 import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.event.session.PacketSendingEvent;
 import com.github.steveice10.packetlib.packet.Packet;
@@ -63,7 +67,7 @@ class ClientPacketListenerTest {
 	void answersTheLoginWithClientInformationBeforeReportingItWithTheGrantedProfile() {
 		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed")));
 		receive(new ClientboundLoginPacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL, 1,
-				new String[0], new CompoundTag(""), new CompoundTag(""), "minecraft:overworld", 0, 20, 10, 10, false, true, false, false));
+				new String[0], codec(), overworld(), "minecraft:overworld", 0, 20, 10, 10, false, true, false, false));
 
 		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ServerboundClientInformationPacket", "logged in as Alice_Renamed " + GRANTED), events);
 		ServerboundClientInformationPacket information = assertInstanceOf(ServerboundClientInformationPacket.class, sent.getFirst());
@@ -177,5 +181,29 @@ class ClientPacketListenerTest {
 		public void received(@NotNull Session session, @NotNull ClientboundPacket packet) {
 			received.add(packet);
 		}
+	}
+
+	/**
+	 * The dimension type of the overworld, as these releases describe it.
+	 */
+	private static CompoundTag overworld() {
+		CompoundTag type = new CompoundTag("");
+		type.put(new StringTag("effects", "minecraft:overworld"));
+		return type;
+	}
+
+	/**
+	 * The login's registries, which list only the overworld's dimension type.
+	 */
+	private static CompoundTag codec() {
+		CompoundTag entry = new CompoundTag("");
+		entry.put(new StringTag("name", "minecraft:overworld"));
+		entry.put(new IntTag("id", 0));
+		entry.put(new CompoundTag("element", overworld().getValue()));
+		CompoundTag registry = new CompoundTag("minecraft:dimension_type");
+		registry.put(new ListTag("value", List.<Tag>of(entry)));
+		CompoundTag codec = new CompoundTag("");
+		codec.put(registry);
+		return codec;
 	}
 }

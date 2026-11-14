@@ -1,44 +1,17 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
-import org.geysermc.mcprotocollib.network.packet.Packet;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundStartConfigurationPacket;
+import org.cloudburstmc.nbt.NbtMap;
+import org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Set;
-
 /**
- * The moments the MCProtocolLib releases from 1.20.5 on join a level, respawn and return to the configuration phase.
+ * The connection moments of the MCProtocolLib releases from 1.20.5 until 26.3, whose registry entries carry their
+ * data as a compound.
  */
-public final class ConnectionPackets implements PacketTranslation<Packet> {
+public final class ConnectionPackets extends ConnectionTranslation {
 	@Override
-	public @NotNull Set<Class<? extends JavaPacket>> packets() {
-		return Set.of(ClientboundLogin.class, ClientboundRespawn.class, ClientboundStartConfiguration.class);
-	}
-
-	@Override
-	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
-		return switch (packet) {
-			case ClientboundLoginPacket login ->
-					new ClientboundLogin(login.getEntityId(), login.getCommonPlayerSpawnInfo().getWorldName().asString());
-			case ClientboundRespawnPacket respawn ->
-					new ClientboundRespawn(respawn.getCommonPlayerSpawnInfo().getWorldName().asString());
-			case ClientboundStartConfigurationPacket ignored -> new ClientboundStartConfiguration();
-			default -> null;
-		};
-	}
-
-	@Override
-	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
-		return null;
+	protected @Nullable NbtMap description(@NotNull RegistryEntry entry) {
+		return entry.getData();
 	}
 }

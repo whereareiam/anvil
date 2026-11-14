@@ -29,11 +29,13 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 	 * @return the release's translations
 	 */
 	static PacketTable<Packet> packets() {
+		// The connection translation reads the dimension types of the registry data before the configuration
+		// translation decodes it.
 		return new PacketTable<>(List.of(
+				new ConnectionPackets(),
 				new ChatPackets(TEXT),
 				new CommandPackets(),
 				new ConfigurationPackets(),
-				new ConnectionPackets(),
 				new CookiePackets(),
 				new DialogPackets(),
 				new EntityPackets(TEXT),
