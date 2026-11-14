@@ -29,4 +29,11 @@ public class ScenarioLaunchRequest {
 	 * Initial process name, or null to start the complete scenario and its setup.
 	 */
 	@Nullable String target;
+
+	/**
+	 * Whether to start the target process, or every server and proxy when there is no target, with a JDWP agent.
+	 * The agent listens on a free loopback port and prints it to the process console as
+	 * {@code Listening for transport dt_socket at address: <port>}, again after each restart.
+	 */
+	boolean debug;
 }

@@ -89,7 +89,7 @@ class InteractiveSessionTest {
 		}
 
 		@Override
-		public void start(@NotNull String definition, @Nullable String process) {
+		public void start(@NotNull String definition, @Nullable String process, boolean debug) {
 			actions.add("start " + definition);
 			snapshot = SessionSnapshot.builder().sessionId("fixture").definition(definition).scenario(
 					definition.equals(FirstScenario.class.getName()) ? "first" : "second")

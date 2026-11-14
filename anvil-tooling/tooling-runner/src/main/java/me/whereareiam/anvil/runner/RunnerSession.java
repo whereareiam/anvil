@@ -4,6 +4,7 @@ package me.whereareiam.anvil.runner;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.tooling.extension.api.ToolingRegistry;
 import me.whereareiam.anvil.runner.scenario.DisplayNameResolver;
+import me.whereareiam.anvil.runner.scenario.ScenarioDebugging;
 import me.whereareiam.anvil.runner.session.SessionConsole;
 import me.whereareiam.anvil.runner.scenario.ScenarioRepository;
 import me.whereareiam.anvil.runner.extension.ToolingExtensionRegistry;
@@ -103,14 +104,15 @@ public final class RunnerSession implements ToolingSession {
 	}
 
 	@Override
-	public void start(@NotNull String definition, @Nullable String process) {
+	public void start(@NotNull String definition, @Nullable String process, boolean debug) {
 		lifecycle.lock();
 		try {
 			ensureOpen();
 			// The process only narrows the start; it never selects a scenario.
 			ScenarioRepository.Entry selected = scenarios.require(definition);
-			AnvilScenario scenario = selected.scenario();
-			if (process != null) requireDeclaredProcess(scenario, process);
+			AnvilScenario declared = selected.scenario();
+			if (process != null) requireDeclaredProcess(declared, process);
+			AnvilScenario scenario = debug ? ScenarioDebugging.withAgent(declared, process) : declared;
 			stop();
 
 			Map<String, PresentationMetadata> labels = new LinkedHashMap<>();

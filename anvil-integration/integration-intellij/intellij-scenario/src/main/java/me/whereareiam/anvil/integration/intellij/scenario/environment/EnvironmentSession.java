@@ -63,6 +63,12 @@ public final class EnvironmentSession implements Disposable {
 	@Getter
 	private volatile @NotNull ScenarioDescriptor scenario;
 
+	/**
+	 * Whether the IDE's debugger attaches to the environment's processes as they start.
+	 */
+	@Getter
+	private final boolean debug;
+
 	private volatile boolean disposed;
 
 	EnvironmentSession(
@@ -70,17 +76,20 @@ public final class EnvironmentSession implements Disposable {
 			@NotNull ToolingLaunch launch,
 			@NotNull ScenarioDescriptor scenario,
 			@Nullable String process,
+			boolean debug,
 			@NotNull Runnable onDispose,
 			@NotNull Runnable onChange
 	) {
 		this.ideProject = ideProject;
 		this.source = launch.source();
 		this.scenario = scenario;
+		this.debug = debug;
 		this.onDispose = onDispose;
-		execution = new EnvironmentExecution(launch, scenario, process, log, () -> {
+		execution = new EnvironmentExecution(launch, scenario, process, debug, log, () -> {
 			changed();
 			onChange.run();
 		}, this::scenario);
+		if (debug) log.subscribe(new EnvironmentDebugger(ideProject), this);
 	}
 
 	boolean isDisposed() {

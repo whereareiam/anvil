@@ -34,6 +34,7 @@ final class EnvironmentExecution {
 	private final @NotNull ToolingLaunch launch;
 	private final @NotNull ScenarioDescriptor selection;
 	private final @Nullable String process;
+	private final boolean debug;
 	private final @NotNull SessionLog log;
 	private final @NotNull Runnable changed;
 	private final @NotNull Consumer<ScenarioDescriptor> discovered;
@@ -47,6 +48,7 @@ final class EnvironmentExecution {
 			@NotNull ToolingLaunch launch,
 			@NotNull ScenarioDescriptor selection,
 			@Nullable String process,
+			boolean debug,
 			@NotNull SessionLog log,
 			@NotNull Runnable changed,
 			@NotNull Consumer<ScenarioDescriptor> discovered
@@ -54,6 +56,7 @@ final class EnvironmentExecution {
 		this.launch = launch;
 		this.selection = selection;
 		this.process = process;
+		this.debug = debug;
 		this.log = log;
 		this.changed = changed;
 		this.discovered = discovered;
@@ -104,6 +107,7 @@ final class EnvironmentExecution {
 					.definition(selection.getDefinition())
 					.scenario(selection.getName())
 					.target(process)
+					.debug(debug)
 					.build();
 			connected.request(ScenarioOperations.START, request).result().whenComplete((state, startFailure) -> {
 				if (startFailure != null) failUnlessStopping(startFailure);

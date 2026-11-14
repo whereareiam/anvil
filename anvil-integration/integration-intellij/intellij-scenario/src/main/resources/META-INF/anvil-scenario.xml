@@ -3,6 +3,7 @@
 		<applicationConfigurable parentId="me.whereareiam.anvil" id="me.whereareiam.anvil.scenarios" displayName="Scenarios"
 				instance="me.whereareiam.anvil.integration.intellij.scenario.settings.ScenarioSettingsPage"/>
 		<configurationType implementation="me.whereareiam.anvil.integration.intellij.scenario.runconfiguration.AnvilConfigurationType"/>
+		<programRunner implementation="me.whereareiam.anvil.integration.intellij.scenario.runconfiguration.AnvilDebugRunner"/>
 		<runConfigurationProducer implementation="me.whereareiam.anvil.integration.intellij.scenario.runconfiguration.ScenarioConfigurationProducer"/>
 		<runLineMarkerContributor language="JAVA" implementationClass="me.whereareiam.anvil.integration.intellij.scenario.editor.ScenarioLineMarker"/>
 		<toolWindow id="Anvil" anchor="bottom" icon="/icons/anvil.svg" canCloseContents="true"
@@ -12,6 +13,8 @@
 	<actions>
 		<action id="Anvil.Run" class="me.whereareiam.anvil.integration.intellij.scenario.action.RunAction" text="Run Scenario"
 				description="Run the selected scenario, or start the selected server or proxy" icon="AllIcons.Actions.Execute"/>
+		<action id="Anvil.Debug" class="me.whereareiam.anvil.integration.intellij.scenario.action.DebugAction" text="Debug Scenario"
+				description="Start the selected scenario or process with the debugger attached" icon="AllIcons.Actions.StartDebugger"/>
 		<action id="Anvil.Stop" class="me.whereareiam.anvil.integration.intellij.scenario.action.StopAction" text="Stop Environment"
 				description="Stop the selected process, or the whole environment" icon="AllIcons.Actions.Suspend"/>
 		<action id="Anvil.RestartProcess" class="me.whereareiam.anvil.integration.intellij.scenario.action.RestartProcessAction" text="Restart Process"
@@ -28,6 +31,7 @@
 			<reference ref="Anvil.SyncProject"/>
 			<separator/>
 			<reference ref="Anvil.Run"/>
+			<reference ref="Anvil.Debug"/>
 			<reference ref="Anvil.Stop"/>
 			<separator/>
 			<reference ref="Anvil.SaveRunConfiguration"/>
@@ -35,6 +39,7 @@
 		</group>
 		<group id="Anvil.Catalog.Popup">
 			<reference ref="Anvil.Run"/>
+			<reference ref="Anvil.Debug"/>
 			<reference ref="Anvil.Stop"/>
 			<reference ref="Anvil.RestartProcess"/>
 			<separator/>

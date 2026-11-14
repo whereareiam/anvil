@@ -67,6 +67,44 @@ public final class EnvironmentLifecycle implements Disposable {
 	}
 
 	/**
+	 * Reports whether a scenario, or one of its processes, can be debugged now. Debugging always starts a new
+	 * environment, so no other environment may be active.
+	 *
+	 * @param process declared process name, or null for every server and proxy of the scenario
+	 * @return whether debugging is possible, with the reason when it is not
+	 */
+	public @NotNull EnvironmentSession.Availability debugAvailability(
+			@NotNull ScenarioSource source,
+			@NotNull ScenarioDescriptor scenario,
+			@Nullable String process
+	) {
+		EnvironmentSession current = getActiveSession();
+		if (current != null)
+			return EnvironmentSession.Availability.unavailable("Stop “" + current.getScenario().getDisplayName() + "” to debug a scenario");
+
+		return availability(source, scenario, process);
+	}
+
+	/**
+	 * Starts a scenario, or one of its processes, in a new environment and attaches the IDE's debugger to each
+	 * debugged process as it starts.
+	 *
+	 * @param process declared process to debug and start, or null to start the scenario and debug every process
+	 * @return the session that runs it
+	 * @throws IllegalStateException if {@link #debugAvailability} refuses it, or the project is closed
+	 */
+	public synchronized @NotNull EnvironmentSession debug(
+			@NotNull ScenarioSource source,
+			@NotNull ScenarioDescriptor scenario,
+			@Nullable String process
+	) {
+		EnvironmentSession.Availability availability = debugAvailability(source, scenario, process);
+		if (!availability.available()) throw new IllegalStateException(availability.reason() + ".");
+
+		return open(source, scenario, process, true);
+	}
+
+	/**
 	 * Runs a scenario or one of its processes: in the active environment when it runs that scenario, otherwise
 	 * in a new environment.
 	 *
@@ -83,7 +121,7 @@ public final class EnvironmentLifecycle implements Disposable {
 		if (!availability.available()) throw new IllegalStateException(availability.reason() + ".");
 
 		EnvironmentSession current = getActiveSession();
-		if (current == null) return open(source, scenario, process);
+		if (current == null) return open(source, scenario, process, false);
 
 		if (process == null) current.startAll();
 		else current.startProcess(process);
@@ -91,13 +129,13 @@ public final class EnvironmentLifecycle implements Disposable {
 		return current;
 	}
 
-	private EnvironmentSession open(ScenarioSource source, ScenarioDescriptor scenario, @Nullable String process) {
+	private EnvironmentSession open(ScenarioSource source, ScenarioDescriptor scenario, @Nullable String process, boolean debug) {
 		if (disposed || project.isDisposed()) throw new IllegalStateException("The project is closed.");
 
 		// The catalog observes launches; it must exist before a cold start allocates one.
 		ScenarioCatalog.getInstance(project);
 		var launch = project.getService(ToolingHost.class).reserve(source);
-		var session = new EnvironmentSession(project, launch, scenario, process, this::removeDisposed, this::changed);
+		var session = new EnvironmentSession(project, launch, scenario, process, debug, this::removeDisposed, this::changed);
 
 		Disposer.register(this, session);
 		sessions.add(session);

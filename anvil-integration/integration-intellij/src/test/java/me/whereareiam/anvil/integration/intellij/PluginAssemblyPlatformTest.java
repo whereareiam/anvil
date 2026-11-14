@@ -26,6 +26,7 @@ import me.whereareiam.anvil.integration.intellij.account.settings.AccountSetting
 import me.whereareiam.anvil.integration.intellij.account.storage.ProjectAccountStaging;
 import me.whereareiam.anvil.integration.intellij.scenario.editor.ScenarioLineMarker;
 import me.whereareiam.anvil.integration.intellij.scenario.runconfiguration.AnvilConfigurationType;
+import me.whereareiam.anvil.integration.intellij.scenario.runconfiguration.AnvilDebugRunner;
 import me.whereareiam.anvil.integration.intellij.scenario.runconfiguration.AnvilRunConfiguration;
 import me.whereareiam.anvil.integration.intellij.scenario.runconfiguration.ScenarioConfigurationProducer;
 import me.whereareiam.anvil.integration.intellij.scenario.settings.ScenarioSettingsPage;
@@ -38,7 +39,7 @@ import me.whereareiam.anvil.integration.intellij.source.ToolingCommands;
  * Checks that the plugin descriptor composes every module's fragment into one working plugin.
  */
 public class PluginAssemblyPlatformTest extends BasePlatformTestCase {
-	public void testRunConfigurationsRunButAreNeverOfferedToTheDebugger() {
+	public void testRunConfigurationsRunAndDebugThroughTheAnvilRunner() {
 		var type = ConfigurationTypeUtil.findConfigurationType("AnvilScenario");
 		assertInstanceOf(type, AnvilConfigurationType.class);
 		var configuration = type.getConfigurationFactories()[0].createTemplateConfiguration(getProject());
@@ -47,7 +48,7 @@ public class PluginAssemblyPlatformTest extends BasePlatformTestCase {
 		var runner = ProgramRunner.getRunner(DefaultRunExecutor.EXECUTOR_ID, configuration);
 		assertNotNull(runner);
 		assertTrue(runner.canRun(DefaultRunExecutor.EXECUTOR_ID, configuration));
-		assertNull(ProgramRunner.getRunner(DefaultDebugExecutor.EXECUTOR_ID, configuration));
+		assertInstanceOf(ProgramRunner.getRunner(DefaultDebugExecutor.EXECUTOR_ID, configuration), AnvilDebugRunner.class);
 	}
 
 	public void testSharedContractsAreBoundToTheirStandardImplementations() {

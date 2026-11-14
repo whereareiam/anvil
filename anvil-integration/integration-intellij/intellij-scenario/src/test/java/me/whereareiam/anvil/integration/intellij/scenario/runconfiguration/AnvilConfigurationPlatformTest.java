@@ -4,6 +4,7 @@ import com.intellij.execution.ExecutionException;
 import com.intellij.execution.RunManager;
 import com.intellij.execution.configurations.RunConfigurationWithSuppressedDefaultDebugAction;
 import com.intellij.execution.configurations.RuntimeConfigurationError;
+import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.executors.DefaultRunExecutor;
 import com.intellij.execution.impl.ConsoleViewImpl;
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder;
@@ -169,7 +170,7 @@ public class AnvilConfigurationPlatformTest extends ScenarioPlatformTestCase {
 		configuration.setSourceId(source.getId());
 		configuration.setProcessId("lobby");
 
-		EnvironmentSession session = service().launch(configuration);
+		EnvironmentSession session = service().launch(configuration, false);
 
 		assertSame(catalog.snapshot().getScenarios().getFirst(), session.getScenario());
 		ControlledProject.await(() -> project.startRequests().size() == 1);
@@ -185,14 +186,40 @@ public class AnvilConfigurationPlatformTest extends ScenarioPlatformTestCase {
 		configuration.setSourceId(project.source("authentication").getId());
 		configuration.setName("Saved launcher");
 
-		EnvironmentSession session = service().launch(configuration);
+		EnvironmentSession session = service().launch(configuration, false);
 
 		assertEquals(DEFINITION, session.getScenario().getDefinition());
 		assertEquals("Saved launcher", session.getScenario().getDisplayName());
 		ControlledProject.await(() -> project.startRequests().size() == 1);
 		assertEquals(DEFINITION, project.startRequests().getFirst().path("definition").asText());
 		assertTrue(project.startRequests().getFirst().path("target").isMissingNode());
+		assertFalse(project.startRequests().getFirst().path("debug").asBoolean());
 		session.stop();
+	}
+
+	public void testDebugStartsANewEnvironmentWithAgents() throws Exception {
+		var project = ControlledProject.install(getTestRootDisposable(), this::tooling, "authentication");
+		var configuration = configuration();
+		configuration.setSourceId(project.source("authentication").getId());
+		configuration.setProcessId("lobby");
+
+		EnvironmentSession session = service().launch(configuration, true);
+
+		assertTrue(session.isDebug());
+		ControlledProject.await(() -> project.startRequests().size() == 1);
+		assertTrue(project.startRequests().getFirst().path("debug").asBoolean());
+		assertEquals("lobby", project.startRequests().getFirst().path("target").asText());
+		var refused = Assertions.assertThrows(ExecutionException.class, () -> service().launch(configuration, true));
+		assertTrue(refused.getMessage(), refused.getMessage().contains("to debug a scenario"));
+		session.stop();
+	}
+
+	public void testOnlyTheDebugExecutorUsesTheAnvilDebugRunner() {
+		var configuration = configuration();
+		var runner = new AnvilDebugRunner();
+
+		assertTrue(runner.canRun(DefaultDebugExecutor.EXECUTOR_ID, configuration));
+		assertFalse(runner.canRun(DefaultRunExecutor.EXECUTOR_ID, configuration));
 	}
 
 	public void testLaunchResolvesTheSourceAgainAfterValidation() throws Exception {
@@ -203,7 +230,7 @@ public class AnvilConfigurationPlatformTest extends ScenarioPlatformTestCase {
 		project.setSources(List.of(ScenarioSource.builder().id("fixture:replacement").displayName("replacement")
 				.integrationId("fixture").directory(project.source("authentication").getDirectory()).build()));
 
-		var failure = Assertions.assertThrows(ExecutionException.class, () -> service().launch(configuration));
+		var failure = Assertions.assertThrows(ExecutionException.class, () -> service().launch(configuration, false));
 
 		assertInstanceOf(failure.getCause(), IllegalStateException.class);
 		assertTrue(project.getRunners().isEmpty());
@@ -215,7 +242,7 @@ public class AnvilConfigurationPlatformTest extends ScenarioPlatformTestCase {
 		configuration.setDefinition(" ");
 
 		assertThrows(RuntimeConfigurationError.class, configuration::checkConfiguration);
-		assertThrows(ExecutionException.class, () -> service().launch(configuration));
+		assertThrows(ExecutionException.class, () -> service().launch(configuration, false));
 		assertTrue(project.getRunners().isEmpty());
 	}
 
@@ -227,7 +254,7 @@ public class AnvilConfigurationPlatformTest extends ScenarioPlatformTestCase {
 		var configuration = configuration();
 		configuration.setSourceId(source.getId());
 
-		var failure = Assertions.assertThrows(ExecutionException.class, () -> service().launch(configuration));
+		var failure = Assertions.assertThrows(ExecutionException.class, () -> service().launch(configuration, false));
 
 		assertInstanceOf(failure.getCause(), IllegalStateException.class);
 		assertEquals("Stop “Other” to run another scenario.", failure.getMessage());

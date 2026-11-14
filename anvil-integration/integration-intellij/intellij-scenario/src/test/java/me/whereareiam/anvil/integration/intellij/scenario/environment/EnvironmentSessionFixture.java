@@ -56,7 +56,7 @@ public class EnvironmentSessionFixture {
 			boolean notifyPresentation) {
 		EnvironmentSession run =
 				new EnvironmentSession(
-						project, new ToolingLaunch(source, ToolingLaunch.Inputs.of(project), ProcessBuilder::start), scenario, null, () -> {}, () -> {});
+						project, new ToolingLaunch(source, ToolingLaunch.Inputs.of(project), ProcessBuilder::start), scenario, null, false, () -> {}, () -> {});
 		Disposer.register(owner, run);
 		var presentation = new ConsolePresentation(project, run.getLog(), run::stop, run);
 		synchronized (PRESENTATIONS) {

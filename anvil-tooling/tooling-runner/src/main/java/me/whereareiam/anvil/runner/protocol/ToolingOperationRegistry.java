@@ -30,7 +30,7 @@ final class ToolingOperationRegistry {
 			String definition = request.getDefinition() == null ? request.getScenario() : request.getDefinition();
 			String target = request.getTarget();
 			if (target != null) requiredText(target, "target");
-			session.start(requiredText(definition, "definition"), target);
+			session.start(requiredText(definition, "definition"), target, request.isDebug());
 			return session.snapshot();
 		});
 		register(EnvironmentOperations.START_ALL, Policy.CANCELLABLE, ignored -> {

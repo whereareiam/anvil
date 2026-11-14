@@ -78,15 +78,18 @@ public final class RunConfigurationService {
 	}
 
 	/**
-	 * Resolves the configuration's source and scenario and runs them.
+	 * Resolves the configuration's source and scenario and runs or debugs them.
 	 *
+	 * @param debug whether to start a new environment with the IDE's debugger attached to its processes
 	 * @throws ExecutionException if the source is unavailable or another environment is running
 	 */
-	public @NotNull EnvironmentSession launch(@NotNull AnvilRunConfiguration configuration) throws ExecutionException {
+	public @NotNull EnvironmentSession launch(@NotNull AnvilRunConfiguration configuration, boolean debug) throws ExecutionException {
 		try {
 			ScenarioSource source = resolveSource(configuration);
+			ScenarioDescriptor scenario = resolveScenario(source, configuration);
 			String process = configuration.getProcessId().isBlank() ? null : configuration.getProcessId();
-			return EnvironmentLifecycle.getInstance(project).run(source, resolveScenario(source, configuration), process);
+			var lifecycle = EnvironmentLifecycle.getInstance(project);
+			return debug ? lifecycle.debug(source, scenario, process) : lifecycle.run(source, scenario, process);
 		} catch (IllegalStateException failure) {
 			throw new ExecutionException(failure.getMessage(), failure);
 		}
