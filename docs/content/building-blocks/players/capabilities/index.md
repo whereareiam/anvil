@@ -23,8 +23,8 @@ For the first journey, use Session to connect, the server's
 and check replies. Movement, Inventory, Interaction, Commands, and Dialogs cover additional game actions;
 Cookies holds the cookies a server stores on the client; Screen and Sounds record the titles, action
 bars, boss bars and sounds the server shows and plays, Entities follows the entities the server
-shows it, such as text above a player, World the dimension the server put the player in, and Vitals
-the player's health, food and deaths.
+shows it, such as text above a player, World the dimension the server put the player in, with the time,
+weather, world border and spawn point around it, and Vitals the player's health, food and deaths.
 Each capability is optional unless the test or another installed capability requires it.
 
 | Capability | Use it to | Bundled requirement |
@@ -40,7 +40,7 @@ Each capability is optional unless the test or another installed capability requ
 | [Screen](./screen/index.md) | Await titles, action bars, and boss bars. | MCProtocol and Session |
 | [Sounds](./sounds/index.md) | Await the sounds the server plays. | MCProtocol and Session |
 | [Entities](./entities/index.md) | Follow the entities the server shows: positions, passengers, names, display text, items and flags. | MCProtocol and Session |
-| [World](./world/index.md) | Read the dimension the player is in, its type, environment and generation, and the server's worlds; await a change. | MCProtocol and Session |
+| [World](./world/index.md) | Read the dimension the player is in, its type, environment and generation, the server's worlds, and the time, weather, world border and spawn point; await a change. | MCProtocol and Session |
 | [Vitals](./vitals/index.md) | Read health and food, await deaths, and respawn. | MCProtocol and Session |
 
 Packet-backed capabilities operate through the player's protocol library. The built-in capabilities

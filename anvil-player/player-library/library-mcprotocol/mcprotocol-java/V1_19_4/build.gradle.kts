@@ -3,8 +3,8 @@ plugins {
 }
 
 // MCProtocolLib 1.19.4 signs chat, merged the mob and painting spawns into the entity spawn, resolves sounds itself,
-// sends the block-change sequence with uses, names the dimension type by its key and reports disconnect reasons as
-// components; the segment takes every 1.18.2 class but the translations of these areas and brings its own.
+// sends the block-change sequence with uses, names the dimension type by its key and the spawn point's block by a
+// vector, and reports disconnect reasons as components; the segment takes every 1.18.2 class but the translations of these areas and brings its own.
 segment {
 	extends(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolJava.v1182)
 	replaces(
@@ -15,6 +15,7 @@ segment {
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.EntityPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.InteractionPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.SoundPackets",
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.WorldPackets",
 	)
 }
 

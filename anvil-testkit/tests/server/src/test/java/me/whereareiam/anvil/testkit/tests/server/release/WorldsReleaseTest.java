@@ -4,10 +4,15 @@ import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.world.DimensionWatch;
 import me.whereareiam.anvil.capability.world.World;
+import me.whereareiam.anvil.capability.world.WorldStateWatch;
 import me.whereareiam.anvil.capability.world.model.DimensionTypeInfo;
 import me.whereareiam.anvil.capability.world.model.LevelInfo;
+import me.whereareiam.anvil.capability.world.model.SpawnPoint;
+import me.whereareiam.anvil.capability.world.model.WorldBorder;
+import me.whereareiam.anvil.capability.world.model.WorldState;
 import me.whereareiam.anvil.capability.world.type.Environment;
 import me.whereareiam.anvil.capability.world.type.LevelGeneration;
+import me.whereareiam.anvil.capability.world.type.WeatherType;
 import me.whereareiam.anvil.capability.worlds.WorldChangeWatch;
 import me.whereareiam.anvil.capability.worlds.WorldEventWatch;
 import me.whereareiam.anvil.capability.worlds.Worlds;
@@ -23,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +44,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * does, follows the server loading and unloading them, and unloads, loads or deletes them again. The release's server
  * is kept for every test, so a world a test created and left loaded is deleted when the test passes, which the first
  * two tests check in that order.
+ *
+ * <p>It also changes the time, the weather, the world border and the spawn point through the server's console and
+ * follows what the client is told; each test puts back what it changed, because the release's server is shared by
+ * the task's tests.</p>
  */
 @Release
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -45,6 +55,7 @@ class WorldsReleaseTest {
 	private static final String LEFT_BEHIND = "anvil_left_behind";
 
 	private static final Duration TIMEOUT = Duration.ofSeconds(20);
+	private static final String WORLD_CLOCKS = "26.1";
 	// Above the nether's bedrock roof, where a player standing still is in the air instead of inside the rock.
 	private static final WorldLocation ABOVE_THE_NETHER = WorldLocation.builder()
 			.world("minecraft:the_nether")
@@ -185,5 +196,74 @@ class WorldsReleaseTest {
 		events.unloaded("anvil_empty_nether", TIMEOUT);
 		assertEquals(Optional.empty(), worlds.world("anvil_empty_nether"));
 		assertFalse(server.files().exists(folder));
+	}
+
+	@Test
+	void followsTheTimeOfDayOfThePlayersLevel(ScenarioContext anvil) {
+		FixtureServer server = new FixtureServer(anvil);
+		World world = server.join().capability(World.class);
+
+		server.console("time set 6000");
+
+		WorldState noon = world.states().until(state -> state.getTime() != null
+				&& state.getTime().timeOfDay().orElse(-1) >= 6000 && state.getTime().timeOfDay().orElse(-1) < 8000, TIMEOUT);
+		assertTrue(noon.getTime().isAdvancing());
+		assertEquals(TestedRelease.isAtLeast(WORLD_CLOCKS), noon.getTime().getClocks().containsKey("minecraft:overworld"));
+	}
+
+	@Test
+	void followsTheWeatherAsItRainsAndThunders(ScenarioContext anvil) {
+		FixtureServer server = new FixtureServer(anvil);
+		World world = server.join().capability(World.class);
+		WorldStateWatch states = world.states();
+		assertEquals(WeatherType.CLEAR, states.until(state -> state.getWeather() != null, TIMEOUT).weatherType());
+
+		try {
+			server.console("weather thunder");
+			states.until(state -> state.weatherType() == WeatherType.THUNDER, TIMEOUT);
+		} finally {
+			server.console("weather clear");
+		}
+
+		states.until(state -> state.weatherType() == WeatherType.CLEAR, TIMEOUT);
+	}
+
+	@Test
+	void followsTheWorldBorderOfThePlayersLevel(ScenarioContext anvil) {
+		FixtureServer server = new FixtureServer(anvil);
+		World world = server.join().capability(World.class);
+		WorldBorder initial = world.states().until(state -> state.getBorder() != null, TIMEOUT).getBorder();
+
+		try {
+			// Whole coordinates center the border on the middle of a block, so the test names the middle itself.
+			server.console("worldborder center 10.5 20.5");
+			server.console("worldborder set 200");
+			WorldBorder border = world.states().until(state -> state.getBorder().getSize() == 200
+					&& state.getBorder().getCenterX() == 10.5, TIMEOUT).getBorder();
+			assertEquals(List.of(10.5D, 20.5D, 0L), List.of(border.getCenterX(), border.getCenterZ(), border.getLerpTicks()));
+		} finally {
+			server.console("worldborder center " + initial.getCenterX() + " " + initial.getCenterZ());
+			server.console("worldborder set " + BigDecimal.valueOf(initial.getSize()).toPlainString());
+		}
+
+		world.states().until(state -> state.getBorder().getSize() == initial.getSize(), TIMEOUT);
+	}
+
+	@Test
+	void followsTheSpawnPointOfTheWorld(ScenarioContext anvil) {
+		FixtureServer server = new FixtureServer(anvil);
+		World world = server.join().capability(World.class);
+		SpawnPoint initial = world.states().until(state -> state.getSpawn() != null, TIMEOUT).getSpawn();
+		assertEquals("minecraft:overworld", initial.getDimension());
+
+		try {
+			server.console("setworldspawn " + (initial.getX() + 1) + " " + initial.getY() + " " + initial.getZ());
+			SpawnPoint moved = world.states().until(state -> state.getSpawn().getX() == initial.getX() + 1, TIMEOUT)
+					.getSpawn();
+			assertEquals(List.of("minecraft:overworld", initial.getY(), initial.getZ()),
+					List.of(moved.getDimension(), moved.getY(), moved.getZ()));
+		} finally {
+			server.console("setworldspawn " + initial.getX() + " " + initial.getY() + " " + initial.getZ());
+		}
 	}
 }

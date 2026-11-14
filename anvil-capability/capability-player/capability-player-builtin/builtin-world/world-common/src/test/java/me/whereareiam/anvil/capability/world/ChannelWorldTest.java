@@ -6,8 +6,14 @@ import me.whereareiam.anvil.capability.world.model.DimensionChange;
 import me.whereareiam.anvil.capability.world.model.DimensionTypeInfo;
 import me.whereareiam.anvil.capability.world.model.LevelInfo;
 import me.whereareiam.anvil.capability.world.model.ServerInfo;
+import me.whereareiam.anvil.capability.world.model.SpawnPoint;
+import me.whereareiam.anvil.capability.world.model.Weather;
+import me.whereareiam.anvil.capability.world.model.WorldBorder;
+import me.whereareiam.anvil.capability.world.model.WorldState;
+import me.whereareiam.anvil.capability.world.model.WorldTime;
 import me.whereareiam.anvil.capability.world.type.Environment;
 import me.whereareiam.anvil.capability.world.type.LevelGeneration;
+import me.whereareiam.anvil.capability.world.type.WeatherType;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
@@ -130,6 +136,77 @@ class ChannelWorldTest {
 		assertTrue(nether.met());
 	}
 
+	@Test
+	void tellsTheLastWorldStateAndNothingOnceTheConnectionEnded() {
+		assertEquals(WorldState.EMPTY, world.states().current());
+		assertEquals(Optional.empty(), world.time());
+
+		WorldState state = WorldState.builder()
+				.time(WorldTime.builder().gameTime(10).dayTime(6000L).advancing(true).build())
+				.weather(Weather.CLEAR)
+				.border(WorldBorder.builder().size(100).lerpFrom(100).build())
+				.spawn(SpawnPoint.builder().dimension(OVERWORLD).y(64).build())
+				.build();
+		channel.publish(WorldChannel.STATE, state);
+
+		assertEquals(Optional.of(state.getTime()), world.time());
+		assertEquals(Optional.of(Weather.CLEAR), world.weather());
+		assertEquals(Optional.of(state.getBorder()), world.border());
+		assertEquals(Optional.of(state.getSpawn()), world.spawn());
+
+		channel.publish(WorldChannel.STATE, WorldState.EMPTY);
+		assertEquals(Optional.empty(), world.spawn());
+	}
+
+	@Test
+	void waitsForAStateThatHoldsNowOrOnlyBrieflyMeanwhile() {
+		WorldStateWatch states = world.states();
+		channel.publish(WorldChannel.STATE, raining(false));
+		assertEquals(raining(false), states.until(state -> state.getWeather() != null, TIMEOUT));
+
+		channel.meanwhile(() -> {
+			channel.publish(WorldChannel.STATE, raining(true));
+			channel.publish(WorldChannel.STATE, raining(false));
+		});
+		assertEquals(raining(true), states.until(ChannelWorldTest::rains, TIMEOUT));
+		assertEquals("Player did not reach a matching world state", assertThrows(IllegalStateException.class,
+				() -> states.until(ChannelWorldTest::rains, TIMEOUT)).getMessage());
+	}
+
+	@Test
+	void failsWhenAForbiddenStateHoldsEvenBrieflyAndPassesOtherwise() {
+		WorldStateWatch states = world.states();
+		channel.publish(WorldChannel.STATE, raining(false));
+		states.never(ChannelWorldTest::rains, TIMEOUT);
+
+		channel.meanwhile(() -> {
+			channel.publish(WorldChannel.STATE, raining(true));
+			channel.publish(WorldChannel.STATE, raining(false));
+		});
+		IllegalStateException failure = assertThrows(IllegalStateException.class,
+				() -> states.never(ChannelWorldTest::rains, TIMEOUT));
+		assertTrue(failure.getMessage().startsWith("Player's world reached a state it must not reach: "));
+	}
+
+	@Test
+	void expectsAStateForWaitingOnSeveralThings() {
+		Expectation rain = world.states().expect(state -> state.weatherType() == WeatherType.RAIN);
+
+		assertFalse(rain.met());
+		channel.publish(WorldChannel.STATE, raining(true));
+		assertTrue(rain.met());
+	}
+
+	private static boolean rains(WorldState state) {
+		return state.weatherType() == WeatherType.RAIN;
+	}
+
+	private static WorldState raining(boolean raining) {
+		return WorldState.builder()
+				.weather(Weather.builder().rainLevel(raining ? 1 : 0).build())
+				.build();
+	}
+
 	private static DimensionChange change(String from, String to) {
 		return new DimensionChange(from, to, level(to));
 	}
@@ -139,11 +216,17 @@ class ChannelWorldTest {
 	}
 
 	/**
-	 * Delivers published events synchronously; a wait whose condition does not hold fails immediately instead of
-	 * timing out.
+	 * Delivers published events synchronously; the next wait first runs what the test publishes meanwhile, and a
+	 * wait whose condition does not hold then fails immediately instead of timing out.
 	 */
 	private static final class RecordingChannel implements ProtocolChannel {
 		private final Map<String, List<Consumer<Object>>> listeners = new HashMap<>();
+		private Runnable meanwhile = () -> {
+		};
+
+		private void meanwhile(Runnable events) {
+			meanwhile = events;
+		}
 
 		private <E> void publish(EventDescriptor<E> eventDescriptor, @Nullable E payload) {
 			listeners.getOrDefault(eventDescriptor.getId(), List.of()).forEach(listener -> listener.accept(payload));
@@ -163,6 +246,10 @@ class ChannelWorldTest {
 
 		@Override
 		public void await(@NotNull BooleanSupplier condition, @NotNull String description, @NotNull Duration timeout) {
+			Runnable events = meanwhile;
+			meanwhile = () -> {
+			};
+			events.run();
 			if (!condition.getAsBoolean()) throw new IllegalStateException("Player did not " + description);
 		}
 

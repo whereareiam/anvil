@@ -1,7 +1,8 @@
 package me.whereareiam.anvil.protocol.java.api.type;
 
 /**
- * The state changes of the game's game event packet, named as the game's game event types.
+ * The state changes of the game's game event packet, named as the game's game event types. Every release reports an
+ * event by the game's number for it, whatever an older library calls it.
  */
 public enum GameEventType {
 	/**
@@ -9,11 +10,14 @@ public enum GameEventType {
 	 */
 	NO_RESPAWN_BLOCK_AVAILABLE,
 	/**
-	 * Rain starts.
+	 * The game's event 1, which a vanilla server sends when rain starts and when a player joins a level where it rains;
+	 * the client sets its rain level to {@code 0} and lets the rain level changes raise it. Paper servers before
+	 * Minecraft 26.2 send it when rain stops instead.
 	 */
 	START_RAINING,
 	/**
-	 * Rain stops.
+	 * The game's event 2, which a vanilla server sends when rain stops; the client sets its rain level to {@code 1} and
+	 * lets the rain level changes lower it. Paper servers before Minecraft 26.2 send it when rain starts instead.
 	 */
 	STOP_RAINING,
 	/**

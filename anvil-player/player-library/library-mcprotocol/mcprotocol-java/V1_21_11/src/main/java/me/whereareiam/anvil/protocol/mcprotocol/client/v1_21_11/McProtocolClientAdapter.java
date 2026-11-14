@@ -30,10 +30,11 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 	 * @return the release's translations
 	 */
 	static PacketTable<Packet> packets() {
-		// The connection translation reads the dimension types of the registry data before the configuration
-		// translation decodes it.
+		// The connection and world translations read the dimension types and world clocks of the registry data before
+		// the configuration translation decodes it.
 		return new PacketTable<>(List.of(
 				new ConnectionPackets(),
+				new WorldPackets(),
 				new ChatPackets(TEXT),
 				new CommandPackets(),
 				new ConfigurationPackets(),
@@ -45,8 +46,7 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 				new InventoryPackets(TEXT),
 				new PlayerPackets(),
 				new ScreenPackets(TEXT),
-				new SoundPackets(),
-				new WorldPackets()
+				new SoundPackets()
 		));
 	}
 }
