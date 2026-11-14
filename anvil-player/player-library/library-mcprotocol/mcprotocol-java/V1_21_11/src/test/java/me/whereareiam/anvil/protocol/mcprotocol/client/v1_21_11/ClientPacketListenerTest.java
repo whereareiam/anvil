@@ -14,6 +14,7 @@ import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.auth.GameProfile;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;
+import org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.GameMode;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.HandPreference;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerSpawnInfo;
@@ -25,6 +26,7 @@ import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.Clientbound
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundPingPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundClientInformationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundPongPacket;
+import org.geysermc.mcprotocollib.protocol.packet.configuration.clientbound.ClientboundRegistryDataPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
@@ -60,6 +62,8 @@ class ClientPacketListenerTest {
 	void answersTheConfigurationsFirstPacketWithThePlayersSettingsOnce() {
 		receive(new ClientboundLoginFinishedPacket(new GameProfile(GRANTED, "Alice_Renamed")));
 		receive(new ClientboundKeepAlivePacket(7));
+		receive(new ClientboundRegistryDataPacket(Key.key("minecraft", "dimension_type"),
+				List.of(new RegistryEntry(Key.key("minecraft", "overworld"), null))));
 		receive(new ClientboundLoginPacket(42, false, new Key[0], 20, 10, 10, false, true, false,
 				new PlayerSpawnInfo(0, Key.key("minecraft", "overworld"), 0, GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, null, 0,
 						63),

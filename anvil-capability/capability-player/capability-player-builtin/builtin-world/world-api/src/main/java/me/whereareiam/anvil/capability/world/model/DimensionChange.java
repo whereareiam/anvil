@@ -21,4 +21,8 @@ public class DimensionChange {
 	 * The dimension the player is in afterwards.
 	 */
 	@NotNull String to;
+	/**
+	 * What the client was told about the level it is in afterwards.
+	 */
+	@NotNull LevelInfo level;
 }

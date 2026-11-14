@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.api.history.HistoryCursor;
 import me.whereareiam.anvil.capability.world.channel.WorldChannel;
 import me.whereareiam.anvil.capability.world.model.DimensionChange;
+import me.whereareiam.anvil.capability.world.model.LevelInfo;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,7 +18,7 @@ import java.util.function.Predicate;
 
 /**
  * World capability driven over a player's typed channel: every dimension change the worker emits is kept in the
- * player's history, across reconnects, and the dimension of the last one is the player's until its connection ends.
+ * player's history, across reconnects, and the level of the last one is the player's until its connection ends.
  * The channel releases the event subscriptions together with the player.
  */
 final class ChannelWorld implements World {
@@ -25,20 +26,26 @@ final class ChannelWorld implements World {
 
 	private final ProtocolChannel channel;
 	private final CopyOnWriteArrayList<DimensionChange> changes = new CopyOnWriteArrayList<>();
-	private final AtomicReference<String> dimension = new AtomicReference<>();
+	private final AtomicReference<LevelInfo> level = new AtomicReference<>();
 
 	ChannelWorld(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
 		channel.subscribe(WorldChannel.DIMENSION, change -> {
 			changes.add(change);
-			dimension.set(change.getTo());
+			level.set(change.getLevel());
 		});
-		channel.subscribe(WorldChannel.LEFT, left -> dimension.compareAndSet(left, null));
+		channel.subscribe(WorldChannel.LEFT, left ->
+				level.getAndUpdate(now -> now != null && now.getDimension().equals(left) ? null : now));
 	}
 
 	@Override
 	public @NotNull Optional<String> dimension() {
-		return Optional.ofNullable(dimension.get());
+		return level().map(LevelInfo::getDimension);
+	}
+
+	@Override
+	public @NotNull Optional<LevelInfo> level() {
+		return Optional.ofNullable(level.get());
 	}
 
 	@Override

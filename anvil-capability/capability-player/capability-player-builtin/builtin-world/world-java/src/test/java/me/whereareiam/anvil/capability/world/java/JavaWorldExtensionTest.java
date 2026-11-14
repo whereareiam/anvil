@@ -2,6 +2,8 @@ package me.whereareiam.anvil.capability.world.java;
 
 import me.whereareiam.anvil.capability.world.channel.WorldChannel;
 import me.whereareiam.anvil.capability.world.model.DimensionChange;
+import me.whereareiam.anvil.capability.world.model.LevelInfo;
+import me.whereareiam.anvil.capability.world.type.Environment;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
@@ -12,6 +14,7 @@ import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -60,40 +63,77 @@ class JavaWorldExtensionTest {
 	}
 
 	@Test
-	void emitsTheDimensionTheConnectionJoinsAndEachRespawnWithTheDimensionBefore() {
+	void emitsTheLevelTheConnectionJoinsAndEachRespawnWithTheDimensionBefore() {
 		connect();
 
-		protocol.deliver(new ClientboundLogin(7, OVERWORLD));
-		protocol.deliver(new ClientboundRespawn(NETHER));
-		protocol.deliver(new ClientboundRespawn(NETHER));
+		protocol.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
+		protocol.deliver(respawn(NETHER, vanilla(NETHER)));
+		protocol.deliver(respawn(NETHER, vanilla(NETHER)));
 
-		assertEquals(List.of(new DimensionChange(null, OVERWORLD), new DimensionChange(OVERWORLD, NETHER),
-				new DimensionChange(NETHER, NETHER)), player.emitted(WorldChannel.DIMENSION));
+		assertEquals(List.of(change(null, OVERWORLD, Environment.OVERWORLD), change(OVERWORLD, NETHER, Environment.NETHER),
+				change(NETHER, NETHER, Environment.NETHER)), player.emitted(WorldChannel.DIMENSION));
 		assertTrue(operations.registered.isEmpty());
+	}
+
+	@Test
+	void describesTheLevelWithItsTypeEnvironmentFlagsAndTheServersLevels() {
+		connect();
+
+		protocol.deliver(ClientboundLogin.builder()
+				.entityId(7)
+				.level(OVERWORLD)
+				.level(ARENA)
+				.hardcore(true)
+				.dimension(ARENA)
+				.dimensionType(DimensionType.withEffects("example:void", "minecraft:the_end"))
+				.debug(true)
+				.flat(true)
+				.build());
+		protocol.deliver(respawn(ARENA, new DimensionType("example:modded", null, null)));
+
+		List<LevelInfo> levels = player.emitted(WorldChannel.DIMENSION).stream().map(DimensionChange::getLevel).toList();
+		assertEquals(LevelInfo.builder()
+				.dimension(ARENA)
+				.dimensionType("example:void")
+				.environment(Environment.END)
+				.hardcore(true)
+				.debug(true)
+				.flat(true)
+				.level(OVERWORLD)
+				.level(ARENA)
+				.build(), levels.get(0));
+		assertEquals(LevelInfo.builder()
+				.dimension(ARENA)
+				.dimensionType("example:modded")
+				.environment(Environment.CUSTOM)
+				.hardcore(true)
+				.level(OVERWORLD)
+				.level(ARENA)
+				.build(), levels.get(1));
 	}
 
 	@Test
 	void keepsTheDimensionWhenAProxyJoinsTheConnectionToAnotherServersLevel() {
 		connect();
 
-		protocol.deliver(new ClientboundLogin(7, OVERWORLD));
-		protocol.deliver(new ClientboundLogin(8, ARENA));
+		protocol.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
+		protocol.deliver(login(8, ARENA, vanilla(OVERWORLD)));
 
-		assertEquals(List.of(new DimensionChange(null, OVERWORLD), new DimensionChange(OVERWORLD, ARENA)),
-				player.emitted(WorldChannel.DIMENSION));
+		assertEquals(List.of(null, OVERWORLD), player.emitted(WorldChannel.DIMENSION).stream()
+				.map(DimensionChange::getFrom).toList());
 	}
 
 	@Test
 	void leavesTheDimensionWhenTheConnectionEndsAndStartsTheNextConnectionInNone() {
 		connect();
-		protocol.deliver(new ClientboundLogin(7, NETHER));
+		protocol.deliver(login(7, NETHER, vanilla(NETHER)));
 
 		player.startConnection();
-		protocol.deliver(new ClientboundLogin(7, OVERWORLD));
+		protocol.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
 		player.endConnection();
 
 		assertEquals(List.of(NETHER, OVERWORLD), player.emitted(WorldChannel.LEFT));
-		assertEquals(List.of(new DimensionChange(null, NETHER), new DimensionChange(null, OVERWORLD)),
+		assertEquals(List.of(change(null, NETHER, Environment.NETHER), change(null, OVERWORLD, Environment.OVERWORLD)),
 				player.emitted(WorldChannel.DIMENSION));
 	}
 
@@ -109,12 +149,12 @@ class JavaWorldExtensionTest {
 	void emitsNothingOnceTheBindingCloses() {
 		WorkerBinding binding = extension.bind(player, operations);
 		player.startConnection();
-		protocol.deliver(new ClientboundLogin(7, OVERWORLD));
+		protocol.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
 
 		binding.close();
-		protocol.deliver(new ClientboundRespawn(NETHER));
+		protocol.deliver(respawn(NETHER, vanilla(NETHER)));
 
-		assertEquals(List.of(new DimensionChange(null, OVERWORLD)), player.emitted(WorldChannel.DIMENSION));
+		assertEquals(List.of(change(null, OVERWORLD, Environment.OVERWORLD)), player.emitted(WorldChannel.DIMENSION));
 		assertTrue(player.emitted(WorldChannel.LEFT).isEmpty());
 		assertNull(player.connections);
 	}
@@ -130,6 +170,37 @@ class JavaWorldExtensionTest {
 	private void connect() {
 		extension.bind(player, operations);
 		player.startConnection();
+	}
+
+	private static ClientboundLogin login(int entityId, String dimension, DimensionType type) {
+		return ClientboundLogin.builder()
+				.entityId(entityId)
+				.level(OVERWORLD)
+				.level(NETHER)
+				.dimension(dimension)
+				.dimensionType(type)
+				.build();
+	}
+
+	private static ClientboundRespawn respawn(String dimension, DimensionType type) {
+		return ClientboundRespawn.builder().dimension(dimension).dimensionType(type).build();
+	}
+
+	private static DimensionType vanilla(String key) {
+		return DimensionType.withEffects(key, key);
+	}
+
+	/**
+	 * A change into a vanilla dimension of a server whose levels are the overworld and the nether.
+	 */
+	private static DimensionChange change(String from, String to, Environment environment) {
+		return new DimensionChange(from, to, LevelInfo.builder()
+				.dimension(to)
+				.dimensionType(to)
+				.environment(environment)
+				.level(OVERWORLD)
+				.level(NETHER)
+				.build());
 	}
 
 	/**

@@ -17,6 +17,7 @@ import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
+import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
@@ -86,7 +87,7 @@ class JavaEntitiesExtensionTest {
 		protocol.deliver(spawn(7, "armor_stand", 0, 0, 0));
 		player.open();
 		protocol.deliver(spawn(7, "zombie", 0, 0, 0));
-		protocol.deliver(new ClientboundRespawn("minecraft:overworld"));
+		protocol.deliver(respawn());
 
 		assertEquals(List.of(1, 1, 2, 2), player.emitted.stream().map(change -> change.getEntity().getConnection()).toList());
 		assertEquals(List.of(EntityChangeKind.APPEARED, EntityChangeKind.DISAPPEARED, EntityChangeKind.APPEARED,
@@ -149,7 +150,7 @@ class JavaEntitiesExtensionTest {
 		extension.bind(player, new RecordingOperations());
 		player.open();
 
-		protocol.deliver(new ClientboundLogin(PLAYER, "minecraft:overworld"));
+		protocol.deliver(login(PLAYER));
 		protocol.deliver(spawn(7, "armor_stand", 0, 0, 0));
 		protocol.deliver(new ClientboundSetEntityData(7, List.of(new CustomName("Alice: hello"))));
 		protocol.deliver(new ClientboundSetPassengers(PLAYER, List.of(7)));
@@ -211,7 +212,7 @@ class JavaEntitiesExtensionTest {
 		player.open();
 
 		protocol.deliver(spawn(7, "zombie", 0, 0, 0));
-		protocol.deliver(new ClientboundLogin(PLAYER, "minecraft:overworld"));
+		protocol.deliver(login(PLAYER));
 		protocol.deliver(spawn(8, "zombie", 0, 0, 0));
 		protocol.deliver(new ClientboundStartConfiguration());
 
@@ -273,6 +274,22 @@ class JavaEntitiesExtensionTest {
 
 	private static @Nullable Double distance(RecordingOperations operations) {
 		return operations.execute(EntitiesChannel.KNOWN, null).getEntities().getFirst().getPlayerDistance();
+	}
+
+	private static ClientboundLogin login(int entityId) {
+		return ClientboundLogin.builder()
+				.entityId(entityId)
+				.level("minecraft:overworld")
+				.dimension("minecraft:overworld")
+				.dimensionType(DimensionType.withEffects("minecraft:overworld", "minecraft:overworld"))
+				.build();
+	}
+
+	private static ClientboundRespawn respawn() {
+		return ClientboundRespawn.builder()
+				.dimension("minecraft:overworld")
+				.dimensionType(DimensionType.withEffects("minecraft:overworld", "minecraft:overworld"))
+				.build();
 	}
 
 	/**

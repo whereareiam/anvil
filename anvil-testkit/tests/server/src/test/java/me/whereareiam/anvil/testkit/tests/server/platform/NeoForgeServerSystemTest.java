@@ -88,6 +88,8 @@ class NeoForgeServerSystemTest {
 			assertThrows(UnsupportedOperationException.class, () -> worlds.load("anvil_neoforge"));
 			assertThrows(UnsupportedOperationException.class, () -> worlds.unload("the_end"));
 			assertThrows(UnsupportedOperationException.class, () -> worlds.delete("the_end"));
+			worlds.send(alice, "minecraft:overworld");
+			dimensions.entered("minecraft:overworld", Duration.ofSeconds(10));
 
 			assertTrue(dispatch.execute("kick Alice anvil:kicked"));
 			assertEquals("anvil:kicked", session.kicked());

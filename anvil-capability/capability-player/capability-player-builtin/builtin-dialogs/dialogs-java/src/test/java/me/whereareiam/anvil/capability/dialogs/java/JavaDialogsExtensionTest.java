@@ -31,6 +31,7 @@ import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtInt;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtList;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtTag;
+import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -166,8 +167,8 @@ class JavaDialogsExtensionTest {
 		List<ClientboundPacket> endings = List.of(
 				new ClientboundShowDialog(null, NOTICE, false),
 				new ClientboundClearDialog(),
-				new ClientboundLogin(42, "minecraft:overworld"),
-				new ClientboundRespawn("minecraft:overworld"),
+				login(42),
+				respawn(),
 				new ClientboundStartConfiguration()
 		);
 
@@ -232,8 +233,8 @@ class JavaDialogsExtensionTest {
 		player.startConnection();
 		protocol.deliver(new ClientboundShowDialog(null, NOTICE, false));
 		protocol.deliver(new ClientboundClearDialog());
-		protocol.deliver(new ClientboundLogin(42, "minecraft:overworld"));
-		protocol.deliver(new ClientboundRespawn("minecraft:overworld"));
+		protocol.deliver(login(42));
+		protocol.deliver(respawn());
 		protocol.deliver(new ClientboundStartConfiguration());
 		player.startConnection();
 
@@ -447,6 +448,22 @@ class JavaDialogsExtensionTest {
 		return NbtCompound.builder()
 				.put("label", new NbtString(label))
 				.put("action", action)
+				.build();
+	}
+
+	private static ClientboundLogin login(int entityId) {
+		return ClientboundLogin.builder()
+				.entityId(entityId)
+				.level("minecraft:overworld")
+				.dimension("minecraft:overworld")
+				.dimensionType(DimensionType.withEffects("minecraft:overworld", "minecraft:overworld"))
+				.build();
+	}
+
+	private static ClientboundRespawn respawn() {
+		return ClientboundRespawn.builder()
+				.dimension("minecraft:overworld")
+				.dimensionType(DimensionType.withEffects("minecraft:overworld", "minecraft:overworld"))
 				.build();
 	}
 

@@ -4,6 +4,8 @@ import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.world.DimensionWatch;
 import me.whereareiam.anvil.capability.world.World;
+import me.whereareiam.anvil.capability.world.model.LevelInfo;
+import me.whereareiam.anvil.capability.world.type.Environment;
 import me.whereareiam.anvil.capability.worlds.WorldChangeWatch;
 import me.whereareiam.anvil.capability.worlds.WorldEventWatch;
 import me.whereareiam.anvil.capability.worlds.Worlds;
@@ -55,6 +57,9 @@ class WorldsReleaseTest {
 				worlds.worlds().stream().map(ServerWorld::getKind).toList());
 		assertEquals(Optional.of("minecraft:overworld"), player.capability(World.class).dimension());
 		assertEquals("minecraft:overworld", worlds.location(player).orElseThrow().getWorld());
+		LevelInfo level = player.capability(World.class).level().orElseThrow();
+		assertEquals(List.of("minecraft:overworld", Environment.OVERWORLD), List.of(level.getDimensionType(), level.getEnvironment()));
+		assertEquals(List.of("minecraft:overworld", "minecraft:the_nether", "minecraft:the_end"), level.getLevels());
 	}
 
 	@Test
@@ -71,6 +76,8 @@ class WorldsReleaseTest {
 		assertEquals("minecraft:overworld", changes.changed(player, "the_nether", TIMEOUT).getFrom());
 		assertEquals("minecraft:overworld", dimensions.entered("minecraft:the_nether", TIMEOUT).getFrom());
 		assertEquals(Optional.of("minecraft:the_nether"), world.dimension());
+		LevelInfo nether = world.level().orElseThrow();
+		assertEquals(List.of("minecraft:the_nether", Environment.NETHER), List.of(nether.getDimensionType(), nether.getEnvironment()));
 		WorldLocation location = worlds.location(player).orElseThrow();
 		assertEquals(List.of("minecraft:the_nether", 140D), List.of(location.getWorld(), location.getY()));
 
