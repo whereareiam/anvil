@@ -9,20 +9,24 @@ import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.api.process.RequestChannel;
 import me.whereareiam.anvil.capability.worlds.agent.WorldsOperations;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentLocation;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentLogRequest;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacement;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacements;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentTransfer;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorld;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChange;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChanges;
-import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChangesRequest;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldEvent;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldEvents;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldList;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldOutcome;
 import me.whereareiam.anvil.capability.worlds.model.ServerWorld;
 import me.whereareiam.anvil.capability.worlds.model.WorldChange;
 import me.whereareiam.anvil.capability.worlds.model.WorldCreation;
+import me.whereareiam.anvil.capability.worlds.model.WorldEvent;
 import me.whereareiam.anvil.capability.worlds.model.WorldLocation;
+import me.whereareiam.anvil.capability.worlds.type.WorldEventType;
 import me.whereareiam.anvil.capability.worlds.type.WorldKind;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,9 +44,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * Worlds capability of one server, over the operations its worlds agent extension answers. The world changes the
- * server reports are read from the agent as they are needed and kept, so a restarted server's earlier changes stay,
- * followed by those of its new process.
+ * Worlds capability of one server, over the operations its worlds agent extension answers. The world changes and world
+ * events the server reports are read from the agent as they are needed and kept, so a restarted server's earlier ones
+ * stay, followed by those of its new process.
  *
  * <p>A simulated player is matched by the UUIDs of every profile its client was granted, read on every call, so a
  * profile granted at a later login counts as well.</p>
@@ -52,16 +56,21 @@ final class AgentWorlds implements Worlds {
 	private static final ChannelOperation<Void, AgentWorldList> WORLDS = channel(WorldsOperations.WORLDS);
 	private static final ChannelOperation<Void, AgentPlacements> PLACEMENTS = channel(WorldsOperations.PLACEMENTS);
 	private static final ChannelOperation<AgentTransfer, Boolean> SEND = channel(WorldsOperations.SEND);
-	private static final ChannelOperation<AgentWorldChangesRequest, AgentWorldChanges> CHANGES =
+	private static final ChannelOperation<AgentLogRequest, AgentWorldChanges> CHANGES =
 			channel(WorldsOperations.CHANGES);
 	private static final ChannelOperation<AgentWorldCreation, AgentWorldOutcome> CREATE = channel(WorldsOperations.CREATE);
 	private static final ChannelOperation<String, AgentWorldOutcome> UNLOAD = channel(WorldsOperations.UNLOAD);
+	private static final ChannelOperation<String, AgentWorldOutcome> DELETE = channel(WorldsOperations.DELETE);
+	private static final ChannelOperation<AgentLogRequest, AgentWorldEvents> EVENTS = channel(WorldsOperations.EVENTS);
 
 	private final @NotNull String process;
 	private final @NotNull RequestChannel channel;
 	private final List<WorldChange> changes = new ArrayList<>();
+	private final List<WorldEvent> events = new ArrayList<>();
 	private @Nullable String log;
 	private long read;
+	private @Nullable String eventLog;
+	private long eventsRead;
 
 	AgentWorlds(@NotNull String process, @NotNull RequestChannel channel) {
 		this.process = process;
@@ -142,8 +151,21 @@ final class AgentWorlds implements Worlds {
 	}
 
 	@Override
+	public void delete(@NotNull String world) {
+		String key = key(world);
+		loaded(key);
+
+		done(Objects.requireNonNull(channel.request(DELETE, key)), "delete the world '" + key + "'");
+	}
+
+	@Override
 	public @NotNull WorldChangeWatch watch() {
 		return new Watch(new HistoryCursor<>(this::changes));
+	}
+
+	@Override
+	public @NotNull WorldEventWatch watchWorlds() {
+		return new EventWatch(new HistoryCursor<>(this::events));
 	}
 
 	/**
@@ -151,7 +173,7 @@ final class AgentWorlds implements Worlds {
 	 * no longer keeps, because the server restarted, is followed by the new process's log from its start.
 	 */
 	private synchronized @NotNull List<WorldChange> changes() {
-		AgentWorldChanges unread = Objects.requireNonNull(channel.request(CHANGES, AgentWorldChangesRequest.builder()
+		AgentWorldChanges unread = Objects.requireNonNull(channel.request(CHANGES, AgentLogRequest.builder()
 				.log(log)
 				.after(read)
 				.build()));
@@ -164,6 +186,26 @@ final class AgentWorlds implements Worlds {
 		}
 
 		return List.copyOf(changes);
+	}
+
+	/**
+	 * Reads the world events the agent reported since the last read, and returns every event kept so far, as
+	 * {@link #changes()} does for world changes.
+	 */
+	private synchronized @NotNull List<WorldEvent> events() {
+		AgentWorldEvents unread = Objects.requireNonNull(channel.request(EVENTS, AgentLogRequest.builder()
+				.log(eventLog)
+				.after(eventsRead)
+				.build()));
+		if (!unread.getLog().equals(eventLog)) eventsRead = 0;
+		eventLog = unread.getLog();
+		for (AgentWorldEvent event : unread.getEvents()) {
+			events.add(new WorldEvent(event.getWorld(), WorldEventType.valueOf(event.getType()),
+					Instant.ofEpochMilli(event.getAt())));
+			eventsRead = event.getPosition();
+		}
+
+		return List.copyOf(events);
 	}
 
 	/**
@@ -313,6 +355,65 @@ final class AgentWorlds implements Worlds {
 
 		private @NotNull Predicate<WorldChange> of(@NotNull SimulatedPlayer player) {
 			return change -> uniqueIds(player).contains(change.getProfile().getUniqueId());
+		}
+	}
+
+	/**
+	 * A watch over the worlds the server loads and unloads.
+	 */
+	private final class EventWatch implements WorldEventWatch {
+		private final HistoryCursor<WorldEvent> cursor;
+
+		private EventWatch(@NotNull HistoryCursor<WorldEvent> cursor) {
+			this.cursor = cursor;
+		}
+
+		@Override
+		public @NotNull WorldEvent loaded(@NotNull String world, @NotNull Duration timeout) {
+			String key = key(world);
+			return next(of(key, WorldEventType.LOADED), timeout, "'" + process + "' did not load the world '" + key + "'");
+		}
+
+		@Override
+		public @NotNull WorldEvent unloaded(@NotNull String world, @NotNull Duration timeout) {
+			String key = key(world);
+			return next(of(key, WorldEventType.UNLOADED), timeout, "'" + process + "' did not unload the world '" + key + "'");
+		}
+
+		@Override
+		public void neverLoaded(@NotNull String world, @NotNull Duration duration) {
+			String key = key(world);
+			Predicate<WorldEvent> matcher = of(key, WorldEventType.LOADED);
+			try {
+				poll(() -> cursor.find(matcher) != null, duration, "loaded");
+			} catch (IllegalStateException quiet) {
+				if (cursor.find(matcher) == null) return;
+			}
+
+			throw new IllegalStateException("'" + process + "' loaded the world '" + key + "', which it must not do");
+		}
+
+		@Override
+		public @NotNull Expectation expectLoaded(@NotNull String world) {
+			String key = key(world);
+			Predicate<WorldEvent> matcher = of(key, WorldEventType.LOADED);
+
+			return Expectation.of("see '" + process + "' load the world '" + key + "'", () -> cursor.find(matcher) != null);
+		}
+
+		@Override
+		public @NotNull List<WorldEvent> unread() {
+			return cursor.unread();
+		}
+
+		private @NotNull WorldEvent next(@NotNull Predicate<WorldEvent> matcher, @NotNull Duration timeout,
+				@NotNull String failure) {
+			poll(() -> cursor.find(matcher) != null, timeout, failure);
+			return Objects.requireNonNull(cursor.take(matcher));
+		}
+
+		private @NotNull Predicate<WorldEvent> of(@NotNull String key, @NotNull WorldEventType type) {
+			return event -> event.getType() == type && event.getWorld().equals(key);
 		}
 	}
 }

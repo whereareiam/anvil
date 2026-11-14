@@ -5,6 +5,7 @@ import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.world.DimensionWatch;
 import me.whereareiam.anvil.capability.world.World;
 import me.whereareiam.anvil.capability.worlds.WorldChangeWatch;
+import me.whereareiam.anvil.capability.worlds.WorldEventWatch;
 import me.whereareiam.anvil.capability.worlds.Worlds;
 import me.whereareiam.anvil.capability.worlds.model.ServerWorld;
 import me.whereareiam.anvil.capability.worlds.model.WorldCreation;
@@ -14,17 +15,21 @@ import me.whereareiam.anvil.capability.worlds.type.WorldKind;
 import me.whereareiam.anvil.testkit.tests.server.fixture.FixtureServer;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Moves a player between the server's worlds through the server's own API and follows the move from both ends: the
  * server reports the world change, and the client is told the dimension it is in now. Creates worlds the way a plugin
- * does and unloads them again, since the release's server is kept for every test.
+ * does, follows the server loading and unloading them, and unloads or deletes them again, since the release's server is
+ * kept for every test.
  */
 @Release
 class WorldsReleaseTest {
@@ -84,6 +89,7 @@ class WorldsReleaseTest {
 		World world = player.capability(World.class);
 		WorldChangeWatch changes = worlds.watch();
 		DimensionWatch dimensions = world.watch();
+		WorldEventWatch events = worlds.watchWorlds();
 
 		ServerWorld flat = worlds.create(WorldCreation.builder()
 				.key("anvil_flat")
@@ -93,6 +99,7 @@ class WorldsReleaseTest {
 
 		assertEquals(List.of("minecraft:anvil_flat", WorldKind.OVERWORLD), List.of(flat.getKey(), flat.getKind()));
 		assertEquals(Optional.of(flat), worlds.world("anvil_flat"));
+		events.loaded("minecraft:anvil_flat", TIMEOUT);
 		worlds.send(player, "anvil_flat");
 		changes.changed(player, "minecraft:anvil_flat", TIMEOUT);
 		dimensions.entered("minecraft:anvil_flat", TIMEOUT);
@@ -102,13 +109,16 @@ class WorldsReleaseTest {
 		changes.changed(player, "minecraft:overworld", TIMEOUT);
 		worlds.unload("anvil_flat");
 
+		events.unloaded("anvil_flat", TIMEOUT);
 		assertEquals(Optional.empty(), worlds.world("anvil_flat"));
 		assertThrows(IllegalStateException.class, () -> worlds.unload("overworld"));
 	}
 
 	@Test
-	void createsAnEmptyWorldOfAnotherKind(ScenarioContext anvil) {
-		Worlds worlds = anvil.processes().server("server").capability(Worlds.class);
+	void createsAnEmptyWorldOfAnotherKindAndDeletesItsFolder(ScenarioContext anvil) throws IOException {
+		var server = anvil.processes().server("server");
+		Worlds worlds = server.capability(Worlds.class);
+		WorldEventWatch events = worlds.watchWorlds();
 
 		ServerWorld empty = worlds.create(WorldCreation.builder()
 				.key("anvil_empty_nether")
@@ -118,7 +128,14 @@ class WorldsReleaseTest {
 
 		assertEquals(List.of("minecraft:anvil_empty_nether", WorldKind.NETHER), List.of(empty.getKey(), empty.getKind()));
 		assertEquals(List.of(0D, 64D, 0D), List.of(empty.getSpawn().getX(), empty.getSpawn().getY(), empty.getSpawn().getZ()));
-		worlds.unload("anvil_empty_nether");
+		// Since 26.1 a server keeps every dimension below its main world's folder.
+		String folder = server.files().exists("anvil_empty_nether") ? "anvil_empty_nether"
+				: "world/dimensions/minecraft/anvil_empty_nether";
+		assertTrue(server.files().exists(folder));
+		worlds.delete("anvil_empty_nether");
+
+		events.unloaded("anvil_empty_nether", TIMEOUT);
 		assertEquals(Optional.empty(), worlds.world("anvil_empty_nether"));
+		assertFalse(server.files().exists(folder));
 	}
 }

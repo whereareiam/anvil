@@ -2,6 +2,7 @@ package me.whereareiam.anvil.capability.worlds.bukkit;
 
 import me.whereareiam.anvil.capability.worlds.agent.ServerWorlds;
 import me.whereareiam.anvil.capability.worlds.agent.WorldChangeLog;
+import me.whereareiam.anvil.capability.worlds.agent.WorldEventLog;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentLocation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacement;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorld;
@@ -17,15 +18,22 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.world.WorldLoadEvent;
+import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.generator.ChunkGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A Bukkit server's worlds, named by the keys of their levels, as the server tells its players' clients. A server
@@ -40,10 +48,12 @@ import java.util.stream.Collectors;
 final class BukkitWorlds implements ServerWorlds, Listener {
 	private final Server server;
 	private final WorldChangeLog changes;
+	private final WorldEventLog events;
 
-	BukkitWorlds(@NotNull Server server, @NotNull WorldChangeLog changes) {
+	BukkitWorlds(@NotNull Server server, @NotNull WorldChangeLog changes, @NotNull WorldEventLog events) {
 		this.server = server;
 		this.changes = changes;
+		this.events = events;
 	}
 
 	@Override
@@ -91,15 +101,27 @@ final class BukkitWorlds implements ServerWorlds, Listener {
 
 	@Override
 	public void unload(@NotNull String key) {
-		World world = find(key);
-		if (world == null) throw new IllegalArgumentException("The server has not loaded the world " + key);
-		if (world.equals(server.getWorlds().get(0)))
-			throw new IllegalStateException(key + " is the server's main world, which it never unloads");
-
-		List<String> players = world.getPlayers().stream().map(Player::getName).collect(Collectors.toList());
-		if (!players.isEmpty()) throw new IllegalStateException("Players are in " + key + ": " + players);
-		if (!server.unloadWorld(world, true))
+		if (!server.unloadWorld(unloadable(key), true))
 			throw new IllegalStateException("The server did not unload " + key + ", for example because a plugin cancelled it");
+	}
+
+	@Override
+	public void delete(@NotNull String key) {
+		World world = unloadable(key);
+		Path folder = world.getWorldFolder().toPath().toAbsolutePath().normalize();
+		Path container = server.getWorldContainer().toPath().toAbsolutePath().normalize();
+		if (!folder.startsWith(container) || folder.equals(container))
+			throw new IllegalStateException("The folder of " + key + " is outside the server's worlds: " + folder);
+		if (!server.unloadWorld(world, false))
+			throw new IllegalStateException("The server did not unload " + key + ", for example because a plugin cancelled it");
+
+		try (Stream<Path> files = Files.walk(folder)) {
+			for (Path file : files.sorted(Comparator.reverseOrder()).collect(Collectors.toList()))
+				Files.delete(file);
+		} catch (IOException exception) {
+			throw new IllegalStateException("The server unloaded " + key + " but its folder " + folder
+					+ " could not be deleted: " + exception, exception);
+		}
 	}
 
 	/**
@@ -111,6 +133,41 @@ final class BukkitWorlds implements ServerWorlds, Listener {
 	public void changed(@NotNull PlayerChangedWorldEvent event) {
 		Player player = event.getPlayer();
 		changes.record(player.getUniqueId(), player.getName(), key(event.getFrom()), key(player.getWorld()));
+	}
+
+	/**
+	 * Records the server loading a world.
+	 *
+	 * @param event the load
+	 */
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void loaded(@NotNull WorldLoadEvent event) {
+		events.loaded(key(event.getWorld()));
+	}
+
+	/**
+	 * Records the server unloading a world, unless a plugin kept it loaded.
+	 *
+	 * @param event the unload
+	 */
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+	public void unloaded(@NotNull WorldUnloadEvent event) {
+		events.unloaded(key(event.getWorld()));
+	}
+
+	/**
+	 * Finds a world the server could unload: one it has loaded, other than its main world, that no player is in.
+	 */
+	private @NotNull World unloadable(@NotNull String key) {
+		World world = find(key);
+		if (world == null) throw new IllegalArgumentException("The server has not loaded the world " + key);
+		if (world.equals(server.getWorlds().get(0)))
+			throw new IllegalStateException(key + " is the server's main world, which it never unloads");
+
+		List<String> players = world.getPlayers().stream().map(Player::getName).collect(Collectors.toList());
+		if (!players.isEmpty()) throw new IllegalStateException("Players are in " + key + ": " + players);
+
+		return world;
 	}
 
 	private @Nullable World find(@NotNull String key) {

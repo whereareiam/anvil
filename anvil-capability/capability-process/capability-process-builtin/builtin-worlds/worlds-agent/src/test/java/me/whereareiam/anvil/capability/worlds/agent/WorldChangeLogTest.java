@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.capability.worlds.agent;
 
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentLogRequest;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChange;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChanges;
-import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChangesRequest;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -55,8 +55,8 @@ class WorldChangeLogTest {
 				new WorldChangeLog().since(request(null, 0)).getLog());
 	}
 
-	private static AgentWorldChangesRequest request(String log, long after) {
-		return AgentWorldChangesRequest.builder().log(log).after(after).build();
+	private static AgentLogRequest request(String log, long after) {
+		return AgentLogRequest.builder().log(log).after(after).build();
 	}
 
 	private static AgentWorldChange change(long position, String from, String to, long at) {

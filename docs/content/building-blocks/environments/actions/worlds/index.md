@@ -1,10 +1,11 @@
 ---
 title: Moving players between worlds
-description: List a server's worlds, create and unload worlds, find which world a player is in, move it to another one, and wait for the server to report the move.
+description: List a server's worlds, create, unload and delete worlds, wait for the server to load or unload one, find which world a player is in, move it to another one, and wait for the server to report the move.
 ---
 
 Use a server's `Worlds` capability when a test needs what a server knows about its worlds, needs a
-world created or unloaded, or needs a player moved to another world as a plugin would move it. Retrieve it from the process:
+world created, unloaded or deleted, waits for a plugin to load a world, or needs a player moved to
+another world as a plugin would move it. Retrieve it from the process:
 `anvil.processes().server("lobby").capability(Worlds.class)`.
 
 `Worlds` works through each platform's own API: Bukkit's on Paper and Spigot, and Minecraft's on
@@ -97,18 +98,59 @@ loaded a world of that key or the kind is `CUSTOM`.
 has not loaded the world, and with `IllegalStateException` when the server refuses: for its main world,
 for a world players are still in, so send them elsewhere first, or when a plugin keeps the world loaded.
 
-A created world stays until the test unloads it or the server stops, so a server that a scenario keeps
-for later scenarios keeps it as well. Its folder stays in the server's workspace, and creating the same
-key again on that server loads what it kept.
+`delete(world)` unloads the world without saving it and deletes its folder from the server's
+workspace, so creating the same key again starts a new world. It refuses what `unload` refuses, and
+fails with `IllegalStateException` when the server unloaded the world but its folder could not be
+deleted.
+
+A created world stays until the test unloads or deletes it, or the server stops, so a server that a
+scenario keeps for later scenarios keeps it as well. `unload` keeps the world's folder, and creating the
+same key again on that server loads what it kept. A test on a kept server deletes the worlds it created
+when it is done, in a `finally` block when a failure must not leave them behind:
+
+```java
+try {
+	worlds.create(WorldCreation.builder().key("arena").build());
+	// ...
+} finally {
+	worlds.delete("arena");
+}
+```
 
 ### Limitations
 
-- Only Paper and Spigot create and unload worlds. NeoForge has no API to create or unload a level while
-  the server runs, so on NeoForge both fail with `UnsupportedOperationException`. A NeoForge test that
+- Only Paper and Spigot create, unload and delete worlds. NeoForge has no API to create or unload a level
+  while the server runs, so on NeoForge all three fail with `UnsupportedOperationException`. A NeoForge test that
   needs another dimension adds it with a data pack or mod before the server starts.
 - Bukkit creates a world under a plain name and names its level after it in the `minecraft` namespace,
   so a created key is `minecraft:<name>`, without `/`. Another namespace fails with
   `UnsupportedOperationException`.
+
+## Wait for the server to load a world
+
+A plugin may create a world on its own, such as the target of a teleport command that does not exist
+yet. `watchWorlds()` follows the server loading and unloading its worlds from the moment the watch is
+created:
+
+```java
+import me.whereareiam.anvil.capability.messages.Messages;
+import me.whereareiam.anvil.capability.worlds.WorldEventWatch;
+```
+
+```java
+WorldEventWatch events = worlds.watchWorlds();
+alice.capability(Messages.class).command("tpworld arena_nether");
+
+events.loaded("minecraft:arena_nether", Duration.ofSeconds(10));
+changes.changed(alice, "minecraft:arena_nether", Duration.ofSeconds(10));
+```
+
+`loaded(world)` and `unloaded(world)` wait for the server to load or unload a world, whether a plugin or
+the test caused it, and return a `WorldEvent` with the world's key, its `type` (`LOADED` or `UNLOADED`)
+and the time. `neverLoaded(world, duration)` fails as soon as the server loads the world,
+`expectLoaded(world)` gives an expectation for `alice.awaitFirst(...)`, and `unread()` returns the
+events since the previous wait. The worlds a server loads while it starts are no events. This works on
+NeoForge too, for levels a mod adds while the server runs.
 
 ## Read the worlds and where a player is
 

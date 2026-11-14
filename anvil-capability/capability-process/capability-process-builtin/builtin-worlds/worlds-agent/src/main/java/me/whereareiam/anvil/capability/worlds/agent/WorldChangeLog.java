@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.capability.worlds.agent;
 
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentLogRequest;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChange;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChanges;
-import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChangesRequest;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public final class WorldChangeLog {
 	 * @param request what the host read last
 	 * @return this log's identity and the changes after the request
 	 */
-	public synchronized @NotNull AgentWorldChanges since(@NotNull AgentWorldChangesRequest request) {
+	public synchronized @NotNull AgentWorldChanges since(@NotNull AgentLogRequest request) {
 		long after = Objects.equals(request.getLog(), identity) ? request.getAfter() : 0;
 		int from = (int) Math.min(Math.max(after, 0), changes.size());
 

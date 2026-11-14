@@ -1,11 +1,12 @@
 package me.whereareiam.anvil.capability.worlds.agent;
 
 import me.whereareiam.anvil.agent.api.model.AgentOperation;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentLogRequest;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacements;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentTransfer;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChanges;
-import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChangesRequest;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldEvents;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldList;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldOutcome;
 import org.jetbrains.annotations.NotNull;
@@ -37,9 +38,9 @@ public final class WorldsOperations {
 	/**
 	 * Reads the world changes the server reported after the ones the host has read.
 	 */
-	public static final @NotNull AgentOperation<AgentWorldChangesRequest, AgentWorldChanges> CHANGES =
-			AgentOperation.<AgentWorldChangesRequest, AgentWorldChanges>builder()
-					.name(NAMESPACE + ".changes").requestType(AgentWorldChangesRequest.class)
+	public static final @NotNull AgentOperation<AgentLogRequest, AgentWorldChanges> CHANGES =
+			AgentOperation.<AgentLogRequest, AgentWorldChanges>builder()
+					.name(NAMESPACE + ".changes").requestType(AgentLogRequest.class)
 					.responseType(AgentWorldChanges.class).build();
 	/**
 	 * Creates a world, answering the world or why it was not created.
@@ -54,6 +55,20 @@ public final class WorldsOperations {
 	public static final @NotNull AgentOperation<String, AgentWorldOutcome> UNLOAD =
 			AgentOperation.<String, AgentWorldOutcome>builder()
 					.name(NAMESPACE + ".unload").requestType(String.class).responseType(AgentWorldOutcome.class).build();
+	/**
+	 * Unloads the world of a key without saving it and deletes its folder, answering whether it was deleted or why
+	 * not.
+	 */
+	public static final @NotNull AgentOperation<String, AgentWorldOutcome> DELETE =
+			AgentOperation.<String, AgentWorldOutcome>builder()
+					.name(NAMESPACE + ".delete").requestType(String.class).responseType(AgentWorldOutcome.class).build();
+	/**
+	 * Reads the worlds the server loaded and unloaded after the events the host has read.
+	 */
+	public static final @NotNull AgentOperation<AgentLogRequest, AgentWorldEvents> EVENTS =
+			AgentOperation.<AgentLogRequest, AgentWorldEvents>builder()
+					.name(NAMESPACE + ".events").requestType(AgentLogRequest.class)
+					.responseType(AgentWorldEvents.class).build();
 
 	private WorldsOperations() {
 	}

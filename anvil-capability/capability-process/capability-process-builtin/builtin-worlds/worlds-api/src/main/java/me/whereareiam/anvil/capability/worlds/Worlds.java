@@ -11,10 +11,10 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * What one server knows about its worlds and the players in them, moving a player to another world, and creating and
- * unloading worlds, through the server's own API: Bukkit's on Paper and Spigot, and Minecraft's own on NeoForge. A
- * proxy has no worlds, so it has no {@code Worlds}. NeoForge has no API to create or unload a level while the server
- * runs, so only Paper and Spigot create and unload worlds.
+ * What one server knows about its worlds and the players in them, the worlds it loads and unloads, moving a player to
+ * another world, and creating, unloading and deleting worlds, through the server's own API: Bukkit's on Paper and
+ * Spigot, and Minecraft's own on NeoForge. A proxy has no worlds, so it has no {@code Worlds}. NeoForge has no API to
+ * create or unload a level while the server runs, so only Paper and Spigot create, unload and delete worlds.
  *
  * <p>A world is named by the key of its level, with its namespace, such as {@code minecraft:the_nether}: the same key
  * the player's client is told, which its {@code World} capability reports. A key without a namespace, such as
@@ -104,10 +104,30 @@ public interface Worlds extends ProcessCapability {
 	void unload(@NotNull String world);
 
 	/**
+	 * Unloads a world without saving it and deletes its folder from the server's workspace, so creating the same key
+	 * again starts a new world. It refuses what {@link #unload(String)} refuses.
+	 *
+	 * @param world the key of the world's level
+	 * @throws IllegalArgumentException when the server has not loaded the world
+	 * @throws UnsupportedOperationException when the server cannot unload a world: a NeoForge server
+	 * @throws IllegalStateException when the server refused to unload it, or unloaded it but could not delete its
+	 *         folder
+	 */
+	void delete(@NotNull String world);
+
+	/**
 	 * Starts following the players moving between the server's worlds from now on. Each watch keeps its own
 	 * position, so several can follow the same server independently.
 	 *
 	 * @return a watch that starts after the last world change reported so far
 	 */
 	@NotNull WorldChangeWatch watch();
+
+	/**
+	 * Starts following the server loading and unloading its worlds from now on, such as a world a plugin creates on
+	 * its own. Each watch keeps its own position, so several can follow the same server independently.
+	 *
+	 * @return a watch that starts after the last world event reported so far
+	 */
+	@NotNull WorldEventWatch watchWorlds();
 }

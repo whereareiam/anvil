@@ -8,13 +8,14 @@ import me.whereareiam.anvil.agent.server.api.PlatformAgent;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationHandler;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationRegistry;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentLocation;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentLogRequest;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacement;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacements;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentTransfer;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorld;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChanges;
-import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChangesRequest;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldEvents;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldList;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldOutcome;
 import org.jetbrains.annotations.NotNull;
@@ -44,6 +45,7 @@ class WorldsAgentOperationsTest {
 	private final RecordingRegistry registry = new RecordingRegistry();
 	private final FixedWorlds worlds = new FixedWorlds();
 	private WorldChangeLog log;
+	private WorldEventLog events;
 
 	@Test
 	void ownsItsNamespaceAndRegistersEveryOperationOfTheChannel() {
@@ -52,7 +54,7 @@ class WorldsAgentOperationsTest {
 		assertEquals("me.whereareiam.anvil.worlds", new Operations().id());
 		assertEquals(List.of("me.whereareiam.anvil.worlds.worlds", "me.whereareiam.anvil.worlds.placements",
 				"me.whereareiam.anvil.worlds.send", "me.whereareiam.anvil.worlds.changes", "me.whereareiam.anvil.worlds.create",
-				"me.whereareiam.anvil.worlds.unload"), List.copyOf(registry.handlers.keySet()));
+				"me.whereareiam.anvil.worlds.unload", "me.whereareiam.anvil.worlds.delete", "me.whereareiam.anvil.worlds.events"), List.copyOf(registry.handlers.keySet()));
 	}
 
 	@Test
@@ -74,10 +76,24 @@ class WorldsAgentOperationsTest {
 		log.record(ALICE, "Alice", "minecraft:overworld", "minecraft:arena");
 
 		AgentWorldChanges changes = registry.execute(WorldsOperations.CHANGES,
-				AgentWorldChangesRequest.builder().after(0).build());
+				AgentLogRequest.builder().after(0).build());
 
 		assertEquals(1, changes.getChanges().size());
 		assertEquals("minecraft:arena", changes.getChanges().getFirst().getTo());
+	}
+
+	@Test
+	void readsTheWorldEventsThePlatformSideRecorded() throws Exception {
+		install();
+		events.loaded("minecraft:arena");
+		events.unloaded("minecraft:arena");
+
+		AgentWorldEvents read = registry.execute(WorldsOperations.EVENTS, AgentLogRequest.builder().after(1).build());
+
+		assertEquals(2, read.getEvents().size());
+		read = registry.execute(WorldsOperations.EVENTS, AgentLogRequest.builder().log(read.getLog()).after(1).build());
+		assertEquals(List.of("minecraft:arena", "UNLOADED", 2L), List.of(read.getEvents().getFirst().getWorld(),
+				read.getEvents().getFirst().getType(), read.getEvents().getFirst().getPosition()));
 	}
 
 	@Test
@@ -87,13 +103,14 @@ class WorldsAgentOperationsTest {
 				AgentWorldList.builder().world(AgentWorld.builder().key("minecraft:arena").kind("CUSTOM").spawn(ARENA).build()).build(),
 				AgentPlacements.builder().placement(placement(SPAWN)).build(),
 				transfer(ARENA),
-				AgentWorldChangesRequest.builder().log(null).after(3).build(),
-				new WorldChangeLog().since(AgentWorldChangesRequest.builder().after(0).build()),
+				AgentLogRequest.builder().log(null).after(3).build(),
+				new WorldChangeLog().since(AgentLogRequest.builder().after(0).build()),
 				DUNGEON,
 				AgentWorldCreation.builder().key("minecraft:lobby").kind("OVERWORLD").generator("DEFAULT").build(),
 				AgentWorldOutcome.builder().world(AgentWorld.builder().key("minecraft:dungeon").kind("NETHER").spawn(ARENA).build())
 						.build(),
-				AgentWorldOutcome.builder().refusal("refused").build()
+				AgentWorldOutcome.builder().refusal("refused").build(),
+				recordedEvents()
 		);
 
 		for (Object payload : payloads)
@@ -115,8 +132,10 @@ class WorldsAgentOperationsTest {
 		AgentWorld dungeon = AgentWorld.builder().key("minecraft:dungeon").kind("NETHER").spawn(ARENA).build();
 		assertEquals(AgentWorldOutcome.builder().world(dungeon).build(), registry.execute(WorldsOperations.CREATE, DUNGEON));
 		assertEquals(AgentWorldOutcome.builder().build(), registry.execute(WorldsOperations.UNLOAD, "minecraft:dungeon"));
-		assertEquals(List.of("create minecraft:dungeon", "unload minecraft:dungeon"), worlds.changed);
-		assertEquals(2, platform.calls);
+		assertEquals(AgentWorldOutcome.builder().build(), registry.execute(WorldsOperations.DELETE, "minecraft:dungeon"));
+		assertEquals(List.of("create minecraft:dungeon", "unload minecraft:dungeon", "delete minecraft:dungeon"),
+				worlds.changed);
+		assertEquals(3, platform.calls);
 	}
 
 	@Test
@@ -128,8 +147,16 @@ class WorldsAgentOperationsTest {
 		worlds.failure = new IllegalStateException("Players are in it");
 		assertEquals(AgentWorldOutcome.builder().refusal("Players are in it").build(),
 				registry.execute(WorldsOperations.UNLOAD, "minecraft:dungeon"));
+		assertEquals(AgentWorldOutcome.builder().refusal("Players are in it").build(),
+				registry.execute(WorldsOperations.DELETE, "minecraft:dungeon"));
 		worlds.failure = new IllegalArgumentException("Not loaded");
 		assertThrows(IllegalArgumentException.class, () -> registry.execute(WorldsOperations.UNLOAD, "minecraft:dungeon"));
+	}
+
+	private static AgentWorldEvents recordedEvents() {
+		WorldEventLog log = new WorldEventLog();
+		log.loaded("minecraft:arena");
+		return log.since(AgentLogRequest.builder().after(0).build());
 	}
 
 	private void install() {
@@ -150,8 +177,13 @@ class WorldsAgentOperationsTest {
 
 	private final class Operations extends WorldsAgentOperations {
 		@Override
-		protected @NotNull ServerWorlds open(@NotNull PlatformAgent platform, @NotNull WorldChangeLog changes) {
+		protected @NotNull ServerWorlds open(
+				@NotNull PlatformAgent platform,
+				@NotNull WorldChangeLog changes,
+				@NotNull WorldEventLog events
+		) {
 			log = changes;
+			WorldsAgentOperationsTest.this.events = events;
 			return worlds;
 		}
 	}
@@ -193,6 +225,13 @@ class WorldsAgentOperationsTest {
 			if (failure != null) throw failure;
 
 			changed.add("unload " + key);
+		}
+
+		@Override
+		public void delete(@NotNull String key) {
+			if (failure != null) throw failure;
+
+			changed.add("delete " + key);
 		}
 	}
 

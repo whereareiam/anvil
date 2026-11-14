@@ -8,20 +8,23 @@ import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.api.process.RequestChannel;
 import me.whereareiam.anvil.capability.worlds.agent.WorldChangeLog;
+import me.whereareiam.anvil.capability.worlds.agent.WorldEventLog;
 import me.whereareiam.anvil.capability.worlds.agent.WorldsOperations;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentLocation;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentLogRequest;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacement;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacements;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentTransfer;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorld;
-import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChangesRequest;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldList;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldOutcome;
 import me.whereareiam.anvil.capability.worlds.model.ServerWorld;
 import me.whereareiam.anvil.capability.worlds.model.WorldChange;
 import me.whereareiam.anvil.capability.worlds.model.WorldCreation;
+import me.whereareiam.anvil.capability.worlds.model.WorldEvent;
 import me.whereareiam.anvil.capability.worlds.model.WorldLocation;
+import me.whereareiam.anvil.capability.worlds.type.WorldEventType;
 import me.whereareiam.anvil.capability.worlds.type.WorldGenerator;
 import me.whereareiam.anvil.capability.worlds.type.WorldKind;
 import org.jetbrains.annotations.NotNull;
@@ -177,6 +180,52 @@ class AgentWorldsTest {
 	}
 
 	@Test
+	void deletesALoadedWorldByItsFullKeyAndTellsWhyTheServerRefused() {
+		server.outcome = AgentWorldOutcome.builder().build();
+
+		worlds.delete("arena");
+		assertEquals(List.of("minecraft:arena"), server.requests);
+
+		assertThrows(IllegalArgumentException.class, () -> worlds.delete("the_end"));
+		server.outcome = AgentWorldOutcome.builder().unsupported("NeoForge has no API").build();
+		assertEquals("'lobby' cannot delete the world 'minecraft:arena': NeoForge has no API",
+				assertThrows(UnsupportedOperationException.class, () -> worlds.delete("arena")).getMessage());
+	}
+
+	@Test
+	void watchesTheWorldsTheServerLoadsAndUnloadsSinceTheWatch() {
+		server.events.loaded("minecraft:arena");
+		WorldEventWatch events = worlds.watchWorlds();
+		Expectation dungeon = events.expectLoaded("dungeon");
+
+		assertThrows(IllegalStateException.class, () -> events.loaded("arena", WAIT));
+		events.neverLoaded("dungeon", WAIT);
+		assertFalse(dungeon.met());
+
+		server.events.loaded("minecraft:dungeon");
+		server.events.unloaded("minecraft:dungeon");
+		assertTrue(dungeon.met());
+		assertEquals("'lobby' loaded the world 'minecraft:dungeon', which it must not do",
+				assertThrows(IllegalStateException.class, () -> events.neverLoaded("dungeon", WAIT)).getMessage());
+		WorldEvent loaded = events.loaded("minecraft:dungeon", WAIT);
+		assertEquals(List.of("minecraft:dungeon", WorldEventType.LOADED), List.of(loaded.getWorld(), loaded.getType()));
+		assertEquals(WorldEventType.UNLOADED, events.unloaded("dungeon", WAIT).getType());
+		assertEquals(List.of(), events.unread());
+	}
+
+	@Test
+	void keepsTheWorldEventsOfARestartedServerFollowedByThoseOfItsNewProcess() {
+		WorldEventWatch events = worlds.watchWorlds();
+		server.events.loaded("minecraft:arena");
+		events.loaded("arena", WAIT);
+
+		server.events = new WorldEventLog();
+		server.events.loaded("minecraft:dungeon");
+
+		events.loaded("dungeon", WAIT);
+	}
+
+	@Test
 	void watchesOnlyChangesSinceItForTheMatchingPlayer() {
 		server.log.record(forwarded.getUniqueId(), "Alice", "minecraft:overworld", "minecraft:arena");
 		WorldChangeWatch changes = worlds.watch();
@@ -239,6 +288,7 @@ class AgentWorldsTest {
 		private final List<AgentTransfer> transfers = new ArrayList<>();
 		private final List<Object> requests = new ArrayList<>();
 		private WorldChangeLog log = new WorldChangeLog();
+		private WorldEventLog events = new WorldEventLog();
 		private boolean refuse;
 		private AgentWorldOutcome outcome;
 
@@ -261,8 +311,10 @@ class AgentWorldsTest {
 					transfers.add((AgentTransfer) request);
 					yield true;
 				}
-				case "me.whereareiam.anvil.worlds.changes" -> log.since((AgentWorldChangesRequest) request);
-				case "me.whereareiam.anvil.worlds.create", "me.whereareiam.anvil.worlds.unload" -> {
+				case "me.whereareiam.anvil.worlds.changes" -> log.since((AgentLogRequest) request);
+				case "me.whereareiam.anvil.worlds.events" -> events.since((AgentLogRequest) request);
+				case "me.whereareiam.anvil.worlds.create", "me.whereareiam.anvil.worlds.unload",
+						"me.whereareiam.anvil.worlds.delete" -> {
 					requests.add(request);
 					yield outcome;
 				}

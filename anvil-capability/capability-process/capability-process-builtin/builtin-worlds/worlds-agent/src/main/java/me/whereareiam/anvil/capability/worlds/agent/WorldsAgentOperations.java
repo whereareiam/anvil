@@ -12,8 +12,8 @@ import java.util.function.Supplier;
 
 /**
  * Answers the worlds capability's operations on one platform: each platform side extends it with the
- * {@link ServerWorlds} of its platform, which it opens once the agent starts, together with the log it records the
- * platform's world changes in. Every operation that reads or changes a world runs on the platform's own thread. A
+ * {@link ServerWorlds} of its platform, which it opens once the agent starts, together with the logs it records the
+ * platform's world changes and world events in. Every operation that reads or changes a world runs on the platform's own thread. A
  * creation or unloading the server refuses, or the platform cannot do, is answered as such instead of as a failure.
  */
 public abstract class WorldsAgentOperations implements AgentOperationProvider {
@@ -25,7 +25,8 @@ public abstract class WorldsAgentOperations implements AgentOperationProvider {
 	@Override
 	public final void install(@NotNull PlatformAgent platform, @NotNull AgentOperationRegistry registry) {
 		WorldChangeLog changes = new WorldChangeLog();
-		ServerWorlds worlds = open(platform, changes);
+		WorldEventLog events = new WorldEventLog();
+		ServerWorlds worlds = open(platform, changes, events);
 
 		registry.register(WorldsOperations.WORLDS, (agent, ignored) ->
 				agent.call(() -> AgentWorldList.builder().worlds(worlds.worlds()).build()));
@@ -40,16 +41,26 @@ public abstract class WorldsAgentOperations implements AgentOperationProvider {
 			worlds.unload(key);
 			return AgentWorldOutcome.builder().build();
 		})));
+		registry.register(WorldsOperations.DELETE, (agent, key) -> agent.call(() -> outcome(() -> {
+			worlds.delete(key);
+			return AgentWorldOutcome.builder().build();
+		})));
+		registry.register(WorldsOperations.EVENTS, (agent, request) -> events.since(request));
 	}
 
 	/**
-	 * Opens the platform's worlds and starts recording its players' world changes.
+	 * Opens the platform's worlds and starts recording its players' world changes and the worlds it loads and unloads.
 	 *
 	 * @param platform the platform agent, whose services reach the platform's API
 	 * @param changes the log to record each world change the platform reports in
+	 * @param events the log to record each world the platform loads or unloads in
 	 * @return the platform's worlds
 	 */
-	protected abstract @NotNull ServerWorlds open(@NotNull PlatformAgent platform, @NotNull WorldChangeLog changes);
+	protected abstract @NotNull ServerWorlds open(
+			@NotNull PlatformAgent platform,
+			@NotNull WorldChangeLog changes,
+			@NotNull WorldEventLog events
+	);
 
 	private static @NotNull AgentWorldOutcome outcome(@NotNull Supplier<AgentWorldOutcome> request) {
 		try {
