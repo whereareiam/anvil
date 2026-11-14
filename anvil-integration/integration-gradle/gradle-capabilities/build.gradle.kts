@@ -97,6 +97,12 @@ gradlePlugin {
 			displayName = "Anvil Entities Capability"
 			description = "Includes the built-in Entities capability"
 		}
+		create("anvilCapabilityVitals") {
+			id = "me.whereareiam.anvil.capability.vitals"
+			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.VitalsPlugin"
+			displayName = "Anvil Vitals Capability"
+			description = "Includes the built-in Vitals capability"
+		}
 		create("anvilCapabilityWorld") {
 			id = "me.whereareiam.anvil.capability.world"
 			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.WorldPlugin"

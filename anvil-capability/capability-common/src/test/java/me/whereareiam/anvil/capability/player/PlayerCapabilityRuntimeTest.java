@@ -70,6 +70,7 @@ class PlayerCapabilityRuntimeTest {
 				"me.whereareiam.anvil.cookies",
 				"me.whereareiam.anvil.screen",
 				"me.whereareiam.anvil.sounds",
+				"me.whereareiam.anvil.vitals",
 				"me.whereareiam.anvil.entities",
 				"me.whereareiam.anvil.world"
 		), PlayerCapabilityRuntime.discover().providers().stream()
