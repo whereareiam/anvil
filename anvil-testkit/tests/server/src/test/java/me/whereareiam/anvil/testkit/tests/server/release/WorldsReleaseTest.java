@@ -31,7 +31,10 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -95,17 +98,21 @@ class WorldsReleaseTest {
 		SimulatedPlayer player = server.join();
 		Worlds worlds = anvil.processes().server("server").capability(Worlds.class);
 
-		assertEquals(List.of("minecraft:overworld", "minecraft:the_nether", "minecraft:the_end"),
-				worlds.worlds().stream().map(ServerWorld::getKey).toList());
-		assertEquals(List.of(WorldKind.OVERWORLD, WorldKind.NETHER, WorldKind.END),
-				worlds.worlds().stream().map(ServerWorld::getKind).toList());
+		// The server lists its main world first; the order of the others changes once another test of this server
+		// unloads and loads a world.
+		List<ServerWorld> loaded = worlds.worlds();
+		assertEquals("minecraft:overworld", loaded.get(0).getKey());
+		assertEquals(Map.of("minecraft:overworld", WorldKind.OVERWORLD, "minecraft:the_nether", WorldKind.NETHER,
+				"minecraft:the_end", WorldKind.END),
+				loaded.stream().collect(Collectors.toMap(ServerWorld::getKey, ServerWorld::getKind)));
 		assertEquals(Optional.of("minecraft:overworld"), player.capability(World.class).dimension());
 		assertEquals("minecraft:overworld", worlds.location(player).orElseThrow().getWorld());
 		World world = player.capability(World.class);
 		DimensionTypeInfo overworld = new DimensionTypeInfo("minecraft:overworld", Environment.OVERWORLD);
 		assertEquals(new LevelInfo("minecraft:overworld", overworld, LevelGeneration.NORMAL), world.level().orElseThrow());
-		assertEquals(List.of("minecraft:overworld", "minecraft:the_nether", "minecraft:the_end"),
-				world.server().orElseThrow().getLevels());
+		List<String> levels = world.server().orElseThrow().getLevels();
+		assertEquals("minecraft:overworld", levels.get(0));
+		assertEquals(Set.of("minecraft:overworld", "minecraft:the_nether", "minecraft:the_end"), Set.copyOf(levels));
 	}
 
 	@Test
