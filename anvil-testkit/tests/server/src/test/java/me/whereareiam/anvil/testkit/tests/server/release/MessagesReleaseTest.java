@@ -28,6 +28,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @Release
 class MessagesReleaseTest {
+	/**
+	 * Number of commands, and of chat messages, a burst sends without waiting between them.
+	 */
+	private static final int BURST = 20;
+
 	@Test
 	void receivesItsOwnChat(ScenarioContext anvil) {
 		Messages messages = new FixtureServer(anvil).join().capability(Messages.class);
@@ -44,6 +49,52 @@ class MessagesReleaseTest {
 		messages.command("anvil-fixture ping");
 
 		messages.received("anvil:pong", Duration.ofSeconds(10));
+	}
+
+	@Test
+	void deliversEveryCommandAndChatMessageOfABurst(ScenarioContext anvil) {
+		SimulatedPlayer player = new FixtureServer(anvil).join();
+		Messages messages = player.capability(Messages.class);
+		// The server kicks a player who is not an operator for sending this much at once.
+		messages.command("anvil-fixture op");
+		messages.received("anvil:op", Duration.ofSeconds(10));
+		MessageWatch replies = messages.watch();
+
+		for (int message = 0; message < BURST; message++) {
+			messages.command("anvil-fixture dialog-echo burst-%02d".formatted(message));
+			messages.chat("anvil-burst-chat-%02d".formatted(message));
+		}
+
+		// The server runs commands in the order they arrive, but Paper handles chat on several threads.
+		for (int message = 0; message < BURST; message++)
+			replies.received("anvil:dialog-echo:burst-%02d".formatted(message), Duration.ofSeconds(10));
+		for (int message = 0; message < BURST; message++)
+			messages.received("anvil-burst-chat-%02d".formatted(message), Duration.ofSeconds(10));
+	}
+
+	@Test
+	void runsACommandRightAfterConnecting(ScenarioContext anvil) {
+		Messages messages = new FixtureServer(anvil).connect().capability(Messages.class);
+
+		messages.command("anvil-fixture dialog-echo connected");
+
+		messages.received("anvil:dialog-echo:connected", Duration.ofSeconds(10));
+	}
+
+	@Test
+	void runsCommandsInEveryDimensionThePlayerMovesTo(ScenarioContext anvil) {
+		FixtureServer server = new FixtureServer(anvil);
+		SimulatedPlayer player = server.join();
+		Messages messages = player.capability(Messages.class);
+		MessageWatch chat = messages.watch();
+
+		server.console("execute in minecraft:the_nether run tp " + player.name() + " 0 120 0");
+		messages.command("anvil-fixture dialog-echo nether");
+		chat.received("anvil:dialog-echo:nether", Duration.ofSeconds(30));
+		server.console("execute in minecraft:overworld run tp " + player.name() + " 0 120 0");
+		messages.command("anvil-fixture dialog-echo overworld");
+
+		chat.received("anvil:dialog-echo:overworld", Duration.ofSeconds(30));
 	}
 
 	@Test
