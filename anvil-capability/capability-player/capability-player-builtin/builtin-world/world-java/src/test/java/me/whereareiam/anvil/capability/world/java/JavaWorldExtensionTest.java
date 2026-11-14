@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,7 +120,7 @@ class JavaWorldExtensionTest {
 		protocol.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
 		protocol.deliver(login(8, ARENA, vanilla(OVERWORLD)));
 
-		assertEquals(List.of(null, OVERWORLD), player.emitted(WorldChannel.DIMENSION).stream()
+		assertEquals(Arrays.asList(null, OVERWORLD), player.emitted(WorldChannel.DIMENSION).stream()
 				.map(DimensionChange::getFrom).toList());
 	}
 
