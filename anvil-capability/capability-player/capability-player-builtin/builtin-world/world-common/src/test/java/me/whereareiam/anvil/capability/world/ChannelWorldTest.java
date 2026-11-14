@@ -3,8 +3,11 @@ package me.whereareiam.anvil.capability.world;
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.world.channel.WorldChannel;
 import me.whereareiam.anvil.capability.world.model.DimensionChange;
+import me.whereareiam.anvil.capability.world.model.DimensionTypeInfo;
 import me.whereareiam.anvil.capability.world.model.LevelInfo;
+import me.whereareiam.anvil.capability.world.model.ServerInfo;
 import me.whereareiam.anvil.capability.world.type.Environment;
+import me.whereareiam.anvil.capability.world.type.LevelGeneration;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
@@ -49,21 +52,26 @@ class ChannelWorldTest {
 	}
 
 	@Test
-	void keepsWhatTheClientWasToldAboutTheLevelOfTheLastChange() {
-		LevelInfo nether = level(NETHER).toBuilder().environment(Environment.NETHER).hardcore(true).build();
+	void keepsTheLevelOfTheLastChangeAndTheServerOfTheLastJoin() {
+		ServerInfo server = ServerInfo.builder().hardcore(true).level(OVERWORLD).level(NETHER).build();
+		LevelInfo nether = new LevelInfo(NETHER, new DimensionTypeInfo(NETHER, Environment.NETHER), LevelGeneration.FLAT);
+		channel.publish(WorldChannel.SERVER, server);
 		channel.publish(WorldChannel.DIMENSION, change(null, OVERWORLD));
 		channel.publish(WorldChannel.DIMENSION, new DimensionChange(OVERWORLD, NETHER, nether));
 
 		assertEquals(Optional.of(nether), world.level());
+		assertEquals(Optional.of(server), world.server());
 	}
 
 	@Test
 	void isInNoDimensionOnceTheConnectionLeftItAndKeepsTheHistory() {
+		channel.publish(WorldChannel.SERVER, ServerInfo.builder().level(NETHER).build());
 		channel.publish(WorldChannel.DIMENSION, change(null, NETHER));
 		channel.publish(WorldChannel.LEFT, NETHER);
 
 		assertEquals(Optional.empty(), world.dimension());
 		assertEquals(Optional.empty(), world.level());
+		assertEquals(Optional.empty(), world.server());
 		assertEquals(List.of(change(null, NETHER)), world.changes());
 	}
 
@@ -127,13 +135,7 @@ class ChannelWorldTest {
 	}
 
 	private static LevelInfo level(String dimension) {
-		return LevelInfo.builder()
-				.dimension(dimension)
-				.dimensionType(dimension)
-				.environment(Environment.OVERWORLD)
-				.level(OVERWORLD)
-				.level(NETHER)
-				.build();
+		return new LevelInfo(dimension, new DimensionTypeInfo(dimension, Environment.OVERWORLD), LevelGeneration.NORMAL);
 	}
 
 	/**

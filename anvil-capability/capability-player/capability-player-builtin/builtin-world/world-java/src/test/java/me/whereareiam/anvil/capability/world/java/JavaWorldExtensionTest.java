@@ -2,8 +2,11 @@ package me.whereareiam.anvil.capability.world.java;
 
 import me.whereareiam.anvil.capability.world.channel.WorldChannel;
 import me.whereareiam.anvil.capability.world.model.DimensionChange;
+import me.whereareiam.anvil.capability.world.model.DimensionTypeInfo;
 import me.whereareiam.anvil.capability.world.model.LevelInfo;
+import me.whereareiam.anvil.capability.world.model.ServerInfo;
 import me.whereareiam.anvil.capability.world.type.Environment;
+import me.whereareiam.anvil.capability.world.type.LevelGeneration;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
@@ -77,7 +80,7 @@ class JavaWorldExtensionTest {
 	}
 
 	@Test
-	void describesTheLevelWithItsTypeEnvironmentFlagsAndTheServersLevels() {
+	void describesTheServerOnEachJoinAndTheLevelWithItsTypeAndGeneration() {
 		connect();
 
 		protocol.deliver(ClientboundLogin.builder()
@@ -87,30 +90,20 @@ class JavaWorldExtensionTest {
 				.hardcore(true)
 				.dimension(ARENA)
 				.dimensionType(DimensionType.withEffects("example:void", "minecraft:the_end"))
-				.debug(true)
 				.flat(true)
 				.build());
-		protocol.deliver(respawn(ARENA, new DimensionType("example:modded", null, null)));
-
-		List<LevelInfo> levels = player.emitted(WorldChannel.DIMENSION).stream().map(DimensionChange::getLevel).toList();
-		assertEquals(LevelInfo.builder()
+		protocol.deliver(ClientboundRespawn.builder()
 				.dimension(ARENA)
-				.dimensionType("example:void")
-				.environment(Environment.END)
-				.hardcore(true)
+				.dimensionType(new DimensionType("example:modded", null, null))
 				.debug(true)
-				.flat(true)
-				.level(OVERWORLD)
-				.level(ARENA)
-				.build(), levels.get(0));
-		assertEquals(LevelInfo.builder()
-				.dimension(ARENA)
-				.dimensionType("example:modded")
-				.environment(Environment.CUSTOM)
-				.hardcore(true)
-				.level(OVERWORLD)
-				.level(ARENA)
-				.build(), levels.get(1));
+				.build());
+
+		assertEquals(List.of(ServerInfo.builder().hardcore(true).level(OVERWORLD).level(ARENA).build()),
+				player.emitted(WorldChannel.SERVER));
+		assertEquals(List.of(
+				new LevelInfo(ARENA, new DimensionTypeInfo("example:void", Environment.END), LevelGeneration.FLAT),
+				new LevelInfo(ARENA, new DimensionTypeInfo("example:modded", Environment.CUSTOM), LevelGeneration.DEBUG)
+		), player.emitted(WorldChannel.DIMENSION).stream().map(DimensionChange::getLevel).toList());
 	}
 
 	@Test
@@ -192,16 +185,11 @@ class JavaWorldExtensionTest {
 	}
 
 	/**
-	 * A change into a vanilla dimension of a server whose levels are the overworld and the nether.
+	 * A change into a vanilla dimension of normal generation.
 	 */
 	private static DimensionChange change(String from, String to, Environment environment) {
-		return new DimensionChange(from, to, LevelInfo.builder()
-				.dimension(to)
-				.dimensionType(to)
-				.environment(environment)
-				.level(OVERWORLD)
-				.level(NETHER)
-				.build());
+		return new DimensionChange(from, to, new LevelInfo(to, new DimensionTypeInfo(to, environment),
+				LevelGeneration.NORMAL));
 	}
 
 	/**

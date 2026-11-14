@@ -39,7 +39,7 @@ Each capability is optional unless the test or another installed capability requ
 | [Screen](./screen/index.md) | Await titles, action bars, and boss bars. | MCProtocol and Session |
 | [Sounds](./sounds/index.md) | Await the sounds the server plays. | MCProtocol and Session |
 | [Entities](./entities/index.md) | Follow the entities the server shows: positions, passengers, names, display text, items and flags. | MCProtocol and Session |
-| [World](./world/index.md) | Read the dimension the player is in, its type, environment and flags, and await a change. | MCProtocol and Session |
+| [World](./world/index.md) | Read the dimension the player is in, its type, environment and generation, and the server's worlds; await a change. | MCProtocol and Session |
 
 Packet-backed capabilities operate through the player's protocol library. The built-in capabilities
 are installed on every MCProtocolLib release Anvil ships, from Minecraft 1.16.5 to 26.3,

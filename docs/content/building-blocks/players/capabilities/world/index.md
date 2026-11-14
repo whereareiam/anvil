@@ -1,6 +1,6 @@
 ---
 title: World
-description: Read the dimension the player is in, with its type, environment and flags, and wait until it enters another one.
+description: Read the dimension the player is in, its type, environment and generation, and the server's worlds, and wait until the player enters another dimension.
 ---
 
 `World` reports the dimension the player's client is in: the key of the level the server put it in, with
@@ -49,28 +49,35 @@ proxy moving the player to another server's overworld:
 ## Read what the client knows about its level
 
 `world.dimension()` is the dimension the player is in now, or empty while it is not connected or has not
-joined a level yet. `world.level()` gives the rest of what the client was told about that level, as a
-`LevelInfo` (`me.whereareiam.anvil.capability.world.model`):
+joined a level yet. `world.level()` gives the rest of what the client was told about that level, and
+`world.server()` what it was told about the server's worlds when it joined the server. Both models are in
+`me.whereareiam.anvil.capability.world.model`:
 
 ```java
 LevelInfo level = world.level().orElseThrow();
-assertEquals(Environment.NETHER, level.getEnvironment());
-assertTrue(level.getLevels().contains("minecraft:arena"));
+assertEquals("minecraft:the_nether", level.getType().getKey());
+assertEquals(Environment.NETHER, level.getType().getEnvironment());
+assertEquals(LevelGeneration.NORMAL, level.getGeneration());
+
+ServerInfo server = world.server().orElseThrow();
+assertTrue(server.getLevels().contains("minecraft:arena"));
 ```
 
 | Member | Meaning |
 | --- | --- |
-| `dimension` | The level's key, the same as `world.dimension()`. |
-| `dimensionType` | The key of the level's dimension type, such as `minecraft:the_nether` or a data pack's `example:void`. |
-| `environment` | How the client renders the level, from its dimension type's effects: `OVERWORLD`, `NETHER`, `END`, or `CUSTOM` for a mod's effects. A world a plugin created as a nether world has the environment `NETHER`. |
-| `hardcore` | Whether the server is in hardcore mode. |
-| `debug`, `flat` | Whether the level is a debug or a superflat world. |
-| `levels` | The keys of every level the server named when the player joined it, in the server's order. |
+| `LevelInfo.dimension` | The level's key, the same as `world.dimension()`. |
+| `LevelInfo.type.key` | The key of the level's dimension type, such as `minecraft:the_nether` or a data pack's `example:void`. |
+| `LevelInfo.type.environment` | How the client renders the level, from its dimension type's sky and shading: `OVERWORLD`, `NETHER`, `END`, or `CUSTOM` for any other pair, such as a mod's. A world a plugin created as a nether world has the environment `NETHER`. |
+| `LevelInfo.generation` | `NORMAL`, `FLAT` for a superflat world, or `DEBUG` for a debug world. |
+| `ServerInfo.hardcore` | Whether the server is in hardcore mode. |
+| `ServerInfo.levels` | The keys of every level the server has, in the server's order. |
 
-Each `DimensionChange` carries the `LevelInfo` of the level it entered as `getLevel()`. `world.changes()`
-lists every change in order, across reconnects.
+The level changes with every join and respawn, and each `DimensionChange` carries the `LevelInfo` of the
+level it entered as `getLevel()`. The server info changes only when the player joins a server, which a
+proxy does when it moves the player to another one. `world.changes()` lists every change in order, across
+reconnects.
 
-The game mode is not part of the level: a server changes it without a respawn, so `World` does not report it.
+The game mode is not part of either: a server changes it without a respawn, so `World` does not report it.
 
 ## Expect that the player stays
 

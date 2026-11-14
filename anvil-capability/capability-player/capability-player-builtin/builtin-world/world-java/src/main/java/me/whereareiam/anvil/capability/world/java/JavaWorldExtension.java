@@ -2,8 +2,11 @@ package me.whereareiam.anvil.capability.world.java;
 
 import me.whereareiam.anvil.capability.world.channel.WorldChannel;
 import me.whereareiam.anvil.capability.world.model.DimensionChange;
+import me.whereareiam.anvil.capability.world.model.DimensionTypeInfo;
 import me.whereareiam.anvil.capability.world.model.LevelInfo;
+import me.whereareiam.anvil.capability.world.model.ServerInfo;
 import me.whereareiam.anvil.capability.world.type.Environment;
+import me.whereareiam.anvil.capability.world.type.LevelGeneration;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
@@ -18,13 +21,12 @@ import me.whereareiam.anvil.protocol.java.api.type.Skybox;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 
 /**
- * Installs the built-in world capability for players that speak the Java Edition protocol: it emits the level each
- * join and respawn of the player's current connection puts the player in, together with the dimension it was in, and
- * the dimension the connection was in when it ends. A respawn keeps the server's hardcore mode and levels its last
- * join named. Each connection starts in no level. The world registers no operations.
+ * Installs the built-in world capability for players that speak the Java Edition protocol: it emits the server each
+ * join of the player's current connection names, the level each join and respawn puts the player in, together with
+ * the dimension it was in, and the dimension the connection was in when it ends. Each connection starts in no level.
+ * The world registers no operations.
  */
 public final class JavaWorldExtension implements WorkerExtension<Object> {
 	@Override
@@ -60,8 +62,6 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 	private static final class Dimension {
 		private final PlayerBindingContext<Object> player;
 		private @Nullable LevelInfo current;
-		private boolean hardcore;
-		private List<String> levels = List.of();
 		private boolean observed = true;
 
 		private Dimension(PlayerBindingContext<Object> player) {
@@ -69,8 +69,11 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 		}
 
 		private synchronized void joined(ClientboundLogin login) {
-			hardcore = login.isHardcore();
-			levels = login.getLevels();
+			if (observed)
+				player.emit(WorldChannel.SERVER, ServerInfo.builder()
+						.hardcore(login.isHardcore())
+						.levels(login.getLevels())
+						.build());
 			entered(login.getDimension(), login.getDimensionType(), login.isDebug(), login.isFlat());
 		}
 
@@ -81,15 +84,8 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 		private void entered(String dimension, DimensionType type, boolean debug, boolean flat) {
 			if (!observed) return;
 
-			LevelInfo level = LevelInfo.builder()
-					.dimension(dimension)
-					.dimensionType(type.getKey())
-					.environment(environment(type))
-					.hardcore(hardcore)
-					.debug(debug)
-					.flat(flat)
-					.levels(levels)
-					.build();
+			LevelInfo level = new LevelInfo(dimension, new DimensionTypeInfo(type.getKey(), environment(type)),
+					generation(debug, flat));
 			player.emit(WorldChannel.DIMENSION, new DimensionChange(current == null ? null : current.getDimension(),
 					dimension, level));
 			current = level;
@@ -98,7 +94,6 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 		private synchronized void left() {
 			LevelInfo left = current;
 			current = null;
-			levels = List.of();
 			if (observed && left != null) player.emit(WorldChannel.LEFT, left.getDimension());
 		}
 
@@ -108,6 +103,12 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 		private synchronized void discard() {
 			observed = false;
 			current = null;
+		}
+
+		private static LevelGeneration generation(boolean debug, boolean flat) {
+			if (debug) return LevelGeneration.DEBUG;
+
+			return flat ? LevelGeneration.FLAT : LevelGeneration.NORMAL;
 		}
 
 		/**

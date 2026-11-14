@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.world.channel;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.capability.world.model.DimensionChange;
+import me.whereareiam.anvil.capability.world.model.ServerInfo;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 
 /**
@@ -16,13 +17,18 @@ public final class WorldChannel {
 	 */
 	public static final String ID = "me.whereareiam.anvil.world";
 	/**
+	 * The player's current connection joined a server, before the level it joined.
+	 */
+	public static final EventDescriptor<ServerInfo> SERVER = new EventDescriptor<>("world.server", ServerInfo.class);
+	/**
 	 * The player's current connection joined a level or respawned.
 	 */
 	public static final EventDescriptor<DimensionChange> DIMENSION = new EventDescriptor<>(
 			"world.dimension", DimensionChange.class
 	);
 	/**
-	 * The player's current connection ended while it was in a level, with the key of that level.
+	 * The player's current connection ended while it was in a level, with the key of that level. The connection is on
+	 * no server afterwards.
 	 */
 	public static final EventDescriptor<String> LEFT = new EventDescriptor<>("world.left", String.class);
 }
