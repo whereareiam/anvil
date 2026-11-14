@@ -7,7 +7,9 @@ import me.whereareiam.anvil.capability.world.World;
 import me.whereareiam.anvil.capability.worlds.WorldChangeWatch;
 import me.whereareiam.anvil.capability.worlds.Worlds;
 import me.whereareiam.anvil.capability.worlds.model.ServerWorld;
+import me.whereareiam.anvil.capability.worlds.model.WorldCreation;
 import me.whereareiam.anvil.capability.worlds.model.WorldLocation;
+import me.whereareiam.anvil.capability.worlds.type.WorldGenerator;
 import me.whereareiam.anvil.capability.worlds.type.WorldKind;
 import me.whereareiam.anvil.testkit.tests.server.fixture.FixtureServer;
 import org.junit.jupiter.api.Test;
@@ -17,10 +19,12 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Moves a player between the server's worlds through the server's own API and follows the move from both ends: the
- * server reports the world change, and the client is told the dimension it is in now.
+ * server reports the world change, and the client is told the dimension it is in now. Creates worlds the way a plugin
+ * does and unloads them again, since the release's server is kept for every test.
  */
 @Release
 class WorldsReleaseTest {
@@ -70,5 +74,51 @@ class WorldsReleaseTest {
 		changes.changed(player, "minecraft:overworld", TIMEOUT);
 		dimensions.entered("overworld", TIMEOUT);
 		assertEquals(Optional.of("minecraft:overworld"), world.dimension());
+	}
+
+	@Test
+	void createsAWorldSendsAPlayerIntoItAndUnloadsItOnceThePlayerLeft(ScenarioContext anvil) {
+		FixtureServer server = new FixtureServer(anvil);
+		SimulatedPlayer player = server.join();
+		Worlds worlds = anvil.processes().server("server").capability(Worlds.class);
+		World world = player.capability(World.class);
+		WorldChangeWatch changes = worlds.watch();
+		DimensionWatch dimensions = world.watch();
+
+		ServerWorld flat = worlds.create(WorldCreation.builder()
+				.key("anvil_flat")
+				.seed(42L)
+				.generator(WorldGenerator.FLAT)
+				.build());
+
+		assertEquals(List.of("minecraft:anvil_flat", WorldKind.OVERWORLD), List.of(flat.getKey(), flat.getKind()));
+		assertEquals(Optional.of(flat), worlds.world("anvil_flat"));
+		worlds.send(player, "anvil_flat");
+		changes.changed(player, "minecraft:anvil_flat", TIMEOUT);
+		dimensions.entered("minecraft:anvil_flat", TIMEOUT);
+		assertThrows(IllegalStateException.class, () -> worlds.unload("anvil_flat"));
+
+		worlds.send(player, "overworld");
+		changes.changed(player, "minecraft:overworld", TIMEOUT);
+		worlds.unload("anvil_flat");
+
+		assertEquals(Optional.empty(), worlds.world("anvil_flat"));
+		assertThrows(IllegalStateException.class, () -> worlds.unload("overworld"));
+	}
+
+	@Test
+	void createsAnEmptyWorldOfAnotherKind(ScenarioContext anvil) {
+		Worlds worlds = anvil.processes().server("server").capability(Worlds.class);
+
+		ServerWorld empty = worlds.create(WorldCreation.builder()
+				.key("anvil_empty_nether")
+				.kind(WorldKind.NETHER)
+				.generator(WorldGenerator.EMPTY)
+				.build());
+
+		assertEquals(List.of("minecraft:anvil_empty_nether", WorldKind.NETHER), List.of(empty.getKey(), empty.getKind()));
+		assertEquals(List.of(0D, 64D, 0D), List.of(empty.getSpawn().getX(), empty.getSpawn().getY(), empty.getSpawn().getZ()));
+		worlds.unload("anvil_empty_nether");
+		assertEquals(Optional.empty(), worlds.world("anvil_empty_nether"));
 	}
 }

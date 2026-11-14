@@ -13,7 +13,9 @@ import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.capability.world.DimensionWatch;
 import me.whereareiam.anvil.capability.world.World;
 import me.whereareiam.anvil.capability.worlds.Worlds;
+import me.whereareiam.anvil.capability.worlds.model.WorldCreation;
 import me.whereareiam.anvil.capability.worlds.model.WorldLocation;
+import me.whereareiam.anvil.capability.worlds.type.WorldGenerator;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
 import me.whereareiam.anvil.testkit.tests.server.fixture.FixtureAgentProbeProvider;
 import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
@@ -29,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Logs a player in on Spigot and behind each proxy, runs console commands and an agent extension on every process,
- * and moves the player between the backends of a proxy.
+ * creates a world and moves the player into it, and moves the player between the backends of a proxy.
  */
 class PlatformCompatibilitySystemTest {
 	@TestFactory
@@ -71,6 +73,13 @@ class PlatformCompatibilitySystemTest {
 			worlds.send(alice, WorldLocation.builder().world("minecraft:the_nether").x(0.5).y(140).z(0.5).build());
 			dimensions.entered("minecraft:the_nether", Duration.ofSeconds(10));
 			assertEquals("minecraft:the_nether", worlds.location(alice).orElseThrow().getWorld());
+			worlds.create(WorldCreation.builder().key("anvil_platform").generator(WorldGenerator.FLAT).build());
+			worlds.send(alice, "anvil_platform");
+			dimensions.entered("minecraft:anvil_platform", Duration.ofSeconds(10));
+			worlds.send(alice, "overworld");
+			dimensions.entered("minecraft:overworld", Duration.ofSeconds(10));
+			worlds.unload("anvil_platform");
+			assertEquals(Optional.empty(), worlds.world("anvil_platform"));
 			if (scenario.getProxies().isEmpty()) return;
 
 			moves.joined(alice, Duration.ofSeconds(10));

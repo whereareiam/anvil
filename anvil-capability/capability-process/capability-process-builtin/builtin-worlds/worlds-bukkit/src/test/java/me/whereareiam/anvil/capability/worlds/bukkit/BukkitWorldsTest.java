@@ -5,13 +5,17 @@ import me.whereareiam.anvil.capability.worlds.agent.model.AgentLocation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorld;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChange;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChangesRequest;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Server;
 import org.bukkit.World;
+import org.bukkit.WorldCreator;
+import org.bukkit.WorldType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.generator.ChunkGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -20,11 +24,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -32,6 +39,9 @@ class BukkitWorldsTest {
 	private static final UUID ALICE = new UUID(0, 1);
 
 	private final List<Location> teleports = new ArrayList<>();
+	private final List<WorldCreator> creators = new ArrayList<>();
+	private final List<World> unloaded = new ArrayList<>();
+	private boolean refuse;
 	private final WorldChangeLog log = new WorldChangeLog();
 
 	@Test
@@ -111,12 +121,104 @@ class BukkitWorldsTest {
 		assertFalse(change.getAt() <= 0);
 	}
 
+	@Test
+	void createsAWorldThroughAWorldCreatorOfItsKindSeedAndGenerator() {
+		List<World> worlds = new ArrayList<>(List.of(world("world", World.Environment.NORMAL, null)));
+		BukkitWorlds bukkit = new BukkitWorlds(server(worlds, List.of()), log);
+
+		AgentWorld created = bukkit.create(AgentWorldCreation.builder().key("minecraft:arena").kind("NETHER").seed(42L)
+				.generator("FLAT").build());
+
+		assertEquals(List.of("minecraft:arena", "NETHER"), List.of(created.getKey(), created.getKind()));
+		WorldCreator creator = creators.get(0);
+		assertEquals(List.of("arena", World.Environment.NETHER, 42L, WorldType.FLAT),
+				List.of(creator.name(), creator.environment(), creator.seed(), creator.type()));
+		assertNull(creator.generator());
+		assertEquals(2, worlds.size());
+	}
+
+	@Test
+	void createsAnEmptyWorldWhoseSpawnIsAboveTheOrigin() {
+		World world = world("world", World.Environment.NORMAL, null);
+		BukkitWorlds bukkit = new BukkitWorlds(server(new ArrayList<>(List.of(world)), List.of()), log);
+
+		bukkit.create(AgentWorldCreation.builder().key("minecraft:void").kind("END").generator("EMPTY").build());
+
+		WorldCreator creator = creators.get(0);
+		assertEquals(List.of(World.Environment.THE_END, WorldType.NORMAL), List.of(creator.environment(), creator.type()));
+		ChunkGenerator generator = assertInstanceOf(ChunkGenerator.class, creator.generator());
+		Location spawn = generator.getFixedSpawnLocation(world, new Random());
+		assertEquals(List.of(0D, 64D, 0D), List.of(spawn.getX(), spawn.getY(), spawn.getZ()));
+	}
+
+	@Test
+	void refusesAKeyBukkitCannotNameAWorldByALoadedWorldAndACreationTheServerDidNotDo() {
+		BukkitWorlds bukkit = new BukkitWorlds(server(new ArrayList<>(List.of(world("world", World.Environment.NORMAL,
+				null))), List.of()), log);
+
+		assertThrows(UnsupportedOperationException.class, () -> bukkit.create(creation("example:arena")));
+		assertThrows(UnsupportedOperationException.class, () -> bukkit.create(creation("minecraft:arenas/one")));
+		assertThrows(IllegalArgumentException.class, () -> bukkit.create(creation("minecraft:overworld")));
+		assertTrue(creators.isEmpty());
+
+		refuse = true;
+		assertThrows(IllegalStateException.class, () -> bukkit.create(creation("minecraft:arena")));
+	}
+
+	@Test
+	void unloadsAndSavesAWorldNobodyIsIn() {
+		World main = world("world", World.Environment.NORMAL, null);
+		World arena = world("arena", World.Environment.NORMAL, null);
+		BukkitWorlds bukkit = new BukkitWorlds(server(new ArrayList<>(List.of(main, arena)), List.of()), log);
+
+		bukkit.unload("minecraft:arena");
+
+		assertEquals(List.of(arena), unloaded);
+	}
+
+	@Test
+	void refusesToUnloadTheMainWorldAWorldPlayersAreInAndOneTheServerKept() {
+		World main = world("world", World.Environment.NORMAL, null);
+		World arena = world("arena", World.Environment.NORMAL, null);
+		Player alice = player(new Location(arena, 0, 64, 0));
+		World busy = world("busy", World.Environment.NORMAL, null, List.of(alice));
+		BukkitWorlds bukkit = new BukkitWorlds(server(new ArrayList<>(List.of(main, arena, busy)), List.of(alice)), log);
+
+		assertThrows(IllegalArgumentException.class, () -> bukkit.unload("minecraft:the_end"));
+		assertThrows(IllegalStateException.class, () -> bukkit.unload("minecraft:overworld"));
+		assertEquals("Players are in minecraft:busy: [Alice]",
+				assertThrows(IllegalStateException.class, () -> bukkit.unload("minecraft:busy")).getMessage());
+		refuse = true;
+		assertThrows(IllegalStateException.class, () -> bukkit.unload("minecraft:arena"));
+		assertTrue(unloaded.isEmpty());
+	}
+
+	private static AgentWorldCreation creation(String key) {
+		return AgentWorldCreation.builder().key(key).kind("OVERWORLD").generator("DEFAULT").build();
+	}
+
 	private Server server(List<World> worlds, List<Player> players) {
 		return proxy(Server.class, Map.of(
 				"getWorlds", arguments -> worlds,
 				"getOnlinePlayers", arguments -> players,
 				"getPlayer", arguments -> players.stream().filter(player -> player.getUniqueId().equals(arguments[0]))
-						.findFirst().orElse(null)
+						.findFirst().orElse(null),
+				"createWorld", arguments -> {
+					if (refuse) return null;
+
+					WorldCreator creator = (WorldCreator) arguments[0];
+					creators.add(creator);
+					World world = world(creator.name(), creator.environment(), null);
+					worlds.add(world);
+					return world;
+				},
+				"unloadWorld", arguments -> {
+					if (refuse) return false;
+
+					assertEquals(true, arguments[1]);
+					unloaded.add((World) arguments[0]);
+					return worlds.remove(arguments[0]);
+				}
 		));
 	}
 
@@ -131,7 +233,12 @@ class BukkitWorldsTest {
 	}
 
 	private static World world(String name, World.Environment environment, NamespacedKey key) {
+		return world(name, environment, key, List.of());
+	}
+
+	private static World world(String name, World.Environment environment, NamespacedKey key, List<Player> players) {
 		Map<String, Answer> answers = new HashMap<>();
+		answers.put("getPlayers", arguments -> players);
 		answers.put("getName", arguments -> name);
 		answers.put("getEnvironment", arguments -> environment);
 		answers.put("getKey", arguments -> key);

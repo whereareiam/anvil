@@ -5,6 +5,7 @@ import me.whereareiam.anvil.capability.worlds.agent.WorldChangeLog;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentLocation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacement;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorld;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
@@ -23,7 +24,8 @@ import java.util.UUID;
 
 /**
  * The levels of a NeoForge server of Minecraft 1.21.1, named by their keys. A level's spawn is the shared spawn the
- * server reports for it, and its kind follows its dimension type.
+ * server reports for it, and its kind follows its dimension type. NeoForge has no API to create or unload a level
+ * while the server runs, so this side refuses both.
  */
 final class NeoForgeWorlds implements ServerWorlds {
 	private final MinecraftServer server;
@@ -69,6 +71,17 @@ final class NeoForgeWorlds implements ServerWorlds {
 		ServerLevel level = level(location.getWorld());
 		player.teleportTo(level, location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
 		return player.serverLevel() == level;
+	}
+
+	@Override
+	public @NotNull AgentWorld create(@NotNull AgentWorldCreation creation) {
+		throw new UnsupportedOperationException("NeoForge has no API to create a level while the server runs; "
+				+ "a mod or data pack adds its dimensions before the server starts");
+	}
+
+	@Override
+	public void unload(@NotNull String key) {
+		throw new UnsupportedOperationException("NeoForge has no API to unload a level while the server runs");
 	}
 
 	/**

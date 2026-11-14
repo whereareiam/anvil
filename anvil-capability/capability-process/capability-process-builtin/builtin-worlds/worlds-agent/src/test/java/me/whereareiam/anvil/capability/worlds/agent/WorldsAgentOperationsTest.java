@@ -14,7 +14,9 @@ import me.whereareiam.anvil.capability.worlds.agent.model.AgentTransfer;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorld;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChanges;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChangesRequest;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldList;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldOutcome;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -28,12 +30,15 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WorldsAgentOperationsTest {
 	private static final UUID ALICE = new UUID(0, 1);
 	private static final AgentLocation SPAWN = location("minecraft:overworld", 0.5, 64, 0.5);
 	private static final AgentLocation ARENA = location("minecraft:arena", 10, 70, -4);
+	private static final AgentWorldCreation DUNGEON = AgentWorldCreation.builder().key("minecraft:dungeon").kind("NETHER")
+			.seed(7L).generator("FLAT").build();
 
 	private final RecordingPlatform platform = new RecordingPlatform();
 	private final RecordingRegistry registry = new RecordingRegistry();
@@ -46,7 +51,8 @@ class WorldsAgentOperationsTest {
 
 		assertEquals("me.whereareiam.anvil.worlds", new Operations().id());
 		assertEquals(List.of("me.whereareiam.anvil.worlds.worlds", "me.whereareiam.anvil.worlds.placements",
-				"me.whereareiam.anvil.worlds.send", "me.whereareiam.anvil.worlds.changes"), List.copyOf(registry.handlers.keySet()));
+				"me.whereareiam.anvil.worlds.send", "me.whereareiam.anvil.worlds.changes", "me.whereareiam.anvil.worlds.create",
+				"me.whereareiam.anvil.worlds.unload"), List.copyOf(registry.handlers.keySet()));
 	}
 
 	@Test
@@ -82,7 +88,12 @@ class WorldsAgentOperationsTest {
 				AgentPlacements.builder().placement(placement(SPAWN)).build(),
 				transfer(ARENA),
 				AgentWorldChangesRequest.builder().log(null).after(3).build(),
-				new WorldChangeLog().since(AgentWorldChangesRequest.builder().after(0).build())
+				new WorldChangeLog().since(AgentWorldChangesRequest.builder().after(0).build()),
+				DUNGEON,
+				AgentWorldCreation.builder().key("minecraft:lobby").kind("OVERWORLD").generator("DEFAULT").build(),
+				AgentWorldOutcome.builder().world(AgentWorld.builder().key("minecraft:dungeon").kind("NETHER").spawn(ARENA).build())
+						.build(),
+				AgentWorldOutcome.builder().refusal("refused").build()
 		);
 
 		for (Object payload : payloads)
@@ -95,6 +106,30 @@ class WorldsAgentOperationsTest {
 		worlds.refuse = true;
 
 		assertFalse(registry.execute(WorldsOperations.SEND, transfer(ARENA)));
+	}
+
+	@Test
+	void createsAndUnloadsWorldsOnThePlatformsThread() throws Exception {
+		install();
+
+		AgentWorld dungeon = AgentWorld.builder().key("minecraft:dungeon").kind("NETHER").spawn(ARENA).build();
+		assertEquals(AgentWorldOutcome.builder().world(dungeon).build(), registry.execute(WorldsOperations.CREATE, DUNGEON));
+		assertEquals(AgentWorldOutcome.builder().build(), registry.execute(WorldsOperations.UNLOAD, "minecraft:dungeon"));
+		assertEquals(List.of("create minecraft:dungeon", "unload minecraft:dungeon"), worlds.changed);
+		assertEquals(2, platform.calls);
+	}
+
+	@Test
+	void answersACreationOrUnloadingThePlatformCannotDoOrTheServerRefusedWithTheReason() throws Exception {
+		install();
+
+		worlds.failure = new UnsupportedOperationException("No API");
+		assertEquals(AgentWorldOutcome.builder().unsupported("No API").build(), registry.execute(WorldsOperations.CREATE, DUNGEON));
+		worlds.failure = new IllegalStateException("Players are in it");
+		assertEquals(AgentWorldOutcome.builder().refusal("Players are in it").build(),
+				registry.execute(WorldsOperations.UNLOAD, "minecraft:dungeon"));
+		worlds.failure = new IllegalArgumentException("Not loaded");
+		assertThrows(IllegalArgumentException.class, () -> registry.execute(WorldsOperations.UNLOAD, "minecraft:dungeon"));
 	}
 
 	private void install() {
@@ -123,7 +158,9 @@ class WorldsAgentOperationsTest {
 
 	private static final class FixedWorlds implements ServerWorlds {
 		private final List<AgentLocation> teleported = new ArrayList<>();
+		private final List<String> changed = new ArrayList<>();
 		private boolean refuse;
+		private RuntimeException failure;
 
 		@Override
 		public @NotNull List<AgentWorld> worlds() {
@@ -141,6 +178,21 @@ class WorldsAgentOperationsTest {
 
 			teleported.add(location);
 			return true;
+		}
+
+		@Override
+		public @NotNull AgentWorld create(@NotNull AgentWorldCreation creation) {
+			if (failure != null) throw failure;
+
+			changed.add("create " + creation.getKey());
+			return AgentWorld.builder().key(creation.getKey()).kind(creation.getKind()).spawn(ARENA).build();
+		}
+
+		@Override
+		public void unload(@NotNull String key) {
+			if (failure != null) throw failure;
+
+			changed.add("unload " + key);
 		}
 	}
 
