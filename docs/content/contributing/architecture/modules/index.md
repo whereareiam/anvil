@@ -163,6 +163,16 @@ A family that reads its processes through their agents, such as dispatch or play
 `<feature>-common` as well: it uses the platform agents' general operations, so it ships nothing into the
 processes.
 
+A process family that needs a platform's own API, such as worlds, ships an agent extension of its own instead.
+`<feature>-agent` is its agent channel: the agent operations and payloads its host provider and platform sides
+share, and the handlers every side answers them with, compiled for the oldest Java a server runs on. Each
+`<feature>-<platform>`, such as `worlds-bukkit` for Paper and Spigot, answers those operations over one agent
+platform's API. The provider declares the channel's JAR and each side's through `agentExtensions()`, and the family
+root brings them to the runtime class path, where Anvil finds them. NeoForge renames Minecraft's names between the
+releases Anvil supports, so `worlds-neoforge` only wires one `release-<minecraft>` part per change, each compiled
+against the first release it serves; every part goes into every NeoForge server, and only the part whose range
+holds the server's Minecraft version installs.
+
 Capability providers share `CapabilityProvider`, `CapabilityContext`, and `CapabilityDescriptor`
 from `capability-api`. Its `RequestChannel` performs a process's typed calls described by `ChannelOperation`; a
 player's channel uses `player-api`'s own `OperationDescriptor`, because capability APIs never reach into the

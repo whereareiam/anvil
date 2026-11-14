@@ -38,6 +38,9 @@ bukkit-cookies = "1.21.1-R0.1-SNAPSHOT"
 velocity = "3.5.1"
 # The oldest NeoForge release the NeoForge agent compiles against.
 neoforge = "21.1.256"
+# The NeoForge release the worlds capability's NeoForge part for Minecraft 1.21.11 on compiles against: the first
+# whose Minecraft names that part uses. The part for 1.21.1 compiles against the agent's release above.
+worldsNeoforge12111 = "21.11.45"
 bungeecord = "26.1-R0.1-SNAPSHOT"
 
 # minecraft protocol

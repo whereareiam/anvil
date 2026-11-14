@@ -1,0 +1,43 @@
+package me.whereareiam.anvil.capability.worlds.agent;
+
+import me.whereareiam.anvil.agent.server.api.PlatformAgent;
+import me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider;
+import me.whereareiam.anvil.agent.server.api.operation.AgentOperationRegistry;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacements;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldList;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * Answers the worlds capability's operations on one platform: each platform side extends it with the
+ * {@link ServerWorlds} of its platform, which it opens once the agent starts, together with the log it records the
+ * platform's world changes in. Every operation that reads or changes a world runs on the platform's own thread.
+ */
+public abstract class WorldsAgentOperations implements AgentOperationProvider {
+	@Override
+	public final @NotNull String id() {
+		return WorldsOperations.NAMESPACE;
+	}
+
+	@Override
+	public final void install(@NotNull PlatformAgent platform, @NotNull AgentOperationRegistry registry) {
+		WorldChangeLog changes = new WorldChangeLog();
+		ServerWorlds worlds = open(platform, changes);
+
+		registry.register(WorldsOperations.WORLDS, (agent, ignored) ->
+				agent.call(() -> AgentWorldList.builder().worlds(worlds.worlds()).build()));
+		registry.register(WorldsOperations.PLACEMENTS, (agent, ignored) ->
+				agent.call(() -> AgentPlacements.builder().placements(worlds.placements()).build()));
+		registry.register(WorldsOperations.SEND, (agent, transfer) ->
+				agent.call(() -> worlds.teleport(transfer.getUniqueId(), transfer.getLocation())));
+		registry.register(WorldsOperations.CHANGES, (agent, request) -> changes.since(request));
+	}
+
+	/**
+	 * Opens the platform's worlds and starts recording its players' world changes.
+	 *
+	 * @param platform the platform agent, whose services reach the platform's API
+	 * @param changes the log to record each world change the platform reports in
+	 * @return the platform's worlds
+	 */
+	protected abstract @NotNull ServerWorlds open(@NotNull PlatformAgent platform, @NotNull WorldChangeLog changes);
+}

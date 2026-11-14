@@ -26,6 +26,52 @@ class CapabilityFamilyTest {
 	}
 
 	@Test
+	fun `reads the agent channel and platform sides of a process family`() {
+		val family = family("worlds", "worlds-api", "worlds-common", "worlds-agent", "worlds-bukkit", "worlds-neoforge",
+			group = PROCESS)
+
+		val read = CapabilityFamily.read(family, listOf("java"), listOf("bukkit", "neoforge", "velocity"))
+
+		assertEquals(
+			CapabilityFamily("worlds", "worlds-api", "worlds-common", listOf(), "worlds-agent",
+				listOf("worlds-bukkit", "worlds-neoforge")),
+			read,
+		)
+		assertEquals(listOf("worlds-api", "worlds-agent", "worlds-bukkit", "worlds-neoforge"), read.published)
+		assertEquals(listOf("bukkit", "neoforge"), read.platforms)
+	}
+
+	@Test
+	fun `requires the agent channel of a process family with platform sides`() {
+		val family = family("worlds", "worlds-api", "worlds-common", "worlds-bukkit", group = PROCESS)
+
+		val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("java"), listOf("bukkit")) }
+
+		assertTrue(failure.message!!.contains("must contain the agent channel 'worlds-agent'"), failure.message)
+	}
+
+	@Test
+	fun `keeps agent members out of player families`() {
+		listOf("movement-agent", "movement-bukkit").forEach { child ->
+			val family = family("movement", "movement-api", child)
+
+			val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("java"), listOf("bukkit")) }
+
+			assertTrue(failure.message!!.contains("found '$child'"), failure.message)
+			family.deleteRecursively()
+		}
+	}
+
+	@Test
+	fun `rejects process family children for platforms without an agent`() {
+		val family = family("worlds", "worlds-api", "worlds-agent", "worlds-folia", group = PROCESS)
+
+		val failure = assertThrows<GradleException> { CapabilityFamily.read(family, listOf("java"), listOf("bukkit")) }
+
+		assertTrue(failure.message!!.contains("agent platforms [bukkit]; found 'worlds-folia'"), failure.message)
+	}
+
+	@Test
 	fun `keeps code out of the root of a process family without common code`() {
 		val family = family("console", "console-api", group = PROCESS)
 		File(family, "src/main/java").mkdirs()

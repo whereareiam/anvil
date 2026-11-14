@@ -6,6 +6,7 @@
     "dispatch",
     "agents",
     "players",
+    "worlds",
     "restarts",
     "kills",
     "freezes"
