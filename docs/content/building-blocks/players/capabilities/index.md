@@ -23,7 +23,8 @@ For the first journey, use Session to connect, the server's
 and check replies. Movement, Inventory, Interaction, Commands, and Dialogs cover additional game actions;
 Cookies holds the cookies a server stores on the client; Screen and Sounds record the titles, action
 bars, boss bars and sounds the server shows and plays, Entities follows the entities the server
-shows it, such as text above a player, and World the dimension the server put the player in.
+shows it, such as text above a player, World the dimension the server put the player in, and Vitals
+the player's health, food and deaths.
 Each capability is optional unless the test or another installed capability requires it.
 
 | Capability | Use it to | Bundled requirement |
@@ -40,6 +41,7 @@ Each capability is optional unless the test or another installed capability requ
 | [Sounds](./sounds/index.md) | Await the sounds the server plays. | MCProtocol and Session |
 | [Entities](./entities/index.md) | Follow the entities the server shows: positions, passengers, names, display text, items and flags. | MCProtocol and Session |
 | [World](./world/index.md) | Read the dimension the player is in, its type, environment and generation, and the server's worlds; await a change. | MCProtocol and Session |
+| [Vitals](./vitals/index.md) | Read health and food, await deaths, and respawn. | MCProtocol and Session |
 
 Packet-backed capabilities operate through the player's protocol library. The built-in capabilities
 are installed on every MCProtocolLib release Anvil ships, from Minecraft 1.16.5 to 26.3,
@@ -65,7 +67,8 @@ plugins {
 
 Keep the repositories, protocol dependency, and `anvil` configuration from
 [installation](../../../getting-started/installation/index.md). The remaining unit suffixes are
-`movement`, `inventory`, `interaction`, `commands`, `dialogs`, `cookies`, `screen`, `sounds`, `entities`, and `world`. Keep unit versions aligned with Anvil.
+`movement`, `inventory`, `interaction`, `commands`, `dialogs`, `cookies`, `screen`, `sounds`, `entities`, `world`, and
+`vitals`. Keep unit versions aligned with Anvil.
 
 ## Retrieve a capability
 

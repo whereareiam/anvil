@@ -13,6 +13,7 @@
     "screen",
     "sounds",
     "entities",
-    "world"
+    "world",
+    "vitals"
   ]
 }
