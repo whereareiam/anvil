@@ -1,0 +1,71 @@
+package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
+
+import me.whereareiam.anvil.protocol.mcprotocol.client.ClientBrand;
+import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
+import org.geysermc.mcprotocollib.network.Session;
+import org.geysermc.mcprotocollib.network.packet.Packet;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.HandPreference;
+import org.geysermc.mcprotocollib.protocol.data.game.setting.ChatVisibility;
+import org.geysermc.mcprotocollib.protocol.data.game.setting.SkinPart;
+import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundClientInformationPacket;
+import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundCustomPayloadPacket;
+import org.geysermc.mcprotocollib.protocol.packet.configuration.clientbound.ClientboundFinishConfigurationPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.ServerboundConfigurationAcknowledgedPacket;
+import org.geysermc.mcprotocollib.protocol.packet.login.serverbound.ServerboundLoginAcknowledgedPacket;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Proxy;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class ClientConfigurationTest {
+	private final List<Packet> sent = new ArrayList<>();
+	private final Session session = session();
+	private final ClientConfiguration configuration = new ClientConfiguration(
+			ClientSettings.builder().locale("de_de").viewDistance(6).build());
+
+	@Test
+	void sendsTheBrandAndThenTheClientInformationWhenTheConfigurationStarts() {
+		configuration.packetSent(session, new ServerboundLoginAcknowledgedPacket());
+
+		assertEquals(List.of(ServerboundCustomPayloadPacket.class, ServerboundClientInformationPacket.class),
+				sent.stream().map(Packet::getClass).toList());
+		ServerboundCustomPayloadPacket brand = (ServerboundCustomPayloadPacket) sent.getFirst();
+		assertEquals(ClientBrand.CHANNEL, brand.getChannel().asString());
+		assertArrayEquals(ClientBrand.payload(), brand.getData());
+
+		ServerboundClientInformationPacket information = (ServerboundClientInformationPacket) sent.get(1);
+		assertEquals("de_de", information.getLocale());
+		assertEquals(6, information.getRenderDistance());
+		assertEquals(ChatVisibility.FULL, information.getChatVisibility());
+		assertTrue(information.isUseChatColors());
+		assertEquals(Arrays.asList(SkinPart.values()), information.getVisibleParts());
+		assertEquals(HandPreference.RIGHT_HAND, information.getMainHand());
+		assertFalse(information.isTextFilteringEnabled());
+		assertTrue(information.isAllowsListing());
+	}
+
+	@Test
+	void sendsNothingWhenTheServerStartsAnotherConfiguration() {
+		configuration.packetSent(session, new ServerboundConfigurationAcknowledgedPacket());
+		configuration.packetReceived(session, new ClientboundFinishConfigurationPacket());
+
+		assertEquals(List.of(), sent);
+	}
+
+	private Session session() {
+		Class<?>[] types = {Session.class};
+		return (Session) Proxy.newProxyInstance(Session.class.getClassLoader(), types, (proxy, method, arguments) -> {
+			if (!method.getName().equals("send")) throw new UnsupportedOperationException(method.getName());
+
+			sent.add((Packet) arguments[0]);
+			return null;
+		});
+	}
+}

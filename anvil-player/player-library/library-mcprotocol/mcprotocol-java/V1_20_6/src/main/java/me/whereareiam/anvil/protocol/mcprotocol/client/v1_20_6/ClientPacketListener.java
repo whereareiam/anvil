@@ -14,12 +14,8 @@ import org.geysermc.mcprotocollib.network.event.session.PacketSendingEvent;
 import org.geysermc.mcprotocollib.network.event.session.SessionAdapter;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.UnexpectedEncryptionException;
-import org.geysermc.mcprotocollib.protocol.data.game.entity.player.HandPreference;
-import org.geysermc.mcprotocollib.protocol.data.game.setting.ChatVisibility;
-import org.geysermc.mcprotocollib.protocol.data.game.setting.SkinPart;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundDisconnectPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundPingPacket;
-import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundClientInformationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundPongPacket;
 import org.geysermc.mcprotocollib.protocol.packet.handshake.serverbound.ClientIntentionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
@@ -31,7 +27,6 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.Serve
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -40,9 +35,8 @@ import java.util.function.Function;
  * them each chunk batch with the rate {@link ChunkBatchPacing} wants next, and reports login, teleports and disconnects
  * with their reason flattened to plain text. The login reports the profile the server granted in its login success,
  * which arrives before the game starts; each release's sessions read that profile, since MCProtocolLib 1.21 replaced
- * mcauthlib's profile with its own. Like a vanilla client, it sends the player's
- * settings, its language among them, at the start of the configuration, so the server knows them before the player
- * joins.
+ * mcauthlib's profile with its own. The brand and the player's settings, its language among them, go out at the start
+ * of the configuration through the release's {@link ConfigurationStart}.
  */
 @RequiredArgsConstructor
 public final class ClientPacketListener extends SessionAdapter {
@@ -71,22 +65,12 @@ public final class ClientPacketListener extends SessionAdapter {
 	 */
 	private final ChunkBatchPacing chunkBatches = new ChunkBatchPacing();
 	private volatile ClientProfile granted;
-	private volatile boolean settingsDue;
 
 	@Override
 	public void packetReceived(Session session, Packet packet) {
-		if (settingsDue) {
-			// The server's first packet after the login success is a configuration packet, so MCProtocolLib, whose own
-			// listener may run after this one, has entered the configuration by now; the settings answer it before the
-			// configuration ends, which a server waits for before the player joins.
-			settingsDue = false;
-			session.send(new ServerboundClientInformationPacket(login.getSettings().getLocale(), login.getSettings().getViewDistance(),
-					ChatVisibility.FULL, true, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, false, true));
-		}
 		if (packet instanceof ClientboundGameProfilePacket success) {
 			granted = profiles.apply(success);
 			listener.granted(session, granted);
-			settingsDue = true;
 		}
 		if (packet instanceof ClientboundLoginPacket)
 			listener.loggedIn(session, Objects.requireNonNull(granted, "The server started the game before it granted a profile"));

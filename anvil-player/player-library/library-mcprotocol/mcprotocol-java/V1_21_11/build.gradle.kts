@@ -18,6 +18,8 @@ segment {
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SoundPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.TextTranslator",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.WorldPackets",
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.ClientConfiguration",
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.ClientProtocol",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.InteractionPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.TcpClientSessions",
 	)
