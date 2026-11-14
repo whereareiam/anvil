@@ -9,6 +9,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
 import org.geysermc.mcprotocollib.network.ClientSession;
+import org.geysermc.mcprotocollib.network.event.session.SessionListener;
 import org.geysermc.mcprotocollib.protocol.packet.login.serverbound.ServerboundCustomQueryAnswerPacket;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -71,6 +73,21 @@ class NetworkClientSessionsTest {
 
 			assertEquals("SERVER anvil:kicked", disconnect.get(5, TimeUnit.SECONDS));
 		}
+	}
+
+	@Test
+	void startsTheConfigurationAfterTheLibrarysOwnListener() {
+		ClientSession session = new NetworkClientSessions(new TextTranslator(), TeleportListener::new)
+				.open(login(25565), new DisconnectListener(new CompletableFuture<>()), McProtocolClientAdapter.packets());
+
+		session.getPacketProtocol().newClientSession(session);
+
+		// MCProtocolLib's own listener shares its simple name with Anvil's client listener.
+		List<Class<?>> listeners = session.getListeners().stream()
+				.<Class<?>>map(SessionListener::getClass)
+				.toList();
+		assertEquals(List.of(TeleportListener.class, ClientPacketListener.class,
+				org.geysermc.mcprotocollib.protocol.ClientListener.class, ClientConfiguration.class), listeners);
 	}
 
 	private static ClientLogin login(int port) {
