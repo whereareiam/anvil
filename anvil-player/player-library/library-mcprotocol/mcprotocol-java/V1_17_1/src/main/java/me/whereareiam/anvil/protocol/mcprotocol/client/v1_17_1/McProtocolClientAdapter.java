@@ -10,7 +10,6 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.PlayerPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.SoundPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.TextTranslator;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.WorldPackets;
 
 import java.util.List;
 

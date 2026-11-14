@@ -9,7 +9,6 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.PlayerPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ScreenPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.TextTranslator;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.WorldPackets;
 
 import java.util.List;
 

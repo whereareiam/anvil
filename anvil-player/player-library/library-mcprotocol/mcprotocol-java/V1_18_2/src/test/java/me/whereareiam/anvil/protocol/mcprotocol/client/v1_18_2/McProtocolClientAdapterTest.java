@@ -37,6 +37,10 @@ import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetAction
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleText;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
+import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
+import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundInitializeBorder;
+import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetDefaultSpawnPosition;
+import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetTime;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -159,6 +163,10 @@ class McProtocolClientAdapterTest {
 		assertFalse(client.supports(ClientboundStartConfiguration.class));
 		assertFalse(client.supports(ClientboundShowDialog.class));
 		assertFalse(client.supports(ServerboundCustomClickAction.class));
+		assertTrue(client.supports(ClientboundSetTime.class));
+		assertTrue(client.supports(ClientboundGameEvent.class));
+		assertTrue(client.supports(ClientboundInitializeBorder.class));
+		assertTrue(client.supports(ClientboundSetDefaultSpawnPosition.class));
 		assertFalse(client.supports(UnknownPacket.class));
 	}
 

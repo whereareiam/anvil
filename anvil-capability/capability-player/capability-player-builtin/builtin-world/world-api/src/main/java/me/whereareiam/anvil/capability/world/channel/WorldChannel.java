@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.capability.world.model.DimensionChange;
 import me.whereareiam.anvil.capability.world.model.ServerInfo;
+import me.whereareiam.anvil.capability.world.model.WorldState;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 
 /**
@@ -31,4 +32,9 @@ public final class WorldChannel {
 	 * no server afterwards.
 	 */
 	public static final EventDescriptor<String> LEFT = new EventDescriptor<>("world.left", String.class);
+	/**
+	 * What the player's current connection was told about the world around its level changed, with the whole state
+	 * afterwards.
+	 */
+	public static final EventDescriptor<WorldState> STATE = new EventDescriptor<>("world.state", WorldState.class);
 }

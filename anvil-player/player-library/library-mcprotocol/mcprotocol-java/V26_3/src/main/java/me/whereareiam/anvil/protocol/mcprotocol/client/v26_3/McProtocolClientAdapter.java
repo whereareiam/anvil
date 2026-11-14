@@ -12,8 +12,8 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.NetworkClientSes
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.PlayerPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.SoundPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.TextTranslator;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.WorldPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2.HealthPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2.WorldPackets;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 
@@ -40,10 +40,11 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 	 * @return the 26.1 translations with this release's configuration, entity and interaction translations
 	 */
 	static PacketTable<Packet> packets() {
-		// The connection translation reads the dimension types of the registry data before the configuration
-		// translation decodes it.
+		// The connection and world translations read the dimension types and world clocks of the registry data before
+		// the configuration translation decodes it.
 		return new PacketTable<>(List.of(
 				new ConnectionPackets(),
+				new WorldPackets(),
 				new ChatPackets(TEXT),
 				new CommandPackets(),
 				new ConfigurationPackets(),
@@ -55,8 +56,7 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 				new InventoryPackets(TEXT),
 				new PlayerPackets(),
 				new ScreenPackets(TEXT),
-				new SoundPackets(),
-				new WorldPackets()
+				new SoundPackets()
 		));
 	}
 }

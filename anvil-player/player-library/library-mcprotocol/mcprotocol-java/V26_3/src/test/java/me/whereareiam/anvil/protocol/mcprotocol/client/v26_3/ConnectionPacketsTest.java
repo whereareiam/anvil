@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * The release's registry entries carry any tag as their data, and the release's packet table reads a dimension type's
@@ -31,8 +32,25 @@ class ConnectionPacketsTest {
 				new RegistryEntry(Key.key("example:void"), NbtMap.builder().putString("effects", "minecraft:the_nether").build())
 		)));
 
-		assertEquals(DimensionType.withEffects("minecraft:the_end", "minecraft:the_end"), respawnInto(0).getDimensionType());
+		assertEquals(DimensionType.withEffects("minecraft:the_end", "minecraft:the_end").withDefaultClock("minecraft:the_end"),
+				respawnInto(0).getDimensionType());
 		assertEquals(DimensionType.withEffects("example:void", "minecraft:the_nether"), respawnInto(1).getDimensionType());
+	}
+
+	@Test
+	void readsTheClockADescriptionNamesAndTheClockOfAVanillaTypeWithoutOne() {
+		packets.decode(new ClientboundRegistryDataPacket(Key.key("minecraft:dimension_type"), List.of(
+				new RegistryEntry(Key.key("minecraft:overworld"), null),
+				new RegistryEntry(Key.key("minecraft:the_nether"), null),
+				new RegistryEntry(Key.key("example:void"), NbtMap.builder()
+						.putString("skybox", "end")
+						.putString("default_clock", "example:slow")
+						.build())
+		)));
+
+		assertEquals("minecraft:overworld", respawnInto(0).getDimensionType().getDefaultClock());
+		assertNull(respawnInto(1).getDimensionType().getDefaultClock());
+		assertEquals("example:slow", respawnInto(2).getDimensionType().getDefaultClock());
 	}
 
 	private ClientboundRespawn respawnInto(int type) {

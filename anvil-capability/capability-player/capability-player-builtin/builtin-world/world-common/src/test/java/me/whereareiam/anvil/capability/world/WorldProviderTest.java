@@ -44,8 +44,8 @@ class WorldProviderTest {
 		RecordingChannel channel = new RecordingChannel();
 		World world = new WorldProvider().create(new ChannelContext(channel));
 
-		assertEquals(List.of(WorldChannel.SERVER.getId(), WorldChannel.DIMENSION.getId(), WorldChannel.LEFT.getId()),
-				channel.subscriptions);
+		assertEquals(List.of(WorldChannel.SERVER.getId(), WorldChannel.DIMENSION.getId(), WorldChannel.LEFT.getId(),
+				WorldChannel.STATE.getId()), channel.subscriptions);
 		assertTrue(channel.requests.isEmpty());
 		assertTrue(world.dimension().isEmpty());
 	}
