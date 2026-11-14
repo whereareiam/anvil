@@ -5,7 +5,6 @@ import me.whereareiam.anvil.agent.client.ProcessAgentClient;
 import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
 import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.exception.ProcessException;
-import me.whereareiam.anvil.api.model.workspace.WorkspaceAsset;
 import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
@@ -13,6 +12,7 @@ import me.whereareiam.anvil.environment.execution.api.preparation.PreparedLaunch
 import me.whereareiam.anvil.environment.execution.api.preparation.PreparedProcess;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.PreparedWorkspace;
+import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceRefresh;
 import me.whereareiam.anvil.platform.api.PlatformPreparer;
 import me.whereareiam.anvil.platform.api.model.PlatformRequest;
 import me.whereareiam.anvil.platform.api.model.ProcessPlan;
@@ -20,12 +20,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.function.Supplier;
 
 /**
  * Retains prepared workspace ownership while refreshing its assets and creating fresh platform configuration for
- * each generation. The assets come from their current sources, which the workbench holds copies of.
+ * each generation. The workspace is refreshed with the current sources of its assets, which the workbench holds copies
+ * of.
  */
 @RequiredArgsConstructor
 final class PreparedPlatformProcess implements PreparedProcess {
@@ -33,7 +33,7 @@ final class PreparedPlatformProcess implements PreparedProcess {
 	private final @NotNull PlatformRequest request;
 	private final @NotNull PlatformPreparer platforms;
 	private final @NotNull PreparedWorkspace workspace;
-	private final @NotNull Supplier<List<WorkspaceAsset>> assets;
+	private final @NotNull Supplier<WorkspaceRefresh> refresh;
 	private final @NotNull JavaCommand command;
 	private final @NotNull ProcessTarget target;
 	private final @NotNull AgentConnectionProvider connections;
@@ -43,7 +43,7 @@ final class PreparedPlatformProcess implements PreparedProcess {
 
 	@Override
 	public @NotNull PreparedLaunch launch() {
-		workspace.beforeStart(assets.get());
+		workspace.refresh(refresh.get());
 		try {
 			platforms.configure(plan, request);
 		} catch (IOException failure) {

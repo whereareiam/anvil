@@ -14,6 +14,8 @@ import me.whereareiam.anvil.api.type.CachePolicy;
 import me.whereareiam.anvil.api.type.CleanupPhase;
 import me.whereareiam.anvil.api.type.WorkspaceMode;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.PreparedWorkspace;
+import me.whereareiam.anvil.environment.provisioning.workspace.api.model.AssetRefresh;
+import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceRefresh;
 import me.whereareiam.anvil.environment.provisioning.workspace.directory.WorkspaceFiles;
 import me.whereareiam.anvil.environment.provisioning.workspace.snapshot.WorkspaceSnapshotCache;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +28,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.UnaryOperator;
 
 /**
@@ -108,36 +112,42 @@ public final class WorkspaceSession implements PreparedWorkspace {
 	}
 
 	/**
-	 * Installs the assets again from their current sources before every start but the first, which preparation
+	 * Installs the assets again from their current sources before every generation but the first, which preparation
 	 * already installed for.
 	 */
 	@Override
-	public synchronized void beforeStart(@NotNull List<WorkspaceAsset> assets) {
+	public synchronized void refresh(@NotNull WorkspaceRefresh refresh) {
 		if (finalized) throw new IllegalStateException("Workspace is finalized: " + workspace);
-		List<WorkspaceAsset> current = new WorkspacePlanValidator(files)
-				.validate(WorkspacePlan.builder().assets(assets).build(), List.of())
-				.getAssets();
-		requirePlanned(current);
+		List<WorkspaceAsset> assets = current(refresh);
 		if (!started) {
 			started = true;
 			return;
 		}
 
-		installAssets(current);
+		installAssets(assets);
 	}
 
 	/**
-	 * Requires assets with the prepared plan's targets and install modes, in its order.
+	 * Returns the plan's assets, each with the source the refresh names for its target.
 	 */
-	private void requirePlanned(List<WorkspaceAsset> current) {
-		List<WorkspaceAsset> planned = plan.getAssets();
-		boolean same = current.size() == planned.size();
-		for (int index = 0; same && index < current.size(); index++)
-			same = current.get(index).getTarget().normalize().equals(planned.get(index).getTarget().normalize())
-					&& current.get(index).getMode() == planned.get(index).getMode();
-		if (!same)
-			throw new IllegalArgumentException("A start must install the prepared plan's assets, with only their sources "
-					+ "changed: " + workspace);
+	private List<WorkspaceAsset> current(WorkspaceRefresh refresh) {
+		Map<Path, AssetSource> sources = new LinkedHashMap<>();
+		for (AssetRefresh asset : refresh.getAssets()) {
+			Path target = files.resolveRelative(workspace, asset.getTarget(), "Asset target");
+			if (sources.put(target, asset.getSource()) != null)
+				throw new IllegalArgumentException("The refresh names the asset target " + asset.getTarget() + " twice");
+		}
+
+		List<WorkspaceAsset> assets = new ArrayList<>();
+		for (WorkspaceAsset planned : plan.getAssets()) {
+			AssetSource source = sources.remove(files.resolveRelative(workspace, planned.getTarget(), "Asset target"));
+			assets.add(source == null ? planned : planned.toBuilder().source(source).build());
+		}
+		if (!sources.isEmpty())
+			throw new IllegalArgumentException("The workspace's plan has no asset at " + sources.keySet() + ": " + workspace);
+
+		return new WorkspacePlanValidator(files).validate(WorkspacePlan.builder().assets(assets).build(), List.of())
+				.getAssets();
 	}
 
 	/**

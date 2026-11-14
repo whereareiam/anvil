@@ -19,7 +19,9 @@ import me.whereareiam.anvil.environment.execution.api.preparation.PreparedProces
 import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.PreparedWorkspace;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.WorkspaceProvisioner;
+import me.whereareiam.anvil.environment.provisioning.workspace.api.model.AssetRefresh;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceLayout;
+import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceRefresh;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceRequest;
 import me.whereareiam.anvil.platform.api.PlatformPreparer;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
@@ -100,7 +102,7 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 					request,
 					platforms,
 					workspace,
-					() -> stored(planned.getWorkspace()).getAssets(),
+					() -> refresh(planned.getWorkspace()),
 					command,
 					target,
 					connections,
@@ -120,8 +122,7 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 
 	/**
 	 * Hands the files a workspace copies from the engine's machine, such as plugin JARs and the platform agent, to
-	 * the workbench, and points the assets at the workbench's copies. Every start of the process does it again, so a
-	 * file rebuilt since reaches the workbench before the start installs it.
+	 * the workbench, and points the assets at the workbench's copies.
 	 */
 	private WorkspacePlan stored(WorkspacePlan plan) {
 		List<WorkspaceAsset> assets = plan.getAssets().stream()
@@ -131,6 +132,19 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 				.toList();
 
 		return plan.toBuilder().clearAssets().assets(assets).build();
+	}
+
+	/**
+	 * Hands the workbench the current content of every file asset again, before each generation, so a file rebuilt
+	 * since preparation reaches it.
+	 */
+	private WorkspaceRefresh refresh(WorkspacePlan plan) {
+		WorkspaceRefresh.WorkspaceRefreshBuilder refresh = WorkspaceRefresh.builder();
+		for (WorkspaceAsset asset : plan.getAssets())
+			if (asset.getSource().isPath())
+				refresh.asset(new AssetRefresh(asset.getTarget(), AssetSource.path(workbench.store(asset.getSource().getPath()))));
+
+		return refresh.build();
 	}
 
 	private ContainerProcess container(String name) {

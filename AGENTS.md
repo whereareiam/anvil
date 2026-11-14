@@ -463,11 +463,13 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   concurrently within configured limits. Configure each process during its start, including the first
   start and every restart; independent configurations may overlap and must use the supplied process
   workspace and planned shared values. Preparation owns reusable inputs, not launch resources.
-  `PreparedWorkspace.beforeStart` runs before every start: preparation installed the assets for the first one,
-  and each later start installs them again, so `ALWAYS` assets come from their current sources and a missing
-  `SEED_ONCE` asset is reseeded. Caches restore and cleanups run only at preparation and finalization. The
-  launcher hands each start the scenario's assets stored through `Workbench.store` again, so a file rebuilt on the
-  engine's machine reaches a workbench on another machine; a start's assets keep the plan's targets and modes.
+  `PreparedWorkspace.refresh(WorkspaceRefresh)` runs before every generation: preparation installed the assets for
+  the first one, and each later generation installs them again, so `ALWAYS` assets come from their current sources
+  and a missing `SEED_ONCE` asset is reseeded. Caches restore and cleanups run only at preparation and finalization.
+  `WorkspaceRefresh` is a typed model with one member per thing a generation may need that changed since
+  preparation; today its `AssetRefresh` entries name each file asset's current source by target, which the launcher
+  stores through `Workbench.store` again, so a file rebuilt on the engine's machine reaches a workbench on another
+  machine. Add a member for a new need rather than another method or workbench request.
 - Agents bind to loopback and authenticate with per-run random tokens. Non-loopback game listeners
   require a manual scenario and explicit LAN opt-in.
 - Global `ScenarioFactory.create` acquires a context without starting processes. The core engine builder

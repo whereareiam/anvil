@@ -16,6 +16,8 @@ import me.whereareiam.anvil.environment.execution.api.model.process.ProcessReque
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.PreparedWorkspace;
+import me.whereareiam.anvil.environment.provisioning.workspace.api.model.AssetRefresh;
+import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceRefresh;
 import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceRequest;
 import me.whereareiam.anvil.workbench.api.exception.WorkbenchException;
 import me.whereareiam.anvil.workbench.api.model.JavaMainLaunch;
@@ -40,7 +42,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -104,7 +105,7 @@ class RemoteWorkbenchIntegrationTest {
 	}
 
 	@Test
-	void installsAPluginRebuiltOnTheEnginesMachineWhenItsProcessStartsAgain() throws Exception {
+	void installsAPluginRebuiltOnTheEnginesMachineInTheNextGeneration() throws Exception {
 		try (RemoteWorkbench workbench = RemoteWorkbench.connect(pairing)) {
 			Path plugin = Files.writeString(temporary.resolve("plugin.jar"), "built");
 			WorkspaceAsset asset = WorkspaceAsset.builder()
@@ -124,21 +125,30 @@ class RemoteWorkbenchIntegrationTest {
 							.build())
 					.plan(WorkspacePlan.builder().asset(stored(workbench, asset)).build())
 					.build())) {
-				prepared.beforeStart(List.of(stored(workbench, asset)));
+				prepared.refresh(refresh(workbench, asset));
 				Files.writeString(plugin, "rebuilt");
-				assertEquals("built", files.read("plugins/plugin.jar"), "The first start uses the prepared copy");
+				assertEquals("built", files.read("plugins/plugin.jar"), "The first generation uses the prepared copy");
 
-				prepared.beforeStart(List.of(stored(workbench, asset)));
+				prepared.refresh(refresh(workbench, asset));
 				assertEquals("rebuilt", files.read("plugins/plugin.jar"));
 			}
 		}
 	}
 
 	/**
-	 * Points an asset at the workbench's copy of its file, as the launcher does before every start.
+	 * Points an asset at the workbench's copy of its file, as the launcher does when it prepares the workspace.
 	 */
 	private static WorkspaceAsset stored(RemoteWorkbench workbench, WorkspaceAsset asset) {
 		return asset.toBuilder().source(AssetSource.path(workbench.store(asset.getSource().getPath()))).build();
+	}
+
+	/**
+	 * Hands the workbench the current content of an asset's file, as the launcher does before every generation.
+	 */
+	private static WorkspaceRefresh refresh(RemoteWorkbench workbench, WorkspaceAsset asset) {
+		return WorkspaceRefresh.builder()
+				.asset(new AssetRefresh(asset.getTarget(), stored(workbench, asset).getSource()))
+				.build();
 	}
 
 	@Test
