@@ -6,12 +6,14 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.CommandPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConnectionPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.CookiePackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.EntityPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.HealthPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.InventoryPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.PlayerPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ScreenPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SoundPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.TextTranslator;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.WorldPackets;
 import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 
@@ -44,11 +46,13 @@ public final class McProtocolClientAdapter extends JavaClient<Session> {
 				new ConnectionPackets(),
 				new CookiePackets(),
 				new EntityPackets(TEXT),
+				new HealthPackets(TEXT),
 				new InteractionPackets(),
 				new InventoryPackets(TEXT),
 				new PlayerPackets(),
 				new ScreenPackets(TEXT),
-				new SoundPackets()
+				new SoundPackets(),
+				new WorldPackets()
 		));
 	}
 }

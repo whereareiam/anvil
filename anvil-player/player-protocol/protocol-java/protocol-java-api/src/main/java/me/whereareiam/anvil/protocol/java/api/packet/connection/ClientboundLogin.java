@@ -11,8 +11,8 @@ import java.util.List;
 
 /**
  * The server lets the player join the game, after login or configuration, and the client replaces its screens with
- * the level. The protocol models the player's entity ID, the server's levels, whether it is hardcore, and the level
- * the player joins of the packet's fields.
+ * the level. The protocol models the player's entity ID, the server's levels, whether it is hardcore, the level the
+ * player joins and whether the client shows a death screen of the packet's fields.
  */
 @Value
 @Builder
@@ -46,4 +46,11 @@ public class ClientboundLogin implements ClientboundPacket {
 	 * Whether the level is a superflat world, which the client renders with a lower horizon.
 	 */
 	boolean flat;
+	/**
+	 * Whether the client shows the death screen when the player dies, until the server changes it with the
+	 * {@code IMMEDIATE_RESPAWN} game event. A server whose immediate-respawn rule is on sends {@code false}, and the
+	 * client then respawns at once by itself. A login built without it shows the death screen.
+	 */
+	@Builder.Default
+	boolean showDeathScreen = true;
 }

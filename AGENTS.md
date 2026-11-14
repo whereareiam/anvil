@@ -166,7 +166,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   remember the types of the session's entities: entity data is decoded by entity type from the release's
   `EntityDataLayout`, never by guessing from value types. Release quirks stay in the segments: where releases say the
   same thing in different packets, every release reports the current packet (spawns as `ClientboundAddEntity`, the
-  player's own inventory slots as `ClientboundSetPlayerInventory`, named sounds as `ClientboundSound`), and the
+  player's own inventory slots as `ClientboundSetPlayerInventory`, named sounds as `ClientboundSound`, the player's
+  death as `ClientboundPlayerCombatKill`), and the
   current packet a feature sends reaches an older release in that release's form (`ServerboundAttack` as the attack
   action of the interact packet). A release without a packet leaves it out of the table; a feature checks `supports`,
   or `JavaProtocol.require` throws `ProtocolUnavailableException` when it cannot work without some packets. Features

@@ -51,6 +51,7 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 					.dimensionType(type(login.getDimension()))
 					.debug(login.isDebug())
 					.flat(login.isFlat())
+					.showDeathScreen(login.isEnableRespawnScreen())
 					.build();
 		}
 		if (packet instanceof ClientboundRespawnPacket respawn)

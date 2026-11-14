@@ -32,11 +32,13 @@ public final class McProtocolClientAdapter extends JavaClient<Session> {
 				new ConnectionPackets(),
 				new CookiePackets(),
 				new EntityPackets(TEXT),
+				new HealthPackets(TEXT),
 				new InteractionPackets(),
 				new InventoryPackets(TEXT),
 				new PlayerPackets(),
 				new ScreenPackets(TEXT),
-				new SoundPackets()
+				new SoundPackets(),
+				new WorldPackets()
 		));
 	}
 }

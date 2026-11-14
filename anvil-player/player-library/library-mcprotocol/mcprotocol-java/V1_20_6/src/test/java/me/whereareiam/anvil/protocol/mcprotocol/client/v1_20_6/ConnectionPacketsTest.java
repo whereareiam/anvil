@@ -39,8 +39,9 @@ class ConnectionPacketsTest {
 				.dimension("minecraft:arena")
 				.dimensionType(DimensionType.withEffects("example:void", "minecraft:the_end"))
 				.flat(true)
+				.showDeathScreen(false)
 				.build(), packets.decode(new ClientboundLoginPacket(42, true,
-				new Key[]{Key.key("minecraft", "overworld"), Key.key("minecraft", "arena")}, 20, 10, 10, false, true, false,
+				new Key[]{Key.key("minecraft", "overworld"), Key.key("minecraft", "arena")}, 20, 10, 10, false, false, false,
 				spawnIn(Key.key("minecraft", "arena"), 2, false, true), false)));
 	}
 
