@@ -1,10 +1,14 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5;
 
+import com.github.steveice10.mc.protocol.data.game.entity.player.Animation;
+import com.github.steveice10.mc.protocol.data.game.entity.player.Hand;
 import com.github.steveice10.mc.protocol.packet.handshake.client.HandshakePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.ClientPluginMessagePacket;
+import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerSwingArmPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.world.ClientTeleportConfirmPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerDisconnectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerJoinGamePacket;
+import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityAnimationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerPositionRotationPacket;
 import com.github.steveice10.mc.protocol.packet.login.server.EncryptionRequestPacket;
 import com.github.steveice10.mc.protocol.packet.login.server.LoginDisconnectPacket;
@@ -29,7 +33,8 @@ import java.util.Objects;
 
 /**
  * Answers the packets a client of the MCProtocolLib releases from 1.16.5 until 1.17.1 must answer on its own and
- * reports login, teleports and disconnects with their reason flattened to plain text. The login reports the profile the
+ * reports login, teleports and disconnects with their reason flattened to plain text. Like the vanilla client, it
+ * swings back the arm the server swings of the player's own entity. The login reports the profile the
  * server granted in its login success, which arrives before the game starts. A vanilla client of these releases answers
  * the game's start with its client information, which the release's {@link ClientAnswers} build, followed by its
  * {@link ClientBrand}; the answers also acknowledge what the release must acknowledge.
@@ -48,6 +53,10 @@ final class ClientPacketListener extends SessionAdapter {
 	private final ComponentTranslator text;
 	private volatile ClientProfile granted;
 	private volatile boolean authenticationRequired;
+	/**
+	 * The protocol ID of the player's own entity, which the game's start names before the server animates it.
+	 */
+	private volatile int entityId;
 
 	@Override
 	public void packetReceived(PacketReceivedEvent event) {
@@ -61,7 +70,8 @@ final class ClientPacketListener extends SessionAdapter {
 					.build();
 			listener.granted(session, granted);
 		}
-		if (packet instanceof ServerJoinGamePacket) {
+		if (packet instanceof ServerJoinGamePacket join) {
+			entityId = join.getEntityId();
 			session.send(answers.clientInformation(login.getSettings()));
 			session.send(new ClientPluginMessagePacket(ClientBrand.CHANNEL, ClientBrand.payload()));
 			listener.loggedIn(session,
@@ -71,6 +81,8 @@ final class ClientPacketListener extends SessionAdapter {
 			listener.teleported(session, position.getYaw(), position.getPitch());
 			session.send(new ClientTeleportConfirmPacket(position.getTeleportId()));
 		}
+		if (packet instanceof ServerEntityAnimationPacket animation && animation.getEntityId() == entityId)
+			swingBack(session, animation.getAnimation());
 		if (packet instanceof ServerDisconnectPacket disconnect)
 			listener.disconnected(session, DisconnectCause.SERVER, text.translate(disconnect.getReason()).plain());
 		if (packet instanceof LoginDisconnectPacket disconnect)
@@ -80,6 +92,16 @@ final class ClientPacketListener extends SessionAdapter {
 
 		ClientboundPacket translated = packets.decode(packet);
 		if (translated != null) listener.received(session, translated);
+	}
+
+	/**
+	 * Swings back the arm the server swings of the player's own entity, as the vanilla client's own swing does, which
+	 * tells the server. The library names the off hand's swing, animation 3, after the eating it stood for before
+	 * Minecraft 1.9.
+	 */
+	private static void swingBack(Session session, Animation animation) {
+		if (animation == Animation.SWING_ARM) session.send(new ClientPlayerSwingArmPacket(Hand.MAIN_HAND));
+		if (animation == Animation.EAT_FOOD) session.send(new ClientPlayerSwingArmPacket(Hand.OFF_HAND));
 	}
 
 	/**

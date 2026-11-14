@@ -44,7 +44,7 @@ class NetworkClientSessionsTest {
 	void reportsTheServersReasonWhenAnAnswerFailsAfterTheServerClosed() throws Exception {
 		CompletableFuture<String> disconnect = new CompletableFuture<>();
 		try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
-			NetworkClientSessions sessions = new NetworkClientSessions(new TextTranslator(), TeleportListener::new);
+			NetworkClientSessions sessions = new NetworkClientSessions(new TextTranslator(), ReleaseAnswers::new);
 			ClientSession session = sessions.open(login(server.getLocalPort()), new DisconnectListener(disconnect),
 					McProtocolClientAdapter.packets());
 			sessions.connect(session);
@@ -77,7 +77,7 @@ class NetworkClientSessionsTest {
 
 	@Test
 	void startsTheConfigurationAfterTheLibrarysOwnListener() {
-		ClientSession session = new NetworkClientSessions(new TextTranslator(), TeleportListener::new)
+		ClientSession session = new NetworkClientSessions(new TextTranslator(), ReleaseAnswers::new)
 				.open(login(25565), new DisconnectListener(new CompletableFuture<>()), McProtocolClientAdapter.packets());
 
 		session.getPacketProtocol().newClientSession(session);
@@ -86,7 +86,7 @@ class NetworkClientSessionsTest {
 		List<Class<?>> listeners = session.getListeners().stream()
 				.<Class<?>>map(SessionListener::getClass)
 				.toList();
-		assertEquals(List.of(TeleportListener.class, ClientPacketListener.class,
+		assertEquals(List.of(ReleaseAnswers.class, ClientPacketListener.class,
 				org.geysermc.mcprotocollib.protocol.ClientListener.class, ClientConfiguration.class), listeners);
 	}
 
