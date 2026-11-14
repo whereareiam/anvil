@@ -87,7 +87,9 @@ rather than by joining strings, so that values are quoted and escaped correctly.
 
 The default `AssetInstallMode.ALWAYS` replaces the target before every process start: when the
 workspace is prepared, and again whenever the process starts after a stop or restart. A restart
-therefore picks up a plugin JAR rebuilt since the scenario started. For a directory source, replacement removes the existing target directory first, so files absent from the
+therefore picks up a plugin JAR rebuilt since the scenario started, also on a workbench on another
+machine: before every start, Anvil hands the workbench the current content of each file asset again,
+and the workbench installs that copy. For a directory source, replacement removes the existing target directory first, so files absent from the
 source are not preserved. Choose `SEED_ONCE` when existing generated state should survive; see
 [persistent workspaces](../persistence/index.md).
 

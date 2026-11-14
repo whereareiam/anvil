@@ -89,7 +89,7 @@ final class ProvisioningOperations {
 				yield new PreparedWorkspaceHandle(handles.register(owner, prepared, () -> prepared.finish(false)), prepared.workspace());
 			}
 			case StartWorkspace start -> {
-				handles.get(owner, start.getHandle(), PreparedWorkspace.class).beforeStart();
+				handles.get(owner, start.getHandle(), PreparedWorkspace.class).beforeStart(start.getAssets());
 				yield new Done();
 			}
 			case FinishWorkspace finish -> {
