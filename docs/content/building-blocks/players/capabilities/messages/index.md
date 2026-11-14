@@ -36,6 +36,26 @@ the reply it documents. Commands accept either a leading slash or no slash. Publ
 protocol has no command packet, so the server runs a `chat` text that starts with `/` as a command;
 use `command(...)` whenever you mean a command, so the step behaves the same on every version.
 
+## When the server refuses chat and commands
+
+`chat(...)` and `command(...)` return once the player sent the message; the server decides what happens to it.
+Two of its rules catch tests that send chat:
+
+- A server refuses the chat and commands of a player that died and has not respawned. It runs nothing and shows
+  the player a refusal instead, `chat.disabled.options` on current releases, one for each message. A real client
+  respawns from the death screen, but a simulated player cannot respawn, and reconnecting does not help, because
+  the server saves the player dead. Keep a player that sends chat alive: spawn it where it cannot fall or take
+  damage, or protect it from your plugin when it joins.
+- A server kicks a player who is not an operator for spam, with the reason `disconnect.spam`, when it sends more
+  than about ten chat messages or commands within a second: each one adds 20 to a counter that drops by one every
+  tick, and the server kicks at 200. Make the player an operator, wait for each reply before the next step, or run
+  repeated setup through the console. `Session.state().kickReason()` names the kick, and the next send fails because
+  the player is no longer connected.
+
+The server runs a player's commands in the order they arrive, but Paper and Spigot handle chat on several threads, so
+chat messages sent in quick succession may reach other players, and the sender's own chat, in another order. When a reply
+does not arrive, look for a refusal in `history()` before you retry.
+
 ## Read what the chat showed
 
 Each chat message the player's chat shows becomes one history entry: player chat, system messages and, on

@@ -41,13 +41,29 @@ public final class FixtureServer {
 	 * @return the connected player
 	 */
 	public @NotNull SimulatedPlayer join(@NotNull String language) {
+		SimulatedPlayer player = connect(language);
+		player.capability(Messages.class).received("anvil:welcome", TIMEOUT);
+
+		return player;
+	}
+
+	/**
+	 * Creates a player with a name no earlier test of this run used and connects it, without waiting for anything the
+	 * server sends after the login.
+	 *
+	 * @return the connected player
+	 */
+	public @NotNull SimulatedPlayer connect() {
+		return connect(PlayerOptions.DEFAULT_LANGUAGE);
+	}
+
+	private @NotNull SimulatedPlayer connect(@NotNull String language) {
 		SimulatedPlayer player = anvil.players().create(PlayerOptions.builder()
 				.name("Player" + PLAYERS.incrementAndGet())
 				.language(language)
 				.build());
 		player.capability(Session.class).connect();
 		player.capability(Session.class).connected(TIMEOUT);
-		player.capability(Messages.class).received("anvil:welcome", TIMEOUT);
 
 		return player;
 	}
