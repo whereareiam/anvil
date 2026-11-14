@@ -21,7 +21,7 @@ import java.util.List;
 
 /**
  * The client segment's adapter for the MCProtocolLib 26.3 release: the chain's {@link JavaClient} with the 1.21.11
- * network sessions, which answer teleports through this release's {@link TeleportListener}, and the 26.1 packet table
+ * network sessions, which answer teleports through this release's {@link ReleaseAnswers}, and the 26.1 packet table
  * with this release's configuration, entity and interaction translations.
  */
 public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
@@ -31,7 +31,7 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 	 * Creates the client of the MCProtocolLib 26.3 release.
 	 */
 	public McProtocolClientAdapter() {
-		super(new NetworkClientSessions(TEXT, TeleportListener::new), McProtocolClientAdapter::packets);
+		super(new NetworkClientSessions(TEXT, ReleaseAnswers::new), McProtocolClientAdapter::packets);
 	}
 
 	/**

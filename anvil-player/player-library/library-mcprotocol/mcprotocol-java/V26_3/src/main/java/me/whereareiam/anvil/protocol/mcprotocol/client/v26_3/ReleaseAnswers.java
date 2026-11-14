@@ -18,14 +18,15 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Answers the teleports of the MCProtocolLib 26.3 release, which accepts a teleport with the position and view it
- * results in; the server treats the acceptance as the player's first movement from the teleport's target. The
+ * What a client of the MCProtocolLib 26.3 release answers on its own in packets that Minecraft 26.3 changed: its
+ * teleports. Its server plays the swings of a player's arm itself, so the client answers none. The release accepts a
+ * teleport with the position and view it results in; the server treats the acceptance as the player's first movement from the teleport's target. The
  * listener therefore follows the position and view the client last sent or was teleported to, resolves each
  * teleport's relative coordinates and angles against them as the vanilla client does, and accepts the teleport with
  * the result before it announces that the player loaded. The teleport is reported as the server sent it.
  */
 @RequiredArgsConstructor
-final class TeleportListener extends SessionAdapter {
+final class ReleaseAnswers extends SessionAdapter {
 	private final ClientSession session;
 	private final ClientListener<? super ClientSession> listener;
 	private final AtomicReference<Placement> placement = new AtomicReference<>(new Placement(0, 0, 0, 0, 0));

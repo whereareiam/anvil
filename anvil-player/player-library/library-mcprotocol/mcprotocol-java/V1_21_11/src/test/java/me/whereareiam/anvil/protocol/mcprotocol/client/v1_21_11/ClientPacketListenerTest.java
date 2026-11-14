@@ -5,10 +5,7 @@ import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.auth.GameProfile;
@@ -16,19 +13,17 @@ import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.GameMode;
-import org.geysermc.mcprotocollib.protocol.data.game.entity.player.HandPreference;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerSpawnInfo;
-import org.geysermc.mcprotocollib.protocol.data.game.setting.ChatVisibility;
-import org.geysermc.mcprotocollib.protocol.data.game.setting.ParticleStatus;
-import org.geysermc.mcprotocollib.protocol.data.game.setting.SkinPart;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundDisconnectPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundPingPacket;
-import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundClientInformationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundPongPacket;
 import org.geysermc.mcprotocollib.protocol.packet.configuration.clientbound.ClientboundRegistryDataPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchFinishedPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchStartPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundChunkBatchReceivedPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginFinishedPacket;
 import org.jetbrains.annotations.NotNull;
@@ -36,30 +31,25 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClientPacketListenerTest {
 	private static final UUID GRANTED = new UUID(0, 2);
-	private static final ClientLogin LOGIN = ClientLogin.builder()
-			.profile(ClientProfile.builder().name("Alice").uniqueId(new UUID(0, 1)).build())
-			.settings(ClientSettings.builder().locale("ru_ru").viewDistance(8).build())
-			.connection(ClientConnection.builder().host("localhost").port(25565).build())
-			.build();
 
 	private final List<String> events = new ArrayList<>();
 	private final List<Packet> sent = new ArrayList<>();
 	private final List<ClientboundPacket> received = new ArrayList<>();
 	private final ClientSession session = session();
-	private final ClientPacketListener listener = new ClientPacketListener(session, LOGIN, new RecordingListener(), McProtocolClientAdapter.packets(),
+	private final ClientPacketListener listener = new ClientPacketListener(session, new RecordingListener(), McProtocolClientAdapter.packets(),
 			new TextTranslator());
 
 	@Test
-	void answersTheConfigurationsFirstPacketWithThePlayersSettingsOnce() {
+	void reportsTheLoginWithTheGrantedProfile() {
 		receive(new ClientboundLoginFinishedPacket(new GameProfile(GRANTED, "Alice_Renamed")));
 		receive(new ClientboundKeepAlivePacket(7));
 		receive(new ClientboundRegistryDataPacket(Key.key("minecraft", "dimension_type"),
@@ -69,14 +59,22 @@ class ClientPacketListenerTest {
 						63),
 				false));
 
-		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ServerboundClientInformationPacket", "logged in as Alice_Renamed " + GRANTED), events);
-		ServerboundClientInformationPacket information = assertInstanceOf(ServerboundClientInformationPacket.class, sent.getFirst());
-		assertEquals("ru_ru", information.getLocale());
-		assertEquals(8, information.getRenderDistance());
-		assertEquals(ChatVisibility.FULL, information.getChatVisibility());
-		assertEquals(Arrays.asList(SkinPart.values()), information.getVisibleParts());
-		assertEquals(HandPreference.RIGHT_HAND, information.getMainHand());
-		assertEquals(ParticleStatus.ALL, information.getParticleStatus());
+		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "logged in as Alice_Renamed " + GRANTED), events);
+	}
+
+	@Test
+	void acknowledgesEveryChunkBatchWithTheRateItWantsNext() {
+		receive(new ClientboundChunkBatchStartPacket());
+		receive(new ClientboundChunkBatchFinishedPacket(9));
+		receive(new ClientboundChunkBatchStartPacket());
+		receive(new ClientboundChunkBatchFinishedPacket(0));
+
+		assertEquals(List.of("sent ServerboundChunkBatchReceivedPacket", "sent ServerboundChunkBatchReceivedPacket"),
+				events);
+		float first = assertInstanceOf(ServerboundChunkBatchReceivedPacket.class, sent.getFirst()).getDesiredChunksPerTick();
+		assertTrue(first > 0);
+		assertEquals(first, assertInstanceOf(ServerboundChunkBatchReceivedPacket.class, sent.get(1))
+				.getDesiredChunksPerTick());
 	}
 
 	@Test

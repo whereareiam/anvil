@@ -10,7 +10,7 @@ segment {
 	replaces(
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ConfigurationPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.EntityPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.TeleportListener",
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ReleaseAnswers",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2.ConnectionPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2.InteractionPackets",
 	)

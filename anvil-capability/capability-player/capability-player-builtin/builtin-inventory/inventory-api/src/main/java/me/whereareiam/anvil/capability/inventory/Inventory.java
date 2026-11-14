@@ -43,7 +43,9 @@ public interface Inventory extends PlayerCapability {
 	);
 
 	/**
-	 * Changes the selected hotbar slot.
+	 * Changes the selected hotbar slot. As a vanilla client does, the player tells the server only a slot that differs
+	 * from the one it last told it, so selecting the slot already held sends nothing. A slot the server selects, such as
+	 * after a respawn, becomes the selected one as well.
 	 *
 	 * @param slot zero-based slot in the range {@code 0..8}
 	 */

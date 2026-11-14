@@ -14,31 +14,34 @@ import org.geysermc.mcprotocollib.network.event.session.PacketSendingEvent;
 import org.geysermc.mcprotocollib.network.event.session.SessionAdapter;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.UnexpectedEncryptionException;
-import org.geysermc.mcprotocollib.protocol.data.game.entity.player.HandPreference;
-import org.geysermc.mcprotocollib.protocol.data.game.setting.ChatVisibility;
-import org.geysermc.mcprotocollib.protocol.data.game.setting.SkinPart;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Animation;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Hand;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundDisconnectPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundPingPacket;
-import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundClientInformationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundPongPacket;
 import org.geysermc.mcprotocollib.protocol.packet.handshake.serverbound.ClientIntentionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchFinishedPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchStartPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundChunkBatchReceivedPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Answers the packets a client of the MCProtocolLib releases from 1.20.5 until 1.21.1 must answer on its own and
- * reports login, teleports and disconnects with their reason flattened to plain text. The login reports the profile the
- * server granted in its login success, which arrives before the game starts; each release's sessions read that profile,
- * since MCProtocolLib 1.21 replaced mcauthlib's profile with its own. Like a vanilla client, it sends the player's
- * settings, its language among them, at the start of the configuration, so the server knows them before the player
- * joins.
+ * Answers the packets a client of the MCProtocolLib releases from 1.20.5 until 1.21.1 must answer on its own, among
+ * them each chunk batch with the rate {@link ChunkBatchPacing} wants next, and reports login, teleports and disconnects
+ * with their reason flattened to plain text. The login reports the profile the server granted in its login success,
+ * which arrives before the game starts; each release's sessions read that profile, since MCProtocolLib 1.21 replaced
+ * mcauthlib's profile with its own. The brand and the player's settings, its language among them, go out at the start
+ * of the configuration through the release's {@link ConfigurationStart}. Like the vanilla client, it swings back the
+ * arm the server swings of the player's own entity.
  */
 @RequiredArgsConstructor
 public final class ClientPacketListener extends SessionAdapter {
@@ -62,30 +65,35 @@ public final class ClientPacketListener extends SessionAdapter {
 	 * Translates the release's text components.
 	 */
 	private final ComponentTranslator text;
+	/**
+	 * Paces the chunk batches the session acknowledges, as the vanilla client does.
+	 */
+	private final ChunkBatchPacing chunkBatches = new ChunkBatchPacing();
 	private volatile ClientProfile granted;
-	private volatile boolean settingsDue;
+	/**
+	 * The protocol ID of the player's own entity, which the game's start names before the server animates it.
+	 */
+	private volatile int entityId;
 
 	@Override
 	public void packetReceived(Session session, Packet packet) {
-		if (settingsDue) {
-			// The server's first packet after the login success is a configuration packet, so MCProtocolLib, whose own
-			// listener may run after this one, has entered the configuration by now; the settings answer it before the
-			// configuration ends, which a server waits for before the player joins.
-			settingsDue = false;
-			session.send(new ServerboundClientInformationPacket(login.getSettings().getLocale(), login.getSettings().getViewDistance(),
-					ChatVisibility.FULL, true, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, false, true));
-		}
 		if (packet instanceof ClientboundGameProfilePacket success) {
 			granted = profiles.apply(success);
 			listener.granted(session, granted);
-			settingsDue = true;
 		}
-		if (packet instanceof ClientboundLoginPacket)
+		if (packet instanceof ClientboundLoginPacket game) {
+			entityId = game.getEntityId();
 			listener.loggedIn(session, Objects.requireNonNull(granted, "The server started the game before it granted a profile"));
+		}
 		if (packet instanceof ClientboundPlayerPositionPacket position) {
 			listener.teleported(session, position.getYaw(), position.getPitch());
 			session.send(new ServerboundAcceptTeleportationPacket(position.getTeleportId()));
 		}
+		if (packet instanceof ClientboundChunkBatchStartPacket) chunkBatches.started();
+		if (packet instanceof ClientboundChunkBatchFinishedPacket finished)
+			session.send(new ServerboundChunkBatchReceivedPacket(chunkBatches.finished(finished.getBatchSize())));
+		if (packet instanceof ClientboundAnimatePacket animation && animation.getEntityId() == entityId)
+			swingBack(session, animation.getAnimation());
 		// A vanilla client answers every ping; NeoForge waits for the answer to tell a vanilla client from a modded
 		// one.
 		if (packet instanceof ClientboundPingPacket ping) session.send(new ServerboundPongPacket(ping.getId()));
@@ -96,6 +104,15 @@ public final class ClientPacketListener extends SessionAdapter {
 
 		ClientboundPacket translated = packets.decode(packet);
 		if (translated != null) listener.received(session, translated);
+	}
+
+	/**
+	 * Swings back the arm the server swings of the player's own entity, as the vanilla client's own swing does, which
+	 * tells the server.
+	 */
+	private static void swingBack(Session session, Animation animation) {
+		if (animation == Animation.SWING_ARM) session.send(new ServerboundSwingPacket(Hand.MAIN_HAND));
+		if (animation == Animation.SWING_OFFHAND) session.send(new ServerboundSwingPacket(Hand.OFF_HAND));
 	}
 
 	/**

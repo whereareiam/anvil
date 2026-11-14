@@ -2,15 +2,20 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5;
 
 import com.github.steveice10.mc.auth.data.GameProfile;
 import com.github.steveice10.mc.protocol.data.game.MessageType;
+import com.github.steveice10.mc.protocol.data.game.entity.player.Animation;
 import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
+import com.github.steveice10.mc.protocol.data.game.entity.player.Hand;
 import com.github.steveice10.mc.protocol.data.handshake.HandshakeIntent;
 import com.github.steveice10.mc.protocol.packet.handshake.client.HandshakePacket;
+import com.github.steveice10.mc.protocol.packet.ingame.client.ClientPluginMessagePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.ClientSettingsPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerSwingArmPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.window.ClientConfirmTransactionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.world.ClientTeleportConfirmPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerChatPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerDisconnectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerJoinGamePacket;
+import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityAnimationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerPositionRotationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerConfirmTransactionPacket;
 import com.github.steveice10.mc.protocol.packet.login.server.EncryptionRequestPacket;
@@ -29,6 +34,7 @@ import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
+import me.whereareiam.anvil.protocol.mcprotocol.client.ClientBrand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -44,6 +50,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -64,15 +71,19 @@ class ClientPacketListenerTest {
 			McProtocolClientAdapter.packets(), new ReleaseAnswers(), new TextTranslator());
 
 	@Test
-	void answersTheJoinWithClientSettingsBeforeReportingTheLoginWithTheGrantedProfile() {
+	void answersTheJoinWithClientSettingsAndTheBrandBeforeReportingTheLoginWithTheGrantedProfile() {
 		receive(new LoginSuccessPacket(new GameProfile(GRANTED, "Alice_Renamed")));
 		receive(new ServerJoinGamePacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL, 1,
 				new String[0], codec(), overworld(), "minecraft:overworld", 0, 20, 10, false, true, false, false));
 
-		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ClientSettingsPacket", "logged in as Alice_Renamed " + GRANTED), events);
+		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ClientSettingsPacket", "sent ClientPluginMessagePacket",
+				"logged in as Alice_Renamed " + GRANTED), events);
 		ClientSettingsPacket settings = assertInstanceOf(ClientSettingsPacket.class, sent.getFirst());
 		assertEquals("en_us", settings.getLocale());
 		assertEquals(8, settings.getRenderDistance());
+		ClientPluginMessagePacket brand = assertInstanceOf(ClientPluginMessagePacket.class, sent.get(1));
+		assertEquals("minecraft:brand", brand.getChannel());
+		assertArrayEquals(ClientBrand.payload(), brand.getData());
 	}
 
 	@Test
@@ -148,6 +159,23 @@ class ClientPacketListenerTest {
 		receive(new LoginSuccessPacket(new GameProfile(GRANTED, "Alice_Renamed")));
 
 		assertEquals(List.of("granted Alice_Renamed " + GRANTED), events);
+	}
+
+	@Test
+	void swingsBackTheArmTheServerSwingsOfThePlayersOwnEntity() {
+		receive(new LoginSuccessPacket(new GameProfile(GRANTED, "Alice_Renamed")));
+		receive(new ServerJoinGamePacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL, 1,
+				new String[0], codec(), overworld(), "minecraft:overworld", 0, 20, 10, false, true, false, false));
+		sent.clear();
+
+		receive(new ServerEntityAnimationPacket(42, Animation.SWING_ARM));
+		receive(new ServerEntityAnimationPacket(42, Animation.EAT_FOOD));
+		receive(new ServerEntityAnimationPacket(7, Animation.SWING_ARM));
+		receive(new ServerEntityAnimationPacket(42, Animation.CRITICAL_HIT));
+
+		assertEquals(List.of(Hand.MAIN_HAND, Hand.OFF_HAND), sent.stream()
+				.map(packet -> assertInstanceOf(ClientPlayerSwingArmPacket.class, packet).getHand())
+				.toList());
 	}
 
 	private void receive(Packet packet) {

@@ -1,15 +1,22 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
 import com.github.steveice10.mc.protocol.data.UnexpectedEncryptionException;
+import com.github.steveice10.mc.protocol.data.game.entity.player.Animation;
+import com.github.steveice10.mc.protocol.data.game.entity.player.Hand;
 import com.github.steveice10.mc.protocol.data.game.entity.player.HandPreference;
 import com.github.steveice10.mc.protocol.data.game.setting.ChatVisibility;
 import com.github.steveice10.mc.protocol.data.game.setting.SkinPart;
 import com.github.steveice10.mc.protocol.packet.handshake.serverbound.ClientIntentionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundDisconnectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundPingPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientInformationPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundCustomPayloadPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundPongPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 import com.github.steveice10.packetlib.Session;
@@ -21,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
+import me.whereareiam.anvil.protocol.mcprotocol.client.ClientBrand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -31,10 +39,12 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Answers the packets a client of the MCProtocolLib releases from 1.18.2 until 1.19.4 must answer on its own and
- * reports login, teleports and disconnects with their reason flattened to plain text. The login reports the profile the
- * server granted in its login success, which arrives before the game starts. Each release's adapter reads the reason
- * of a closed connection, which packetlib turned from a string into a component.
+ * Answers the packets a client of the MCProtocolLib releases from 1.18.2 until 1.19.4 must answer on its own, each ping
+ * with its pong as the vanilla client does, and reports login, teleports and disconnects with their reason flattened to
+ * plain text. The login reports the profile the server granted in its login success, which arrives before the game
+ * starts. A vanilla client of these releases answers the game's start with its client information followed by its
+ * {@link ClientBrand}, and swings back the arm the server swings of the player's own entity. Each release's adapter
+ * reads the reason of a closed connection, which packetlib turned from a string into a component.
  */
 @RequiredArgsConstructor
 final class ClientPacketListener extends SessionAdapter {
@@ -44,6 +54,10 @@ final class ClientPacketListener extends SessionAdapter {
 	private final Function<DisconnectedEvent, String> reasons;
 	private final ComponentTranslator text;
 	private volatile ClientProfile granted;
+	/**
+	 * The protocol ID of the player's own entity, which the game's start names before the server animates it.
+	 */
+	private volatile int entityId;
 
 	@Override
 	public void packetReceived(Session session, Packet packet) {
@@ -51,11 +65,16 @@ final class ClientPacketListener extends SessionAdapter {
 			granted = ClientProfile.builder().name(success.getProfile().getName()).uniqueId(success.getProfile().getId()).build();
 			listener.granted(session, granted);
 		}
-		if (packet instanceof ClientboundLoginPacket) {
+		if (packet instanceof ClientboundLoginPacket game) {
+			entityId = game.getEntityId();
 			session.send(new ServerboundClientInformationPacket(login.getSettings().getLocale(), login.getSettings().getViewDistance(), ChatVisibility.FULL,
 					true, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, false, true));
+			session.send(new ServerboundCustomPayloadPacket(ClientBrand.CHANNEL, ClientBrand.payload()));
 			listener.loggedIn(session, Objects.requireNonNull(granted, "The server started the game before it granted a profile"));
 		}
+		if (packet instanceof ClientboundAnimatePacket animation && animation.getEntityId() == entityId)
+			swingBack(session, animation.getAnimation());
+		if (packet instanceof ClientboundPingPacket ping) session.send(new ServerboundPongPacket(ping.getId()));
 		if (packet instanceof ClientboundPlayerPositionPacket position) {
 			listener.teleported(session, position.getYaw(), position.getPitch());
 			session.send(new ServerboundAcceptTeleportationPacket(position.getTeleportId()));
@@ -67,6 +86,15 @@ final class ClientPacketListener extends SessionAdapter {
 
 		ClientboundPacket translated = packets.decode(packet);
 		if (translated != null) listener.received(session, translated);
+	}
+
+	/**
+	 * Swings back the arm the server swings of the player's own entity, as the vanilla client's own swing does, which
+	 * tells the server.
+	 */
+	private static void swingBack(Session session, Animation animation) {
+		if (animation == Animation.SWING_ARM) session.send(new ServerboundSwingPacket(Hand.MAIN_HAND));
+		if (animation == Animation.SWING_OFFHAND) session.send(new ServerboundSwingPacket(Hand.OFF_HAND));
 	}
 
 	/**

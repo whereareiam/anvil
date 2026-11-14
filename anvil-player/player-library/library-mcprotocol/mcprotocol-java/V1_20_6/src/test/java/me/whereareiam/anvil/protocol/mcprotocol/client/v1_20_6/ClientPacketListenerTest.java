@@ -16,21 +16,24 @@ import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.event.session.PacketSendingEvent;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Animation;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.GameMode;
-import org.geysermc.mcprotocollib.protocol.data.game.entity.player.HandPreference;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Hand;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerSpawnInfo;
-import org.geysermc.mcprotocollib.protocol.data.game.setting.ChatVisibility;
-import org.geysermc.mcprotocollib.protocol.data.game.setting.SkinPart;
 import org.geysermc.mcprotocollib.protocol.data.handshake.HandshakeIntent;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundDisconnectPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
-import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundClientInformationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.configuration.clientbound.ClientboundRegistryDataPacket;
 import org.geysermc.mcprotocollib.protocol.packet.handshake.serverbound.ClientIntentionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchFinishedPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchStartPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundChunkBatchReceivedPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 import org.jetbrains.annotations.NotNull;
@@ -38,13 +41,13 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClientPacketListenerTest {
 	private static final UUID GRANTED = new UUID(0, 2);
@@ -62,23 +65,7 @@ class ClientPacketListenerTest {
 			McProtocolClientAdapter.packets(), TcpClientSessions::granted, new TextTranslator());
 
 	@Test
-	void answersTheConfigurationsFirstPacketWithThePlayersSettings() {
-		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed"), false));
-		events.clear();
-		receive(new ClientboundKeepAlivePacket(7));
-		receive(new ClientboundKeepAlivePacket(8));
-
-		ServerboundClientInformationPacket information = assertInstanceOf(ServerboundClientInformationPacket.class, sent.getFirst());
-		assertEquals(List.of("sent ServerboundClientInformationPacket"), events);
-		assertEquals("ru_ru", information.getLocale());
-		assertEquals(8, information.getRenderDistance());
-		assertEquals(ChatVisibility.FULL, information.getChatVisibility());
-		assertEquals(Arrays.asList(SkinPart.values()), information.getVisibleParts());
-		assertEquals(HandPreference.RIGHT_HAND, information.getMainHand());
-	}
-
-	@Test
-	void reportsTheLoginWithTheGrantedProfileAfterTheSettings() {
+	void reportsTheLoginWithTheGrantedProfile() {
 		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed"), false));
 		receive(new ClientboundRegistryDataPacket(Key.key("minecraft", "dimension_type"),
 				List.of(new RegistryEntry(Key.key("minecraft", "overworld"), null))));
@@ -86,8 +73,22 @@ class ClientPacketListenerTest {
 				new PlayerSpawnInfo(0, Key.key("minecraft", "overworld"), 0, GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, null, 0),
 				false));
 
-		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "sent ServerboundClientInformationPacket",
-				"logged in as Alice_Renamed " + GRANTED), events);
+		assertEquals(List.of("granted Alice_Renamed " + GRANTED, "logged in as Alice_Renamed " + GRANTED), events);
+	}
+
+	@Test
+	void acknowledgesEveryChunkBatchWithTheRateItWantsNext() {
+		receive(new ClientboundChunkBatchStartPacket());
+		receive(new ClientboundChunkBatchFinishedPacket(9));
+		receive(new ClientboundChunkBatchStartPacket());
+		receive(new ClientboundChunkBatchFinishedPacket(0));
+
+		assertEquals(List.of("sent ServerboundChunkBatchReceivedPacket", "sent ServerboundChunkBatchReceivedPacket"),
+				events);
+		float first = assertInstanceOf(ServerboundChunkBatchReceivedPacket.class, sent.getFirst()).getDesiredChunksPerTick();
+		assertTrue(first > 0);
+		assertEquals(first, assertInstanceOf(ServerboundChunkBatchReceivedPacket.class, sent.get(1))
+				.getDesiredChunksPerTick());
 	}
 
 	@Test
@@ -150,6 +151,26 @@ class ClientPacketListenerTest {
 		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed"), false));
 
 		assertEquals(List.of("granted Alice_Renamed " + GRANTED), events);
+	}
+
+	@Test
+	void swingsBackTheArmTheServerSwingsOfThePlayersOwnEntity() {
+		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed"), false));
+		receive(new ClientboundRegistryDataPacket(Key.key("minecraft", "dimension_type"),
+				List.of(new RegistryEntry(Key.key("minecraft", "overworld"), null))));
+		receive(new ClientboundLoginPacket(42, false, new Key[0], 20, 10, 10, false, true, false,
+				new PlayerSpawnInfo(0, Key.key("minecraft", "overworld"), 0, GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, null, 0),
+				false));
+		sent.clear();
+
+		receive(new ClientboundAnimatePacket(42, Animation.SWING_ARM));
+		receive(new ClientboundAnimatePacket(42, Animation.SWING_OFFHAND));
+		receive(new ClientboundAnimatePacket(7, Animation.SWING_ARM));
+		receive(new ClientboundAnimatePacket(42, Animation.CRITICAL_HIT));
+
+		assertEquals(List.of(Hand.MAIN_HAND, Hand.OFF_HAND), sent.stream()
+				.map(packet -> assertInstanceOf(ServerboundSwingPacket.class, packet).getHand())
+				.toList());
 	}
 
 	private void receive(Packet packet) {
