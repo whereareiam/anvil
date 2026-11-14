@@ -1,10 +1,10 @@
 ---
 title: Moving players between worlds
-description: List a server's worlds, create, unload and delete worlds, wait for the server to load or unload one, find which world a player is in, move it to another one, and wait for the server to report the move.
+description: List a server's worlds, create, load, unload and delete worlds, wait for the server to load or unload one, find which world a player is in, move it to another one, and wait for the server to report the move.
 ---
 
 Use a server's `Worlds` capability when a test needs what a server knows about its worlds, needs a
-world created, unloaded or deleted, waits for a plugin to load a world, or needs a player moved to
+world created, loaded, unloaded or deleted, waits for a plugin to load a world, or needs a player moved to
 another world as a plugin would move it. Retrieve it from the process:
 `anvil.processes().server("lobby").capability(Worlds.class)`.
 
@@ -59,7 +59,7 @@ watch before the action. `changed(player, timeout)` waits for a move to any worl
 `neverChanged(player, duration)` fails as soon as the server moves the player, and
 `expectChanged(player, world)` gives an expectation for `alice.awaitFirst(...)`.
 
-## Create a world and unload it
+## Create, unload and delete worlds
 
 A test that needs a world the server does not have creates it, as a plugin creating one through
 Bukkit's `WorldCreator` does. This fragment uses the imports above and these:
@@ -103,6 +103,25 @@ workspace, so creating the same key again starts a new world. It refuses what `u
 fails with `IllegalStateException` when the server unloaded the world but its folder could not be
 deleted.
 
+## Load a prepared map
+
+`load(world)` loads a world from the folder the server keeps for it: a prepared map the scenario copies
+into the server's workspace, or a world the test unloaded earlier. Unlike `create`, it never generates
+a new world, and fails with `IllegalArgumentException` when the server keeps no folder for the world or
+has already loaded it.
+
+```java
+ServerWorld arena = worlds.load("arena");
+ServerWorld lair = worlds.load("lair", WorldKind.NETHER);
+```
+
+Paper and Spigot look for the folder named after the key's path in the server's worlds' folder, such as
+`arena`, or, since Minecraft 26.1, among the dimensions of the main world, such as
+`world/dimensions/minecraft/arena`. The server does not read a world's kind from its folder, so pass the
+kind of a nether or end map; `load(world)` loads an overworld.
+
+## Keep worlds from leaking into later tests
+
 A created world stays until the test unloads or deletes it, or the server stops, so a server that a
 scenario keeps for later scenarios keeps it as well. `unload` keeps the world's folder, and creating the
 same key again on that server loads what it kept. A test on a kept server deletes the worlds it created
@@ -116,15 +135,6 @@ try {
 	worlds.delete("arena");
 }
 ```
-
-### Limitations
-
-- Only Paper and Spigot create, unload and delete worlds. NeoForge has no API to create or unload a level
-  while the server runs, so on NeoForge all three fail with `UnsupportedOperationException`. A NeoForge test that
-  needs another dimension adds it with a data pack or mod before the server starts.
-- Bukkit creates a world under a plain name and names its level after it in the `minecraft` namespace,
-  so a created key is `minecraft:<name>`, without `/`. Another namespace fails with
-  `UnsupportedOperationException`.
 
 ## Wait for the server to load a world
 
@@ -164,3 +174,13 @@ proxy forwarded under another UUID is still found.
 
 A restarted server keeps the world changes reported before the restart, followed by those of its new
 process.
+
+## Limitations
+
+- Only Paper and Spigot create, load, unload and delete worlds. NeoForge has no API to create, load or
+  unload a level while the server runs, so on NeoForge all four fail with
+  `UnsupportedOperationException`. A NeoForge test that needs another dimension adds it with a data pack
+  or mod before the server starts.
+- Bukkit creates a world under a plain name and names its level after it in the `minecraft` namespace,
+  so a created or loaded key is `minecraft:<name>`, without `/`. Another namespace fails with
+  `UnsupportedOperationException`.

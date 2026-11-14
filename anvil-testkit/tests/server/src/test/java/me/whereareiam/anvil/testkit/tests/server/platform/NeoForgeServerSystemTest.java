@@ -85,6 +85,7 @@ class NeoForgeServerSystemTest {
 			assertEquals("minecraft:the_nether", worlds.location(alice).orElseThrow().getWorld());
 			assertThrows(UnsupportedOperationException.class,
 					() -> worlds.create(WorldCreation.builder().key("anvil_neoforge").build()));
+			assertThrows(UnsupportedOperationException.class, () -> worlds.load("anvil_neoforge"));
 			assertThrows(UnsupportedOperationException.class, () -> worlds.unload("the_end"));
 			assertThrows(UnsupportedOperationException.class, () -> worlds.delete("the_end"));
 

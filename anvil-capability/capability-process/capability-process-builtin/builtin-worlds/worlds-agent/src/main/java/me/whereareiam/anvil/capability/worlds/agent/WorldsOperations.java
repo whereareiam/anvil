@@ -8,6 +8,7 @@ import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChanges;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldEvents;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldList;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldLoad;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldOutcome;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,6 +49,13 @@ public final class WorldsOperations {
 	public static final @NotNull AgentOperation<AgentWorldCreation, AgentWorldOutcome> CREATE =
 			AgentOperation.<AgentWorldCreation, AgentWorldOutcome>builder()
 					.name(NAMESPACE + ".create").requestType(AgentWorldCreation.class)
+					.responseType(AgentWorldOutcome.class).build();
+	/**
+	 * Loads a world from the folder the server keeps for it, answering the world or why it was not loaded.
+	 */
+	public static final @NotNull AgentOperation<AgentWorldLoad, AgentWorldOutcome> LOAD =
+			AgentOperation.<AgentWorldLoad, AgentWorldOutcome>builder()
+					.name(NAMESPACE + ".load").requestType(AgentWorldLoad.class)
 					.responseType(AgentWorldOutcome.class).build();
 	/**
 	 * Unloads the world of a key, answering whether it was unloaded or why not.

@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Moves a player between the server's worlds through the server's own API and follows the move from both ends: the
  * server reports the world change, and the client is told the dimension it is in now. Creates worlds the way a plugin
- * does, follows the server loading and unloading them, and unloads or deletes them again, since the release's server is
+ * does, follows the server loading and unloading them, and unloads, loads or deletes them again, since the release's server is
  * kept for every test.
  */
 @Release
@@ -82,7 +82,7 @@ class WorldsReleaseTest {
 	}
 
 	@Test
-	void createsAWorldSendsAPlayerIntoItAndUnloadsItOnceThePlayerLeft(ScenarioContext anvil) {
+	void createsAWorldSendsAPlayerIntoItAndUnloadsAndLoadsItOnceThePlayerLeft(ScenarioContext anvil) {
 		FixtureServer server = new FixtureServer(anvil);
 		SimulatedPlayer player = server.join();
 		Worlds worlds = anvil.processes().server("server").capability(Worlds.class);
@@ -112,6 +112,12 @@ class WorldsReleaseTest {
 		events.unloaded("anvil_flat", TIMEOUT);
 		assertEquals(Optional.empty(), worlds.world("anvil_flat"));
 		assertThrows(IllegalStateException.class, () -> worlds.unload("overworld"));
+
+		ServerWorld loaded = worlds.load("anvil_flat");
+		events.loaded("anvil_flat", TIMEOUT);
+		assertEquals(List.of("minecraft:anvil_flat", WorldKind.OVERWORLD), List.of(loaded.getKey(), loaded.getKind()));
+		worlds.delete("anvil_flat");
+		assertThrows(IllegalArgumentException.class, () -> worlds.load("anvil_flat"));
 	}
 
 	@Test

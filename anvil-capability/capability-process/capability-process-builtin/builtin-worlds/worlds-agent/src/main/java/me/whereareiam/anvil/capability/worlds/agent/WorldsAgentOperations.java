@@ -13,8 +13,9 @@ import java.util.function.Supplier;
 /**
  * Answers the worlds capability's operations on one platform: each platform side extends it with the
  * {@link ServerWorlds} of its platform, which it opens once the agent starts, together with the logs it records the
- * platform's world changes and world events in. Every operation that reads or changes a world runs on the platform's own thread. A
- * creation or unloading the server refuses, or the platform cannot do, is answered as such instead of as a failure.
+ * platform's world changes and world events in. Every operation that reads or changes a world runs on the platform's
+ * own thread. A request to create, load, unload or delete a world that names a world wrongly, that the server
+ * refuses, or that the platform cannot do is answered as such instead of as a failure.
  */
 public abstract class WorldsAgentOperations implements AgentOperationProvider {
 	@Override
@@ -37,6 +38,8 @@ public abstract class WorldsAgentOperations implements AgentOperationProvider {
 		registry.register(WorldsOperations.CHANGES, (agent, request) -> changes.since(request));
 		registry.register(WorldsOperations.CREATE, (agent, creation) ->
 				agent.call(() -> outcome(() -> AgentWorldOutcome.builder().world(worlds.create(creation)).build())));
+		registry.register(WorldsOperations.LOAD, (agent, load) ->
+				agent.call(() -> outcome(() -> AgentWorldOutcome.builder().world(worlds.load(load)).build())));
 		registry.register(WorldsOperations.UNLOAD, (agent, key) -> agent.call(() -> outcome(() -> {
 			worlds.unload(key);
 			return AgentWorldOutcome.builder().build();
@@ -67,6 +70,8 @@ public abstract class WorldsAgentOperations implements AgentOperationProvider {
 			return request.get();
 		} catch (UnsupportedOperationException exception) {
 			return AgentWorldOutcome.builder().unsupported(exception.getMessage()).build();
+		} catch (IllegalArgumentException exception) {
+			return AgentWorldOutcome.builder().missing(exception.getMessage()).build();
 		} catch (IllegalStateException exception) {
 			return AgentWorldOutcome.builder().refusal(exception.getMessage()).build();
 		}

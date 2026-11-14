@@ -17,6 +17,7 @@ import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldChanges;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldEvents;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldList;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldLoad;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldOutcome;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -54,7 +55,7 @@ class WorldsAgentOperationsTest {
 		assertEquals("me.whereareiam.anvil.worlds", new Operations().id());
 		assertEquals(List.of("me.whereareiam.anvil.worlds.worlds", "me.whereareiam.anvil.worlds.placements",
 				"me.whereareiam.anvil.worlds.send", "me.whereareiam.anvil.worlds.changes", "me.whereareiam.anvil.worlds.create",
-				"me.whereareiam.anvil.worlds.unload", "me.whereareiam.anvil.worlds.delete", "me.whereareiam.anvil.worlds.events"), List.copyOf(registry.handlers.keySet()));
+				"me.whereareiam.anvil.worlds.load", "me.whereareiam.anvil.worlds.unload", "me.whereareiam.anvil.worlds.delete", "me.whereareiam.anvil.worlds.events"), List.copyOf(registry.handlers.keySet()));
 	}
 
 	@Test
@@ -110,6 +111,8 @@ class WorldsAgentOperationsTest {
 				AgentWorldOutcome.builder().world(AgentWorld.builder().key("minecraft:dungeon").kind("NETHER").spawn(ARENA).build())
 						.build(),
 				AgentWorldOutcome.builder().refusal("refused").build(),
+				AgentWorldOutcome.builder().missing("no folder").build(),
+				AgentWorldLoad.builder().key("minecraft:map").kind("END").build(),
 				recordedEvents()
 		);
 
@@ -132,10 +135,12 @@ class WorldsAgentOperationsTest {
 		AgentWorld dungeon = AgentWorld.builder().key("minecraft:dungeon").kind("NETHER").spawn(ARENA).build();
 		assertEquals(AgentWorldOutcome.builder().world(dungeon).build(), registry.execute(WorldsOperations.CREATE, DUNGEON));
 		assertEquals(AgentWorldOutcome.builder().build(), registry.execute(WorldsOperations.UNLOAD, "minecraft:dungeon"));
+		assertEquals(AgentWorldOutcome.builder().world(dungeon).build(), registry.execute(WorldsOperations.LOAD,
+				AgentWorldLoad.builder().key("minecraft:dungeon").kind("NETHER").build()));
 		assertEquals(AgentWorldOutcome.builder().build(), registry.execute(WorldsOperations.DELETE, "minecraft:dungeon"));
-		assertEquals(List.of("create minecraft:dungeon", "unload minecraft:dungeon", "delete minecraft:dungeon"),
-				worlds.changed);
-		assertEquals(3, platform.calls);
+		assertEquals(List.of("create minecraft:dungeon", "unload minecraft:dungeon", "load minecraft:dungeon",
+				"delete minecraft:dungeon"), worlds.changed);
+		assertEquals(4, platform.calls);
 	}
 
 	@Test
@@ -149,8 +154,9 @@ class WorldsAgentOperationsTest {
 				registry.execute(WorldsOperations.UNLOAD, "minecraft:dungeon"));
 		assertEquals(AgentWorldOutcome.builder().refusal("Players are in it").build(),
 				registry.execute(WorldsOperations.DELETE, "minecraft:dungeon"));
-		worlds.failure = new IllegalArgumentException("Not loaded");
-		assertThrows(IllegalArgumentException.class, () -> registry.execute(WorldsOperations.UNLOAD, "minecraft:dungeon"));
+		worlds.failure = new IllegalArgumentException("No folder");
+		assertEquals(AgentWorldOutcome.builder().missing("No folder").build(), registry.execute(WorldsOperations.LOAD,
+				AgentWorldLoad.builder().key("minecraft:dungeon").kind("NETHER").build()));
 	}
 
 	private static AgentWorldEvents recordedEvents() {
@@ -218,6 +224,14 @@ class WorldsAgentOperationsTest {
 
 			changed.add("create " + creation.getKey());
 			return AgentWorld.builder().key(creation.getKey()).kind(creation.getKind()).spawn(ARENA).build();
+		}
+
+		@Override
+		public @NotNull AgentWorld load(@NotNull AgentWorldLoad load) {
+			if (failure != null) throw failure;
+
+			changed.add("load " + load.getKey());
+			return AgentWorld.builder().key(load.getKey()).kind(load.getKind()).spawn(ARENA).build();
 		}
 
 		@Override

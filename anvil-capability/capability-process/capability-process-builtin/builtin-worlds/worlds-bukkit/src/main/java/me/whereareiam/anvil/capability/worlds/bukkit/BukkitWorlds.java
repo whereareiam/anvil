@@ -7,6 +7,7 @@ import me.whereareiam.anvil.capability.worlds.agent.model.AgentLocation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacement;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorld;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldLoad;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.Server;
@@ -42,8 +43,9 @@ import java.util.stream.Stream;
  * worlds named after it have the vanilla keys, and every other world the key of its lower-case name in the
  * {@code minecraft} namespace.
  *
- * <p>A world is created under the name of its key's path, which both rules name by that key in the {@code minecraft}
- * namespace, so only such keys can be created.</p>
+ * <p>A world is created and loaded under the name of its key's path, which both rules name by that key in the
+ * {@code minecraft} namespace, so only such keys can be created or loaded. A world is loaded from its folder in the
+ * server's worlds' folder or, since 26.1, among the dimensions of the main world.</p>
  */
 final class BukkitWorlds implements ServerWorlds, Listener {
 	private final Server server;
@@ -95,6 +97,22 @@ final class BukkitWorlds implements ServerWorlds, Listener {
 
 		World world = server.createWorld(creator);
 		if (world == null) throw new IllegalStateException("The server did not create the world " + key);
+
+		return world(world);
+	}
+
+	@Override
+	public @NotNull AgentWorld load(@NotNull AgentWorldLoad load) {
+		String key = load.getKey();
+		if (find(key) != null) throw new IllegalArgumentException("The server has already loaded the world " + key);
+
+		String name = name(key);
+		if (!kept(name))
+			throw new IllegalArgumentException("The server keeps no folder for the world " + key + ": neither " + name
+					+ " nor " + dimensions().resolve(name) + " in " + server.getWorldContainer());
+
+		World world = server.createWorld(new WorldCreator(name).environment(environment(load.getKind())));
+		if (world == null) throw new IllegalStateException("The server did not load the world " + key);
 
 		return world(world);
 	}
@@ -153,6 +171,23 @@ final class BukkitWorlds implements ServerWorlds, Listener {
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void unloaded(@NotNull WorldUnloadEvent event) {
 		events.unloaded(key(event.getWorld()));
+	}
+
+	/**
+	 * Tells whether the server keeps a world's folder: in its worlds' folder, or, since 26.1, among the dimensions of
+	 * its main world.
+	 */
+	private boolean kept(@NotNull String name) {
+		Path container = server.getWorldContainer().toPath();
+		return Files.isDirectory(container.resolve(name))
+				|| Files.isDirectory(container.resolve(dimensions()).resolve(name));
+	}
+
+	/**
+	 * The folder below the worlds' folder that keeps the dimensions of the main world since 26.1.
+	 */
+	private @NotNull Path dimensions() {
+		return Path.of(server.getWorlds().get(0).getName(), "dimensions", "minecraft");
 	}
 
 	/**

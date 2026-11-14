@@ -4,6 +4,7 @@ import me.whereareiam.anvil.capability.worlds.agent.model.AgentLocation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacement;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorld;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldCreation;
+import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorldLoad;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -49,6 +50,17 @@ public interface ServerWorlds {
 	 * @throws IllegalStateException when the server refused to create it, with the reason
 	 */
 	@NotNull AgentWorld create(@NotNull AgentWorldCreation creation);
+
+	/**
+	 * Loads a world from the folder the server keeps for it.
+	 *
+	 * @param load the world's key and kind
+	 * @return the world the server loaded
+	 * @throws IllegalArgumentException when the server has already loaded the world or has no folder for it
+	 * @throws UnsupportedOperationException when the platform cannot load such a world, with the reason
+	 * @throws IllegalStateException when the server refused to load it, with the reason
+	 */
+	@NotNull AgentWorld load(@NotNull AgentWorldLoad load);
 
 	/**
 	 * Saves a world and unloads it.
