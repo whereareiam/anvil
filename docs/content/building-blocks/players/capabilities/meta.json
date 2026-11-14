@@ -12,6 +12,7 @@
     "cookies",
     "screen",
     "sounds",
-    "entities"
+    "entities",
+    "world"
   ]
 }
