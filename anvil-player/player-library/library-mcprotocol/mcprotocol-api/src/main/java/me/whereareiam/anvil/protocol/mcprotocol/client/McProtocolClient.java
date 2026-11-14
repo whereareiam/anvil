@@ -12,8 +12,9 @@ import org.jetbrains.annotations.NotNull;
  *
  * <p>The worker shell never links against MCProtocolLib: it opens, connects and disconnects native sessions and
  * exchanges Java Edition packets only through this port, and the segment translates them to and from the release's
- * own packets. A segment owns every packet the client must answer on its own, such as sending
- * client information after login, accepting teleports and announcing that the player loaded, and reports the
+ * own packets. A segment owns every packet the client must answer on its own, such as sending its
+ * brand and client information, accepting teleports and announcing that the player loaded, and swinging back an arm
+ * the server swings of the player's own entity, and reports the
  * resulting state through {@link ClientListener}. Sessions are opaque to the shell and are passed back to the
  * segment that created them.</p>
  *
@@ -25,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
  * <pre>{@code
  * public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
  *     public McProtocolClientAdapter() {
- *         super(new NetworkClientSessions(TeleportListener::new), McProtocolClientAdapter::packets);
+ *         super(new NetworkClientSessions(ReleaseAnswers::new), McProtocolClientAdapter::packets);
  *     }
  *
  *     static PacketTable<Packet> packets() {

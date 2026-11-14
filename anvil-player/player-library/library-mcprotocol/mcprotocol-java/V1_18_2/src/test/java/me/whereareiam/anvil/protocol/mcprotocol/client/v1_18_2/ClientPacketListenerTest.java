@@ -2,7 +2,9 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
 import com.github.steveice10.mc.auth.data.GameProfile;
 import com.github.steveice10.mc.protocol.data.game.MessageType;
+import com.github.steveice10.mc.protocol.data.game.entity.player.Animation;
 import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
+import com.github.steveice10.mc.protocol.data.game.entity.player.Hand;
 import com.github.steveice10.mc.protocol.data.game.entity.player.HandPreference;
 import com.github.steveice10.mc.protocol.data.game.setting.ChatVisibility;
 import com.github.steveice10.mc.protocol.data.game.setting.SkinPart;
@@ -13,11 +15,13 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundDi
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundPingPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientInformationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundCustomPayloadPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundPongPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
@@ -156,6 +160,23 @@ class ClientPacketListenerTest {
 		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed")));
 
 		assertEquals(List.of("granted Alice_Renamed " + GRANTED), events);
+	}
+
+	@Test
+	void swingsBackTheArmTheServerSwingsOfThePlayersOwnEntity() {
+		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed")));
+		receive(new ClientboundLoginPacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL, 1,
+				new String[0], codec(), overworld(), "minecraft:overworld", 0, 20, 10, 10, false, true, false, false));
+		sent.clear();
+
+		receive(new ClientboundAnimatePacket(42, Animation.SWING_ARM));
+		receive(new ClientboundAnimatePacket(42, Animation.SWING_OFFHAND));
+		receive(new ClientboundAnimatePacket(7, Animation.SWING_ARM));
+		receive(new ClientboundAnimatePacket(42, Animation.CRITICAL_HIT));
+
+		assertEquals(List.of(Hand.MAIN_HAND, Hand.OFF_HAND), sent.stream()
+				.map(packet -> assertInstanceOf(ServerboundSwingPacket.class, packet).getHand())
+				.toList());
 	}
 
 	private void receive(Packet packet) {

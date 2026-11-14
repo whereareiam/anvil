@@ -16,7 +16,9 @@ import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.event.session.PacketSendingEvent;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Animation;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.GameMode;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Hand;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerSpawnInfo;
 import org.geysermc.mcprotocollib.protocol.data.handshake.HandshakeIntent;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundDisconnectPacket;
@@ -25,11 +27,13 @@ import org.geysermc.mcprotocollib.protocol.packet.configuration.clientbound.Clie
 import org.geysermc.mcprotocollib.protocol.packet.handshake.serverbound.ClientIntentionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchFinishedPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchStartPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundChunkBatchReceivedPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 import org.jetbrains.annotations.NotNull;
@@ -147,6 +151,26 @@ class ClientPacketListenerTest {
 		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed"), false));
 
 		assertEquals(List.of("granted Alice_Renamed " + GRANTED), events);
+	}
+
+	@Test
+	void swingsBackTheArmTheServerSwingsOfThePlayersOwnEntity() {
+		receive(new ClientboundGameProfilePacket(new GameProfile(GRANTED, "Alice_Renamed"), false));
+		receive(new ClientboundRegistryDataPacket(Key.key("minecraft", "dimension_type"),
+				List.of(new RegistryEntry(Key.key("minecraft", "overworld"), null))));
+		receive(new ClientboundLoginPacket(42, false, new Key[0], 20, 10, 10, false, true, false,
+				new PlayerSpawnInfo(0, Key.key("minecraft", "overworld"), 0, GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, null, 0),
+				false));
+		sent.clear();
+
+		receive(new ClientboundAnimatePacket(42, Animation.SWING_ARM));
+		receive(new ClientboundAnimatePacket(42, Animation.SWING_OFFHAND));
+		receive(new ClientboundAnimatePacket(7, Animation.SWING_ARM));
+		receive(new ClientboundAnimatePacket(42, Animation.CRITICAL_HIT));
+
+		assertEquals(List.of(Hand.MAIN_HAND, Hand.OFF_HAND), sent.stream()
+				.map(packet -> assertInstanceOf(ServerboundSwingPacket.class, packet).getHand())
+				.toList());
 	}
 
 	private void receive(Packet packet) {
