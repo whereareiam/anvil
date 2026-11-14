@@ -5,6 +5,7 @@ import me.whereareiam.anvil.capability.api.history.HistoryCursor;
 import me.whereareiam.anvil.capability.world.channel.WorldChannel;
 import me.whereareiam.anvil.capability.world.model.DimensionChange;
 import me.whereareiam.anvil.capability.world.model.LevelInfo;
+import me.whereareiam.anvil.capability.world.model.ServerInfo;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,7 +19,8 @@ import java.util.function.Predicate;
 
 /**
  * World capability driven over a player's typed channel: every dimension change the worker emits is kept in the
- * player's history, across reconnects, and the level of the last one is the player's until its connection ends.
+ * player's history, across reconnects, and the level of the last one, with the server of the last join, is the
+ * player's until its connection ends.
  * The channel releases the event subscriptions together with the player.
  */
 final class ChannelWorld implements World {
@@ -27,15 +29,19 @@ final class ChannelWorld implements World {
 	private final ProtocolChannel channel;
 	private final CopyOnWriteArrayList<DimensionChange> changes = new CopyOnWriteArrayList<>();
 	private final AtomicReference<LevelInfo> level = new AtomicReference<>();
+	private final AtomicReference<ServerInfo> server = new AtomicReference<>();
 
 	ChannelWorld(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
+		channel.subscribe(WorldChannel.SERVER, server::set);
 		channel.subscribe(WorldChannel.DIMENSION, change -> {
 			changes.add(change);
 			level.set(change.getLevel());
 		});
-		channel.subscribe(WorldChannel.LEFT, left ->
-				level.getAndUpdate(now -> now != null && now.getDimension().equals(left) ? null : now));
+		channel.subscribe(WorldChannel.LEFT, left -> {
+			level.getAndUpdate(now -> now != null && now.getDimension().equals(left) ? null : now);
+			server.set(null);
+		});
 	}
 
 	@Override
@@ -46,6 +52,11 @@ final class ChannelWorld implements World {
 	@Override
 	public @NotNull Optional<LevelInfo> level() {
 		return Optional.ofNullable(level.get());
+	}
+
+	@Override
+	public @NotNull Optional<ServerInfo> server() {
+		return Optional.ofNullable(server.get());
 	}
 
 	@Override
