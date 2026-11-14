@@ -78,7 +78,7 @@ class PlatformCompatibilitySystemTest {
 			dimensions.entered("minecraft:anvil_platform", Duration.ofSeconds(10));
 			worlds.send(alice, "overworld");
 			dimensions.entered("minecraft:overworld", Duration.ofSeconds(10));
-			worlds.unload("anvil_platform");
+			worlds.delete("anvil_platform");
 			assertEquals(Optional.empty(), worlds.world("anvil_platform"));
 			if (scenario.getProxies().isEmpty()) return;
 

@@ -2,6 +2,7 @@ package me.whereareiam.anvil.capability.worlds.neoforge.v1_21_11;
 
 import me.whereareiam.anvil.capability.worlds.agent.ServerWorlds;
 import me.whereareiam.anvil.capability.worlds.agent.WorldChangeLog;
+import me.whereareiam.anvil.capability.worlds.agent.WorldEventLog;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentLocation;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentPlacement;
 import me.whereareiam.anvil.capability.worlds.agent.model.AgentWorld;
@@ -16,6 +17,7 @@ import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.storage.LevelData;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -31,10 +33,12 @@ import java.util.UUID;
 final class NeoForgeWorlds implements ServerWorlds {
 	private final MinecraftServer server;
 	private final WorldChangeLog changes;
+	private final WorldEventLog events;
 
-	NeoForgeWorlds(@NotNull MinecraftServer server, @NotNull WorldChangeLog changes) {
+	NeoForgeWorlds(@NotNull MinecraftServer server, @NotNull WorldChangeLog changes, @NotNull WorldEventLog events) {
 		this.server = server;
 		this.changes = changes;
+		this.events = events;
 	}
 
 	@Override
@@ -83,6 +87,29 @@ final class NeoForgeWorlds implements ServerWorlds {
 	@Override
 	public void unload(@NotNull String key) {
 		throw new UnsupportedOperationException("NeoForge has no API to unload a level while the server runs");
+	}
+
+	@Override
+	public void delete(@NotNull String key) {
+		throw new UnsupportedOperationException("NeoForge has no API to unload a level while the server runs");
+	}
+
+	/**
+	 * Records the server loading a level, such as one a mod adds while the server runs.
+	 *
+	 * @param event the load
+	 */
+	void loaded(@NotNull LevelEvent.Load event) {
+		if (event.getLevel() instanceof ServerLevel level) events.loaded(key(level.dimension()));
+	}
+
+	/**
+	 * Records the server unloading a level.
+	 *
+	 * @param event the unload
+	 */
+	void unloaded(@NotNull LevelEvent.Unload event) {
+		if (event.getLevel() instanceof ServerLevel level) events.unloaded(key(level.dimension()));
 	}
 
 	/**

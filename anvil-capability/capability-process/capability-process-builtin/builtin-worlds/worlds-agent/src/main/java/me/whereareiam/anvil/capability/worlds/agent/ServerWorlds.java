@@ -59,4 +59,15 @@ public interface ServerWorlds {
 	 * @throws IllegalStateException when the server refused to unload it, with the reason
 	 */
 	void unload(@NotNull String key);
+
+	/**
+	 * Unloads a world without saving it and deletes its folder.
+	 *
+	 * @param key the key of the world's level
+	 * @throws IllegalArgumentException when the server has not loaded the world
+	 * @throws UnsupportedOperationException when the platform cannot unload a world, with the reason
+	 * @throws IllegalStateException when the server refused to unload it or its folder could not be deleted, with the
+	 *         reason
+	 */
+	void delete(@NotNull String key);
 }
