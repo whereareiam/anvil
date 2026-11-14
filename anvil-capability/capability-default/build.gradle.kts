@@ -20,6 +20,8 @@ dependencies {
 	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinScreen)
 	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinSession)
 	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinSounds)
+	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinWorld)
 	api(projects.anvilCapability.capabilityProcess.capabilityProcessBuiltin.builtinDispatch)
 	api(projects.anvilCapability.capabilityProcess.capabilityProcessBuiltin.builtinPlayers)
+	api(projects.anvilCapability.capabilityProcess.capabilityProcessBuiltin.builtinWorlds)
 }

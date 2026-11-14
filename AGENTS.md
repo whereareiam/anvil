@@ -58,6 +58,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-capability/capability-process/capability-process-api`          | Agent-backed process providers and scoped request-channel contexts; shared capability API only (artifact `capability-agent-api`) |
 | `anvil-capability/capability-process/capability-process-builtin/builtin-<feature>` | Process capability family: `<feature>-api` and `<feature>-common` holding the agent-backed provider, independent of simulated players |
 | `anvil-capability/capability-process/capability-process-builtin/builtin-players` | Players family: what one server or proxy knows about the players on it, from its own agent's events, with `players-api` and `players-common` |
+| `anvil-capability/capability-process/capability-process-builtin/builtin-<feature>/<feature>-agent` | A process family's agent channel (`builtin-<feature>-agent`): the agent operations and payloads its host provider and platform sides share, and the platform-neutral handlers, compiled for the legacy Java release |
+| `anvil-capability/capability-process/capability-process-builtin/builtin-<feature>/<feature>-<platform>` | A process family's agent extension for one agent platform (`builtin-<feature>-<platform>`), such as `-bukkit` for Paper and Spigot, over that platform's own API |
+| `anvil-capability/capability-process/capability-process-builtin/builtin-worlds` | Worlds family: a server's worlds, where its players are, moving them and the world changes it reports, with `worlds-bukkit` and `worlds-neoforge`, whose `release-<minecraft>` parts each serve the NeoForge releases from one change of Minecraft's names on |
 | `anvil-capability/capability-default`                                 | Aggregate of every built-in player and process capability (artifact `default`) |
 | `anvil-player/player-api`                                         | Protocol library providers and releases, player creation/composition, the typed player channel and worker extension contracts, the styled text a player sees (`model.text`), pinned runtime resolution, and optional authentication                       |
 | `anvil-player/player-common`                                         | Player registration, version selection, authentication compatibility, composition, observations, and resolving a remote's address as the vanilla client does |
@@ -194,7 +197,19 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   names and fails a build file that sets its own, and `gradle-capabilities` tests that each family has a plugin
   installing `builtin-<feature>`.
   Common code lives in the feature packages, never in `common` or `util` packages. An agent-backed provider,
-  such as Dispatch's, lives in `<feature>-common` as well; the convention refuses code in every family root. An
+  such as Dispatch's, lives in `<feature>-common` as well; the convention refuses code in every family root.
+  A process family that needs a platform's own API beyond the core operations ships its own agent extension:
+  `<feature>-agent` (artifact `builtin-<feature>-agent`, `module-api` with `module-java-legacy`) holds the
+  `AgentOperation` descriptors and payloads, which the host provider turns into `ChannelOperation`s, and the
+  platform-neutral handlers; each `<feature>-<platform>` (artifact `builtin-<feature>-<platform>`) answers them for
+  one agent platform, a `platform-<name>` folder with a `<name>-agent`, against that platform's API only, embeds
+  nothing and is compiled for the oldest Java its servers run on. The family root declares the agent APIs through
+  `architecture.dependsOnApis` and brings the channel and every platform side to the runtime, where the provider's
+  `agentExtensions()` finds their JARs by class: the channel's for every platform it serves and each side's for its
+  own. Player families have no agent members. A platform whose servers rename what a side uses between supported
+  releases gets a wiring-only side with one `release-<minecraft>` part per change (never `V*`, which names library
+  segments), each compiled against the first release it serves and installed only where
+  `AgentOperationProvider.supports` finds the server's Minecraft version in its range through `MinecraftRelease`. An
   extension needing what the release cannot carry throws `ProtocolUnavailableException`, and the worker reports the
   capability unavailable with that reason; a `LinkageError` or `ServiceConfigurationError` while binding likewise
   disables only that capability. An external capability that needs library code Anvil's protocol does not cover may
@@ -254,8 +269,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 - Every platform agent provides the core operations once: `ping`, `command` (`PlatformAgent.executeCommand`) and
   `player-events`, the players' joins and leaves, which the agent reports to `AgentServer.playerEvents()` (`PlayerEvents`).
   Keep that vocabulary small: only facts about players' connections and the console. Built-in capabilities use
-  them through `ProcessCapabilityContext.platform()`, which carries only that process's events, and ship no
-  agent JARs; anything else a capability needs from a platform belongs to an agent extension.
+  them through `ProcessCapabilityContext.platform()`, which carries only that process's events; anything else a
+  capability needs from a platform belongs to an agent extension, which a built-in process family ships as its
+  `-agent` and `-<platform>` members. Never send a platform action through `command` to avoid an extension.
 - Platform agents expose native services and their scheduling rules. The endpoint owns its extension
   class loader; the scenario owns host connections.
 - A workbench holds a scenario's machine side; the host keeps planning and managed execution. The launcher builds
