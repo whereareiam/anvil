@@ -11,6 +11,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ValueTranslator;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.Session;
+import org.geysermc.mcprotocollib.network.event.session.ConnectedEvent;
 import org.geysermc.mcprotocollib.network.event.session.DisconnectedEvent;
 import org.geysermc.mcprotocollib.network.event.session.SessionAdapter;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -46,6 +47,16 @@ final class ClientPacketListener extends SessionAdapter {
 	private final ComponentTranslator text;
 	private volatile ClientProfile granted;
 	private volatile boolean settingsDue;
+
+	@Override
+	public void connected(ConnectedEvent event) {
+		// A server closes the connection right after its disconnect, so an answer the client sends just then, such as
+		// the two that accept a teleport after a dimension change, may be written into a closed connection. Netty would
+		// close the channel on that failed write and drop the disconnect still waiting to be read, reporting the end of
+		// the stream instead of the server's reason. Without auto-close the failed write only shuts the output down,
+		// and the channel closes when it reads the disconnect or the end of the stream.
+		session.getChannel().config().setAutoClose(false);
+	}
 
 	@Override
 	public void packetReceived(Session ignored, Packet packet) {
