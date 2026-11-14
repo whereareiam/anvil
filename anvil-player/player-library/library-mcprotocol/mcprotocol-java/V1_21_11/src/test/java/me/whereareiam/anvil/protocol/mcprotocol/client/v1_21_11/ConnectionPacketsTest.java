@@ -6,6 +6,8 @@ import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespa
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConnectionPackets;
 import net.kyori.adventure.key.Key;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.GameMode;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerSpawnInfo;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
@@ -21,10 +23,11 @@ class ConnectionPacketsTest {
 	private final ConnectionPackets packets = new ConnectionPackets();
 
 	@Test
-	void decodesJoiningALevelRespawningAndReturningToConfiguration() {
-		assertEquals(new ClientboundLogin(42), packets.decode(new ClientboundLoginPacket(42, false, new Key[0], 20, 10, 10,
-				false, true, false, null, false)));
-		assertEquals(new ClientboundRespawn(), packets.decode(new ClientboundRespawnPacket(null, false, false)));
+	void decodesJoiningALevelAndRespawningWithTheDimensionAndReturningToConfiguration() {
+		assertEquals(new ClientboundLogin(42, "minecraft:overworld"), packets.decode(new ClientboundLoginPacket(42, false,
+				new Key[0], 20, 10, 10, false, true, false, spawnIn(Key.key("minecraft", "overworld")), false)));
+		assertEquals(new ClientboundRespawn("example:arena"), packets.decode(new ClientboundRespawnPacket(
+				spawnIn(Key.key("example", "arena")), false, false)));
 		assertEquals(new ClientboundStartConfiguration(), packets.decode(new ClientboundStartConfigurationPacket()));
 	}
 
@@ -38,6 +41,10 @@ class ConnectionPacketsTest {
 	void carriesEveryConnectionPacket() {
 		assertEquals(Set.of(ClientboundLogin.class, ClientboundRespawn.class, ClientboundStartConfiguration.class),
 				packets.packets());
+	}
+
+	private static PlayerSpawnInfo spawnIn(Key dimension) {
+		return new PlayerSpawnInfo(0, dimension, 0, GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, null, 0, 63);
 	}
 
 	private static final class UnknownPacket implements ServerboundPacket {
