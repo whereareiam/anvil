@@ -5,6 +5,7 @@ import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.model.player.PlayerState;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
+import me.whereareiam.anvil.capability.api.exception.ChannelUnavailableException;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.api.process.RequestChannel;
 import me.whereareiam.anvil.capability.worlds.agent.WorldChangeLog;
@@ -33,7 +34,9 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -219,6 +222,96 @@ class AgentWorldsTest {
 	}
 
 	@Test
+	void deletesTheWorldsAPassedScenarioCreatedThatAreStillLoadedOnlyOnce() {
+		create("dungeon");
+		create("arena_nether");
+		create("lobby");
+		server.outcome = AgentWorldOutcome.builder().build();
+		worlds.delete("arena_nether");
+		worlds.unload("lobby");
+		server.requests.clear();
+		server.deletions.add(AgentWorldOutcome.builder().build());
+
+		worlds.finishScenario(true);
+		worlds.finishScenario(true);
+
+		assertEquals(List.of("minecraft:dungeon"), server.requests);
+		assertEquals(Optional.empty(), worlds.world("dungeon"));
+	}
+
+	@Test
+	void leavesTheWorldsAFailedScenarioCreatedForDiagnosticsAndForgetsThem() {
+		create("dungeon");
+		server.requests.clear();
+
+		worlds.finishScenario(false);
+		worlds.finishScenario(true);
+
+		assertTrue(server.requests.isEmpty());
+		assertTrue(worlds.world("dungeon").isPresent());
+	}
+
+	@Test
+	void asksAgainWhileTheServerRefusesToDeleteAWorldItsPlayersHaveJustLeft() {
+		create("dungeon");
+		server.requests.clear();
+		AgentWorldOutcome occupied = AgentWorldOutcome.builder().refusal("Players are in minecraft:dungeon: [Alice]").build();
+		server.deletions.addAll(List.of(occupied, occupied, AgentWorldOutcome.builder().build()));
+
+		worlds.finishScenario(true);
+
+		assertEquals(List.of("minecraft:dungeon", "minecraft:dungeon", "minecraft:dungeon"), server.requests);
+		assertEquals(Optional.empty(), worlds.world("dungeon"));
+	}
+
+	@Test
+	void failsWithEveryWorldTheServerKeptRefusingToDeleteAfterTryingTheOthers() {
+		AgentWorlds impatient = new AgentWorlds("lobby", server, Duration.ofMillis(60));
+		server.outcome = created("dungeon");
+		impatient.create(WorldCreation.builder().key("dungeon").build());
+		server.outcome = created("crypt");
+		impatient.create(WorldCreation.builder().key("crypt").build());
+		server.outcome = AgentWorldOutcome.builder().refusal("Players are in the world").build();
+
+		IllegalStateException failure = assertThrows(IllegalStateException.class, () -> impatient.finishScenario(true));
+
+		assertEquals("'lobby' refused to delete the world 'minecraft:dungeon' its scenario created: Players are in the world",
+				failure.getMessage());
+		assertEquals(1, failure.getSuppressed().length);
+		assertTrue(failure.getSuppressed()[0].getMessage().contains("'minecraft:crypt'"));
+	}
+
+	@Test
+	void leavesAWorldAPassedScenarioLoadedFromItsKeptFolder() {
+		server.outcome = created("map");
+		worlds.load("map");
+		server.requests.clear();
+
+		worlds.finishScenario(true);
+
+		assertTrue(server.requests.isEmpty());
+	}
+
+	@Test
+	void hasNothingToDeleteOnceTheServerStopped() {
+		create("dungeon");
+		server.stopped = true;
+
+		worlds.finishScenario(true);
+	}
+
+	private void create(String key) {
+		server.outcome = created(key);
+		worlds.create(WorldCreation.builder().key(key).build());
+	}
+
+	private static AgentWorldOutcome created(String key) {
+		return AgentWorldOutcome.builder()
+				.world(AgentWorld.builder().key("minecraft:" + key).kind("OVERWORLD").spawn(location("minecraft:" + key, 0.5, 64, 0.5)).build())
+				.build();
+	}
+
+	@Test
 	void watchesTheWorldsTheServerLoadsAndUnloadsSinceTheWatch() {
 		server.events.loaded("minecraft:arena");
 		WorldEventWatch events = worlds.watchWorlds();
@@ -313,6 +406,17 @@ class AgentWorldsTest {
 		private final Map<UUID, AgentLocation> placements = new LinkedHashMap<>();
 		private final List<AgentTransfer> transfers = new ArrayList<>();
 		private final List<Object> requests = new ArrayList<>();
+		private final List<AgentWorld> loaded = new ArrayList<>(List.of(
+				AgentWorld.builder().key("minecraft:overworld").kind("OVERWORLD").spawn(OVERWORLD_SPAWN).build(),
+				AgentWorld.builder().key("minecraft:the_nether").kind("NETHER").spawn(NETHER_SPAWN).build(),
+				AgentWorld.builder().key("minecraft:arena").kind("CUSTOM").spawn(ARENA_SPAWN).build()
+		));
+		/**
+		 * Outcomes of the next deletions, each of which removes the world when it succeeds; once they are used up, a
+		 * deletion answers {@link #outcome} and keeps the world.
+		 */
+		private final Deque<AgentWorldOutcome> deletions = new ArrayDeque<>();
+		private boolean stopped;
 		private WorldChangeLog log = new WorldChangeLog();
 		private WorldEventLog events = new WorldEventLog();
 		private boolean refuse;
@@ -320,12 +424,10 @@ class AgentWorldsTest {
 
 		@Override
 		public <Q, R> @Nullable R request(@NotNull ChannelOperation<Q, R> operation, @Nullable Q request) {
+			if (stopped) throw new ChannelUnavailableException("The server stopped", new IllegalStateException("closed"));
+
 			Object response = switch (operation.getId()) {
-				case "me.whereareiam.anvil.worlds.worlds" -> AgentWorldList.builder()
-						.world(AgentWorld.builder().key("minecraft:overworld").kind("OVERWORLD").spawn(OVERWORLD_SPAWN).build())
-						.world(AgentWorld.builder().key("minecraft:the_nether").kind("NETHER").spawn(NETHER_SPAWN).build())
-						.world(AgentWorld.builder().key("minecraft:arena").kind("CUSTOM").spawn(ARENA_SPAWN).build())
-						.build();
+				case "me.whereareiam.anvil.worlds.worlds" -> AgentWorldList.builder().worlds(List.copyOf(loaded)).build();
 				case "me.whereareiam.anvil.worlds.placements" -> AgentPlacements.builder()
 						.placements(placements.entrySet().stream()
 								.map(entry -> AgentPlacement.builder().uniqueId(entry.getKey()).location(entry.getValue()).build())
@@ -339,8 +441,21 @@ class AgentWorldsTest {
 				}
 				case "me.whereareiam.anvil.worlds.changes" -> log.since((AgentLogRequest) request);
 				case "me.whereareiam.anvil.worlds.events" -> events.since((AgentLogRequest) request);
-				case "me.whereareiam.anvil.worlds.create", "me.whereareiam.anvil.worlds.load",
-						"me.whereareiam.anvil.worlds.unload", "me.whereareiam.anvil.worlds.delete" -> {
+				case "me.whereareiam.anvil.worlds.create" -> {
+					requests.add(request);
+					if (outcome.getWorld() != null) loaded.add(outcome.getWorld());
+					yield outcome;
+				}
+				case "me.whereareiam.anvil.worlds.delete" -> {
+					requests.add(request);
+					AgentWorldOutcome deletion = deletions.poll();
+					if (deletion == null) yield outcome;
+
+					if (deletion.getRefusal() == null && deletion.getUnsupported() == null)
+						loaded.removeIf(world -> world.getKey().equals(request));
+					yield deletion;
+				}
+				case "me.whereareiam.anvil.worlds.load", "me.whereareiam.anvil.worlds.unload" -> {
 					requests.add(request);
 					yield outcome;
 				}

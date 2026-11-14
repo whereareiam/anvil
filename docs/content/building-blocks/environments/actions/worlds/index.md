@@ -122,19 +122,16 @@ kind of a nether or end map; `load(world)` loads an overworld.
 
 ## Keep worlds from leaking into later tests
 
-A created world stays until the test unloads or deletes it, or the server stops, so a server that a
-scenario keeps for later scenarios keeps it as well. `unload` keeps the world's folder, and creating the
-same key again on that server loads what it kept. A test on a kept server deletes the worlds it created
-when it is done, in a `finally` block when a failure must not leave them behind:
+When a scenario passes, `Worlds` deletes the worlds it created that the server still has loaded, so a
+server kept for later scenarios offers each the worlds it started with, and a test does not delete what it
+created itself. The scenario's players have only just left when it finishes, so a world the server refuses to
+delete while a player is still in it is asked for again for up to ten seconds; if the server still refuses,
+the scenario's cleanup fails and a kept server is stopped instead of being lent to the next scenario. When a
+scenario fails, its worlds stay on the server for diagnostics, together with its workspace.
 
-```java
-try {
-	worlds.create(WorldCreation.builder().key("arena").build());
-	// ...
-} finally {
-	worlds.delete("arena");
-}
-```
+A world the test unloaded itself is not deleted: `unload` keeps the world's folder, and creating or loading
+the same key again on that server loads what it kept. Neither is a world the test loaded with `load`, since
+its folder was there before the scenario; a test on a kept server unloads such a world when it is done.
 
 ## Wait for the server to load a world
 

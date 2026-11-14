@@ -17,7 +17,10 @@ import me.whereareiam.anvil.capability.worlds.model.WorldLocation;
 import me.whereareiam.anvil.capability.worlds.type.WorldGenerator;
 import me.whereareiam.anvil.capability.worlds.type.WorldKind;
 import me.whereareiam.anvil.testkit.tests.server.fixture.FixtureServer;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -32,11 +35,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Moves a player between the server's worlds through the server's own API and follows the move from both ends: the
  * server reports the world change, and the client is told the dimension it is in now. Creates worlds the way a plugin
- * does, follows the server loading and unloading them, and unloads, loads or deletes them again, since the release's server is
- * kept for every test.
+ * does, follows the server loading and unloading them, and unloads, loads or deletes them again. The release's server
+ * is kept for every test, so a world a test created and left loaded is deleted when the test passes, which the first
+ * two tests check in that order.
  */
 @Release
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class WorldsReleaseTest {
+	private static final String LEFT_BEHIND = "anvil_left_behind";
+
 	private static final Duration TIMEOUT = Duration.ofSeconds(20);
 	// Above the nether's bedrock roof, where a player standing still is in the air instead of inside the rock.
 	private static final WorldLocation ABOVE_THE_NETHER = WorldLocation.builder()
@@ -46,6 +53,30 @@ class WorldsReleaseTest {
 			.z(0.5)
 			.yaw(90)
 			.build();
+
+	@Test
+	@Order(1)
+	void leavesACreatedWorldLoadedWithAPlayerInIt(ScenarioContext anvil) {
+		FixtureServer server = new FixtureServer(anvil);
+		SimulatedPlayer player = server.join();
+		Worlds worlds = anvil.processes().server("server").capability(Worlds.class);
+		WorldChangeWatch changes = worlds.watch();
+
+		worlds.create(WorldCreation.builder().key(LEFT_BEHIND).generator(WorldGenerator.FLAT).build());
+		worlds.send(player, LEFT_BEHIND);
+
+		changes.changed(player, LEFT_BEHIND, TIMEOUT);
+	}
+
+	@Test
+	@Order(2)
+	void findsNoWorldAnEarlierPassedTestCreated(ScenarioContext anvil) throws IOException {
+		var server = anvil.processes().server("server");
+
+		assertEquals(Optional.empty(), server.capability(Worlds.class).world(LEFT_BEHIND));
+		assertFalse(server.files().exists(LEFT_BEHIND));
+		assertFalse(server.files().exists("world/dimensions/minecraft/" + LEFT_BEHIND));
+	}
 
 	@Test
 	void listsTheServersWorldsByTheKeysItsPlayersAreTold(ScenarioContext anvil) {

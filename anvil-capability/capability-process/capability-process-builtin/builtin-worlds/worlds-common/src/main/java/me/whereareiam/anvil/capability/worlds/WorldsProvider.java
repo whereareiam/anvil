@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.capability.agent.api.model.AgentExtension;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityContext;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider;
+import me.whereareiam.anvil.capability.api.event.scenario.ScenarioFinished;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.worlds.agent.WorldsOperations;
 import org.jetbrains.annotations.NotNull;
@@ -56,6 +57,9 @@ public final class WorldsProvider implements AgentProcessCapabilityProvider<Worl
 
 	@Override
 	public @NotNull Worlds create(@NotNull AgentProcessCapabilityContext context) {
-		return new AgentWorlds(context.processName(), context.channel());
+		AgentWorlds worlds = new AgentWorlds(context.processName(), context.channel());
+		context.on(ScenarioFinished.class, finished -> worlds.finishScenario(finished.isPassed()));
+
+		return worlds;
 	}
 }
