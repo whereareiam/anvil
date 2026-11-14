@@ -3,6 +3,11 @@ package me.whereareiam.anvil.workbench.server;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.java.JavaSource;
+import me.whereareiam.anvil.api.model.process.Distribution;
+import me.whereareiam.anvil.api.model.process.MinecraftServer;
+import me.whereareiam.anvil.api.model.workspace.AssetSource;
+import me.whereareiam.anvil.api.model.workspace.WorkspaceAsset;
+import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
@@ -10,6 +15,8 @@ import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
 import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
+import me.whereareiam.anvil.environment.provisioning.workspace.api.PreparedWorkspace;
+import me.whereareiam.anvil.environment.provisioning.workspace.api.model.WorkspaceRequest;
 import me.whereareiam.anvil.workbench.api.exception.WorkbenchException;
 import me.whereareiam.anvil.workbench.api.model.JavaMainLaunch;
 import me.whereareiam.anvil.workbench.api.model.WorkbenchFacts;
@@ -33,6 +40,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -93,6 +101,44 @@ class RemoteWorkbenchIntegrationTest {
 			Files.writeString(data.resolve("value.txt"), "inside");
 			assertEquals("inside", Files.readString(workbench.store(temporary.resolve("data")).resolve("nested/value.txt")));
 		}
+	}
+
+	@Test
+	void installsAPluginRebuiltOnTheEnginesMachineWhenItsProcessStartsAgain() throws Exception {
+		try (RemoteWorkbench workbench = RemoteWorkbench.connect(pairing)) {
+			Path plugin = Files.writeString(temporary.resolve("plugin.jar"), "built");
+			WorkspaceAsset asset = WorkspaceAsset.builder()
+					.source(AssetSource.path(plugin))
+					.target(Path.of("plugins/plugin.jar"))
+					.build();
+			Path workspace = workbench.workDirectory().resolve("scenario/run/lobby");
+			ProcessFiles files = workbench.workspaces().files(workspace);
+
+			try (PreparedWorkspace prepared = workbench.workspaces().prepare(WorkspaceRequest.builder()
+					.root(workbench.workDirectory())
+					.directory(workspace)
+					.process(MinecraftServer.builder()
+							.name("lobby")
+							.platform("paper")
+							.distribution(Distribution.remote("1.21.11", "132"))
+							.build())
+					.plan(WorkspacePlan.builder().asset(stored(workbench, asset)).build())
+					.build())) {
+				prepared.beforeStart(List.of(stored(workbench, asset)));
+				Files.writeString(plugin, "rebuilt");
+				assertEquals("built", files.read("plugins/plugin.jar"), "The first start uses the prepared copy");
+
+				prepared.beforeStart(List.of(stored(workbench, asset)));
+				assertEquals("rebuilt", files.read("plugins/plugin.jar"));
+			}
+		}
+	}
+
+	/**
+	 * Points an asset at the workbench's copy of its file, as the launcher does before every start.
+	 */
+	private static WorkspaceAsset stored(RemoteWorkbench workbench, WorkspaceAsset asset) {
+		return asset.toBuilder().source(AssetSource.path(workbench.store(asset.getSource().getPath()))).build();
 	}
 
 	@Test

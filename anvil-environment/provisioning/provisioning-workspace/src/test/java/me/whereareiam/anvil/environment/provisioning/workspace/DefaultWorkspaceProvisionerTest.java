@@ -109,15 +109,53 @@ class DefaultWorkspaceProvisionerTest {
 		try (PreparedWorkspace prepared = prepare(root, workspace, plan, List.of())) {
 			Files.writeString(plugin, "rebuilt");
 			Files.writeString(workspace.resolve("world.dat"), "played");
-			prepared.beforeStart();
+			prepared.beforeStart(plan.getAssets());
 			assertEquals("built", Files.readString(workspace.resolve("plugins/plugin.jar")), "The first start uses the prepared assets");
 
-			prepared.beforeStart();
+			prepared.beforeStart(plan.getAssets());
 			assertEquals("rebuilt", Files.readString(workspace.resolve("plugins/plugin.jar")));
 			assertEquals("played", Files.readString(workspace.resolve("world.dat")));
 
 			prepared.finish(true);
-			assertThrows(IllegalStateException.class, prepared::beforeStart);
+			assertThrows(IllegalStateException.class, () -> prepared.beforeStart(plan.getAssets()));
+		}
+	}
+
+	@Test
+	void installsALaterStartFromTheSourcesItIsGiven() throws Exception {
+		Path plugin = Files.writeString(temporary.resolve("plugin.jar"), "built");
+		Path copy = Files.writeString(temporary.resolve("store-copy.jar"), "rebuilt and stored again");
+		Path root = temporary.resolve("work");
+		Path workspace = root.resolve("scenario/run/server");
+		WorkspaceAsset asset = WorkspaceAsset.builder()
+				.source(AssetSource.path(plugin))
+				.target(Path.of("plugins/plugin.jar"))
+				.build();
+
+		try (PreparedWorkspace prepared = prepare(root, workspace, WorkspacePlan.builder().asset(asset).build(), List.of())) {
+			prepared.beforeStart(List.of(asset));
+			prepared.beforeStart(List.of(asset.toBuilder().source(AssetSource.path(copy)).build()));
+
+			assertEquals("rebuilt and stored again", Files.readString(workspace.resolve("plugins/plugin.jar")));
+		}
+	}
+
+	@Test
+	void refusesAssetsThatAreNotThePreparedPlans() throws Exception {
+		Path plugin = Files.writeString(temporary.resolve("plugin.jar"), "built");
+		Path root = temporary.resolve("work");
+		Path workspace = root.resolve("scenario/run/server");
+		WorkspaceAsset asset = WorkspaceAsset.builder()
+				.source(AssetSource.path(plugin))
+				.target(Path.of("plugins/plugin.jar"))
+				.build();
+
+		try (PreparedWorkspace prepared = prepare(root, workspace, WorkspacePlan.builder().asset(asset).build(), List.of())) {
+			assertThrows(IllegalArgumentException.class, () -> prepared.beforeStart(List.of()));
+			assertThrows(IllegalArgumentException.class, () -> prepared.beforeStart(List.of(asset.toBuilder()
+					.target(Path.of("plugins/other.jar")).build())));
+			assertThrows(IllegalArgumentException.class, () -> prepared.beforeStart(List.of(asset.toBuilder()
+					.mode(AssetInstallMode.SEED_ONCE).build())));
 		}
 	}
 

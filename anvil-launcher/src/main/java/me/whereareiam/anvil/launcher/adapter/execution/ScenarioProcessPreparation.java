@@ -100,6 +100,7 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 					request,
 					platforms,
 					workspace,
+					() -> stored(planned.getWorkspace()).getAssets(),
 					command,
 					target,
 					connections,
@@ -119,7 +120,8 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 
 	/**
 	 * Hands the files a workspace copies from the engine's machine, such as plugin JARs and the platform agent, to
-	 * the workbench, and points the assets at the workbench's copies.
+	 * the workbench, and points the assets at the workbench's copies. Every start of the process does it again, so a
+	 * file rebuilt since reaches the workbench before the start installs it.
 	 */
 	private WorkspacePlan stored(WorkspacePlan plan) {
 		List<WorkspaceAsset> assets = plan.getAssets().stream()

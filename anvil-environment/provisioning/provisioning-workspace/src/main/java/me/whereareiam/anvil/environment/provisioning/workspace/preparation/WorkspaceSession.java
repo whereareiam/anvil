@@ -108,17 +108,36 @@ public final class WorkspaceSession implements PreparedWorkspace {
 	}
 
 	/**
-	 * Installs the assets again before every start but the first, which preparation already installed for.
+	 * Installs the assets again from their current sources before every start but the first, which preparation
+	 * already installed for.
 	 */
 	@Override
-	public synchronized void beforeStart() {
+	public synchronized void beforeStart(@NotNull List<WorkspaceAsset> assets) {
 		if (finalized) throw new IllegalStateException("Workspace is finalized: " + workspace);
+		List<WorkspaceAsset> current = new WorkspacePlanValidator(files)
+				.validate(WorkspacePlan.builder().assets(assets).build(), List.of())
+				.getAssets();
+		requirePlanned(current);
 		if (!started) {
 			started = true;
 			return;
 		}
 
-		installAssets();
+		installAssets(current);
+	}
+
+	/**
+	 * Requires assets with the prepared plan's targets and install modes, in its order.
+	 */
+	private void requirePlanned(List<WorkspaceAsset> current) {
+		List<WorkspaceAsset> planned = plan.getAssets();
+		boolean same = current.size() == planned.size();
+		for (int index = 0; same && index < current.size(); index++)
+			same = current.get(index).getTarget().normalize().equals(planned.get(index).getTarget().normalize())
+					&& current.get(index).getMode() == planned.get(index).getMode();
+		if (!same)
+			throw new IllegalArgumentException("A start must install the prepared plan's assets, with only their sources "
+					+ "changed: " + workspace);
 	}
 
 	/**
@@ -205,11 +224,11 @@ public final class WorkspaceSession implements PreparedWorkspace {
 				snapshots.restore(identity(cache), cache.effectiveKey(),
 						files.resolveRelative(workspace, cache.getPath(), "Cache path"));
 
-		installAssets();
+		installAssets(plan.getAssets());
 	}
 
-	private void installAssets() {
-		for (WorkspaceAsset asset : plan.getAssets()) {
+	private void installAssets(List<WorkspaceAsset> assets) {
+		for (WorkspaceAsset asset : assets) {
 			Path target = files.resolveRelative(workspace, asset.getTarget(), "Asset target");
 			if (asset.getMode() == AssetInstallMode.SEED_ONCE && Files.exists(target))
 				continue;

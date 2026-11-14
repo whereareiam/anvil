@@ -1,8 +1,10 @@
 package me.whereareiam.anvil.environment.provisioning.workspace.api;
 
+import me.whereareiam.anvil.api.model.workspace.WorkspaceAsset;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
+import java.util.List;
 
 /**
  * Owns a prepared process directory until its run is finalized.
@@ -20,14 +22,20 @@ public interface PreparedWorkspace extends AutoCloseable {
 
 	/**
 	 * Brings the workspace up to date for a process start. Preparation already installed the assets for the
-	 * first start; each later start, such as a restart, installs them again, so an
+	 * first start; each later start, such as a restart, installs them again from the sources it is given, so an
 	 * {@link me.whereareiam.anvil.api.type.AssetInstallMode#ALWAYS ALWAYS} asset is replaced from its current
 	 * source, for example a rebuilt plugin JAR, and a missing {@code SEED_ONCE} asset is seeded again. Caches and
 	 * cleanups apply only at preparation and finalization.
 	 *
+	 * <p>The assets are the prepared plan's, in its order and with its targets and install modes; only their sources
+	 * may differ. A workbench on another machine is given fresh copies of the engine's files this way, because it
+	 * installs from its own copies, never from the engine's paths.</p>
+	 *
+	 * @param assets the workspace's assets with their current sources
+	 * @throws IllegalArgumentException if the assets are not the prepared plan's
 	 * @throws IllegalStateException if the workspace was finalized
 	 */
-	void beforeStart();
+	void beforeStart(@NotNull List<WorkspaceAsset> assets);
 
 	/**
 	 * Saves enabled snapshots for successful runs, applies cleanup, and releases directory ownership.
