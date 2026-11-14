@@ -49,7 +49,9 @@ MinecraftProxy proxy = MinecraftProxy.builder()
 
 A scenario uses a kept process like any other: `anvil.processes()` returns it, players connect to it and
 observe it, and its capabilities work. A scenario may stop or restart it; whatever state the scenario
-leaves it in must be ready again when the scenario finishes, or the process is not kept.
+leaves it in must be ready again when the scenario finishes, or the process is not kept. Capabilities
+undo some of what a passed scenario did before the next one starts: `Worlds` deletes the worlds the scenario
+created. A capability that fails to do so stops the process instead of handing it to the next scenario.
 
 ## Know what the same process means
 

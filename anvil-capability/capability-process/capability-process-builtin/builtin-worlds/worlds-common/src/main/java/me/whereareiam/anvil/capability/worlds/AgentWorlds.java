@@ -4,6 +4,7 @@ import me.whereareiam.anvil.agent.api.model.AgentOperation;
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
+import me.whereareiam.anvil.capability.api.exception.ChannelUnavailableException;
 import me.whereareiam.anvil.capability.api.history.HistoryCursor;
 import me.whereareiam.anvil.capability.api.model.channel.ChannelOperation;
 import me.whereareiam.anvil.capability.api.process.RequestChannel;
@@ -35,6 +36,7 @@ import org.jetbrains.annotations.Nullable;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -51,9 +53,15 @@ import java.util.stream.Collectors;
  *
  * <p>A simulated player is matched by the UUIDs of every profile its client was granted, read on every call, so a
  * profile granted at a later login counts as well.</p>
+ *
+ * <p>The worlds a scenario created are deleted when it passes, if the server still has them loaded, so a server kept
+ * for later scenarios offers each the worlds it started with. The server refuses to delete a world a player is still
+ * in, and the scenario's players have only just left when it finishes, so a refused deletion is retried for a while
+ * before it fails. After a failed scenario the worlds stay for diagnostics.</p>
  */
 final class AgentWorlds implements Worlds {
 	private static final Duration POLL_INTERVAL = Duration.ofMillis(25);
+	private static final Duration CLEANUP_TIMEOUT = Duration.ofSeconds(10);
 	private static final ChannelOperation<Void, AgentWorldList> WORLDS = channel(WorldsOperations.WORLDS);
 	private static final ChannelOperation<Void, AgentPlacements> PLACEMENTS = channel(WorldsOperations.PLACEMENTS);
 	private static final ChannelOperation<AgentTransfer, Boolean> SEND = channel(WorldsOperations.SEND);
@@ -67,6 +75,11 @@ final class AgentWorlds implements Worlds {
 
 	private final @NotNull String process;
 	private final @NotNull RequestChannel channel;
+	private final @NotNull Duration cleanupTimeout;
+	/**
+	 * Keys of the worlds the current scenario created and has not deleted or unloaded itself.
+	 */
+	private final Set<String> created = new LinkedHashSet<>();
 	private final List<WorldChange> changes = new ArrayList<>();
 	private final List<WorldEvent> events = new ArrayList<>();
 	private @Nullable String log;
@@ -75,8 +88,13 @@ final class AgentWorlds implements Worlds {
 	private long eventsRead;
 
 	AgentWorlds(@NotNull String process, @NotNull RequestChannel channel) {
+		this(process, channel, CLEANUP_TIMEOUT);
+	}
+
+	AgentWorlds(@NotNull String process, @NotNull RequestChannel channel, @NotNull Duration cleanupTimeout) {
 		this.process = process;
 		this.channel = channel;
+		this.cleanupTimeout = cleanupTimeout;
 	}
 
 	@Override
@@ -138,6 +156,9 @@ final class AgentWorlds implements Worlds {
 				.generator(creation.getGenerator().name())
 				.build()));
 		done(outcome, "create the world '" + key + "'");
+		synchronized (created) {
+			created.add(key);
+		}
 
 		return world(Objects.requireNonNull(outcome.getWorld()));
 	}
@@ -162,6 +183,7 @@ final class AgentWorlds implements Worlds {
 		loaded(key);
 
 		done(Objects.requireNonNull(channel.request(UNLOAD, key)), "unload the world '" + key + "'");
+		forget(key);
 	}
 
 	@Override
@@ -170,6 +192,66 @@ final class AgentWorlds implements Worlds {
 		loaded(key);
 
 		done(Objects.requireNonNull(channel.request(DELETE, key)), "delete the world '" + key + "'");
+		forget(key);
+	}
+
+	/**
+	 * Deletes the worlds the finished scenario created and the server still has loaded, when the scenario passed, and
+	 * forgets them either way. A server that has stopped has nothing left to delete.
+	 *
+	 * @param passed whether the scenario passed
+	 * @throws IllegalStateException when the server kept refusing to delete a world, with later failures suppressed
+	 */
+	void finishScenario(boolean passed) {
+		List<String> keys;
+		synchronized (created) {
+			keys = List.copyOf(created);
+			created.clear();
+		}
+		if (!passed || keys.isEmpty()) return;
+
+		try {
+			Set<String> loaded = worlds().stream().map(ServerWorld::getKey).collect(Collectors.toSet());
+			RuntimeException failure = null;
+			for (String key : keys) {
+				if (!loaded.contains(key)) continue;
+
+				try {
+					deleteCreated(key);
+				} catch (ChannelUnavailableException stopped) {
+					throw stopped;
+				} catch (RuntimeException refused) {
+					if (failure == null) failure = refused;
+					else failure.addSuppressed(refused);
+				}
+			}
+			if (failure != null) throw failure;
+		} catch (ChannelUnavailableException stopped) {
+			// The server stopped, and its worlds went with it.
+		}
+	}
+
+	/**
+	 * Deletes a world the scenario created, asking again while the server refuses, as it does while the players who
+	 * have just left are still in it.
+	 */
+	private void deleteCreated(@NotNull String key) {
+		long deadline = System.nanoTime() + cleanupTimeout.toNanos();
+		while (true) {
+			AgentWorldOutcome outcome = Objects.requireNonNull(channel.request(DELETE, key));
+			if (outcome.getRefusal() == null || System.nanoTime() >= deadline) {
+				done(outcome, "delete the world '" + key + "' its scenario created");
+				return;
+			}
+
+			sleep();
+		}
+	}
+
+	private void forget(@NotNull String key) {
+		synchronized (created) {
+			created.remove(key);
+		}
 	}
 
 	@Override
