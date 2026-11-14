@@ -224,6 +224,34 @@ class ChannelMessagesTest {
 		assertEquals(List.of("Use /register"), plain(messages.history()));
 	}
 
+	@Test
+	void namesTheLatestMessagesTheChatShowedWhenAWaitFails() {
+		RecordingChannel channel = new RecordingChannel();
+		ChannelMessages messages = new ChannelMessages(channel);
+		show(channel, 0, "anvil:welcome");
+		MessageWatch chat = messages.watch();
+		show(channel, 1, "anvil:dialog-echo:nether");
+		show(channel, 2, "chat.disabled.options");
+
+		assertEquals("""
+				Player did not see a matching message in chat
+				The chat showed: 'anvil:dialog-echo:nether', 'chat.disabled.options'""",
+				assertThrows(IllegalStateException.class, () -> chat.received("overworld", TIMEOUT)).getMessage());
+		chat.received("nether", TIMEOUT);
+		assertEquals("""
+				Player did not see a matching message in chat
+				The chat showed: 'chat.disabled.options'""",
+				assertThrows(IllegalStateException.class, () -> chat.received("overworld", TIMEOUT)).getMessage());
+
+		for (int message = 3; message < 15; message++)
+			show(channel, message, "line-" + message);
+		assertEquals("""
+				Player did not see a message containing 'overworld' in chat
+				The chat showed: 5 earlier, then 'line-5', 'line-6', 'line-7', 'line-8', 'line-9', 'line-10', \
+				'line-11', 'line-12', 'line-13', 'line-14'""",
+				assertThrows(IllegalStateException.class, () -> messages.received("overworld", TIMEOUT)).getMessage());
+	}
+
 	private static void show(RecordingChannel channel, long id, String text) {
 		channel.publish(MessagesChannel.CHAT_ADDED, new ChatMessage(id, Text.literal(text)));
 	}

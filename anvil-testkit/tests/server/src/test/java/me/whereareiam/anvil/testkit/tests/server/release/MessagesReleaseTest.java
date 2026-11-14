@@ -5,6 +5,8 @@ import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.messages.MessageWatch;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.messages.model.ChatLines;
+import me.whereareiam.anvil.capability.world.DimensionWatch;
+import me.whereareiam.anvil.capability.world.World;
 import me.whereareiam.anvil.protocol.api.model.text.SpanStyle;
 import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.api.model.text.TextColor;
@@ -87,14 +89,18 @@ class MessagesReleaseTest {
 		SimulatedPlayer player = server.join();
 		Messages messages = player.capability(Messages.class);
 		MessageWatch chat = messages.watch();
+		// The server refuses a command that reaches it while it moves the player, so the player sends once it arrived.
+		DimensionWatch dimensions = player.capability(World.class).watch();
 
 		server.console("execute in minecraft:the_nether run tp " + player.name() + " 0 120 0");
+		dimensions.entered("minecraft:the_nether", Duration.ofSeconds(30));
 		messages.command("anvil-fixture dialog-echo nether");
-		chat.received("anvil:dialog-echo:nether", Duration.ofSeconds(30));
+		chat.received("anvil:dialog-echo:nether", Duration.ofSeconds(10));
 		server.console("execute in minecraft:overworld run tp " + player.name() + " 0 120 0");
+		dimensions.entered("minecraft:overworld", Duration.ofSeconds(30));
 		messages.command("anvil-fixture dialog-echo overworld");
 
-		chat.received("anvil:dialog-echo:overworld", Duration.ofSeconds(30));
+		chat.received("anvil:dialog-echo:overworld", Duration.ofSeconds(10));
 	}
 
 	@Test

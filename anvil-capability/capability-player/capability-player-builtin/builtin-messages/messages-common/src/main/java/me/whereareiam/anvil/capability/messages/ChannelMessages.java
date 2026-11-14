@@ -28,6 +28,11 @@ import java.util.stream.Collectors;
  * subscriptions together with the player.
  */
 final class ChannelMessages implements Messages {
+	/**
+	 * Number of the chat's latest messages a failed wait names.
+	 */
+	private static final int NAMED_MESSAGES = 10;
+
 	private final ProtocolChannel channel;
 	private final CopyOnWriteArrayList<Text> history = new CopyOnWriteArrayList<>();
 	private final CopyOnWriteArrayList<DroppedChat> dropped = new CopyOnWriteArrayList<>();
@@ -63,7 +68,7 @@ final class ChannelMessages implements Messages {
 	@Override
 	public @NotNull Text received(@NotNull String text, @NotNull Duration timeout) {
 		await(() -> history.stream().anyMatch(message -> message.plain().contains(text)),
-				"see a message containing '" + text + "' in chat", timeout, () -> List.copyOf(dropped),
+				"see a message containing '" + text + "' in chat", timeout, this::history, () -> List.copyOf(dropped),
 				message -> message.contains(text));
 		return history.reversed().stream()
 				.filter(message -> message.plain().contains(text))
@@ -82,26 +87,44 @@ final class ChannelMessages implements Messages {
 	}
 
 	/**
-	 * Waits for a condition and, when it fails, names the matching messages among those the chat left out, which tells a
-	 * message the server never sent from one the player could not see.
+	 * Waits for a condition and, when it fails, names the latest messages the chat showed, such as the server's refusal
+	 * of a command, and the matching messages among those the chat left out, which tells a message the server never
+	 * sent from one the player could not see.
 	 */
 	private void await(
 			@NotNull BooleanSupplier condition,
 			@NotNull String description,
 			@NotNull Duration timeout,
+			@NotNull Supplier<List<Text>> shown,
 			@NotNull Supplier<List<DroppedChat>> left,
 			@NotNull Predicate<String> matcher
 	) {
 		try {
 			channel.await(condition, description, timeout);
 		} catch (IllegalStateException failure) {
+			List<Text> showed = shown.get();
 			List<DroppedChat> matching = left.get().stream().filter(message -> matcher.test(message.getText())).toList();
-			if (matching.isEmpty()) throw failure;
+			if (showed.isEmpty() && matching.isEmpty()) throw failure;
 
-			throw new IllegalStateException(failure.getMessage() + "\nThe chat left out matching messages that reached "
-					+ "the client: " + matching.stream().map(ChannelMessages::describe).collect(Collectors.joining(", ")),
-					failure);
+			StringBuilder message = new StringBuilder(failure.getMessage());
+			if (!showed.isEmpty()) message.append("\nThe chat showed: ").append(describe(showed));
+			if (!matching.isEmpty())
+				message.append("\nThe chat left out matching messages that reached the client: ")
+						.append(matching.stream().map(ChannelMessages::describe).collect(Collectors.joining(", ")));
+			throw new IllegalStateException(message.toString(), failure);
 		}
+	}
+
+	/**
+	 * Names the latest of the messages the chat showed, oldest first.
+	 */
+	private static String describe(List<Text> shown) {
+		int earlier = Math.max(0, shown.size() - NAMED_MESSAGES);
+		String latest = shown.subList(earlier, shown.size()).stream()
+				.map(message -> "'" + message.plain() + "'")
+				.collect(Collectors.joining(", "));
+
+		return earlier == 0 ? latest : earlier + " earlier, then " + latest;
 	}
 
 	private static String describe(DroppedChat message) {
@@ -113,7 +136,7 @@ final class ChannelMessages implements Messages {
 
 	/**
 	 * A watch over this player's history, which waits through the player's channel. It keeps a position in the
-	 * dropped messages too, so a failed wait names only those left out since the previous wait.
+	 * dropped messages too, so a failed wait names only the messages shown and left out since the previous wait.
 	 */
 	private final class Watch implements MessageWatch {
 		private final HistoryCursor<Text> cursor = new HistoryCursor<>(ChannelMessages.this::history);
@@ -122,8 +145,8 @@ final class ChannelMessages implements Messages {
 		@Override
 		public @NotNull Text received(@NotNull Predicate<String> matcher, @NotNull Duration timeout) {
 			Predicate<Text> plain = plain(matcher);
-			await(() -> cursor.find(plain) != null, "see a matching message in chat", timeout, droppedSince::unread,
-					matcher);
+			await(() -> cursor.find(plain) != null, "see a matching message in chat", timeout, cursor::unread,
+					droppedSince::unread, matcher);
 			droppedSince = droppedCursor();
 			return Objects.requireNonNull(cursor.take(plain));
 		}
