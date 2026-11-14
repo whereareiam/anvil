@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.inventory;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
+import me.whereareiam.anvil.capability.api.event.CapabilityEvent;
 import me.whereareiam.anvil.capability.inventory.channel.InventoryChannel;
 import me.whereareiam.anvil.capability.inventory.model.InventoryAction;
 import me.whereareiam.anvil.capability.inventory.model.SlotSelection;
@@ -122,7 +123,7 @@ class InventoryProviderTest {
 
 
 		@Override
-		public void onDestroy(@NotNull Runnable action) {
+		public <E extends CapabilityEvent> void on(@NotNull Class<E> event, @NotNull Consumer<E> action) {
 			throw new AssertionError("Inventory registers no cleanup");
 		}
 

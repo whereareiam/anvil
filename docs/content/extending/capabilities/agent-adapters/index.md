@@ -85,8 +85,31 @@ using `.requiredCapability(Type.class)` on its builder. Retrieve them with
 `.optionalCapability(Type.class)` instead: it is created first when the process has it, and
 `context.findCapability(Type.class)` is empty when it does not. Only declared predecessors are
 available, and all belong to this same logical process. Register capability-owned resources with
-`context.onClose(...)`; cleanup runs in reverse registration order before the underlying agent
-connection closes.
+`context.on(Closed.class, closed -> ...)`; cleanup runs in reverse registration order before the underlying
+agent connection closes. The same `context.on(...)` acts on the process's other moments: `ScenarioStarted` when a
+scenario takes the process, `ScenarioFinished` when it finishes, and `ProcessRestarted` when a later generation of
+the process is ready, since the capability outlives restarts while the JVM's state does not.
+
+A process declared with the engine lifetime outlives its scenario and is lent to later ones, and its
+capability serves all of them before it closes. To undo what one scenario did before the next one starts,
+act on `ScenarioFinished` with `context.on(ScenarioFinished.class, finished -> ...)`. It is reported each time a
+scenario using the process finishes, after the scenario's players are closed, and tells whether the scenario
+passed; for a process the scenario starts itself, it is reported once, just before `Closed`. Leave state in place when the scenario failed,
+since its workspaces are kept for diagnostics. A failing action fails the scenario's cleanup, and a kept process
+is then stopped instead of being lent again. Requests can report `ChannelUnavailableException` when the
+scenario stopped the process. In this example, `REMOVE` stands for a `ChannelOperation` of your own
+extension and `created` for the keys the capability's methods recorded:
+
+```java
+import me.whereareiam.anvil.capability.api.event.scenario.ScenarioFinished;
+
+Set<String> created = ConcurrentHashMap.newKeySet();
+context.on(ScenarioFinished.class, finished -> {
+	// A failed scenario keeps what it created for diagnostics.
+	if (finished.isPassed()) created.forEach(key -> context.channel().request(REMOVE, key));
+	created.clear();
+});
+```
 
 The scenario owns the request channel's transport, which follows the process's replacement
 connection across restarts. The same capability instance remains associated with that process;

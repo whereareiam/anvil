@@ -9,19 +9,27 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Map;
 
 /**
- * Finalizes logical capabilities before their underlying process group, preserving failed outcomes.
+ * Finalizes logical capabilities before their underlying process group, preserving failed outcomes. A scenario's
+ * group reports {@code ScenarioStarted} to the capabilities once every process is ready, and {@code ScenarioFinished}
+ * before closing them; a failed action fails the scenario's start or cleanup.
  */
 @RequiredArgsConstructor
 final class CapabilityProcessGroup implements ProcessGroup {
 	@Delegate(types = ScenarioProcesses.class)
 	private final @NotNull ProcessGroup processes;
 	private final @NotNull Map<String, ProcessCapabilities> capabilities;
+	/**
+	 * Whether starting and finishing the group start and finish a scenario, as they do for every group but one kept
+	 * beyond its scenarios.
+	 */
+	private final boolean scenario;
 
 	private boolean closed;
 
 	@Override
 	public void startAll() {
 		processes.startAll();
+		if (scenario) ProcessCapabilityRuntime.rethrow(ProcessCapabilityRuntime.startScenario(capabilities.values(), null));
 	}
 
 	@Override
@@ -31,7 +39,8 @@ final class CapabilityProcessGroup implements ProcessGroup {
 			closed = true;
 		}
 
-		Throwable failure = ProcessCapabilityRuntime.close(capabilities.values(), null);
+		Throwable failure = scenario ? ProcessCapabilityRuntime.finishScenario(capabilities.values(), successful, null) : null;
+		failure = ProcessCapabilityRuntime.close(capabilities.values(), failure);
 		try {
 			processes.finish(successful && capabilities.values().stream().noneMatch(ProcessCapabilities::failed) && failure == null);
 		} catch (RuntimeException | Error cleanup) {

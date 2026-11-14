@@ -213,7 +213,8 @@ An `EventDescriptor<E>` declares the event ID and payload class shared by the wo
 connection event, for example, carries a `PlayerConnectionEvent` with the profile the joined process granted at
 login, or the reason the connection ended. Use `Void` with a `null` payload when an event carries no value.
 
-Register host subscription cleanup with `context.onDestroy(...)`. `player.viewRotation()` returns the shared
+Register host subscription cleanup with `context.on(Closed.class, closed -> ...)`; a player reports only
+`Closed`, when it is destroyed for good. `player.viewRotation()` returns the shared
 `ViewRotation`: yaw and pitch in degrees, including server corrections. Movement updates it when sending a new
 direction, and interaction reads it for the current view; `player.viewRotation(rotation)` only records the value.
 

@@ -7,6 +7,10 @@ import me.whereareiam.anvil.capability.CapabilityRuntime;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider;
 import me.whereareiam.anvil.capability.api.CapabilityContext;
 import me.whereareiam.anvil.capability.api.CapabilityProvider;
+import me.whereareiam.anvil.capability.api.event.CapabilityEvent;
+import me.whereareiam.anvil.capability.api.event.lifecycle.ProcessRestarted;
+import me.whereareiam.anvil.capability.api.event.scenario.ScenarioFinished;
+import me.whereareiam.anvil.capability.api.event.scenario.ScenarioStarted;
 import me.whereareiam.anvil.capability.api.platform.ProcessPlatform;
 import me.whereareiam.anvil.capability.api.process.RequestChannel;
 import org.jetbrains.annotations.NotNull;
@@ -19,12 +23,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
  * Validates each logical process's capability graph and owns composition and cleanup across generations.
  */
 public final class ProcessCapabilityRuntime {
+	/**
+	 * The events a process reports to its capabilities besides {@code Closed}.
+	 */
+	private static final Set<Class<? extends CapabilityEvent>> EVENTS =
+			Set.of(ScenarioStarted.class, ScenarioFinished.class, ProcessRestarted.class);
+
 	private final Map<String, ProcessCapabilities> owners = new LinkedHashMap<>();
 	private boolean bound;
 
@@ -37,7 +48,8 @@ public final class ProcessCapabilityRuntime {
 			@NotNull Map<String, ? extends Collection<? extends CapabilityProvider<? extends ProcessCapability, CapabilityContext<ProcessCapability>>>> providers
 	) {
 		providers.forEach((name, supplied) -> {
-			var runtime = new CapabilityRuntime<ProcessCapability, CapabilityContext<ProcessCapability>>(ProcessCapability.class, supplied);
+			var runtime = new CapabilityRuntime<ProcessCapability, CapabilityContext<ProcessCapability>>(
+					ProcessCapability.class, supplied, EVENTS);
 			owners.put(name, new ProcessCapabilities(name, () -> runtime.compose("Process '" + name + "'", Function.identity())));
 		});
 	}
@@ -123,7 +135,8 @@ public final class ProcessCapabilityRuntime {
 
 	/**
 	 * Initializes a logical process owner after its transport first becomes ready.
-	 * Repeated readiness notifications preserve previously created capabilities.
+	 * Repeated readiness notifications preserve previously created capabilities and report
+	 * {@link ProcessRestarted} to them.
 	 *
 	 * @param name declared process identity
 	 */
@@ -137,20 +150,79 @@ public final class ProcessCapabilityRuntime {
 	}
 
 	/**
-	 * Transfers this composition's lifecycle to one prepared process group. Execution handles must
+	 * Transfers this composition's lifecycle to one prepared scenario's process group. Execution handles must
 	 * already delegate capability lookup to the corresponding owners returned by owner(name).
-	 * Capabilities are initialized after readiness and closed before underlying process finalization.
+	 * Capabilities are initialized after readiness; starting the group starts the scenario, so it reports
+	 * {@link ScenarioStarted} once every process is ready, and finishing the group finishes the scenario, so it
+	 * reports {@link ScenarioFinished} and then closes them, before underlying process finalization.
 	 *
 	 * @param processes prepared execution group
 	 * @return group coordinating readiness and capability lifetime without replacing its handles
 	 */
-	public synchronized @NotNull ProcessGroup bind(@NotNull ProcessGroup processes) {
+	public @NotNull ProcessGroup bind(@NotNull ProcessGroup processes) {
+		return bind(processes, true);
+	}
+
+	/**
+	 * Transfers this composition's lifecycle to a process group that outlives the scenarios it is lent to, as
+	 * {@link #bind(ProcessGroup)} does, except that starting or finishing the group starts or finishes no scenario:
+	 * each scenario's start and end are reported through {@link #startScenario()} and {@link #finishScenario(boolean)},
+	 * and finishing the group only closes the capabilities.
+	 *
+	 * @param processes prepared execution group of processes kept beyond their scenario
+	 * @return group coordinating readiness and capability lifetime without replacing its handles
+	 */
+	public @NotNull ProcessGroup bindRetained(@NotNull ProcessGroup processes) {
+		return bind(processes, false);
+	}
+
+	/**
+	 * Reports {@link ScenarioFinished} to every process's capabilities for a scenario that used the processes of a
+	 * retained group, the last process's first. Every action runs even when an earlier one failed.
+	 *
+	 * @param passed whether the scenario passed
+	 * @throws RuntimeException the first failure of an action, with later ones suppressed
+	 */
+	public void finishScenario(boolean passed) {
+		rethrow(finishScenario(owners.values(), passed, null));
+	}
+
+	/**
+	 * Reports {@link ScenarioStarted} to every process's capabilities for a scenario that a retained group is lent
+	 * to, in process order. Every action runs even when an earlier one failed.
+	 *
+	 * @throws RuntimeException the first failure of an action, with later ones suppressed
+	 */
+	public void startScenario() {
+		rethrow(startScenario(owners.values(), null));
+	}
+
+	static @Nullable Throwable startScenario(@NotNull Collection<ProcessCapabilities> capabilities, @Nullable Throwable first) {
+		for (ProcessCapabilities owner : capabilities)
+			first = owner.report(ScenarioStarted.INSTANCE, first);
+
+		return first;
+	}
+
+	static void rethrow(@Nullable Throwable failure) {
+		if (failure instanceof RuntimeException runtime) throw runtime;
+		if (failure instanceof Error error) throw error;
+	}
+
+	private synchronized @NotNull ProcessGroup bind(@NotNull ProcessGroup processes, boolean scenario) {
 		if (bound) throw new IllegalStateException("Process capability ownership was already transferred");
 
 		bound = true;
 		return owners.isEmpty()
 				? processes
-				: new CapabilityProcessGroup(processes, Collections.unmodifiableMap(new LinkedHashMap<>(owners)));
+				: new CapabilityProcessGroup(processes, Collections.unmodifiableMap(new LinkedHashMap<>(owners)), scenario);
+	}
+
+	static @Nullable Throwable finishScenario(@NotNull Collection<ProcessCapabilities> capabilities, boolean passed, @Nullable Throwable first) {
+		for (ProcessCapabilities owner : new ArrayList<>(capabilities).reversed())
+			first = owner.report(new ScenarioFinished(passed), first);
+
+		return first;
 	}
 
 	static @Nullable Throwable close(@NotNull Collection<ProcessCapabilities> capabilities, @Nullable Throwable first) {
@@ -164,5 +236,4 @@ public final class ProcessCapabilityRuntime {
 
 		return first;
 	}
-
 }

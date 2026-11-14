@@ -140,6 +140,13 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   contain, and `workerBacked()` for a worker extension without an edition protocol, such as Session's;
   `supportedLibraries()` is only for a capability that uses one library's own services. Agent process providers
   select supported platform IDs.
+- Capabilities act on their owner's lifecycle only through `CapabilityContext.on(Class, Consumer)` with a sealed
+  `CapabilityEvent` (`capability.api.event`), grouped by subject: `event.scenario` (`ScenarioStarted`,
+  `ScenarioFinished`) and `event.lifecycle` (`ProcessRestarted`, `Closed`, which is also how a capability registers
+  cleanup). `capability-common`'s `CapabilityEvents` dispatches them under one rule set: reverse
+  registration order, every action runs, the first failure is reported with later ones suppressed, and an owner
+  refuses an event it never reports. A new lifecycle moment becomes a new `CapabilityEvent` type plus the point
+  that reports it, never a new context method or a separate action list.
 - Retrieve only declared capability dependencies. The agent-backed `Players` capability must remain
   independent of `Session`.
 - A built-in capability belongs to whoever can normally do or know the thing: what a client can do or see

@@ -10,7 +10,8 @@ import org.jetbrains.annotations.Nullable;
 
 
 /**
- * Player identity, declared dependencies, and cleanup available during capability creation. The context
+ * Player identity, declared dependencies, and lifecycle events available during capability creation. A player
+ * reports only {@code Closed}, when it is destroyed for good. The context
  * exposes no connection, request channel, or external SDK service. Dependencies always belong to this player.
  */
 public interface PlayerCapabilityContext extends CapabilityContext<PlayerCapability> {
@@ -51,24 +52,6 @@ public interface PlayerCapabilityContext extends CapabilityContext<PlayerCapabil
 	 * @return the player's connection, with its target process
 	 */
 	@NotNull PlayerConnection connection();
-
-	/**
-	 * Registers cleanup for permanent destruction of the owning player.
-	 * Actions run in reverse registration order, including rollback after failed capability creation.
-	 *
-	 * @param action player-scoped cleanup action
-	 */
-	void onDestroy(@NotNull Runnable action);
-
-	/**
-	 * Registers cleanup for permanent destruction of the owning player.
-	 *
-	 * @param action player-scoped cleanup action
-	 */
-	@Override
-	default void onClose(@NotNull Runnable action) {
-		onDestroy(action);
-	}
 
 	/**
 	 * Resolves a capability created by an explicitly declared provider dependency.

@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.capability.Capability;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.capability.api.CapabilityContext;
 import me.whereareiam.anvil.capability.api.CapabilityProvider;
+import me.whereareiam.anvil.capability.api.event.lifecycle.Closed;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import org.jetbrains.annotations.NotNull;
@@ -30,12 +31,12 @@ class CapabilityRuntimeTest {
 		AtomicInteger identities = new AtomicInteger();
 		var status = provider("status", Status.class, Set.of(), context -> {
 			int id = identities.incrementAndGet();
-			context.onClose(() -> closed.add("status-" + id));
+			context.on(Closed.class, event -> closed.add("status-" + id));
 			return () -> id;
 		});
 		var command = provider("command", Command.class, Set.of(Status.class), context -> {
 			Status dependency = context.requireCapability(Status.class);
-			context.onClose(() -> closed.add("command-" + dependency.identity()));
+			context.on(Closed.class, event -> closed.add("command-" + dependency.identity()));
 			return dependency::identity;
 		});
 		var runtime = runtime(List.of(command, status));
@@ -109,12 +110,12 @@ class CapabilityRuntimeTest {
 		AssertionError construction = new AssertionError("construction failed");
 		AssertionError cleanup = new AssertionError("cleanup failed");
 		var status = provider("status", Status.class, Set.of(), context -> {
-			context.onClose(() -> closed.add("status"));
+			context.on(Closed.class, event -> closed.add("status"));
 			return () -> 1;
 		});
 		var command = provider("command", Command.class, Set.of(Status.class), context -> {
-			context.onClose(() -> closed.add("command-first"));
-			context.onClose(() -> {
+			context.on(Closed.class, event -> closed.add("command-first"));
+			context.on(Closed.class, event -> {
 				closed.add("command-last");
 				throw cleanup;
 			});
@@ -138,7 +139,7 @@ class CapabilityRuntimeTest {
 
 		assertSame(construction, assertThrows(AssertionError.class,
 				() -> runtime(List.of(provider)).compose("Agent 'lobby'", context -> {
-					context.onClose(() -> closed.add("context"));
+					context.on(Closed.class, event -> closed.add("context"));
 					throw construction;
 				})));
 		assertEquals(List.of("context"), closed);
@@ -150,12 +151,12 @@ class CapabilityRuntimeTest {
 		AssertionError first = new AssertionError("first failure");
 		RuntimeException second = new IllegalStateException("second failure");
 		var provider = provider("status", Status.class, Set.of(), context -> {
-			context.onClose(() -> closed.add("oldest"));
-			context.onClose(() -> {
+			context.on(Closed.class, event -> closed.add("oldest"));
+			context.on(Closed.class, event -> {
 				closed.add("second");
 				throw second;
 			});
-			context.onClose(() -> {
+			context.on(Closed.class, event -> {
 				closed.add("first");
 				throw first;
 			});
@@ -174,7 +175,7 @@ class CapabilityRuntimeTest {
 	void rejectsNullCapabilityAndReleasesItsRegisteredResources() {
 		List<String> closed = new ArrayList<>();
 		var provider = provider("status", Status.class, Set.of(), context -> {
-			context.onClose(() -> closed.add("status"));
+			context.on(Closed.class, event -> closed.add("status"));
 			return null;
 		});
 

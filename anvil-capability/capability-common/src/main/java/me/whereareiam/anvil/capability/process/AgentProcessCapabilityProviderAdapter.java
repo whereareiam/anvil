@@ -6,18 +6,21 @@ import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityC
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider;
 import me.whereareiam.anvil.capability.api.CapabilityContext;
 import me.whereareiam.anvil.capability.api.CapabilityProvider;
+import me.whereareiam.anvil.capability.api.event.CapabilityEvent;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.api.platform.ProcessPlatform;
 import me.whereareiam.anvil.capability.api.process.RequestChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
- * Adapts an agent process factory to shared dependency ordering and cleanup using a borrowed request channel.
+ * Adapts an agent process factory to shared dependency ordering and lifecycle events using a borrowed request
+ * channel.
  */
 @RequiredArgsConstructor
-public final class AgentProcessCapabilityProviderAdapter<C extends ProcessCapability> implements CapabilityProvider<C, CapabilityContext<ProcessCapability>> {
+final class AgentProcessCapabilityProviderAdapter<C extends ProcessCapability> implements CapabilityProvider<C, CapabilityContext<ProcessCapability>> {
 	private final @NotNull AgentProcessCapabilityProvider<C> provider;
 	private final @NotNull String processName;
 	private final @NotNull String platformId;
@@ -69,8 +72,8 @@ public final class AgentProcessCapabilityProviderAdapter<C extends ProcessCapabi
 		}
 
 		@Override
-		public void onClose(@NotNull Runnable action) {
-			capabilities.onClose(action);
+		public <E extends CapabilityEvent> void on(@NotNull Class<E> event, @NotNull Consumer<E> action) {
+			capabilities.on(event, action);
 		}
 	}
 }
