@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.dialogs;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
+import me.whereareiam.anvil.capability.api.event.CapabilityEvent;
 import me.whereareiam.anvil.capability.commands.Commands;
 import me.whereareiam.anvil.capability.commands.model.CommandTree;
 import me.whereareiam.anvil.capability.commands.type.CommandCheck;
@@ -139,7 +140,7 @@ class DialogsProviderTest {
 
 
 		@Override
-		public void onDestroy(@NotNull Runnable action) {
+		public <E extends CapabilityEvent> void on(@NotNull Class<E> event, @NotNull Consumer<E> action) {
 			throw new AssertionError("Dialogs register no cleanup");
 		}
 

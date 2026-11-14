@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.vitals;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
+import me.whereareiam.anvil.capability.api.event.CapabilityEvent;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.vitals.channel.VitalsChannel;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
@@ -114,7 +115,7 @@ class VitalsProviderTest {
 
 
 		@Override
-		public void onDestroy(@NotNull Runnable action) {
+		public <E extends CapabilityEvent> void on(@NotNull Class<E> event, @NotNull Consumer<E> action) {
 			throw new AssertionError("The vitals register no cleanup");
 		}
 

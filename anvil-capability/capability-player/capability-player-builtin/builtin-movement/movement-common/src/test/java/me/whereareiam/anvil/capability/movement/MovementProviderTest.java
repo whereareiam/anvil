@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.movement;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
+import me.whereareiam.anvil.capability.api.event.CapabilityEvent;
 import me.whereareiam.anvil.capability.movement.channel.MovementChannel;
 import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
@@ -117,7 +118,7 @@ class MovementProviderTest {
 
 
 		@Override
-		public void onDestroy(@NotNull Runnable action) {
+		public <E extends CapabilityEvent> void on(@NotNull Class<E> event, @NotNull Consumer<E> action) {
 			throw new AssertionError("Movement registers no cleanup");
 		}
 

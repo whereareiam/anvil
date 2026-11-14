@@ -63,9 +63,10 @@ Kept processes therefore start during preparation, because the scenario's own pr
 against their addresses and adopt the forwarding settings they run with.
 
 The scenario's process group joins both: lookups and individual lifecycle operations reach either
-side, and finishing the group finalizes the scenario's own processes and releases the lease. A
-successful scenario that leaves every kept process ready returns the set for the next scenario; any
-other outcome stops it and finalizes its workspaces as failed. A lease is exclusive, so concurrent
+side, and finishing the group finalizes the scenario's own processes and releases the lease. Releasing
+first reports `ScenarioFinished` to the set's capabilities, which the set binds through
+`ProcessCapabilityRuntime.bindRetained`, so stopping the set itself finishes no scenario. A successful scenario whose actions completed and that leaves every kept process ready returns the
+set for the next scenario; any other outcome stops it and finalizes its workspaces as failed. A lease is exclusive, so concurrent
 scenarios each hold their own set. Closing the engine stops the idle sets after the scenarios.
 
 The engine prepares and starts scenarios concurrently. Its `close()` waits for preparations and
@@ -123,8 +124,27 @@ report normal completion; earlier lifecycle failures still
 prevent successful finalization. An embedding application that catches a failed journey should
 call `context.finish(false)` before closing the engine.
 
+Capabilities act on their owner's lifecycle through one typed system. A moment is a `CapabilityEvent`
+(`capability.api.event`) carrying what is known then, grouped by subject:
+
+| Event | Package | Reported to | When |
+| --- | --- | --- | --- |
+| `ScenarioStarted` | `event.scenario` | process capabilities | the scenario's own processes are all ready (`CapabilityProcessGroup.startAll`), or a kept set is lent (`ProcessLease.take`) |
+| `ScenarioFinished` | `event.scenario` | process capabilities | the scenario's players are closed, with whether it passed |
+| `ProcessRestarted` | `event.lifecycle` | process capabilities | a later generation of the process is ready (`ProcessCapabilities.initialize`) |
+| `Closed` | `event.lifecycle` | every capability | the owner closes for good, or composing it fails |
+
+A provider registers with `context.on(Event.class, action)`, cleanup included, through `Closed`; there is no
+other registration method. `CapabilityEvents` in `capability-common` dispatches every
+event under one rule set: an event's actions run in reverse registration order, every one runs, and the first
+failure is reported with later ones suppressed. Every owner reports `Closed` once; other events only where
+composition reports them, and registering for an event the owner never reports, such as `ScenarioFinished` on a
+player, is refused. A new moment becomes a new event type and the point that reports it, never another
+context method or action list.
+
 Global attachments finish in reverse installation order before the underlying context is released.
-Default scenario cleanup destroys players, closes process capabilities, detaches launch services,
+Default scenario cleanup destroys players, reports `ScenarioFinished` to process capabilities and
+closes them, detaches launch services,
 and stops processes in reverse dependency order, stopping those that started in the same layer
 together. Capability cleanup retains access to borrowed
 agent clients until it completes. After the owner closes, capability lookup fails and

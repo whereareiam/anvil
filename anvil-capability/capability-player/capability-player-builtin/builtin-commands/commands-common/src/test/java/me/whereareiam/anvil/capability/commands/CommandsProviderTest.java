@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.commands;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
+import me.whereareiam.anvil.capability.api.event.CapabilityEvent;
 import me.whereareiam.anvil.capability.commands.channel.CommandsChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
@@ -116,7 +117,7 @@ class CommandsProviderTest {
 
 
 		@Override
-		public void onDestroy(@NotNull Runnable action) {
+		public <E extends CapabilityEvent> void on(@NotNull Class<E> event, @NotNull Consumer<E> action) {
 			throw new AssertionError("Commands register no cleanup");
 		}
 

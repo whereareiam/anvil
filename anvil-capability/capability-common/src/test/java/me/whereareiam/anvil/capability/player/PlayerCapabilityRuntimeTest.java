@@ -6,6 +6,8 @@ import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
+import me.whereareiam.anvil.capability.api.event.lifecycle.Closed;
+import me.whereareiam.anvil.capability.api.event.scenario.ScenarioFinished;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityContext;
@@ -370,7 +372,7 @@ class PlayerCapabilityRuntimeTest {
 			assertEquals("test", context.clientVersion());
 			assertEquals("proxy", context.connection().getTarget());
 			assertNull(context.grantedProfile());
-			context.onClose(() -> released.add("shared"));
+			context.on(Closed.class, closed -> released.add("shared"));
 			return () -> context.requestedProfile().getUsername();
 		});
 		var plain = new StubPlayer();
@@ -431,12 +433,12 @@ class PlayerCapabilityRuntimeTest {
 		RuntimeException constructionFailure = new CapabilityException("construction failed");
 		RuntimeException cleanupFailure = new IllegalStateException("cleanup failed");
 		ProtocolPlayerCapabilityProvider<BaseCapability> base = provider("base", BaseCapability.class, Set.of(), context -> {
-			context.onDestroy(() -> released.add("base"));
+			context.on(Closed.class, closed -> released.add("base"));
 			return () -> "base";
 		});
 		ProtocolPlayerCapabilityProvider<DependentCapability> failing = provider("dependent", DependentCapability.class,
 				Set.of(BaseCapability.class), context -> {
-					context.onDestroy(() -> {
+					context.on(Closed.class, closed -> {
 						released.add("dependent");
 						throw cleanupFailure;
 					});
@@ -451,12 +453,26 @@ class PlayerCapabilityRuntimeTest {
 	}
 
 	@Test
+	void refusesAPlayerCapabilityActingOnAScenarioFinishingSinceAPlayerNeverReportsIt() {
+		ProtocolPlayerCapabilityProvider<BaseCapability> base = provider("base", BaseCapability.class, Set.of(), context -> {
+			context.on(ScenarioFinished.class, finished -> { });
+			return () -> "base";
+		});
+
+		CapabilityException refused = assertThrows(CapabilityException.class,
+				() -> new PlayerCapabilityRuntime(List.of(), List.of(base))
+						.compose(new StubPlayer(), null, PlayerConnection.to("proxy"), ignored -> { }));
+
+		assertTrue(refused.getMessage().contains("never reports ScenarioFinished"), refused.getMessage());
+	}
+
+	@Test
 	void reportsCleanupFailuresAfterReleasingAllCapabilitiesAndRemovingPlayer() {
 		List<String> released = new ArrayList<>();
 		RuntimeException cleanupFailure = new IllegalStateException("cleanup failed");
 		ProtocolPlayerCapabilityProvider<BaseCapability> base = provider("base", BaseCapability.class, Set.of(), context -> {
-			context.onDestroy(() -> released.add("base"));
-			context.onDestroy(() -> { throw cleanupFailure; });
+			context.on(Closed.class, closed -> released.add("base"));
+			context.on(Closed.class, closed -> { throw cleanupFailure; });
 			return () -> "base";
 		});
 		StubPlayer driven = new StubPlayer();
@@ -475,7 +491,7 @@ class PlayerCapabilityRuntimeTest {
 		AssertionError destructionFailure = new AssertionError("library player destruction failed");
 		RuntimeException cleanupFailure = new IllegalStateException("capability cleanup failed");
 		ProtocolPlayerCapabilityProvider<BaseCapability> base = provider("base", BaseCapability.class, Set.of(), context -> {
-			context.onClose(() -> {
+			context.on(Closed.class, closed -> {
 				released.add("capability");
 				throw cleanupFailure;
 			});

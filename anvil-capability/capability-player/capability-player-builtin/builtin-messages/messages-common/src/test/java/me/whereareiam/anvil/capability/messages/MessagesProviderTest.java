@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.messages;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
+import me.whereareiam.anvil.capability.api.event.CapabilityEvent;
 import me.whereareiam.anvil.capability.messages.channel.MessagesChannel;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
@@ -122,7 +123,7 @@ class MessagesProviderTest {
 
 
 		@Override
-		public void onDestroy(@NotNull Runnable action) {
+		public <E extends CapabilityEvent> void on(@NotNull Class<E> event, @NotNull Consumer<E> action) {
 			throw new AssertionError("Messages register no cleanup");
 		}
 

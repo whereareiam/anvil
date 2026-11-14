@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.interaction;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
+import me.whereareiam.anvil.capability.api.event.CapabilityEvent;
 import me.whereareiam.anvil.capability.interaction.channel.InteractionChannel;
 import me.whereareiam.anvil.capability.interaction.model.ItemUse;
 import me.whereareiam.anvil.capability.interaction.type.Hand;
@@ -118,7 +119,7 @@ class InteractionProviderTest {
 
 
 		@Override
-		public void onDestroy(@NotNull Runnable action) {
+		public <E extends CapabilityEvent> void on(@NotNull Class<E> event, @NotNull Consumer<E> action) {
 			throw new AssertionError("Interaction registers no cleanup");
 		}
 

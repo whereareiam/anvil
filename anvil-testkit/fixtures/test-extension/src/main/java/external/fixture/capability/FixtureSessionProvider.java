@@ -1,9 +1,10 @@
 package external.fixture.capability;
 
 import external.fixture.protocol.FixtureConnection;
+import me.whereareiam.anvil.capability.api.event.lifecycle.Closed;
+import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
-import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.capability.session.model.SessionState;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +34,7 @@ public final class FixtureSessionProvider implements ProtocolPlayerCapabilityPro
 	@Override
 	public @NotNull Session create(@NotNull ProtocolPlayerCapabilityContext context) {
 		FixtureConnection connection = context.requireService(FixtureConnection.class);
-		context.onDestroy(connection::disconnect);
+		context.on(Closed.class, closed -> connection.disconnect());
 		return new Session() {
 			@Override
 			public @NotNull SessionState state() {

@@ -23,6 +23,7 @@ import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
 import me.whereareiam.anvil.api.model.workspace.WorkspaceCleanup;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 import me.whereareiam.anvil.api.player.PlayerCapability;
+import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.scenario.ScenarioAccess;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
@@ -32,6 +33,9 @@ import me.whereareiam.anvil.api.type.CleanupPhase;
 import me.whereareiam.anvil.api.type.ProcessLifetime;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.api.type.WorkspaceMode;
+import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityContext;
+import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider;
+import me.whereareiam.anvil.capability.api.event.scenario.ScenarioFinished;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.dispatch.Dispatch;
@@ -88,6 +92,8 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -607,6 +613,61 @@ class DefaultScenarioFactoryIntegrationTest {
 	}
 
 	@Test
+	void processCapabilitiesHearEveryScenarioFinishOfAnEngineProcessAndOnlyOnceOfTheirOwn(@TempDir Path services) throws Exception {
+		ScenarioEngine engine = engine(true, agentForwarding(), List.of(), (port, token, timeout) -> agent(() -> { }));
+		ClassLoader original = Thread.currentThread().getContextClassLoader();
+		try (var loader = scenarioFinishRecorder(services)) {
+			Thread.currentThread().setContextClassLoader(loader);
+			RunningProcess kept;
+			try (var first = engine.start(network(ProcessLifetime.ENGINE))) {
+				kept = first.processes().server("server");
+			}
+			// The scenario's own proxy finishes first, then the kept server is handed back.
+			assertEquals(List.of("proxy:true", "server:true"), ScenarioFinishRecorder.EVENTS);
+
+			var second = engine.start(network(ProcessLifetime.ENGINE));
+			assertEquals(kept.executionId(), second.processes().server("server").executionId());
+			second.finish(false);
+			assertEquals(List.of("proxy:true", "server:true", "proxy:false", "server:false"), ScenarioFinishRecorder.EVENTS);
+			assertEquals(ProcessState.STOPPED, kept.state());
+
+			try (var third = engine.start(network(ProcessLifetime.ENGINE))) {
+				assertNotEquals(kept.executionId(), third.processes().server("server").executionId());
+			}
+			ScenarioFinishRecorder.EVENTS.clear();
+			engine.close();
+			assertEquals(List.of(), ScenarioFinishRecorder.EVENTS, "Stopping a kept server finishes no scenario");
+		} finally {
+			Thread.currentThread().setContextClassLoader(original);
+			ScenarioFinishRecorder.EVENTS.clear();
+		}
+	}
+
+	@Test
+	void aFailedScenarioFinishOfAnEngineProcessFailsTheScenarioAndStopsTheProcess(@TempDir Path services) throws Exception {
+		ScenarioEngine engine = engine(true, agentForwarding(), List.of(), (port, token, timeout) -> agent(() -> { }));
+		ClassLoader original = Thread.currentThread().getContextClassLoader();
+		try (var loader = scenarioFinishRecorder(services)) {
+			Thread.currentThread().setContextClassLoader(loader);
+			ScenarioFinishRecorder.FAILING.add("server");
+			var first = engine.start(network(ProcessLifetime.ENGINE));
+			RunningProcess kept = first.processes().server("server");
+
+			var failure = assertThrows(IllegalStateException.class, first::close);
+			assertEquals("server cannot finish the scenario", failure.getMessage());
+			assertEquals(ProcessState.STOPPED, kept.state());
+			ScenarioFinishRecorder.FAILING.clear();
+			try (var next = engine.start(network(ProcessLifetime.ENGINE))) {
+				assertNotEquals(kept.executionId(), next.processes().server("server").executionId());
+			}
+		} finally {
+			Thread.currentThread().setContextClassLoader(original);
+			ScenarioFinishRecorder.EVENTS.clear();
+			ScenarioFinishRecorder.FAILING.clear();
+		}
+	}
+
+	@Test
 	void aChangedDeclarationStartsItsOwnEngineProcess() {
 		ScenarioEngine engine = engine(forwarding(new LinkedHashMap<>()));
 		UUID original;
@@ -667,6 +728,39 @@ class DefaultScenarioFactoryIntegrationTest {
 				contexts.put(process.getName(), context);
 			}
 		};
+	}
+
+	/**
+	 * The forwarding platform whose processes run an agent, which accepts console commands only.
+	 */
+	private TestPlatform agentForwarding() {
+		return new TestPlatform() {
+			@Override
+			public @NotNull Class<? extends MinecraftProcess> configurationType() {
+				return MinecraftProcess.class;
+			}
+
+			@Override
+			public @NotNull List<ForwardingMode> forwardingModes() {
+				return List.of(ForwardingMode.MODERN);
+			}
+
+			@Override
+			public PlatformAgentDescriptor platformAgent() {
+				return PlatformAgentDescriptor.builder().entrypointClassName("fixture").build();
+			}
+		};
+	}
+
+	/**
+	 * Installs {@link ScenarioFinishRecorder} through a class loader that the caller makes the context class loader.
+	 */
+	private URLClassLoader scenarioFinishRecorder(Path services) throws IOException {
+		Path descriptor = services.resolve("META-INF/services/" + AgentProcessCapabilityProvider.class.getName());
+		Files.createDirectories(descriptor.getParent());
+		Files.writeString(descriptor, ScenarioFinishRecorder.class.getName());
+
+		return new URLClassLoader(new URL[]{services.toUri().toURL()}, Thread.currentThread().getContextClassLoader());
 	}
 
 	private AnvilScenario withWorkspace(AnvilScenario scenario) {
@@ -884,6 +978,38 @@ class DefaultScenarioFactoryIntegrationTest {
 			throw new AssertionError("Validation must fail before creation");
 		}
 	}
+
+	/**
+	 * Process capability provider that records each scenario finish its process hears, and fails it for the processes
+	 * named in {@link #FAILING}.
+	 */
+	public static final class ScenarioFinishRecorder implements AgentProcessCapabilityProvider<FinishRecording> {
+		static final List<String> EVENTS = new CopyOnWriteArrayList<>();
+		static final Set<String> FAILING = new CopyOnWriteArraySet<>();
+
+		@Override
+		public @NotNull CapabilityDescriptor descriptor() {
+			return CapabilityDescriptor.builder().id("scenario-finish-recorder").build();
+		}
+
+		@Override
+		public @NotNull Class<FinishRecording> capability() {
+			return FinishRecording.class;
+		}
+
+		@Override
+		public @NotNull FinishRecording create(@NotNull AgentProcessCapabilityContext context) {
+			context.on(ScenarioFinished.class, finished -> {
+				EVENTS.add(context.processName() + ":" + finished.isPassed());
+				if (FAILING.contains(context.processName()))
+					throw new IllegalStateException(context.processName() + " cannot finish the scenario");
+			});
+
+			return new FinishRecording() { };
+		}
+	}
+
+	private interface FinishRecording extends ProcessCapability { }
 
 	private interface UnreachedCapability extends PlayerCapability { }
 

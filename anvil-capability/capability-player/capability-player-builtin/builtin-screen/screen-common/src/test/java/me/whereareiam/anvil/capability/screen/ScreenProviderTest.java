@@ -3,6 +3,7 @@ package me.whereareiam.anvil.capability.screen;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
+import me.whereareiam.anvil.capability.api.event.CapabilityEvent;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.screen.channel.ScreenChannel;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
@@ -115,7 +116,7 @@ class ScreenProviderTest {
 
 
 		@Override
-		public void onDestroy(@NotNull Runnable action) {
+		public <E extends CapabilityEvent> void on(@NotNull Class<E> event, @NotNull Consumer<E> action) {
 			throw new AssertionError("The screen registers no cleanup");
 		}
 

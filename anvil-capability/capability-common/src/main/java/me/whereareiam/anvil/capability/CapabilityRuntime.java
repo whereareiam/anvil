@@ -3,6 +3,8 @@ package me.whereareiam.anvil.capability;
 import me.whereareiam.anvil.api.capability.Capability;
 import me.whereareiam.anvil.capability.api.CapabilityContext;
 import me.whereareiam.anvil.capability.api.CapabilityProvider;
+import me.whereareiam.anvil.capability.api.event.CapabilityEvent;
+import me.whereareiam.anvil.capability.api.event.lifecycle.Closed;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import org.jetbrains.annotations.NotNull;
@@ -28,9 +30,11 @@ import java.util.function.Function;
  */
 public final class CapabilityRuntime<C extends Capability, X extends CapabilityContext<C>> {
 	private final List<CapabilityProvider<? extends C, ? super X>> providers;
+	private final Set<Class<? extends CapabilityEvent>> events;
 
 	/**
-	 * Validates identities, owner types, and dependencies before ordering providers.
+	 * Validates identities, owner types, and dependencies before ordering providers, for an owner that reports only
+	 * {@link Closed}.
 	 *
 	 * @param ownerType capability marker belonging to this owner
 	 * @param providers providers for this owner
@@ -39,7 +43,23 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 			@NotNull Class<C> ownerType,
 			@NotNull Collection<? extends CapabilityProvider<? extends C, ? super X>> providers
 	) {
+		this(ownerType, providers, Set.of());
+	}
+
+	/**
+	 * Validates identities, owner types, and dependencies before ordering providers.
+	 *
+	 * @param ownerType capability marker belonging to this owner
+	 * @param providers providers for this owner
+	 * @param events the lifecycle events each composed owner reports besides {@link Closed}
+	 */
+	public CapabilityRuntime(
+			@NotNull Class<C> ownerType,
+			@NotNull Collection<? extends CapabilityProvider<? extends C, ? super X>> providers,
+			@NotNull Set<Class<? extends CapabilityEvent>> events
+	) {
 		this.providers = validateAndOrder(ownerType, providers);
+		this.events = Set.copyOf(events);
 	}
 
 	/**
@@ -81,7 +101,7 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 			@NotNull Map<String, String> unavailable,
 			@NotNull Function<CapabilityContext<C>, X> contextFactory
 	) {
-		CapabilitySet<C> capabilities = new CapabilitySet<>(ownerDescription);
+		CapabilitySet<C> capabilities = new CapabilitySet<>(ownerDescription, events);
 		try {
 			for (CapabilityProvider<? extends C, ? super X> provider : providers) {
 				String reason = unavailableReason(provider, unavailable, capabilities);

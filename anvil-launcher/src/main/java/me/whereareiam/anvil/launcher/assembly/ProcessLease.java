@@ -53,6 +53,16 @@ public final class ProcessLease {
 					+ " lifetime, which its execution provider cannot connect to the processes of a later scenario");
 
 		RetainedProcessSet set = retained.lease(split.identity(), () -> RetainedProcessSet.start(split.retained(), execution));
+		try {
+			set.startScenario();
+		} catch (RuntimeException | Error failure) {
+			try {
+				retained.release(set, false);
+			} catch (RuntimeException | Error cleanup) {
+				if (cleanup != failure) failure.addSuppressed(cleanup);
+			}
+			throw failure;
+		}
 
 		return new ProcessLease(split.own(set.getPlan()), set, retained);
 	}
@@ -124,11 +134,25 @@ public final class ProcessLease {
 	}
 
 	/**
-	 * Hands the lent processes back to the engine, which keeps them only after a successful scenario.
+	 * Tells the lent processes' capabilities that the scenario finished and hands the processes back to the engine,
+	 * which keeps them only after a successful scenario whose capabilities finished it without failure.
 	 *
 	 * @param successful whether the scenario and the cleanup of its own processes succeeded
+	 * @throws RuntimeException the first failure of a capability's scenario-finish action or of the release
 	 */
 	public void release(boolean successful) {
-		if (set != null) retained.release(set, successful);
+		if (set == null) return;
+
+		try {
+			set.finishScenario(successful);
+		} catch (RuntimeException | Error failure) {
+			try {
+				retained.release(set, false);
+			} catch (RuntimeException | Error cleanup) {
+				if (cleanup != failure) failure.addSuppressed(cleanup);
+			}
+			throw failure;
+		}
+		retained.release(set, successful);
 	}
 }

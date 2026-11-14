@@ -12,6 +12,7 @@ import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.CapabilityRuntime;
 import me.whereareiam.anvil.capability.CapabilitySet;
 import me.whereareiam.anvil.capability.api.CapabilityContext;
+import me.whereareiam.anvil.capability.api.event.CapabilityEvent;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
@@ -228,8 +229,8 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 		}
 
 		@Override
-		public void onDestroy(@NotNull Runnable action) {
-			capabilities.onClose(action);
+		public <E extends CapabilityEvent> void on(@NotNull Class<E> event, @NotNull Consumer<E> action) {
+			capabilities.on(event, action);
 		}
 
 		@Override

@@ -5,20 +5,22 @@ import me.whereareiam.anvil.api.capability.Capability;
 import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
 import me.whereareiam.anvil.capability.api.CapabilityContext;
+import me.whereareiam.anvil.capability.api.event.CapabilityEvent;
+import me.whereareiam.anvil.capability.api.event.lifecycle.Closed;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
- * Capabilities and reverse-ordered cleanup belonging to one composed owner.
- * Closing a set releases its registered resources exactly once.
+ * Capabilities and the lifecycle events of one composed owner. Closing a set reports {@link Closed} exactly once,
+ * which releases its registered resources.
  *
  * @param <C> capability types supported by the owner
  */
@@ -27,11 +29,11 @@ public final class CapabilitySet<C extends Capability> implements CapabilityOwne
 
 	private final Map<Class<? extends C>, C> capabilities = new LinkedHashMap<>();
 	private final Map<Class<? extends C>, String> unavailable = new LinkedHashMap<>();
-	private final List<Runnable> cleanup = new ArrayList<>();
-	private boolean closed;
+	private final CapabilityEvents events;
 
-	CapabilitySet(@NotNull String ownerDescription) {
+	CapabilitySet(@NotNull String ownerDescription, @NotNull Set<Class<? extends CapabilityEvent>> events) {
 		this.ownerDescription = ownerDescription;
+		this.events = new CapabilityEvents(ownerDescription, events);
 	}
 
 	@Override
@@ -77,42 +79,28 @@ public final class CapabilitySet<C extends Capability> implements CapabilityOwne
 	}
 
 	/**
-	 * Runs every registered action in reverse order. The first unchecked failure is
-	 * rethrown after all actions have been attempted, with later failures suppressed.
+	 * Reports an event to the actions the capabilities registered for it, under the rules of
+	 * {@link CapabilityContext#on(Class, Consumer)}. Nothing runs once the set is closed.
+	 *
+	 * @param event event the owner reports, other than {@link Closed}, which {@link #close()} reports
+	 * @param first failure already seen, to which later failures are added as suppressed
+	 * @return the first failure, or null when every action completed and none was seen before
+	 * @throws IllegalArgumentException when the owner does not report the event
+	 */
+	public @Nullable Throwable report(@NotNull CapabilityEvent event, @Nullable Throwable first) {
+		if (event instanceof Closed) throw new IllegalArgumentException("Close the capability set to report Closed");
+		return events.fire(event, first);
+	}
+
+	/**
+	 * Reports {@link Closed}. The first unchecked failure is rethrown after all actions have been attempted, with
+	 * later failures suppressed.
 	 */
 	@Override
 	public void close() {
-		List<Runnable> actions;
-		synchronized (cleanup) {
-			if (closed) return;
-			closed = true;
-			actions = new ArrayList<>(cleanup).reversed();
-			cleanup.clear();
-		}
-
-		Throwable failure = null;
-		for (Runnable action : actions)
-			try {
-				action.run();
-			} catch (RuntimeException | Error exception) {
-				if (failure == null)
-					failure = exception;
-				else if (failure != exception)
-					failure.addSuppressed(exception);
-			}
-
+		Throwable failure = events.fire(Closed.INSTANCE, null);
 		if (failure instanceof RuntimeException exception) throw exception;
 		if (failure instanceof Error error) throw error;
-	}
-
-	private void registerCleanup(@NotNull Runnable action) {
-		synchronized (cleanup) {
-			if (!closed) {
-				cleanup.add(action);
-				return;
-			}
-		}
-		action.run();
 	}
 
 	@RequiredArgsConstructor
@@ -135,8 +123,8 @@ public final class CapabilitySet<C extends Capability> implements CapabilityOwne
 		}
 
 		@Override
-		public void onClose(@NotNull Runnable action) {
-			registerCleanup(action);
+		public <E extends CapabilityEvent> void on(@NotNull Class<E> event, @NotNull Consumer<E> action) {
+			events.on(event, action);
 		}
 	}
 }
