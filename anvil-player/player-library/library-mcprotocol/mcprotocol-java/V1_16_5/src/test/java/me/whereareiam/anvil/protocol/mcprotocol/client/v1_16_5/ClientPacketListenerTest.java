@@ -59,6 +59,7 @@ class ClientPacketListenerTest {
 	private static final UUID GRANTED = new UUID(0, 2);
 	private static final ClientLogin LOGIN = ClientLogin.builder()
 			.profile(ClientProfile.builder().name("Alice").uniqueId(new UUID(0, 1)).build())
+			.minecraftVersion("1.16.5")
 			.settings(ClientSettings.builder().locale("en_us").viewDistance(8).build())
 			.connection(ClientConnection.builder().host("localhost").port(25565).build())
 			.build();
@@ -132,6 +133,7 @@ class ClientPacketListenerTest {
 	void announcesTheVirtualHostInPlaceOfTheConnectedHost() {
 		ClientLogin virtual = ClientLogin.builder()
 				.profile(LOGIN.getProfile())
+				.minecraftVersion("1.16.5")
 				.settings(LOGIN.getSettings())
 				.connection(ClientConnection.builder().host("127.0.0.1").port(25577).virtualHost("lobby.example.test")
 						.build())

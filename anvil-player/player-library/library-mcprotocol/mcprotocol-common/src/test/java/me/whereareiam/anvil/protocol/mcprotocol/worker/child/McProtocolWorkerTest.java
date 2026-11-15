@@ -44,6 +44,7 @@ class McProtocolWorkerTest {
 		UUID identity = UUID.randomUUID();
 		var options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder().name("Alice").uniqueId(identity).build())
+				.minecraftVersion("1.21.11")
 				.language("en_us")
 				.connection(WorkerConnection.builder().host("localhost").port(25565).build())
 				.build();

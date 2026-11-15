@@ -9,6 +9,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
 import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.event.session.SessionListener;
+import org.geysermc.mcprotocollib.protocol.MinecraftConstants;
 import org.geysermc.mcprotocollib.protocol.MinecraftProtocol;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -17,16 +18,18 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class TcpClientSessionsTest {
 	private static final ClientLogin LOGIN = ClientLogin.builder()
 			.profile(ClientProfile.builder().name("Alice").uniqueId(new UUID(0, 1)).build())
+			.minecraftVersion("1.20.6")
 			.settings(ClientSettings.builder().locale("en_us").viewDistance(8).build())
 			.connection(ClientConnection.builder().host("127.0.0.1").port(25565).build())
 			.build();
 
 	@Test
-	void startsTheConfigurationAfterTheLibrarysOwnListenerAndAnswersKeepAlivesItself() {
+	void startsTheConfigurationAfterTheLibrarysOwnListenerAndAnswersKeepAlivesAndKnownPacksItself() {
 		Session session = new TcpClientSessions(new TextTranslator())
 				.open(LOGIN, new IgnoringListener(), McProtocolClientAdapter.packets());
 
@@ -34,7 +37,10 @@ class TcpClientSessionsTest {
 
 		// MCProtocolLib's own listener shares its simple name with Anvil's client listener.
 		assertEquals(List.of(KeepAliveAnswers.class, ClientPacketListener.class,
-				org.geysermc.mcprotocollib.protocol.ClientListener.class, ClientConfiguration.class), listeners(session));
+				org.geysermc.mcprotocollib.protocol.ClientListener.class, ClientConfiguration.class,
+				KnownPacksAnswer.class),
+				listeners(session));
+		assertFalse(session.getFlag(MinecraftConstants.SEND_BLANK_KNOWN_PACKS_RESPONSE, true));
 	}
 
 	private static List<Class<?>> listeners(Session session) {

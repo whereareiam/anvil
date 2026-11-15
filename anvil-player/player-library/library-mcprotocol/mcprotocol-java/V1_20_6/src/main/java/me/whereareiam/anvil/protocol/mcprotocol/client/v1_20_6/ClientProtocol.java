@@ -14,9 +14,11 @@ import org.jetbrains.annotations.Nullable;
  * The protocol of a player's sessions of the MCProtocolLib 1.20.6 release, built from the player's login. MCProtocolLib hands each
  * session that connects to its protocol, which adds the library's own listener: that listener answers the login and
  * switches the session from one phase to the next. The {@link ClientConfiguration} starts the configuration once the
- * library entered it, so it must see every packet after the library's listener, and the protocol adds it right after.
+ * library entered it, so it must see every packet after the library's listener, and the protocol adds it right after,
+ * with the {@link KnownPacksAnswer} that names the vanilla data pack of the player's Minecraft version.
  */
 final class ClientProtocol extends MinecraftProtocol {
+	private final String minecraftVersion;
 	private final ClientSettings settings;
 
 	/**
@@ -26,6 +28,7 @@ final class ClientProtocol extends MinecraftProtocol {
 	 */
 	ClientProtocol(@NotNull ClientLogin login) {
 		super(profile(login.getProfile()), accessToken(login.getCredentials()));
+		this.minecraftVersion = login.getMinecraftVersion();
 		this.settings = login.getSettings();
 	}
 
@@ -33,6 +36,7 @@ final class ClientProtocol extends MinecraftProtocol {
 	public void newClientSession(Session session, boolean transferring) {
 		super.newClientSession(session, transferring);
 		session.addListener(new ClientConfiguration(settings));
+		KnownPacksAnswer.install(session, minecraftVersion);
 	}
 
 	private static GameProfile profile(ClientProfile profile) {

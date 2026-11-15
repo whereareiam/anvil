@@ -14,7 +14,8 @@ public class RegistryDialog {
 	 */
 	@NotNull String name;
 	/**
-	 * The dialog, or {@code null} when the server left it out because the client knows it from a built-in pack.
+	 * The dialog, or {@code null} when the server left it out for the client's own data pack and this Anvil version
+	 * does not know that dialog. Anvil knows the built-in dialogs of every release from Minecraft 1.21.6 until 26.3.
 	 */
 	@Nullable Dialog dialog;
 }

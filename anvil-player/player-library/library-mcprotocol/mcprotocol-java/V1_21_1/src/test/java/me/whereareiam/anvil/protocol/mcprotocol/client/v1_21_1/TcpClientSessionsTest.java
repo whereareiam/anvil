@@ -8,10 +8,12 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ClientPacketListener;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.KnownPacksAnswer;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.TextTranslator;
 import org.geysermc.mcprotocollib.auth.GameProfile;
 import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.event.session.SessionListener;
+import org.geysermc.mcprotocollib.protocol.MinecraftConstants;
 import org.geysermc.mcprotocollib.protocol.MinecraftProtocol;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import org.jetbrains.annotations.NotNull;
@@ -21,10 +23,12 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class TcpClientSessionsTest {
 	private static final ClientLogin LOGIN = ClientLogin.builder()
 			.profile(ClientProfile.builder().name("Alice").uniqueId(new UUID(0, 1)).build())
+			.minecraftVersion("1.21.1")
 			.settings(ClientSettings.builder().locale("en_us").viewDistance(8).build())
 			.connection(ClientConnection.builder().host("127.0.0.1").port(25565).build())
 			.build();
@@ -40,7 +44,7 @@ class TcpClientSessionsTest {
 	}
 
 	@Test
-	void startsTheConfigurationAfterTheLibrarysOwnListenerAndLeavesKeepAlivesToIt() {
+	void startsTheConfigurationAfterTheLibrarysOwnListenerAnswersKnownPacksAndLeavesKeepAlivesToIt() {
 		Session session = new TcpClientSessions(new TextTranslator())
 				.open(LOGIN, new IgnoringListener(), McProtocolClientAdapter.packets());
 
@@ -50,7 +54,9 @@ class TcpClientSessionsTest {
 		List<Class<?>> listeners = session.getListeners().stream()
 				.<Class<?>>map(SessionListener::getClass)
 				.toList();
-		assertEquals(List.of(ClientPacketListener.class, org.geysermc.mcprotocollib.protocol.ClientListener.class, ClientConfiguration.class), listeners);
+		assertEquals(List.of(ClientPacketListener.class, org.geysermc.mcprotocollib.protocol.ClientListener.class,
+				ClientConfiguration.class, KnownPacksAnswer.class), listeners);
+		assertFalse(session.getFlag(MinecraftConstants.SEND_BLANK_KNOWN_PACKS_RESPONSE, true));
 	}
 
 	private static final class IgnoringListener implements ClientListener<Session> {

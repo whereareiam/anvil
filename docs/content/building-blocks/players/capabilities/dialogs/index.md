@@ -114,9 +114,13 @@ there: a button that runs one sends nothing and leaves the dialog as it is.
 
 The server may refer to a dialog of its dialog registry, such as one from a data pack, instead of sending
 it. Anvil resolves it from the registry the server sent during configuration and keeps its
-`getRegistryId()` and `getRegistryName()`. A dialog the server left out of the registry because the
-client knows it, such as a built-in one, carries only those two; its title, body, inputs and buttons are
-empty.
+`getRegistryId()` and `getRegistryName()`. The server leaves the data of the built-in dialogs out of
+the registry, because the client tells it that it knows vanilla's own data pack, and Anvil fills them in
+as a vanilla client does: `minecraft:server_links`, `minecraft:custom_options` and
+`minecraft:quick_actions`, the same on every release from Minecraft 1.21.6 to 26.3. A custom-options or
+quick-actions dialog lists the dialogs of a tag, which Anvil does not resolve, so it lists none. A dialog
+the server left out that Anvil does not know carries only its registry ID and name; its title, body,
+inputs and buttons are empty.
 
 ## Watch the dialogs shown next
 

@@ -364,15 +364,39 @@ class JavaDialogsExtensionTest {
 				new RegistryEntry("minecraft:overworld", NbtCompound.EMPTY.with("height", new NbtInt(384)))
 		)));
 		protocol.deliver(new ClientboundRegistryData("minecraft:dialog", List.of(
-				new RegistryEntry("minecraft:server_links", null),
-				new RegistryEntry("example:rules", NOTICE)
+				new RegistryEntry("example:rules", NOTICE),
+				new RegistryEntry("example:menu", null)
 		)));
 
 		assertEquals(List.of("dialogs.registry"), player.events);
 		assertEquals(new DialogRegistry(List.of(
-				new RegistryDialog("minecraft:server_links", null),
-				new RegistryDialog("example:rules", LOGIN)
+				new RegistryDialog("example:rules", LOGIN),
+				new RegistryDialog("example:menu", null)
 		)), player.payloads.getFirst());
+	}
+
+	@Test
+	void takesTheBuiltInDialogsTheServerSendsWithoutDataFromTheClientsOwnDataPack() {
+		RecordingProtocol protocol = new RecordingProtocol();
+		RecordingPlayer player = new RecordingPlayer(protocol);
+		extension.bind(player, new RecordingOperations());
+
+		protocol.deliver(new ClientboundRegistryData("minecraft:dialog", List.of(
+				new RegistryEntry("minecraft:server_links", null),
+				new RegistryEntry("minecraft:custom_options", null),
+				new RegistryEntry("minecraft:quick_actions", null)
+		)));
+
+		List<RegistryDialog> dialogs = ((DialogRegistry) player.payloads.getFirst()).getDialogs();
+		assertEquals(List.of("minecraft:server_links", "minecraft:dialog_list", "minecraft:dialog_list"),
+				dialogs.stream().map(registered -> registered.getDialog().getType()).toList());
+		assertEquals(List.of("menu.server_links.title", "menu.custom_options.title", "menu.quick_actions.title"),
+				dialogs.stream().map(registered -> registered.getDialog().getTitle()).toList());
+		assertEquals(List.of("menu.server_links", "menu.custom_options", "menu.quick_actions"),
+				dialogs.stream().map(registered -> registered.getDialog().getExternalTitle()).toList());
+		assertEquals(List.of("gui.back"), dialogs.getFirst().getDialog().getButtons().stream()
+				.map(DialogButton::getLabel)
+				.toList());
 	}
 
 	@Test
