@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ChatPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.CommandPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConfigurationPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConnectionPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.CookiePackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.EntityPackets;
@@ -12,6 +13,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.PlayerPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ScreenPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SoundPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SynchronizedRegistries;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.TextTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.WorldPackets;
 import org.geysermc.mcprotocollib.network.Session;
@@ -40,10 +42,12 @@ public final class McProtocolClientAdapter extends JavaClient<Session> {
 	 * @return the 1.20.6 translations with this release's interaction translation
 	 */
 	static PacketTable<Packet> packets() {
+		SynchronizedRegistries registries = new SynchronizedRegistries();
 		return new PacketTable<>(List.of(
 				new ChatPackets(TEXT),
 				new CommandPackets(),
-				new ConnectionPackets(),
+				new ConfigurationPackets(registries),
+				new ConnectionPackets(registries),
 				new CookiePackets(),
 				new EntityPackets(TEXT),
 				new HealthPackets(TEXT),

@@ -110,20 +110,22 @@ class JavaWorldExtensionTest {
 				.level(ARENA)
 				.hardcore(true)
 				.dimension(ARENA)
-				.dimensionType(DimensionType.withEffects("example:void", "minecraft:the_end"))
+				.dimensionType(DimensionType.withEffects("example:void", "minecraft:the_end", 0, 256))
 				.flat(true)
 				.build());
 		protocol.deliver(ClientboundRespawn.builder()
 				.dimension(ARENA)
-				.dimensionType(new DimensionType("example:modded", null, null))
+				.dimensionType(DimensionType.builder().key("example:modded").minY(-32).height(128).build())
 				.debug(true)
 				.build());
 
 		assertEquals(List.of(ServerInfo.builder().hardcore(true).level(OVERWORLD).level(ARENA).build()),
 				player.emitted(WorldChannel.SERVER));
 		assertEquals(List.of(
-				new LevelInfo(ARENA, new DimensionTypeInfo("example:void", Environment.END), LevelGeneration.FLAT),
-				new LevelInfo(ARENA, new DimensionTypeInfo("example:modded", Environment.CUSTOM), LevelGeneration.DEBUG)
+				new LevelInfo(ARENA, new DimensionTypeInfo("example:void", Environment.END, 0, 256),
+						LevelGeneration.FLAT),
+				new LevelInfo(ARENA, new DimensionTypeInfo("example:modded", Environment.CUSTOM, -32, 128),
+						LevelGeneration.DEBUG)
 		), player.emitted(WorldChannel.DIMENSION).stream().map(DimensionChange::getLevel).toList());
 	}
 
@@ -196,7 +198,7 @@ class JavaWorldExtensionTest {
 	@Test
 	void followsTheClockOfTheLevelsDimensionTypeFromWorldClocks() {
 		connect();
-		protocol.deliver(login(7, OVERWORLD, vanilla(OVERWORLD).withDefaultClock(OVERWORLD)));
+		protocol.deliver(login(7, OVERWORLD, vanilla(OVERWORLD).toBuilder().defaultClock(OVERWORLD).build()));
 
 		protocol.deliver(ClientboundSetTime.builder()
 				.gameTime(500)
@@ -206,7 +208,7 @@ class JavaWorldExtensionTest {
 		WorldTime overworld = lastState().getTime();
 		protocol.deliver(respawn(NETHER, vanilla(NETHER)));
 		WorldTime nether = lastState().getTime();
-		protocol.deliver(respawn(END, vanilla(END).withDefaultClock(END)));
+		protocol.deliver(respawn(END, vanilla(END).toBuilder().defaultClock(END).build()));
 		WorldTime end = lastState().getTime();
 
 		assertEquals(13000L, overworld.getDayTime());
@@ -333,15 +335,16 @@ class JavaWorldExtensionTest {
 	}
 
 	private static DimensionType vanilla(String key) {
-		return DimensionType.withEffects(key, key);
+		return DimensionType.known(key);
 	}
 
 	/**
-	 * A change into a vanilla dimension of normal generation.
+	 * A change into a vanilla dimension of normal generation, with the type's block heights from Minecraft 1.20.5 on.
 	 */
 	private static DimensionChange change(String from, String to, Environment environment) {
-		return new DimensionChange(from, to, new LevelInfo(to, new DimensionTypeInfo(to, environment),
-				LevelGeneration.NORMAL));
+		DimensionType type = vanilla(to);
+		DimensionTypeInfo info = new DimensionTypeInfo(to, environment, type.getMinY(), type.getHeight());
+		return new DimensionChange(from, to, new LevelInfo(to, info, LevelGeneration.NORMAL));
 	}
 
 	/**

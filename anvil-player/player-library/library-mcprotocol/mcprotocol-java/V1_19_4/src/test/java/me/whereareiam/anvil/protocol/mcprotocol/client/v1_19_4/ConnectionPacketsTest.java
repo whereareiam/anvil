@@ -13,6 +13,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,7 +31,7 @@ class ConnectionPacketsTest {
 				.level("minecraft:overworld")
 				.level("example:arena")
 				.dimension("example:arena")
-				.dimensionType(DimensionType.withEffects("example:void", "minecraft:the_end"))
+				.dimensionType(DimensionType.withEffects("example:void", "minecraft:the_end", 0, 256))
 				.debug(true)
 				.build(), packets.decode(login("example:void")));
 	}
@@ -41,7 +42,7 @@ class ConnectionPacketsTest {
 
 		assertEquals(ClientboundRespawn.builder()
 				.dimension("minecraft:the_end")
-				.dimensionType(DimensionType.withEffects("example:void", "minecraft:the_end"))
+				.dimensionType(DimensionType.withEffects("example:void", "minecraft:the_end", 0, 256))
 				.flat(true)
 				.build(), packets.decode(new ClientboundRespawnPacket("example:void", "minecraft:the_end", 0,
 				GameMode.SURVIVAL, GameMode.SURVIVAL, false, true, false, false, null)));
@@ -50,6 +51,25 @@ class ConnectionPacketsTest {
 	@Test
 	void refusesATypeTheLoginDidNotList() {
 		assertThrows(IllegalStateException.class, () -> packets.decode(login("example:unknown")));
+	}
+
+	@Test
+	void refusesATypeDescribedWithoutItsBlockHeights() {
+		CompoundTag registry = codec().get("minecraft:dimension_type");
+		ListTag entries = registry.get("value");
+		CompoundTag flat = new CompoundTag("element");
+		flat.put(new StringTag("effects", "minecraft:overworld"));
+		CompoundTag entry = new CompoundTag("");
+		entry.put(new StringTag("name", "example:flat"));
+		entry.put(new IntTag("id", 2));
+		entry.put(flat);
+		entries.add(entry);
+		CompoundTag codec = new CompoundTag("");
+		codec.put(registry);
+
+		assertThrows(IllegalStateException.class, () -> packets.decode(new ClientboundLoginPacket(42, false,
+				GameMode.SURVIVAL, GameMode.SURVIVAL, new String[]{"minecraft:overworld"}, codec, "minecraft:overworld",
+				"minecraft:overworld", 0, 20, 10, 10, false, true, true, false, null)));
 	}
 
 	@Test
@@ -65,13 +85,13 @@ class ConnectionPacketsTest {
 	}
 
 	/**
-	 * The login's registries: the overworld's type and a data pack's type with the end's effects.
+	 * The login's registries: the overworld's type and a data pack's type with the end's effects and heights.
 	 */
 	private static CompoundTag codec() {
-		List<Tag> entries = List.of(
-				entry("minecraft:overworld", 0, "minecraft:overworld"),
-				entry("example:void", 1, "minecraft:the_end")
-		);
+		List<Tag> entries = new ArrayList<>(List.of(
+				entry("minecraft:overworld", 0, "minecraft:overworld", -64, 384),
+				entry("example:void", 1, "minecraft:the_end", 0, 256)
+		));
 		CompoundTag registry = new CompoundTag("minecraft:dimension_type");
 		registry.put(new ListTag("value", entries));
 		CompoundTag codec = new CompoundTag("");
@@ -79,9 +99,11 @@ class ConnectionPacketsTest {
 		return codec;
 	}
 
-	private static CompoundTag entry(String name, int id, String effects) {
+	private static CompoundTag entry(String name, int id, String effects, int minY, int height) {
 		CompoundTag element = new CompoundTag("element");
 		element.put(new StringTag("effects", effects));
+		element.put(new IntTag("min_y", minY));
+		element.put(new IntTag("height", height));
 		CompoundTag entry = new CompoundTag("");
 		entry.put(new StringTag("name", name));
 		entry.put(new IntTag("id", id));

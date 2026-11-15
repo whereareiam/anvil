@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v26_3;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
 import me.whereareiam.anvil.protocol.java.api.packet.configuration.ClientboundRegistryData;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SynchronizedRegistries;
 import net.kyori.adventure.key.Key;
 import org.cloudburstmc.nbt.NbtMap;
 import org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry;
@@ -17,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ConfigurationPacketsTest {
-	private final ConfigurationPackets packets = new ConfigurationPackets();
+	private final ConfigurationPackets packets = new ConfigurationPackets(new SynchronizedRegistries());
 
 	@Test
 	void decodesCompoundEntriesAndEntriesWithoutData() {

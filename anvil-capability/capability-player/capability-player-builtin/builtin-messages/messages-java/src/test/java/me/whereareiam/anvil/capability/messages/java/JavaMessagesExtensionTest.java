@@ -298,7 +298,7 @@ class JavaMessagesExtensionTest {
 				.entityId(entityId)
 				.level("minecraft:overworld")
 				.dimension("minecraft:overworld")
-				.dimensionType(DimensionType.withEffects("minecraft:overworld", "minecraft:overworld"))
+				.dimensionType(DimensionType.known("minecraft:overworld"))
 				.build();
 	}
 

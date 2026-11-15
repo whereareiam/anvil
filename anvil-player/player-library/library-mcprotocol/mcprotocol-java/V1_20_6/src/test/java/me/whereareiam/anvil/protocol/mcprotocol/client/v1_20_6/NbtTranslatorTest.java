@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
+package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtByte;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtByteArray;

@@ -1,19 +1,22 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConnectionTranslation;
-import org.cloudburstmc.nbt.NbtMap;
-import org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SynchronizedRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The connection moments of the MCProtocolLib 26.1 release, whose registry entries carry their data as a compound and
- * whose dimension types name the world clock their day follows.
+ * The connection moments of the MCProtocolLib releases from 26.1 on, whose dimension types name the world clock their
+ * day follows.
  */
 public final class ConnectionPackets extends ConnectionTranslation {
-	@Override
-	protected @Nullable NbtMap description(@NotNull RegistryEntry entry) {
-		return entry.getData();
+	/**
+	 * Creates the connection translation of one connection.
+	 *
+	 * @param registries the connection's registries
+	 */
+	public ConnectionPackets(@NotNull SynchronizedRegistries registries) {
+		super(registries);
 	}
 
 	@Override

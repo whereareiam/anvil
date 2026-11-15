@@ -1,17 +1,19 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
+import me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry;
+import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
+import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtInt;
+import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.configuration.ClientboundRegistryData;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
 import net.kyori.adventure.key.Key;
-import org.cloudburstmc.nbt.NbtMap;
-import org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.GameMode;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerSpawnInfo;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
-import org.geysermc.mcprotocollib.protocol.packet.configuration.clientbound.ClientboundRegistryDataPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundStartConfigurationPacket;
@@ -25,11 +27,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ConnectionPacketsTest {
-	private final ConnectionPackets packets = new ConnectionPackets();
+	private final SynchronizedRegistries registries = new SynchronizedRegistries();
+	private final ConnectionPackets packets = new ConnectionPackets(registries);
 
 	@Test
 	void namesTheJoinedLevelsTypeByItsIdInTheRegistryTheConfigurationSynchronized() {
-		assertNull(packets.decode(types()));
+		synchronize(new RegistryEntry("minecraft:overworld", null), new RegistryEntry("example:void",
+				described(0, 128).with("effects", new NbtString("minecraft:the_end"))));
 
 		assertEquals(ClientboundLogin.builder()
 				.entityId(42)
@@ -37,41 +41,63 @@ class ConnectionPacketsTest {
 				.level("minecraft:arena")
 				.hardcore(true)
 				.dimension("minecraft:arena")
-				.dimensionType(DimensionType.withEffects("example:void", "minecraft:the_end"))
+				.dimensionType(DimensionType.withEffects("example:void", "minecraft:the_end", 0, 128))
 				.flat(true)
 				.showDeathScreen(false)
 				.build(), packets.decode(new ClientboundLoginPacket(42, true,
 				new Key[]{Key.key("minecraft", "overworld"), Key.key("minecraft", "arena")}, 20, 10, 10, false, false, false,
-				spawnIn(Key.key("minecraft", "arena"), 2, false, true), false)));
+				spawnIn(Key.key("minecraft", "arena"), 1, false, true), false)));
 	}
 
 	@Test
-	void givesAVanillaTypeWithoutDescriptionTheEffectsOfTheClientsOwnDataPack() {
-		packets.decode(types());
+	void takesAVanillaTypeWithoutDescriptionFromTheClientsOwnDataPack() {
+		synchronize(new RegistryEntry("minecraft:overworld", null), new RegistryEntry("minecraft:the_nether", null));
 
 		assertEquals(ClientboundRespawn.builder()
 				.dimension("minecraft:the_nether")
-				.dimensionType(DimensionType.withEffects("minecraft:the_nether", "minecraft:the_nether"))
+				.dimensionType(DimensionType.withEffects("minecraft:the_nether", "minecraft:the_nether", 0, 256))
 				.debug(true)
 				.build(), packets.decode(new ClientboundRespawnPacket(spawnIn(Key.key("minecraft", "the_nether"), 1, true,
 				false), false, false)));
+		assertEquals(DimensionType.withEffects("minecraft:overworld", "minecraft:overworld", -64, 384), respawnInto(0)
+				.getDimensionType());
 	}
 
 	@Test
-	void leavesTheEffectsOfAnUndescribedModTypeUnknownAndTakesTheOverworldsForAnEmptyDescription() {
-		packets.decode(new ClientboundRegistryDataPacket(Key.key("minecraft", "dimension_type"), List.of(
-				new RegistryEntry(Key.key("example", "modded"), null),
-				new RegistryEntry(Key.key("example", "plain"), NbtMap.EMPTY)
-		)));
+	void takesTheOverworldsEffectsForADescriptionThatNamesNone() {
+		synchronize(new RegistryEntry("example:plain", described(-16, 64)));
 
-		assertEquals(new DimensionType("example:modded", null, null), respawnInto(0).getDimensionType());
-		assertEquals(DimensionType.withEffects("example:plain", "minecraft:overworld"), respawnInto(1).getDimensionType());
+		assertEquals(DimensionType.withEffects("example:plain", "minecraft:overworld", -16, 64),
+				respawnInto(0).getDimensionType());
 	}
 
 	@Test
-	void readsOnlyTheDimensionTypeRegistryAndRefusesATypeItDidNotList() {
-		packets.decode(new ClientboundRegistryDataPacket(Key.key("minecraft", "dialog"), List.of(
-				new RegistryEntry(Key.key("example", "menu"), NbtMap.EMPTY))));
+	void leavesTheSkyAndShadingOfAModsEffectsUnknown() {
+		synchronize(new RegistryEntry("example:modded",
+				described(0, 256).with("effects", new NbtString("example:fog"))));
+
+		assertEquals(DimensionType.builder().key("example:modded").minY(0).height(256).build(),
+				respawnInto(0).getDimensionType());
+	}
+
+	@Test
+	void refusesATypeTheConfigurationDidNotList() {
+		registries.record(new ClientboundRegistryData("minecraft:dialog", List.of(
+				new RegistryEntry("example:menu", NbtCompound.EMPTY))));
+
+		assertThrows(IllegalStateException.class, () -> respawnInto(0));
+	}
+
+	@Test
+	void refusesATypeNoVanillaClientKnowsSentWithoutItsDescription() {
+		synchronize(new RegistryEntry("example:modded", null));
+
+		assertThrows(IllegalStateException.class, () -> respawnInto(0));
+	}
+
+	@Test
+	void refusesADescriptionWithoutBlockHeights() {
+		synchronize(new RegistryEntry("example:flat", NbtCompound.EMPTY.with("height", new NbtInt(256))));
 
 		assertThrows(IllegalStateException.class, () -> respawnInto(0));
 	}
@@ -89,21 +115,17 @@ class ConnectionPacketsTest {
 				packets.packets());
 	}
 
+	private void synchronize(RegistryEntry... types) {
+		registries.record(new ClientboundRegistryData("minecraft:dimension_type", List.of(types)));
+	}
+
 	private ClientboundRespawn respawnInto(int type) {
 		return (ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(spawnIn(Key.key("minecraft", "overworld"),
 				type, false, false), false, false));
 	}
 
-	/**
-	 * The dimension types a vanilla server synchronizes, which the client knows from its own data pack, and a data
-	 * pack's type with the end's effects.
-	 */
-	private static ClientboundRegistryDataPacket types() {
-		return new ClientboundRegistryDataPacket(Key.key("minecraft", "dimension_type"), List.of(
-				new RegistryEntry(Key.key("minecraft", "overworld"), null),
-				new RegistryEntry(Key.key("minecraft", "the_nether"), null),
-				new RegistryEntry(Key.key("example", "void"), NbtMap.builder().putString("effects", "minecraft:the_end").build())
-		));
+	private static NbtCompound described(int minY, int height) {
+		return NbtCompound.EMPTY.with("min_y", new NbtInt(minY)).with("height", new NbtInt(height));
 	}
 
 	private static PlayerSpawnInfo spawnIn(Key level, int type, boolean debug, boolean flat) {

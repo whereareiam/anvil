@@ -154,8 +154,9 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 		private void entered(String dimension, DimensionType type, boolean debug, boolean flat) {
 			if (!observed) return;
 
-			LevelInfo level = new LevelInfo(dimension, new DimensionTypeInfo(type.getKey(), environment(type)),
-					generation(debug, flat));
+			DimensionTypeInfo info = new DimensionTypeInfo(type.getKey(), environment(type), type.getMinY(),
+					type.getHeight());
+			LevelInfo level = new LevelInfo(dimension, info, generation(debug, flat));
 			player.emit(WorldChannel.DIMENSION, new DimensionChange(current == null ? null : current.getDimension(),
 					dimension, level));
 			boolean anotherLevel = current == null || !current.getDimension().equals(dimension);

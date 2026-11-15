@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerJoinGamePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerRespawnPacket;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+import com.github.steveice10.opennbt.tag.builtin.IntTag;
 import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
 import com.github.steveice10.opennbt.tag.builtin.Tag;
@@ -27,10 +28,16 @@ import java.util.Set;
  * The moments the MCProtocolLib releases from 1.16.5 until 1.17.1 join a level and respawn. These releases have no
  * configuration phase, so they never return to one. They send the dimension type itself, without its key, and the
  * dimension types of the whole server with the login, so the translation names a type by the login's entry whose
- * description equals it, the first such entry when several are equal; one translation serves one session.
+ * description equals it, the first such entry when several are equal; one translation serves one session. A type of
+ * Minecraft 1.16 names no block heights, because every level spans the 256 heights from 0; from Minecraft 1.17 a type
+ * names both.
  */
 public final class ConnectionPackets implements PacketTranslation<Packet> {
 	private static final String DEFAULT_EFFECTS = "minecraft:overworld";
+	private static final String MIN_Y = "min_y";
+	private static final String HEIGHT = "height";
+	private static final int FIXED_MIN_Y = 0;
+	private static final int FIXED_HEIGHT = 256;
 
 	private volatile Map<String, CompoundTag> types = Map.of();
 
@@ -74,9 +81,26 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 		StringTag described = description.get("effects");
 		String effects = described == null ? DEFAULT_EFFECTS : described.getValue();
 		for (Map.Entry<String, CompoundTag> type : types.entrySet())
-			if (type.getValue().getValue().equals(description.getValue())) return DimensionType.withEffects(type.getKey(), effects);
+			if (type.getValue().getValue().equals(description.getValue()))
+				return DimensionType.withEffects(type.getKey(), effects, minY(description), height(description));
 
 		throw new IllegalStateException("The server sent a dimension type its login did not list");
+	}
+
+	/**
+	 * Reads a type's lowest block height, which Minecraft 1.16 leaves out.
+	 */
+	private static int minY(@NotNull CompoundTag description) {
+		IntTag minY = description.get(MIN_Y);
+		return minY == null ? FIXED_MIN_Y : minY.getValue();
+	}
+
+	/**
+	 * Reads the number of block heights a type's levels span, which Minecraft 1.16 leaves out.
+	 */
+	private static int height(@NotNull CompoundTag description) {
+		IntTag height = description.get(HEIGHT);
+		return height == null ? FIXED_HEIGHT : height.getValue();
 	}
 
 	/**

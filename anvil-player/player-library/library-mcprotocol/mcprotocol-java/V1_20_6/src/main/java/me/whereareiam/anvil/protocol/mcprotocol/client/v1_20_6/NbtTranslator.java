@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
+package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -29,12 +29,12 @@ import java.util.Map;
  * Translates between the NBT tree MCProtocolLib reads and writes, Cloudburst's {@link NbtMap} with its boxed values,
  * and the protocol's {@link NbtTag}, tag by tag.
  *
- * <p>A Cloudburst list holds one element type. Since Minecraft 1.21.5 the game writes a list of mixed types as a list
- * of compounds, wrapping each element that is not a compound, or is itself such a wrapper, in a compound with the
- * empty key; the translation unwraps those elements when reading and wraps them again when writing such a list.</p>
+ * <p>A Cloudburst list holds one element type. The game writes a list of mixed types as a list of compounds, wrapping
+ * each element that is not a compound, or is itself such a wrapper, in a compound with the empty key; the translation
+ * unwraps those elements when reading and wraps them again when writing such a list.</p>
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-final class NbtTranslator {
+public final class NbtTranslator {
 	private static final String WRAPPER_KEY = "";
 
 	/**
@@ -43,7 +43,7 @@ final class NbtTranslator {
 	 * @param compound the library's compound
 	 * @return the protocol's compound
 	 */
-	static @NotNull NbtCompound compound(@NotNull NbtMap compound) {
+	public static @NotNull NbtCompound compound(@NotNull NbtMap compound) {
 		Map<String, NbtTag> entries = new LinkedHashMap<>();
 		compound.forEach((key, value) -> entries.put(key, tag(value)));
 
@@ -81,7 +81,7 @@ final class NbtTranslator {
 	 * @param compound the protocol's compound
 	 * @return the library's compound
 	 */
-	static @NotNull NbtMap map(@NotNull NbtCompound compound) {
+	public static @NotNull NbtMap map(@NotNull NbtCompound compound) {
 		NbtMapBuilder map = NbtMap.builder();
 		compound.getEntries().forEach((key, tag) -> map.put(key, value(tag)));
 

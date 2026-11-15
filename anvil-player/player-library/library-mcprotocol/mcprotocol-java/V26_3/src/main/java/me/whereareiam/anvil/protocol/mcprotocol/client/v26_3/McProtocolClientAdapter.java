@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v26_3;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ScreenPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SynchronizedRegistries;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ChatPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.CommandPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.CookiePackets;
@@ -12,6 +13,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.NetworkClientSes
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.PlayerPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.SoundPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.TextTranslator;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2.ConnectionPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2.HealthPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2.WorldPackets;
 import org.geysermc.mcprotocollib.network.ClientSession;
@@ -40,14 +42,12 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 	 * @return the 26.1 translations with this release's configuration, entity and interaction translations
 	 */
 	static PacketTable<Packet> packets() {
-		// The connection and world translations read the dimension types and world clocks of the registry data before
-		// the configuration translation decodes it.
+		SynchronizedRegistries registries = new SynchronizedRegistries();
 		return new PacketTable<>(List.of(
-				new ConnectionPackets(),
-				new WorldPackets(),
 				new ChatPackets(TEXT),
 				new CommandPackets(),
-				new ConfigurationPackets(),
+				new ConfigurationPackets(registries),
+				new ConnectionPackets(registries),
 				new CookiePackets(),
 				new DialogPackets(),
 				new EntityPackets(TEXT),
@@ -56,7 +56,8 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 				new InventoryPackets(TEXT),
 				new PlayerPackets(),
 				new ScreenPackets(TEXT),
-				new SoundPackets()
+				new SoundPackets(),
+				new WorldPackets(registries)
 		));
 	}
 }

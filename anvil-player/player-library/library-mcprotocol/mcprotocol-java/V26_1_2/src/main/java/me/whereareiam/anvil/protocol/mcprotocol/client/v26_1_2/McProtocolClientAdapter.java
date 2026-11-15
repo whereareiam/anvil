@@ -1,19 +1,20 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConfigurationPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ScreenPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SynchronizedRegistries;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ChatPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.CommandPackets;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ConfigurationPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.CookiePackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.DialogPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.EntityPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.InventoryPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.NetworkClientSessions;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.PlayerPackets;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.SoundPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ReleaseAnswers;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.SoundPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.TextTranslator;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -42,14 +43,12 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 	 * @return the 1.21.11 translations with this release's interaction translation
 	 */
 	static PacketTable<Packet> packets() {
-		// The connection and world translations read the dimension types and world clocks of the registry data before
-		// the configuration translation decodes it.
+		SynchronizedRegistries registries = new SynchronizedRegistries();
 		return new PacketTable<>(List.of(
-				new ConnectionPackets(),
-				new WorldPackets(),
 				new ChatPackets(TEXT),
 				new CommandPackets(),
-				new ConfigurationPackets(),
+				new ConfigurationPackets(registries),
+				new ConnectionPackets(registries),
 				new CookiePackets(),
 				new DialogPackets(),
 				new EntityPackets(TEXT),
@@ -58,7 +57,8 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 				new InventoryPackets(TEXT),
 				new PlayerPackets(),
 				new ScreenPackets(TEXT),
-				new SoundPackets()
+				new SoundPackets(),
+				new WorldPackets(registries)
 		));
 	}
 }

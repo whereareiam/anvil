@@ -164,7 +164,7 @@ class JavaVitalsExtensionTest {
 				.entityId(PLAYER)
 				.level(OVERWORLD)
 				.dimension(OVERWORLD)
-				.dimensionType(DimensionType.withEffects(OVERWORLD, OVERWORLD))
+				.dimensionType(DimensionType.known(OVERWORLD))
 				.showDeathScreen(deathScreen)
 				.build();
 	}

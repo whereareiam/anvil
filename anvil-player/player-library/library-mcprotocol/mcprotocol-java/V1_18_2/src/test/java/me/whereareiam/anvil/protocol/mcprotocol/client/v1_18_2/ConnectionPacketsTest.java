@@ -35,7 +35,7 @@ class ConnectionPacketsTest {
 				.level("minecraft:the_nether")
 				.hardcore(true)
 				.dimension("minecraft:overworld")
-				.dimensionType(DimensionType.withEffects("minecraft:overworld", "minecraft:overworld"))
+				.dimensionType(DimensionType.withEffects("minecraft:overworld", "minecraft:overworld", -64, 384))
 				.flat(true)
 				.build(), packets.decode(login(overworld())));
 	}
@@ -46,7 +46,7 @@ class ConnectionPacketsTest {
 
 		assertEquals(ClientboundRespawn.builder()
 				.dimension("example:arena")
-				.dimensionType(DimensionType.withEffects("minecraft:the_nether", "minecraft:the_nether"))
+				.dimensionType(DimensionType.withEffects("minecraft:the_nether", "minecraft:the_nether", 0, 256))
 				.debug(true)
 				.build(), packets.decode(new ClientboundRespawnPacket(nether(), "example:arena", 0, GameMode.SURVIVAL,
 				GameMode.SURVIVAL, true, false, false)));
@@ -54,11 +54,11 @@ class ConnectionPacketsTest {
 
 	@Test
 	void takesTheOverworldsEffectsForATypeThatDescribesNone() {
-		CompoundTag plain = new CompoundTag("");
+		CompoundTag plain = heights(new CompoundTag(""), 0, 256);
 		plain.put(new ByteTag("ultrawarm", (byte) 0));
 		CompoundTag codec = codec(entry("example:plain", 2, plain));
 
-		assertEquals(DimensionType.withEffects("example:plain", "minecraft:overworld"),
+		assertEquals(DimensionType.withEffects("example:plain", "minecraft:overworld", 0, 256),
 				((ClientboundLogin) packets.decode(new ClientboundLoginPacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL,
 						1, new String[]{"example:plain"}, codec, plain, "example:plain", 0, 20, 10, 10, false, true, false,
 						false))).getDimensionType());
@@ -89,17 +89,23 @@ class ConnectionPacketsTest {
 	}
 
 	private static CompoundTag overworld() {
-		return type("minecraft:overworld", false);
+		return heights(type("minecraft:overworld", false), -64, 384);
 	}
 
 	private static CompoundTag nether() {
-		return type("minecraft:the_nether", true);
+		return heights(type("minecraft:the_nether", true), 0, 256);
 	}
 
 	private static CompoundTag type(String effects, boolean ultrawarm) {
 		CompoundTag type = new CompoundTag("");
 		type.put(new StringTag("effects", effects));
 		type.put(new ByteTag("ultrawarm", (byte) (ultrawarm ? 1 : 0)));
+		return type;
+	}
+
+	private static CompoundTag heights(CompoundTag type, int minY, int height) {
+		type.put(new IntTag("min_y", minY));
+		type.put(new IntTag("height", height));
 		return type;
 	}
 

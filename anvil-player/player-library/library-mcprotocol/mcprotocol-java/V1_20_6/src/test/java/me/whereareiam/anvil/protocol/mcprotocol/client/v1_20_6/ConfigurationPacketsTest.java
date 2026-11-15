@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
+package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtInt;
@@ -19,7 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ConfigurationPacketsTest {
-	private final ConfigurationPackets packets = new ConfigurationPackets();
+	private final SynchronizedRegistries registries = new SynchronizedRegistries();
+	private final ConfigurationPackets packets = new ConfigurationPackets(registries);
 
 	@Test
 	void decodesTheDialogRegistryInRegistryOrder() {
@@ -50,6 +51,18 @@ class ConfigurationPacketsTest {
 				new me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry("minecraft:overworld",
 						NbtCompound.EMPTY.with("height", new NbtInt(384)))
 		)), packets.decode(registry));
+	}
+
+	@Test
+	void recordsEachRegistryForThePacketsThatNameItsEntriesById() {
+		packets.decode(new ClientboundRegistryDataPacket(Key.key("minecraft:world_clock"), List.of(
+				new RegistryEntry(Key.key("minecraft:overworld"), null),
+				new RegistryEntry(Key.key("minecraft:the_end"), null)
+		)));
+
+		var expected = new me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry("minecraft:the_end",
+				null);
+		assertEquals(expected, registries.entry("minecraft:world_clock", 1));
 	}
 
 	@Test

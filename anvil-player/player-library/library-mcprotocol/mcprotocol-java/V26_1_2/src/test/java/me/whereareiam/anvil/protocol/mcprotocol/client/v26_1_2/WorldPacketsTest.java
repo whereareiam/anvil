@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * The release's time carries world clocks by their IDs in the configuration's {@code minecraft:world_clock} registry,
- * which the release's packet table reads before its configuration translation reports the registry data.
+ * which the release's configuration translation records for the world translation of the same packet table.
  */
 class WorldPacketsTest {
 	private final PacketTable<Packet> packets = McProtocolClientAdapter.packets();
@@ -68,10 +68,12 @@ class WorldPacketsTest {
 				new RegistryEntry(Key.key("example:void"), NbtMap.builder()
 						.putString("skybox", "end")
 						.putString("default_clock", "example:slow")
+						.putInt("min_y", 0)
+						.putInt("height", 256)
 						.build())
 		)));
 
-		assertEquals(DimensionType.known("minecraft:overworld").withDefaultClock("minecraft:overworld"),
+		assertEquals(DimensionType.known("minecraft:overworld").toBuilder().defaultClock("minecraft:overworld").build(),
 				respawnInto(0).getDimensionType());
 		assertNull(respawnInto(1).getDimensionType().getDefaultClock());
 		assertEquals("example:slow", respawnInto(2).getDimensionType().getDefaultClock());

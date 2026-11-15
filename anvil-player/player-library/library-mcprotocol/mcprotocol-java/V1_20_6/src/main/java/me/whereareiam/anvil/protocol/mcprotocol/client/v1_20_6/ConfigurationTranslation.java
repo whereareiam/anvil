@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
+package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
@@ -17,11 +17,23 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Configuration of the MCProtocolLib releases from 1.21.11 on: the registry data of every synchronized registry, with
- * each entry's data translated by {@link NbtTranslator}. Each release's {@code ConfigurationPackets} reads an entry's
- * data, whose type Minecraft 26.3 widened to any tag.
+ * Configuration of the MCProtocolLib releases from 1.20.5 on: the registry data of every synchronized registry, with
+ * each entry's data translated by {@link NbtTranslator}, which the translation also records in the connection's
+ * {@link SynchronizedRegistries} for the packets that name an entry by ID. Each release's {@code ConfigurationPackets}
+ * reads an entry's data, whose type Minecraft 26.3 widened to any tag.
  */
 public abstract class ConfigurationTranslation implements PacketTranslation<Packet> {
+	private final SynchronizedRegistries registries;
+
+	/**
+	 * Creates the configuration translation of one connection.
+	 *
+	 * @param registries the connection's registries, which the translation records each registry's entries in
+	 */
+	protected ConfigurationTranslation(@NotNull SynchronizedRegistries registries) {
+		this.registries = registries;
+	}
+
 	@Override
 	public final @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(ClientboundRegistryData.class);
@@ -36,7 +48,10 @@ public abstract class ConfigurationTranslation implements PacketTranslation<Pack
 				.map(entry -> new me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry(
 						entry.getId().asString(), data(entry)))
 				.toList();
-		return new ClientboundRegistryData(registry.getRegistry().asString(), entries);
+		ClientboundRegistryData decoded = new ClientboundRegistryData(registry.getRegistry().asString(), entries);
+		registries.record(decoded);
+
+		return decoded;
 	}
 
 	@Override

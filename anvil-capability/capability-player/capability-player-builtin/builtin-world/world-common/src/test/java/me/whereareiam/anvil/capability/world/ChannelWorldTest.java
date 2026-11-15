@@ -60,7 +60,8 @@ class ChannelWorldTest {
 	@Test
 	void keepsTheLevelOfTheLastChangeAndTheServerOfTheLastJoin() {
 		ServerInfo server = ServerInfo.builder().hardcore(true).level(OVERWORLD).level(NETHER).build();
-		LevelInfo nether = new LevelInfo(NETHER, new DimensionTypeInfo(NETHER, Environment.NETHER), LevelGeneration.FLAT);
+		LevelInfo nether = new LevelInfo(NETHER, new DimensionTypeInfo(NETHER, Environment.NETHER, 0, 256),
+				LevelGeneration.FLAT);
 		channel.publish(WorldChannel.SERVER, server);
 		channel.publish(WorldChannel.DIMENSION, change(null, OVERWORLD));
 		channel.publish(WorldChannel.DIMENSION, new DimensionChange(OVERWORLD, NETHER, nether));
@@ -212,7 +213,8 @@ class ChannelWorldTest {
 	}
 
 	private static LevelInfo level(String dimension) {
-		return new LevelInfo(dimension, new DimensionTypeInfo(dimension, Environment.OVERWORLD), LevelGeneration.NORMAL);
+		return new LevelInfo(dimension, new DimensionTypeInfo(dimension, Environment.OVERWORLD, -64, 384),
+				LevelGeneration.NORMAL);
 	}
 
 	/**

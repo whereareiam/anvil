@@ -7,6 +7,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.dialog.ClientboundClearDial
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ClientboundShowDialog;
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ServerboundCustomClickAction;
 import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.NbtTranslator;
 import net.kyori.adventure.key.Key;
 import org.cloudburstmc.nbt.NbtMap;
 import org.geysermc.mcprotocollib.network.packet.Packet;
