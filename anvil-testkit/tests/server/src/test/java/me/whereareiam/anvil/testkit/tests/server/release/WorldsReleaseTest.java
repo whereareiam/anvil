@@ -58,6 +58,7 @@ class WorldsReleaseTest {
 	private static final String LEFT_BEHIND = "anvil_left_behind";
 
 	private static final Duration TIMEOUT = Duration.ofSeconds(20);
+	private static final String CAVES_AND_CLIFFS = "1.18";
 	private static final String WORLD_CLOCKS = "26.1";
 	// Above the nether's bedrock roof, where a player standing still is in the air instead of inside the rock.
 	private static final WorldLocation ABOVE_THE_NETHER = WorldLocation.builder()
@@ -108,7 +109,10 @@ class WorldsReleaseTest {
 		assertEquals(Optional.of("minecraft:overworld"), player.capability(World.class).dimension());
 		assertEquals("minecraft:overworld", worlds.location(player).orElseThrow().getWorld());
 		World world = player.capability(World.class);
-		DimensionTypeInfo overworld = new DimensionTypeInfo("minecraft:overworld", Environment.OVERWORLD);
+		// Minecraft 1.18 lowered the overworld's floor and raised its ceiling; the nether and the end kept theirs.
+		DimensionTypeInfo overworld = TestedRelease.isAtLeast(CAVES_AND_CLIFFS)
+				? new DimensionTypeInfo("minecraft:overworld", Environment.OVERWORLD, -64, 384)
+				: new DimensionTypeInfo("minecraft:overworld", Environment.OVERWORLD, 0, 256);
 		assertEquals(new LevelInfo("minecraft:overworld", overworld, LevelGeneration.NORMAL), world.level().orElseThrow());
 		List<String> levels = world.server().orElseThrow().getLevels();
 		assertEquals("minecraft:overworld", levels.get(0));
@@ -129,7 +133,7 @@ class WorldsReleaseTest {
 		assertEquals("minecraft:overworld", changes.changed(player, "the_nether", TIMEOUT).getFrom());
 		assertEquals("minecraft:overworld", dimensions.entered("minecraft:the_nether", TIMEOUT).getFrom());
 		assertEquals(Optional.of("minecraft:the_nether"), world.dimension());
-		assertEquals(new DimensionTypeInfo("minecraft:the_nether", Environment.NETHER),
+		assertEquals(new DimensionTypeInfo("minecraft:the_nether", Environment.NETHER, 0, 256),
 				world.level().orElseThrow().getType());
 		WorldLocation location = worlds.location(player).orElseThrow();
 		assertEquals(List.of("minecraft:the_nether", 140D), List.of(location.getWorld(), location.getY()));

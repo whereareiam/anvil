@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * The release's registry entries carry any tag as their data, and the release's packet table reads a dimension type's
- * description only from a compound.
+ * description only from a compound, which names the type's block heights.
  */
 class ConnectionPacketsTest {
 	private final PacketTable<Packet> packets = McProtocolClientAdapter.packets();
@@ -29,12 +29,17 @@ class ConnectionPacketsTest {
 	void readsTheEffectsOfACompoundDescriptionAndTakesVanillaEffectsWithoutOne() {
 		packets.decode(new ClientboundRegistryDataPacket(Key.key("minecraft:dimension_type"), List.of(
 				new RegistryEntry(Key.key("minecraft:the_end"), null),
-				new RegistryEntry(Key.key("example:void"), NbtMap.builder().putString("effects", "minecraft:the_nether").build())
+				new RegistryEntry(Key.key("example:void"), NbtMap.builder()
+						.putString("effects", "minecraft:the_nether")
+						.putInt("min_y", 0)
+						.putInt("height", 128)
+						.build())
 		)));
 
-		assertEquals(DimensionType.withEffects("minecraft:the_end", "minecraft:the_end").withDefaultClock("minecraft:the_end"),
+		assertEquals(DimensionType.known("minecraft:the_end").toBuilder().defaultClock("minecraft:the_end").build(),
 				respawnInto(0).getDimensionType());
-		assertEquals(DimensionType.withEffects("example:void", "minecraft:the_nether"), respawnInto(1).getDimensionType());
+		assertEquals(DimensionType.withEffects("example:void", "minecraft:the_nether", 0, 128),
+				respawnInto(1).getDimensionType());
 	}
 
 	@Test
@@ -45,6 +50,8 @@ class ConnectionPacketsTest {
 				new RegistryEntry(Key.key("example:void"), NbtMap.builder()
 						.putString("skybox", "end")
 						.putString("default_clock", "example:slow")
+						.putInt("min_y", 0)
+						.putInt("height", 256)
 						.build())
 		)));
 

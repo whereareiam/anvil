@@ -59,6 +59,8 @@ joined a level yet. `world.level()` gives the rest of what the client was told a
 LevelInfo level = world.level().orElseThrow();
 assertEquals("minecraft:the_nether", level.getType().getKey());
 assertEquals(Environment.NETHER, level.getType().getEnvironment());
+assertEquals(0, level.getType().getMinY());
+assertEquals(256, level.getType().getHeight());
 assertEquals(LevelGeneration.NORMAL, level.getGeneration());
 
 ServerInfo server = world.server().orElseThrow();
@@ -70,6 +72,8 @@ assertTrue(server.getLevels().contains("minecraft:arena"));
 | `LevelInfo.dimension` | The level's key, the same as `world.dimension()`. |
 | `LevelInfo.type.key` | The key of the level's dimension type, such as `minecraft:the_nether` or a data pack's `example:void`. |
 | `LevelInfo.type.environment` | How the client renders the level, from its dimension type's sky and shading: `OVERWORLD`, `NETHER`, `END`, or `CUSTOM` for any other pair, such as a mod's. A world a plugin created as a nether world has the environment `NETHER`. |
+| `LevelInfo.type.minY` | The lowest block height of the level, such as `-64` for the overworld from Minecraft 1.18 on. |
+| `LevelInfo.type.height` | How many block heights the level spans from `minY` up, such as `384` for the overworld from Minecraft 1.18 on. Every level spans 256 before Minecraft 1.17. |
 | `LevelInfo.generation` | `NORMAL`, `FLAT` for a superflat world, or `DEBUG` for a debug world. |
 | `ServerInfo.hardcore` | Whether the server is in hardcore mode. |
 | `ServerInfo.levels` | The keys of every level the server has, in the server's order. |

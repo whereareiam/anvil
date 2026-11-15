@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+import com.github.steveice10.opennbt.tag.builtin.IntTag;
 import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
 import com.github.steveice10.opennbt.tag.builtin.Tag;
@@ -27,10 +28,14 @@ import java.util.Set;
  * The moments the MCProtocolLib 1.18.2 release joins a level and respawns. The release has no configuration phase,
  * so it never returns to one. It sends the dimension type itself, without its key, and the dimension types of the
  * whole server with the login, so the translation names a type by the login's entry whose
- * description equals it, the first such entry when several are equal; one translation serves one session.
+ * description equals it, the first such entry when several are equal; one translation serves one session. A type
+ * names its block heights, and one without them breaks the protocol: a vanilla client cannot read the login and
+ * disconnects, and the translation throws, which makes MCProtocolLib disconnect the session as well.
  */
 public final class ConnectionPackets implements PacketTranslation<Packet> {
 	private static final String DEFAULT_EFFECTS = "minecraft:overworld";
+	private static final String MIN_Y = "min_y";
+	private static final String HEIGHT = "height";
 
 	private volatile Map<String, CompoundTag> types = Map.of();
 
@@ -74,9 +79,22 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 		StringTag described = description.get("effects");
 		String effects = described == null ? DEFAULT_EFFECTS : described.getValue();
 		for (Map.Entry<String, CompoundTag> type : types.entrySet())
-			if (type.getValue().getValue().equals(description.getValue())) return DimensionType.withEffects(type.getKey(), effects);
+			if (type.getValue().getValue().equals(description.getValue()))
+				return DimensionType.withEffects(type.getKey(), effects, height(description, MIN_Y),
+						height(description, HEIGHT));
 
 		throw new IllegalStateException("The server sent a dimension type its login did not list");
+	}
+
+	/**
+	 * Reads one of a type's block heights.
+	 */
+	private static int height(@NotNull CompoundTag description, @NotNull String field) {
+		IntTag value = description.get(field);
+		if (value == null)
+			throw new IllegalStateException("The server described a dimension type without its " + field);
+
+		return value.getValue();
 	}
 
 	/**

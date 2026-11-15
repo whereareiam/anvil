@@ -26,10 +26,12 @@ public final class McProtocolClientAdapter extends JavaClient<Session> {
 	 * @return the release's translations
 	 */
 	static PacketTable<Packet> packets() {
+		SynchronizedRegistries registries = new SynchronizedRegistries();
 		return new PacketTable<>(List.of(
 				new ChatPackets(TEXT),
 				new CommandPackets(),
-				new ConnectionPackets(),
+				new ConfigurationPackets(registries),
+				new ConnectionPackets(registries),
 				new CookiePackets(),
 				new EntityPackets(TEXT),
 				new HealthPackets(TEXT),

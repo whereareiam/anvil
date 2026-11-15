@@ -27,7 +27,6 @@ import org.geysermc.mcprotocollib.protocol.data.game.level.notify.LimitedCraftin
 import org.geysermc.mcprotocollib.protocol.data.game.level.notify.RainStrengthValue;
 import org.geysermc.mcprotocollib.protocol.data.game.level.notify.RespawnScreenValue;
 import org.geysermc.mcprotocollib.protocol.data.game.level.notify.ThunderStrengthValue;
-import org.geysermc.mcprotocollib.protocol.packet.configuration.clientbound.ClientboundRegistryDataPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundGameEventPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundSetDefaultSpawnPositionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundSetTimePacket;
@@ -47,9 +46,7 @@ import java.util.Set;
  * does and keep with each event's number as a value of their own that the translation turns back into the game's
  * number, their world border, which they move in
  * ticks, their spawn point in a level of its own with the view a player spawns with, and their time, which each
- * release's {@code WorldPackets} reads, because Minecraft 26.1 replaced the time of day with world clocks. A release
- * whose time refers to its configuration's registries reads them as they arrive and leaves the registry data itself to
- * the configuration translation; one translation serves one session.
+ * release's {@code WorldPackets} reads, because Minecraft 26.1 replaced the time of day with world clocks.
  */
 public abstract class WorldTranslation implements PacketTranslation<Packet> {
 	@Override
@@ -63,10 +60,6 @@ public abstract class WorldTranslation implements PacketTranslation<Packet> {
 	@Override
 	public final @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		return switch (packet) {
-			case ClientboundRegistryDataPacket registry -> {
-				registry(registry);
-				yield null;
-			}
 			case ClientboundSetTimePacket time -> time(time);
 			case ClientboundGameEventPacket event -> event(event);
 			case ClientboundInitializeBorderPacket border -> ClientboundInitializeBorder.builder()
@@ -102,14 +95,6 @@ public abstract class WorldTranslation implements PacketTranslation<Packet> {
 	 * @return the time every release reports
 	 */
 	protected abstract @NotNull ClientboundSetTime time(@NotNull ClientboundSetTimePacket time);
-
-	/**
-	 * Reads a registry the configuration synchronized, which a release whose time refers to one remembers.
-	 *
-	 * @param registry the release's registry data
-	 */
-	protected void registry(@NotNull ClientboundRegistryDataPacket registry) {
-	}
 
 	private static @NotNull ClientboundSetDefaultSpawnPosition spawn(@NotNull ClientboundSetDefaultSpawnPositionPacket spawn) {
 		GlobalPos point = spawn.getGlobalPos();

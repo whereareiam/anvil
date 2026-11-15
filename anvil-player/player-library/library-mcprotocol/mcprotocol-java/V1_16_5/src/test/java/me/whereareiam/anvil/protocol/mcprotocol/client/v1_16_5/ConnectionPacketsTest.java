@@ -35,7 +35,7 @@ class ConnectionPacketsTest {
 				.level("minecraft:the_nether")
 				.hardcore(true)
 				.dimension("minecraft:overworld")
-				.dimensionType(DimensionType.withEffects("minecraft:overworld", "minecraft:overworld"))
+				.dimensionType(DimensionType.withEffects("minecraft:overworld", "minecraft:overworld", 0, 256))
 				.flat(true)
 				.build(), packets.decode(login(overworld())));
 	}
@@ -46,7 +46,7 @@ class ConnectionPacketsTest {
 
 		assertEquals(ClientboundRespawn.builder()
 				.dimension("example:arena")
-				.dimensionType(DimensionType.withEffects("minecraft:the_nether", "minecraft:the_nether"))
+				.dimensionType(DimensionType.withEffects("minecraft:the_nether", "minecraft:the_nether", 0, 256))
 				.debug(true)
 				.build(), packets.decode(new ServerRespawnPacket(nether(), "example:arena", 0, GameMode.SURVIVAL,
 				GameMode.SURVIVAL, true, false, false)));
@@ -58,10 +58,23 @@ class ConnectionPacketsTest {
 		plain.put(new ByteTag("ultrawarm", (byte) 0));
 		CompoundTag codec = codec(entry("example:plain", 2, plain));
 
-		assertEquals(DimensionType.withEffects("example:plain", "minecraft:overworld"),
+		assertEquals(DimensionType.withEffects("example:plain", "minecraft:overworld", 0, 256),
 				((ClientboundLogin) packets.decode(new ServerJoinGamePacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL,
 						1, new String[]{"example:plain"}, codec, plain, "example:plain", 0, 20, 10, false, true, false,
 						false))).getDimensionType());
+	}
+
+	@Test
+	void readsTheBlockHeightsATypeOfMinecraft117Names() {
+		CompoundTag tall = type("minecraft:overworld", false);
+		tall.put(new IntTag("min_y", -32));
+		tall.put(new IntTag("height", 320));
+		CompoundTag codec = codec(entry("example:tall", 0, tall));
+		ServerJoinGamePacket login = new ServerJoinGamePacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL, 1,
+				new String[]{"example:tall"}, codec, tall, "example:tall", 0, 20, 10, false, true, false, false);
+
+		assertEquals(DimensionType.withEffects("example:tall", "minecraft:overworld", -32, 320),
+				((ClientboundLogin) packets.decode(login)).getDimensionType());
 	}
 
 	@Test

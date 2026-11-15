@@ -228,6 +228,8 @@ class ClientPacketListenerTest {
 	private static CompoundTag overworld() {
 		CompoundTag type = new CompoundTag("");
 		type.put(new StringTag("effects", "minecraft:overworld"));
+		type.put(new IntTag("min_y", -64));
+		type.put(new IntTag("height", 384));
 		return type;
 	}
 
