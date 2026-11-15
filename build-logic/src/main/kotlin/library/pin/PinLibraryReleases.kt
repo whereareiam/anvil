@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.buildlogic.library.pin
 
+import me.whereareiam.anvil.buildlogic.download.Checksums
 import me.whereareiam.anvil.buildlogic.library.ArtifactCoordinate
 import me.whereareiam.anvil.buildlogic.library.LibraryRelease
 import me.whereareiam.anvil.buildlogic.library.LibraryReleaseReader

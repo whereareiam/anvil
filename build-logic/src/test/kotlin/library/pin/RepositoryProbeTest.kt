@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.buildlogic.library.pin
 
 import com.sun.net.httpserver.HttpServer
+import me.whereareiam.anvil.buildlogic.download.Checksums
 import org.gradle.api.GradleException
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
+
 import java.io.File
 import java.net.InetAddress
 import java.net.InetSocketAddress
