@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.buildlogic.library.pin
+package me.whereareiam.anvil.buildlogic.download
 
 import java.io.File
 import java.io.InputStream

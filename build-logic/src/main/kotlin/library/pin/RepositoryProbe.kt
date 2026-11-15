@@ -1,13 +1,11 @@
 package me.whereareiam.anvil.buildlogic.library.pin
 
+import me.whereareiam.anvil.buildlogic.download.Checksums
+import me.whereareiam.anvil.buildlogic.download.HttpReader
 import org.gradle.api.GradleException
 import java.io.File
 import java.io.IOException
-import java.net.ProxySelector
 import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
 import java.time.Duration
 
 /**
@@ -24,14 +22,7 @@ import java.time.Duration
 class RepositoryProbe(repositories: List<URI>) : AutoCloseable {
 	private val roots = repositories.map { URI(it.toString().removeSuffix("/") + "/") }
 	private val located = mutableMapOf<String, String>()
-	private val connection = lazy {
-		HttpClient.newBuilder()
-			.followRedirects(HttpClient.Redirect.NORMAL)
-			.proxy(ProxySelector.getDefault())
-			.connectTimeout(Duration.ofSeconds(30))
-			.build()
-	}
-	private val client: HttpClient by connection
+	private val http = HttpReader()
 
 	/**
 	 * Returns the URL of the first library repository that serves [path] with checksum [sha256].
@@ -59,9 +50,7 @@ class RepositoryProbe(repositories: List<URI>) : AutoCloseable {
 			+ misses.joinToString("\n") { "  $it" })
 	}
 
-	override fun close() {
-		if (connection.isInitialized()) client.close()
-	}
+	override fun close() = http.close()
 
 	private fun fileChecksum(url: URI, misses: MutableList<String>): String? {
 		val file = File(url)
@@ -72,12 +61,10 @@ class RepositoryProbe(repositories: List<URI>) : AutoCloseable {
 	}
 
 	private fun httpChecksum(url: URI, misses: MutableList<String>): String? {
-		val request = HttpRequest.newBuilder(url).timeout(Duration.ofMinutes(5)).GET().build()
 		try {
-			val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
-			return response.body().use { body ->
-				if (response.statusCode() == 200) return@use Checksums.sha256(body)
-				misses += "$url (HTTP ${response.statusCode()})"
+			return http.get(url, Duration.ofMinutes(5)) { status, body ->
+				if (status == 200) return@get Checksums.sha256(body)
+				misses += "$url (HTTP $status)"
 				null
 			}
 		} catch (exception: IOException) {

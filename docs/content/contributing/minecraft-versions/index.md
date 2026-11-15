@@ -50,6 +50,57 @@ The workers download exactly this closure. A release with an empty pin is listed
 launched: preparation prints a warning, and creating a player that selects it is refused with the
 pin task as the remedy.
 
+## Add the block data
+
+Simulated players read block facts, such as collision shapes and friction, from `protocol-java-block`, which
+generates them at build time from [PrismarineJS minecraft-data](https://github.com/PrismarineJS/minecraft-data)
+(MIT; the notice ships as `META-INF/LICENSE-minecraft-data.txt`). Its
+`anvil-player/player-protocol/protocol-java/protocol-java-block/block-data.toml` pins one minecraft-data release
+and, per `[[release]]` row, the `blocks.json` and `blockCollisionShapes.json` of one protocol, with their SHA-256.
+Every Minecraft version of a protocol has the same block registry, so the rows and the data are keyed by protocol
+number, and a new version of a protocol Anvil already speaks needs nothing here. Gradle resolves the pinned files
+through the `minecraft-data` repository the settings declare, so a build fetches them once into its cache and works
+offline after that. For a new protocol, add a row with its number and pin it:
+
+```toml
+[[release]]
+protocol = 777
+```
+
+```shell
+./gradlew :anvil-player:player-protocol:protocol-java:protocol-java-block:pinBlockData
+```
+
+The task resolves the commit of the file's minecraft-data `version` tag, finds each row's Minecraft versions in
+`data/pc/common/protocolVersions.json` there, looks them up in `data/dataPaths.json` and rewrites the commit and
+every row's pins. The versions of a protocol that dataPaths names must agree on their files; a version it does not
+name, such as a patch release, shares them through its protocol. To move to a newer minecraft-data release, change
+`version` first; while the commit stays the same, a pin never changes, and a file whose checksum differs fails the
+build.
+
+The rows must match the protocol library's releases: `checkBlockDataReleases`, part of `check`, fails unless the
+protocol of each release of `mcprotocol-releases.toml` has a row, and every row a release. When minecraft-data has
+no block data for any version of a protocol, its row keeps no pins. The build still succeeds, and
+`JavaBlockData.require` reports the protocol as having no block data, naming the minecraft-data release; it never
+serves another protocol's data. Pin again once minecraft-data publishes the release.
+
+What minecraft-data does not carry is maintained by hand in `block-facts.toml` beside it: a block's `kind` where
+vanilla's movement code asks what it is (air, fences, walls, fence gates, trapdoors), its `collision` kind where its
+shape depends on the entity or the position, its fluid, its movement (friction, speed and jump factors, bounce,
+stuck slowdowns and `behaviours` such as climbable blocks) and the lowest value of integer properties that do not
+start at `0`. Each entry names the vanilla code its values come from; check new blocks of the release against
+vanilla's code and add them. The generator, Java in the module's own `generator` source set, binds the file to the
+same enums the data uses: it fails on a name no protocol has, on a field or constant it does not know, on a value an
+entry sets for a block another entry already set, and on an integer property whose listed values disagree with the
+file. Then run the data's tests, which check known facts,
+such as the state count and collision shapes, for every protocol:
+
+```shell
+./gradlew :anvil-player:player-protocol:protocol-java:protocol-java-block:test
+```
+
+Add the new protocol to the state counts `BlockRegistryTest` expects and to the protocols `JavaBlockDataTest` lists.
+
 ## Let linkage decide about segments
 
 Release-specific code lives only in segments: projects named `V<major>_<minor>[_<patch>]` after the
