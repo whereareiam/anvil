@@ -94,6 +94,7 @@ class WorkerMessageCodecTest {
 		var options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder().name("Alice").uniqueId(UUID.randomUUID()).build())
 				.credentials(WorkerCredentials.builder().accessToken("private-token").build())
+				.minecraftVersion("1.21")
 				.language("ru_ru")
 				.connection(WorkerConnection.builder().host("localhost").port(25565)
 						.virtualHost("lobby.example.test").sourceAddress("127.0.0.2").build())

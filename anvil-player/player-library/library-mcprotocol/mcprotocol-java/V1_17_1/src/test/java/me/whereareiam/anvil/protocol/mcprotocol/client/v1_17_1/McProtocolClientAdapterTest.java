@@ -81,6 +81,7 @@ class McProtocolClientAdapterTest {
 			McProtocolClientAdapter client = new McProtocolClientAdapter();
 			Session session = client.open(ClientLogin.builder()
 					.profile(ClientProfile.builder().name("Alice").uniqueId(new UUID(0, 1)).build())
+					.minecraftVersion("1.17.1")
 					.settings(ClientSettings.builder().locale("en_us").viewDistance(8).build())
 					.connection(ClientConnection.builder()
 							.host(server.getInetAddress().getHostAddress())

@@ -168,6 +168,7 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 						.accessToken(credentials.getAccessToken())
 						.sessionServer(credentials.getSessionServer())
 						.build())
+				.minecraftVersion(options.getMinecraftVersion())
 				.settings(ClientSettings.builder().locale(options.getLanguage()).viewDistance(VIEW_DISTANCE).build())
 				.connection(ClientConnection.builder()
 						.host(connection.getHost())

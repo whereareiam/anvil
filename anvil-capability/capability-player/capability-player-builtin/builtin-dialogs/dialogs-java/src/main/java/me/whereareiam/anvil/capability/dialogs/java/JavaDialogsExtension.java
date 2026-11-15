@@ -14,6 +14,7 @@ import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry;
+import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
@@ -33,7 +34,8 @@ import java.util.List;
 /**
  * Installs the built-in dialogs capability for players that speak the Java Edition protocol: it emits each dialog the
  * player's current connection is shown, read from its NBT by {@link DialogReader}, each dialog the server clears, the
- * {@code minecraft:dialog} registry the server sends during configuration, and a reset whenever the client replaces
+ * {@code minecraft:dialog} registry the server sends during configuration, whose built-in dialogs the client knows from
+ * {@link KnownDialogs} when the server leaves their data out, and a reset whenever the client replaces
  * its screens, which it does when it joins a level, respawns or returns to configuration, and when a new connection
  * starts. The custom actions of the shown dialog and of the registry stay in the worker, in {@link ShownActions},
  * until the server replaces or clears the dialog, sends a new registry, or the client closes its screens or the
@@ -160,13 +162,14 @@ public final class JavaDialogsExtension implements WorkerExtension<Object> {
 				.afterAction(DialogAfterAction.CLOSE);
 	}
 	/**
-	 * Reads the dialog registry, keeping its order, so registry IDs still index it.
+	 * Reads the dialog registry, keeping its order, so registry IDs still index it. A dialog the server sent without
+	 * its data is one of the client's own data pack, which the client takes from {@link KnownDialogs}.
 	 */
 	private static DialogRegistry registry(ClientboundRegistryData packet, DialogReader reader) {
 		List<RegistryDialog> dialogs = new ArrayList<>();
 		for (RegistryEntry entry : packet.getEntries()) {
-			Dialog dialog = entry.getData() == null ? null : reader.read(entry.getData());
-			dialogs.add(new RegistryDialog(entry.getKey(), dialog));
+			NbtCompound data = entry.getData() == null ? KnownDialogs.find(entry.getKey()) : entry.getData();
+			dialogs.add(new RegistryDialog(entry.getKey(), data == null ? null : reader.read(data)));
 		}
 
 		return new DialogRegistry(dialogs);

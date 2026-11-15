@@ -8,8 +8,10 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.KnownPacksAnswer;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.event.session.SessionListener;
+import org.geysermc.mcprotocollib.protocol.MinecraftConstants;
 import org.geysermc.mcprotocollib.protocol.packet.login.serverbound.ServerboundCustomQueryAnswerPacket;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class NetworkClientSessionsTest {
 	private static final int LOGIN_DISCONNECT = 0x00;
@@ -76,7 +79,7 @@ class NetworkClientSessionsTest {
 	}
 
 	@Test
-	void startsTheConfigurationAfterTheLibrarysOwnListener() {
+	void startsTheConfigurationAfterTheLibrarysOwnListenerAndAnswersKnownPacks() {
 		ClientSession session = new NetworkClientSessions(new TextTranslator(), ReleaseAnswers::new)
 				.open(login(25565), new DisconnectListener(new CompletableFuture<>()), McProtocolClientAdapter.packets());
 
@@ -87,12 +90,16 @@ class NetworkClientSessionsTest {
 				.<Class<?>>map(SessionListener::getClass)
 				.toList();
 		assertEquals(List.of(ReleaseAnswers.class, ClientPacketListener.class,
-				org.geysermc.mcprotocollib.protocol.ClientListener.class, ClientConfiguration.class), listeners);
+				org.geysermc.mcprotocollib.protocol.ClientListener.class, ClientConfiguration.class,
+				KnownPacksAnswer.class),
+				listeners);
+		assertFalse(session.getFlag(MinecraftConstants.SEND_BLANK_KNOWN_PACKS_RESPONSE, true));
 	}
 
 	private static ClientLogin login(int port) {
 		return ClientLogin.builder()
 				.profile(ClientProfile.builder().name("Alice").uniqueId(new UUID(0, 1)).build())
+				.minecraftVersion("1.21.11")
 				.settings(ClientSettings.builder().locale("en_us").viewDistance(8).build())
 				.connection(ClientConnection.builder().host("127.0.0.1").port(port).build())
 				.build();

@@ -159,8 +159,14 @@ runs. A player that selects such a release is refused when it is created. The wo
 shell never links against MCProtocolLib: the release's client segment implements the `mcprotocol-api`
 client port and owns login, teleport and disconnect packets and what a vanilla client of the release sends on its
 own, in the same phase and order: its brand and client information, from Minecraft 1.20.2 on at the start of the
-configuration and before that when the game starts, the answers to keep-alives and pings in every phase, and the
-swing of an arm the server swings of the player's own entity.
+configuration and before that when the game starts, the answers to keep-alives and pings in every phase, the
+swing of an arm the server swings of the player's own entity, and from Minecraft 1.20.5 the answer to the data packs
+the server offers, which names the vanilla core pack of the player's exact Minecraft version. The server then sends
+vanilla's registry entries without their data, and the client knows them as a vanilla client does: the dimension
+types from `DimensionType.known` and the built-in dialogs from the Dialogs worker extension. The registries a
+connection synchronized have one owner, the segment's configuration translation, which records them for the
+translations of the packets that name an entry by ID, so a packet table does not depend on the order of its
+translations.
 Feature wiring implements `player-api`'s `WorkerExtension` directly; the worker discovers it. Its
 `PlayerBindingContext` supplies SDK/session access for the existing native player and, through `adapter(Class)`,
 the release-specific port implementation of the segment selected for the worker's release. Native

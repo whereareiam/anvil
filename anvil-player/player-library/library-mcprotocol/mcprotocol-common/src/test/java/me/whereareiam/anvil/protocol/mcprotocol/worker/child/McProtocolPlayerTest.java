@@ -66,6 +66,7 @@ class McProtocolPlayerTest {
 			assertEquals("Alice", login.getProfile().getName());
 			assertEquals(uuid, login.getProfile().getUniqueId());
 			assertEquals("token", login.getCredentials().getAccessToken());
+			assertEquals("1.20.5", login.getMinecraftVersion());
 			assertEquals("ru_ru", login.getSettings().getLocale());
 			assertEquals(8, login.getSettings().getViewDistance());
 			assertEquals("localhost", login.getConnection().getHost());
@@ -287,6 +288,7 @@ class McProtocolPlayerTest {
 	private McProtocolPlayer player(String accessToken, WorkerExtension<?>... extensions) {
 		var options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder().name("Alice").uniqueId(uuid).build())
+				.minecraftVersion("1.20.5")
 				.language("ru_ru")
 				.credentials(accessToken == null ? null : WorkerCredentials.builder().accessToken(accessToken).build())
 				.connection(WorkerConnection.builder().host("localhost").port(25565)

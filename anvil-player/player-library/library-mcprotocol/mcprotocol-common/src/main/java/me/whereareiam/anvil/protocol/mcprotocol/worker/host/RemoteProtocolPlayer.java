@@ -89,6 +89,7 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 						.accessToken(authentication.getAccessToken())
 						.sessionServer(authentication.getSessionServer())
 						.build())
+				.minecraftVersion(request.getClientVersion().toString())
 				.language(request.getLanguage())
 				.connection(WorkerConnection.builder()
 						.host(connection.getAddress().getHostString())
