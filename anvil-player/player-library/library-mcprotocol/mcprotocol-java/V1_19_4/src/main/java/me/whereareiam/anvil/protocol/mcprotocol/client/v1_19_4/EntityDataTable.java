@@ -3,7 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_19_4;
 import com.github.steveice10.mc.protocol.data.game.entity.type.EntityType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import me.whereareiam.anvil.protocol.mcprotocol.client.EntityDataLayout;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.EntityDataLayout;
 import me.whereareiam.anvil.protocol.mcprotocol.client.type.EntityDataField;
 
 import java.util.Map;

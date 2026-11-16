@@ -65,11 +65,11 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-player/player-api`                                         | Protocol library providers and releases, player creation/composition, the typed player channel and worker extension contracts, the styled text a player sees (`model.text`), pinned runtime resolution, and optional authentication                       |
 | `anvil-player/player-common`                                         | Player registration, version selection, authentication compatibility, composition, observations, and resolving a remote's address as the vanilla client does |
 | `anvil-player/player-worker`                                         | Worker runtime kit every library embeds to run worker extensions: `WorkerExtensions`, `NativeSessionBindings`, `WorkerProtocols` and `WorkerOperation` |
-| `anvil-player/player-protocol/protocol-java/protocol-java-api` | Java Edition protocol of simulated players: `JavaProtocol` and the packets, models and types it carries, as release-neutral values |
-| `anvil-player/player-protocol/protocol-java/protocol-java-worker` | Java Edition worker kit: `JavaPacketDispatcher`, the player's `JavaProtocol` over the `JavaConnection` a library implements |
+| `anvil-player/player-protocol/protocol-java/protocol-java-api` | Java Edition protocol of simulated players: `JavaProtocol` and the packets, models and types it carries, as release-neutral values, and the client's `JavaWorld` that its packets keep |
+| `anvil-player/player-protocol/protocol-java/protocol-java-worker` | Java Edition worker kit: `JavaPacketDispatcher`, the player's `JavaProtocol` over the `JavaConnection` a library implements, with the store of the player's `JavaWorld` and the `wants` a library asks before it decodes a costly packet |
 | `anvil-player/player-protocol/protocol-java/protocol-java-block` | Block data of every supported protocol by global block state ID (`JavaBlockData`, `BlockRegistry`), keyed by protocol number because every Minecraft version of a protocol shares one registry; generated at build time from the PrismarineJS minecraft-data files `block-data.toml` pins per protocol (`pinBlockData`, which finds a protocol's versions in minecraft-data's own `protocolVersions.json`), which Gradle resolves through the settings' `minecraft-data` repository, and the hand-maintained vanilla facts of `block-facts.toml`: a block's kind, collision kind and movement. Its Java `generator` source set (`BlockDataGenerator`, run by `generateBlockData` with the files Gradle resolved) binds both inputs to typed classes and writes the data through the package-private `BlockDataCodec`, which `JavaBlockData` reads it with, so the enums and the format exist once; `checkBlockDataReleases` requires a row for the protocol of every protocol library release, and a protocol minecraft-data lacks is reported missing, never served another protocol's data |
 | `anvil-player/player-library/library-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port and the client segments; owns `mcprotocol-releases.toml` and `pinLibraryReleases`  |
-| `anvil-player/player-library/library-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell, and what their translations share: `PacketTranslation`, `PacketTable` and `EntityDataLayout` |
+| `anvil-player/player-library/library-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell, and, in `client.translation`, what their translations share: `PacketTranslation`, `PacketTable`, `EntityDataLayout`, the `PacketDemand` a session's listener answers and the `ConnectionLevel` a connection's translations share |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-adventure`             | `ComponentTranslator`, which translates Adventure components to the protocol's `Text` through Adventure API stable since 4.0, for the segments of releases whose components are Adventure's; each chain extends it once as its `TextTranslator` with the accessors its releases' Adventure keeps differently, a later segment whose Adventure moved further replaces that subclass, and Adventure comes from the release's closure |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-common`                | MCProtocolLib library provider, release data, worker host and segment selection, MCProtocolLib-free worker shell with its extension registry and typed transport, and private authentication store                                  |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-java`                | Source-free side folder exporting one client segment per MCProtocolLib release whose client code differs                                                                            |
@@ -155,9 +155,10 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   running process (`ProcessCapability`); a proxy counts as server side. The implementation (packets, agent
   events) never decides the owner.
 - A player speaks its edition's protocol: `protocol-java-api`'s `JavaProtocol` (`listen` by packet class, `send`,
-  `listenSent` for the packets bindings send, `supports`), which a worker extension gets from
+  `listenSent` for the packets bindings send, `supports`, `world`), which a worker extension gets from
   `PlayerBindingContext.protocol(JavaProtocol.class)`. Packets are immutable values grouped by area under
-  `packet.<area>`, one class per game packet in the game's shape; the protocol owns the data types they need
+  `packet.<area>`, an area of more than seven packets split by subject below it (`packet.world.border`,
+  `packet.world.chunk`), one class per game packet in the game's shape; the protocol owns the data types they need
   (`model.<area>`, enums in `type`) and carries text flattened to plain strings, except chat, which it carries as
   `player-api`'s `Text` (`protocol.api.model.text`): the component tree the server sent, whose `spans()` resolve what
   the player sees, translated by the segment's `TextTranslator`.
@@ -165,14 +166,21 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   dialog or a registry entry, the protocol carries it as `model.nbt` tags (`NbtTag`, `NbtCompound`), never as SNBT
   text, and the feature interprets it: `dialogs-java` reads dialogs, flattens their text components itself and
   keeps custom payloads in the worker, where a click names them by handle. A listener follows the player's current
-  connection.
+  connection. `JavaProtocol.world()` is the world the client knows, its `JavaWorld`, which the kit's dispatcher keeps
+  from the packets it delivers: each packet applies whole under one lock before its listeners see it, a single read
+  and a `read(...)` see one moment, and chunks are decoded and kept only once something asked for the world.
+  Chunk decoding never disconnects: a column the release cannot read is left out with a warning.
   Release-specific packet code lives only in the library's client segments: one `PacketTranslation` per area, listed
   by the segment's adapter in `mcprotocol-api`'s `PacketTable`, which alone refuses to send a packet the release
   cannot carry, with Adventure components translated by the segment's one `TextTranslator`, which extends
   `mcprotocol-adventure`'s `ComponentTranslator` and which the segment's adapter hands to every translation that reads
-  text, and NBT translated by the segment's one `NbtTranslator`. Each session decodes through a table of its own, so the entity translation can
-  remember the types of the session's entities: entity data is decoded by entity type from the release's
-  `EntityDataLayout`, never by guessing from value types. Release quirks stay in the segments: where releases say the
+  text, and NBT translated by the segment's one `NbtTranslator`. Each session decodes through a table of its own, so
+  the entity translation can remember the types of the session's entities: entity data is decoded by entity type from
+  the release's `EntityDataLayout`, never by guessing from value types. The table is created for the session's
+  listener, which is its `PacketDemand`: a translation of costly packets, such as `ChunkPackets`, decodes only what
+  the player's dispatcher `wants`. Translations of one connection share what one reads and another needs through a
+  per-table object, such as the `ConnectionLevel` that the connection translation records and the chunk translation
+  sizes a column by. Release quirks stay in the segments: where releases say the
   same thing in different packets, every release reports the current packet (spawns as `ClientboundAddEntity`, the
   player's own inventory slots as `ClientboundSetPlayerInventory`, named sounds as `ClientboundSound`, the player's
   death as `ClientboundPlayerCombatKill`), and the

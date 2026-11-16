@@ -7,7 +7,9 @@ plugins {
 segment {
 	extends(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolJava.v1211)
 	replaces(
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.BorderPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ChatPackets",
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ChunkPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ClientPacketListener",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.CommandPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.CookiePackets",

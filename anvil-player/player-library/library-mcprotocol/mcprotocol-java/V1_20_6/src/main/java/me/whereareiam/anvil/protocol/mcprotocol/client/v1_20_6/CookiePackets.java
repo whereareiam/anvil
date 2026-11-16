@@ -6,7 +6,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.cookie.ClientboundCookieRequest;
 import me.whereareiam.anvil.protocol.java.api.packet.cookie.ClientboundStoreCookie;
 import me.whereareiam.anvil.protocol.java.api.packet.cookie.ServerboundCookieResponse;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import net.kyori.adventure.key.Key;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundCookieRequestPacket;

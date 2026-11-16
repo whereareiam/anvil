@@ -12,14 +12,15 @@ import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientCredentials;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /**
  * Client of the MCProtocolLib releases from 1.16.5 until 1.17.1, which every adapter of this segment and of the
@@ -40,7 +41,7 @@ public abstract class JavaClient implements McProtocolClient<Session> {
 
 	private final ClientAnswers answers;
 	private final ComponentTranslator text;
-	private final Supplier<PacketTable<Packet>> tables;
+	private final Function<PacketDemand, PacketTable<Packet>> tables;
 	private final PacketTable<Packet> packets;
 
 	/**
@@ -48,17 +49,17 @@ public abstract class JavaClient implements McProtocolClient<Session> {
 	 *
 	 * @param answers the packets the release's client sends on its own
 	 * @param text translates the release's text components
-	 * @param tables creates a new packet table of the release
+	 * @param tables creates a new packet table of the release for what its demand wants
 	 */
 	protected JavaClient(
 			@NotNull ClientAnswers answers,
 			@NotNull ComponentTranslator text,
-			@NotNull Supplier<PacketTable<Packet>> tables
+			@NotNull Function<PacketDemand, PacketTable<Packet>> tables
 	) {
 		this.answers = answers;
 		this.text = text;
 		this.tables = tables;
-		this.packets = tables.get();
+		this.packets = tables.apply(PacketDemand.EVERY);
 	}
 
 	@Override
@@ -82,7 +83,7 @@ public abstract class JavaClient implements McProtocolClient<Session> {
 			sessionService.setBaseUri(credentials.getSessionServer() + PATH_SEPARATOR);
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, sessionService);
 		}
-		session.addListener(new ClientPacketListener(login, listener, tables.get(), answers, text));
+		session.addListener(new ClientPacketListener(login, listener, tables.apply(listener), answers, text));
 
 		return session;
 	}

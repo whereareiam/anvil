@@ -7,6 +7,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.event.session.SessionListener;
 import org.geysermc.mcprotocollib.protocol.MinecraftConstants;
@@ -31,7 +32,7 @@ class TcpClientSessionsTest {
 	@Test
 	void startsTheConfigurationAfterTheLibrarysOwnListenerAndAnswersKeepAlivesAndKnownPacksItself() {
 		Session session = new TcpClientSessions(new TextTranslator())
-				.open(LOGIN, new IgnoringListener(), McProtocolClientAdapter.packets());
+				.open(LOGIN, new IgnoringListener(), McProtocolClientAdapter.packets(PacketDemand.EVERY));
 
 		((MinecraftProtocol) session.getPacketProtocol()).newClientSession(session, false);
 
@@ -65,5 +66,10 @@ class TcpClientSessionsTest {
 		@Override
 		public void received(@NotNull Session session, @NotNull ClientboundPacket packet) {
 		}
+		@Override
+		public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
+			return true;
+		}
+
 	}
 }

@@ -99,5 +99,10 @@ class ReleaseAnswersTest {
 		public void received(@NotNull ClientSession session, @NotNull ClientboundPacket packet) {
 			throw new UnsupportedOperationException();
 		}
+		@Override
+		public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
+			return true;
+		}
+
 	}
 }

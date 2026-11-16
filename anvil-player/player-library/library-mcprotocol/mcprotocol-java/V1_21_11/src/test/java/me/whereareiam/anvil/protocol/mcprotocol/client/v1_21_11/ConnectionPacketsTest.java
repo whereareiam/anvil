@@ -11,7 +11,8 @@ import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespa
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
 import me.whereareiam.anvil.protocol.java.api.type.CardinalLight;
 import me.whereareiam.anvil.protocol.java.api.type.Skybox;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import net.kyori.adventure.key.Key;
 import org.cloudburstmc.nbt.NbtMap;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -32,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * and respawns by it.
  */
 class ConnectionPacketsTest {
-	private final PacketTable<Packet> packets = McProtocolClientAdapter.packets();
+	private final PacketTable<Packet> packets = McProtocolClientAdapter.packets(PacketDemand.EVERY);
 
 	@Test
 	void decodesTheRegistryDataAndNamesTheTypeOfEachLevelByIt() {

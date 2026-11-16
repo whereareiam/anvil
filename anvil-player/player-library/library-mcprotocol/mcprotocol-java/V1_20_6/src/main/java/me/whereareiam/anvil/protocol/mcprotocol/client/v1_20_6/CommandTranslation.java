@@ -7,7 +7,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.command.ClientboundCommands;
 import me.whereareiam.anvil.protocol.java.api.type.CommandNodeType;
 import me.whereareiam.anvil.protocol.java.api.type.StringArgumentMode;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import net.kyori.adventure.key.Key;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.command.CommandParser;

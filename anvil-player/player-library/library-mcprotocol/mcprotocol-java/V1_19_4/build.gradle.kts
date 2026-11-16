@@ -9,6 +9,7 @@ segment {
 	extends(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolJava.v1182)
 	replaces(
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ChatPackets",
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ChunkPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.CommandPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ConnectionPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.EntityDataTable",

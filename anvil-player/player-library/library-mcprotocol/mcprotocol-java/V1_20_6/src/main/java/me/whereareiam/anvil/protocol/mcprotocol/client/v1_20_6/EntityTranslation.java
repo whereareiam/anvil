@@ -12,8 +12,8 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEnt
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
-import me.whereareiam.anvil.protocol.mcprotocol.client.EntityDataLayout;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.EntityDataLayout;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.type.EntityDataField;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.EntityMetadata;

@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import me.whereareiam.anvil.protocol.mcprotocol.client.EntityDataLayout;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.EntityDataLayout;
 import me.whereareiam.anvil.protocol.mcprotocol.client.type.EntityDataField;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
 

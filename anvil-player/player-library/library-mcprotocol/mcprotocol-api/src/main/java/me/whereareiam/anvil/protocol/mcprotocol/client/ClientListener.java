@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -12,9 +13,12 @@ import org.jetbrains.annotations.NotNull;
  * information, and a teleport before the client accepts it. Each callback names the session it belongs to; a
  * session that was replaced by a reconnect can still deliver callbacks while it closes.</p>
  *
+ * <p>The listener is also the demand of the session's translations: a packet that is costly to decode, such as a chunk
+ * column, is decoded only while the listener {@linkplain #wants(Class) wants} it.</p>
+ *
  * @param <S> native session type of the release
  */
-public interface ClientListener<S> {
+public interface ClientListener<S> extends PacketDemand {
 	/**
 	 * Reports the profile the server or proxy granted in its login success, which arrives before the game starts. A
 	 * proxy can keep the client on the loading screen for a while before it starts the game, or never start it.

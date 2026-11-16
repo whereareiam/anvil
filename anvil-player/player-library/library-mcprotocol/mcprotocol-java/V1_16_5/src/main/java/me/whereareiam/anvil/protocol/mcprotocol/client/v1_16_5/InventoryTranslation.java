@@ -28,7 +28,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPla
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

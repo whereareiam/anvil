@@ -8,7 +8,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundSetHealth
 import me.whereareiam.anvil.protocol.java.api.packet.health.ServerboundClientCommand;
 import me.whereareiam.anvil.protocol.java.api.type.ClientCommandAction;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.ClientCommand;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerCombatKillPacket;

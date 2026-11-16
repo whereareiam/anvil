@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.protocol.java.api.packet.world;
+package me.whereareiam.anvil.protocol.java.api.packet.world.border;
 
 import lombok.Builder;
 import lombok.Value;

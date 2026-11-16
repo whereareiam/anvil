@@ -308,11 +308,17 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 			protocol.deliver(packet);
 		}
 
+		@Override
+		public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
+			return protocol.wants(type);
+		}
+
 		private void report(Object current, DisconnectCause cause, String reason) {
 			if (current != session) return;
 			if (!disconnectNotified.compareAndSet(false, true)) return;
 
 			try {
+				protocol.disconnected();
 				nativeBindings.end(current);
 			} finally {
 				emit(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(false, reason, cause, null));

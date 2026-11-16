@@ -5,11 +5,13 @@ import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtInt;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
+import me.whereareiam.anvil.protocol.java.api.model.world.Level;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.configuration.ClientboundRegistryData;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLevel;
 import net.kyori.adventure.key.Key;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.GameMode;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerSpawnInfo;
@@ -20,6 +22,7 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.Clientbound
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -28,7 +31,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ConnectionPacketsTest {
 	private final SynchronizedRegistries registries = new SynchronizedRegistries();
-	private final ConnectionPackets packets = new ConnectionPackets(registries);
+	private final ConnectionLevel level = new ConnectionLevel();
+	private final ConnectionPackets packets = new ConnectionPackets(registries, level);
+
+	@Test
+	void recordsTheLevelOfEachRespawnForTheConnectionsOtherTranslations() {
+		synchronize(new RegistryEntry("minecraft:overworld", null), new RegistryEntry("minecraft:the_nether", null));
+
+		ClientboundRespawn respawn = respawnInto(1);
+
+		assertEquals(Optional.of(new Level("minecraft:overworld", respawn.getDimensionType())), level.current());
+	}
 
 	@Test
 	void namesTheJoinedLevelsTypeByItsIdInTheRegistryTheConfigurationSynchronized() {

@@ -2,7 +2,8 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v26_3;
 
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import net.kyori.adventure.key.Key;
 import org.cloudburstmc.nbt.NbtMap;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -23,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * description only from a compound, which names the type's block heights.
  */
 class ConnectionPacketsTest {
-	private final PacketTable<Packet> packets = McProtocolClientAdapter.packets();
+	private final PacketTable<Packet> packets = McProtocolClientAdapter.packets(PacketDemand.EVERY);
 
 	@Test
 	void readsTheEffectsOfACompoundDescriptionAndTakesVanillaEffectsWithoutOne() {

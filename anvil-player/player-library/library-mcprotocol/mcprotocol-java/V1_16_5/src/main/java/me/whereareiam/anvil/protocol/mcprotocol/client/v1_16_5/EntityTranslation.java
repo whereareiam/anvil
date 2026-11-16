@@ -36,8 +36,8 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntity
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
-import me.whereareiam.anvil.protocol.mcprotocol.client.EntityDataLayout;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.EntityDataLayout;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.type.EntityDataField;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;

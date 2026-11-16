@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.protocol.mcprotocol.client;
+package me.whereareiam.anvil.protocol.mcprotocol.client.translation;
 
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;

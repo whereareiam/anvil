@@ -177,7 +177,8 @@ types.
 through the player family's worker kits: `player-worker`'s `WorkerExtensions` enforces binding-time registration,
 unique namespaced operation IDs, unavailability and cleanup, `NativeSessionBindings` follows session generations,
 and `protocol-java-worker`'s `JavaPacketDispatcher` is the player's `JavaProtocol` over the library's
-`JavaConnection`. The MCProtocol worker adds only its client, segments and transport: `WorkerMessageCodec` owns
+`JavaConnection`, which keeps the player's `JavaWorld` from the packets it delivers and tells the library through
+`wants` which costly packets to decode. The MCProtocol worker adds only its client, segments and transport: `WorkerMessageCodec` owns
 request decoding, response type checks, and encoding on both ends of the worker's transport, so the host's
 `ProtocolChannel` and the worker's handlers operate on typed values.
 

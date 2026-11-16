@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.JavaWorld;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -19,12 +20,18 @@ import java.util.function.Consumer;
  * One worker player's Java Edition protocol over a library's {@link JavaConnection}: it hands the packets the library
  * delivers to their listeners, sends packets through the connection and then hands each sent packet to the listeners
  * of sent packets. The connection refuses a packet its release cannot send; a listener of a packet the release never
- * carries is refused here, since no delivered packet would tell.
+ * carries is refused here, since no delivered packet would tell. Every delivered packet first updates the player's
+ * {@link JavaWorld}, which {@link #world()} hands out.
+ *
+ * <p>A library asks {@link #wants(Class)} before it decodes a packet that is costly to decode, such as a chunk column,
+ * and skips it while nothing wants it.</p>
  *
  * <pre>{@code
  * JavaPacketDispatcher protocol = new JavaPacketDispatcher(LIBRARY_ID, connection);
  * ...
- * protocol.deliver(packet); // for each packet the player's connection receives
+ * if (protocol.wants(ClientboundLevelChunkWithLight.class)) protocol.deliver(decode(chunk));
+ * protocol.deliver(packet); // for each other packet the player's connection receives
+ * protocol.disconnected(); // once the player's connection closed
  * }</pre>
  */
 @RequiredArgsConstructor
@@ -33,6 +40,7 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 	private final @NotNull JavaConnection connection;
 	private final Map<Class<?>, List<Consumer<Object>>> listeners = new ConcurrentHashMap<>();
 	private final Map<Class<?>, List<Consumer<Object>>> sentListeners = new ConcurrentHashMap<>();
+	private final JavaWorldStore world = new JavaWorldStore();
 
 	@Override
 	public <P extends ClientboundPacket> @NotNull Subscription listen(
@@ -61,14 +69,42 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 		return connection.supports(type);
 	}
 
+	@Override
+	public @NotNull JavaWorld world() {
+		world.storeChunks();
+		return world;
+	}
+
 	/**
-	 * Hands a packet of the player's current connection to the listeners of its class. A failing listener is reported
-	 * on standard error and does not keep the packet from the others.
+	 * Tells whether anything wants the packets of a class: a listener of the class, or the player's world, which wants
+	 * the packets of its chunks once something asked for it.
+	 *
+	 * @param type packet class
+	 * @return whether a packet of the class should be decoded and delivered
+	 */
+	public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
+		if (world.wants(type)) return true;
+
+		List<Consumer<Object>> subscribed = listeners.get(type);
+		return subscribed != null && !subscribed.isEmpty();
+	}
+
+	/**
+	 * Hands a packet of the player's current connection to the listeners of its class, once the player's world
+	 * applied it. A failing listener is reported on standard error and does not keep the packet from the others.
 	 *
 	 * @param packet received packet
 	 */
 	public void deliver(@NotNull ClientboundPacket packet) {
+		world.apply(packet);
 		handOut(listeners, packet);
+	}
+
+	/**
+	 * Tells that the player's current connection closed, so the player's world forgets its level and its chunks.
+	 */
+	public void disconnected() {
+		world.clear();
 	}
 
 	/**
@@ -153,6 +189,11 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 		@Override
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
 			return JavaPacketDispatcher.this.supports(type);
+		}
+
+		@Override
+		public @NotNull JavaWorld world() {
+			return JavaPacketDispatcher.this.world();
 		}
 	}
 }

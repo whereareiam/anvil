@@ -28,7 +28,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitles
 import me.whereareiam.anvil.protocol.java.api.type.BossEventColor;
 import me.whereareiam.anvil.protocol.java.api.type.BossEventOverlay;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

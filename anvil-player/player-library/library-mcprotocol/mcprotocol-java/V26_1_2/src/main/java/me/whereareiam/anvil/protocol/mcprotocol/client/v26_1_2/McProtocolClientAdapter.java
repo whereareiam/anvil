@@ -1,11 +1,15 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLevel;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConfigurationPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ScreenPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SynchronizedRegistries;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.BorderPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ChatPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ChunkPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.CommandPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.CookiePackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.DialogPackets;
@@ -42,13 +46,16 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 	 *
 	 * @return the 1.21.11 translations with this release's interaction translation
 	 */
-	static PacketTable<Packet> packets() {
+	static PacketTable<Packet> packets(PacketDemand demand) {
 		SynchronizedRegistries registries = new SynchronizedRegistries();
+		ConnectionLevel level = new ConnectionLevel();
 		return new PacketTable<>(List.of(
+				new BorderPackets(),
 				new ChatPackets(TEXT),
+				new ChunkPackets(level, demand),
 				new CommandPackets(),
 				new ConfigurationPackets(registries),
-				new ConnectionPackets(registries),
+				new ConnectionPackets(registries, level),
 				new CookiePackets(),
 				new DialogPackets(),
 				new EntityPackets(TEXT),

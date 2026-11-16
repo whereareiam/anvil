@@ -2,8 +2,10 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_17_1;
 
 import com.github.steveice10.mc.protocol.MinecraftConstants;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ChatPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ChunkPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ConnectionPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.InteractionPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.JavaClient;
@@ -39,11 +41,14 @@ public final class McProtocolClientAdapter extends JavaClient {
 	/**
 	 * Returns a new packet table of the MCProtocolLib 1.17.1 release.
 	 *
+	 * @param demand the packets the session wants decoded
 	 * @return the release's translations
 	 */
-	static PacketTable<Packet> packets() {
+	static PacketTable<Packet> packets(PacketDemand demand) {
 		return new PacketTable<>(List.of(
+				new BorderPackets(),
 				new ChatPackets(TEXT),
+				new ChunkPackets(demand),
 				new CommandPackets(),
 				new ConnectionPackets(),
 				new EntityPackets(TEXT),

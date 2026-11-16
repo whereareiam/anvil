@@ -5,7 +5,8 @@ import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.configuration.ClientboundRegistryData;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetTime;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import net.kyori.adventure.key.Key;
 import org.cloudburstmc.nbt.NbtMap;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -31,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * which the release's configuration translation records for the world translation of the same packet table.
  */
 class WorldPacketsTest {
-	private final PacketTable<Packet> packets = McProtocolClientAdapter.packets();
+	private final PacketTable<Packet> packets = McProtocolClientAdapter.packets(PacketDemand.EVERY);
 
 	@Test
 	void namesEachClockByItsKeyInTheConfigurationsRegistry() {

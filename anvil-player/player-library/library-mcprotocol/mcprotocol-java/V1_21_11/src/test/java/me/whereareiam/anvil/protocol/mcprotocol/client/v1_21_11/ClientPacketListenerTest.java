@@ -6,6 +6,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.auth.GameProfile;
@@ -45,7 +46,7 @@ class ClientPacketListenerTest {
 	private final List<Packet> sent = new ArrayList<>();
 	private final List<ClientboundPacket> received = new ArrayList<>();
 	private final ClientSession session = session();
-	private final ClientPacketListener listener = new ClientPacketListener(session, new RecordingListener(), McProtocolClientAdapter.packets(),
+	private final ClientPacketListener listener = new ClientPacketListener(session, new RecordingListener(), McProtocolClientAdapter.packets(PacketDemand.EVERY),
 			new TextTranslator());
 
 	@Test
@@ -151,5 +152,10 @@ class ClientPacketListenerTest {
 		public void received(@NotNull ClientSession session, @NotNull ClientboundPacket packet) {
 			received.add(packet);
 		}
+		@Override
+		public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
+			return true;
+		}
+
 	}
 }

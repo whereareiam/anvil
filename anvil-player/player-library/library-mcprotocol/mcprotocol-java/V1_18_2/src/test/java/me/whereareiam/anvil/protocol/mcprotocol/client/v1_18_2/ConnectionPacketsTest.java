@@ -11,12 +11,15 @@ import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
 import com.github.steveice10.opennbt.tag.builtin.Tag;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
+import me.whereareiam.anvil.protocol.java.api.model.world.Level;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLevel;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,7 +28,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConnectionPacketsTest {
-	private final ConnectionPackets packets = new ConnectionPackets();
+	private final ConnectionLevel level = new ConnectionLevel();
+	private final ConnectionPackets packets = new ConnectionPackets(level);
+
+	@Test
+	void recordsTheLevelOfEachLoginForTheConnectionsOtherTranslations() {
+		ClientboundLogin login = (ClientboundLogin) packets.decode(login(overworld()));
+
+		assertEquals(Optional.of(new Level(login.getDimension(), login.getDimensionType())), level.current());
+	}
 
 	@Test
 	void decodesTheJoinedLevelWithItsTypeNamedByTheLoginsRegistry() {

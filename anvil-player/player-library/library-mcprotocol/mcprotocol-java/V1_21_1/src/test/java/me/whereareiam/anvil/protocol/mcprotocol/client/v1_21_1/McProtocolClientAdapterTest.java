@@ -35,9 +35,9 @@ import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleT
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundInitializeBorder;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetDefaultSpawnPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetTime;
+import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundInitializeBorder;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
@@ -223,5 +223,10 @@ class McProtocolClientAdapterTest {
 		@Override
 		public void received(@NotNull Session session, @NotNull ClientboundPacket packet) {
 		}
+		@Override
+		public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
+			return true;
+		}
+
 	}
 }

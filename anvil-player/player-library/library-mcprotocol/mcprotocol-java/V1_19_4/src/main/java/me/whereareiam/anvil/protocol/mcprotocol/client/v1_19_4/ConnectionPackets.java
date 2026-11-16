@@ -9,12 +9,14 @@ import com.github.steveice10.opennbt.tag.builtin.StringTag;
 import com.github.steveice10.opennbt.tag.builtin.Tag;
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
+import me.whereareiam.anvil.protocol.java.api.model.world.Level;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLevel;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,6 +36,16 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 	private static final String DEFAULT_EFFECTS = "minecraft:overworld";
 
 	private volatile Map<String, DimensionType> types = Map.of();
+	private final ConnectionLevel level;
+
+	/**
+	 * Creates the connection translation of one connection.
+	 *
+	 * @param level the connection's level, which the translation records for the connection's other translations
+	 */
+	public ConnectionPackets(@NotNull ConnectionLevel level) {
+		this.level = level;
+	}
 
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
@@ -44,7 +56,7 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (packet instanceof ClientboundLoginPacket login) {
 			types = types(login.getRegistry());
-			return ClientboundLogin.builder()
+			return entered(ClientboundLogin.builder()
 					.entityId(login.getEntityId())
 					.levels(List.of(login.getWorldNames()))
 					.hardcore(login.isHardcore())
@@ -53,15 +65,15 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 					.debug(login.isDebug())
 					.flat(login.isFlat())
 					.showDeathScreen(login.isEnableRespawnScreen())
-					.build();
+					.build());
 		}
 		if (packet instanceof ClientboundRespawnPacket respawn)
-			return ClientboundRespawn.builder()
+			return entered(ClientboundRespawn.builder()
 					.dimension(respawn.getWorldName())
 					.dimensionType(type(respawn.getDimension()))
 					.debug(respawn.isDebug())
 					.flat(respawn.isFlat())
-					.build();
+					.build());
 
 		return null;
 	}
@@ -69,6 +81,22 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 	@Override
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		return null;
+	}
+
+	/**
+	 * Records the level a login names for the connection's other translations.
+	 */
+	private ClientboundLogin entered(ClientboundLogin login) {
+		level.enter(new Level(login.getDimension(), login.getDimensionType()));
+		return login;
+	}
+
+	/**
+	 * Records the level a respawn names for the connection's other translations.
+	 */
+	private ClientboundRespawn entered(ClientboundRespawn respawn) {
+		level.enter(new Level(respawn.getDimension(), respawn.getDimensionType()));
+		return respawn;
 	}
 
 	private @NotNull DimensionType type(@NotNull String key) {

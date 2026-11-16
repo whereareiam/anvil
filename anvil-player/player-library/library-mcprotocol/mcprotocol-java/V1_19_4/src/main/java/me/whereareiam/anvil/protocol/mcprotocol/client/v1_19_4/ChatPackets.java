@@ -22,7 +22,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.protocol.java.api.type.FilterMaskType;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ValueTranslator;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
