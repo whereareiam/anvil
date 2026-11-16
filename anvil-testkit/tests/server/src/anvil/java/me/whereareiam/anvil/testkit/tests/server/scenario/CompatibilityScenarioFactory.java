@@ -2,6 +2,8 @@ package me.whereareiam.anvil.testkit.tests.server.scenario;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
+import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
@@ -19,9 +21,10 @@ import java.util.List;
 
 /**
  * Internal scenario factory defining Anvil's live matrix from {@code live-matrix.toml}: every platform, Minecraft
- * version and Java combination these scenarios run is what the platforms' and protocol libraries' version data call
- * verified. Every release runs direct on Paper, where the release suite drives every player capability; the
- * platform releases also run on Spigot and behind both proxies, and NeoForge runs direct.
+ * version and Java combination these scenarios run is what the build writes into the platforms' and protocol
+ * libraries' version data as verified, and each process requests its row's Java so that it runs exactly that. Every
+ * release runs direct on Paper, where the release suite drives every player capability; the Spigot releases also run
+ * behind both proxies, beside the Paper server of their version, and NeoForge runs direct.
  */
 public final class CompatibilityScenarioFactory {
 	private static final LiveMatrix MATRIX = LiveMatrix.read();
@@ -82,12 +85,11 @@ public final class CompatibilityScenarioFactory {
 	 */
 	public static @NotNull List<AnvilScenario> platformScenarios() {
 		List<AnvilScenario> scenarios = new ArrayList<>();
-		for (LiveMatrix.PlatformRelease platform : MATRIX.getPlatforms()) {
-			MinecraftVersion version = platform.release().minecraft();
-			scenarios.add(directScenario("spigot-" + version, Platforms.SPIGOT, spigot(platform)));
+		for (LiveMatrix.SpigotRelease spigot : MATRIX.getSpigot()) {
+			scenarios.add(directScenario("spigot-" + spigot.minecraft(), Platforms.SPIGOT, spigot(spigot), spigot.java()));
 			for (String proxy : List.of(Platforms.VELOCITY, Platforms.BUNGEECORD))
 				for (String server : List.of(Platforms.PAPER, Platforms.SPIGOT))
-					scenarios.add(proxyScenario(proxy, server, platform));
+					scenarios.add(proxyScenario(proxy, server, spigot));
 		}
 
 		return List.copyOf(scenarios);
@@ -98,21 +100,21 @@ public final class CompatibilityScenarioFactory {
 	 *
 	 * @param proxyPlatform proxy platform, {@link Platforms#VELOCITY} or {@link Platforms#BUNGEECORD}
 	 * @param serverPlatform server platform, {@link Platforms#PAPER} or {@link Platforms#SPIGOT}
-	 * @param version Minecraft version of a platform release
+	 * @param version Minecraft version of a Spigot release
 	 * @return the routed scenario
-	 * @throws IllegalArgumentException when the live matrix has no such platform release
+	 * @throws IllegalArgumentException when the live matrix has no such Spigot release
 	 */
 	public static @NotNull AnvilScenario proxyScenario(
 			@NotNull String proxyPlatform,
 			@NotNull String serverPlatform,
 			@NotNull MinecraftVersion version
 	) {
-		LiveMatrix.PlatformRelease platform = MATRIX.getPlatforms().stream()
-				.filter(candidate -> candidate.release().minecraft().equals(version))
+		LiveMatrix.SpigotRelease spigot = MATRIX.getSpigot().stream()
+				.filter(candidate -> candidate.minecraft().equals(version))
 				.findFirst()
 				.orElseThrow(() -> new IllegalArgumentException("The live matrix runs no platforms on " + version));
 
-		return proxyScenario(proxyPlatform, serverPlatform, platform);
+		return proxyScenario(proxyPlatform, serverPlatform, spigot);
 	}
 
 	/**
@@ -126,27 +128,29 @@ public final class CompatibilityScenarioFactory {
 	}
 
 	private static AnvilScenario paperScenario(LiveMatrix.Release release) {
-		Distribution paper = Distribution.remote(release.minecraft().toString(), release.paper());
-		return directScenario("paper-" + release.minecraft(), Platforms.PAPER, paper);
+		return directScenario("paper-" + release.minecraft(), Platforms.PAPER, paper(release), release.java());
 	}
 
-	private static Distribution spigot(LiveMatrix.PlatformRelease platform) {
-		return Distribution.pinned(platform.release().minecraft().toString(), platform.spigotSha256());
+	private static Distribution paper(LiveMatrix.Release release) {
+		return Distribution.remote(release.minecraft().toString(), release.build());
+	}
+
+	private static Distribution spigot(LiveMatrix.SpigotRelease spigot) {
+		return Distribution.pinned(spigot.minecraft().toString(), spigot.sha256());
 	}
 
 	private static AnvilScenario proxyScenario(
 			String proxyPlatform,
 			String serverPlatform,
-			LiveMatrix.PlatformRelease platform
+			LiveMatrix.SpigotRelease spigot
 	) {
-		LiveMatrix.Release release = platform.release();
-		Distribution distribution = serverPlatform.equals(Platforms.SPIGOT)
-				? spigot(platform)
-				: Distribution.remote(release.minecraft().toString(), release.paper());
+		boolean onSpigot = serverPlatform.equals(Platforms.SPIGOT);
+		Distribution distribution = onSpigot ? spigot(spigot) : paper(spigot.paper());
+		int java = onSpigot ? spigot.java() : spigot.paper().java();
 		String name = (proxyPlatform.equals(Platforms.VELOCITY) ? "velocity-" : "bungee-") + serverPlatform + "-"
-				+ release.minecraft();
+				+ spigot.minecraft();
 
-		return proxyScenario(name, proxyPlatform, serverPlatform, distribution);
+		return proxyScenario(name, proxyPlatform, serverPlatform, distribution, java);
 	}
 
 	private static AnvilScenario neoForgeScenario(LiveMatrix.NeoForgeRelease release) {
@@ -156,6 +160,7 @@ public final class CompatibilityScenarioFactory {
 				.metadata(serverMetadata("server"))
 				.platform(Platforms.NEOFORGE)
 				.distribution(Distribution.remote(version, release.release()))
+				.javaSelection(java(release.java()))
 				.memoryMegabytes(1536)
 				.build();
 		return AnvilScenario.builder()
@@ -170,8 +175,8 @@ public final class CompatibilityScenarioFactory {
 				.build();
 	}
 
-	private static AnvilScenario directScenario(String name, String platform, Distribution distribution) {
-		MinecraftServer server = server("server", platform, distribution);
+	private static AnvilScenario directScenario(String name, String platform, Distribution distribution, int java) {
+		MinecraftServer server = server("server", platform, distribution, java);
 		return AnvilScenario.builder()
 				.name(name)
 				.metadata(PresentationMetadata.builder()
@@ -189,10 +194,11 @@ public final class CompatibilityScenarioFactory {
 			String name,
 			String proxyPlatform,
 			String serverPlatform,
-			Distribution distribution
+			Distribution distribution,
+			int java
 	) {
-		MinecraftServer lobby = server("lobby", serverPlatform, distribution);
-		MinecraftServer game = server("game", serverPlatform, distribution);
+		MinecraftServer lobby = server("lobby", serverPlatform, distribution, java);
+		MinecraftServer game = server("game", serverPlatform, distribution, java);
 		MinecraftProxy proxy = proxy("proxy", proxyPlatform, lobby.getName(), game.getName());
 		return AnvilScenario.builder()
 				.name(name)
@@ -211,13 +217,14 @@ public final class CompatibilityScenarioFactory {
 				.build();
 	}
 
-	private static MinecraftServer server(String name, String platform, Distribution distribution) {
+	private static MinecraftServer server(String name, String platform, Distribution distribution, int java) {
 		Path fixture = FixtureArtifacts.serverPlugin();
 		return MinecraftServer.builder()
 				.name(name)
 				.metadata(serverMetadata(name))
 				.platform(platform)
 				.distribution(distribution)
+				.javaSelection(java(java))
 				.workspace(WorkspacePlan.builder()
 						.asset(WorkspaceAsset.builder()
 								.group("fixture")
@@ -236,9 +243,11 @@ public final class CompatibilityScenarioFactory {
 
 	private static MinecraftProxy proxy(String name, String platform, String defaultServer, String otherServer) {
 		LiveMatrix.Proxies proxies = MATRIX.getProxies();
-		Distribution distribution = Platforms.VELOCITY.equals(platform)
+		boolean velocity = Platforms.VELOCITY.equals(platform);
+		Distribution distribution = velocity
 				? Distribution.remote(proxies.velocityVersion(), proxies.velocityBuild())
 				: Distribution.remote("BungeeCord", proxies.bungeeCordBuild());
+		JavaSelection java = velocity ? java(proxies.velocityJava()) : JavaSelection.builder().build();
 		return MinecraftProxy.builder()
 				.name(name)
 				.metadata(PresentationMetadata.builder()
@@ -248,9 +257,19 @@ public final class CompatibilityScenarioFactory {
 						.build())
 				.platform(platform)
 				.distribution(distribution)
+				.javaSelection(java)
 				.server(defaultServer)
 				.server(otherServer)
 				.defaultServer(defaultServer)
+				.build();
+	}
+
+	/**
+	 * Requests the Java the live matrix runs a process on, which its version data calls verified.
+	 */
+	private static JavaSelection java(int featureVersion) {
+		return JavaSelection.builder()
+				.requirement(JavaRequirement.builder().featureVersion(featureVersion).build())
 				.build();
 	}
 

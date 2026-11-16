@@ -1,4 +1,4 @@
-import me.whereareiam.anvil.buildlogic.fixture.LiveMatrixReleases
+import me.whereareiam.anvil.buildlogic.matrix.LiveMatrix
 
 plugins {
 	id("module-java")
@@ -38,10 +38,11 @@ dependencies {
 val fullTesting = providers.gradleProperty("anvil.testMode").orElse("unit")
 	.map { it.equals("full", ignoreCase = true) }
 val platforms = providers.gradleProperty("anvilPlatforms").orElse("")
-// The live matrix lists the releases, Spigot and proxy versions and NeoForge releases that run against real servers.
-val liveMatrix = layout.projectDirectory.file("live-matrix.toml")
-val releases = LiveMatrixReleases.parse(providers.fileContents(liveMatrix).asText.get())
-// Plans the live matrix without starting a process to check that verified data lists exactly what it runs.
+// The live matrix at the repository root lists what runs against real servers, and is what the platforms' and the
+// protocol libraries' version data call verified; each Paper row is one release.
+val liveMatrix = layout.settingsDirectory.file("live-matrix.toml")
+val releases = LiveMatrix.parse(providers.fileContents(liveMatrix).asText.get()).minecraftVersions("paper")
+// Plans the live matrix without starting a process to check that each scenario runs what the version data verifies.
 val matrixDataTest = "*.CompatibilityScenarioFactoryTest"
 
 // Each suite is one package of the tests and runs only with -Panvil.testMode=full: `release` against the server of
@@ -92,7 +93,7 @@ tasks.test {
 // The matrix data check starts no server, so every build runs it, unlike the real-server tests above.
 val matrixTest = tasks.register<Test>("matrixTest") {
 	group = LifecycleBasePlugin.VERIFICATION_GROUP
-	description = "Checks that the verified platform and protocol data equal the live matrix."
+	description = "Checks that every live matrix scenario plans the Java its row names, which the version data verifies."
 	testClassesDirs = sourceSets.test.get().output.classesDirs
 	classpath = sourceSets.test.get().runtimeClasspath
 	filter {

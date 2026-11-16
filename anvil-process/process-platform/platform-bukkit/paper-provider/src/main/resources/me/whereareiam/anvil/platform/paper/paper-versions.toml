@@ -4,8 +4,8 @@
 # agent:    the oldest Java the Bukkit agent installed into Paper runs on. Planning never selects
 #           older Java, and the provider's checkAgentJava build task fails when the agent's classes
 #           need newer Java.
-# verified: Minecraft version -> Java feature versions Anvil's live matrix (CompatibilityScenarioFactory)
-#           runs (VERIFIED); every other supported version is listed in `known` only.
+# verified: not written here; the build appends what live-matrix.toml at the repository root runs on this platform
+#           (VERIFIED). Every other supported version is listed in `known` only.
 # java:     each row applies from `since` until the next row starts. `maximum` is Paper's own
 #           startup refusal; `maximumBypassProperty` lifts it when a scenario explicitly requests
 #           a newer LTS release (Paper 1.16.5 and 1.17.x check `Paper.IgnoreJavaVersion`).
@@ -24,18 +24,6 @@ known = [
 
 [agent]
 minimumJava = 11
-
-[verified]
-"1.16.5" = [11]
-"1.17.1" = [17]
-"1.18.2" = [17]
-"1.19.4" = [17]
-"1.20.6" = [21]
-"1.21.1" = [21]
-"1.21.11" = [21]
-"26.1.2" = [25]
-"26.2" = [25]
-"26.3" = [25]
 
 [[java]]
 since = "1.16.5"

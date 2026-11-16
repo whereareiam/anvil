@@ -91,15 +91,16 @@ Kicking, reconnect, and identity changes also require `PlayerIdentityReconnectSy
 Paper versions it runs. Platform provider or forwarding changes require every affected server/proxy
 combination.
 
-## Keep verified data equal to the matrix
+## Verified data comes from the matrix
 
-`anvil-testkit/tests/server/live-matrix.toml` lists the live matrix: the Paper build of every release key, the
-releases that also run on Spigot and behind Velocity and BungeeCord with their Spigot checksums, the proxies' builds,
-and the NeoForge releases. `CompatibilityScenarioFactory` builds the scenarios from it, and the build registers one
-`releaseTest-<minecraft>` task per release from it. The `verified` data of MCProtocolLib's releases and of each
-platform lists exactly the combinations the matrix runs. `CompatibilityScenarioFactoryTest` plans the matrix without
-starting a server and fails when they differ; every build runs it through the `matrixTest` task, without
-`-Panvil.testMode=full`:
+`live-matrix.toml` at the repository root lists the live matrix, one table per platform: the Paper build of every
+release key, the Spigot servers that also run behind Velocity and BungeeCord with their checksums, the proxies'
+builds, and the NeoForge releases, each with the Java the suites run it on. `CompatibilityScenarioFactory` builds the
+scenarios from it, requesting each row's Java, and the build registers one `releaseTest-<minecraft>` task per Paper
+row. It is also the only source of what Anvil calls verified: the build writes each platform's rows into its
+provider's version data and the matrix's server versions into MCProtocolLib's release data.
+`CompatibilityScenarioFactoryTest` plans the matrix against that written data without starting a server; every build
+runs it through the `matrixTest` task, without `-Panvil.testMode=full`:
 
 ```shell
 ./gradlew :anvil-testkit:tests:server:matrixTest
@@ -107,7 +108,7 @@ starting a server and fails when they differ; every build runs it through the `m
 
 ## Run the suites in CI
 
-The live workflow reads the releases from `live-matrix.toml` and runs one job per release, so a new release gets its
+The live workflow reads the Paper rows of `live-matrix.toml` and runs one job per release, so a new release gets its
 own job without a workflow change. Three jobs run the platform suite, for Spigot and NeoForge, for Velocity and for
 BungeeCord, and one job runs the behaviour suite. All of them run at once.
 

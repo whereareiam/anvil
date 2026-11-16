@@ -1,5 +1,6 @@
 # MCProtocolLib releases supported by this Anvil version: the latest patch of each Minecraft major.
-# Each release lists every Minecraft version speaking its protocol; 'verified' versions are live-tested.
+# Each release lists every Minecraft version speaking its protocol. The build writes each release's 'verified'
+# versions into the shipped copy from live-matrix.toml at the repository root, the one list of what is live-tested.
 # 'module' is the compile coordinate for version-specific segments. Each [[release.artifact]] is the
 # worker runtime closure, downloaded and checked against 'sha256'. Empty pins are filled by
 # ./gradlew :anvil-player:player-library:library-mcprotocol:pinLibraryReleases, which also refreshes the closure.
@@ -9,7 +10,6 @@ version = "1.16.5-2"
 module = "com.github.GeyserMC:mcprotocollib:1.16.5-2"
 protocol = 754
 minecraft = ["1.16.4", "1.16.5"]
-verified = ["1.16.5"]
 java = 8
 features = ["ONLINE_AUTHENTICATION"]
 
@@ -83,7 +83,6 @@ version = "1.17.1-2"
 module = "com.github.GeyserMC:mcprotocollib:1.17.1-2"
 protocol = 756
 minecraft = ["1.17.1"]
-verified = ["1.17.1"]
 java = 8
 features = ["ONLINE_AUTHENTICATION"]
 
@@ -167,7 +166,6 @@ version = "1.18.2-1"
 module = "com.github.steveice10:mcprotocollib:1.18.2-1"
 protocol = 758
 minecraft = ["1.18.2"]
-verified = ["1.18.2"]
 java = 8
 features = ["ONLINE_AUTHENTICATION"]
 
@@ -281,7 +279,6 @@ version = "1.19.4-2-20230503.145414-3"
 module = "com.github.steveice10:mcprotocollib:1.19.4-2-20230503.145414-3"
 protocol = 762
 minecraft = ["1.19.4"]
-verified = ["1.19.4"]
 java = 8
 features = ["ONLINE_AUTHENTICATION"]
 
@@ -425,7 +422,6 @@ version = "1.20.6-2-20240610.212238-11"
 module = "org.geysermc.mcprotocollib:protocol:1.20.6-2-20240610.212238-11"
 protocol = 766
 minecraft = ["1.20.5", "1.20.6"]
-verified = ["1.20.6"]
 java = 17
 features = ["ONLINE_AUTHENTICATION"]
 
@@ -744,7 +740,6 @@ version = "1.21-20241010.155958-24"
 module = "org.geysermc.mcprotocollib:protocol:1.21-20241010.155958-24"
 protocol = 767
 minecraft = ["1.21", "1.21.1"]
-verified = ["1.21.1"]
 java = 17
 features = ["ONLINE_AUTHENTICATION"]
 
@@ -1088,7 +1083,6 @@ version = "1.21.11-20260512.221357-18"
 module = "org.geysermc.mcprotocollib:protocol:1.21.11-20260512.221357-18"
 protocol = 774
 minecraft = ["1.21.11"]
-verified = ["1.21.11"]
 java = 17
 features = ["ONLINE_AUTHENTICATION"]
 
@@ -1487,7 +1481,6 @@ version = "26.1-20260708.090514-22"
 module = "org.geysermc.mcprotocollib:protocol:26.1-20260708.090514-22"
 protocol = 775
 minecraft = ["26.1", "26.1.1", "26.1.2"]
-verified = ["26.1.2"]
 java = 17
 features = ["ONLINE_AUTHENTICATION"]
 
@@ -1886,7 +1879,6 @@ version = "26.2"
 module = "org.geysermc.mcprotocollib:protocol:26.2"
 protocol = 776
 minecraft = ["26.2"]
-verified = ["26.2"]
 java = 21
 features = ["ONLINE_AUTHENTICATION"]
 
@@ -2275,7 +2267,6 @@ version = "26.3"
 module = "org.geysermc.mcprotocollib:protocol:26.3"
 protocol = 777
 minecraft = ["26.3"]
-verified = ["26.3"]
 java = 21
 features = ["ONLINE_AUTHENTICATION"]
 

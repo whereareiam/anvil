@@ -37,10 +37,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Keeps the verified data of the bundled platforms and of MCProtocolLib equal to the live matrix these
- * scenarios define: a combination is VERIFIED exactly when a matrix scenario runs it. It also keeps one direct
- * Paper release scenario, which the release suite runs every player capability against, for every MCProtocolLib
- * release key. The test plans the scenarios without starting any process.
+ * Checks the verified data the build writes from {@code live-matrix.toml} against the scenarios built from the same
+ * file: a combination is VERIFIED exactly when a matrix scenario plans it, so a scenario that does not run the Java
+ * its row names, or a generator that writes another combination, fails here. It also keeps one direct Paper release
+ * scenario, which the release suite runs every player capability against, for every MCProtocolLib release key. The
+ * test plans the scenarios without starting any process.
  */
 class CompatibilityScenarioFactoryTest {
 	private static final Map<String, PlatformProvider> PLATFORMS = ServiceLoader.load(PlatformProvider.class).stream()

@@ -469,7 +469,6 @@ class SegmentConventionsFunctionalTest {
 			module = "$module"
 			protocol = $protocol
 			minecraft = [$minecraft]
-			verified = ["$key"]
 			java = $java
 			features = ["ONLINE_AUTHENTICATION"]
 		""".trimIndent()

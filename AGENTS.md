@@ -100,7 +100,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-testkit/fixtures`                                              | Independent consumer build for process, server-plugin, and extension fixture JARs                                                                                                   |
 | `anvil-testkit/support`                                               | Host-side fixture artifact access and scoped extension loading                                                                                                                      |
 | `examples/proof-of-patience`                                          | Standalone consumer example, not a home for framework system assertions                                                                                                             |
-| `build-logic`                                                         | Shared conventions grouped by `module/`, `packaging/`, `adapter/`, `library/`, `platform/`, `capability/`, `integration/`, `fixture/`, `block/` (the block data pins, their pin task and protocol check, and the generator's arguments), and `download/` (checksums and the HTTP reader the pin tasks share) |
+| `build-logic`                                                         | Shared conventions grouped by `module/`, `packaging/`, `adapter/`, `library/`, `platform/`, `capability/`, `integration/`, `fixture/`, `matrix/` (the live matrix and the tasks that write what it verifies into version and release data), `block/` (the block data pins, their pin task and protocol check, and the generator's arguments), and `download/` (checksums and the HTTP reader the pin tasks share) |
 | `build-logic/settings`                                                | Lean settings conventions loaded by every project's parent classloader: library registry, library repositories, and library and platform layout checks                             |
 | `docs/content`                                                        | Task-oriented Scriptorium guides for using, extending, and contributing to Anvil                                                                                                    |
 | `scriptorium.project.json`                                            | Scriptorium project metadata and version policy                                                                                                                                     |
@@ -344,8 +344,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   version. Scenario listener binding and LAN permission belong to `NetworkPolicy`, alongside exposure and access
   policy.
 - Processes run on LTS releases only (11, 17, 21, 25, then every fourth); Java 8 is not one of them.
-  Each provider owns `<platform>-versions.toml` (Java rows, `[agent] minimumJava`, verified and known
-  versions) and exposes it through `PlatformProvider.versionData()`; process-common reads it, so
+  Each provider owns `<platform>-versions.toml` (Java rows, `[agent] minimumJava` and known versions; the
+  build adds the verified ones) and exposes it through `PlatformProvider.versionData()`; process-common reads it, so
   process-api carries no parser. The agent minimum raises the effective minimum and the default LTS;
   a default it pushes above the row maximum is refused. A maximum is refused unless the row names a
   bypass property; planning then adds `-D<property>=true` before provider defaults for explicit requests
@@ -358,10 +358,13 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   settings plugin fails the configuration of any project whose main resources ship version data with an
   `[agent]` table unless it applies the convention. The `platformAgent` configuration only feeds that check, so
   it is intentionally outside the architecture verifier's production configurations even though it names
-  another family's agent. VERIFIED means run by the live matrix: a platform's and a protocol library's verified data
-  list exactly the combinations `live-matrix.toml` lists and `CompatibilityScenarioFactory` runs (checked in every
-  build by `CompatibilityScenarioFactoryTest` through the server suite's `matrixTest`), and every other supported
-  version is only known (COMPATIBLE). Docs keep one Java-per-version table in the Java provisioning guide,
+  another family's agent. VERIFIED means run by the live matrix, `live-matrix.toml` at the repository root, the only
+  list of verified combinations: one table per platform, named by the provider's id, whose rows name a version and
+  the Java the live suites run it on. The build writes them into the shipped version data (`writeVersionData` of
+  `module-platform-provider`, and `writeReleaseData` for a protocol library's releases, which are verified on every
+  Minecraft version a matrix server runs); hand-written verified data fails the build. `CompatibilityScenarioFactory`
+  requests each row's Java, and `CompatibilityScenarioFactoryTest` (the server suite's `matrixTest`, in every build)
+  plans its scenarios against the written data. Every other supported version is only known (COMPATIBLE). Docs keep one Java-per-version table in the Java provisioning guide,
   which `JavaVersionTableDocumentationTest` compares with the installed providers' version data and the
   planner's defaults.
 - Java requirements are execution-agnostic. Local homes and verified archives belong to Java provisioning;
@@ -543,7 +546,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   settings control personal IDE behavior, while runtime options stay in project/scenario definitions.
 - Adding a Minecraft version follows the contributing guide `docs/content/contributing/minecraft-versions`.
   Add the version to the `mcprotocol-releases.toml` release that speaks its protocol, or a `[[release]]` row
-  for a new protocol (version, module, protocol, Minecraft versions, verified versions, Java, features), and
+  for a new protocol (version, module, protocol, Minecraft versions, Java, features), and
   pin its closure with `pinLibraryReleases`. A new protocol gets a `block-data.toml` row in `protocol-java-block`,
   pinned with `pinBlockData`; a version of a protocol that has one needs none. Check `block-facts.toml` for the
   release's new blocks. Add a segment only to a side whose newest segment fails
@@ -553,8 +556,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   name>")`, which the build validates; code a chain shares, its public `JavaClient` base and abstract bases of
   translations whose bulk does not change, lives in the chain's earliest segment, and each segment has its own
   `McProtocolClientAdapter`. Add the release to `McProtocolWorkerContractTest`,
-  platform `known` versions and `[[java]]` rows only where Java changes, and mark as verified exactly what
-  `CompatibilityScenarioFactory` runs; every other listed version is COMPATIBLE, and user-supplied release
+  platform `known` versions and `[[java]]` rows only where Java changes, and add a `live-matrix.toml` row for each
+  combination the live suites should run, which makes it verified; every other listed version is COMPATIBLE, and user-supplied release
   data is UNTESTED. Update the versions page, the Java table, the README, and the FAQ. The worker shell never
   imports MCProtocolLib; release-specific client code lives only in `mcprotocol-java` segments, whose
   `linkage.txt` requirement keywords the worker's self-check enforces. A release with an unpinned closure is
@@ -585,8 +588,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `TestedRelease.isAtLeast`. `platform` (`platformTest`, `-PanvilPlatforms`) runs Spigot, the proxies and NeoForge,
   and `behavior` (`behaviorTest`) lifecycles, sessions, routing, tooling and extensions, which pick scenarios
   through typed `CompatibilityScenarioFactory` lookups, never by name. `test` runs all three. The live matrix is the
-  data file `live-matrix.toml`: the build registers one release task per release from it and CI one job per
-  release. Only `matrixTest`, which checks `CompatibilityScenarioFactoryTest` without starting a server, runs in
+  data file `live-matrix.toml` at the repository root: the build registers one release task per `[[paper]]` row and
+  CI one job per release. Only `matrixTest`, which checks `CompatibilityScenarioFactoryTest` without starting a server, runs in
   every build.
 - The independent `anvil-test-fixtures` consumer build under `anvil-testkit/fixtures` contains
   `test-process`, `test-server-plugin`, `test-extension`, and `test-java-library`. They use `src/main`; dependencies on Anvil

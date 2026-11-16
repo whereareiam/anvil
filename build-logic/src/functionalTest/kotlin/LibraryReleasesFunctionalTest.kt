@@ -119,7 +119,6 @@ class LibraryReleasesFunctionalTest {
 		module = "com.example.legacy:protocol:1.18.2-1"
 		protocol = 758
 		minecraft = ["1.18.2"]
-		verified = ["1.18.2"]
 		java = 8
 		features = ["ONLINE_AUTHENTICATION"]
 	""".trimIndent()
@@ -131,7 +130,6 @@ class LibraryReleasesFunctionalTest {
 		module = "com.example.modern:protocol:$snapshot"
 		protocol = 774
 		minecraft = ["1.21.11"]
-		verified = ["1.21.11"]
 		java = 17
 		features = ["ONLINE_AUTHENTICATION"]
 	""".trimIndent()

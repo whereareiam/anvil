@@ -14,9 +14,10 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * The live matrix as {@code live-matrix.toml} lists it: the Paper build of each release, the releases that also run
- * on Spigot and behind the proxies, the proxies' builds, and the NeoForge releases. The build reads the same file to
- * register one release test task per release.
+ * The live matrix as {@code live-matrix.toml} at the repository root lists it, one table per platform: the Paper
+ * server of each release, the Spigot servers that also run behind the proxies, the proxies' builds, and the NeoForge
+ * servers, each with the Java the suites run it on. The build reads the same file to register one release test task
+ * per Paper row and to write what the platforms' and protocol libraries' version data call verified.
  */
 @Value
 class LiveMatrix {
@@ -27,9 +28,9 @@ class LiveMatrix {
 	 */
 	@NotNull List<Release> releases;
 	/**
-	 * Releases that also run on Spigot and behind both proxies.
+	 * Spigot servers, which also run behind both proxies.
 	 */
-	@NotNull List<PlatformRelease> platforms;
+	@NotNull List<SpigotRelease> spigot;
 	/**
 	 * The proxies' pinned builds.
 	 */
@@ -58,28 +59,28 @@ class LiveMatrix {
 
 	private static LiveMatrix read(JsonNode root) {
 		List<Release> releases = new ArrayList<>();
-		for (JsonNode row : root.path("release"))
-			releases.add(new Release(version(row), text(row, "paper")));
+		for (JsonNode row : root.path("paper"))
+			releases.add(new Release(version(row), text(row, "build"), java(row)));
 
-		List<PlatformRelease> platforms = new ArrayList<>();
-		for (JsonNode row : root.path("platform")) {
+		List<SpigotRelease> spigot = new ArrayList<>();
+		for (JsonNode row : root.path("spigot")) {
 			MinecraftVersion version = version(row);
-			Release release = releases.stream()
+			Release paper = releases.stream()
 					.filter(candidate -> candidate.minecraft().equals(version))
 					.findFirst()
-					.orElseThrow(() -> new IllegalStateException("Platform release " + version + " names no release"));
-			platforms.add(new PlatformRelease(release, text(row, "spigot-sha256")));
+					.orElseThrow(() -> new IllegalStateException("Spigot " + version + " has no Paper row to run beside"));
+			spigot.add(new SpigotRelease(version, text(row, "sha256"), java(row), paper));
 		}
 
-		JsonNode proxy = root.path("proxy");
-		Proxies proxies = new Proxies(text(proxy, "velocity-version"), text(proxy, "velocity-build"),
-				text(proxy, "bungeecord-build"));
+		JsonNode velocity = root.path("velocity");
+		Proxies proxies = new Proxies(text(velocity, "version"), text(velocity, "build"), java(velocity),
+				text(root.path("bungeecord"), "build"));
 
 		List<NeoForgeRelease> neoForge = new ArrayList<>();
 		for (JsonNode row : root.path("neoforge"))
-			neoForge.add(new NeoForgeRelease(version(row), text(row, "release")));
+			neoForge.add(new NeoForgeRelease(version(row), text(row, "release"), java(row)));
 
-		return new LiveMatrix(List.copyOf(releases), List.copyOf(platforms), proxies, List.copyOf(neoForge));
+		return new LiveMatrix(List.copyOf(releases), List.copyOf(spigot), proxies, List.copyOf(neoForge));
 	}
 
 	/**
@@ -96,6 +97,14 @@ class LiveMatrix {
 		return MinecraftVersion.parse(text(row, "minecraft"));
 	}
 
+	private static int java(JsonNode row) {
+		JsonNode value = row.get("java");
+		if (value == null || !value.isIntegralNumber())
+			throw new IllegalStateException("The live matrix needs a Java feature version for 'java' in " + row);
+
+		return value.asInt();
+	}
+
 	private static String text(JsonNode node, String field) {
 		JsonNode value = node.get(field);
 		if (value == null || !value.isTextual() || value.asText().isBlank())
@@ -108,28 +117,37 @@ class LiveMatrix {
 	 * One release key's direct Paper server.
 	 *
 	 * @param minecraft Minecraft version
-	 * @param paper pinned Paper build
+	 * @param build pinned Paper build
+	 * @param java Java feature version it runs on
 	 */
-	record Release(@NotNull MinecraftVersion minecraft, @NotNull String paper) {
+	record Release(@NotNull MinecraftVersion minecraft, @NotNull String build, int java) {
 	}
 
 	/**
-	 * A release that also runs on Spigot and behind the proxies.
+	 * A Spigot server, which also runs behind the proxies beside the Paper server of its Minecraft version.
 	 *
-	 * @param release the release, whose Paper build proxied Paper servers use
-	 * @param spigotSha256 checksum of the pinned Spigot JAR
+	 * @param minecraft Minecraft version
+	 * @param sha256 checksum of the pinned Spigot JAR
+	 * @param java Java feature version it runs on
+	 * @param paper the Paper release of the same Minecraft version
 	 */
-	record PlatformRelease(@NotNull Release release, @NotNull String spigotSha256) {
+	record SpigotRelease(@NotNull MinecraftVersion minecraft, @NotNull String sha256, int java, @NotNull Release paper) {
 	}
 
 	/**
-	 * The pinned builds of the proxies.
+	 * The pinned builds of the proxies. BungeeCord carries no release version and runs on the Java planning selects.
 	 *
 	 * @param velocityVersion Velocity version
 	 * @param velocityBuild Velocity build
+	 * @param velocityJava Java feature version Velocity runs on
 	 * @param bungeeCordBuild BungeeCord build
 	 */
-	record Proxies(@NotNull String velocityVersion, @NotNull String velocityBuild, @NotNull String bungeeCordBuild) {
+	record Proxies(
+			@NotNull String velocityVersion,
+			@NotNull String velocityBuild,
+			int velocityJava,
+			@NotNull String bungeeCordBuild
+	) {
 	}
 
 	/**
@@ -137,7 +155,8 @@ class LiveMatrix {
 	 *
 	 * @param minecraft Minecraft version
 	 * @param release NeoForge release
+	 * @param java Java feature version it runs on
 	 */
-	record NeoForgeRelease(@NotNull MinecraftVersion minecraft, @NotNull String release) {
+	record NeoForgeRelease(@NotNull MinecraftVersion minecraft, @NotNull String release, int java) {
 	}
 }
