@@ -2,7 +2,10 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_19_4;
 
 import com.github.steveice10.packetlib.event.session.DisconnectedEvent;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLevel;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.BorderPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.HealthPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.InventoryPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.JavaClient;
@@ -39,13 +42,17 @@ public final class McProtocolClientAdapter extends JavaClient {
 	/**
 	 * Returns a new packet table of the MCProtocolLib 1.19.4 release.
 	 *
+	 * @param demand the packets the session wants decoded
 	 * @return the release's translations
 	 */
-	static PacketTable<Packet> packets() {
+	static PacketTable<Packet> packets(PacketDemand demand) {
+		ConnectionLevel level = new ConnectionLevel();
 		return new PacketTable<>(List.of(
+				new BorderPackets(),
 				new ChatPackets(TEXT),
+				new ChunkPackets(level, demand),
 				new CommandPackets(),
-				new ConnectionPackets(),
+				new ConnectionPackets(level),
 				new EntityPackets(TEXT),
 				new HealthPackets(TEXT),
 				new InteractionPackets(),

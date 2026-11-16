@@ -5,16 +5,10 @@ import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundInitializeBorder;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderCenter;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderLerpSize;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderSize;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderWarningDelay;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderWarningDistance;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetDefaultSpawnPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetTime;
 import me.whereareiam.anvil.protocol.java.api.type.GameEventType;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import org.cloudburstmc.math.vector.Vector3i;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.GlobalPos;
@@ -30,12 +24,6 @@ import org.geysermc.mcprotocollib.protocol.data.game.level.notify.ThunderStrengt
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundGameEventPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundSetDefaultSpawnPositionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundSetTimePacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.border.ClientboundInitializeBorderPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.border.ClientboundSetBorderCenterPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.border.ClientboundSetBorderLerpSizePacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.border.ClientboundSetBorderSizePacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.border.ClientboundSetBorderWarningDelayPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.border.ClientboundSetBorderWarningDistancePacket;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,17 +32,13 @@ import java.util.Set;
 /**
  * The world of the MCProtocolLib releases from 1.21.11 on: their game events, which these releases name as the game
  * does and keep with each event's number as a value of their own that the translation turns back into the game's
- * number, their world border, which they move in
- * ticks, their spawn point in a level of its own with the view a player spawns with, and their time, which each
+ * number, their spawn point in a level of its own with the view a player spawns with, and their time, which each
  * release's {@code WorldPackets} reads, because Minecraft 26.1 replaced the time of day with world clocks.
  */
 public abstract class WorldTranslation implements PacketTranslation<Packet> {
 	@Override
 	public final @NotNull Set<Class<? extends JavaPacket>> packets() {
-		return Set.of(ClientboundSetTime.class, ClientboundGameEvent.class, ClientboundInitializeBorder.class,
-				ClientboundSetBorderCenter.class, ClientboundSetBorderLerpSize.class, ClientboundSetBorderSize.class,
-				ClientboundSetBorderWarningDelay.class, ClientboundSetBorderWarningDistance.class,
-				ClientboundSetDefaultSpawnPosition.class);
+		return Set.of(ClientboundSetTime.class, ClientboundGameEvent.class, ClientboundSetDefaultSpawnPosition.class);
 	}
 
 	@Override
@@ -62,22 +46,6 @@ public abstract class WorldTranslation implements PacketTranslation<Packet> {
 		return switch (packet) {
 			case ClientboundSetTimePacket time -> time(time);
 			case ClientboundGameEventPacket event -> event(event);
-			case ClientboundInitializeBorderPacket border -> ClientboundInitializeBorder.builder()
-					.centerX(border.getNewCenterX())
-					.centerZ(border.getNewCenterZ())
-					.oldSize(border.getOldSize())
-					.newSize(border.getNewSize())
-					.lerpTime(border.getLerpTime())
-					.absoluteMaxSize(border.getNewAbsoluteMaxSize())
-					.warningBlocks(border.getWarningBlocks())
-					.warningTime(border.getWarningTime())
-					.build();
-			case ClientboundSetBorderCenterPacket center -> new ClientboundSetBorderCenter(center.getNewCenterX(), center.getNewCenterZ());
-			case ClientboundSetBorderLerpSizePacket lerp -> new ClientboundSetBorderLerpSize(lerp.getOldSize(), lerp.getNewSize(),
-					lerp.getLerpTime());
-			case ClientboundSetBorderSizePacket size -> new ClientboundSetBorderSize(size.getSize());
-			case ClientboundSetBorderWarningDelayPacket delay -> new ClientboundSetBorderWarningDelay(delay.getWarningDelay());
-			case ClientboundSetBorderWarningDistancePacket distance -> new ClientboundSetBorderWarningDistance(distance.getWarningBlocks());
 			case ClientboundSetDefaultSpawnPositionPacket spawn -> spawn(spawn);
 			default -> null;
 		};

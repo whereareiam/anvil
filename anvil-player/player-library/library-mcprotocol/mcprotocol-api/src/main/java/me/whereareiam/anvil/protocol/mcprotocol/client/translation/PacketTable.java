@@ -1,9 +1,10 @@
-package me.whereareiam.anvil.protocol.mcprotocol.client;
+package me.whereareiam.anvil.protocol.mcprotocol.client.translation;
 
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

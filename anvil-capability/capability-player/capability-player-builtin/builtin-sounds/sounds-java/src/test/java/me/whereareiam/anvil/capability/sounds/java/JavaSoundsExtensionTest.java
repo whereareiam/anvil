@@ -14,6 +14,7 @@ import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.JavaWorld;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
@@ -202,6 +203,11 @@ class JavaSoundsExtensionTest {
 		@Override
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
 			return true;
+		}
+
+		@Override
+		public @NotNull JavaWorld world() {
+			throw new UnsupportedOperationException("This test's protocol keeps no world");
 		}
 
 		private void deliver(ClientboundPacket packet) {

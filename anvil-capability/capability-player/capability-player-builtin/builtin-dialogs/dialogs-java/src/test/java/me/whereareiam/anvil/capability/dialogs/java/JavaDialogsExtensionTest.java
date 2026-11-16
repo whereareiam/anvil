@@ -23,6 +23,7 @@ import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.JavaWorld;
 import me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtByte;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
@@ -527,6 +528,11 @@ class JavaDialogsExtensionTest {
 		@Override
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
 			return !unsupported.contains(type);
+		}
+
+		@Override
+		public @NotNull JavaWorld world() {
+			throw new UnsupportedOperationException("This test's protocol keeps no world");
 		}
 
 		private void deliver(ClientboundPacket packet) {

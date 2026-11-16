@@ -19,6 +19,7 @@ import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.JavaWorld;
 import me.whereareiam.anvil.protocol.java.api.model.chat.MessageSignature;
 import me.whereareiam.anvil.protocol.java.api.model.chat.PackedMessageSignature;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
@@ -344,6 +345,11 @@ class JavaMessagesExtensionTest {
 			if (missing.contains(type)) return false;
 
 			return signedChat || type != ClientboundDisguisedChat.class && type != ClientboundDeleteChat.class;
+		}
+
+		@Override
+		public @NotNull JavaWorld world() {
+			throw new UnsupportedOperationException("This test's protocol keeps no world");
 		}
 
 		private void deliver(ClientboundPacket packet) {

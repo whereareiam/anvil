@@ -139,6 +139,7 @@ final class JavaFixturePlayer implements ProtocolPlayer, PlayerBindingContext<Ob
 		session = null;
 		granted = null;
 		sessions.end(current);
+		protocol.disconnected();
 		var ended = new PlayerConnectionEvent(false, "Disconnected by Anvil", DisconnectCause.CLIENT, null);
 		emit(PlayerConnectionEvent.CHANGED, ended);
 	}

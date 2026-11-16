@@ -4,6 +4,7 @@ import me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
+import me.whereareiam.anvil.protocol.java.api.model.world.Level;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -12,7 +13,8 @@ import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespa
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
 import me.whereareiam.anvil.protocol.java.api.type.CardinalLight;
 import me.whereareiam.anvil.protocol.java.api.type.Skybox;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLevel;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import net.kyori.adventure.key.Key;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerSpawnInfo;
@@ -43,14 +45,17 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 	private static final String DIMENSION_TYPES = "minecraft:dimension_type";
 
 	private final SynchronizedRegistries registries;
+	private final ConnectionLevel level;
 
 	/**
 	 * Creates the connection translation of one connection.
 	 *
 	 * @param registries the connection's registries, in which the translation looks up dimension types
+	 * @param level the connection's level, which the translation records for the connection's other translations
 	 */
-	protected ConnectionTranslation(@NotNull SynchronizedRegistries registries) {
+	protected ConnectionTranslation(@NotNull SynchronizedRegistries registries, @NotNull ConnectionLevel level) {
 		this.registries = registries;
+		this.level = level;
 	}
 
 	@Override
@@ -63,7 +68,7 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 		return switch (packet) {
 			case ClientboundLoginPacket login -> {
 				PlayerSpawnInfo spawn = login.getCommonPlayerSpawnInfo();
-				yield ClientboundLogin.builder()
+				yield entered(ClientboundLogin.builder()
 						.entityId(login.getEntityId())
 						.levels(Arrays.stream(login.getWorldNames()).map(Key::asString).toList())
 						.hardcore(login.isHardcore())
@@ -72,16 +77,16 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 						.debug(spawn.isDebug())
 						.flat(spawn.isFlat())
 						.showDeathScreen(login.isEnableRespawnScreen())
-						.build();
+						.build());
 			}
 			case ClientboundRespawnPacket respawn -> {
 				PlayerSpawnInfo spawn = respawn.getCommonPlayerSpawnInfo();
-				yield ClientboundRespawn.builder()
+				yield entered(ClientboundRespawn.builder()
 						.dimension(spawn.getWorldName().asString())
 						.dimensionType(type(spawn.getDimension()))
 						.debug(spawn.isDebug())
 						.flat(spawn.isFlat())
-						.build();
+						.build());
 			}
 			case ClientboundStartConfigurationPacket ignored -> new ClientboundStartConfiguration();
 			default -> null;
@@ -91,6 +96,22 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 	@Override
 	public final @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		return null;
+	}
+
+	/**
+	 * Records the level a login names for the connection's other translations.
+	 */
+	private ClientboundLogin entered(ClientboundLogin login) {
+		level.enter(new Level(login.getDimension(), login.getDimensionType()));
+		return login;
+	}
+
+	/**
+	 * Records the level a respawn names for the connection's other translations.
+	 */
+	private ClientboundRespawn entered(ClientboundRespawn respawn) {
+		level.enter(new Level(respawn.getDimension(), respawn.getDimensionType()));
+		return respawn;
 	}
 
 	/**

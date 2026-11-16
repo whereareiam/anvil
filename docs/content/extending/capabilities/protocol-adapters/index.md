@@ -194,6 +194,31 @@ unavailable with that message, and the player keeps its other capabilities. `lis
 for a packet the release cannot carry. A player of a library that does not speak the Java Edition protocol throws it
 from `protocol(JavaProtocol.class)`.
 
+### Read the world the client knows
+
+`protocol.world()` returns the player's `JavaWorld`: the level the login and each respawn named, and the blocks of the
+chunk columns the server sent, kept up to date by the block updates that followed. Ask for it in `bind`, before the
+player connects: the player keeps chunks only from the first call on, and until then its library does not even
+decode them, so players that nothing asks about blocks spend nothing on them.
+
+```java
+JavaWorld world = protocol.world();
+OptionalInt below = world.blockState(x, y - 1, z);
+int[] column = world.read(view -> new int[] {
+		view.blockState(x, y - 1, z).orElse(LevelChunkSection.AIR),
+		view.blockState(x, y - 2, z).orElse(LevelChunkSection.AIR)
+});
+```
+
+A block state is a global ID in the release's block state registry; `protocol-java-block`'s `JavaBlockData` tells
+what it is for the player's protocol. Each packet applies to the world whole, before its listeners see it. Every call
+of `JavaWorld` sees the world at one moment, and `read(...)` holds that moment for a whole reader, such as a physics
+tick that reads many blocks: no packet applies while it runs, so keep it short and never wait in it for the player's
+packets. The world follows the player's current connection: a login replaces it, a respawn into a level of another
+key empties it, and so do a return to the configuration phase and a closed connection. A column the release cannot
+read is left out with a warning rather than disconnecting the player, so the world never claims blocks it does not
+know.
+
 `player.bindConnection(...)` tells you when a connection starts: its callback runs before each connection logs in
 and returns a `Subscription` that is closed when that connection ends or a new one replaces it. Use it for state
 that belongs to one connection, such as cookies:

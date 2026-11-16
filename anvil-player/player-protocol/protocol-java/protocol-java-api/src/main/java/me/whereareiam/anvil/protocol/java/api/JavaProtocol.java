@@ -79,6 +79,20 @@ public interface JavaProtocol {
 	boolean supports(@NotNull Class<? extends JavaPacket> type);
 
 	/**
+	 * Returns the world the player's client knows, which the packets this protocol receives keep up to date. The first
+	 * call makes the player keep chunks; until then the release does not decode them. Every call returns the same
+	 * world, which belongs to the player, not to one connection.
+	 *
+	 * <pre>{@code
+	 * JavaWorld world = protocol.world();
+	 * OptionalInt below = world.blockState(x, y - 1, z);
+	 * }</pre>
+	 *
+	 * @return the player's world
+	 */
+	@NotNull JavaWorld world();
+
+	/**
 	 * Requires the packets a feature needs, so that a binding whose feature the loaded release lacks, such as cookies
 	 * before Minecraft 1.20.5, fails before it registers anything.
 	 *

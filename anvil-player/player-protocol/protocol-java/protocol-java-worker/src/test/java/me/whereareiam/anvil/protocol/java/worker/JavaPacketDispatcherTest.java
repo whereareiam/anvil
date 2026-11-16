@@ -27,6 +27,18 @@ class JavaPacketDispatcherTest {
 	private final JavaPacketDispatcher protocol = new JavaPacketDispatcher("test", connection);
 
 	@Test
+	void wantsThePacketsOfItsListenersWhileTheyListen() {
+		assertFalse(protocol.wants(ClientboundSystemChat.class));
+
+		Subscription chat = protocol.listen(ClientboundSystemChat.class, packet -> {
+		});
+		assertTrue(protocol.wants(ClientboundSystemChat.class));
+
+		chat.close();
+		assertFalse(protocol.wants(ClientboundSystemChat.class));
+	}
+
+	@Test
 	void deliversAPacketOnlyToTheListenersOfItsClass() {
 		List<String> received = new ArrayList<>();
 		protocol.listen(ClientboundSystemChat.class, packet -> received.add("first " + packet.getText().plain()));

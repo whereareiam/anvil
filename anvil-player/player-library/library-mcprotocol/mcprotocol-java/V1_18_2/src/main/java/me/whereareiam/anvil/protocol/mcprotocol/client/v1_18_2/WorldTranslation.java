@@ -11,48 +11,33 @@ import com.github.steveice10.mc.protocol.data.game.level.notify.ThunderStrengthV
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.ClientboundGameEventPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.ClientboundSetDefaultSpawnPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.ClientboundSetTimePacket;
-import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.border.ClientboundInitializeBorderPacket;
-import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.border.ClientboundSetBorderCenterPacket;
-import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.border.ClientboundSetBorderLerpSizePacket;
-import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.border.ClientboundSetBorderSizePacket;
-import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.border.ClientboundSetBorderWarningDelayPacket;
-import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.border.ClientboundSetBorderWarningDistancePacket;
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundInitializeBorder;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderCenter;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderLerpSize;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderSize;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderWarningDelay;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderWarningDistance;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetDefaultSpawnPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetTime;
 import me.whereareiam.anvil.protocol.java.api.type.GameEventType;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
 
 /**
- * The world of the MCProtocolLib releases from 1.18.2 until 1.19.4: their time, their game events, their world border
- * and their spawn point. These releases keep each game event's number as a value of their own, which the translation
- * turns back into the game's number; they read no value for the elder guardian's effect, which is therefore
- * {@code 0}, and only 1.19.4 knows the demo's screenshot message. Each release's {@code WorldPackets} reads the spawn point's position and tells the rain events
- * apart, because MCProtocolLib 1.19 changed the position's type and renumbered the events. These releases send a negative time of day while the time of day stands still, and move the border in
- * milliseconds.
+ * The world of the MCProtocolLib releases from 1.18.2 until 1.19.4: their time, their game events and their spawn
+ * point. These releases keep each game event's number as a value of their own, which the translation turns back into
+ * the game's number; they read no value for the elder guardian's effect, which is therefore {@code 0}, and only 1.19.4
+ * knows the demo's screenshot message. Each release's {@code WorldPackets} reads the spawn point's position and tells
+ * the rain events apart, because MCProtocolLib 1.19 changed the position's type and renumbered the events. These
+ * releases send a negative time of day while the time of day stands still.
  */
 public abstract class WorldTranslation implements PacketTranslation<Packet> {
 	@Override
 	public final @NotNull Set<Class<? extends JavaPacket>> packets() {
-		return Set.of(ClientboundSetTime.class, ClientboundGameEvent.class, ClientboundInitializeBorder.class,
-				ClientboundSetBorderCenter.class, ClientboundSetBorderLerpSize.class, ClientboundSetBorderSize.class,
-				ClientboundSetBorderWarningDelay.class, ClientboundSetBorderWarningDistance.class,
-				ClientboundSetDefaultSpawnPosition.class);
+		return Set.of(ClientboundSetTime.class, ClientboundGameEvent.class, ClientboundSetDefaultSpawnPosition.class);
 	}
 
 	@Override
@@ -64,22 +49,6 @@ public abstract class WorldTranslation implements PacketTranslation<Packet> {
 					.tickDayTime(time.getTime() >= 0)
 					.build();
 			case ClientboundGameEventPacket event -> event(event);
-			case ClientboundInitializeBorderPacket border -> ClientboundInitializeBorder.builder()
-					.centerX(border.getNewCenterX())
-					.centerZ(border.getNewCenterZ())
-					.oldSize(border.getOldSize())
-					.newSize(border.getNewSize())
-					.lerpTime(ticks(border.getLerpTime()))
-					.absoluteMaxSize(border.getNewAbsoluteMaxSize())
-					.warningBlocks(border.getWarningBlocks())
-					.warningTime(border.getWarningTime())
-					.build();
-			case ClientboundSetBorderCenterPacket center -> new ClientboundSetBorderCenter(center.getNewCenterX(), center.getNewCenterZ());
-			case ClientboundSetBorderLerpSizePacket lerp -> new ClientboundSetBorderLerpSize(lerp.getOldSize(), lerp.getNewSize(),
-					ticks(lerp.getLerpTime()));
-			case ClientboundSetBorderSizePacket size -> new ClientboundSetBorderSize(size.getSize());
-			case ClientboundSetBorderWarningDelayPacket delay -> new ClientboundSetBorderWarningDelay(delay.getWarningDelay());
-			case ClientboundSetBorderWarningDistancePacket distance -> new ClientboundSetBorderWarningDistance(distance.getWarningBlocks());
 			case ClientboundSetDefaultSpawnPositionPacket spawn -> ClientboundSetDefaultSpawnPosition.builder()
 					.position(position(spawn))
 					.yaw(spawn.getAngle())
@@ -127,13 +96,6 @@ public abstract class WorldTranslation implements PacketTranslation<Packet> {
 			case ENABLE_RESPAWN_SCREEN -> GameEventType.IMMEDIATE_RESPAWN;
 		};
 		return new ClientboundGameEvent(type, value(event.getValue()));
-	}
-
-	/**
-	 * Converts the milliseconds a border of these releases moves for into ticks.
-	 */
-	private static long ticks(long millis) {
-		return millis / 50;
 	}
 
 	/**

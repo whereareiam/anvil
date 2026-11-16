@@ -4,14 +4,15 @@ import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.codec.MinecraftCodec;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /**
  * Client of the MCProtocolLib releases from 1.20.5 on, which every adapter of this segment and of the segments
@@ -23,19 +24,22 @@ import java.util.function.Supplier;
  */
 public class JavaClient<S extends Session> implements McProtocolClient<S> {
 	private final ClientSessions<S> sessions;
-	private final Supplier<PacketTable<Packet>> tables;
+	private final Function<PacketDemand, PacketTable<Packet>> tables;
 	private final PacketTable<Packet> packets;
 
 	/**
 	 * Creates a client of one release.
 	 *
 	 * @param sessions how the release opens and connects sessions
-	 * @param tables creates a new packet table of the release
+	 * @param tables creates a new packet table of the release for what its demand wants
 	 */
-	protected JavaClient(@NotNull ClientSessions<S> sessions, @NotNull Supplier<PacketTable<Packet>> tables) {
+	protected JavaClient(
+			@NotNull ClientSessions<S> sessions,
+			@NotNull Function<PacketDemand, PacketTable<Packet>> tables
+	) {
 		this.sessions = sessions;
 		this.tables = tables;
-		this.packets = tables.get();
+		this.packets = tables.apply(PacketDemand.EVERY);
 	}
 
 	@Override
@@ -50,7 +54,7 @@ public class JavaClient<S extends Session> implements McProtocolClient<S> {
 
 	@Override
 	public @NotNull S open(@NotNull ClientLogin login, @NotNull ClientListener<? super S> listener) {
-		return sessions.open(login, listener, tables.get());
+		return sessions.open(login, listener, tables.apply(listener));
 	}
 
 	@Override

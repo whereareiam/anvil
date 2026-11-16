@@ -9,6 +9,7 @@ plugins {
 segment {
 	extends(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolJava.v1165)
 	replaces(
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.BorderPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.CommandPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.EntityDataTable",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.EntityPackets",

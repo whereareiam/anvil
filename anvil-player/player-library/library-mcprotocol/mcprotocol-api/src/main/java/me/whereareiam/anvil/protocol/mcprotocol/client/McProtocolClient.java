@@ -5,6 +5,8 @@ import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -21,7 +23,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>Segments register their implementation in
  * {@code META-INF/services/me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient}: an adapter per segment,
  * which lists its release's translations in a {@link PacketTable} and hands them to the client base its side
- * shares:</p>
+ * shares. Each session's table is created for the session's {@link ClientListener}, which is the {@link PacketDemand}
+ * of the translations that skip what nothing wants:</p>
  *
  * <pre>{@code
  * public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
@@ -29,8 +32,8 @@ import org.jetbrains.annotations.NotNull;
  *         super(new NetworkClientSessions(ReleaseAnswers::new), McProtocolClientAdapter::packets);
  *     }
  *
- *     static PacketTable<Packet> packets() {
- *         return new PacketTable<>(List.of(new ChatPackets(), new InteractionPackets()));
+ *     static PacketTable<Packet> packets(PacketDemand demand) {
+ *         return new PacketTable<>(List.of(new ChatPackets(), new ChunkPackets(demand)));
  *     }
  * }
  * }</pre>

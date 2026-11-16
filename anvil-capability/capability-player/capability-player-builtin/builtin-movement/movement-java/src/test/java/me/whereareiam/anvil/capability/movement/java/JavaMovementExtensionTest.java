@@ -11,6 +11,7 @@ import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.JavaWorld;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
@@ -138,6 +139,11 @@ class JavaMovementExtensionTest {
 		@Override
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
 			return true;
+		}
+
+		@Override
+		public @NotNull JavaWorld world() {
+			throw new UnsupportedOperationException("This test's protocol keeps no world");
 		}
 	}
 

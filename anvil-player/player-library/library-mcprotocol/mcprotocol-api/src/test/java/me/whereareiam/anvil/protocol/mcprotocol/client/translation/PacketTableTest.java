@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.protocol.mcprotocol.client;
+package me.whereareiam.anvil.protocol.mcprotocol.client.translation;
 
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.text.Text;

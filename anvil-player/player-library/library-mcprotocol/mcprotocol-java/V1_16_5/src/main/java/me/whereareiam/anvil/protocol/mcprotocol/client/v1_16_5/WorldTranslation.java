@@ -16,16 +16,10 @@ import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundInitializeBorder;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderCenter;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderLerpSize;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderSize;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderWarningDelay;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderWarningDistance;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetDefaultSpawnPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetTime;
 import me.whereareiam.anvil.protocol.java.api.type.GameEventType;
-import me.whereareiam.anvil.protocol.mcprotocol.client.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,17 +29,13 @@ import java.util.Set;
  * The world of the MCProtocolLib releases from 1.16.5 until 1.17.1: their game events, which these releases keep with
  * each event's number as a value of their own that the translation turns back into the game's number, and their time.
  * They read no value for the elder guardian's effect, which is therefore {@code 0}, name the rain events the other
- * way round from the game, and send a negative time of day while the time of day stands still. Minecraft 1.17 split
- * the world border into a packet per change and gave the spawn point an angle, so each release's
- * {@code WorldPackets} reads those two; both move the border in milliseconds, which it reports as ticks.
+ * way round from the game, and send a negative time of day while the time of day stands still. Minecraft 1.17 gave
+ * the spawn point an angle, so each release's {@code WorldPackets} reads the spawn point.
  */
 public abstract class WorldTranslation implements PacketTranslation<Packet> {
 	@Override
 	public final @NotNull Set<Class<? extends JavaPacket>> packets() {
-		return Set.of(ClientboundSetTime.class, ClientboundGameEvent.class, ClientboundInitializeBorder.class,
-				ClientboundSetBorderCenter.class, ClientboundSetBorderLerpSize.class, ClientboundSetBorderSize.class,
-				ClientboundSetBorderWarningDelay.class, ClientboundSetBorderWarningDistance.class,
-				ClientboundSetDefaultSpawnPosition.class);
+		return Set.of(ClientboundSetTime.class, ClientboundGameEvent.class, ClientboundSetDefaultSpawnPosition.class);
 	}
 
 	@Override
@@ -56,7 +46,7 @@ public abstract class WorldTranslation implements PacketTranslation<Packet> {
 					.dayTime(Math.abs(time.getTime()))
 					.tickDayTime(time.getTime() >= 0)
 					.build();
-		if (!(packet instanceof ServerNotifyClientPacket event)) return borderOrSpawn(packet);
+		if (!(packet instanceof ServerNotifyClientPacket event)) return spawn(packet);
 
 		GameEventType type = switch (event.getNotification()) {
 			case INVALID_BED -> GameEventType.NO_RESPAWN_BLOCK_AVAILABLE;
@@ -83,22 +73,12 @@ public abstract class WorldTranslation implements PacketTranslation<Packet> {
 	}
 
 	/**
-	 * Translates the release's world border or spawn point.
+	 * Translates the release's spawn point.
 	 *
 	 * @param packet the release's packet
-	 * @return the border or spawn point packet, or {@code null} for any other packet
+	 * @return the spawn point packet, or {@code null} for any other packet
 	 */
-	protected abstract @Nullable ClientboundPacket borderOrSpawn(@NotNull Packet packet);
-
-	/**
-	 * Converts the milliseconds a border of these releases moves for into ticks.
-	 *
-	 * @param millis the milliseconds the release sent
-	 * @return the ticks of 50 milliseconds
-	 */
-	protected static long ticks(long millis) {
-		return millis / 50;
-	}
+	protected abstract @Nullable ClientboundSetDefaultSpawnPosition spawn(@NotNull Packet packet);
 
 	/**
 	 * Translates the block of a spawn point.

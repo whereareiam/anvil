@@ -24,6 +24,7 @@ import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.JavaWorld;
 import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.model.world.ClockState;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
@@ -33,14 +34,14 @@ import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundInitializeBorder;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderCenter;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderLerpSize;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderSize;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderWarningDelay;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetBorderWarningDistance;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetDefaultSpawnPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetTime;
+import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundInitializeBorder;
+import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderCenter;
+import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderLerpSize;
+import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderSize;
+import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderWarningDelay;
+import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderWarningDistance;
 import me.whereareiam.anvil.protocol.java.api.type.GameEventType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -378,6 +379,11 @@ class JavaWorldExtensionTest {
 		@Override
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
 			return true;
+		}
+
+		@Override
+		public @NotNull JavaWorld world() {
+			throw new UnsupportedOperationException("This test's protocol keeps no world");
 		}
 
 		private void deliver(ClientboundPacket packet) {

@@ -10,6 +10,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.network.Session;
@@ -63,7 +64,7 @@ class ClientPacketListenerTest {
 	private final List<ClientboundPacket> received = new ArrayList<>();
 	private final Session session = session();
 	private final ClientPacketListener listener = new ClientPacketListener(LOGIN, new RecordingListener(),
-			McProtocolClientAdapter.packets(), TcpClientSessions::granted, new TextTranslator());
+			McProtocolClientAdapter.packets(PacketDemand.EVERY), TcpClientSessions::granted, new TextTranslator());
 
 	@Test
 	void reportsTheLoginWithTheGrantedProfile() {
@@ -119,7 +120,7 @@ class ClientPacketListenerTest {
 				.build();
 		PacketSendingEvent handshake = new PacketSendingEvent(session, new ClientIntentionPacket(1, "127.0.0.1", 25577, HandshakeIntent.LOGIN));
 
-		new ClientPacketListener(virtual, new RecordingListener(), McProtocolClientAdapter.packets(),
+		new ClientPacketListener(virtual, new RecordingListener(), McProtocolClientAdapter.packets(PacketDemand.EVERY),
 				TcpClientSessions::granted, new TextTranslator())
 				.packetSending(handshake);
 
@@ -216,5 +217,10 @@ class ClientPacketListenerTest {
 		public void received(@NotNull Session session, @NotNull ClientboundPacket packet) {
 			received.add(packet);
 		}
+		@Override
+		public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
+			return true;
+		}
+
 	}
 }

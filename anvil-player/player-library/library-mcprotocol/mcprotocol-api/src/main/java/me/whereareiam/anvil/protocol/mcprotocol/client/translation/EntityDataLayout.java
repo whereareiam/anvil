@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.protocol.mcprotocol.client;
+package me.whereareiam.anvil.protocol.mcprotocol.client.translation;
 
 import me.whereareiam.anvil.protocol.mcprotocol.client.type.EntityDataField;
 import org.jetbrains.annotations.NotNull;

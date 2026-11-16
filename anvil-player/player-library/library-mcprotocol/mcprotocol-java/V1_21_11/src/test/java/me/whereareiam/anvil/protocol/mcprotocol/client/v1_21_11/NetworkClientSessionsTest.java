@@ -8,6 +8,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.KnownPacksAnswer;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.event.session.SessionListener;
@@ -49,7 +50,7 @@ class NetworkClientSessionsTest {
 		try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
 			NetworkClientSessions sessions = new NetworkClientSessions(new TextTranslator(), ReleaseAnswers::new);
 			ClientSession session = sessions.open(login(server.getLocalPort()), new DisconnectListener(disconnect),
-					McProtocolClientAdapter.packets());
+					McProtocolClientAdapter.packets(PacketDemand.EVERY));
 			sessions.connect(session);
 			try (Socket connection = server.accept()) {
 				InputStream input = connection.getInputStream();
@@ -81,7 +82,7 @@ class NetworkClientSessionsTest {
 	@Test
 	void startsTheConfigurationAfterTheLibrarysOwnListenerAndAnswersKnownPacks() {
 		ClientSession session = new NetworkClientSessions(new TextTranslator(), ReleaseAnswers::new)
-				.open(login(25565), new DisconnectListener(new CompletableFuture<>()), McProtocolClientAdapter.packets());
+				.open(login(25565), new DisconnectListener(new CompletableFuture<>()), McProtocolClientAdapter.packets(PacketDemand.EVERY));
 
 		session.getPacketProtocol().newClientSession(session);
 
@@ -163,5 +164,10 @@ class NetworkClientSessionsTest {
 		@Override
 		public void received(@NotNull ClientSession session, @NotNull ClientboundPacket packet) {
 		}
+		@Override
+		public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
+			return true;
+		}
+
 	}
 }

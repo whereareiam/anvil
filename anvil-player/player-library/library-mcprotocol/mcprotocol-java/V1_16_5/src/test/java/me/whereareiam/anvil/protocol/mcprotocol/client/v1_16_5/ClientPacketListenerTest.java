@@ -40,6 +40,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -69,7 +70,7 @@ class ClientPacketListenerTest {
 	private final List<ClientboundPacket> received = new ArrayList<>();
 	private final Session session = session();
 	private final ClientPacketListener listener = new ClientPacketListener(LOGIN, new RecordingListener(),
-			McProtocolClientAdapter.packets(), new ReleaseAnswers(), new TextTranslator());
+			McProtocolClientAdapter.packets(PacketDemand.EVERY), new ReleaseAnswers(), new TextTranslator());
 
 	@Test
 	void answersTheJoinWithClientSettingsAndTheBrandBeforeReportingTheLoginWithTheGrantedProfile() {
@@ -141,7 +142,7 @@ class ClientPacketListenerTest {
 		PacketSendingEvent handshake = new PacketSendingEvent(session,
 				new HandshakePacket(754, "127.0.0.1", 25577, HandshakeIntent.LOGIN));
 
-		new ClientPacketListener(virtual, new RecordingListener(), McProtocolClientAdapter.packets(),
+		new ClientPacketListener(virtual, new RecordingListener(), McProtocolClientAdapter.packets(PacketDemand.EVERY),
 				new ReleaseAnswers(), new TextTranslator()).packetSending(handshake);
 
 		HandshakePacket announced = assertInstanceOf(HandshakePacket.class, handshake.getPacket());
@@ -221,6 +222,11 @@ class ClientPacketListenerTest {
 		public void received(@NotNull Session session, @NotNull ClientboundPacket packet) {
 			received.add(packet);
 		}
+		@Override
+		public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
+			return true;
+		}
+
 	}
 
 	/**
