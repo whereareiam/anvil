@@ -71,7 +71,6 @@ class SegmentPlanTest {
 			module = module,
 			protocol = 1,
 			minecraft = minecraft.map(MinecraftVersion::parse),
-			verified = emptyList(),
 			java = 17,
 			features = emptyList(),
 			artifacts = listOf(ReleaseArtifact(module, "https://repository.example/$version.jar", "")),

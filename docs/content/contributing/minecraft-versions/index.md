@@ -19,9 +19,12 @@ One `[[release]]` row describes one MCProtocolLib build, which speaks one wire p
 | `module` | The release's `group:name:version` coordinate, against which segments compile |
 | `protocol` | Wire protocol number |
 | `minecraft` | Every Minecraft version speaking that protocol; the highest is the release key |
-| `verified` | The versions the live matrix runs; nothing else |
 | `java` | Minimum Java feature version of the release's runtime, at least 8 |
 | `features` | `ONLINE_AUTHENTICATION` when its clients can log in to online-mode servers |
+
+A row has no `verified` field. The build writes each release's verified versions into the copy it ships from the live
+matrix, as [Cover the version in the live matrix](#cover-the-version-in-the-live-matrix) explains, and fails on a
+hand-written one.
 
 When the new Minecraft version speaks the protocol of an existing release and that build already
 supports it, add the version to the release's `minecraft` list instead of adding a row. Each Minecraft
@@ -206,24 +209,34 @@ when they differ:
 
 ## Cover the version in the live matrix
 
-`VERIFIED` means that Anvil's live matrix runs the combination. The matrix is the data file
-`anvil-testkit/tests/server/live-matrix.toml`:
+`VERIFIED` means that Anvil's live matrix runs the combination. The matrix is the data file `live-matrix.toml`
+at the repository root, the only place a combination is called verified. It has one table per platform, named by
+the provider's id, and each row names a version and the Java the live suites run it on:
 
-- A release key runs directly on Paper: add a `[[release]]` row with the version and its pinned Paper build, in
-  version order. The build registers its `releaseTest-<minecraft>` task, which runs the release suite against it,
+```toml
+[[paper]]
+minecraft = "1.21.11"
+build = "132"
+java = 21
+```
+
+- A release key runs directly on Paper: add a `[[paper]]` row with the version, its pinned Paper build and its Java,
+  in version order. The build registers its `releaseTest-<minecraft>` task, which runs the release suite against it,
   and CI gives it a job of its own. A version the IDE should list as its own scenario also gets a
   `Paper<version>SystemScenario` definition, such as `Paper2612SystemScenario`, that returns
   `CompatibilityScenarioFactory.releaseScenario(...)`.
-- A current version also runs on Spigot and behind Velocity and BungeeCord: add a `[[platform]]` row naming the
-  release and the Spigot JAR's SHA-256.
-- A version NeoForge supports also runs directly on NeoForge: add a `[[neoforge]]` row with the version and its
-  pinned NeoForge release. `NeoForgeServerSystemTest` runs it without the fixture plugin, which NeoForge cannot
+- A current version also runs on Spigot, and behind Velocity and BungeeCord beside its Paper server: add a
+  `[[spigot]]` row with the version, the Spigot JAR's SHA-256 and its Java.
+- A version NeoForge supports also runs directly on NeoForge: add a `[[neoforge]]` row with the version, its pinned
+  NeoForge release and its Java. `NeoForgeServerSystemTest` runs it without the fixture plugin, which NeoForge cannot
   load.
 
-Then list exactly the matrix's combinations as verified: the release's `verified` versions in
-`mcprotocol-releases.toml`, and each platform's `[verified]` table with the Java versions the matrix
-plans. `CompatibilityScenarioFactoryTest` plans the matrix without starting a server and fails when
-the data and the matrix differ; every build runs it through the server suite's `matrixTest` task:
+That is all the verified data needs. The build appends each platform's rows to the version data its provider ships
+as the `[verified]` table, and writes each MCProtocolLib release's `verified` versions, every Minecraft version of the
+release a matrix server runs, into the shipped `mcprotocol-releases.toml`. A hand-written `[verified]` table or
+`verified` field fails the build, and so does a matrix server no release speaks. The scenarios request each row's
+Java, and `CompatibilityScenarioFactoryTest` plans them without starting a server against the data the build wrote;
+every build runs it through the server suite's `matrixTest` task:
 
 ```shell
 ./gradlew :anvil-testkit:tests:server:matrixTest

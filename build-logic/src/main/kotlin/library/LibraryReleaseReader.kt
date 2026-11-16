@@ -9,15 +9,16 @@ import java.io.File
 /**
  * Reads and validates a protocol library's releases file (`<library>-releases.toml`).
  *
- * Each `[[release]]` row declares `version`, `module`, `protocol`, `minecraft`, `verified`, `java`, `features`
- * and a non-empty `[[release.artifact]]` closure of `module`, `url` and `sha256`. Release versions and Minecraft
- * versions are unique across rows, verified versions are listed in `minecraft`, the release's own module is
+ * Each `[[release]]` row declares `version`, `module`, `protocol`, `minecraft`, `java`, `features` and a non-empty
+ * `[[release.artifact]]` closure of `module`, `url` and `sha256`; it declares no `verified`, which the build writes
+ * into the shipped copy from the live matrix. Release versions and Minecraft versions are unique across rows, the
+ * release's own module is
  * part of its closure, and a checksum is either empty (not pinned yet) or 64 lower-case hex digits. A release
  * module is a `group:name:version` coordinate; an artifact module may add a classifier, as native transport
  * JARs do.
  */
 object LibraryReleaseReader {
-	private val rowFields = setOf("version", "module", "protocol", "minecraft", "verified", "java", "features", "artifact")
+	private val rowFields = setOf("version", "module", "protocol", "minecraft", "java", "features", "artifact")
 	private val artifactFields = setOf("module", "url", "sha256")
 	private val coordinate = Regex("""[^:\s]+:[^:\s]+:[^:\s]+""")
 	private val classifiedCoordinate = Regex("""[^:\s]+:[^:\s]+:[^:\s]+(:[^:\s]+)?""")
@@ -54,12 +55,12 @@ object LibraryReleaseReader {
 			if (!row.isObject) fail(source, "$position must be a table")
 			val version = text(row, "version", position)
 			val context = "release $version"
+			if (row.has("verified"))
+				fail(source, "$context declares verified, which the build writes from live-matrix.toml; list the combination there")
 			unknownFields(row, rowFields, "$source $context")
 
 			val minecraft = versions(row, "minecraft", context)
 			if (minecraft.isEmpty()) fail(source, "$context must list at least one Minecraft version")
-			val verified = versions(row, "verified", context)
-			verified.filterNot(minecraft::contains).forEach { fail(source, "$context verifies Minecraft $it, which it does not list") }
 
 			val module = module(row, "module", context, classified = false)
 			val artifacts = artifacts(row.path("artifact"), context)
@@ -70,7 +71,6 @@ object LibraryReleaseReader {
 				module = module,
 				protocol = number(row, "protocol", context, minimum = 1),
 				minecraft = minecraft,
-				verified = verified,
 				java = number(row, "java", context, minimum = minimumJava),
 				features = strings(row, "features", context, required = false),
 				artifacts = artifacts,

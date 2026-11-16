@@ -11,7 +11,8 @@ import java.io.File
 /**
  * Builds a consumer project whose `provider` declares the agent it installs and the agent's minimum Java in its
  * versions data, and checks the agent's compiled classes against that declaration. The `build-platforms` settings
- * plugin refuses agent data in a project without the convention.
+ * plugin refuses agent data in a project without the convention. The provider ships its version data with what the
+ * build's `live-matrix.toml` verifies.
  */
 class PlatformProviderConventionFunctionalTest {
 	@TempDir
@@ -62,6 +63,22 @@ class PlatformProviderConventionFunctionalTest {
 			+ "does not apply id(\"module-platform-provider\")"), unconventional.output)
 	}
 
+	@Test
+	fun `ships the version data with what the live matrix verifies and refuses a hand-written verified table`() {
+		writeProject()
+		write("agent/build.gradle.kts", "plugins {\n\tid(\"module-java\")\n}\n\njavaRelease {\n\tmain.set(11)\n}\n")
+
+		runner(":provider:processResources").build()
+		val shipped = file("provider/build/resources/main/demo/demo-versions.toml").readText()
+		assertTrue(shipped.startsWith("[agent]\nminimumJava = 11\n"), shipped)
+		assertTrue(shipped.endsWith("[verified]\n\"1.21.1\" = [11]\n"), shipped)
+
+		write("provider/src/main/resources/demo/demo-versions.toml", versionData("[agent]\nminimumJava = 11\n\n[verified]\n\"1.21.1\" = [11]\n"))
+		val handWritten = runner(":provider:processResources").buildAndFail()
+		assertTrue(handWritten.output.contains("demo/demo-versions.toml declares [verified], which the build writes from "
+			+ "live-matrix.toml"), handWritten.output)
+	}
+
 	private fun versionData(agent: String): String = agent + """
 
 		[[java]]
@@ -85,6 +102,11 @@ class PlatformProviderConventionFunctionalTest {
 
 			rootProject.name = "platform-consumer"
 			include(":agent", ":provider")
+		""")
+		write("live-matrix.toml", """
+			[[demo]]
+			minecraft = "1.21.1"
+			java = 11
 		""")
 		write("build.gradle.kts", """
 			allprojects {

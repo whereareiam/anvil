@@ -1,3 +1,5 @@
+import me.whereareiam.anvil.buildlogic.matrix.WriteVerifiedReleases
+
 plugins {
 	id("module-java")
 	// Worker contract tests start real workers on each release's locked closure instead of downloading it.
@@ -35,9 +37,17 @@ dependencies {
 	testRuntimeOnly(libs.slf4j.simple)
 }
 
-// The release data lives at the family root, where build-logic reads it for segments; the runtime reads this copy.
+// The release data lives at the family root, where build-logic reads it for segments. The runtime reads this copy,
+// with each release's verified versions written from the live matrix at the repository root.
+val writeReleaseData = tasks.register<WriteVerifiedReleases>("writeReleaseData") {
+	description = "Writes the release data with the Minecraft versions live-matrix.toml verifies."
+	releases.set(layout.projectDirectory.file("../mcprotocol-releases.toml"))
+	matrix.set(layout.settingsDirectory.file("live-matrix.toml"))
+	destination.set(layout.buildDirectory.file("generated/release-data/mcprotocol-releases.toml"))
+}
+
 tasks.named<ProcessResources>("processResources") {
-	from(layout.projectDirectory.file("../mcprotocol-releases.toml")) {
+	from(writeReleaseData) {
 		into("me/whereareiam/anvil/protocol/mcprotocol")
 	}
 }

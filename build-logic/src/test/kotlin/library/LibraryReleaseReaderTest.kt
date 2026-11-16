@@ -21,7 +21,6 @@ class LibraryReleaseReaderTest {
 		assertEquals(MinecraftVersion.parse("1.20.6"), modern.key)
 		assertEquals(766, modern.protocol)
 		assertEquals(listOf(MinecraftVersion.parse("1.20.5"), MinecraftVersion.parse("1.20.6")), modern.minecraft)
-		assertEquals(listOf(MinecraftVersion.parse("1.20.6")), modern.verified)
 		assertEquals(17, modern.java)
 		assertEquals(listOf("ONLINE_AUTHENTICATION"), modern.features)
 		assertEquals(ReleaseArtifact("demo:protocol:1.20.6-1", "https://repository.example/protocol-1.20.6-1.jar", ""), modern.artifacts.single())
@@ -56,8 +55,10 @@ class LibraryReleaseReaderTest {
 	}
 
 	@Test
-	fun `rejects a verified version the release does not list`() {
-		assertFailure("verifies Minecraft 1.20.6, which it does not list", release("1.20.4-1", "1.20.4", verified = "1.20.6"))
+	fun `rejects verified versions, which the build writes from the live matrix`() {
+		val text = release("1.20.4-1", "1.20.4").replace("java = 17", "verified = [\"1.20.4\"]\njava = 17")
+
+		assertFailure("release 1.20.4-1 declares verified, which the build writes from live-matrix.toml", text)
 	}
 
 	@Test
@@ -112,7 +113,6 @@ class LibraryReleaseReaderTest {
 		version: String,
 		minecraft: String,
 		protocol: Int = 758,
-		verified: String = minecraft.substringAfterLast('"'),
 		sha256: String = "",
 		artifactModule: String = "demo:protocol:$version",
 	): String = """
@@ -121,7 +121,6 @@ class LibraryReleaseReaderTest {
 		module = "demo:protocol:$version"
 		protocol = $protocol
 		minecraft = ["$minecraft"]
-		verified = ["$verified"]
 		java = 17
 		features = ["ONLINE_AUTHENTICATION"]
 

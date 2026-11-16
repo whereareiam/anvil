@@ -33,10 +33,10 @@ jobs:
         with:
           ref: ${{ inputs.commit }}
           persist-credentials: false
-          sparse-checkout: anvil-testkit/tests/server/live-matrix.toml
+          sparse-checkout: live-matrix.toml
           sparse-checkout-cone-mode: false
 
-      # One job per release of the live matrix, which runs the release suite against that release's server, then
+      # One job per release of the live matrix, each a Paper row, which runs the release suite against that release's server, then
       # the platform suite per platform group and the behaviour suite.
       - name: List the suites
         id: suites
@@ -45,8 +45,8 @@ jobs:
           import json
           import tomllib
 
-          with open("anvil-testkit/tests/server/live-matrix.toml", "rb") as file:
-              releases = [row["minecraft"] for row in tomllib.load(file)["release"]]
+          with open("live-matrix.toml", "rb") as file:
+              releases = [row["minecraft"] for row in tomllib.load(file)["paper"]]
 
           suites = [
               {"name": f"Release {release}", "shard": f"release-{release}", "task": f"releaseTest-{release}", "platforms": ""}
