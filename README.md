@@ -354,7 +354,7 @@ its implementation. Anvil ships a useful starting set:
 |---------------------|--------------------------------------------------------------------------------|
 | `Session`           | Connect, disconnect, rejoin, inspect connection state, and verify kick reasons |
 | `Messages`          | Send chat and commands, capture messages, wait for output, and model the chat  |
-| `Movement`          | Send position, rotation, and on-ground state                                   |
+| `Movement`          | Place and turn the player, or walk it with held keys as a vanilla client does  |
 | `Inventory`         | Inspect containers, select held slots, and click inventory slots               |
 | `Interaction`       | Use held items and interact with blocks or entities                            |
 | `Commands`          | Read the command tree and check commands as the client does                    |

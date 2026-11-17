@@ -8,7 +8,7 @@ import org.gradle.api.GradleException
 import java.io.File
 
 /**
- * Reads and writes the pins file of one [MinecraftDataKind], such as `block-data.toml`.
+ * Reads and writes the pins file of one [MinecraftDataKind], such as `packet-data.toml`.
  *
  * The file has one `[source]` table naming the minecraft-data `repository`, its release tag `version` and the
  * `commit` of that tag, and one `[[release]]` row per protocol: its `protocol` number and, when minecraft-data has the

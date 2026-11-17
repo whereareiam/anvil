@@ -3,29 +3,30 @@ package me.whereareiam.anvil.protocol.java.block.model;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
+import me.whereareiam.anvil.protocol.java.block.model.collision.BlockOffset;
 import me.whereareiam.anvil.protocol.java.block.model.movement.BlockMovement;
 import me.whereareiam.anvil.protocol.java.block.type.BlockKind;
 import me.whereareiam.anvil.protocol.java.block.type.CollisionKind;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * One block of a protocol's registry, such as {@code minecraft:stone}, with what vanilla's movement code needs from it.
  *
- * <p>Its states have the consecutive global IDs {@link #getMinStateId()} to {@link #getMaxStateId()}. The name,
- * properties and states come from PrismarineJS minecraft-data; the kind, the collision kind and the movement are
- * vanilla's facts that Anvil maintains by hand, and keep vanilla's defaults for every block that does not change
- * them.</p>
+ * <p>Its states have the consecutive global IDs {@link #getMinStateId()} to {@link #getMaxStateId()}. Everything it
+ * holds was read from the release's vanilla client: its registries, the block's class, tags and methods.</p>
  *
  * <pre>{@code
  * BlockType block = registry.state(stateId).getBlock();
  * float friction = block.getMovement().getFriction();
- * boolean climbable = block.getMovement().has(MovementBehaviour.CLIMBABLE);
- * boolean fence = block.getKind() == BlockKind.FENCE;
+ * boolean climbable = block.hasTag("minecraft:climbable");
+ * boolean trapdoor = block.getKind() == BlockKind.TRAPDOOR;
  * }</pre>
  */
 @Value
@@ -68,6 +69,28 @@ public class BlockType {
 	 * How the block changes the movement of an entity on or in it.
 	 */
 	@NotNull BlockMovement movement;
+	/**
+	 * How vanilla moves the block's shapes by their position, or {@code null} when it does not.
+	 */
+	@Nullable BlockOffset offset;
+	/**
+	 * The block tags vanilla's movement code reads that the block is in, such as {@code minecraft:climbable},
+	 * {@code minecraft:fences}, {@code minecraft:walls}, {@code minecraft:soul_speed_blocks},
+	 * {@code minecraft:can_glide_through}, {@code minecraft:suppresses_bounce} (from 26.2) and
+	 * {@code minecraft:blocks_fluid_flow} (from 26.3); a tag the release does not have has no members.
+	 */
+	@Singular
+	@NotNull Set<String> tags;
+
+	/**
+	 * Tests whether the block is in one of the movement tags {@link #getTags()} records.
+	 *
+	 * @param tag the tag's name, such as {@code minecraft:climbable}
+	 * @return whether the block is in it
+	 */
+	public boolean hasTag(@NotNull String tag) {
+		return tags.contains(tag);
+	}
 
 	/**
 	 * Returns the property values of one of the block's states. Vanilla numbers a block's states by its properties,

@@ -3,7 +3,7 @@ package me.whereareiam.anvil.protocol.java.physics.entity;
 import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeSnapshot;
 import me.whereareiam.anvil.protocol.java.physics.TestEntity;
 import me.whereareiam.anvil.protocol.java.physics.TestWorld;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
+import me.whereareiam.anvil.protocol.java.geometry.Vector;
 import me.whereareiam.anvil.protocol.java.physics.living.LivingSimulation;
 import me.whereareiam.anvil.protocol.java.physics.living.attribute.AttributeMap;
 import me.whereareiam.anvil.protocol.java.physics.living.attribute.AttributeSupplier;
@@ -63,6 +63,32 @@ class EntityMoveTest {
 
 		assertEquals(65.0, plain.body().getPosition().y);
 		assertEquals(66.0, stepping.body().getPosition().y);
+	}
+
+	@Test
+	void bouncesOffItsLandingUnlessTheBlockSuppressesTheBounce() {
+		TestWorld world = new TestWorld("26.3").join().load(0, 0).floor(0, 15, 64, 0, 15, "minecraft:stone")
+				.set(12, 64, 8, "minecraft:honey_block").send();
+		LivingSimulation onStone = bouncy(world, new Vector(4.5, 70.0, 8.5));
+		LivingSimulation onHoney = bouncy(world, new Vector(12.5, 70.0, 8.5));
+		boolean stoneBounced = false;
+		boolean honeyBounced = false;
+
+		for (int tick = 0; tick < 30; tick++) {
+			onStone.tick();
+			onHoney.tick();
+			stoneBounced |= onStone.body().getDeltaMovement().y > 0.0;
+			honeyBounced |= onHoney.body().getDeltaMovement().y > 0.0;
+		}
+
+		assertTrue(stoneBounced, "the entity bounced off the stone");
+		assertFalse(honeyBounced, "the honey block, in minecraft:suppresses_bounce, let the entity bounce");
+	}
+
+	private static @NotNull LivingSimulation bouncy(@NotNull TestWorld world, @NotNull Vector at) {
+		AttributeMap attributes = new AttributeMap(world.version, AttributeSupplier.living());
+		attributes.update(List.of(new AttributeSnapshot("minecraft:bounciness", 0.5, List.of())));
+		return TestEntity.living(world, attributes, new Effects(), at);
 	}
 
 	private static @NotNull TestWorld walled() {

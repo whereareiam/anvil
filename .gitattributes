@@ -1,0 +1,4 @@
+# Data the physics harness's generateVanillaData writes from the vanilla clients: committed so builds never run
+# Mojang's client, regenerated only by a maintainer, and never edited by hand. GitHub collapses it in diffs.
+anvil-player/player-protocol/protocol-java/protocol-java-block/vanilla/*.blocks linguist-generated
+anvil-testkit/physics/traces/**/*.trace linguist-generated

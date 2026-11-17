@@ -2,9 +2,9 @@ package me.whereareiam.anvil.protocol.java.physics.world.shape;
 
 import me.whereareiam.anvil.protocol.java.block.model.collision.CollisionBox;
 import me.whereareiam.anvil.protocol.java.block.model.collision.CollisionShape;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Axis;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Box;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
+import me.whereareiam.anvil.protocol.java.geometry.Axis;
+import me.whereareiam.anvil.protocol.java.geometry.Box;
+import me.whereareiam.anvil.protocol.java.geometry.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -22,14 +22,12 @@ public final class BlockShape {
 	private final @NotNull List<CollisionBox> boxes;
 	private final double @NotNull [][] coordinates;
 	private final boolean @NotNull [] solid;
-	private final boolean fullBlock;
 	private final boolean large;
 
 	private BlockShape(@NotNull List<CollisionBox> boxes, double @NotNull [][] coordinates, boolean @NotNull [] solid) {
 		this.boxes = boxes;
 		this.coordinates = coordinates;
 		this.solid = solid;
-		this.fullBlock = boxes.size() == 1 && boxes.getFirst().isFullBlock();
 		this.large = boxes.stream().anyMatch(box -> box.getMinX() < 0.0 || box.getMinY() < 0.0 || box.getMinZ() < 0.0
 				|| box.getMaxX() > 1.0 || box.getMaxY() > 1.0 || box.getMaxZ() > 1.0);
 	}
@@ -47,21 +45,33 @@ public final class BlockShape {
 	}
 
 	/**
+	 * Returns this shape moved within its block, as {@code VoxelShape.move} moves an offset block's shape by its
+	 * position's offset: every coordinate plus the offset on its axis, the cells unchanged.
+	 *
+	 * @param offset the offset
+	 * @return the moved shape
+	 */
+	public @NotNull BlockShape moved(@NotNull Vector offset) {
+		double[] by = {offset.x, offset.y, offset.z};
+		double[][] moved = new double[3][];
+		for (int axis = 0; axis < 3; axis++) {
+			moved[axis] = coordinates[axis].clone();
+			for (int index = 0; index < moved[axis].length; index++) moved[axis][index] += by[axis];
+		}
+
+		List<CollisionBox> movedBoxes = boxes.stream().map(box -> new CollisionBox(box.getMinX() + by[0],
+				box.getMinY() + by[1], box.getMinZ() + by[2], box.getMaxX() + by[0], box.getMaxY() + by[1],
+				box.getMaxZ() + by[2])).toList();
+		return new BlockShape(movedBoxes, moved, solid);
+	}
+
+	/**
 	 * Tells whether the shape has no box.
 	 *
 	 * @return whether entities move through it
 	 */
 	public boolean isEmpty() {
 		return boxes.isEmpty();
-	}
-
-	/**
-	 * Tells whether the shape is exactly the full block, {@code Shapes.block()}.
-	 *
-	 * @return whether it fills the block
-	 */
-	public boolean isFullBlock() {
-		return fullBlock;
 	}
 
 	/**
@@ -74,15 +84,6 @@ public final class BlockShape {
 	}
 
 	/**
-	 * Returns the shape's boxes in block-local coordinates.
-	 *
-	 * @return the boxes
-	 */
-	public @NotNull List<CollisionBox> boxes() {
-		return boxes;
-	}
-
-	/**
 	 * Returns the shape's coordinates along an axis in block-local coordinates, ascending, as
 	 * {@code VoxelShape.getCoords} does.
 	 *
@@ -91,6 +92,31 @@ public final class BlockShape {
 	 */
 	public double @NotNull [] coordinates(@NotNull Axis axis) {
 		return coordinates[axis.ordinal()];
+	}
+
+	/**
+	 * Returns the shape at a block as the boxes vanilla splits it into ({@code VoxelShape.toAabbs}), in its order.
+	 *
+	 * @param block the block's position
+	 * @param heightFirst whether vanilla walks the cells up first, as from 1.18
+	 * @return the boxes at the block
+	 */
+	public @NotNull List<Box> toBoxes(int @NotNull [] block, boolean heightFirst) {
+		return ShapeBoxes.of(coordinates, solid, block, heightFirst);
+	}
+
+	/**
+	 * Returns the top of the shape's highest solid cell in block-local coordinates ({@code VoxelShape.max(Axis.Y)}).
+	 *
+	 * @return the top, negative infinity for an empty shape
+	 */
+	public double maxY() {
+		double top = Double.NEGATIVE_INFINITY;
+		for (int x = 0; x < size(Axis.X); x++)
+			for (int y = 0; y < size(Axis.Y); y++)
+				for (int z = 0; z < size(Axis.Z); z++)
+					if (solid[(x * size(Axis.Y) + y) * size(Axis.Z) + z]) top = Math.max(top, coordinates[1][y + 1]);
+		return top;
 	}
 
 	/**

@@ -3,32 +3,18 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.experimental.Accessors;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.api.model.player.PlayerProfile;
-import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
-import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.java.worker.JavaConnection;
 import me.whereareiam.anvil.protocol.java.worker.JavaPacketDispatcher;
-import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientCredentials;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
-import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
-import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerCredentials;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerCapabilities;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerOptions;
-import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageWriter;
 import me.whereareiam.anvil.protocol.worker.NativeSessionBindings;
@@ -39,32 +25,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 /**
  * One worker player, which binds the worker's extensions as their {@code PlayerBindingContext}. Native sessions come
  * from the release's client segment and stay opaque here; this player owns their generations, the connection
- * events and the view rotation, and its Java Edition protocol, a {@link JavaPacketDispatcher} over the release's
- * client, follows the current session. Adapters come from the worker's verified segments.
+ * events, and its Java Edition protocol, a {@link JavaPacketDispatcher} over the release's client, follows the current
+ * session; the player's view is that protocol's client's own player's. Adapters come from the worker's verified
+ * segments.
  */
 @Accessors(fluent = true)
 final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoCloseable {
-	private static final int VIEW_DISTANCE = 8;
-	/**
-	 * How long a closed connection waits for the reason of its closing. Client libraries handle packets on
-	 * another thread than connection events, so the close can be reported before the server's disconnect packet.
-	 */
-	private static final long CLOSE_REASON_GRACE_MILLIS = 300;
-	private static final ScheduledExecutorService CLOSE_REPORTS = Executors.newSingleThreadScheduledExecutor(task -> {
-		Thread thread = new Thread(task, "anvil-close-reports");
-		thread.setDaemon(true);
-		return thread;
-	});
-
 	private final String id;
 	private final @NotNull WorkerPlayerOptions options;
 	private final @NotNull MinecraftVersion clientVersion;
@@ -76,13 +47,11 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	private final WorkerProtocols protocols;
 
 	private final @NotNull WorkerMessageCodec codec = new WorkerMessageCodec();
-	private final AtomicBoolean disconnectNotified = new AtomicBoolean();
-	private volatile boolean disconnecting;
 	private final NativeSessionBindings nativeBindings = new NativeSessionBindings();
+	private final SessionReports reports;
 
 	private WorkerExtensions.PlayerBindings bindings;
 	private volatile @Nullable Object session;
-	private volatile @NotNull ViewRotation rotation = new ViewRotation(0, 0);
 
 	McProtocolPlayer(
 			String id,
@@ -99,8 +68,9 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 		this.segments = segments;
 		this.events = events;
 		this.capabilities = capabilities;
-		this.protocol = new JavaPacketDispatcher(McProtocolClient.LIBRARY_ID, client.protocolNumber(),
-				new SessionConnection());
+		this.protocol = new JavaPacketDispatcher(McProtocolClient.LIBRARY_ID, client.protocolNumber(), clientVersion,
+				options.getProfile().getName(), new SessionConnection());
+		this.reports = new SessionReports(this, protocol, nativeBindings);
 		this.protocols = WorkerProtocols.builder(McProtocolClient.LIBRARY_ID)
 				.speak(JavaProtocol.class, protocol, protocol::scoped)
 				.build();
@@ -114,6 +84,7 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	@NotNull WorkerPlayerCapabilities initialize() {
 		try {
 			bindings = capabilities.bind(this, protocols);
+			protocol.start();
 			return WorkerPlayerCapabilities.builder()
 					.capabilities(capabilities.capabilities())
 					.unavailable(capabilities.unavailable())
@@ -156,44 +127,18 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 		Object current = session;
 		if (current != null && client.connected(current)) return;
 
-		disconnectNotified.set(false);
-		disconnecting = false;
-		Object created = client.open(login(), new Listener());
+		reports.opened();
+		Object created = client.open(PlayerLogin.of(options), reports);
 		session = created;
 		nativeBindings.attach(created);
 		client.connect(created);
-	}
-
-	/**
-	 * Builds the client login from the resolved options, with the player's language and the worker's other client
-	 * settings.
-	 */
-	private ClientLogin login() {
-		WorkerProfile profile = options.getProfile();
-		WorkerCredentials credentials = options.getCredentials();
-		WorkerConnection connection = options.getConnection();
-		return ClientLogin.builder()
-				.profile(ClientProfile.builder().name(profile.getName()).uniqueId(profile.getUniqueId()).build())
-				.credentials(credentials == null ? null : ClientCredentials.builder()
-						.accessToken(credentials.getAccessToken())
-						.sessionServer(credentials.getSessionServer())
-						.build())
-				.minecraftVersion(options.getMinecraftVersion())
-				.settings(ClientSettings.builder().locale(options.getLanguage()).viewDistance(VIEW_DISTANCE).build())
-				.connection(ClientConnection.builder()
-						.host(connection.getHost())
-						.port(connection.getPort())
-						.virtualHost(connection.getVirtualHost())
-						.sourceAddress(connection.getSourceAddress())
-						.build())
-				.build();
 	}
 
 	@Override
 	public synchronized void disconnect() {
 		Object current = session;
 		if (current != null && client.connected(current)) {
-			disconnecting = true;
+			reports.disconnecting();
 			client.disconnect(current, "Disconnected by Anvil");
 		}
 	}
@@ -230,12 +175,12 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 
 	@Override
 	public @NotNull ViewRotation viewRotation() {
-		return rotation;
+		return protocol.player().rotation();
 	}
 
 	@Override
 	public void viewRotation(@NotNull ViewRotation rotation) {
-		this.rotation = rotation;
+		protocol.player().rotation(rotation);
 	}
 
 	@Override
@@ -250,7 +195,7 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 
 	@Override
 	public void close() {
-		try (nativeBindings; var ignored = bindings) {
+		try (protocol; nativeBindings; var ignored = bindings) {
 			disconnect();
 		} finally {
 			session = null;
@@ -274,87 +219,6 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 		@Override
 		public boolean handsOverFrames() {
 			return true;
-		}
-	}
-
-	/**
-	 * Turns the client's callbacks for the current session generation into player events; callbacks of a
-	 * replaced session are ignored.
-	 */
-	private final class Listener implements ClientListener<Object> {
-		@Override
-		public void granted(@NotNull Object current, @NotNull ClientProfile granted) {
-			if (current != session) return;
-			emit(PlayerConnectionEvent.GRANTED, new PlayerProfile(granted.getName(), granted.getUniqueId()));
-		}
-
-		@Override
-		public void loggedIn(@NotNull Object current, @NotNull ClientProfile granted) {
-			if (current != session) return;
-			PlayerProfile profile = new PlayerProfile(granted.getName(), granted.getUniqueId());
-			emit(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(true, null, null, profile));
-		}
-
-		@Override
-		public void teleported(@NotNull Object current, float yaw, float pitch) {
-			if (current != session) return;
-			viewRotation(new ViewRotation(yaw, pitch));
-		}
-
-		@Override
-		public void disconnected(@NotNull Object current, @NotNull DisconnectCause cause, @NotNull String reason) {
-			if (current != session) return;
-			if (disconnecting) {
-				report(current, DisconnectCause.CLIENT, reason);
-				return;
-			}
-			if (cause != DisconnectCause.CONNECTION_LOST) {
-				report(current, cause, reason);
-				return;
-			}
-
-			// The reason of this close may still be on its way; it wins when it arrives within the grace period.
-			CLOSE_REPORTS.schedule(() -> report(current, cause, reason), CLOSE_REASON_GRACE_MILLIS, TimeUnit.MILLISECONDS);
-		}
-
-		@Override
-		public void received(@NotNull Object current, @NotNull ClientboundPacket packet) {
-			if (current != session) return;
-			protocol.deliver(packet);
-		}
-
-		@Override
-		public boolean wantsFrames() {
-			return protocol.wantsFrames();
-		}
-
-		@Override
-		public void received(
-				@NotNull Object current,
-				@NotNull ConnectionState state,
-				int id,
-				byte @NotNull [] payload,
-				@Nullable ClientboundPacket packet
-		) {
-			if (current != session) return;
-			protocol.deliver(state, id, payload, packet);
-		}
-
-		@Override
-		public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
-			return protocol.wants(type);
-		}
-
-		private void report(Object current, DisconnectCause cause, String reason) {
-			if (current != session) return;
-			if (!disconnectNotified.compareAndSet(false, true)) return;
-
-			try {
-				protocol.disconnected();
-				nativeBindings.end(current);
-			} finally {
-				emit(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(false, reason, cause, null));
-			}
 		}
 	}
 }

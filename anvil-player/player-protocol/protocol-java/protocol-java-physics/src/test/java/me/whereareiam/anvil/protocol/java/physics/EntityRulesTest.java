@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.java.physics;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Trigonometry;
+import me.whereareiam.anvil.protocol.java.geometry.Trigonometry;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 

@@ -54,12 +54,30 @@ public final class LivingAttributes {
 			Attribute.of("minecraft:water_movement_efficiency", "1.21", 0.0, 0.0, 1.0);
 
 	/**
+	 * {@code bounciness}: how much of its speed the entity keeps, reversed, when it hits a block, {@code 0.0}.
+	 */
+	public static final @NotNull Attribute BOUNCINESS =
+			Attribute.of("minecraft:bounciness", "26.2", 0.0, 0.0, 1.0);
+	/**
+	 * {@code air_drag_modifier}: the factor of the speed the entity loses to the air ({@code computeModifiedFriction}),
+	 * {@code 1.0}.
+	 */
+	public static final @NotNull Attribute AIR_DRAG_MODIFIER =
+			Attribute.of("minecraft:air_drag_modifier", "26.2", 1.0, 0.0, 2048.0);
+	/**
+	 * {@code friction_modifier}: the factor of the speed the entity loses to the block it walks on
+	 * ({@code computeModifiedFriction}), {@code 1.0}.
+	 */
+	public static final @NotNull Attribute FRICTION_MODIFIER =
+			Attribute.of("minecraft:friction_modifier", "26.2", 1.0, 0.0, 2048.0);
+
+	/**
 	 * Returns every living attribute, in the order vanilla registers them.
 	 *
 	 * @return the attributes
 	 */
 	public static @NotNull List<Attribute> all() {
 		return List.of(MOVEMENT_SPEED, JUMP_STRENGTH, GRAVITY, STEP_HEIGHT, SCALE, SAFE_FALL_DISTANCE, MOVEMENT_EFFICIENCY,
-				WATER_MOVEMENT_EFFICIENCY);
+				WATER_MOVEMENT_EFFICIENCY, BOUNCINESS, AIR_DRAG_MODIFIER, FRICTION_MODIFIER);
 	}
 }

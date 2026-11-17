@@ -20,10 +20,8 @@ import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.Serverbound
 import org.geysermc.mcprotocollib.protocol.packet.handshake.serverbound.ClientIntentionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchFinishedPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchStartPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundChunkBatchReceivedPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
@@ -34,7 +32,7 @@ import java.util.function.Function;
 
 /**
  * Answers the packets a client of the MCProtocolLib releases from 1.20.5 until 1.21.1 must answer on its own, among
- * them each chunk batch with the rate {@link ChunkBatchPacing} wants next, and reports login, teleports and disconnects
+ * them each chunk batch with the rate {@link ChunkBatchPacing} wants next, and reports login and disconnects
  * with their reason flattened to plain text. The login reports the profile the server granted in its login success,
  * which arrives before the game starts; each release's sessions read that profile, since MCProtocolLib 1.21 replaced
  * mcauthlib's profile with its own. The brand and the player's settings, its language among them, go out at the start
@@ -79,10 +77,6 @@ public final class ClientPacketListener extends SessionAdapter {
 		if (packet instanceof ClientboundLoginPacket game) {
 			entityId = game.getEntityId();
 			listener.loggedIn(session, Objects.requireNonNull(granted, "The server started the game before it granted a profile"));
-		}
-		if (packet instanceof ClientboundPlayerPositionPacket position) {
-			listener.teleported(session, position.getYaw(), position.getPitch());
-			session.send(new ServerboundAcceptTeleportationPacket(position.getTeleportId()));
 		}
 		if (packet instanceof ClientboundChunkBatchStartPacket) chunkBatches.started();
 		if (packet instanceof ClientboundChunkBatchFinishedPacket finished)

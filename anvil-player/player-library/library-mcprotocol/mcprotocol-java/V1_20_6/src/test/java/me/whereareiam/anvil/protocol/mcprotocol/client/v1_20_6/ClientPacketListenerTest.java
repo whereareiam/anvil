@@ -25,7 +25,6 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.Clie
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchFinishedPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchStartPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundChunkBatchReceivedPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
@@ -85,11 +84,11 @@ class ClientPacketListenerTest {
 	}
 
 	@Test
-	void reportsATeleportBeforeAcceptingIt() {
+	void leavesATeleportToThePlayersClient() {
 		receive(new ClientboundPlayerPositionPacket(1, 64, -2, 90, -15, 7));
 
-		assertEquals(List.of("teleported 90.0 -15.0", "sent ServerboundAcceptTeleportationPacket"), events);
-		assertEquals(7, assertInstanceOf(ServerboundAcceptTeleportationPacket.class, sent.getFirst()).getId());
+		assertEquals(List.of(), events);
+		assertTrue(sent.isEmpty());
 	}
 
 	@Test

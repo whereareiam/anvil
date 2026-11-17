@@ -1,10 +1,11 @@
 package me.whereareiam.anvil.protocol.java.worker;
 
-import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.JavaWorld;
+import me.whereareiam.anvil.protocol.java.api.LocalPlayer;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundFrame;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPackets;
@@ -12,61 +13,65 @@ import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.java.packet.JavaPacketData;
-import me.whereareiam.anvil.protocol.java.packet.PacketRegistry;
+import me.whereareiam.anvil.protocol.java.worker.position.ClientPosition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 /**
  * One worker player's Java Edition protocol over a library's {@link JavaConnection}: it hands the packets the library
- * delivers to their listeners, sends packets through the connection and then hands each sent packet to the listeners
- * of sent packets. The connection refuses a packet its release cannot send; a listener of a packet the release never
- * carries is refused here, since no delivered packet would tell. Every delivered packet first updates the player's
- * {@link JavaWorld}, which {@link #world()} hands out.
+ * delivers to their listeners and each packet it sends to the listeners of sent packets; the connection refuses a
+ * packet its release cannot send, and a listener of a packet the release never carries is refused here. Every delivered
+ * packet first updates the player's {@link JavaWorld} and the client's own {@link #player() player}, under the client's
+ * lock, which its listeners run under too. The library {@link #start() starts} the client's ticks once the player's
+ * extensions are bound and {@link #close() closes} them with the player.
  *
- * <p>A library asks {@link #wants(Class)} before it decodes a packet that is costly to decode, such as a chunk column,
- * and skips it while nothing wants it. While a frame listener exists, {@link #wantsFrames()} tells a library that hands
- * over frames to deliver each packet it receives as its frame, which the dispatcher names by the player's protocol from
- * Anvil's packet data, and every packet the protocol models is wanted except the
- * {@linkplain ClientboundPackets#isCostly costly} ones, which only a listener of their class, {@link #want(Class)} or
- * the player's world wants, so only then does their frame carry their value.</p>
+ * <p>A library asks {@link #wants(Class)} before it decodes a costly packet, such as a chunk column, and skips it while
+ * nothing wants it. While a frame listener exists, {@link #wantsFrames()} tells a library that hands over frames to
+ * deliver each packet as its frame, named from Anvil's packet data, and every packet is wanted but the
+ * {@linkplain ClientboundPackets#isCostly costly} ones, whose frame carries their value only while something wants it.</p>
  *
  * <pre>{@code
- * JavaPacketDispatcher protocol = new JavaPacketDispatcher(LIBRARY_ID, release.protocolNumber(), connection);
+ * JavaPacketDispatcher protocol = new JavaPacketDispatcher(LIBRARY_ID, protocolNumber, version, name, connection);
+ * protocol.start(); // once the player's extensions are bound
  * ...
  * if (protocol.wantsFrames()) protocol.deliver(state, packetId, payload, translated);
  * else if (translated != null) protocol.deliver(translated); // for each packet the player's connection receives
  * protocol.disconnected(); // once the player's connection closed
+ * protocol.close(); // once the player is closed
  * }</pre>
  */
-public final class JavaPacketDispatcher implements JavaProtocol {
+public final class JavaPacketDispatcher implements JavaProtocol, AutoCloseable {
 	private final @NotNull String libraryId;
 	private final int protocolNumber;
 	private final @NotNull JavaConnection connection;
-	private final @Nullable PacketRegistry names;
-	private final Map<Class<?>, List<Consumer<Object>>> listeners = new ConcurrentHashMap<>();
-	private final Map<Class<?>, List<Consumer<Object>>> sentListeners = new ConcurrentHashMap<>();
-	private final List<Consumer<? super ClientboundFrame>> frameListeners = new CopyOnWriteArrayList<>();
-	private final Map<Class<?>, List<Want>> wanted = new ConcurrentHashMap<>();
+	private final PacketListeners listeners;
 	private final JavaWorldStore world = new JavaWorldStore();
+	private final ClientPosition player;
 
 	/**
-	 * Creates the protocol of one player.
+	 * Creates the protocol of one player, whose client does not tick until {@link #start() started}.
 	 *
 	 * @param libraryId the ID of the player's protocol library, which refusals name
 	 * @param protocolNumber the number of the protocol the player's release speaks
+	 * @param clientVersion the Minecraft version of the player's client
+	 * @param playerName the player's name, which names its client's thread
 	 * @param connection what the library supplies
 	 */
-	public JavaPacketDispatcher(@NotNull String libraryId, int protocolNumber, @NotNull JavaConnection connection) {
+	public JavaPacketDispatcher(
+			@NotNull String libraryId,
+			int protocolNumber,
+			@NotNull MinecraftVersion clientVersion,
+			@NotNull String playerName,
+			@NotNull JavaConnection connection
+	) {
 		this.libraryId = libraryId;
 		this.protocolNumber = protocolNumber;
 		this.connection = connection;
-		this.names = JavaPacketData.shipped().find(protocolNumber).orElse(null);
+		this.listeners = new PacketListeners(JavaPacketData.shipped().find(protocolNumber).orElse(null));
+		this.player = new ClientPosition(clientVersion, playerName, this, world);
+		if (player.readsChunks()) world.storeChunks();
 	}
 
 	@Override
@@ -74,7 +79,7 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 			@NotNull Class<P> type,
 			@NotNull Consumer<? super P> listener
 	) {
-		return subscribe(listeners, type, listener);
+		return listeners.received(carried(type), listener);
 	}
 
 	@Override
@@ -88,26 +93,18 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 			throw new ProtocolUnavailableException("the " + libraryId + " library does not hand over the frames its "
 					+ "players receive");
 
-		frameListeners.add(listener);
-		return () -> frameListeners.remove(listener);
+		return listeners.frames(listener);
 	}
 
 	@Override
 	public @NotNull Subscription want(@NotNull Class<? extends ClientboundPacket> type) {
-		if (!connection.supports(type))
-			throw new ProtocolUnavailableException("the loaded " + libraryId + " release does not carry "
-					+ type.getName());
-
-		Want want = new Want(wanted.computeIfAbsent(type, ignored -> new CopyOnWriteArrayList<>()));
-		want.wants.add(want);
-
-		return want;
+		return listeners.want(carried(type));
 	}
 
 	@Override
 	public void send(@NotNull ServerboundPacket packet) {
 		connection.send(packet);
-		handOut(sentListeners, packet);
+		listeners.handOutSent(packet);
 	}
 
 	@Override
@@ -115,7 +112,7 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 			@NotNull Class<P> type,
 			@NotNull Consumer<? super P> listener
 	) {
-		return subscribe(sentListeners, type, listener);
+		return listeners.sent(carried(type), listener);
 	}
 
 	@Override
@@ -134,50 +131,68 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 		return world;
 	}
 
+	@Override
+	public @NotNull LocalPlayer player() {
+		return player;
+	}
+
 	/**
-	 * Tells whether anything wants the packets of a class: a listener of the class, {@link #want(Class)}, the player's
-	 * world, which wants the packets of its chunks once something asked for it, or a frame listener, which wants the
-	 * value of every packet that is not {@linkplain ClientboundPackets#isCostly costly}.
+	 * Starts the ticks of the player's client, 20 a second, unless they run.
+	 *
+	 * @throws IllegalStateException when the protocol is closed
+	 */
+	public void start() {
+		player.start();
+	}
+
+	/**
+	 * Stops the ticks of the player's client for good, as the player closes.
+	 */
+	@Override
+	public void close() {
+		player.close();
+	}
+
+	/**
+	 * Tells whether anything wants the packets of a class: a listener of the class, {@link #want(Class)}, the world once
+	 * it keeps chunks, or a frame listener, which wants every packet but the {@linkplain ClientboundPackets#isCostly
+	 * costly} ones.
 	 *
 	 * @param type packet class
 	 * @return whether a packet of the class should be decoded and delivered
 	 */
 	public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
-		if (world.wants(type) || present(listeners.get(type)) || present(wanted.get(type))) return true;
+		if (world.wants(type) || listeners.wants(type)) return true;
 
 		return wantsFrames() && !ClientboundPackets.isCostly(type);
 	}
 
-	private static boolean present(@Nullable List<?> entries) {
-		return entries != null && !entries.isEmpty();
-	}
-
 	/**
-	 * Hands a packet of the player's current connection to the listeners of its class, once the player's world
-	 * applied it. A failing listener is reported on standard error and does not keep the packet from the others.
+	 * Hands a packet of the player's current connection to the listeners of its class, once the player's world and
+	 * client applied it, past a failing listener, which is reported on standard error.
 	 *
 	 * @param packet received packet
 	 */
 	public void deliver(@NotNull ClientboundPacket packet) {
-		world.apply(packet);
-		handOut(listeners, packet);
+		player.run(() -> {
+			world.apply(packet);
+			player.apply(packet);
+			listeners.handOutReceived(packet);
+		});
 	}
 
 	/**
 	 * Tells whether a frame listener exists, so a library that hands over frames delivers each packet it receives
 	 * through {@link #deliver(ConnectionState, int, byte[], ClientboundPacket)}.
-	 *
-	 * @return whether frames are wanted
 	 */
 	public boolean wantsFrames() {
-		return !frameListeners.isEmpty();
+		return listeners.wantsFrames();
 	}
 
 	/**
 	 * Hands a packet of the player's current connection over as its frame: its value, when the protocol models the
-	 * packet, to the player's world and the listeners of its class as {@link #deliver(ClientboundPacket)} does, and
-	 * then the frame, named by the player's protocol, to the frame listeners. A failing listener is reported on standard
-	 * error and does not keep the frame from the others.
+	 * packet, as {@link #deliver(ClientboundPacket)} does, then the frame, named by the player's protocol, to the frame
+	 * listeners, past a failing one.
 	 *
 	 * @param state the connection's state when the packet arrived
 	 * @param id the packet's ID on the wire
@@ -190,25 +205,20 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 			byte @NotNull [] payload,
 			@Nullable ClientboundPacket packet
 	) {
-		if (packet != null) deliver(packet);
-		if (frameListeners.isEmpty()) return;
-
-		String name = names == null ? null : names.clientbound(state, id).orElse(null);
-		ClientboundFrame frame = new ClientboundFrame(state, id, name, payload, packet);
-		for (Consumer<? super ClientboundFrame> listener : frameListeners) {
-			try {
-				listener.accept(frame);
-			} catch (RuntimeException failure) {
-				System.err.println("[Anvil] Warning: a frame listener failed: " + failure);
-			}
-		}
+		player.run(() -> {
+			if (packet != null) deliver(packet);
+			listeners.handOut(state, id, payload, packet);
+		});
 	}
 
 	/**
-	 * Tells that the player's current connection closed, so the player's world forgets its level and its chunks.
+	 * Tells that the player's current connection closed: the world forgets its level and chunks, the client its player.
 	 */
 	public void disconnected() {
-		world.clear();
+		player.run(() -> {
+			world.clear();
+			player.disconnected();
+		});
 	}
 
 	/**
@@ -219,124 +229,22 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 	 * @return the scoped view
 	 */
 	public @NotNull JavaProtocol scoped(@NotNull Consumer<Subscription> track) {
-		return new ScopedView(track);
+		return new ScopedJavaProtocol(this, player.scoped(track), track);
 	}
 
-	private <P extends JavaPacket> Subscription subscribe(
-			Map<Class<?>, List<Consumer<Object>>> table,
-			Class<P> type,
-			Consumer<? super P> listener
-	) {
+	/**
+	 * Returns the client's own player with what only a test that drives the client itself uses: its ticks one at a time
+	 * and a placement without the server's handshake.
+	 */
+	@NotNull ClientPosition client() {
+		return player;
+	}
+
+	private <P extends JavaPacket> @NotNull Class<P> carried(@NotNull Class<P> type) {
 		if (!connection.supports(type))
 			throw new ProtocolUnavailableException("the loaded " + libraryId + " release does not carry "
 					+ type.getName());
 
-		Consumer<Object> typed = packet -> listener.accept(type.cast(packet));
-		List<Consumer<Object>> subscribed = table.computeIfAbsent(type, ignored -> new CopyOnWriteArrayList<>());
-		subscribed.add(typed);
-
-		return () -> subscribed.remove(typed);
-	}
-
-	/**
-	 * Hands a packet to the listeners of its class in one table. A failing listener is reported on standard error
-	 * and does not keep the packet from the others.
-	 */
-	private static void handOut(Map<Class<?>, List<Consumer<Object>>> table, JavaPacket packet) {
-		List<Consumer<Object>> subscribed = table.get(packet.getClass());
-		if (subscribed == null) return;
-
-		for (Consumer<Object> listener : subscribed) {
-			try {
-				listener.accept(packet);
-			} catch (RuntimeException failure) {
-				System.err.println("[Anvil] Warning: a listener of " + packet.getClass().getSimpleName() + " failed: "
-						+ failure);
-			}
-		}
-	}
-
-	/**
-	 * One open {@link #want(Class)}, which wants its class while it is listed among the class's wants.
-	 */
-	@RequiredArgsConstructor
-	private static final class Want implements Subscription {
-		private final List<Want> wants;
-
-		@Override
-		public void close() {
-			wants.remove(this);
-		}
-	}
-
-	/**
-	 * The protocol as one extension sees it while binding: the subscriptions it creates are reported to its scope.
-	 */
-	@RequiredArgsConstructor
-	private final class ScopedView implements JavaProtocol {
-		private final Consumer<Subscription> track;
-
-		@Override
-		public <P extends ClientboundPacket> @NotNull Subscription listen(
-				@NotNull Class<P> type,
-				@NotNull Consumer<? super P> listener
-		) {
-			Subscription subscription = JavaPacketDispatcher.this.listen(type, listener);
-			track.accept(subscription);
-
-			return subscription;
-		}
-
-		@Override
-		public @NotNull Subscription listenFrames(@NotNull Consumer<? super ClientboundFrame> listener) {
-			Subscription subscription = JavaPacketDispatcher.this.listenFrames(listener);
-			track.accept(subscription);
-
-			return subscription;
-		}
-
-		@Override
-		public @NotNull Subscription want(@NotNull Class<? extends ClientboundPacket> type) {
-			Subscription subscription = JavaPacketDispatcher.this.want(type);
-			track.accept(subscription);
-
-			return subscription;
-		}
-
-		@Override
-		public boolean handsOverFrames() {
-			return JavaPacketDispatcher.this.handsOverFrames();
-		}
-
-		@Override
-		public void send(@NotNull ServerboundPacket packet) {
-			JavaPacketDispatcher.this.send(packet);
-		}
-
-		@Override
-		public <P extends ServerboundPacket> @NotNull Subscription listenSent(
-				@NotNull Class<P> type,
-				@NotNull Consumer<? super P> listener
-		) {
-			Subscription subscription = JavaPacketDispatcher.this.listenSent(type, listener);
-			track.accept(subscription);
-
-			return subscription;
-		}
-
-		@Override
-		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
-			return JavaPacketDispatcher.this.supports(type);
-		}
-
-		@Override
-		public int protocolNumber() {
-			return protocolNumber;
-		}
-
-		@Override
-		public @NotNull JavaWorld world() {
-			return JavaPacketDispatcher.this.world();
-		}
+		return type;
 	}
 }

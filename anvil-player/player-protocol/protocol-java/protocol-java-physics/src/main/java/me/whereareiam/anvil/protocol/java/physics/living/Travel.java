@@ -4,9 +4,9 @@ import me.whereareiam.anvil.protocol.java.physics.EntityBehaviour;
 import me.whereareiam.anvil.protocol.java.physics.entity.BlockEffects;
 import me.whereareiam.anvil.protocol.java.physics.entity.EntityMove;
 import me.whereareiam.anvil.protocol.java.physics.entity.FluidState;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Box;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Trigonometry;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
+import me.whereareiam.anvil.protocol.java.geometry.Box;
+import me.whereareiam.anvil.protocol.java.geometry.Trigonometry;
+import me.whereareiam.anvil.protocol.java.geometry.Vector;
 import me.whereareiam.anvil.protocol.java.physics.living.attribute.LivingAttributes;
 import me.whereareiam.anvil.protocol.java.physics.living.effect.Effects;
 import me.whereareiam.anvil.protocol.java.physics.living.effect.MobEffect;
@@ -39,7 +39,7 @@ public final class Travel {
 	 */
 	public Travel(@NotNull LivingBody body, @NotNull FluidState fluids, @NotNull BlockEffects effects) {
 		this.body = body;
-		this.move = new EntityMove(body, effects, fluids);
+		this.move = new EntityMove(body, effects, fluids, body);
 		this.fluids = fluids;
 		this.effects = effects;
 		this.climbing = new Climbing(body);
@@ -66,9 +66,9 @@ public final class Travel {
 	}
 
 	private void travelInAir(@NotNull Vector input) {
-		double earlyGravity = effectiveGravity();
-		float friction = body.isOnGround() ? effects.friction() : 1.0F;
-		float drag = friction * 0.91F;
+		double earlyGravity = body.effectiveGravity();
+		float friction = body.isOnGround() ? groundFriction() : 1.0F;
+		float drag = friction * airDrag(0.91F);
 		moveRelative(frictionInfluencedSpeed(friction), input);
 		body.setDeltaMovement(climbing.handleOnClimbable(body.getDeltaMovement()));
 		move.move(body.getDeltaMovement());
@@ -76,32 +76,51 @@ public final class Travel {
 		if ((body.isHorizontalCollision() || body.isJumping()) && body.onClimbable())
 			movement = new Vector(movement.x, 0.2, movement.z);
 
-		double gravity = body.has(EntityBehaviour.GRAVITY_AFTER_MOVE) ? effectiveGravity() : earlyGravity;
+		double gravity = body.has(EntityBehaviour.GRAVITY_AFTER_MOVE) ? body.effectiveGravity() : earlyGravity;
 		double vertical = vertical(movement.y, gravity);
-		body.setDeltaMovement(new Vector(movement.x * drag, vertical * 0.98F, movement.z * drag));
+		body.setDeltaMovement(new Vector(movement.x * drag, vertical * airDrag(0.98F), movement.z * drag));
+	}
+
+	/**
+	 * The friction of the block below, from 26.2 modified by the friction modifier attribute.
+	 */
+	private float groundFriction() {
+		float friction = effects.friction();
+		if (!body.has(EntityBehaviour.FRICTION_MODIFIERS)) return friction;
+
+		return body.modifiedFriction(friction, LivingAttributes.FRICTION_MODIFIER);
+	}
+
+	/**
+	 * A drag of the air, from 26.2 modified by the air drag modifier attribute.
+	 */
+	private float airDrag(float drag) {
+		if (!body.has(EntityBehaviour.FRICTION_MODIFIERS)) return drag;
+
+		return body.modifiedFriction(drag, LivingAttributes.AIR_DRAG_MODIFIER);
 	}
 
 	private double vertical(double vertical, double gravity) {
 		Effects active = body.getEffects();
 		if (active.has(MobEffect.LEVITATION))
 			return vertical + (0.05 * (active.amplifier(MobEffect.LEVITATION).orElseThrow() + 1) - vertical) * 0.2;
-		if (effects.hasChunkBelow()) return vertical - gravity;
 
-		return body.getPosition().y > body.getLevel().minY() ? -0.1 : 0.0;
+		return vertical - gravity;
 	}
 
 	/**
-	 * {@code getFrictionInfluencedSpeed}: on the ground the entity's speed scaled by the friction, in the air the speed
-	 * of its control there ({@link LivingBody#flyingSpeed}).
+	 * {@code getFrictionInfluencedSpeed}: on the ground the entity's speed scaled by the friction, from 26.2 only where
+	 * the friction is above {@code 0.6}, in the air the speed of its control there ({@link LivingBody#flyingSpeed}).
 	 */
 	private float frictionInfluencedSpeed(float friction) {
-		if (body.isOnGround()) return body.getSpeed() * (0.21600002F / (friction * friction * friction));
+		if (!body.isOnGround()) return body.flyingSpeed();
+		if (body.has(EntityBehaviour.FRICTION_MODIFIERS) && !(friction > 0.6)) return body.getSpeed();
 
-		return body.flyingSpeed();
+		return body.getSpeed() * (0.21600002F / (friction * friction * friction));
 	}
 
 	private void travelInWater(@NotNull Vector input) {
-		double gravity = effectiveGravity();
+		double gravity = body.effectiveGravity();
 		boolean falling = body.getDeltaMovement().y <= 0.0;
 		double startY = body.getPosition().y;
 		float slowDown = body.isSprinting() ? 0.9F : 0.8F;
@@ -124,7 +143,7 @@ public final class Travel {
 	}
 
 	private void travelInLava(@NotNull Vector input) {
-		double gravity = effectiveGravity();
+		double gravity = body.effectiveGravity();
 		boolean falling = body.getDeltaMovement().y <= 0.0;
 		double startY = body.getPosition().y;
 		moveRelative(0.02F, input);
@@ -149,31 +168,26 @@ public final class Travel {
 		if (!body.isHorizontalCollision()) return;
 
 		Box moved = body.getBox().move(delta.x, delta.y + 0.6F - body.getPosition().y + startY, delta.z);
-		if (collisions.noCollision(moved, body.context()) && !new Fluids(body.getLevel()).containsAny(moved))
+		Fluids fluidsAround = new Fluids(body.getLevel(), body.getRules().vectorLength());
+		if (collisions.noCollision(moved, body.context()) && !fluidsAround.containsAny(moved))
 			body.setDeltaMovement(new Vector(delta.x, 0.3F, delta.z));
 	}
 
 	/**
-	 * {@code Entity.moveRelative}: accelerates the entity along its input, turned by its yaw.
+	 * {@code Entity.moveRelative}: accelerates the entity along its input, turned by its yaw; an input too short to have a
+	 * direction adds zero ({@code getInputVector}), which still turns a negative zero speed positive.
 	 */
 	private void moveRelative(float amount, @NotNull Vector input) {
 		double lengthSqr = input.lengthSqr();
-		if (lengthSqr < 1.0E-7) return;
+		if (lengthSqr < 1.0E-7) {
+			body.addDeltaMovement(0.0, 0.0, 0.0);
+			return;
+		}
 
-		Vector scaled = (lengthSqr > 1.0 ? input.normalize() : input).scale(amount);
+		Vector scaled = (lengthSqr > 1.0 ? body.getRules().vectorLength().normalize(input) : input).scale(amount);
 		Trigonometry trigonometry = body.getRules().trigonometry();
 		float sin = trigonometry.sin(body.getYaw() * DEGREES_TO_RADIANS);
 		float cos = trigonometry.cos(body.getYaw() * DEGREES_TO_RADIANS);
 		body.addDeltaMovement(scaled.x * cos - scaled.z * sin, scaled.y, scaled.z * cos + scaled.x * sin);
-	}
-
-	/**
-	 * {@code LivingEntity.getEffectiveGravity}: the gravity attribute, at most {@code 0.01} while the entity falls with
-	 * slow falling.
-	 */
-	private double effectiveGravity() {
-		double gravity = body.getAttributes().value(LivingAttributes.GRAVITY);
-		boolean slow = body.getDeltaMovement().y <= 0.0 && body.getEffects().has(MobEffect.SLOW_FALLING);
-		return slow ? Math.min(gravity, 0.01) : gravity;
 	}
 }

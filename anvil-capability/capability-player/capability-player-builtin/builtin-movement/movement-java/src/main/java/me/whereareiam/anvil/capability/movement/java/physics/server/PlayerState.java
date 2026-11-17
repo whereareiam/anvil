@@ -4,13 +4,11 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
+import me.whereareiam.anvil.protocol.java.api.LocalPlayer;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundRemoveMobEffect;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateAttributes;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateMobEffect;
-import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundPlayerCombatKill;
 import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundSetHealth;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
@@ -19,17 +17,17 @@ import me.whereareiam.anvil.protocol.java.api.type.world.GameEventType;
 import me.whereareiam.anvil.protocol.java.physics.living.attribute.AttributeMap;
 import me.whereareiam.anvil.protocol.java.physics.living.effect.Effects;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
- * What the server set of the player's own entity, as the vanilla client follows it: the entity's ID from the login,
- * the game mode of the login, each respawn and each {@code CHANGE_GAME_MODE} game event, which set the abilities it
- * implies ({@code GameType.updatePlayerAbilities}), the abilities the server sends ({@code handlePlayerAbilities}), the
- * food level, the attributes and effects of the own entity, and its death, from a health of zero or less or the
- * player's combat kill until it respawns. A login and a respawn make a new player, as the vanilla client creates one:
- * default abilities and food, no effects, and, after a respawn, the attributes' base values without their modifiers.
+ * What the server set of the player's own entity that only client physics reads, as the vanilla client follows it: the
+ * abilities the game mode implies ({@code GameType.updatePlayerAbilities}) at the login, each respawn and each change of
+ * the game mode, the abilities the server sends ({@code handlePlayerAbilities}), the food level, and the attributes and
+ * effects of the own entity. The client's own player, every Java player's, keeps the entity's ID, its game mode and its
+ * death, which this state reads from it after the client followed the same packet. A login and a respawn make a new
+ * player, as the vanilla client creates one: default abilities and food, no effects, and, after a respawn, the
+ * attributes' base values without their modifiers.
  *
- * <p>Not thread-safe; its owner serializes packets and ticks.</p>
+ * <p>Not thread-safe; its owner serializes packets and ticks, as the client's lock does.</p>
  */
 @Getter
 public final class PlayerState {
@@ -37,14 +35,10 @@ public final class PlayerState {
 	private static final float DEFAULT_WALKING_SPEED = 0.1F;
 	private static final int DEFAULT_FOOD = 20;
 
+	@Getter(AccessLevel.NONE)
+	private final @NotNull LocalPlayer client;
 	private final @NotNull AttributeMap attributes;
 	private final @NotNull Effects effects = new Effects();
-	/**
-	 * The protocol ID of the player's own entity, which the server may choose negative, or {@code null} until the
-	 * player joined a level on its current connection.
-	 */
-	private @Nullable EntityId entityId;
-	private @NotNull GameMode gameMode = GameMode.SURVIVAL;
 	/**
 	 * Whether the player flies, which the client also changes itself when it toggles flight or lands.
 	 */
@@ -59,56 +53,42 @@ public final class PlayerState {
 	private float walkingSpeed = DEFAULT_WALKING_SPEED;
 	@Getter(AccessLevel.NONE)
 	private int food = DEFAULT_FOOD;
-	private boolean dead;
 
 	/**
-	 * Creates the state of a player that has not joined a level.
+	 * Creates the state of a new player of the client's own player.
 	 *
 	 * @param version the client's Minecraft version
+	 * @param client the client's own player, which keeps the entity, its game mode and its death
 	 */
-	public PlayerState(@NotNull MinecraftVersion version) {
+	public PlayerState(@NotNull MinecraftVersion version, @NotNull LocalPlayer client) {
+		this.client = client;
 		this.attributes = new AttributeMap(version, PlayerAttributes.supplier());
 	}
 
 	/**
-	 * Follows a login: a new player with the login's entity ID and game mode.
-	 *
-	 * @param login the login
+	 * Follows a login, once the client followed it: a new player in the login's game mode.
 	 */
-	public void login(@NotNull ClientboundLogin login) {
-		entityId = login.getEntityId();
+	public void login() {
 		attributes.reset();
-		renew(login.getGameMode());
+		renew();
 	}
 
 	/**
-	 * Follows a respawn: a new player in the respawn's game mode, alive again.
-	 *
-	 * @param respawn the respawn
+	 * Follows a respawn, once the client followed it: a new player in the respawn's game mode.
 	 */
-	public void respawn(@NotNull ClientboundRespawn respawn) {
+	public void respawn() {
 		attributes.keepBaseValues();
-		renew(respawn.getGameMode());
+		renew();
 	}
 
 	/**
-	 * Forgets the entity, whose connection ended.
-	 */
-	public void disconnected() {
-		entityId = null;
-	}
-
-	/**
-	 * Follows a game event, of which only a changed game mode concerns movement; the event's value rounds to the game
-	 * mode's ID and an unknown ID is survival, as {@code handleGameEvent} and {@code GameType.byId} read it.
+	 * Follows a game event once the client followed it, of which only a changed game mode concerns movement: it sets the
+	 * abilities the client's new game mode implies.
 	 *
 	 * @param event the event
 	 */
 	public void gameEvent(@NotNull ClientboundGameEvent event) {
-		if (event.getEvent() != GameEventType.CHANGE_GAME_MODE) return;
-
-		int id = (int) Math.floor(event.getValue() + 0.5F);
-		gameMode(id >= 0 && id < GameMode.values().length ? GameMode.values()[id] : GameMode.SURVIVAL);
+		if (event.getEvent() == GameEventType.CHANGE_GAME_MODE) abilitiesOf(client.gameMode());
 	}
 
 	/**
@@ -124,22 +104,12 @@ public final class PlayerState {
 	}
 
 	/**
-	 * Takes the player's health and food; a health of zero or less is death.
+	 * Takes the player's food.
 	 *
-	 * @param health the health
+	 * @param health the health and food
 	 */
 	public void health(@NotNull ClientboundSetHealth health) {
 		food = health.getFood();
-		if (health.getHealth() <= 0.0F) dead = true;
-	}
-
-	/**
-	 * Follows the combat kill of an entity, which is the player's death when it names the player's own entity.
-	 *
-	 * @param kill the kill
-	 */
-	public void combatKill(@NotNull ClientboundPlayerCombatKill kill) {
-		if (own(kill.getPlayerId())) dead = true;
 	}
 
 	/**
@@ -170,22 +140,22 @@ public final class PlayerState {
 	}
 
 	/**
-	 * Tells whether an entity ID is the player's own.
-	 *
-	 * @param id the entity's ID
-	 * @return whether it is the player's entity
-	 */
-	public boolean own(@NotNull EntityId id) {
-		return id.equals(entityId);
-	}
-
-	/**
-	 * Tells whether the player is a spectator, which flies through blocks ({@code Player.noPhysics}).
+	 * Tells whether the player is a spectator, which flies through blocks ({@code Player.noPhysics}), as the client's
+	 * game mode says.
 	 *
 	 * @return whether it spectates
 	 */
 	public boolean isSpectator() {
-		return gameMode == GameMode.SPECTATOR;
+		return client.gameMode() == GameMode.SPECTATOR;
+	}
+
+	/**
+	 * Tells whether the player is dead, as the client follows it, which holds no keys and reports no movement.
+	 *
+	 * @return whether it is dead
+	 */
+	public boolean isDead() {
+		return client.isDead();
 	}
 
 	/**
@@ -198,21 +168,23 @@ public final class PlayerState {
 		return food > 6.0F || mayFly;
 	}
 
-	private void renew(@NotNull GameMode mode) {
+	private boolean own(@NotNull EntityId id) {
+		return client.entityId().filter(id::equals).isPresent();
+	}
+
+	private void renew() {
 		effects.clear();
-		dead = false;
 		food = DEFAULT_FOOD;
 		flyingSpeed = DEFAULT_FLYING_SPEED;
 		walkingSpeed = DEFAULT_WALKING_SPEED;
 		flying = false;
-		gameMode(mode);
+		abilitiesOf(client.gameMode());
 	}
 
 	/**
-	 * Sets the game mode and the abilities it implies, as {@code GameType.updatePlayerAbilities} does.
+	 * Sets the abilities a game mode implies, as {@code GameType.updatePlayerAbilities} does.
 	 */
-	private void gameMode(@NotNull GameMode mode) {
-		gameMode = mode;
+	private void abilitiesOf(@NotNull GameMode mode) {
 		mayFly = mode == GameMode.CREATIVE || mode == GameMode.SPECTATOR;
 		if (mode == GameMode.SPECTATOR) flying = true;
 		if (!mayFly) flying = false;

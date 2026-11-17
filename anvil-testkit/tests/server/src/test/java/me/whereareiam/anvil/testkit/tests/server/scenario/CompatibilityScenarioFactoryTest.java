@@ -12,8 +12,6 @@ import me.whereareiam.anvil.platform.api.PlatformProvider;
 import me.whereareiam.anvil.platform.api.model.ProcessPlan;
 import me.whereareiam.anvil.platform.planning.DefaultPlatformPlanner;
 import me.whereareiam.anvil.platform.planning.version.PlatformVersionsReader;
-import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
-import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -112,22 +110,7 @@ class CompatibilityScenarioFactoryTest {
 	}
 
 	private List<ProtocolRelease> mcprotocolReleases() {
-		ProtocolLibraryProvider mcprotocol = ServiceLoader.load(ProtocolLibraryProvider.class).stream()
-				.map(ServiceLoader.Provider::get)
-				.filter(library -> library.id().equals("mcprotocol"))
-				.findFirst().orElseThrow();
-		ProtocolLibraryContext context = ProtocolLibraryContext.builder()
-				.workers(launch -> {
-					throw new AssertionError("Reading release data must not start a worker");
-				})
-				.cacheDirectory(directory)
-				.accountsDirectory(directory.resolve("accounts"))
-				.artifacts((artifact, destination, sha256) -> {
-					throw new AssertionError("Reading release data must not download artifacts");
-				})
-				.build();
-
-		return mcprotocol.releases(context);
+		return McProtocolReleases.read(directory);
 	}
 
 	private static Optional<MinecraftVersion> version(MinecraftProcess process) {

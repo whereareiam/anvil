@@ -65,12 +65,13 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-player/player-api`                                         | Protocol library providers and releases, player creation/composition, the typed player channel and worker extension contracts, the styled text a player sees (`model.text`), pinned runtime resolution, and optional authentication                       |
 | `anvil-player/player-common`                                         | Player registration, version selection, authentication compatibility, composition, observations, and resolving a remote's address as the vanilla client does |
 | `anvil-player/player-worker`                                         | Worker runtime kit every library embeds to run worker extensions: `WorkerExtensions`, `NativeSessionBindings`, `WorkerProtocols` and `WorkerOperation`, and in its test fixtures the `TestWorkerPlayer` and `TestOperations` that extension tests bind to |
-| `anvil-player/player-protocol/protocol-java/protocol-java-api` | Java Edition protocol of simulated players: `JavaProtocol` and the packets, models and types it carries, as release-neutral values, the `ClientboundFrame` every received packet also arrives as, the `ClientboundPackets` catalog naming each packet value's kind, and the client's `JavaWorld` that its packets keep |
-| `anvil-player/player-protocol/protocol-java/protocol-java-worker` | Java Edition worker kit: `JavaPacketDispatcher`, the player's `JavaProtocol` over the `JavaConnection` a library implements, with the store of the player's `JavaWorld`, the `wants` a library asks before it decodes a costly packet and the `wantsFrames` it asks before it hands a packet over as its frame, which the dispatcher names from `protocol-java-packet`, and in its test fixtures the `TestJavaPlayer` that speaks it |
-| `anvil-player/player-protocol/protocol-java/protocol-java-block` | Block data of every supported protocol by global block state ID (`JavaBlockData`, `BlockRegistry`), keyed by protocol number because every Minecraft version of a protocol shares one registry; generated at build time from the PrismarineJS minecraft-data files `block-data.toml` pins per protocol (`pinBlockData`, which finds a protocol's versions in minecraft-data's own `protocolVersions.json`), which Gradle resolves through the settings' `minecraft-data` repository, and the hand-maintained vanilla facts of `block-facts.toml`: a block's kind, collision kind and movement. Its Java `generator` source set (`BlockDataGenerator`, run by `generateBlockData` with the files Gradle resolved) binds both inputs to typed classes and writes the data through the package-private `BlockDataCodec`, which `JavaBlockData` reads it with, so the enums and the format exist once; `checkBlockDataReleases` requires a row for the protocol of every protocol library release, and a protocol minecraft-data lacks is reported missing, never served another protocol's data |
-| `anvil-player/player-protocol/protocol-java/protocol-java-physics` | Java Edition physics kit: vanilla's `Entity` and `LivingEntity` movement over the world a player's client knows, bit for bit as the client of each version computes it (`EntityBehaviour` ranges, `EntityRules`): `geometry`, the blocks' collisions and fluids (`world`: `BlockReader`, `Collisions`, `Fluids`), the entity (`entity`: `EntityBody`, `EntityMove`, `FluidState`, `BlockEffects`) and the living entity (`living`: `LivingBody`, `LivingSimulation`, `Travel`, `Jumping`, `Climbing`, attributes and effects). It knows nothing of players: the bodies' non-final methods and `LivingSimulation`'s `serverAiStep`, `travel` and `aiStep` are vanilla's override points, which a worker extension implements for its kind of entity as Movement's player layer does for `Player` and `LocalPlayer`; its test fixtures hold `TestWorld`, a test player's world built block by block |
-| `anvil-player/player-protocol/protocol-java/protocol-java-packet` | Packet names of every supported protocol (`JavaPacketData`, `PacketRegistry`): minecraft-data's name of each packet a server sends, by connection state and packet ID, generated like the block data from the `protocol.json` that `packet-data.toml` pins per protocol (`pinPacketData`, `checkPacketDataReleases`); the names are minecraft-data's, such as `map_chunk`, never Mojang's |
-| `anvil-player/player-protocol/protocol-java/protocol-java-item` | Item registry keys of every supported protocol (`JavaItemData`, `ItemRegistry`): the key of each item, such as `minecraft:emerald`, by the numeric ID inventory packets carry, generated like the block data from the `items.json` that `item-data.toml` pins per protocol (`pinItemData`, `checkItemDataReleases`); minecraft-data's files before 1.19.4 leave out air, which the generator puts at ID 0 |
+| `anvil-player/player-protocol/protocol-java/protocol-java-api` | Java Edition protocol of simulated players: `JavaProtocol` and the packets, models and types it carries, as release-neutral values, the `ClientboundFrame` every received packet also arrives as, the `ClientboundPackets` catalog naming each packet value's kind, the client's `JavaWorld` that its packets keep and the client's own `LocalPlayer` |
+| `anvil-player/player-protocol/protocol-java/protocol-java-geometry` | Vanilla's math, bit for bit as the client of each version computes it: `Vector`, `Box`, `Axis`, `Coordinates`, `VectorLength` and the table sine of each version (`Trigonometry`), which the worker kit's teleports and the physics kit share; no Anvil dependency |
+| `anvil-player/player-protocol/protocol-java/protocol-java-worker` | Java Edition worker kit: `JavaPacketDispatcher`, the player's `JavaProtocol` over the `JavaConnection` a library implements, with the store of the player's `JavaWorld`, the `wants` a library asks before it decodes a costly packet and the `wantsFrames` it asks before it hands a packet over as its frame, which the dispatcher names from `protocol-java-packet`; in `position` the client's own player every Java player has (`ClientPosition`, the `LocalPlayer` the dispatcher hands out): the client's 20 Hz loop (`ClientLoop`), the position, view, velocity and ground state it knows, the teleports it resolves (`Teleport`) and accepts, the wait for its level (`LevelLoading`) and the version differences of all that (`LocalPlayerBehaviour`); and in its test fixtures the `TestJavaPlayer` that speaks it and whose client a test ticks itself |
+| `anvil-player/player-protocol/protocol-java/protocol-java-block` | Block data of every supported protocol by global block state ID (`JavaBlockData`, `BlockRegistry`), keyed by protocol number because every Minecraft version of a protocol shares one registry; read from each release's own vanilla client by the physics harness's `generateVanillaData` and committed as `vanilla/<protocol>.blocks`: the blocks and states in global ID order with their properties, each state's collision shape for a standing player (`CollisionContext.of(player)`) with the shape of every other player case that differs (`CollisionCase`) and the unmoved shape of an offset block with its `BlockOffset`, friction, speed, jump and bounce, stuck speeds, fluid state, fluid flow and sturdy faces, the kind, collision kind and behaviours vanilla's movement code asks by class, identity or tag, and the movement tags it reads; nothing is maintained by hand. The `module-block-data` convention's Java `generator` source set (`BlockDataGenerator` and `VanillaBlockReader`, run by `generateBlockData`) reads the files strictly and writes the data through the package-private `BlockDataCodec`, which `JavaBlockData` reads it with, so the enums and the format exist once; `checkBlockDataReleases` requires a file for the protocol of every protocol library release and none for another |
+| `anvil-player/player-protocol/protocol-java/protocol-java-physics` | Java Edition physics kit: vanilla's `Entity` and `LivingEntity` movement over the world a player's client knows, bit for bit as the client of each version computes it (`EntityBehaviour` ranges, `EntityRules`, which picks the version's `Trigonometry` from `protocol-java-geometry`): the blocks' collisions and fluids (`world`: `BlockReader`, `Collisions`, `Fluids`), the entity (`entity`: `EntityBody`, `EntityMove`, `FluidState`, `BlockEffects`) and the living entity (`living`: `LivingBody`, `LivingSimulation`, `Travel`, `Jumping`, `Climbing`, attributes and effects). It knows nothing of players: the bodies' non-final methods and `LivingSimulation`'s `serverAiStep`, `travel` and `aiStep` are vanilla's override points, which a worker extension implements for its kind of entity as Movement's player layer does for `Player` and `LocalPlayer`; its test fixtures hold `TestWorld`, a test player's world built block by block |
+| `anvil-player/player-protocol/protocol-java/protocol-java-packet` | Packet names of every supported protocol (`JavaPacketData`, `PacketRegistry`): minecraft-data's name of each packet a server sends, by connection state and packet ID, generated from the `protocol.json` that `packet-data.toml` pins per protocol (`pinPacketData`, `checkPacketDataReleases`); the names are minecraft-data's, such as `map_chunk`, never Mojang's |
+| `anvil-player/player-protocol/protocol-java/protocol-java-item` | Item registry keys of every supported protocol (`JavaItemData`, `ItemRegistry`): the key of each item, such as `minecraft:emerald`, by the numeric ID inventory packets carry, generated like the packet names from the `items.json` that `item-data.toml` pins per protocol (`pinItemData`, `checkItemDataReleases`); minecraft-data's files before 1.19.4 leave out air, which the generator puts at ID 0 |
 | `anvil-player/player-protocol/protocol-java/protocol-java-json` | `JavaProtocolJson`, the one JSON form of the Java protocol's values, which the MCProtocolLib worker codec and packet recordings share: packets by their `ClientboundPackets` kind, sealed models by their kinds, entity IDs as `{"entity": n}` and chunk sections by their encoding |
 | `anvil-player/player-library/library-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port and the client segments; owns `mcprotocol-releases.toml` and `pinLibraryReleases`  |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell, and, in `client.translation`, what their translations share: `PacketTranslation`, `PacketTable`, `EntityDataLayout`, the `PacketDemand` a session's listener answers and the `ConnectionLevel` a connection's translations share, and in its test fixtures the `TestClientListener` segment tests report to |
@@ -105,7 +106,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-testkit/fixtures`                                              | Independent consumer build for process, server-plugin, and extension fixture JARs                                                                                                   |
 | `anvil-testkit/support`                                               | Host-side fixture artifact access and scoped extension loading                                                                                                                      |
 | `examples/proof-of-patience`                                          | Standalone consumer example, not a home for framework system assertions                                                                                                             |
-| `build-logic`                                                         | Shared conventions grouped by `module/`, `packaging/`, `adapter/`, `library/`, `platform/`, `capability/`, `integration/`, `fixture/`, `matrix/` (the live matrix and the tasks that write what it verifies into version and release data), `minecraftdata/` (the `module-minecraft-data` convention that makes a module generate one `MinecraftDataKind`, such as the block data or the packet names, from the minecraft-data files its pins file pins: reading minecraft-data, the pins files, their pin task and protocol check, and the generator's arguments), and `download/` (checksums and the HTTP reader the pin tasks share) |
+| `build-logic`                                                         | Shared conventions grouped by `module/`, `packaging/`, `adapter/`, `library/`, `platform/`, `capability/`, `integration/`, `fixture/`, `matrix/` (the live matrix and the tasks that write what it verifies into version and release data), `minecraftdata/` (the `module-minecraft-data` convention that makes a module generate one `MinecraftDataKind`, today the packet names, from the minecraft-data files its pins file pins: reading minecraft-data, the pins files, their pin task and protocol check, and the generator's arguments), `block/` (the `module-block-data` convention that generates `protocol-java-block`'s data from the block data read from vanilla clients: the generator's arguments and `checkBlockDataReleases`), `vanilla/` (the `vanilla-harness` convention of the standalone physics harness: `vanilla-clients.toml` and `pinVanillaClients`, the clients' preparation into `~/.anvil/vanilla-clients`, each family's `src/<family>/release-<minecraft>` sources, and `generateVanillaData`, which writes the traces and each release's block data), and `download/` (checksums and the HTTP reader the pin tasks share) |
 | `build-logic/settings`                                                | Lean settings conventions loaded by every project's parent classloader: library registry, library repositories, and library and platform layout checks                             |
 | `docs/content`                                                        | Task-oriented Scriptorium guides for using, extending, and contributing to Anvil                                                                                                    |
 | `scriptorium.project.json`                                            | Scriptorium project metadata and version policy                                                                                                                                     |
@@ -183,7 +184,15 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   keeps custom payloads in the worker, where a click names them by handle. A listener follows the player's current
   connection. `JavaProtocol.world()` is the world the client knows, its `JavaWorld`, which the kit's dispatcher keeps
   from the packets it delivers: each packet applies whole under one lock before its listeners see it, a single read
-  and a `read(...)` see one moment, and chunks are decoded and kept only once something asked for the world.
+  and a `read(...)` see one moment, and chunks are decoded and kept only once something asked for the world, the
+  client's own player among them where its rules read chunks (its level's loading from 1.21.4, its ticks before 1.17).
+  `JavaProtocol.player()` is the client's own player, its `LocalPlayer`, which the kit keeps for every Java player of
+  every library: the position, view, velocity and ground state the client knows, the entity ID, game mode and death
+  the server set, and the client's tick, which the library starts once the player's extensions are bound and closes
+  with the player, 20 a second on one virtual thread per player that catches up at most ten ticks. The client applies
+  each packet, and its listeners run, under one lock with the ticks, as the vanilla client runs both on its thread;
+  `LocalPlayer.run` and `get` take that lock for an operation, and a feature that moves the player hooks its own tick
+  into the client's through `LocalPlayer.onTick`, between the connection's tick and the tick end.
   Chunk decoding never disconnects: a column the release cannot read is left out with a warning.
   Every packet a player receives is also a `ClientboundFrame`: the connection's state, the packet's ID, its bytes after
   the ID and minecraft-data's name of it, with its value when the protocol models it. A library that sees the wire
@@ -211,7 +220,13 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   player's own inventory slots as `ClientboundSetPlayerInventory`, named sounds as `ClientboundSound`, the player's
   death as `ClientboundPlayerCombatKill`), and the
   current packet a feature sends reaches an older release in that release's form (`ServerboundAttack` as the attack
-  action of the interact packet). A release without a packet leaves it out of the table; a feature checks `supports`,
+  action of the interact packet), such as `ServerboundAcceptTeleportation`, whose position and view only 26.3's
+  carries. What the client answers about its own position belongs to the kit's client player, never to a segment or
+  a feature: it accepts every teleport as the packet arrives, followed before 26.3 by the position it left the player
+  at, takes the velocity of its own entity, ends each tick from 1.21.2 (`ServerboundClientTickEnd`) and from 1.21.4
+  tells the server once it loaded its level (`ServerboundPlayerLoaded`), in the vanilla client's order. A library's
+  `PlayerBindingContext.viewRotation()` is that player's view. Movement only adds physics: its tick moves the client's
+  player, and its operations place and turn it. A release without a packet leaves it out of the table; a feature checks `supports`,
   or `JavaProtocol.require` throws `ProtocolUnavailableException` when it cannot work without some packets. Features
   never touch native sessions or library packets: they follow connections through
   `PlayerBindingContext.bindConnection` and close their listeners together through `Subscription.all`.
@@ -581,15 +596,16 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 - Adding a Minecraft version follows the contributing guide `docs/content/contributing/minecraft-versions`.
   Add the version to the `mcprotocol-releases.toml` release that speaks its protocol, or a `[[release]]` row
   for a new protocol (version, module, protocol, Minecraft versions, Java, features), and
-  pin its closure with `pinLibraryReleases`. A new protocol gets a `block-data.toml` row in `protocol-java-block`,
-  pinned with `pinBlockData`, a `packet-data.toml` row in `protocol-java-packet`, pinned with `pinPacketData`, and an
-  `item-data.toml` row in `protocol-java-item`, pinned with `pinItemData`; a
-  version of a protocol that has them needs none. Check `block-facts.toml` for the
-  release's new blocks. Add a segment only to a side whose newest segment fails
+  pin its closure with `pinLibraryReleases`. A new protocol gets its block data read from its vanilla client: a
+  `vanilla-clients.toml` row in the physics harness, pinned with `pinVanillaClients`, then `generateVanillaData`,
+  which writes `protocol-java-block`'s `vanilla/<protocol>.blocks` (`checkBlockDataReleases` fails without it), a
+  `packet-data.toml` row in `protocol-java-packet`, pinned with `pinPacketData`, and an `item-data.toml` row in
+  `protocol-java-item`, pinned with `pinItemData`; a version of a protocol that has them needs none. Add a segment only
+  to a side whose newest segment fails
   `checkSegmentLinkage` against the new closure, named after the new release key; a segment folder must name
   a release key, so raising a key renames that segment. A new segment extends the side's newest one
-  (`segment { extends(...) }`) and names each base class it brings its own version of in `replaces("<binary
-  name>")`, which the build validates; code a chain shares, its public `JavaClient` base and abstract bases of
+  (`segment { extends(...) }`) and names each base class it brings its own version of, or leaves out because
+  the release needs none, in `replaces("<binary name>")`, which the build validates; code a chain shares, its public `JavaClient` base and abstract bases of
   translations whose bulk does not change, lives in the chain's earliest segment, and each segment has its own
   `McProtocolClientAdapter`. Add the release to `McProtocolWorkerContractTest`,
   platform `known` versions and `[[java]]` rows only where Java changes, and add a `live-matrix.toml` row for each
@@ -612,8 +628,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   never through production artifacts or another module's whole test tree.
 - A worker extension's tests bind it to the kits' test players, never to a fake of their own: `TestJavaPlayer`
   (`protocol-java-worker` test fixtures) speaks the real `JavaPacketDispatcher`, so the test delivers packets, reads
-  what the player sent and connects and disconnects it as a worker does, and `TestOperations` calls what the extension
-  registered. A host capability's tests talk to `player-api`'s `TestProtocolChannel`, which answers operations,
+  what the player sent, connects and disconnects it as a worker does and runs its client's ticks one by one with
+  `tick()`, since the client does not tick on its own until the test starts it, and `TestOperations` calls what the
+  extension registered. A host capability's tests talk to `player-api`'s `TestProtocolChannel`, which answers operations,
   publishes events, records requests, payloads, subscriptions and waits, and scripts what happens while the capability
   waits; a provider's tests create it in `capability-player-api`'s `TestProtocolPlayerCapabilityContext`, which hands
   it that channel and the capabilities the test offers as its dependencies. A client segment's tests take what its
@@ -629,16 +646,47 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   changes the reference, weekly and on demand. CI pulls it with its `GITHUB_TOKEN`, never anonymously from Docker
   Hub or ECR, whose limits shared runners exhaust, and a test pulls it only when the engine lacks it.
 - `anvil-testkit/tests/runtime/src/test`: cross-module discovery/composition without live Minecraft.
-- `anvil-testkit/tests/server/src/test`: real servers in three suites, one package and task each, all requiring
+- `anvil-testkit/tests/server/src/test`: real servers in four suites, one package and task each, all requiring
   `-Panvil.testMode=full`. `release` runs one test class per capability, annotated `@Release`, against the direct
   Paper server of the release `releaseTest-<minecraft>` names; the server is kept for the task's JVM, each test
   joins its own player through `FixtureServer`, and capabilities a release predates are gated with
-  `TestedRelease.isAtLeast`. `platform` (`platformTest`, `-PanvilPlatforms`) runs Spigot, the proxies and NeoForge,
-  and `behavior` (`behaviorTest`) lifecycles, sessions, routing, tooling and extensions, which pick scenarios
-  through typed `CompatibilityScenarioFactory` lookups, never by name. `test` runs all three. The live matrix is the
-  data file `live-matrix.toml` at the repository root: the build registers one release task per `[[paper]]` row and
-  CI one job per release. Only `matrixTest`, which checks `CompatibilityScenarioFactoryTest` without starting a server, runs in
-  every build.
+  `TestedRelease.isAtLeast`. `physics` (`physicsTest-<minecraft>`, `physicsTest` for all) runs every physics course
+  with client physics on the same server, described below. `platform` (`platformTest`, `-PanvilPlatforms`) runs
+  Spigot, the proxies and NeoForge, and `behavior` (`behaviorTest`) lifecycles, sessions, routing, tooling and
+  extensions, which pick scenarios through typed `CompatibilityScenarioFactory` lookups, never by name. `test` runs
+  all four. The live matrix is the data file `live-matrix.toml` at the repository root: the build registers one
+  release task and one physics task per `[[paper]]` row and CI one `Release <minecraft>` and one `Physics <minecraft>`
+  job per release. Only `matrixTest`, which checks `CompatibilityScenarioFactoryTest`, and `blockDataTest`, which
+  requires block data in `JavaBlockData.shipped()` for the protocol of every `[[paper]]` row, run in every build;
+  neither starts a server, and no test hard-codes a release without block data.
+- Client physics is checked against the vanilla client itself. `anvil-testkit/physics/courses/<course>.toml` declares
+  each course: the blocks laid in order, the player placed at rest at its `[start]` or joining as over the network
+  (`[join]`: the login, the first position packet with teleport ID 1, then the course's chunks after
+  `chunksAfterTicks`), the keys held from each tick, the server's packets before given ticks (`[[server]]`, such as
+  teleports, relative, absolute or, from 1.21.2, with a velocity), the first release it runs on (`since`) and the
+  ticks it runs. `anvil-testkit/physics/traces/<minecraft>/<course>.trace` holds, for every supported release, the
+  vanilla client's state after each tick and the packets it sent during it, in order, a join's handshake as tick
+  `-1`, each packet by its `protocol-java-api` name with only the fields the release's own packet carries, from the
+  harness's explicit list of the packets movement concerns. `ReferenceTraceTest` drives Anvil's client through the
+  same join, keys and server packets and must reproduce both bit for bit. A maintainer who owns Minecraft generates
+  the traces locally with the manual `generateVanillaData` task of the standalone `anvil-testkit/physics/harness`
+  build (`./gradlew -p anvil-testkit/physics/harness generateVanillaData`), which downloads each client JAR and its
+  mappings from Mojang by the SHA-1 that `vanilla-clients.toml` pins into a cache under `~/.anvil` and runs them
+  headless, joining through the client's real packet handlers; the same run writes each release's block data into
+  `protocol-java-block`'s `vanilla/`. A harness family whose releases name members differently keeps each release's
+  own code in `src/<family>/release-<minecraft>/java`, compiled against that client alone, never reflection. The
+  harness reaches non-public client members only through access widening: each family's and each release's
+  `accesstransformer.cfg` (NeoForge's format, one class or member per line with its descriptor) lists exactly what
+  the client preparation widens into `client-widened.jar`, deterministically and keyed by the lists' content, and
+  `Unconstructed` alone allocates the objects the harness builds without their constructors. Only the traces and the
+  block data are committed: never commit or publish Mojang's client JAR, its mappings, remapped or widened JARs or
+  decompiled sources, and CI never downloads the client. The live `physics` suite runs the same courses on the Paper
+  server of each release, those the release runs that script no server packet: `CourseTest`, through the suite's one
+  course model `Course`, clears a site and lays the course with the fixture plugin's `anvil-blocks` command (never
+  on the terrain of a random seed), places a new player at the start or the join's position, opens a `ConsoleWatch`
+  and a `PacketTap` on `ClientboundPlayerPosition` before physics turns on, holds the keys tick by tick, and fails
+  on any position correction or a "moved too quickly" or "moved wrongly" warning. No third-party plugin, such as an
+  anticheat, joins the suite; the server runs Paper and Anvil's fixture plugin only.
 - The independent `anvil-test-fixtures` consumer build under `anvil-testkit/fixtures` contains
   `test-process`, `test-server-plugin`, `test-extension`, and `test-java-library`. They use `src/main`; dependencies on Anvil
   use public artifact aliases, with current source projects substituted in the root composite build.
@@ -666,7 +714,7 @@ Run the nearest relevant test first, then architecture/build checks:
 ./gradlew :anvil-player:player-library:library-mcprotocol:mcprotocol-common:test
 ./gradlew :anvil-integration:integration-gradle:gradle-plugin:test :anvil-integration:integration-gradle:gradle-capabilities:test :anvil-integration:integration-gradle:gradle-platforms:test
 ./gradlew :anvil-testkit:tests:runtime:test
-./gradlew :anvil-testkit:tests:server:matrixTest
+./gradlew :anvil-testkit:tests:server:matrixTest :anvil-testkit:tests:server:blockDataTest
 ./gradlew :build-logic:check :build-logic-settings:check
 ./gradlew build
 ./gradlew dockerTest
@@ -681,6 +729,7 @@ failures.
 ~~~shell
 ./gradlew test -Panvil.testMode=full
 ./gradlew :anvil-testkit:tests:server:releaseTest-1.21.11 -Panvil.testMode=full
+./gradlew :anvil-testkit:tests:server:physicsTest-1.21.11 -Panvil.testMode=full
 ./gradlew :anvil-testkit:tests:server:platformTest -Panvil.testMode=full -PanvilPlatforms=spigot
 ~~~
 

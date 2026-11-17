@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.java.physics.world.shape;
 
 import me.whereareiam.anvil.protocol.java.block.model.collision.CollisionBox;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Axis;
+import me.whereareiam.anvil.protocol.java.geometry.Axis;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

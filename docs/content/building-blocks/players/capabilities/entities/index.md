@@ -109,8 +109,9 @@ position stays where it spawned while it rides along.
 - `isInvisible()`, `isGlowing()`, `isOnFire()`, `isSneaking()`, `isSprinting()`, `isSwimming()` and
   `isGliding()`, the flags every entity carries;
 - `getVehicleId()`, `getPassengerIds()` and `isRidingPlayer()`;
-- `getPlayerDistance()`, the distance from Alice when the value was taken, or `null` before the
-  server placed her;
+- `getPlayerDistance()`, the distance from where Alice's client knows itself to be when the value was taken,
+  which the server's teleports and her own moves, client physics among them, set, or `null` before the server
+  placed her on her current connection, her latest respawn included;
 - `label()`, the custom name or else the display text.
 
 Positions, rotations and distances come from the client's current state: `all()` and `present()` read

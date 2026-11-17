@@ -2,11 +2,15 @@ package me.whereareiam.anvil.protocol.java.block;
 
 import me.whereareiam.anvil.protocol.java.block.model.BlockState;
 import me.whereareiam.anvil.protocol.java.block.model.BlockType;
+import me.whereareiam.anvil.protocol.java.block.model.collision.BlockOffset;
 import me.whereareiam.anvil.protocol.java.block.model.collision.CollisionBox;
+import me.whereareiam.anvil.protocol.java.block.model.collision.CollisionCase;
 import me.whereareiam.anvil.protocol.java.block.model.movement.BlockMovement;
 import me.whereareiam.anvil.protocol.java.block.model.movement.StuckSpeed;
+import me.whereareiam.anvil.protocol.java.block.type.BlockFace;
 import me.whereareiam.anvil.protocol.java.block.type.BlockKind;
 import me.whereareiam.anvil.protocol.java.block.type.CollisionKind;
+import me.whereareiam.anvil.protocol.java.block.type.EntityBottom;
 import me.whereareiam.anvil.protocol.java.block.type.FluidType;
 import me.whereareiam.anvil.protocol.java.block.type.MovementBehaviour;
 import org.jetbrains.annotations.NotNull;
@@ -14,8 +18,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,8 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BlockRegistryTest {
 	/**
-	 * The state count and the default state of oak stairs of each protocol, as minecraft-data's {@code blocks.json}
-	 * lists them.
+	 * The state count and the default state of oak stairs of each protocol, as each release's vanilla client numbers
+	 * them.
 	 */
 	private static final Map<Integer, List<Integer>> PROTOCOLS = Map.of(
 			754, List.of(17112, 1965),
@@ -37,7 +43,9 @@ class BlockRegistryTest {
 			766, List.of(26684, 2885),
 			767, List.of(26684, 2885),
 			774, List.of(29671, 3717),
-			775, List.of(29873, 3918)
+			775, List.of(29873, 3918),
+			776, List.of(32366, 3918),
+			777, List.of(35723, 5474)
 	);
 
 	static Stream<Arguments> stairs() {
@@ -133,12 +141,15 @@ class BlockRegistryTest {
 		assertEquals(0.5F, honey.getJumpFactor());
 		assertTrue(honey.has(MovementBehaviour.HONEY_SLIDE));
 		assertEquals(0.4F, movement(registry, "minecraft:soul_sand").getSpeedFactor());
-		assertEquals((double) 0.66F, movement(registry, "minecraft:red_bed").getBounceFactor());
+		// From 26.2 a bed states its bounce restitution as data, 0.75F; before, its bounceUp reverses 0.66F of the speed.
+		assertEquals(protocol >= 776 ? (double) 0.75F : (double) 0.66F, movement(registry, "minecraft:red_bed").getBounceFactor());
 		assertEquals(new StuckSpeed(0.25, (double) 0.05F), movement(registry, "minecraft:cobweb").getStuckSpeed());
 		assertNull(movement(registry, "minecraft:stone").getStuckSpeed());
-		assertTrue(movement(registry, "minecraft:ladder").has(MovementBehaviour.CLIMBABLE));
-		assertTrue(movement(registry, "minecraft:scaffolding").has(MovementBehaviour.CLIMBABLE));
-		assertFalse(movement(registry, "minecraft:stone").has(MovementBehaviour.CLIMBABLE));
+		assertTrue(block(registry, "minecraft:ladder").hasTag("minecraft:climbable"));
+		assertTrue(block(registry, "minecraft:oak_fence").hasTag("minecraft:fences"));
+		assertEquals(protocol >= 776, block(registry, "minecraft:honey_block").hasTag("minecraft:suppresses_bounce"));
+		assertTrue(block(registry, "minecraft:scaffolding").hasTag("minecraft:climbable"));
+		assertFalse(block(registry, "minecraft:stone").hasTag("minecraft:climbable"));
 	}
 
 	@ParameterizedTest
@@ -147,8 +158,8 @@ class BlockRegistryTest {
 		BlockRegistry registry = registry(protocol);
 
 		assertEquals(BlockKind.AIR, block(registry, "minecraft:void_air").getKind());
-		assertEquals(BlockKind.FENCE, block(registry, "minecraft:oak_fence").getKind());
-		assertEquals(BlockKind.WALL, block(registry, "minecraft:cobblestone_wall").getKind());
+		assertEquals(BlockKind.OTHER, block(registry, "minecraft:oak_fence").getKind());
+		assertTrue(block(registry, "minecraft:cobblestone_wall").hasTag("minecraft:walls"));
 		assertEquals(BlockKind.FENCE_GATE, block(registry, "minecraft:spruce_fence_gate").getKind());
 		assertEquals(BlockKind.TRAPDOOR, block(registry, "minecraft:iron_trapdoor").getKind());
 		assertEquals(BlockKind.LADDER, block(registry, "minecraft:ladder").getKind());
@@ -177,6 +188,57 @@ class BlockRegistryTest {
 		BlockType slab = block(registry, "minecraft:oak_slab");
 		assertEquals(FluidType.WATER, registry.states(slab).stream()
 				.filter(state -> state.property("waterlogged").orElseThrow().equals("true")).findFirst().orElseThrow().getFluid());
+	}
+
+	@ParameterizedTest
+	@MethodSource("protocols")
+	void knowsTheLevelOfEachFluidState(int protocol) {
+		BlockRegistry registry = registry(protocol);
+		BlockType water = block(registry, "minecraft:water");
+		BlockState source = registry.state(water.getMinStateId());
+		BlockState flowing = registry.state(water.getMinStateId() + 1);
+		BlockState falling = registry.state(water.getMinStateId() + 8);
+
+		assertEquals(List.of(8, true, false), List.of(source.getFluidAmount(), source.isFluidSource(), source.isFluidFalling()));
+		assertEquals(List.of(7, false, false), List.of(flowing.getFluidAmount(), flowing.isFluidSource(), flowing.isFluidFalling()));
+		assertEquals(List.of(8, false, true), List.of(falling.getFluidAmount(), falling.isFluidSource(), falling.isFluidFalling()));
+		assertEquals(0, state(registry, "minecraft:stone").getFluidAmount());
+	}
+
+	@ParameterizedTest
+	@MethodSource("protocols")
+	void knowsHowStatesMeetFluids(int protocol) {
+		BlockRegistry registry = registry(protocol);
+
+		assertTrue(state(registry, "minecraft:stone").isBlocksFluidFlow());
+		assertFalse(state(registry, "minecraft:water").isBlocksFluidFlow());
+		assertEquals(EnumSet.allOf(BlockFace.class), state(registry, "minecraft:stone").getSturdyFaces());
+		assertEquals(Set.of(BlockFace.DOWN), state(registry, "minecraft:oak_slab").getSturdyFaces());
+	}
+
+	@ParameterizedTest
+	@MethodSource("protocols")
+	void recordsWhatScaffoldingGivesEachPlayer(int protocol) {
+		BlockRegistry registry = registry(protocol);
+		BlockType scaffolding = block(registry, "minecraft:scaffolding");
+		BlockState hangingBottom = registry.states(scaffolding).stream()
+				.filter(state -> state.getProperties().equals(Map.of("bottom", "true", "distance", "1", "waterlogged", "false")))
+				.findFirst().orElseThrow();
+
+		assertFalse(hangingBottom.getCollision().isEmpty());
+		assertEquals(List.of(new CollisionBox(0, 0, 0, 1, 0.125, 1)),
+				hangingBottom.collision(new CollisionCase(EntityBottom.INSIDE, false, false, false)).getBoxes());
+		assertTrue(hangingBottom.collision(new CollisionCase(EntityBottom.BELOW, false, false, false)).isEmpty());
+		assertEquals(hangingBottom.getCollision(), hangingBottom.collision(CollisionCase.STANDING));
+	}
+
+	@ParameterizedTest
+	@MethodSource("protocols")
+	void movesBambooByItsOffset(int protocol) {
+		BlockType bamboo = block(registry(protocol), "minecraft:bamboo");
+
+		assertEquals(new BlockOffset(false, 0.25, 0.0), bamboo.getOffset());
+		assertNull(block(registry(protocol), "minecraft:stone").getOffset());
 	}
 
 	@ParameterizedTest

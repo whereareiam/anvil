@@ -3,7 +3,7 @@ package me.whereareiam.anvil.protocol.java.physics;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.protocol.java.physics.entity.EntityDimensions;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
+import me.whereareiam.anvil.protocol.java.geometry.Vector;
 import me.whereareiam.anvil.protocol.java.physics.living.LivingBody;
 import me.whereareiam.anvil.protocol.java.physics.living.LivingSimulation;
 import me.whereareiam.anvil.protocol.java.physics.living.attribute.AttributeMap;

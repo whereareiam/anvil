@@ -11,11 +11,9 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundDi
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundPingPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
-import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientInformationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundCustomPayloadPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundPongPacket;
-import com.github.steveice10.mc.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
@@ -38,7 +36,7 @@ import java.util.function.Function;
 
 /**
  * Answers the packets a client of the MCProtocolLib releases from 1.18.2 until 1.19.4 must answer on its own, each ping
- * with its pong as the vanilla client does, and reports login, teleports and disconnects with their reason flattened to
+ * with its pong as the vanilla client does, and reports login and disconnects with their reason flattened to
  * plain text; the session's {@link FramedClientSession} hands the packets themselves over. The login reports the
  * profile the server granted in its login success, which arrives before the game starts. A vanilla client of these
  * releases answers the game's start with its client information followed by its {@link ClientBrand}, and swings back
@@ -73,10 +71,6 @@ final class ClientPacketListener extends SessionAdapter {
 		if (packet instanceof ClientboundAnimatePacket animation && animation.getEntityId() == entityId)
 			swingBack(session, animation.getAnimation());
 		if (packet instanceof ClientboundPingPacket ping) session.send(new ServerboundPongPacket(ping.getId()));
-		if (packet instanceof ClientboundPlayerPositionPacket position) {
-			listener.teleported(session, position.getYaw(), position.getPitch());
-			session.send(new ServerboundAcceptTeleportationPacket(position.getTeleportId()));
-		}
 		if (packet instanceof ClientboundDisconnectPacket disconnect)
 			listener.disconnected(session, DisconnectCause.SERVER, text.translate(disconnect.getReason()).plain());
 		if (packet instanceof ClientboundLoginDisconnectPacket disconnect)

@@ -81,7 +81,7 @@ public final class BlockRegistry {
 	}
 
 	/**
-	 * Where the data comes from: the minecraft-data release, its commit and the files.
+	 * Where the data comes from: the vanilla client it was read from.
 	 *
 	 * @return the data's source
 	 */

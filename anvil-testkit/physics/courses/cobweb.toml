@@ -1,0 +1,35 @@
+description = "Walks into cobwebs, which hold the player back, and jumps inside them"
+ticks = 70
+
+[start]
+x = 0.5
+y = 64.0
+z = 0.5
+yaw = 0.0
+pitch = 0.0
+
+[[blocks]]
+from = [-3, 63, -3]
+to = [3, 63, 12]
+state = "minecraft:stone"
+
+[[blocks]]
+from = [-1, 64, 3]
+to = [1, 65, 6]
+state = "minecraft:cobweb"
+
+[[keys]]
+tick = 5
+held = ["forward"]
+
+[[keys]]
+tick = 30
+held = ["forward", "jump"]
+
+[[keys]]
+tick = 45
+held = ["forward"]
+
+[[keys]]
+tick = 60
+held = []

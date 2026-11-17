@@ -11,6 +11,7 @@ architecture {
 	sharedApis = setOf(projects.anvilPlayer.playerApi.path, projects.anvilPlayer.playerWorker.path)
 	dependsOnApis = setOf(
 		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi.path,
+		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaGeometry.path,
 		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaJson.path,
 		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaPacket.path,
 		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker.path,

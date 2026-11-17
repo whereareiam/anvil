@@ -29,11 +29,13 @@ final class Flight {
 	}
 
 	/**
-	 * Toggles flight with the jump key of this tick, for a player that may fly.
+	 * Toggles flight with the jump key of this tick, for a player that may fly; a jump that auto-jump pressed toggles
+	 * nothing.
 	 *
-	 * @param wasJumping whether the jump key was held in the previous tick
+	 * @param wasJumping whether the input jumped in the previous tick
+	 * @param autoJumped whether auto-jump pressed jump this tick
 	 */
-	void toggle(boolean wasJumping) {
+	void toggle(boolean wasJumping, boolean autoJumped) {
 		PlayerState server = body.getServer();
 		if (!server.isMayFly()) return;
 		if (server.isSpectator()) {
@@ -43,7 +45,7 @@ final class Flight {
 			body.updateAbilities();
 			return;
 		}
-		if (wasJumping || !body.getKeys().isJump()) return;
+		if (wasJumping || !body.isJumpDown() || autoJumped) return;
 		if (jumpTriggerTime == 0) {
 			jumpTriggerTime = DOUBLE_TAP_WINDOW;
 			return;
@@ -62,7 +64,7 @@ final class Flight {
 		PlayerState server = body.getServer();
 		if (!server.isFlying()) return;
 
-		int direction = (body.getKeys().isSneak() ? -1 : 0) + (body.getKeys().isJump() ? 1 : 0);
+		int direction = (body.getKeys().isSneak() ? -1 : 0) + (body.isJumpDown() ? 1 : 0);
 		if (direction != 0) body.addDeltaMovement(0.0, direction * server.getFlyingSpeed() * 3.0F, 0.0);
 	}
 

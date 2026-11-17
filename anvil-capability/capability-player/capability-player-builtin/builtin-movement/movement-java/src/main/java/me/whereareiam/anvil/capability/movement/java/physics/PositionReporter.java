@@ -1,9 +1,9 @@
 package me.whereareiam.anvil.capability.movement.java.physics;
 
 import me.whereareiam.anvil.capability.movement.java.physics.player.PlayerBody;
-import me.whereareiam.anvil.capability.movement.java.physics.server.PlayerState;
 import me.whereareiam.anvil.capability.movement.model.MovementInput;
 import me.whereareiam.anvil.capability.movement.model.Position;
+import me.whereareiam.anvil.protocol.java.api.LocalPlayer;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -23,15 +23,17 @@ import java.util.List;
  * Decides the packets the vanilla client sends after each tick of its player and remembers what they told the server,
  * as {@code LocalPlayer.tick} and {@code sendPosition} do: the held keys when they changed, where the release carries
  * them ({@code ServerboundPlayerInput}), sprinting when it changed, sneaking when it changed where the release has no
- * input packet, and one movement packet: the position when it moved more than {@code 2.0E-4} or every 20 ticks, the
+ * input packet, and one movement packet: the position when it moved more than {@code 2.0E-4}, before 1.18 more than
+ * {@code 0.03}, or every 20 ticks, the
  * rotation when it changed, both together, or the ground state (and, from 1.21.2, the horizontal collision) when only
  * that changed. A new player told nothing, so it remembers the origin, as a new {@code LocalPlayer} does.
  */
 final class PositionReporter {
 	private static final double MOVED = 2.0E-4 * 2.0E-4;
+	private static final double MOVED_COARSELY = 9.0E-4;
 
 	private final @NotNull MovementRules rules;
-	private final @NotNull PlayerState state;
+	private final @NotNull LocalPlayer client;
 	private final boolean inputPackets;
 
 	private @NotNull Position last = Position.builder().build();
@@ -45,12 +47,12 @@ final class PositionReporter {
 	 * Creates the reporter of a new player, which told the server nothing yet.
 	 *
 	 * @param rules the client's rules
-	 * @param state what the server set of the player, which names its entity
+	 * @param client the client's own player, which names its entity
 	 * @param inputPackets whether the release carries the held keys, which then also tell sneaking
 	 */
-	PositionReporter(@NotNull MovementRules rules, @NotNull PlayerState state, boolean inputPackets) {
+	PositionReporter(@NotNull MovementRules rules, @NotNull LocalPlayer client, boolean inputPackets) {
 		this.rules = rules;
-		this.state = state;
+		this.client = client;
 		this.inputPackets = inputPackets;
 	}
 
@@ -82,7 +84,8 @@ final class PositionReporter {
 		double dy = player.getPosition().y - last.getY();
 		double dz = player.getPosition().z - last.getZ();
 		positionReminder++;
-		boolean moved = dx * dx + dy * dy + dz * dz > MOVED || positionReminder >= 20;
+		double threshold = rules.has(ClientBehaviour.COARSE_POSITION_REPORT) ? MOVED_COARSELY : MOVED;
+		boolean moved = dx * dx + dy * dy + dz * dz > threshold || positionReminder >= 20;
 		boolean turned = player.getYaw() != last.getYaw() || player.getPitch() != last.getPitch();
 		boolean collision = rules.has(ClientBehaviour.REPORTED_HORIZONTAL_COLLISION) && player.isHorizontalCollision();
 		Packet packet = Packet.of(moved, turned);
@@ -118,8 +121,8 @@ final class PositionReporter {
 	}
 
 	private @NotNull ServerboundPacket command(@NotNull PlayerCommandAction action) {
-		EntityId entityId = state.getEntityId();
-		if (entityId == null) throw new IllegalStateException("The player has not joined a level on its connection");
+		EntityId entityId = client.entityId()
+				.orElseThrow(() -> new IllegalStateException("The player has not joined a level on its connection"));
 
 		return new ServerboundPlayerCommand(entityId, action);
 	}

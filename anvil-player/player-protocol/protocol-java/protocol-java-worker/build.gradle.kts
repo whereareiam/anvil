@@ -12,6 +12,7 @@ description = "Java Edition worker kit that protocol libraries embed: the player
 dependencies {
 	api(projects.anvilPlayer.playerApi)
 	api(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
+	api(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaGeometry)
 	api(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaPacket)
 
 	testFixturesApi(testFixtures(projects.anvilPlayer.playerWorker))

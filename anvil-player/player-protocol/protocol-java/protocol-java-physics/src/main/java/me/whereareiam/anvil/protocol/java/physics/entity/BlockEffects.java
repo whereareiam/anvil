@@ -1,18 +1,17 @@
 package me.whereareiam.anvil.protocol.java.physics.entity;
 
 import me.whereareiam.anvil.protocol.java.block.model.BlockState;
+import me.whereareiam.anvil.protocol.java.block.model.BlockType;
 import me.whereareiam.anvil.protocol.java.block.model.movement.BlockMovement;
 import me.whereareiam.anvil.protocol.java.block.type.BlockKind;
 import me.whereareiam.anvil.protocol.java.block.type.MovementBehaviour;
 import me.whereareiam.anvil.protocol.java.physics.EntityBehaviour;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Box;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Coordinates;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
+import me.whereareiam.anvil.protocol.java.geometry.Box;
+import me.whereareiam.anvil.protocol.java.geometry.Coordinates;
+import me.whereareiam.anvil.protocol.java.geometry.Vector;
 import me.whereareiam.anvil.protocol.java.physics.world.BlockReader;
 import me.whereareiam.anvil.protocol.java.physics.world.Collisions;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Set;
 
 /**
  * What the blocks around an entity do to its movement, as vanilla's blocks and {@code Entity} apply it: the block it
@@ -23,7 +22,8 @@ import java.util.Set;
  * it, over the box swept from the tick's start to its end ({@code applyEffectsFromBlocks}).
  */
 public final class BlockEffects {
-	private static final Set<BlockKind> TALL = Set.of(BlockKind.FENCE, BlockKind.WALL, BlockKind.FENCE_GATE);
+	private static final String FENCES = "minecraft:fences";
+	private static final String WALLS = "minecraft:walls";
 
 	private final @NotNull EntityBody body;
 	private final @NotNull BlockReader reader;
@@ -58,8 +58,8 @@ public final class BlockEffects {
 		if (supporting == null) return below;
 		if (!(offset > 1.0E-5F)) return supporting;
 
-		BlockKind kind = state(supporting).getBlock().getKind();
-		boolean keep = offset <= 0.5 && kind == BlockKind.FENCE || kind == BlockKind.WALL || kind == BlockKind.FENCE_GATE;
+		BlockType block = state(supporting).getBlock();
+		boolean keep = offset <= 0.5 && block.hasTag(FENCES) || block.hasTag(WALLS) || block.getKind() == BlockKind.FENCE_GATE;
 		return keep ? supporting : new int[] {supporting[0], below[1], supporting[2]};
 	}
 
@@ -67,7 +67,9 @@ public final class BlockEffects {
 		if (!state(below).isAir()) return below;
 
 		int[] lower = {below[0], below[1] - 1, below[2]};
-		return TALL.contains(state(lower).getBlock().getKind()) ? lower : below;
+		BlockType block = state(lower).getBlock();
+		boolean tall = block.hasTag(FENCES) || block.hasTag(WALLS) || block.getKind() == BlockKind.FENCE_GATE;
+		return tall ? lower : below;
 	}
 
 	/**
@@ -79,15 +81,6 @@ public final class BlockEffects {
 		return movement(below()).getFriction();
 	}
 
-	/**
-	 * Tells whether the client has the chunk column of the block below the entity.
-	 *
-	 * @return whether it is loaded
-	 */
-	public boolean hasChunkBelow() {
-		int[] below = below();
-		return reader.hasChunkAt(below[0], below[2]);
-	}
 
 	/**
 	 * The jump factor of the block the entity is in, else of the block below it ({@code getBlockJumpFactor}).

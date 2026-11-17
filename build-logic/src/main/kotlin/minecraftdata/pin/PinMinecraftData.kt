@@ -11,8 +11,8 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.UntrackedTask
 
 /**
- * Pins the minecraft-data files of every release in one kind's pins file, such as `pinBlockData` for
- * `block-data.toml`.
+ * Pins the minecraft-data files of every release in one kind's pins file, such as `pinPacketData` for
+ * `packet-data.toml`.
  *
  * The task resolves the commit of the file's minecraft-data `version` tag and reads `data/pc/common/protocolVersions.json`
  * and `data/dataPaths.json` at that commit. For each row, the Minecraft versions minecraft-data gives the row's

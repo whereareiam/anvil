@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
-import me.whereareiam.anvil.protocol.mcprotocol.client.TestClientListener;
 import net.kyori.adventure.key.Key;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -12,8 +11,6 @@ import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.Clientbound
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.ServerboundPlayerLoadedPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
 import org.junit.jupiter.api.Test;
 
@@ -28,19 +25,11 @@ class ReleaseAnswersTest {
 	private final List<String> events = new ArrayList<>();
 	private final List<Packet> sent = new ArrayList<>();
 	private final ClientSession session = session();
-	private final ReleaseAnswers listener = new ReleaseAnswers(session, new TestClientListener<>(events));
+	private final ReleaseAnswers listener = new ReleaseAnswers(session);
 
 	@Test
-	void reportsATeleportBeforeAcceptingItAndAnnouncingThatThePlayerLoaded() {
+	void leavesATeleportAndEveryOtherPacketToThePlayersClient() {
 		listener.packetReceived(session, new ClientboundPlayerPositionPacket(7, 1, 64, -2, 0, 0, 0, 90, -15));
-
-		assertEquals(List.of("teleported 90.0 -15.0", "sent ServerboundAcceptTeleportationPacket", "sent ServerboundPlayerLoadedPacket"), events);
-		assertEquals(7, assertInstanceOf(ServerboundAcceptTeleportationPacket.class, sent.getFirst()).getId());
-		assertEquals(ServerboundPlayerLoadedPacket.INSTANCE, sent.get(1));
-	}
-
-	@Test
-	void leavesEveryOtherPacketAlone() {
 		listener.packetReceived(session, new ClientboundPingPacket(42));
 
 		assertEquals(List.of(), events);
