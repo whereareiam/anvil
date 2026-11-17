@@ -2,8 +2,6 @@ package me.whereareiam.anvil.testkit.tests.server.release;
 
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
-import me.whereareiam.anvil.api.process.ConsoleWatch;
-import me.whereareiam.anvil.api.process.ProcessConsole;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.vitals.DeathWatch;
 import me.whereareiam.anvil.capability.vitals.Vitals;
@@ -70,7 +68,7 @@ class VitalsReleaseTest {
 	@Test
 	void respawnsByItselfWhenTheServerTurnedTheDeathScreenOff(ScenarioContext anvil) {
 		FixtureServer server = new FixtureServer(anvil);
-		immediateRespawn(anvil, true);
+		immediateRespawn(server, true);
 		try {
 			SimulatedPlayer player = server.join();
 			Vitals vitals = player.capability(Vitals.class);
@@ -81,21 +79,17 @@ class VitalsReleaseTest {
 			assertTrue(deaths.died(TIMEOUT).isRespawnedImmediately());
 			player.awaitFirst(TIMEOUT, Expectation.of("respawn", () -> vitals.health() == 20F && !vitals.dead()));
 		} finally {
-			immediateRespawn(anvil, false);
+			immediateRespawn(server, false);
 		}
 	}
 
 	/**
-	 * Turns the death screen off or back on and waits until the server confirms it, so the next player's login, also
-	 * in the next test on the same server, carries the rule.
+	 * Turns the death screen off or back on, so the next player's login, also in the next test on the same server,
+	 * carries the rule.
 	 */
-	private static void immediateRespawn(ScenarioContext anvil, boolean enabled) {
+	private static void immediateRespawn(FixtureServer server, boolean enabled) {
 		String rule = TestedRelease.isAtLeast("1.21.11") ? "immediate_respawn" : "doImmediateRespawn";
-		ProcessConsole console = anvil.processes().server("server").console();
-		ConsoleWatch output = console.watch();
-
-		console.sendCommand("gamerule " + rule + " " + enabled);
-		output.printed(line -> line.contains(rule) && line.contains(String.valueOf(enabled)), TIMEOUT);
+		server.console("gamerule " + rule + " " + enabled);
 	}
 
 	/**

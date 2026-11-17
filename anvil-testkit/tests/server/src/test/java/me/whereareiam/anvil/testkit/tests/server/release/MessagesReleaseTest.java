@@ -90,11 +90,11 @@ class MessagesReleaseTest {
 
 		server.console("execute in minecraft:the_nether run tp " + player.name() + " 0 120 0");
 		messages.command("anvil-fixture dialog-echo nether");
-		chat.received("anvil:dialog-echo:nether", Duration.ofSeconds(30));
+		chat.received("anvil:dialog-echo:nether", Duration.ofSeconds(10));
 		server.console("execute in minecraft:overworld run tp " + player.name() + " 0 120 0");
 		messages.command("anvil-fixture dialog-echo overworld");
 
-		chat.received("anvil:dialog-echo:overworld", Duration.ofSeconds(30));
+		chat.received("anvil:dialog-echo:overworld", Duration.ofSeconds(10));
 	}
 
 	@Test
