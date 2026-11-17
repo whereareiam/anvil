@@ -1,0 +1,37 @@
+description = "Climbs a ladder by walking into it, holds on while sneaking, then lets go and slides down"
+ticks = 110
+
+[start]
+x = 0.5
+y = 64.0
+z = 0.5
+yaw = 0.0
+pitch = 0.0
+
+[[blocks]]
+from = [-3, 63, -3]
+to = [3, 63, 6]
+state = "minecraft:stone"
+
+[[blocks]]
+from = [-1, 64, 3]
+to = [1, 74, 3]
+state = "minecraft:stone"
+
+# A ladder facing north hangs on the wall south of it.
+[[blocks]]
+from = [0, 64, 2]
+to = [0, 73, 2]
+state = "minecraft:ladder[facing=north]"
+
+[[keys]]
+tick = 5
+held = ["forward"]
+
+[[keys]]
+tick = 55
+held = ["sneak"]
+
+[[keys]]
+tick = 70
+held = []

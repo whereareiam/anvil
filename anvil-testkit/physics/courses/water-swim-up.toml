@@ -1,0 +1,32 @@
+description = "Walks off the floor into a deep pool, sinks, swims up holding jump, and climbs out over the far wall"
+ticks = 120
+
+[start]
+x = 0.5
+y = 64.0
+z = 0.5
+yaw = 0.0
+pitch = 0.0
+
+# Solid ground with the pool carved into it; stone walls keep the water still on a real server.
+[[blocks]]
+from = [-4, 57, -3]
+to = [4, 63, 24]
+state = "minecraft:stone"
+
+[[blocks]]
+from = [-2, 58, 4]
+to = [2, 63, 10]
+state = "minecraft:water"
+
+[[keys]]
+tick = 5
+held = ["forward"]
+
+[[keys]]
+tick = 25
+held = ["forward", "jump"]
+
+[[keys]]
+tick = 105
+held = []

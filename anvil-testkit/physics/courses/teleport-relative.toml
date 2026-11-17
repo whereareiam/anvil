@@ -1,0 +1,27 @@
+description = "Walks forward on a stone floor and is teleported relative to where it is, its view turned, mid-walk"
+ticks = 60
+
+[join]
+x = 0.5
+y = 64.0
+z = 0.5
+yaw = 0.0
+pitch = 0.0
+chunksAfterTicks = 0
+
+[[blocks]]
+from = [-3, 63, -3]
+to = [12, 63, 20]
+state = "minecraft:stone"
+
+[[keys]]
+tick = 5
+held = ["forward"]
+
+[[keys]]
+tick = 50
+held = []
+
+[[server]]
+tick = 25
+teleport = { id = 2, x = 3.0, y = 0.0, z = 1.5, yaw = -45.0, pitch = 10.0, relatives = ["x", "y", "z", "yaw", "pitch"] }

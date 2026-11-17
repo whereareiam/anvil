@@ -1,36 +1,40 @@
 package me.whereareiam.anvil.protocol.java.physics.world;
 
 import me.whereareiam.anvil.protocol.java.block.model.BlockState;
-import me.whereareiam.anvil.protocol.java.block.model.collision.CollisionBox;
+import me.whereareiam.anvil.protocol.java.block.type.BlockFace;
 import me.whereareiam.anvil.protocol.java.block.type.BlockKind;
 import me.whereareiam.anvil.protocol.java.block.type.FluidType;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Box;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Coordinates;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
+import me.whereareiam.anvil.protocol.java.geometry.Box;
+import me.whereareiam.anvil.protocol.java.geometry.Coordinates;
+import me.whereareiam.anvil.protocol.java.geometry.Vector;
+import me.whereareiam.anvil.protocol.java.geometry.VectorLength;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * The fluids of the blocks the client knows, as vanilla's {@code FlowingFluid} describes them: how much of its block a
- * fluid fills, how high it reaches and which way it flows. A block that stops movement ({@code blocksMotion}) and a
- * face that stops a falling fluid ({@code isSolidFace}) are read from the block's collision shape, which is what
- * vanilla derives them from for the blocks that do not force them.
+ * fluid fills, how high it reaches and which way it flows. Each block state's fluid amount, whether it falls, whether
+ * it stops fluid flowing beside it and its sturdy faces are the block data's, as the release's vanilla client states
+ * them.
  */
 public final class Fluids {
-	private static final int SOURCE = 8;
 	/**
 	 * North, east, south and west, in {@code Direction.Plane.HORIZONTAL}'s order, as x and z steps.
 	 */
 	private static final int[][] HORIZONTAL = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
+	private static final BlockFace[] FACES = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
 
 	private final @NotNull BlockReader reader;
+	private final @NotNull VectorLength vectors;
 
 	/**
 	 * Creates the fluids of the world a player's client knows.
 	 *
 	 * @param reader the blocks the client knows
+	 * @param vectors the length and direction of vectors the client computes with
 	 */
-	public Fluids(@NotNull BlockReader reader) {
+	public Fluids(@NotNull BlockReader reader, @NotNull VectorLength vectors) {
 		this.reader = reader;
+		this.vectors = vectors;
 	}
 
 	/**
@@ -84,9 +88,10 @@ public final class Fluids {
 		}
 
 		Vector flow = new Vector(flowX, 0.0, flowZ);
-		if (falling(state) && besideSolidFace(state.getFluid(), x, y, z)) flow = flow.normalize().add(0.0, -6.0, 0.0);
+		if (state.isFluidFalling() && besideSolidFace(state.getFluid(), x, y, z))
+			flow = vectors.normalize(flow).add(0.0, -6.0, 0.0);
 
-		return flow.normalize();
+		return vectors.normalize(flow);
 	}
 
 	private float difference(@NotNull BlockState state, int x, int y, int z) {
@@ -95,7 +100,7 @@ public final class Fluids {
 
 		float height = ownHeight(neighbour);
 		if (height != 0.0F) return ownHeight(state) - height;
-		if (blocksMotion(neighbour)) return 0.0F;
+		if (neighbour.isBlocksFluidFlow()) return 0.0F;
 
 		BlockState below = reader.state(x, y - 1, z);
 		if (!affectsFlow(below, state.getFluid())) return 0.0F;
@@ -105,9 +110,11 @@ public final class Fluids {
 	}
 
 	private boolean besideSolidFace(@NotNull FluidType type, int x, int y, int z) {
-		for (int[] direction : HORIZONTAL)
-			if (solidFace(x + direction[0], y, z + direction[1], direction, type)
-					|| solidFace(x + direction[0], y + 1, z + direction[1], direction, type)) return true;
+		for (int side = 0; side < HORIZONTAL.length; side++) {
+			int[] direction = HORIZONTAL[side];
+			if (solidFace(x + direction[0], y, z + direction[1], FACES[side], type)
+					|| solidFace(x + direction[0], y + 1, z + direction[1], FACES[side], type)) return true;
+		}
 
 		return false;
 	}
@@ -128,24 +135,10 @@ public final class Fluids {
 	}
 
 	/**
-	 * The fluid's amount, from 1 to 8 for a source or a falling fluid, as {@code FluidState.getAmount}; 0 without fluid.
-	 */
-	private static int amount(@NotNull BlockState state) {
-		if (state.getFluid() == FluidType.NONE) return 0;
-
-		int level = level(state);
-		return level == 0 || level >= SOURCE ? SOURCE : SOURCE - level;
-	}
-
-	private static boolean falling(@NotNull BlockState state) {
-		return state.getFluid() != FluidType.NONE && level(state) >= SOURCE;
-	}
-
-	/**
-	 * How much of its block the fluid itself fills ({@code getOwnHeight}).
+	 * How much of its block the fluid itself fills ({@code getOwnHeight}): its amount in ninths.
 	 */
 	private static float ownHeight(@NotNull BlockState state) {
-		return amount(state) / 9.0F;
+		return state.getFluidAmount() / 9.0F;
 	}
 
 	private static boolean affectsFlow(@NotNull BlockState state, @NotNull FluidType type) {
@@ -153,47 +146,14 @@ public final class Fluids {
 	}
 
 	/**
-	 * Whether a block stops movement ({@code BlockState.blocksMotion}), which vanilla derives from its collision shape
-	 * ({@code calculateSolid}): bounds of at least about three quarters of a block on average, or a full block high.
+	 * Whether a block shows a solid face toward a direction ({@code FlowingFluid.isSolidFace}): not the same fluid, not
+	 * an {@code IceBlock}, and sturdy on the face toward that direction, which vanilla asks of the neighbour's face on
+	 * the far side from the fluid.
 	 */
-	private static boolean blocksMotion(@NotNull BlockState state) {
-		if (state.getCollision().isEmpty()) return false;
-
-		Box bounds = null;
-		for (CollisionBox box : state.getCollision().getBoxes()) {
-			Box part = new Box(new Vector(box.getMinX(), box.getMinY(), box.getMinZ()),
-					new Vector(box.getMaxX(), box.getMaxY(), box.getMaxZ()));
-			bounds = bounds == null ? part : bounds.union(part);
-		}
-
-		return bounds.size() >= 0.7291666666666666 || bounds.maxY - bounds.minY >= 1.0;
-	}
-
-	/**
-	 * Whether a block shows a solid face in a horizontal direction ({@code FlowingFluid.isSolidFace}): not the same
-	 * fluid, not ice ({@code IceBlock}), and one box of its collision covering that whole face.
-	 */
-	private boolean solidFace(int x, int y, int z, int @NotNull [] direction, @NotNull FluidType type) {
+	private boolean solidFace(int x, int y, int z, @NotNull BlockFace face, @NotNull FluidType type) {
 		BlockState state = reader.state(x, y, z);
 		if (state.getFluid() == type || state.getBlock().getKind() == BlockKind.ICE) return false;
 
-		for (CollisionBox box : state.getCollision().getBoxes())
-			if (coversFace(box, direction)) return true;
-
-		return false;
-	}
-
-	private static boolean coversFace(@NotNull CollisionBox box, int @NotNull [] direction) {
-		if (box.getMinY() > 0.0 || box.getMaxY() < 1.0) return false;
-		if (direction[0] != 0)
-			return box.getMinZ() <= 0.0 && box.getMaxZ() >= 1.0
-					&& (direction[0] < 0 ? box.getMinX() <= 0.0 : box.getMaxX() >= 1.0);
-
-		return box.getMinX() <= 0.0 && box.getMaxX() >= 1.0
-				&& (direction[1] < 0 ? box.getMinZ() <= 0.0 : box.getMaxZ() >= 1.0);
-	}
-
-	private static int level(@NotNull BlockState state) {
-		return state.property("level").map(Integer::parseInt).orElse(0);
+		return state.getSturdyFaces().contains(face);
 	}
 }

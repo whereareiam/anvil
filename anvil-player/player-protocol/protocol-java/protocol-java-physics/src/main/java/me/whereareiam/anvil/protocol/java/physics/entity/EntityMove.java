@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.protocol.java.physics.entity;
 
 import me.whereareiam.anvil.protocol.java.physics.EntityBehaviour;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Box;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
+import me.whereareiam.anvil.protocol.java.geometry.Box;
+import me.whereareiam.anvil.protocol.java.geometry.Vector;
 import me.whereareiam.anvil.protocol.java.physics.world.Collisions;
 import me.whereareiam.anvil.protocol.java.physics.world.EntityContext;
 import me.whereareiam.anvil.protocol.java.physics.world.shape.PlacedShape;
@@ -22,6 +22,7 @@ public final class EntityMove {
 	private final @NotNull Collisions collisions;
 	private final @NotNull BlockEffects effects;
 	private final @NotNull FluidState fluids;
+	private final @NotNull Restitution restitution;
 
 	/**
 	 * Creates the movement of an entity.
@@ -29,12 +30,19 @@ public final class EntityMove {
 	 * @param body the entity
 	 * @param effects what the blocks do to it
 	 * @param fluids how it is in fluids
+	 * @param bounciness what the entity brings to a bounce, from 26.2
 	 */
-	public EntityMove(@NotNull EntityBody body, @NotNull BlockEffects effects, @NotNull FluidState fluids) {
+	public EntityMove(
+			@NotNull EntityBody body,
+			@NotNull BlockEffects effects,
+			@NotNull FluidState fluids,
+			@NotNull Bounciness bounciness
+	) {
 		this.body = body;
 		this.collisions = new Collisions(body.getLevel());
 		this.effects = effects;
 		this.fluids = fluids;
+		this.restitution = new Restitution(body, bounciness);
 	}
 
 	/**
@@ -87,17 +95,34 @@ public final class EntityMove {
 
 		int[] landed = effects.onPos(0.2F);
 		checkFallDamage(collided.y);
-		Vector delta = body.getDeltaMovement();
-		if (body.isHorizontalCollision())
-			body.setDeltaMovement(new Vector(collidedX ? 0.0 : delta.x, delta.y, collidedZ ? 0.0 : delta.z));
-		if (vertical) effects.fallOn(landed);
+		boolean exact = body.has(EntityBehaviour.EXACT_COLLISION_STOP);
+		boolean stopX = exact ? movement.x != collided.x : collidedX;
+		boolean stopZ = exact ? movement.z != collided.z : collidedZ;
+		if (body.has(EntityBehaviour.RESTITUTION))
+			restitution.apply(body.getLevel().state(landed[0], landed[1], landed[2]), movement, collided);
+		else stopAfterCollisions(landed, stopX, stopZ, vertical);
 		if (body.has(EntityBehaviour.PATH_BLOCK_EFFECTS)) return;
 
 		if (body.isOnGround()) effects.stepOn(landed);
 		effects.insideDuringMove();
 	}
 
-	private static boolean equal(double first, double second) {
+	/**
+	 * Stops the entity's velocity along the axes it collided on before 26.2: horizontally at a wall, before 1.18 along
+	 * every axis the collision changed at all, and vertically as the block it landed on takes the fall
+	 * ({@code updateEntityMovementAfterFallOn}).
+	 */
+	private void stopAfterCollisions(int @NotNull [] landed, boolean collidedX, boolean collidedZ, boolean vertical) {
+		Vector delta = body.getDeltaMovement();
+		if (collidedX || collidedZ)
+			body.setDeltaMovement(new Vector(collidedX ? 0.0 : delta.x, delta.y, collidedZ ? 0.0 : delta.z));
+		if (vertical) effects.fallOn(landed);
+	}
+
+	/**
+	 * {@code Mth.equal}: whether two coordinates differ by less than {@code 1.0E-5F}.
+	 */
+	static boolean equal(double first, double second) {
 		return Math.abs(second - first) < 1.0E-5F;
 	}
 
@@ -123,12 +148,21 @@ public final class EntityMove {
 	}
 
 	/**
+	 * Moves a box against the blocks, with the world border among the colliders before 1.18.
+	 */
+	private @NotNull Vector collide(@NotNull Vector movement, @NotNull Box box, @NotNull EntityContext context) {
+		return body.has(EntityBehaviour.WORLD_BORDER_COLLIDER)
+				? collisions.collideBoundingBoxWithBorder(movement, box, context)
+				: collisions.collideBoundingBox(movement, box, context);
+	}
+
+	/**
 	 * {@code Entity.collide}: moves the entity against the blocks and steps up onto what stops it horizontally.
 	 */
 	private @NotNull Vector collide(@NotNull Vector movement) {
 		Box box = body.getBox();
 		EntityContext context = body.context();
-		Vector collided = movement.lengthSqr() == 0.0 ? movement : collisions.collideBoundingBox(movement, box, context);
+		Vector collided = movement.lengthSqr() == 0.0 ? movement : collide(movement, box, context);
 		boolean landing = movement.y != collided.y && movement.y < 0.0;
 		boolean blocked = movement.x != collided.x || movement.z != collided.z;
 		float stepHeight = body.maxUpStep();
@@ -164,17 +198,17 @@ public final class EntityMove {
 	private @NotNull Vector legacyStepUp(@NotNull Vector movement, @NotNull Vector collided, float stepHeight) {
 		Box box = body.getBox();
 		EntityContext context = body.context();
-		Vector stepped = collisions.collideBoundingBox(new Vector(movement.x, stepHeight, movement.z), box, context);
-		Vector rise = collisions.collideBoundingBox(new Vector(0.0, stepHeight, 0.0),
+		Vector stepped = collide(new Vector(movement.x, stepHeight, movement.z), box, context);
+		Vector rise = collide(new Vector(0.0, stepHeight, 0.0),
 				box.expandTowards(movement.x, 0.0, movement.z), context);
 		if (rise.y < stepHeight) {
-			Vector across = collisions.collideBoundingBox(new Vector(movement.x, 0.0, movement.z), box.move(rise), context)
+			Vector across = collide(new Vector(movement.x, 0.0, movement.z), box.move(rise), context)
 					.add(rise);
 			if (across.horizontalDistanceSqr() > stepped.horizontalDistanceSqr()) stepped = across;
 		}
 		if (stepped.horizontalDistanceSqr() <= collided.horizontalDistanceSqr()) return collided;
 
-		return stepped.add(collisions.collideBoundingBox(new Vector(0.0, -stepped.y + movement.y, 0.0),
+		return stepped.add(collide(new Vector(0.0, -stepped.y + movement.y, 0.0),
 				box.move(stepped), context));
 	}
 }

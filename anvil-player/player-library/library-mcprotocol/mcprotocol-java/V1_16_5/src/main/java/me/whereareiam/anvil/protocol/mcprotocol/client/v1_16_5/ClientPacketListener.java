@@ -5,11 +5,9 @@ import com.github.steveice10.mc.protocol.data.game.entity.player.Hand;
 import com.github.steveice10.mc.protocol.packet.handshake.client.HandshakePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.ClientPluginMessagePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerSwingArmPacket;
-import com.github.steveice10.mc.protocol.packet.ingame.client.world.ClientTeleportConfirmPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerDisconnectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerJoinGamePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityAnimationPacket;
-import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerPositionRotationPacket;
 import com.github.steveice10.mc.protocol.packet.login.server.EncryptionRequestPacket;
 import com.github.steveice10.mc.protocol.packet.login.server.LoginDisconnectPacket;
 import com.github.steveice10.mc.protocol.packet.login.server.LoginSuccessPacket;
@@ -31,7 +29,7 @@ import java.util.Objects;
 
 /**
  * Answers the packets a client of the MCProtocolLib releases from 1.16.5 until 1.17.1 must answer on its own and
- * reports login, teleports and disconnects with their reason flattened to plain text; the session's {@link
+ * reports login and disconnects with their reason flattened to plain text; the session's {@link
  * FramedClientSession} hands the packets themselves over. Like the vanilla client, it swings back the arm the server
  * swings of the player's own entity. The login reports the profile the server granted in its login success, which
  * arrives before the game starts. A vanilla client of these releases answers the game's start with its client
@@ -74,10 +72,6 @@ final class ClientPacketListener extends SessionAdapter {
 			session.send(new ClientPluginMessagePacket(ClientBrand.CHANNEL, ClientBrand.payload()));
 			listener.loggedIn(session,
 					Objects.requireNonNull(granted, "The server started the game before it granted a profile"));
-		}
-		if (packet instanceof ServerPlayerPositionRotationPacket position) {
-			listener.teleported(session, position.getYaw(), position.getPitch());
-			session.send(new ClientTeleportConfirmPacket(position.getTeleportId()));
 		}
 		if (packet instanceof ServerEntityAnimationPacket animation && animation.getEntityId() == entityId)
 			swingBack(session, animation.getAnimation());

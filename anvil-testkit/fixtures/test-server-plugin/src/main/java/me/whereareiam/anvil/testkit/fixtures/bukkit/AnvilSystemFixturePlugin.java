@@ -3,8 +3,10 @@ package me.whereareiam.anvil.testkit.fixtures.bukkit;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
@@ -65,6 +67,9 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 		var health = getCommand("anvil-health");
 		if (health != null)
 			health.setExecutor((sender, ignored, label, arguments) -> health(arguments));
+		var blocks = getCommand("anvil-blocks");
+		if (blocks != null)
+			blocks.setExecutor((sender, ignored, label, arguments) -> blocks(arguments));
 		var auth = getCommand("auth");
 		if (auth != null)
 			auth.setExecutor((sender, ignored, label, arguments) -> authenticate(player(sender)));
@@ -268,6 +273,54 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 			default:
 				return false;
 		}
+	}
+
+	/**
+	 * Fills a box of the main world, both corners included, with one block state as vanilla writes it, such as
+	 * {@code minecraft:oak_stairs[facing=north,half=bottom]}, from the console. It loads the box's chunks and keeps
+	 * them loaded, and sets each block exactly as given, without the updates that would reshape it or its neighbours
+	 * or start fluids flowing. It logs {@code anvil:blocks:filled <count>} once the blocks are set, or
+	 * {@code anvil:blocks:refused <reason>}.
+	 */
+	private boolean blocks(String[] arguments) {
+		if (arguments.length != 7)
+			return refuseBlocks("expected <x1> <y1> <z1> <x2> <y2> <z2> <state>");
+
+		int[] corners = new int[6];
+		BlockData state;
+		try {
+			for (int index = 0; index < corners.length; index++)
+				corners[index] = Integer.parseInt(arguments[index]);
+			state = Bukkit.createBlockData(arguments[6]);
+		} catch (IllegalArgumentException invalid) {
+			return refuseBlocks(invalid.getMessage());
+		}
+
+		World world = Bukkit.getWorlds().get(0);
+		int minX = Math.min(corners[0], corners[3]);
+		int maxX = Math.max(corners[0], corners[3]);
+		int minY = Math.min(corners[1], corners[4]);
+		int maxY = Math.max(corners[1], corners[4]);
+		int minZ = Math.min(corners[2], corners[5]);
+		int maxZ = Math.max(corners[2], corners[5]);
+		for (int chunkX = minX >> 4; chunkX <= maxX >> 4; chunkX++)
+			for (int chunkZ = minZ >> 4; chunkZ <= maxZ >> 4; chunkZ++)
+				world.getChunkAt(chunkX, chunkZ).addPluginChunkTicket(this);
+
+		int count = 0;
+		for (int x = minX; x <= maxX; x++)
+			for (int y = minY; y <= maxY; y++)
+				for (int z = minZ; z <= maxZ; z++) {
+					world.getBlockAt(x, y, z).setBlockData(state, false);
+					count++;
+				}
+		getLogger().info("anvil:blocks:filled " + count);
+		return true;
+	}
+
+	private boolean refuseBlocks(String reason) {
+		getLogger().info("anvil:blocks:refused " + reason);
+		return true;
 	}
 
 	private static Player player(CommandSender sender) {

@@ -6,10 +6,12 @@ import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundAcceptTeleportation;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundClientTickEnd;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerInput;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerLoaded;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPos;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPosRot;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerRot;
@@ -23,6 +25,8 @@ import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.Clientbound
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerAbilitiesPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.ServerboundClientTickEndPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.ServerboundPlayerLoadedPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundPlayerInputPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerPosPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerPosRotPacket;
@@ -133,10 +137,19 @@ class PlayerPacketsTest {
 				Vector3d.from(0.25, -0.5, 0), 90, 5, List.of(PositionElement.X, PositionElement.X_ROT,
 				PositionElement.DELTA_Y, PositionElement.ROTATE_DELTA));
 
-		assertEquals(ClientboundPlayerPosition.builder().position(new Vec3d(10, 64, -10)).yaw(90).pitch(5)
+		assertEquals(ClientboundPlayerPosition.builder().id(1).position(new Vec3d(10, 64, -10)).yaw(90).pitch(5)
 				.deltaMovement(new Vec3d(0.25, -0.5, 0))
 				.relatives(Set.of(Relative.X, Relative.PITCH, Relative.DELTA_Y, Relative.ROTATE_DELTA)).build(),
 				packets.decode(position));
+	}
+
+	@Test
+	void acceptsATeleportByItsIdAndTellsThatThePlayerLoaded() {
+		ServerboundAcceptTeleportationPacket accept = assertInstanceOf(ServerboundAcceptTeleportationPacket.class,
+				packets.encode(ServerboundAcceptTeleportation.builder().id(7).position(new Vec3d(1, 2, 3)).build()));
+
+		assertEquals(7, accept.getId());
+		assertSame(ServerboundPlayerLoadedPacket.INSTANCE, packets.encode(new ServerboundPlayerLoaded()));
 	}
 
 	@Test
@@ -157,6 +170,7 @@ class PlayerPacketsTest {
 		assertEquals(Set.of(
 				ClientboundPlayerAbilities.class,
 				ClientboundPlayerPosition.class,
+				ServerboundAcceptTeleportation.class,
 				ServerboundClientTickEnd.class,
 				ServerboundMovePlayerPos.class,
 				ServerboundMovePlayerPosRot.class,
@@ -164,7 +178,8 @@ class PlayerPacketsTest {
 				ServerboundMovePlayerStatusOnly.class,
 				ServerboundPlayerAbilities.class,
 				ServerboundPlayerCommand.class,
-				ServerboundPlayerInput.class
+				ServerboundPlayerInput.class,
+				ServerboundPlayerLoaded.class
 		), packets.packets());
 	}
 

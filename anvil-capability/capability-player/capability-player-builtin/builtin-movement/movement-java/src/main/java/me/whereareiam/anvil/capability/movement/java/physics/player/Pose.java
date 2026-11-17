@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.capability.movement.java.physics.player;
 
 import me.whereareiam.anvil.protocol.java.physics.entity.EntityDimensions;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Box;
+import me.whereareiam.anvil.protocol.java.geometry.Box;
 import me.whereareiam.anvil.protocol.java.physics.living.attribute.LivingAttributes;
 import me.whereareiam.anvil.protocol.java.physics.world.Collisions;
 import org.jetbrains.annotations.NotNull;

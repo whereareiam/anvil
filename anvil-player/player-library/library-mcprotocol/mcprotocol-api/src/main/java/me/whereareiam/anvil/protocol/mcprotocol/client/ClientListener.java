@@ -44,16 +44,6 @@ public interface ClientListener<S> extends PacketDemand {
 	void loggedIn(@NotNull S session, @NotNull ClientProfile granted);
 
 	/**
-	 * Reports a server-set position and view before the client accepts the teleport, so that whoever observes the
-	 * server completing the teleport already reads the new view.
-	 *
-	 * @param session session that was teleported
-	 * @param yaw view yaw in degrees, as sent by the server
-	 * @param pitch view pitch in degrees, as sent by the server
-	 */
-	void teleported(@NotNull S session, float yaw, float pitch);
-
-	/**
 	 * Reports that a session's connection ended. A session can report more than one disconnect, in either
 	 * order: the server's disconnect packet as {@link DisconnectCause#SERVER}, a refused encryption request as
 	 * {@link DisconnectCause#AUTHENTICATION_REQUIRED}, and the closed connection as

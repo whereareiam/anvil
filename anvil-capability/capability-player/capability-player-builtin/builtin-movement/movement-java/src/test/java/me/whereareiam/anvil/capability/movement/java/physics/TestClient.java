@@ -7,11 +7,12 @@ import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
 import me.whereareiam.anvil.protocol.java.api.type.player.GameMode;
+import me.whereareiam.anvil.protocol.java.api.type.world.GameEventType;
 import me.whereareiam.anvil.protocol.java.block.BlockRegistry;
 import me.whereareiam.anvil.protocol.java.physics.TestWorld;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
+import me.whereareiam.anvil.protocol.java.geometry.Vector;
 import me.whereareiam.anvil.protocol.java.worker.TestJavaPlayer;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,6 +44,14 @@ public final class TestClient {
 	 */
 	public TestClient(@NotNull String version, @NotNull Predicate<Class<? extends JavaPacket>> carried) {
 		this(new TestWorld(version, carried));
+	}
+
+	/**
+	 * Creates a disconnected player of a client version that speaks the given protocol, such as one Anvil ships no
+	 * block data of.
+	 */
+	public TestClient(@NotNull String version, int protocol) {
+		this(new TestWorld(version, protocol));
 	}
 
 	/**
@@ -99,24 +108,31 @@ public final class TestClient {
 	 * Starts a simulation of the player in this world, as client physics does.
 	 */
 	public @NotNull PlayerSimulation simulation(@NotNull PlayerState state, double x, double y, double z) {
-		Position at = Position.builder().x(x).y(y).z(z).build();
+		return simulation(state, Position.builder().x(x).y(y).z(z).build());
+	}
+
+	/**
+	 * Starts a simulation of the player at rest where a server teleport placed it, as client physics does.
+	 */
+	public @NotNull PlayerSimulation simulation(@NotNull PlayerState state, @NotNull Position at) {
 		return PlayerSimulation.start(new MovementRules(version), state, world.reader(), at, Vector.ZERO);
 	}
 
 	/**
-	 * Returns the server state of a player that joined this client's level as entity {@link #ENTITY_ID}.
+	 * Puts the player, which joined this client's level as entity {@link #ENTITY_ID}, in a game mode, as the server's
+	 * change of the game mode does, and returns the server state of a new player in it.
 	 */
 	public @NotNull PlayerState state(@NotNull GameMode gameMode) {
-		PlayerState state = new PlayerState(version);
-		state.login(ClientboundLogin.builder().entityId(ENTITY_ID).level(TestWorld.OVERWORLD)
-				.dimension(TestWorld.OVERWORLD).dimensionType(dimension).gameMode(gameMode).build());
+		player.deliver(new ClientboundGameEvent(GameEventType.CHANGE_GAME_MODE, gameMode.ordinal()));
+		PlayerState state = new PlayerState(version, player.protocol().player());
+		state.login();
 		return state;
 	}
 
 	/**
-	 * Starts a simulation of the player in this world with the server state of a fresh survival player.
+	 * Starts a simulation of the player in this world with the server state of a new player.
 	 */
 	public @NotNull PlayerSimulation simulation(double x, double y, double z) {
-		return simulation(new PlayerState(version), x, y, z);
+		return simulation(new PlayerState(version, player.protocol().player()), x, y, z);
 	}
 }

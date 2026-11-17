@@ -66,7 +66,7 @@ class NetworkClientSessionsTest {
 	void reportsTheServersReasonWhenAnAnswerFailsAfterTheServerClosed() throws Exception {
 		CompletableFuture<String> disconnect = new CompletableFuture<>();
 		try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
-			NetworkClientSessions sessions = new NetworkClientSessions(new TextTranslator(), ReleaseAnswers::new);
+			NetworkClientSessions sessions = sessions();
 			ClientSession session = sessions.open(login(server.getLocalPort()), disconnects(disconnect),
 					McProtocolClientAdapter.packets(PacketDemand.EVERY));
 			sessions.connect(session);
@@ -99,7 +99,7 @@ class NetworkClientSessionsTest {
 
 	@Test
 	void startsTheConfigurationAfterTheLibrarysOwnListenerAndAnswersKnownPacks() {
-		ClientSession session = new NetworkClientSessions(new TextTranslator(), ReleaseAnswers::new)
+		ClientSession session = sessions()
 				.open(login(25565), new TestClientListener<>(), McProtocolClientAdapter.packets(PacketDemand.EVERY));
 
 		session.getPacketProtocol().newClientSession(session);
@@ -117,7 +117,7 @@ class NetworkClientSessionsTest {
 	@Test
 	void handsEveryPacketOverOnceConnectedAndAsItsFrameWhileTheListenerWantsFrames() {
 		TestClientListener<ClientSession> listener = new TestClientListener<>();
-		ClientSession session = new NetworkClientSessions(new TextTranslator(), ReleaseAnswers::new)
+		ClientSession session = sessions()
 				.open(login(25565), listener, McProtocolClientAdapter.packets(PacketDemand.EVERY));
 		Deque<Packet> decoded = new ArrayDeque<>();
 		EmbeddedChannel channel = new EmbeddedChannel(new ChannelInitializer<>() {
@@ -145,6 +145,10 @@ class NetworkClientSessionsTest {
 		assertEquals(List.of(welcome), listener.received());
 		assertEquals(List.of(new TestClientListener.Frame(ConnectionState.PLAY, 0x2B, new byte[]{7}, null)),
 				listener.frames());
+	}
+
+	private static NetworkClientSessions sessions() {
+		return new NetworkClientSessions(new TextTranslator(), ReleaseAnswers::new);
 	}
 
 	private static ClientLogin login(int port) {

@@ -3,7 +3,7 @@ package me.whereareiam.anvil.protocol.java.physics.living;
 import me.whereareiam.anvil.protocol.java.physics.EntityBehaviour;
 import me.whereareiam.anvil.protocol.java.physics.entity.BlockEffects;
 import me.whereareiam.anvil.protocol.java.physics.entity.FluidState;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
+import me.whereareiam.anvil.protocol.java.geometry.Vector;
 import me.whereareiam.anvil.protocol.java.physics.living.effect.Effects;
 import me.whereareiam.anvil.protocol.java.physics.living.effect.MobEffect;
 import org.jetbrains.annotations.NotNull;
@@ -119,6 +119,15 @@ public class LivingSimulation {
 	 */
 	public @NotNull Jumping jumping() {
 		return jumping;
+	}
+
+	/**
+	 * Returns what the blocks around the entity do to it, such as their jump factor.
+	 *
+	 * @return its block effects
+	 */
+	public @NotNull BlockEffects blockEffects() {
+		return blocks;
 	}
 
 	/**

@@ -11,7 +11,7 @@ import java.time.Duration
 
 /**
  * Reads files over HTTP for the tasks that pin what the build downloads, such as `pinLibraryReleases` and
- * `pinBlockData`: one client per task that follows redirects and the system's proxy. The ordinary build never reads
+ * `pinPacketData`: one client per task that follows redirects and the system's proxy. The ordinary build never reads
  * through it; it resolves pinned files through Gradle's repositories, which cache them and work offline.
  */
 class HttpReader : AutoCloseable {

@@ -16,35 +16,47 @@ import org.geysermc.mcprotocollib.protocol.MinecraftConstants;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
-import java.util.function.BiFunction;
+import java.util.List;
+import java.util.function.Function;
 
 /**
  * Sessions of the MCProtocolLib releases from 1.21.11 on: client sessions from the network session factory with
  * built-in profiles. The handshake announces a virtual host through the client-host flag, and the session binds the
  * source address as its bind socket address; the factory's {@code setBindAddress} is avoided because it replaces the
- * remote address instead. How a client accepts a teleport and answers a swing changed in Minecraft 26.3, so each
- * segment's adapter hands over its release's {@code ReleaseAnswers}. The session's {@link ClientProtocol} starts its configuration.
+ * remote address instead. What a client answers on its own changed in Minecraft 26.3, whose client answers nothing, so
+ * each segment's adapter hands over its release's {@code ReleaseAnswers}, or none. The session's {@link ClientProtocol}
+ * starts its configuration.
  */
 public final class NetworkClientSessions implements ClientSessions<ClientSession> {
 	private static final int ANY_PORT = 0;
 
 	private final ComponentTranslator text;
-	private final BiFunction<ClientSession, ClientListener<? super ClientSession>, SessionListener> answers;
+	private final List<Function<ClientSession, SessionListener>> answers;
 
 	/**
-	 * Creates the sessions of a release.
+	 * Creates the sessions of a release whose client answers some of its packets on its own.
 	 *
 	 * @param text translates the release's text components
-	 * @param answers creates the listener that gives one session the answers of the release's own packets and reports
-	 * its teleports to the session's listener; the sessions add it before the listener that delivers the session's
-	 * packets
+	 * @param answers creates the listener that gives one session the answers of the release's own packets; the sessions
+	 * add it before the listener that delivers the session's packets
 	 */
 	public NetworkClientSessions(
 			@NotNull ComponentTranslator text,
-			@NotNull BiFunction<ClientSession, ClientListener<? super ClientSession>, SessionListener> answers
+			@NotNull Function<ClientSession, SessionListener> answers
 	) {
 		this.text = text;
-		this.answers = answers;
+		this.answers = List.of(answers);
+	}
+
+	/**
+	 * Creates the sessions of a release whose client answers nothing on its own: the client's own player of the Java
+	 * worker kit gives every answer.
+	 *
+	 * @param text translates the release's text components
+	 */
+	public NetworkClientSessions(@NotNull ComponentTranslator text) {
+		this.text = text;
+		this.answers = List.of();
 	}
 
 	@Override
@@ -73,7 +85,7 @@ public final class NetworkClientSessions implements ClientSessions<ClientSession
 		if (credentials != null && credentials.getSessionServer() != null)
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY,
 					new RedirectedSessionService(credentials.getSessionServer()));
-		session.addListener(answers.apply(session, listener));
+		answers.forEach(answer -> session.addListener(answer.apply(session)));
 		session.addListener(new ClientPacketListener(session, listener, packets, text));
 
 		return session;

@@ -80,7 +80,7 @@ public abstract class SyncedEntityTranslation extends EntityTranslation {
 					.position(ValueTranslator.vec3d(teleport.getPosition()))
 					.yaw(teleport.getYRot())
 					.pitch(teleport.getXRot())
-					.relatives(placement(PlayerPackets.relatives(teleport.getRelatives())))
+					.relatives(placement(RelativeElements.translate(teleport.getRelatives())))
 					.build();
 			case ClientboundEntityPositionSyncPacket sync -> ClientboundEntityPositionSync.builder()
 					.entityId(new EntityId(sync.getId()))

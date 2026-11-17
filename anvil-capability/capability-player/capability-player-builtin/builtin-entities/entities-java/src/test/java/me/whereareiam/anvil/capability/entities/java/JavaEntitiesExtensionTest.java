@@ -27,7 +27,6 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMove
 import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundTeleportEntity;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
-import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPosRot;
 import me.whereareiam.anvil.protocol.java.api.type.entity.Relative;
 import me.whereareiam.anvil.protocol.java.worker.TestJavaPlayer;
 import me.whereareiam.anvil.protocol.worker.TestOperations;
@@ -52,8 +51,7 @@ class JavaEntitiesExtensionTest {
 	private static final List<Class<? extends ClientboundPacket>> LISTENED = List.of(ClientboundLogin.class,
 			ClientboundRespawn.class, ClientboundAddEntity.class, ClientboundMoveEntityPos.class,
 			ClientboundMoveEntityPosRot.class, ClientboundMoveEntityRot.class, ClientboundTeleportEntity.class,
-			ClientboundPlayerPosition.class, ClientboundSetEntityData.class, ClientboundSetPassengers.class,
-			ClientboundRemoveEntities.class);
+			ClientboundSetEntityData.class, ClientboundSetPassengers.class, ClientboundRemoveEntities.class);
 
 	private final JavaEntitiesExtension extension = new JavaEntitiesExtension();
 	private final TestJavaPlayer player = new TestJavaPlayer("Alice");
@@ -169,7 +167,7 @@ class JavaEntitiesExtensionTest {
 	}
 
 	@Test
-	void measuresDistancesFromWhereTheServerPlacedThePlayerAndWhereItMovedItself() {
+	void measuresDistancesFromWhereTheClientsOwnPlayerIs() {
 		extension.bind(player, operations);
 		player.connect();
 		player.deliver(spawn(7, "zombie", 0, 64, 10));
@@ -180,7 +178,7 @@ class JavaEntitiesExtensionTest {
 				.relatives(Set.of(Relative.X, Relative.Y, Relative.Z))
 				.build());
 		assertEquals(4.0, distance());
-		player.protocol().send(ServerboundMovePlayerPosRot.builder().position(new Vec3d(0, 64, 7)).build());
+		player.protocol().player().position(new Vec3d(0, 64, 7));
 		assertEquals(3.0, distance());
 	}
 
@@ -218,7 +216,6 @@ class JavaEntitiesExtensionTest {
 
 		binding.close();
 		player.deliver(spawn(8, "zombie", 0, 0, 0));
-		player.protocol().send(ServerboundMovePlayerPosRot.builder().position(new Vec3d(0, 64, 7)).build());
 		player.rejoin();
 		player.deliver(spawn(9, "zombie", 0, 0, 0));
 

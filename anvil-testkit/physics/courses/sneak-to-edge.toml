@@ -1,0 +1,24 @@
+description = "Sneaks forward to the edge of a platform, where sneaking keeps the player from falling off, and keeps pushing"
+ticks = 110
+
+[start]
+x = 0.5
+y = 64.0
+z = 0.5
+yaw = 0.0
+pitch = 0.0
+
+# The platform ends at z = 4; beyond it the player would fall to the floor below.
+[[blocks]]
+from = [-3, 60, -3]
+to = [3, 60, 12]
+state = "minecraft:stone"
+
+[[blocks]]
+from = [-3, 61, -3]
+to = [3, 63, 3]
+state = "minecraft:stone"
+
+[[keys]]
+tick = 5
+held = ["forward", "sneak"]

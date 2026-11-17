@@ -1,0 +1,23 @@
+description = "Joins on a stone floor whose chunks arrive with the login, then walks forward"
+ticks = 40
+
+[join]
+x = 0.5
+y = 64.0
+z = 0.5
+yaw = 0.0
+pitch = 0.0
+chunksAfterTicks = 0
+
+[[blocks]]
+from = [-3, 63, -3]
+to = [3, 63, 20]
+state = "minecraft:stone"
+
+[[keys]]
+tick = 10
+held = ["forward"]
+
+[[keys]]
+tick = 25
+held = []

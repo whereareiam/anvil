@@ -7,8 +7,9 @@ import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioF
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The release the release suite runs against: the {@code anvil.release} system property, which each
- * {@code releaseTest-<minecraft>} task sets, or the newest release of the live matrix when a test runs on its own.
+ * The release the release and physics suites run against: the {@code anvil.release} system property, which each
+ * {@code releaseTest-<minecraft>} and {@code physicsTest-<minecraft>} task sets, or the newest release of the live
+ * matrix when a test runs on its own.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class TestedRelease {

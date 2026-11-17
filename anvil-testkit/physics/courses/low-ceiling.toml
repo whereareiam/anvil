@@ -1,0 +1,31 @@
+description = "Holds jump under a ceiling two blocks above the floor, so each jump hits it, then walks out from under it"
+ticks = 70
+
+[start]
+x = 0.5
+y = 64.0
+z = 0.5
+yaw = 0.0
+pitch = 0.0
+
+[[blocks]]
+from = [-3, 63, -3]
+to = [3, 63, 10]
+state = "minecraft:stone"
+
+[[blocks]]
+from = [-3, 66, -3]
+to = [3, 66, 3]
+state = "minecraft:stone"
+
+[[keys]]
+tick = 5
+held = ["jump"]
+
+[[keys]]
+tick = 40
+held = ["forward", "jump"]
+
+[[keys]]
+tick = 55
+held = []

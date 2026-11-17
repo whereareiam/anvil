@@ -36,8 +36,9 @@ jobs:
           sparse-checkout: live-matrix.toml
           sparse-checkout-cone-mode: false
 
-      # One job per release of the live matrix, each a Paper row, which runs the release suite against that release's server, then
-      # the platform suite per platform group and the behaviour suite.
+      # Two jobs per release of the live matrix, each a Paper row: the release suite against that release's server and,
+      # beside it, the physics suite, which runs every physics course there. Then the platform suite per platform group
+      # and the behaviour suite.
       - name: List the suites
         id: suites
         run: |
@@ -49,8 +50,14 @@ jobs:
               releases = [row["minecraft"] for row in tomllib.load(file)["paper"]]
 
           suites = [
-              {"name": f"Release {release}", "shard": f"release-{release}", "task": f"releaseTest-{release}", "platforms": ""}
+              suite
               for release in releases
+              for suite in (
+                  {"name": f"Release {release}", "shard": f"release-{release}", "task": f"releaseTest-{release}",
+                   "platforms": ""},
+                  {"name": f"Physics {release}", "shard": f"physics-{release}", "task": f"physicsTest-{release}",
+                   "platforms": ""},
+              )
           ]
           suites += [
               {"name": "Platforms · Spigot and NeoForge", "shard": "platform-direct", "task": "platformTest",

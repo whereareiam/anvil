@@ -3,8 +3,8 @@ package me.whereareiam.anvil.protocol.java.block.type;
 /**
  * What a block is, where vanilla's movement code asks by the block's class or tag rather than by its numbers.
  *
- * <p>Anvil maintains these by hand from vanilla's code, because minecraft-data does not carry them; each constant
- * names the vanilla code it stands for.</p>
+ * <p>Each release's kinds are read from its vanilla client, by the class, identity or tag its movement code asks;
+ * each constant names that code.</p>
  */
 public enum BlockKind {
 	/**
@@ -16,20 +16,9 @@ public enum BlockKind {
 	 */
 	AIR,
 	/**
-	 * The block is a fence (the {@code minecraft:fences} tag), whose collision reaches above the block:
-	 * {@code Entity.getOnPos} keeps it as the block an entity on top of it stands on for what lies just below the
-	 * entity's feet, such as the block it lands on.
-	 */
-	FENCE,
-	/**
-	 * The block is a wall (the {@code minecraft:walls} tag), whose collision reaches above the block:
-	 * {@code Entity.getOnPos} keeps it as the block an entity on top of it stands on, so its friction and its speed
-	 * and jump factors apply.
-	 */
-	WALL,
-	/**
 	 * The block is a fence gate ({@code FenceGateBlock}), whose closed collision reaches above the block:
-	 * {@code Entity.getOnPos} keeps it as the block an entity on top of it stands on, as for a wall.
+	 * {@code Entity.getOnPos} keeps it as the block an entity on top of it stands on, as for the
+	 * {@code minecraft:fences} and {@code minecraft:walls} tags.
 	 */
 	FENCE_GATE,
 	/**

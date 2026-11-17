@@ -4,12 +4,16 @@ import me.whereareiam.anvil.protocol.java.block.model.BlockDataSource;
 import me.whereareiam.anvil.protocol.java.block.model.BlockProperty;
 import me.whereareiam.anvil.protocol.java.block.model.BlockState;
 import me.whereareiam.anvil.protocol.java.block.model.BlockType;
+import me.whereareiam.anvil.protocol.java.block.model.collision.BlockOffset;
 import me.whereareiam.anvil.protocol.java.block.model.collision.CollisionBox;
+import me.whereareiam.anvil.protocol.java.block.model.collision.CollisionCase;
 import me.whereareiam.anvil.protocol.java.block.model.collision.CollisionShape;
 import me.whereareiam.anvil.protocol.java.block.model.movement.BlockMovement;
 import me.whereareiam.anvil.protocol.java.block.model.movement.StuckSpeed;
+import me.whereareiam.anvil.protocol.java.block.type.BlockFace;
 import me.whereareiam.anvil.protocol.java.block.type.BlockKind;
 import me.whereareiam.anvil.protocol.java.block.type.CollisionKind;
+import me.whereareiam.anvil.protocol.java.block.type.EntityBottom;
 import me.whereareiam.anvil.protocol.java.block.type.FluidType;
 import me.whereareiam.anvil.protocol.java.block.type.MovementBehaviour;
 import org.junit.jupiter.api.Test;
@@ -26,14 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class BlockDataCodecTest {
-	private static final BlockDataSource SOURCE = BlockDataSource.builder()
-			.repository("demo/data")
-			.version("1.0.0")
-			.commit("abc")
-			.blocks("data/blocks.json")
-			.collisionShapes("data/shapes.json")
-			.build();
+	private static final BlockDataSource SOURCE = new BlockDataSource("1.20.6");
 	private static final CollisionShape SLAB = new CollisionShape(List.of(new CollisionBox(0, 0, 0, 1, 0.5, 1)));
+	private static final CollisionShape FLOOR = new CollisionShape(List.of(new CollisionBox(0, 0, 0, 1, 0.125, 1)));
 
 	@Test
 	void readsTheRegistryItWrote() throws IOException {
@@ -50,14 +49,14 @@ class BlockDataCodecTest {
 
 	@Test
 	void readsTheIndexItWrote() throws IOException {
-		JavaBlockData written = new JavaBlockData(Set.of(754, 766), Map.of(777, "demo/data 1.0.0 has no block data for it"));
+		JavaBlockData written = new JavaBlockData(Set.of(754, 766), Map.of(777, "no vanilla client was read for it"));
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		BlockDataCodec.writeIndex(written, output);
 		JavaBlockData read = BlockDataCodec.readIndex(new ByteArrayInputStream(output.toByteArray()));
 
 		assertEquals(Set.of(754, 766), read.protocols());
 		assertEquals(Set.of(777), read.missingProtocols());
-		assertEquals("demo/data 1.0.0 has no block data for it", read.missingReason(777));
+		assertEquals("no vanilla client was read for it", read.missingReason(777));
 	}
 
 	@Test
@@ -78,6 +77,9 @@ class BlockDataCodecTest {
 				.id(1).name("minecraft:honey_slab").minStateId(1).maxStateId(2).defaultStateId(2)
 				.property(new BlockProperty("waterlogged", List.of("true", "false")))
 				.kind(BlockKind.OTHER).collision(CollisionKind.DYNAMIC)
+				.offset(new BlockOffset(true, 0.25, (double) 0.2F))
+				.tag("minecraft:climbable")
+				.tag("minecraft:walls")
 				.movement(BlockMovement.builder()
 						.friction(0.98F).speedFactor(0.4F).jumpFactor(0.5F).bounceFactor(0.66F)
 						.stuckSpeed(new StuckSpeed(0.25, 0.05F))
@@ -86,9 +88,12 @@ class BlockDataCodecTest {
 						.build())
 				.build();
 		BlockState[] states = {
-				new BlockState(0, air, Map.of(), CollisionShape.EMPTY, FluidType.NONE),
-				new BlockState(1, slab, slab.propertiesAt(1), SLAB, FluidType.WATER),
-				new BlockState(2, slab, slab.propertiesAt(2), SLAB, FluidType.NONE)
+				new BlockState(0, air, Map.of(), CollisionShape.EMPTY, FluidType.NONE, Map.of(), 0, false, false, false, Set.of()),
+				new BlockState(1, slab, slab.propertiesAt(1), SLAB, FluidType.WATER,
+						Map.of(new CollisionCase(EntityBottom.INSIDE, true, false, true), FLOOR,
+								new CollisionCase(EntityBottom.BELOW, false, true, false), CollisionShape.EMPTY),
+						8, true, false, true, Set.of(BlockFace.DOWN, BlockFace.EAST)),
+				new BlockState(2, slab, slab.propertiesAt(2), SLAB, FluidType.NONE, Map.of(), 0, false, false, true, Set.of(BlockFace.DOWN))
 		};
 
 		return new BlockRegistry(766, SOURCE, List.of(air, slab), states);

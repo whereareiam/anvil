@@ -4,6 +4,7 @@ import me.whereareiam.anvil.capability.entities.model.EntityChange;
 import me.whereareiam.anvil.capability.entities.model.EntityItem;
 import me.whereareiam.anvil.capability.entities.model.SeenEntity;
 import me.whereareiam.anvil.capability.entities.type.EntityChangeKind;
+import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomNameVisible;
 import me.whereareiam.anvil.protocol.java.api.model.entity.DisplayText;
@@ -11,9 +12,14 @@ import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
 import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
+import me.whereareiam.anvil.protocol.java.api.type.entity.Relative;
+import me.whereareiam.anvil.protocol.java.worker.TestJavaPlayer;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,12 +29,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EntityTrackerTest {
 	private static final int PLAYER = 42;
+	private static final Set<Relative> DELTA = EnumSet.of(Relative.X, Relative.Y, Relative.Z);
+
+	private final TestJavaPlayer player = new TestJavaPlayer("Alice");
 
 	@Test
 	void reportsASpawnWithTheConnectionAndTheDistanceToThePlacedPlayer() {
-		EntityTracker tracker = new EntityTracker(3);
+		EntityTracker tracker = tracker(3);
 		tracker.join(PLAYER);
-		tracker.movePlayer(0, 64, 0, false, false, false);
+		place(0, 64, 0);
 
 		EntityChange change = single(spawn(tracker, 7, "minecraft:armor_stand", 3, 68, 0));
 
@@ -46,14 +55,14 @@ class EntityTrackerTest {
 
 	@Test
 	void measuresNoDistanceBeforeThePlayerIsPlaced() {
-		EntityTracker tracker = new EntityTracker(1);
+		EntityTracker tracker = tracker(1);
 
 		assertNull(single(spawn(tracker, 7, "minecraft:zombie", 3, 68, 0)).getEntity().getPlayerDistance());
 	}
 
 	@Test
 	void appliesDataAndReportsTheEntityBeforeAndAfter() {
-		EntityTracker tracker = new EntityTracker(1);
+		EntityTracker tracker = tracker(1);
 		spawn(tracker, 7, "minecraft:armor_stand", 0, 0, 0);
 
 		EntityChange change = single(tracker.change(7, List.of(
@@ -78,7 +87,7 @@ class EntityTrackerTest {
 
 	@Test
 	void showsNoItemForAnEmptyStack() {
-		EntityTracker tracker = new EntityTracker(1);
+		EntityTracker tracker = tracker(1);
 		spawn(tracker, 7, "minecraft:item", 0, 0, 0);
 		tracker.change(7, List.of(new ShownItem(ItemStack.of(871, 3))));
 
@@ -88,26 +97,26 @@ class EntityTrackerTest {
 
 	@Test
 	void reportsNothingForAnUnchangedOrUnknownEntity() {
-		EntityTracker tracker = new EntityTracker(1);
+		EntityTracker tracker = tracker(1);
 		spawn(tracker, 7, "minecraft:armor_stand", 0, 0, 0);
 
 		assertEquals(List.of(), tracker.change(7, List.of(SharedFlags.builder().build())));
 		assertEquals(List.of(), tracker.change(7, List.of()));
 		assertEquals(List.of(), tracker.change(8, List.of(SharedFlags.builder().invisible(true).build())));
-		tracker.move(8, 1, 0, 0, false, false, false);
-		tracker.turn(8, 90, 0, false, false);
+		tracker.move(8, new Vec3d(1, 0, 0), Set.of());
+		tracker.turn(8, 90, 0, Set.of());
 		assertEquals(List.of(7), tracker.known().stream().map(SeenEntity::getId).toList());
 		assertEquals(List.of(), tracker.remove(List.of(8)));
 	}
 
 	@Test
 	void movesByRelativeCoordinatesAndToAbsoluteOnes() {
-		EntityTracker tracker = new EntityTracker(1);
+		EntityTracker tracker = tracker(1);
 		spawn(tracker, 7, "minecraft:zombie", 1, 2, 3);
 
-		tracker.move(7, 0.5, -1, 0, true, true, true);
+		tracker.move(7, new Vec3d(0.5, -1, 0), DELTA);
 		SeenEntity moved = tracker.known().getFirst();
-		tracker.move(7, 10, 1, 20, false, true, false);
+		tracker.move(7, new Vec3d(10, 1, 20), Set.of(Relative.Y));
 		SeenEntity teleported = tracker.known().getFirst();
 
 		assertEquals(List.of(1.5, 1.0, 3.0), List.of(moved.getX(), moved.getY(), moved.getZ()));
@@ -116,21 +125,21 @@ class EntityTrackerTest {
 
 	@Test
 	void measuresTheDistanceToWhereThePlayerIsWhenRead() {
-		EntityTracker tracker = new EntityTracker(1);
-		tracker.movePlayer(0, 64, 0, false, false, false);
+		EntityTracker tracker = tracker(1);
+		place(0, 64, 0);
 		spawn(tracker, 7, "minecraft:zombie", 0, 64, 10);
 
-		tracker.movePlayer(0, 0, 4, true, true, true);
+		player.protocol().player().position(new Vec3d(0, 64, 4));
 		assertEquals(6.0, tracker.known().getFirst().getPlayerDistance());
-		tracker.move(7, 0, 0, -3, true, true, true);
+		tracker.move(7, new Vec3d(0, 0, -3), DELTA);
 		assertEquals(3.0, tracker.known().getFirst().getPlayerDistance());
 	}
 
 	@Test
 	void carriesTheCurrentPositionInTheNextFact() {
-		EntityTracker tracker = new EntityTracker(1);
+		EntityTracker tracker = tracker(1);
 		spawn(tracker, 7, "minecraft:armor_stand", 0, 0, 0);
-		tracker.move(7, 5, 0, 0, false, false, false);
+		tracker.move(7, new Vec3d(5, 0, 0), Set.of());
 
 		EntityChange named = single(tracker.change(7, List.of(new CustomName("hello"))));
 
@@ -140,11 +149,11 @@ class EntityTrackerTest {
 
 	@Test
 	void keepsTheSpawnRotationAndTurnsByRelativeAnglesAndToAbsoluteOnes() {
-		EntityTracker tracker = new EntityTracker(1);
+		EntityTracker tracker = tracker(1);
 		SeenEntity spawned = single(tracker.spawn(7, null, "minecraft:zombie", new Vec3d(0, 0, 0), 90, 10))
 				.getEntity();
 
-		tracker.turn(7, 180, 5, false, true);
+		tracker.turn(7, 180, 5, Set.of(Relative.PITCH));
 		SeenEntity turned = tracker.known().getFirst();
 
 		assertNull(spawned.getUniqueId());
@@ -154,7 +163,7 @@ class EntityTrackerTest {
 
 	@Test
 	void tracksWhatRidesThePlayerThroughEveryVehicle() {
-		EntityTracker tracker = new EntityTracker(1);
+		EntityTracker tracker = tracker(1);
 		tracker.join(PLAYER);
 		spawn(tracker, 7, "minecraft:armor_stand", 0, 0, 0);
 		spawn(tracker, 8, "minecraft:text_display", 0, 0, 0);
@@ -177,7 +186,7 @@ class EntityTrackerTest {
 
 	@Test
 	void removesEntitiesAndDismountsTheirPassengers() {
-		EntityTracker tracker = new EntityTracker(1);
+		EntityTracker tracker = tracker(1);
 		tracker.join(PLAYER);
 		spawn(tracker, 7, "minecraft:armor_stand", 0, 0, 0);
 		spawn(tracker, 8, "minecraft:text_display", 0, 0, 0);
@@ -195,7 +204,7 @@ class EntityTrackerTest {
 
 	@Test
 	void replacesAnEntitySpawnedAgainUnderItsId() {
-		EntityTracker tracker = new EntityTracker(1);
+		EntityTracker tracker = tracker(1);
 		spawn(tracker, 7, "minecraft:armor_stand", 0, 0, 0);
 
 		List<EntityChange> changes = spawn(tracker, 7, "minecraft:zombie", 0, 0, 0);
@@ -207,7 +216,7 @@ class EntityTrackerTest {
 
 	@Test
 	void forgetsEveryEntityWhenThePlayerJoinsAgainOrTheWorldIsCleared() {
-		EntityTracker tracker = new EntityTracker(1);
+		EntityTracker tracker = tracker(1);
 		spawn(tracker, 7, "minecraft:armor_stand", 0, 0, 0);
 		spawn(tracker, 8, "minecraft:zombie", 0, 0, 0);
 
@@ -235,5 +244,13 @@ class EntityTrackerTest {
 	private static EntityChange single(List<EntityChange> changes) {
 		assertEquals(1, changes.size(), changes::toString);
 		return changes.getFirst();
+	}
+
+	private @NotNull EntityTracker tracker(int connection) {
+		return new EntityTracker(connection, new PlayerMeasure(player.protocol().player()));
+	}
+
+	private void place(double x, double y, double z) {
+		player.place(new Vec3d(x, y, z), new ViewRotation(0, 0), true);
 	}
 }

@@ -42,6 +42,20 @@ public sealed interface KeyInput permits VectorInput, LegacyInput {
 	void read(@NotNull MovementInput keys);
 
 	/**
+	 * The strafing part of the input's move vector this tick ({@code input.getMoveVector().x}, {@code leftImpulse}).
+	 *
+	 * @return the left impulse
+	 */
+	float leftImpulse();
+
+	/**
+	 * The forward part of the input's move vector this tick ({@code input.getMoveVector().y}, {@code forwardImpulse}).
+	 *
+	 * @return the forward impulse
+	 */
+	float forwardImpulse();
+
+	/**
 	 * Turns the keys into the player's input and jumping ({@code LocalPlayer.serverAiStep}, {@code applyInput}).
 	 */
 	void apply();

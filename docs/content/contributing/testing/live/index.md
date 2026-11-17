@@ -4,23 +4,26 @@ description: Verify native workers and real server/proxy behavior across the sup
 ---
 
 Real platform tests live in `anvil-testkit/tests/server/src/test`. They start pinned distributions and run players
-or agent operations against them. They form three suites, one package each, with a task of its own, and run only
+or agent operations against them. They form four suites, one package each, with a task of its own, and run only
 with `-Panvil.testMode=full`:
 
 | Suite | Package | Task | What it checks |
 |---|---|---|---|
 | Release | `release` | `releaseTest-<minecraft>`, `releaseTest` for all | Every built-in player capability, the server's agent and a restart, against the direct Paper server of one release |
+| Physics | `physics` | `physicsTest-<minecraft>`, `physicsTest` for all | Every physics course with client physics on the direct Paper server of one release, which may never correct the player |
 | Platform | `platform` | `platformTest` | Login, commands, routes and restarts on Spigot, behind Velocity and BungeeCord, and on NeoForge |
 | Behaviour | `behavior` | `behaviorTest` | Lifecycles, sessions, kills, partial starts, routing, tooling and external extensions |
 
 ```shell
 ./gradlew :anvil-testkit:tests:server:releaseTest-1.21.11 -Panvil.testMode=full
+./gradlew :anvil-testkit:tests:server:physicsTest-1.21.11 -Panvil.testMode=full
 ./gradlew :anvil-testkit:tests:server:platformTest -Panvil.testMode=full -PanvilPlatforms=velocity
 ./gradlew :anvil-testkit:tests:server:behaviorTest -Panvil.testMode=full
 ./gradlew :anvil-testkit:tests:server:test -Panvil.testMode=full
 ```
 
-`test` runs every suite: each release one after another, then the platform and behaviour suites. The first run may
+`test` runs every suite: each release one after another, the physics courses on each release, then the platform and
+behaviour suites. The first run may
 provision distribution JARs, protocol runtimes, and the Java installations required by the selected versions. These
 checks accept the EULA through their test configuration. Do not add real online-account authentication to this
 suite.
@@ -50,6 +53,44 @@ Select one class with `--tests`:
 
 ```shell
 ./gradlew :anvil-testkit:tests:server:releaseTest-1.16.5 -Panvil.testMode=full --tests '*InventoryReleaseTest'
+```
+
+## Test client physics on real servers
+
+The physics suite checks that a Paper server takes Anvil's client physics as a vanilla client's movement. It runs
+the courses in `anvil-testkit/physics/courses/`, the same files the vanilla client's reference traces in
+`anvil-testkit/physics/traces/` were generated from, against the Paper server of the release
+`physicsTest-<minecraft>` names: every course the release runs, by the course's `since`, except those that script
+packets of the server's own at given ticks, which only the reference harness can send at an exact tick. `CourseTest` reads each course through `Course`, the suite's one model of the course
+format, and for each one:
+
+1. clears the course's site to air and lays its blocks in order with the fixture plugin's `anvil-blocks` console
+   command, which sets each block state exactly as the course writes it, so no course is walked on the terrain of the
+   world's random seed;
+2. teleports a new player in survival to the course's start, or where its join's first position packet puts it, and
+   waits until its client knows the whole site and stands there;
+3. opens a `ConsoleWatch` on the server and a `PacketTap` on the position packets the player receives, turns client
+   physics on and holds the course's keys tick by tick through `physics().input(...)` and `awaitTicks`;
+4. fails when the server corrected the player's position, which reaches the client as a position packet whether or not
+   the server logs it, or logged that the player moved too quickly or wrongly.
+
+The suite only shows that the server accepts the movement. Whether it matches the vanilla client bit for bit is what
+the reference traces check without a server: `ReferenceTraceTest` in Movement's `movement-java` runs every course on
+Anvil's client physics for every release with traces, started as the harness starts the vanilla client and sent the
+same join and server packets, and fails on the first tick whose position, delta movement, ground or horizontal
+collision, or the packets the client sent during it, differ in any bit. It runs in every
+build, as part of that module's `test`. No third-party plugin, such as an anticheat, joins the suite: the server
+runs Paper and Anvil's fixture plugin only.
+
+```shell
+./gradlew :anvil-testkit:tests:server:physicsTest-1.21.11 -Panvil.testMode=full
+```
+
+Client physics needs block data for the release's protocol, so every build checks that Anvil ships it for every Paper
+row of the live matrix, through the `blockDataTest` task beside `matrixTest`:
+
+```shell
+./gradlew :anvil-testkit:tests:server:blockDataTest
 ```
 
 ## Test platforms and behaviour
@@ -108,8 +149,8 @@ runs it through the `matrixTest` task, without `-Panvil.testMode=full`:
 
 ## Run the suites in CI
 
-The live workflow reads the Paper rows of `live-matrix.toml` and runs one job per release, so a new release gets its
-own job without a workflow change. Three jobs run the platform suite, for Spigot and NeoForge, for Velocity and for
+The live workflow reads the Paper rows of `live-matrix.toml` and runs two jobs per release, `Release <minecraft>` and
+`Physics <minecraft>` beside it, so a new release gets its jobs without a workflow change. Three jobs run the platform suite, for Spigot and NeoForge, for Velocity and for
 BungeeCord, and one job runs the behaviour suite. All of them run at once.
 
 ## Inspect framework environments in the IDE

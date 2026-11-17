@@ -8,6 +8,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlaye
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerPositionRotationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerRotationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerStatePacket;
+import com.github.steveice10.mc.protocol.packet.ingame.client.world.ClientTeleportConfirmPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerAbilitiesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerPositionRotationPacket;
@@ -16,6 +17,7 @@ import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundAcceptTeleportation;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundClientTickEnd;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerCommand;
@@ -93,7 +95,7 @@ class PlayerPacketsTest {
 		ServerPlayerPositionRotationPacket position = new ServerPlayerPositionRotationPacket(10, 64, -10, 90, 5, 1,
 				List.of(PositionElement.X, PositionElement.Z, PositionElement.YAW));
 
-		assertEquals(ClientboundPlayerPosition.builder().position(new Vec3d(10, 64, -10)).yaw(90).pitch(5)
+		assertEquals(ClientboundPlayerPosition.builder().id(1).position(new Vec3d(10, 64, -10)).yaw(90).pitch(5)
 						.deltaMovement(Vec3d.ZERO)
 						.relatives(Set.of(Relative.X, Relative.DELTA_X, Relative.Z, Relative.DELTA_Z, Relative.YAW))
 						.build(),
@@ -102,9 +104,17 @@ class PlayerPacketsTest {
 
 	@Test
 	void decodesAnAbsolutePlacementAsStoppingTheVelocity() {
-		assertEquals(ClientboundPlayerPosition.builder().position(new Vec3d(10, 64, -10)).yaw(90).pitch(5)
+		assertEquals(ClientboundPlayerPosition.builder().id(1).position(new Vec3d(10, 64, -10)).yaw(90).pitch(5)
 						.relatives(Set.of()).build(),
 				packets.decode(new ServerPlayerPositionRotationPacket(10, 64, -10, 90, 5, 1, List.of())));
+	}
+
+	@Test
+	void confirmsATeleportByItsId() {
+		ClientTeleportConfirmPacket confirm = assertInstanceOf(ClientTeleportConfirmPacket.class,
+				packets.encode(ServerboundAcceptTeleportation.builder().id(7).build()));
+
+		assertEquals(7, confirm.getId());
 	}
 
 	@Test
@@ -123,7 +133,7 @@ class PlayerPacketsTest {
 	@Test
 	void carriesNeitherThePlayerInputNorTheEndOfAClientTick() {
 		assertEquals(Set.of(ClientboundPlayerAbilities.class, ClientboundPlayerPosition.class,
-				ServerboundMovePlayerPos.class, ServerboundMovePlayerPosRot.class, ServerboundMovePlayerRot.class,
+				ServerboundAcceptTeleportation.class, ServerboundMovePlayerPos.class, ServerboundMovePlayerPosRot.class, ServerboundMovePlayerRot.class,
 				ServerboundMovePlayerStatusOnly.class, ServerboundPlayerAbilities.class,
 				ServerboundPlayerCommand.class), packets.packets());
 		assertFalse(packets.packets().contains(ServerboundPlayerInput.class));

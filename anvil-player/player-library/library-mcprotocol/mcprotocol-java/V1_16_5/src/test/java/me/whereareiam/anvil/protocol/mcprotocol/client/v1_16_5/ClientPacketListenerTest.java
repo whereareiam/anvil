@@ -10,7 +10,6 @@ import com.github.steveice10.mc.protocol.packet.ingame.client.ClientPluginMessag
 import com.github.steveice10.mc.protocol.packet.ingame.client.ClientSettingsPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerSwingArmPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.window.ClientConfirmTransactionPacket;
-import com.github.steveice10.mc.protocol.packet.ingame.client.world.ClientTeleportConfirmPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerDisconnectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerJoinGamePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityAnimationPacket;
@@ -81,11 +80,11 @@ class ClientPacketListenerTest {
 	}
 
 	@Test
-	void reportsATeleportBeforeConfirmingIt() {
+	void leavesATeleportToThePlayersClient() {
 		receive(new ServerPlayerPositionRotationPacket(1, 64, -2, 90, -15, 7));
 
-		assertEquals(List.of("teleported 90.0 -15.0", "sent ClientTeleportConfirmPacket"), events);
-		assertEquals(7, assertInstanceOf(ClientTeleportConfirmPacket.class, sent.getFirst()).getId());
+		assertEquals(List.of(), events);
+		assertTrue(sent.isEmpty());
 	}
 
 	@Test

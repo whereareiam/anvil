@@ -79,7 +79,16 @@ class McProtocolPlayerTest {
 	}
 
 	@Test
-	void reportsConnectionEventsAndViewOnlyForTheCurrentSession() {
+	void sharesItsViewWithItsClientsOwnPlayer() {
+		try (McProtocolPlayer player = player(null)) {
+			player.viewRotation(new ViewRotation(30, 40));
+
+			assertEquals(new ViewRotation(30, 40), player.protocol(JavaProtocol.class).player().rotation());
+		}
+	}
+
+	@Test
+	void reportsConnectionEventsOnlyForTheCurrentSession() {
 		try (McProtocolPlayer player = player(null)) {
 			player.connect();
 			Object first = client.sessions().getFirst();
@@ -87,14 +96,11 @@ class McProtocolPlayerTest {
 			Object second = client.sessions().get(1);
 
 			client.listener(first).loggedIn(first, granted("Alice"));
-			client.listener(first).teleported(first, 10, 20);
 			client.listener(first).disconnected(first, DisconnectCause.SERVER, "replaced");
 			client.listener(second).loggedIn(second, granted("Alice_Renamed"));
-			client.listener(second).teleported(second, 30, 40);
 			client.listener(second).disconnected(second, DisconnectCause.SERVER, "kicked anvil:requested-kick");
 			client.listener(second).disconnected(second, DisconnectCause.CONNECTION_LOST, "closed");
 
-			assertEquals(new ViewRotation(30, 40), player.viewRotation());
 			assertEquals(List.of("Disconnected by Anvil"), client.disconnects());
 			assertEquals(List.of(
 					new PlayerConnectionEvent(true, null, null, new PlayerProfile("Alice_Renamed", uuid)),

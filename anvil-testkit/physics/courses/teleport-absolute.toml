@@ -1,0 +1,27 @@
+description = "Sprint-jumps on a stone floor and is teleported to an absolute position and view mid-jump, keeping its keys"
+ticks = 60
+
+[join]
+x = 0.5
+y = 64.0
+z = 0.5
+yaw = 0.0
+pitch = 0.0
+chunksAfterTicks = 0
+
+[[blocks]]
+from = [-3, 63, -3]
+to = [12, 63, 20]
+state = "minecraft:stone"
+
+[[keys]]
+tick = 5
+held = ["forward", "sprint", "jump"]
+
+[[keys]]
+tick = 45
+held = []
+
+[[server]]
+tick = 30
+teleport = { id = 2, x = 4.5, y = 64.0, z = 10.5, yaw = 90.0, pitch = 0.0, relatives = [] }

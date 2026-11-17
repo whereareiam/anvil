@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.java.physics.living;
 
 import me.whereareiam.anvil.protocol.java.physics.TestEntity;
 import me.whereareiam.anvil.protocol.java.physics.TestWorld;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
+import me.whereareiam.anvil.protocol.java.geometry.Vector;
 import me.whereareiam.anvil.protocol.java.physics.living.attribute.AttributeMap;
 import me.whereareiam.anvil.protocol.java.physics.living.attribute.AttributeSupplier;
 import me.whereareiam.anvil.protocol.java.physics.living.effect.Effects;

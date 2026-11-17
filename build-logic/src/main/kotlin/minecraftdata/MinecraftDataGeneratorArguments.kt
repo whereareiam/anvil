@@ -25,8 +25,7 @@ import java.io.File
 /**
  * The argument of a module's minecraft-data generator: its request as one JSON object, naming the directory to write
  * into, the pinned minecraft-data release, for each pinned protocol the files Gradle resolved by their fields, the
- * protocols minecraft-data has no data for, and the module's own further inputs by name, such as `block-facts.toml`
- * as `facts`.
+ * protocols minecraft-data has no data for, and the module's own further input files by the request member that names them.
  *
  * Gradle resolves the pinned files through the settings' `minecraft-data` repository; [minecraftData] holds them, and
  * each pin is found among them by its sha256, so a file whose bytes differ from its pin fails the build before the
@@ -81,7 +80,7 @@ abstract class MinecraftDataGeneratorArguments : CommandLineArgumentProvider {
 	abstract val destination: DirectoryProperty
 
 	/**
-	 * The package the data belongs to, relative to [destination], such as `me/whereareiam/anvil/protocol/java/block`.
+	 * The package the data belongs to, relative to [destination], such as `me/whereareiam/anvil/protocol/java/packet`.
 	 */
 	@get:Input
 	abstract val packagePath: Property<String>

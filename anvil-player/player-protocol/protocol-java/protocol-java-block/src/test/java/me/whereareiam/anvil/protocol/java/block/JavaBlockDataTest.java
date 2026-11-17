@@ -15,8 +15,9 @@ class JavaBlockDataTest {
 	private static final JavaBlockData DATA = JavaBlockData.shipped();
 
 	@Test
-	void shipsBlockDataForEveryProtocolMinecraftDataHas() {
-		assertEquals(Set.of(754, 756, 758, 762, 766, 767, 774, 775), DATA.protocols());
+	void shipsBlockDataForEveryProtocolOfTheProtocolLibraries() {
+		assertEquals(Set.of(754, 756, 758, 762, 766, 767, 774, 775, 776, 777), DATA.protocols());
+		assertEquals(Set.of(), DATA.missingProtocols());
 	}
 
 	@Test
@@ -27,21 +28,6 @@ class JavaBlockDataTest {
 			assertEquals(protocol, registry.protocol());
 			assertTrue(registry.stateCount() > 0, "Protocol " + protocol + " has no block states");
 		}
-	}
-
-	@Test
-	void listsTheSupportedProtocolsMinecraftDataLacksAsMissing() {
-		assertEquals(Set.of(776, 777), DATA.missingProtocols());
-		assertTrue(DATA.find(776).isEmpty());
-	}
-
-	@Test
-	void reportsWhyAMissingProtocolHasNoBlockData() {
-		BlockDataUnavailableException failure = assertThrows(BlockDataUnavailableException.class, () -> DATA.require(777));
-
-		assertEquals(777, failure.getProtocol());
-		assertEquals("No block data for protocol 777: PrismarineJS/minecraft-data 3.117.0 has no block data for it",
-				failure.getMessage());
 	}
 
 	@Test
@@ -59,13 +45,8 @@ class JavaBlockDataTest {
 	}
 
 	@Test
-	void namesTheSourceOfTheData() {
-		assertEquals(BlockDataSource.builder()
-				.repository("PrismarineJS/minecraft-data")
-				.version("3.117.0")
-				.commit("15411f050f040e4c5df09352a75a9912ad8c3eeb")
-				.blocks("data/pc/1.16.2/blocks.json")
-				.collisionShapes("data/pc/1.16.1/blockCollisionShapes.json")
-				.build(), DATA.require(754).source());
+	void namesTheVanillaClientTheDataWasReadFrom() {
+		assertEquals(new BlockDataSource("1.16.5"), DATA.require(754).source());
+		assertEquals(new BlockDataSource("26.3"), DATA.require(777).source());
 	}
 }

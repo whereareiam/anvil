@@ -1,20 +1,19 @@
 package me.whereareiam.anvil.capability.movement.java.physics;
 
 import me.whereareiam.anvil.capability.movement.java.physics.player.PlayerSimulation;
-import me.whereareiam.anvil.capability.movement.java.physics.server.PlayerState;
 import me.whereareiam.anvil.capability.movement.model.MovementInput;
 import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerInput;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPos;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPosRot;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerRot;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerStatusOnly;
+import me.whereareiam.anvil.protocol.java.api.type.player.GameMode;
 import me.whereareiam.anvil.protocol.java.api.type.player.PlayerCommandAction;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
+import me.whereareiam.anvil.protocol.java.geometry.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -145,11 +144,9 @@ class PositionReporterTest {
 
 		private Fixture(@NotNull String version, boolean inputPackets) {
 			this.client = new TestClient(version).join().load(0, 0);
-			PlayerState state = new PlayerState(client.version);
-			state.login(ClientboundLogin.builder().entityId(TestClient.ENTITY_ID).dimension("minecraft:overworld")
-					.dimensionType(client.dimension).build());
-			this.player = client.simulation(state, 8.5, 65.0, 8.5);
-			this.reporter = new PositionReporter(new MovementRules(client.version), state, inputPackets);
+			this.player = client.simulation(client.state(GameMode.SURVIVAL), 8.5, 65.0, 8.5);
+			this.reporter = new PositionReporter(new MovementRules(client.version), client.player.protocol().player(),
+					inputPackets);
 		}
 
 		private @NotNull List<ServerboundPacket> report() {

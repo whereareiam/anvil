@@ -9,8 +9,8 @@ import java.lang.annotation.Target;
 
 /**
  * Runs a test against the direct Paper server of the release under test, which {@link TestedRelease} names. The
- * server is kept for the test JVM, so every test of the release suite in one run shares one server, while each test
- * gets a scenario, and so players, of its own.
+ * server is kept for the test JVM, so every test of the release suite, or of the physics suite, in one run shares one
+ * server, while each test gets a scenario, and so players, of its own.
  *
  * <pre>{@code
  * @Release

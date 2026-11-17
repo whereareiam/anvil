@@ -16,7 +16,7 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 
 /**
- * Checks that one kind's pins file, such as `block-data.toml`, lists exactly the protocols the protocol libraries
+ * Checks that one kind's pins file, such as `packet-data.toml`, lists exactly the protocols the protocol libraries
  * speak: one row for the protocol of each release of a library's `<id>-releases.toml`. A protocol a library adds
  * without a row, or a row no library speaks, fails the check, so a supported release can never lack the data
  * silently; a row without pins reports its protocol as missing instead. A Minecraft version a library adds to a

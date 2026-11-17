@@ -157,8 +157,8 @@ isolated worker per release. A release with an unpinned artifact cannot be launc
 for each server whose default players would use it, so a scenario whose players all choose another library still
 runs. A player that selects such a release is refused when it is created. The worker
 shell never links against MCProtocolLib: the release's client segment implements the `mcprotocol-api`
-client port and owns login, teleport and disconnect packets and what a vanilla client of the release sends on its
-own, in the same phase and order: its brand and client information, from Minecraft 1.20.2 on at the start of the
+client port and owns login and disconnect packets, and sends what a vanilla client of the
+release sends on its own, in the same phase and order: its brand and client information, from Minecraft 1.20.2 on at the start of the
 configuration and before that when the game starts, the answers to keep-alives and pings in every phase, the
 swing of an arm the server swings of the player's own entity, and from Minecraft 1.20.5 the answer to the data packs
 the server offers, which names the vanilla core pack of the player's exact Minecraft version. The server then sends
@@ -166,7 +166,10 @@ vanilla's registry entries without their data, and the client knows them as a va
 types from `DimensionType.known` and the built-in dialogs from the Dialogs worker extension. The registries a
 connection synchronized have one owner, the segment's configuration translation, which records them for the
 translations of the packets that name an entry by ID, so a packet table does not depend on the order of its
-translations.
+translations. What the client answers about its own position belongs to the Java worker kit's client player, not
+to the segment or a feature: every Java player's `LocalPlayer` accepts every teleport with the position and view it
+left the player at, before 26.3 followed by that position, ends each tick from Minecraft 1.21.2 and from 1.21.4 tells
+the server once the client loaded its level, so these packets keep the vanilla client's order around its ticks.
 Feature wiring implements `player-api`'s `WorkerExtension` directly; the worker discovers it. Its
 `PlayerBindingContext` supplies SDK/session access for the existing native player and, through `adapter(Class)`,
 the release-specific port implementation of the segment selected for the worker's release. Native
@@ -177,8 +180,10 @@ types.
 through the player family's worker kits: `player-worker`'s `WorkerExtensions` enforces binding-time registration,
 unique namespaced operation IDs, unavailability and cleanup, `NativeSessionBindings` follows session generations,
 and `protocol-java-worker`'s `JavaPacketDispatcher` is the player's `JavaProtocol` over the library's
-`JavaConnection`, which keeps the player's `JavaWorld` from the packets it delivers and tells the library through
-`wants` which costly packets to decode. The MCProtocol worker adds only its client, segments and transport: `WorkerMessageCodec` owns
+`JavaConnection`, which keeps the player's `JavaWorld` and its client's own `LocalPlayer` from the packets it
+delivers, under one lock with the client's twenty ticks a second, and tells the library through `wants` which costly
+packets to decode. The library starts the client's ticks once the player's extensions are bound and closes them with
+the player; Movement's physics hooks its tick into the client's through `LocalPlayer.onTick`. The MCProtocol worker adds only its client, segments and transport: `WorkerMessageCodec` owns
 request decoding, response type checks, and encoding on both ends of the worker's transport, so the host's
 `ProtocolChannel` and the worker's handlers operate on typed values.
 

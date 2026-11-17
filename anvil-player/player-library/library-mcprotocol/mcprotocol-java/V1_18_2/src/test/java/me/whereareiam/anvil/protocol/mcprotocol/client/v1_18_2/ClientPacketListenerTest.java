@@ -17,7 +17,6 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientInformationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundCustomPayloadPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundPongPacket;
-import com.github.steveice10.mc.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import com.github.steveice10.mc.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
@@ -49,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClientPacketListenerTest {
 	private static final UUID GRANTED = new UUID(0, 2);
@@ -85,11 +85,11 @@ class ClientPacketListenerTest {
 	}
 
 	@Test
-	void reportsATeleportBeforeAcceptingIt() {
+	void leavesATeleportToThePlayersClient() {
 		receive(new ClientboundPlayerPositionPacket(1, 64, -2, 90, -15, 7, false));
 
-		assertEquals(List.of("teleported 90.0 -15.0", "sent ServerboundAcceptTeleportationPacket"), events);
-		assertEquals(7, assertInstanceOf(ServerboundAcceptTeleportationPacket.class, sent.getFirst()).getId());
+		assertEquals(List.of(), events);
+		assertTrue(sent.isEmpty());
 	}
 
 	@Test
