@@ -8,8 +8,16 @@ import java.util.jar.JarFile
 /**
  * A temporary consumer build that applies the conventions under test from the plugin classpath and uses the
  * build's own version catalog, so the conventions see the same `libs` as the Anvil build.
+ *
+ * The project lives in [directory]'s canonical form, because Gradle canonicalizes a build's root directory and
+ * reports every path it derives from it that way, such as `/private/var/...` for a macOS temporary directory.
  */
-class TestProject(val directory: File) {
+class TestProject(directory: File) {
+	/**
+	 * The project's directory as Gradle sees it.
+	 */
+	val directory: File = directory.canonicalFile
+
 	init {
 		File(System.getProperty("anvil.buildlogic.catalog")).copyTo(file("gradle/libs.versions.toml"), overwrite = true)
 		write("gradle.properties", "org.gradle.configuration-cache=true\n")

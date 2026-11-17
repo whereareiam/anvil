@@ -17,7 +17,13 @@ import kotlin.io.path.writeText
 
 class AnvilToolingTaskTest {
     @TempDir
-    lateinit var projectDirectory: Path
+    lateinit var temporaryDirectory: Path
+
+    /**
+     * The project's directory as Gradle sees it: Gradle canonicalizes a build's root directory and reports every
+     * path it derives from it that way, such as `/private/var/...` for a macOS temporary directory.
+     */
+    private val projectDirectory: Path by lazy { temporaryDirectory.toRealPath() }
 
     private val testedVersion = requireNotNull(System.getProperty("anvil.test.version"))
     private val repository = Path.of(requireNotNull(System.getProperty("anvil.test.repository"))).toUri()
