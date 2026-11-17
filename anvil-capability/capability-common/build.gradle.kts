@@ -17,4 +17,5 @@ dependencies {
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi)
 	testImplementation(projects.anvilCapability.capabilityProcess.capabilityProcessApi)
 	testImplementation(projects.anvilPlayer.playerApi)
+	testImplementation(testFixtures(projects.anvilPlayer.playerApi))
 }

@@ -6,10 +6,8 @@ import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
-import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
-import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,15 +15,11 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,7 +30,7 @@ class CapabilitySimulatedPlayerTest {
 
 	@Test
 	void waitsThroughThePlayersChannelAndReturnsTheExpectationMet() {
-		RecordingChannel channel = new RecordingChannel();
+		TestProtocolChannel channel = new TestProtocolChannel(Set.of());
 		SimulatedPlayer player = compose(new StubPlayer(channel));
 
 		int first = player.awaitFirst(TIMEOUT,
@@ -44,19 +38,19 @@ class CapabilitySimulatedPlayerTest {
 				Expectation.of("be kicked", () -> true));
 
 		assertEquals(1, first);
-		assertEquals(List.of("receive a reply or be kicked"), channel.waits);
+		assertEquals(List.of("receive a reply or be kicked"), channel.waits());
 	}
 
 	@Test
 	void prefersTheEarliestExpectationWhenSeveralAreMet() {
-		SimulatedPlayer player = compose(new StubPlayer(new RecordingChannel()));
+		SimulatedPlayer player = compose(new StubPlayer(new TestProtocolChannel(Set.of())));
 
 		assertEquals(0, player.awaitFirst(TIMEOUT, Expectation.of("a", () -> true), Expectation.of("b", () -> true)));
 	}
 
 	@Test
 	void failsWithEveryExpectationNamedWhenTheChannelGivesUp() {
-		SimulatedPlayer player = compose(new StubPlayer(new RecordingChannel()));
+		SimulatedPlayer player = compose(new StubPlayer(new TestProtocolChannel(Set.of())));
 
 		IllegalStateException failure = assertThrows(IllegalStateException.class,
 				() -> player.awaitFirst(TIMEOUT, Expectation.of("receive a reply", () -> false), Expectation.of("be kicked", () -> false)));
@@ -96,24 +90,6 @@ class CapabilitySimulatedPlayerTest {
 
 	private static SimulatedPlayer compose(ProtocolPlayer player) {
 		return new PlayerCapabilityRuntime(List.of()).compose(player, null, PlayerConnection.to("proxy"), ignored -> { });
-	}
-
-	/**
-	 * Checks a wait's condition once, as a channel whose observation is already complete; a condition that does
-	 * not hold fails at once instead of timing out.
-	 */
-	private static final class RecordingChannel implements ProtocolChannel {
-		private final List<String> waits = new ArrayList<>();
-
-		public <Q, R> R request(@NotNull OperationDescriptor<Q, R> operation, Q request) { throw new AssertionError(); }
-		public <E> @NotNull Subscription subscribe(@NotNull EventDescriptor<E> eventDescriptor, @NotNull Consumer<E> listener) { return () -> { }; }
-		public @NotNull Set<String> installedCapabilities() { return Set.of(); }
-		public @NotNull Map<String, String> unavailableCapabilities() { return Map.of(); }
-
-		public void await(@NotNull BooleanSupplier condition, @NotNull String description, @NotNull Duration timeout) {
-			waits.add(description);
-			if (!condition.getAsBoolean()) throw new IllegalStateException("Player did not " + description);
-		}
 	}
 
 	private record StubPlayer(@Nullable ProtocolChannel protocolChannel) implements ProtocolPlayer {

@@ -1,5 +1,6 @@
 plugins {
 	id("module-api")
+	id("module-test-fixtures")
 }
 
 // The player group only organizes: its API stays in the capability family, whose common code composes the

@@ -15,13 +15,11 @@ import me.whereareiam.anvil.capability.api.player.PlayerCapabilityProvider;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
-import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
 import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
-import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,7 +33,6 @@ import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -45,8 +42,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -88,12 +83,7 @@ class PlayerCapabilityRuntimeTest {
 		for (ProtocolPlayerCapabilityProvider<?> provider : ServiceLoader.load(ProtocolPlayerCapabilityProvider.class)) {
 			if (!independent.contains(provider.descriptor().getId())) continue;
 			StubPlayer stub = new StubPlayer();
-			stub.channel = new ProtocolChannel() {
-				public <Q, R> R request(@NotNull OperationDescriptor<Q, R> operation, Q request) { throw new AssertionError("Creation must not execute packets"); }
-				public <E> @NotNull Subscription subscribe(@NotNull EventDescriptor<E> eventDescriptor, @NotNull Consumer<E> listener) { return () -> { }; }
-				public void await(@NotNull BooleanSupplier condition, @NotNull String description, @NotNull Duration timeout) { throw new AssertionError(); }
-				public @NotNull Set<String> installedCapabilities() { return Set.of(provider.descriptor().getId()); }
-			};
+			stub.channel = new TestProtocolChannel(Set.of(provider.descriptor().getId()));
 			SimulatedPlayer player = new PlayerCapabilityRuntime(List.of(), List.of(provider))
 					.compose(stub, null, PlayerConnection.to("proxy"), ignored -> { });
 			assertTrue(player.hasCapability(provider.capability()));
@@ -143,7 +133,7 @@ class PlayerCapabilityRuntimeTest {
 			throw new AssertionError("A dependent of an unavailable capability must not be created");
 		});
 		StubPlayer stub = new StubPlayer();
-		stub.channel = channel(Set.of("installed"), Map.of("linked", "NoSuchMethodError: 'void example.Packet.<init>(int)'"));
+		stub.channel = new TestProtocolChannel(Set.of("installed"), Map.of("linked", "NoSuchMethodError: 'void example.Packet.<init>(int)'"));
 		var output = new ByteArrayOutputStream();
 		var previous = System.err;
 
@@ -179,7 +169,7 @@ class PlayerCapabilityRuntimeTest {
 			throw new AssertionError("A capability the worker does not install must not be created");
 		});
 		StubPlayer stub = new StubPlayer();
-		stub.channel = channel(Set.of("other"), Map.of("another", "NoClassDefFoundError: example/Other"));
+		stub.channel = new TestProtocolChannel(Set.of("other"), Map.of("another", "NoClassDefFoundError: example/Other"));
 		var previous = System.err;
 
 		SimulatedPlayer player;
@@ -218,7 +208,7 @@ class PlayerCapabilityRuntimeTest {
 			throw new AssertionError("A dependent of an unsupported capability must not be created");
 		});
 		StubPlayer stub = new StubPlayer();
-		stub.channel = channel(Set.of("edition"), Map.of());
+		stub.channel = new TestProtocolChannel(Set.of("edition"));
 
 		var runtime = new PlayerCapabilityRuntime(List.of(summary), List.of(edition), library(Set.of()));
 
@@ -235,7 +225,7 @@ class PlayerCapabilityRuntimeTest {
 	void composesCapabilitiesWhoseProtocolsTheLibrarySpeaks() {
 		var edition = editionProvider("edition", BaseCapability.class, Set.of(), context -> () -> "edition");
 		StubPlayer stub = new StubPlayer();
-		stub.channel = channel(Set.of("edition"), Map.of());
+		stub.channel = new TestProtocolChannel(Set.of("edition"));
 
 		var runtime = new PlayerCapabilityRuntime(List.of(), List.of(edition), library(Set.of(EditionProtocol.class)));
 
@@ -315,15 +305,6 @@ class PlayerCapabilityRuntimeTest {
 	private interface EditionProtocol {
 	}
 
-	private static ProtocolChannel channel(Set<String> installed, Map<String, String> unavailable) {
-		return new ProtocolChannel() {
-			public <Q, R> R request(@NotNull OperationDescriptor<Q, R> operation, Q request) { throw new AssertionError(); }
-			public <E> @NotNull Subscription subscribe(@NotNull EventDescriptor<E> eventDescriptor, @NotNull Consumer<E> listener) { return () -> { }; }
-			public void await(@NotNull BooleanSupplier condition, @NotNull String description, @NotNull Duration timeout) { throw new AssertionError(); }
-			public @NotNull Set<String> installedCapabilities() { return installed; }
-			public @NotNull Map<String, String> unavailableCapabilities() { return unavailable; }
-		};
-	}
 
 	@Test
 	void validatesSharedAndProtocolFactoriesAsOneGraphBeforeCreatingCapabilities() {

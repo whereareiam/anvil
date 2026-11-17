@@ -5,22 +5,12 @@ import me.whereareiam.anvil.capability.sounds.channel.SoundsChannel;
 import me.whereareiam.anvil.capability.sounds.model.HeardSound;
 import me.whereareiam.anvil.capability.sounds.model.SoundPosition;
 import me.whereareiam.anvil.capability.sounds.type.SoundCategory;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
-import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -33,7 +23,7 @@ class ChannelSoundsTest {
 	private static final HeardSound PLING = sound("minecraft:block.note_block.pling", 2F);
 	private static final HeardSound ALERT = sound("example:alert", 1F);
 
-	private final RecordingChannel channel = new RecordingChannel();
+	private final TestProtocolChannel channel = new TestProtocolChannel(Set.of(SoundsChannel.ID));
 	private final ChannelSounds sounds = new ChannelSounds(channel);
 
 	@Test
@@ -112,39 +102,5 @@ class ChannelSoundsTest {
 				.pitch(pitch)
 				.position(new SoundPosition(1D, 64D, -2D))
 				.build();
-	}
-
-	/**
-	 * Delivers published events synchronously; a wait whose condition does not hold fails immediately instead of
-	 * timing out.
-	 */
-	private static final class RecordingChannel implements ProtocolChannel {
-		private final Map<String, List<Consumer<Object>>> listeners = new HashMap<>();
-
-		private <E> void publish(EventDescriptor<E> eventDescriptor, @Nullable E payload) {
-			listeners.getOrDefault(eventDescriptor.getId(), List.of()).forEach(listener -> listener.accept(payload));
-		}
-
-		@Override
-		public <Q, R> @Nullable R request(@NotNull OperationDescriptor<Q, R> operation, @Nullable Q request) {
-			throw new AssertionError("Sounds send no requests");
-		}
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public <E> @NotNull Subscription subscribe(@NotNull EventDescriptor<E> eventDescriptor, @NotNull Consumer<E> listener) {
-			listeners.computeIfAbsent(eventDescriptor.getId(), ignored -> new ArrayList<>()).add((Consumer<Object>) listener);
-			return () -> listeners.get(eventDescriptor.getId()).remove(listener);
-		}
-
-		@Override
-		public void await(@NotNull BooleanSupplier condition, @NotNull String description, @NotNull Duration timeout) {
-			if (!condition.getAsBoolean()) throw new IllegalStateException("Player did not " + description);
-		}
-
-		@Override
-		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(SoundsChannel.ID);
-		}
 	}
 }
