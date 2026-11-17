@@ -147,12 +147,13 @@ class LocalExecutionSessionTest {
 	}
 
 	/**
-	 * Starts a stand-in for the Java executable that reports the niceness it runs with.
+	 * Starts a stand-in for the Java executable that reports the niceness it runs with, through POSIX {@code ps},
+	 * because only GNU {@code nice} prints the niceness when it is given no command.
 	 */
 	private int niceness(ProcessPriority priority) throws Exception {
 		Path executable = Files.createDirectories(directory.resolve(priority.name())).resolve("java");
 		Path report = executable.resolveSibling("niceness");
-		Files.writeString(executable, "#!/bin/sh\nnice > '" + report + "'\n");
+		Files.writeString(executable, "#!/bin/sh\nps -o nice= -p $$ > '" + report + "'\n");
 		assertTrue(executable.toFile().setExecutable(true));
 
 		var context = ExecutionContext.builder().processPriority(priority).build();
