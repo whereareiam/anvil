@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class EntityPacketsTest {
 	private static final UUID STAND = new UUID(0, 7);
 
-	private final EntityPackets packets = new EntityPackets(new TextTranslator());
+	private final EntityPackets packets = new EntityPackets(new TextTranslator(), new ItemTranslator(new TextTranslator()));
 
 	@Test
 	void decodesEachSpawnPacketAsAnAddedEntityWithTheRegistryKey() {
@@ -87,7 +87,7 @@ class EntityPacketsTest {
 				SharedFlags.builder().onFire(true).build(),
 				new CustomName("Alice: hello"),
 				new CustomNameVisible(true),
-				new ShownItem(new me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack(871, 3))
+				new ShownItem(me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(871, 3))
 		), decodeData(data(15,
 				new EntityMetadata(0, MetadataType.BYTE, (byte) 0x01),
 				new EntityMetadata(2, MetadataType.OPTIONAL_CHAT,

@@ -9,6 +9,7 @@ dependencies {
 	implementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinInventory.inventoryApi)
 	implementation(projects.anvilPlayer.playerApi)
 	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
+	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaItem)
 
 	testImplementation(testFixtures(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker))
 }

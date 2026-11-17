@@ -9,6 +9,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ChatPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ChunkPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ConnectionPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.InteractionPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ItemTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.PlayerPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.SoundPackets;
@@ -23,6 +24,7 @@ import java.util.List;
  */
 public final class McProtocolClientAdapter extends JavaClient {
 	private static final TextTranslator TEXT = new TextTranslator();
+	private static final ItemTranslator ITEMS = new ItemTranslator(TEXT);
 
 	/**
 	 * Creates the client of the MCProtocolLib 1.17.1 release.
@@ -55,12 +57,12 @@ public final class McProtocolClientAdapter extends JavaClient {
 				new CommandPackets(),
 				new ConnectionPackets(),
 				new EffectPackets(),
-				new EntityPackets(TEXT),
+				new EntityPackets(TEXT, ITEMS),
 				new HealthPackets(TEXT),
 				new InteractionPackets(),
-				new InventoryPackets(TEXT),
+				new InventoryPackets(TEXT, ITEMS),
 				new PlayerPackets(),
-				new ScreenPackets(TEXT),
+				new OverlayPackets(TEXT),
 				new SoundPackets(),
 				new WorldPackets()
 		));

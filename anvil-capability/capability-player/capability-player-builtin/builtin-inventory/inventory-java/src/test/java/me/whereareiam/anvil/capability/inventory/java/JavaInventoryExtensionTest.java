@@ -1,28 +1,36 @@
 package me.whereareiam.anvil.capability.inventory.java;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.capability.inventory.channel.InventoryChannel;
 import me.whereareiam.anvil.capability.inventory.model.InventoryAction;
 import me.whereareiam.anvil.capability.inventory.model.InventoryItem;
 import me.whereareiam.anvil.capability.inventory.model.InventorySnapshot;
+import me.whereareiam.anvil.capability.inventory.model.ItemDisplay;
+import me.whereareiam.anvil.capability.inventory.model.ItemType;
 import me.whereareiam.anvil.capability.inventory.model.SlotSelection;
 import me.whereareiam.anvil.capability.inventory.type.InventoryClick;
+import me.whereareiam.anvil.capability.inventory.type.ItemNameSource;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
+import me.whereareiam.anvil.protocol.java.api.PlayerInventoryLayout;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetContent;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundOpenScreen;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetHeldSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerClose;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetContent;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundOpenScreen;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetHeldSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetPlayerInventory;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ServerboundSetCarriedItem;
 import me.whereareiam.anvil.protocol.java.api.type.interaction.ClickType;
+import me.whereareiam.anvil.protocol.java.item.JavaItemData;
 import me.whereareiam.anvil.protocol.java.worker.TestJavaPlayer;
 import me.whereareiam.anvil.protocol.worker.TestOperations;
 import me.whereareiam.anvil.protocol.worker.TestWorkerPlayer;
@@ -46,8 +54,12 @@ class JavaInventoryExtensionTest {
 	private static final DimensionType OVERWORLD = DimensionType.known("minecraft:overworld");
 	private static final List<Class<? extends ClientboundPacket>> LISTENED = List.of(ClientboundLogin.class,
 			ClientboundRespawn.class, ClientboundSetHeldSlot.class, ClientboundOpenScreen.class,
-			ClientboundContainerSetContent.class, ClientboundContainerSetSlot.class,
+			ClientboundContainerClose.class, ClientboundContainerSetContent.class, ClientboundContainerSetSlot.class,
 			ClientboundSetPlayerInventory.class);
+	/**
+	 * The slots of a single-row chest: its nine own slots, then the player's main inventory and hotbar.
+	 */
+	private static final int CHEST_SLOTS = 9 + 36;
 
 	private final JavaInventoryExtension extension = new JavaInventoryExtension();
 	private final TestJavaPlayer player = new TestJavaPlayer("Alice");
@@ -117,6 +129,7 @@ class JavaInventoryExtensionTest {
 	@Test
 	void clicksTheObservedContainerWithItsState() {
 		connect();
+		player.deliver(new ClientboundOpenScreen(1, "minecraft:generic_9x1", Text.literal("Chest")));
 		player.deliver(content(1, 7, stack(3)));
 
 		operations.call(InventoryChannel.CLICK, new InventoryAction(4, InventoryClick.LEFT, 0));
@@ -188,35 +201,120 @@ class JavaInventoryExtensionTest {
 	}
 
 	@Test
-	void publishesEveryChangeOfTheObservedContainer() {
+	void publishesAnOpenedContainerOnceTheServerFilledItAndEveryChangeOfIt() {
 		connect();
 		InventoryItem stone = item(0, 64);
 
-		player.deliver(new ClientboundOpenScreen(2, "minecraft:generic_9x1", "Chest"));
+		player.deliver(new ClientboundOpenScreen(2, "minecraft:generic_9x1", Text.literal("Chest")));
+		assertEquals(List.of(), snapshots());
 		player.deliver(content(2, 3, stack(64), null, null, null, stack(3)));
 		player.deliver(new ClientboundContainerSetSlot(2, 4, 0, null));
 		player.deliver(new ClientboundContainerSetSlot(2, 5, 1, stack(1)));
 
 		assertEquals(List.of(
-				snapshot(2, 0),
-				snapshot(2, 3, stone, DIAMONDS),
-				snapshot(2, 4, DIAMONDS),
-				snapshot(2, 5, item(1, 1), DIAMONDS)
+				chest(1, 3, stone, DIAMONDS),
+				chest(1, 4, DIAMONDS),
+				chest(1, 5, item(1, 1), DIAMONDS)
 		), snapshots());
 	}
 
 	@Test
-	void ignoresSlotsOfOtherContainersTheCursorAndThePlayersInventoryWhileAContainerIsOpen() {
+	void ignoresTheContentsOfContainersThatAreNotOpenAndTheCursor() {
 		connect();
+		player.deliver(new ClientboundOpenScreen(2, "minecraft:generic_9x1", Text.literal("Chest")));
 		player.deliver(content(2, 3, null, null, null, null, stack(3)));
 
-		player.deliver(new ClientboundContainerSetSlot(0, 9, 36, stack(1)));
+		player.deliver(content(5, 9, stack(1)));
+		player.deliver(new ClientboundContainerSetSlot(5, 9, 0, stack(1)));
 		player.deliver(new ClientboundContainerSetSlot(-1, 9, -1, stack(1)));
-		player.deliver(new ClientboundSetPlayerInventory(0, stack(1)));
 
-		assertEquals(List.of(snapshot(2, 3, DIAMONDS)), snapshots());
+		assertEquals(List.of(chest(1, 3, DIAMONDS)), snapshots());
 		operations.call(InventoryChannel.CLICK, new InventoryAction(4, InventoryClick.LEFT, 0));
 		assertEquals(click(2, 3, 4, ClickType.PICKUP, 0), player.sent().getFirst());
+	}
+
+	@Test
+	void showsThePlayersMainInventoryAndHotbarBelowAnOpenedContainer() {
+		connect();
+		player.deliver(content(0, 1));
+		player.deliver(new ClientboundSetPlayerInventory(9, stack(2)));
+		player.deliver(new ClientboundOpenScreen(2, "minecraft:generic_9x1", Text.literal("Chest")));
+		player.deliver(chestContent(3));
+
+		player.deliver(new ClientboundSetPlayerInventory(0, stack(1)));
+		player.deliver(new ClientboundContainerSetSlot(0, 2, 36, null));
+		player.deliver(new ClientboundSetPlayerInventory(39, stack(4)));
+
+		assertEquals(List.of(
+				snapshot(0, 1),
+				snapshot(0, 1, item(9, 2)),
+				chest(1, 3, item(9, 2)),
+				chest(1, 3, item(9, 2), item(36, 1)),
+				chest(1, 3, item(9, 2))
+		), snapshots());
+	}
+
+	@Test
+	void returnsToThePlayersInventoryWithWhatChangedBelowTheClosedContainer() {
+		connect();
+		player.deliver(content(0, 1, null, null, null, null, null, null, null, null, null, stack(2)));
+		player.deliver(new ClientboundOpenScreen(2, "minecraft:generic_9x1", Text.literal("Chest")));
+		player.deliver(chestContent(3, 9, stack(5)));
+
+		player.deliver(new ClientboundContainerClose(7));
+		player.deliver(new ClientboundContainerClose(7));
+		player.deliver(new ClientboundContainerSetSlot(2, 4, 0, stack(1)));
+
+		assertEquals(InventorySnapshot.builder().containerId(0).stateId(1).screen(2).item(item(9, 5)).build(),
+				snapshots().getLast());
+		assertEquals(3, snapshots().size());
+		operations.call(InventoryChannel.CLICK, new InventoryAction(9, InventoryClick.LEFT, 0));
+		assertEquals(click(0, 1, 9, ClickType.PICKUP, 0), player.sent().getFirst());
+	}
+
+	@Test
+	void keysEachItemByTheItemDataOfThePlayersProtocolAndNamesItAsTheClientDoes() {
+		connect();
+		int emerald = JavaItemData.shipped().require(TestJavaPlayer.PROTOCOL).id("minecraft:emerald").orElseThrow();
+		ItemStack named = ItemStack.builder()
+				.id(emerald)
+				.count(1)
+				.customName(Text.literal("Buy"))
+				.itemName(Text.literal("Token"))
+				.lore(Text.literal("Costs 64 coins"))
+				.build();
+
+		player.deliver(content(0, 1));
+		player.deliver(new ClientboundSetPlayerInventory(9, named));
+
+		assertEquals(InventoryItem.builder()
+				.slot(9)
+				.type(new ItemType("minecraft:emerald", emerald))
+				.amount(1)
+				.display(ItemDisplay.builder()
+						.name(Text.literal("Buy"))
+						.nameSource(ItemNameSource.CUSTOM)
+						.lore(Text.literal("Costs 64 coins"))
+						.build())
+				.build(), snapshots().getLast().getItems().getFirst());
+		player.deliver(new ClientboundSetPlayerInventory(9, named.toBuilder().customName(null).build()));
+		assertEquals(ItemDisplay.builder()
+				.name(Text.literal("Token"))
+				.nameSource(ItemNameSource.ITEM)
+				.lore(Text.literal("Costs 64 coins"))
+				.build(), snapshots().getLast().getItems().getFirst().getDisplay());
+	}
+
+	@Test
+	void leavesTheTypeOutForAProtocolWithoutItemData() {
+		TestJavaPlayer unknown = new TestJavaPlayer("Alice", MinecraftVersion.parse("26.2"), 776, type -> true);
+		extension.bind(unknown, operations);
+		unknown.connect();
+
+		unknown.deliver(content(0, 1));
+		unknown.deliver(new ClientboundSetPlayerInventory(9, stack(1)));
+
+		assertNull(unknown.emitted(InventoryChannel.CHANGED).getLast().getItems().getFirst().getType().getIdentifier());
 	}
 
 	@Test
@@ -240,7 +338,7 @@ class JavaInventoryExtensionTest {
 		player.connect();
 
 		binding.close();
-		player.deliver(new ClientboundOpenScreen(5, "minecraft:generic_9x1", "Chest"));
+		player.deliver(new ClientboundOpenScreen(5, "minecraft:generic_9x1", Text.literal("Chest")));
 
 		for (Class<? extends ClientboundPacket> type : LISTENED)
 			assertFalse(player.protocol().wants(type), type.getSimpleName());
@@ -284,15 +382,54 @@ class JavaInventoryExtensionTest {
 	}
 
 	private static ItemStack stack(int count) {
-		return new ItemStack(100 + count, count);
+		return ItemStack.of(100 + count, count);
 	}
 
 	private static InventoryItem item(int slot, int amount) {
-		return InventoryItem.builder().slot(slot).protocolId(100 + amount).amount(amount).build();
+		return InventoryItem.builder()
+				.slot(slot)
+				.type(new ItemType(JavaItemData.shipped().require(TestJavaPlayer.PROTOCOL).key(100 + amount).orElseThrow(),
+						100 + amount))
+				.amount(amount)
+				.build();
 	}
 
 	private static InventorySnapshot snapshot(int containerId, int stateId, InventoryItem... items) {
 		return InventorySnapshot.builder().containerId(containerId).stateId(stateId).items(List.of(items)).build();
+	}
+
+	private static InventorySnapshot chest(int screen, int stateId, InventoryItem... items) {
+		return InventorySnapshot.builder()
+				.containerId(2)
+				.stateId(stateId)
+				.screen(screen)
+				.menuType("minecraft:generic_9x1")
+				.title(Text.literal("Chest"))
+				.items(List.of(items))
+				.build();
+	}
+
+	/**
+	 * Fills the single-row chest, showing the player's inventory below it as the server does, with a stack in one of
+	 * its slots.
+	 */
+	private ClientboundContainerSetContent chestContent(int stateId, int slot, ItemStack stack) {
+		ItemStack[] items = new ItemStack[CHEST_SLOTS];
+		items[slot] = stack;
+		return new ClientboundContainerSetContent(2, stateId, Arrays.asList(items), null);
+	}
+
+	/**
+	 * Fills the single-row chest with what the player's inventory holds below it, as the server does.
+	 */
+	private ClientboundContainerSetContent chestContent(int stateId) {
+		ItemStack[] items = new ItemStack[CHEST_SLOTS];
+		for (InventoryItem item : snapshots().getLast().getItems()) {
+			int index = PlayerInventoryLayout.inventoryIndex(item.getSlot()).orElseThrow();
+			PlayerInventoryLayout.menuSlot(index, CHEST_SLOTS).ifPresent(slot ->
+					items[slot] = ItemStack.of(item.getType().getProtocolId(), item.getAmount()));
+		}
+		return new ClientboundContainerSetContent(2, stateId, Arrays.asList(items), null);
 	}
 
 	private static ServerboundContainerClick click(int containerId, int stateId, int slot, ClickType type, int button) {

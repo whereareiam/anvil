@@ -62,7 +62,7 @@ class EntityTrackerTest {
 				new CustomNameVisible(true)
 		)));
 		EntityChange text = single(tracker.change(7, List.of(new DisplayText("hi"), new CustomName(null),
-				new ShownItem(new ItemStack(871, 3)))));
+				new ShownItem(ItemStack.of(871, 3)))));
 
 		assertEquals(EntityChangeKind.CHANGED, change.getKind());
 		assertNull(change.getPrevious().getCustomName());
@@ -80,9 +80,9 @@ class EntityTrackerTest {
 	void showsNoItemForAnEmptyStack() {
 		EntityTracker tracker = new EntityTracker(1);
 		spawn(tracker, 7, "minecraft:item", 0, 0, 0);
-		tracker.change(7, List.of(new ShownItem(new ItemStack(871, 3))));
+		tracker.change(7, List.of(new ShownItem(ItemStack.of(871, 3))));
 
-		assertNull(single(tracker.change(7, List.of(new ShownItem(new ItemStack(871, 0))))).getEntity().getItem());
+		assertNull(single(tracker.change(7, List.of(new ShownItem(ItemStack.of(871, 0))))).getEntity().getItem());
 		assertEquals(List.of(), tracker.change(7, List.of(new ShownItem(null))));
 	}
 

@@ -75,7 +75,7 @@ Minecraft 1.19.4 and later, disguised chat such as `say` from the console. The h
 follows the vanilla client's chat, so a message the client drops is not part of it, such as one that
 arrives while the client still configures; a [failed wait names those](#inspect-failures).
 Action-bar text is not chat, even when the server sends it as chat, and neither are titles;
-[Screen](../screen/index.md) records them.
+[Overlays](../overlays/index.md) records them.
 
 A message's plain text joins every part of the message in order, because the client's language file is not
 available:

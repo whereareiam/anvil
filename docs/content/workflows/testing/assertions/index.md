@@ -19,6 +19,7 @@ command, and requesting an interaction do not imply their server-side effects ha
 | Proxy connected the player to a backend | `PlayerWatch.joined(player, backend)` on the proxy's `Players.watch()` |
 | Proxy moved the player away from a backend | `PlayerWatch.left(player, backend)` on the proxy's watch |
 | Inventory reached a condition | `Inventory.matching(predicate)` |
+| Server opened or closed a menu | `InventoryWatch.screen(title)` or `closed()` on `Inventory.watch()` |
 | New process output contains text | `ConsoleWatch.printed(text, timeout)` |
 
 Capability waits offer explicit duration overloads; their default maximum wait is ten seconds.
@@ -89,7 +90,8 @@ the same text, the first reply can satisfy both waits. Use a unique request/resp
 change your application exposes, or a new player where a fresh history fits the journey.
 
 Similarly, `Inventory.matching(...)` can return immediately when the current snapshot already matches.
-Write a condition that distinguishes the intended result from the initial state.
+Write a condition that distinguishes the intended result from the initial state, or wait for the next screen through
+an `Inventory.watch()` created before the action.
 
 ## Assert application behavior
 

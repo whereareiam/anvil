@@ -22,7 +22,7 @@ import me.whereareiam.anvil.protocol.api.model.text.hover.TextHover;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityDataValue;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtTag;
-import me.whereareiam.anvil.protocol.java.api.model.screen.BossEventOperation;
+import me.whereareiam.anvil.protocol.java.api.model.overlay.BossEventOperation;
 import me.whereareiam.anvil.protocol.java.api.model.world.chunk.LevelChunkSection;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPackets;

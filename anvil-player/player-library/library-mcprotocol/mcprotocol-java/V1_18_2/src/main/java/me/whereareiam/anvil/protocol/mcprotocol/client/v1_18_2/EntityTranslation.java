@@ -68,16 +68,23 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 	private final EntityDataLayout<EntityType> layout;
 
 	private final ComponentTranslator text;
+	private final ItemTranslator items;
 
 	/**
 	 * Creates the translation of a release whose entity data indexes the layout describes.
 	 *
 	 * @param layout the release's entity data layout
 	 * @param text translates the release's text components
+	 * @param items translates the release's item stacks
 	 */
-	protected EntityTranslation(@NotNull EntityDataLayout<EntityType> layout, @NotNull ComponentTranslator text) {
+	protected EntityTranslation(
+			@NotNull EntityDataLayout<EntityType> layout,
+			@NotNull ComponentTranslator text,
+			@NotNull ItemTranslator items
+	) {
 		this.layout = layout;
 		this.text = text;
+		this.items = items;
 	}
 
 	@Override
@@ -208,7 +215,7 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 			case CUSTOM_NAME -> value instanceof Optional<?> name ? customName(name) : null;
 			case CUSTOM_NAME_VISIBLE -> value instanceof Boolean visible ? new CustomNameVisible(visible) : null;
 			case SHOWN_ITEM -> value == null || value instanceof ItemStack
-					? new ShownItem(ValueTranslator.item((ItemStack) value))
+					? new ShownItem(items.item((ItemStack) value))
 					: null;
 			case DISPLAY_TEXT -> value instanceof Component component ? new DisplayText(text.translate(component).plain()) : null;
 		};

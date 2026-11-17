@@ -30,19 +30,20 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpd
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateMobEffect;
 import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundPlayerCombatKill;
 import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundSetHealth;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetContent;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundOpenScreen;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetHeldSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerClose;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetContent;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundOpenScreen;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetHeldSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetPlayerInventory;
+import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundBossEvent;
+import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundClearTitles;
+import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetActionBarText;
+import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetSubtitleText;
+import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetTitleText;
+import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetTitlesAnimation;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
-import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundBossEvent;
-import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundClearTitles;
-import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetActionBarText;
-import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetSubtitleText;
-import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleText;
-import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitlesAnimation;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
@@ -117,6 +118,7 @@ public final class ClientboundPackets {
 			ClientboundUpdateMobEffect.class,
 			ClientboundPlayerCombatKill.class,
 			ClientboundSetHealth.class,
+			ClientboundContainerClose.class,
 			ClientboundContainerSetContent.class,
 			ClientboundContainerSetSlot.class,
 			ClientboundOpenScreen.class,

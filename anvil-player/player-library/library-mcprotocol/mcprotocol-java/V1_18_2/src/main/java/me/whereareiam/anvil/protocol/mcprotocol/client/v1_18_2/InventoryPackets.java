@@ -11,6 +11,7 @@ import com.github.steveice10.mc.protocol.data.game.inventory.MoveToHotbarAction;
 import com.github.steveice10.mc.protocol.data.game.inventory.ShiftClickItemAction;
 import com.github.steveice10.mc.protocol.data.game.inventory.SpreadItemAction;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundSetCarriedItemPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.inventory.ClientboundContainerClosePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.inventory.ClientboundContainerSetContentPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.inventory.ClientboundContainerSetSlotPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.inventory.ClientboundOpenScreenPacket;
@@ -21,13 +22,14 @@ import me.whereareiam.anvil.protocol.java.api.PlayerInventoryLayout;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetContent;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundOpenScreen;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetHeldSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerClose;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetContent;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundOpenScreen;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetHeldSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetPlayerInventory;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ServerboundSetCarriedItem;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import net.kyori.adventure.key.Key;
@@ -68,20 +70,24 @@ public final class InventoryPackets implements PacketTranslation<Packet> {
 	};
 
 	private final ComponentTranslator text;
+	private final ItemTranslator items;
 
 	/**
 	 * Creates the inventory translation of the release.
 	 *
 	 * @param text translates the release's text components
+	 * @param items translates the release's item stacks
 	 */
-	public InventoryPackets(@NotNull ComponentTranslator text) {
+	public InventoryPackets(@NotNull ComponentTranslator text, @NotNull ItemTranslator items) {
 		this.text = text;
+		this.items = items;
 	}
 
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(
 				ClientboundOpenScreen.class,
+				ClientboundContainerClose.class,
 				ClientboundContainerSetContent.class,
 				ClientboundContainerSetSlot.class,
 				ClientboundSetPlayerInventory.class,
@@ -95,10 +101,12 @@ public final class InventoryPackets implements PacketTranslation<Packet> {
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (packet instanceof ClientboundOpenScreenPacket open)
 			return new ClientboundOpenScreen(open.getContainerId(), menuType(open.getType()),
-					text.translate(open.getTitle()).plain());
+					text.translate(open.getTitle()));
+		if (packet instanceof ClientboundContainerClosePacket close)
+			return new ClientboundContainerClose(close.getContainerId());
 		if (packet instanceof ClientboundContainerSetContentPacket content)
 			return new ClientboundContainerSetContent(content.getContainerId(), content.getStateId(),
-					ValueTranslator.items(content.getItems()), ValueTranslator.item(content.getCarriedItem()));
+					items.items(content.getItems()), items.item(content.getCarriedItem()));
 		if (packet instanceof ClientboundContainerSetSlotPacket slot) return slot(slot);
 		if (packet instanceof ClientboundSetCarriedItemPacket held) return new ClientboundSetHeldSlot(held.getSlot());
 
@@ -119,13 +127,13 @@ public final class InventoryPackets implements PacketTranslation<Packet> {
 	 * Reads a slot packet. The library reads its container ID as an unsigned byte; vanilla sends a signed one, so the
 	 * cursor's {@code -1} and the inventory index container's {@code -2} arrive as 255 and 254.
 	 */
-	private static ClientboundPacket slot(ClientboundContainerSetSlotPacket slot) {
+	private ClientboundPacket slot(ClientboundContainerSetSlotPacket slot) {
 		int containerId = (byte) slot.getContainerId();
 		if (containerId == INVENTORY_INDEX_CONTAINER)
-			return new ClientboundSetPlayerInventory(slot.getSlot(), ValueTranslator.item(slot.getItem()));
+			return new ClientboundSetPlayerInventory(slot.getSlot(), items.item(slot.getItem()));
 
 		return new ClientboundContainerSetSlot(containerId, slot.getStateId(), slot.getSlot(),
-				ValueTranslator.item(slot.getItem()));
+				items.item(slot.getItem()));
 	}
 
 	private static String menuType(ContainerType type) {

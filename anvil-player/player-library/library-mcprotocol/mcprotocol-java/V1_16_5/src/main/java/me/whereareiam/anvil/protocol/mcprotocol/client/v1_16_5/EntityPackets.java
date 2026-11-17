@@ -11,8 +11,8 @@ import org.jetbrains.annotations.Nullable;
  * Entities of the MCProtocolLib 1.16.5 release, which removes entities through its destroy packet.
  */
 final class EntityPackets extends EntityTranslation {
-	EntityPackets(@NotNull ComponentTranslator text) {
-		super(EntityDataTable.LAYOUT, text);
+	EntityPackets(@NotNull ComponentTranslator text, @NotNull ItemTranslator items) {
+		super(EntityDataTable.LAYOUT, text, items);
 	}
 
 	@Override

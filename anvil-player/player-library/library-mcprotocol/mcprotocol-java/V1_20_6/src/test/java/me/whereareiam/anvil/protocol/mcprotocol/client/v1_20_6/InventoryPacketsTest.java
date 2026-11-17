@@ -1,14 +1,16 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
+import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetContent;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundOpenScreen;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetHeldSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerClose;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetContent;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundOpenScreen;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetHeldSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetPlayerInventory;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ServerboundSetCarriedItem;
 import me.whereareiam.anvil.protocol.java.api.type.interaction.ClickType;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.protocol.data.game.inventory.ClickItemAction;
@@ -23,6 +25,7 @@ import org.geysermc.mcprotocollib.protocol.data.game.inventory.ShiftClickItemAct
 import org.geysermc.mcprotocollib.protocol.data.game.inventory.SpreadItemAction;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundSetCarriedItemPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.inventory.ClientboundContainerClosePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.inventory.ClientboundContainerSetContentPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.inventory.ClientboundContainerSetSlotPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.inventory.ClientboundOpenScreenPacket;
@@ -40,7 +43,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class InventoryPacketsTest {
-	private final InventoryPackets packets = new InventoryPackets(new TextTranslator());
+	private final InventoryPackets packets = new InventoryPackets(new TextTranslator(), new ComponentItemTranslator(new TextTranslator()));
+
+	@Test
+	void readsTheContainerTheServerCloses() {
+		assertEquals(new ClientboundContainerClose(2), packets.decode(new ClientboundContainerClosePacket(2)));
+	}
 
 	@Test
 	void decodesAnOpenedContainerWithItsMenuTypeAndPlainTitle() {
@@ -49,7 +57,7 @@ class InventoryPacketsTest {
 		ClientboundOpenScreenPacket map = new ClientboundOpenScreenPacket(3, ContainerType.CARTOGRAPHY,
 				Component.text("Map"));
 
-		assertEquals(new ClientboundOpenScreen(2, "minecraft:generic_9x1", "Chest"), packets.decode(chest));
+		assertEquals(new ClientboundOpenScreen(2, "minecraft:generic_9x1", Text.literal("Chest")), packets.decode(chest));
 		assertEquals("minecraft:cartography_table",
 				assertInstanceOf(ClientboundOpenScreen.class, packets.decode(map)).getMenuType());
 	}
@@ -59,19 +67,19 @@ class InventoryPacketsTest {
 		ClientboundContainerSetContentPacket content = new ClientboundContainerSetContentPacket(2, 7,
 				stacks(null, stack(800, 3)), stack(5, 1));
 
-		assertEquals(new ClientboundContainerSetContent(2, 7, Arrays.asList(null, new ItemStack(800, 3)),
-				new ItemStack(5, 1)), packets.decode(content));
+		assertEquals(new ClientboundContainerSetContent(2, 7, Arrays.asList(null, ItemStack.of(800, 3)),
+				ItemStack.of(5, 1)), packets.decode(content));
 	}
 
 	@Test
 	void decodesSlotsOfAContainerOfTheCursorAndOfThePlayersInventory() {
-		assertEquals(new ClientboundContainerSetSlot(2, 8, 0, new ItemStack(1, 64)),
+		assertEquals(new ClientboundContainerSetSlot(2, 8, 0, ItemStack.of(1, 64)),
 				packets.decode(new ClientboundContainerSetSlotPacket(2, 8, 0, stack(1, 64))));
 		// The library decodes this container ID as an unsigned byte, so vanilla's cursor -1 and inventory index -2
 		// arrive as 255 and 254.
 		assertEquals(new ClientboundContainerSetSlot(-1, 8, -1, null),
 				packets.decode(new ClientboundContainerSetSlotPacket(255, 8, -1, null)));
-		assertEquals(new ClientboundSetPlayerInventory(40, new ItemStack(5, 1)),
+		assertEquals(new ClientboundSetPlayerInventory(40, ItemStack.of(5, 1)),
 				packets.decode(new ClientboundContainerSetSlotPacket(254, 0, 40, stack(5, 1))));
 	}
 
@@ -139,6 +147,7 @@ class InventoryPacketsTest {
 	void carriesEveryInventoryPacketOfTheRelease() {
 		assertEquals(Set.of(
 				ClientboundOpenScreen.class,
+				ClientboundContainerClose.class,
 				ClientboundContainerSetContent.class,
 				ClientboundContainerSetSlot.class,
 				ClientboundSetPlayerInventory.class,

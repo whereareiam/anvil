@@ -5,6 +5,7 @@ import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.EntityTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ItemTranslator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,8 +14,8 @@ import org.jetbrains.annotations.Nullable;
  * the removal.
  */
 final class EntityPackets extends EntityTranslation {
-	EntityPackets(@NotNull ComponentTranslator text) {
-		super(EntityDataTable.LAYOUT, text);
+	EntityPackets(@NotNull ComponentTranslator text, @NotNull ItemTranslator items) {
+		super(EntityDataTable.LAYOUT, text, items);
 	}
 
 	@Override

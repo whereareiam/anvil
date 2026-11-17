@@ -52,16 +52,23 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 	private final Map<Integer, EntityType> types = new HashMap<>();
 	private final EntityDataLayout<EntityType> layout;
 	private final ComponentTranslator text;
+	private final ItemTranslator items;
 
 	/**
 	 * Creates the translation of a release whose entity data indexes the layout describes.
 	 *
 	 * @param layout the release's entity data layout
 	 * @param text translates the release's text components
+	 * @param items translates the release's item stacks
 	 */
-	protected EntityTranslation(@NotNull EntityDataLayout<EntityType> layout, @NotNull ComponentTranslator text) {
+	protected EntityTranslation(
+			@NotNull EntityDataLayout<EntityType> layout,
+			@NotNull ComponentTranslator text,
+			@NotNull ItemTranslator items
+	) {
 		this.layout = layout;
 		this.text = text;
+		this.items = items;
 	}
 
 	@Override
@@ -152,7 +159,7 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 		List<EntityDataValue> values = new ArrayList<>();
 		for (EntityMetadata<?, ?> entry : metadata) {
 			EntityDataField field = layout.field(type, entry.getId());
-			EntityDataValue value = field == null ? null : EntityDataValues.value(field, entry.getValue(), text);
+			EntityDataValue value = field == null ? null : EntityDataValues.value(field, entry.getValue(), text, items);
 			if (value != null) values.add(value);
 		}
 

@@ -6,11 +6,12 @@ import com.github.steveice10.mc.protocol.data.game.window.WindowAction;
 import com.github.steveice10.mc.protocol.packet.ingame.client.window.ClientWindowActionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerSetSlotPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerWindowItemsPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetContent;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetContent;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.type.interaction.ClickType;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ItemTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.TextTranslator;
 import org.junit.jupiter.api.Test;
 
@@ -22,13 +23,13 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class InventoryPacketsTest {
-	private final InventoryPackets packets = new InventoryPackets(new TextTranslator());
+	private final InventoryPackets packets = new InventoryPackets(new TextTranslator(), new ItemTranslator(new TextTranslator()));
 
 	@Test
 	void reportsContainersWithTheirStateIdsAndCarriedStack() {
 		assertEquals(new ClientboundContainerSetContent(3, 9, Arrays.asList(
-						new me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack(1, 2), null),
-						new me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack(5, 1)),
+						me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(1, 2), null),
+						me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(5, 1)),
 				packets.decode(new ServerWindowItemsPacket(3, 9, new ItemStack[]{new ItemStack(1, 2), null},
 						new ItemStack(5, 1))));
 		assertEquals(new ClientboundContainerSetSlot(3, 10, 4, null),

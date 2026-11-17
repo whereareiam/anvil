@@ -1,10 +1,10 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetHeldSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetHeldSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetPlayerInventory;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.inventory.ContainerAction;
@@ -27,9 +27,10 @@ public final class InventoryPackets extends InventoryTranslation {
 	 * Creates the inventory translation of the release.
 	 *
 	 * @param text translates the release's text components
+	 * @param items translates the release's item stacks
 	 */
-	public InventoryPackets(@NotNull ComponentTranslator text) {
-		super(text);
+	public InventoryPackets(@NotNull ComponentTranslator text, @NotNull ItemTranslator items) {
+		super(text, items);
 	}
 
 	/**
@@ -47,10 +48,10 @@ public final class InventoryPackets extends InventoryTranslation {
 
 		int containerId = (byte) slot.getContainerId();
 		if (containerId == INVENTORY_INDEX_CONTAINER)
-			return new ClientboundSetPlayerInventory(slot.getSlot(), ValueTranslator.item(slot.getItem()));
+			return new ClientboundSetPlayerInventory(slot.getSlot(), items.item(slot.getItem()));
 
 		return new ClientboundContainerSetSlot(containerId, slot.getStateId(), slot.getSlot(),
-				ValueTranslator.item(slot.getItem()));
+				items.item(slot.getItem()));
 	}
 
 	@Override

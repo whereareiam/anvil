@@ -37,8 +37,8 @@ public final class EntityPackets extends EntityTranslation {
 	/**
 	 * Creates the translation.
 	 */
-	public EntityPackets(@NotNull ComponentTranslator text) {
-		super(EntityDataTable.LAYOUT, text);
+	public EntityPackets(@NotNull ComponentTranslator text, @NotNull ItemTranslator items) {
+		super(EntityDataTable.LAYOUT, text, items);
 	}
 
 	@Override

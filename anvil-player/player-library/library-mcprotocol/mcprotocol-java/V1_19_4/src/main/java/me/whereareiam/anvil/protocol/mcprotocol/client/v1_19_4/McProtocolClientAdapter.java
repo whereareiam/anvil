@@ -9,9 +9,10 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.BorderPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.EntityStatePackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.HealthPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.InventoryPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ItemTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.JavaClient;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.OverlayPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.PlayerPackets;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ScreenPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.TextTranslator;
 
 import java.util.List;
@@ -19,10 +20,11 @@ import java.util.List;
 /**
  * The client segment's adapter for the MCProtocolLib 1.19.4 release: the 1.18.2 {@link JavaClient} with the release's
  * component disconnect reasons and packet table, which keeps the 1.18.2 border, entity state, health, inventory,
- * player and screen translations.
+ * player and overlay translations.
  */
 public final class McProtocolClientAdapter extends JavaClient {
 	private static final TextTranslator TEXT = new TextTranslator();
+	private static final ItemTranslator ITEMS = new ItemTranslator(TEXT);
 
 	/**
 	 * Creates the client of the MCProtocolLib 1.19.4 release.
@@ -55,13 +57,13 @@ public final class McProtocolClientAdapter extends JavaClient {
 				new ChunkPackets(level, demand),
 				new CommandPackets(),
 				new ConnectionPackets(level),
-				new EntityPackets(TEXT),
+				new EntityPackets(TEXT, ITEMS),
 				new EntityStatePackets(),
 				new HealthPackets(TEXT),
 				new InteractionPackets(),
-				new InventoryPackets(TEXT),
+				new InventoryPackets(TEXT, ITEMS),
 				new PlayerPackets(),
-				new ScreenPackets(TEXT),
+				new OverlayPackets(TEXT),
 				new SoundPackets(),
 				new WorldPackets()
 		));

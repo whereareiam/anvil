@@ -65,7 +65,7 @@ class PlayerCapabilityRuntimeTest {
 				"me.whereareiam.anvil.commands",
 				"me.whereareiam.anvil.dialogs",
 				"me.whereareiam.anvil.cookies",
-				"me.whereareiam.anvil.screen",
+				"me.whereareiam.anvil.overlays",
 				"me.whereareiam.anvil.sounds",
 				"me.whereareiam.anvil.vitals",
 				"me.whereareiam.anvil.entities",

@@ -11,6 +11,16 @@ import java.util.function.Predicate;
 
 /**
  * Observes and interacts with a simulated player's inventory and open container.
+ *
+ * <p>Tests find items by what the player sees of them through {@link #items()}, and follow the screens that open and
+ * close through {@link #watch()}; {@link #click(int, InventoryClick, int)} clicks a slot by its index.</p>
+ *
+ * <pre>{@code
+ * InventoryWatch watch = inventory.watch();
+ * messages.command("shop");
+ * watch.screen("Shop").items().named("Buy").click(InventoryClick.LEFT);
+ * watch.closed();
+ * }</pre>
  */
 public interface Inventory extends PlayerCapability {
 	/**
@@ -67,4 +77,23 @@ public interface Inventory extends PlayerCapability {
 	 *               otherwise zero
 	 */
 	void click(int slot, @NotNull InventoryClick click, int button);
+
+	/**
+	 * Returns a locator of every item of the screen the player sees whenever the locator acts: the open container,
+	 * including the player's inventory slots below it, or the player's own inventory.
+	 *
+	 * <pre>{@code
+	 * inventory.items().named("Buy").click(InventoryClick.LEFT);
+	 * }</pre>
+	 *
+	 * @return a locator without conditions
+	 */
+	@NotNull ItemLocator items();
+
+	/**
+	 * Starts following the screens the player sees from now on.
+	 *
+	 * @return a watch that finds only screens that open after it started
+	 */
+	@NotNull InventoryWatch watch();
 }

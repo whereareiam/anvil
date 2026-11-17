@@ -17,7 +17,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInte
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwing;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundClientTickEnd;

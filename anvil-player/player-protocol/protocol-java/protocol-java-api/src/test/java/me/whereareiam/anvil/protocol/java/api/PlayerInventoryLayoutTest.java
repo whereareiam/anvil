@@ -40,4 +40,32 @@ class PlayerInventoryLayoutTest {
 		assertEquals(41, IntStream.rangeClosed(-5, 50).filter(index -> PlayerInventoryLayout.containerSlot(index).isPresent())
 				.count());
 	}
+
+	@Test
+	void mapsEachSlotOfThePlayersInventoryContainerBackToItsIndex() {
+		for (int index = 0; index <= PlayerInventoryLayout.OFF_HAND; index++)
+			assertEquals(OptionalInt.of(index),
+					PlayerInventoryLayout.inventoryIndex(PlayerInventoryLayout.containerSlot(index).orElseThrow()));
+		assertEquals(OptionalInt.empty(), PlayerInventoryLayout.inventoryIndex(0));
+		assertEquals(OptionalInt.empty(), PlayerInventoryLayout.inventoryIndex(4));
+		assertEquals(OptionalInt.empty(), PlayerInventoryLayout.inventoryIndex(46));
+	}
+
+	@Test
+	void mapsTheMainInventoryAndHotbarBelowAnOpenedContainersOwnSlots() {
+		int chest = 27 + 36;
+
+		assertEquals(OptionalInt.of(27), PlayerInventoryLayout.menuSlot(9, chest));
+		assertEquals(OptionalInt.of(53), PlayerInventoryLayout.menuSlot(35, chest));
+		assertEquals(OptionalInt.of(54), PlayerInventoryLayout.menuSlot(0, chest));
+		assertEquals(OptionalInt.of(62), PlayerInventoryLayout.menuSlot(8, chest));
+		assertEquals(OptionalInt.empty(), PlayerInventoryLayout.menuSlot(36, chest));
+		assertEquals(OptionalInt.empty(), PlayerInventoryLayout.menuSlot(40, chest));
+		for (int index = 0; index < PlayerInventoryLayout.ARMOR; index++)
+			assertEquals(OptionalInt.of(index), PlayerInventoryLayout.menuInventoryIndex(
+					PlayerInventoryLayout.menuSlot(index, chest).orElseThrow(), chest));
+		assertEquals(OptionalInt.empty(), PlayerInventoryLayout.menuInventoryIndex(26, chest));
+		assertEquals(OptionalInt.empty(), PlayerInventoryLayout.menuInventoryIndex(63, chest));
+		assertEquals(OptionalInt.empty(), PlayerInventoryLayout.menuSlot(0, 9));
+	}
 }

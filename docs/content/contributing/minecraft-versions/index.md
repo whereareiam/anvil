@@ -120,7 +120,23 @@ its `protocol.json` (the notice ships as `META-INF/LICENSE-minecraft-data-packet
 check does. A protocol minecraft-data has no `protocol.json` for keeps a row without pins; its frames have no name,
 and a tap refuses to select its packets by name. Add the new protocol to the protocols `JavaPacketDataTest` lists.
 
-Both data modules apply the `module-minecraft-data` convention of `build-logic`'s `minecraftdata` group, which owns
+## Add the item data
+
+Inventory items carry their type's registry key from `protocol-java-item`, which generates, from the same
+minecraft-data release, each protocol's item registry by item ID: its `items.json` (the notice ships as
+`META-INF/LICENSE-minecraft-data-items.txt`). Its
+`anvil-player/player-protocol/protocol-java/protocol-java-item/item-data.toml` has the layout of `block-data.toml`,
+with one `items` file per row. For a new protocol, add a row and pin it:
+
+```shell
+./gradlew :anvil-player:player-protocol:protocol-java:protocol-java-item:pinItemData
+```
+
+`checkItemDataReleases`, part of `check`, requires a row for the protocol of every release. A protocol minecraft-data
+has no `items.json` for keeps a row without pins; its items carry no type, and an inventory locator with a type
+refuses to act. Add the new protocol to the protocols `JavaItemDataTest` lists.
+
+All three data modules apply the `module-minecraft-data` convention of `build-logic`'s `minecraftdata` group, which owns
 reading minecraft-data, the pins files, the pin and check tasks and the generators' arguments for every kind of data
 a module generates.
 
