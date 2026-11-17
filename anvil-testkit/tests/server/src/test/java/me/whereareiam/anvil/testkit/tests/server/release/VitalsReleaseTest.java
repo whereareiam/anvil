@@ -18,17 +18,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Sees the health the server sends the player, dies to the server's vanilla commands and respawns, by itself when the
- * server turned the death screen off.
- *
- * <p>From Minecraft 1.21.4 a server protects a player from damage until it handles the client's report that it
- * loaded, a tick after the join the fixture's welcome confirms, so each test repeats its damaging command until it
- * lands.</p>
+ * server turned the death screen off. A server protects a player that just spawned from ordinary damage, so the test
+ * sets the player's health through the fixture to see it fall, and kills with {@code /kill}, which the protection
+ * does not stop.
  */
 @Release
 class VitalsReleaseTest {
 	private static final Duration TIMEOUT = Duration.ofSeconds(10);
-	private static final Duration ATTEMPT = Duration.ofSeconds(1);
-	private static final int ATTEMPTS = 5;
+	private static final Duration QUIET = Duration.ofSeconds(1);
 
 	@Test
 	void seesTheHealthItLoses(ScenarioContext anvil) {
@@ -36,8 +33,8 @@ class VitalsReleaseTest {
 		SimulatedPlayer player = server.join();
 		Vitals vitals = player.capability(Vitals.class);
 
-		Expectation hurt = Expectation.of("lose health", () -> vitals.health() < 20F);
-		repeatUntil(player, hurt, () -> server.console("effect give " + player.name() + " minecraft:instant_damage 1 0"));
+		server.console("anvil-health " + player.name() + " 14");
+		player.awaitFirst(TIMEOUT, Expectation.of("lose health", () -> vitals.health() == 14F));
 
 		assertFalse(vitals.dead());
 		assertTrue(vitals.food() > 0);
@@ -50,13 +47,13 @@ class VitalsReleaseTest {
 		Vitals vitals = player.capability(Vitals.class);
 		DeathWatch deaths = vitals.watchDeaths();
 
-		kill(server, player, deaths);
+		server.console("kill " + player.name());
 
 		Death death = deaths.died(TIMEOUT);
 		assertTrue(death.getMessage().contains(player.name()), death.getMessage());
 		assertFalse(death.isRespawnedImmediately());
 		assertTrue(vitals.dead());
-		deaths.neverDied(ATTEMPT);
+		deaths.neverDied(QUIET);
 		assertTrue(vitals.dead());
 
 		vitals.respawn(TIMEOUT);
@@ -74,7 +71,7 @@ class VitalsReleaseTest {
 			Vitals vitals = player.capability(Vitals.class);
 			DeathWatch deaths = vitals.watchDeaths();
 
-			kill(server, player, deaths);
+			server.console("kill " + player.name());
 
 			assertTrue(deaths.died(TIMEOUT).isRespawnedImmediately());
 			player.awaitFirst(TIMEOUT, Expectation.of("respawn", () -> vitals.health() == 20F && !vitals.dead()));
@@ -90,24 +87,5 @@ class VitalsReleaseTest {
 	private static void immediateRespawn(FixtureServer server, boolean enabled) {
 		String rule = TestedRelease.isAtLeast("1.21.11") ? "immediate_respawn" : "doImmediateRespawn";
 		server.console("gamerule " + rule + " " + enabled);
-	}
-
-	/**
-	 * Kills the player until the server reports the death, without taking it from the watch.
-	 */
-	private static void kill(FixtureServer server, SimulatedPlayer player, DeathWatch deaths) {
-		repeatUntil(player, deaths.expectDied(death -> true), () -> server.console("kill " + player.name()));
-	}
-
-	private static void repeatUntil(SimulatedPlayer player, Expectation landed, Runnable command) {
-		for (int attempt = 1; ; attempt++) {
-			command.run();
-			try {
-				player.awaitFirst(ATTEMPT, landed);
-				return;
-			} catch (IllegalStateException notYet) {
-				if (attempt == ATTEMPTS) throw notYet;
-			}
-		}
 	}
 }

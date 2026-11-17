@@ -60,6 +60,9 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 		var entity = getCommand("anvil-entity");
 		if (entity != null)
 			entity.setExecutor((sender, ignored, label, arguments) -> entity(arguments));
+		var health = getCommand("anvil-health");
+		if (health != null)
+			health.setExecutor((sender, ignored, label, arguments) -> health(arguments));
 		var auth = getCommand("auth");
 		if (auth != null)
 			auth.setExecutor((sender, ignored, label, arguments) -> authenticate(player(sender)));
@@ -195,6 +198,19 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 			cookies.request(player, arguments[2]);
 		else
 			return false;
+		return true;
+	}
+
+	/**
+	 * Sets the health of a player named by the console, as a plugin that heals or hurts players does. It bypasses the
+	 * protection a server gives a player that just spawned, so a test sees the health the server sends at once.
+	 */
+	private boolean health(String[] arguments) {
+		Player player = arguments.length != 2 ? null : Bukkit.getPlayerExact(arguments[0]);
+		if (player == null)
+			return false;
+
+		player.setHealth(Double.parseDouble(arguments[1]));
 		return true;
 	}
 
