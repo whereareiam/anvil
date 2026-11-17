@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.capability.world.java;
 
 import me.whereareiam.anvil.capability.world.channel.AreaWatch;
+import me.whereareiam.anvil.capability.world.channel.BlockLookup;
 import me.whereareiam.anvil.capability.world.channel.BlockReading;
 import me.whereareiam.anvil.capability.world.channel.LoadedChunks;
 import me.whereareiam.anvil.capability.world.channel.WatchedChanges;
@@ -57,7 +58,7 @@ final class WorldBlocks {
 	 * Registers the host's reads of blocks and chunks and the opening and closing of watches.
 	 */
 	void register(@NotNull OperationRegistry operations) {
-		operations.register(WorldChannel.BLOCK, position -> world.read(view -> reading(view, position)));
+		operations.register(WorldChannel.BLOCK, position -> world.read(view -> lookup(view, position)));
 		operations.register(WorldChannel.CHUNK, chunk -> world.isLoaded(chunk(chunk)));
 		operations.register(WorldChannel.CHUNKS, ignored -> new LoadedChunks(world.loadedChunks().stream()
 				.map(chunk -> new ChunkPosition(chunk.getX(), chunk.getZ()))
@@ -167,9 +168,9 @@ final class WorldBlocks {
 		if (!blocks.isEmpty()) player.emit(WorldChannel.CHANGES, new WatchedChanges(watch, level, List.copyOf(blocks)));
 	}
 
-	private @Nullable BlockReading reading(WorldView view, BlockPosition position) {
+	private BlockLookup lookup(WorldView view, BlockPosition position) {
 		OptionalInt state = view.blockState(position.getX(), position.getY(), position.getZ());
-		return state.isPresent() ? reading(position, state.getAsInt()) : null;
+		return new BlockLookup(state.isPresent() ? reading(position, state.getAsInt()) : null);
 	}
 
 	private BlockReading reading(BlockPosition position, int state) {

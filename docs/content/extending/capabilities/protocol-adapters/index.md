@@ -69,7 +69,10 @@ public final class RoundTripOperations {
 
 The descriptor binds a namespaced operation ID to explicit request and response classes. Use a new
 ID when changing its payload contract. MCProtocol requests use immutable object models, or `Void`
-for an operation with no request. Keep packet-library types and transport annotations out of these
+for an operation with no request. Only `Void` stands for no value: a handler of any other response type
+answers with a value, and the worker refuses `null` (`OperationDescriptor.response`). An answer that may be
+absent is a model of its own that says so, such as the World capability's `BlockLookup`, which holds no block
+while the client lacks the block's chunk. Keep packet-library types and transport annotations out of these
 models; the bundled codec supports constructors whose parameter names are retained by `-parameters`.
 
 ## Bind behavior to a player

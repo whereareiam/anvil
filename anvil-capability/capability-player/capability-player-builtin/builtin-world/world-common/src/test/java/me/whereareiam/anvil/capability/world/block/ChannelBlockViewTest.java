@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.capability.world.block;
 
 import me.whereareiam.anvil.capability.world.channel.AreaWatch;
+import me.whereareiam.anvil.capability.world.channel.BlockLookup;
 import me.whereareiam.anvil.capability.world.channel.BlockReading;
 import me.whereareiam.anvil.capability.world.channel.LoadedChunks;
 import me.whereareiam.anvil.capability.world.channel.WatchedChanges;
@@ -49,7 +50,7 @@ class ChannelBlockViewTest {
 
 	@Test
 	void readsABlockTheWorkerKnowsAndNothingOfAChunkItLacks() {
-		channel.answer(WorldChannel.BLOCK, position -> position.equals(DOOR) ? reading(1234, CLOSED) : null);
+		channel.answer(WorldChannel.BLOCK, position -> new BlockLookup(position.equals(DOOR) ? reading(1234, CLOSED) : null));
 
 		Block door = blocks.block(DOOR).orElseThrow();
 
@@ -71,7 +72,7 @@ class ChannelBlockViewTest {
 
 	@Test
 	void returnsABlockThatAlreadyMatchesAndClosesItsWatch() {
-		channel.answer(WorldChannel.BLOCK, position -> reading(1234, CLOSED));
+		channel.answer(WorldChannel.BLOCK, position -> new BlockLookup(reading(1234, CLOSED)));
 
 		Block door = blocks.until(DOOR, BlockQuery.named("oak_door"));
 
@@ -82,7 +83,7 @@ class ChannelBlockViewTest {
 
 	@Test
 	void waitsForTheBlockToChangeWhenItDoesNotMatchYet() {
-		channel.answer(WorldChannel.BLOCK, position -> reading(1234, CLOSED));
+		channel.answer(WorldChannel.BLOCK, position -> new BlockLookup(reading(1234, CLOSED)));
 		channel.meanwhile(() -> channel.publish(WorldChannel.CHANGES,
 				new WatchedChanges(1, OVERWORLD, List.of(reading(1235, OPEN)))));
 
@@ -94,7 +95,7 @@ class ChannelBlockViewTest {
 
 	@Test
 	void waitsForABlockOfAChunkTheClientDoesNotHaveYet() {
-		channel.answer(WorldChannel.BLOCK, position -> null);
+		channel.answer(WorldChannel.BLOCK, position -> new BlockLookup(null));
 		channel.meanwhile(() -> channel.publish(WorldChannel.CHANGES,
 				new WatchedChanges(1, OVERWORLD, List.of(reading(1234, CLOSED)))));
 
@@ -103,7 +104,7 @@ class ChannelBlockViewTest {
 
 	@Test
 	void closesTheWatchOfAWaitThatTimesOut() {
-		channel.answer(WorldChannel.BLOCK, position -> reading(1234, CLOSED));
+		channel.answer(WorldChannel.BLOCK, position -> new BlockLookup(reading(1234, CLOSED)));
 
 		IllegalStateException failure = assertThrows(IllegalStateException.class,
 				() -> blocks.until(DOOR, BlockQuery.withProperty("open", "true"), Duration.ofMillis(10)));

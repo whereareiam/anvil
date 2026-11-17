@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.capability.world.java;
 
 import me.whereareiam.anvil.capability.world.channel.AreaWatch;
+import me.whereareiam.anvil.capability.world.channel.BlockLookup;
 import me.whereareiam.anvil.capability.world.channel.BlockReading;
 import me.whereareiam.anvil.capability.world.channel.LoadedChunks;
 import me.whereareiam.anvil.capability.world.channel.WatchedChanges;
@@ -62,27 +63,27 @@ class WorldBlocksTest {
 	void keepsTheChunksOfTheFirstJoinBecauseTheWorldStartsKeepingAtBind() {
 		player.deliver(stoneFloor(0, 0));
 
-		assertEquals(reading(IN_CHUNK, STONE), operations.call(WorldChannel.BLOCK, IN_CHUNK));
+		assertEquals(new BlockLookup(reading(IN_CHUNK, STONE)), operations.call(WorldChannel.BLOCK, IN_CHUNK));
 		assertEquals(Boolean.TRUE, operations.call(WorldChannel.CHUNK, new ChunkPosition(0, 0)));
 		assertEquals(new LoadedChunks(List.of(new ChunkPosition(0, 0))), operations.call(WorldChannel.CHUNKS, null));
 	}
 
 	@Test
 	void readsNothingOfAChunkTheClientLacks() {
-		assertNull(operations.call(WorldChannel.BLOCK, IN_CHUNK));
+		assertEquals(new BlockLookup(null), operations.call(WorldChannel.BLOCK, IN_CHUNK));
 		assertEquals(Boolean.FALSE, operations.call(WorldChannel.CHUNK, new ChunkPosition(0, 0)));
 
 		player.deliver(stoneFloor(0, 0));
 		player.deliver(new ClientboundForgetLevelChunk(chunk(0, 0)));
 
-		assertNull(operations.call(WorldChannel.BLOCK, IN_CHUNK));
+		assertEquals(new BlockLookup(null), operations.call(WorldChannel.BLOCK, IN_CHUNK));
 	}
 
 	@Test
 	void namesEachStateByTheBlockDataOfThePlayersProtocol() {
 		player.deliver(stoneFloor(0, 0));
 
-		BlockReading stone = operations.call(WorldChannel.BLOCK, IN_CHUNK);
+		BlockReading stone = operations.call(WorldChannel.BLOCK, IN_CHUNK).getReading();
 
 		assertEquals(new BlockIdentity("minecraft:stone", Map.of(), false), stone.getIdentity());
 		assertEquals(TestJavaPlayer.PROTOCOL, stone.getProtocol());
@@ -94,7 +95,7 @@ class WorldBlocksTest {
 		player.deliver(stoneFloor(0, 0));
 		player.deliver(new ClientboundBlockUpdate(change(IN_CHUNK, BLOCKS.stateCount())));
 
-		assertNull(operations.call(WorldChannel.BLOCK, IN_CHUNK).getIdentity());
+		assertNull(operations.call(WorldChannel.BLOCK, IN_CHUNK).getReading().getIdentity());
 	}
 
 	@Test

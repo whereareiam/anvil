@@ -90,8 +90,8 @@ class ChannelCookiesTest {
 	@Test
 	void sendsNormalizedKeysAndCopiesOfPayloads() {
 		TestProtocolChannel channel = new TestProtocolChannel(Set.of(CookiesChannel.ID));
-		channel.answer(CookiesChannel.STORE, cookie -> null);
-		channel.answer(CookiesChannel.REMOVE, key -> null);
+		channel.answer(CookiesChannel.STORE, cookie -> new HeldCookies(1, Map.of()));
+		channel.answer(CookiesChannel.REMOVE, key -> new HeldCookies(2, Map.of()));
 		Cookies cookies = new ChannelCookies(channel);
 		byte[] payload = TICKET.clone();
 
@@ -121,7 +121,7 @@ class ChannelCookiesTest {
 	@Test
 	void refusesAnInvalidKeyOrAPayloadLargerThanACookieHolds() {
 		TestProtocolChannel channel = new TestProtocolChannel(Set.of(CookiesChannel.ID));
-		channel.answer(CookiesChannel.STORE, cookie -> null);
+		channel.answer(CookiesChannel.STORE, cookie -> new HeldCookies(1, Map.of()));
 		Cookies cookies = new ChannelCookies(channel);
 
 		assertThrows(IllegalArgumentException.class, () -> cookies.store("Example:Ticket", TICKET));

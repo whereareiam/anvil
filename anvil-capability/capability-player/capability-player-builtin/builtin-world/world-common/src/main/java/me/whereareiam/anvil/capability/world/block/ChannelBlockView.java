@@ -43,7 +43,7 @@ public final class ChannelBlockView implements BlockView {
 
 	@Override
 	public @NotNull Optional<Block> block(@NotNull BlockPosition position) {
-		return Optional.ofNullable(channel.request(WorldChannel.BLOCK, position)).map(ChannelBlockView::block);
+		return Optional.ofNullable(channel.request(WorldChannel.BLOCK, position).getReading()).map(ChannelBlockView::block);
 	}
 
 	@Override

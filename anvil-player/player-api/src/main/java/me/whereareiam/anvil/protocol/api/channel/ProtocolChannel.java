@@ -23,11 +23,12 @@ public interface ProtocolChannel {
 	 * @param request request value, or {@code null} for a {@link Void} request
 	 * @param <Q> request type
 	 * @param <R> response type
-	 * @return response value, or {@code null} for a {@link Void} response
+	 * @return response value, {@code null} only for a {@link Void} response
 	 * @throws IllegalArgumentException when the request is {@code null} for an operation that requires one, or a
 	 * value does not match the operation's schemas
 	 * @throws IllegalStateException when the player has been destroyed, one of its event callbacks failed, or the
-	 * operation failed in the worker
+	 * operation failed in the worker, which includes a handler answering {@code null} for a response other than
+	 * {@link Void}
 	 */
 	<Q, R> @Nullable R request(@NotNull OperationDescriptor<Q, R> operation, @Nullable Q request);
 

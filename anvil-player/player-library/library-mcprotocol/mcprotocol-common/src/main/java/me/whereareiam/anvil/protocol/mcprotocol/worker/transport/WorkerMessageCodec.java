@@ -105,11 +105,13 @@ public final class WorkerMessageCodec {
 	}
 
 	/**
-	 * Reads a player operation or event value from its envelope, decoding only the declared schema.
+	 * Reads a player operation or event value from its envelope, decoding only the declared schema. Only a
+	 * {@link Void} schema stands for no value, as {@link OperationDescriptor} defines, so an envelope holding
+	 * {@code null} for any other schema does not match it.
 	 *
 	 * @param envelope envelope received from the other side
 	 * @param type declared schema; {@link Void} reads {@code null}
-	 * @return decoded value
+	 * @return decoded value, {@code null} only for {@link Void}
 	 * @throws IllegalArgumentException when the envelope or its value does not match the schema
 	 */
 	public @Nullable <T> T open(@NotNull JsonNode envelope, @NotNull Class<T> type) {
@@ -132,7 +134,8 @@ public final class WorkerMessageCodec {
 
 	/**
 	 * Adapts a typed operation handler to envelopes: it opens the request with the declared request schema and
-	 * checks the handler's result against the declared response schema before wrapping it.
+	 * checks the handler's result against the declared response schema
+	 * ({@link OperationDescriptor#response(Object)}) before wrapping it.
 	 *
 	 * @param operation request and response schemas
 	 * @param handler typed operation implementation
@@ -144,7 +147,7 @@ public final class WorkerMessageCodec {
 	) {
 		return request -> {
 			R response = handler.apply(open(request, operation.getRequestType()));
-			return envelope(operation.getResponseType().cast(response));
+			return envelope(operation.response(response));
 		};
 	}
 
