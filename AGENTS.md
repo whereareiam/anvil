@@ -50,7 +50,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-launcher`                                                      | Public default builder, scoped-service adapters, default ScenarioFactory/per-run assembly, and shaded packaging; wiring only, no rules of its own |
 | `anvil-capability/capability-api`                                     | Owner-neutral composition, typed process requests, and neutral player identity/dependency/lifetime contracts                                              |
 | `anvil-capability/capability-common`                                  | Shared dependency validation/composition/cleanup for capability owners, agent extensions of installed process providers, per-library player runtimes and the player composer, and process/player facades |
-| `anvil-capability/capability-player/capability-player-api`            | Protocol-backed player providers and their contexts over the player's `ProtocolChannel` (artifact `capability-protocol-api`) |
+| `anvil-capability/capability-player/capability-player-api`            | Protocol-backed player providers and their contexts over the player's `ProtocolChannel` (artifact `capability-protocol-api`), and in its test fixtures the `TestProtocolPlayerCapabilityContext` provider tests create capabilities in |
 | `anvil-capability/capability-player/capability-player-builtin/builtin-<feature>` | Player capability family whose wiring-only root publishes the shaded `builtin-<feature>` bundle |
 | `anvil-capability/capability-player/capability-player-builtin/builtin-<feature>/<feature>-api` | Public feature API (`builtin-<feature>-api`) and, in `.channel`, the `<Feature>Channel` contract between host and worker: capability ID, operation and event descriptors |
 | `anvil-capability/capability-player/capability-player-builtin/builtin-<feature>/<feature>-common` | Embedded, unpublished host provider and host capability in the feature root package |
@@ -586,8 +586,13 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   (`protocol-java-worker` test fixtures) speaks the real `JavaPacketDispatcher`, so the test delivers packets, reads
   what the player sent and connects and disconnects it as a worker does, and `TestOperations` calls what the extension
   registered. A host capability's tests talk to `player-api`'s `TestProtocolChannel`, which answers operations,
-  publishes events and scripts what happens while the capability waits. A module shares test fixtures through the
-  `module-test-fixtures` convention, which keeps them out of its publication.
+  publishes events, records requests, payloads, subscriptions and waits, and scripts what happens while the capability
+  waits; a provider's tests create it in `capability-player-api`'s `TestProtocolPlayerCapabilityContext`, which hands
+  it that channel and the capabilities the test offers as its dependencies. No test implements a contract that has a
+  shared test double itself; `checkSharedTestDoubles` of `module-defaults`, part of every module's `check`, fails a
+  test class that does and names the fixture to use. Only the modules that own a contract or its fixture, which the
+  fixture cannot serve, test it with an implementation of their own. A module shares test fixtures through the `module-test-fixtures` convention, which keeps
+  them out of its publication.
 - Tests that need a real Docker engine live in their module's `dockerTest` JVM test suite (`src/dockerTest/java`),
   so `test` and `build` need no Docker. They run in the image the `anvil.docker.testImage` property of
   `gradle.properties` names, the only place it is named, passed to them through an argument provider: a copy of

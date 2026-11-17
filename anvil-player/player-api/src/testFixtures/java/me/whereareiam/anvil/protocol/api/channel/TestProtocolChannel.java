@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -33,10 +34,13 @@ import java.util.function.Function;
  */
 public final class TestProtocolChannel implements ProtocolChannel {
 	private final Set<String> installed;
+	private final Map<String, String> unavailable;
 	private final Map<String, Function<Object, Object>> answers = new ConcurrentHashMap<>();
 	private final Map<String, List<Consumer<Object>>> listeners = new ConcurrentHashMap<>();
 	private final List<String> requests = new CopyOnWriteArrayList<>();
+	private final List<Object> payloads = new CopyOnWriteArrayList<>();
 	private final List<String> subscriptions = new CopyOnWriteArrayList<>();
+	private final List<String> waits = new CopyOnWriteArrayList<>();
 	private volatile Runnable meanwhile = () -> {
 	};
 
@@ -46,7 +50,19 @@ public final class TestProtocolChannel implements ProtocolChannel {
 	 * @param installed the IDs of the installed capabilities
 	 */
 	public TestProtocolChannel(@NotNull Set<String> installed) {
+		this(installed, Map.of());
+	}
+
+	/**
+	 * Creates a channel to a worker that installed the given capabilities and reports others unavailable, as a worker
+	 * does whose library cannot carry what they need.
+	 *
+	 * @param installed the IDs of the installed capabilities
+	 * @param unavailable why each unavailable capability is unavailable, by its ID
+	 */
+	public TestProtocolChannel(@NotNull Set<String> installed, @NotNull Map<String, String> unavailable) {
 		this.installed = Set.copyOf(installed);
+		this.unavailable = Map.copyOf(unavailable);
 	}
 
 	/**
@@ -92,6 +108,16 @@ public final class TestProtocolChannel implements ProtocolChannel {
 	}
 
 	/**
+	 * Returns the payloads of the capability's requests, in order, as {@link #requests()} names their operations. A
+	 * request without a payload records {@link Optional#empty()}.
+	 *
+	 * @return the request payloads
+	 */
+	public @NotNull List<Object> payloads() {
+		return List.copyOf(payloads);
+	}
+
+	/**
 	 * Returns the IDs of the events the capability subscribed to, in order.
 	 *
 	 * @return the subscribed event IDs
@@ -100,9 +126,19 @@ public final class TestProtocolChannel implements ProtocolChannel {
 		return List.copyOf(subscriptions);
 	}
 
+	/**
+	 * Returns the descriptions of the capability's waits, in order.
+	 *
+	 * @return the wait descriptions
+	 */
+	public @NotNull List<String> waits() {
+		return List.copyOf(waits);
+	}
+
 	@Override
 	public <Q, R> @Nullable R request(@NotNull OperationDescriptor<Q, R> operation, @Nullable Q request) {
 		requests.add(operation.getId());
+		payloads.add(request == null ? Optional.empty() : request);
 		Function<Object, Object> handler = answers.get(operation.getId());
 		if (handler == null)
 			throw new IllegalStateException("The test's worker does not answer " + operation.getId());
@@ -124,6 +160,7 @@ public final class TestProtocolChannel implements ProtocolChannel {
 
 	@Override
 	public void await(@NotNull BooleanSupplier condition, @NotNull String description, @NotNull Duration timeout) {
+		waits.add(description);
 		Runnable events = meanwhile;
 		meanwhile = () -> {
 		};
@@ -135,5 +172,10 @@ public final class TestProtocolChannel implements ProtocolChannel {
 	@Override
 	public @NotNull Set<String> installedCapabilities() {
 		return installed;
+	}
+
+	@Override
+	public @NotNull Map<String, String> unavailableCapabilities() {
+		return unavailable;
 	}
 }

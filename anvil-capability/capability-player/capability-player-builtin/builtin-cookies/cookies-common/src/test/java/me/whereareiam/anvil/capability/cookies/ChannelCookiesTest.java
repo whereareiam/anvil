@@ -5,23 +5,14 @@ import me.whereareiam.anvil.capability.cookies.model.CookieKey;
 import me.whereareiam.anvil.capability.cookies.model.CookieRequest;
 import me.whereareiam.anvil.capability.cookies.model.HeldCookies;
 import me.whereareiam.anvil.capability.cookies.model.StoredCookie;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
-import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,7 +27,7 @@ class ChannelCookiesTest {
 
 	@Test
 	void keepsEveryRequestInOrderWithItsAnswer() {
-		RecordingChannel channel = new RecordingChannel();
+		TestProtocolChannel channel = new TestProtocolChannel(Set.of(CookiesChannel.ID));
 		Cookies cookies = new ChannelCookies(channel);
 
 		channel.publish(CookiesChannel.REQUESTED, new CookieRequest("example:ticket", TICKET));
@@ -50,7 +41,7 @@ class ChannelCookiesTest {
 
 	@Test
 	void watchesOnlyRequestsMadeSinceItAndContinuesAfterEachMatch() {
-		RecordingChannel channel = new RecordingChannel();
+		TestProtocolChannel channel = new TestProtocolChannel(Set.of(CookiesChannel.ID));
 		Cookies cookies = new ChannelCookies(channel);
 		channel.publish(CookiesChannel.REQUESTED, new CookieRequest("example:ticket", TICKET));
 		CookieWatch asked = cookies.watch();
@@ -71,7 +62,7 @@ class ChannelCookiesTest {
 
 	@Test
 	void readsAKeyWithoutANamespaceAsAMinecraftKey() {
-		RecordingChannel channel = new RecordingChannel();
+		TestProtocolChannel channel = new TestProtocolChannel(Set.of(CookiesChannel.ID));
 		Cookies cookies = new ChannelCookies(channel);
 		channel.publish(CookiesChannel.HELD, new HeldCookies(1, Map.of("minecraft:ticket", TICKET)));
 
@@ -84,9 +75,9 @@ class ChannelCookiesTest {
 
 	@Test
 	void keepsTheLatestHeldCookiesWhicheverWayTheyArrive() {
-		RecordingChannel channel = new RecordingChannel();
+		TestProtocolChannel channel = new TestProtocolChannel(Set.of(CookiesChannel.ID));
 		Cookies cookies = new ChannelCookies(channel);
-		channel.response = new HeldCookies(3, Map.of("example:ticket", TICKET));
+		channel.answer(CookiesChannel.STORE, cookie -> new HeldCookies(3, Map.of("example:ticket", TICKET)));
 
 		cookies.store("example:ticket", TICKET);
 		channel.publish(CookiesChannel.HELD, new HeldCookies(2, Map.of()));
@@ -98,7 +89,9 @@ class ChannelCookiesTest {
 
 	@Test
 	void sendsNormalizedKeysAndCopiesOfPayloads() {
-		RecordingChannel channel = new RecordingChannel();
+		TestProtocolChannel channel = new TestProtocolChannel(Set.of(CookiesChannel.ID));
+		channel.answer(CookiesChannel.STORE, cookie -> null);
+		channel.answer(CookiesChannel.REMOVE, key -> null);
 		Cookies cookies = new ChannelCookies(channel);
 		byte[] payload = TICKET.clone();
 
@@ -106,16 +99,16 @@ class ChannelCookiesTest {
 		payload[0] = 'X';
 		cookies.remove("example:ticket");
 
-		assertEquals(List.of(CookiesChannel.STORE.getId(), CookiesChannel.REMOVE.getId()), channel.requests);
-		StoredCookie stored = (StoredCookie) channel.payloads.get(0);
+		assertEquals(List.of(CookiesChannel.STORE.getId(), CookiesChannel.REMOVE.getId()), channel.requests());
+		StoredCookie stored = (StoredCookie) channel.payloads().get(0);
 		assertEquals("minecraft:ticket", stored.getKey());
 		assertArrayEquals(TICKET, stored.getPayload());
-		assertEquals(new CookieKey("example:ticket"), channel.payloads.get(1));
+		assertEquals(new CookieKey("example:ticket"), channel.payloads().get(1));
 	}
 
 	@Test
 	void returnsCopiesOfTheHeldPayloads() {
-		RecordingChannel channel = new RecordingChannel();
+		TestProtocolChannel channel = new TestProtocolChannel(Set.of(CookiesChannel.ID));
 		Cookies cookies = new ChannelCookies(channel);
 		channel.publish(CookiesChannel.HELD, new HeldCookies(1, Map.of("example:ticket", TICKET.clone())));
 
@@ -127,62 +120,23 @@ class ChannelCookiesTest {
 
 	@Test
 	void refusesAnInvalidKeyOrAPayloadLargerThanACookieHolds() {
-		RecordingChannel channel = new RecordingChannel();
+		TestProtocolChannel channel = new TestProtocolChannel(Set.of(CookiesChannel.ID));
+		channel.answer(CookiesChannel.STORE, cookie -> null);
 		Cookies cookies = new ChannelCookies(channel);
 
 		assertThrows(IllegalArgumentException.class, () -> cookies.store("Example:Ticket", TICKET));
 		assertThrows(IllegalArgumentException.class, () -> cookies.store("example:ticket", new byte[Cookies.MAX_PAYLOAD + 1]));
 
 		cookies.store("example:ticket", new byte[Cookies.MAX_PAYLOAD]);
-		assertEquals(List.of(CookiesChannel.STORE.getId()), channel.requests);
+		assertEquals(List.of(CookiesChannel.STORE.getId()), channel.requests());
 	}
 
 	@Test
 	void holdsNoCookiesBeforeTheWorkerReportsAny() {
-		Cookies cookies = new ChannelCookies(new RecordingChannel());
+		Cookies cookies = new ChannelCookies(new TestProtocolChannel(Set.of(CookiesChannel.ID)));
 
 		assertEquals(Map.of(), cookies.stored());
 		assertEquals(List.of(), cookies.requests());
 		assertThrows(IllegalStateException.class, () -> cookies.stored("example:ticket", WAIT));
-	}
-
-	/**
-	 * Records requests, answers them with a set response and delivers published events synchronously; a wait fails at
-	 * once when its condition is not met.
-	 */
-	private static final class RecordingChannel implements ProtocolChannel {
-		private final List<String> requests = new ArrayList<>();
-		private final List<Object> payloads = new ArrayList<>();
-		private final Map<String, List<Consumer<Object>>> listeners = new HashMap<>();
-		private @Nullable Object response;
-
-		private <E> void publish(EventDescriptor<E> eventDescriptor, @Nullable E payload) {
-			listeners.getOrDefault(eventDescriptor.getId(), List.of()).forEach(listener -> listener.accept(payload));
-		}
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public <Q, R> @Nullable R request(@NotNull OperationDescriptor<Q, R> operation, @Nullable Q request) {
-			requests.add(operation.getId());
-			payloads.add(request);
-			return (R) response;
-		}
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public <E> @NotNull Subscription subscribe(@NotNull EventDescriptor<E> eventDescriptor, @NotNull Consumer<E> listener) {
-			listeners.computeIfAbsent(eventDescriptor.getId(), ignored -> new ArrayList<>()).add((Consumer<Object>) listener);
-			return () -> listeners.get(eventDescriptor.getId()).remove(listener);
-		}
-
-		@Override
-		public void await(@NotNull BooleanSupplier condition, @NotNull String description, @NotNull Duration timeout) {
-			if (!condition.getAsBoolean()) throw new IllegalStateException("Player did not " + description);
-		}
-
-		@Override
-		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(CookiesChannel.ID);
-		}
 	}
 }

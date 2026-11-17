@@ -98,7 +98,32 @@ List<HeardSound> heard = player.emitted(SoundsChannel.HEARD);
 A host capability, such as `ChannelWorld`, is tested in its `<feature>-common` module against
 `TestProtocolChannel` from the `player-api` test fixtures: the test answers the operations the capability
 requests with `answer(...)`, plays the worker's events with `publish(...)`, and schedules with
-`meanwhile(...)` what happens while the capability's next wait waits, so no test sleeps.
+`meanwhile(...)` what happens while the capability's next wait waits, so no test sleeps. It records what the
+capability did: `requests()` and `payloads()` for the operations it requested, `subscriptions()` for the events it
+follows and `waits()` for what it waited for. An operation the test did not answer fails the request, as a worker
+without the handler would.
+
+A provider, such as `WorldProvider`, creates its capability in `TestProtocolPlayerCapabilityContext` from the
+`capability-player-api` test fixtures. The context hands the provider the test's channel and the capabilities the
+test offers with `withCapability(...)` as the provider's dependencies; its player is Alice on Minecraft 1.21.11,
+connected to the process `proxy`, and it refuses a lifecycle action, which no built-in capability registers.
+
+```java
+TestProtocolChannel channel = new TestProtocolChannel(Set.of(DialogsChannel.ID));
+channel.answer(DialogsChannel.CLICK, click -> null);
+Dialogs dialogs = new DialogsProvider().create(new TestProtocolPlayerCapabilityContext(channel)
+		.withCapability(Commands.class, commands));
+
+assertEquals(List.of(DialogsChannel.REGISTRY.getId(), DialogsChannel.SHOWN.getId(),
+		DialogsChannel.CLEARED.getId(), DialogsChannel.RESET.getId()), channel.subscriptions());
+```
+
+No test implements `ProtocolChannel`, a capability context or another contract with a shared test double itself:
+every module's `check` runs `checkSharedTestDoubles`, which fails such a test class and names the fixture to use.
+Only the modules that own a contract or its fixture, which the fixture cannot serve, test it with an implementation
+of their own. A host module adds the fixtures with
+`testImplementation(testFixtures(projects.anvilPlayer.playerApi))` and
+`testImplementation(testFixtures(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi))`.
 
 A player created with a predicate, `new TestJavaPlayer("Alice", type -> type != ClientboundDeleteChat.class)`,
 carries only the packets it accepts, as an older release does. A module adds the fixtures with

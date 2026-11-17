@@ -16,8 +16,10 @@ dependencies {
 	testImplementation(projects.anvilApi)
 	testImplementation(projects.anvilCapability.capabilityApi)
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi)
+	testImplementation(testFixtures(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi))
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinCommands.commandsApi)
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinDialogs.dialogsApi)
 	testImplementation(projects.anvilPlayer.playerApi)
+	testImplementation(testFixtures(projects.anvilPlayer.playerApi))
 	testImplementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
 }

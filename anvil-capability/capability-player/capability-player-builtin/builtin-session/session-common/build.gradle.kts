@@ -14,7 +14,9 @@ dependencies {
 	testImplementation(projects.anvilApi)
 	testImplementation(projects.anvilCapability.capabilityApi)
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi)
+	testImplementation(testFixtures(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi))
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinSession.sessionApi)
 	testImplementation(projects.anvilPlayer.playerApi)
+	testImplementation(testFixtures(projects.anvilPlayer.playerApi))
 	testImplementation(testFixtures(projects.anvilPlayer.playerWorker))
 }
