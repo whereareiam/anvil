@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.host;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -11,6 +12,12 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PlayerChannelEventDispatcherTest {
+	/**
+	 * More events than a release sends for a teleport's chunks with a tap of every packet open.
+	 */
+	private static final int BURST = 5000;
+	private static final Duration STALL = Duration.ofMillis(200);
+
 	@Test
 	void queuedEventsUseTheirOriginalActiveSubscriptions() throws Exception {
 		List<String> observed = new CopyOnWriteArrayList<>();
@@ -32,26 +39,69 @@ class PlayerChannelEventDispatcherTest {
 	}
 
 	@Test
-	void pendingOverflowFailsOnlyTheSlowPlayerAndRemainsBounded() throws Exception {
+	void burstArrivingWhileACallbackRunsIsDeliveredInFull() throws Exception {
+		var entered = new CountDownLatch(1);
+		var proceed = new CountDownLatch(1);
+		var delivered = new CountDownLatch(BURST);
+		try (var events = new PlayerEventDispatcher("Alice", ignored -> { })) {
+			events.subscribe("gate", ignored -> { entered.countDown(); await(proceed); });
+			events.subscribe("frame", ignored -> delivered.countDown());
+			events.dispatch("gate", JsonNodeFactory.instance.objectNode());
+			assertTrue(entered.await(3, TimeUnit.SECONDS));
+			for (int i = 0; i < BURST; i++) events.dispatch("frame", JsonNodeFactory.instance.objectNode());
+			proceed.countDown();
+			assertTrue(delivered.await(3, TimeUnit.SECONDS));
+			assertDoesNotThrow(events::throwIfFailed);
+		} finally { proceed.countDown(); }
+	}
+
+	@Test
+	void stalledCallbackFailsOnlyItsPlayer() throws Exception {
 		var entered = new CountDownLatch(1);
 		var proceed = new CountDownLatch(1);
 		var delivered = new CountDownLatch(1);
-		try (var slow = new PlayerEventDispatcher("Slow", ignored -> { });
-			 var other = new PlayerEventDispatcher("Other", ignored -> { })
+		try (var slow = new PlayerEventDispatcher("Slow", ignored -> { }, STALL);
+			 var other = new PlayerEventDispatcher("Other", ignored -> { }, STALL)
 		) {
 			slow.subscribe("changed", ignored -> { entered.countDown(); await(proceed); });
 			slow.dispatch("changed", JsonNodeFactory.instance.objectNode());
 			assertTrue(entered.await(3, TimeUnit.SECONDS));
-			for (int i = 0; i < 1000; i++) slow.dispatch("changed", JsonNodeFactory.instance.objectNode());
+			slow.dispatch("changed", JsonNodeFactory.instance.objectNode());
+			assertDoesNotThrow(slow::throwIfFailed);
+			Thread.sleep(STALL.multipliedBy(2).toMillis());
+			slow.dispatch("changed", JsonNodeFactory.instance.objectNode());
 			IllegalStateException failure = assertThrows(IllegalStateException.class, slow::throwIfFailed);
 			assertTrue(failure.getMessage().contains("Slow"));
-			assertTrue(failure.getMessage().contains("pending capability events"));
+			assertTrue(failure.getMessage().contains("capability events waited"));
 			other.subscribe("changed", ignored -> delivered.countDown());
 			other.dispatch("changed", JsonNodeFactory.instance.objectNode());
 			assertTrue(delivered.await(3, TimeUnit.SECONDS));
 			assertDoesNotThrow(other::throwIfFailed);
 			proceed.countDown();
-			assertSame(failure, assertThrows(IllegalStateException.class, slow::close));
+			IllegalStateException closing = assertThrows(IllegalStateException.class, slow::close);
+			assertEquals(failure.getMessage(), closing.getMessage());
+		} finally { proceed.countDown(); }
+	}
+
+	@Test
+	void everyCallerGetsItsOwnExceptionForTheFailure() throws Exception {
+		var entered = new CountDownLatch(1);
+		var proceed = new CountDownLatch(1);
+		try (var events = new PlayerEventDispatcher("Alice", ignored -> { }, STALL)) {
+			events.subscribe("changed", ignored -> { entered.countDown(); await(proceed); });
+			events.dispatch("changed", JsonNodeFactory.instance.objectNode());
+			assertTrue(entered.await(3, TimeUnit.SECONDS));
+			events.dispatch("changed", JsonNodeFactory.instance.objectNode());
+			Thread.sleep(STALL.multipliedBy(2).toMillis());
+			events.dispatch("changed", JsonNodeFactory.instance.objectNode());
+
+			IllegalStateException waiting = assertThrows(IllegalStateException.class, events::throwIfFailed);
+			IllegalStateException cleanup = assertThrows(IllegalStateException.class, events::throwIfFailed);
+			assertNotSame(waiting, cleanup);
+			assertSame(waiting.getCause(), cleanup.getCause());
+			waiting.addSuppressed(cleanup);
+			proceed.countDown();
+			assertThrows(IllegalStateException.class, events::close);
 		} finally { proceed.countDown(); }
 	}
 
