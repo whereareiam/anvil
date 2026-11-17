@@ -85,11 +85,11 @@ gradlePlugin {
 			displayName = "Anvil Dialogs Capability"
 			description = "Includes the built-in Dialogs capability"
 		}
-		create("anvilCapabilityScreen") {
-			id = "me.whereareiam.anvil.capability.screen"
-			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.ScreenPlugin"
-			displayName = "Anvil Screen Capability"
-			description = "Includes the built-in Screen capability"
+		create("anvilCapabilityOverlays") {
+			id = "me.whereareiam.anvil.capability.overlays"
+			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.OverlaysPlugin"
+			displayName = "Anvil Overlays Capability"
+			description = "Includes the built-in Overlays capability"
 		}
 		create("anvilCapabilitySounds") {
 			id = "me.whereareiam.anvil.capability.sounds"

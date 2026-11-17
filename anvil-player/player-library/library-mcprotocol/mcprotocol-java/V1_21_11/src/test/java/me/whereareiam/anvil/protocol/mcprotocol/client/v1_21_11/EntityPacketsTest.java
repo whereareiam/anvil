@@ -58,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class EntityPacketsTest {
 	private static final UUID STAND = new UUID(0, 7);
 
-	private final EntityPackets packets = new EntityPackets(new TextTranslator());
+	private final EntityPackets packets = new EntityPackets(new TextTranslator(), new ComponentItemTranslator(new TextTranslator()));
 
 	@Test
 	void decodesSpawnsWithTheNamespacedType() {
@@ -104,7 +104,7 @@ class EntityPacketsTest {
 				SharedFlags.builder().sprinting(true).swimming(true).gliding(true).build(),
 				new CustomName(null),
 				new CustomNameVisible(false),
-				new ShownItem(new me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack(871, 3))
+				new ShownItem(me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(871, 3))
 		)), packets.decode(data(8,
 				new ByteEntityMetadata(0, MetadataTypes.BYTE, (byte) 0x9C),
 				new ObjectEntityMetadata<>(2, MetadataTypes.OPTIONAL_COMPONENT, Optional.empty()),
@@ -123,7 +123,7 @@ class EntityPacketsTest {
 		assertEquals(new ClientboundSetEntityData(new EntityId(9), List.of(new DisplayText("bubble"))), packets.decode(data(9,
 				new ObjectEntityMetadata<>(23, MetadataTypes.COMPONENT, Component.text("bubble")))));
 		assertEquals(new ClientboundSetEntityData(new EntityId(10), List.of(
-				new ShownItem(new me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack(40, 1))
+				new ShownItem(me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(40, 1))
 		)), packets.decode(data(10,
 				new ObjectEntityMetadata<>(23, MetadataTypes.ITEM_STACK, new ItemStack(40, 1)),
 				new ObjectEntityMetadata<>(8, MetadataTypes.INT, 0)
@@ -135,11 +135,11 @@ class EntityPacketsTest {
 		add(11, EntityType.GLOW_ITEM_FRAME);
 		add(12, EntityType.SPLASH_POTION);
 
-		assertEquals(List.of(new ShownItem(new me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack(40, 1))),
+		assertEquals(List.of(new ShownItem(me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(40, 1))),
 				decodeData(data(11,
 						new ObjectEntityMetadata<>(8, MetadataTypes.ITEM_STACK, new ItemStack(1, 1)),
 						new ObjectEntityMetadata<>(9, MetadataTypes.ITEM_STACK, new ItemStack(40, 1)))));
-		assertEquals(List.of(new ShownItem(new me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack(5, 1))),
+		assertEquals(List.of(new ShownItem(me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(5, 1))),
 				decodeData(data(12, new ObjectEntityMetadata<>(8, MetadataTypes.ITEM_STACK, new ItemStack(5, 1)))));
 	}
 

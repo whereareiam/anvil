@@ -21,7 +21,7 @@ capability owned by the process and backed by its [agent](../../environments/act
 For the first journey, use Session to connect, the server's
 [Players](../../environments/actions/players/index.md) to observe arrival, and Messages to trigger commands
 and check replies. Movement, Inventory, Interaction, Commands, and Dialogs cover additional game actions;
-Cookies holds the cookies a server stores on the client; Screen and Sounds record the titles, action
+Cookies holds the cookies a server stores on the client; Overlays and Sounds record the titles, action
 bars, boss bars and sounds the server shows and plays, Entities follows the entities the server
 shows it, such as text above a player, World the dimension the server put the player in, with the time,
 weather, world border and spawn point around it, Packets the packets the client receives, in arrival order, and
@@ -33,12 +33,12 @@ Each capability is optional unless the test or another installed capability requ
 | [Session](./session/index.md) | Connect, disconnect, rejoin, and observe kicks. | MCProtocol |
 | [Messages](./messages/index.md) | Send chat and commands; await received text; check what the chat still shows. | MCProtocol and Session |
 | [Movement](./movement/index.md) | Send absolute position and view changes. | MCProtocol and Session |
-| [Inventory](./inventory/index.md) | Observe inventory or containers and perform clicks. | MCProtocol and Session |
+| [Inventory](./inventory/index.md) | Find and click menu items by name, lore and type, follow screens, and read inventory state. | MCProtocol and Session |
 | [Interaction](./interaction/index.md) | Use items and interact with blocks or entities. | MCProtocol and Session |
 | [Commands](./commands/index.md) | Read the command tree and check commands as the client does. | MCProtocol and Session |
 | [Dialogs](./dialogs/index.md) | Observe dialogs, fill their inputs, and press their buttons. | MCProtocol and Session, Minecraft 1.21.6+; Commands for buttons that run commands |
 | [Cookies](./cookies/index.md) | Hold cookies, answer the server's cookie requests, and observe them. | MCProtocol and Session, Minecraft 1.20.5+ |
-| [Screen](./screen/index.md) | Await titles, action bars, and boss bars. | MCProtocol and Session |
+| [Overlays](./overlays/index.md) | Await titles, action bars, and boss bars. | MCProtocol and Session |
 | [Sounds](./sounds/index.md) | Await the sounds the server plays. | MCProtocol and Session |
 | [Entities](./entities/index.md) | Follow the entities the server shows: positions, passengers, names, display text, items and flags. | MCProtocol and Session |
 | [World](./world/index.md) | Read the dimension the player is in, its type, environment and generation, the server's worlds, and the time, weather, world border and spawn point; await a change. | MCProtocol and Session |
@@ -69,7 +69,7 @@ plugins {
 
 Keep the repositories, protocol dependency, and `anvil` configuration from
 [installation](../../../getting-started/installation/index.md). The remaining unit suffixes are
-`movement`, `inventory`, `interaction`, `commands`, `dialogs`, `cookies`, `screen`, `sounds`, `entities`, `world`,
+`movement`, `inventory`, `interaction`, `commands`, `dialogs`, `cookies`, `overlays`, `sounds`, `entities`, `world`,
 `packets`, and `vitals`. Keep unit versions aligned with Anvil.
 
 ## Retrieve a capability

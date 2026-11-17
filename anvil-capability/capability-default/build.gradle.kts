@@ -18,7 +18,7 @@ dependencies {
 	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinMessages)
 	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinMovement)
 	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinPackets)
-	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinScreen)
+	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinOverlays)
 	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinSession)
 	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinSounds)
 	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinVitals)

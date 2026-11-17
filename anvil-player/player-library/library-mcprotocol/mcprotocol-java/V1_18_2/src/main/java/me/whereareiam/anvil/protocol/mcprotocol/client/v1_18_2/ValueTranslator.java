@@ -7,20 +7,16 @@ import com.github.steveice10.mc.protocol.data.game.entity.type.EntityType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
-import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.java.api.type.interaction.InteractionHand;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Locale;
 
 /**
  * Translates the values that several areas of the protocol share between the Java Edition protocol and the
- * MCProtocolLib releases from 1.18.2 until 1.19.4, which keep them unchanged: hands, block faces, item stacks, game
- * modes and the registry keys of entity types. The translations of this segment and of the segments extending it use it instead of
+ * MCProtocolLib releases from 1.18.2 until 1.19.4, which keep them unchanged: hands, block faces, game modes and the
+ * registry keys of entity types. The translations of this segment and of the segments extending it use it instead of
  * translating these values on their own.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -54,34 +50,6 @@ public final class ValueTranslator {
 			case WEST -> Direction.WEST;
 			case EAST -> Direction.EAST;
 		};
-	}
-
-	/**
-	 * Translates the library's item stack.
-	 *
-	 * @param stack the library's stack, or {@code null} for an empty slot
-	 * @return the protocol's stack, or {@code null} for an empty slot or a stack of no items
-	 */
-	public static @Nullable ItemStack item(
-			com.github.steveice10.mc.protocol.data.game.entity.metadata.@Nullable ItemStack stack
-	) {
-		if (stack == null || stack.getAmount() <= 0) return null;
-
-		return new ItemStack(stack.getId(), stack.getAmount());
-	}
-
-	/**
-	 * Translates the library's item stacks, keeping their order and their empty slots.
-	 *
-	 * @param stacks the library's stacks
-	 * @return the protocol's stacks, {@code null} for each empty slot
-	 */
-	public static @NotNull List<@Nullable ItemStack> items(
-			com.github.steveice10.mc.protocol.data.game.entity.metadata.@Nullable ItemStack @NotNull [] stacks
-	) {
-		List<ItemStack> items = new ArrayList<>(stacks.length);
-		for (var stack : stacks) items.add(item(stack));
-		return Collections.unmodifiableList(items);
 	}
 
 	/**

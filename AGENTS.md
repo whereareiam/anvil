@@ -70,6 +70,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-player/player-protocol/protocol-java/protocol-java-block` | Block data of every supported protocol by global block state ID (`JavaBlockData`, `BlockRegistry`), keyed by protocol number because every Minecraft version of a protocol shares one registry; generated at build time from the PrismarineJS minecraft-data files `block-data.toml` pins per protocol (`pinBlockData`, which finds a protocol's versions in minecraft-data's own `protocolVersions.json`), which Gradle resolves through the settings' `minecraft-data` repository, and the hand-maintained vanilla facts of `block-facts.toml`: a block's kind, collision kind and movement. Its Java `generator` source set (`BlockDataGenerator`, run by `generateBlockData` with the files Gradle resolved) binds both inputs to typed classes and writes the data through the package-private `BlockDataCodec`, which `JavaBlockData` reads it with, so the enums and the format exist once; `checkBlockDataReleases` requires a row for the protocol of every protocol library release, and a protocol minecraft-data lacks is reported missing, never served another protocol's data |
 | `anvil-player/player-protocol/protocol-java/protocol-java-physics` | Java Edition physics kit: vanilla's `Entity` and `LivingEntity` movement over the world a player's client knows, bit for bit as the client of each version computes it (`EntityBehaviour` ranges, `EntityRules`): `geometry`, the blocks' collisions and fluids (`world`: `BlockReader`, `Collisions`, `Fluids`), the entity (`entity`: `EntityBody`, `EntityMove`, `FluidState`, `BlockEffects`) and the living entity (`living`: `LivingBody`, `LivingSimulation`, `Travel`, `Jumping`, `Climbing`, attributes and effects). It knows nothing of players: the bodies' non-final methods and `LivingSimulation`'s `serverAiStep`, `travel` and `aiStep` are vanilla's override points, which a worker extension implements for its kind of entity as Movement's player layer does for `Player` and `LocalPlayer`; its test fixtures hold `TestWorld`, a test player's world built block by block |
 | `anvil-player/player-protocol/protocol-java/protocol-java-packet` | Packet names of every supported protocol (`JavaPacketData`, `PacketRegistry`): minecraft-data's name of each packet a server sends, by connection state and packet ID, generated like the block data from the `protocol.json` that `packet-data.toml` pins per protocol (`pinPacketData`, `checkPacketDataReleases`); the names are minecraft-data's, such as `map_chunk`, never Mojang's |
+| `anvil-player/player-protocol/protocol-java/protocol-java-item` | Item registry keys of every supported protocol (`JavaItemData`, `ItemRegistry`): the key of each item, such as `minecraft:emerald`, by the numeric ID inventory packets carry, generated like the block data from the `items.json` that `item-data.toml` pins per protocol (`pinItemData`, `checkItemDataReleases`); minecraft-data's files before 1.19.4 leave out air, which the generator puts at ID 0 |
 | `anvil-player/player-protocol/protocol-java/protocol-java-json` | `JavaProtocolJson`, the one JSON form of the Java protocol's values, which the MCProtocolLib worker codec and packet recordings share: packets by their `ClientboundPackets` kind, sealed models by their kinds, entity IDs as `{"entity": n}` and chunk sections by their encoding |
 | `anvil-player/player-library/library-mcprotocol`                                  | Wiring bundle publishing the MCProtocolLib library: shaded `mcprotocol-common`, the client port and the client segments; owns `mcprotocol-releases.toml` and `pinLibraryReleases`  |
 | `anvil-player/player-library/library-mcprotocol/mcprotocol-api`                   | Release-neutral MCProtocolLib client port that client segments implement for the worker shell, and, in `client.translation`, what their translations share: `PacketTranslation`, `PacketTable`, `EntityDataLayout`, the `PacketDemand` a session's listener answers and the `ConnectionLevel` a connection's translations share, and in its test fixtures the `TestClientListener` segment tests report to |
@@ -169,9 +170,13 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `PlayerBindingContext.protocol(JavaProtocol.class)`. Packets are immutable values grouped by area under
   `packet.<area>`, an area of more than seven packets split by subject below it (`packet.world.border`,
   `packet.world.chunk`), one class per game packet in the game's shape; the protocol owns the data types they need
-  (`model.<area>`, enums in `type`) and carries text flattened to plain strings, except chat, which it carries as
-  `player-api`'s `Text` (`protocol.api.model.text`): the component tree the server sent, whose `spans()` resolve what
-  the player sees, translated by the segment's `TextTranslator`.
+  (`model.<area>`, enums in `type`) and carries text flattened to plain strings, except chat, container titles and the
+  names and lore of item stacks, which it carries as `player-api`'s `Text` (`protocol.api.model.text`): the component
+  tree the server sent, whose `spans()` resolve what the player sees, translated by the segment's `TextTranslator`.
+  Item stacks are translated by each segment's one item translator, which its adapter hands to every translation that
+  reads stacks: the NBT `display` of the releases before 1.20.5 (`ItemTranslator` of `V1_16_5` and `V1_18_2`), the
+  data components from 1.20.5 on (`V1_20_6`'s `ItemTranslator`, whose `ComponentItemTranslator` each segment whose
+  components moved replaces).
   Where a packet holds NBT, such as a
   dialog or a registry entry, the protocol carries it as `model.nbt` tags (`NbtTag`, `NbtCompound`), never as SNBT
   text, and the feature interprets it: `dialogs-java` reads dialogs, flattens their text components itself and
@@ -577,7 +582,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   Add the version to the `mcprotocol-releases.toml` release that speaks its protocol, or a `[[release]]` row
   for a new protocol (version, module, protocol, Minecraft versions, Java, features), and
   pin its closure with `pinLibraryReleases`. A new protocol gets a `block-data.toml` row in `protocol-java-block`,
-  pinned with `pinBlockData`, and a `packet-data.toml` row in `protocol-java-packet`, pinned with `pinPacketData`; a
+  pinned with `pinBlockData`, a `packet-data.toml` row in `protocol-java-packet`, pinned with `pinPacketData`, and an
+  `item-data.toml` row in `protocol-java-item`, pinned with `pinItemData`; a
   version of a protocol that has them needs none. Check `block-facts.toml` for the
   release's new blocks. Add a segment only to a side whose newest segment fails
   `checkSegmentLinkage` against the new closure, named after the new release key; a segment folder must name

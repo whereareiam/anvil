@@ -10,6 +10,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundEnti
 import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundTeleportEntity;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.type.entity.Relative;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ComponentItemTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.EntityPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.TextTranslator;
 import net.kyori.adventure.text.Component;
@@ -35,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * Runs the 1.21.11 entity translation, which this segment reuses, against the packets of MCProtocolLib 26.1.
  */
 class EntityPacketsTest {
-	private final EntityPackets packets = new EntityPackets(new TextTranslator());
+	private final EntityPackets packets = new EntityPackets(new TextTranslator(), new ComponentItemTranslator(new TextTranslator()));
 
 	@Test
 	void decodesASpawnAndTheDataOfADisplayAndAnItemFrameAsIn1_21_11() {
@@ -50,7 +51,7 @@ class EntityPacketsTest {
 						new ObjectEntityMetadata<>(23, MetadataTypes.COMPONENT, Component.text("bubble"))
 				})));
 		assertEquals(new ClientboundSetEntityData(new EntityId(9), List.of(
-				new ShownItem(new me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack(40, 1))
+				new ShownItem(me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(40, 1))
 		)), packets.decode(new ClientboundSetEntityDataPacket(9, new ObjectEntityMetadata<?>[]{
 				new ObjectEntityMetadata<>(9, MetadataTypes.ITEM_STACK, new ItemStack(40, 1))
 		})));

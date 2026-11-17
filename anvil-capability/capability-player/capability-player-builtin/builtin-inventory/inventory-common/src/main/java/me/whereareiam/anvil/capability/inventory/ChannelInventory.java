@@ -9,28 +9,26 @@ import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 /**
  * Inventory capability driven over a player's typed channel: selections and clicks go to the worker's inventory
- * extension, and the snapshots it publishes keep the latest observed state. The channel releases the event
- * subscription together with the player.
+ * extension, and the snapshots it publishes keep the history of the screens the player saw, whose last is the latest
+ * observed state. Locators match items against those states on the host. The channel releases the event subscription
+ * together with the player.
  */
 final class ChannelInventory implements Inventory {
 	private final ProtocolChannel channel;
-	private final AtomicReference<InventorySnapshot> snapshot = new AtomicReference<>(
-			InventorySnapshot.builder().containerId(0).stateId(0).build()
-	);
+	private final ScreenHistory history = new ScreenHistory(InventorySnapshot.builder().containerId(0).stateId(0).build());
 
 	ChannelInventory(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
-		channel.subscribe(InventoryChannel.CHANGED, snapshot::set);
+		channel.subscribe(InventoryChannel.CHANGED, history::record);
 	}
 
 	@Override
 	public @NotNull InventorySnapshot snapshot() {
-		return snapshot.get();
+		return history.latest();
 	}
 
 	@Override
@@ -38,8 +36,8 @@ final class ChannelInventory implements Inventory {
 			@NotNull Predicate<InventorySnapshot> predicate,
 			@NotNull Duration timeout
 	) {
-		channel.await(() -> predicate.test(snapshot.get()), "receive matching inventory", timeout);
-		return snapshot.get();
+		channel.await(() -> predicate.test(history.latest()), "receive matching inventory", timeout);
+		return history.latest();
 	}
 
 	@Override
@@ -53,5 +51,15 @@ final class ChannelInventory implements Inventory {
 	@Override
 	public void click(int slot, @NotNull InventoryClick click, int button) {
 		channel.request(InventoryChannel.CLICK, new InventoryAction(slot, click, button));
+	}
+
+	@Override
+	public @NotNull ItemLocator items() {
+		return new ChannelItemLocator(this, channel, history::latest, () -> true, "on the player's screen");
+	}
+
+	@Override
+	public @NotNull InventoryWatch watch() {
+		return new ChannelInventoryWatch(this, channel, history);
 	}
 }

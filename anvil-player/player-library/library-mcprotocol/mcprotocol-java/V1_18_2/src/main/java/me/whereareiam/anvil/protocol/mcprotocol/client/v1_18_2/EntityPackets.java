@@ -25,8 +25,8 @@ final class EntityPackets extends EntityTranslation {
 	/**
 	 * Creates the translation of the release's entities.
 	 */
-	EntityPackets(@NotNull ComponentTranslator text) {
-		super(EntityDataTable.LAYOUT, text);
+	EntityPackets(@NotNull ComponentTranslator text, @NotNull ItemTranslator items) {
+		super(EntityDataTable.LAYOUT, text, items);
 	}
 
 	@Override

@@ -14,8 +14,11 @@ import me.whereareiam.anvil.capability.interaction.type.Hand;
 import me.whereareiam.anvil.capability.inventory.model.InventoryAction;
 import me.whereareiam.anvil.capability.inventory.model.InventoryItem;
 import me.whereareiam.anvil.capability.inventory.model.InventorySnapshot;
+import me.whereareiam.anvil.capability.inventory.model.ItemDisplay;
+import me.whereareiam.anvil.capability.inventory.model.ItemType;
 import me.whereareiam.anvil.capability.inventory.model.SlotSelection;
 import me.whereareiam.anvil.capability.inventory.type.InventoryClick;
+import me.whereareiam.anvil.capability.inventory.type.ItemNameSource;
 import me.whereareiam.anvil.capability.messages.model.ChatMessage;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.capability.movement.model.Position;
@@ -148,7 +151,20 @@ class WorkerMessageCodecTest {
 		roundTrip(InventorySnapshot.builder()
 				.containerId(2)
 				.stateId(5)
-				.item(InventoryItem.builder().slot(0).protocolId(1).amount(2).build())
+				.screen(3)
+				.menuType("minecraft:generic_9x3")
+				.title(Text.literal("Shop"))
+				.item(InventoryItem.builder().slot(0).type(new ItemType(null, 1)).amount(2).build())
+				.item(InventoryItem.builder()
+						.slot(11)
+						.type(new ItemType("minecraft:emerald", 800))
+						.amount(1)
+						.display(ItemDisplay.builder()
+								.name(Text.literal("Buy"))
+								.nameSource(ItemNameSource.CUSTOM)
+								.lore(Text.literal("Costs 64 coins"))
+								.build())
+						.build())
 				.build());
 		roundTrip(new PlayerConnectionEvent(true, null, null, new PlayerProfile("Steve_Premium", UUID.randomUUID())));
 		roundTrip(new PlayerConnectionEvent(false, "kicked", DisconnectCause.SERVER, null));

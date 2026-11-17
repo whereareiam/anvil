@@ -7,10 +7,10 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerSetSl
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerWindowItemsPacket;
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetContent;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetContent;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetPlayerInventory;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,25 +35,25 @@ final class InventoryPackets extends InventoryTranslation {
 
 	private final AtomicInteger actions = new AtomicInteger();
 
-	InventoryPackets(@NotNull ComponentTranslator text) {
-		super(text);
+	InventoryPackets(@NotNull ComponentTranslator text, @NotNull ItemTranslator items) {
+		super(text, items);
 	}
 
 	@Override
 	protected @Nullable ClientboundPacket decodeContents(@NotNull Packet packet) {
 		if (packet instanceof ServerWindowItemsPacket content)
 			return new ClientboundContainerSetContent(content.getWindowId(), NO_STATE,
-					ValueTranslator.items(content.getItems()), null);
+					items.items(content.getItems()), null);
 		if (!(packet instanceof ServerSetSlotPacket slot)) return null;
 
 		// The library reads the window ID as an unsigned byte; vanilla sends a signed one, so the cursor's -1 and the
 		// inventory index container's -2 arrive as 255 and 254.
 		int containerId = (byte) slot.getWindowId();
 		if (containerId == INVENTORY_INDEX_CONTAINER)
-			return new ClientboundSetPlayerInventory(slot.getSlot(), ValueTranslator.item(slot.getItem()));
+			return new ClientboundSetPlayerInventory(slot.getSlot(), items.item(slot.getItem()));
 
 		return new ClientboundContainerSetSlot(containerId, NO_STATE, slot.getSlot(),
-				ValueTranslator.item(slot.getItem()));
+				items.item(slot.getItem()));
 	}
 
 	@Override

@@ -4,6 +4,7 @@ import me.whereareiam.anvil.capability.inventory.channel.InventoryChannel;
 import me.whereareiam.anvil.capability.inventory.model.InventoryAction;
 import me.whereareiam.anvil.capability.inventory.model.InventoryItem;
 import me.whereareiam.anvil.capability.inventory.model.InventorySnapshot;
+import me.whereareiam.anvil.capability.inventory.model.ItemType;
 import me.whereareiam.anvil.capability.inventory.model.SlotSelection;
 import me.whereareiam.anvil.capability.inventory.type.InventoryClick;
 import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
@@ -23,7 +24,7 @@ class ChannelInventoryTest {
 	private static final InventorySnapshot CHEST = InventorySnapshot.builder()
 			.containerId(2)
 			.stateId(5)
-			.item(InventoryItem.builder().slot(4).protocolId(800).amount(3).build())
+			.item(InventoryItem.builder().slot(4).type(new ItemType("minecraft:diamond", 800)).amount(3).build())
 			.build();
 
 	@Test

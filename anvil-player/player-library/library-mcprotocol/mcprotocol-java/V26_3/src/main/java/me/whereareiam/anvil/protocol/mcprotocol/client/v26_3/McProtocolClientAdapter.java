@@ -4,14 +4,16 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLev
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.EffectPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ItemTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.JavaClient;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ScreenPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.OverlayPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SynchronizedRegistries;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.AttributePackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.BorderPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ChatPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ChunkPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.CommandPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ComponentItemTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.CookiePackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.DialogPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.InventoryPackets;
@@ -34,6 +36,7 @@ import java.util.List;
  */
 public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 	private static final TextTranslator TEXT = new TextTranslator();
+	private static final ItemTranslator ITEMS = new ComponentItemTranslator(TEXT);
 
 	/**
 	 * Creates the client of the MCProtocolLib 26.3 release.
@@ -61,12 +64,12 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 				new CookiePackets(),
 				new DialogPackets(),
 				new EffectPackets(),
-				new EntityPackets(TEXT),
+				new EntityPackets(TEXT, ITEMS),
 				new HealthPackets(TEXT),
 				new InteractionPackets(),
-				new InventoryPackets(TEXT),
+				new InventoryPackets(TEXT, ITEMS),
 				new PlayerPackets(),
-				new ScreenPackets(TEXT),
+				new OverlayPackets(TEXT),
 				new SoundPackets(),
 				new WorldPackets(registries)
 		));

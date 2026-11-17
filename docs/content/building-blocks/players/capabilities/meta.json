@@ -10,7 +10,7 @@
     "commands",
     "dialogs",
     "cookies",
-    "screen",
+    "overlays",
     "sounds",
     "entities",
     "world",

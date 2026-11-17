@@ -87,4 +87,55 @@ public final class PlayerInventoryLayout {
 
 		return OptionalInt.empty();
 	}
+
+	/**
+	 * Maps a slot of the player's inventory container to its inventory index, the inverse of
+	 * {@link #containerSlot(int)}. The container's crafting slots hold no slot of the inventory.
+	 *
+	 * @param slot container slot
+	 * @return the inventory index, or empty for a slot that holds no slot of the inventory
+	 */
+	public static @NotNull OptionalInt inventoryIndex(int slot) {
+		if (slot >= CONTAINER_HOTBAR && slot < CONTAINER_HOTBAR + HOTBAR_SIZE)
+			return OptionalInt.of(HOTBAR + slot - CONTAINER_HOTBAR);
+		if (slot >= MAIN && slot < ARMOR) return OptionalInt.of(slot);
+		if (slot >= CONTAINER_HEAD && slot < CONTAINER_HEAD + ARMOR_SIZE)
+			return OptionalInt.of(ARMOR + ARMOR_SIZE - 1 - (slot - CONTAINER_HEAD));
+		if (slot == CONTAINER_OFF_HAND) return OptionalInt.of(OFF_HAND);
+
+		return OptionalInt.empty();
+	}
+
+	/**
+	 * Maps an inventory index to its slot in a container the server opened. Every such container lists the player's
+	 * main inventory and then the hotbar as its last slots, below its own; armor and the off hand are not shown.
+	 *
+	 * @param index inventory index
+	 * @param slots number of slots of the container, the player's included
+	 * @return the container slot, or empty for an index the container does not show
+	 */
+	public static @NotNull OptionalInt menuSlot(int index, int slots) {
+		int main = slots - MAIN_SIZE - HOTBAR_SIZE;
+		if (main < 0) return OptionalInt.empty();
+		if (index >= MAIN && index < ARMOR) return OptionalInt.of(main + index - MAIN);
+		if (hotbar(index)) return OptionalInt.of(main + MAIN_SIZE + index - HOTBAR);
+
+		return OptionalInt.empty();
+	}
+
+	/**
+	 * Maps a slot of a container the server opened to the inventory index it shows, the inverse of
+	 * {@link #menuSlot(int, int)}.
+	 *
+	 * @param slot container slot
+	 * @param slots number of slots of the container, the player's included
+	 * @return the inventory index, or empty for one of the container's own slots
+	 */
+	public static @NotNull OptionalInt menuInventoryIndex(int slot, int slots) {
+		int main = slots - MAIN_SIZE - HOTBAR_SIZE;
+		if (main < 0 || slot < main || slot >= slots) return OptionalInt.empty();
+		if (slot < main + MAIN_SIZE) return OptionalInt.of(MAIN + slot - main);
+
+		return OptionalInt.of(HOTBAR + slot - main - MAIN_SIZE);
+	}
 }

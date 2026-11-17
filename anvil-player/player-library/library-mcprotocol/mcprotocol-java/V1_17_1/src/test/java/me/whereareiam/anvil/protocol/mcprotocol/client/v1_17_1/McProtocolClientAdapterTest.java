@@ -30,9 +30,12 @@ import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInte
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwing;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetPlayerInventory;
+import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundBossEvent;
+import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetActionBarText;
+import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetTitleText;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundClientTickEnd;
@@ -43,9 +46,6 @@ import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMove
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPosRot;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerRot;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerStatusOnly;
-import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundBossEvent;
-import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetActionBarText;
-import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleText;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;

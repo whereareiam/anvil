@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_3;
 
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ItemTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.SyncedEntityTranslation;
 import org.cloudburstmc.math.vector.Vector3d;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundEntityPositionSyncPacket;
@@ -11,8 +12,8 @@ import org.jetbrains.annotations.NotNull;
  * steps, which the client interpolates; the protocol places the entity where the last step ends.
  */
 final class EntityPackets extends SyncedEntityTranslation {
-	EntityPackets(@NotNull ComponentTranslator text) {
-		super(text);
+	EntityPackets(@NotNull ComponentTranslator text, @NotNull ItemTranslator items) {
+		super(text, items);
 	}
 
 	@Override

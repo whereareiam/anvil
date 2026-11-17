@@ -18,7 +18,7 @@ segment {
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.HealthPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.InventoryPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ReleaseAnswers",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ScreenPackets",
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.OverlayPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.WorldPackets",
 	)
 }

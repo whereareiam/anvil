@@ -44,6 +44,7 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 	private final Map<UUID, String> joinLocales = new ConcurrentHashMap<>();
 	private FixtureCookies cookies;
 	private FixtureDisplays displays;
+	private FixtureShop shop;
 
 	@Override
 	public void onEnable() {
@@ -57,6 +58,7 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 		if (cookie != null)
 			cookie.setExecutor((sender, ignored, label, arguments) -> cookie(arguments));
 		displays = FixtureDisplays.load(getClassLoader());
+		shop = new FixtureShop(this);
 		var entity = getCommand("anvil-entity");
 		if (entity != null)
 			entity.setExecutor((sender, ignored, label, arguments) -> entity(arguments));
@@ -119,6 +121,7 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 
 	@EventHandler
 	public void onInventoryClick(InventoryClickEvent event) {
+		if (shop.click(event)) return;
 		if (event.getWhoClicked() instanceof Player)
 			event.getWhoClicked().sendMessage("anvil:click:" + event.getRawSlot());
 	}
@@ -140,6 +143,9 @@ public final class AnvilSystemFixturePlugin extends JavaPlugin implements Listen
 				break;
 			case "gui":
 				openInventory(player);
+				break;
+			case "shop":
+				shop.open(player);
 				break;
 			case "item":
 				player.getInventory().setItem(0, new ItemStack(Material.DIAMOND));

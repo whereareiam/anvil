@@ -13,6 +13,7 @@ import com.github.steveice10.mc.protocol.data.game.window.WindowActionParam;
 import com.github.steveice10.mc.protocol.data.game.window.WindowType;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerChangeHeldItemPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerChangeHeldItemPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerCloseWindowPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerOpenWindowPacket;
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
@@ -20,13 +21,14 @@ import me.whereareiam.anvil.protocol.java.api.PlayerInventoryLayout;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetContent;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundOpenScreen;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetHeldSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerClose;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetContent;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundOpenScreen;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetHeldSlot;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetPlayerInventory;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ServerboundSetCarriedItem;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import net.kyori.adventure.key.Key;
@@ -63,20 +65,27 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 	 * Translates the release's text components.
 	 */
 	protected final @NotNull ComponentTranslator text;
+	/**
+	 * Translates the release's item stacks.
+	 */
+	protected final @NotNull ItemTranslator items;
 
 	/**
 	 * Creates the translation of a release.
 	 *
 	 * @param text translates the release's text components
+	 * @param items translates the release's item stacks
 	 */
-	protected InventoryTranslation(@NotNull ComponentTranslator text) {
+	protected InventoryTranslation(@NotNull ComponentTranslator text, @NotNull ItemTranslator items) {
 		this.text = text;
+		this.items = items;
 	}
 
 	@Override
 	public final @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(
 				ClientboundOpenScreen.class,
+				ClientboundContainerClose.class,
 				ClientboundContainerSetContent.class,
 				ClientboundContainerSetSlot.class,
 				ClientboundSetPlayerInventory.class,
@@ -90,7 +99,8 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 	public final @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (packet instanceof ServerOpenWindowPacket open)
 			return new ClientboundOpenScreen(open.getWindowId(), menuType(open.getType()),
-					text.translate(DefaultComponentSerializer.get().deserialize(open.getName())).plain());
+					text.translate(DefaultComponentSerializer.get().deserialize(open.getName())));
+		if (packet instanceof ServerCloseWindowPacket close) return new ClientboundContainerClose(close.getWindowId());
 		if (packet instanceof ServerPlayerChangeHeldItemPacket held) return new ClientboundSetHeldSlot(held.getSlot());
 
 		return decodeContents(packet);

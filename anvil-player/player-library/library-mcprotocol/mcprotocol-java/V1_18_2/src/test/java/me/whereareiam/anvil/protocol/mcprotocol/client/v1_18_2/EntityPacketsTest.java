@@ -64,7 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class EntityPacketsTest {
 	private static final UUID STAND = new UUID(0, 7);
 
-	private final EntityPackets packets = new EntityPackets(new TextTranslator());
+	private final EntityPackets packets = new EntityPackets(new TextTranslator(), new ItemTranslator(new TextTranslator()));
 
 	@Test
 	void decodesEachSpawnPacketAsAnAddedEntityWithTheNamespacedType() {
@@ -119,7 +119,7 @@ class EntityPacketsTest {
 				SharedFlags.builder().sprinting(true).swimming(true).gliding(true).build(),
 				new CustomName(null),
 				new CustomNameVisible(false),
-				new ShownItem(new me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack(871, 3))
+				new ShownItem(me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(871, 3))
 		)), packets.decode(data(8,
 				new ByteEntityMetadata(0, MetadataType.BYTE, (byte) 0x9C),
 				new ObjectEntityMetadata<>(2, MetadataType.OPTIONAL_CHAT, Optional.empty()),
@@ -135,9 +135,9 @@ class EntityPacketsTest {
 		add(9, EntityType.ITEM_FRAME);
 		add(10, EntityType.POTION);
 
-		assertEquals(List.of(new ShownItem(new me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack(40, 1))),
+		assertEquals(List.of(new ShownItem(me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(40, 1))),
 				decodeData(data(9, new ObjectEntityMetadata<>(8, MetadataType.ITEM, new ItemStack(40, 1)))));
-		assertEquals(List.of(new ShownItem(new me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack(5, 1))),
+		assertEquals(List.of(new ShownItem(me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(5, 1))),
 				decodeData(data(10, new ObjectEntityMetadata<>(8, MetadataType.ITEM, new ItemStack(5, 1)))));
 	}
 

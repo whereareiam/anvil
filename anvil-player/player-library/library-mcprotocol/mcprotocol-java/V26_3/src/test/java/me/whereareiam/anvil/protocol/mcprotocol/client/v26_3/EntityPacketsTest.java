@@ -10,6 +10,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetE
 import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundTeleportEntity;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.type.entity.Relative;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ComponentItemTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.TextTranslator;
 import net.kyori.adventure.text.Component;
 import org.cloudburstmc.math.vector.Vector3d;
@@ -31,7 +32,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class EntityPacketsTest {
-	private final EntityPackets packets = new EntityPackets(new TextTranslator());
+	private final EntityPackets packets = new EntityPackets(new TextTranslator(), new ComponentItemTranslator(new TextTranslator()));
 
 	@Test
 	void decodesASpawnAndTheDataOfADisplayWithThe1_21_11Layout() {

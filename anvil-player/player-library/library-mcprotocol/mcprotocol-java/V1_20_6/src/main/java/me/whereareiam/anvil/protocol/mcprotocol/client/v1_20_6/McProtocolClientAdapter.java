@@ -14,6 +14,7 @@ import java.util.List;
  */
 public final class McProtocolClientAdapter extends JavaClient<Session> {
 	private static final TextTranslator TEXT = new TextTranslator();
+	private static final ItemTranslator ITEMS = new ComponentItemTranslator(TEXT);
 
 	/**
 	 * Creates the client of the MCProtocolLib 1.20.6 release.
@@ -41,12 +42,12 @@ public final class McProtocolClientAdapter extends JavaClient<Session> {
 				new ConnectionPackets(registries, level),
 				new CookiePackets(),
 				new EffectPackets(),
-				new EntityPackets(TEXT),
+				new EntityPackets(TEXT, ITEMS),
 				new HealthPackets(TEXT),
 				new InteractionPackets(),
-				new InventoryPackets(TEXT),
+				new InventoryPackets(TEXT, ITEMS),
 				new PlayerPackets(),
-				new ScreenPackets(TEXT),
+				new OverlayPackets(TEXT),
 				new SoundPackets(),
 				new WorldPackets()
 		));
