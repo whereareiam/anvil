@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.entity;
 
 import lombok.Value;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,9 +16,9 @@ public class ClientboundSetPassengers implements ClientboundPacket {
 	/**
 	 * The vehicle's protocol ID.
 	 */
-	int vehicleId;
+	@NotNull EntityId vehicleId;
 	/**
 	 * The protocol IDs of the entities riding it.
 	 */
-	@NotNull List<Integer> passengerIds;
+	@NotNull List<EntityId> passengerIds;
 }

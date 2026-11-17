@@ -14,6 +14,7 @@ import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
@@ -143,9 +144,9 @@ public final class JavaInteractionExtension implements WorkerExtension<Object> {
 
 		private ServerboundPacket entity(EntityUse use, InteractionHand hand) {
 			return switch (use.getInteraction()) {
-				case ATTACK -> new ServerboundAttack(use.getEntityId());
+				case ATTACK -> new ServerboundAttack(new EntityId(use.getEntityId()));
 				case INTERACT -> ServerboundInteract.builder()
-						.entityId(use.getEntityId())
+						.entityId(new EntityId(use.getEntityId()))
 						.action(InteractAction.INTERACT)
 						.hand(hand)
 						.build();

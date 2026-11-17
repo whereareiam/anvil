@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
@@ -45,7 +46,7 @@ public abstract class SoundTranslation implements PacketTranslation<Packet> {
 		return ClientboundSoundEntity.builder()
 				.sound(key(sound.getSound().getName()))
 				.source(source(sound.getCategory()))
-				.entityId(sound.getEntityId())
+				.entityId(new EntityId(sound.getEntityId()))
 				.volume(sound.getVolume())
 				.pitch(sound.getPitch())
 				.seed(sound.getSeed())

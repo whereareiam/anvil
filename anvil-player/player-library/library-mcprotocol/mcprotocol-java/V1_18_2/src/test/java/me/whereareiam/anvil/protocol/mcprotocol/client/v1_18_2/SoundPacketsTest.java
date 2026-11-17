@@ -7,6 +7,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKe
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundSoundEntityPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.ClientboundCustomSoundPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.ClientboundSoundPacket;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
@@ -77,7 +78,7 @@ class SoundPacketsTest {
 		assertEquals(ClientboundSoundEntity.builder()
 				.sound("minecraft:block.note_block.pling")
 				.source(SoundSource.BLOCKS)
-				.entityId(42)
+				.entityId(new EntityId(42))
 				.volume(1F)
 				.pitch(1F)
 				.build(), packets.decode(known));

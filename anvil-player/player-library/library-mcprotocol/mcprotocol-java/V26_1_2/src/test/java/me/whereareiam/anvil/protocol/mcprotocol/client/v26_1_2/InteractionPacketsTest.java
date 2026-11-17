@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -91,7 +92,7 @@ class InteractionPacketsTest {
 	@Test
 	void interactsWithAnEntityAtItsPositionWithTheHand() {
 		Object encoded = packets.encode(ServerboundInteract.builder()
-				.entityId(42)
+				.entityId(new EntityId(42))
 				.action(InteractAction.INTERACT)
 				.hand(InteractionHand.OFF_HAND)
 				.build());
@@ -106,7 +107,7 @@ class InteractionPacketsTest {
 	@Test
 	void interactsAtAPointOfTheEntity() {
 		Object encoded = packets.encode(ServerboundInteract.builder()
-				.entityId(42)
+				.entityId(new EntityId(42))
 				.action(InteractAction.INTERACT_AT)
 				.hand(InteractionHand.MAIN_HAND)
 				.point(new Vec3d(0.25, 1.5, -0.25))
@@ -121,7 +122,7 @@ class InteractionPacketsTest {
 
 	@Test
 	void attacksAnEntityInThePacketOfItsOwn() {
-		Object encoded = packets.encode(new ServerboundAttack(43));
+		Object encoded = packets.encode(new ServerboundAttack(new EntityId(43)));
 
 		assertEquals(43, assertInstanceOf(ServerboundAttackPacket.class, encoded).getEntityId());
 	}

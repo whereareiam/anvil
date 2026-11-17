@@ -18,6 +18,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import me.whereareiam.anvil.protocol.java.api.model.entity.DisplayText;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityDataValue;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
 import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
 import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
@@ -44,19 +45,19 @@ class EntityPacketsTest {
 
 	@Test
 	void decodesMobsAndPaintingsThroughTheEntitySpawnAndPlayersAndOrbsThroughTheirOwn() {
-		assertEquals(ClientboundAddEntity.builder().entityId(7).uniqueId(ZOMBIE).type(EntityTypeKey.minecraft("zombie"))
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(7)).uniqueId(ZOMBIE).type(EntityTypeKey.minecraft("zombie"))
 						.position(new Vec3d(1.5, 64, -2.5)).yaw(90).pitch(10).build(),
 				packets.decode(new ClientboundAddEntityPacket(7, ZOMBIE, EntityType.ZOMBIE, 1.5, 64, -2.5, 90, 10,
 						90)));
-		assertEquals(ClientboundAddEntity.builder().entityId(8).uniqueId(new UUID(0, 8))
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(8)).uniqueId(new UUID(0, 8))
 						.type(EntityTypeKey.minecraft("painting")).position(new Vec3d(4, 65, 4)).build(),
 				packets.decode(new ClientboundAddEntityPacket(8, new UUID(0, 8), EntityType.PAINTING, 4, 65, 4, 0, 0,
 						0)));
-		assertEquals(ClientboundAddEntity.builder().entityId(9).uniqueId(new UUID(0, 9))
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(9)).uniqueId(new UUID(0, 9))
 						.type(EntityTypeKey.minecraft("player")).position(new Vec3d(2, 64, 2)).yaw(270).pitch(-30)
 						.build(),
 				packets.decode(new ClientboundAddPlayerPacket(9, new UUID(0, 9), 2, 64, 2, 270, -30)));
-		assertEquals(ClientboundAddEntity.builder().entityId(10).type(EntityTypeKey.minecraft("experience_orb"))
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(10)).type(EntityTypeKey.minecraft("experience_orb"))
 						.position(new Vec3d(1, 2, 3)).build(),
 				packets.decode(new ClientboundAddExperienceOrbPacket(10, 1, 2, 3, 5)));
 	}
@@ -70,7 +71,7 @@ class EntityPacketsTest {
 		wire.writeShort(-4000);
 		wire.writeShort(0);
 
-		assertEquals(new ClientboundSetEntityMotion(7, new Vec3d(0.125, -0.5, 0)),
+		assertEquals(new ClientboundSetEntityMotion(new EntityId(7), new Vec3d(0.125, -0.5, 0)),
 				packets.decode(new ClientboundSetEntityMotionPacket(wire, helper)));
 	}
 

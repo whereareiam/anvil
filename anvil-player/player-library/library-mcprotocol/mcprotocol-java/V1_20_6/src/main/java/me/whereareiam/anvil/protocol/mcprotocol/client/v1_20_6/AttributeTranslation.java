@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeSnapshot;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
@@ -39,7 +40,7 @@ public abstract class AttributeTranslation implements PacketTranslation<Packet> 
 	public final @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (!(packet instanceof ClientboundUpdateAttributesPacket update)) return null;
 
-		return new ClientboundUpdateAttributes(update.getEntityId(),
+		return new ClientboundUpdateAttributes(new EntityId(update.getEntityId()),
 				update.getAttributes().stream().map(this::snapshot).toList());
 	}
 

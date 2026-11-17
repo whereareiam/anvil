@@ -7,6 +7,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.Client
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundUpdateAttributesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundUpdateMobEffectPacket;
 import com.github.steveice10.packetlib.packet.Packet;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeModifier;
 import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeSnapshot;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
@@ -50,16 +51,16 @@ public final class EntityStatePackets implements PacketTranslation<Packet> {
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		return switch (packet) {
 			case ClientboundUpdateAttributesPacket attributes ->
-					new ClientboundUpdateAttributes(attributes.getEntityId(),
+					new ClientboundUpdateAttributes(new EntityId(attributes.getEntityId()),
 							attributes.getAttributes().stream().map(EntityStatePackets::snapshot).toList());
 			case ClientboundUpdateMobEffectPacket effect -> ClientboundUpdateMobEffect.builder()
-					.entityId(effect.getEntityId())
+					.entityId(new EntityId(effect.getEntityId()))
 					.effect(effect(effect.getEffect()))
 					.amplifier(effect.getAmplifier())
 					.duration(effect.getDuration())
 					.build();
 			case ClientboundRemoveMobEffectPacket effect ->
-					new ClientboundRemoveMobEffect(effect.getEntityId(), effect(effect.getEffect()));
+					new ClientboundRemoveMobEffect(new EntityId(effect.getEntityId()), effect(effect.getEffect()));
 			default -> null;
 		};
 	}

@@ -87,7 +87,7 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 					new ClientPlayerRotationPacket(turn.isOnGround(), turn.getYaw(), turn.getPitch());
 			case ServerboundMovePlayerStatusOnly status -> new ClientPlayerMovementPacket(status.isOnGround());
 			case ServerboundPlayerCommand command ->
-					new ClientPlayerStatePacket(command.getEntityId(), state(command.getAction()));
+					new ClientPlayerStatePacket(command.getEntityId().getValue(), state(command.getAction()));
 			default -> null;
 		};
 	}

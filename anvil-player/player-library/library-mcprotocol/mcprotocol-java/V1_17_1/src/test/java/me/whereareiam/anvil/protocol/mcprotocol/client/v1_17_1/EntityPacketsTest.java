@@ -8,6 +8,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntit
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityVelocityPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerRemoveEntitiesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.ServerSpawnEntityPacket;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
@@ -28,7 +29,7 @@ class EntityPacketsTest {
 	void decodesTheItemOfAGlowItemFrameAtIndex8AfterTheFrozenTicks() {
 		packets.decode(new ServerSpawnEntityPacket(7, new UUID(0, 7), EntityType.GLOW_ITEM_FRAME, 0, 0, 0, 0, 0));
 
-		assertEquals(new ClientboundSetEntityData(7, List.of(
+		assertEquals(new ClientboundSetEntityData(new EntityId(7), List.of(
 						new ShownItem(new me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack(40, 1)))),
 				packets.decode(new ServerEntityMetadataPacket(7, new EntityMetadata[]{
 						new EntityMetadata(7, MetadataType.INT, 140),
@@ -38,13 +39,13 @@ class EntityPacketsTest {
 
 	@Test
 	void decodesTheRemovalOfEntities() {
-		assertEquals(new ClientboundRemoveEntities(List.of(7, 8)),
+		assertEquals(new ClientboundRemoveEntities(List.of(new EntityId(7), new EntityId(8))),
 				packets.decode(new ServerRemoveEntitiesPacket(new int[]{7, 8})));
 	}
 
 	@Test
 	void decodesTheMotionOfAnEntityInBlocksPerTick() {
-		assertEquals(new ClientboundSetEntityMotion(7, new Vec3d(0, -0.0784, 0.5)),
+		assertEquals(new ClientboundSetEntityMotion(new EntityId(7), new Vec3d(0, -0.0784, 0.5)),
 				packets.decode(new ServerEntityVelocityPacket(7, 0, -0.0784, 0.5)));
 	}
 }

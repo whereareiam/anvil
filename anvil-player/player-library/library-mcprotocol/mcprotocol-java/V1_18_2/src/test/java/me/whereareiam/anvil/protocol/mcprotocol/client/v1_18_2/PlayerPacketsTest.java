@@ -10,6 +10,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.Server
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerRotPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerStatusOnlyPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundPlayerCommandPacket;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
@@ -102,7 +103,7 @@ class PlayerPacketsTest {
 	@Test
 	void encodesSprintingAndSneakingAsPlayerStatesOfThePlayersEntity() {
 		ServerboundPlayerCommandPacket sprint = assertInstanceOf(ServerboundPlayerCommandPacket.class,
-				packets.encode(new ServerboundPlayerCommand(7, PlayerCommandAction.START_SPRINTING)));
+				packets.encode(new ServerboundPlayerCommand(new EntityId(7), PlayerCommandAction.START_SPRINTING)));
 
 		assertEquals(7, sprint.getEntityId());
 		assertEquals(PlayerState.START_SPRINTING, sprint.getState());
@@ -132,7 +133,7 @@ class PlayerPacketsTest {
 
 	private PlayerState state(PlayerCommandAction action) {
 		return assertInstanceOf(ServerboundPlayerCommandPacket.class,
-				packets.encode(new ServerboundPlayerCommand(7, action))).getState();
+				packets.encode(new ServerboundPlayerCommand(new EntityId(7), action))).getState();
 	}
 
 	private static ServerboundMovePlayerPosRot move(boolean onGround, boolean horizontalCollision) {

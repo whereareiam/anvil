@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_3;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeSnapshot;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateAttributes;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
@@ -22,7 +23,7 @@ class AttributePacketsTest {
 
 	@Test
 	void decodesTheAttributesTheReleaseAddedByTheirKeys() {
-		assertEquals(new ClientboundUpdateAttributes(7, List.of(
+		assertEquals(new ClientboundUpdateAttributes(new EntityId(7), List.of(
 				new AttributeSnapshot("minecraft:bounciness", 0.5, List.of()),
 				new AttributeSnapshot("minecraft:friction_modifier", 1, List.of())
 		)), packets.decode(new ClientboundUpdateAttributesPacket(7, List.of(

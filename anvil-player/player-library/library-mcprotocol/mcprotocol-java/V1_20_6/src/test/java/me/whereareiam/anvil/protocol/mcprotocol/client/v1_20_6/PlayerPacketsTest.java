@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
@@ -135,7 +136,7 @@ class PlayerPacketsTest {
 
 	private ServerboundPlayerCommandPacket command(PlayerCommandAction action) {
 		return assertInstanceOf(ServerboundPlayerCommandPacket.class,
-				packets.encode(new ServerboundPlayerCommand(7, action)));
+				packets.encode(new ServerboundPlayerCommand(new EntityId(7), action)));
 	}
 
 	private static ServerboundMovePlayerPosRot move(boolean onGround, boolean horizontalCollision) {

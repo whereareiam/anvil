@@ -5,6 +5,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKe
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerCombatKillPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundSetHealthPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientCommandPacket;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundPlayerCombatKill;
 import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundSetHealth;
@@ -24,7 +25,7 @@ class HealthPacketsTest {
 	@Test
 	void decodesTheHealthAndTheDeathWithItsMessage() {
 		assertEquals(new ClientboundSetHealth(7.5F, 12, 1F), packets.decode(new ClientboundSetHealthPacket(7.5F, 12, 1F)));
-		assertEquals(new ClientboundPlayerCombatKill(42, "death.attack.genericKill Alice"),
+		assertEquals(new ClientboundPlayerCombatKill(new EntityId(42), "death.attack.genericKill Alice"),
 				packets.decode(new ClientboundPlayerCombatKillPacket(42, 43,
 						Component.translatable("death.attack.genericKill", Component.text("Alice")))));
 	}

@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -32,13 +33,13 @@ public final class EffectPackets implements PacketTranslation<Packet> {
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		return switch (packet) {
 			case ClientboundUpdateMobEffectPacket update -> ClientboundUpdateMobEffect.builder()
-					.entityId(update.getEntityId())
+					.entityId(new EntityId(update.getEntityId()))
 					.effect(key(update.getEffect()))
 					.amplifier(update.getAmplifier())
 					.duration(update.getDuration())
 					.build();
 			case ClientboundRemoveMobEffectPacket remove ->
-					new ClientboundRemoveMobEffect(remove.getEntityId(), key(remove.getEffect()));
+					new ClientboundRemoveMobEffect(new EntityId(remove.getEntityId()), key(remove.getEffect()));
 			default -> null;
 		};
 	}

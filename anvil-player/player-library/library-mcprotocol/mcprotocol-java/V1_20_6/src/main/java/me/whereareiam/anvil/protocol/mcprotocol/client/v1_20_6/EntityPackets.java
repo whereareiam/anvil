@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
@@ -63,13 +64,13 @@ public final class EntityPackets extends EntityTranslation {
 			case ClientboundAddExperienceOrbPacket orb -> added(orb.getEntityId(), null, EntityType.EXPERIENCE_ORB,
 					new Vec3d(orb.getX(), orb.getY(), orb.getZ()), NO_DIRECTION, NO_DIRECTION);
 			case ClientboundTeleportEntityPacket teleport -> ClientboundTeleportEntity.builder()
-					.entityId(teleport.getEntityId())
+					.entityId(new EntityId(teleport.getEntityId()))
 					.position(new Vec3d(teleport.getX(), teleport.getY(), teleport.getZ()))
 					.yaw(teleport.getYaw())
 					.pitch(teleport.getPitch())
 					.relatives(Set.of())
 					.build();
-			case ClientboundSetEntityMotionPacket motion -> new ClientboundSetEntityMotion(motion.getEntityId(),
+			case ClientboundSetEntityMotionPacket motion -> new ClientboundSetEntityMotion(new EntityId(motion.getEntityId()),
 					new Vec3d(motion.getMotionX(), motion.getMotionY(), motion.getMotionZ()));
 			default -> null;
 		};

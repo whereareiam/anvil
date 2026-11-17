@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundPlayerCombatKill;
 import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundSetHealth;
@@ -25,7 +26,7 @@ class HealthPacketsTest {
 	@Test
 	void decodesTheHealthAndTheDeathWithItsMessage() {
 		assertEquals(new ClientboundSetHealth(7.5F, 12, 1F), packets.decode(new ClientboundSetHealthPacket(7.5F, 12, 1F)));
-		assertEquals(new ClientboundPlayerCombatKill(42, "death.attack.genericKill Alice"),
+		assertEquals(new ClientboundPlayerCombatKill(new EntityId(42), "death.attack.genericKill Alice"),
 				packets.decode(new ClientboundPlayerCombatKillPacket(42,
 						Component.translatable("death.attack.genericKill", Component.text("Alice")))));
 	}

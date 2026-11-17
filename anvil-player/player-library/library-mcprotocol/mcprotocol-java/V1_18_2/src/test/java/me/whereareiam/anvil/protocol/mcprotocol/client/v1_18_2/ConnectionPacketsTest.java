@@ -10,6 +10,7 @@ import com.github.steveice10.opennbt.tag.builtin.IntTag;
 import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
 import com.github.steveice10.opennbt.tag.builtin.Tag;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.model.world.Level;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -41,7 +42,7 @@ class ConnectionPacketsTest {
 	@Test
 	void decodesTheJoinedLevelWithItsTypeNamedByTheLoginsRegistry() {
 		assertEquals(ClientboundLogin.builder()
-				.entityId(42)
+				.entityId(new EntityId(42))
 				.level("minecraft:overworld")
 				.level("minecraft:the_nether")
 				.hardcore(true)

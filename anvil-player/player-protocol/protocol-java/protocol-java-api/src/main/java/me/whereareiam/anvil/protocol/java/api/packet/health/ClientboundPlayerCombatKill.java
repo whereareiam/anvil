@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.health;
 
 import lombok.Value;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,7 +15,7 @@ public class ClientboundPlayerCombatKill implements ClientboundPacket {
 	/**
 	 * The protocol ID of the player's own entity.
 	 */
-	int playerId;
+	@NotNull EntityId playerId;
 	/**
 	 * The death message, flattened to plain text; translated messages keep their key and arguments, as chat does.
 	 */

@@ -7,6 +7,7 @@ import me.whereareiam.anvil.capability.sounds.type.SoundCategory;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
@@ -69,7 +70,7 @@ class JavaSoundsExtensionTest {
 		player.deliver(ClientboundSoundEntity.builder()
 				.sound("minecraft:block.note_block.pling")
 				.source(SoundSource.BLOCKS)
-				.entityId(42)
+				.entityId(new EntityId(42))
 				.volume(0.5F)
 				.pitch(1F)
 				.build());
@@ -116,7 +117,7 @@ class JavaSoundsExtensionTest {
 			player.deliver(ClientboundSoundEntity.builder()
 					.sound("minecraft:ui.toast.in")
 					.source(source)
-					.entityId(42)
+					.entityId(new EntityId(42))
 					.build());
 		}
 
@@ -141,6 +142,7 @@ class JavaSoundsExtensionTest {
 		player.deliver(ClientboundSoundEntity.builder()
 				.sound("minecraft:after.close")
 				.source(SoundSource.MASTER)
+				.entityId(new EntityId(1))
 				.build());
 
 		assertFalse(player.protocol().wants(ClientboundSound.class));

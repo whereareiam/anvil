@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundRemoveMobEffect;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateMobEffect;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
@@ -21,7 +22,7 @@ class EffectPacketsTest {
 
 	@Test
 	void decodesAnAddedEffectByItsKey() {
-		assertEquals(ClientboundUpdateMobEffect.builder().entityId(42).effect("minecraft:jump_boost").amplifier(1)
+		assertEquals(ClientboundUpdateMobEffect.builder().entityId(new EntityId(42)).effect("minecraft:jump_boost").amplifier(1)
 						.duration(600).build(),
 				packets.decode(new ClientboundUpdateMobEffectPacket(42, Effect.JUMP_BOOST, 1, 600, true, false, true,
 						false)));
@@ -29,9 +30,9 @@ class EffectPacketsTest {
 
 	@Test
 	void decodesARemovedEffectByItsKey() {
-		assertEquals(new ClientboundRemoveMobEffect(42, "minecraft:speed"),
+		assertEquals(new ClientboundRemoveMobEffect(new EntityId(42), "minecraft:speed"),
 				packets.decode(new ClientboundRemoveMobEffectPacket(42, Effect.SPEED)));
-		assertEquals(new ClientboundRemoveMobEffect(42, "minecraft:breath_of_the_nautilus"),
+		assertEquals(new ClientboundRemoveMobEffect(new EntityId(42), "minecraft:breath_of_the_nautilus"),
 				packets.decode(new ClientboundRemoveMobEffectPacket(42, Effect.BREATH_OF_THE_NAUTILUS)));
 	}
 }

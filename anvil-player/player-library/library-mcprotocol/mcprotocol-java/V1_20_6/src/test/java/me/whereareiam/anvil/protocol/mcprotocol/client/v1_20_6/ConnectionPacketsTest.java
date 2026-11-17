@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtInt;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
@@ -49,7 +50,7 @@ class ConnectionPacketsTest {
 				described(0, 128).with("effects", new NbtString("minecraft:the_end"))));
 
 		assertEquals(ClientboundLogin.builder()
-				.entityId(42)
+				.entityId(new EntityId(42))
 				.level("minecraft:overworld")
 				.level("minecraft:arena")
 				.hardcore(true)

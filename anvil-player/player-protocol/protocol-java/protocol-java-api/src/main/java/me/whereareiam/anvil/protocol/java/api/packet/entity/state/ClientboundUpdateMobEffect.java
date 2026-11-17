@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.entity.state;
 
 import lombok.Builder;
 import lombok.Value;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,7 +16,7 @@ public class ClientboundUpdateMobEffect implements ClientboundPacket {
 	/**
 	 * The entity's protocol ID.
 	 */
-	int entityId;
+	@NotNull EntityId entityId;
 	/**
 	 * The effect's key with its namespace, such as {@code minecraft:speed}; releases that number their effects report
 	 * the key of the number.

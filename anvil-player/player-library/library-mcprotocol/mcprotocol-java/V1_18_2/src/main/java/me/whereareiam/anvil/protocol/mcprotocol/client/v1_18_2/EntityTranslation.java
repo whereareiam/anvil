@@ -18,6 +18,7 @@ import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomNameVisible;
 import me.whereareiam.anvil.protocol.java.api.model.entity.DisplayText;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityDataValue;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
 import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
@@ -100,29 +101,30 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 			case ClientboundLoginPacket ignored -> forget();
 			case ClientboundRespawnPacket ignored -> forget();
 			case ClientboundMoveEntityPosPacket move -> ClientboundMoveEntityPos.builder()
-					.entityId(move.getEntityId())
+					.entityId(new EntityId(move.getEntityId()))
 					.delta(new Vec3d(move.getMoveX(), move.getMoveY(), move.getMoveZ()))
 					.build();
 			case ClientboundMoveEntityPosRotPacket move -> ClientboundMoveEntityPosRot.builder()
-					.entityId(move.getEntityId())
+					.entityId(new EntityId(move.getEntityId()))
 					.delta(new Vec3d(move.getMoveX(), move.getMoveY(), move.getMoveZ()))
 					.yaw(move.getYaw())
 					.pitch(move.getPitch())
 					.build();
 			case ClientboundMoveEntityRotPacket turn ->
-					new ClientboundMoveEntityRot(turn.getEntityId(), turn.getYaw(), turn.getPitch());
+					new ClientboundMoveEntityRot(new EntityId(turn.getEntityId()), turn.getYaw(), turn.getPitch());
 			case ClientboundTeleportEntityPacket teleport -> ClientboundTeleportEntity.builder()
-					.entityId(teleport.getEntityId())
+					.entityId(new EntityId(teleport.getEntityId()))
 					.position(new Vec3d(teleport.getX(), teleport.getY(), teleport.getZ()))
 					.yaw(teleport.getYaw())
 					.pitch(teleport.getPitch())
 					.relatives(Set.of())
 					.build();
-			case ClientboundSetEntityMotionPacket motion -> new ClientboundSetEntityMotion(motion.getEntityId(),
+			case ClientboundSetEntityMotionPacket motion -> new ClientboundSetEntityMotion(new EntityId(motion.getEntityId()),
 					new Vec3d(motion.getMotionX(), motion.getMotionY(), motion.getMotionZ()));
 			case ClientboundSetEntityDataPacket data -> data(data.getEntityId(), data.getMetadata());
-			case ClientboundSetPassengersPacket passengers -> new ClientboundSetPassengers(passengers.getEntityId(),
-					Arrays.stream(passengers.getPassengerIds()).boxed().toList());
+			case ClientboundSetPassengersPacket passengers -> new ClientboundSetPassengers(
+					new EntityId(passengers.getEntityId()),
+					Arrays.stream(passengers.getPassengerIds()).mapToObj(EntityId::new).toList());
 			case ClientboundRemoveEntitiesPacket removed -> removed(removed.getEntityIds());
 			default -> decodeSpawn(packet);
 		};
@@ -162,7 +164,7 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 	) {
 		types.put(entityId, type);
 		return ClientboundAddEntity.builder()
-				.entityId(entityId)
+				.entityId(new EntityId(entityId))
 				.uniqueId(uniqueId)
 				.type(ValueTranslator.entityType(type))
 				.position(position)
@@ -181,7 +183,7 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 
 	private ClientboundRemoveEntities removed(int[] entityIds) {
 		for (int entityId : entityIds) types.remove(entityId);
-		return new ClientboundRemoveEntities(Arrays.stream(entityIds).boxed().toList());
+		return new ClientboundRemoveEntities(Arrays.stream(entityIds).mapToObj(EntityId::new).toList());
 	}
 
 	private ClientboundSetEntityData data(int entityId, EntityMetadata<?, ?>[] metadata) {
@@ -193,7 +195,7 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 			if (value != null) values.add(value);
 		}
 
-		return new ClientboundSetEntityData(entityId, List.copyOf(values));
+		return new ClientboundSetEntityData(new EntityId(entityId), List.copyOf(values));
 	}
 
 	/**

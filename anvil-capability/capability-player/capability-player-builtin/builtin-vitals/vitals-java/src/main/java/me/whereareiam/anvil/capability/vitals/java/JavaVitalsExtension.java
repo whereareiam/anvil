@@ -52,14 +52,14 @@ public final class JavaVitalsExtension implements WorkerExtension<Object> {
 
 		Subscription binding = Subscription.all(
 				protocol.listen(ClientboundLogin.class,
-						login -> life.joined(login.getEntityId(), login.isShowDeathScreen())),
+						login -> life.joined(login.getEntityId().getValue(), login.isShowDeathScreen())),
 				protocol.listen(ClientboundGameEvent.class, event -> {
 					if (event.getEvent() == GameEventType.IMMEDIATE_RESPAWN) life.deathScreen(event.getValue() == 0F);
 				}),
 				protocol.listen(ClientboundSetHealth.class, health -> player.emit(VitalsChannel.STATUS,
 						new VitalStatus(health.getHealth(), health.getFood(), health.getSaturation()))),
 				protocol.listen(ClientboundPlayerCombatKill.class, kill -> {
-					if (!life.isPlayer(kill.getPlayerId())) return;
+					if (!life.isPlayer(kill.getPlayerId().getValue())) return;
 
 					boolean immediately = !life.showsDeathScreen();
 					player.emit(VitalsChannel.DIED, new Death(kill.getMessage(), immediately));

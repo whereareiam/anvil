@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.sound;
 
 import lombok.Builder;
 import lombok.Value;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.type.world.SoundSource;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +26,7 @@ public class ClientboundSoundEntity implements ClientboundPacket {
 	/**
 	 * The protocol ID of the entity the sound follows.
 	 */
-	int entityId;
+	@NotNull EntityId entityId;
 	/**
 	 * The sound's volume, where {@code 1} is full volume and higher values carry further.
 	 */

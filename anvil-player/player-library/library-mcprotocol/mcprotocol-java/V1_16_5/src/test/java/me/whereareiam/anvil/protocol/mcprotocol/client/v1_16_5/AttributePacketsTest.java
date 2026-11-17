@@ -5,6 +5,7 @@ import com.github.steveice10.mc.protocol.data.game.entity.attribute.AttributeTyp
 import com.github.steveice10.mc.protocol.data.game.entity.attribute.ModifierOperation;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityPropertiesPacket;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeModifier;
 import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeSnapshot;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -30,7 +31,7 @@ class AttributePacketsTest {
 
 	@Test
 	void decodesEachAttributeWithItsModifiersInTheServersOrder() {
-		assertEquals(new ClientboundUpdateAttributes(7, List.of(
+		assertEquals(new ClientboundUpdateAttributes(new EntityId(7), List.of(
 				new AttributeSnapshot("minecraft:movement_speed", 0.1, List.of(
 						new AttributeModifier(SPRINTING.toString(), 0.3, AttributeOperation.ADD_MULTIPLIED_TOTAL),
 						new AttributeModifier(BOOTS.toString(), 2, AttributeOperation.ADD_VALUE),

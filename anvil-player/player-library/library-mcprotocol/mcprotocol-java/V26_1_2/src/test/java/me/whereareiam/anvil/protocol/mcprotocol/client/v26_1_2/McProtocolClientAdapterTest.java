@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.configuration.ClientboundRegistryData;
@@ -65,7 +66,7 @@ class McProtocolClientAdapterTest {
 	void sendsAnAttackEncodedThroughTheReleaseTable() {
 		List<Packet> sent = new ArrayList<>();
 
-		new McProtocolClientAdapter().send(recording(sent), new ServerboundAttack(43));
+		new McProtocolClientAdapter().send(recording(sent), new ServerboundAttack(new EntityId(43)));
 
 		assertEquals(1, sent.size());
 		assertEquals(43, assertInstanceOf(ServerboundAttackPacket.class, sent.getFirst()).getEntityId());

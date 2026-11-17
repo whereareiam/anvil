@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.entity;
 
 import lombok.Builder;
 import lombok.Value;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
@@ -21,7 +22,7 @@ public class ClientboundAddEntity implements ClientboundPacket {
 	/**
 	 * The entity's protocol ID, which later packets about it name.
 	 */
-	int entityId;
+	@NotNull EntityId entityId;
 	/**
 	 * The entity's unique ID, or {@code null} for an experience orb of a release before Minecraft 1.21.2, which added
 	 * orbs without one.

@@ -17,6 +17,7 @@ import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtByte;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtFloat;
@@ -460,7 +461,7 @@ class JavaDialogsExtensionTest {
 
 	private static ClientboundLogin login(int entityId) {
 		return ClientboundLogin.builder()
-				.entityId(entityId)
+				.entityId(new EntityId(entityId))
 				.level("minecraft:overworld")
 				.dimension("minecraft:overworld")
 				.dimensionType(DimensionType.known("minecraft:overworld"))

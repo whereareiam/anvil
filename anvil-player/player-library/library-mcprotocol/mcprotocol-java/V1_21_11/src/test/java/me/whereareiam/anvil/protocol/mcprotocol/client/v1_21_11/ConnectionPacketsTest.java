@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
 import me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtInt;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
@@ -55,7 +56,7 @@ class ConnectionPacketsTest {
 		))));
 
 		assertEquals(ClientboundLogin.builder()
-				.entityId(42)
+				.entityId(new EntityId(42))
 				.level("minecraft:overworld")
 				.dimension("minecraft:overworld")
 				.dimensionType(DimensionType.known("minecraft:overworld"))

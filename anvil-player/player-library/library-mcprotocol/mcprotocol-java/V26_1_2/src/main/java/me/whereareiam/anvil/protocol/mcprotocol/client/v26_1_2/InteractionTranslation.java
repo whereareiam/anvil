@@ -56,7 +56,7 @@ public abstract class InteractionTranslation implements PacketTranslation<Packet
 					use.getSequence(), use.getYaw(), use.getPitch());
 			case ServerboundUseItemOn use -> useItemOn(use);
 			case ServerboundInteract interact -> interact(interact);
-			case ServerboundAttack attack -> new ServerboundAttackPacket(attack.getEntityId());
+			case ServerboundAttack attack -> new ServerboundAttackPacket(attack.getEntityId().getValue());
 			default -> encodeRelease(packet);
 		};
 	}
@@ -85,7 +85,8 @@ public abstract class InteractionTranslation implements PacketTranslation<Packet
 
 	private static Packet interact(ServerboundInteract interact) {
 		Vec3d point = interact.getPoint() == null ? Vec3d.ZERO : interact.getPoint();
-		return new ServerboundInteractPacket(interact.getEntityId(), ValueTranslator.hand(interact.getHand()),
-				Vector3d.from(point.getX(), point.getY(), point.getZ()), interact.isSneaking());
+		return new ServerboundInteractPacket(interact.getEntityId().getValue(),
+				ValueTranslator.hand(interact.getHand()), Vector3d.from(point.getX(), point.getY(), point.getZ()),
+				interact.isSneaking());
 	}
 }

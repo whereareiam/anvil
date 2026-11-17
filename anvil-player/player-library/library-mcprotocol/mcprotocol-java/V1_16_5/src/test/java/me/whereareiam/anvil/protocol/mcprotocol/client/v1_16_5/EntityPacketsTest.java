@@ -21,6 +21,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.Serve
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomNameVisible;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityDataValue;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
 import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
 import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
@@ -49,24 +50,24 @@ class EntityPacketsTest {
 
 	@Test
 	void decodesEachSpawnPacketAsAnAddedEntityWithTheRegistryKey() {
-		assertEquals(ClientboundAddEntity.builder().entityId(7).uniqueId(STAND)
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(7)).uniqueId(STAND)
 						.type(EntityTypeKey.minecraft("armor_stand")).position(new Vec3d(1.5, 64, -2.5)).yaw(90)
 						.pitch(10).build(),
 				packets.decode(new ServerSpawnEntityPacket(7, STAND, EntityType.ARMOR_STAND, 1.5, 64, -2.5, 90, 10)));
-		assertEquals(ClientboundAddEntity.builder().entityId(8).uniqueId(new UUID(0, 8))
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(8)).uniqueId(new UUID(0, 8))
 						.type(EntityTypeKey.minecraft("zombie")).position(new Vec3d(0, 66, 0)).yaw(180).pitch(20)
 						.build(),
 				packets.decode(new ServerSpawnLivingEntityPacket(8, new UUID(0, 8), EntityType.ZOMBIE, 0, 66, 0, 20,
 						180, 45, 0, 0, 0)));
-		assertEquals(ClientboundAddEntity.builder().entityId(9).uniqueId(new UUID(0, 9))
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(9)).uniqueId(new UUID(0, 9))
 						.type(EntityTypeKey.minecraft("player")).position(new Vec3d(2, 64, 2)).yaw(270).pitch(-30)
 						.build(),
 				packets.decode(new ServerSpawnPlayerPacket(9, new UUID(0, 9), 2, 64, 2, 270, -30)));
-		assertEquals(ClientboundAddEntity.builder().entityId(10).uniqueId(new UUID(0, 10))
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(10)).uniqueId(new UUID(0, 10))
 						.type(EntityTypeKey.minecraft("painting")).position(new Vec3d(4, 65, 4)).build(),
 				packets.decode(new ServerSpawnPaintingPacket(10, new UUID(0, 10), PaintingType.KEBAB,
 						new Position(4, 65, 4), HangingDirection.NORTH)));
-		assertEquals(ClientboundAddEntity.builder().entityId(11).type(EntityTypeKey.minecraft("experience_orb"))
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(11)).type(EntityTypeKey.minecraft("experience_orb"))
 						.position(new Vec3d(1, 2, 3)).build(),
 				packets.decode(new ServerSpawnExpOrbPacket(11, 1, 2, 3, 5)));
 	}
@@ -106,18 +107,18 @@ class EntityPacketsTest {
 
 	@Test
 	void decodesMovesTeleportsAndRemovals() {
-		assertEquals(ClientboundMoveEntityPos.builder().entityId(7).delta(new Vec3d(0.5, 0, -0.25)).build(),
+		assertEquals(ClientboundMoveEntityPos.builder().entityId(new EntityId(7)).delta(new Vec3d(0.5, 0, -0.25)).build(),
 				packets.decode(new ServerEntityPositionPacket(7, 0.5, 0, -0.25, true)));
-		assertEquals(ClientboundTeleportEntity.builder().entityId(7).position(new Vec3d(1, 2, 3)).yaw(90).pitch(0)
+		assertEquals(ClientboundTeleportEntity.builder().entityId(new EntityId(7)).position(new Vec3d(1, 2, 3)).yaw(90).pitch(0)
 						.relatives(Set.of()).build(),
 				packets.decode(new ServerEntityTeleportPacket(7, 1, 2, 3, 90, 0, true)));
-		assertEquals(new ClientboundRemoveEntities(List.of(7, 8)),
+		assertEquals(new ClientboundRemoveEntities(List.of(new EntityId(7), new EntityId(8))),
 				packets.decode(new ServerEntityDestroyPacket(new int[]{7, 8})));
 	}
 
 	@Test
 	void decodesTheMotionOfAnEntityInBlocksPerTick() {
-		assertEquals(new ClientboundSetEntityMotion(7, new Vec3d(0.25, 0.42, -0.125)),
+		assertEquals(new ClientboundSetEntityMotion(new EntityId(7), new Vec3d(0.25, 0.42, -0.125)),
 				packets.decode(new ServerEntityVelocityPacket(7, 0.25, 0.42, -0.125)));
 	}
 
