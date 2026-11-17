@@ -1,19 +1,13 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.transport;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.jsontype.NamedType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
-import me.whereareiam.anvil.protocol.api.model.text.click.TextClick;
-import me.whereareiam.anvil.protocol.api.model.text.content.TextContent;
-import me.whereareiam.anvil.protocol.api.model.text.hover.TextHover;
+import me.whereareiam.anvil.protocol.java.json.JavaProtocolJson;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerEvent;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerMessage;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerReady;
@@ -34,23 +28,9 @@ public final class WorkerMessageCodec {
 	private static final String FRAME_PREFIX = "ANVIL:";
 	private static final String VALUE = "value";
 	private final ObjectMapper mapper = new ObjectMapper();
-	// Player operation and event values: immutable classes read through their creator parameters, and the kinds of
-	// the sealed text models by their names.
-	private final ObjectMapper values = sealedKinds(new ObjectMapper()
-			.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES)),
-			TextContent.class, TextClick.class, TextHover.class);
-
-	/**
-	 * Writes each value of a sealed type with the name of its kind, so it reads back as the same kind.
-	 */
-	private static ObjectMapper sealedKinds(ObjectMapper mapper, Class<?>... types) {
-		for (Class<?> type : types) {
-			mapper.addMixIn(type, SealedKind.class);
-			for (Class<?> kind : type.getPermittedSubclasses()) mapper.registerSubtypes(new NamedType(kind, kind.getSimpleName()));
-		}
-
-		return mapper;
-	}
+	// Player operation and event values, in the Java protocol's JSON form: immutable classes read through their creator
+	// parameters, and polymorphic values, such as packets and texts, by the names of their kinds.
+	private final ObjectMapper values = JavaProtocolJson.configure(new ObjectMapper());
 
 	public @NotNull String encodeRequest(@NotNull WorkerRequest request) {
 		return encode(request);
@@ -204,9 +184,5 @@ public final class WorkerMessageCodec {
 
 	private static IllegalArgumentException invalidValue(Class<?> type) {
 		return new IllegalArgumentException("Invalid player message for " + type.getName());
-	}
-
-	@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind")
-	private interface SealedKind {
 	}
 }

@@ -10,7 +10,6 @@ description = "MCProtocolLib library provider, release data, worker host and the
 
 dependencies {
 	implementation(libs.jackson.databind)
-	implementation(libs.jackson.parameters)
 	implementation(libs.jackson.toml)
 	implementation(libs.minecraft.auth)
 	implementation(libs.slf4j.api)
@@ -19,6 +18,7 @@ dependencies {
 	compileOnly(projects.anvilPlayer.playerApi)
 	compileOnly(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolApi)
 	compileOnly(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
+	compileOnly(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaJson)
 	compileOnly(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker)
 	compileOnly(projects.anvilPlayer.playerWorker)
 
@@ -30,6 +30,7 @@ dependencies {
 	testImplementation(projects.anvilPlayer.playerApi)
 	testImplementation(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolApi)
 	testImplementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
+	testImplementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaJson)
 	testImplementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker)
 	testImplementation(projects.anvilPlayer.playerWorker)
 
