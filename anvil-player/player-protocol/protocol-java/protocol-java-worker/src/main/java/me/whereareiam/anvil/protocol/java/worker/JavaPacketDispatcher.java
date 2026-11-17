@@ -52,7 +52,7 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 	private final Map<Class<?>, List<Consumer<Object>>> listeners = new ConcurrentHashMap<>();
 	private final Map<Class<?>, List<Consumer<Object>>> sentListeners = new ConcurrentHashMap<>();
 	private final List<Consumer<? super ClientboundFrame>> frameListeners = new CopyOnWriteArrayList<>();
-	private final Map<Class<?>, List<Object>> wanted = new ConcurrentHashMap<>();
+	private final Map<Class<?>, List<Want>> wanted = new ConcurrentHashMap<>();
 	private final JavaWorldStore world = new JavaWorldStore();
 
 	/**
@@ -98,11 +98,10 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 			throw new ProtocolUnavailableException("the loaded " + libraryId + " release does not carry "
 					+ type.getName());
 
-		Object demand = new Object();
-		List<Object> demands = wanted.computeIfAbsent(type, ignored -> new CopyOnWriteArrayList<>());
-		demands.add(demand);
+		Want want = new Want(wanted.computeIfAbsent(type, ignored -> new CopyOnWriteArrayList<>()));
+		want.wants.add(want);
 
-		return () -> demands.remove(demand);
+		return want;
 	}
 
 	@Override
@@ -254,6 +253,19 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 				System.err.println("[Anvil] Warning: a listener of " + packet.getClass().getSimpleName() + " failed: "
 						+ failure);
 			}
+		}
+	}
+
+	/**
+	 * One open {@link #want(Class)}, which wants its class while it is listed among the class's wants.
+	 */
+	@RequiredArgsConstructor
+	private static final class Want implements Subscription {
+		private final List<Want> wants;
+
+		@Override
+		public void close() {
+			wants.remove(this);
 		}
 	}
 
