@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
+import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtByte;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtInt;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
@@ -27,8 +28,10 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConnectionPacketsTest {
 	private final SynchronizedRegistries registries = new SynchronizedRegistries();
@@ -87,7 +90,10 @@ class ConnectionPacketsTest {
 
 		assertEquals(ClientboundRespawn.builder()
 				.dimension("minecraft:the_nether")
-				.dimensionType(DimensionType.withEffects("minecraft:the_nether", "minecraft:the_nether", 0, 256))
+				.dimensionType(DimensionType.withEffects("minecraft:the_nether", "minecraft:the_nether", 0, 256)
+						.toBuilder()
+						.fastLava(true)
+						.build())
 				.debug(true)
 				.build(), packets.decode(new ClientboundRespawnPacket(spawnIn(Key.key("minecraft", "the_nether"), 1, true,
 				false), false, false)));
@@ -110,6 +116,24 @@ class ConnectionPacketsTest {
 
 		assertEquals(DimensionType.builder().key("example:modded").minY(0).height(256).build(),
 				respawnInto(0).getDimensionType());
+	}
+
+	@Test
+	void readsFastLavaFromTheUltrawarmFlagOfADescriptionAndNotFromAnAttributeThisReleaseLacks() {
+		NbtCompound attribute = NbtCompound.EMPTY.with("minecraft:gameplay/fast_lava", NbtByte.of(true));
+		synchronize(new RegistryEntry("example:hot", described(0, 256).with("ultrawarm", NbtByte.of(true))),
+				new RegistryEntry("example:attributed", described(0, 256).with("attributes", attribute)));
+
+		assertTrue(respawnInto(0).getDimensionType().isFastLava());
+		assertFalse(respawnInto(1).getDimensionType().isFastLava());
+	}
+
+	@Test
+	void refusesADescriptionWithoutItsUltrawarmFlag() {
+		synchronize(new RegistryEntry("example:unflagged", NbtCompound.EMPTY.with("min_y", new NbtInt(0))
+				.with("height", new NbtInt(256))));
+
+		assertThrows(IllegalStateException.class, () -> respawnInto(0));
 	}
 
 	@Test
@@ -157,7 +181,8 @@ class ConnectionPacketsTest {
 	}
 
 	private static NbtCompound described(int minY, int height) {
-		return NbtCompound.EMPTY.with("min_y", new NbtInt(minY)).with("height", new NbtInt(height));
+		return NbtCompound.EMPTY.with("min_y", new NbtInt(minY)).with("height", new NbtInt(height))
+				.with("ultrawarm", NbtByte.of(false));
 	}
 
 	private static PlayerSpawnInfo spawnIn(Key level, int type, boolean debug, boolean flat) {

@@ -23,6 +23,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConnectionPacketsTest {
@@ -47,7 +48,10 @@ class ConnectionPacketsTest {
 
 		assertEquals(ClientboundRespawn.builder()
 				.dimension("example:arena")
-				.dimensionType(DimensionType.withEffects("minecraft:the_nether", "minecraft:the_nether", 0, 256))
+				.dimensionType(DimensionType.withEffects("minecraft:the_nether", "minecraft:the_nether", 0, 256)
+						.toBuilder()
+						.fastLava(true)
+						.build())
 				.debug(true)
 				.build(), packets.decode(new ServerRespawnPacket(nether(), "example:arena", 0, GameMode.SURVIVAL,
 				GameMode.SURVIVAL, true, false, false)));
@@ -76,6 +80,27 @@ class ConnectionPacketsTest {
 
 		assertEquals(DimensionType.withEffects("example:tall", "minecraft:overworld", -32, 320),
 				((ClientboundLogin) packets.decode(login)).getDimensionType());
+	}
+
+	@Test
+	void readsFastLavaFromTheUltrawarmFlagOfTheType() {
+		packets.decode(login(overworld()));
+
+		assertTrue(((ClientboundRespawn) packets.decode(new ServerRespawnPacket(nether(), "minecraft:the_nether", 0,
+				GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, false))).getDimensionType().isFastLava());
+		assertFalse(((ClientboundLogin) packets.decode(login(overworld()))).getDimensionType().isFastLava());
+	}
+
+	@Test
+	void refusesATypeWithoutItsUltrawarmFlagAsTheVanillaClientCannotReadIt() {
+		CompoundTag unflagged = new CompoundTag("");
+		unflagged.put(new StringTag("effects", "minecraft:the_nether"));
+		CompoundTag codec = codec(entry("example:unflagged", 0, unflagged));
+		ServerJoinGamePacket login = new ServerJoinGamePacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL, 1,
+				new String[]{"example:unflagged"}, codec, unflagged, "example:unflagged", 0, 20, 10, false, true, false,
+				false);
+
+		assertThrows(IllegalStateException.class, () -> packets.decode(login));
 	}
 
 	@Test

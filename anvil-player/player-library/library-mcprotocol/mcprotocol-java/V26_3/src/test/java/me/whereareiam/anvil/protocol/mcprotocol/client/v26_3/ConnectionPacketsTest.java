@@ -17,7 +17,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The release's registry entries carry any tag as their data, and the release's packet table reads a dimension type's
@@ -59,6 +61,33 @@ class ConnectionPacketsTest {
 		assertEquals("minecraft:overworld", respawnInto(0).getDimensionType().getDefaultClock());
 		assertNull(respawnInto(1).getDimensionType().getDefaultClock());
 		assertEquals("example:slow", respawnInto(2).getDimensionType().getDefaultClock());
+	}
+
+	@Test
+	void readsFastLavaFromTheEnvironmentAttributeOfADescriptionAndOfTheVanillaNether() {
+		packets.decode(new ClientboundRegistryDataPacket(Key.key("minecraft:dimension_type"), List.of(
+				new RegistryEntry(Key.key("minecraft:the_nether"), null),
+				new RegistryEntry(Key.key("example:hot"), NbtMap.builder()
+						.putString("skybox", "none")
+						.putInt("min_y", 0)
+						.putInt("height", 256)
+						.putCompound("attributes", NbtMap.builder()
+								.putCompound("minecraft:gameplay/fast_lava", NbtMap.builder()
+										.putString("modifier", "xnor")
+										.putBoolean("argument", false)
+										.build())
+								.build())
+						.build()),
+				new RegistryEntry(Key.key("example:flagged"), NbtMap.builder()
+						.putInt("min_y", 0)
+						.putInt("height", 256)
+						.putBoolean("ultrawarm", true)
+						.build())
+		)));
+
+		assertTrue(respawnInto(0).getDimensionType().isFastLava());
+		assertTrue(respawnInto(1).getDimensionType().isFastLava());
+		assertFalse(respawnInto(2).getDimensionType().isFastLava());
 	}
 
 	private ClientboundRespawn respawnInto(int type) {

@@ -4,12 +4,14 @@ import me.whereareiam.anvil.capability.movement.channel.MovementChannel;
 import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
+import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPosRot;
 import me.whereareiam.anvil.protocol.java.worker.TestJavaPlayer;
 import me.whereareiam.anvil.protocol.worker.TestOperations;
 import me.whereareiam.anvil.protocol.worker.TestWorkerPlayer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -31,6 +33,12 @@ class JavaMovementExtensionTest {
 	private final JavaMovementExtension extension = new JavaMovementExtension();
 	private final TestJavaPlayer player = new TestJavaPlayer("Alice");
 	private final TestOperations operations = new TestOperations();
+	private WorkerBinding binding;
+
+	@AfterEach
+	void close() {
+		if (binding != null) binding.close();
+	}
 
 	@Test
 	void isDiscoveredAsTheJavaMovementExtensionForEveryLibrary() {
@@ -46,13 +54,20 @@ class JavaMovementExtensionTest {
 	}
 
 	@Test
+	void registersEveryOperationOfTheMovementChannel() {
+		binding = extension.bind(player, operations);
+
+		assertEquals(List.of("movement.move", "movement.look", "movement.physics", "movement.input", "movement.state"),
+				operations.registered());
+	}
+
+	@Test
 	void sendsTheMoveAsOnePacketAndSharesTheViewRotation() {
-		extension.bind(player, operations);
+		binding = extension.bind(player, operations);
 		player.connect();
 
 		assertNull(operations.call(MovementChannel.MOVE, POSITION));
 
-		assertEquals(List.of("movement.move"), operations.registered());
 		assertEquals(List.of(ServerboundMovePlayerPosRot.builder()
 				.position(new Vec3d(1.5, 64, -2.5))
 				.yaw(90)
@@ -61,11 +76,12 @@ class JavaMovementExtensionTest {
 				.horizontalCollision(false)
 				.build()), player.sent());
 		assertEquals(new ViewRotation(90, -15), player.viewRotation());
+		assertEquals(POSITION, operations.call(MovementChannel.STATE, null).getPosition());
 	}
 
 	@Test
 	void leavesTheViewUnchangedWhileThePlayerIsDisconnected() {
-		extension.bind(player, operations);
+		binding = extension.bind(player, operations);
 
 		IllegalStateException failure = assertThrows(IllegalStateException.class,
 				() -> operations.call(MovementChannel.MOVE, POSITION));

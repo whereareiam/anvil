@@ -32,13 +32,16 @@ import java.util.Set;
  * dimension types of the whole server with the login, so the translation names a type by the login's entry whose
  * description equals it, the first such entry when several are equal; one translation serves one session. A type of
  * Minecraft 1.16 names no block heights, because every level spans the 256 heights from 0; from Minecraft 1.17 a type
- * names both. The library names game mode 255, which a server sends only for the absent previous mode, its unknown
- * mode; the translation takes that mode for survival, as the vanilla client takes a mode number it does not know.
+ * names both. Every type tells whether it is {@code ultrawarm}, whose lava is fast; a type without that flag breaks the
+ * protocol, and the translation throws, which makes MCProtocolLib disconnect the session. The library names game mode
+ * 255, which a server sends only for the absent previous mode, its unknown mode; the translation takes that mode for
+ * survival, as the vanilla client takes a mode number it does not know.
  */
 public final class ConnectionPackets implements PacketTranslation<Packet> {
 	private static final String DEFAULT_EFFECTS = "minecraft:overworld";
 	private static final String MIN_Y = "min_y";
 	private static final String HEIGHT = "height";
+	private static final String ULTRAWARM = "ultrawarm";
 	private static final int FIXED_MIN_Y = 0;
 	private static final int FIXED_HEIGHT = 256;
 
@@ -98,7 +101,10 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 		String effects = described == null ? DEFAULT_EFFECTS : described.getValue();
 		for (Map.Entry<String, CompoundTag> type : types.entrySet())
 			if (type.getValue().getValue().equals(description.getValue()))
-				return DimensionType.withEffects(type.getKey(), effects, minY(description), height(description));
+				return DimensionType.withEffects(type.getKey(), effects, minY(description), height(description))
+						.toBuilder()
+						.fastLava(ultrawarm(description))
+						.build();
 
 		throw new IllegalStateException("The server sent a dimension type its login did not list");
 	}
@@ -117,6 +123,18 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 	private static int height(@NotNull CompoundTag description) {
 		IntTag height = description.get(HEIGHT);
 		return height == null ? FIXED_HEIGHT : height.getValue();
+	}
+
+	/**
+	 * Reads whether a type is {@code ultrawarm}, which makes its lava fast. The vanilla client reads the flag as a
+	 * number whose low byte is not zero and cannot read a type without it.
+	 */
+	private static boolean ultrawarm(@NotNull CompoundTag description) {
+		Tag flag = description.get(ULTRAWARM);
+		if (flag == null || !(flag.getValue() instanceof Number number))
+			throw new IllegalStateException("The server described a dimension type without its " + ULTRAWARM);
+
+		return number.byteValue() != 0;
 	}
 
 	/**

@@ -8,6 +8,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.Server
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerPosRotPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerRotPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerStatusOnlyPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundPlayerAbilitiesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundPlayerCommandPacket;
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
@@ -16,6 +17,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPos;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPosRot;
@@ -35,7 +37,8 @@ import java.util.Set;
 /**
  * The player of the MCProtocolLib releases from 1.18.2 until 1.19.4: its movement, whose packets carry no horizontal
  * collision flag, its player command, which still tells sneaking besides sprinting, the abilities its game mode gives
- * it, and the server's placement of the player. A placement names relative coordinates and angles and carries no
+ * it, the flight it starts or stops on its own, whose abilities packet carries only whether it flies, and the server's
+ * placement of the player. A placement names relative coordinates and angles and carries no
  * velocity: the client keeps its velocity along each relative coordinate and stops it along each absolute one, which
  * the translation reports as a zero velocity that is relative along each relative coordinate.
  */
@@ -49,6 +52,7 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 				ServerboundMovePlayerPosRot.class,
 				ServerboundMovePlayerRot.class,
 				ServerboundMovePlayerStatusOnly.class,
+				ServerboundPlayerAbilities.class,
 				ServerboundPlayerCommand.class
 		);
 	}
@@ -88,6 +92,7 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 					new ServerboundMovePlayerStatusOnlyPacket(status.isOnGround());
 			case ServerboundPlayerCommand command ->
 					new ServerboundPlayerCommandPacket(command.getEntityId().getValue(), state(command.getAction()));
+			case ServerboundPlayerAbilities abilities -> new ServerboundPlayerAbilitiesPacket(abilities.isFlying());
 			default -> null;
 		};
 	}

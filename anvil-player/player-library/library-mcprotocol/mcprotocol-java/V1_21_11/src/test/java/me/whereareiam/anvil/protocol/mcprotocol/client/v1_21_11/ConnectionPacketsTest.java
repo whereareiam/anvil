@@ -25,13 +25,15 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.Clientbound
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundStartConfigurationPacket;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * The release's packet table decodes the registry data of the configuration and names the dimension types of joins
- * and respawns by it.
+ * and respawns by it, reading fast lava from a type's {@code minecraft:gameplay/fast_lava} environment attribute.
  */
 class ConnectionPacketsTest {
 	private final PacketTable<Packet> packets = McProtocolClientAdapter.packets(PacketDemand.EVERY);
@@ -78,6 +80,9 @@ class ConnectionPacketsTest {
 								.putString("cardinal_light", "nether")
 								.putInt("min_y", 0)
 								.putInt("height", 256)
+								.putCompound("attributes", NbtMap.builder()
+										.putBoolean("minecraft:gameplay/fast_lava", true)
+										.build())
 								.build()),
 				new org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry(Key.key("example", "plain"),
 						NbtMap.builder().putInt("min_y", -64).putInt("height", 384).build())
@@ -98,6 +103,41 @@ class ConnectionPacketsTest {
 	}
 
 	@Test
+	void readsFastLavaFromTheEnvironmentAttributeOfADescriptionAndNotFromTheUltrawarmFlagThisReleaseDropped() {
+		types(
+				attributed(NbtMap.builder().putBoolean("minecraft:gameplay/fast_lava", true).build()),
+				attributed(NbtMap.builder().putBoolean("gameplay/fast_lava", true).build()),
+				attributed(NbtMap.EMPTY),
+				NbtMap.builder().putInt("min_y", 0).putInt("height", 256).putBoolean("ultrawarm", true).build(),
+				attributed(NbtMap.builder().putBoolean("minecraft:gameplay/water_evaporates", true).build())
+		);
+
+		assertEquals(List.of(true, true, false, false, false), fastLava(5));
+	}
+
+	@Test
+	void appliesAFastLavaModifierToTheAttributesDefault() {
+		types(
+				modified("override", true), modified("and", true), modified("nand", false), modified("or", true),
+				modified("nor", false), modified("xor", true), modified("xnor", true), modified("or", false)
+		);
+
+		assertEquals(List.of(true, false, true, true, true, true, false, false), fastLava(8));
+	}
+
+	@Test
+	void refusesAFastLavaAttributeNoVanillaClientCanRead() {
+		types(modified("multiply", true), attributed(NbtMap.builder().putString("minecraft:gameplay/fast_lava", "yes")
+				.build()), attributed(NbtMap.builder().putCompound("minecraft:gameplay/fast_lava",
+				NbtMap.builder().putString("modifier", "or").build()).build()));
+
+		for (int type = 0; type < 3; type++) {
+			int id = type;
+			assertThrows(IllegalStateException.class, () -> respawnInto(id), "type " + id);
+		}
+	}
+
+	@Test
 	void reportsTheGameModeOfEachLoginAndRespawn() {
 		packets.decode(new ClientboundRegistryDataPacket(Key.key("minecraft", "dimension_type"), List.of(
 				new org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry(Key.key("minecraft", "overworld"), null))));
@@ -109,6 +149,36 @@ class ConnectionPacketsTest {
 		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.SPECTATOR,
 				((ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(
 						spawnIn(Key.key("minecraft", "overworld"), 0, GameMode.SPECTATOR), false, false))).getGameMode());
+	}
+
+	private void types(NbtMap... descriptions) {
+		List<org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry> entries = new ArrayList<>();
+		for (int id = 0; id < descriptions.length; id++)
+			entries.add(new org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry(
+					Key.key("example", "type_" + id), descriptions[id]));
+		packets.decode(new ClientboundRegistryDataPacket(Key.key("minecraft", "dimension_type"), entries));
+	}
+
+	private List<Boolean> fastLava(int types) {
+		List<Boolean> fastLava = new ArrayList<>();
+		for (int type = 0; type < types; type++) fastLava.add(respawnInto(type).getDimensionType().isFastLava());
+		return fastLava;
+	}
+
+	private ClientboundRespawn respawnInto(int type) {
+		return (ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(
+				spawnIn(Key.key("example", "arena"), type), false, false));
+	}
+
+	private static NbtMap attributed(NbtMap attributes) {
+		return NbtMap.builder().putInt("min_y", 0).putInt("height", 256).putCompound("attributes", attributes).build();
+	}
+
+	private static NbtMap modified(String modifier, boolean argument) {
+		return attributed(NbtMap.builder().putCompound("minecraft:gameplay/fast_lava", NbtMap.builder()
+				.putString("modifier", modifier)
+				.putBoolean("argument", argument)
+				.build()).build());
 	}
 
 	private static PlayerSpawnInfo spawnIn(Key level, int type) {

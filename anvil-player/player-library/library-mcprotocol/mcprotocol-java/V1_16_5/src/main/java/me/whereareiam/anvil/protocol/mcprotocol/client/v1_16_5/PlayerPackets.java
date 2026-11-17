@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5;
 
 import com.github.steveice10.mc.protocol.data.game.entity.player.PlayerState;
 import com.github.steveice10.mc.protocol.data.game.entity.player.PositionElement;
+import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerAbilitiesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerMovementPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerPositionRotationPacket;
@@ -16,6 +17,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPos;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPosRot;
@@ -34,11 +36,12 @@ import java.util.Set;
 
 /**
  * The player of the MCProtocolLib releases from 1.16.5 until 1.17.1: its movement, whose packets carry no horizontal
- * collision flag, the player command, which still tells sneaking as well as sprinting, and what the server tells the
- * player about itself. The server's placement of the player names relative coordinates and angles and carries no
- * velocity: the client keeps its velocity along each relative coordinate and stops it along each absolute one, so the
- * translation reports a zero velocity that is relative along each relative coordinate. These releases have neither the
- * player input nor the end of a client tick.
+ * collision flag, the player command, which still tells sneaking as well as sprinting, what the server tells the
+ * player about itself, and the flight the player starts or stops on its own, whose abilities packet carries only
+ * whether it flies, as from Minecraft 1.16. The server's placement of the player names relative coordinates and angles
+ * and carries no velocity: the client keeps its velocity along each relative coordinate and stops it along each
+ * absolute one, so the translation reports a zero velocity that is relative along each relative coordinate. These
+ * releases have neither the player input nor the end of a client tick.
  */
 public final class PlayerPackets implements PacketTranslation<Packet> {
 	@Override
@@ -50,6 +53,7 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 				ServerboundMovePlayerPosRot.class,
 				ServerboundMovePlayerRot.class,
 				ServerboundMovePlayerStatusOnly.class,
+				ServerboundPlayerAbilities.class,
 				ServerboundPlayerCommand.class
 		);
 	}
@@ -88,6 +92,7 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 			case ServerboundMovePlayerStatusOnly status -> new ClientPlayerMovementPacket(status.isOnGround());
 			case ServerboundPlayerCommand command ->
 					new ClientPlayerStatePacket(command.getEntityId().getValue(), state(command.getAction()));
+			case ServerboundPlayerAbilities abilities -> new ClientPlayerAbilitiesPacket(abilities.isFlying());
 			default -> null;
 		};
 	}

@@ -2,8 +2,10 @@ plugins {
 	id("module-adapter-segment")
 }
 
-// MCProtocolLib 1.21.11 keeps the client, connection and screen translations of the chain and the release-neutral parts
-// of the other areas; the segment replaces the classes whose release changed or that no longer link against it.
+// MCProtocolLib 1.21.11 keeps the client and screen translations of the chain and the release-neutral parts of the
+// other areas; the segment replaces the classes whose release changed or that no longer link against it, and the
+// connection moments, because Minecraft 1.21.11 tells a dimension type's fast lava by an environment attribute instead
+// of its ultrawarm flag.
 segment {
 	extends(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolJava.v1211)
 	replaces(
@@ -12,6 +14,7 @@ segment {
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ChunkPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ClientPacketListener",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.CommandPackets",
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConnectionPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.CookiePackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.EntityDataTable",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.EntityPackets",

@@ -18,6 +18,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.Serv
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerConfirmTransactionPacket;
 import com.github.steveice10.mc.protocol.packet.login.server.EncryptionRequestPacket;
 import com.github.steveice10.mc.protocol.packet.login.server.LoginSuccessPacket;
+import com.github.steveice10.opennbt.tag.builtin.ByteTag;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.IntTag;
 import com.github.steveice10.opennbt.tag.builtin.ListTag;
@@ -187,6 +188,7 @@ class ClientPacketListenerTest {
 	private static CompoundTag overworld() {
 		CompoundTag type = new CompoundTag("");
 		type.put(new StringTag("effects", "minecraft:overworld"));
+		type.put(new ByteTag("ultrawarm", (byte) 0));
 		return type;
 	}
 

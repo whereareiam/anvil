@@ -5,6 +5,7 @@ import com.github.steveice10.mc.protocol.data.game.entity.player.PlayerState;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundRemoveMobEffectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundUpdateMobEffectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundChatPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundPlayerAbilitiesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundPlayerCommandPacket;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.packetlib.Session;
@@ -43,6 +44,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContai
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundClientTickEnd;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerInput;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPos;
@@ -175,6 +177,19 @@ class McProtocolClientAdapterTest {
 	}
 
 	@Test
+	void sendsTheFlightThePlayerStartsOrStopsAsTheFlyingFlagOfTheAbilities() {
+		List<Packet> sent = new ArrayList<>();
+		McProtocolClientAdapter client = new McProtocolClientAdapter();
+
+		client.send(recording(sent), new ServerboundPlayerAbilities(true));
+		client.send(recording(sent), new ServerboundPlayerAbilities(false));
+
+		assertEquals(2, sent.size());
+		assertTrue(assertInstanceOf(ServerboundPlayerAbilitiesPacket.class, sent.get(0)).isFlying());
+		assertFalse(assertInstanceOf(ServerboundPlayerAbilitiesPacket.class, sent.get(1)).isFlying());
+	}
+
+	@Test
 	void supportsExactlyThePacketsOfTheReleaseTable() {
 		McProtocolClientAdapter client = new McProtocolClientAdapter();
 
@@ -215,6 +230,7 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ServerboundMovePlayerPos.class));
 		assertTrue(client.supports(ServerboundMovePlayerRot.class));
 		assertTrue(client.supports(ServerboundMovePlayerStatusOnly.class));
+		assertTrue(client.supports(ServerboundPlayerAbilities.class));
 		assertTrue(client.supports(ServerboundPlayerCommand.class));
 		assertFalse(client.supports(ServerboundPlayerInput.class));
 		assertFalse(client.supports(ServerboundClientTickEnd.class));

@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_17_1;
 
 import com.github.steveice10.mc.protocol.data.game.entity.player.PlayerState;
 import com.github.steveice10.mc.protocol.data.game.entity.player.PositionElement;
+import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerAbilitiesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerMovementPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerRotationPacket;
@@ -12,6 +13,7 @@ import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPos;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerRot;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -71,6 +74,17 @@ class PlayerPacketsTest {
 		assertEquals(ClientboundPlayerAbilities.builder().invulnerable(true).flying(false).mayFly(true)
 						.instabuild(true).flyingSpeed(0.05f).walkingSpeed(0.1f).build(),
 				packets.decode(new ServerPlayerAbilitiesPacket(true, true, false, true, 0.05f, 0.1f)));
+	}
+
+	@Test
+	void encodesTheFlightThePlayerStartsOrStopsAsTheOnlyAbilityItTells() {
+		ClientPlayerAbilitiesPacket flying = assertInstanceOf(ClientPlayerAbilitiesPacket.class,
+				packets.encode(new ServerboundPlayerAbilities(true)));
+		ClientPlayerAbilitiesPacket landed = assertInstanceOf(ClientPlayerAbilitiesPacket.class,
+				packets.encode(new ServerboundPlayerAbilities(false)));
+
+		assertTrue(flying.isFlying());
+		assertFalse(landed.isFlying());
 	}
 
 	private PlayerState state(PlayerCommandAction action) {

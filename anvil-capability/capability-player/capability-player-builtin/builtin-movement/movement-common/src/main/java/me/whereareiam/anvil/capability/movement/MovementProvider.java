@@ -4,15 +4,14 @@ import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.movement.channel.MovementChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
 
 /**
- * Host-side provider for absolute movement and view changes over the player's typed channel, for the
- * libraries the movement family has a worker side for. Composition creates it only for players whose worker
+ * Host-side provider of the player's movement and client physics over its typed channel, for the libraries the
+ * movement family has a worker side for. Composition creates it only for players whose worker
  * installed the movement binding.
  */
 public final class MovementProvider implements ProtocolPlayerCapabilityProvider<Movement> {
@@ -35,7 +34,6 @@ public final class MovementProvider implements ProtocolPlayerCapabilityProvider<
 
 	@Override
 	public @NotNull Movement create(@NotNull ProtocolPlayerCapabilityContext context) {
-		ProtocolChannel channel = context.channel();
-		return position -> channel.request(MovementChannel.MOVE, position);
+		return new ChannelMovement(context.channel(), context.playerName());
 	}
 }

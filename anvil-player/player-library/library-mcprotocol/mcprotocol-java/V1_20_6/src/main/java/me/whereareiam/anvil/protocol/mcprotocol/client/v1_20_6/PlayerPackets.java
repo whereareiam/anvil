@@ -6,6 +6,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPos;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPosRot;
@@ -23,6 +24,7 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.Serv
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerPosRotPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerRotPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerStatusOnlyPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundPlayerAbilitiesPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundPlayerCommandPacket;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,7 +37,8 @@ import java.util.Set;
 /**
  * The player of the MCProtocolLib 1.20.6 and 1.21.1 releases: its movement, whose packets carry no horizontal
  * collision flag, its player command, which still tells sneaking as well as sprinting, the abilities the server grants
- * it, and the server's placement of it. A placement names relative coordinates and angles and carries no velocity: the
+ * it, the flight it starts or stops on its own, whose abilities packet carries only whether it flies, and the server's
+ * placement of it. A placement names relative coordinates and angles and carries no velocity: the
  * client keeps its velocity along each relative coordinate and stops it along each absolute one, which the translation
  * reports as a zero velocity that is relative along each relative coordinate.
  */
@@ -49,6 +52,7 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 				ServerboundMovePlayerPosRot.class,
 				ServerboundMovePlayerRot.class,
 				ServerboundMovePlayerStatusOnly.class,
+				ServerboundPlayerAbilities.class,
 				ServerboundPlayerCommand.class
 		);
 	}
@@ -87,6 +91,7 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 			case ServerboundMovePlayerStatusOnly status -> new ServerboundMovePlayerStatusOnlyPacket(status.isOnGround());
 			case ServerboundPlayerCommand command ->
 					new ServerboundPlayerCommandPacket(command.getEntityId().getValue(), state(command.getAction()));
+			case ServerboundPlayerAbilities abilities -> new ServerboundPlayerAbilitiesPacket(abilities.isFlying());
 			default -> null;
 		};
 	}

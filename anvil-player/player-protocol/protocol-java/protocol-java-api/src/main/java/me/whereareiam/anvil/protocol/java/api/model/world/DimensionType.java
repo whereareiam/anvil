@@ -13,7 +13,8 @@ import java.util.Map;
  * The type of a dimension the server put the player in: the block heights its levels span, and what decides how the
  * client renders them, their sky and the shading of block faces. Releases before Minecraft 1.21.11 name sky and
  * shading together as the type's effects, which every release reports in this form; a type with a mod's own effects
- * has neither. From Minecraft 26.1 a type also names the world clock its day follows.
+ * has neither. From Minecraft 26.1 a type also names the world clock its day follows. Every release tells whether lava
+ * is fast in the type's levels, which changes how its flow pushes the player.
  *
  * <pre>{@code
  * DimensionType nether = DimensionType.builder()
@@ -41,7 +42,9 @@ public class DimensionType {
 	private static final Map<String, DimensionType> VANILLA = Map.of(
 			"minecraft:overworld", withEffects("minecraft:overworld", "minecraft:overworld", -64, 384),
 			"minecraft:overworld_caves", withEffects("minecraft:overworld_caves", "minecraft:overworld", -64, 384),
-			"minecraft:the_nether", withEffects("minecraft:the_nether", "minecraft:the_nether", 0, 256),
+			"minecraft:the_nether", withEffects("minecraft:the_nether", "minecraft:the_nether", 0, 256).toBuilder()
+					.fastLava(true)
+					.build(),
 			"minecraft:the_end", withEffects("minecraft:the_end", "minecraft:the_end", 0, 256)
 	);
 
@@ -74,6 +77,15 @@ public class DimensionType {
 	 * no other height.
 	 */
 	int height;
+	/**
+	 * Whether lava is fast in the type's levels, as in the vanilla nether: it spreads farther and sooner, and its flow
+	 * pushes an entity in it by {@code 0.007} rather than {@code 0.0023333333333333335} per tick, which the client
+	 * moves its own player by. Releases before Minecraft 1.21.11 tell it by the type's {@code ultrawarm}, which also
+	 * makes water evaporate; from Minecraft 1.21.11 by the type's {@code minecraft:gameplay/fast_lava} environment
+	 * attribute. A timeline of the type that changes the attribute over time is not followed: this is the type's own
+	 * value.
+	 */
+	boolean fastLava;
 
 	/**
 	 * Describes a type by the effects that releases before Minecraft 1.21.11 name.
@@ -82,7 +94,8 @@ public class DimensionType {
 	 * @param effects the type's effects, such as {@code minecraft:the_nether}
 	 * @param minY the lowest block height of the type's levels
 	 * @param height the number of block heights the type's levels span
-	 * @return the type, without a skybox or shading for a mod's own effects
+	 * @return the type, without a skybox or shading for a mod's own effects and with slow lava, which
+	 * {@link #toBuilder()} changes for an {@code ultrawarm} type
 	 */
 	public static @NotNull DimensionType withEffects(
 			@NotNull String key,
@@ -105,7 +118,8 @@ public class DimensionType {
 	 * synchronized without its description because the client named that pack among those it knows.
 	 *
 	 * @param key the type's key
-	 * @return the type without a world clock, or {@code null} when no vanilla type has that key
+	 * @return the type without a world clock, with fast lava for the nether alone, or {@code null} when no vanilla type
+	 * has that key
 	 */
 	public static @Nullable DimensionType known(@NotNull String key) {
 		return VANILLA.get(key);
