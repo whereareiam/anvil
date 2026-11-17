@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.player;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 
 /**
@@ -9,6 +10,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
  * and walks.
  */
 @Value
+@FieldNameConstants
 @Builder
 public class ClientboundPlayerAbilities implements ClientboundPacket {
 	/**

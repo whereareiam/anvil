@@ -34,6 +34,6 @@ public final class PacketsProvider implements ProtocolPlayerCapabilityProvider<P
 
 	@Override
 	public @NotNull Packets create(@NotNull ProtocolPlayerCapabilityContext context) {
-		return new ChannelPackets(context.channel(), context.playerName(), context.clientVersion());
+		return new ChannelPackets(context.channel(), context.playerName(), context.clientVersion().toString());
 	}
 }

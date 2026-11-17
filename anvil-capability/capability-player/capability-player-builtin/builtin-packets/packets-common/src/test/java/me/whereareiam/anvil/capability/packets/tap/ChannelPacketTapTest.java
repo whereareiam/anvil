@@ -8,7 +8,7 @@ import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
 import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundBlockUpdate;
-import me.whereareiam.anvil.protocol.java.api.type.ConnectionState;
+import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

@@ -8,7 +8,7 @@ import me.whereareiam.anvil.capability.packets.model.RecordedPackets;
 import me.whereareiam.anvil.capability.packets.model.RecordingHeader;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundFrame;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.type.ConnectionState;
+import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.java.json.JavaProtocolJson;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

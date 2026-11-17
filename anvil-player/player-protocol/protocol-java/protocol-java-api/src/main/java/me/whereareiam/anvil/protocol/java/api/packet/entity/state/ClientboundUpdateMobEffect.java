@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.entity.state;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
@@ -11,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * the effect does of the packet's fields, not how the client shows it: some releases' libraries drop its icon flag.
  */
 @Value
+@FieldNameConstants
 @Builder
 public class ClientboundUpdateMobEffect implements ClientboundPacket {
 	/**

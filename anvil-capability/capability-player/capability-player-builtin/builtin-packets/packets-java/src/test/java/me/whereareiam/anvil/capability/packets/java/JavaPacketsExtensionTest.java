@@ -1,12 +1,13 @@
 package me.whereareiam.anvil.capability.packets.java;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.capability.packets.channel.PacketsChannel;
 import me.whereareiam.anvil.capability.packets.channel.TapRequest;
 import me.whereareiam.anvil.capability.packets.channel.TappedFrame;
 import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
-import me.whereareiam.anvil.protocol.java.api.type.ConnectionState;
+import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.java.worker.TestJavaPlayer;
 import me.whereareiam.anvil.protocol.worker.TestOperations;
 import org.junit.jupiter.api.Test;
@@ -105,7 +106,7 @@ class JavaPacketsExtensionTest {
 
 	@Test
 	void refusesNamesForAProtocolAnvilShipsNoNamesFor() {
-		TestJavaPlayer unnamed = new TestJavaPlayer("Bob", 777, type -> true);
+		TestJavaPlayer unnamed = new TestJavaPlayer("Bob", MinecraftVersion.parse("26.3"), 777, type -> true);
 		TestOperations unnamedOperations = new TestOperations();
 		new JavaPacketsExtension().bind(unnamed, unnamedOperations);
 

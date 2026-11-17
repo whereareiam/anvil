@@ -69,7 +69,8 @@ class PlayerCapabilityRuntimeTest {
 				"me.whereareiam.anvil.sounds",
 				"me.whereareiam.anvil.vitals",
 				"me.whereareiam.anvil.entities",
-				"me.whereareiam.anvil.world"
+				"me.whereareiam.anvil.world",
+				"me.whereareiam.anvil.packets"
 		), PlayerCapabilityRuntime.discover().providers().stream()
 				.map(CapabilityDescriptor::getId)
 				.collect(Collectors.toSet()));
