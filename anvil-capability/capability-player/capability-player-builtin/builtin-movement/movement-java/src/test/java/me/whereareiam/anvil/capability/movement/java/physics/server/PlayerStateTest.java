@@ -12,6 +12,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbi
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
 import me.whereareiam.anvil.protocol.java.api.type.player.GameMode;
 import me.whereareiam.anvil.protocol.java.api.type.world.GameEventType;
+import me.whereareiam.anvil.protocol.java.physics.living.effect.MobEffect;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 

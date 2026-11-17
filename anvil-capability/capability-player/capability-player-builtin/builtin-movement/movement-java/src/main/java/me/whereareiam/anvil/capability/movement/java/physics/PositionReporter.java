@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.capability.movement.java.physics;
 
+import me.whereareiam.anvil.capability.movement.java.physics.player.PlayerBody;
 import me.whereareiam.anvil.capability.movement.java.physics.server.PlayerState;
-import me.whereareiam.anvil.capability.movement.java.physics.simulation.PlayerBody;
 import me.whereareiam.anvil.capability.movement.model.MovementInput;
 import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;

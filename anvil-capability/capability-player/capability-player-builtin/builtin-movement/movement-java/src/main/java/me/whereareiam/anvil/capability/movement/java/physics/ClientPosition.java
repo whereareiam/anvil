@@ -1,14 +1,14 @@
 package me.whereareiam.anvil.capability.movement.java.physics;
 
-import me.whereareiam.anvil.capability.movement.java.physics.geometry.Vector;
+import me.whereareiam.anvil.capability.movement.java.physics.player.PlayerSimulation;
 import me.whereareiam.anvil.capability.movement.java.physics.server.PlayerState;
-import me.whereareiam.anvil.capability.movement.java.physics.simulation.PlayerSimulation;
-import me.whereareiam.anvil.capability.movement.java.physics.world.BlockReader;
 import me.whereareiam.anvil.capability.movement.model.MovementInput;
 import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
 import me.whereareiam.anvil.protocol.java.api.JavaWorld;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
+import me.whereareiam.anvil.protocol.java.physics.world.BlockReader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -1,8 +1,7 @@
 package me.whereareiam.anvil.capability.movement.java.physics;
 
-import me.whereareiam.anvil.capability.movement.java.physics.geometry.Vector;
+import me.whereareiam.anvil.capability.movement.java.physics.player.PlayerSimulation;
 import me.whereareiam.anvil.capability.movement.java.physics.server.PlayerState;
-import me.whereareiam.anvil.capability.movement.java.physics.simulation.PlayerSimulation;
 import me.whereareiam.anvil.capability.movement.model.MovementInput;
 import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
@@ -15,6 +14,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMove
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerRot;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerStatusOnly;
 import me.whereareiam.anvil.protocol.java.api.type.player.PlayerCommandAction;
+import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

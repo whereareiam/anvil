@@ -6,6 +6,7 @@ import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.cookies.Cookies;
 import me.whereareiam.anvil.capability.messages.Messages;
+import me.whereareiam.anvil.capability.movement.Movement;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.capability.sounds.Sounds;
 import me.whereareiam.anvil.capability.world.World;
@@ -67,6 +68,9 @@ class ExternalJavaLibraryIntegrationTest {
 			session.connected();
 			assertEquals("minecraft:stone", blocks.until(floor, BlockQuery.named("stone")).name());
 			assertEquals(Set.of(new ChunkPosition(0, 0)), blocks.loadedChunks());
+			Movement movement = alice.capability(Movement.class);
+			assertFalse(movement.physics().isEnabled(), "Movement binds on the physics kit");
+			assertEquals(Optional.empty(), movement.position());
 			Messages messages = alice.capability(Messages.class);
 			messages.chat("hello");
 			messages.command("anvil ping");

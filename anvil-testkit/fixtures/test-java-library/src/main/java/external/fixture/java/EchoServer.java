@@ -14,6 +14,8 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetDefaultSpawnPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetTime;
@@ -35,9 +37,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * A release that carries chat and the packets of the world, and a server that answers them: it puts a joining player
- * in the overworld with one chunk column, whose lowest blocks are stone, and answers chat as the player's chat and a
- * command as a system message naming it.
+ * A release that carries chat, the packets of the world and the teleports and velocity of the player's own entity, and
+ * a server that answers them: it puts a joining player in the overworld with one chunk column, whose lowest blocks are
+ * stone, and answers chat as the player's chat and a command as a system message naming it.
  */
 final class EchoServer {
 	private static final Set<Class<? extends JavaPacket>> CARRIED = Set.of(
@@ -47,6 +49,8 @@ final class EchoServer {
 			ClientboundSystemChat.class,
 			ClientboundLogin.class,
 			ClientboundRespawn.class,
+			ClientboundPlayerPosition.class,
+			ClientboundSetEntityMotion.class,
 			ClientboundSetTime.class,
 			ClientboundGameEvent.class,
 			ClientboundSetDefaultSpawnPosition.class,
