@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_3;
 
 import me.whereareiam.anvil.protocol.java.api.model.entity.DisplayText;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
@@ -34,12 +35,12 @@ class EntityPacketsTest {
 
 	@Test
 	void decodesASpawnAndTheDataOfADisplayWithThe1_21_11Layout() {
-		assertEquals(ClientboundAddEntity.builder().entityId(8).uniqueId(new UUID(0, 8))
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(8)).uniqueId(new UUID(0, 8))
 						.type(EntityTypeKey.minecraft("text_display")).position(new Vec3d(0, 66, 0)).build(),
 				packets.decode(new ClientboundAddEntityPacket(8, new UUID(0, 8), EntityType.TEXT_DISPLAY, 0, 66, 0, 0,
 						0, 0)));
 
-		assertEquals(new ClientboundSetEntityData(8, List.of(new DisplayText("bubble"))),
+		assertEquals(new ClientboundSetEntityData(new EntityId(8), List.of(new DisplayText("bubble"))),
 				packets.decode(new ClientboundSetEntityDataPacket(8, new ObjectEntityMetadata<?>[]{
 						new ObjectEntityMetadata<>(23, MetadataTypes.COMPONENT, Component.text("bubble"))
 				})));
@@ -47,7 +48,7 @@ class EntityPacketsTest {
 
 	@Test
 	void decodesRelativeTeleports() {
-		assertEquals(ClientboundTeleportEntity.builder().entityId(7).position(new Vec3d(1, 2, 3)).yaw(15).pitch(5)
+		assertEquals(ClientboundTeleportEntity.builder().entityId(new EntityId(7)).position(new Vec3d(1, 2, 3)).yaw(15).pitch(5)
 						.relatives(Set.of(Relative.X, Relative.PITCH)).build(),
 				packets.decode(new ClientboundTeleportEntityPacket(7, Vector3d.from(1, 2, 3), Vector3d.ZERO, 15, 5,
 						List.of(PositionElement.X, PositionElement.X_ROT), false)));
@@ -58,7 +59,7 @@ class EntityPacketsTest {
 		ClientboundEntityPositionSyncPacket sync = new ClientboundEntityPositionSyncPacket(7, false, Vector3d.from(4, 5, 6),
 				null, 30, 20, true);
 
-		assertEquals(ClientboundEntityPositionSync.builder().entityId(7).position(new Vec3d(4, 5, 6)).yaw(30).pitch(20)
+		assertEquals(ClientboundEntityPositionSync.builder().entityId(new EntityId(7)).position(new Vec3d(4, 5, 6)).yaw(30).pitch(20)
 				.build(), packets.decode(sync));
 	}
 
@@ -69,13 +70,13 @@ class EntityPacketsTest {
 				new ClientboundEntityPositionSyncPacket.PositionStep(Vector3d.from(4, 5, 6), 2)
 		), 30, 20, true);
 
-		assertEquals(ClientboundEntityPositionSync.builder().entityId(7).position(new Vec3d(4, 5, 6)).yaw(30).pitch(20)
+		assertEquals(ClientboundEntityPositionSync.builder().entityId(new EntityId(7)).position(new Vec3d(4, 5, 6)).yaw(30).pitch(20)
 				.build(), packets.decode(sync));
 	}
 
 	@Test
 	void decodesTheVelocityTheServerSets() {
-		assertEquals(new ClientboundSetEntityMotion(7, new Vec3d(0, 0.42, 0)),
+		assertEquals(new ClientboundSetEntityMotion(new EntityId(7), new Vec3d(0, 0.42, 0)),
 				packets.decode(new ClientboundSetEntityMotionPacket(7, Vector3d.from(0, 0.42, 0))));
 	}
 }

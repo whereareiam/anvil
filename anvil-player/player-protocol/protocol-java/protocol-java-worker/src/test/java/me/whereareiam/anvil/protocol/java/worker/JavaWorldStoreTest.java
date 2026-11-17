@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.worker;
 
 import me.whereareiam.anvil.protocol.java.api.JavaWorld;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.model.world.Level;
@@ -213,7 +214,7 @@ class JavaWorldStoreTest {
 	}
 
 	private static ClientboundLogin login(String level, DimensionType type) {
-		return ClientboundLogin.builder().entityId(1).level(level).dimension(level).dimensionType(type).build();
+		return ClientboundLogin.builder().entityId(new EntityId(1)).level(level).dimension(level).dimensionType(type).build();
 	}
 
 	private static ClientboundRespawn respawn(String level, DimensionType type) {

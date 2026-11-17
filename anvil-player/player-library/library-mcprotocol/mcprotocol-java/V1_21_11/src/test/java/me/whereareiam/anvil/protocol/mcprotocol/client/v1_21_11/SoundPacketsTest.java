@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
@@ -61,7 +62,7 @@ class SoundPacketsTest {
 		assertEquals(ClientboundSoundEntity.builder()
 				.sound("minecraft:ui.toast.in")
 				.source(SoundSource.MASTER)
-				.entityId(42)
+				.entityId(new EntityId(42))
 				.volume(1F)
 				.pitch(0.5F)
 				.seed(3L)

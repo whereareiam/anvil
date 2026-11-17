@@ -10,6 +10,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.ServerEntitySoundE
 import com.github.steveice10.mc.protocol.packet.ingame.server.world.ServerPlayBuiltinSoundPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.world.ServerPlaySoundPacket;
 import com.github.steveice10.packetlib.packet.Packet;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
@@ -59,7 +60,7 @@ public final class SoundPackets implements PacketTranslation<Packet> {
 		return ClientboundSoundEntity.builder()
 				.sound(builtinKey(sound.getSoundId()))
 				.source(source(sound.getSoundCategory()))
-				.entityId(sound.getEntityId())
+				.entityId(new EntityId(sound.getEntityId()))
 				.volume(sound.getVolume())
 				.pitch(sound.getPitch())
 				.build();

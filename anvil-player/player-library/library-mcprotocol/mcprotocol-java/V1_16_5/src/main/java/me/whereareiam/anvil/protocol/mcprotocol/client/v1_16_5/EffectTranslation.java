@@ -4,6 +4,7 @@ import com.github.steveice10.mc.protocol.data.game.entity.Effect;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityEffectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityRemoveEffectPacket;
 import com.github.steveice10.packetlib.packet.Packet;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -30,13 +31,13 @@ public abstract class EffectTranslation implements PacketTranslation<Packet> {
 	public final @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		return switch (packet) {
 			case ServerEntityEffectPacket update -> ClientboundUpdateMobEffect.builder()
-					.entityId(update.getEntityId())
+					.entityId(new EntityId(update.getEntityId()))
 					.effect(key(update.getEffect()))
 					.amplifier(update.getAmplifier())
 					.duration(update.getDuration())
 					.build();
 			case ServerEntityRemoveEffectPacket removal ->
-					new ClientboundRemoveMobEffect(removal.getEntityId(), key(removal.getEffect()));
+					new ClientboundRemoveMobEffect(new EntityId(removal.getEntityId()), key(removal.getEffect()));
 			default -> null;
 		};
 	}

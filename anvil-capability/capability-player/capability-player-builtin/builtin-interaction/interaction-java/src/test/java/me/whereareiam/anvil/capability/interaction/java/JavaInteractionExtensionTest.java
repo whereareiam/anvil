@@ -11,6 +11,7 @@ import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -134,9 +135,9 @@ class JavaInteractionExtensionTest {
 		operations.call(InteractionChannel.ITEM, new ItemUse(Hand.MAIN));
 
 		assertEquals(List.of(
-				new ServerboundAttack(42),
+				new ServerboundAttack(new EntityId(42)),
 				new ServerboundSwing(InteractionHand.MAIN_HAND),
-				ServerboundInteract.builder().entityId(43).action(InteractAction.INTERACT).hand(InteractionHand.OFF_HAND).build(),
+				ServerboundInteract.builder().entityId(new EntityId(43)).action(InteractAction.INTERACT).hand(InteractionHand.OFF_HAND).build(),
 				new ServerboundSwing(InteractionHand.OFF_HAND),
 				new ServerboundSwing(InteractionHand.MAIN_HAND),
 				ServerboundUseItem.builder().hand(InteractionHand.MAIN_HAND).sequence(1).build()
@@ -161,9 +162,9 @@ class JavaInteractionExtensionTest {
 		operations.call(InteractionChannel.ITEM, new ItemUse(Hand.MAIN));
 
 		assertEquals(List.of(
-				new ServerboundAttack(42),
+				new ServerboundAttack(new EntityId(42)),
 				new ServerboundPunch(),
-				ServerboundInteract.builder().entityId(43).action(InteractAction.INTERACT).hand(InteractionHand.OFF_HAND).build(),
+				ServerboundInteract.builder().entityId(new EntityId(43)).action(InteractAction.INTERACT).hand(InteractionHand.OFF_HAND).build(),
 				ServerboundUseItem.builder().hand(InteractionHand.MAIN_HAND).sequence(1).build()
 		), punching.sent());
 	}

@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
@@ -73,20 +74,20 @@ public abstract class SyncedEntityTranslation extends EntityTranslation {
 			case ClientboundAddEntityPacket add -> added(add.getEntityId(), add.getUuid(), add.getType(),
 					new Vec3d(add.getX(), add.getY(), add.getZ()), add.getYaw(), add.getPitch());
 			case ClientboundTeleportEntityPacket teleport -> ClientboundTeleportEntity.builder()
-					.entityId(teleport.getId())
+					.entityId(new EntityId(teleport.getId()))
 					.position(ValueTranslator.vec3d(teleport.getPosition()))
 					.yaw(teleport.getYRot())
 					.pitch(teleport.getXRot())
 					.relatives(placement(PlayerPackets.relatives(teleport.getRelatives())))
 					.build();
 			case ClientboundEntityPositionSyncPacket sync -> ClientboundEntityPositionSync.builder()
-					.entityId(sync.getId())
+					.entityId(new EntityId(sync.getId()))
 					.position(ValueTranslator.vec3d(syncedPosition(sync)))
 					.yaw(sync.getYRot())
 					.pitch(sync.getXRot())
 					.build();
 			case ClientboundSetEntityMotionPacket motion ->
-					new ClientboundSetEntityMotion(motion.getEntityId(), ValueTranslator.vec3d(motion.getMovement()));
+					new ClientboundSetEntityMotion(new EntityId(motion.getEntityId()), ValueTranslator.vec3d(motion.getMovement()));
 			default -> null;
 		};
 	}

@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.entity.state;
 
 import lombok.Value;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeSnapshot;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +17,7 @@ public class ClientboundUpdateAttributes implements ClientboundPacket {
 	/**
 	 * The entity's protocol ID.
 	 */
-	int entityId;
+	@NotNull EntityId entityId;
 	/**
 	 * The attributes the server sent, in its order.
 	 */

@@ -10,6 +10,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlaye
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerAbilitiesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerPositionRotationPacket;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
@@ -79,7 +80,7 @@ class PlayerPacketsTest {
 
 		for (PlayerCommandAction action : PlayerCommandAction.values()) {
 			ClientPlayerStatePacket state = assertInstanceOf(ClientPlayerStatePacket.class,
-					packets.encode(new ServerboundPlayerCommand(7, action)));
+					packets.encode(new ServerboundPlayerCommand(new EntityId(7), action)));
 			assertEquals(7, state.getEntityId());
 			assertEquals(states.get(action), state.getState());
 		}

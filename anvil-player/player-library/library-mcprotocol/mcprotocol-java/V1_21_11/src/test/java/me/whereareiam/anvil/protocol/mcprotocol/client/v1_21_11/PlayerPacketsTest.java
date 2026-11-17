@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
@@ -111,17 +112,17 @@ class PlayerPacketsTest {
 	@Test
 	void encodesSprintingAndRefusesSneakingWhichTheReleaseTellsOnlyThroughTheKeys() {
 		ServerboundPlayerCommandPacket start = assertInstanceOf(ServerboundPlayerCommandPacket.class,
-				packets.encode(new ServerboundPlayerCommand(42, PlayerCommandAction.START_SPRINTING)));
+				packets.encode(new ServerboundPlayerCommand(new EntityId(42), PlayerCommandAction.START_SPRINTING)));
 		assertEquals(42, start.getEntityId());
 		assertEquals(PlayerState.START_SPRINTING, start.getState());
 		assertEquals(PlayerState.STOP_SPRINTING, ((ServerboundPlayerCommandPacket) packets.encode(
-				new ServerboundPlayerCommand(42, PlayerCommandAction.STOP_SPRINTING))).getState());
+				new ServerboundPlayerCommand(new EntityId(42), PlayerCommandAction.STOP_SPRINTING))).getState());
 
 		ProtocolUnavailableException refused = assertThrows(ProtocolUnavailableException.class,
-				() -> packets.encode(new ServerboundPlayerCommand(42, PlayerCommandAction.PRESS_SHIFT_KEY)));
+				() -> packets.encode(new ServerboundPlayerCommand(new EntityId(42), PlayerCommandAction.PRESS_SHIFT_KEY)));
 		assertTrue(refused.getMessage().contains("PRESS_SHIFT_KEY"));
 		assertThrows(ProtocolUnavailableException.class,
-				() -> packets.encode(new ServerboundPlayerCommand(42, PlayerCommandAction.RELEASE_SHIFT_KEY)));
+				() -> packets.encode(new ServerboundPlayerCommand(new EntityId(42), PlayerCommandAction.RELEASE_SHIFT_KEY)));
 	}
 
 	@Test

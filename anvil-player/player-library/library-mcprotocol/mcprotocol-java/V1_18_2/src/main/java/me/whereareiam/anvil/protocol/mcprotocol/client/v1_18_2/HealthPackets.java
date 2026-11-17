@@ -6,6 +6,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientCommandPacket;
 import com.github.steveice10.packetlib.packet.Packet;
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -38,7 +39,8 @@ public final class HealthPackets implements PacketTranslation<Packet> {
 			case ClientboundSetHealthPacket health ->
 					new ClientboundSetHealth(health.getHealth(), health.getFood(), health.getSaturation());
 			case ClientboundPlayerCombatKillPacket kill ->
-					new ClientboundPlayerCombatKill(kill.getPlayerId(), text.translate(kill.getMessage()).plain());
+					new ClientboundPlayerCombatKill(new EntityId(kill.getPlayerId()),
+							text.translate(kill.getMessage()).plain());
 			default -> null;
 		};
 	}

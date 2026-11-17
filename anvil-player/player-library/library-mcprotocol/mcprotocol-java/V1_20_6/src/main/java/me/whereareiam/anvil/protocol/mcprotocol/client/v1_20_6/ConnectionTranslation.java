@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
@@ -71,7 +72,7 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 			case ClientboundLoginPacket login -> {
 				PlayerSpawnInfo spawn = login.getCommonPlayerSpawnInfo();
 				yield entered(ClientboundLogin.builder()
-						.entityId(login.getEntityId())
+						.entityId(new EntityId(login.getEntityId()))
 						.levels(Arrays.stream(login.getWorldNames()).map(Key::asString).toList())
 						.hardcore(login.isHardcore())
 						.dimension(spawn.getWorldName().asString())

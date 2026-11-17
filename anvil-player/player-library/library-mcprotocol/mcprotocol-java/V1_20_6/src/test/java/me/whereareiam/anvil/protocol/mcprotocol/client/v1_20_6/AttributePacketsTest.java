@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeModifier;
 import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeSnapshot;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -38,7 +39,7 @@ class AttributePacketsTest {
 				new Attribute(AttributeType.Builtin.PLAYER_BLOCK_INTERACTION_RANGE, 4.5),
 				new Attribute(AttributeType.Builtin.ZOMBIE_SPAWN_REINFORCEMENTS, 0.05)));
 
-		assertEquals(new ClientboundUpdateAttributes(42, List.of(
+		assertEquals(new ClientboundUpdateAttributes(new EntityId(42), List.of(
 				new AttributeSnapshot("minecraft:movement_speed", 0.1, List.of(
 						new AttributeModifier(SPRINTING.toString(), 0.3, AttributeOperation.ADD_MULTIPLIED_TOTAL),
 						new AttributeModifier(BOOST.toString(), 0.5, AttributeOperation.ADD_MULTIPLIED_BASE),

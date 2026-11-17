@@ -48,7 +48,7 @@ public final class JavaSoundsExtension implements WorkerExtension<Object> {
 						.category(category(sound.getSource()))
 						.volume(sound.getVolume())
 						.pitch(sound.getPitch())
-						.entityId(sound.getEntityId())))
+						.entityId(sound.getEntityId().getValue())))
 		);
 
 		return heard::close;

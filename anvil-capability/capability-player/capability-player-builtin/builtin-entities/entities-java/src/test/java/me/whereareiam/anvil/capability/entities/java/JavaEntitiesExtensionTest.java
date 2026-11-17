@@ -9,6 +9,7 @@ import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
@@ -95,7 +96,7 @@ class JavaEntitiesExtensionTest {
 		player.deliver(spawn(7, "zombie", 0, 0, 0));
 		player.rejoin();
 		player.deliver(spawn(8, "zombie", 0, 0, 0));
-		player.deliver(ClientboundMoveEntityPos.builder().entityId(8).delta(new Vec3d(4, 0, 0)).build());
+		player.deliver(ClientboundMoveEntityPos.builder().entityId(new EntityId(8)).delta(new Vec3d(4, 0, 0)).build());
 
 		List<SeenEntity> known = operations.call(EntitiesChannel.KNOWN, null).getEntities();
 		assertEquals(List.of("entities.known"), operations.registered());
@@ -111,13 +112,13 @@ class JavaEntitiesExtensionTest {
 		player.connect();
 
 		player.deliver(spawn(7, "armor_stand", 1.5, 64, -2.5));
-		player.deliver(ClientboundAddEntity.builder().entityId(8).uniqueId(new UUID(0, 8))
+		player.deliver(ClientboundAddEntity.builder().entityId(new EntityId(8)).uniqueId(new UUID(0, 8))
 				.type(EntityTypeKey.minecraft("zombie")).position(new Vec3d(0, 66, 0)).yaw(180).pitch(20).build());
-		player.deliver(ClientboundAddEntity.builder().entityId(9).uniqueId(new UUID(0, 9))
+		player.deliver(ClientboundAddEntity.builder().entityId(new EntityId(9)).uniqueId(new UUID(0, 9))
 				.type(EntityTypeKey.minecraft("player")).position(new Vec3d(2, 64, 2)).yaw(270).pitch(-30).build());
-		player.deliver(ClientboundAddEntity.builder().entityId(10).uniqueId(new UUID(0, 10))
+		player.deliver(ClientboundAddEntity.builder().entityId(new EntityId(10)).uniqueId(new UUID(0, 10))
 				.type(EntityTypeKey.minecraft("painting")).position(new Vec3d(4, 65, 4)).build());
-		player.deliver(ClientboundAddEntity.builder().entityId(11).type(EntityTypeKey.minecraft("experience_orb"))
+		player.deliver(ClientboundAddEntity.builder().entityId(new EntityId(11)).type(EntityTypeKey.minecraft("experience_orb"))
 				.position(new Vec3d(1, 2, 3)).build());
 
 		List<SeenEntity> spawned = changes().stream().map(EntityChange::getEntity).toList();
@@ -137,9 +138,9 @@ class JavaEntitiesExtensionTest {
 
 		player.deliver(login(PLAYER));
 		player.deliver(spawn(7, "armor_stand", 0, 0, 0));
-		player.deliver(new ClientboundSetEntityData(7, List.of(new CustomName("Alice: hello"))));
-		player.deliver(new ClientboundSetPassengers(PLAYER, List.of(7)));
-		player.deliver(new ClientboundRemoveEntities(List.of(7)));
+		player.deliver(new ClientboundSetEntityData(new EntityId(7), List.of(new CustomName("Alice: hello"))));
+		player.deliver(new ClientboundSetPassengers(new EntityId(PLAYER), List.of(new EntityId(7))));
+		player.deliver(new ClientboundRemoveEntities(List.of(new EntityId(7))));
 
 		assertEquals(List.of(EntityChangeKind.APPEARED, EntityChangeKind.CHANGED, EntityChangeKind.CHANGED,
 				EntityChangeKind.DISAPPEARED), changes().stream().map(EntityChange::getKind).toList());
@@ -153,15 +154,15 @@ class JavaEntitiesExtensionTest {
 		player.connect();
 		player.deliver(spawn(7, "zombie", 1, 2, 3));
 
-		player.deliver(ClientboundMoveEntityPosRot.builder().entityId(7).delta(new Vec3d(1, 0, 0)).yaw(90).pitch(10)
+		player.deliver(ClientboundMoveEntityPosRot.builder().entityId(new EntityId(7)).delta(new Vec3d(1, 0, 0)).yaw(90).pitch(10)
 				.build());
 		assertEquals(List.of(2.0, 2.0, 3.0, 90f, 10f), place());
-		player.deliver(new ClientboundMoveEntityRot(7, 180, -10));
+		player.deliver(new ClientboundMoveEntityRot(new EntityId(7), 180, -10));
 		assertEquals(List.of(2.0, 2.0, 3.0, 180f, -10f), place());
-		player.deliver(ClientboundTeleportEntity.builder().entityId(7).position(new Vec3d(1, 2, 3)).yaw(15)
+		player.deliver(ClientboundTeleportEntity.builder().entityId(new EntityId(7)).position(new Vec3d(1, 2, 3)).yaw(15)
 				.pitch(5).relatives(Set.of(Relative.Y, Relative.YAW)).build());
 		assertEquals(List.of(1.0, 4.0, 3.0, 195f, 5f), place());
-		player.deliver(ClientboundEntityPositionSync.builder().entityId(7).position(new Vec3d(4, 5, 6)).yaw(30)
+		player.deliver(ClientboundEntityPositionSync.builder().entityId(new EntityId(7)).position(new Vec3d(4, 5, 6)).yaw(30)
 				.pitch(20).build());
 		assertEquals(List.of(4.0, 5.0, 6.0, 30f, 20f), place());
 		assertEquals(1, changes().size());
@@ -243,7 +244,7 @@ class JavaEntitiesExtensionTest {
 
 	private static ClientboundAddEntity spawn(int entityId, String type, double x, double y, double z) {
 		return ClientboundAddEntity.builder()
-				.entityId(entityId)
+				.entityId(new EntityId(entityId))
 				.uniqueId(new UUID(0, entityId))
 				.type(EntityTypeKey.minecraft(type))
 				.position(new Vec3d(x, y, z))
@@ -261,7 +262,7 @@ class JavaEntitiesExtensionTest {
 
 	private static ClientboundLogin login(int entityId) {
 		return ClientboundLogin.builder()
-				.entityId(entityId)
+				.entityId(new EntityId(entityId))
 				.level("minecraft:overworld")
 				.dimension("minecraft:overworld")
 				.dimensionType(DimensionType.known("minecraft:overworld"))

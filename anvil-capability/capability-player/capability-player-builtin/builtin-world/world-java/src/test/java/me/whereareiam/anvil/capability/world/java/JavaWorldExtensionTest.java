@@ -16,6 +16,7 @@ import me.whereareiam.anvil.capability.world.type.WeatherType;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.model.world.ClockState;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
@@ -91,7 +92,7 @@ class JavaWorldExtensionTest {
 		connect();
 
 		player.deliver(ClientboundLogin.builder()
-				.entityId(7)
+				.entityId(new EntityId(7))
 				.level(OVERWORLD)
 				.level(ARENA)
 				.hardcore(true)
@@ -320,7 +321,7 @@ class JavaWorldExtensionTest {
 
 	private static ClientboundLogin login(int entityId, String dimension, DimensionType type) {
 		return ClientboundLogin.builder()
-				.entityId(entityId)
+				.entityId(new EntityId(entityId))
 				.level(OVERWORLD)
 				.level(NETHER)
 				.dimension(dimension)

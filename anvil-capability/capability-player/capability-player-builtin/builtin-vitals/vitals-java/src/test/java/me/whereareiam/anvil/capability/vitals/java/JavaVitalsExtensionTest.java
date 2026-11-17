@@ -6,6 +6,7 @@ import me.whereareiam.anvil.capability.vitals.model.VitalStatus;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundPlayerCombatKill;
@@ -66,8 +67,8 @@ class JavaVitalsExtensionTest {
 	void emitsTheDeathsOfThePlayersOwnEntityWithTheirMessageAndStaysDead() {
 		connect(true);
 
-		player.deliver(new ClientboundPlayerCombatKill(PLAYER + 1, "death.attack.genericKill Bob"));
-		player.deliver(new ClientboundPlayerCombatKill(PLAYER, KILLED));
+		player.deliver(new ClientboundPlayerCombatKill(new EntityId(PLAYER + 1), "death.attack.genericKill Bob"));
+		player.deliver(new ClientboundPlayerCombatKill(new EntityId(PLAYER), KILLED));
 
 		assertEquals(List.of(new Death(KILLED, false)), player.emitted(VitalsChannel.DIED));
 		assertTrue(player.sent().isEmpty());
@@ -77,7 +78,7 @@ class JavaVitalsExtensionTest {
 	void respawnsByItselfWhenTheLoginTurnedTheDeathScreenOff() {
 		connect(false);
 
-		player.deliver(new ClientboundPlayerCombatKill(PLAYER, KILLED));
+		player.deliver(new ClientboundPlayerCombatKill(new EntityId(PLAYER), KILLED));
 
 		assertEquals(List.of(new Death(KILLED, true)), player.emitted(VitalsChannel.DIED));
 		assertEquals(List.of(RESPAWN), player.sent());
@@ -88,18 +89,18 @@ class JavaVitalsExtensionTest {
 		connect(true);
 		player.deliver(new ClientboundGameEvent(GameEventType.IMMEDIATE_RESPAWN, 1F));
 		player.deliver(new ClientboundGameEvent(GameEventType.START_RAINING, 0F));
-		player.deliver(new ClientboundPlayerCombatKill(PLAYER, KILLED));
+		player.deliver(new ClientboundPlayerCombatKill(new EntityId(PLAYER), KILLED));
 		player.deliver(new ClientboundGameEvent(GameEventType.IMMEDIATE_RESPAWN, 0F));
-		player.deliver(new ClientboundPlayerCombatKill(PLAYER, KILLED));
+		player.deliver(new ClientboundPlayerCombatKill(new EntityId(PLAYER), KILLED));
 
 		assertEquals(List.of(new Death(KILLED, true), new Death(KILLED, false)), player.emitted(VitalsChannel.DIED));
 		assertEquals(List.of(RESPAWN), player.sent());
 
 		player.deliver(new ClientboundGameEvent(GameEventType.IMMEDIATE_RESPAWN, 1F));
 		player.rejoin();
-		player.deliver(new ClientboundPlayerCombatKill(PLAYER, KILLED));
+		player.deliver(new ClientboundPlayerCombatKill(new EntityId(PLAYER), KILLED));
 		player.deliver(login(true));
-		player.deliver(new ClientboundPlayerCombatKill(PLAYER, KILLED));
+		player.deliver(new ClientboundPlayerCombatKill(new EntityId(PLAYER), KILLED));
 
 		assertEquals(List.of(new Death(KILLED, true), new Death(KILLED, false), new Death(KILLED, false)),
 				player.emitted(VitalsChannel.DIED));
@@ -122,7 +123,7 @@ class JavaVitalsExtensionTest {
 
 		binding.close();
 		player.deliver(new ClientboundSetHealth(1F, 1, 0F));
-		player.deliver(new ClientboundPlayerCombatKill(PLAYER, KILLED));
+		player.deliver(new ClientboundPlayerCombatKill(new EntityId(PLAYER), KILLED));
 		player.rejoin();
 
 		assertEquals(List.of(VitalStatus.INITIAL), player.emitted(VitalsChannel.STATUS));
@@ -149,7 +150,7 @@ class JavaVitalsExtensionTest {
 
 	private static ClientboundLogin login(boolean deathScreen) {
 		return ClientboundLogin.builder()
-				.entityId(PLAYER)
+				.entityId(new EntityId(PLAYER))
 				.level(OVERWORLD)
 				.dimension(OVERWORLD)
 				.dimensionType(DimensionType.known(OVERWORLD))

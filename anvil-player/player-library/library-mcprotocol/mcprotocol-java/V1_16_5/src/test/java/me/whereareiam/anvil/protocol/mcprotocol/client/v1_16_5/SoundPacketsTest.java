@@ -7,6 +7,7 @@ import com.github.steveice10.mc.protocol.data.game.world.sound.SoundCategory;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerEntitySoundEffectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.world.ServerPlayBuiltinSoundPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.world.ServerPlaySoundPacket;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
@@ -45,7 +46,7 @@ class SoundPacketsTest {
 		assertEquals(ClientboundSoundEntity.builder()
 				.sound("minecraft:entity.player.levelup")
 				.source(SoundSource.MASTER)
-				.entityId(42)
+				.entityId(new EntityId(42))
 				.volume(1F)
 				.pitch(0.5F)
 				.build(), packets.decode(new ServerEntitySoundEffectPacket(levelUp, SoundCategory.MASTER, 42, 1F,

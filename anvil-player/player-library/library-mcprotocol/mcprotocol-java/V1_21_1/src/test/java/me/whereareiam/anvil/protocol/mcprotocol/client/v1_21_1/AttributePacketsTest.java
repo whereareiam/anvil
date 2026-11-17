@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeModifier;
 import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeSnapshot;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateAttributes;
@@ -32,7 +33,7 @@ class AttributePacketsTest {
 				new Attribute(AttributeType.Builtin.PLAYER_SNEAKING_SPEED, 0.3),
 				new Attribute(AttributeType.Builtin.GENERIC_WATER_MOVEMENT_EFFICIENCY, 0)));
 
-		assertEquals(new ClientboundUpdateAttributes(42, List.of(
+		assertEquals(new ClientboundUpdateAttributes(new EntityId(42), List.of(
 				new AttributeSnapshot("minecraft:movement_speed", 0.1, List.of(
 						new AttributeModifier("minecraft:sprinting", 0.3, AttributeOperation.ADD_MULTIPLIED_TOTAL),
 						new AttributeModifier("example:boost", 1, AttributeOperation.ADD_VALUE))),

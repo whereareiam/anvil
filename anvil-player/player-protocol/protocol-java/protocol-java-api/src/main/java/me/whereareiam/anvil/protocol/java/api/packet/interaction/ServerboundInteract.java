@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.interaction;
 
 import lombok.Builder;
 import lombok.Value;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.type.interaction.InteractAction;
@@ -20,7 +21,7 @@ public class ServerboundInteract implements ServerboundPacket {
 	/**
 	 * The protocol ID of the targeted entity.
 	 */
-	int entityId;
+	@NotNull EntityId entityId;
 	/**
 	 * Whether the player interacts with the entity or with a point of it.
 	 */

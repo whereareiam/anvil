@@ -22,6 +22,7 @@ import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomNameVisible;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityDataValue;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
 import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
@@ -117,29 +118,30 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 			case ServerSpawnExpOrbPacket orb -> added(orb.getEntityId(), null, EntityType.EXPERIENCE_ORB,
 					new Vec3d(orb.getX(), orb.getY(), orb.getZ()), NO_DIRECTION, NO_DIRECTION);
 			case ServerEntityPositionPacket move -> ClientboundMoveEntityPos.builder()
-					.entityId(move.getEntityId())
+					.entityId(new EntityId(move.getEntityId()))
 					.delta(new Vec3d(move.getMoveX(), move.getMoveY(), move.getMoveZ()))
 					.build();
 			case ServerEntityPositionRotationPacket move -> ClientboundMoveEntityPosRot.builder()
-					.entityId(move.getEntityId())
+					.entityId(new EntityId(move.getEntityId()))
 					.delta(new Vec3d(move.getMoveX(), move.getMoveY(), move.getMoveZ()))
 					.yaw(move.getYaw())
 					.pitch(move.getPitch())
 					.build();
 			case ServerEntityRotationPacket turn ->
-					new ClientboundMoveEntityRot(turn.getEntityId(), turn.getYaw(), turn.getPitch());
+					new ClientboundMoveEntityRot(new EntityId(turn.getEntityId()), turn.getYaw(), turn.getPitch());
 			case ServerEntityTeleportPacket teleport -> ClientboundTeleportEntity.builder()
-					.entityId(teleport.getEntityId())
+					.entityId(new EntityId(teleport.getEntityId()))
 					.position(new Vec3d(teleport.getX(), teleport.getY(), teleport.getZ()))
 					.yaw(teleport.getYaw())
 					.pitch(teleport.getPitch())
 					.relatives(Set.of())
 					.build();
-			case ServerEntityVelocityPacket motion -> new ClientboundSetEntityMotion(motion.getEntityId(),
+			case ServerEntityVelocityPacket motion -> new ClientboundSetEntityMotion(new EntityId(motion.getEntityId()),
 					new Vec3d(motion.getMotionX(), motion.getMotionY(), motion.getMotionZ()));
 			case ServerEntityMetadataPacket data -> data(data.getEntityId(), data.getMetadata());
-			case ServerEntitySetPassengersPacket passengers -> new ClientboundSetPassengers(passengers.getEntityId(),
-					Arrays.stream(passengers.getPassengerIds()).boxed().toList());
+			case ServerEntitySetPassengersPacket passengers -> new ClientboundSetPassengers(
+					new EntityId(passengers.getEntityId()),
+					Arrays.stream(passengers.getPassengerIds()).mapToObj(EntityId::new).toList());
 			default -> decodeRemoval(packet);
 		};
 	}
@@ -165,7 +167,7 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 	 */
 	protected final @NotNull ClientboundRemoveEntities removed(int @NotNull [] entityIds) {
 		for (int entityId : entityIds) types.remove(entityId);
-		return new ClientboundRemoveEntities(Arrays.stream(entityIds).boxed().toList());
+		return new ClientboundRemoveEntities(Arrays.stream(entityIds).mapToObj(EntityId::new).toList());
 	}
 
 	/**
@@ -186,7 +188,7 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 	) {
 		types.put(entityId, type);
 		return ClientboundAddEntity.builder()
-				.entityId(entityId)
+				.entityId(new EntityId(entityId))
 				.uniqueId(uniqueId)
 				.type(ValueTranslator.entityType(type))
 				.position(position)
@@ -204,7 +206,7 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 			if (value != null) values.add(value);
 		}
 
-		return new ClientboundSetEntityData(entityId, List.copyOf(values));
+		return new ClientboundSetEntityData(new EntityId(entityId), List.copyOf(values));
 	}
 
 	/**

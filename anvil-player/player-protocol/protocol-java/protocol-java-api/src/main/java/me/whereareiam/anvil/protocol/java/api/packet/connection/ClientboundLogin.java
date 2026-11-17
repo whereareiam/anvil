@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.connection;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.type.player.GameMode;
@@ -21,7 +22,7 @@ public class ClientboundLogin implements ClientboundPacket {
 	/**
 	 * The protocol ID of the player's own entity, which entities riding the player name as their vehicle.
 	 */
-	int entityId;
+	@NotNull EntityId entityId;
 	/**
 	 * The keys of every level the server has, with their namespaces, in the server's order.
 	 */

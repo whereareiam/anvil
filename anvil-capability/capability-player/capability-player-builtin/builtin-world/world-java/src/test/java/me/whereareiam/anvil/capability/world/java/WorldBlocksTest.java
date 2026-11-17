@@ -11,6 +11,7 @@ import me.whereareiam.anvil.capability.world.model.block.BlockPosition;
 import me.whereareiam.anvil.capability.world.model.level.ChunkPosition;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.model.world.chunk.BlockChange;
 import me.whereareiam.anvil.protocol.java.api.model.world.chunk.LevelChunkSection;
@@ -50,7 +51,7 @@ class WorldBlocksTest {
 		blocks.register(operations);
 		player.connect();
 		player.deliver(ClientboundLogin.builder()
-				.entityId(1)
+				.entityId(new EntityId(1))
 				.level(OVERWORLD)
 				.dimension(OVERWORLD)
 				.dimensionType(DimensionType.known(OVERWORLD))

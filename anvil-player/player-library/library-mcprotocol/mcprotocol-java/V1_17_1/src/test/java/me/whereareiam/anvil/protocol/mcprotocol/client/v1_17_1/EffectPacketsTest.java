@@ -4,6 +4,7 @@ import com.github.steveice10.mc.protocol.data.game.entity.Effect;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityEffectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityRemoveEffectPacket;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundRemoveMobEffect;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateMobEffect;
 import org.junit.jupiter.api.Test;
@@ -21,17 +22,17 @@ class EffectPacketsTest {
 
 	@Test
 	void decodesAnEffectByItsVanillaKey() {
-		assertEquals(ClientboundUpdateMobEffect.builder().entityId(7).effect("minecraft:slow_falling").amplifier(0)
+		assertEquals(ClientboundUpdateMobEffect.builder().entityId(new EntityId(7)).effect("minecraft:slow_falling").amplifier(0)
 						.duration(300).build(),
 				packets.decode(new ServerEntityEffectPacket(7, Effect.SLOW_FALLING, 0, 300, false, true)));
-		assertEquals(ClientboundUpdateMobEffect.builder().entityId(7).effect("minecraft:mining_fatigue").amplifier(2)
+		assertEquals(ClientboundUpdateMobEffect.builder().entityId(new EntityId(7)).effect("minecraft:mining_fatigue").amplifier(2)
 						.duration(6000).build(),
 				packets.decode(new ServerEntityEffectPacket(7, Effect.MINING_FATIGUE, 2, 6000, true, false)));
 	}
 
 	@Test
 	void decodesTheRemovalOfAnEffectByItsVanillaKey() {
-		assertEquals(new ClientboundRemoveMobEffect(7, "minecraft:jump_boost"),
+		assertEquals(new ClientboundRemoveMobEffect(new EntityId(7), "minecraft:jump_boost"),
 				packets.decode(new ServerEntityRemoveEffectPacket(7, Effect.JUMP_BOOST)));
 	}
 

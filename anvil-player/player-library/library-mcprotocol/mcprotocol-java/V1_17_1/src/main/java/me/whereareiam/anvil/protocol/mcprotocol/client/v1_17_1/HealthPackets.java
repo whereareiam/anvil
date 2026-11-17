@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_17_1;
 
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerCombatKillPacket;
 import com.github.steveice10.packetlib.packet.Packet;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundPlayerCombatKill;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.HealthTranslation;
@@ -21,6 +22,7 @@ final class HealthPackets extends HealthTranslation {
 	protected @Nullable ClientboundPlayerCombatKill decodeDeath(@NotNull Packet packet) {
 		if (!(packet instanceof ServerPlayerCombatKillPacket kill)) return null;
 
-		return new ClientboundPlayerCombatKill(kill.getPlayerId(), text.translate(kill.getMessage()).plain());
+		return new ClientboundPlayerCombatKill(new EntityId(kill.getPlayerId()),
+				text.translate(kill.getMessage()).plain());
 	}
 }

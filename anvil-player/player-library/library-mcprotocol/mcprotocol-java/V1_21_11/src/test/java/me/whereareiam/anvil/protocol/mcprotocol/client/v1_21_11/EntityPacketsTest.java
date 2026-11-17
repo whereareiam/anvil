@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomNameVisible;
 import me.whereareiam.anvil.protocol.java.api.model.entity.DisplayText;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
 import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
 import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
@@ -61,16 +62,16 @@ class EntityPacketsTest {
 
 	@Test
 	void decodesSpawnsWithTheNamespacedType() {
-		assertEquals(ClientboundAddEntity.builder().entityId(7).uniqueId(STAND)
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(7)).uniqueId(STAND)
 				.type(EntityTypeKey.minecraft("armor_stand"))
 						.position(new Vec3d(1.5, 64, -2.5)).yaw(90).pitch(10).build(),
 				packets.decode(new ClientboundAddEntityPacket(7, STAND, EntityType.ARMOR_STAND, 1.5, 64, -2.5, 90, 10,
 						45)));
-		assertEquals(ClientboundAddEntity.builder().entityId(8).uniqueId(new UUID(0, 8))
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(8)).uniqueId(new UUID(0, 8))
 						.type(EntityTypeKey.minecraft("text_display")).position(new Vec3d(0, 66, 0)).build(),
 				packets.decode(new ClientboundAddEntityPacket(8, new UUID(0, 8), EntityType.TEXT_DISPLAY, 0, 66, 0, 0,
 						0, 0)));
-		assertEquals(ClientboundAddEntity.builder().entityId(9).uniqueId(new UUID(0, 9))
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(9)).uniqueId(new UUID(0, 9))
 						.type(EntityTypeKey.minecraft("experience_orb")).position(new Vec3d(1, 2, 3)).build(),
 				packets.decode(new ClientboundAddEntityPacket(9, new UUID(0, 9), EntityType.EXPERIENCE_ORB, 1, 2, 3, 0,
 						0, 0)));
@@ -80,7 +81,7 @@ class EntityPacketsTest {
 	void decodesTheValuesEveryEntityKeepsAndLeavesOutWhatItsTypeDoesNotKeep() {
 		add(7, EntityType.ARMOR_STAND);
 
-		assertEquals(new ClientboundSetEntityData(7, List.of(
+		assertEquals(new ClientboundSetEntityData(new EntityId(7), List.of(
 				SharedFlags.builder().onFire(true).sneaking(true).invisible(true).glowing(true).build(),
 				new CustomName("Alice: hello"),
 				new CustomNameVisible(true)
@@ -99,7 +100,7 @@ class EntityPacketsTest {
 	void decodesTheItemOfADroppedItemWithEveryOtherFlagAndARemovedName() {
 		add(8, EntityType.ITEM);
 
-		assertEquals(new ClientboundSetEntityData(8, List.of(
+		assertEquals(new ClientboundSetEntityData(new EntityId(8), List.of(
 				SharedFlags.builder().sprinting(true).swimming(true).gliding(true).build(),
 				new CustomName(null),
 				new CustomNameVisible(false),
@@ -110,7 +111,7 @@ class EntityPacketsTest {
 				new BooleanEntityMetadata(3, MetadataTypes.BOOLEAN, false),
 				new ObjectEntityMetadata<>(8, MetadataTypes.ITEM_STACK, new ItemStack(871, 3))
 		)));
-		assertEquals(new ClientboundSetEntityData(8, List.of(new ShownItem(null))),
+		assertEquals(new ClientboundSetEntityData(new EntityId(8), List.of(new ShownItem(null))),
 				packets.decode(data(8, new ObjectEntityMetadata<>(8, MetadataTypes.ITEM_STACK, null))));
 	}
 
@@ -119,9 +120,9 @@ class EntityPacketsTest {
 		add(9, EntityType.TEXT_DISPLAY);
 		add(10, EntityType.ITEM_DISPLAY);
 
-		assertEquals(new ClientboundSetEntityData(9, List.of(new DisplayText("bubble"))), packets.decode(data(9,
+		assertEquals(new ClientboundSetEntityData(new EntityId(9), List.of(new DisplayText("bubble"))), packets.decode(data(9,
 				new ObjectEntityMetadata<>(23, MetadataTypes.COMPONENT, Component.text("bubble")))));
-		assertEquals(new ClientboundSetEntityData(10, List.of(
+		assertEquals(new ClientboundSetEntityData(new EntityId(10), List.of(
 				new ShownItem(new me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack(40, 1))
 		)), packets.decode(data(10,
 				new ObjectEntityMetadata<>(23, MetadataTypes.ITEM_STACK, new ItemStack(40, 1)),
@@ -144,7 +145,7 @@ class EntityPacketsTest {
 
 	@Test
 	void decodesOnlyTheValuesEveryEntityKeepsForAnEntityTheSessionNeverAdded() {
-		assertEquals(new ClientboundSetEntityData(42, List.of(SharedFlags.builder().sneaking(true).build())),
+		assertEquals(new ClientboundSetEntityData(new EntityId(42), List.of(SharedFlags.builder().sneaking(true).build())),
 				packets.decode(data(42,
 						new ByteEntityMetadata(0, MetadataTypes.BYTE, (byte) 0x02),
 						new ObjectEntityMetadata<>(8, MetadataTypes.ITEM_STACK, new ItemStack(871, 3))
@@ -155,7 +156,7 @@ class EntityPacketsTest {
 	void leavesOutAValueOfAnotherKindThanTheTableNames() {
 		add(9, EntityType.TEXT_DISPLAY);
 
-		assertEquals(new ClientboundSetEntityData(9, List.of()), packets.decode(data(9,
+		assertEquals(new ClientboundSetEntityData(new EntityId(9), List.of()), packets.decode(data(9,
 				new ObjectEntityMetadata<>(23, MetadataTypes.ITEM_STACK, new ItemStack(40, 1)),
 				new BooleanEntityMetadata(0, MetadataTypes.BOOLEAN, true)
 		)));
@@ -168,8 +169,8 @@ class EntityPacketsTest {
 		add(9, EntityType.ITEM);
 		ClientboundSetEntityDataPacket item7 = data(7, new ObjectEntityMetadata<>(8, MetadataTypes.ITEM_STACK, null));
 
-		assertEquals(new ClientboundRemoveEntities(List.of(7)), packets.decode(new ClientboundRemoveEntitiesPacket(new int[]{7})));
-		assertEquals(new ClientboundSetEntityData(7, List.of()), packets.decode(item7));
+		assertEquals(new ClientboundRemoveEntities(List.of(new EntityId(7))), packets.decode(new ClientboundRemoveEntitiesPacket(new int[]{7})));
+		assertEquals(new ClientboundSetEntityData(new EntityId(7), List.of()), packets.decode(item7));
 		assertEquals(List.of(new ShownItem(null)), decodeData(data(8, new ObjectEntityMetadata<>(8, MetadataTypes.ITEM_STACK, null))));
 
 		assertNull(packets.decode(new ClientboundRespawnPacket(null, false, false)));
@@ -187,19 +188,19 @@ class EntityPacketsTest {
 
 	@Test
 	void decodesMovesTurnsTeleportsAndPositionSyncs() {
-		assertEquals(ClientboundMoveEntityPos.builder().entityId(7).delta(new Vec3d(0.5, -1, 0.25)).build(),
+		assertEquals(ClientboundMoveEntityPos.builder().entityId(new EntityId(7)).delta(new Vec3d(0.5, -1, 0.25)).build(),
 				packets.decode(new ClientboundMoveEntityPosPacket(7, 0.5, -1, 0.25, true)));
-		assertEquals(ClientboundMoveEntityPosRot.builder().entityId(7).delta(new Vec3d(1, 0, 0)).yaw(90).pitch(10)
+		assertEquals(ClientboundMoveEntityPosRot.builder().entityId(new EntityId(7)).delta(new Vec3d(1, 0, 0)).yaw(90).pitch(10)
 				.build(),
 				packets.decode(new ClientboundMoveEntityPosRotPacket(7, 1, 0, 0, 90, 10, true)));
-		assertEquals(new ClientboundMoveEntityRot(7, 180, -10),
+		assertEquals(new ClientboundMoveEntityRot(new EntityId(7), 180, -10),
 				packets.decode(new ClientboundMoveEntityRotPacket(7, 180, -10, true)));
-		assertEquals(ClientboundTeleportEntity.builder().entityId(7).position(new Vec3d(1, 2, 3)).yaw(15).pitch(5)
+		assertEquals(ClientboundTeleportEntity.builder().entityId(new EntityId(7)).position(new Vec3d(1, 2, 3)).yaw(15).pitch(5)
 						.relatives(Set.of(Relative.Y, Relative.YAW)).build(),
 				packets.decode(new ClientboundTeleportEntityPacket(7, Vector3d.from(1, 2, 3), Vector3d.ZERO, 15, 5,
 						List.of(PositionElement.Y, PositionElement.Y_ROT, PositionElement.DELTA_X,
 								PositionElement.ROTATE_DELTA), true)));
-		assertEquals(ClientboundEntityPositionSync.builder().entityId(7).position(new Vec3d(4, 5, 6)).yaw(30)
+		assertEquals(ClientboundEntityPositionSync.builder().entityId(new EntityId(7)).position(new Vec3d(4, 5, 6)).yaw(30)
 						.pitch(20).build(),
 				packets.decode(new ClientboundEntityPositionSyncPacket(7, Vector3d.from(4, 5, 6), Vector3d.ZERO, 30, 20,
 						true)));
@@ -207,15 +208,15 @@ class EntityPacketsTest {
 
 	@Test
 	void decodesTheVelocityTheServerSetsInBlocksPerTick() {
-		assertEquals(new ClientboundSetEntityMotion(7, new Vec3d(0.25, 0.42, -0.125)),
+		assertEquals(new ClientboundSetEntityMotion(new EntityId(7), new Vec3d(0.25, 0.42, -0.125)),
 				packets.decode(new ClientboundSetEntityMotionPacket(7, Vector3d.from(0.25, 0.42, -0.125))));
 	}
 
 	@Test
 	void decodesPassengersAndRemovals() {
-		assertEquals(new ClientboundSetPassengers(42, List.of(7, 8)),
+		assertEquals(new ClientboundSetPassengers(new EntityId(42), List.of(new EntityId(7), new EntityId(8))),
 				packets.decode(new ClientboundSetPassengersPacket(42, new int[]{7, 8})));
-		assertEquals(new ClientboundRemoveEntities(List.of(7, 8)),
+		assertEquals(new ClientboundRemoveEntities(List.of(new EntityId(7), new EntityId(8))),
 				packets.decode(new ClientboundRemoveEntitiesPacket(new int[]{7, 8})));
 	}
 

@@ -6,6 +6,7 @@ import com.github.steveice10.mc.protocol.data.game.entity.attribute.AttributeTyp
 import com.github.steveice10.mc.protocol.data.game.entity.attribute.ModifierOperation;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityPropertiesPacket;
 import com.github.steveice10.packetlib.packet.Packet;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeModifier;
 import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeSnapshot;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
@@ -40,7 +41,7 @@ public final class AttributePackets implements PacketTranslation<Packet> {
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (!(packet instanceof ServerEntityPropertiesPacket properties)) return null;
 
-		return new ClientboundUpdateAttributes(properties.getEntityId(),
+		return new ClientboundUpdateAttributes(new EntityId(properties.getEntityId()),
 				properties.getAttributes().stream().map(AttributePackets::snapshot).toList());
 	}
 

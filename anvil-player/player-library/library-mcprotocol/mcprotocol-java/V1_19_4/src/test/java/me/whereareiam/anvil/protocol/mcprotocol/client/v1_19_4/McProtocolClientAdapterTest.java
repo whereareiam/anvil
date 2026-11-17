@@ -12,6 +12,7 @@ import com.github.steveice10.packetlib.event.session.DisconnectedEvent;
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundDisguisedChat;
@@ -147,7 +148,7 @@ class McProtocolClientAdapterTest {
 		List<Packet> sent = new ArrayList<>();
 
 		new McProtocolClientAdapter().send(recording(sent),
-				new ServerboundPlayerCommand(7, PlayerCommandAction.PRESS_SHIFT_KEY));
+				new ServerboundPlayerCommand(new EntityId(7), PlayerCommandAction.PRESS_SHIFT_KEY));
 
 		ServerboundPlayerCommandPacket command = assertInstanceOf(ServerboundPlayerCommandPacket.class, sent.getFirst());
 		assertEquals(7, command.getEntityId());
@@ -158,11 +159,11 @@ class McProtocolClientAdapterTest {
 	void decodesTheEffectsOfTheReleaseWithTheirFactorDataByTheirRegistryKeys() {
 		PacketTable<Packet> packets = McProtocolClientAdapter.packets(PacketDemand.EVERY);
 
-		assertEquals(ClientboundUpdateMobEffect.builder().entityId(7).effect("minecraft:darkness").amplifier(0)
+		assertEquals(ClientboundUpdateMobEffect.builder().entityId(new EntityId(7)).effect("minecraft:darkness").amplifier(0)
 						.duration(260).build(),
 				packets.decode(new ClientboundUpdateMobEffectPacket(7, Effect.DARKNESS, 0, 260, false, true,
 						new CompoundTag("factor_calculation_data"))));
-		assertEquals(new ClientboundRemoveMobEffect(7, "minecraft:darkness"),
+		assertEquals(new ClientboundRemoveMobEffect(new EntityId(7), "minecraft:darkness"),
 				packets.decode(new ClientboundRemoveMobEffectPacket(7, Effect.DARKNESS)));
 	}
 

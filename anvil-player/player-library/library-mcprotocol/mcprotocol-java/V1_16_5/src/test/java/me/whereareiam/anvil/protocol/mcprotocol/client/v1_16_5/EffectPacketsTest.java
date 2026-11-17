@@ -4,6 +4,7 @@ import com.github.steveice10.mc.protocol.data.game.entity.Effect;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityEffectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityRemoveEffectPacket;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundRemoveMobEffect;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateMobEffect;
@@ -22,17 +23,17 @@ class EffectPacketsTest {
 
 	@Test
 	void decodesAnEffectByItsVanillaKey() {
-		assertEquals(ClientboundUpdateMobEffect.builder().entityId(7).effect("minecraft:speed").amplifier(1)
+		assertEquals(ClientboundUpdateMobEffect.builder().entityId(new EntityId(7)).effect("minecraft:speed").amplifier(1)
 						.duration(600).build(),
 				packets.decode(new ServerEntityEffectPacket(7, Effect.FASTER_MOVEMENT, 1, 600, false, true)));
-		assertEquals(ClientboundUpdateMobEffect.builder().entityId(7).effect("minecraft:haste").amplifier(0)
+		assertEquals(ClientboundUpdateMobEffect.builder().entityId(new EntityId(7)).effect("minecraft:haste").amplifier(0)
 						.duration(200).build(),
 				packets.decode(new ServerEntityEffectPacket(7, Effect.FASTER_DIG, 0, 200, true, false)));
 	}
 
 	@Test
 	void decodesTheRemovalOfAnEffectByItsVanillaKey() {
-		assertEquals(new ClientboundRemoveMobEffect(7, "minecraft:jump_boost"),
+		assertEquals(new ClientboundRemoveMobEffect(new EntityId(7), "minecraft:jump_boost"),
 				packets.decode(new ServerEntityRemoveEffectPacket(7, Effect.JUMP)));
 	}
 

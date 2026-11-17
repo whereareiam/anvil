@@ -7,6 +7,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundSo
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.ClientboundCustomSoundPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.ClientboundSoundPacket;
 import com.github.steveice10.packetlib.packet.Packet;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
@@ -43,7 +44,7 @@ final class SoundPackets extends SoundTranslation {
 		return ClientboundSoundEntity.builder()
 				.sound(builtinKey(sound.getSoundId()))
 				.source(source(sound.getSoundCategory()))
-				.entityId(sound.getEntityId())
+				.entityId(new EntityId(sound.getEntityId()))
 				.volume(sound.getVolume())
 				.pitch(sound.getPitch())
 				.build();

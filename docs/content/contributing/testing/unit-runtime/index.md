@@ -89,7 +89,7 @@ player.connect();
 player.deliver(ClientboundSoundEntity.builder()
 		.sound("minecraft:block.note_block.pling")
 		.source(SoundSource.BLOCKS)
-		.entityId(42)
+		.entityId(new EntityId(42))
 		.build());
 
 List<HeardSound> heard = player.emitted(SoundsChannel.HEARD);

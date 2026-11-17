@@ -9,6 +9,7 @@ import me.whereareiam.anvil.capability.inventory.type.InventoryClick;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
@@ -306,7 +307,7 @@ class JavaInventoryExtensionTest {
 
 	private static ClientboundLogin login(int entityId) {
 		return ClientboundLogin.builder()
-				.entityId(entityId)
+				.entityId(new EntityId(entityId))
 				.level("minecraft:overworld")
 				.dimension("minecraft:overworld")
 				.dimensionType(OVERWORLD)

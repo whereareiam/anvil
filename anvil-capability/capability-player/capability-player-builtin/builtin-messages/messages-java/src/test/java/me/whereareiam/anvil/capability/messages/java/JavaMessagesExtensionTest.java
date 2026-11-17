@@ -14,6 +14,7 @@ import me.whereareiam.anvil.protocol.api.model.text.content.LiteralContent;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.java.api.model.chat.MessageSignature;
 import me.whereareiam.anvil.protocol.java.api.model.chat.PackedMessageSignature;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundDeleteChat;
@@ -291,7 +292,7 @@ class JavaMessagesExtensionTest {
 
 	private static ClientboundLogin login(int entityId) {
 		return ClientboundLogin.builder()
-				.entityId(entityId)
+				.entityId(new EntityId(entityId))
 				.level("minecraft:overworld")
 				.dimension("minecraft:overworld")
 				.dimensionType(DimensionType.known("minecraft:overworld"))

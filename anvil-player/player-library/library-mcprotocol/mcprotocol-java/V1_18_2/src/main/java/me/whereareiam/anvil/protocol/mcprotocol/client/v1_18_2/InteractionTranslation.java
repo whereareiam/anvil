@@ -58,8 +58,8 @@ public abstract class InteractionTranslation implements PacketTranslation<Packet
 			case ServerboundUseItem use -> useItem(use);
 			case ServerboundUseItemOn use -> useItemOn(use);
 			case ServerboundInteract interact -> interact(interact);
-			case ServerboundAttack attack -> new ServerboundInteractPacket(attack.getEntityId(), InteractAction.ATTACK,
-					ATTACK_HAND, ATTACK_SNEAKING);
+			case ServerboundAttack attack -> new ServerboundInteractPacket(attack.getEntityId().getValue(),
+					InteractAction.ATTACK, ATTACK_HAND, ATTACK_SNEAKING);
 			default -> null;
 		};
 	}
@@ -83,12 +83,13 @@ public abstract class InteractionTranslation implements PacketTranslation<Packet
 	private static Packet interact(ServerboundInteract interact) {
 		Hand hand = ValueTranslator.hand(interact.getHand());
 		return switch (interact.getAction()) {
-			case INTERACT -> new ServerboundInteractPacket(interact.getEntityId(), InteractAction.INTERACT, hand,
-					interact.isSneaking());
+			case INTERACT -> new ServerboundInteractPacket(interact.getEntityId().getValue(),
+					InteractAction.INTERACT, hand, interact.isSneaking());
 			case INTERACT_AT -> {
 				Vec3d point = interact.getPoint() == null ? Vec3d.ZERO : interact.getPoint();
-				yield new ServerboundInteractPacket(interact.getEntityId(), InteractAction.INTERACT_AT,
-						(float) point.getX(), (float) point.getY(), (float) point.getZ(), hand, interact.isSneaking());
+				yield new ServerboundInteractPacket(interact.getEntityId().getValue(), InteractAction.INTERACT_AT,
+						(float) point.getX(), (float) point.getY(), (float) point.getZ(), hand,
+						interact.isSneaking());
 			}
 		};
 	}

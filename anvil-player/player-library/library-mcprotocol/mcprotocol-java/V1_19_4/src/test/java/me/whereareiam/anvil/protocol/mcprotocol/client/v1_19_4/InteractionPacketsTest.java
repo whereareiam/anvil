@@ -4,6 +4,7 @@ import com.github.steveice10.mc.protocol.data.game.entity.player.InteractAction;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundInteractPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundUseItemOnPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundUseItemPacket;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
@@ -66,7 +67,7 @@ class InteractionPacketsTest {
 	@Test
 	void attacksThroughTheSharedEntityPacket() {
 		ServerboundInteractPacket attack = assertInstanceOf(ServerboundInteractPacket.class,
-				packets.encode(new ServerboundAttack(43)));
+				packets.encode(new ServerboundAttack(new EntityId(43))));
 
 		assertEquals(43, attack.getEntityId());
 		assertEquals(InteractAction.ATTACK, attack.getAction());

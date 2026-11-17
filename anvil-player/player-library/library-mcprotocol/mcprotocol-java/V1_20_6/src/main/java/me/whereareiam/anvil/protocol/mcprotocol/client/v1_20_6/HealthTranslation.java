@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -46,7 +47,8 @@ public abstract class HealthTranslation implements PacketTranslation<Packet> {
 			case ClientboundSetHealthPacket health ->
 					new ClientboundSetHealth(health.getHealth(), health.getFood(), health.getSaturation());
 			case ClientboundPlayerCombatKillPacket kill ->
-					new ClientboundPlayerCombatKill(kill.getPlayerId(), text.translate(kill.getMessage()).plain());
+					new ClientboundPlayerCombatKill(new EntityId(kill.getPlayerId()),
+							text.translate(kill.getMessage()).plain());
 			default -> null;
 		};
 	}

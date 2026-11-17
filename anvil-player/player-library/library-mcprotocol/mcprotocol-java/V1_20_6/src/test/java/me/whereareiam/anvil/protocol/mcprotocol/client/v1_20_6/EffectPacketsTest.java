@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundRemoveMobEffect;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateMobEffect;
@@ -19,11 +20,11 @@ class EffectPacketsTest {
 
 	@Test
 	void decodesAnEffectByTheRegistryKeyOfTheLibrarysNumberedEffect() {
-		assertEquals(ClientboundUpdateMobEffect.builder().entityId(7).effect("minecraft:speed").amplifier(1)
+		assertEquals(ClientboundUpdateMobEffect.builder().entityId(new EntityId(7)).effect("minecraft:speed").amplifier(1)
 						.duration(600).build(),
 				packets.decode(new ClientboundUpdateMobEffectPacket(7, Effect.SPEED, 1, 600, false, true, true,
 						false)));
-		assertEquals(ClientboundUpdateMobEffect.builder().entityId(7).effect("minecraft:jump_boost").duration(-1)
+		assertEquals(ClientboundUpdateMobEffect.builder().entityId(new EntityId(7)).effect("minecraft:jump_boost").duration(-1)
 						.build(),
 				packets.decode(new ClientboundUpdateMobEffectPacket(7, Effect.JUMP_BOOST, 0, -1, true, false, false,
 						false)));
@@ -34,7 +35,7 @@ class EffectPacketsTest {
 
 	@Test
 	void decodesARemovedEffect() {
-		assertEquals(new ClientboundRemoveMobEffect(7, "minecraft:slow_falling"),
+		assertEquals(new ClientboundRemoveMobEffect(new EntityId(7), "minecraft:slow_falling"),
 				packets.decode(new ClientboundRemoveMobEffectPacket(7, Effect.SLOW_FALLING)));
 	}
 

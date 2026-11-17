@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.entity;
 
 import lombok.Value;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,5 +15,5 @@ public class ClientboundRemoveEntities implements ClientboundPacket {
 	/**
 	 * The protocol IDs of the removed entities.
 	 */
-	@NotNull List<Integer> entityIds;
+	@NotNull List<EntityId> entityIds;
 }

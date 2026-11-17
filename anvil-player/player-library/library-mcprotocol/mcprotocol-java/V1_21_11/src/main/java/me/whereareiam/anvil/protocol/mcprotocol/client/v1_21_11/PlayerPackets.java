@@ -102,7 +102,7 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 					input.isLeft(), input.isRight(), input.isJump(), input.isShift(), input.isSprint());
 			case ServerboundClientTickEnd ignored -> ServerboundClientTickEndPacket.INSTANCE;
 			case ServerboundPlayerCommand command ->
-					new ServerboundPlayerCommandPacket(command.getEntityId(), state(command.getAction()));
+					new ServerboundPlayerCommandPacket(command.getEntityId().getValue(), state(command.getAction()));
 			default -> null;
 		};
 	}

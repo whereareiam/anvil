@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.entity.move;
 
 import lombok.Value;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +15,7 @@ public class ClientboundSetEntityMotion implements ClientboundPacket {
 	/**
 	 * The entity's protocol ID.
 	 */
-	int entityId;
+	@NotNull EntityId entityId;
 	/**
 	 * The entity's new velocity, in blocks per tick.
 	 */

@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.player;
 
 import lombok.Value;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.type.player.PlayerCommandAction;
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +15,7 @@ public class ServerboundPlayerCommand implements ServerboundPacket {
 	/**
 	 * The protocol ID of the player's own entity, as the login names it.
 	 */
-	int entityId;
+	@NotNull EntityId entityId;
 	/**
 	 * The action the player starts or stops.
 	 */

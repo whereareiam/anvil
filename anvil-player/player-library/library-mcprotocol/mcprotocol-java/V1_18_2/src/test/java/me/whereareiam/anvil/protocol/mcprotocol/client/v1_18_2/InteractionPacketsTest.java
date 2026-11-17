@@ -6,6 +6,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.Server
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundUseItemOnPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundUseItemPacket;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -73,7 +74,7 @@ class InteractionPacketsTest {
 	@Test
 	void interactsWithAndAttacksEntitiesInTheSharedEntityPacket() {
 		ServerboundInteractPacket interact = assertInstanceOf(ServerboundInteractPacket.class, packets.encode(ServerboundInteract.builder()
-				.entityId(42)
+				.entityId(new EntityId(42))
 				.action(me.whereareiam.anvil.protocol.java.api.type.interaction.InteractAction.INTERACT)
 				.hand(InteractionHand.OFF_HAND)
 				.build()));
@@ -83,7 +84,7 @@ class InteractionPacketsTest {
 		assertFalse(interact.isSneaking());
 
 		ServerboundInteractPacket attack = assertInstanceOf(ServerboundInteractPacket.class,
-				packets.encode(new ServerboundAttack(43)));
+				packets.encode(new ServerboundAttack(new EntityId(43))));
 		assertEquals(43, attack.getEntityId());
 		assertEquals(InteractAction.ATTACK, attack.getAction());
 		assertFalse(attack.isSneaking());
@@ -92,7 +93,7 @@ class InteractionPacketsTest {
 	@Test
 	void interactsAtAPointOfTheEntity() {
 		ServerboundInteractPacket packet = assertInstanceOf(ServerboundInteractPacket.class, packets.encode(ServerboundInteract.builder()
-				.entityId(42)
+				.entityId(new EntityId(42))
 				.action(me.whereareiam.anvil.protocol.java.api.type.interaction.InteractAction.INTERACT_AT)
 				.hand(InteractionHand.MAIN_HAND)
 				.point(new Vec3d(0.25, 1.5, -0.25))

@@ -1,6 +1,7 @@
 package external.fixture.java;
 
 import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.model.world.chunk.ChunkPosition;
 import me.whereareiam.anvil.protocol.java.api.model.world.chunk.LevelChunkSection;
@@ -84,7 +85,7 @@ final class EchoServer {
 
 		return List.of(
 				ClientboundLogin.builder()
-						.entityId(1)
+						.entityId(new EntityId(1))
 						.level(OVERWORLD)
 						.dimension(OVERWORLD)
 						.dimensionType(overworld)

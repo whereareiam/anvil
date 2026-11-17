@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_3;
 
+import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
@@ -46,7 +47,7 @@ class InteractionPacketsTest {
 
 	@Test
 	void attacksInThePacketOfItsOwnAndPunchesWithoutAHand() {
-		assertEquals(43, assertInstanceOf(ServerboundAttackPacket.class, packets.encode(new ServerboundAttack(43)))
+		assertEquals(43, assertInstanceOf(ServerboundAttackPacket.class, packets.encode(new ServerboundAttack(new EntityId(43))))
 				.getEntityId());
 		assertEquals(ServerboundPunchPacket.INSTANCE, packets.encode(new ServerboundPunch()));
 	}
@@ -87,7 +88,7 @@ class InteractionPacketsTest {
 	@Test
 	void interactsWithAnEntityAtItsPositionWithTheHand() {
 		ServerboundInteractPacket packet = assertInstanceOf(ServerboundInteractPacket.class, packets.encode(
-				ServerboundInteract.builder().entityId(42).action(InteractAction.INTERACT).hand(InteractionHand.OFF_HAND)
+				ServerboundInteract.builder().entityId(new EntityId(42)).action(InteractAction.INTERACT).hand(InteractionHand.OFF_HAND)
 						.build()));
 
 		assertEquals(42, packet.getEntityId());
