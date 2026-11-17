@@ -1,0 +1,53 @@
+# Packet data of every Minecraft release Anvil supports, generated at build time from
+# PrismarineJS minecraft-data (https://github.com/PrismarineJS/minecraft-data, MIT). Each [[release]] names one
+# protocol, whose Minecraft versions share one set of packet data, and pins the minecraft-data files of those
+# versions (protocol.json), which pinPacketData finds through
+# minecraft-data's own data/pc/common/protocolVersions.json and data/dataPaths.json. A row without files has no
+# packet data: minecraft-data has none for any version of its protocol. checkPacketDataReleases requires one
+# row for every protocol a protocol library release speaks.
+# Change [source] version to another minecraft-data release, or add a row, then run
+# ./gradlew :anvil-player:player-protocol:protocol-java:protocol-java-packet:pinPacketData
+# which resolves the commit and rewrites every pin. Pins never change silently while the commit stays the same.
+
+[source]
+repository = "PrismarineJS/minecraft-data"
+version = "3.117.0"
+commit = "15411f050f040e4c5df09352a75a9912ad8c3eeb"
+
+[[release]]
+protocol = 754
+packets = { path = "data/pc/1.16.2/protocol.json", sha256 = "c25e99d506fa129b10a49ab9c587d33b673096517fb34fb7ad7ddd28e648782b" }
+
+[[release]]
+protocol = 756
+packets = { path = "data/pc/1.17.1/protocol.json", sha256 = "695099fb813c72b54180bd9cfea002f2243c28d0be9beb87e03b405cfa2abb31" }
+
+[[release]]
+protocol = 758
+packets = { path = "data/pc/1.18.2/protocol.json", sha256 = "ccc0da0598fc2d704dc1beac311ee8cbb98950baa813c1cf4e56377b8eb3b244" }
+
+[[release]]
+protocol = 762
+packets = { path = "data/pc/1.19.4/protocol.json", sha256 = "183041dd54a8fc66909abc6a6772b86d59fdcc69be4f4fffe6fee2d19ebfe552" }
+
+[[release]]
+protocol = 766
+packets = { path = "data/pc/1.20.5/protocol.json", sha256 = "4204f6f1d4f5aa7ab0936fe0cb78fac3d249a06e534e4903d1937614667be241" }
+
+[[release]]
+protocol = 767
+packets = { path = "data/pc/1.21.1/protocol.json", sha256 = "1f5f23d1d1425a12d1b46d78dbc2b79038ea456cc1be11c942a79bebd8d3f43a" }
+
+[[release]]
+protocol = 774
+packets = { path = "data/pc/1.21.11/protocol.json", sha256 = "34d280120eef9090c66abc502d43d5305ffa2f592c1d2b0eb7a96b71048b81f7" }
+
+[[release]]
+protocol = 775
+packets = { path = "data/pc/26.1/protocol.json", sha256 = "a5fda872e2d425d1f35a8ab7e042148f4944ac1a7f0c3c5380b64b06d383bc0d" }
+
+[[release]]
+protocol = 776
+
+[[release]]
+protocol = 777
