@@ -14,23 +14,13 @@ import me.whereareiam.anvil.capability.world.model.WorldTime;
 import me.whereareiam.anvil.capability.world.type.Environment;
 import me.whereareiam.anvil.capability.world.type.LevelGeneration;
 import me.whereareiam.anvil.capability.world.type.WeatherType;
-import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
-import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
-import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
-import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
-import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
-import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
-import me.whereareiam.anvil.protocol.java.api.JavaWorld;
 import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.model.world.ClockState;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
@@ -43,20 +33,17 @@ import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSet
 import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderWarningDelay;
 import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderWarningDistance;
 import me.whereareiam.anvil.protocol.java.api.type.GameEventType;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import me.whereareiam.anvil.protocol.java.worker.TestJavaPlayer;
+import me.whereareiam.anvil.protocol.worker.TestOperations;
+import me.whereareiam.anvil.protocol.worker.TestWorkerPlayer;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.UUID;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -70,9 +57,8 @@ class JavaWorldExtensionTest {
 	private static final String ARENA = "minecraft:arena";
 	private static final String END = "minecraft:the_end";
 
-	private final RecordingProtocol protocol = new RecordingProtocol();
-	private final RecordingPlayer player = new RecordingPlayer(protocol);
-	private final RecordingOperations operations = new RecordingOperations();
+	private final TestJavaPlayer player = new TestJavaPlayer("Alice");
+	private final TestOperations operations = new TestOperations();
 	private final JavaWorldExtension extension = new JavaWorldExtension();
 
 	@Test
@@ -92,20 +78,20 @@ class JavaWorldExtensionTest {
 	void emitsTheLevelTheConnectionJoinsAndEachRespawnWithTheDimensionBefore() {
 		connect();
 
-		protocol.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
-		protocol.deliver(respawn(NETHER, vanilla(NETHER)));
-		protocol.deliver(respawn(NETHER, vanilla(NETHER)));
+		player.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
+		player.deliver(respawn(NETHER, vanilla(NETHER)));
+		player.deliver(respawn(NETHER, vanilla(NETHER)));
 
 		assertEquals(List.of(change(null, OVERWORLD, Environment.OVERWORLD), change(OVERWORLD, NETHER, Environment.NETHER),
 				change(NETHER, NETHER, Environment.NETHER)), player.emitted(WorldChannel.DIMENSION));
-		assertTrue(operations.registered.isEmpty());
+		assertTrue(operations.registered().isEmpty());
 	}
 
 	@Test
 	void describesTheServerOnEachJoinAndTheLevelWithItsTypeAndGeneration() {
 		connect();
 
-		protocol.deliver(ClientboundLogin.builder()
+		player.deliver(ClientboundLogin.builder()
 				.entityId(7)
 				.level(OVERWORLD)
 				.level(ARENA)
@@ -114,7 +100,7 @@ class JavaWorldExtensionTest {
 				.dimensionType(DimensionType.withEffects("example:void", "minecraft:the_end", 0, 256))
 				.flat(true)
 				.build());
-		protocol.deliver(ClientboundRespawn.builder()
+		player.deliver(ClientboundRespawn.builder()
 				.dimension(ARENA)
 				.dimensionType(DimensionType.builder().key("example:modded").minY(-32).height(128).build())
 				.debug(true)
@@ -134,8 +120,8 @@ class JavaWorldExtensionTest {
 	void keepsTheDimensionWhenAProxyJoinsTheConnectionToAnotherServersLevel() {
 		connect();
 
-		protocol.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
-		protocol.deliver(login(8, ARENA, vanilla(OVERWORLD)));
+		player.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
+		player.deliver(login(8, ARENA, vanilla(OVERWORLD)));
 
 		assertEquals(Arrays.asList(null, OVERWORLD), player.emitted(WorldChannel.DIMENSION).stream()
 				.map(DimensionChange::getFrom).toList());
@@ -144,11 +130,11 @@ class JavaWorldExtensionTest {
 	@Test
 	void leavesTheDimensionWhenTheConnectionEndsAndStartsTheNextConnectionInNone() {
 		connect();
-		protocol.deliver(login(7, NETHER, vanilla(NETHER)));
+		player.deliver(login(7, NETHER, vanilla(NETHER)));
 
-		player.startConnection();
-		protocol.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
-		player.endConnection();
+		player.rejoin();
+		player.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
+		player.disconnect();
 
 		assertEquals(List.of(NETHER, OVERWORLD), player.emitted(WorldChannel.LEFT));
 		assertEquals(List.of(change(null, NETHER, Environment.NETHER), change(null, OVERWORLD, Environment.OVERWORLD)),
@@ -158,7 +144,7 @@ class JavaWorldExtensionTest {
 	@Test
 	void leavesNothingForAConnectionThatEndsBeforeJoiningALevel() {
 		connect();
-		player.endConnection();
+		player.disconnect();
 
 		assertTrue(player.emitted(WorldChannel.LEFT).isEmpty());
 	}
@@ -166,31 +152,47 @@ class JavaWorldExtensionTest {
 	@Test
 	void emitsNothingOnceTheBindingCloses() {
 		WorkerBinding binding = extension.bind(player, operations);
-		player.startConnection();
-		protocol.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
+		player.connect();
+		player.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
 
 		binding.close();
-		protocol.deliver(respawn(NETHER, vanilla(NETHER)));
+		player.deliver(respawn(NETHER, vanilla(NETHER)));
+		player.disconnect();
 
 		assertEquals(List.of(change(null, OVERWORLD, Environment.OVERWORLD)), player.emitted(WorldChannel.DIMENSION));
 		assertTrue(player.emitted(WorldChannel.LEFT).isEmpty());
-		assertNull(player.connections);
+		for (Class<? extends ClientboundPacket> type : List.of(
+				ClientboundLogin.class,
+				ClientboundRespawn.class,
+				ClientboundSetTime.class,
+				ClientboundGameEvent.class,
+				ClientboundInitializeBorder.class,
+				ClientboundSetBorderCenter.class,
+				ClientboundSetBorderLerpSize.class,
+				ClientboundSetBorderSize.class,
+				ClientboundSetBorderWarningDelay.class,
+				ClientboundSetBorderWarningDistance.class,
+				ClientboundSetDefaultSpawnPosition.class
+		))
+			assertFalse(player.protocol().wants(type), type.getSimpleName());
 	}
 
 	@Test
 	void isUnavailableForAPlayerThatDoesNotSpeakTheJavaProtocol() {
-		RecordingPlayer silent = new RecordingPlayer(null);
+		TestWorkerPlayer silent = new TestWorkerPlayer("Alice");
 
 		assertThrows(ProtocolUnavailableException.class, () -> extension.bind(silent, operations));
-		assertNull(silent.connections);
+		silent.connect();
+
+		assertEquals(List.of(), silent.emittedEvents());
 	}
 
 	@Test
 	void reportsTheTimeOfDayTheServerSendsBeforeWorldClocks() {
 		connect();
-		protocol.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
+		player.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
 
-		protocol.deliver(ClientboundSetTime.builder().gameTime(500).dayTime(30000L).tickDayTime(false).build());
+		player.deliver(ClientboundSetTime.builder().gameTime(500).dayTime(30000L).tickDayTime(false).build());
 
 		assertEquals(WorldTime.builder().gameTime(500).dayTime(30000L).advancing(false).build(), lastState().getTime());
 		assertEquals(6000, lastState().getTime().timeOfDay().orElseThrow());
@@ -199,17 +201,17 @@ class JavaWorldExtensionTest {
 	@Test
 	void followsTheClockOfTheLevelsDimensionTypeFromWorldClocks() {
 		connect();
-		protocol.deliver(login(7, OVERWORLD, vanilla(OVERWORLD).toBuilder().defaultClock(OVERWORLD).build()));
+		player.deliver(login(7, OVERWORLD, vanilla(OVERWORLD).toBuilder().defaultClock(OVERWORLD).build()));
 
-		protocol.deliver(ClientboundSetTime.builder()
+		player.deliver(ClientboundSetTime.builder()
 				.gameTime(500)
 				.clockUpdate(OVERWORLD, new ClockState(13000, 0, 1))
 				.clockUpdate(END, new ClockState(40, 0, 0))
 				.build());
 		WorldTime overworld = lastState().getTime();
-		protocol.deliver(respawn(NETHER, vanilla(NETHER)));
+		player.deliver(respawn(NETHER, vanilla(NETHER)));
 		WorldTime nether = lastState().getTime();
-		protocol.deliver(respawn(END, vanilla(END).toBuilder().defaultClock(END).build()));
+		player.deliver(respawn(END, vanilla(END).toBuilder().defaultClock(END).build()));
 		WorldTime end = lastState().getTime();
 
 		assertEquals(13000L, overworld.getDayTime());
@@ -224,35 +226,35 @@ class JavaWorldExtensionTest {
 	@Test
 	void keepsTheWeatherOfTheLevelAndClearsItInAnotherOne() {
 		connect();
-		protocol.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
+		player.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
 		assertEquals(Weather.CLEAR, lastState().getWeather());
 
-		protocol.deliver(new ClientboundGameEvent(GameEventType.START_RAINING, 0));
-		protocol.deliver(new ClientboundGameEvent(GameEventType.RAIN_LEVEL_CHANGE, 1));
-		protocol.deliver(new ClientboundGameEvent(GameEventType.THUNDER_LEVEL_CHANGE, 1));
+		player.deliver(new ClientboundGameEvent(GameEventType.START_RAINING, 0));
+		player.deliver(new ClientboundGameEvent(GameEventType.RAIN_LEVEL_CHANGE, 1));
+		player.deliver(new ClientboundGameEvent(GameEventType.THUNDER_LEVEL_CHANGE, 1));
 		assertEquals(Weather.builder().rainLevel(1).thunderLevel(1).build(), lastState().getWeather());
 		assertEquals(WeatherType.THUNDER, lastState().weatherType());
 
-		protocol.deliver(respawn(OVERWORLD, vanilla(OVERWORLD)));
+		player.deliver(respawn(OVERWORLD, vanilla(OVERWORLD)));
 		assertEquals(WeatherType.THUNDER, lastState().weatherType());
 
-		protocol.deliver(new ClientboundGameEvent(GameEventType.RAIN_LEVEL_CHANGE, 0.1F));
-		protocol.deliver(new ClientboundGameEvent(GameEventType.STOP_RAINING, 0));
+		player.deliver(new ClientboundGameEvent(GameEventType.RAIN_LEVEL_CHANGE, 0.1F));
+		player.deliver(new ClientboundGameEvent(GameEventType.STOP_RAINING, 0));
 		assertEquals(Weather.builder().rainLevel(1).thunderLevel(1).build(), lastState().getWeather());
-		protocol.deliver(new ClientboundGameEvent(GameEventType.START_RAINING, 0));
+		player.deliver(new ClientboundGameEvent(GameEventType.START_RAINING, 0));
 		assertEquals(WeatherType.CLEAR, lastState().weatherType());
 
-		protocol.deliver(respawn(NETHER, vanilla(NETHER)));
+		player.deliver(respawn(NETHER, vanilla(NETHER)));
 		assertEquals(Weather.CLEAR, lastState().getWeather());
 	}
 
 	@Test
 	void followsTheWorldBorderOfTheLevel() {
 		connect();
-		protocol.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
+		player.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
 		assertNull(lastState().getBorder());
 
-		protocol.deliver(ClientboundInitializeBorder.builder()
+		player.deliver(ClientboundInitializeBorder.builder()
 				.centerX(1)
 				.centerZ(2)
 				.oldSize(100)
@@ -261,33 +263,33 @@ class JavaWorldExtensionTest {
 				.warningBlocks(5)
 				.warningTime(15)
 				.build());
-		protocol.deliver(new ClientboundSetBorderLerpSize(100, 50, 200));
+		player.deliver(new ClientboundSetBorderLerpSize(100, 50, 200));
 		WorldBorder moving = lastState().getBorder();
-		protocol.deliver(new ClientboundSetBorderCenter(10, 20));
-		protocol.deliver(new ClientboundSetBorderSize(64));
-		protocol.deliver(new ClientboundSetBorderWarningDelay(30));
-		protocol.deliver(new ClientboundSetBorderWarningDistance(8));
+		player.deliver(new ClientboundSetBorderCenter(10, 20));
+		player.deliver(new ClientboundSetBorderSize(64));
+		player.deliver(new ClientboundSetBorderWarningDelay(30));
+		player.deliver(new ClientboundSetBorderWarningDistance(8));
 
 		assertEquals(WorldBorder.builder().centerX(1).centerZ(2).size(50).lerpFrom(100).lerpTicks(200)
 				.absoluteMaxSize(1000).warningBlocks(5).warningTime(15).build(), moving);
 		assertEquals(WorldBorder.builder().centerX(10).centerZ(20).size(64).lerpFrom(64)
 				.absoluteMaxSize(1000).warningBlocks(8).warningTime(30).build(), lastState().getBorder());
 
-		protocol.deliver(respawn(NETHER, vanilla(NETHER)));
+		player.deliver(respawn(NETHER, vanilla(NETHER)));
 		assertNull(lastState().getBorder());
 	}
 
 	@Test
 	void placesASpawnPointWithoutALevelInTheLevelThePlayerIsIn() {
 		connect();
-		protocol.deliver(login(7, NETHER, vanilla(NETHER)));
+		player.deliver(login(7, NETHER, vanilla(NETHER)));
 
-		protocol.deliver(ClientboundSetDefaultSpawnPosition.builder()
+		player.deliver(ClientboundSetDefaultSpawnPosition.builder()
 				.position(BlockPosition.builder().x(1).y(64).z(-3).build())
 				.yaw(90)
 				.build());
 		SpawnPoint inferred = lastState().getSpawn();
-		protocol.deliver(ClientboundSetDefaultSpawnPosition.builder()
+		player.deliver(ClientboundSetDefaultSpawnPosition.builder()
 				.dimension(OVERWORLD)
 				.position(BlockPosition.builder().x(0).y(70).z(0).build())
 				.yaw(180)
@@ -301,13 +303,11 @@ class JavaWorldExtensionTest {
 	@Test
 	void emptiesTheWorldStateWhenTheConnectionEnds() {
 		connect();
-		protocol.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
-		protocol.deliver(ClientboundSetTime.builder().gameTime(1).dayTime(1L).tickDayTime(true).build());
+		player.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
+		player.deliver(ClientboundSetTime.builder().gameTime(1).dayTime(1L).tickDayTime(true).build());
 
-		player.endConnection();
+		player.disconnect();
 
-		assertEquals(WorldState.EMPTY, lastState());
-		protocol.deliver(ClientboundSetTime.builder().gameTime(2).dayTime(2L).tickDayTime(true).build());
 		assertEquals(WorldState.EMPTY, lastState());
 	}
 
@@ -318,7 +318,7 @@ class JavaWorldExtensionTest {
 
 	private void connect() {
 		extension.bind(player, operations);
-		player.startConnection();
+		player.connect();
 	}
 
 	private static ClientboundLogin login(int entityId, String dimension, DimensionType type) {
@@ -346,161 +346,5 @@ class JavaWorldExtensionTest {
 		DimensionType type = vanilla(to);
 		DimensionTypeInfo info = new DimensionTypeInfo(to, environment, type.getMinY(), type.getHeight());
 		return new DimensionChange(from, to, new LevelInfo(to, info, LevelGeneration.NORMAL));
-	}
-
-	/**
-	 * Hands delivered packets to the listener of their class; the world sends nothing.
-	 */
-	private static final class RecordingProtocol implements JavaProtocol {
-		private final Map<Class<?>, Consumer<Object>> listeners = new LinkedHashMap<>();
-
-		@Override
-		public <P extends ClientboundPacket> @NotNull Subscription listen(
-				@NotNull Class<P> type,
-				@NotNull Consumer<? super P> listener
-		) {
-			listeners.put(type, packet -> listener.accept(type.cast(packet)));
-			return () -> listeners.remove(type);
-		}
-
-		@Override
-		public void send(@NotNull ServerboundPacket packet) {
-			throw new AssertionError("The world sends no packets");
-		}
-
-		@Override
-		public <P extends ServerboundPacket> @NotNull Subscription listenSent(
-				@NotNull Class<P> type,
-				@NotNull Consumer<? super P> listener
-		) {
-			throw new AssertionError("The world binding observes no sent packets");
-		}
-
-		@Override
-		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
-			return true;
-		}
-
-		@Override
-		public @NotNull JavaWorld world() {
-			throw new UnsupportedOperationException("This test's protocol keeps no world");
-		}
-
-		private void deliver(ClientboundPacket packet) {
-			Consumer<Object> listener = listeners.get(packet.getClass());
-			if (listener != null) listener.accept(packet);
-		}
-	}
-
-	private static final class RecordingOperations implements OperationRegistry {
-		private final List<String> registered = new ArrayList<>();
-
-		@Override
-		public <Q, R> void register(@NotNull OperationDescriptor<Q, R> operation, @NotNull Function<Q, R> handler) {
-			registered.add(operation.getId());
-		}
-	}
-
-	/**
-	 * A player that speaks the given protocol, or none, whose connections the test starts and ends: each
-	 * {@link #startConnection()} closes the binding of the previous connection and binds the new one, as the worker
-	 * does before a new session connects, and {@link #endConnection()} closes the current one, as the worker does when
-	 * the connection ends.
-	 */
-	private static final class RecordingPlayer implements PlayerBindingContext<Object> {
-		private final @Nullable JavaProtocol protocol;
-		private final List<Emitted> emitted = new ArrayList<>();
-		private @Nullable Function<Object, Subscription> connections;
-		private @Nullable Subscription connection;
-
-		private RecordingPlayer(@Nullable JavaProtocol protocol) {
-			this.protocol = protocol;
-		}
-
-		private void startConnection() {
-			endConnection();
-			if (connections != null) connection = connections.apply(new Object());
-		}
-
-		private void endConnection() {
-			if (connection != null) connection.close();
-			connection = null;
-		}
-
-		private <E> List<E> emitted(EventDescriptor<E> event) {
-			return emitted.stream()
-					.filter(emitted -> emitted.id().equals(event.getId()))
-					.map(emitted -> event.getPayloadType().cast(emitted.payload()))
-					.toList();
-		}
-
-		@Override
-		public <P> @NotNull P protocol(@NotNull Class<P> type) {
-			if (protocol == null) return PlayerBindingContext.super.protocol(type);
-
-			return type.cast(protocol);
-		}
-
-		@Override
-		public @NotNull String name() {
-			return "Alice";
-		}
-
-		@Override
-		public @NotNull UUID uniqueId() {
-			return UUID.nameUUIDFromBytes("Alice".getBytes());
-		}
-
-		@Override
-		public void connect() {
-			throw new AssertionError("The world does not drive the lifecycle");
-		}
-
-		@Override
-		public void disconnect() {
-			throw new AssertionError("The world does not drive the lifecycle");
-		}
-
-		@Override
-		public void rejoin() {
-			throw new AssertionError("The world does not drive the lifecycle");
-		}
-
-		@Override
-		public @NotNull Object nativeSession() {
-			throw new AssertionError("The world uses the protocol, not the native session");
-		}
-
-		@Override
-		public boolean isCurrentNativeSession(@NotNull Object nativeSession) {
-			throw new AssertionError("The world uses the protocol, not the native session");
-		}
-
-		@Override
-		public @NotNull Subscription bindNativeSession(@NotNull Function<Object, Subscription> listener) {
-			connections = listener;
-			return () -> {
-				connections = null;
-				endConnection();
-			};
-		}
-
-		@Override
-		public @NotNull ViewRotation viewRotation() {
-			throw new AssertionError("The world does not use the view rotation");
-		}
-
-		@Override
-		public void viewRotation(@NotNull ViewRotation rotation) {
-			throw new AssertionError("The world does not change the view rotation");
-		}
-
-		@Override
-		public <E> void emit(@NotNull EventDescriptor<E> event, @Nullable E payload) {
-			emitted.add(new Emitted(event.getId(), payload));
-		}
-
-		private record Emitted(String id, Object payload) {
-		}
 	}
 }

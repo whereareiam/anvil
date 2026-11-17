@@ -9,4 +9,6 @@ dependencies {
 	implementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinMessages.messagesApi)
 	implementation(projects.anvilPlayer.playerApi)
 	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
+
+	testImplementation(testFixtures(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker))
 }

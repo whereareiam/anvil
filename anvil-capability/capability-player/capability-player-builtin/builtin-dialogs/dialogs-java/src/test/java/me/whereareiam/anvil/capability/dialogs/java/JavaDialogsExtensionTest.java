@@ -13,17 +13,9 @@ import me.whereareiam.anvil.capability.dialogs.model.dialog.RegistryDialog;
 import me.whereareiam.anvil.capability.dialogs.type.DialogActionType;
 import me.whereareiam.anvil.capability.dialogs.type.DialogAfterAction;
 import me.whereareiam.anvil.capability.dialogs.type.DialogInputType;
-import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
-import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
-import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
-import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
-import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
-import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
-import me.whereareiam.anvil.protocol.java.api.JavaWorld;
 import me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtByte;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
@@ -34,8 +26,6 @@ import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtTag;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.configuration.ClientboundRegistryData;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
@@ -44,24 +34,20 @@ import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStart
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ClientboundClearDialog;
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ClientboundShowDialog;
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ServerboundCustomClickAction;
-import org.jetbrains.annotations.NotNull;
+import me.whereareiam.anvil.protocol.java.worker.TestJavaPlayer;
+import me.whereareiam.anvil.protocol.worker.TestOperations;
+import me.whereareiam.anvil.protocol.worker.TestWorkerPlayer;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.UUID;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -79,8 +65,18 @@ class JavaDialogsExtensionTest {
 			.closeWithEscape(true)
 			.afterAction(DialogAfterAction.CLOSE)
 			.build();
+	private static final List<Class<? extends ClientboundPacket>> LISTENED = List.of(
+			ClientboundShowDialog.class,
+			ClientboundClearDialog.class,
+			ClientboundRegistryData.class,
+			ClientboundLogin.class,
+			ClientboundRespawn.class,
+			ClientboundStartConfiguration.class
+	);
 
 	private final JavaDialogsExtension extension = new JavaDialogsExtension();
+	private final TestJavaPlayer player = new TestJavaPlayer("Alice");
+	private final TestOperations operations = new TestOperations();
 
 	@Test
 	void isDiscoveredAsTheEditionWideDialogsExtension() {
@@ -97,37 +93,33 @@ class JavaDialogsExtensionTest {
 
 	@Test
 	void sendsCommandsAsUnsignedCommandsAndCustomClicksWithTheDeclaredIdAndPayload() {
-		RecordingProtocol protocol = new RecordingProtocol();
-		RecordingPlayer player = new RecordingPlayer(protocol);
-		RecordingOperations operations = new RecordingOperations();
 		extension.bind(player, operations);
-		protocol.deliver(new ClientboundShowDialog(null, actions(
+		player.connect();
+		player.deliver(new ClientboundShowDialog(null, actions(
 				custom("minecraft:custom", "example:leave", "payload", NbtCompound.EMPTY.with("source", new NbtString("dialog"))),
 				custom("minecraft:custom", "example:ping", "payload", null)
 		), false));
 
-		assertNull(operations.execute(DialogsChannel.CLICK, DialogClick.command("login secret")));
-		assertNull(operations.execute(DialogsChannel.CLICK, DialogClick.custom(handle(player, 0), List.of())));
-		assertNull(operations.execute(DialogsChannel.CLICK, DialogClick.custom(handle(player, 1), List.of())));
+		assertNull(operations.call(DialogsChannel.CLICK, DialogClick.command("login secret")));
+		assertNull(operations.call(DialogsChannel.CLICK, DialogClick.custom(handle(player, 0), List.of())));
+		assertNull(operations.call(DialogsChannel.CLICK, DialogClick.custom(handle(player, 1), List.of())));
 
-		assertEquals(List.of("dialogs.click"), List.copyOf(operations.handlers.keySet()));
+		assertEquals(List.of("dialogs.click"), operations.registered());
 		assertEquals(List.of(
 				new ServerboundChatCommand("login secret"),
 				new ServerboundCustomClickAction("example:leave", NbtCompound.EMPTY.with("source", new NbtString("dialog"))),
 				new ServerboundCustomClickAction("example:ping", NbtCompound.EMPTY)
-		), protocol.sent);
+		), player.sent());
 	}
 
 	@Test
 	void sendsADynamicCustomClickWithTheValuesPutIntoTheDeclaredAdditions() {
-		RecordingProtocol protocol = new RecordingProtocol();
-		RecordingPlayer player = new RecordingPlayer(protocol);
-		RecordingOperations operations = new RecordingOperations();
 		extension.bind(player, operations);
-		protocol.deliver(new ClientboundShowDialog(null, actions(custom("minecraft:dynamic/custom", "example:submit", "additions",
+		player.connect();
+		player.deliver(new ClientboundShowDialog(null, actions(custom("minecraft:dynamic/custom", "example:submit", "additions",
 				NbtCompound.builder().put("source", new NbtString("dialog")).put("password", new NbtString("old")).build())), false));
 
-		operations.execute(DialogsChannel.CLICK, DialogClick.custom(handle(player, 0), List.of(
+		operations.call(DialogsChannel.CLICK, DialogClick.custom(handle(player, 0), List.of(
 				new DialogValue("password", DialogInputType.TEXT, "secret"),
 				new DialogValue("remember", DialogInputType.BOOLEAN, "true"),
 				new DialogValue("hidden", DialogInputType.BOOLEAN, "false"),
@@ -142,29 +134,25 @@ class JavaDialogsExtensionTest {
 				.put("hidden", NbtByte.of(false))
 				.put("amount", new NbtFloat(2.5F))
 				.put("mode", new NbtString("hard"))
-				.build())), protocol.sent);
+				.build())), player.sent());
 	}
 
 	@Test
 	void refusesACustomClickWhoseDeclaredPayloadIsNotACompound() {
-		RecordingProtocol protocol = new RecordingProtocol();
-		RecordingPlayer player = new RecordingPlayer(protocol);
-		RecordingOperations operations = new RecordingOperations();
 		extension.bind(player, operations);
-		protocol.deliver(new ClientboundShowDialog(null, actions(custom("minecraft:custom", "example:ping", "payload",
+		player.connect();
+		player.deliver(new ClientboundShowDialog(null, actions(custom("minecraft:custom", "example:ping", "payload",
 				new NbtList(List.of(new NbtInt(1), new NbtInt(2))))), false));
 
 		assertThrows(IllegalArgumentException.class,
-				() -> operations.execute(DialogsChannel.CLICK, DialogClick.custom(handle(player, 0), List.of())));
-		assertEquals(List.of(), protocol.sent);
+				() -> operations.call(DialogsChannel.CLICK, DialogClick.custom(handle(player, 0), List.of())));
+		assertEquals(List.of(), player.sent());
 	}
 
 	@Test
 	void refusesAClickNamingAnActionOfADialogThatIsGone() {
-		RecordingProtocol protocol = new RecordingProtocol();
-		RecordingPlayer player = new RecordingPlayer(protocol);
-		RecordingOperations operations = new RecordingOperations();
 		extension.bind(player, operations);
+		player.connect();
 		List<ClientboundPacket> endings = List.of(
 				new ClientboundShowDialog(null, NOTICE, false),
 				new ClientboundClearDialog(),
@@ -174,83 +162,76 @@ class JavaDialogsExtensionTest {
 		);
 
 		for (ClientboundPacket ending : endings) {
-			protocol.deliver(new ClientboundShowDialog(null, actions(custom("minecraft:custom", "example:ping", "payload", null)), false));
+			player.deliver(new ClientboundShowDialog(null, actions(custom("minecraft:custom", "example:ping", "payload", null)), false));
 			long handle = handle(player, 0);
-			protocol.deliver(ending);
+			player.deliver(ending);
 
 			IllegalStateException failure = assertThrows(IllegalStateException.class,
-					() -> operations.execute(DialogsChannel.CLICK, DialogClick.custom(handle, List.of())));
+					() -> operations.call(DialogsChannel.CLICK, DialogClick.custom(handle, List.of())));
 			assertTrue(failure.getMessage().contains("no longer shown"), failure.getMessage());
 		}
 
-		protocol.deliver(new ClientboundShowDialog(null, actions(custom("minecraft:custom", "example:ping", "payload", null)), false));
+		player.deliver(new ClientboundShowDialog(null, actions(custom("minecraft:custom", "example:ping", "payload", null)), false));
 		long handle = handle(player, 0);
-		player.startConnection();
+		player.rejoin();
 
-		assertThrows(IllegalStateException.class, () -> operations.execute(DialogsChannel.CLICK, DialogClick.custom(handle, List.of())));
-		assertEquals(List.of(), protocol.sent);
+		assertThrows(IllegalStateException.class, () -> operations.call(DialogsChannel.CLICK, DialogClick.custom(handle, List.of())));
+		assertEquals(List.of(), player.sent());
 	}
 
 	@Test
 	void keepsTheActionsOfTheDialogRegistryUntilANewRegistryReplacesIt() {
-		RecordingProtocol protocol = new RecordingProtocol();
-		RecordingPlayer player = new RecordingPlayer(protocol);
-		RecordingOperations operations = new RecordingOperations();
 		extension.bind(player, operations);
+		player.connect();
 		NbtCompound rules = actions(custom("minecraft:custom", "example:agree", "payload", null));
 
-		protocol.deliver(new ClientboundRegistryData("minecraft:dialog", List.of(new RegistryEntry("example:rules", rules))));
-		DialogRegistry registry = (DialogRegistry) player.payloads.getLast();
+		player.deliver(new ClientboundRegistryData("minecraft:dialog", List.of(new RegistryEntry("example:rules", rules))));
+		DialogRegistry registry = player.emitted(DialogsChannel.REGISTRY).getLast();
 		long handle = registry.getDialogs().getFirst().getDialog().getButtons().getFirst().getAction().getHandle();
-		protocol.deliver(new ClientboundShowDialog(0, null, false));
-		protocol.deliver(new ClientboundClearDialog());
-		operations.execute(DialogsChannel.CLICK, DialogClick.custom(handle, List.of()));
-		protocol.deliver(new ClientboundRegistryData("minecraft:dialog", List.of()));
+		player.deliver(new ClientboundShowDialog(0, null, false));
+		player.deliver(new ClientboundClearDialog());
+		operations.call(DialogsChannel.CLICK, DialogClick.custom(handle, List.of()));
+		player.deliver(new ClientboundRegistryData("minecraft:dialog", List.of()));
 
-		assertEquals(List.of(new ServerboundCustomClickAction("example:agree", NbtCompound.EMPTY)), protocol.sent);
-		assertThrows(IllegalStateException.class, () -> operations.execute(DialogsChannel.CLICK, DialogClick.custom(handle, List.of())));
+		assertEquals(List.of(new ServerboundCustomClickAction("example:agree", NbtCompound.EMPTY)), player.sent());
+		assertThrows(IllegalStateException.class, () -> operations.call(DialogsChannel.CLICK, DialogClick.custom(handle, List.of())));
 	}
 
 	@Test
 	void sendsNothingWhileThePlayerIsDisconnected() {
-		RecordingProtocol protocol = new RecordingProtocol();
-		protocol.connected = false;
-		RecordingOperations operations = new RecordingOperations();
-		extension.bind(new RecordingPlayer(protocol), operations);
+		extension.bind(player, operations);
 
 		IllegalStateException failure = assertThrows(IllegalStateException.class,
-				() -> operations.execute(DialogsChannel.CLICK, DialogClick.command("login secret")));
+				() -> operations.call(DialogsChannel.CLICK, DialogClick.command("login secret")));
 
 		assertTrue(failure.getMessage().contains("not connected"), failure.getMessage());
-		assertEquals(List.of(), protocol.sent);
+		assertEquals(List.of(), player.sent());
 	}
 
 	@Test
 	void resetsTheScreensForEachNewConnectionAndWheneverTheClientReplacesThem() {
-		RecordingProtocol protocol = new RecordingProtocol();
-		RecordingPlayer player = new RecordingPlayer(protocol);
-		extension.bind(player, new RecordingOperations());
+		extension.bind(player, operations);
 
-		player.startConnection();
-		protocol.deliver(new ClientboundShowDialog(null, NOTICE, false));
-		protocol.deliver(new ClientboundClearDialog());
-		protocol.deliver(login(42));
-		protocol.deliver(respawn());
-		protocol.deliver(new ClientboundStartConfiguration());
-		player.startConnection();
+		player.connect();
+		player.deliver(new ClientboundShowDialog(null, NOTICE, false));
+		player.deliver(new ClientboundClearDialog());
+		player.deliver(login(42));
+		player.deliver(respawn());
+		player.deliver(new ClientboundStartConfiguration());
+		player.rejoin();
 
 		assertEquals(List.of("dialogs.reset", "dialogs.shown", "dialogs.cleared", "dialogs.reset", "dialogs.reset", "dialogs.reset",
-				"dialogs.reset"), player.events);
-		assertEquals(LOGIN, player.payloads.get(1));
+				"dialogs.reset"), player.emittedEvents());
+		assertEquals(List.of(LOGIN), player.emitted(DialogsChannel.SHOWN));
 	}
 
 	@Test
 	void mapsShownDialogsWithTheirInputsButtonsAndNestedDialogs() {
-		RecordingProtocol protocol = new RecordingProtocol();
-		RecordingPlayer player = new RecordingPlayer(protocol);
-		extension.bind(player, new RecordingOperations());
+		extension.bind(player, operations);
+		player.connect();
 
-		protocol.deliver(new ClientboundShowDialog(null, NbtCompound.builder()
+
+		player.deliver(new ClientboundShowDialog(null, NbtCompound.builder()
 				.put("type", new NbtString("minecraft:multi_action"))
 				.put("title", new NbtString("Identica"))
 				.put("external_title", new NbtString("Log in"))
@@ -332,63 +313,62 @@ class JavaDialogsExtensionTest {
 				.button(new DialogButton("Leave", DialogAction.of(DialogActionType.RUN_COMMAND, "/hub"), true))
 				.closeWithEscape(false)
 				.afterAction(DialogAfterAction.WAIT_FOR_RESPONSE)
-				.build(), player.payloads.getLast());
+				.build(), player.emitted(DialogsChannel.SHOWN).getLast());
 	}
 
 	@Test
 	void reportsRegistryReferencesAndConfigurationDialogs() {
-		RecordingProtocol protocol = new RecordingProtocol();
-		RecordingPlayer player = new RecordingPlayer(protocol);
-		extension.bind(player, new RecordingOperations());
+		extension.bind(player, operations);
+		player.connect();
 
-		protocol.deliver(new ClientboundShowDialog(3, null, false));
-		protocol.deliver(new ClientboundShowDialog(null, NOTICE, true));
+		player.deliver(new ClientboundShowDialog(3, null, false));
+		player.deliver(new ClientboundShowDialog(null, NOTICE, true));
 
-		assertEquals(Dialog.builder()
-				.type("")
-				.registryId(3)
-				.title("")
-				.externalTitle("")
-				.closeWithEscape(true)
-				.afterAction(DialogAfterAction.CLOSE)
-				.build(), player.payloads.get(0));
-		assertEquals(LOGIN.toBuilder().configuration(true).build(), player.payloads.get(1));
+		assertEquals(List.of(
+				Dialog.builder()
+						.type("")
+						.registryId(3)
+						.title("")
+						.externalTitle("")
+						.closeWithEscape(true)
+						.afterAction(DialogAfterAction.CLOSE)
+						.build(),
+				LOGIN.toBuilder().configuration(true).build()
+		), player.emitted(DialogsChannel.SHOWN));
 	}
 
 	@Test
 	void reportsOnlyTheDialogRegistryInItsOrder() {
-		RecordingProtocol protocol = new RecordingProtocol();
-		RecordingPlayer player = new RecordingPlayer(protocol);
-		extension.bind(player, new RecordingOperations());
+		extension.bind(player, operations);
+		player.connect();
 
-		protocol.deliver(new ClientboundRegistryData("minecraft:dimension_type", List.of(
+		player.deliver(new ClientboundRegistryData("minecraft:dimension_type", List.of(
 				new RegistryEntry("minecraft:overworld", NbtCompound.EMPTY.with("height", new NbtInt(384)))
 		)));
-		protocol.deliver(new ClientboundRegistryData("minecraft:dialog", List.of(
+		player.deliver(new ClientboundRegistryData("minecraft:dialog", List.of(
 				new RegistryEntry("example:rules", NOTICE),
 				new RegistryEntry("example:menu", null)
 		)));
 
-		assertEquals(List.of("dialogs.registry"), player.events);
-		assertEquals(new DialogRegistry(List.of(
+		assertEquals(List.of("dialogs.reset", "dialogs.registry"), player.emittedEvents());
+		assertEquals(List.of(new DialogRegistry(List.of(
 				new RegistryDialog("example:rules", LOGIN),
 				new RegistryDialog("example:menu", null)
-		)), player.payloads.getFirst());
+		))), player.emitted(DialogsChannel.REGISTRY));
 	}
 
 	@Test
 	void takesTheBuiltInDialogsTheServerSendsWithoutDataFromTheClientsOwnDataPack() {
-		RecordingProtocol protocol = new RecordingProtocol();
-		RecordingPlayer player = new RecordingPlayer(protocol);
-		extension.bind(player, new RecordingOperations());
+		extension.bind(player, operations);
+		player.connect();
 
-		protocol.deliver(new ClientboundRegistryData("minecraft:dialog", List.of(
+		player.deliver(new ClientboundRegistryData("minecraft:dialog", List.of(
 				new RegistryEntry("minecraft:server_links", null),
 				new RegistryEntry("minecraft:custom_options", null),
 				new RegistryEntry("minecraft:quick_actions", null)
 		)));
 
-		List<RegistryDialog> dialogs = ((DialogRegistry) player.payloads.getFirst()).getDialogs();
+		List<RegistryDialog> dialogs = player.emitted(DialogsChannel.REGISTRY).getFirst().getDialogs();
 		assertEquals(List.of("minecraft:server_links", "minecraft:dialog_list", "minecraft:dialog_list"),
 				dialogs.stream().map(registered -> registered.getDialog().getType()).toList());
 		assertEquals(List.of("menu.server_links.title", "menu.custom_options.title", "menu.quick_actions.title"),
@@ -402,41 +382,43 @@ class JavaDialogsExtensionTest {
 
 	@Test
 	void stopsListeningAndObservingConnectionsWhenClosed() {
-		RecordingProtocol protocol = new RecordingProtocol();
-		RecordingPlayer player = new RecordingPlayer(protocol);
-		WorkerBinding binding = extension.bind(player, new RecordingOperations());
+		WorkerBinding binding = extension.bind(player, operations);
+		for (Class<? extends ClientboundPacket> type : LISTENED)
+			assertTrue(player.protocol().wants(type), type.getName());
 
 		binding.close();
-		player.startConnection();
-		protocol.deliver(new ClientboundClearDialog());
+		player.connect();
+		player.deliver(new ClientboundClearDialog());
 
-		assertEquals(Map.of(), protocol.listeners);
-		assertNull(player.connections);
-		assertEquals(List.of(), player.events);
+		for (Class<? extends ClientboundPacket> type : LISTENED)
+			assertFalse(player.protocol().wants(type), type.getName());
+		assertEquals(List.of(), player.emittedEvents());
 	}
 
 	@Test
 	void isUnavailableForAReleaseWithoutDialogs() {
-		RecordingProtocol protocol = new RecordingProtocol();
-		protocol.unsupported.add(ClientboundShowDialog.class);
-		RecordingPlayer player = new RecordingPlayer(protocol);
-		RecordingOperations operations = new RecordingOperations();
+		TestJavaPlayer older = new TestJavaPlayer("Alice", type -> type != ClientboundShowDialog.class);
 
 		ProtocolUnavailableException failure = assertThrows(ProtocolUnavailableException.class,
-				() -> extension.bind(player, operations));
+				() -> extension.bind(older, operations));
+		older.connect();
 
 		assertTrue(failure.getMessage().contains(ClientboundShowDialog.class.getName()), failure.getMessage());
-		assertEquals(Map.of(), operations.handlers);
-		assertEquals(Map.of(), protocol.listeners);
-		assertNull(player.connections);
+		assertEquals(List.of(), operations.registered());
+		for (Class<? extends ClientboundPacket> type : LISTENED)
+			assertFalse(older.protocol().wants(type), type.getName());
+		assertEquals(List.of(), older.emittedEvents());
 	}
 
 	@Test
 	void isUnavailableForAPlayerThatDoesNotSpeakTheJavaProtocol() {
-		RecordingPlayer player = new RecordingPlayer(null);
+		TestWorkerPlayer silent = new TestWorkerPlayer("Alice");
 
-		assertThrows(ProtocolUnavailableException.class, () -> extension.bind(player, new RecordingOperations()));
-		assertNull(player.connections);
+		assertThrows(ProtocolUnavailableException.class, () -> extension.bind(silent, operations));
+		silent.connect();
+
+		assertEquals(List.of(), operations.registered());
+		assertEquals(List.of(), silent.emittedEvents());
 	}
 
 	/**
@@ -464,8 +446,8 @@ class JavaDialogsExtensionTest {
 	/**
 	 * Returns the handle of a button's action in the dialog the player was shown last.
 	 */
-	private static long handle(RecordingPlayer player, int button) {
-		Dialog shown = (Dialog) player.payloads.getLast();
+	private static long handle(TestJavaPlayer player, int button) {
+		Dialog shown = player.emitted(DialogsChannel.SHOWN).getLast();
 		return Objects.requireNonNull(shown.getButtons().get(button).getAction().getHandle());
 	}
 
@@ -490,151 +472,5 @@ class JavaDialogsExtensionTest {
 				.dimension("minecraft:overworld")
 				.dimensionType(DimensionType.known("minecraft:overworld"))
 				.build();
-	}
-
-	/**
-	 * Hands delivered packets to the listener of their class and records the packets sent while connected.
-	 */
-	private static final class RecordingProtocol implements JavaProtocol {
-		private final Map<Class<?>, Consumer<Object>> listeners = new LinkedHashMap<>();
-		private final List<ServerboundPacket> sent = new ArrayList<>();
-		private final Set<Class<?>> unsupported = new HashSet<>();
-		private boolean connected = true;
-
-		@Override
-		public <P extends ClientboundPacket> @NotNull Subscription listen(
-				@NotNull Class<P> type,
-				@NotNull Consumer<? super P> listener
-		) {
-			listeners.put(type, packet -> listener.accept(type.cast(packet)));
-			return () -> listeners.remove(type);
-		}
-
-		@Override
-		public void send(@NotNull ServerboundPacket packet) {
-			if (!connected) throw new IllegalStateException("Player Alice is not connected");
-
-			sent.add(packet);
-		}
-
-		@Override
-		public <P extends ServerboundPacket> @NotNull Subscription listenSent(
-				@NotNull Class<P> type,
-				@NotNull Consumer<? super P> listener
-		) {
-			throw new AssertionError("The dialogs binding observes no sent packets");
-		}
-
-		@Override
-		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
-			return !unsupported.contains(type);
-		}
-
-		@Override
-		public @NotNull JavaWorld world() {
-			throw new UnsupportedOperationException("This test's protocol keeps no world");
-		}
-
-		private void deliver(ClientboundPacket packet) {
-			Consumer<Object> listener = listeners.get(packet.getClass());
-			if (listener != null) listener.accept(packet);
-		}
-	}
-
-	private static final class RecordingOperations implements OperationRegistry {
-		private final Map<String, Function<Object, Object>> handlers = new LinkedHashMap<>();
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public <Q, R> void register(@NotNull OperationDescriptor<Q, R> operation, @NotNull Function<Q, R> handler) {
-			handlers.put(operation.getId(), (Function<Object, Object>) handler);
-		}
-
-		private <Q> @Nullable Object execute(OperationDescriptor<Q, ?> operation, Q request) {
-			return handlers.get(operation.getId()).apply(request);
-		}
-	}
-
-	/**
-	 * A player that speaks the given protocol, or none, whose connections the test starts: each
-	 * {@link #startConnection()} runs the connection listener as the worker does before a new session connects.
-	 */
-	private static final class RecordingPlayer implements PlayerBindingContext<Object> {
-		private final @Nullable JavaProtocol protocol;
-		private final List<String> events = new ArrayList<>();
-		private final List<Object> payloads = new ArrayList<>();
-		private @Nullable Function<Object, Subscription> connections;
-
-		private RecordingPlayer(@Nullable JavaProtocol protocol) {
-			this.protocol = protocol;
-		}
-
-		private void startConnection() {
-			if (connections != null) connections.apply(new Object());
-		}
-
-		@Override
-		public <P> @NotNull P protocol(@NotNull Class<P> type) {
-			if (protocol == null) return PlayerBindingContext.super.protocol(type);
-
-			return type.cast(protocol);
-		}
-
-		@Override
-		public @NotNull String name() {
-			return "Alice";
-		}
-
-		@Override
-		public @NotNull UUID uniqueId() {
-			return UUID.nameUUIDFromBytes("Alice".getBytes());
-		}
-
-		@Override
-		public void connect() {
-			throw new AssertionError("Dialogs do not drive the lifecycle");
-		}
-
-		@Override
-		public void disconnect() {
-			throw new AssertionError("Dialogs do not drive the lifecycle");
-		}
-
-		@Override
-		public void rejoin() {
-			throw new AssertionError("Dialogs do not drive the lifecycle");
-		}
-
-		@Override
-		public @NotNull Object nativeSession() {
-			throw new AssertionError("Dialogs use the protocol, not the native session");
-		}
-
-		@Override
-		public boolean isCurrentNativeSession(@NotNull Object nativeSession) {
-			throw new AssertionError("Dialogs use the protocol, not the native session");
-		}
-
-		@Override
-		public @NotNull Subscription bindNativeSession(@NotNull Function<Object, Subscription> listener) {
-			connections = listener;
-			return () -> connections = null;
-		}
-
-		@Override
-		public @NotNull ViewRotation viewRotation() {
-			throw new AssertionError("Dialogs do not use the view rotation");
-		}
-
-		@Override
-		public void viewRotation(@NotNull ViewRotation rotation) {
-			throw new AssertionError("Dialogs do not change the view rotation");
-		}
-
-		@Override
-		public <E> void emit(@NotNull EventDescriptor<E> event, @Nullable E payload) {
-			events.add(event.getId());
-			payloads.add(payload);
-		}
 	}
 }
