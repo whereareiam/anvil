@@ -71,6 +71,35 @@ have it; the package is public, so that needs no login, and CI pulls it with its
 another image for a run, pass `-Panvil.docker.testImage=<image>`; to change it for everyone, change the property,
 and the workflow copies the new image once the change reaches `dev`.
 
+## Test a worker extension
+
+A built-in capability's worker extension, such as `JavaSoundsExtension`, is tested in its `<feature>-java` module
+against the worker kits' own test player, never against a fake of its own. `TestJavaPlayer`, from the
+`protocol-java-worker` test fixtures, speaks the real `JavaPacketDispatcher`: the test binds the extension, connects
+the player as a worker does, delivers the packets the server would send and reads what the player sent and emitted.
+`TestOperations` calls the operations the extension registered, and `TestWorkerPlayer` is a player that speaks no
+edition protocol.
+
+```java
+TestJavaPlayer player = new TestJavaPlayer("Alice");
+TestOperations operations = new TestOperations();
+extension.bind(player, operations);
+player.connect();
+
+player.deliver(ClientboundSoundEntity.builder()
+		.sound("minecraft:block.note_block.pling")
+		.source(SoundSource.BLOCKS)
+		.entityId(42)
+		.build());
+
+List<HeardSound> heard = player.emitted(SoundsChannel.HEARD);
+```
+
+A player created with a predicate, `new TestJavaPlayer("Alice", type -> type != ClientboundDeleteChat.class)`,
+carries only the packets it accepts, as an older release does. A module adds the fixtures with
+`testImplementation(testFixtures(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker))`. Modules
+share test fixtures through the `module-test-fixtures` convention, which leaves them out of the published artifacts.
+
 ## Check cross-module discovery
 
 `anvil-testkit/tests/runtime` exercises protocol library selection, platform providers, and capability

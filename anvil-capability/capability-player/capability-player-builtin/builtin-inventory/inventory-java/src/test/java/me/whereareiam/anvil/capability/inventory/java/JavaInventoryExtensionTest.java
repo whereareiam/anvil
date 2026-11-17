@@ -6,22 +6,12 @@ import me.whereareiam.anvil.capability.inventory.model.InventoryItem;
 import me.whereareiam.anvil.capability.inventory.model.InventorySnapshot;
 import me.whereareiam.anvil.capability.inventory.model.SlotSelection;
 import me.whereareiam.anvil.capability.inventory.type.InventoryClick;
-import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
-import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
-import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
-import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
-import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
-import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
-import me.whereareiam.anvil.protocol.java.api.JavaWorld;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetContent;
@@ -32,22 +22,20 @@ import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPla
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
 import me.whereareiam.anvil.protocol.java.api.type.ClickType;
-import org.jetbrains.annotations.NotNull;
+import me.whereareiam.anvil.protocol.java.worker.TestJavaPlayer;
+import me.whereareiam.anvil.protocol.worker.TestOperations;
+import me.whereareiam.anvil.protocol.worker.TestWorkerPlayer;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.UUID;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -55,8 +43,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class JavaInventoryExtensionTest {
 	private static final InventoryItem DIAMONDS = item(4, 3);
 	private static final DimensionType OVERWORLD = DimensionType.known("minecraft:overworld");
+	private static final List<Class<? extends ClientboundPacket>> LISTENED = List.of(ClientboundLogin.class,
+			ClientboundRespawn.class, ClientboundSetHeldSlot.class, ClientboundOpenScreen.class,
+			ClientboundContainerSetContent.class, ClientboundContainerSetSlot.class,
+			ClientboundSetPlayerInventory.class);
 
 	private final JavaInventoryExtension extension = new JavaInventoryExtension();
+	private final TestJavaPlayer player = new TestJavaPlayer("Alice");
+	private final TestOperations operations = new TestOperations();
 
 	@Test
 	void isDiscoveredAsTheEditionWideInventoryExtension() {
@@ -73,71 +67,71 @@ class JavaInventoryExtensionTest {
 
 	@Test
 	void selectsTheHotbarSlot() {
-		Fixture fixture = new Fixture();
+		connect();
 
-		assertNull(fixture.operations.execute(InventoryChannel.SELECT, new SlotSelection(3)));
+		assertNull(operations.call(InventoryChannel.SELECT, new SlotSelection(3)));
 
-		assertEquals(List.of("inventory.select", "inventory.click"), List.copyOf(fixture.operations.handlers.keySet()));
-		assertEquals(List.of(new ServerboundSetCarriedItem(3)), fixture.protocol.sent);
+		assertEquals(List.of("inventory.select", "inventory.click"), operations.registered());
+		assertEquals(List.of(new ServerboundSetCarriedItem(3)), player.sent());
 	}
 
 	@Test
 	void tellsNothingForTheSlotThePlayerHoldsAlready() {
-		Fixture fixture = new Fixture();
+		connect();
 
-		fixture.operations.execute(InventoryChannel.SELECT, new SlotSelection(0));
-		fixture.operations.execute(InventoryChannel.SELECT, new SlotSelection(2));
-		fixture.operations.execute(InventoryChannel.SELECT, new SlotSelection(2));
+		operations.call(InventoryChannel.SELECT, new SlotSelection(0));
+		operations.call(InventoryChannel.SELECT, new SlotSelection(2));
+		operations.call(InventoryChannel.SELECT, new SlotSelection(2));
 
-		assertEquals(List.of(new ServerboundSetCarriedItem(2)), fixture.protocol.sent);
+		assertEquals(List.of(new ServerboundSetCarriedItem(2)), player.sent());
 	}
 
 	@Test
 	void holdsTheHotbarSlotTheServerSelectsAndTellsIt() {
-		Fixture fixture = new Fixture();
+		connect();
 
-		fixture.protocol.deliver(new ClientboundSetHeldSlot(0));
-		fixture.protocol.deliver(new ClientboundSetHeldSlot(5));
-		fixture.protocol.deliver(new ClientboundSetHeldSlot(5));
-		fixture.protocol.deliver(new ClientboundSetHeldSlot(9));
-		fixture.protocol.deliver(new ClientboundSetHeldSlot(-1));
+		player.deliver(new ClientboundSetHeldSlot(0));
+		player.deliver(new ClientboundSetHeldSlot(5));
+		player.deliver(new ClientboundSetHeldSlot(5));
+		player.deliver(new ClientboundSetHeldSlot(9));
+		player.deliver(new ClientboundSetHeldSlot(-1));
 
-		assertEquals(List.of(new ServerboundSetCarriedItem(5)), fixture.protocol.sent);
+		assertEquals(List.of(new ServerboundSetCarriedItem(5)), player.sent());
 	}
 
 	@Test
 	void startsEachLoginWithTheFirstSlotToldAndEachRespawnWithItSelected() {
-		Fixture fixture = new Fixture();
-		fixture.operations.execute(InventoryChannel.SELECT, new SlotSelection(4));
+		connect();
+		operations.call(InventoryChannel.SELECT, new SlotSelection(4));
 
-		fixture.protocol.deliver(ClientboundRespawn.builder().dimension("minecraft:overworld").dimensionType(OVERWORLD).build());
-		fixture.protocol.deliver(new ClientboundSetHeldSlot(4));
-		fixture.protocol.deliver(login(1));
-		fixture.protocol.deliver(new ClientboundSetHeldSlot(0));
-		fixture.protocol.deliver(new ClientboundSetHeldSlot(4));
+		player.deliver(ClientboundRespawn.builder().dimension("minecraft:overworld").dimensionType(OVERWORLD).build());
+		player.deliver(new ClientboundSetHeldSlot(4));
+		player.deliver(login(1));
+		player.deliver(new ClientboundSetHeldSlot(0));
+		player.deliver(new ClientboundSetHeldSlot(4));
 
-		assertEquals(List.of(new ServerboundSetCarriedItem(4), new ServerboundSetCarriedItem(4)), fixture.protocol.sent);
+		assertEquals(List.of(new ServerboundSetCarriedItem(4), new ServerboundSetCarriedItem(4)), player.sent());
 	}
 
 	@Test
 	void clicksTheObservedContainerWithItsState() {
-		Fixture fixture = new Fixture();
-		fixture.protocol.deliver(content(1, 7, stack(3)));
+		connect();
+		player.deliver(content(1, 7, stack(3)));
 
-		fixture.operations.execute(InventoryChannel.CLICK, new InventoryAction(4, InventoryClick.LEFT, 0));
-		fixture.operations.execute(InventoryChannel.CLICK, new InventoryAction(5, InventoryClick.RIGHT, 0));
-		fixture.operations.execute(InventoryChannel.CLICK, new InventoryAction(4, InventoryClick.HOTBAR_SWAP, 8));
+		operations.call(InventoryChannel.CLICK, new InventoryAction(4, InventoryClick.LEFT, 0));
+		operations.call(InventoryChannel.CLICK, new InventoryAction(5, InventoryClick.RIGHT, 0));
+		operations.call(InventoryChannel.CLICK, new InventoryAction(4, InventoryClick.HOTBAR_SWAP, 8));
 
 		assertEquals(List.of(
 				click(1, 7, 4, ClickType.PICKUP, 0),
 				click(1, 7, 5, ClickType.PICKUP, 1),
 				click(1, 7, 4, ClickType.SWAP, 8)
-		), fixture.protocol.sent);
+		), player.sent());
 	}
 
 	@Test
 	void sendsEachClickModeAsItsClickTypeAndButton() {
-		Fixture fixture = new Fixture();
+		connect();
 		Map<InventoryClick, List<Object>> expected = Map.of(
 				InventoryClick.LEFT, List.of(ClickType.PICKUP, 0),
 				InventoryClick.RIGHT, List.of(ClickType.PICKUP, 1),
@@ -148,115 +142,129 @@ class JavaInventoryExtensionTest {
 		);
 
 		for (InventoryClick click : InventoryClick.values()) {
-			fixture.operations.execute(InventoryChannel.CLICK,
+			operations.call(InventoryChannel.CLICK,
 					new InventoryAction(4, click, click == InventoryClick.HOTBAR_SWAP ? 8 : 0));
-			ServerboundContainerClick packet = (ServerboundContainerClick) fixture.protocol.sent.getLast();
+			ServerboundContainerClick packet = (ServerboundContainerClick) player.sent().getLast();
 			assertEquals(expected.get(click), List.<Object>of(packet.getClickType(), packet.getButton()), click.name());
 		}
 	}
 
 	@Test
 	void refusesAHotbarButtonOutsideTheHotbarBeforeSending() {
-		Fixture fixture = new Fixture();
+		connect();
 
 		IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
-				() -> fixture.click(InventoryClick.HOTBAR_SWAP, 9));
+				() -> click(InventoryClick.HOTBAR_SWAP, 9));
 
 		assertEquals("Invalid hotbar button: 9", failure.getMessage());
-		assertTrue(fixture.protocol.sent.isEmpty());
+		assertTrue(player.sent().isEmpty());
 	}
 
 	@Test
 	void sendsTheOffHandSwapButtonAndRefusesTheButtonAfterIt() {
-		Fixture fixture = new Fixture();
+		connect();
 
-		fixture.operations.execute(InventoryChannel.CLICK, new InventoryAction(4, InventoryClick.HOTBAR_SWAP, 40));
+		operations.call(InventoryChannel.CLICK, new InventoryAction(4, InventoryClick.HOTBAR_SWAP, 40));
 		IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
-				() -> fixture.click(InventoryClick.HOTBAR_SWAP, 41));
+				() -> click(InventoryClick.HOTBAR_SWAP, 41));
 
 		assertEquals("Invalid hotbar button: 41", failure.getMessage());
-		assertEquals(List.of(click(0, 0, 4, ClickType.SWAP, 40)), fixture.protocol.sent);
+		assertEquals(List.of(click(0, 0, 4, ClickType.SWAP, 40)), player.sent());
 	}
 
 	@Test
 	void passesOnTheRefusalOfAPlayerThatIsNotConnected() {
-		Fixture fixture = new Fixture();
-		fixture.protocol.connected = false;
+		connect();
+		player.disconnect();
 
 		IllegalStateException failure = assertThrows(IllegalStateException.class,
-				() -> fixture.operations.execute(InventoryChannel.SELECT, new SlotSelection(3)));
+				() -> operations.call(InventoryChannel.SELECT, new SlotSelection(3)));
 		assertThrows(IllegalStateException.class,
-				() -> fixture.click(InventoryClick.LEFT, 0));
+				() -> click(InventoryClick.LEFT, 0));
 
 		assertTrue(failure.getMessage().contains("not connected"), failure.getMessage());
-		assertTrue(fixture.protocol.sent.isEmpty());
+		assertTrue(player.sent().isEmpty());
 	}
 
 	@Test
 	void publishesEveryChangeOfTheObservedContainer() {
-		Fixture fixture = new Fixture();
+		connect();
 		InventoryItem stone = item(0, 64);
 
-		fixture.protocol.deliver(new ClientboundOpenScreen(2, "minecraft:generic_9x1", "Chest"));
-		fixture.protocol.deliver(content(2, 3, stack(64), null, null, null, stack(3)));
-		fixture.protocol.deliver(new ClientboundContainerSetSlot(2, 4, 0, null));
-		fixture.protocol.deliver(new ClientboundContainerSetSlot(2, 5, 1, stack(1)));
+		player.deliver(new ClientboundOpenScreen(2, "minecraft:generic_9x1", "Chest"));
+		player.deliver(content(2, 3, stack(64), null, null, null, stack(3)));
+		player.deliver(new ClientboundContainerSetSlot(2, 4, 0, null));
+		player.deliver(new ClientboundContainerSetSlot(2, 5, 1, stack(1)));
 
 		assertEquals(List.of(
 				snapshot(2, 0),
 				snapshot(2, 3, stone, DIAMONDS),
 				snapshot(2, 4, DIAMONDS),
 				snapshot(2, 5, item(1, 1), DIAMONDS)
-		), fixture.player.snapshots);
+		), snapshots());
 	}
 
 	@Test
 	void ignoresSlotsOfOtherContainersTheCursorAndThePlayersInventoryWhileAContainerIsOpen() {
-		Fixture fixture = new Fixture();
-		fixture.protocol.deliver(content(2, 3, null, null, null, null, stack(3)));
+		connect();
+		player.deliver(content(2, 3, null, null, null, null, stack(3)));
 
-		fixture.protocol.deliver(new ClientboundContainerSetSlot(0, 9, 36, stack(1)));
-		fixture.protocol.deliver(new ClientboundContainerSetSlot(-1, 9, -1, stack(1)));
-		fixture.protocol.deliver(new ClientboundSetPlayerInventory(0, stack(1)));
+		player.deliver(new ClientboundContainerSetSlot(0, 9, 36, stack(1)));
+		player.deliver(new ClientboundContainerSetSlot(-1, 9, -1, stack(1)));
+		player.deliver(new ClientboundSetPlayerInventory(0, stack(1)));
 
-		assertEquals(List.of(snapshot(2, 3, DIAMONDS)), fixture.player.snapshots);
-		fixture.operations.execute(InventoryChannel.CLICK, new InventoryAction(4, InventoryClick.LEFT, 0));
-		assertEquals(click(2, 3, 4, ClickType.PICKUP, 0), fixture.protocol.sent.getFirst());
+		assertEquals(List.of(snapshot(2, 3, DIAMONDS)), snapshots());
+		operations.call(InventoryChannel.CLICK, new InventoryAction(4, InventoryClick.LEFT, 0));
+		assertEquals(click(2, 3, 4, ClickType.PICKUP, 0), player.sent().getFirst());
 	}
 
 	@Test
 	void placesTheSlotsOfThePlayersInventoryInThePlayersInventoryContainer() {
-		Fixture fixture = new Fixture();
-		fixture.protocol.deliver(content(0, 1));
+		connect();
+		player.deliver(content(0, 1));
 
-		fixture.protocol.deliver(new ClientboundSetPlayerInventory(0, stack(1)));
-		fixture.protocol.deliver(new ClientboundSetPlayerInventory(9, stack(2)));
-		fixture.protocol.deliver(new ClientboundSetPlayerInventory(39, stack(3)));
-		fixture.protocol.deliver(new ClientboundSetPlayerInventory(40, stack(4)));
-		fixture.protocol.deliver(new ClientboundSetPlayerInventory(41, stack(5)));
-		fixture.protocol.deliver(new ClientboundSetPlayerInventory(0, null));
+		player.deliver(new ClientboundSetPlayerInventory(0, stack(1)));
+		player.deliver(new ClientboundSetPlayerInventory(9, stack(2)));
+		player.deliver(new ClientboundSetPlayerInventory(39, stack(3)));
+		player.deliver(new ClientboundSetPlayerInventory(40, stack(4)));
+		player.deliver(new ClientboundSetPlayerInventory(41, stack(5)));
+		player.deliver(new ClientboundSetPlayerInventory(0, null));
 
-		assertEquals(playerInventorySnapshots(), fixture.player.snapshots);
+		assertEquals(playerInventorySnapshots(), snapshots());
 	}
 
 	@Test
 	void stopsListeningWhenClosed() {
-		Fixture fixture = new Fixture();
+		WorkerBinding binding = extension.bind(player, operations);
+		player.connect();
 
-		fixture.binding.close();
-		fixture.protocol.deliver(new ClientboundOpenScreen(5, "minecraft:generic_9x1", "Chest"));
+		binding.close();
+		player.deliver(new ClientboundOpenScreen(5, "minecraft:generic_9x1", "Chest"));
 
-		assertEquals(Map.of(), fixture.protocol.listeners);
-		assertEquals(List.of(), fixture.player.snapshots);
+		for (Class<? extends ClientboundPacket> type : LISTENED)
+			assertFalse(player.protocol().wants(type), type.getSimpleName());
+		assertEquals(List.of(), snapshots());
 	}
 
 	@Test
 	void isUnavailableForAPlayerThatDoesNotSpeakTheJavaProtocol() {
-		RecordingPlayer player = new RecordingPlayer(null);
-		RecordingOperations operations = new RecordingOperations();
+		TestWorkerPlayer silent = new TestWorkerPlayer("Alice");
 
-		assertThrows(ProtocolUnavailableException.class, () -> extension.bind(player, operations));
-		assertEquals(Map.of(), operations.handlers);
+		assertThrows(ProtocolUnavailableException.class, () -> extension.bind(silent, operations));
+		assertEquals(List.of(), operations.registered());
+	}
+
+	private void connect() {
+		extension.bind(player, operations);
+		player.connect();
+	}
+
+	private void click(InventoryClick click, int button) {
+		operations.call(InventoryChannel.CLICK, new InventoryAction(4, click, button));
+	}
+
+	private List<InventorySnapshot> snapshots() {
+		return player.emitted(InventoryChannel.CHANGED);
 	}
 
 	private static List<InventorySnapshot> playerInventorySnapshots() {
@@ -303,162 +311,5 @@ class JavaInventoryExtensionTest {
 				.dimension("minecraft:overworld")
 				.dimensionType(OVERWORLD)
 				.build();
-	}
-
-	/**
-	 * Binds inventory for one player.
-	 */
-	private final class Fixture {
-		private final RecordingProtocol protocol;
-		private final RecordingPlayer player;
-		private final RecordingOperations operations = new RecordingOperations();
-		private final WorkerBinding binding;
-
-		private Fixture() {
-			protocol = new RecordingProtocol();
-			player = new RecordingPlayer(protocol);
-			binding = extension.bind(player, operations);
-		}
-
-		private void click(InventoryClick click, int button) {
-			operations.execute(InventoryChannel.CLICK, new InventoryAction(4, click, button));
-		}
-	}
-
-	/**
-	 * Records sent packets and hands delivered packets to the listener of their class.
-	 */
-	private static final class RecordingProtocol implements JavaProtocol {
-		private final Map<Class<?>, Consumer<Object>> listeners = new LinkedHashMap<>();
-		private final List<ServerboundPacket> sent = new ArrayList<>();
-		private boolean connected = true;
-
-		@Override
-		public <P extends ClientboundPacket> @NotNull Subscription listen(
-				@NotNull Class<P> type,
-				@NotNull Consumer<? super P> listener
-		) {
-			listeners.put(type, packet -> listener.accept(type.cast(packet)));
-			return () -> listeners.remove(type);
-		}
-
-		@Override
-		public void send(@NotNull ServerboundPacket packet) {
-			if (!connected) throw new IllegalStateException("Player Alice is not connected");
-
-			sent.add(packet);
-		}
-
-		@Override
-		public <P extends ServerboundPacket> @NotNull Subscription listenSent(
-				@NotNull Class<P> type,
-				@NotNull Consumer<? super P> listener
-		) {
-			throw new AssertionError("The inventory binding observes no sent packets");
-		}
-
-		@Override
-		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
-			return true;
-		}
-
-		@Override
-		public @NotNull JavaWorld world() {
-			throw new UnsupportedOperationException("This test's protocol keeps no world");
-		}
-
-		private void deliver(ClientboundPacket packet) {
-			Consumer<Object> listener = listeners.get(packet.getClass());
-			if (listener != null) listener.accept(packet);
-		}
-	}
-
-	private static final class RecordingOperations implements OperationRegistry {
-		private final Map<String, Function<Object, Object>> handlers = new LinkedHashMap<>();
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public <Q, R> void register(@NotNull OperationDescriptor<Q, R> operation, @NotNull Function<Q, R> handler) {
-			handlers.put(operation.getId(), (Function<Object, Object>) handler);
-		}
-
-		private <Q> @Nullable Object execute(OperationDescriptor<Q, ?> operation, Q request) {
-			return handlers.get(operation.getId()).apply(request);
-		}
-	}
-
-	/**
-	 * A player that speaks the given protocol, or none, and records the snapshots it emits.
-	 */
-	private static final class RecordingPlayer implements PlayerBindingContext<Object> {
-		private final @Nullable JavaProtocol protocol;
-		private final List<InventorySnapshot> snapshots = new ArrayList<>();
-
-		private RecordingPlayer(@Nullable JavaProtocol protocol) {
-			this.protocol = protocol;
-		}
-
-		@Override
-		public <P> @NotNull P protocol(@NotNull Class<P> type) {
-			if (protocol == null) return PlayerBindingContext.super.protocol(type);
-
-			return type.cast(protocol);
-		}
-
-		@Override
-		public @NotNull String name() {
-			return "Alice";
-		}
-
-		@Override
-		public @NotNull UUID uniqueId() {
-			return UUID.nameUUIDFromBytes("Alice".getBytes());
-		}
-
-		@Override
-		public void connect() {
-			throw new AssertionError("Inventory does not drive the lifecycle");
-		}
-
-		@Override
-		public void disconnect() {
-			throw new AssertionError("Inventory does not drive the lifecycle");
-		}
-
-		@Override
-		public void rejoin() {
-			throw new AssertionError("Inventory does not drive the lifecycle");
-		}
-
-		@Override
-		public @NotNull Object nativeSession() {
-			throw new AssertionError("Inventory uses the protocol, not the native session");
-		}
-
-		@Override
-		public boolean isCurrentNativeSession(@NotNull Object nativeSession) {
-			throw new AssertionError("Inventory uses the protocol, not the native session");
-		}
-
-		@Override
-		public @NotNull Subscription bindNativeSession(@NotNull Function<Object, Subscription> listener) {
-			throw new AssertionError("Inventory keeps its container across connections");
-		}
-
-		@Override
-		public @NotNull ViewRotation viewRotation() {
-			throw new AssertionError("Inventory does not read the view");
-		}
-
-		@Override
-		public void viewRotation(@NotNull ViewRotation rotation) {
-			throw new AssertionError("Inventory does not change the view");
-		}
-
-		@Override
-		public <E> void emit(@NotNull EventDescriptor<E> event, @Nullable E payload) {
-			assertEquals(InventoryChannel.CHANGED, event);
-			snapshots.add((InventorySnapshot) payload);
-		}
 	}
 }
