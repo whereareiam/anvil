@@ -1,5 +1,6 @@
 package external.fixture.java;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
@@ -87,8 +88,8 @@ final class JavaFixturePlayer implements ProtocolPlayer, PlayerBindingContext<Ob
 	}
 
 	@Override
-	public @NotNull String clientVersion() {
-		return request.getClientVersion().toString();
+	public @NotNull MinecraftVersion clientVersion() {
+		return request.getClientVersion();
 	}
 
 	@Override

@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.experimental.Accessors;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
@@ -65,6 +66,7 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 
 	private final String id;
 	private final @NotNull WorkerPlayerOptions options;
+	private final @NotNull MinecraftVersion clientVersion;
 	private final McProtocolClient<Object> client;
 	private final WorkerSegments segments;
 	private final WorkerMessageWriter events;
@@ -91,6 +93,7 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	) {
 		this.id = id;
 		this.options = options;
+		this.clientVersion = MinecraftVersion.parse(options.getMinecraftVersion());
 		this.client = client;
 		this.segments = segments;
 		this.events = events;
@@ -135,6 +138,11 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	@Override
 	public @NotNull UUID uniqueId() {
 		return options.getProfile().getUniqueId();
+	}
+
+	@Override
+	public @NotNull MinecraftVersion clientVersion() {
+		return clientVersion;
 	}
 
 	@Override

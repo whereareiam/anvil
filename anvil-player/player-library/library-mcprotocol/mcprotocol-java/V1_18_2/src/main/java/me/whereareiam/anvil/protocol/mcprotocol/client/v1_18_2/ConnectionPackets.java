@@ -64,6 +64,7 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 					.entityId(login.getEntityId())
 					.levels(List.of(login.getWorldNames()))
 					.hardcore(login.isHardcore())
+					.gameMode(ValueTranslator.gameMode(login.getGameMode()))
 					.dimension(login.getWorldName())
 					.dimensionType(type(login.getDimension()))
 					.debug(login.isDebug())
@@ -75,6 +76,7 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 			return entered(ClientboundRespawn.builder()
 					.dimension(respawn.getWorldName())
 					.dimensionType(type(respawn.getDimension()))
+					.gameMode(ValueTranslator.gameMode(respawn.getGamemode()))
 					.debug(respawn.isDebug())
 					.flat(respawn.isFlat())
 					.build());

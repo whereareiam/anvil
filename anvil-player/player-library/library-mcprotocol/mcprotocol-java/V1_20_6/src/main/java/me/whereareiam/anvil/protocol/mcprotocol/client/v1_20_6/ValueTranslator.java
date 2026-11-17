@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
-import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
+import me.whereareiam.anvil.protocol.java.api.type.interaction.InteractionHand;
 import org.cloudburstmc.math.vector.Vector3d;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.object.Direction;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Hand;
@@ -46,7 +46,7 @@ public final class ValueTranslator {
 	 * @param face the protocol's direction
 	 * @return the library's direction
 	 */
-	public static @NotNull Direction direction(@NotNull me.whereareiam.anvil.protocol.java.api.type.Direction face) {
+	public static @NotNull Direction direction(@NotNull me.whereareiam.anvil.protocol.java.api.type.interaction.Direction face) {
 		return switch (face) {
 			case DOWN -> Direction.DOWN;
 			case UP -> Direction.UP;

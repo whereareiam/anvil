@@ -5,10 +5,12 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConfigurationPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConnectionPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.EffectPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.HealthPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ScreenPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SynchronizedRegistries;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.AttributePackets;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 
@@ -16,7 +18,7 @@ import java.util.List;
 
 /**
  * The client segment's adapter for the MCProtocolLib 1.21.11 release: the 1.21 {@link JavaClient} with the release's
- * network sessions and packet table, which keeps the 1.21 connection and screen translations.
+ * network sessions and packet table, which keeps the 1.21 attribute, connection, effect and screen translations.
  */
 public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 	private static final TextTranslator TEXT = new TextTranslator();
@@ -38,6 +40,7 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 		SynchronizedRegistries registries = new SynchronizedRegistries();
 		ConnectionLevel level = new ConnectionLevel();
 		return new PacketTable<>(List.of(
+				new AttributePackets(),
 				new BorderPackets(),
 				new ChatPackets(TEXT),
 				new ChunkPackets(level, demand),
@@ -46,6 +49,7 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 				new ConnectionPackets(registries, level),
 				new CookiePackets(),
 				new DialogPackets(),
+				new EffectPackets(),
 				new EntityPackets(TEXT),
 				new HealthPackets(TEXT),
 				new InteractionPackets(),

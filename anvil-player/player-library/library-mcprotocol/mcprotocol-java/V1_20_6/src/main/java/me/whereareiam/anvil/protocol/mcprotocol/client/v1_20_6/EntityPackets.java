@@ -4,16 +4,18 @@ import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPos;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPosRot;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityRot;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityPos;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityPosRot;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityRot;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityMotionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundTeleportEntityPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddExperienceOrbPacket;
@@ -24,8 +26,9 @@ import java.util.Set;
 
 /**
  * Entities of the MCProtocolLib 1.20.6 and 1.21.1 releases. Experience orbs still spawn through a packet of their own,
- * without a unique ID or direction, which the translation reports as an added entity, and teleports place and turn an
- * entity absolutely.
+ * without a unique ID or direction, which the translation reports as an added entity, teleports place and turn an
+ * entity absolutely, and a velocity arrives as three components in blocks per tick, which the library reads from the
+ * 1/8000 of a block per tick that the wire carries.
  */
 public final class EntityPackets extends EntityTranslation {
 	private static final float NO_DIRECTION = 0;
@@ -45,6 +48,7 @@ public final class EntityPackets extends EntityTranslation {
 				ClientboundMoveEntityPosRot.class,
 				ClientboundMoveEntityRot.class,
 				ClientboundTeleportEntity.class,
+				ClientboundSetEntityMotion.class,
 				ClientboundSetEntityData.class,
 				ClientboundSetPassengers.class,
 				ClientboundRemoveEntities.class
@@ -65,6 +69,8 @@ public final class EntityPackets extends EntityTranslation {
 					.pitch(teleport.getPitch())
 					.relatives(Set.of())
 					.build();
+			case ClientboundSetEntityMotionPacket motion -> new ClientboundSetEntityMotion(motion.getEntityId(),
+					new Vec3d(motion.getMotionX(), motion.getMotionY(), motion.getMotionZ()));
 			default -> null;
 		};
 	}

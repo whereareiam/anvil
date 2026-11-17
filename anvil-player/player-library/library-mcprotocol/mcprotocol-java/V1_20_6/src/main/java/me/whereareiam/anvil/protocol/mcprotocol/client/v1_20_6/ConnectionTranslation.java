@@ -11,8 +11,9 @@ import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
-import me.whereareiam.anvil.protocol.java.api.type.CardinalLight;
-import me.whereareiam.anvil.protocol.java.api.type.Skybox;
+import me.whereareiam.anvil.protocol.java.api.type.player.GameMode;
+import me.whereareiam.anvil.protocol.java.api.type.world.CardinalLight;
+import me.whereareiam.anvil.protocol.java.api.type.world.Skybox;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLevel;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import net.kyori.adventure.key.Key;
@@ -29,10 +30,11 @@ import java.util.Set;
 
 /**
  * The moments the MCProtocolLib releases from 1.20.5 on join a level, respawn and return to the configuration phase.
- * These releases name the dimension type by its ID in the {@code minecraft:dimension_type} registry, which the
- * translation looks up in the connection's {@link SynchronizedRegistries}. A vanilla type arrives without its
- * description when the client named the vanilla core pack among those it knows, and the client takes it from its own
- * data pack, as {@link DimensionType#known(String)} describes it. A description gives the type's block heights, names
+ * A login and a respawn name the game mode the player is in. These releases name the dimension type by its ID in the
+ * {@code minecraft:dimension_type} registry, which the translation looks up in the connection's
+ * {@link SynchronizedRegistries}. A vanilla type arrives without its description when the client named the vanilla
+ * core pack among those it knows, and the client takes it from its own data pack, as
+ * {@link DimensionType#known(String)} describes it. A description gives the type's block heights, names
  * its effects before Minecraft 1.21.11 and its skybox and shading from then on; one without either takes the
  * overworld's. From Minecraft 26.1 it also names the world clock its day follows. Each release's
  * {@code ConnectionPackets} names the clock of a vanilla type sent without its description.
@@ -74,6 +76,7 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 						.hardcore(login.isHardcore())
 						.dimension(spawn.getWorldName().asString())
 						.dimensionType(type(spawn.getDimension()))
+						.gameMode(gameMode(spawn.getGameMode()))
 						.debug(spawn.isDebug())
 						.flat(spawn.isFlat())
 						.showDeathScreen(login.isEnableRespawnScreen())
@@ -84,6 +87,7 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 				yield entered(ClientboundRespawn.builder()
 						.dimension(spawn.getWorldName().asString())
 						.dimensionType(type(spawn.getDimension()))
+						.gameMode(gameMode(spawn.getGameMode()))
 						.debug(spawn.isDebug())
 						.flat(spawn.isFlat())
 						.build());
@@ -136,6 +140,20 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 			case "minecraft:overworld", "minecraft:overworld_caves" -> "minecraft:overworld";
 			case "minecraft:the_end" -> "minecraft:the_end";
 			default -> null;
+		};
+	}
+
+	/**
+	 * Translates the game mode the server puts the player in, which every release from 1.20.5 on names alike.
+	 */
+	private static @NotNull GameMode gameMode(
+			org.geysermc.mcprotocollib.protocol.data.game.entity.player.@NotNull GameMode gameMode
+	) {
+		return switch (gameMode) {
+			case SURVIVAL -> GameMode.SURVIVAL;
+			case CREATIVE -> GameMode.CREATIVE;
+			case ADVENTURE -> GameMode.ADVENTURE;
+			case SPECTATOR -> GameMode.SPECTATOR;
 		};
 	}
 

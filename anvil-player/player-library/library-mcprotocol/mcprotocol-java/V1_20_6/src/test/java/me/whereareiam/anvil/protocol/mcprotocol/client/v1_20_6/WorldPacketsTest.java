@@ -4,7 +4,7 @@ import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetDefaultSpawnPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetTime;
-import me.whereareiam.anvil.protocol.java.api.type.GameEventType;
+import me.whereareiam.anvil.protocol.java.api.type.world.GameEventType;
 import org.cloudburstmc.math.vector.Vector3i;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.GameMode;
 import org.geysermc.mcprotocollib.protocol.data.game.level.notify.DemoMessageValue;

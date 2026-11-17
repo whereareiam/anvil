@@ -81,8 +81,8 @@ public class FixtureLibraryProvider implements ProtocolLibraryProvider {
 			}
 
 			@Override
-			public @NotNull String clientVersion() {
-				return request.getClientVersion().toString();
+			public @NotNull MinecraftVersion clientVersion() {
+				return request.getClientVersion();
 			}
 
 			@Override

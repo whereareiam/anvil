@@ -157,7 +157,7 @@ class PlayerCapabilityRuntimeTest {
 				dependent.getMessage());
 		var lines = output.toString(StandardCharsets.UTF_8).lines().toList();
 		assertEquals(1, lines.size(), lines.toString());
-		assertTrue(lines.getFirst().startsWith("[Anvil] Warning: player 'Alice' on Minecraft test runs without"), lines.getFirst());
+		assertTrue(lines.getFirst().startsWith("[Anvil] Warning: player 'Alice' on Minecraft 1.21.11 runs without"), lines.getFirst());
 		assertTrue(lines.getFirst().contains(DependentCapability.class.getName()));
 		assertTrue(lines.getFirst().contains(SummaryCapability.class.getName()));
 		player.destroy();
@@ -350,7 +350,7 @@ class PlayerCapabilityRuntimeTest {
 		List<String> released = new ArrayList<>();
 		var provider = sharedProvider("identity", BaseCapability.class, Set.of(), context -> {
 			assertEquals("Alice", context.playerName());
-			assertEquals("test", context.clientVersion());
+			assertEquals(MinecraftVersion.parse("1.21.11"), context.clientVersion());
 			assertEquals("proxy", context.connection().getTarget());
 			assertNull(context.grantedProfile());
 			context.on(Closed.class, closed -> released.add("shared"));
@@ -672,8 +672,8 @@ class PlayerCapabilityRuntimeTest {
 		}
 
 		@Override
-		public @NotNull String clientVersion() {
-			return "test";
+		public @NotNull MinecraftVersion clientVersion() {
+			return MinecraftVersion.parse("1.21.11");
 		}
 
 		@Override

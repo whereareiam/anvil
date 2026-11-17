@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.api.worker;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
@@ -35,6 +36,19 @@ public interface PlayerBindingContext<S> {
 	 * @return client UUID
 	 */
 	@NotNull UUID uniqueId();
+
+	/**
+	 * Returns the Minecraft version of the player's client, the one the player was created for. A binding reads it to
+	 * reproduce what that version's client does differently, such as how it moves; whether a packet exists is the
+	 * protocol's to tell, through its {@code supports}.
+	 *
+	 * <pre>{@code
+	 * boolean edgeBackOff = player.clientVersion().isAtLeast(MinecraftVersion.parse("1.21.2"));
+	 * }</pre>
+	 *
+	 * @return the client's Minecraft version
+	 */
+	@NotNull MinecraftVersion clientVersion();
 
 	/**
 	 * Starts the native login sequence.

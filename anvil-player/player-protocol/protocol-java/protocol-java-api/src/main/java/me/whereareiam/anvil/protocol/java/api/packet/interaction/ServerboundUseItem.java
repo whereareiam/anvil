@@ -3,7 +3,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.interaction;
 import lombok.Builder;
 import lombok.Value;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
+import me.whereareiam.anvil.protocol.java.api.type.interaction.InteractionHand;
 import org.jetbrains.annotations.NotNull;
 
 /**

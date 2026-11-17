@@ -10,6 +10,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.CommandPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConfigurationPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConnectionPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.CookiePackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.EffectPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.EntityPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.HealthPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.InventoryPackets;
@@ -28,7 +29,7 @@ import java.util.List;
 /**
  * The client segment's adapter for the MCProtocolLib 1.21.1 release: the 1.20.6 {@link JavaClient} with the release's
  * TCP sessions, whose profiles and session service MCProtocolLib now brings itself, and the 1.20.6 packet table but
- * for the interaction, whose item use carries the view.
+ * for the interaction, whose item use carries the view, and the attributes, whose modifiers are named by keys.
  */
 public final class McProtocolClientAdapter extends JavaClient<Session> {
 	private static final TextTranslator TEXT = new TextTranslator();
@@ -43,12 +44,13 @@ public final class McProtocolClientAdapter extends JavaClient<Session> {
 	/**
 	 * Returns a new packet table of the MCProtocolLib 1.21.1 release.
 	 *
-	 * @return the 1.20.6 translations with this release's interaction translation
+	 * @return the 1.20.6 translations with this release's interaction and attribute translations
 	 */
 	static PacketTable<Packet> packets(PacketDemand demand) {
 		SynchronizedRegistries registries = new SynchronizedRegistries();
 		ConnectionLevel level = new ConnectionLevel();
 		return new PacketTable<>(List.of(
+				new AttributePackets(),
 				new BorderPackets(),
 				new ChatPackets(TEXT),
 				new ChunkPackets(level, demand),
@@ -56,6 +58,7 @@ public final class McProtocolClientAdapter extends JavaClient<Session> {
 				new ConfigurationPackets(registries),
 				new ConnectionPackets(registries, level),
 				new CookiePackets(),
+				new EffectPackets(),
 				new EntityPackets(TEXT),
 				new HealthPackets(TEXT),
 				new InteractionPackets(),

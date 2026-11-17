@@ -24,7 +24,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
-import me.whereareiam.anvil.protocol.java.api.type.FilterMaskType;
+import me.whereareiam.anvil.protocol.java.api.type.chat.FilterMaskType;
 import me.whereareiam.anvil.protocol.java.worker.TestJavaPlayer;
 import me.whereareiam.anvil.protocol.worker.TestOperations;
 import me.whereareiam.anvil.protocol.worker.TestWorkerPlayer;

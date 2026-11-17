@@ -95,7 +95,7 @@ class CapabilitySimulatedPlayerTest {
 	private record StubPlayer(@Nullable ProtocolChannel protocolChannel) implements ProtocolPlayer {
 		public @NotNull String name() { return "Alice"; }
 		public @NotNull String libraryId() { return "stub"; }
-		public @NotNull String clientVersion() { return "test"; }
+		public @NotNull MinecraftVersion clientVersion() { return MinecraftVersion.parse("1.21.11"); }
 		public @NotNull ProtocolRelease release() {
 			return ProtocolRelease.builder()
 					.libraryVersion("test")

@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Value;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.java.api.type.player.GameMode;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -30,4 +31,9 @@ public class ClientboundRespawn implements ClientboundPacket {
 	 * Whether the level is a superflat world.
 	 */
 	boolean flat;
+	/**
+	 * The game mode the player is in.
+	 */
+	@Builder.Default
+	@NotNull GameMode gameMode = GameMode.SURVIVAL;
 }

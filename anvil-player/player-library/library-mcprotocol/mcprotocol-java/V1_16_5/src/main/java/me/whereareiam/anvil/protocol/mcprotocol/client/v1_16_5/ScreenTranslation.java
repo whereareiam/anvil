@@ -20,8 +20,8 @@ import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetAction
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetSubtitleText;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleText;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitlesAnimation;
-import me.whereareiam.anvil.protocol.java.api.type.BossEventColor;
-import me.whereareiam.anvil.protocol.java.api.type.BossEventOverlay;
+import me.whereareiam.anvil.protocol.java.api.type.screen.BossEventColor;
+import me.whereareiam.anvil.protocol.java.api.type.screen.BossEventOverlay;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import org.jetbrains.annotations.NotNull;

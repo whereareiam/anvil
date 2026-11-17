@@ -4,7 +4,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundPlayerCombatKill;
 import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundSetHealth;
 import me.whereareiam.anvil.protocol.java.api.packet.health.ServerboundClientCommand;
-import me.whereareiam.anvil.protocol.java.api.type.ClientCommandAction;
+import me.whereareiam.anvil.protocol.java.api.type.player.ClientCommandAction;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.protocol.data.game.ClientCommand;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;

@@ -4,9 +4,11 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLev
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConfigurationPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.EffectPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.JavaClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ScreenPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SynchronizedRegistries;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.AttributePackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.BorderPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ChatPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ChunkPackets;
@@ -50,6 +52,7 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 		SynchronizedRegistries registries = new SynchronizedRegistries();
 		ConnectionLevel level = new ConnectionLevel();
 		return new PacketTable<>(List.of(
+				new AttributePackets(),
 				new BorderPackets(),
 				new ChatPackets(TEXT),
 				new ChunkPackets(level, demand),
@@ -58,6 +61,7 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 				new ConnectionPackets(registries, level),
 				new CookiePackets(),
 				new DialogPackets(),
+				new EffectPackets(),
 				new EntityPackets(TEXT),
 				new HealthPackets(TEXT),
 				new InteractionPackets(),

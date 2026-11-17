@@ -38,11 +38,13 @@ public final class McProtocolClientAdapter extends JavaClient {
 	 */
 	static PacketTable<Packet> packets(PacketDemand demand) {
 		return new PacketTable<>(List.of(
+				new AttributePackets(),
 				new BorderPackets(),
 				new ChatPackets(TEXT),
 				new ChunkPackets(demand),
 				new CommandPackets(),
 				new ConnectionPackets(),
+				new EffectPackets(),
 				new EntityPackets(TEXT),
 				new HealthPackets(TEXT),
 				new InteractionPackets(),

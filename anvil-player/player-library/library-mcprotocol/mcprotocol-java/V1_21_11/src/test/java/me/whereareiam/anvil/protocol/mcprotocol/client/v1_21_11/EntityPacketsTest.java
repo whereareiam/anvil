@@ -9,15 +9,16 @@ import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundEntityPositionSync;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPos;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPosRot;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityRot;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
-import me.whereareiam.anvil.protocol.java.api.type.Relative;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundEntityPositionSync;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityPos;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityPosRot;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityRot;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
+import me.whereareiam.anvil.protocol.java.api.type.entity.Relative;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.cloudburstmc.math.vector.Vector3d;
@@ -40,6 +41,7 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.Clie
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityRotPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundRemoveEntitiesPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityMotionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetPassengersPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundTeleportEntityPacket;
 import org.junit.jupiter.api.Test;
@@ -195,11 +197,18 @@ class EntityPacketsTest {
 		assertEquals(ClientboundTeleportEntity.builder().entityId(7).position(new Vec3d(1, 2, 3)).yaw(15).pitch(5)
 						.relatives(Set.of(Relative.Y, Relative.YAW)).build(),
 				packets.decode(new ClientboundTeleportEntityPacket(7, Vector3d.from(1, 2, 3), Vector3d.ZERO, 15, 5,
-						List.of(PositionElement.Y, PositionElement.Y_ROT, PositionElement.DELTA_X), true)));
+						List.of(PositionElement.Y, PositionElement.Y_ROT, PositionElement.DELTA_X,
+								PositionElement.ROTATE_DELTA), true)));
 		assertEquals(ClientboundEntityPositionSync.builder().entityId(7).position(new Vec3d(4, 5, 6)).yaw(30)
 						.pitch(20).build(),
 				packets.decode(new ClientboundEntityPositionSyncPacket(7, Vector3d.from(4, 5, 6), Vector3d.ZERO, 30, 20,
 						true)));
+	}
+
+	@Test
+	void decodesTheVelocityTheServerSetsInBlocksPerTick() {
+		assertEquals(new ClientboundSetEntityMotion(7, new Vec3d(0.25, 0.42, -0.125)),
+				packets.decode(new ClientboundSetEntityMotionPacket(7, Vector3d.from(0.25, 0.42, -0.125))));
 	}
 
 	@Test
@@ -225,6 +234,7 @@ class EntityPacketsTest {
 				ClientboundMoveEntityRot.class,
 				ClientboundTeleportEntity.class,
 				ClientboundEntityPositionSync.class,
+				ClientboundSetEntityMotion.class,
 				ClientboundSetEntityData.class,
 				ClientboundSetPassengers.class,
 				ClientboundRemoveEntities.class

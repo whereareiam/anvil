@@ -8,8 +8,8 @@ import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInte
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwing;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
-import me.whereareiam.anvil.protocol.java.api.type.Direction;
-import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
+import me.whereareiam.anvil.protocol.java.api.type.interaction.Direction;
+import me.whereareiam.anvil.protocol.java.api.type.interaction.InteractionHand;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.InteractAction;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundInteractPacket;
@@ -77,7 +77,7 @@ class InteractionPacketsTest {
 	void interactsWithAndAttacksEntitiesInTheSharedEntityPacket() {
 		ServerboundInteractPacket interact = assertInstanceOf(ServerboundInteractPacket.class, packets.encode(ServerboundInteract.builder()
 				.entityId(42)
-				.action(me.whereareiam.anvil.protocol.java.api.type.InteractAction.INTERACT)
+				.action(me.whereareiam.anvil.protocol.java.api.type.interaction.InteractAction.INTERACT)
 				.hand(InteractionHand.OFF_HAND)
 				.build()));
 		assertEquals(42, interact.getEntityId());
@@ -96,7 +96,7 @@ class InteractionPacketsTest {
 	void interactsAtAPointOfTheEntity() {
 		ServerboundInteractPacket packet = assertInstanceOf(ServerboundInteractPacket.class, packets.encode(ServerboundInteract.builder()
 				.entityId(42)
-				.action(me.whereareiam.anvil.protocol.java.api.type.InteractAction.INTERACT_AT)
+				.action(me.whereareiam.anvil.protocol.java.api.type.interaction.InteractAction.INTERACT_AT)
 				.hand(InteractionHand.MAIN_HAND)
 				.point(new Vec3d(0.25, 1.5, -0.25))
 				.build()));

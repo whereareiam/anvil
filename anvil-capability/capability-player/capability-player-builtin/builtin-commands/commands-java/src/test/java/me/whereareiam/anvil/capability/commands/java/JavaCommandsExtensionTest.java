@@ -9,7 +9,7 @@ import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.model.command.CommandNode;
 import me.whereareiam.anvil.protocol.java.api.packet.command.ClientboundCommands;
-import me.whereareiam.anvil.protocol.java.api.type.StringArgumentMode;
+import me.whereareiam.anvil.protocol.java.api.type.chat.StringArgumentMode;
 import me.whereareiam.anvil.protocol.java.worker.TestJavaPlayer;
 import me.whereareiam.anvil.protocol.worker.TestOperations;
 import me.whereareiam.anvil.protocol.worker.TestWorkerPlayer;
@@ -64,16 +64,16 @@ class JavaCommandsExtensionTest {
 		player.connect();
 
 		player.deliver(new ClientboundCommands(List.of(
-				CommandNode.builder().type(me.whereareiam.anvil.protocol.java.api.type.CommandNodeType.ROOT).child(1).build(),
+				CommandNode.builder().type(me.whereareiam.anvil.protocol.java.api.type.chat.CommandNodeType.ROOT).child(1).build(),
 				CommandNode.builder()
-						.type(me.whereareiam.anvil.protocol.java.api.type.CommandNodeType.LITERAL)
+						.type(me.whereareiam.anvil.protocol.java.api.type.chat.CommandNodeType.LITERAL)
 						.name("give")
 						.child(2)
 						.child(3)
 						.restricted(true)
 						.build(),
 				CommandNode.builder()
-						.type(me.whereareiam.anvil.protocol.java.api.type.CommandNodeType.ARGUMENT)
+						.type(me.whereareiam.anvil.protocol.java.api.type.chat.CommandNodeType.ARGUMENT)
 						.name("amount")
 						.redirect(0)
 						.executable(true)
@@ -83,7 +83,7 @@ class JavaCommandsExtensionTest {
 						.suggestions("minecraft:ask_server")
 						.build(),
 				CommandNode.builder()
-						.type(me.whereareiam.anvil.protocol.java.api.type.CommandNodeType.ARGUMENT)
+						.type(me.whereareiam.anvil.protocol.java.api.type.chat.CommandNodeType.ARGUMENT)
 						.name("text")
 						.executable(true)
 						.parser("brigadier:string")

@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.api.worker;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
@@ -62,6 +63,11 @@ class PlayerBindingContextTest {
 		@Override
 		public @NotNull UUID uniqueId() {
 			return new UUID(0, 1);
+		}
+
+		@Override
+		public @NotNull MinecraftVersion clientVersion() {
+			return MinecraftVersion.parse("1.21.11");
 		}
 
 		@Override

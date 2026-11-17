@@ -32,8 +32,8 @@ import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSet
 import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderSize;
 import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderWarningDelay;
 import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderWarningDistance;
-import me.whereareiam.anvil.protocol.java.api.type.CardinalLight;
-import me.whereareiam.anvil.protocol.java.api.type.Skybox;
+import me.whereareiam.anvil.protocol.java.api.type.world.CardinalLight;
+import me.whereareiam.anvil.protocol.java.api.type.world.Skybox;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

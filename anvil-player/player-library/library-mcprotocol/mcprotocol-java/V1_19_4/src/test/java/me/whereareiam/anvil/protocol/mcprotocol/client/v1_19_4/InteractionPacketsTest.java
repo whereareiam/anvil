@@ -8,7 +8,7 @@ import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
-import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
+import me.whereareiam.anvil.protocol.java.api.type.interaction.InteractionHand;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -37,8 +37,8 @@ class InteractionPacketsTest {
 	}
 
 	@ParameterizedTest
-	@EnumSource(me.whereareiam.anvil.protocol.java.api.type.Direction.class)
-	void usesTheItemOnEachBlockFaceWithTheSequence(me.whereareiam.anvil.protocol.java.api.type.Direction face) {
+	@EnumSource(me.whereareiam.anvil.protocol.java.api.type.interaction.Direction.class)
+	void usesTheItemOnEachBlockFaceWithTheSequence(me.whereareiam.anvil.protocol.java.api.type.interaction.Direction face) {
 		Object encoded = packets.encode(ServerboundUseItemOn.builder()
 				.hand(InteractionHand.MAIN_HAND)
 				.position(BlockPosition.builder().x(4).y(-60).z(-7).build())

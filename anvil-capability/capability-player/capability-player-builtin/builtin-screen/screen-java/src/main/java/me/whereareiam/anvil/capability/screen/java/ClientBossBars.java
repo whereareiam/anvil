@@ -15,8 +15,8 @@ import me.whereareiam.anvil.protocol.java.api.model.screen.BossEventUpdateProgre
 import me.whereareiam.anvil.protocol.java.api.model.screen.BossEventUpdateProperties;
 import me.whereareiam.anvil.protocol.java.api.model.screen.BossEventUpdateStyle;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundBossEvent;
-import me.whereareiam.anvil.protocol.java.api.type.BossEventColor;
-import me.whereareiam.anvil.protocol.java.api.type.BossEventOverlay;
+import me.whereareiam.anvil.protocol.java.api.type.screen.BossEventColor;
+import me.whereareiam.anvil.protocol.java.api.type.screen.BossEventOverlay;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

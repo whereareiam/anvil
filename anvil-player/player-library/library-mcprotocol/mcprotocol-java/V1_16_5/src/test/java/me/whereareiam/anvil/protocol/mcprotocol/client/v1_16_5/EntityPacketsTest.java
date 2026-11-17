@@ -12,6 +12,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntit
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityMetadataPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityTeleportPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityVelocityPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.ServerSpawnEntityPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.ServerSpawnExpOrbPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.ServerSpawnLivingEntityPacket;
@@ -25,10 +26,11 @@ import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
 import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPos;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityPos;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;
 
@@ -111,6 +113,12 @@ class EntityPacketsTest {
 				packets.decode(new ServerEntityTeleportPacket(7, 1, 2, 3, 90, 0, true)));
 		assertEquals(new ClientboundRemoveEntities(List.of(7, 8)),
 				packets.decode(new ServerEntityDestroyPacket(new int[]{7, 8})));
+	}
+
+	@Test
+	void decodesTheMotionOfAnEntityInBlocksPerTick() {
+		assertEquals(new ClientboundSetEntityMotion(7, new Vec3d(0.25, 0.42, -0.125)),
+				packets.decode(new ServerEntityVelocityPacket(7, 0.25, 0.42, -0.125)));
 	}
 
 	@Test

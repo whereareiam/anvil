@@ -63,6 +63,24 @@ class ConnectionPacketsTest {
 	}
 
 	@Test
+	void namesTheGameModeOfEachLoginAndRespawn() {
+		synchronize(new RegistryEntry("minecraft:overworld", null));
+
+		ClientboundLogin login = (ClientboundLogin) packets.decode(new ClientboundLoginPacket(42, false,
+				new Key[]{Key.key("minecraft", "overworld")}, 20, 10, 10, false, true, false,
+				spawnIn(Key.key("minecraft", "overworld"), GameMode.CREATIVE), false));
+		ClientboundRespawn respawn = (ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(
+				spawnIn(Key.key("minecraft", "overworld"), GameMode.SPECTATOR), false, false));
+		ClientboundRespawn adventure = (ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(
+				spawnIn(Key.key("minecraft", "overworld"), GameMode.ADVENTURE), false, false));
+
+		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.CREATIVE, login.getGameMode());
+		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.SPECTATOR, respawn.getGameMode());
+		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.ADVENTURE, adventure.getGameMode());
+		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.SURVIVAL, respawnInto(0).getGameMode());
+	}
+
+	@Test
 	void takesAVanillaTypeWithoutDescriptionFromTheClientsOwnDataPack() {
 		synchronize(new RegistryEntry("minecraft:overworld", null), new RegistryEntry("minecraft:the_nether", null));
 
@@ -143,6 +161,10 @@ class ConnectionPacketsTest {
 
 	private static PlayerSpawnInfo spawnIn(Key level, int type, boolean debug, boolean flat) {
 		return new PlayerSpawnInfo(type, level, 0, GameMode.SURVIVAL, GameMode.SURVIVAL, debug, flat, null, 0);
+	}
+
+	private static PlayerSpawnInfo spawnIn(Key level, GameMode gameMode) {
+		return new PlayerSpawnInfo(0, level, 0, gameMode, GameMode.SURVIVAL, false, false, null, 0);
 	}
 
 	private static final class UnknownPacket implements ServerboundPacket {

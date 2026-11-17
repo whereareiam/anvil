@@ -1,5 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomNameVisible;
 import me.whereareiam.anvil.protocol.java.api.model.entity.DisplayText;
@@ -9,15 +11,18 @@ import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPos;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPosRot;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityRot;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityPos;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityPosRot;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityRot;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import org.geysermc.mcprotocollib.protocol.codec.MinecraftCodec;
+import org.geysermc.mcprotocollib.protocol.codec.MinecraftCodecHelper;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.EntityMetadata;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.MetadataType;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.type.BooleanEntityMetadata;
@@ -34,6 +39,7 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.Clie
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityRotPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundRemoveEntitiesPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityMotionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetPassengersPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundTeleportEntityPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
@@ -180,6 +186,19 @@ class EntityPacketsTest {
 	}
 
 	@Test
+	void decodesAVelocityInBlocksPerTickFromThe8000thsOfABlockTheWireCarries() {
+		MinecraftCodecHelper helper = MinecraftCodec.CODEC.getHelperFactory().get();
+		ByteBuf wire = Unpooled.buffer();
+		helper.writeVarInt(wire, 7);
+		wire.writeShort(4000);
+		wire.writeShort(3360);
+		wire.writeShort(-2000);
+
+		assertEquals(new ClientboundSetEntityMotion(7, new Vec3d(0.5, 0.42, -0.25)),
+				packets.decode(new ClientboundSetEntityMotionPacket(wire, helper)));
+	}
+
+	@Test
 	void decodesPassengersAndRemovals() {
 		assertEquals(new ClientboundSetPassengers(42, List.of(7, 8)),
 				packets.decode(new ClientboundSetPassengersPacket(42, new int[]{7, 8})));
@@ -201,6 +220,7 @@ class EntityPacketsTest {
 				ClientboundMoveEntityPosRot.class,
 				ClientboundMoveEntityRot.class,
 				ClientboundTeleportEntity.class,
+				ClientboundSetEntityMotion.class,
 				ClientboundSetEntityData.class,
 				ClientboundSetPassengers.class,
 				ClientboundRemoveEntities.class

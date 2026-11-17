@@ -19,6 +19,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.Client
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityRotPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundRemoveEntitiesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityMotionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundSetPassengersPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundTeleportEntityPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
@@ -27,6 +28,8 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddPaintingPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddPlayerPacket;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+import com.github.steveice10.packetlib.io.stream.StreamNetInput;
+import com.github.steveice10.packetlib.io.stream.StreamNetOutput;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
 import me.whereareiam.anvil.protocol.java.api.model.entity.CustomNameVisible;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
@@ -35,16 +38,20 @@ import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPos;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPosRot;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityRot;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityPos;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityPosRot;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityRot;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -201,6 +208,19 @@ class EntityPacketsTest {
 	}
 
 	@Test
+	void decodesTheVelocityTheServerGivesAnEntityInBlocksPerTick() throws IOException {
+		ByteArrayOutputStream wire = new ByteArrayOutputStream();
+		StreamNetOutput output = new StreamNetOutput(wire);
+		output.writeVarInt(7);
+		output.writeShort(1000);
+		output.writeShort(-4000);
+		output.writeShort(0);
+
+		assertEquals(new ClientboundSetEntityMotion(7, new Vec3d(0.125, -0.5, 0)), packets.decode(
+				new ClientboundSetEntityMotionPacket(new StreamNetInput(new ByteArrayInputStream(wire.toByteArray())))));
+	}
+
+	@Test
 	void carriesEveryEntityPacketOfTheRelease() {
 		assertEquals(Set.of(
 				ClientboundAddEntity.class,
@@ -208,6 +228,7 @@ class EntityPacketsTest {
 				ClientboundMoveEntityPosRot.class,
 				ClientboundMoveEntityRot.class,
 				ClientboundTeleportEntity.class,
+				ClientboundSetEntityMotion.class,
 				ClientboundSetEntityData.class,
 				ClientboundSetPassengers.class,
 				ClientboundRemoveEntities.class

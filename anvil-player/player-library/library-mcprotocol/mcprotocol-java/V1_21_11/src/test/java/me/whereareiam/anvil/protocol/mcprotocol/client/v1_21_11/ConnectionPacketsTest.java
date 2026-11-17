@@ -9,8 +9,8 @@ import me.whereareiam.anvil.protocol.java.api.packet.configuration.ClientboundRe
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
-import me.whereareiam.anvil.protocol.java.api.type.CardinalLight;
-import me.whereareiam.anvil.protocol.java.api.type.Skybox;
+import me.whereareiam.anvil.protocol.java.api.type.world.CardinalLight;
+import me.whereareiam.anvil.protocol.java.api.type.world.Skybox;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import net.kyori.adventure.key.Key;
@@ -96,7 +96,25 @@ class ConnectionPacketsTest {
 						false, false))).getDimensionType());
 	}
 
+	@Test
+	void reportsTheGameModeOfEachLoginAndRespawn() {
+		packets.decode(new ClientboundRegistryDataPacket(Key.key("minecraft", "dimension_type"), List.of(
+				new org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry(Key.key("minecraft", "overworld"), null))));
+
+		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.CREATIVE,
+				((ClientboundLogin) packets.decode(new ClientboundLoginPacket(42, false,
+						new Key[]{Key.key("minecraft", "overworld")}, 20, 10, 10, false, false, false,
+						spawnIn(Key.key("minecraft", "overworld"), 0, GameMode.CREATIVE), false))).getGameMode());
+		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.SPECTATOR,
+				((ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(
+						spawnIn(Key.key("minecraft", "overworld"), 0, GameMode.SPECTATOR), false, false))).getGameMode());
+	}
+
 	private static PlayerSpawnInfo spawnIn(Key level, int type) {
-		return new PlayerSpawnInfo(type, level, 0, GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, null, 0, 63);
+		return spawnIn(level, type, GameMode.SURVIVAL);
+	}
+
+	private static PlayerSpawnInfo spawnIn(Key level, int type, GameMode gameMode) {
+		return new PlayerSpawnInfo(type, level, 0, gameMode, GameMode.SURVIVAL, false, false, null, 0, 63);
 	}
 }

@@ -14,6 +14,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.protocol.java.api.type.player.GameMode;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,7 +31,8 @@ import java.util.Set;
  * dimension types of the whole server with the login, so the translation names a type by the login's entry whose
  * description equals it, the first such entry when several are equal; one translation serves one session. A type of
  * Minecraft 1.16 names no block heights, because every level spans the 256 heights from 0; from Minecraft 1.17 a type
- * names both.
+ * names both. The library names game mode 255, which a server sends only for the absent previous mode, its unknown
+ * mode; the translation takes that mode for survival, as the vanilla client takes a mode number it does not know.
  */
 public final class ConnectionPackets implements PacketTranslation<Packet> {
 	private static final String DEFAULT_EFFECTS = "minecraft:overworld";
@@ -58,6 +60,7 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 					.dimensionType(type(login.getDimension()))
 					.debug(login.isDebug())
 					.flat(login.isFlat())
+					.gameMode(gameMode(login.getGameMode()))
 					.showDeathScreen(login.isEnableRespawnScreen())
 					.build();
 		}
@@ -67,6 +70,7 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 					.dimensionType(type(respawn.getDimension()))
 					.debug(respawn.isDebug())
 					.flat(respawn.isFlat())
+					.gameMode(gameMode(respawn.getGamemode()))
 					.build();
 
 		return null;
@@ -75,6 +79,17 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 	@Override
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		return null;
+	}
+
+	private static @NotNull GameMode gameMode(
+			com.github.steveice10.mc.protocol.data.game.entity.player.@NotNull GameMode mode
+	) {
+		return switch (mode) {
+			case SURVIVAL, UNKNOWN -> GameMode.SURVIVAL;
+			case CREATIVE -> GameMode.CREATIVE;
+			case ADVENTURE -> GameMode.ADVENTURE;
+			case SPECTATOR -> GameMode.SPECTATOR;
+		};
 	}
 
 	private @NotNull DimensionType type(@NotNull CompoundTag description) {

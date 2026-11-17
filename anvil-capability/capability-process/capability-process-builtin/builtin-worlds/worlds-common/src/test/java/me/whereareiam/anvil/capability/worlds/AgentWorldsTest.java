@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.worlds;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.model.player.PlayerState;
@@ -478,8 +479,8 @@ class AgentWorldsTest {
 			}
 
 			@Override
-			public @NotNull String clientVersion() {
-				return "1.21.11";
+			public @NotNull MinecraftVersion clientVersion() {
+				return MinecraftVersion.parse("1.21.11");
 			}
 
 			@Override

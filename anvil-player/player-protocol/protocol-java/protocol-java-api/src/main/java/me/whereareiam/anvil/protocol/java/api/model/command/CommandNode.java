@@ -3,8 +3,8 @@ package me.whereareiam.anvil.protocol.java.api.model.command;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
-import me.whereareiam.anvil.protocol.java.api.type.CommandNodeType;
-import me.whereareiam.anvil.protocol.java.api.type.StringArgumentMode;
+import me.whereareiam.anvil.protocol.java.api.type.chat.CommandNodeType;
+import me.whereareiam.anvil.protocol.java.api.type.chat.StringArgumentMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

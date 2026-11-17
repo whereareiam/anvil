@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.worker;
 
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
@@ -335,6 +336,11 @@ public final class WorkerExtensions {
 			@Override
 			public @NotNull UUID uniqueId() {
 				return player.uniqueId();
+			}
+
+			@Override
+			public @NotNull MinecraftVersion clientVersion() {
+				return player.clientVersion();
 			}
 
 			@Override

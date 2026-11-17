@@ -5,11 +5,14 @@ import com.github.steveice10.mc.protocol.data.game.entity.metadata.ItemStack;
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.MetadataType;
 import com.github.steveice10.mc.protocol.data.game.entity.type.EntityType;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityMetadataPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityVelocityPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerRemoveEntitiesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.ServerSpawnEntityPacket;
 import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
+import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.TextTranslator;
 import org.junit.jupiter.api.Test;
 
@@ -37,5 +40,11 @@ class EntityPacketsTest {
 	void decodesTheRemovalOfEntities() {
 		assertEquals(new ClientboundRemoveEntities(List.of(7, 8)),
 				packets.decode(new ServerRemoveEntitiesPacket(new int[]{7, 8})));
+	}
+
+	@Test
+	void decodesTheMotionOfAnEntityInBlocksPerTick() {
+		assertEquals(new ClientboundSetEntityMotion(7, new Vec3d(0, -0.0784, 0.5)),
+				packets.decode(new ServerEntityVelocityPacket(7, 0, -0.0784, 0.5)));
 	}
 }

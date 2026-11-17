@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceConfigurationError;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -126,8 +125,8 @@ class WorkerExtensionsTest {
 			alice.connect();
 			assertEquals("Alice:hello", execute(aliceBindings, ECHO, "hello"));
 			assertEquals("Bob:hello", execute(bobBindings, ECHO, "hello"));
-			assertEquals(List.of("Alice:hello"), alice.events);
-			assertEquals(List.of("Bob:hello"), bob.events);
+			assertEquals(List.of("Alice:hello"), alice.emitted(CHANGED));
+			assertEquals(List.of("Bob:hello"), bob.emitted(CHANGED));
 			assertEquals(new ViewRotation(56, 78), alice.viewRotation());
 			assertEquals(List.of("Alice attached"), listeners);
 		}
@@ -414,83 +413,21 @@ class WorkerExtensionsTest {
 	}
 
 	/**
-	 * A library's player, reduced to what extensions bind to: sessions as plain objects, events recorded.
+	 * A test player that speaks the test's greetings protocol.
 	 */
-	@RequiredArgsConstructor
-	private static final class Player implements PlayerBindingContext<Object> {
-		private final String name;
-		private final List<String> events = new ArrayList<>();
-		private final NativeSessionBindings sessions = new NativeSessionBindings();
+	private static final class Player extends TestWorkerPlayer {
 		private final GreetingChannel greetings = new GreetingChannel();
 		private final WorkerProtocols protocols = WorkerProtocols.builder(LIBRARY)
 				.speak(Greetings.class, greetings, greetings::scoped)
 				.build();
-		private @Nullable Object session;
-		private ViewRotation rotation = new ViewRotation(0, 0);
 
-		@Override
-		public @NotNull String name() {
-			return name;
+		private Player(String name) {
+			super(name);
 		}
 
 		@Override
-		public @NotNull UUID uniqueId() {
-			return UUID.nameUUIDFromBytes(name.getBytes());
-		}
-
-		@Override
-		public void connect() {
-			session = new Object();
-			sessions.attach(session);
-		}
-
-		@Override
-		public void disconnect() {
-			if (session != null) sessions.end(session);
-			session = null;
-		}
-
-		@Override
-		public void rejoin() {
-			disconnect();
-			connect();
-		}
-
-		@Override
-		public @NotNull Object nativeSession() {
-			if (session == null) throw new IllegalStateException(name + " is not connected");
-
-			return session;
-		}
-
-		@Override
-		public boolean isCurrentNativeSession(@NotNull Object nativeSession) {
-			return session == nativeSession;
-		}
-
-		@Override
-		public @NotNull Subscription bindNativeSession(@NotNull Function<Object, Subscription> listener) {
-			return sessions.register(listener);
-		}
-
-		@Override
-		public @NotNull ViewRotation viewRotation() {
-			return rotation;
-		}
-
-		@Override
-		public void viewRotation(@NotNull ViewRotation rotation) {
-			this.rotation = rotation;
-		}
-
-		@Override
-		public <E> void emit(@NotNull EventDescriptor<E> event, @Nullable E payload) {
-			events.add(String.valueOf(payload));
-		}
-
-		@Override
-		public <P> @NotNull P protocol(@NotNull Class<P> type) {
-			return protocols.protocol(type);
+		protected @NotNull WorkerProtocols protocols() {
+			return protocols;
 		}
 
 		@Override

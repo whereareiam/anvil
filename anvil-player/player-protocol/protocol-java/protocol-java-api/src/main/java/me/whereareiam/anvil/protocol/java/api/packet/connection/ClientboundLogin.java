@@ -5,6 +5,7 @@ import lombok.Singular;
 import lombok.Value;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.java.api.type.player.GameMode;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -46,6 +47,11 @@ public class ClientboundLogin implements ClientboundPacket {
 	 * Whether the level is a superflat world, which the client renders with a lower horizon.
 	 */
 	boolean flat;
+	/**
+	 * The game mode the player is in.
+	 */
+	@Builder.Default
+	@NotNull GameMode gameMode = GameMode.SURVIVAL;
 	/**
 	 * Whether the client shows the death screen when the player dies, until the server changes it with the
 	 * {@code IMMEDIATE_RESPAWN} game event. A server whose immediate-respawn rule is on sends {@code false}, and the

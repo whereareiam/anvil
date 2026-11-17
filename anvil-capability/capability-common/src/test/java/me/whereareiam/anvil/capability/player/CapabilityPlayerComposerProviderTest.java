@@ -98,8 +98,8 @@ class CapabilityPlayerComposerProviderTest {
 		}
 
 		@Override
-		public @NotNull String clientVersion() {
-			return "1.21.11";
+		public @NotNull MinecraftVersion clientVersion() {
+			return MinecraftVersion.parse("1.21.11");
 		}
 
 		@Override

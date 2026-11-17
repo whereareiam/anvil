@@ -82,7 +82,7 @@ public final class JavaCommandsExtension implements WorkerExtension<Object> {
 	}
 
 	private static @Nullable StringArgumentMode stringMode(
-			me.whereareiam.anvil.protocol.java.api.type.@Nullable StringArgumentMode mode
+			me.whereareiam.anvil.protocol.java.api.type.chat.@Nullable StringArgumentMode mode
 	) {
 		if (mode == null) return null;
 

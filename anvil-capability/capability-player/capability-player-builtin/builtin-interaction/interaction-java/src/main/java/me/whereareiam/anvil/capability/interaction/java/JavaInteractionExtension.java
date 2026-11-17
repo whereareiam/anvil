@@ -22,9 +22,9 @@ import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundPunc
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwing;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
-import me.whereareiam.anvil.protocol.java.api.type.Direction;
-import me.whereareiam.anvil.protocol.java.api.type.InteractAction;
-import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
+import me.whereareiam.anvil.protocol.java.api.type.interaction.Direction;
+import me.whereareiam.anvil.protocol.java.api.type.interaction.InteractAction;
+import me.whereareiam.anvil.protocol.java.api.type.interaction.InteractionHand;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.IntFunction;

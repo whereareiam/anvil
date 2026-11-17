@@ -3,7 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_19_4;
 import com.github.steveice10.mc.protocol.data.game.level.notify.GameEvent;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.ClientboundSetDefaultSpawnPositionPacket;
 import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
-import me.whereareiam.anvil.protocol.java.api.type.GameEventType;
+import me.whereareiam.anvil.protocol.java.api.type.world.GameEventType;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.WorldTranslation;
 import org.cloudburstmc.math.vector.Vector3i;
 import org.jetbrains.annotations.NotNull;

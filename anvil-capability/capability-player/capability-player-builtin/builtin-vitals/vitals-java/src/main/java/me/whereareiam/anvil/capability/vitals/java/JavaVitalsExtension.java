@@ -14,8 +14,8 @@ import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundPlayerCom
 import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundSetHealth;
 import me.whereareiam.anvil.protocol.java.api.packet.health.ServerboundClientCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
-import me.whereareiam.anvil.protocol.java.api.type.ClientCommandAction;
-import me.whereareiam.anvil.protocol.java.api.type.GameEventType;
+import me.whereareiam.anvil.protocol.java.api.type.player.ClientCommandAction;
+import me.whereareiam.anvil.protocol.java.api.type.world.GameEventType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

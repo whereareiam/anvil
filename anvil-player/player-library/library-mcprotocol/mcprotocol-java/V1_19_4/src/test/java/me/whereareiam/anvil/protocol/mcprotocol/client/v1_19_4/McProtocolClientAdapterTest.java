@@ -1,6 +1,12 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_19_4;
 
+import com.github.steveice10.mc.protocol.data.game.entity.Effect;
+import com.github.steveice10.mc.protocol.data.game.entity.player.PlayerState;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundRemoveMobEffectPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundUpdateMobEffectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundChatPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundPlayerCommandPacket;
+import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.event.session.DisconnectedEvent;
 import com.github.steveice10.packetlib.packet.Packet;
@@ -21,8 +27,12 @@ import me.whereareiam.anvil.protocol.java.api.packet.cookie.ServerboundCookieRes
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ClientboundShowDialog;
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ServerboundCustomClickAction;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundEntityPositionSync;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundEntityPositionSync;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundRemoveMobEffect;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateAttributes;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateMobEffect;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInteract;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwing;
@@ -31,8 +41,15 @@ import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseI
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
-import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundMovePlayerPosRot;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundClientTickEnd;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerCommand;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerInput;
+import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPos;
+import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPosRot;
+import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerRot;
+import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerStatusOnly;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundBossEvent;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetActionBarText;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleText;
@@ -42,11 +59,14 @@ import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetDefaultSpawnPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetTime;
 import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundInitializeBorder;
+import me.whereareiam.anvil.protocol.java.api.type.player.PlayerCommandAction;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
+import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -123,6 +143,30 @@ class McProtocolClientAdapterTest {
 	}
 
 	@Test
+	void sendsSneakingThroughThePlayerStateOfTheRelease() {
+		List<Packet> sent = new ArrayList<>();
+
+		new McProtocolClientAdapter().send(recording(sent),
+				new ServerboundPlayerCommand(7, PlayerCommandAction.PRESS_SHIFT_KEY));
+
+		ServerboundPlayerCommandPacket command = assertInstanceOf(ServerboundPlayerCommandPacket.class, sent.getFirst());
+		assertEquals(7, command.getEntityId());
+		assertEquals(PlayerState.START_SNEAKING, command.getState());
+	}
+
+	@Test
+	void decodesTheEffectsOfTheReleaseWithTheirFactorDataByTheirRegistryKeys() {
+		PacketTable<Packet> packets = McProtocolClientAdapter.packets(PacketDemand.EVERY);
+
+		assertEquals(ClientboundUpdateMobEffect.builder().entityId(7).effect("minecraft:darkness").amplifier(0)
+						.duration(260).build(),
+				packets.decode(new ClientboundUpdateMobEffectPacket(7, Effect.DARKNESS, 0, 260, false, true,
+						new CompoundTag("factor_calculation_data"))));
+		assertEquals(new ClientboundRemoveMobEffect(7, "minecraft:darkness"),
+				packets.decode(new ClientboundRemoveMobEffectPacket(7, Effect.DARKNESS)));
+	}
+
+	@Test
 	void refusesToSendAPacketTheReleaseDoesNotCarry() {
 		List<Packet> sent = new ArrayList<>();
 		McProtocolClientAdapter client = new McProtocolClientAdapter();
@@ -170,6 +214,17 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ClientboundGameEvent.class));
 		assertTrue(client.supports(ClientboundInitializeBorder.class));
 		assertTrue(client.supports(ClientboundSetDefaultSpawnPosition.class));
+		assertTrue(client.supports(ServerboundMovePlayerPos.class));
+		assertTrue(client.supports(ServerboundMovePlayerRot.class));
+		assertTrue(client.supports(ServerboundMovePlayerStatusOnly.class));
+		assertTrue(client.supports(ServerboundPlayerCommand.class));
+		assertFalse(client.supports(ServerboundPlayerInput.class));
+		assertFalse(client.supports(ServerboundClientTickEnd.class));
+		assertTrue(client.supports(ClientboundPlayerAbilities.class));
+		assertTrue(client.supports(ClientboundSetEntityMotion.class));
+		assertTrue(client.supports(ClientboundUpdateAttributes.class));
+		assertTrue(client.supports(ClientboundUpdateMobEffect.class));
+		assertTrue(client.supports(ClientboundRemoveMobEffect.class));
 		assertFalse(client.supports(UnknownPacket.class));
 	}
 
