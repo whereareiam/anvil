@@ -5,10 +5,15 @@ import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.JavaWorld;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundFrame;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
+import me.whereareiam.anvil.protocol.java.packet.JavaPacketData;
+import me.whereareiam.anvil.protocol.java.packet.PacketRegistry;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -24,24 +29,41 @@ import java.util.function.Consumer;
  * {@link JavaWorld}, which {@link #world()} hands out.
  *
  * <p>A library asks {@link #wants(Class)} before it decodes a packet that is costly to decode, such as a chunk column,
- * and skips it while nothing wants it.</p>
+ * and skips it while nothing wants it. While a frame listener exists, {@link #wantsFrames()} tells a library that hands
+ * over frames to deliver each packet it receives as its frame, which the dispatcher names by the player's protocol from
+ * Anvil's packet data, and every packet the protocol models is wanted, so each frame carries its value.</p>
  *
  * <pre>{@code
  * JavaPacketDispatcher protocol = new JavaPacketDispatcher(LIBRARY_ID, release.protocolNumber(), connection);
  * ...
- * if (protocol.wants(ClientboundLevelChunkWithLight.class)) protocol.deliver(decode(chunk));
- * protocol.deliver(packet); // for each other packet the player's connection receives
+ * if (protocol.wantsFrames()) protocol.deliver(state, packetId, payload, translated);
+ * else if (translated != null) protocol.deliver(translated); // for each packet the player's connection receives
  * protocol.disconnected(); // once the player's connection closed
  * }</pre>
  */
-@RequiredArgsConstructor
 public final class JavaPacketDispatcher implements JavaProtocol {
 	private final @NotNull String libraryId;
 	private final int protocolNumber;
 	private final @NotNull JavaConnection connection;
+	private final @Nullable PacketRegistry names;
 	private final Map<Class<?>, List<Consumer<Object>>> listeners = new ConcurrentHashMap<>();
 	private final Map<Class<?>, List<Consumer<Object>>> sentListeners = new ConcurrentHashMap<>();
+	private final List<Consumer<? super ClientboundFrame>> frameListeners = new CopyOnWriteArrayList<>();
 	private final JavaWorldStore world = new JavaWorldStore();
+
+	/**
+	 * Creates the protocol of one player.
+	 *
+	 * @param libraryId the ID of the player's protocol library, which refusals name
+	 * @param protocolNumber the number of the protocol the player's release speaks
+	 * @param connection what the library supplies
+	 */
+	public JavaPacketDispatcher(@NotNull String libraryId, int protocolNumber, @NotNull JavaConnection connection) {
+		this.libraryId = libraryId;
+		this.protocolNumber = protocolNumber;
+		this.connection = connection;
+		this.names = JavaPacketData.shipped().find(protocolNumber).orElse(null);
+	}
 
 	@Override
 	public <P extends ClientboundPacket> @NotNull Subscription listen(
@@ -49,6 +71,21 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 			@NotNull Consumer<? super P> listener
 	) {
 		return subscribe(listeners, type, listener);
+	}
+
+	@Override
+	public boolean handsOverFrames() {
+		return connection.handsOverFrames();
+	}
+
+	@Override
+	public @NotNull Subscription listenFrames(@NotNull Consumer<? super ClientboundFrame> listener) {
+		if (!connection.handsOverFrames())
+			throw new ProtocolUnavailableException("the " + libraryId + " library does not hand over the frames its "
+					+ "players receive");
+
+		frameListeners.add(listener);
+		return () -> frameListeners.remove(listener);
 	}
 
 	@Override
@@ -82,14 +119,14 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 	}
 
 	/**
-	 * Tells whether anything wants the packets of a class: a listener of the class, or the player's world, which wants
-	 * the packets of its chunks once something asked for it.
+	 * Tells whether anything wants the packets of a class: a listener of the class, a frame listener, which wants the
+	 * value of every packet, or the player's world, which wants the packets of its chunks once something asked for it.
 	 *
 	 * @param type packet class
 	 * @return whether a packet of the class should be decoded and delivered
 	 */
 	public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
-		if (world.wants(type)) return true;
+		if (wantsFrames() || world.wants(type)) return true;
 
 		List<Consumer<Object>> subscribed = listeners.get(type);
 		return subscribed != null && !subscribed.isEmpty();
@@ -104,6 +141,47 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 	public void deliver(@NotNull ClientboundPacket packet) {
 		world.apply(packet);
 		handOut(listeners, packet);
+	}
+
+	/**
+	 * Tells whether a frame listener exists, so a library that hands over frames delivers each packet it receives
+	 * through {@link #deliver(ConnectionState, int, byte[], ClientboundPacket)}.
+	 *
+	 * @return whether frames are wanted
+	 */
+	public boolean wantsFrames() {
+		return !frameListeners.isEmpty();
+	}
+
+	/**
+	 * Hands a packet of the player's current connection over as its frame: its value, when the protocol models the
+	 * packet, to the player's world and the listeners of its class as {@link #deliver(ClientboundPacket)} does, and
+	 * then the frame, named by the player's protocol, to the frame listeners. A failing listener is reported on standard
+	 * error and does not keep the frame from the others.
+	 *
+	 * @param state the connection's state when the packet arrived
+	 * @param id the packet's ID on the wire
+	 * @param payload the packet's bytes after its ID, decrypted and decompressed
+	 * @param packet the packet's value, or {@code null} when the release does not translate the packet
+	 */
+	public void deliver(
+			@NotNull ConnectionState state,
+			int id,
+			byte @NotNull [] payload,
+			@Nullable ClientboundPacket packet
+	) {
+		if (packet != null) deliver(packet);
+		if (frameListeners.isEmpty()) return;
+
+		String name = names == null ? null : names.clientbound(state, id).orElse(null);
+		ClientboundFrame frame = new ClientboundFrame(state, id, name, payload, packet);
+		for (Consumer<? super ClientboundFrame> listener : frameListeners) {
+			try {
+				listener.accept(frame);
+			} catch (RuntimeException failure) {
+				System.err.println("[Anvil] Warning: a frame listener failed: " + failure);
+			}
+		}
 	}
 
 	/**
@@ -174,6 +252,19 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 			track.accept(subscription);
 
 			return subscription;
+		}
+
+		@Override
+		public @NotNull Subscription listenFrames(@NotNull Consumer<? super ClientboundFrame> listener) {
+			Subscription subscription = JavaPacketDispatcher.this.listenFrames(listener);
+			track.accept(subscription);
+
+			return subscription;
+		}
+
+		@Override
+		public boolean handsOverFrames() {
+			return JavaPacketDispatcher.this.handsOverFrames();
 		}
 
 		@Override

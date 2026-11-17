@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.java.api;
 
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundFrame;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -38,6 +39,30 @@ public interface JavaProtocol {
 	 * @throws ProtocolUnavailableException when the loaded release cannot carry the packet
 	 */
 	<P extends ClientboundPacket> @NotNull Subscription listen(@NotNull Class<P> type, @NotNull Consumer<? super P> listener);
+
+	/**
+	 * Observes every packet the player receives as its {@link ClientboundFrame}, in the order the packets arrive on the
+	 * wire: those the protocol models with their value, and every other one with its bytes alone. While a frame
+	 * listener exists, the release decodes every packet it models, even one costly to decode such as a chunk column,
+	 * so each frame carries its value.
+	 *
+	 * <pre>{@code
+	 * Subscription frames = protocol.listenFrames(frame -> recorded.add(frame));
+	 * }</pre>
+	 *
+	 * @param listener observer of each frame
+	 * @return registration that stops the observation when closed
+	 * @throws ProtocolUnavailableException when the player's library does not hand over the frames it receives
+	 */
+	@NotNull Subscription listenFrames(@NotNull Consumer<? super ClientboundFrame> listener);
+
+	/**
+	 * Tells whether the player's library hands over the frames it receives, so that a binding that needs them can
+	 * report itself unavailable before it listens.
+	 *
+	 * @return whether {@link #listenFrames(Consumer)} accepts listeners
+	 */
+	boolean handsOverFrames();
 
 	/**
 	 * Sends a packet on the player's current connection.

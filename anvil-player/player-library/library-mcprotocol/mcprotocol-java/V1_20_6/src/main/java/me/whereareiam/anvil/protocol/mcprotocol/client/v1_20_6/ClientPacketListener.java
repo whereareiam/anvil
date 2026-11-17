@@ -2,10 +2,8 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.DisconnectCause;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
-import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import org.geysermc.mcprotocollib.network.Session;
@@ -40,8 +38,9 @@ import java.util.function.Function;
  * with their reason flattened to plain text. The login reports the profile the server granted in its login success,
  * which arrives before the game starts; each release's sessions read that profile, since MCProtocolLib 1.21 replaced
  * mcauthlib's profile with its own. The brand and the player's settings, its language among them, go out at the start
- * of the configuration through the release's {@link ConfigurationStart}. Like the vanilla client, it swings back the
- * arm the server swings of the player's own entity.
+ * of the configuration through the release's {@link ConfigurationStart}. The session's {@link FramedClientSession}
+ * hands the packets themselves over. Like the vanilla client, it swings back the arm the server swings of the player's
+ * own entity.
  */
 @RequiredArgsConstructor
 public final class ClientPacketListener extends SessionAdapter {
@@ -50,13 +49,9 @@ public final class ClientPacketListener extends SessionAdapter {
 	 */
 	private final ClientLogin login;
 	/**
-	 * The receiver of the session's state and packets.
+	 * The receiver of the session's state.
 	 */
 	private final ClientListener<? super Session> listener;
-	/**
-	 * The table the session decodes through.
-	 */
-	private final PacketTable<Packet> packets;
 	/**
 	 * Reads the profile a login success grants, in the release's own profile type.
 	 */
@@ -101,9 +96,6 @@ public final class ClientPacketListener extends SessionAdapter {
 			listener.disconnected(session, DisconnectCause.SERVER, text.translate(disconnect.getReason()).plain());
 		if (packet instanceof ClientboundLoginDisconnectPacket disconnect)
 			listener.disconnected(session, DisconnectCause.SERVER, text.translate(disconnect.getReason()).plain());
-
-		ClientboundPacket translated = packets.decode(packet);
-		if (translated != null) listener.received(session, translated);
 	}
 
 	/**

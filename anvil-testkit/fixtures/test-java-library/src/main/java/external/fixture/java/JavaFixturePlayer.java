@@ -231,6 +231,11 @@ final class JavaFixturePlayer implements ProtocolPlayer, PlayerBindingContext<Ob
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
 			return server.carries(type);
 		}
+
+		@Override
+		public boolean handsOverFrames() {
+			return false;
+		}
 	}
 
 	/**

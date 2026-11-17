@@ -1,9 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
-import me.whereareiam.anvil.api.type.DisconnectCause;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
+import me.whereareiam.anvil.protocol.mcprotocol.client.TestClientListener;
 import net.kyori.adventure.key.Key;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -18,7 +15,6 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.play
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.ServerboundPlayerLoadedPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
@@ -32,7 +28,7 @@ class ReleaseAnswersTest {
 	private final List<String> events = new ArrayList<>();
 	private final List<Packet> sent = new ArrayList<>();
 	private final ClientSession session = session();
-	private final ReleaseAnswers listener = new ReleaseAnswers(session, new RecordingListener());
+	private final ReleaseAnswers listener = new ReleaseAnswers(session, new TestClientListener<>(events));
 
 	@Test
 	void reportsATeleportBeforeAcceptingItAndAnnouncingThatThePlayerLoaded() {
@@ -77,32 +73,5 @@ class ReleaseAnswersTest {
 			events.add("sent " + packet.getClass().getSimpleName());
 			return null;
 		});
-	}
-
-	private final class RecordingListener implements ClientListener<ClientSession> {
-		@Override
-		public void loggedIn(@NotNull ClientSession session, @NotNull ClientProfile granted) {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public void teleported(@NotNull ClientSession session, float yaw, float pitch) {
-			events.add("teleported " + yaw + " " + pitch);
-		}
-
-		@Override
-		public void disconnected(@NotNull ClientSession session, @NotNull DisconnectCause cause, @NotNull String reason) {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public void received(@NotNull ClientSession session, @NotNull ClientboundPacket packet) {
-			throw new UnsupportedOperationException();
-		}
-		@Override
-		public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
-			return true;
-		}
-
 	}
 }

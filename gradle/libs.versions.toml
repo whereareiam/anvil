@@ -46,6 +46,9 @@ bungeecord = "26.1-R0.1-SNAPSHOT"
 # minecraft protocol
 # The oldest Adventure that a pinned MCProtocolLib release brings; release-neutral client code compiles against it.
 adventure = "4.9.3"
+# The oldest netty that a pinned MCProtocolLib release brings; the frame handlers of every client segment compile
+# against it.
+netty = "4.1.56.Final"
 minecraft-auth = "5.0.2"
 
 # testing
@@ -89,6 +92,7 @@ bungeecord = { group = "net.md-5", name = "bungeecord-api", version.ref = "bunge
 
 # minecraft protocol
 adventure-api = { group = "net.kyori", name = "adventure-api", version.ref = "adventure" }
+netty-all = { group = "io.netty", name = "netty-all", version.ref = "netty" }
 minecraft-auth = { group = "net.raphimc", name = "MinecraftAuth", version.ref = "minecraft-auth" }
 
 # testing

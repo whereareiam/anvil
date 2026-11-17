@@ -2,13 +2,14 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.DisconnectCause;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ChunkBatchPacing;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ValueTranslator;
+import me.whereareiam.anvil.protocol.mcprotocol.netty.ReceivedFrames;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.event.session.ConnectedEvent;
@@ -26,6 +27,8 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.Serve
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginFinishedPacket;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Objects;
 
 /**
@@ -34,7 +37,8 @@ import java.util.Objects;
  * flattened to plain text. The brand and the player's settings, its language among them, go out at the start of the
  * configuration through the release's {@link ClientConfiguration}. The login reports the profile the server granted in
  * its login success, which arrives before the game starts. Teleports are answered by the release's teleport listener,
- * which the segment's adapter hands to {@link NetworkClientSessions}.
+ * which the segment's adapter hands to {@link NetworkClientSessions}. When the session connects, the listener puts
+ * {@link ReceivedFrames} into its pipeline, which hand the packets themselves over in the order they arrive.
  */
 @RequiredArgsConstructor
 final class ClientPacketListener extends SessionAdapter {
@@ -53,6 +57,8 @@ final class ClientPacketListener extends SessionAdapter {
 		// the stream instead of the server's reason. Without auto-close the failed write only shuts the output down,
 		// and the channel closes when it reads the disconnect or the end of the stream.
 		session.getChannel().config().setAutoClose(false);
+		new ReceivedFrames<>(session, Packet.class, packets, listener, this::state)
+				.install(session.getChannel().pipeline());
 	}
 
 	@Override
@@ -73,9 +79,18 @@ final class ClientPacketListener extends SessionAdapter {
 			listener.disconnected(session, DisconnectCause.SERVER, text.translate(disconnect.getReason()).plain());
 		if (packet instanceof ClientboundLoginDisconnectPacket disconnect)
 			listener.disconnected(session, DisconnectCause.SERVER, text.translate(disconnect.getReason()).plain());
+	}
 
-		ClientboundPacket translated = packets.decode(packet);
-		if (translated != null) listener.received(session, translated);
+	/**
+	 * The state the release reads the next packet in.
+	 */
+	private @Nullable ConnectionState state() {
+		return switch (session.getPacketProtocol().getInboundState()) {
+			case LOGIN -> ConnectionState.LOGIN;
+			case CONFIGURATION -> ConnectionState.CONFIGURATION;
+			case GAME -> ConnectionState.PLAY;
+			default -> null;
+		};
 	}
 
 	@Override

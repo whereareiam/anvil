@@ -11,20 +11,19 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.packet.Packet;
-import org.geysermc.mcprotocollib.network.tcp.TcpClientSession;
 import org.geysermc.mcprotocollib.protocol.MinecraftConstants;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Sessions of the MCProtocolLib 1.20.6 release: TCP sessions whose profiles and session service still come from
- * mcauthlib, which MCProtocolLib 1.21 replaced with its own. A session binds the source address through its
- * bind-address constructor; the handshake always announces the session host, so {@link ClientPacketListener}
- * rewrites the handshake for a virtual host. The session's {@link ClientProtocol} starts its configuration, and
- * {@link KeepAliveAnswers} answer its keep-alives in both phases.
+ * mcauthlib, which MCProtocolLib 1.21 replaced with its own. Each session is a {@link FramedClientSession}, which hands
+ * the packets it receives over in the order they arrive. A session binds the source address through its bind-address
+ * constructor; the handshake always announces the session host, so {@link ClientPacketListener} rewrites the handshake
+ * for a virtual host. The session's {@link ClientProtocol} starts its configuration, and {@link KeepAliveAnswers}
+ * answer its keep-alives in both phases.
  */
 final class TcpClientSessions implements ClientSessions<Session> {
-	private static final int ANY_PORT = 0;
 	/**
 	 * Separates the session server's address from the paths the session service appends to it.
 	 */
@@ -56,16 +55,16 @@ final class TcpClientSessions implements ClientSessions<Session> {
 		ClientConnection connection = login.getConnection();
 		ClientProtocol protocol = new ClientProtocol(login);
 		Session session = connection.getSourceAddress() == null
-				? new TcpClientSession(connection.getHost(), connection.getPort(), protocol)
-				: new TcpClientSession(connection.getHost(), connection.getPort(), connection.getSourceAddress(),
-						ANY_PORT, protocol);
+				? new FramedClientSession(connection.getHost(), connection.getPort(), protocol, listener, packets)
+				: new FramedClientSession(connection.getHost(), connection.getPort(), connection.getSourceAddress(),
+						protocol, listener, packets);
 		if (credentials != null && credentials.getSessionServer() != null) {
 			SessionService sessionService = new SessionService();
 			sessionService.setBaseUri(credentials.getSessionServer() + PATH_SEPARATOR);
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, sessionService);
 		}
 		KeepAliveAnswers.install(session);
-		session.addListener(new ClientPacketListener(login, listener, packets, TcpClientSessions::granted, text));
+		session.addListener(new ClientPacketListener(login, listener, TcpClientSessions::granted, text));
 
 		return session;
 	}

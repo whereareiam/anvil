@@ -14,6 +14,7 @@ import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.java.worker.JavaConnection;
 import me.whereareiam.anvil.protocol.java.worker.JavaPacketDispatcher;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
@@ -269,6 +270,11 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
 			return client.supports(type);
 		}
+
+		@Override
+		public boolean handsOverFrames() {
+			return true;
+		}
 	}
 
 	/**
@@ -315,6 +321,23 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 		public void received(@NotNull Object current, @NotNull ClientboundPacket packet) {
 			if (current != session) return;
 			protocol.deliver(packet);
+		}
+
+		@Override
+		public boolean wantsFrames() {
+			return protocol.wantsFrames();
+		}
+
+		@Override
+		public void received(
+				@NotNull Object current,
+				@NotNull ConnectionState state,
+				int id,
+				byte @NotNull [] payload,
+				@Nullable ClientboundPacket packet
+		) {
+			if (current != session) return;
+			protocol.deliver(state, id, payload, packet);
 		}
 
 		@Override

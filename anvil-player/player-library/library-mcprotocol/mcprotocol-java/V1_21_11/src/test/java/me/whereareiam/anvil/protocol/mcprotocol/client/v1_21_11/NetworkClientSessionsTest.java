@@ -1,20 +1,36 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoop;
+import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.util.ReferenceCountUtil;
 import me.whereareiam.anvil.api.type.DisconnectCause;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
+import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
+import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
+import me.whereareiam.anvil.protocol.mcprotocol.client.TestClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.KnownPacksAnswer;
+import me.whereareiam.anvil.protocol.mcprotocol.netty.ReceivedFrames;
+import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.event.session.SessionListener;
+import org.geysermc.mcprotocollib.network.packet.Packet;
+import org.geysermc.mcprotocollib.protocol.ClientListener;
 import org.geysermc.mcprotocollib.protocol.MinecraftConstants;
+import org.geysermc.mcprotocollib.protocol.data.ProtocolState;
+import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.serverbound.ServerboundCustomQueryAnswerPacket;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -26,6 +42,8 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -49,7 +67,7 @@ class NetworkClientSessionsTest {
 		CompletableFuture<String> disconnect = new CompletableFuture<>();
 		try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
 			NetworkClientSessions sessions = new NetworkClientSessions(new TextTranslator(), ReleaseAnswers::new);
-			ClientSession session = sessions.open(login(server.getLocalPort()), new DisconnectListener(disconnect),
+			ClientSession session = sessions.open(login(server.getLocalPort()), disconnects(disconnect),
 					McProtocolClientAdapter.packets(PacketDemand.EVERY));
 			sessions.connect(session);
 			try (Socket connection = server.accept()) {
@@ -82,19 +100,51 @@ class NetworkClientSessionsTest {
 	@Test
 	void startsTheConfigurationAfterTheLibrarysOwnListenerAndAnswersKnownPacks() {
 		ClientSession session = new NetworkClientSessions(new TextTranslator(), ReleaseAnswers::new)
-				.open(login(25565), new DisconnectListener(new CompletableFuture<>()), McProtocolClientAdapter.packets(PacketDemand.EVERY));
+				.open(login(25565), new TestClientListener<>(), McProtocolClientAdapter.packets(PacketDemand.EVERY));
 
 		session.getPacketProtocol().newClientSession(session);
 
-		// MCProtocolLib's own listener shares its simple name with Anvil's client listener.
 		List<Class<?>> listeners = session.getListeners().stream()
 				.<Class<?>>map(SessionListener::getClass)
 				.toList();
 		assertEquals(List.of(ReleaseAnswers.class, ClientPacketListener.class,
-				org.geysermc.mcprotocollib.protocol.ClientListener.class, ClientConfiguration.class,
+				ClientListener.class, ClientConfiguration.class,
 				KnownPacksAnswer.class),
 				listeners);
 		assertFalse(session.getFlag(MinecraftConstants.SEND_BLANK_KNOWN_PACKS_RESPONSE, true));
+	}
+
+	@Test
+	void handsEveryPacketOverOnceConnectedAndAsItsFrameWhileTheListenerWantsFrames() {
+		TestClientListener<ClientSession> listener = new TestClientListener<>();
+		ClientSession session = new NetworkClientSessions(new TextTranslator(), ReleaseAnswers::new)
+				.open(login(25565), listener, McProtocolClientAdapter.packets(PacketDemand.EVERY));
+		Deque<Packet> decoded = new ArrayDeque<>();
+		EmbeddedChannel channel = new EmbeddedChannel(new ChannelInitializer<>() {
+			@Override
+			protected void initChannel(Channel channel) {
+				channel.pipeline().addLast(ReceivedFrames.CODEC, new ChannelInboundHandlerAdapter() {
+					@Override
+					public void channelRead(ChannelHandlerContext context, Object message) {
+						ReferenceCountUtil.release(message);
+						context.fireChannelRead(decoded.remove());
+					}
+				});
+				channel.pipeline().addLast("manager", (ChannelHandler) session);
+			}
+		});
+		ClientboundSystemChat welcome = new ClientboundSystemChat(Text.literal("anvil:welcome"), false);
+
+		decoded.add(new ClientboundSystemChatPacket(Component.text("anvil:welcome"), false));
+		channel.writeInbound(Unpooled.wrappedBuffer(new byte[]{0x77}));
+		session.getPacketProtocol().setInboundState(ProtocolState.GAME);
+		listener.wantFrames(true);
+		decoded.add(new ClientboundKeepAlivePacket(7));
+		channel.writeInbound(Unpooled.wrappedBuffer(new byte[]{0x2B, 7}));
+
+		assertEquals(List.of(welcome), listener.received());
+		assertEquals(List.of(new TestClientListener.Frame(ConnectionState.PLAY, 0x2B, new byte[]{7}, null)),
+				listener.frames());
 	}
 
 	private static ClientLogin login(int port) {
@@ -142,32 +192,15 @@ class NetworkClientSessionsTest {
 		output.write(value);
 	}
 
-	private record DisconnectListener(CompletableFuture<String> disconnect) implements ClientListener<ClientSession> {
-		@Override
-		public void granted(@NotNull ClientSession session, @NotNull ClientProfile granted) {
-		}
-
-		@Override
-		public void loggedIn(@NotNull ClientSession session, @NotNull ClientProfile granted) {
-		}
-
-		@Override
-		public void teleported(@NotNull ClientSession session, float yaw, float pitch) {
-		}
-
-		@Override
-		public void disconnected(@NotNull ClientSession session, @NotNull DisconnectCause cause, @NotNull String reason) {
-			// The server's own disconnect is reported as SERVER; a close the client could not explain is not.
+	/**
+	 * A listener that completes the future with the first disconnect the server decided: its own disconnect, reported
+	 * as SERVER, or the end of the stream; a close the client could not explain does not complete it.
+	 */
+	private static TestClientListener<ClientSession> disconnects(CompletableFuture<String> disconnect) {
+		TestClientListener<ClientSession> listener = new TestClientListener<>();
+		listener.onDisconnect((cause, reason) -> {
 			if (cause == DisconnectCause.SERVER || reason.equals("disconnect.endOfStream")) disconnect.complete(cause + " " + reason);
-		}
-
-		@Override
-		public void received(@NotNull ClientSession session, @NotNull ClientboundPacket packet) {
-		}
-		@Override
-		public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
-			return true;
-		}
-
+		});
+		return listener;
 	}
 }

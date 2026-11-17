@@ -243,5 +243,10 @@ class JavaWorldStoreTest {
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
 			return true;
 		}
+
+		@Override
+		public boolean handsOverFrames() {
+			return false;
+		}
 	}
 }

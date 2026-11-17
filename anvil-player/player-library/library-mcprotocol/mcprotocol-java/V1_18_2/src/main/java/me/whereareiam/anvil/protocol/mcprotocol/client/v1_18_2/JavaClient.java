@@ -8,7 +8,6 @@ import com.github.steveice10.mc.protocol.codec.MinecraftCodec;
 import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.event.session.DisconnectedEvent;
 import com.github.steveice10.packetlib.packet.Packet;
-import com.github.steveice10.packetlib.tcp.TcpClientSession;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
@@ -33,7 +32,6 @@ import java.util.function.Function;
  * own, since a translation may remember what earlier packets of the session said, such as the types of its entities.
  */
 public class JavaClient implements McProtocolClient<Session> {
-	private static final int ANY_PORT = 0;
 	/**
 	 * Separates the session server's address from the paths the session service appends to it.
 	 */
@@ -79,16 +77,17 @@ public class JavaClient implements McProtocolClient<Session> {
 		ClientConnection connection = login.getConnection();
 		MinecraftProtocol protocol = new MinecraftProtocol(new GameProfile(profile.getUniqueId(), profile.getName()),
 				credentials == null ? null : credentials.getAccessToken());
+		PacketTable<Packet> table = tables.apply(listener);
 		Session session = connection.getSourceAddress() == null
-				? new TcpClientSession(connection.getHost(), connection.getPort(), protocol)
-				: new TcpClientSession(connection.getHost(), connection.getPort(), connection.getSourceAddress(),
-						ANY_PORT, protocol);
+				? new FramedClientSession(connection.getHost(), connection.getPort(), protocol, listener, table)
+				: new FramedClientSession(connection.getHost(), connection.getPort(), connection.getSourceAddress(),
+						protocol, listener, table);
 		if (credentials != null && credentials.getSessionServer() != null) {
 			SessionService sessionService = new SessionService();
 			sessionService.setBaseUri(credentials.getSessionServer() + PATH_SEPARATOR);
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, sessionService);
 		}
-		session.addListener(new ClientPacketListener(login, listener, tables.apply(listener), reasons, text));
+		session.addListener(new ClientPacketListener(login, listener, reasons, text));
 
 		return session;
 	}

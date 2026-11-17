@@ -26,11 +26,9 @@ import com.github.steveice10.packetlib.event.session.SessionAdapter;
 import com.github.steveice10.packetlib.packet.Packet;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.DisconnectCause;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientBrand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
-import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 
@@ -41,16 +39,16 @@ import java.util.function.Function;
 /**
  * Answers the packets a client of the MCProtocolLib releases from 1.18.2 until 1.19.4 must answer on its own, each ping
  * with its pong as the vanilla client does, and reports login, teleports and disconnects with their reason flattened to
- * plain text. The login reports the profile the server granted in its login success, which arrives before the game
- * starts. A vanilla client of these releases answers the game's start with its client information followed by its
- * {@link ClientBrand}, and swings back the arm the server swings of the player's own entity. Each release's adapter
- * reads the reason of a closed connection, which packetlib turned from a string into a component.
+ * plain text; the session's {@link FramedClientSession} hands the packets themselves over. The login reports the
+ * profile the server granted in its login success, which arrives before the game starts. A vanilla client of these
+ * releases answers the game's start with its client information followed by its {@link ClientBrand}, and swings back
+ * the arm the server swings of the player's own entity. Each release's adapter reads the reason of a closed connection,
+ * which packetlib turned from a string into a component.
  */
 @RequiredArgsConstructor
 final class ClientPacketListener extends SessionAdapter {
 	private final ClientLogin login;
 	private final ClientListener<? super Session> listener;
-	private final PacketTable<Packet> packets;
 	private final Function<DisconnectedEvent, String> reasons;
 	private final ComponentTranslator text;
 	private volatile ClientProfile granted;
@@ -83,9 +81,6 @@ final class ClientPacketListener extends SessionAdapter {
 			listener.disconnected(session, DisconnectCause.SERVER, text.translate(disconnect.getReason()).plain());
 		if (packet instanceof ClientboundLoginDisconnectPacket disconnect)
 			listener.disconnected(session, DisconnectCause.SERVER, text.translate(disconnect.getReason()).plain());
-
-		ClientboundPacket translated = packets.decode(packet);
-		if (translated != null) listener.received(session, translated);
 	}
 
 	/**

@@ -3,7 +3,7 @@ package me.whereareiam.anvil.protocol.java.packet.generator;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import me.whereareiam.anvil.protocol.java.api.type.ConnectionState;
+import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

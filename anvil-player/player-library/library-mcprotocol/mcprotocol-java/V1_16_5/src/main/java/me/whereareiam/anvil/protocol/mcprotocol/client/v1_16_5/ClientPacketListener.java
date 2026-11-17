@@ -21,11 +21,9 @@ import com.github.steveice10.packetlib.event.session.SessionAdapter;
 import com.github.steveice10.packetlib.packet.Packet;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.DisconnectCause;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientBrand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
-import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 
@@ -33,11 +31,12 @@ import java.util.Objects;
 
 /**
  * Answers the packets a client of the MCProtocolLib releases from 1.16.5 until 1.17.1 must answer on its own and
- * reports login, teleports and disconnects with their reason flattened to plain text. Like the vanilla client, it
- * swings back the arm the server swings of the player's own entity. The login reports the profile the
- * server granted in its login success, which arrives before the game starts. A vanilla client of these releases answers
- * the game's start with its client information, which the release's {@link ClientAnswers} build, followed by its
- * {@link ClientBrand}; the answers also acknowledge what the release must acknowledge.
+ * reports login, teleports and disconnects with their reason flattened to plain text; the session's {@link
+ * FramedClientSession} hands the packets themselves over. Like the vanilla client, it swings back the arm the server
+ * swings of the player's own entity. The login reports the profile the server granted in its login success, which
+ * arrives before the game starts. A vanilla client of these releases answers the game's start with its client
+ * information, which the release's {@link ClientAnswers} build, followed by its {@link ClientBrand}; the answers also
+ * acknowledge what the release must acknowledge.
  *
  * <p>The session adds MCProtocolLib's own listener when it connects, after this one, so this listener sees an
  * encryption request first. These releases refuse the request of a client without an account with an exception that
@@ -48,7 +47,6 @@ import java.util.Objects;
 final class ClientPacketListener extends SessionAdapter {
 	private final ClientLogin login;
 	private final ClientListener<? super Session> listener;
-	private final PacketTable<Packet> packets;
 	private final ClientAnswers answers;
 	private final ComponentTranslator text;
 	private volatile ClientProfile granted;
@@ -89,9 +87,6 @@ final class ClientPacketListener extends SessionAdapter {
 			listener.disconnected(session, DisconnectCause.SERVER, text.translate(disconnect.getReason()).plain());
 		Packet answer = answers.answer(packet);
 		if (answer != null) session.send(answer);
-
-		ClientboundPacket translated = packets.decode(packet);
-		if (translated != null) listener.received(session, translated);
 	}
 
 	/**
