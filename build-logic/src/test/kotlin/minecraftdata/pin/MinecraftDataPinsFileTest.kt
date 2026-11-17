@@ -1,5 +1,6 @@
-package me.whereareiam.anvil.buildlogic.block
+package me.whereareiam.anvil.buildlogic.minecraftdata.pin
 
+import me.whereareiam.anvil.buildlogic.minecraftdata.MinecraftDataKind
 import org.gradle.api.GradleException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -9,7 +10,14 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 
-class BlockDataPinsFileTest {
+class MinecraftDataPinsFileTest {
+	private val kind = MinecraftDataKind(
+		"block data",
+		"BlockData",
+		"block-data.toml",
+		listOf(MinecraftDataKind.File("blocks", "blocks"), MinecraftDataKind.File("collision-shapes", "blockCollisionShapes")),
+	)
+
 	@TempDir
 	lateinit var directory: File
 
@@ -34,25 +42,27 @@ class BlockDataPinsFileTest {
 
 		assertEquals(listOf(754, 776), pins.releases.map { it.protocol })
 		assertTrue(pins.releases.first().pinned)
-		assertEquals(BlockDataPins.PinnedFile("data/pc/1.16.2/blocks.json", checksum), pins.releases.first().blocks)
+		assertEquals(MinecraftDataPins.PinnedFile("data/pc/1.16.2/blocks.json", checksum), pins.releases.first().file("blocks"))
 		assertFalse(pins.releases.last().pinned)
 	}
 
 	@Test
 	fun `formats what it reads`() {
-		val pins = BlockDataPins(
-			BlockDataPins.Source("PrismarineJS/minecraft-data", "3.117.0", "c".repeat(40)),
+		val pins = MinecraftDataPins(
+			MinecraftDataPins.Source("PrismarineJS/minecraft-data", "3.117.0", "c".repeat(40)),
 			listOf(
-				BlockDataPins.Release(777, null, null),
-				BlockDataPins.Release(
-					767,
-					BlockDataPins.PinnedFile("data/pc/1.21.1/blocks.json", checksum),
-					BlockDataPins.PinnedFile("data/pc/1.20.5/blockCollisionShapes.json", checksum),
-				),
+				MinecraftDataPins.Release(777, emptyMap()),
+				MinecraftDataPins.Release(767, mapOf(
+					"blocks" to MinecraftDataPins.PinnedFile("data/pc/1.21.1/blocks.json", checksum),
+					"collision-shapes" to MinecraftDataPins.PinnedFile("data/pc/1.20.5/blockCollisionShapes.json", checksum),
+				)),
 			),
 		)
 
-		assertEquals(pins.copy(releases = pins.releases.sortedBy { it.protocol }), read(BlockDataPinsFile.format(pins)))
+		val formatted = MinecraftDataPinsFile(kind).format(pins, ":protocol-java-block:pinBlockData")
+
+		assertEquals(pins.copy(releases = pins.releases.sortedBy { it.protocol }), read(formatted))
+		assertTrue(formatted.contains("./gradlew :protocol-java-block:pinBlockData"))
 	}
 
 	@Test
@@ -65,7 +75,7 @@ class BlockDataPinsFileTest {
 			""".trimIndent())
 		}
 
-		assertEquals("block-data.toml: protocol 756 must pin both blocks and collision-shapes, or neither", failure.message)
+		assertEquals("block-data.toml: protocol 756 must pin blocks and collision-shapes, or none of them", failure.message)
 	}
 
 	@Test
@@ -100,5 +110,5 @@ class BlockDataPinsFileTest {
 
 	private fun source(): String = "[source]\nrepository = \"PrismarineJS/minecraft-data\"\nversion = \"3.117.0\"\ncommit = \"\"\n\n"
 
-	private fun read(text: String): BlockDataPins = BlockDataPinsFile.read(directory.resolve("block-data.toml").apply { writeText(text) })
+	private fun read(text: String): MinecraftDataPins = MinecraftDataPinsFile(kind).read(directory.resolve("block-data.toml").apply { writeText(text) })
 }

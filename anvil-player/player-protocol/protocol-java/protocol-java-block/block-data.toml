@@ -1,12 +1,13 @@
-# Block data of every Minecraft release Anvil supports, generated at build time from PrismarineJS minecraft-data
-# (https://github.com/PrismarineJS/minecraft-data, MIT). Each [[release]] names one protocol, whose Minecraft
-# versions share one block registry, and pins the minecraft-data files of those versions, which pinBlockData finds
-# through minecraft-data's own data/pc/common/protocolVersions.json and data/dataPaths.json. A row without files has
-# no block data: minecraft-data has none for any version of its protocol. checkBlockDataReleases requires one row
-# for every protocol a protocol library release speaks.
+# Block data of every Minecraft release Anvil supports, generated at build time from
+# PrismarineJS minecraft-data (https://github.com/PrismarineJS/minecraft-data, MIT). Each [[release]] names one
+# protocol, whose Minecraft versions share one set of block data, and pins the minecraft-data files of those
+# versions (blocks.json, blockCollisionShapes.json), which pinBlockData finds through
+# minecraft-data's own data/pc/common/protocolVersions.json and data/dataPaths.json. A row without files has no
+# block data: minecraft-data has none for any version of its protocol. checkBlockDataReleases requires one
+# row for every protocol a protocol library release speaks.
 # Change [source] version to another minecraft-data release, or add a row, then run
-# ./gradlew :anvil-player:player-protocol:protocol-java:protocol-java-block:pinBlockData, which resolves the
-# commit and rewrites every pin. Pins never change silently while the commit stays the same.
+# ./gradlew :anvil-player:player-protocol:protocol-java:protocol-java-block:pinBlockData
+# which resolves the commit and rewrites every pin. Pins never change silently while the commit stays the same.
 
 [source]
 repository = "PrismarineJS/minecraft-data"
