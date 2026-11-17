@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.cookie;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
  * cookies.
  */
 @Value
+@FieldNameConstants
 public class ClientboundCookieRequest implements ClientboundPacket {
 	/**
 	 * The requested key, a resource location with its namespace, such as {@code minecraft:ticket}.

@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.command;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.command.CommandNode;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
@@ -12,6 +13,7 @@ import java.util.List;
  * index. A new tree replaces the previous one.
  */
 @Value
+@FieldNameConstants
 public class ClientboundCommands implements ClientboundPacket {
 	/**
 	 * The tree's nodes, in the order the server sent them.

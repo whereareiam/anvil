@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.connection;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.type.player.GameMode;
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
  * level. The protocol models the level the player is in afterwards of the packet's fields.
  */
 @Value
+@FieldNameConstants
 @Builder
 public class ClientboundRespawn implements ClientboundPacket {
 	/**

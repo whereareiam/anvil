@@ -12,6 +12,7 @@ architecture {
 	dependsOnApis = setOf(
 		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi.path,
 		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaJson.path,
+		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaPacket.path,
 		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker.path,
 	)
 }

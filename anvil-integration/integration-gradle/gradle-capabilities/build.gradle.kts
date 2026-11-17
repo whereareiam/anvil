@@ -49,6 +49,12 @@ gradlePlugin {
 			displayName = "Anvil Movement Capability"
 			description = "Includes the built-in Movement capability"
 		}
+		create("anvilCapabilityPackets") {
+			id = "me.whereareiam.anvil.capability.packets"
+			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.PacketsPlugin"
+			displayName = "Anvil Packets Capability"
+			description = "Includes the built-in Packets capability"
+		}
 		create("anvilCapabilityInventory") {
 			id = "me.whereareiam.anvil.capability.inventory"
 			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.InventoryPlugin"

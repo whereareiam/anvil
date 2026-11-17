@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.entity.move;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
  * a teleport instead.
  */
 @Value
+@FieldNameConstants
 @Builder
 public class ClientboundEntityPositionSync implements ClientboundPacket {
 	/**

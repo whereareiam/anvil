@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.screen;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
 
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * message arrives as that message instead.
  */
 @Value
+@FieldNameConstants
 public class ClientboundSetActionBarText implements ClientboundPacket {
 	/**
 	 * The text as plain text.

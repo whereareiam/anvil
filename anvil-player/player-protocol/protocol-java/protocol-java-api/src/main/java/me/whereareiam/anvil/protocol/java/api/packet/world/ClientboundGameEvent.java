@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.world;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.type.world.GameEventType;
 import org.jetbrains.annotations.NotNull;
@@ -10,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
  * death screen, with the number the event carries.
  */
 @Value
+@FieldNameConstants
 public class ClientboundGameEvent implements ClientboundPacket {
 	/**
 	 * Which state changes.

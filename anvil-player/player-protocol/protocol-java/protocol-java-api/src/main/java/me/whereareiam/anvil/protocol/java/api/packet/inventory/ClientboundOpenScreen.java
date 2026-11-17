@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.inventory;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
 
@@ -8,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * A container the server opens for the player, such as a chest. Its contents arrive in a later packet.
  */
 @Value
+@FieldNameConstants
 public class ClientboundOpenScreen implements ClientboundPacket {
 	/**
 	 * ID of the opened container, which later packets and clicks address it by.

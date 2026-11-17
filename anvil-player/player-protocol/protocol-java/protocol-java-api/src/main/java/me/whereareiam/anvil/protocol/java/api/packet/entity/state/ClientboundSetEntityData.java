@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.entity.state;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityDataValue;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
@@ -13,6 +14,7 @@ import java.util.List;
  * values the protocol does not model are left out, so the list may be empty.
  */
 @Value
+@FieldNameConstants
 public class ClientboundSetEntityData implements ClientboundPacket {
 	/**
 	 * The entity's protocol ID.

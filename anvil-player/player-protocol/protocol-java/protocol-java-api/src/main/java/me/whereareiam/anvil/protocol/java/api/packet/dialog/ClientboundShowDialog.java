@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.dialog;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.Nullable;
@@ -11,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
  * as the NBT the game's dialog codec writes. Releases before Minecraft 1.21.6 have no dialogs.
  */
 @Value
+@FieldNameConstants
 public class ClientboundShowDialog implements ClientboundPacket {
 	/**
 	 * Registry ID of the dialog the server refers to, its index in the {@code minecraft:dialog} registry, or

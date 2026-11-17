@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.chat;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.java.api.model.chat.MessageSignature;
 import me.whereareiam.anvil.protocol.java.api.model.chat.PackedMessageSignature;
@@ -16,6 +17,7 @@ import java.util.List;
  * their messages pass through, without a signature and with nothing last seen.
  */
 @Value
+@FieldNameConstants
 public class ClientboundPlayerChat implements ClientboundPacket {
 	/**
 	 * The message as the game shows it, without the chat type's decoration around it: the server's unsigned
