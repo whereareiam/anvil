@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.capability.world.model;
+package me.whereareiam.anvil.capability.world.model.environment;
 
 import lombok.Value;
 
@@ -7,7 +7,7 @@ import lombok.Value;
  * as the day of the overworld; the client advances it itself between updates.
  */
 @Value
-public class ClockInfo {
+public class Clock {
 	/**
 	 * The ticks the clock has counted.
 	 */

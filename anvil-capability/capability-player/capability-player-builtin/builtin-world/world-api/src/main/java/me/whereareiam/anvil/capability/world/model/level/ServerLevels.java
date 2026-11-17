@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.capability.world.model;
+package me.whereareiam.anvil.capability.world.model.level;
 
 import lombok.Builder;
 import lombok.Singular;
@@ -13,7 +13,7 @@ import java.util.List;
  */
 @Value
 @Builder
-public class ServerInfo {
+public class ServerLevels {
 	/**
 	 * Whether the server is in hardcore mode, where a player who dies cannot respawn.
 	 */

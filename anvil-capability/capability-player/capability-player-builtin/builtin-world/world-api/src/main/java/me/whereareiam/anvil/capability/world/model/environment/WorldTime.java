@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.capability.world.model;
+package me.whereareiam.anvil.capability.world.model.environment;
 
 import lombok.Builder;
 import lombok.Singular;
@@ -41,7 +41,7 @@ public class WorldTime {
 	 * The world clocks the server keeps, by their keys, such as {@code minecraft:overworld}; empty before Minecraft
 	 * 26.1, which has none.
 	 */
-	@NotNull @Singular Map<String, ClockInfo> clocks;
+	@NotNull @Singular Map<String, Clock> clocks;
 
 	/**
 	 * Returns the time within the current day, from {@code 0} at sunrise to {@code 23999}, as the game's

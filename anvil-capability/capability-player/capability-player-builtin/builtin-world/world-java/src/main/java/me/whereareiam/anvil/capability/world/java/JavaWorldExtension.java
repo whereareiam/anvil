@@ -1,16 +1,15 @@
 package me.whereareiam.anvil.capability.world.java;
 
 import me.whereareiam.anvil.capability.world.channel.WorldChannel;
-import me.whereareiam.anvil.capability.world.model.ClockInfo;
-import me.whereareiam.anvil.capability.world.model.DimensionChange;
-import me.whereareiam.anvil.capability.world.model.DimensionTypeInfo;
-import me.whereareiam.anvil.capability.world.model.LevelInfo;
-import me.whereareiam.anvil.capability.world.model.ServerInfo;
-import me.whereareiam.anvil.capability.world.model.SpawnPoint;
-import me.whereareiam.anvil.capability.world.model.Weather;
-import me.whereareiam.anvil.capability.world.model.WorldBorder;
-import me.whereareiam.anvil.capability.world.model.WorldState;
-import me.whereareiam.anvil.capability.world.model.WorldTime;
+import me.whereareiam.anvil.capability.world.model.environment.Clock;
+import me.whereareiam.anvil.capability.world.model.environment.SpawnPoint;
+import me.whereareiam.anvil.capability.world.model.environment.Weather;
+import me.whereareiam.anvil.capability.world.model.environment.WorldBorder;
+import me.whereareiam.anvil.capability.world.model.environment.WorldState;
+import me.whereareiam.anvil.capability.world.model.environment.WorldTime;
+import me.whereareiam.anvil.capability.world.model.level.DimensionChange;
+import me.whereareiam.anvil.capability.world.model.level.Level;
+import me.whereareiam.anvil.capability.world.model.level.ServerLevels;
 import me.whereareiam.anvil.capability.world.type.Environment;
 import me.whereareiam.anvil.capability.world.type.LevelGeneration;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
@@ -46,13 +45,15 @@ import java.util.function.UnaryOperator;
  * Installs the built-in world capability for players that speak the Java Edition protocol: it emits the server each
  * join of the player's current connection names, the level each join and respawn puts the player in, together with
  * the dimension it was in, and the dimension the connection was in when it ends. Each connection starts in no level.
- * The world registers no operations.
  *
  * <p>It also emits the whole world state each time the connection is told about the time, the weather, the world
  * border or the spawn point, as the client keeps them: a join starts a fresh state, a respawn into another dimension
  * starts a level with clear weather and no border yet, and the end of the connection empties the state. From
  * Minecraft 26.1 the time of day is the time of the clock the level's dimension type follows; before, the server
  * sends it. A spawn point of a release that names no level is in the level the player is in.</p>
+ *
+ * <p>The player keeps the chunks the server sends it from the moment the world binds, as a vanilla client does, so the
+ * host can read its blocks and watch areas of them through {@link WorldBlocks}.</p>
  */
 public final class JavaWorldExtension implements WorkerExtension<Object> {
 	/**
@@ -80,6 +81,8 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 	public @NotNull WorkerBinding bind(@NotNull PlayerBindingContext<Object> player, @NotNull OperationRegistry operations) {
 		JavaProtocol protocol = player.protocol(JavaProtocol.class);
 		Dimension dimension = new Dimension(player);
+		WorldBlocks blocks = new WorldBlocks(player, protocol);
+		blocks.register(operations);
 
 		Subscription connections = player.bindConnection(() -> dimension::left);
 		Subscription binding = Subscription.all(
@@ -109,6 +112,7 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 						.warningBlocks(distance.getWarningBlocks())
 						.build())),
 				protocol.listen(ClientboundSetDefaultSpawnPosition.class, dimension::spawn),
+				blocks.listen(),
 				dimension::discard,
 				connections
 		);
@@ -123,13 +127,13 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 	 */
 	private static final class Dimension {
 		private final PlayerBindingContext<Object> player;
-		private @Nullable LevelInfo current;
+		private @Nullable Level current;
 		private @Nullable DimensionType type;
 		private boolean observed = true;
 
 		private WorldState state = WorldState.EMPTY;
 		private @Nullable ClientboundSetTime lastTime;
-		private final Map<String, ClockInfo> clocks = new LinkedHashMap<>();
+		private final Map<String, Clock> clocks = new LinkedHashMap<>();
 
 		private Dimension(PlayerBindingContext<Object> player) {
 			this.player = player;
@@ -140,7 +144,7 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 			clocks.clear();
 			state = WorldState.EMPTY;
 			if (observed)
-				player.emit(WorldChannel.SERVER, ServerInfo.builder()
+				player.emit(WorldChannel.SERVER, ServerLevels.builder()
 						.hardcore(login.isHardcore())
 						.levels(login.getLevels())
 						.build());
@@ -154,9 +158,9 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 		private void entered(String dimension, DimensionType type, boolean debug, boolean flat) {
 			if (!observed) return;
 
-			DimensionTypeInfo info = new DimensionTypeInfo(type.getKey(), environment(type), type.getMinY(),
-					type.getHeight());
-			LevelInfo level = new LevelInfo(dimension, info, generation(debug, flat));
+			var levelType = new me.whereareiam.anvil.capability.world.model.level.DimensionType(type.getKey(),
+					environment(type), type.getMinY(), type.getHeight());
+			Level level = new Level(dimension, levelType, generation(debug, flat));
 			player.emit(WorldChannel.DIMENSION, new DimensionChange(current == null ? null : current.getDimension(),
 					dimension, level));
 			boolean anotherLevel = current == null || !current.getDimension().equals(dimension);
@@ -173,7 +177,7 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 
 			lastTime = time;
 			for (Map.Entry<String, ClockState> update : time.getClockUpdates().entrySet())
-				clocks.put(update.getKey(), new ClockInfo(update.getValue().getTotalTicks(), update.getValue().getRate()));
+				clocks.put(update.getKey(), new Clock(update.getValue().getTotalTicks(), update.getValue().getRate()));
 			emit(state.toBuilder().time(time()).build());
 		}
 
@@ -192,7 +196,7 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 						.build();
 
 			String clockKey = type == null ? null : type.getDefaultClock();
-			ClockInfo clock = clockKey == null ? null : clocks.get(clockKey);
+			Clock clock = clockKey == null ? null : clocks.get(clockKey);
 			return WorldTime.builder()
 					.gameTime(time.getGameTime())
 					.dayTime(clock == null ? null : clock.getTicks())
@@ -265,7 +269,7 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 		}
 
 		private synchronized void left() {
-			LevelInfo left = current;
+			Level left = current;
 			current = null;
 			type = null;
 			lastTime = null;

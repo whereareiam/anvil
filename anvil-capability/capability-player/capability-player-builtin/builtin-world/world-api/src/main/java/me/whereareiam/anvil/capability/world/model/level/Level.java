@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.capability.world.model;
+package me.whereareiam.anvil.capability.world.model.level;
 
 import lombok.Value;
 import me.whereareiam.anvil.capability.world.type.LevelGeneration;
@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
  * What the client was told about the level it is in when it joined or respawned in it.
  */
 @Value
-public class LevelInfo {
+public class Level {
 	/**
 	 * The key of the level, with its namespace, such as {@code minecraft:the_nether}: the dimension the player is in.
 	 */
@@ -16,7 +16,7 @@ public class LevelInfo {
 	/**
 	 * The level's dimension type.
 	 */
-	@NotNull DimensionTypeInfo type;
+	@NotNull DimensionType type;
 	/**
 	 * How the server generates the level.
 	 */

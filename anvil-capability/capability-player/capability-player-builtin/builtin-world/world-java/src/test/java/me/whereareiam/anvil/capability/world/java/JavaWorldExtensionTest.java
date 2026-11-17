@@ -1,16 +1,15 @@
 package me.whereareiam.anvil.capability.world.java;
 
 import me.whereareiam.anvil.capability.world.channel.WorldChannel;
-import me.whereareiam.anvil.capability.world.model.ClockInfo;
-import me.whereareiam.anvil.capability.world.model.DimensionChange;
-import me.whereareiam.anvil.capability.world.model.DimensionTypeInfo;
-import me.whereareiam.anvil.capability.world.model.LevelInfo;
-import me.whereareiam.anvil.capability.world.model.ServerInfo;
-import me.whereareiam.anvil.capability.world.model.SpawnPoint;
-import me.whereareiam.anvil.capability.world.model.Weather;
-import me.whereareiam.anvil.capability.world.model.WorldBorder;
-import me.whereareiam.anvil.capability.world.model.WorldState;
-import me.whereareiam.anvil.capability.world.model.WorldTime;
+import me.whereareiam.anvil.capability.world.model.environment.Clock;
+import me.whereareiam.anvil.capability.world.model.environment.SpawnPoint;
+import me.whereareiam.anvil.capability.world.model.environment.Weather;
+import me.whereareiam.anvil.capability.world.model.environment.WorldBorder;
+import me.whereareiam.anvil.capability.world.model.environment.WorldState;
+import me.whereareiam.anvil.capability.world.model.environment.WorldTime;
+import me.whereareiam.anvil.capability.world.model.level.DimensionChange;
+import me.whereareiam.anvil.capability.world.model.level.Level;
+import me.whereareiam.anvil.capability.world.model.level.ServerLevels;
 import me.whereareiam.anvil.capability.world.type.Environment;
 import me.whereareiam.anvil.capability.world.type.LevelGeneration;
 import me.whereareiam.anvil.capability.world.type.WeatherType;
@@ -43,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -84,7 +82,8 @@ class JavaWorldExtensionTest {
 
 		assertEquals(List.of(change(null, OVERWORLD, Environment.OVERWORLD), change(OVERWORLD, NETHER, Environment.NETHER),
 				change(NETHER, NETHER, Environment.NETHER)), player.emitted(WorldChannel.DIMENSION));
-		assertTrue(operations.registered().isEmpty());
+		assertEquals(List.of("world.block", "world.chunk", "world.chunks", "world.watch", "world.unwatch"),
+				operations.registered());
 	}
 
 	@Test
@@ -106,13 +105,11 @@ class JavaWorldExtensionTest {
 				.debug(true)
 				.build());
 
-		assertEquals(List.of(ServerInfo.builder().hardcore(true).level(OVERWORLD).level(ARENA).build()),
+		assertEquals(List.of(ServerLevels.builder().hardcore(true).level(OVERWORLD).level(ARENA).build()),
 				player.emitted(WorldChannel.SERVER));
 		assertEquals(List.of(
-				new LevelInfo(ARENA, new DimensionTypeInfo("example:void", Environment.END, 0, 256),
-						LevelGeneration.FLAT),
-				new LevelInfo(ARENA, new DimensionTypeInfo("example:modded", Environment.CUSTOM, -32, 128),
-						LevelGeneration.DEBUG)
+				new Level(ARENA, levelType("example:void", Environment.END, 0, 256), LevelGeneration.FLAT),
+				new Level(ARENA, levelType("example:modded", Environment.CUSTOM, -32, 128), LevelGeneration.DEBUG)
 		), player.emitted(WorldChannel.DIMENSION).stream().map(DimensionChange::getLevel).toList());
 	}
 
@@ -216,7 +213,7 @@ class JavaWorldExtensionTest {
 
 		assertEquals(13000L, overworld.getDayTime());
 		assertTrue(overworld.isAdvancing());
-		assertEquals(Map.of(OVERWORLD, new ClockInfo(13000, 1), END, new ClockInfo(40, 0)), overworld.getClocks());
+		assertEquals(Map.of(OVERWORLD, new Clock(13000, 1), END, new Clock(40, 0)), overworld.getClocks());
 		assertNull(nether.getDayTime());
 		assertFalse(nether.isAdvancing());
 		assertEquals(40L, end.getDayTime());
@@ -344,7 +341,21 @@ class JavaWorldExtensionTest {
 	 */
 	private static DimensionChange change(String from, String to, Environment environment) {
 		DimensionType type = vanilla(to);
-		DimensionTypeInfo info = new DimensionTypeInfo(to, environment, type.getMinY(), type.getHeight());
-		return new DimensionChange(from, to, new LevelInfo(to, info, LevelGeneration.NORMAL));
+		Level level = new Level(to, levelType(to, environment, type.getMinY(), type.getHeight()),
+				LevelGeneration.NORMAL);
+
+		return new DimensionChange(from, to, level);
+	}
+
+	/**
+	 * Creates the World capability's dimension type, whose name the protocol's own dimension type shares.
+	 */
+	private static me.whereareiam.anvil.capability.world.model.level.DimensionType levelType(
+			String key,
+			Environment environment,
+			int minY,
+			int height
+	) {
+		return new me.whereareiam.anvil.capability.world.model.level.DimensionType(key, environment, minY, height);
 	}
 }

@@ -95,6 +95,11 @@ player.deliver(ClientboundSoundEntity.builder()
 List<HeardSound> heard = player.emitted(SoundsChannel.HEARD);
 ```
 
+A host capability, such as `ChannelWorld`, is tested in its `<feature>-common` module against
+`TestProtocolChannel` from the `player-api` test fixtures: the test answers the operations the capability
+requests with `answer(...)`, plays the worker's events with `publish(...)`, and schedules with
+`meanwhile(...)` what happens while the capability's next wait waits, so no test sleeps.
+
 A player created with a predicate, `new TestJavaPlayer("Alice", type -> type != ClientboundDeleteChat.class)`,
 carries only the packets it accepts, as an older release does. A module adds the fixtures with
 `testImplementation(testFixtures(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker))`. Modules

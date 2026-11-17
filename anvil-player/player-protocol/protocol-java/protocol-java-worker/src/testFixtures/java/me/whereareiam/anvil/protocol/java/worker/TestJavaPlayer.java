@@ -32,15 +32,18 @@ import java.util.function.Predicate;
  * }</pre>
  */
 public final class TestJavaPlayer extends TestWorkerPlayer {
+	/**
+	 * The protocol a test player speaks unless its test names another: 774, the protocol of Minecraft 1.21.11.
+	 */
+	public static final int PROTOCOL = 774;
+
 	private final Predicate<Class<? extends JavaPacket>> carried;
 	private final List<ServerboundPacket> sent = new CopyOnWriteArrayList<>();
-	private final JavaPacketDispatcher protocol = new JavaPacketDispatcher(LIBRARY_ID, new TestConnection());
-	private final WorkerProtocols protocols = WorkerProtocols.builder(LIBRARY_ID)
-			.speak(JavaProtocol.class, protocol, protocol::scoped)
-			.build();
+	private final JavaPacketDispatcher protocol;
+	private final WorkerProtocols protocols;
 
 	/**
-	 * Creates a disconnected player whose release carries every packet.
+	 * Creates a disconnected player of the {@link #PROTOCOL default protocol} whose release carries every packet.
 	 *
 	 * @param name the player's name
 	 */
@@ -49,14 +52,33 @@ public final class TestJavaPlayer extends TestWorkerPlayer {
 	}
 
 	/**
-	 * Creates a disconnected player whose release carries only some packets.
+	 * Creates a disconnected player of the {@link #PROTOCOL default protocol} whose release carries only some packets.
 	 *
 	 * @param name the player's name
 	 * @param carried tells whether the release carries a packet class
 	 */
 	public TestJavaPlayer(@NotNull String name, @NotNull Predicate<Class<? extends JavaPacket>> carried) {
+		this(name, PROTOCOL, carried);
+	}
+
+	/**
+	 * Creates a disconnected player of a protocol whose release carries only some packets.
+	 *
+	 * @param name the player's name
+	 * @param protocolNumber the protocol the player speaks
+	 * @param carried tells whether the release carries a packet class
+	 */
+	public TestJavaPlayer(
+			@NotNull String name,
+			int protocolNumber,
+			@NotNull Predicate<Class<? extends JavaPacket>> carried
+	) {
 		super(name);
 		this.carried = carried;
+		this.protocol = new JavaPacketDispatcher(LIBRARY_ID, protocolNumber, new TestConnection());
+		this.protocols = WorkerProtocols.builder(LIBRARY_ID)
+				.speak(JavaProtocol.class, protocol, protocol::scoped)
+				.build();
 	}
 
 	/**

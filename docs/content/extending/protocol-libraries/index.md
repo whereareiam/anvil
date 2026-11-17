@@ -134,12 +134,12 @@ Two kits hold the runtime, so a library supplies only its connection and its pac
 | Artifact | Use |
 | --- | --- |
 | `player-worker` | `WorkerExtensions` discovers the extensions on the class path, keeps those that target your library or every library and accept your native session type, binds them to each player, buffers operations while binding, and reports each unavailable one with its reason. `NativeSessionBindings` runs `bindNativeSession(...)`, and the `bindConnection(...)` built on it, across your sessions. `WorkerProtocols` lists the protocols a player speaks. |
-| `protocol-java-worker` | `JavaPacketDispatcher` is the player's `JavaProtocol` over the `JavaConnection` you implement: send a packet in your release's form, and say which packets your release carries. Hand every packet your player receives, already translated, to `deliver(...)`, and call `disconnected()` when its connection closes; the dispatcher keeps the player's `JavaWorld` from them. Before you decode a packet that is costly to decode, such as a chunk column, ask `wants(type)` and skip it while nothing wants it. |
+| `protocol-java-worker` | `JavaPacketDispatcher` is the player's `JavaProtocol` over the `JavaConnection` you implement: give it the number of the protocol your release speaks, send a packet in your release's form, and say which packets your release carries. Hand every packet your player receives, already translated, to `deliver(...)`, and call `disconnected()` when its connection closes; the dispatcher keeps the player's `JavaWorld` from them. Before you decode a packet that is costly to decode, such as a chunk column, ask `wants(type)` and skip it while nothing wants it. |
 
 A worker player implements `PlayerBindingContext<Object>` with them:
 
 ```java
-JavaPacketDispatcher java = new JavaPacketDispatcher("example", connection);
+JavaPacketDispatcher java = new JavaPacketDispatcher("example", release.getProtocolNumber(), connection);
 WorkerProtocols protocols = WorkerProtocols.builder("example")
 		.speak(JavaProtocol.class, java, java::scoped)
 		.build();

@@ -9,6 +9,7 @@ dependencies {
 	compileOnly(projects.anvilCapability.capabilityApi)
 	compileOnly(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi)
 	compileOnly(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinInteraction.interactionApi)
+	compileOnly(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinWorld.worldApi)
 	compileOnly(projects.anvilPlayer.playerApi)
 	compileOnly(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
 
@@ -16,6 +17,7 @@ dependencies {
 	testImplementation(projects.anvilCapability.capabilityApi)
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi)
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinInteraction.interactionApi)
+	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinWorld.worldApi)
 	testImplementation(projects.anvilPlayer.playerApi)
 	testImplementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
 }

@@ -95,7 +95,8 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 		this.segments = segments;
 		this.events = events;
 		this.capabilities = capabilities;
-		this.protocol = new JavaPacketDispatcher(McProtocolClient.LIBRARY_ID, new SessionConnection());
+		this.protocol = new JavaPacketDispatcher(McProtocolClient.LIBRARY_ID, client.protocolNumber(),
+				new SessionConnection());
 		this.protocols = WorkerProtocols.builder(McProtocolClient.LIBRARY_ID)
 				.speak(JavaProtocol.class, protocol, protocol::scoped)
 				.build();

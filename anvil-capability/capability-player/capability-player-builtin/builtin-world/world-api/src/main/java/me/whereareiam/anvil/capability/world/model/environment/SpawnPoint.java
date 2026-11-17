@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.capability.world.model;
+package me.whereareiam.anvil.capability.world.model.environment;
 
 import lombok.Builder;
 import lombok.Value;

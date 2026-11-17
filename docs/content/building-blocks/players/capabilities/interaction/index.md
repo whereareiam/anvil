@@ -24,7 +24,7 @@ plugin's resulting event or response; sending the interaction does not itself es
 ## Target a prepared block
 
 With a reachable fixture block at `(1, 64, 0)`, import
-`me.whereareiam.anvil.capability.interaction.model.BlockPosition` and
+`me.whereareiam.anvil.capability.world.model.block.BlockPosition` and
 `me.whereareiam.anvil.capability.interaction.type.BlockFace`, then use:
 
 ```java

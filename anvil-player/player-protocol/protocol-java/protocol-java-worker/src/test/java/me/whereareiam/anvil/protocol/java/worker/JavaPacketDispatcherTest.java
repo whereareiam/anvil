@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JavaPacketDispatcherTest {
 	private final RecordingConnection connection = new RecordingConnection();
-	private final JavaPacketDispatcher protocol = new JavaPacketDispatcher("test", connection);
+	private final JavaPacketDispatcher protocol = new JavaPacketDispatcher("test", 774, connection);
 
 	@Test
 	void wantsThePacketsOfItsListenersWhileTheyListen() {

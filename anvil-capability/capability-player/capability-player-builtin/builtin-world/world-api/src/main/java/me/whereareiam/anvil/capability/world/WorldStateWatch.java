@@ -2,7 +2,7 @@ package me.whereareiam.anvil.capability.world;
 
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
-import me.whereareiam.anvil.capability.world.model.WorldState;
+import me.whereareiam.anvil.capability.world.model.environment.WorldState;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;

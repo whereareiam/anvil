@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * the listeners of an extension whose binding failed.
  *
  * <pre>{@code
- * JavaPacketDispatcher java = new JavaPacketDispatcher(LIBRARY_ID, connection);
+ * JavaPacketDispatcher java = new JavaPacketDispatcher(LIBRARY_ID, PROTOCOL, connection);
  * WorkerProtocols protocols = WorkerProtocols.builder(LIBRARY_ID)
  *         .speak(JavaProtocol.class, java, java::scoped)
  *         .build();

@@ -27,7 +27,7 @@ import java.util.function.Consumer;
  * and skips it while nothing wants it.</p>
  *
  * <pre>{@code
- * JavaPacketDispatcher protocol = new JavaPacketDispatcher(LIBRARY_ID, connection);
+ * JavaPacketDispatcher protocol = new JavaPacketDispatcher(LIBRARY_ID, release.protocolNumber(), connection);
  * ...
  * if (protocol.wants(ClientboundLevelChunkWithLight.class)) protocol.deliver(decode(chunk));
  * protocol.deliver(packet); // for each other packet the player's connection receives
@@ -37,6 +37,7 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public final class JavaPacketDispatcher implements JavaProtocol {
 	private final @NotNull String libraryId;
+	private final int protocolNumber;
 	private final @NotNull JavaConnection connection;
 	private final Map<Class<?>, List<Consumer<Object>>> listeners = new ConcurrentHashMap<>();
 	private final Map<Class<?>, List<Consumer<Object>>> sentListeners = new ConcurrentHashMap<>();
@@ -67,6 +68,11 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 	@Override
 	public boolean supports(@NotNull Class<? extends JavaPacket> type) {
 		return connection.supports(type);
+	}
+
+	@Override
+	public int protocolNumber() {
+		return protocolNumber;
 	}
 
 	@Override
@@ -189,6 +195,11 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 		@Override
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
 			return JavaPacketDispatcher.this.supports(type);
+		}
+
+		@Override
+		public int protocolNumber() {
+			return protocolNumber;
 		}
 
 		@Override

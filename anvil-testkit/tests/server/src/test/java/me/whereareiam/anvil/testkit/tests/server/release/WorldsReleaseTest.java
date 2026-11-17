@@ -5,11 +5,11 @@ import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.world.DimensionWatch;
 import me.whereareiam.anvil.capability.world.World;
 import me.whereareiam.anvil.capability.world.WorldStateWatch;
-import me.whereareiam.anvil.capability.world.model.DimensionTypeInfo;
-import me.whereareiam.anvil.capability.world.model.LevelInfo;
-import me.whereareiam.anvil.capability.world.model.SpawnPoint;
-import me.whereareiam.anvil.capability.world.model.WorldBorder;
-import me.whereareiam.anvil.capability.world.model.WorldState;
+import me.whereareiam.anvil.capability.world.model.environment.SpawnPoint;
+import me.whereareiam.anvil.capability.world.model.environment.WorldBorder;
+import me.whereareiam.anvil.capability.world.model.environment.WorldState;
+import me.whereareiam.anvil.capability.world.model.level.DimensionType;
+import me.whereareiam.anvil.capability.world.model.level.Level;
 import me.whereareiam.anvil.capability.world.type.Environment;
 import me.whereareiam.anvil.capability.world.type.LevelGeneration;
 import me.whereareiam.anvil.capability.world.type.WeatherType;
@@ -110,10 +110,10 @@ class WorldsReleaseTest {
 		assertEquals("minecraft:overworld", worlds.location(player).orElseThrow().getWorld());
 		World world = player.capability(World.class);
 		// Minecraft 1.18 lowered the overworld's floor and raised its ceiling; the nether and the end kept theirs.
-		DimensionTypeInfo overworld = TestedRelease.isAtLeast(CAVES_AND_CLIFFS)
-				? new DimensionTypeInfo("minecraft:overworld", Environment.OVERWORLD, -64, 384)
-				: new DimensionTypeInfo("minecraft:overworld", Environment.OVERWORLD, 0, 256);
-		assertEquals(new LevelInfo("minecraft:overworld", overworld, LevelGeneration.NORMAL), world.level().orElseThrow());
+		DimensionType overworld = TestedRelease.isAtLeast(CAVES_AND_CLIFFS)
+				? new DimensionType("minecraft:overworld", Environment.OVERWORLD, -64, 384)
+				: new DimensionType("minecraft:overworld", Environment.OVERWORLD, 0, 256);
+		assertEquals(new Level("minecraft:overworld", overworld, LevelGeneration.NORMAL), world.level().orElseThrow());
 		List<String> levels = world.server().orElseThrow().getLevels();
 		assertEquals("minecraft:overworld", levels.get(0));
 		assertEquals(Set.of("minecraft:overworld", "minecraft:the_nether", "minecraft:the_end"), Set.copyOf(levels));
@@ -126,14 +126,14 @@ class WorldsReleaseTest {
 		Worlds worlds = anvil.processes().server("server").capability(Worlds.class);
 		World world = player.capability(World.class);
 		WorldChangeWatch changes = worlds.watch();
-		DimensionWatch dimensions = world.watch();
+		DimensionWatch dimensions = world.dimensions();
 
 		worlds.send(player, ABOVE_THE_NETHER);
 
 		assertEquals("minecraft:overworld", changes.changed(player, "the_nether", TIMEOUT).getFrom());
 		assertEquals("minecraft:overworld", dimensions.entered("minecraft:the_nether", TIMEOUT).getFrom());
 		assertEquals(Optional.of("minecraft:the_nether"), world.dimension());
-		assertEquals(new DimensionTypeInfo("minecraft:the_nether", Environment.NETHER, 0, 256),
+		assertEquals(new DimensionType("minecraft:the_nether", Environment.NETHER, 0, 256),
 				world.level().orElseThrow().getType());
 		WorldLocation location = worlds.location(player).orElseThrow();
 		assertEquals(List.of("minecraft:the_nether", 140D), List.of(location.getWorld(), location.getY()));
@@ -152,7 +152,7 @@ class WorldsReleaseTest {
 		Worlds worlds = anvil.processes().server("server").capability(Worlds.class);
 		World world = player.capability(World.class);
 		WorldChangeWatch changes = worlds.watch();
-		DimensionWatch dimensions = world.watch();
+		DimensionWatch dimensions = world.dimensions();
 		WorldEventWatch events = worlds.watchWorlds();
 
 		ServerWorld flat = worlds.create(WorldCreation.builder()

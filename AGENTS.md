@@ -155,7 +155,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   running process (`ProcessCapability`); a proxy counts as server side. The implementation (packets, agent
   events) never decides the owner.
 - A player speaks its edition's protocol: `protocol-java-api`'s `JavaProtocol` (`listen` by packet class, `send`,
-  `listenSent` for the packets bindings send, `supports`, `world`), which a worker extension gets from
+  `listenSent` for the packets bindings send, `supports`, `world`, `protocolNumber`), which a worker extension gets from
   `PlayerBindingContext.protocol(JavaProtocol.class)`. Packets are immutable values grouped by area under
   `packet.<area>`, an area of more than seven packets split by subject below it (`packet.world.border`,
   `packet.world.chunk`), one class per game packet in the game's shape; the protocol owns the data types they need
@@ -585,8 +585,9 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 - A worker extension's tests bind it to the kits' test players, never to a fake of their own: `TestJavaPlayer`
   (`protocol-java-worker` test fixtures) speaks the real `JavaPacketDispatcher`, so the test delivers packets, reads
   what the player sent and connects and disconnects it as a worker does, and `TestOperations` calls what the extension
-  registered. A module shares test fixtures through the `module-test-fixtures` convention, which keeps them out of
-  its publication.
+  registered. A host capability's tests talk to `player-api`'s `TestProtocolChannel`, which answers operations,
+  publishes events and scripts what happens while the capability waits. A module shares test fixtures through the
+  `module-test-fixtures` convention, which keeps them out of its publication.
 - Tests that need a real Docker engine live in their module's `dockerTest` JVM test suite (`src/dockerTest/java`),
   so `test` and `build` need no Docker. They run in the image the `anvil.docker.testImage` property of
   `gradle.properties` names, the only place it is named, passed to them through an argument provider: a copy of

@@ -7,21 +7,16 @@ import me.whereareiam.anvil.capability.api.event.CapabilityEvent;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.world.channel.WorldChannel;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
-import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,43 +36,13 @@ class WorldProviderTest {
 
 	@Test
 	void observesDimensionsThroughThePlayersChannelWithoutRequesting() {
-		RecordingChannel channel = new RecordingChannel();
+		TestProtocolChannel channel = new TestProtocolChannel(Set.of(WorldChannel.ID));
 		World world = new WorldProvider().create(new ChannelContext(channel));
 
 		assertEquals(List.of(WorldChannel.SERVER.getId(), WorldChannel.DIMENSION.getId(), WorldChannel.LEFT.getId(),
-				WorldChannel.STATE.getId()), channel.subscriptions);
-		assertTrue(channel.requests.isEmpty());
+				WorldChannel.STATE.getId(), WorldChannel.CHANGES.getId()), channel.subscriptions());
+		assertTrue(channel.requests().isEmpty());
 		assertTrue(world.dimension().isEmpty());
-	}
-
-	/**
-	 * Records requests and subscriptions without delivering events.
-	 */
-	private static final class RecordingChannel implements ProtocolChannel {
-		private final List<String> requests = new ArrayList<>();
-		private final List<String> subscriptions = new ArrayList<>();
-
-		@Override
-		public <Q, R> @Nullable R request(@NotNull OperationDescriptor<Q, R> operation, @Nullable Q request) {
-			requests.add(operation.getId());
-			return null;
-		}
-
-		@Override
-		public <E> @NotNull Subscription subscribe(@NotNull EventDescriptor<E> eventDescriptor, @NotNull Consumer<E> listener) {
-			subscriptions.add(eventDescriptor.getId());
-			return () -> { };
-		}
-
-		@Override
-		public void await(@NotNull BooleanSupplier condition, @NotNull String description, @NotNull Duration timeout) {
-			throw new AssertionError("Creating the world does not wait");
-		}
-
-		@Override
-		public @NotNull Set<String> installedCapabilities() {
-			return Set.of(WorldChannel.ID);
-		}
 	}
 
 	/**

@@ -43,7 +43,7 @@ worlds.send(alice, WorldLocation.builder()
 		.build());
 
 changes.changed(alice, "minecraft:the_nether", Duration.ofSeconds(10));
-alice.capability(World.class).watch().entered("minecraft:the_nether", Duration.ofSeconds(10));
+alice.capability(World.class).dimensions().entered("minecraft:the_nether", Duration.ofSeconds(10));
 ```
 
 `send(player, world)` moves the player to the world's spawn, and `send(player, location)` to an exact
