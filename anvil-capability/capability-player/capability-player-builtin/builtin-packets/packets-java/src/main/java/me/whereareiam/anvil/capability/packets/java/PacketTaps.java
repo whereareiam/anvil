@@ -11,7 +11,7 @@ import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundFrame;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPackets;
-import me.whereareiam.anvil.protocol.java.api.type.ConnectionState;
+import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.java.packet.JavaPacketData;
 import me.whereareiam.anvil.protocol.java.packet.PacketRegistry;
 import org.jetbrains.annotations.NotNull;

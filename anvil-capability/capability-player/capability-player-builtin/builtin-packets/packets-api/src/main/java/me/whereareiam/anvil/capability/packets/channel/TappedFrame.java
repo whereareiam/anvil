@@ -2,7 +2,7 @@ package me.whereareiam.anvil.capability.packets.channel;
 
 import lombok.Value;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.type.ConnectionState;
+import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

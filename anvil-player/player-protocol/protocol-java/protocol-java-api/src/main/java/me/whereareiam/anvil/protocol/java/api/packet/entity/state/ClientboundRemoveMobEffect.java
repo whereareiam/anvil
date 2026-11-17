@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.entity.state;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * The server takes an effect away from an entity.
  */
 @Value
+@FieldNameConstants
 public class ClientboundRemoveMobEffect implements ClientboundPacket {
 	/**
 	 * The entity's protocol ID.

@@ -18,7 +18,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.dialog.ClientboundShowDialog;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundBossEvent;
 import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundBlockUpdate;
 import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundLevelChunkWithLight;
