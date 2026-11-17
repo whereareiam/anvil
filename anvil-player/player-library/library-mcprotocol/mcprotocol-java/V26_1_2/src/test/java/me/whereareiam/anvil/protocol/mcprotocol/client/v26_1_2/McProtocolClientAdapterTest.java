@@ -21,6 +21,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContai
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundClientTickEnd;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerInput;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPos;
@@ -32,6 +33,7 @@ import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.codec.MinecraftCodec;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundAttackPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundPlayerAbilitiesPacket;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
@@ -40,6 +42,7 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -73,6 +76,19 @@ class McProtocolClientAdapterTest {
 	}
 
 	@Test
+	void sendsTheFlightThePlayerStartsOrStopsAsTheFlyingFlagOfTheAbilities() {
+		List<Packet> sent = new ArrayList<>();
+		McProtocolClientAdapter client = new McProtocolClientAdapter();
+
+		client.send(recording(sent), new ServerboundPlayerAbilities(true));
+		client.send(recording(sent), new ServerboundPlayerAbilities(false));
+
+		assertEquals(2, sent.size());
+		assertTrue(assertInstanceOf(ServerboundPlayerAbilitiesPacket.class, sent.get(0)).isFlying());
+		assertFalse(assertInstanceOf(ServerboundPlayerAbilitiesPacket.class, sent.get(1)).isFlying());
+	}
+
+	@Test
 	void supportsThe1_21_11PacketsWithThisReleasesInteraction() {
 		McProtocolClientAdapter client = new McProtocolClientAdapter();
 
@@ -89,6 +105,7 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ClientboundRemoveMobEffect.class));
 		assertTrue(client.supports(ClientboundPlayerAbilities.class));
 		assertTrue(client.supports(ServerboundClientTickEnd.class));
+		assertTrue(client.supports(ServerboundPlayerAbilities.class));
 		assertTrue(client.supports(ServerboundPlayerCommand.class));
 		assertTrue(client.supports(ServerboundPlayerInput.class));
 		assertTrue(client.supports(ServerboundMovePlayerPos.class));

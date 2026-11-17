@@ -7,6 +7,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundClientTickEnd;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerInput;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPos;
@@ -27,6 +28,7 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.Serv
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerPosRotPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerRotPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerStatusOnlyPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundPlayerAbilitiesPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundPlayerCommandPacket;
 import org.junit.jupiter.api.Test;
 
@@ -160,9 +162,21 @@ class PlayerPacketsTest {
 				ServerboundMovePlayerPosRot.class,
 				ServerboundMovePlayerRot.class,
 				ServerboundMovePlayerStatusOnly.class,
+				ServerboundPlayerAbilities.class,
 				ServerboundPlayerCommand.class,
 				ServerboundPlayerInput.class
 		), packets.packets());
+	}
+
+	@Test
+	void encodesTheFlightThePlayerStartsOrStopsAsTheOnlyAbilityItTells() {
+		ServerboundPlayerAbilitiesPacket flying = assertInstanceOf(ServerboundPlayerAbilitiesPacket.class,
+				packets.encode(new ServerboundPlayerAbilities(true)));
+		ServerboundPlayerAbilitiesPacket landed = assertInstanceOf(ServerboundPlayerAbilitiesPacket.class,
+				packets.encode(new ServerboundPlayerAbilities(false)));
+
+		assertTrue(flying.isFlying());
+		assertFalse(landed.isFlying());
 	}
 
 	private static ServerboundMovePlayerPosRot move(boolean onGround, boolean horizontalCollision) {

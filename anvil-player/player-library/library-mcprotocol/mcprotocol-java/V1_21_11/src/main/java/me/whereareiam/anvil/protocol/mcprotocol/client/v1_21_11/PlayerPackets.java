@@ -8,6 +8,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundClientTickEnd;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerInput;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPos;
@@ -29,6 +30,7 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.Serv
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerPosRotPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerRotPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerStatusOnlyPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundPlayerAbilitiesPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundPlayerCommandPacket;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,7 +43,8 @@ import java.util.Set;
 /**
  * The player of the MCProtocolLib releases from 1.21.11 on: its movement packets carry the horizontal collision flag,
  * its client tells the keys it holds and the end of each tick and sneaks only through those keys, the server's
- * placement of the player also sets its velocity, and the server grants the player's abilities.
+ * placement of the player also sets its velocity, the server grants the player's abilities, and the player tells the
+ * flight it starts or stops on its own, whose abilities packet carries only whether it flies.
  */
 public final class PlayerPackets implements PacketTranslation<Packet> {
 	@Override
@@ -54,6 +57,7 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 				ServerboundMovePlayerPosRot.class,
 				ServerboundMovePlayerRot.class,
 				ServerboundMovePlayerStatusOnly.class,
+				ServerboundPlayerAbilities.class,
 				ServerboundPlayerCommand.class,
 				ServerboundPlayerInput.class
 		);
@@ -101,6 +105,7 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 			case ServerboundPlayerInput input -> new ServerboundPlayerInputPacket(input.isForward(), input.isBackward(),
 					input.isLeft(), input.isRight(), input.isJump(), input.isShift(), input.isSprint());
 			case ServerboundClientTickEnd ignored -> ServerboundClientTickEndPacket.INSTANCE;
+			case ServerboundPlayerAbilities abilities -> new ServerboundPlayerAbilitiesPacket(abilities.isFlying());
 			case ServerboundPlayerCommand command ->
 					new ServerboundPlayerCommandPacket(command.getEntityId().getValue(), state(command.getAction()));
 			default -> null;

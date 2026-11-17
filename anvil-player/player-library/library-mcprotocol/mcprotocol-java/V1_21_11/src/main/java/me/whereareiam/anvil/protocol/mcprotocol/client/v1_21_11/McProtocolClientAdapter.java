@@ -4,7 +4,6 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLev
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConfigurationPackets;
-import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConnectionPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.EffectPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.HealthPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.JavaClient;

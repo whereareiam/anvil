@@ -151,6 +151,15 @@ class BlockRegistryTest {
 		assertEquals(BlockKind.WALL, block(registry, "minecraft:cobblestone_wall").getKind());
 		assertEquals(BlockKind.FENCE_GATE, block(registry, "minecraft:spruce_fence_gate").getKind());
 		assertEquals(BlockKind.TRAPDOOR, block(registry, "minecraft:iron_trapdoor").getKind());
+		assertEquals(BlockKind.LADDER, block(registry, "minecraft:ladder").getKind());
+		assertEquals(BlockKind.SCAFFOLDING, block(registry, "minecraft:scaffolding").getKind());
+		assertEquals(BlockKind.WATER, block(registry, "minecraft:water").getKind());
+		assertEquals(BlockKind.OTHER, block(registry, "minecraft:kelp").getKind());
+		assertEquals(BlockKind.ICE, block(registry, "minecraft:frosted_ice").getKind());
+		assertEquals(BlockKind.OTHER, block(registry, "minecraft:packed_ice").getKind());
+		assertEquals(BlockKind.MOVING_PISTON, block(registry, "minecraft:moving_piston").getKind());
+		registry.block("minecraft:powder_snow")
+				.ifPresent(powderSnow -> assertEquals(BlockKind.POWDER_SNOW, powderSnow.getKind()));
 		assertEquals(CollisionKind.DYNAMIC, block(registry, "minecraft:scaffolding").getCollision());
 		assertEquals(CollisionKind.OFFSET, block(registry, "minecraft:bamboo").getCollision());
 		assertEquals(CollisionKind.FIXED, block(registry, "minecraft:oak_fence").getCollision());

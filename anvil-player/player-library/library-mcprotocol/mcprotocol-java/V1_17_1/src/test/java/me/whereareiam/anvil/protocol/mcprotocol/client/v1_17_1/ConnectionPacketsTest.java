@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_17_1;
 import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerJoinGamePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerRespawnPacket;
+import com.github.steveice10.opennbt.tag.builtin.ByteTag;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.IntTag;
 import com.github.steveice10.opennbt.tag.builtin.ListTag;
@@ -16,10 +17,12 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The connection translation of the 1.16 chain on the MCProtocolLib 1.17.1 release, which reads the game mode of the
- * login and the respawn into the library's game mode as 1.16.5 does.
+ * login and the respawn into the library's game mode as 1.16.5 does, and fast lava from a type's {@code ultrawarm}.
  */
 class ConnectionPacketsTest {
 	private final ConnectionPackets packets = new ConnectionPackets();
@@ -44,29 +47,53 @@ class ConnectionPacketsTest {
 						GameMode.ADVENTURE, GameMode.SPECTATOR, false, false, true))).getGameMode());
 	}
 
+	@Test
+	void readsFastLavaFromTheUltrawarmFlagOfTheType() {
+		packets.decode(login(GameMode.SURVIVAL));
+
+		assertFalse(((ClientboundLogin) packets.decode(login(GameMode.SURVIVAL))).getDimensionType().isFastLava());
+		assertTrue(((ClientboundRespawn) packets.decode(new ServerRespawnPacket(nether(), "minecraft:the_nether", 0,
+				GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, true))).getDimensionType().isFastLava());
+	}
+
 	private static ServerJoinGamePacket login(GameMode mode) {
-		return new ServerJoinGamePacket(42, false, mode, GameMode.UNKNOWN, 1, new String[]{"minecraft:overworld"},
-				codec(), overworld(), "minecraft:overworld", 0, 20, 10, false, true, false, false);
+		return new ServerJoinGamePacket(42, false, mode, GameMode.UNKNOWN, 1,
+				new String[]{"minecraft:overworld", "minecraft:the_nether"}, codec(), overworld(),
+				"minecraft:overworld", 0, 20, 10, false, true, false, false);
 	}
 
 	private static CompoundTag overworld() {
+		return type("minecraft:overworld", -64, 384, false);
+	}
+
+	private static CompoundTag nether() {
+		return type("minecraft:the_nether", 0, 256, true);
+	}
+
+	private static CompoundTag type(String effects, int minY, int height, boolean ultrawarm) {
 		CompoundTag type = new CompoundTag("");
-		type.put(new StringTag("effects", "minecraft:overworld"));
-		type.put(new IntTag("min_y", -64));
-		type.put(new IntTag("height", 384));
+		type.put(new StringTag("effects", effects));
+		type.put(new IntTag("min_y", minY));
+		type.put(new IntTag("height", height));
+		type.put(new ByteTag("ultrawarm", (byte) (ultrawarm ? 1 : 0)));
 		return type;
 	}
 
 	private static CompoundTag codec() {
-		CompoundTag entry = new CompoundTag("");
-		entry.put(new StringTag("name", "minecraft:overworld"));
-		entry.put(new IntTag("id", 0));
-		entry.put(new CompoundTag("element", overworld().getValue()));
 		CompoundTag registry = new CompoundTag("minecraft:dimension_type");
 		registry.put(new StringTag("type", "minecraft:dimension_type"));
-		registry.put(new ListTag("value", List.<Tag>of(entry)));
+		registry.put(new ListTag("value", List.<Tag>of(entry("minecraft:overworld", 0, overworld()),
+				entry("minecraft:the_nether", 1, nether()))));
 		CompoundTag codec = new CompoundTag("");
 		codec.put(registry);
 		return codec;
+	}
+
+	private static CompoundTag entry(String name, int id, CompoundTag type) {
+		CompoundTag entry = new CompoundTag("");
+		entry.put(new StringTag("name", name));
+		entry.put(new IntTag("id", id));
+		entry.put(new CompoundTag("element", type.getValue()));
+		return entry;
 	}
 }

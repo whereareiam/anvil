@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5;
 
 import com.github.steveice10.mc.protocol.data.game.entity.player.PlayerState;
 import com.github.steveice10.mc.protocol.data.game.entity.player.PositionElement;
+import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerAbilitiesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerMovementPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerPositionRotationPacket;
@@ -16,6 +17,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundClientTickEnd;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerInput;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPos;
@@ -122,9 +124,21 @@ class PlayerPacketsTest {
 	void carriesNeitherThePlayerInputNorTheEndOfAClientTick() {
 		assertEquals(Set.of(ClientboundPlayerAbilities.class, ClientboundPlayerPosition.class,
 				ServerboundMovePlayerPos.class, ServerboundMovePlayerPosRot.class, ServerboundMovePlayerRot.class,
-				ServerboundMovePlayerStatusOnly.class, ServerboundPlayerCommand.class), packets.packets());
+				ServerboundMovePlayerStatusOnly.class, ServerboundPlayerAbilities.class,
+				ServerboundPlayerCommand.class), packets.packets());
 		assertFalse(packets.packets().contains(ServerboundPlayerInput.class));
 		assertFalse(packets.packets().contains(ServerboundClientTickEnd.class));
+	}
+
+	@Test
+	void encodesTheFlightThePlayerStartsOrStopsAsTheOnlyAbilityItTells() {
+		ClientPlayerAbilitiesPacket flying = assertInstanceOf(ClientPlayerAbilitiesPacket.class,
+				packets.encode(new ServerboundPlayerAbilities(true)));
+		ClientPlayerAbilitiesPacket landed = assertInstanceOf(ClientPlayerAbilitiesPacket.class,
+				packets.encode(new ServerboundPlayerAbilities(false)));
+
+		assertTrue(flying.isFlying());
+		assertFalse(landed.isFlying());
 	}
 
 	private static final class UnknownPacket implements ServerboundPacket {

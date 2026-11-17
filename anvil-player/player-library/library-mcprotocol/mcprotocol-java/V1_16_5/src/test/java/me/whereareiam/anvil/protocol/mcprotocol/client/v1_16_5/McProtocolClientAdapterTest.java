@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5;
 
 import com.github.steveice10.mc.protocol.packet.ingame.client.ClientChatPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerAbilitiesPacket;
 import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
@@ -35,6 +36,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContai
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundClientTickEnd;
+import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerAbilities;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerCommand;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerInput;
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPos;
@@ -139,6 +141,19 @@ class McProtocolClientAdapterTest {
 	}
 
 	@Test
+	void sendsTheFlightThePlayerStartsOrStopsAsTheFlyingFlagOfTheAbilities() {
+		List<Packet> sent = new ArrayList<>();
+		McProtocolClientAdapter client = new McProtocolClientAdapter();
+
+		client.send(recording(sent), new ServerboundPlayerAbilities(true));
+		client.send(recording(sent), new ServerboundPlayerAbilities(false));
+
+		assertEquals(2, sent.size());
+		assertTrue(assertInstanceOf(ClientPlayerAbilitiesPacket.class, sent.get(0)).isFlying());
+		assertFalse(assertInstanceOf(ClientPlayerAbilitiesPacket.class, sent.get(1)).isFlying());
+	}
+
+	@Test
 	void supportsExactlyThePacketsOfTheReleaseTable() {
 		McProtocolClientAdapter client = new McProtocolClientAdapter();
 
@@ -153,6 +168,7 @@ class McProtocolClientAdapterTest {
 		assertTrue(client.supports(ServerboundMovePlayerPos.class));
 		assertTrue(client.supports(ServerboundMovePlayerRot.class));
 		assertTrue(client.supports(ServerboundMovePlayerStatusOnly.class));
+		assertTrue(client.supports(ServerboundPlayerAbilities.class));
 		assertTrue(client.supports(ServerboundPlayerCommand.class));
 		assertFalse(client.supports(ServerboundPlayerInput.class));
 		assertFalse(client.supports(ServerboundClientTickEnd.class));

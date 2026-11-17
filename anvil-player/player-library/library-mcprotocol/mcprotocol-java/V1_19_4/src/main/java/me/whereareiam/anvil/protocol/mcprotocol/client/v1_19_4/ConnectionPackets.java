@@ -30,8 +30,9 @@ import java.util.Set;
 /**
  * The moments the MCProtocolLib 1.19.4 release joins a level and respawns. The release has no configuration phase,
  * so it never returns to one. It names the dimension type by its key and sends the dimension types of the whole server
- * with the login, which give each type its effects and block heights; one translation serves one session. A type the
- * login did not list, or described without its block heights, breaks the protocol: a vanilla client cannot read the
+ * with the login, which give each type its effects, block heights and whether it is {@code ultrawarm}, whose lava is
+ * fast; one translation serves one session. A type the login did not list, or described without its block heights or
+ * that flag, breaks the protocol: a vanilla client cannot read the
  * packet and disconnects, and the translation throws, which makes MCProtocolLib disconnect the session as well.
  */
 public final class ConnectionPackets implements PacketTranslation<Packet> {
@@ -131,7 +132,23 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 		StringTag described = description.get("effects");
 		String effects = described == null ? DEFAULT_EFFECTS : described.getValue();
 		return DimensionType.withEffects(key, effects, height(key, description, "min_y"),
-				height(key, description, "height"));
+						height(key, description, "height"))
+				.toBuilder()
+				.fastLava(ultrawarm(key, description))
+				.build();
+	}
+
+	/**
+	 * Reads whether a type is {@code ultrawarm}, which makes its lava fast. The vanilla client reads the flag as a
+	 * number whose low byte is not zero and cannot read a type without it.
+	 */
+	private static boolean ultrawarm(@NotNull String key, @NotNull CompoundTag description) {
+		Tag flag = description.get("ultrawarm");
+		if (flag == null || !(flag.getValue() instanceof Number number))
+			throw new IllegalStateException("The server described the dimension type " + key
+					+ " without its ultrawarm");
+
+		return number.byteValue() != 0;
 	}
 
 	private static int height(@NotNull String key, @NotNull CompoundTag description, @NotNull String field) {

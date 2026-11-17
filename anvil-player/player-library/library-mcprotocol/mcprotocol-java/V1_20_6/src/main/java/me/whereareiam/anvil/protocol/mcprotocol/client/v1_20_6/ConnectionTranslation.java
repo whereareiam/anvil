@@ -3,7 +3,9 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 import me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
+import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtNumber;
 import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
+import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtTag;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.model.world.Level;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
@@ -38,14 +40,18 @@ import java.util.Set;
  * {@link DimensionType#known(String)} describes it. A description gives the type's block heights, names
  * its effects before Minecraft 1.21.11 and its skybox and shading from then on; one without either takes the
  * overworld's. From Minecraft 26.1 it also names the world clock its day follows. Each release's
- * {@code ConnectionPackets} names the clock of a vanilla type sent without its description.
+ * {@code ConnectionPackets} names the clock of a vanilla type sent without its description, and reads whether a
+ * described type's lava is fast where the release keeps it: the type's {@code ultrawarm} before Minecraft 1.21.11, its
+ * {@code minecraft:gameplay/fast_lava} environment attribute from then on.
  *
- * <p>A type the configuration did not list, a description without block heights, and a type without its description
- * that no vanilla client knows break the protocol: a vanilla client cannot read the packet and disconnects, and the
- * translation throws, which makes MCProtocolLib disconnect the session as well.</p>
+ * <p>A type the configuration did not list, a description without block heights or its release's fast lava, and a
+ * type without its description that no vanilla client knows break the protocol: a vanilla client cannot read the
+ * packet and disconnects, and the translation throws, which makes MCProtocolLib disconnect the session as well.</p>
  */
 public abstract class ConnectionTranslation implements PacketTranslation<Packet> {
 	private static final String DIMENSION_TYPES = "minecraft:dimension_type";
+	private static final String FAST_LAVA = "gameplay/fast_lava";
+	private static final String DEFAULT_NAMESPACE = "minecraft:";
 
 	private final SynchronizedRegistries registries;
 	private final ConnectionLevel level;
@@ -130,6 +136,84 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 	}
 
 	/**
+	 * Reads whether lava is fast in the levels of a type the server described, where the release keeps it.
+	 *
+	 * @param key the type's key
+	 * @param description the type's description
+	 * @return whether the type's lava is fast
+	 * @throws IllegalStateException when the description lacks or breaks what the release reads, which a vanilla
+	 * client cannot read either
+	 */
+	protected abstract boolean fastLava(@NotNull String key, @NotNull NbtCompound description);
+
+	/**
+	 * Reads a type's {@code ultrawarm} flag, which makes its lava fast before Minecraft 1.21.11 and which every type of
+	 * those releases names.
+	 *
+	 * @param key the type's key
+	 * @param description the type's description
+	 * @return whether the type is ultrawarm
+	 * @throws IllegalStateException when the description has no such number
+	 */
+	protected static boolean ultrawarm(@NotNull String key, @NotNull NbtCompound description) {
+		return description.number("ultrawarm")
+				.map(NbtNumber::asBoolean)
+				.orElseThrow(() -> new IllegalStateException("The server described the dimension type " + key
+						+ " without its ultrawarm"));
+	}
+
+	/**
+	 * Reads a type's {@code minecraft:gameplay/fast_lava} environment attribute from Minecraft 1.21.11 on, as the
+	 * client's dimension layer applies it to the attribute's default, {@code false}: a value replaces the default, an
+	 * entry with a {@code modifier} and its {@code argument} combines them, and a type without the attribute keeps the
+	 * default. The client names an attribute without a namespace in {@code minecraft}'s.
+	 *
+	 * @param key the type's key
+	 * @param description the type's description
+	 * @return whether the type's lava is fast
+	 * @throws IllegalStateException when the attribute is neither a boolean nor a boolean modifier entry
+	 */
+	protected static boolean fastLavaAttribute(@NotNull String key, @NotNull NbtCompound description) {
+		NbtCompound attributes = description.compound("attributes").orElse(NbtCompound.EMPTY);
+		NbtTag entry = attribute(attributes);
+		if (entry == null) return false;
+		if (entry instanceof NbtNumber value) return value.asBoolean();
+		if (!(entry instanceof NbtCompound modified))
+			throw new IllegalStateException("The server described the dimension type " + key + " with a fast_lava "
+					+ "attribute that is no boolean");
+
+		String modifier = modified.string("modifier").map(NbtString::getValue).orElse(null);
+		NbtNumber argument = modified.number("argument").orElse(null);
+		if (modifier == null || argument == null)
+			throw new IllegalStateException("The server described the dimension type " + key + " with a fast_lava "
+					+ "modifier without its operation or argument");
+
+		return modify(key, modifier, argument.asBoolean());
+	}
+
+	/**
+	 * Finds the fast lava attribute among a type's attributes, under its key with or without the default namespace.
+	 */
+	private static @Nullable NbtTag attribute(@NotNull NbtCompound attributes) {
+		NbtTag named = attributes.get(DEFAULT_NAMESPACE + FAST_LAVA);
+		return named != null ? named : attributes.get(FAST_LAVA);
+	}
+
+	/**
+	 * Applies a boolean modifier of the game to the attribute's default, {@code false} ({@code BooleanModifier}).
+	 */
+	private static boolean modify(@NotNull String key, @NotNull String modifier, boolean argument) {
+		return switch (modifier) {
+			case "override", "or", "xor" -> argument;
+			case "nor", "xnor" -> !argument;
+			case "and" -> false;
+			case "nand" -> true;
+			default -> throw new IllegalStateException("The server described the dimension type " + key
+					+ " with the fast_lava modifier " + modifier + ", which no boolean attribute has");
+		};
+	}
+
+	/**
 	 * Names the world clock of a vanilla type from Minecraft 26.1 on: the overworld's types follow the overworld's
 	 * clock, the end's the end's, and the nether's none.
 	 *
@@ -182,14 +266,15 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 
 	/**
 	 * Describes a type by its skybox and shading from Minecraft 1.21.11 on and by its effects before, with its block
-	 * heights and, from Minecraft 26.1, its world clock.
+	 * heights, whether its lava is fast and, from Minecraft 26.1, its world clock.
 	 */
-	private static @NotNull DimensionType described(@NotNull String key, @NotNull NbtCompound description) {
+	private @NotNull DimensionType described(@NotNull String key, @NotNull NbtCompound description) {
 		int minY = integer(key, description, "min_y");
 		int height = integer(key, description, "height");
+		boolean fastLava = fastLava(key, description);
 		String effects = string(description, "effects");
 		if (effects != null && !description.contains("skybox"))
-			return DimensionType.withEffects(key, effects, minY, height);
+			return DimensionType.withEffects(key, effects, minY, height).toBuilder().fastLava(fastLava).build();
 
 		String skybox = string(description, "skybox");
 		String cardinalLight = string(description, "cardinal_light");
@@ -200,6 +285,7 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 				.defaultClock(string(description, "default_clock"))
 				.minY(minY)
 				.height(height)
+				.fastLava(fastLava)
 				.build();
 	}
 

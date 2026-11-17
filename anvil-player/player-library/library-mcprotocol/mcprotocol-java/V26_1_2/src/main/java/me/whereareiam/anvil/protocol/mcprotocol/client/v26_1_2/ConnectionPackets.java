@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
+import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLevel;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConnectionTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SynchronizedRegistries;
@@ -8,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * The connection moments of the MCProtocolLib releases from 26.1 on, whose dimension types name the world clock their
- * day follows.
+ * day follows and tell fast lava by their {@code minecraft:gameplay/fast_lava} environment attribute.
  */
 public final class ConnectionPackets extends ConnectionTranslation {
 	/**
@@ -24,5 +25,10 @@ public final class ConnectionPackets extends ConnectionTranslation {
 	@Override
 	protected @Nullable String knownClock(@NotNull String type) {
 		return vanillaClock(type);
+	}
+
+	@Override
+	protected boolean fastLava(@NotNull String key, @NotNull NbtCompound description) {
+		return fastLavaAttribute(key, description);
 	}
 }

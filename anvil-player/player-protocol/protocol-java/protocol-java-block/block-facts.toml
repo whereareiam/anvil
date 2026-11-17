@@ -6,7 +6,8 @@
 # widens to a double is widened the same way. Absent values keep vanilla's defaults: friction 0.6F, speed and jump
 # factors 1.0F, no bounce, no stuck slowdown, no fluid besides a waterlogged state's water, kind OTHER, collision FIXED.
 #
-# kind is what the block is where vanilla's movement code asks: AIR, FENCE, WALL, FENCE_GATE or TRAPDOOR, else OTHER.
+# kind is what the block is where vanilla's movement code asks: AIR, FENCE, WALL, FENCE_GATE, TRAPDOOR, LADDER,
+# SCAFFOLDING, POWDER_SNOW, WATER, ICE or MOVING_PISTON, else OTHER.
 # collision is how vanilla decides its collision shape: DYNAMIC or OFFSET, else FIXED. behaviours are CLIMBABLE,
 # SLIME_STEP, HONEY_SLIDE and BUBBLE_COLUMN. The Java enums BlockKind, CollisionKind and MovementBehaviour document each
 # constant. property-start gives the lowest value of an integer
@@ -22,6 +23,11 @@ kind = "AIR"
 names = ["minecraft:ice", "minecraft:packed_ice", "minecraft:frosted_ice"]
 source = "Blocks.ICE, PACKED_ICE and FROSTED_ICE: BlockBehaviour.Properties.friction(0.98F)"
 friction = "0.98F"
+
+[[block]]
+names = ["minecraft:ice", "minecraft:frosted_ice"]
+source = "Blocks.ICE is IceBlock and FROSTED_ICE is FrostedIceBlock, which extends IceBlock; PACKED_ICE is a plain Block"
+kind = "ICE"
 
 [[block]]
 names = ["minecraft:blue_ice"]
@@ -77,6 +83,7 @@ not on leather boots; PowderSnowBlock.getCollisionShape is solid only for a fall
 powder snow"""
 stuck = { horizontal = "0.9F", vertical = "1.5D" }
 collision = "DYNAMIC"
+kind = "POWDER_SNOW"
 
 [[block]]
 names = [
@@ -92,6 +99,7 @@ names = ["minecraft:scaffolding"]
 source = """ScaffoldingBlock.getCollisionShape: the stable shape only for an entity above the block that is not \
 descending, the unstable bottom for a hanging bottom block, nothing otherwise"""
 collision = "DYNAMIC"
+kind = "SCAFFOLDING"
 
 [[block]]
 names = [
@@ -107,8 +115,10 @@ collision = "DYNAMIC"
 
 [[block]]
 names = ["minecraft:moving_piston"]
-source = "MovingPistonBlock.getCollisionShape comes from the moving block's PistonMovingBlockEntity"
+source = """MovingPistonBlock.getCollisionShape comes from the moving block's PistonMovingBlockEntity; BlockCollisions \
+keeps it on the edges of the area it searches (blockState.is(Blocks.MOVING_PISTON))"""
 collision = "DYNAMIC"
+kind = "MOVING_PISTON"
 
 [[block]]
 names = ["minecraft:bamboo", "minecraft:pointed_dripstone"]
@@ -124,6 +134,16 @@ names = [
 source = """getFluidState: Blocks.WATER is LiquidBlock(Fluids.WATER); BubbleColumnBlock, KelpBlock, KelpPlantBlock, \
 SeagrassBlock and TallSeagrassBlock return Fluids.WATER.getSource(false)"""
 fluid = "WATER"
+
+[[block]]
+names = ["minecraft:water"]
+source = "Entity.getBlockSpeedFactor asks blockState.is(Blocks.WATER) of the block an entity is in"
+kind = "WATER"
+
+[[block]]
+names = ["minecraft:ladder"]
+source = "LivingEntity.trapdoorUsableAsLadder asks blockState.is(Blocks.LADDER) of the block below an open trapdoor"
+kind = "LADDER"
 
 [[block]]
 names = ["minecraft:lava"]

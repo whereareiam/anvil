@@ -9,9 +9,9 @@ plugins {
 segment {
 	extends(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolJava.v12111)
 	replaces(
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConnectionPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.HealthPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.InteractionTranslation",
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ConnectionPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.InteractionPackets",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.WorldPackets",
 	)
