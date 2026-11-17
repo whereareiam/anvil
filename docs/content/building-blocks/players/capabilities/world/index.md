@@ -1,6 +1,6 @@
 ---
 title: World
-description: Read the dimension the player is in, its type, environment and generation, the server's worlds, and the time, weather, world border and spawn point its client knows, and wait until they change.
+description: Read the dimension the player is in, its type, environment and generation, the server's worlds, the time, weather, world border and spawn point its client knows, and the blocks of its chunks, and wait until they change.
 ---
 
 `World` reports the dimension the player's client is in: the key of the level the server put it in, with
@@ -8,7 +8,8 @@ its namespace, such as `minecraft:overworld`, `minecraft:the_nether` or, for a w
 under the name `arena`, `minecraft:arena`. A client learns its dimension when it joins a level and each
 time the server respawns it, which is also how a server moves a player to another dimension; the client
 never picks one itself. It also reports what the client is told about the world around its level: the
-time, the weather, the world border and the spawn point. Install the world unit and its Session
+time, the weather, the world border and the spawn point, and the blocks of the chunk columns the server
+sent it. Install the world unit and its Session
 dependency, or explicitly select the default capability unit. Every MCProtocolLib release Anvil ships has
 it.
 
@@ -31,7 +32,7 @@ Start the watch before the action, then wait:
 
 ```java
 World world = alice.capability(World.class);
-DimensionWatch dimensions = world.watch();
+DimensionWatch dimensions = world.dimensions();
 messages.command("warp arena");
 dimensions.entered("minecraft:arena", Duration.ofSeconds(10));
 assertEquals(Optional.of("minecraft:arena"), world.dimension());
@@ -56,29 +57,29 @@ joined a level yet. `world.level()` gives the rest of what the client was told a
 `me.whereareiam.anvil.capability.world.model`:
 
 ```java
-LevelInfo level = world.level().orElseThrow();
+Level level = world.level().orElseThrow();
 assertEquals("minecraft:the_nether", level.getType().getKey());
 assertEquals(Environment.NETHER, level.getType().getEnvironment());
 assertEquals(0, level.getType().getMinY());
 assertEquals(256, level.getType().getHeight());
 assertEquals(LevelGeneration.NORMAL, level.getGeneration());
 
-ServerInfo server = world.server().orElseThrow();
+ServerLevels server = world.server().orElseThrow();
 assertTrue(server.getLevels().contains("minecraft:arena"));
 ```
 
 | Member | Meaning |
 | --- | --- |
-| `LevelInfo.dimension` | The level's key, the same as `world.dimension()`. |
-| `LevelInfo.type.key` | The key of the level's dimension type, such as `minecraft:the_nether` or a data pack's `example:void`. |
-| `LevelInfo.type.environment` | How the client renders the level, from its dimension type's sky and shading: `OVERWORLD`, `NETHER`, `END`, or `CUSTOM` for any other pair, such as a mod's. A world a plugin created as a nether world has the environment `NETHER`. |
-| `LevelInfo.type.minY` | The lowest block height of the level, such as `-64` for the overworld from Minecraft 1.18 on. |
-| `LevelInfo.type.height` | How many block heights the level spans from `minY` up, such as `384` for the overworld from Minecraft 1.18 on. Every level spans 256 before Minecraft 1.17. |
-| `LevelInfo.generation` | `NORMAL`, `FLAT` for a superflat world, or `DEBUG` for a debug world. |
-| `ServerInfo.hardcore` | Whether the server is in hardcore mode. |
-| `ServerInfo.levels` | The keys of every level the server has, in the server's order. |
+| `Level.dimension` | The level's key, the same as `world.dimension()`. |
+| `Level.type.key` | The key of the level's dimension type, such as `minecraft:the_nether` or a data pack's `example:void`. |
+| `Level.type.environment` | How the client renders the level, from its dimension type's sky and shading: `OVERWORLD`, `NETHER`, `END`, or `CUSTOM` for any other pair, such as a mod's. A world a plugin created as a nether world has the environment `NETHER`. |
+| `Level.type.minY` | The lowest block height of the level, such as `-64` for the overworld from Minecraft 1.18 on. |
+| `Level.type.height` | How many block heights the level spans from `minY` up, such as `384` for the overworld from Minecraft 1.18 on. Every level spans 256 before Minecraft 1.17. |
+| `Level.generation` | `NORMAL`, `FLAT` for a superflat world, or `DEBUG` for a debug world. |
+| `ServerLevels.hardcore` | Whether the server is in hardcore mode. |
+| `ServerLevels.levels` | The keys of every level the server has, in the server's order. |
 
-The level changes with every join and respawn, and each `DimensionChange` carries the `LevelInfo` of the
+The level changes with every join and respawn, and each `DimensionChange` carries the `Level` of the
 level it entered as `getLevel()`. The server info changes only when the player joins a server, which a
 proxy does when it moves the player to another one. `world.changes()` lists every change in order, across
 reconnects.
@@ -169,3 +170,48 @@ another dimension until the server describes that dimension's border.
 and `pitch` a player who spawns there looks at. Releases before Minecraft 1.21.9 do not name the level,
 and `World` takes the dimension the player was in when the server told it, as the client does. They
 send no pitch, and releases before Minecraft 1.17 no yaw; both are then `0`.
+
+## Read and watch blocks
+
+`world.blocks()` reads the blocks of the player's level as its client knows them. The player keeps the
+chunk columns the server sends it from the moment it joins, as a vanilla client does, so a block is known
+as soon as the server sent its column, and unknown before, after the server unloads the column, and once
+the player leaves the level. This fragment uses these imports:
+
+```java
+import me.whereareiam.anvil.capability.world.block.BlockQuery;
+import me.whereareiam.anvil.capability.world.block.BlockView;
+import me.whereareiam.anvil.capability.world.block.BlockWatch;
+import me.whereareiam.anvil.capability.world.model.block.Block;
+import me.whereareiam.anvil.capability.world.model.block.BlockArea;
+import me.whereareiam.anvil.capability.world.model.block.BlockPosition;
+import java.time.Duration;
+```
+
+Wait until the client knows a block, then watch it change:
+
+```java
+BlockView blocks = alice.capability(World.class).blocks();
+BlockPosition door = new BlockPosition(12, 64, -3);
+Block closed = blocks.until(door, BlockQuery.named("oak_door").and(BlockQuery.withProperty("half", "lower")));
+
+try (BlockWatch watch = blocks.watch(BlockArea.of(door))) {
+	lobby.console().sendCommand("setblock 12 64 -3 minecraft:air");
+	watch.changed(door, BlockQuery.air());
+	watch.neverChanged(door, Duration.ofSeconds(1));
+}
+```
+
+`until` returns a block that already matches at once and otherwise waits for it, watching the block while
+it waits. A watch follows the blocks of its area from the moment it opens: every block the server updates
+in it, and every block of it in a chunk column the server sends. Only open watches' areas cross from the
+player's worker to the test, so close a watch when it is no longer needed. Each wait moves the watch's
+cursor past the change it returns; `unread()` lists the changes after the cursor, and a position outside
+the area is refused.
+
+A `Block` has its `position`, the global ID of its `state` in the player's protocol and, through
+`identity()`, its name and properties, which Anvil reads from the block data it ships for every supported
+protocol. A state that is not vanilla's, such as a modded server's block, has no name: `name()` and the
+queries by name, property or air then throw `UnknownBlockNameException`, while `BlockQuery.state(id)` and
+`BlockQuery.any()` still work. `isLoaded(chunk)` and `loadedChunks()` tell which chunk columns the client
+has, by `ChunkPosition`, and `ChunkPosition.containing(block)` names the column of a block.

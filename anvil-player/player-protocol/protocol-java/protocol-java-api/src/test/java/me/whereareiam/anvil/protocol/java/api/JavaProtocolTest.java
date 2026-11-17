@@ -76,6 +76,11 @@ class JavaProtocolTest {
 		}
 
 		@Override
+		public int protocolNumber() {
+			return 774;
+		}
+
+		@Override
 		public @NotNull JavaWorld world() {
 			throw new UnsupportedOperationException("This test's protocol keeps no world");
 		}

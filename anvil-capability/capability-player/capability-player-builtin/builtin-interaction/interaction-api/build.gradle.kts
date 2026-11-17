@@ -6,5 +6,6 @@ description = "Public API and host-to-worker channel contract of the built-in in
 
 dependencies {
 	api(projects.anvilApi)
+	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinWorld.worldApi)
 	api(projects.anvilPlayer.playerApi)
 }

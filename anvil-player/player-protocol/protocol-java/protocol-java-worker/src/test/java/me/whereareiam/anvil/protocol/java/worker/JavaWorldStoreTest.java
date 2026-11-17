@@ -42,7 +42,7 @@ class JavaWorldStoreTest {
 	private static final int DIRT = 10;
 	private static final int GLASS = 20;
 
-	private final JavaPacketDispatcher protocol = new JavaPacketDispatcher("test", new SilentConnection());
+	private final JavaPacketDispatcher protocol = new JavaPacketDispatcher("test", 774, new SilentConnection());
 	private final JavaWorld world = protocol.world();
 
 	@Test
@@ -73,7 +73,7 @@ class JavaWorldStoreTest {
 
 	@Test
 	void keepsNoChunksBeforeAnythingAskedForTheWorld() {
-		JavaPacketDispatcher unasked = new JavaPacketDispatcher("test", new SilentConnection());
+		JavaPacketDispatcher unasked = new JavaPacketDispatcher("test", 774, new SilentConnection());
 		unasked.deliver(login("minecraft:overworld", OVERWORLD));
 		assertFalse(unasked.wants(ClientboundLevelChunkWithLight.class));
 

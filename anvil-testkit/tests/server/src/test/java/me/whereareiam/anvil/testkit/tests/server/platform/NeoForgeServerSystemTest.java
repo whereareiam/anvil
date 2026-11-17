@@ -78,7 +78,7 @@ class NeoForgeServerSystemTest {
 			assertEquals(Set.of("minecraft:overworld", "minecraft:the_nether", "minecraft:the_end"), Set.copyOf(keys));
 			assertEquals(Optional.of("minecraft:overworld"), world.dimension());
 			WorldChangeWatch changes = worlds.watch();
-			DimensionWatch dimensions = world.watch();
+			DimensionWatch dimensions = world.dimensions();
 			worlds.send(alice, WorldLocation.builder().world("minecraft:the_nether").x(0.5).y(140).z(0.5).build());
 			changes.changed(alice, "minecraft:the_nether", Duration.ofSeconds(10));
 			dimensions.entered("minecraft:the_nether", Duration.ofSeconds(10));

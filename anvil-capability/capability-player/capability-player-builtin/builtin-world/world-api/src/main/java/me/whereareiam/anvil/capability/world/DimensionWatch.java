@@ -2,7 +2,7 @@ package me.whereareiam.anvil.capability.world;
 
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
-import me.whereareiam.anvil.capability.world.model.DimensionChange;
+import me.whereareiam.anvil.capability.world.model.level.DimensionChange;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -18,7 +18,7 @@ import java.util.function.Predicate;
  * {@code minecraft} namespace, as in the game's commands.</p>
  *
  * <pre>{@code
- * DimensionWatch dimensions = world.watch();
+ * DimensionWatch dimensions = world.dimensions();
  * messages.command("warp arena");
  * dimensions.entered("minecraft:arena");
  * dimensions.neverEntered("minecraft:overworld", Duration.ofSeconds(2));

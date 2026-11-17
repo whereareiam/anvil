@@ -2,11 +2,13 @@ package me.whereareiam.anvil.capability.world;
 
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.api.history.HistoryCursor;
+import me.whereareiam.anvil.capability.world.block.BlockView;
+import me.whereareiam.anvil.capability.world.block.ChannelBlockView;
 import me.whereareiam.anvil.capability.world.channel.WorldChannel;
-import me.whereareiam.anvil.capability.world.model.DimensionChange;
-import me.whereareiam.anvil.capability.world.model.LevelInfo;
-import me.whereareiam.anvil.capability.world.model.ServerInfo;
-import me.whereareiam.anvil.capability.world.model.WorldState;
+import me.whereareiam.anvil.capability.world.model.environment.WorldState;
+import me.whereareiam.anvil.capability.world.model.level.DimensionChange;
+import me.whereareiam.anvil.capability.world.model.level.Level;
+import me.whereareiam.anvil.capability.world.model.level.ServerLevels;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,17 +25,19 @@ import java.util.function.Predicate;
  * player's history, across reconnects, and the level of the last one, with the server of the last join, is the
  * player's until its connection ends. The world state is the last one the worker emitted, which is empty once the
  * connection ends; each wait on it offers every later state to its condition, so a state that holds only briefly still
- * satisfies it. The channel releases the event subscriptions together with the player.
+ * satisfies it. Blocks are read from the player's worker, which keeps them, through {@link ChannelBlockView}. The
+ * channel releases the event subscriptions together with the player.
  */
 final class ChannelWorld implements World {
 	private static final String DESCRIPTION = "enter a matching dimension";
 
 	private final ProtocolChannel channel;
 	private final CopyOnWriteArrayList<DimensionChange> changes = new CopyOnWriteArrayList<>();
-	private final AtomicReference<LevelInfo> level = new AtomicReference<>();
-	private final AtomicReference<ServerInfo> server = new AtomicReference<>();
+	private final AtomicReference<Level> level = new AtomicReference<>();
+	private final AtomicReference<ServerLevels> server = new AtomicReference<>();
 	private final AtomicReference<WorldState> state = new AtomicReference<>(WorldState.EMPTY);
 	private final CopyOnWriteArrayList<StateProbe> probes = new CopyOnWriteArrayList<>();
+	private final ChannelBlockView blocks;
 
 	ChannelWorld(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
@@ -50,20 +54,21 @@ final class ChannelWorld implements World {
 			state.set(next);
 			for (StateProbe probe : probes) probe.offer(next);
 		});
+		this.blocks = new ChannelBlockView(channel);
 	}
 
 	@Override
 	public @NotNull Optional<String> dimension() {
-		return level().map(LevelInfo::getDimension);
+		return level().map(Level::getDimension);
 	}
 
 	@Override
-	public @NotNull Optional<LevelInfo> level() {
+	public @NotNull Optional<Level> level() {
 		return Optional.ofNullable(level.get());
 	}
 
 	@Override
-	public @NotNull Optional<ServerInfo> server() {
+	public @NotNull Optional<ServerLevels> server() {
 		return Optional.ofNullable(server.get());
 	}
 
@@ -73,13 +78,18 @@ final class ChannelWorld implements World {
 	}
 
 	@Override
-	public @NotNull DimensionWatch watch() {
+	public @NotNull DimensionWatch dimensions() {
 		return new Watch(new HistoryCursor<>(this::changes));
 	}
 
 	@Override
 	public @NotNull WorldStateWatch states() {
 		return new States();
+	}
+
+	@Override
+	public @NotNull BlockView blocks() {
+		return blocks;
 	}
 
 	/**

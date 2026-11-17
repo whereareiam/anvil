@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.capability.world.model;
+package me.whereareiam.anvil.capability.world.model.level;
 
 import lombok.Value;
 import org.jetbrains.annotations.NotNull;
@@ -24,5 +24,5 @@ public class DimensionChange {
 	/**
 	 * What the client was told about the level it is in afterwards.
 	 */
-	@NotNull LevelInfo level;
+	@NotNull Level level;
 }

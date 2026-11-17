@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.capability.world.model;
+package me.whereareiam.anvil.capability.world.model.level;
 
 import lombok.Value;
 import me.whereareiam.anvil.capability.world.type.Environment;
@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * heights they span, from {@link #getMinY()} up to just below {@code minY + height}.
  */
 @Value
-public class DimensionTypeInfo {
+public class DimensionType {
 	/**
 	 * The type's key, with its namespace, such as {@code minecraft:the_nether} or a data pack's {@code example:void}.
 	 */

@@ -8,6 +8,11 @@ import me.whereareiam.anvil.capability.cookies.Cookies;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.capability.sounds.Sounds;
+import me.whereareiam.anvil.capability.world.World;
+import me.whereareiam.anvil.capability.world.block.BlockQuery;
+import me.whereareiam.anvil.capability.world.block.BlockView;
+import me.whereareiam.anvil.capability.world.model.block.BlockPosition;
+import me.whereareiam.anvil.capability.world.model.level.ChunkPosition;
 import me.whereareiam.anvil.launcher.assembly.PlayerComposition;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
 import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
@@ -23,6 +28,8 @@ import org.junit.jupiter.api.io.TempDir;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -31,8 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies that a protocol library built outside Anvil, on the public worker kits alone, runs the worker extensions
- * of the built-in capabilities: the fixture library speaks the Java Edition protocol in-process to a server that only
- * echoes chat.
+ * of the built-in capabilities: the fixture library speaks the Java Edition protocol in-process to a server that puts
+ * the player in a level with one chunk column and echoes chat.
  */
 class ExternalJavaLibraryIntegrationTest {
 	private static final String LIBRARY = "java-fixture";
@@ -53,8 +60,13 @@ class ExternalJavaLibraryIntegrationTest {
 					.compose(created, PlayerConnection.to("server"), null, removed -> { });
 
 			Session session = alice.capability(Session.class);
+			BlockView blocks = alice.capability(World.class).blocks();
+			BlockPosition floor = new BlockPosition(0, -64, 0);
+			assertEquals(Optional.empty(), blocks.block(floor));
 			session.connect();
 			session.connected();
+			assertEquals("minecraft:stone", blocks.until(floor, BlockQuery.named("stone")).name());
+			assertEquals(Set.of(new ChunkPosition(0, 0)), blocks.loadedChunks());
 			Messages messages = alice.capability(Messages.class);
 			messages.chat("hello");
 			messages.command("anvil ping");
@@ -64,6 +76,8 @@ class ExternalJavaLibraryIntegrationTest {
 			session.disconnect();
 			session.disconnected();
 			assertFalse(session.state().connected());
+			assertEquals(Set.of(), blocks.loadedChunks());
+			assertEquals(Optional.empty(), blocks.block(floor));
 
 			var cookies = assertThrows(CapabilityUnavailableException.class, () -> alice.capability(Cookies.class));
 			assertTrue(cookies.getMessage().contains("the player's release has no "), cookies.getMessage());

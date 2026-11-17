@@ -68,7 +68,8 @@ final class JavaFixturePlayer implements ProtocolPlayer, PlayerBindingContext<Ob
 		this.extensions = extensions;
 		this.profile = new PlayerProfile(request.getUsername(),
 				UUID.nameUUIDFromBytes(request.getUsername().getBytes(StandardCharsets.UTF_8)));
-		this.protocol = new JavaPacketDispatcher(JavaFixtureLibraryProvider.ID, new EchoConnection());
+		this.protocol = new JavaPacketDispatcher(JavaFixtureLibraryProvider.ID, release.getProtocolNumber(),
+				new EchoConnection());
 		this.protocols = WorkerProtocols.builder(JavaFixtureLibraryProvider.ID)
 				.speak(JavaProtocol.class, protocol, protocol::scoped)
 				.build();
@@ -129,6 +130,7 @@ final class JavaFixturePlayer implements ProtocolPlayer, PlayerBindingContext<Ob
 		sessions.attach(opened);
 		granted = profile;
 		emit(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(true, null, null, profile));
+		server.join().forEach(protocol::deliver);
 	}
 
 	@Override

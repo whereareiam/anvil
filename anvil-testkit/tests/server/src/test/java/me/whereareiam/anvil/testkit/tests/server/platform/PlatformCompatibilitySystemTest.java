@@ -69,7 +69,7 @@ class PlatformCompatibilitySystemTest {
 			assertEquals("Alice", first.profile(alice).orElseThrow().getUsername());
 			Worlds worlds = context.processes().server(scenario.getProxies().isEmpty() ? "server" : "lobby").capability(Worlds.class);
 			World world = alice.capability(World.class);
-			DimensionWatch dimensions = world.watch();
+			DimensionWatch dimensions = world.dimensions();
 			worlds.send(alice, WorldLocation.builder().world("minecraft:the_nether").x(0.5).y(140).z(0.5).build());
 			dimensions.entered("minecraft:the_nether", Duration.ofSeconds(10));
 			assertEquals("minecraft:the_nether", worlds.location(alice).orElseThrow().getWorld());
@@ -86,7 +86,7 @@ class PlatformCompatibilitySystemTest {
 			moves.joined(alice, "lobby", Duration.ofSeconds(10));
 			assertEquals(Optional.of("lobby"), proxy.backend(alice));
 			PlayerWatch transfers = context.processes().server("game").capability(Players.class).watch();
-			DimensionWatch switches = world.watch();
+			DimensionWatch switches = world.dimensions();
 			messages.command("anvil-fixture transfer game");
 			transfers.joined(alice, Duration.ofSeconds(15));
 			switches.changed(change -> change.getTo().equals("minecraft:overworld"), Duration.ofSeconds(15));

@@ -79,6 +79,19 @@ public interface JavaProtocol {
 	boolean supports(@NotNull Class<? extends JavaPacket> type);
 
 	/**
+	 * Returns the number of the protocol the loaded release speaks, such as 774 for Minecraft 1.21.11, which every
+	 * Minecraft version of that protocol shares. It names what the release's numbers mean, such as the global block
+	 * state IDs of its chunks.
+	 *
+	 * <pre>{@code
+	 * BlockRegistry blocks = JavaBlockData.shipped().require(protocol.protocolNumber());
+	 * }</pre>
+	 *
+	 * @return the protocol number
+	 */
+	int protocolNumber();
+
+	/**
 	 * Returns the world the player's client knows, which the packets this protocol receives keep up to date. The first
 	 * call makes the player keep chunks; until then the release does not decode them. Every call returns the same
 	 * world, which belongs to the player, not to one connection.

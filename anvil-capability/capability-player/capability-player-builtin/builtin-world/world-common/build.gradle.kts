@@ -17,5 +17,6 @@ dependencies {
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerApi)
 	testImplementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinWorld.worldApi)
 	testImplementation(projects.anvilPlayer.playerApi)
+	testImplementation(testFixtures(projects.anvilPlayer.playerApi))
 	testImplementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
 }
