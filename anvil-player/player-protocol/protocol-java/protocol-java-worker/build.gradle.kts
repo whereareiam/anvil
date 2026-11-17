@@ -13,5 +13,7 @@ dependencies {
 	api(projects.anvilPlayer.playerApi)
 	api(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
 
+	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaPacket)
+
 	testFixturesApi(testFixtures(projects.anvilPlayer.playerWorker))
 }

@@ -1,11 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
-import me.whereareiam.anvil.api.type.DisconnectCause;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
-import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
-import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
+import me.whereareiam.anvil.protocol.mcprotocol.client.TestClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
@@ -21,13 +16,11 @@ import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.Clientbound
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundPongPacket;
 import org.geysermc.mcprotocollib.protocol.packet.configuration.clientbound.ClientboundRegistryDataPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchFinishedPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchStartPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundChunkBatchReceivedPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginFinishedPacket;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
@@ -44,9 +37,8 @@ class ClientPacketListenerTest {
 
 	private final List<String> events = new ArrayList<>();
 	private final List<Packet> sent = new ArrayList<>();
-	private final List<ClientboundPacket> received = new ArrayList<>();
 	private final ClientSession session = session();
-	private final ClientPacketListener listener = new ClientPacketListener(session, new RecordingListener(), McProtocolClientAdapter.packets(PacketDemand.EVERY),
+	private final ClientPacketListener listener = new ClientPacketListener(session, new TestClientListener<>(events), McProtocolClientAdapter.packets(PacketDemand.EVERY),
 			new TextTranslator());
 
 	@Test
@@ -96,15 +88,6 @@ class ClientPacketListenerTest {
 	}
 
 	@Test
-	void handsEveryTranslatedPacketToTheListenerAndNothingForOthers() {
-		receive(new ClientboundSystemChatPacket(Component.text("anvil:welcome"), false));
-		receive(new ClientboundKeepAlivePacket(7));
-
-		assertEquals(List.of(new ClientboundSystemChat(Text.literal("anvil:welcome"), false)), received);
-		assertEquals(List.of(), events);
-	}
-
-	@Test
 	void reportsTheGrantedProfileAsSoonAsTheLoginSucceeds() {
 		receive(new ClientboundLoginFinishedPacket(new GameProfile(GRANTED, "Alice_Renamed")));
 
@@ -125,37 +108,5 @@ class ClientPacketListenerTest {
 			events.add("sent " + packet.getClass().getSimpleName());
 			return null;
 		});
-	}
-
-	private final class RecordingListener implements ClientListener<ClientSession> {
-		@Override
-		public void granted(@NotNull ClientSession session, @NotNull ClientProfile granted) {
-			events.add("granted " + granted.getName() + " " + granted.getUniqueId());
-		}
-
-		@Override
-		public void loggedIn(@NotNull ClientSession session, @NotNull ClientProfile granted) {
-			events.add("logged in as " + granted.getName() + " " + granted.getUniqueId());
-		}
-
-		@Override
-		public void teleported(@NotNull ClientSession session, float yaw, float pitch) {
-			events.add("teleported " + yaw + " " + pitch);
-		}
-
-		@Override
-		public void disconnected(@NotNull ClientSession session, @NotNull DisconnectCause cause, @NotNull String reason) {
-			events.add("disconnected " + cause + " " + reason);
-		}
-
-		@Override
-		public void received(@NotNull ClientSession session, @NotNull ClientboundPacket packet) {
-			received.add(packet);
-		}
-		@Override
-		public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
-			return true;
-		}
-
 	}
 }

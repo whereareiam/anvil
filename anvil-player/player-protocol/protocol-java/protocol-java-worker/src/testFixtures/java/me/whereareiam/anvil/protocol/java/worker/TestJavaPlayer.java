@@ -6,9 +6,11 @@ import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
+import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.worker.TestWorkerPlayer;
 import me.whereareiam.anvil.protocol.worker.WorkerProtocols;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -17,7 +19,8 @@ import java.util.function.Predicate;
 /**
  * A worker player that speaks the Java Edition protocol through the kit's own {@link JavaPacketDispatcher}, for the
  * tests of Java Edition worker extensions. The test plays the server: it {@link #deliver(ClientboundPacket) delivers}
- * the packets the player receives and reads the packets the player {@link #sent() sent}. Its release carries the
+ * the packets the player receives, or {@link #deliver(ConnectionState, int, byte[], ClientboundPacket) their frames}
+ * as a library that hands over frames does, and reads the packets the player {@link #sent() sent}. Its release carries the
  * packets the test names, every packet unless it names some, and the dispatcher refuses the others as a library's
  * does.
  *
@@ -107,6 +110,27 @@ public final class TestJavaPlayer extends TestWorkerPlayer {
 	}
 
 	/**
+	 * Hands a packet the server sent over as a library that hands over frames does: as its frame while a frame listener
+	 * exists, else as its value alone, when it has one.
+	 *
+	 * @param state the connection's state when the packet arrived
+	 * @param id the packet's ID on the wire
+	 * @param payload the packet's bytes after its ID
+	 * @param packet the packet's value, or {@code null} for a packet the protocol does not model
+	 * @throws IllegalStateException when the player is not connected
+	 */
+	public void deliver(
+			@NotNull ConnectionState state,
+			int id,
+			byte @NotNull [] payload,
+			@Nullable ClientboundPacket packet
+	) {
+		nativeSession();
+		if (protocol.wantsFrames()) protocol.deliver(state, id, payload, packet);
+		else if (packet != null) protocol.deliver(packet);
+	}
+
+	/**
 	 * Returns every packet the player sent, in the order it sent them.
 	 *
 	 * @return the sent packets
@@ -153,6 +177,11 @@ public final class TestJavaPlayer extends TestWorkerPlayer {
 		@Override
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
 			return carried.test(type);
+		}
+
+		@Override
+		public boolean handsOverFrames() {
+			return true;
 		}
 	}
 }

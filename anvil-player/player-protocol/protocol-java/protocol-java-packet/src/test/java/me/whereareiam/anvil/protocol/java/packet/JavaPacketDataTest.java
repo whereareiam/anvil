@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.java.packet;
 
-import me.whereareiam.anvil.protocol.java.api.type.ConnectionState;
+import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.java.packet.exception.PacketDataUnavailableException;
 import me.whereareiam.anvil.protocol.java.packet.model.PacketDataSource;
 import org.junit.jupiter.api.Test;

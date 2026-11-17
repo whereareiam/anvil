@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.java.api;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.java.api.JavaWorld;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundFrame;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
@@ -55,6 +56,16 @@ class JavaProtocolTest {
 				@NotNull Consumer<? super P> listener
 		) {
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public @NotNull Subscription listenFrames(@NotNull Consumer<? super ClientboundFrame> listener) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public boolean handsOverFrames() {
+			return false;
 		}
 
 		@Override

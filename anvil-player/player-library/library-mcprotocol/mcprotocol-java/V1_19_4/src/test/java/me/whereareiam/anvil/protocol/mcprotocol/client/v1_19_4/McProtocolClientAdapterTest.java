@@ -10,10 +10,8 @@ import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.event.session.DisconnectedEvent;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundDisguisedChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
@@ -61,7 +59,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetDefault
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetTime;
 import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundInitializeBorder;
 import me.whereareiam.anvil.protocol.java.api.type.player.PlayerCommandAction;
-import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
+import me.whereareiam.anvil.protocol.mcprotocol.client.TestClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
@@ -69,7 +67,6 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import net.kyori.adventure.text.Component;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.DataInputStream;
@@ -112,7 +109,7 @@ class McProtocolClientAdapterTest {
 							.virtualHost("lobby.example.test")
 							.sourceAddress(source.getHostAddress())
 							.build())
-					.build(), new IgnoringListener());
+					.build(), new TestClientListener<>());
 			client.connect(session);
 
 			try (Socket connection = server.accept()) {
@@ -274,28 +271,5 @@ class McProtocolClientAdapterTest {
 	}
 
 	private static final class UnknownPacket implements ServerboundPacket {
-	}
-
-	private static final class IgnoringListener implements ClientListener<Session> {
-		@Override
-		public void loggedIn(@NotNull Session session, @NotNull ClientProfile granted) {
-		}
-
-		@Override
-		public void teleported(@NotNull Session session, float yaw, float pitch) {
-		}
-
-		@Override
-		public void disconnected(@NotNull Session session, @NotNull DisconnectCause cause, @NotNull String reason) {
-		}
-
-		@Override
-		public void received(@NotNull Session session, @NotNull ClientboundPacket packet) {
-		}
-		@Override
-		public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
-			return true;
-		}
-
 	}
 }

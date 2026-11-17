@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.protocol.java.api.type;
+package me.whereareiam.anvil.protocol.java.api.type.connection;
 
 /**
  * The state of a player's connection, which decides what each packet ID means: the same ID names different packets

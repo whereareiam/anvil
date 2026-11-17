@@ -23,6 +23,7 @@ segment {
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.ClientConfiguration",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.ClientProtocol",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.InteractionPackets",
+		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.FramedClientSession",
 		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_1.TcpClientSessions",
 	)
 }
@@ -30,4 +31,7 @@ segment {
 dependencies {
 	implementation(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolAdventure)
 	implementation(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolApi)
+	implementation(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolNetty)
+
+	testImplementation(testFixtures(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolApi))
 }

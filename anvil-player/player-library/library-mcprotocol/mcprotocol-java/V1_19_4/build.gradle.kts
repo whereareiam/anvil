@@ -23,6 +23,9 @@ segment {
 dependencies {
 	implementation(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolAdventure)
 	implementation(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolApi)
+	implementation(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolNetty)
+
+	testImplementation(testFixtures(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolApi))
 }
 
 // The release bundles packetlib, which opens one io_uring ring per event-loop thread, and a ring for every core can

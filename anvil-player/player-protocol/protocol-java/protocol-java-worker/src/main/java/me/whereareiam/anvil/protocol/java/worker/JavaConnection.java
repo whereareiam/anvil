@@ -7,13 +7,15 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * What a protocol library supplies for a player's Java Edition protocol: sending a packet on the player's current
- * connection in the release's form, and which packets the release carries. The library hands every packet the player
- * receives to {@link JavaPacketDispatcher#deliver}.
+ * connection in the release's form, which packets the release carries, and whether it hands over the frames it
+ * receives. The library hands every packet the player receives to {@link JavaPacketDispatcher}: as its frame while the
+ * dispatcher {@linkplain JavaPacketDispatcher#wantsFrames() wants frames}, else as its value alone.
  *
  * <pre>{@code
  * JavaConnection connection = new JavaConnection() {
  *     public void send(ServerboundPacket packet) { client.send(player.nativeSession(), packet); }
  *     public boolean supports(Class<? extends JavaPacket> type) { return client.supports(type); }
+ *     public boolean handsOverFrames() { return true; }
  * };
  * }</pre>
  */
@@ -34,4 +36,13 @@ public interface JavaConnection {
 	 * @return whether the release carries it
 	 */
 	boolean supports(@NotNull Class<? extends JavaPacket> type);
+
+	/**
+	 * Tells whether the library hands every packet the player receives to the dispatcher as its frame, its bytes as
+	 * they arrived, while the dispatcher wants frames. A library that never sees the wire, such as one running a
+	 * player in process, hands over values alone, and the protocol refuses frame listeners.
+	 *
+	 * @return whether the library hands over frames
+	 */
+	boolean handsOverFrames();
 }

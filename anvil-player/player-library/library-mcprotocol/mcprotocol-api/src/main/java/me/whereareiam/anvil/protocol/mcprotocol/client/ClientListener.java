@@ -2,9 +2,11 @@ package me.whereareiam.anvil.protocol.mcprotocol.client;
 
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Receives the connection state and the translated packets of sessions opened by a {@link McProtocolClient}.
@@ -14,7 +16,9 @@ import org.jetbrains.annotations.NotNull;
  * session that was replaced by a reconnect can still deliver callbacks while it closes.</p>
  *
  * <p>The listener is also the demand of the session's translations: a packet that is costly to decode, such as a chunk
- * column, is decoded only while the listener {@linkplain #wants(Class) wants} it.</p>
+ * column, is decoded only while the listener {@linkplain #wants(Class) wants} it. While it {@linkplain #wantsFrames()
+ * wants frames}, the session hands it every packet it receives as its frame instead, in the order the packets arrive on
+ * the wire.</p>
  *
  * @param <S> native session type of the release
  */
@@ -63,11 +67,38 @@ public interface ClientListener<S> extends PacketDemand {
 	void disconnected(@NotNull S session, @NotNull DisconnectCause cause, @NotNull String reason);
 
 	/**
-	 * Delivers a packet the session received, translated to the Java Edition protocol. A segment translates every
-	 * packet it can carry, in the order they arrive, whether or not anyone listens.
+	 * Delivers a packet the session received, translated to the Java Edition protocol, while the listener wants no
+	 * frames. A segment translates every packet it can carry, in the order they arrive, whether or not anyone listens.
 	 *
 	 * @param session session that received the packet
 	 * @param packet the received packet
 	 */
 	void received(@NotNull S session, @NotNull ClientboundPacket packet);
+
+	/**
+	 * Tells whether the listener wants each packet the session receives as its frame, which the session then copies
+	 * and delivers through {@link #received(Object, ConnectionState, int, byte[], ClientboundPacket)} instead.
+	 *
+	 * @return whether frames are wanted
+	 */
+	boolean wantsFrames();
+
+	/**
+	 * Delivers a packet the session received as its frame, while the listener wants frames: every packet, in the order
+	 * they arrive on the wire, with its translation when the segment translates it.
+	 *
+	 * @param session session that received the packet
+	 * @param state the connection's state when the packet arrived
+	 * @param id the packet's ID on the wire
+	 * @param payload the packet's bytes after its ID, decrypted and decompressed
+	 * @param packet the packet translated to the Java Edition protocol, or {@code null} when the segment does not
+	 * translate it
+	 */
+	void received(
+			@NotNull S session,
+			@NotNull ConnectionState state,
+			int id,
+			byte @NotNull [] payload,
+			@Nullable ClientboundPacket packet
+	);
 }

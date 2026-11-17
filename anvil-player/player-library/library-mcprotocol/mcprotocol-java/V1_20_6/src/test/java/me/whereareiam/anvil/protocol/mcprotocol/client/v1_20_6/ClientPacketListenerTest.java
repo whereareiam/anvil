@@ -1,16 +1,11 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import com.github.steveice10.mc.auth.data.GameProfile;
-import me.whereareiam.anvil.api.type.DisconnectCause;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
-import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
+import me.whereareiam.anvil.protocol.mcprotocol.client.TestClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientSettings;
-import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.network.Session;
@@ -23,11 +18,9 @@ import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Hand;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerSpawnInfo;
 import org.geysermc.mcprotocollib.protocol.data.handshake.HandshakeIntent;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundDisconnectPacket;
-import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
 import org.geysermc.mcprotocollib.protocol.packet.configuration.clientbound.ClientboundRegistryDataPacket;
 import org.geysermc.mcprotocollib.protocol.packet.handshake.serverbound.ClientIntentionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchFinishedPacket;
@@ -37,7 +30,6 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.Serve
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundGameProfilePacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
@@ -61,10 +53,9 @@ class ClientPacketListenerTest {
 
 	private final List<String> events = new ArrayList<>();
 	private final List<Packet> sent = new ArrayList<>();
-	private final List<ClientboundPacket> received = new ArrayList<>();
 	private final Session session = session();
-	private final ClientPacketListener listener = new ClientPacketListener(LOGIN, new RecordingListener(),
-			McProtocolClientAdapter.packets(PacketDemand.EVERY), TcpClientSessions::granted, new TextTranslator());
+	private final ClientPacketListener listener = new ClientPacketListener(LOGIN, new TestClientListener<>(events),
+			TcpClientSessions::granted, new TextTranslator());
 
 	@Test
 	void reportsTheLoginWithTheGrantedProfile() {
@@ -120,7 +111,7 @@ class ClientPacketListenerTest {
 				.build();
 		PacketSendingEvent handshake = new PacketSendingEvent(session, new ClientIntentionPacket(1, "127.0.0.1", 25577, HandshakeIntent.LOGIN));
 
-		new ClientPacketListener(virtual, new RecordingListener(), McProtocolClientAdapter.packets(PacketDemand.EVERY),
+		new ClientPacketListener(virtual, new TestClientListener<>(events),
 				TcpClientSessions::granted, new TextTranslator())
 				.packetSending(handshake);
 
@@ -138,15 +129,6 @@ class ClientPacketListenerTest {
 		listener.packetSending(handshake);
 
 		assertSame(intention, handshake.getPacket());
-	}
-
-	@Test
-	void handsEveryTranslatedPacketToTheListenerAndNothingForOthers() {
-		receive(new ClientboundSystemChatPacket(Component.text("anvil:welcome"), false));
-		receive(new ClientboundKeepAlivePacket(7));
-
-		assertEquals(List.of(new ClientboundSystemChat(Text.literal("anvil:welcome"), false)), received);
-		assertEquals(List.of(), events);
 	}
 
 	@Test
@@ -190,37 +172,5 @@ class ClientPacketListenerTest {
 			events.add("sent " + packet.getClass().getSimpleName());
 			return null;
 		});
-	}
-
-	private final class RecordingListener implements ClientListener<Session> {
-		@Override
-		public void granted(@NotNull Session session, @NotNull ClientProfile granted) {
-			events.add("granted " + granted.getName() + " " + granted.getUniqueId());
-		}
-
-		@Override
-		public void loggedIn(@NotNull Session session, @NotNull ClientProfile granted) {
-			events.add("logged in as " + granted.getName() + " " + granted.getUniqueId());
-		}
-
-		@Override
-		public void teleported(@NotNull Session session, float yaw, float pitch) {
-			events.add("teleported " + yaw + " " + pitch);
-		}
-
-		@Override
-		public void disconnected(@NotNull Session session, @NotNull DisconnectCause cause, @NotNull String reason) {
-			events.add("disconnected " + cause + " " + reason);
-		}
-
-		@Override
-		public void received(@NotNull Session session, @NotNull ClientboundPacket packet) {
-			received.add(packet);
-		}
-		@Override
-		public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
-			return true;
-		}
-
 	}
 }

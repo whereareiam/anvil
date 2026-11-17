@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.java.worker;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundFrame;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundDisguisedChat;
@@ -10,11 +11,13 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundPlayerChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
+import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JavaPacketDispatcherTest {
-	private final RecordingConnection connection = new RecordingConnection();
+	private final RecordingConnection connection = new RecordingConnection(true);
 	private final JavaPacketDispatcher protocol = new JavaPacketDispatcher("test", 774, connection);
 
 	@Test
@@ -130,6 +133,70 @@ class JavaPacketDispatcherTest {
 		assertEquals(List.of("sent", "received"), received);
 	}
 
+	@Test
+	void wantsFramesAndEveryPacketWhileAFrameListenerListens() {
+		assertFalse(protocol.wantsFrames());
+
+		Subscription frames = protocol.listenFrames(frame -> {
+		});
+		assertTrue(protocol.wantsFrames());
+		assertTrue(protocol.wants(ClientboundSystemChat.class));
+
+		frames.close();
+		assertFalse(protocol.wantsFrames());
+		assertFalse(protocol.wants(ClientboundSystemChat.class));
+	}
+
+	@Test
+	void deliversAFrameNamedByThePlayersProtocolAfterItsValue() {
+		List<String> received = new ArrayList<>();
+		protocol.listen(ClientboundSystemChat.class, packet -> received.add("value " + packet.getText().plain()));
+		protocol.listenFrames(frame -> received.add("frame " + frame.getState() + " " + frame.getId() + " "
+				+ frame.name().orElseThrow() + " " + frame.size() + " " + frame.packet().isPresent()));
+		ClientboundSystemChat welcome = new ClientboundSystemChat(Text.literal("welcome"), false);
+
+		protocol.deliver(ConnectionState.PLAY, 0x08, new byte[]{1, 2, 3}, null);
+		protocol.deliver(ConnectionState.PLAY, 0x77, new byte[]{4}, welcome);
+
+		assertEquals(List.of("frame PLAY 8 block_change 3 false", "value welcome", "frame PLAY 119 system_chat 1 true"),
+				received);
+	}
+
+	@Test
+	void leavesTheFramesOfAProtocolWithoutPacketDataUnnamed() {
+		JavaPacketDispatcher unnamed = new JavaPacketDispatcher("test", 777, connection);
+		List<ClientboundFrame> frames = new ArrayList<>();
+		unnamed.listenFrames(frames::add);
+
+		unnamed.deliver(ConnectionState.PLAY, 0, new byte[0], null);
+
+		assertEquals(Optional.empty(), frames.getFirst().name());
+	}
+
+	@Test
+	void keepsDeliveringFramesPastAFailingListener() {
+		List<ClientboundFrame> frames = new ArrayList<>();
+		protocol.listenFrames(frame -> {
+			throw new IllegalStateException("broken");
+		});
+		protocol.listenFrames(frames::add);
+
+		protocol.deliver(ConnectionState.LOGIN, 0, new byte[0], null);
+
+		assertEquals(1, frames.size());
+	}
+
+	@Test
+	void refusesFrameListenersOfALibraryThatHandsOverNoFrames() {
+		JavaPacketDispatcher unframed = new JavaPacketDispatcher("test", 774, new RecordingConnection(false));
+
+		ProtocolUnavailableException failure = assertThrows(ProtocolUnavailableException.class,
+				() -> unframed.listenFrames(frame -> {
+				}));
+
+		assertEquals("the test library does not hand over the frames its players receive", failure.getMessage());
+	}
+
 	private static final class RecordingConnection implements JavaConnection {
 		private static final Set<Class<? extends JavaPacket>> CARRIED = Set.of(
 				ClientboundSystemChat.class,
@@ -138,6 +205,11 @@ class JavaPacketDispatcherTest {
 		);
 
 		private final List<ServerboundPacket> sent = new ArrayList<>();
+		private final boolean framed;
+
+		private RecordingConnection(boolean framed) {
+			this.framed = framed;
+		}
 
 		@Override
 		public void send(@NotNull ServerboundPacket packet) {
@@ -149,6 +221,11 @@ class JavaPacketDispatcherTest {
 		@Override
 		public boolean supports(@NotNull Class<? extends JavaPacket> type) {
 			return CARRIED.contains(type);
+		}
+
+		@Override
+		public boolean handsOverFrames() {
+			return framed;
 		}
 	}
 }

@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.java.packet;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import me.whereareiam.anvil.protocol.java.api.type.ConnectionState;
+import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.java.packet.model.PacketDataSource;
 import org.jetbrains.annotations.NotNull;
 
