@@ -158,7 +158,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   running process (`ProcessCapability`); a proxy counts as server side. The implementation (packets, agent
   events) never decides the owner.
 - A player speaks its edition's protocol: `protocol-java-api`'s `JavaProtocol` (`listen` by packet class, `send`,
-  `listenSent` for the packets bindings send, `listenFrames` for every packet as its frame, `supports`, `world`,
+  `listenSent` for the packets bindings send, `listenFrames` for every packet as its frame, `want` for a costly packet's
+  value, `supports`, `world`,
   `protocolNumber`), which a worker extension gets from
   `PlayerBindingContext.protocol(JavaProtocol.class)`. Packets are immutable values grouped by area under
   `packet.<area>`, an area of more than seven packets split by subject below it (`packet.world.border`,
@@ -177,7 +178,10 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   Every packet a player receives is also a `ClientboundFrame`: the connection's state, the packet's ID, its bytes after
   the ID and minecraft-data's name of it, with its value when the protocol models it. A library that sees the wire
   answers `JavaConnection.handsOverFrames()` and, while the dispatcher `wantsFrames()`, delivers each packet as its
-  frame in wire order; while a frame listener exists every modelled packet is wanted, so each frame carries its value.
+  frame in wire order; while a frame listener exists every modelled packet is wanted except the costly ones
+  `ClientboundPackets.isCostly` names (the chunk column), whose value is decoded, and carried by its frame, only while
+  something wants its class: a listener, `JavaProtocol.want(Class)` or the world. A packet recording never keeps a
+  costly value (`RecordedPackets`), and a `PacketMask` refuses to compare a costly class by value.
   MCProtocolLib sessions translate and deliver from the netty pipeline through `mcprotocol-netty`'s `ReceivedFrames`,
   never from session listeners, which releases call on other threads or out of order. Packet values name their kind
   through `ClientboundPackets` wherever they are written down, in `protocol-java-json`'s one JSON form; an entity's

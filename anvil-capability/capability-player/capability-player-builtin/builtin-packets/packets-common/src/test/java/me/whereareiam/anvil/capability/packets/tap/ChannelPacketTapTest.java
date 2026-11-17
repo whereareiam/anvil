@@ -6,8 +6,10 @@ import me.whereareiam.anvil.capability.packets.model.PacketSelection;
 import me.whereareiam.anvil.capability.packets.model.TappedPacket;
 import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
 import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.protocol.java.api.model.world.chunk.ChunkPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundBlockUpdate;
+import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundLevelChunkWithLight;
 import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import org.junit.jupiter.api.Test;
 
@@ -56,6 +58,21 @@ class ChannelPacketTapTest {
 
 		assertEquals(0, light.getSequence());
 		assertTrue(light.packet().isEmpty());
+	}
+
+	@Test
+	void keepsAChunkValueOnlyInATapThatSelectsChunks() {
+		ClientboundLevelChunkWithLight chunk = new ClientboundLevelChunkWithLight(new ChunkPosition(1, 2), List.of());
+		TappedFrame frame = new TappedFrame(List.of(2, 3), ConnectionState.PLAY, 0x27, "map_chunk", null, chunk);
+		ChannelPacketTap every = new ChannelPacketTap(2, PacketSelection.every(), channel, closed::add);
+		ChannelPacketTap chunks = new ChannelPacketTap(3, PacketSelection.of(ClientboundLevelChunkWithLight.class),
+				channel, closed::add);
+
+		every.receive(frame);
+		chunks.receive(frame);
+
+		assertTrue(every.history().getFirst().packet().isEmpty());
+		assertEquals(chunk, chunks.received(ClientboundLevelChunkWithLight.class, received -> true));
 	}
 
 	@Test

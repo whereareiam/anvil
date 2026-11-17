@@ -18,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,8 +27,10 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * The open taps of one player: each takes the frames its request names, and while at least one is open the taps
  * listen to the player's frames, sending each frame the open taps take once, with the IDs of those taps and with its
- * bytes when one of them needs them. Names are checked against Anvil's packet data for the player's protocol, so a
- * misspelt name is refused rather than never matched.
+ * bytes when one of them needs them, and with its value when one of them {@linkplain PacketSelection#keepsValue keeps}
+ * it. A tap that names a {@linkplain ClientboundPackets#isCostly costly} class wants it from the protocol while it is
+ * open, so the release decodes it. Names are checked against Anvil's
+ * packet data for the player's protocol, so a misspelt name is refused rather than never matched.
  */
 final class PacketTaps {
 	private final PlayerBindingContext<Object> player;
@@ -57,24 +60,48 @@ final class PacketTaps {
 	 * Closes every tap and stops listening to the player's frames.
 	 */
 	synchronized void closeAll() {
+		for (Tap tap : taps.values())
+			tap.wanted().close();
 		taps.clear();
 		stopListening();
 	}
 
 	private synchronized Integer open(TapRequest request) {
-		Tap tap = new Tap(selection(request), request.isPayloads());
-		if (taps.putIfAbsent(request.getId(), tap) != null)
+		if (taps.containsKey(request.getId()))
 			throw new IllegalArgumentException("Tap " + request.getId() + " is already open");
+
+		PacketSelection selection = selection(request);
+		Set<Class<? extends ClientboundPacket>> costly = new HashSet<>();
+		for (Class<? extends ClientboundPacket> type : selection.getTypes())
+			if (ClientboundPackets.isCostly(type)) costly.add(type);
+		taps.put(request.getId(), new Tap(selection, request.isPayloads(), want(costly)));
 		if (frames == null) frames = protocol.listenFrames(this::received);
 
 		return protocol.protocolNumber();
 	}
 
 	private synchronized Void close(Integer id) {
-		taps.remove(id);
+		Tap tap = taps.remove(id);
+		if (tap != null) tap.wanted().close();
 		if (taps.isEmpty()) stopListening();
 
 		return null;
+	}
+
+	/**
+	 * Wants the costly classes a tap names, releasing what it wanted when the release cannot carry one of them.
+	 */
+	private Subscription want(Set<Class<? extends ClientboundPacket>> costly) {
+		List<Subscription> wanted = new ArrayList<>();
+		try {
+			for (Class<? extends ClientboundPacket> type : costly)
+				wanted.add(protocol.want(type));
+		} catch (RuntimeException refused) {
+			Subscription.all(wanted).close();
+			throw refused;
+		}
+
+		return Subscription.all(wanted);
 	}
 
 	private void stopListening() {
@@ -92,16 +119,18 @@ final class PacketTaps {
 		ClientboundPacket packet = frame.packet().orElse(null);
 		List<Integer> taking = new ArrayList<>();
 		boolean payloads = false;
+		boolean value = false;
 		for (Map.Entry<Integer, Tap> tap : taps.entrySet()) {
 			if (!tap.getValue().selection().selects(name, packet)) continue;
 
 			taking.add(tap.getKey());
 			payloads |= tap.getValue().payloads();
+			value |= packet != null && tap.getValue().selection().keepsValue(packet);
 		}
 		if (taking.isEmpty()) return;
 
 		player.emit(PacketsChannel.FRAMES, new TappedFrame(List.copyOf(taking), frame.getState(), frame.getId(), name,
-				payloads ? frame.payload() : null, packet));
+				payloads ? frame.payload() : null, value ? packet : null));
 	}
 
 	/**
@@ -148,8 +177,9 @@ final class PacketTaps {
 	}
 
 	/**
-	 * What one open tap takes, and whether it needs the bytes of what it takes.
+	 * What one open tap takes, whether it needs the bytes of what it takes, and its wanting of the costly classes it
+	 * names.
 	 */
-	private record Tap(PacketSelection selection, boolean payloads) {
+	private record Tap(PacketSelection selection, boolean payloads, Subscription wanted) {
 	}
 }

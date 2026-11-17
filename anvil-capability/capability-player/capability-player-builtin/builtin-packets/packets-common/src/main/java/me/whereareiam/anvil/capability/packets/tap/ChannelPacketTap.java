@@ -113,8 +113,9 @@ final class ChannelPacketTap implements PacketTap {
 	 */
 	void receive(@NotNull TappedFrame frame) {
 		synchronized (packets) {
+			ClientboundPacket packet = frame.getPacket();
 			packets.add(new TappedPacket(packets.size(), frame.getState(), frame.getId(), frame.getName(),
-					frame.getPacket()));
+					packet == null || selection.keepsValue(packet) ? packet : null));
 		}
 	}
 

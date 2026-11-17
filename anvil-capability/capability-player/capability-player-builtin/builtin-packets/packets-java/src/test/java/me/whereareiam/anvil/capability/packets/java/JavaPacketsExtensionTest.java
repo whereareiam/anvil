@@ -6,8 +6,11 @@ import me.whereareiam.anvil.capability.packets.channel.TapRequest;
 import me.whereareiam.anvil.capability.packets.channel.TappedFrame;
 import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
+import me.whereareiam.anvil.protocol.java.api.model.world.chunk.ChunkPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
+import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundLevelChunkWithLight;
 import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
+import me.whereareiam.anvil.protocol.java.packet.JavaPacketData;
 import me.whereareiam.anvil.protocol.java.worker.TestJavaPlayer;
 import me.whereareiam.anvil.protocol.worker.TestOperations;
 import org.junit.jupiter.api.Test;
@@ -31,6 +34,13 @@ class JavaPacketsExtensionTest {
 	 * The ID of {@code block_change} in the play state of protocol 774, which the test delivers without a value.
 	 */
 	private static final int BLOCK_CHANGE = 0x08;
+	/**
+	 * The ID of {@code map_chunk} in the play state of protocol 774.
+	 */
+	private static final int MAP_CHUNK = JavaPacketData.shipped().find(TestJavaPlayer.PROTOCOL).orElseThrow()
+			.clientboundId(ConnectionState.PLAY, "map_chunk").orElseThrow();
+	private static final ClientboundLevelChunkWithLight CHUNK = new ClientboundLevelChunkWithLight(
+			new ChunkPosition(1, 2), List.of());
 	private static final ClientboundSystemChat WELCOME = new ClientboundSystemChat(Text.literal("welcome"), false);
 
 	private final TestJavaPlayer player = new TestJavaPlayer("Alice");
@@ -92,6 +102,36 @@ class JavaPacketsExtensionTest {
 		assertEquals(List.of(List.of(1, 2), List.of(2)), frames.stream().map(TappedFrame::getTaps)
 				.map(taps -> taps.stream().sorted().toList()).toList());
 		assertArrayEquals(new byte[]{2, 3}, frames.getFirst().getPayload());
+	}
+
+	@Test
+	void recordsACostlyPacketByItsBytesAloneWithoutHavingItDecoded() {
+		operations.call(PacketsChannel.TAP, every(1, true));
+		assertFalse(player.protocol().wants(ClientboundLevelChunkWithLight.class));
+
+		player.deliver(ConnectionState.PLAY, MAP_CHUNK, new byte[]{4}, CHUNK);
+
+		TappedFrame frame = player.emitted(PacketsChannel.FRAMES).getFirst();
+		assertEquals("map_chunk", frame.getName());
+		assertArrayEquals(new byte[]{4}, frame.getPayload());
+		assertNull(frame.getPacket());
+	}
+
+	@Test
+	void wantsACostlyPacketWhileATapNamesItsClassAndSendsItsValueOnlyThen() {
+		operations.call(PacketsChannel.TAP, every(1, true));
+		operations.call(PacketsChannel.TAP, new TapRequest(2, false, Set.of("ClientboundLevelChunkWithLight"), Set.of(),
+				false));
+		assertTrue(player.protocol().wants(ClientboundLevelChunkWithLight.class));
+
+		player.deliver(ConnectionState.PLAY, MAP_CHUNK, new byte[]{4}, CHUNK);
+		operations.call(PacketsChannel.UNTAP, 2);
+		player.deliver(ConnectionState.PLAY, MAP_CHUNK, new byte[]{5}, CHUNK);
+
+		List<TappedFrame> frames = player.emitted(PacketsChannel.FRAMES);
+		assertEquals(CHUNK, frames.get(0).getPacket());
+		assertNull(frames.get(1).getPacket());
+		assertFalse(player.protocol().wants(ClientboundLevelChunkWithLight.class));
 	}
 
 	@Test

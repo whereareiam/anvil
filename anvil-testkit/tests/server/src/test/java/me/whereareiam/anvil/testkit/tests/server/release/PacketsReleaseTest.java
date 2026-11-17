@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Taps and records the packets the server sends the player: the console moves the player high above a far column, whose
  * chunk a tap waits for, places a block below it and removes it again, which every release sends as a block update among the many the world's own activity sends.
+ * A recording made meanwhile keeps the chunk columns as their bytes alone, while the chunk tap gets their values.
  */
 @Release
 class PacketsReleaseTest {
@@ -67,14 +68,20 @@ class PacketsReleaseTest {
 		SimulatedPlayer player = server.join();
 		Packets packets = player.capability(Packets.class);
 
-		BlockPosition block = loadedBlock(server, player);
 		RecordedPackets recorded;
 		try (PacketRecording recording = packets.record(); PacketTap tap = packets.tap(PacketSelection.every())) {
+			BlockPosition block = loadedBlock(server, player);
 			server.console(setblock(block, "minecraft:glass"));
 			tap.received(ClientboundBlockUpdate.class, at(block), TIMEOUT);
 			recorded = recording.stop();
 			assertSequenced(tap.history());
+			assertTrue(tap.history().stream().noneMatch(packet -> packet.packet(ClientboundLevelChunkWithLight.class)
+					.isPresent()), "A tap of every packet received a chunk's value");
 		}
+
+		assertTrue(recorded.getFrames().stream().noneMatch(frame -> frame.packet()
+						.filter(ClientboundLevelChunkWithLight.class::isInstance).isPresent()),
+				"The recording kept a chunk's value, though a chunk tap was open");
 
 		List<ClientboundFrame> updates = recorded.getFrames().stream()
 				.filter(frame -> frame.packet().filter(ClientboundBlockUpdate.class::isInstance).isPresent())

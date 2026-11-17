@@ -16,6 +16,24 @@ There are two ways in:
 
 Packets cross from the player's worker to the test only while a tap or a recording is open.
 
+### Chunk columns are costly
+
+Some packets are costly: decoding them takes far more than their bytes, and their value holds nothing their
+bytes do not. Today the chunk column, `ClientboundLevelChunkWithLight` (`map_chunk`), is the one costly packet
+(`ClientboundPackets.isCostly`). The player's release decodes a costly packet only when something asks for its
+class, so:
+
+- a tap whose selection names `ClientboundLevelChunkWithLight` gets each chunk's value, and the worker decodes
+  chunks while that tap is open;
+- a tap of every packet, or of the name `map_chunk`, gets chunk frames with their name and position in the
+  stream, but without a value;
+- a recording keeps chunk frames as their bytes alone, even while a chunk tap is open, and compares them by
+  bytes.
+
+A chunk's value would otherwise double what crosses from the worker and what a recording keeps. On Paper 1.21.11,
+loading 312 chunk columns made 28.7 MB on the worker channel and a 4.4 MB recording with the values, and
+15.0 MB and 1.8 MB without them.
+
 ## Name packets
 
 A packet the Java protocol models has a value of its class, such as `ClientboundBlockUpdate` or
@@ -135,7 +153,9 @@ A `PacketMask` names what the comparison leaves out:
 - `ignore(type, fields...)` compares the frames whose value is of that class by value, without those fields,
   for example `ignore(ClientboundSystemChat.class, ClientboundSystemChat.Fields.text)`. Every packet class
   has these `Fields` constants, so the compiler checks the names, and a comparison refuses a field the class
-  does not have. Without fields, `ignore(type)` compares the class by value alone.
+  does not have. Without fields, `ignore(type)` compares the class by value alone. A mask refuses a costly
+  class, such as `ClientboundLevelChunkWithLight`, because recordings keep its bytes alone; leave chunks out by
+  name with `ignore("map_chunk")` when they vary.
 
 `PacketMask.runVarying()` leaves out what differs between two runs of one build: keep-alives, pings and the
 periodic time updates, whose presence follows the clock, the login's and the respawn's unmodelled hashed seed,
@@ -151,7 +171,7 @@ name; to compare its contents, it needs a model in the protocol, which the
 `write` writes gzip-compressed JSON Lines, which `zcat file | jq` reads. The first line is the header: the
 format version, the `protocol` number, the `minecraft` version of the client and the `player`. Each further
 line is one frame in arrival order: its `seq`, `state`, `id`, `name`, its bytes as base64 `payload` and, when
-the protocol models it, its `packet` value, which names its `kind`. Entity IDs in values are objects of the one
+the protocol models it and it is not costly, its `packet` value, which names its `kind`. Entity IDs in values are objects of the one
 member `entity`:
 
 ```json

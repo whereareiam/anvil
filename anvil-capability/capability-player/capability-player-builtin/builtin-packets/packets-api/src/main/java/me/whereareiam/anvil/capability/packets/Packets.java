@@ -6,6 +6,7 @@ import me.whereareiam.anvil.capability.packets.model.PacketDifference;
 import me.whereareiam.anvil.capability.packets.model.PacketMask;
 import me.whereareiam.anvil.capability.packets.model.PacketSelection;
 import me.whereareiam.anvil.capability.packets.model.RecordedPackets;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPackets;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -19,7 +20,8 @@ import java.util.List;
  *
  * <p>Packets cross from the player's worker only while a tap or a recording is open. A packet's name is
  * minecraft-data's, such as {@code map_chunk}; its value, when the Java protocol models it, is the protocol's
- * packet class.</p>
+ * packet class. A {@linkplain ClientboundPackets#isCostly costly} packet, such as a chunk column, has its value only
+ * in a tap that selects its class; other taps and every recording keep its bytes alone.</p>
  *
  * <pre>{@code
  * Packets packets = alice.capability(Packets.class);

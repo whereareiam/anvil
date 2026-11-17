@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPackets;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -112,6 +113,18 @@ public class PacketSelection {
 		joinedNames.addAll(other.names);
 
 		return new PacketSelection(every || other.every, Set.copyOf(joinedTypes), Set.copyOf(joinedNames));
+	}
+
+	/**
+	 * Tells whether a tap of this selection keeps the value of a packet it takes: every value except that of a
+	 * {@linkplain ClientboundPackets#isCostly costly} packet, such as a chunk column, whose class the selection does not
+	 * name, so a chunk's value reaches only a tap that selects chunks by class.
+	 *
+	 * @param packet the packet's value
+	 * @return whether the tap keeps it
+	 */
+	public boolean keepsValue(@NotNull ClientboundPacket packet) {
+		return !ClientboundPackets.isCostly(packet.getClass()) || types.contains(packet.getClass());
 	}
 
 	/**
