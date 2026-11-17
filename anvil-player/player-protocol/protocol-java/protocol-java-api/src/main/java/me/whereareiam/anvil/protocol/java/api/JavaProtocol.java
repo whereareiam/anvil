@@ -4,6 +4,7 @@ import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundFrame;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPackets;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import org.jetbrains.annotations.NotNull;
@@ -43,8 +44,9 @@ public interface JavaProtocol {
 	/**
 	 * Observes every packet the player receives as its {@link ClientboundFrame}, in the order the packets arrive on the
 	 * wire: those the protocol models with their value, and every other one with its bytes alone. While a frame
-	 * listener exists, the release decodes every packet it models, even one costly to decode such as a chunk column,
-	 * so each frame carries its value.
+	 * listener exists, the release decodes every packet it models except the {@linkplain ClientboundPackets#isCostly
+	 * costly} ones, such as a chunk column, whose frames carry their value only while something wants their class: a
+	 * listener of the class, {@link #want(Class)}, or the player's {@link #world()} once something asked for it.
 	 *
 	 * <pre>{@code
 	 * Subscription frames = protocol.listenFrames(frame -> recorded.add(frame));
@@ -55,6 +57,21 @@ public interface JavaProtocol {
 	 * @throws ProtocolUnavailableException when the player's library does not hand over the frames it receives
 	 */
 	@NotNull Subscription listenFrames(@NotNull Consumer<? super ClientboundFrame> listener);
+
+	/**
+	 * Wants the packets of a class while the subscription is open, so the release decodes them and the frames of a
+	 * {@linkplain ClientboundPackets#isCostly costly} packet carry its value, without listening to them by class.
+	 *
+	 * <pre>{@code
+	 * Subscription chunks = protocol.want(ClientboundLevelChunkWithLight.class);
+	 * Subscription frames = protocol.listenFrames(frame -> frame.packet().ifPresent(this::matched));
+	 * }</pre>
+	 *
+	 * @param type packet class
+	 * @return registration that stops wanting the class when closed
+	 * @throws ProtocolUnavailableException when the loaded release cannot carry the packet
+	 */
+	@NotNull Subscription want(@NotNull Class<? extends ClientboundPacket> type);
 
 	/**
 	 * Tells whether the player's library hands over the frames it receives, so that a binding that needs them can

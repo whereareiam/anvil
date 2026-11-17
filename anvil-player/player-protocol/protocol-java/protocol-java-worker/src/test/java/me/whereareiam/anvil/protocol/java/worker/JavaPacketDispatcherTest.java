@@ -11,6 +11,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundPlayerChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
+import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundLevelChunkWithLight;
 import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -134,17 +135,33 @@ class JavaPacketDispatcherTest {
 	}
 
 	@Test
-	void wantsFramesAndEveryPacketWhileAFrameListenerListens() {
+	void wantsFramesAndEveryPacketButTheCostlyOnesWhileAFrameListenerListens() {
 		assertFalse(protocol.wantsFrames());
 
 		Subscription frames = protocol.listenFrames(frame -> {
 		});
 		assertTrue(protocol.wantsFrames());
 		assertTrue(protocol.wants(ClientboundSystemChat.class));
+		assertFalse(protocol.wants(ClientboundLevelChunkWithLight.class));
 
 		frames.close();
 		assertFalse(protocol.wantsFrames());
 		assertFalse(protocol.wants(ClientboundSystemChat.class));
+	}
+
+	@Test
+	void wantsACostlyPacketWhileSomethingWantsItsClass() {
+		Subscription frames = protocol.listenFrames(frame -> {
+		});
+		Subscription chunks = protocol.want(ClientboundLevelChunkWithLight.class);
+		Subscription again = protocol.want(ClientboundLevelChunkWithLight.class);
+		assertTrue(protocol.wants(ClientboundLevelChunkWithLight.class));
+
+		chunks.close();
+		assertTrue(protocol.wants(ClientboundLevelChunkWithLight.class));
+		again.close();
+		assertFalse(protocol.wants(ClientboundLevelChunkWithLight.class));
+		frames.close();
 	}
 
 	@Test
@@ -201,6 +218,7 @@ class JavaPacketDispatcherTest {
 		private static final Set<Class<? extends JavaPacket>> CARRIED = Set.of(
 				ClientboundSystemChat.class,
 				ClientboundPlayerChat.class,
+				ClientboundLevelChunkWithLight.class,
 				ServerboundChat.class
 		);
 

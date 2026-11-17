@@ -7,6 +7,7 @@ import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.JavaWorld;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundFrame;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPackets;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
@@ -31,7 +32,9 @@ import java.util.function.Consumer;
  * <p>A library asks {@link #wants(Class)} before it decodes a packet that is costly to decode, such as a chunk column,
  * and skips it while nothing wants it. While a frame listener exists, {@link #wantsFrames()} tells a library that hands
  * over frames to deliver each packet it receives as its frame, which the dispatcher names by the player's protocol from
- * Anvil's packet data, and every packet the protocol models is wanted, so each frame carries its value.</p>
+ * Anvil's packet data, and every packet the protocol models is wanted except the
+ * {@linkplain ClientboundPackets#isCostly costly} ones, which only a listener of their class, {@link #want(Class)} or
+ * the player's world wants, so only then does their frame carry their value.</p>
  *
  * <pre>{@code
  * JavaPacketDispatcher protocol = new JavaPacketDispatcher(LIBRARY_ID, release.protocolNumber(), connection);
@@ -49,6 +52,7 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 	private final Map<Class<?>, List<Consumer<Object>>> listeners = new ConcurrentHashMap<>();
 	private final Map<Class<?>, List<Consumer<Object>>> sentListeners = new ConcurrentHashMap<>();
 	private final List<Consumer<? super ClientboundFrame>> frameListeners = new CopyOnWriteArrayList<>();
+	private final Map<Class<?>, List<Object>> wanted = new ConcurrentHashMap<>();
 	private final JavaWorldStore world = new JavaWorldStore();
 
 	/**
@@ -89,6 +93,19 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 	}
 
 	@Override
+	public @NotNull Subscription want(@NotNull Class<? extends ClientboundPacket> type) {
+		if (!connection.supports(type))
+			throw new ProtocolUnavailableException("the loaded " + libraryId + " release does not carry "
+					+ type.getName());
+
+		Object demand = new Object();
+		List<Object> demands = wanted.computeIfAbsent(type, ignored -> new CopyOnWriteArrayList<>());
+		demands.add(demand);
+
+		return () -> demands.remove(demand);
+	}
+
+	@Override
 	public void send(@NotNull ServerboundPacket packet) {
 		connection.send(packet);
 		handOut(sentListeners, packet);
@@ -119,17 +136,21 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 	}
 
 	/**
-	 * Tells whether anything wants the packets of a class: a listener of the class, a frame listener, which wants the
-	 * value of every packet, or the player's world, which wants the packets of its chunks once something asked for it.
+	 * Tells whether anything wants the packets of a class: a listener of the class, {@link #want(Class)}, the player's
+	 * world, which wants the packets of its chunks once something asked for it, or a frame listener, which wants the
+	 * value of every packet that is not {@linkplain ClientboundPackets#isCostly costly}.
 	 *
 	 * @param type packet class
 	 * @return whether a packet of the class should be decoded and delivered
 	 */
 	public boolean wants(@NotNull Class<? extends ClientboundPacket> type) {
-		if (wantsFrames() || world.wants(type)) return true;
+		if (world.wants(type) || present(listeners.get(type)) || present(wanted.get(type))) return true;
 
-		List<Consumer<Object>> subscribed = listeners.get(type);
-		return subscribed != null && !subscribed.isEmpty();
+		return wantsFrames() && !ClientboundPackets.isCostly(type);
+	}
+
+	private static boolean present(@Nullable List<?> entries) {
+		return entries != null && !entries.isEmpty();
 	}
 
 	/**
@@ -257,6 +278,14 @@ public final class JavaPacketDispatcher implements JavaProtocol {
 		@Override
 		public @NotNull Subscription listenFrames(@NotNull Consumer<? super ClientboundFrame> listener) {
 			Subscription subscription = JavaPacketDispatcher.this.listenFrames(listener);
+			track.accept(subscription);
+
+			return subscription;
+		}
+
+		@Override
+		public @NotNull Subscription want(@NotNull Class<? extends ClientboundPacket> type) {
+			Subscription subscription = JavaPacketDispatcher.this.want(type);
 			track.accept(subscription);
 
 			return subscription;

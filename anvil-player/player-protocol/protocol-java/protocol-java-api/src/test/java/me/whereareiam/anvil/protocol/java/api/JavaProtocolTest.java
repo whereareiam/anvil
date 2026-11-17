@@ -64,6 +64,11 @@ class JavaProtocolTest {
 		}
 
 		@Override
+		public @NotNull Subscription want(@NotNull Class<? extends ClientboundPacket> type) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public boolean handsOverFrames() {
 			return false;
 		}

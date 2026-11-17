@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPackets;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundDeleteChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundPlayerChat;
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
@@ -26,7 +27,9 @@ import java.util.Set;
  *     before they pair up, so neither their presence nor their order matters.</li>
  *     <li>Ignoring fields of a packet class compares the frames whose value is of that class by value, without those
  *     fields, instead of by bytes. Ignoring a class without fields compares it by value alone, which leaves out what
- *     the protocol does not model, such as a login's hashed seed.</li>
+ *     the protocol does not model, such as a login's hashed seed. A {@linkplain ClientboundPackets#isCostly costly}
+ *     class, such as a chunk column, cannot be compared by value, because recordings keep its bytes alone; leave it
+ *     out by name instead, such as {@code map_chunk}.</li>
  * </ul>
  *
  * <p>Name fields through the constants Lombok generates on every packet class, so the compiler checks them; a
@@ -100,8 +103,13 @@ public class PacketMask {
 	 * @param ignored the fields to leave out, through the class's {@code Fields} constants; none compares the class
 	 * by value alone
 	 * @return a mask that also compares them so
+	 * @throws IllegalArgumentException when the class is costly, so recordings keep no value of it
 	 */
 	public @NotNull PacketMask ignore(@NotNull Class<? extends ClientboundPacket> type, @NotNull String @NotNull ... ignored) {
+		if (ClientboundPackets.isCostly(type))
+			throw new IllegalArgumentException(type.getSimpleName() + " is costly to decode, so recordings keep its bytes "
+					+ "alone and compare them; leave its packets out by name instead");
+
 		Map<Class<? extends ClientboundPacket>, Set<String>> joined = new HashMap<>(fields);
 		Set<String> union = new HashSet<>(joined.getOrDefault(type, Set.of()));
 		union.addAll(List.of(ignored));

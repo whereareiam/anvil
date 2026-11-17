@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPackets;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
@@ -111,7 +112,9 @@ public final class TestJavaPlayer extends TestWorkerPlayer {
 
 	/**
 	 * Hands a packet the server sent over as a library that hands over frames does: as its frame while a frame listener
-	 * exists, else as its value alone, when it has one.
+	 * exists, else as its value alone, when it has one. A {@linkplain ClientboundPackets#isCostly costly} packet keeps
+	 * its value only while the dispatcher {@linkplain JavaPacketDispatcher#wants wants} its class, as a library decodes
+	 * it only then.
 	 *
 	 * @param state the connection's state when the packet arrived
 	 * @param id the packet's ID on the wire
@@ -126,8 +129,10 @@ public final class TestJavaPlayer extends TestWorkerPlayer {
 			@Nullable ClientboundPacket packet
 	) {
 		nativeSession();
-		if (protocol.wantsFrames()) protocol.deliver(state, id, payload, packet);
-		else if (packet != null) protocol.deliver(packet);
+		ClientboundPacket value = packet == null || ClientboundPackets.isCostly(packet.getClass())
+				&& !protocol.wants(packet.getClass()) ? null : packet;
+		if (protocol.wantsFrames()) protocol.deliver(state, id, payload, value);
+		else if (value != null) protocol.deliver(value);
 	}
 
 	/**

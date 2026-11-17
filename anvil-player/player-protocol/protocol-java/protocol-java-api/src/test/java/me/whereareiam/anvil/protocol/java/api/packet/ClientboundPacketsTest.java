@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.java.api.packet;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundBlockUpdate;
+import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundLevelChunkWithLight;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -15,7 +16,9 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClientboundPacketsTest {
 	@Test
@@ -32,6 +35,13 @@ class ClientboundPacketsTest {
 		}
 
 		assertEquals(compiled, Set.copyOf(ClientboundPackets.kinds().values()));
+	}
+
+	@Test
+	void namesTheChunkColumnCostlyAndNoOtherPacket() {
+		assertTrue(ClientboundPackets.isCostly(ClientboundLevelChunkWithLight.class));
+		assertFalse(ClientboundPackets.isCostly(ClientboundBlockUpdate.class));
+		assertFalse(ClientboundPackets.isCostly(ClientboundSystemChat.class));
 	}
 
 	@Test

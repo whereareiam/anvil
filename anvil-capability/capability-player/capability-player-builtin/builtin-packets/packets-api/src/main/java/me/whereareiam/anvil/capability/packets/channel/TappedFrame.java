@@ -34,7 +34,8 @@ public class TappedFrame {
 	 */
 	byte @Nullable [] payload;
 	/**
-	 * The packet's value, or {@code null} when the protocol does not model the packet.
+	 * The packet's value, or {@code null} when the protocol does not model the packet, or when it is costly and no tap
+	 * that takes the frame names its class.
 	 */
 	@Nullable ClientboundPacket packet;
 }

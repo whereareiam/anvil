@@ -65,6 +65,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * The catalog of every packet value of the Java protocol that a server sends, each under its kind: the packet class's
@@ -75,6 +76,10 @@ import java.util.Optional;
  * its kind when its class moves to another package: the worker channel that carries frames to the host and the files
  * that recordings of packet streams are kept in. A packet class is renamed only when the packet it stands for changes,
  * which is when written-down values of it stop being readable.</p>
+ *
+ * <p>Some packets are {@linkplain #isCostly(Class) costly}: decoding them takes far more than their bytes, and their
+ * value holds nothing their bytes do not, such as a chunk column's sections. A release decodes them only while
+ * something wants their class, so a frame carries their value only then.</p>
  *
  * <pre>{@code
  * String kind = ClientboundPackets.kind(ClientboundBlockUpdate.class); // "ClientboundBlockUpdate"
@@ -141,6 +146,7 @@ public final class ClientboundPackets {
 			ClientboundLevelChunkWithLight.class,
 			ClientboundSectionBlocksUpdate.class
 	));
+	private static final Set<Class<? extends ClientboundPacket>> COSTLY = Set.of(ClientboundLevelChunkWithLight.class);
 
 	/**
 	 * Returns every packet class by its kind.
@@ -174,6 +180,20 @@ public final class ClientboundPackets {
 			throw new IllegalArgumentException(type.getName() + " is no packet value of the Java protocol");
 
 		return kind;
+	}
+
+	/**
+	 * Tells whether a packet class is costly: its packets take far more to decode than their bytes, and their value
+	 * holds nothing their bytes do not, so a release decodes them only while something wants their class
+	 * ({@code JavaProtocol.want}). A frame listener alone does not, so the frames of a costly packet carry its bytes
+	 * alone unless its class is wanted. Today the chunk column, {@link ClientboundLevelChunkWithLight}, is the one
+	 * costly packet.
+	 *
+	 * @param type the packet class
+	 * @return whether its packets are costly
+	 */
+	public static boolean isCostly(@NotNull Class<? extends ClientboundPacket> type) {
+		return COSTLY.contains(type);
 	}
 
 	private static Map<String, Class<? extends ClientboundPacket>> index(List<Class<? extends ClientboundPacket>> types) {

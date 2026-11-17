@@ -45,7 +45,8 @@ public class TappedPacket {
 	/**
 	 * Returns the packet's value.
 	 *
-	 * @return the value, or empty when the Java protocol does not model the packet
+	 * @return the value, or empty when the Java protocol does not model the packet, or when it is costly, such as a
+	 * chunk column, and the tap does not select its class
 	 */
 	public @NotNull Optional<ClientboundPacket> packet() {
 		return Optional.ofNullable(packet);
