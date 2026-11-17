@@ -16,8 +16,9 @@ public interface OperationRegistry {
 	 * Associates a typed operation with its handler.
 	 *
 	 * @param operation operation identity and request/response schemas
-	 * @param handler typed request handler; a {@link Void} request is supplied as {@code null},
-	 *                and a handler with a {@link Void} response returns {@code null}
+	 * @param handler typed request handler; a {@link Void} request is supplied as {@code null}, a handler with a
+	 *                {@link Void} response returns {@code null}, and every other handler returns a value, which
+	 *                the worker checks through {@link OperationDescriptor#response(Object)}
 	 * @param <Q> request type
 	 * @param <R> response type
 	 */

@@ -66,10 +66,11 @@ public final class TestProtocolChannel implements ProtocolChannel {
 	}
 
 	/**
-	 * Answers every later request of an operation, as the worker's handler would.
+	 * Answers every later request of an operation, as the worker's handler would. Like a worker, the channel refuses
+	 * an answer of {@code null} for a response other than {@link Void}, with the failure a request then reports.
 	 *
 	 * @param operation the operation
-	 * @param handler computes the response from the request
+	 * @param handler computes the response from the request, {@code null} only for a {@link Void} response
 	 * @param <Q> request type
 	 * @param <R> response type
 	 */
@@ -143,7 +144,7 @@ public final class TestProtocolChannel implements ProtocolChannel {
 		if (handler == null)
 			throw new IllegalStateException("The test's worker does not answer " + operation.getId());
 
-		return operation.getResponseType().cast(handler.apply(request));
+		return operation.response(handler.apply(request));
 	}
 
 	@Override

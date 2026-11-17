@@ -22,14 +22,14 @@ import java.util.function.Function;
  * }</pre>
  */
 public final class TestOperations implements OperationRegistry {
-	private final Map<String, Registered<?, ?>> operations = new LinkedHashMap<>();
+	private final Map<String, WorkerOperation<?, ?>> operations = new LinkedHashMap<>();
 
 	@Override
 	public synchronized <Q, R> void register(
 			@NotNull OperationDescriptor<Q, R> operation,
 			@NotNull Function<Q, R> handler
 	) {
-		if (operations.putIfAbsent(operation.getId(), new Registered<>(operation, handler)) != null)
+		if (operations.putIfAbsent(operation.getId(), new WorkerOperation<>(operation, handler)) != null)
 			throw new IllegalArgumentException("Operation already registered: " + operation.getId());
 	}
 
@@ -49,24 +49,22 @@ public final class TestOperations implements OperationRegistry {
 	 * @param request the request, {@code null} for an operation that takes none
 	 * @param <Q> request type
 	 * @param <R> response type
-	 * @return the operation's response
+	 * @return the operation's response, {@code null} only for a {@link Void} response
 	 * @throws IllegalArgumentException when no operation of that ID is registered, or one with another schema
+	 * @throws IllegalStateException when the operation answered {@code null} for a response other than {@link Void}
 	 */
 	public <Q, R> @Nullable R call(@NotNull OperationDescriptor<Q, R> operation, @Nullable Q request) {
-		Registered<?, ?> registered;
+		WorkerOperation<?, ?> registered;
 		synchronized (this) {
 			registered = operations.get(operation.getId());
 		}
 		if (registered == null)
 			throw new IllegalArgumentException("Operation not registered: " + operation.getId());
-		if (!registered.operation().equals(operation))
+		if (!registered.getDescriptor().equals(operation))
 			throw new IllegalArgumentException("Operation " + operation.getId() + " is registered with another schema");
 
 		@SuppressWarnings("unchecked")
-		Function<Q, R> handler = (Function<Q, R>) registered.handler();
-		return operation.getResponseType().cast(handler.apply(request));
-	}
-
-	private record Registered<Q, R>(OperationDescriptor<Q, R> operation, Function<Q, R> handler) {
+		WorkerOperation<Q, R> typed = (WorkerOperation<Q, R>) registered;
+		return typed.apply(request);
 	}
 }

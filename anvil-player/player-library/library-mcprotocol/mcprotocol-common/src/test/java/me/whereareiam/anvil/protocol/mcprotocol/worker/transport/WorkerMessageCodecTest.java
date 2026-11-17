@@ -19,6 +19,11 @@ import me.whereareiam.anvil.capability.inventory.type.InventoryClick;
 import me.whereareiam.anvil.capability.messages.model.ChatMessage;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.capability.movement.model.Position;
+import me.whereareiam.anvil.capability.world.channel.BlockLookup;
+import me.whereareiam.anvil.capability.world.channel.BlockReading;
+import me.whereareiam.anvil.capability.world.channel.WorldChannel;
+import me.whereareiam.anvil.capability.world.model.block.BlockIdentity;
+import me.whereareiam.anvil.capability.world.model.block.BlockPosition;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
 import me.whereareiam.anvil.protocol.api.model.text.ShadowColor;
@@ -222,6 +227,26 @@ class WorkerMessageCodecTest {
 		IllegalStateException failure = new IllegalStateException("handler failed");
 		var failing = codec.handler(operation, request -> { throw failure; });
 		assertSame(failure, assertThrows(IllegalStateException.class, () -> failing.apply(codec.envelope(null))));
+	}
+
+	@Test
+	void handlersRefuseToAnswerNullForAResponseOtherThanVoid() {
+		var handler = codec.handler(WorldChannel.BLOCK, position -> null);
+
+		var failure = assertThrows(IllegalStateException.class,
+				() -> handler.apply(codec.envelope(new BlockPosition(3, -64, 7))));
+		assertEquals("Operation 'world.lookup' answered no " + BlockLookup.class.getName(), failure.getMessage());
+	}
+
+	@Test
+	void anAbsentAnswerCrossesAsAValueThatSaysSo() {
+		BlockPosition known = new BlockPosition(3, -64, 7);
+		BlockReading stone = new BlockReading(known, 1, new BlockIdentity("minecraft:stone", Map.of(), false), 767);
+		var handler = codec.handler(WorldChannel.BLOCK, position -> new BlockLookup(position.equals(known) ? stone : null));
+
+		assertEquals(new BlockLookup(stone), codec.open(handler.apply(codec.envelope(known)), BlockLookup.class));
+		assertEquals(new BlockLookup(null),
+				codec.open(handler.apply(codec.envelope(new BlockPosition(100, 64, 100))), BlockLookup.class));
 	}
 
 	@Test

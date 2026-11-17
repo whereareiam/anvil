@@ -44,10 +44,10 @@ public final class WorldChannel {
 	 */
 	public static final EventDescriptor<WorldState> STATE = new EventDescriptor<>("world.state", WorldState.class);
 	/**
-	 * Reads one block of the player's level, or {@code null} while the client has no chunk holding it.
+	 * Reads one block of the player's level, which the answer leaves out while the client has no chunk holding it.
 	 */
-	public static final OperationDescriptor<BlockPosition, BlockReading> BLOCK = new OperationDescriptor<>(
-			"world.block", BlockPosition.class, BlockReading.class
+	public static final OperationDescriptor<BlockPosition, BlockLookup> BLOCK = new OperationDescriptor<>(
+			"world.lookup", BlockPosition.class, BlockLookup.class
 	);
 	/**
 	 * Tells whether the client has one chunk column.

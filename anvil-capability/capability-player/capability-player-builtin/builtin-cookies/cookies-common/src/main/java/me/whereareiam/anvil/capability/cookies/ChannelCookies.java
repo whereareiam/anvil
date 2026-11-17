@@ -81,9 +81,7 @@ final class ChannelCookies implements Cookies {
 	/**
 	 * Keeps the latest cookies the player holds; an older change that arrives late is ignored.
 	 */
-	private synchronized void hold(@Nullable HeldCookies change) {
-		if (change == null) return;
-
+	private synchronized void hold(@NotNull HeldCookies change) {
 		HeldCookies current = held;
 		if (current == null || change.getVersion() > current.getVersion()) held = change;
 	}

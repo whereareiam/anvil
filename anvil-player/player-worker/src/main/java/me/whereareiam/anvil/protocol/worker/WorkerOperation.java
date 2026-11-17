@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 
@@ -28,12 +29,13 @@ public final class WorkerOperation<Q, R> {
 	private final @NotNull Function<Q, R> handler;
 
 	/**
-	 * Applies the operation to a decoded request.
+	 * Applies the operation to a decoded request and checks the handler's answer against the response schema.
 	 *
 	 * @param request request value, or {@code null} for a {@link Void} request
-	 * @return the handler's response
+	 * @return the handler's response, {@code null} only for a {@link Void} response
+	 * @throws IllegalStateException when the handler answered {@code null} for a response other than {@link Void}
 	 */
-	public R apply(Q request) {
-		return handler.apply(request);
+	public @Nullable R apply(@Nullable Q request) {
+		return descriptor.response(handler.apply(request));
 	}
 }

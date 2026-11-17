@@ -82,7 +82,7 @@ class JavaWorldExtensionTest {
 
 		assertEquals(List.of(change(null, OVERWORLD, Environment.OVERWORLD), change(OVERWORLD, NETHER, Environment.NETHER),
 				change(NETHER, NETHER, Environment.NETHER)), player.emitted(WorldChannel.DIMENSION));
-		assertEquals(List.of("world.block", "world.chunk", "world.chunks", "world.watch", "world.unwatch"),
+		assertEquals(List.of("world.lookup", "world.chunk", "world.chunks", "world.watch", "world.unwatch"),
 				operations.registered());
 	}
 
