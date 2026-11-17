@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.world;
 
 import lombok.Value;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.type.GameEventType;
+import me.whereareiam.anvil.protocol.java.api.type.world.GameEventType;
 import org.jetbrains.annotations.NotNull;
 
 /**

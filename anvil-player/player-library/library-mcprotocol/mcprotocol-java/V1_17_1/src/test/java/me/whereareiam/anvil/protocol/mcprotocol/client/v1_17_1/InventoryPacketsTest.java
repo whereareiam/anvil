@@ -10,7 +10,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContai
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
-import me.whereareiam.anvil.protocol.java.api.type.ClickType;
+import me.whereareiam.anvil.protocol.java.api.type.interaction.ClickType;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.TextTranslator;
 import org.junit.jupiter.api.Test;
 

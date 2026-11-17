@@ -32,6 +32,7 @@ public final class McProtocolClientAdapter extends JavaClient<Session> {
 		SynchronizedRegistries registries = new SynchronizedRegistries();
 		ConnectionLevel level = new ConnectionLevel();
 		return new PacketTable<>(List.of(
+				new AttributePackets(),
 				new BorderPackets(),
 				new ChatPackets(TEXT),
 				new ChunkPackets(level, demand),
@@ -39,6 +40,7 @@ public final class McProtocolClientAdapter extends JavaClient<Session> {
 				new ConfigurationPackets(registries),
 				new ConnectionPackets(registries, level),
 				new CookiePackets(),
+				new EffectPackets(),
 				new EntityPackets(TEXT),
 				new HealthPackets(TEXT),
 				new InteractionPackets(),

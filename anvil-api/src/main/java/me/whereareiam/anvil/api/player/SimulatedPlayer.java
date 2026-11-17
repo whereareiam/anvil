@@ -2,6 +2,7 @@ package me.whereareiam.anvil.api.player;
 
 import me.whereareiam.anvil.api.capability.CapabilityOwner;
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
@@ -42,11 +43,16 @@ public interface SimulatedPlayer extends CapabilityOwner<PlayerCapability> {
 	}
 
 	/**
-	 * Returns the resolved Minecraft client version.
+	 * Returns the Minecraft version of the player's client, resolved when the player was created from its options, its
+	 * scenario and the servers it reaches.
 	 *
-	 * @return client version
+	 * <pre>{@code
+	 * boolean playerInput = alice.clientVersion().isAtLeast(MinecraftVersion.parse("1.21.2"));
+	 * }</pre>
+	 *
+	 * @return the client's Minecraft version
 	 */
-	@NotNull String clientVersion();
+	@NotNull MinecraftVersion clientVersion();
 
 	/**
 	 * Returns the profile the client asks for when it logs in: its offline profile, or the profile of the online

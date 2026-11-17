@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.api.player;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
@@ -23,11 +24,11 @@ public interface PlayerCapabilityContext extends CapabilityContext<PlayerCapabil
 	@NotNull String playerName();
 
 	/**
-	 * Returns the selected Minecraft client version.
+	 * Returns the Minecraft version of the player's client, which the player was created for.
 	 *
-	 * @return client version
+	 * @return the client's Minecraft version
 	 */
-	@NotNull String clientVersion();
+	@NotNull MinecraftVersion clientVersion();
 
 	/**
 	 * Returns the profile the player's client asks for when it logs in.

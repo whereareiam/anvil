@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.host;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
@@ -128,8 +129,8 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 	}
 
 	@Override
-	public @NotNull String clientVersion() {
-		return request.getClientVersion().toString();
+	public @NotNull MinecraftVersion clientVersion() {
+		return request.getClientVersion();
 	}
 
 	@Override

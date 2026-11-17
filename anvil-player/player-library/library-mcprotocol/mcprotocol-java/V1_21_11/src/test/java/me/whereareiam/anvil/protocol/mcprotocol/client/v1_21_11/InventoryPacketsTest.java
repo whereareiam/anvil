@@ -9,7 +9,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetHel
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
-import me.whereareiam.anvil.protocol.java.api.type.ClickType;
+import me.whereareiam.anvil.protocol.java.api.type.interaction.ClickType;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.protocol.data.game.inventory.ClickItemAction;
 import org.geysermc.mcprotocollib.protocol.data.game.inventory.ContainerAction;

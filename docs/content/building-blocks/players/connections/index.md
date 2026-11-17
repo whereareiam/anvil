@@ -175,7 +175,8 @@ You can request a specific version with `PlayerOptions.clientVersion(...)`; that
 be supported and compatible. Conflicting reachable server versions fail validation, and no protocol
 translation plugin is inserted automatically.
 
-Use `alice.clientVersion()` to inspect the resolved version. Consult
+Use `alice.clientVersion()` to inspect the resolved version, a `MinecraftVersion` that compares with
+`isAtLeast(...)`. Consult
 [versions and compatibility](../../environments/platforms/versions/index.md) when choosing
 a distribution or diagnosing a mismatch.
 

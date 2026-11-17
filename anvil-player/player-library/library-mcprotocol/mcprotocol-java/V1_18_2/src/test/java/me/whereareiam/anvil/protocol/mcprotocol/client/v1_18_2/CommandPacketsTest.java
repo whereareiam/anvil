@@ -11,8 +11,8 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKe
 import me.whereareiam.anvil.protocol.java.api.model.command.CommandNode;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.command.ClientboundCommands;
-import me.whereareiam.anvil.protocol.java.api.type.CommandNodeType;
-import me.whereareiam.anvil.protocol.java.api.type.StringArgumentMode;
+import me.whereareiam.anvil.protocol.java.api.type.chat.CommandNodeType;
+import me.whereareiam.anvil.protocol.java.api.type.chat.StringArgumentMode;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

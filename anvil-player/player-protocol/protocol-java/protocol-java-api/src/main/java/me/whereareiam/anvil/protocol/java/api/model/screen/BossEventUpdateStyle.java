@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.protocol.java.api.model.screen;
 
 import lombok.Value;
-import me.whereareiam.anvil.protocol.java.api.type.BossEventColor;
-import me.whereareiam.anvil.protocol.java.api.type.BossEventOverlay;
+import me.whereareiam.anvil.protocol.java.api.type.screen.BossEventColor;
+import me.whereareiam.anvil.protocol.java.api.type.screen.BossEventOverlay;
 import org.jetbrains.annotations.NotNull;
 
 /**

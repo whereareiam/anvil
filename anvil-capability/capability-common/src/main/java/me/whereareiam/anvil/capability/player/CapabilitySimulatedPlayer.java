@@ -2,6 +2,7 @@ package me.whereareiam.anvil.capability.player;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.exception.CapabilityUnavailableException;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
@@ -76,7 +77,7 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 	}
 
 	@Override
-	public @NotNull String clientVersion() {
+	public @NotNull MinecraftVersion clientVersion() {
 		return player.clientVersion();
 	}
 
@@ -199,7 +200,7 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 		}
 
 		@Override
-		public @NotNull String clientVersion() {
+		public @NotNull MinecraftVersion clientVersion() {
 			return CapabilitySimulatedPlayer.this.clientVersion();
 		}
 

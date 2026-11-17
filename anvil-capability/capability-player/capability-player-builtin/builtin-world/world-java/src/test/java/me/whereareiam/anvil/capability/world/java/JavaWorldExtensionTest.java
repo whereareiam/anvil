@@ -31,7 +31,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSet
 import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderSize;
 import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderWarningDelay;
 import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderWarningDistance;
-import me.whereareiam.anvil.protocol.java.api.type.GameEventType;
+import me.whereareiam.anvil.protocol.java.api.type.world.GameEventType;
 import me.whereareiam.anvil.protocol.java.worker.TestJavaPlayer;
 import me.whereareiam.anvil.protocol.worker.TestOperations;
 import me.whereareiam.anvil.protocol.worker.TestWorkerPlayer;

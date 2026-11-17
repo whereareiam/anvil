@@ -10,7 +10,7 @@ import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
-import me.whereareiam.anvil.protocol.java.api.type.SoundSource;
+import me.whereareiam.anvil.protocol.java.api.type.world.SoundSource;
 import me.whereareiam.anvil.protocol.java.worker.TestJavaPlayer;
 import me.whereareiam.anvil.protocol.worker.TestOperations;
 import me.whereareiam.anvil.protocol.worker.TestWorkerPlayer;

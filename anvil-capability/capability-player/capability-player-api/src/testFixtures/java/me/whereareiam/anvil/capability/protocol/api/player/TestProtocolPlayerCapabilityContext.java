@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.capability.protocol.api.player;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.player.PlayerCapability;
@@ -79,8 +80,8 @@ public final class TestProtocolPlayerCapabilityContext implements ProtocolPlayer
 	}
 
 	@Override
-	public @NotNull String clientVersion() {
-		return "1.21.11";
+	public @NotNull MinecraftVersion clientVersion() {
+		return MinecraftVersion.parse("1.21.11");
 	}
 
 	@Override

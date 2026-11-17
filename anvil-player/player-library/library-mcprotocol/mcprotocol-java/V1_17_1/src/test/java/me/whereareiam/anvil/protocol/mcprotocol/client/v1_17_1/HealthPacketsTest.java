@@ -7,7 +7,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.Serv
 import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundPlayerCombatKill;
 import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundSetHealth;
 import me.whereareiam.anvil.protocol.java.api.packet.health.ServerboundClientCommand;
-import me.whereareiam.anvil.protocol.java.api.type.ClientCommandAction;
+import me.whereareiam.anvil.protocol.java.api.type.player.ClientCommandAction;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.TextTranslator;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;

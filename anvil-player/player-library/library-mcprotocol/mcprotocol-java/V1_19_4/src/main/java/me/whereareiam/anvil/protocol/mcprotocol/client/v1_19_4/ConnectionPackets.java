@@ -17,6 +17,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin
 import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLevel;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ValueTranslator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -60,6 +61,7 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 					.entityId(login.getEntityId())
 					.levels(List.of(login.getWorldNames()))
 					.hardcore(login.isHardcore())
+					.gameMode(ValueTranslator.gameMode(login.getGameMode()))
 					.dimension(login.getWorldName())
 					.dimensionType(type(login.getDimension()))
 					.debug(login.isDebug())
@@ -71,6 +73,7 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 			return entered(ClientboundRespawn.builder()
 					.dimension(respawn.getWorldName())
 					.dimensionType(type(respawn.getDimension()))
+					.gameMode(ValueTranslator.gameMode(respawn.getGamemode()))
 					.debug(respawn.isDebug())
 					.flat(respawn.isFlat())
 					.build());

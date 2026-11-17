@@ -8,9 +8,9 @@ import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInte
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwing;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
 import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
-import me.whereareiam.anvil.protocol.java.api.type.Direction;
-import me.whereareiam.anvil.protocol.java.api.type.InteractAction;
-import me.whereareiam.anvil.protocol.java.api.type.InteractionHand;
+import me.whereareiam.anvil.protocol.java.api.type.interaction.Direction;
+import me.whereareiam.anvil.protocol.java.api.type.interaction.InteractAction;
+import me.whereareiam.anvil.protocol.java.api.type.interaction.InteractionHand;
 import org.cloudburstmc.math.vector.Vector3d;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundAttackPacket;

@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.api.player;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
@@ -21,11 +22,11 @@ public interface ProtocolPlayer {
 	@NotNull String name();
 
 	/**
-	 * Returns the resolved native client version.
+	 * Returns the Minecraft version of the player's client, the one its request named.
 	 *
-	 * @return Minecraft client version
+	 * @return the client's Minecraft version
 	 */
-	@NotNull String clientVersion();
+	@NotNull MinecraftVersion clientVersion();
 
 	/**
 	 * Returns the identifier of the protocol library that owns this client. Composition selects the

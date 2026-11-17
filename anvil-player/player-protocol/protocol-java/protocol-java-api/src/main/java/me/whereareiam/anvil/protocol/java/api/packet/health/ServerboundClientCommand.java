@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.health;
 
 import lombok.Value;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.type.ClientCommandAction;
+import me.whereareiam.anvil.protocol.java.api.type.player.ClientCommandAction;
 import org.jetbrains.annotations.NotNull;
 
 /**

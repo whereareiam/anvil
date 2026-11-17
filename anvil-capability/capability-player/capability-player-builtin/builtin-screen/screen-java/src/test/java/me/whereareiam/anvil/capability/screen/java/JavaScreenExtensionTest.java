@@ -26,8 +26,8 @@ import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetAction
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetSubtitleText;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitleText;
 import me.whereareiam.anvil.protocol.java.api.packet.screen.ClientboundSetTitlesAnimation;
-import me.whereareiam.anvil.protocol.java.api.type.BossEventColor;
-import me.whereareiam.anvil.protocol.java.api.type.BossEventOverlay;
+import me.whereareiam.anvil.protocol.java.api.type.screen.BossEventColor;
+import me.whereareiam.anvil.protocol.java.api.type.screen.BossEventOverlay;
 import me.whereareiam.anvil.protocol.java.worker.TestJavaPlayer;
 import me.whereareiam.anvil.protocol.worker.TestOperations;
 import me.whereareiam.anvil.protocol.worker.TestWorkerPlayer;

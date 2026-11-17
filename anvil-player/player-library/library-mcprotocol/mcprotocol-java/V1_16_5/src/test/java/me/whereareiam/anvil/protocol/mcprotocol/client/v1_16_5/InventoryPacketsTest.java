@@ -20,7 +20,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetHel
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundContainerClick;
 import me.whereareiam.anvil.protocol.java.api.packet.inventory.ServerboundSetCarriedItem;
-import me.whereareiam.anvil.protocol.java.api.type.ClickType;
+import me.whereareiam.anvil.protocol.java.api.type.interaction.ClickType;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

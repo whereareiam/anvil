@@ -89,9 +89,37 @@ class ConnectionPacketsTest {
 	}
 
 	@Test
+	void carriesTheGameModeOfTheLoginAndTheRespawn() {
+		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.CREATIVE,
+				loginMode(GameMode.CREATIVE));
+		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.SPECTATOR,
+				respawnMode(GameMode.SPECTATOR));
+		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.ADVENTURE,
+				respawnMode(GameMode.ADVENTURE));
+		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.SURVIVAL,
+				respawnMode(GameMode.SURVIVAL));
+	}
+
+	@Test
+	void takesTheLibrarysUnknownGameModeForSurvival() {
+		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.SURVIVAL,
+				loginMode(GameMode.UNKNOWN));
+	}
+
+	@Test
 	void carriesWhetherTheClientShowsTheDeathScreen() {
 		assertTrue(((ClientboundLogin) packets.decode(login(overworld()))).isShowDeathScreen());
 		assertFalse(((ClientboundLogin) packets.decode(login(overworld()).withEnableRespawnScreen(false))).isShowDeathScreen());
+	}
+
+	private me.whereareiam.anvil.protocol.java.api.type.player.GameMode loginMode(GameMode mode) {
+		return ((ClientboundLogin) packets.decode(login(overworld()).withGameMode(mode))).getGameMode();
+	}
+
+	private me.whereareiam.anvil.protocol.java.api.type.player.GameMode respawnMode(GameMode mode) {
+		packets.decode(login(overworld()));
+		return ((ClientboundRespawn) packets.decode(new ServerRespawnPacket(overworld(), "minecraft:overworld", 0, mode,
+				GameMode.UNKNOWN, false, false, false))).getGameMode();
 	}
 
 	private static ServerJoinGamePacket login(CompoundTag dimension) {

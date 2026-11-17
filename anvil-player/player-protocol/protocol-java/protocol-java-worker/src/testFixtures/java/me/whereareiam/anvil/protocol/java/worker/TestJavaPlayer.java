@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.java.worker;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
@@ -33,7 +34,8 @@ import java.util.function.Predicate;
  */
 public final class TestJavaPlayer extends TestWorkerPlayer {
 	/**
-	 * The protocol a test player speaks unless its test names another: 774, the protocol of Minecraft 1.21.11.
+	 * The protocol a test player speaks unless its test names another: 774, the protocol of its default client version,
+	 * Minecraft 1.21.11.
 	 */
 	public static final int PROTOCOL = 774;
 
@@ -58,22 +60,25 @@ public final class TestJavaPlayer extends TestWorkerPlayer {
 	 * @param carried tells whether the release carries a packet class
 	 */
 	public TestJavaPlayer(@NotNull String name, @NotNull Predicate<Class<? extends JavaPacket>> carried) {
-		this(name, PROTOCOL, carried);
+		this(name, CLIENT_VERSION, PROTOCOL, carried);
 	}
 
 	/**
-	 * Creates a disconnected player of a protocol whose release carries only some packets.
+	 * Creates a disconnected player of a client version, speaking that version's protocol, whose release carries only
+	 * some packets.
 	 *
 	 * @param name the player's name
-	 * @param protocolNumber the protocol the player speaks
+	 * @param clientVersion the Minecraft version of the player's client
+	 * @param protocolNumber the protocol that version speaks
 	 * @param carried tells whether the release carries a packet class
 	 */
 	public TestJavaPlayer(
 			@NotNull String name,
+			@NotNull MinecraftVersion clientVersion,
 			int protocolNumber,
 			@NotNull Predicate<Class<? extends JavaPacket>> carried
 	) {
-		super(name);
+		super(name, clientVersion);
 		this.carried = carried;
 		this.protocol = new JavaPacketDispatcher(LIBRARY_ID, protocolNumber, new TestConnection());
 		this.protocols = WorkerProtocols.builder(LIBRARY_ID)

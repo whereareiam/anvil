@@ -2,6 +2,7 @@ package me.whereareiam.anvil.testkit.tests.runtime.provider;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
@@ -45,7 +46,7 @@ class RemoteEndpointIntegrationTest {
 				assertThrows(NoSuchElementException.class, () -> context.processes().get("network"));
 
 				SimulatedPlayer alice = context.players().create("Alice");
-				assertEquals("1.21.11", alice.clientVersion());
+				assertEquals(MinecraftVersion.parse("1.21.11"), alice.clientVersion());
 				Session session = alice.capability(Session.class);
 				session.connect();
 				session.connected();

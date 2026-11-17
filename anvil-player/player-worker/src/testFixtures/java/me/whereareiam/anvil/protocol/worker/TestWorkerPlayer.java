@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.worker;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
@@ -34,9 +35,14 @@ public class TestWorkerPlayer implements PlayerBindingContext<Object> {
 	 * The library the test players belong to, which their protocols name when they refuse something.
 	 */
 	public static final String LIBRARY_ID = "test";
+	/**
+	 * The client version of a test player unless its test names another: Minecraft 1.21.11.
+	 */
+	public static final MinecraftVersion CLIENT_VERSION = MinecraftVersion.parse("1.21.11");
 
 	private final String name;
 	private final UUID uniqueId;
+	private final MinecraftVersion clientVersion;
 	private final NativeSessionBindings sessions = new NativeSessionBindings();
 	private final WorkerProtocols noProtocols = WorkerProtocols.builder(LIBRARY_ID).build();
 	private final List<Emitted> emitted = new CopyOnWriteArrayList<>();
@@ -44,13 +50,26 @@ public class TestWorkerPlayer implements PlayerBindingContext<Object> {
 	private volatile @NotNull ViewRotation rotation = new ViewRotation(0, 0);
 
 	/**
-	 * Creates a disconnected player whose unique ID derives from its name, as an offline player's does.
+	 * Creates a disconnected player of the {@link #CLIENT_VERSION default client version} whose unique ID derives from
+	 * its name, as an offline player's does.
 	 *
 	 * @param name the player's name
 	 */
 	public TestWorkerPlayer(@NotNull String name) {
+		this(name, CLIENT_VERSION);
+	}
+
+	/**
+	 * Creates a disconnected player of a client version whose unique ID derives from its name, as an offline player's
+	 * does.
+	 *
+	 * @param name the player's name
+	 * @param clientVersion the Minecraft version of the player's client
+	 */
+	public TestWorkerPlayer(@NotNull String name, @NotNull MinecraftVersion clientVersion) {
 		this.name = name;
 		this.uniqueId = UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8));
+		this.clientVersion = clientVersion;
 	}
 
 	@Override
@@ -61,6 +80,11 @@ public class TestWorkerPlayer implements PlayerBindingContext<Object> {
 	@Override
 	public @NotNull UUID uniqueId() {
 		return uniqueId;
+	}
+
+	@Override
+	public @NotNull MinecraftVersion clientVersion() {
+		return clientVersion;
 	}
 
 	/**

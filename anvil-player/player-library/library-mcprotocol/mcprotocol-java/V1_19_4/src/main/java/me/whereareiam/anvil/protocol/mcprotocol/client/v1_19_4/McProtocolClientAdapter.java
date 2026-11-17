@@ -6,6 +6,7 @@ import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLev
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.BorderPackets;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.EntityStatePackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.HealthPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.InventoryPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.JavaClient;
@@ -17,7 +18,8 @@ import java.util.List;
 
 /**
  * The client segment's adapter for the MCProtocolLib 1.19.4 release: the 1.18.2 {@link JavaClient} with the release's
- * component disconnect reasons and packet table, which keeps the 1.18.2 inventory, player and screen translations.
+ * component disconnect reasons and packet table, which keeps the 1.18.2 border, entity state, health, inventory,
+ * player and screen translations.
  */
 public final class McProtocolClientAdapter extends JavaClient {
 	private static final TextTranslator TEXT = new TextTranslator();
@@ -54,6 +56,7 @@ public final class McProtocolClientAdapter extends JavaClient {
 				new CommandPackets(),
 				new ConnectionPackets(level),
 				new EntityPackets(TEXT),
+				new EntityStatePackets(),
 				new HealthPackets(TEXT),
 				new InteractionPackets(),
 				new InventoryPackets(TEXT),

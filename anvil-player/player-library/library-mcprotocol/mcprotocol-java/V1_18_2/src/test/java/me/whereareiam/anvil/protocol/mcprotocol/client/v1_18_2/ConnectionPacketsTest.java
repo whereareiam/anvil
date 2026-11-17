@@ -76,6 +76,17 @@ class ConnectionPacketsTest {
 	}
 
 	@Test
+	void decodesTheGameModeOfEachLoginAndRespawnWithoutItsUnknownPreviousMode() {
+		ClientboundLogin login = (ClientboundLogin) packets.decode(login(overworld()).withGameMode(GameMode.CREATIVE)
+				.withPreviousGamemode(GameMode.UNKNOWN));
+		ClientboundRespawn respawn = (ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(nether(),
+				"minecraft:the_nether", 0, GameMode.SPECTATOR, GameMode.UNKNOWN, false, false, false));
+
+		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.CREATIVE, login.getGameMode());
+		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.SPECTATOR, respawn.getGameMode());
+	}
+
+	@Test
 	void leavesPacketsOfOtherAreasToOtherTranslations() {
 		assertNull(packets.decode(new ClientboundKeepAlivePacket(7)));
 		assertNull(packets.encode(new UnknownPacket()));

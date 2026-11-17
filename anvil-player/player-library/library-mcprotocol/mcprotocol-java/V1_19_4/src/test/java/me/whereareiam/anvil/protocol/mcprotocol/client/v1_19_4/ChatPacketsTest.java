@@ -20,7 +20,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundPlayerChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
-import me.whereareiam.anvil.protocol.java.api.type.FilterMaskType;
+import me.whereareiam.anvil.protocol.java.api.type.chat.FilterMaskType;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.TextTranslator;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.Nullable;

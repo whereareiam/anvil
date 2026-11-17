@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Value;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.type.SoundSource;
+import me.whereareiam.anvil.protocol.java.api.type.world.SoundSource;
 import org.jetbrains.annotations.NotNull;
 
 /**

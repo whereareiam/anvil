@@ -10,6 +10,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.Client
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundMoveEntityRotPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundRemoveEntitiesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityMotionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundSetPassengersPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundTeleportEntityPacket;
 import com.github.steveice10.packetlib.packet.Packet;
@@ -24,13 +25,14 @@ import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPos;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityPosRot;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundMoveEntityRot;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityPos;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityPosRot;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityRot;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundTeleportEntity;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.EntityDataLayout;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
@@ -49,10 +51,11 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Entities of the MCProtocolLib releases from 1.18.2 until 1.19.4, which move, teleport, describe, mount and remove
- * entities alike; teleports place and turn an entity absolutely. Each release's {@code EntityPackets} reads how
- * entities spawn, which MCProtocolLib 1.19 reduced to the entity, player and experience orb packets, and names the
- * entity data layout of its release.
+ * Entities of the MCProtocolLib releases from 1.18.2 until 1.19.4, which move, teleport, push, describe, mount and
+ * remove entities alike; teleports place and turn an entity absolutely, and the library reads an entity's velocity in
+ * blocks per tick from the 1/8000 blocks the game sends. Each release's {@code EntityPackets} reads how entities
+ * spawn, which MCProtocolLib 1.19 reduced to the entity, player and experience orb packets, and names the entity data
+ * layout of its release. The attributes and effects of entities are read by {@link EntityStatePackets}.
  *
  * <p>Entity data is decoded by the entity's type through the release's {@link EntityDataLayout}, so each session
  * decodes through a translation of its own: it remembers the type of every entity the session added until the server
@@ -84,6 +87,7 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 				ClientboundMoveEntityPosRot.class,
 				ClientboundMoveEntityRot.class,
 				ClientboundTeleportEntity.class,
+				ClientboundSetEntityMotion.class,
 				ClientboundSetEntityData.class,
 				ClientboundSetPassengers.class,
 				ClientboundRemoveEntities.class
@@ -114,6 +118,8 @@ public abstract class EntityTranslation implements PacketTranslation<Packet> {
 					.pitch(teleport.getPitch())
 					.relatives(Set.of())
 					.build();
+			case ClientboundSetEntityMotionPacket motion -> new ClientboundSetEntityMotion(motion.getEntityId(),
+					new Vec3d(motion.getMotionX(), motion.getMotionY(), motion.getMotionZ()));
 			case ClientboundSetEntityDataPacket data -> data(data.getEntityId(), data.getMetadata());
 			case ClientboundSetPassengersPacket passengers -> new ClientboundSetPassengers(passengers.getEntityId(),
 					Arrays.stream(passengers.getPassengerIds()).boxed().toList());

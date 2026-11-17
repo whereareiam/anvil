@@ -2,6 +2,7 @@ package me.whereareiam.anvil.testkit.tests.runtime.provider;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
@@ -143,7 +144,7 @@ class ExternalProviderDiscoveryIntegrationTest {
 				}
 
 				@Override
-				public @NotNull String clientVersion() {
+				public @NotNull MinecraftVersion clientVersion() {
 					return player.clientVersion();
 				}
 

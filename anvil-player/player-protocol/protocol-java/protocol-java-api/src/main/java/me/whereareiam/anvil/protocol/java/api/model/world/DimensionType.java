@@ -2,8 +2,8 @@ package me.whereareiam.anvil.protocol.java.api.model.world;
 
 import lombok.Builder;
 import lombok.Value;
-import me.whereareiam.anvil.protocol.java.api.type.CardinalLight;
-import me.whereareiam.anvil.protocol.java.api.type.Skybox;
+import me.whereareiam.anvil.protocol.java.api.type.world.CardinalLight;
+import me.whereareiam.anvil.protocol.java.api.type.world.Skybox;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

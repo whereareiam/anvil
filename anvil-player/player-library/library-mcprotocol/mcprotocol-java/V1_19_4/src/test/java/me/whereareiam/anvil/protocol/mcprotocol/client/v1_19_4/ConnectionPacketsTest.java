@@ -60,6 +60,17 @@ class ConnectionPacketsTest {
 	}
 
 	@Test
+	void decodesTheGameModeOfEachLoginAndRespawn() {
+		ClientboundLogin login = (ClientboundLogin) packets.decode(login("minecraft:overworld")
+				.withGameMode(GameMode.ADVENTURE).withPreviousGamemode(null));
+		ClientboundRespawn respawn = (ClientboundRespawn) packets.decode(new ClientboundRespawnPacket("example:void",
+				"minecraft:the_end", 0, GameMode.CREATIVE, null, false, true, false, false, null));
+
+		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.ADVENTURE, login.getGameMode());
+		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.CREATIVE, respawn.getGameMode());
+	}
+
+	@Test
 	void refusesATypeTheLoginDidNotList() {
 		assertThrows(IllegalStateException.class, () -> packets.decode(login("example:unknown")));
 	}

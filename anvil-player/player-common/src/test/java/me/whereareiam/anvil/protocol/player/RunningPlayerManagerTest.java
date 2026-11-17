@@ -35,8 +35,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -70,7 +70,7 @@ class RunningPlayerManagerTest {
 
 		SimulatedPlayer alice = manager.create("Alice");
 
-		assertEquals("1.21.11", alice.clientVersion());
+		assertEquals(MinecraftVersion.parse("1.21.11"), alice.clientVersion());
 		assertEquals(MinecraftVersion.parse("1.21.11"), library.lastRequest.getClientVersion());
 		assertFalse(alice instanceof AutoCloseable);
 		assertEquals(1, manager.all().size());
@@ -476,7 +476,7 @@ class RunningPlayerManagerTest {
 
 		SimulatedPlayer alice = manager.create("alice");
 
-		assertEquals("1.21.11", alice.clientVersion());
+		assertEquals(MinecraftVersion.parse("1.21.11"), alice.clientVersion());
 		assertEquals("network", target.get());
 		assertEquals("203.0.113.7", library.lastRequest.getConnection().getAddress().getHostString());
 		assertEquals(25570, library.lastRequest.getConnection().getAddress().getPort());
@@ -662,7 +662,7 @@ class RunningPlayerManagerTest {
 			}
 
 			@Override
-			public @NotNull String clientVersion() {
+			public @NotNull MinecraftVersion clientVersion() {
 				return player.clientVersion();
 			}
 
@@ -816,8 +816,8 @@ class RunningPlayerManagerTest {
 		}
 
 		@Override
-		public @NotNull String clientVersion() {
-			return request.getClientVersion().toString();
+		public @NotNull MinecraftVersion clientVersion() {
+			return request.getClientVersion();
 		}
 
 		@Override

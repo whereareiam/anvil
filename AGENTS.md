@@ -238,8 +238,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   worker". A provider that cannot apply to a library, for its protocols or its worker, yields to an applicable
   provider of the same capability, such as a library's own Session. Host providers do not check installation
   themselves.
-- `PlayerBindingContext` supplies an existing player's lifecycle, edition protocol, native session generations and
-  release adapters to a binding; it is not another player entity, and the library's worker player implements it. `PlayerConnectionEvent`
+- `PlayerBindingContext` supplies an existing player's lifecycle, client version, edition protocol, native session
+  generations and release adapters to a binding; it is not another player entity, and the library's worker player implements it. `PlayerConnectionEvent`
   and `ViewRotation` live under `protocol.api.model.player`, `OperationDescriptor<Q, R>` and `EventDescriptor<E>`
   under `protocol.api.model.channel`. View rotation holds yaw/pitch; a descriptor pairs an ID with its payload
   classes.

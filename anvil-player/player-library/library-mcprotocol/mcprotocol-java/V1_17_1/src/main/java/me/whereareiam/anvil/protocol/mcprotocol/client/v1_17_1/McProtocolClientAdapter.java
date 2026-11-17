@@ -4,6 +4,7 @@ import com.github.steveice10.mc.protocol.MinecraftConstants;
 import com.github.steveice10.packetlib.packet.Packet;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
+import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.AttributePackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ChatPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ChunkPackets;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ConnectionPackets;
@@ -17,7 +18,8 @@ import java.util.List;
 
 /**
  * The client segment's adapter for the MCProtocolLib 1.17.1 release: the 1.16.5 {@link JavaClient} with the release's
- * answers and packet table, which keeps the 1.16.5 chat, connection, interaction, player and sound translations.
+ * answers and packet table, which keeps the 1.16.5 attribute, chat, connection, interaction, player and sound
+ * translations.
  */
 public final class McProtocolClientAdapter extends JavaClient {
 	private static final TextTranslator TEXT = new TextTranslator();
@@ -46,11 +48,13 @@ public final class McProtocolClientAdapter extends JavaClient {
 	 */
 	static PacketTable<Packet> packets(PacketDemand demand) {
 		return new PacketTable<>(List.of(
+				new AttributePackets(),
 				new BorderPackets(),
 				new ChatPackets(TEXT),
 				new ChunkPackets(demand),
 				new CommandPackets(),
 				new ConnectionPackets(),
+				new EffectPackets(),
 				new EntityPackets(TEXT),
 				new HealthPackets(TEXT),
 				new InteractionPackets(),

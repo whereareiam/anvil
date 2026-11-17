@@ -10,7 +10,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.world.ServerPlaySo
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
 import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
-import me.whereareiam.anvil.protocol.java.api.type.SoundSource;
+import me.whereareiam.anvil.protocol.java.api.type.world.SoundSource;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

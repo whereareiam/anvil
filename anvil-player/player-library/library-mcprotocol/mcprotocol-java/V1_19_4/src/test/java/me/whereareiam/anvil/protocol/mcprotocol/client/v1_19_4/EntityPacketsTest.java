@@ -1,5 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_19_4;
 
+import com.github.steveice10.mc.protocol.codec.MinecraftCodec;
+import com.github.steveice10.mc.protocol.codec.MinecraftCodecHelper;
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.EntityMetadata;
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.ItemStack;
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.MetadataType;
@@ -8,9 +10,12 @@ import com.github.steveice10.mc.protocol.data.game.entity.metadata.type.ObjectEn
 import com.github.steveice10.mc.protocol.data.game.entity.type.EntityType;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityMotionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddExperienceOrbPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddPlayerPacket;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import me.whereareiam.anvil.protocol.java.api.model.entity.DisplayText;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityDataValue;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
@@ -18,11 +23,13 @@ import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
 import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetEntityData;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.TextTranslator;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -52,6 +59,19 @@ class EntityPacketsTest {
 		assertEquals(ClientboundAddEntity.builder().entityId(10).type(EntityTypeKey.minecraft("experience_orb"))
 						.position(new Vec3d(1, 2, 3)).build(),
 				packets.decode(new ClientboundAddExperienceOrbPacket(10, 1, 2, 3, 5)));
+	}
+
+	@Test
+	void decodesTheVelocityTheServerGivesAnEntityInBlocksPerTick() throws IOException {
+		MinecraftCodecHelper helper = MinecraftCodec.CODEC.getHelperFactory().get();
+		ByteBuf wire = Unpooled.buffer();
+		helper.writeVarInt(wire, 7);
+		wire.writeShort(1000);
+		wire.writeShort(-4000);
+		wire.writeShort(0);
+
+		assertEquals(new ClientboundSetEntityMotion(7, new Vec3d(0.125, -0.5, 0)),
+				packets.decode(new ClientboundSetEntityMotionPacket(wire, helper)));
 	}
 
 	@Test
