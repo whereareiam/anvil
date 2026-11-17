@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.protocol.java.block.generator;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
@@ -12,7 +13,7 @@ import java.util.List;
 /**
  * What the build asks the generator for, as one JSON argument: the facts, the directory to write into, the pinned
  * minecraft-data release, the files Gradle resolved for each pinned protocol, and the supported protocols it has no
- * data for. The build's {@code BlockDataGeneratorArguments} writes it.
+ * data for. The build's {@code MinecraftDataGeneratorArguments} writes it.
  */
 @Value
 @Builder
@@ -74,12 +75,26 @@ public class GenerationRequest {
 		 */
 		int protocol;
 		/**
+		 * Its files, by the fields of {@code block-data.toml} that pin them.
+		 */
+		@NotNull Files files;
+	}
+
+	/**
+	 * One protocol's {@code blocks.json} and {@code blockCollisionShapes.json}.
+	 */
+	@Value
+	@Builder
+	@Jacksonized
+	public static class Files {
+		/**
 		 * Its {@code blocks.json}.
 		 */
 		@NotNull PinnedFile blocks;
 		/**
 		 * Its {@code blockCollisionShapes.json}.
 		 */
+		@JsonProperty("collision-shapes")
 		@NotNull PinnedFile collisionShapes;
 	}
 

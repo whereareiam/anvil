@@ -91,10 +91,10 @@ public final class BlockDataGenerator {
 			BlockFacts facts,
 			Set<String> names
 	) throws IOException {
-		String context = "minecraft-data " + pinned.getBlocks().getPath() + " for protocol " + pinned.getProtocol();
-		List<MinecraftDataBlock> blocks = JSON.readValue(pinned.getBlocks().getFile().toFile(), new TypeReference<>() {
+		String context = "minecraft-data " + pinned.getFiles().getBlocks().getPath() + " for protocol " + pinned.getProtocol();
+		List<MinecraftDataBlock> blocks = JSON.readValue(pinned.getFiles().getBlocks().getFile().toFile(), new TypeReference<>() {
 		});
-		MinecraftDataShapes shapes = JSON.readValue(pinned.getCollisionShapes().getFile().toFile(), MinecraftDataShapes.class);
+		MinecraftDataShapes shapes = JSON.readValue(pinned.getFiles().getCollisionShapes().getFile().toFile(), MinecraftDataShapes.class);
 		RegistryAssembly.Assembled assembled = RegistryAssembly.assemble(context, blocks, shapes, facts);
 		names.addAll(assembled.names());
 
@@ -102,8 +102,8 @@ public final class BlockDataGenerator {
 				.repository(release.getRepository())
 				.version(release.getVersion())
 				.commit(release.getCommit())
-				.blocks(pinned.getBlocks().getPath())
-				.collisionShapes(pinned.getCollisionShapes().getPath())
+				.blocks(pinned.getFiles().getBlocks().getPath())
+				.collisionShapes(pinned.getFiles().getCollisionShapes().getPath())
 				.build();
 		return new BlockRegistry(pinned.getProtocol(), source, assembled.blocks(), assembled.states());
 	}

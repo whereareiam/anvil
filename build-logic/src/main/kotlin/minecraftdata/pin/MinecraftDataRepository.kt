@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.buildlogic.block
+package me.whereareiam.anvil.buildlogic.minecraftdata.pin
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -11,7 +11,7 @@ import java.net.URI
 import java.time.Duration
 
 /**
- * Reads the PrismarineJS minecraft-data repository on GitHub for `pinBlockData`: the commit of a release tag, and
+ * Reads the PrismarineJS minecraft-data repository on GitHub for the pin tasks of minecraft-data pins (`pinBlockData`, `pinPacketData`): the commit of a release tag, and
  * files at one commit. The ordinary build never reads through it; it resolves the pinned files through Gradle.
  *
  * Files come from [contentRoot] as `<root>/<repository>/<commit>/<path>`, tags from the GitHub REST API at
