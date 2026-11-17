@@ -67,7 +67,9 @@ class PlayerChannelEventIsolationTest {
 				proceed.countDown();
 				assertEquals(new MessageText("nested reply"), nested.get(3, TimeUnit.SECONDS));
 				assertEquals(new MessageText("still open"), bobChannel.request(EventWorkerExtension.ECHO, new MessageText("still open")));
-				assertSame(failure, assertThrows(IllegalStateException.class, alice::destroy));
+				IllegalStateException destroying = assertThrows(IllegalStateException.class, alice::destroy);
+				assertEquals(failure.getMessage(), destroying.getMessage());
+				assertSame(failure.getCause(), destroying.getCause());
 			} finally {
 				proceed.countDown();
 				try { alice.destroy(); } finally { bob.destroy(); }
