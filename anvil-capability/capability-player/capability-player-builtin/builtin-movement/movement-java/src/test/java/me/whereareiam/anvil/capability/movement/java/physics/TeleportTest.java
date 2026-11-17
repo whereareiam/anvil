@@ -1,11 +1,11 @@
 package me.whereareiam.anvil.capability.movement.java.physics;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.capability.movement.java.physics.geometry.Vector;
 import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.protocol.java.api.type.entity.Relative;
+import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;

@@ -16,6 +16,8 @@ import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbi
 import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
 import me.whereareiam.anvil.protocol.java.api.type.player.GameMode;
 import me.whereareiam.anvil.protocol.java.api.type.world.GameEventType;
+import me.whereareiam.anvil.protocol.java.physics.living.attribute.AttributeMap;
+import me.whereareiam.anvil.protocol.java.physics.living.effect.Effects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,7 +37,7 @@ public final class PlayerState {
 	private static final float DEFAULT_WALKING_SPEED = 0.1F;
 	private static final int DEFAULT_FOOD = 20;
 
-	private final @NotNull Attributes attributes;
+	private final @NotNull AttributeMap attributes;
 	private final @NotNull Effects effects = new Effects();
 	/**
 	 * The protocol ID of the player's own entity, which the server may choose negative, or {@code null} until the
@@ -65,7 +67,7 @@ public final class PlayerState {
 	 * @param version the client's Minecraft version
 	 */
 	public PlayerState(@NotNull MinecraftVersion version) {
-		this.attributes = new Attributes(version);
+		this.attributes = new AttributeMap(version, PlayerAttributes.supplier());
 	}
 
 	/**

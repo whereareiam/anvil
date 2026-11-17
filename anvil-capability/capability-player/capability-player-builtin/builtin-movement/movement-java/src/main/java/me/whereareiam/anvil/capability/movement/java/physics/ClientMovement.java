@@ -3,10 +3,8 @@ package me.whereareiam.anvil.capability.movement.java.physics;
 import me.whereareiam.anvil.capability.movement.channel.MovementChannel;
 import me.whereareiam.anvil.capability.movement.channel.MovementState;
 import me.whereareiam.anvil.capability.movement.channel.PhysicsChange;
-import me.whereareiam.anvil.capability.movement.java.physics.geometry.Vector;
 import me.whereareiam.anvil.capability.movement.java.physics.server.PlayerState;
 import me.whereareiam.anvil.capability.movement.java.physics.server.PlayerStatePackets;
-import me.whereareiam.anvil.capability.movement.java.physics.world.BlockReader;
 import me.whereareiam.anvil.capability.movement.model.Motion;
 import me.whereareiam.anvil.capability.movement.model.MovementInput;
 import me.whereareiam.anvil.capability.movement.model.Position;
@@ -30,6 +28,8 @@ import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMove
 import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerRot;
 import me.whereareiam.anvil.protocol.java.block.JavaBlockData;
 import me.whereareiam.anvil.protocol.java.block.exception.BlockDataUnavailableException;
+import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
+import me.whereareiam.anvil.protocol.java.physics.world.BlockReader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

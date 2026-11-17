@@ -2,7 +2,7 @@ package me.whereareiam.anvil.capability.movement.java.physics;
 
 import lombok.Getter;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.capability.movement.java.physics.geometry.Trigonometry;
+import me.whereareiam.anvil.protocol.java.physics.EntityRules;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -11,12 +11,14 @@ import java.util.Set;
 
 /**
  * How the vanilla client of one Minecraft version moves its player: the {@link ClientBehaviour behaviours} its version
- * has, which the simulation asks for wherever versions differ.
+ * has, which the player's simulation asks for wherever versions differ, and the {@link EntityRules} its entities move
+ * by.
  */
 public final class MovementRules {
 	@Getter
 	private final @NotNull MinecraftVersion version;
 	private final @NotNull Set<ClientBehaviour> behaviours;
+	private final @NotNull EntityRules entity;
 
 	/**
 	 * Collects the behaviours of a client version.
@@ -26,6 +28,7 @@ public final class MovementRules {
 	public MovementRules(@NotNull MinecraftVersion version) {
 		this.version = version;
 		this.behaviours = EnumSet.noneOf(ClientBehaviour.class);
+		this.entity = new EntityRules(version);
 		Arrays.stream(ClientBehaviour.values()).filter(behaviour -> behaviour.appliesTo(version)).forEach(behaviours::add);
 	}
 
@@ -40,11 +43,11 @@ public final class MovementRules {
 	}
 
 	/**
-	 * Returns the sine and cosine the client computes with.
+	 * Returns how the client's entities move, its player's body among them.
 	 *
-	 * @return the client's table trigonometry
+	 * @return the entity rules of the client's version
 	 */
-	public @NotNull Trigonometry trigonometry() {
-		return has(ClientBehaviour.DOUBLE_TRIGONOMETRY) ? Trigonometry.DOUBLE : Trigonometry.FLOAT;
+	public @NotNull EntityRules entity() {
+		return entity;
 	}
 }
