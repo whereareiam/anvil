@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.world.chunk;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.world.chunk.ChunkPosition;
 import me.whereareiam.anvil.protocol.java.api.model.world.chunk.LevelChunkSection;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
@@ -14,6 +15,7 @@ import java.util.List;
  * the column only while something wants it, such as the player's {@code JavaWorld} or a listener of this packet.
  */
 @Value
+@FieldNameConstants
 public class ClientboundLevelChunkWithLight implements ClientboundPacket {
 	/**
 	 * The column's position.

@@ -2,12 +2,14 @@ package me.whereareiam.anvil.protocol.java.api.packet.world.border;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 
 /**
  * The server tells the player the whole world border of its level, when the player joins it or respawns in it.
  */
 @Value
+@FieldNameConstants
 @Builder
 public class ClientboundInitializeBorder implements ClientboundPacket {
 	/**

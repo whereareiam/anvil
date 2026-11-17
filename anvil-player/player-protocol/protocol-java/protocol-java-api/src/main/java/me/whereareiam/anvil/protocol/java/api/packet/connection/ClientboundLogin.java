@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.connection;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
@@ -17,6 +18,7 @@ import java.util.List;
  * player joins and whether the client shows a death screen of the packet's fields.
  */
 @Value
+@FieldNameConstants
 @Builder
 public class ClientboundLogin implements ClientboundPacket {
 	/**

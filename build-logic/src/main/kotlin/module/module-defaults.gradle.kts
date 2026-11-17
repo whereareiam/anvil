@@ -76,6 +76,9 @@ val sharedTestDoubleContracts = mapOf(
 			":anvil-player:player-protocol:protocol-java:protocol-java-api",
 			":anvil-player:player-protocol:protocol-java:protocol-java-worker",
 		)),
+	"me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener"
+		to SharedTestDouble("mcprotocol-api's TestClientListener",
+			setOf(":anvil-player:player-library:library-mcprotocol:mcprotocol-api")),
 )
 
 val sharedTestDoubles = tasks.register<CheckSharedTestDoubles>("checkSharedTestDoubles") {

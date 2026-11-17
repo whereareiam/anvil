@@ -134,7 +134,7 @@ Two kits hold the runtime, so a library supplies only its connection and its pac
 | Artifact | Use |
 | --- | --- |
 | `player-worker` | `WorkerExtensions` discovers the extensions on the class path, keeps those that target your library or every library and accept your native session type, binds them to each player, buffers operations while binding, and reports each unavailable one with its reason. `NativeSessionBindings` runs `bindNativeSession(...)`, and the `bindConnection(...)` built on it, across your sessions. `WorkerProtocols` lists the protocols a player speaks. |
-| `protocol-java-worker` | `JavaPacketDispatcher` is the player's `JavaProtocol` over the `JavaConnection` you implement: give it the number of the protocol your release speaks, send a packet in your release's form, and say which packets your release carries. Hand every packet your player receives, already translated, to `deliver(...)`, and call `disconnected()` when its connection closes; the dispatcher keeps the player's `JavaWorld` from them. Before you decode a packet that is costly to decode, such as a chunk column, ask `wants(type)` and skip it while nothing wants it. |
+| `protocol-java-worker` | `JavaPacketDispatcher` is the player's `JavaProtocol` over the `JavaConnection` you implement: give it the number of the protocol your release speaks, send a packet in your release's form, and say which packets your release carries. Hand every packet your player receives, already translated, to `deliver(...)`, and call `disconnected()` when its connection closes; the dispatcher keeps the player's `JavaWorld` from them. Before you decode a packet that is costly to decode, such as a chunk column, ask `wants(type)` and skip it while nothing wants it. When your connection sees the wire, answer `handsOverFrames()` with `true` and, while `wantsFrames()`, hand every packet over as its frame instead: `deliver(state, id, payload, translated)` with the connection's state, the packet's ID, its bytes after the ID, decrypted and decompressed, and its translation or `null`, in the order the packets arrive; the dispatcher names the frame and the [Packets](../../building-blocks/players/capabilities/packets/index.md) capability reads it. A library that never sees the wire answers `false`, and its players have no Packets capability. |
 
 A worker player implements `PlayerBindingContext<Object>` with them:
 
@@ -146,8 +146,9 @@ WorkerProtocols protocols = WorkerProtocols.builder("example")
 WorkerExtensions extensions = WorkerExtensions.discover("example", Object.class, Set.of());
 WorkerExtensions.PlayerBindings bindings = extensions.bind(player, protocols);
 ...
-if (java.wants(ClientboundLevelChunkWithLight.class)) java.deliver(translateChunk(chunk));
-java.deliver(translate(packet)); // every other packet the player receives
+ClientboundPacket translated = java.wants(type(packet)) ? translate(packet) : null;
+if (java.wantsFrames()) java.deliver(state, packetId, payload, translated); // every packet, while frames are wanted
+else if (translated != null) java.deliver(translated);
 java.disconnected(); // when the player's connection closes
 ```
 

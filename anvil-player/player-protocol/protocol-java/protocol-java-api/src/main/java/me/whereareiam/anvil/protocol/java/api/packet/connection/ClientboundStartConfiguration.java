@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.connection;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 
 /**
@@ -9,5 +10,6 @@ import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
  * have no configuration phase.
  */
 @Value
+@FieldNameConstants
 public class ClientboundStartConfiguration implements ClientboundPacket {
 }

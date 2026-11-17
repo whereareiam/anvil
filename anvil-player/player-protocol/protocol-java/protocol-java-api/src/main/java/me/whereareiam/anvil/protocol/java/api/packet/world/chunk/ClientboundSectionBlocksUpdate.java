@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.world.chunk;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.world.chunk.BlockChange;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
@@ -14,6 +15,7 @@ import java.util.List;
  * every block of those sections: up to 4096 changes per section, from several sections of the column.
  */
 @Value
+@FieldNameConstants
 public class ClientboundSectionBlocksUpdate implements ClientboundPacket {
 	/**
 	 * The changed blocks, in the order the server sent them.

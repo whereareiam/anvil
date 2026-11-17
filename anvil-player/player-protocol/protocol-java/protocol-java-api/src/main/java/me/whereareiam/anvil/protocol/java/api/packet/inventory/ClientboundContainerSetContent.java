@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.inventory;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
@@ -12,6 +13,7 @@ import java.util.List;
  * The complete contents of a container, which replace everything the player knew about it.
  */
 @Value
+@FieldNameConstants
 public class ClientboundContainerSetContent implements ClientboundPacket {
 	/**
 	 * ID of the container, {@code 0} for the player's own inventory.

@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.sound;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.type.world.SoundSource;
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
  * registry ID or a sound it names.
  */
 @Value
+@FieldNameConstants
 @Builder
 public class ClientboundSound implements ClientboundPacket {
 	/**

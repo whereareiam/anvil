@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.entity;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
@@ -17,6 +18,7 @@ import java.util.UUID;
  * too: a painting at the corner of the block it hangs at, facing no direction.
  */
 @Value
+@FieldNameConstants
 @Builder
 public class ClientboundAddEntity implements ClientboundPacket {
 	/**

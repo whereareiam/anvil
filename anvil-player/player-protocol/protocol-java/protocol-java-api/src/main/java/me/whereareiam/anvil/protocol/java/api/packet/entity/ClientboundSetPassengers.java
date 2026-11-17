@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.entity;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
@@ -12,6 +13,7 @@ import java.util.List;
  * vehicle may be the player itself.
  */
 @Value
+@FieldNameConstants
 public class ClientboundSetPassengers implements ClientboundPacket {
 	/**
 	 * The vehicle's protocol ID.

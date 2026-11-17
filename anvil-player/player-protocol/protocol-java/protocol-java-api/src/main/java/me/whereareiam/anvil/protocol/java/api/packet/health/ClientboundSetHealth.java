@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.health;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 
 /**
@@ -8,6 +9,7 @@ import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
  * joins or respawns. A health of zero or less means the player is dead.
  */
 @Value
+@FieldNameConstants
 public class ClientboundSetHealth implements ClientboundPacket {
 	/**
 	 * Health in half hearts, {@code 20} for a full bar without bonus health.

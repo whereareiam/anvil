@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.chat;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.chat.PackedMessageSignature;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
@@ -10,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
  * Minecraft 1.19.1 cannot delete chat.
  */
 @Value
+@FieldNameConstants
 public class ClientboundDeleteChat implements ClientboundPacket {
 	/**
 	 * The signature of the message to delete, packed against the client's signature cache.

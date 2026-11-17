@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.cookie;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
 
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * same key. Releases before Minecraft 1.20.5 have no cookies.
  */
 @Value
+@FieldNameConstants
 public class ClientboundStoreCookie implements ClientboundPacket {
 	/**
 	 * The cookie's key, a resource location with its namespace, such as {@code minecraft:ticket}.

@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.configuration;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
@@ -13,6 +14,7 @@ import java.util.List;
  * configuration phase.
  */
 @Value
+@FieldNameConstants
 public class ClientboundRegistryData implements ClientboundPacket {
 	/**
 	 * The registry's key with its namespace, such as {@code minecraft:dialog}.

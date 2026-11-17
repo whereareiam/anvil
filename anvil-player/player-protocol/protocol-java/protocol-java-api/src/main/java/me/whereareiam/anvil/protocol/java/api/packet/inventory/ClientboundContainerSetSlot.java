@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.inventory;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.Nullable;
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * The new content of one container slot.
  */
 @Value
+@FieldNameConstants
 public class ClientboundContainerSetSlot implements ClientboundPacket {
 	/**
 	 * Container the slot belongs to, or {@code -1} for the cursor.

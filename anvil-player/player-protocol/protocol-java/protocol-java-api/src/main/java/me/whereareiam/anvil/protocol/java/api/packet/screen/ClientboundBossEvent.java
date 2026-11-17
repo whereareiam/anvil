@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.screen;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.screen.BossEventOperation;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
@@ -12,6 +13,7 @@ import java.util.UUID;
  * and the client ignores an update or removal of a bar the server never added.
  */
 @Value
+@FieldNameConstants
 public class ClientboundBossEvent implements ClientboundPacket {
 	/**
 	 * The ID the server gave the bar.

@@ -24,7 +24,8 @@ and check replies. Movement, Inventory, Interaction, Commands, and Dialogs cover
 Cookies holds the cookies a server stores on the client; Screen and Sounds record the titles, action
 bars, boss bars and sounds the server shows and plays, Entities follows the entities the server
 shows it, such as text above a player, World the dimension the server put the player in, with the time,
-weather, world border and spawn point around it, and Vitals the player's health, food and deaths.
+weather, world border and spawn point around it, Packets the packets the client receives, in arrival order, and
+Vitals the player's health, food and deaths.
 Each capability is optional unless the test or another installed capability requires it.
 
 | Capability | Use it to | Bundled requirement |
@@ -41,6 +42,7 @@ Each capability is optional unless the test or another installed capability requ
 | [Sounds](./sounds/index.md) | Await the sounds the server plays. | MCProtocol and Session |
 | [Entities](./entities/index.md) | Follow the entities the server shows: positions, passengers, names, display text, items and flags. | MCProtocol and Session |
 | [World](./world/index.md) | Read the dimension the player is in, its type, environment and generation, the server's worlds, and the time, weather, world border and spawn point; await a change. | MCProtocol and Session |
+| [Packets](./packets/index.md) | Match the packets the client receives in arrival order; record whole streams and compare two builds. | MCProtocol |
 | [Vitals](./vitals/index.md) | Read health and food, await deaths, and respawn. | MCProtocol and Session |
 
 Packet-backed capabilities operate through the player's protocol library. The built-in capabilities
@@ -67,8 +69,8 @@ plugins {
 
 Keep the repositories, protocol dependency, and `anvil` configuration from
 [installation](../../../getting-started/installation/index.md). The remaining unit suffixes are
-`movement`, `inventory`, `interaction`, `commands`, `dialogs`, `cookies`, `screen`, `sounds`, `entities`, `world`, and
-`vitals`. Keep unit versions aligned with Anvil.
+`movement`, `inventory`, `interaction`, `commands`, `dialogs`, `cookies`, `screen`, `sounds`, `entities`, `world`,
+`packets`, and `vitals`. Keep unit versions aligned with Anvil.
 
 ## Retrieve a capability
 

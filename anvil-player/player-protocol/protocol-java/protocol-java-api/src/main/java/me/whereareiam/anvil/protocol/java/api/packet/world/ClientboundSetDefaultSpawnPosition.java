@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.world;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
  * respawn anchor of its own respawns, when the player joins and whenever the spawn point moves.
  */
 @Value
+@FieldNameConstants
 @Builder
 public class ClientboundSetDefaultSpawnPosition implements ClientboundPacket {
 	/**

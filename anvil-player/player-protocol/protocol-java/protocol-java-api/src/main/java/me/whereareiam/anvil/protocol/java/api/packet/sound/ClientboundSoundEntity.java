@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.sound;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.type.world.SoundSource;
@@ -11,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * A sound the server tells the player to play following an entity.
  */
 @Value
+@FieldNameConstants
 @Builder
 public class ClientboundSoundEntity implements ClientboundPacket {
 	/**

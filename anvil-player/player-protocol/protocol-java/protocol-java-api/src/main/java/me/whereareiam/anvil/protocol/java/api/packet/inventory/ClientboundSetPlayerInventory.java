@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.inventory;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.PlayerInventoryLayout;
 import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
  * packet of a container of their own, which the player's library reports as this packet too.
  */
 @Value
+@FieldNameConstants
 public class ClientboundSetPlayerInventory implements ClientboundPacket {
 	/**
 	 * The inventory index, as {@link PlayerInventoryLayout} lays them out.

@@ -2,6 +2,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.player;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.java.api.type.entity.Relative;
@@ -16,6 +17,7 @@ import java.util.Set;
  * coordinate.
  */
 @Value
+@FieldNameConstants
 @Builder
 public class ClientboundPlayerPosition implements ClientboundPacket {
 	/**

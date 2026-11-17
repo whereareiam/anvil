@@ -1,12 +1,14 @@
 package me.whereareiam.anvil.protocol.java.api.packet.world.border;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 
 /**
  * The server moves the center of the world border of the player's level.
  */
 @Value
+@FieldNameConstants
 public class ClientboundSetBorderCenter implements ClientboundPacket {
 	/**
 	 * The east-west coordinate of the new center.

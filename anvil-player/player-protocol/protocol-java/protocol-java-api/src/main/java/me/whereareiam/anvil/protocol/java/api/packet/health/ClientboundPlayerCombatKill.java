@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.protocol.java.api.packet.health;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
@@ -11,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * releases before Minecraft 1.20 carry, is not modelled.
  */
 @Value
+@FieldNameConstants
 public class ClientboundPlayerCombatKill implements ClientboundPacket {
 	/**
 	 * The protocol ID of the player's own entity.

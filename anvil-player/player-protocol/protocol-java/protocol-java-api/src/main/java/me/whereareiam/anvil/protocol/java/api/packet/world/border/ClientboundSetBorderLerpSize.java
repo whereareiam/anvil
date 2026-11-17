@@ -1,12 +1,14 @@
 package me.whereareiam.anvil.protocol.java.api.packet.world.border;
 
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 
 /**
  * The server starts moving the world border of the player's level from one size to another.
  */
 @Value
+@FieldNameConstants
 public class ClientboundSetBorderLerpSize implements ClientboundPacket {
 	/**
 	 * The border's side length in blocks when it starts moving.

@@ -104,6 +104,26 @@ such as the state count and collision shapes, for every protocol:
 
 Add the new protocol to the state counts `BlockRegistryTest` expects and to the protocols `JavaBlockDataTest` lists.
 
+## Add the packet names
+
+The frames a player receives are named from `protocol-java-packet`, which generates, from the same minecraft-data
+release, the names of the packets a server sends in each connection state of each protocol: the packet mappings of
+its `protocol.json` (the notice ships as `META-INF/LICENSE-minecraft-data-packets.txt`). Its
+`anvil-player/player-protocol/protocol-java/protocol-java-packet/packet-data.toml` has the layout of
+`block-data.toml`, with one `packets` file per row. For a new protocol, add a row and pin it:
+
+```shell
+./gradlew :anvil-player:player-protocol:protocol-java:protocol-java-packet:pinPacketData
+```
+
+`checkPacketDataReleases`, part of `check`, requires a row for the protocol of every release, as the block data's
+check does. A protocol minecraft-data has no `protocol.json` for keeps a row without pins; its frames have no name,
+and a tap refuses to select its packets by name. Add the new protocol to the protocols `JavaPacketDataTest` lists.
+
+Both data modules apply the `module-minecraft-data` convention of `build-logic`'s `minecraftdata` group, which owns
+reading minecraft-data, the pins files, the pin and check tasks and the generators' arguments for every kind of data
+a module generates.
+
 ## Let linkage decide about segments
 
 Release-specific code lives only in segments: projects named `V<major>_<minor>[_<patch>]` after the

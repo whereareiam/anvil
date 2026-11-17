@@ -3,6 +3,7 @@ package me.whereareiam.anvil.protocol.java.api.packet.world;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.protocol.java.api.model.world.ClockState;
 import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
@@ -17,6 +18,7 @@ import java.util.Map;
  * {@linkplain me.whereareiam.anvil.protocol.java.api.model.world.DimensionType#getDefaultClock() default clock}.
  */
 @Value
+@FieldNameConstants
 @Builder
 public class ClientboundSetTime implements ClientboundPacket {
 	/**
