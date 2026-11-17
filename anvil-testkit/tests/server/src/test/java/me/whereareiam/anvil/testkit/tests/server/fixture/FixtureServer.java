@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
+import me.whereareiam.anvil.capability.dispatch.Dispatch;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.session.Session;
 import org.jetbrains.annotations.NotNull;
@@ -69,12 +70,16 @@ public final class FixtureServer {
 	}
 
 	/**
-	 * Runs a command on the server console.
+	 * Runs a command as the server console and returns once the server ran it, so what the command changed, such as
+	 * the player's dimension after a teleport, holds when the test's next step reaches the server. Typing into the
+	 * console instead returns before the server reads the line.
 	 *
 	 * @param command the command, without a slash
+	 * @throws IllegalStateException if the server did not accept the command
 	 */
 	public void console(@NotNull String command) {
-		anvil.processes().server("server").console().sendCommand(command);
+		if (!anvil.processes().server("server").capability(Dispatch.class).execute(command))
+			throw new IllegalStateException("The server did not accept the console command '" + command + "'");
 	}
 
 	/**
