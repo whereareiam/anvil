@@ -120,6 +120,34 @@ public final class LevelChunkSection {
 	}
 
 	/**
+	 * Returns the palette the section's entries index, as the server encoded the section.
+	 *
+	 * @return a copy of the palette, whose one entry is the state of every block of a uniform section, or
+	 * {@code null} for a direct section, whose entries are global block state IDs
+	 */
+	public int @Nullable [] palette() {
+		return palette == null ? null : palette.clone();
+	}
+
+	/**
+	 * Returns how many bits each block's entry takes, as the server encoded the section.
+	 *
+	 * @return the bits per entry, {@code 0} for a uniform section
+	 */
+	public int bitsPerEntry() {
+		return bitsPerEntry;
+	}
+
+	/**
+	 * Returns the packed entries of the section's 4096 blocks, as the server encoded the section.
+	 *
+	 * @return a copy of the packed entries, empty for a uniform section
+	 */
+	public long @NotNull [] data() {
+		return data.clone();
+	}
+
+	/**
 	 * Copies every block's state, in the order the entries run: along x, then z, then y.
 	 *
 	 * @return the 4096 global IDs

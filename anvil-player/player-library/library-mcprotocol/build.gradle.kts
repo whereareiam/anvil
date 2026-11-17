@@ -11,6 +11,7 @@ architecture {
 	sharedApis = setOf(projects.anvilPlayer.playerApi.path, projects.anvilPlayer.playerWorker.path)
 	dependsOnApis = setOf(
 		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi.path,
+		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaJson.path,
 		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker.path,
 	)
 }
@@ -25,6 +26,7 @@ dependencies {
 	api(projects.anvilPlayer.playerApi)
 
 	implementation(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolApi)
+	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaJson)
 	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker)
 	implementation(projects.anvilPlayer.playerWorker)
 	implementation(libs.jackson.databind)
