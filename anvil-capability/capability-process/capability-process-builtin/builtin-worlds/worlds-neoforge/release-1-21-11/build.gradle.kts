@@ -16,5 +16,5 @@ neoForge {
 
 dependencies {
 	compileOnly(projects.anvilCapability.capabilityProcess.capabilityProcessBuiltin.builtinWorlds.worldsAgent)
-	compileOnly(projects.anvilProcess.processProtocol.protocolAgent.protocolAgentApi)
+	compileOnly(projects.anvilProcess.processAgent.agentServer.serverApi)
 }

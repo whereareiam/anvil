@@ -9,8 +9,8 @@ architecture {
 	)
 	// The agent channel's operations are agent API descriptors, and its handlers implement the agent server API.
 	dependsOnApis = setOf(
-		projects.anvilProcess.processProtocol.processProtocolApi.path,
-		projects.anvilProcess.processProtocol.protocolAgent.protocolAgentApi.path,
+		projects.anvilProcess.processAgent.agentApi.path,
+		projects.anvilProcess.processAgent.agentServer.serverApi.path,
 	)
 }
 
