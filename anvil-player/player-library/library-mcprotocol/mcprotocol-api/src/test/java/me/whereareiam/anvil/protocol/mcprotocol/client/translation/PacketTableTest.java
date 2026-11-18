@@ -7,8 +7,8 @@ import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemC
 import me.whereareiam.anvil.edition.java.protocol.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.edition.java.protocol.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.edition.java.protocol.packet.cookie.ClientboundCookieRequest;
-import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.player.api.model.text.Text;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;

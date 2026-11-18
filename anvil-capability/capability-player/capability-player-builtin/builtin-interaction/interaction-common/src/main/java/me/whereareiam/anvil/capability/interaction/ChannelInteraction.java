@@ -9,7 +9,7 @@ import me.whereareiam.anvil.capability.interaction.model.ItemUse;
 import me.whereareiam.anvil.capability.interaction.type.BlockFace;
 import me.whereareiam.anvil.capability.interaction.type.EntityInteraction;
 import me.whereareiam.anvil.capability.interaction.type.Hand;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 /**

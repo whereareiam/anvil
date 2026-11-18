@@ -24,12 +24,12 @@ import me.whereareiam.anvil.edition.java.protocol.packet.player.ServerboundPlaye
 import me.whereareiam.anvil.edition.java.protocol.packet.player.ServerboundPlayerInput;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.move.ServerboundMovePlayerPosRot;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.move.ServerboundMovePlayerRot;
-import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
-import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
-import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
-import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
-import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
+import me.whereareiam.anvil.player.api.channel.Subscription;
+import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.player.api.model.player.ViewRotation;
+import me.whereareiam.anvil.player.api.worker.OperationRegistry;
+import me.whereareiam.anvil.player.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.player.api.worker.WorkerBinding;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

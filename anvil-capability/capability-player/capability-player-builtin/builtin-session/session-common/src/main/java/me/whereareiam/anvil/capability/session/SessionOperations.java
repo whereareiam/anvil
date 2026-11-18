@@ -2,7 +2,7 @@ package me.whereareiam.anvil.capability.session;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.player.api.model.channel.OperationDescriptor;
 
 /**
  * Typed session operations shared by the host session and the worker's session binding.

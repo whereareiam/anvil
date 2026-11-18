@@ -14,7 +14,7 @@ import java.util.Enumeration;
  * The creating thread owns the loader and must close it after discovery and extension use finish.
  */
 public final class TestExtensionLoader implements AutoCloseable {
-	private static final String PROTOCOL_SERVICE = "META-INF/services/me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider";
+	private static final String PROTOCOL_SERVICE = "META-INF/services/me.whereareiam.anvil.player.api.library.ProtocolLibraryProvider";
 
 	private final Path artifact;
 	private final ClassLoader previous;

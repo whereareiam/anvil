@@ -6,7 +6,7 @@ import me.whereareiam.anvil.edition.java.protocol.model.chat.MessageSignature;
 import me.whereareiam.anvil.edition.java.protocol.model.chat.PackedMessageSignature;
 import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.type.chat.FilterMaskType;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.Text;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

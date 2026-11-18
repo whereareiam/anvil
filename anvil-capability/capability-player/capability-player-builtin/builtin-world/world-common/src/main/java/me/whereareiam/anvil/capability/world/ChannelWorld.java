@@ -9,7 +9,7 @@ import me.whereareiam.anvil.capability.world.model.environment.WorldState;
 import me.whereareiam.anvil.capability.world.model.level.DimensionChange;
 import me.whereareiam.anvil.capability.world.model.level.Level;
 import me.whereareiam.anvil.capability.world.model.level.ServerLevels;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;

@@ -2,13 +2,13 @@ package external.fixture.java;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.edition.java.protocol.JavaProtocol;
-import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
-import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
-import me.whereareiam.anvil.protocol.api.model.PlayerRequest;
-import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
-import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
-import me.whereareiam.anvil.protocol.api.player.ProtocolPlayer;
-import me.whereareiam.anvil.protocol.worker.WorkerExtensions;
+import me.whereareiam.anvil.player.api.library.ProtocolLibrary;
+import me.whereareiam.anvil.player.api.library.ProtocolLibraryProvider;
+import me.whereareiam.anvil.player.api.model.PlayerRequest;
+import me.whereareiam.anvil.player.api.model.ProtocolLibraryContext;
+import me.whereareiam.anvil.player.api.model.ProtocolRelease;
+import me.whereareiam.anvil.player.api.player.ProtocolPlayer;
+import me.whereareiam.anvil.player.worker.WorkerExtensions;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

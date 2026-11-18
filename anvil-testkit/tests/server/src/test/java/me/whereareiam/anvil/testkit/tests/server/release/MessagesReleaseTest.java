@@ -5,12 +5,12 @@ import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.capability.messages.MessageWatch;
 import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.messages.model.ChatLines;
-import me.whereareiam.anvil.protocol.api.model.text.SpanStyle;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.api.model.text.TextColor;
-import me.whereareiam.anvil.protocol.api.model.text.TextSpan;
-import me.whereareiam.anvil.protocol.api.model.text.click.RunCommandClick;
-import me.whereareiam.anvil.protocol.api.model.text.content.TranslatedContent;
+import me.whereareiam.anvil.player.api.model.text.SpanStyle;
+import me.whereareiam.anvil.player.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.TextColor;
+import me.whereareiam.anvil.player.api.model.text.TextSpan;
+import me.whereareiam.anvil.player.api.model.text.click.RunCommandClick;
+import me.whereareiam.anvil.player.api.model.text.content.TranslatedContent;
 import me.whereareiam.anvil.testkit.tests.server.fixture.FixtureServer;
 import org.junit.jupiter.api.Test;
 

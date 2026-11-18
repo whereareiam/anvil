@@ -7,20 +7,20 @@ import me.whereareiam.anvil.capability.messages.model.ChatMessage;
 import me.whereareiam.anvil.capability.messages.model.DroppedChat;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.capability.messages.type.ChatDropReason;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
-import me.whereareiam.anvil.protocol.api.model.text.SpanStyle;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.api.model.text.TextColor;
-import me.whereareiam.anvil.protocol.api.model.text.TextStyle;
-import me.whereareiam.anvil.protocol.api.model.text.click.RunCommandClick;
-import me.whereareiam.anvil.protocol.api.model.text.content.LiteralContent;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.model.text.SpanStyle;
+import me.whereareiam.anvil.player.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.TextColor;
+import me.whereareiam.anvil.player.api.model.text.TextStyle;
+import me.whereareiam.anvil.player.api.model.text.click.RunCommandClick;
+import me.whereareiam.anvil.player.api.model.text.content.LiteralContent;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 
-import static me.whereareiam.anvil.protocol.api.type.TextDecoration.BOLD;
+import static me.whereareiam.anvil.player.api.type.TextDecoration.BOLD;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;

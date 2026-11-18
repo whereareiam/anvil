@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.authentication;
 
 import com.google.gson.JsonParser;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
-import me.whereareiam.anvil.protocol.api.library.ProtocolAuthentication;
+import me.whereareiam.anvil.player.api.library.ProtocolAuthentication;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.model.AuthenticationSession;
 import net.raphimc.minecraftauth.MinecraftAuth;

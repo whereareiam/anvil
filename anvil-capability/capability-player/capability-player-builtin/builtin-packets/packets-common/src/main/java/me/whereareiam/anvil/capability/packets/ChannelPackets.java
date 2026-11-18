@@ -7,7 +7,7 @@ import me.whereareiam.anvil.capability.packets.model.RecordedPackets;
 import me.whereareiam.anvil.capability.packets.recording.PacketComparison;
 import me.whereareiam.anvil.capability.packets.recording.RecordingFiles;
 import me.whereareiam.anvil.capability.packets.tap.ChannelPacketTaps;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;

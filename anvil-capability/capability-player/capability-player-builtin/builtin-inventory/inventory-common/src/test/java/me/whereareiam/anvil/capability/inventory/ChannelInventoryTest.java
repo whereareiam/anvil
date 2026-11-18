@@ -7,7 +7,7 @@ import me.whereareiam.anvil.capability.inventory.model.InventorySnapshot;
 import me.whereareiam.anvil.capability.inventory.model.ItemType;
 import me.whereareiam.anvil.capability.inventory.model.SlotSelection;
 import me.whereareiam.anvil.capability.inventory.type.InventoryClick;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

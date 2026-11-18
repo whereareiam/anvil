@@ -11,7 +11,7 @@ import me.whereareiam.anvil.capability.world.model.block.BlockArea;
 import me.whereareiam.anvil.capability.world.model.block.BlockIdentity;
 import me.whereareiam.anvil.capability.world.model.block.BlockPosition;
 import me.whereareiam.anvil.capability.world.model.level.ChunkPosition;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

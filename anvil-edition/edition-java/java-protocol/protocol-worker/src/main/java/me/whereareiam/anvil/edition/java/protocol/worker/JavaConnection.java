@@ -2,7 +2,7 @@ package me.whereareiam.anvil.edition.java.protocol.worker;
 
 import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
 import org.jetbrains.annotations.NotNull;
 
 /**

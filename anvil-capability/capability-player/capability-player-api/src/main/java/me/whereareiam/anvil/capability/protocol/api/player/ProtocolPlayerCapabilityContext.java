@@ -2,7 +2,7 @@ package me.whereareiam.anvil.capability.protocol.api.player;
 
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityContext;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;

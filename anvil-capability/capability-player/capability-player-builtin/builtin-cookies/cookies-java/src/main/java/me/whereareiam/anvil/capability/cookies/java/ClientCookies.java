@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.cookies.java;
 import me.whereareiam.anvil.capability.cookies.channel.CookiesChannel;
 import me.whereareiam.anvil.capability.cookies.model.CookieRequest;
 import me.whereareiam.anvil.capability.cookies.model.HeldCookies;
-import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.player.api.worker.PlayerBindingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

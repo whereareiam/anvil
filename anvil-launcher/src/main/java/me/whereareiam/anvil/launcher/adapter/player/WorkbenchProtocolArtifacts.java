@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.launcher.adapter.player;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.protocol.api.library.ProtocolArtifactResolver;
+import me.whereareiam.anvil.player.api.library.ProtocolArtifactResolver;
 import me.whereareiam.anvil.workbench.api.Workbench;
 import org.jetbrains.annotations.NotNull;
 

@@ -60,7 +60,7 @@ import me.whereareiam.anvil.edition.java.protocol.packet.world.ClientboundSetDef
 import me.whereareiam.anvil.edition.java.protocol.packet.world.ClientboundSetTime;
 import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundInitializeBorder;
 import me.whereareiam.anvil.edition.java.protocol.type.player.PlayerCommandAction;
-import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.mcprotocol.client.TestClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;

@@ -6,7 +6,7 @@ import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundClea
 import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetSubtitleText;
 import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetTitleText;
 import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetTitlesAnimation;
-import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.player.api.worker.PlayerBindingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

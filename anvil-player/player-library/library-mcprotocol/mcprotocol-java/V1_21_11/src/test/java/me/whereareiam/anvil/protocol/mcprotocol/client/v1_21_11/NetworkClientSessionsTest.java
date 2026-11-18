@@ -12,7 +12,7 @@ import io.netty.util.ReferenceCountUtil;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.edition.java.protocol.type.connection.ConnectionState;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.Text;
 import me.whereareiam.anvil.protocol.mcprotocol.client.TestClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;

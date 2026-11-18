@@ -5,7 +5,7 @@ import me.whereareiam.anvil.capability.sounds.channel.SoundsChannel;
 import me.whereareiam.anvil.capability.sounds.model.HeardSound;
 import me.whereareiam.anvil.capability.sounds.model.SoundPosition;
 import me.whereareiam.anvil.capability.sounds.type.SoundCategory;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

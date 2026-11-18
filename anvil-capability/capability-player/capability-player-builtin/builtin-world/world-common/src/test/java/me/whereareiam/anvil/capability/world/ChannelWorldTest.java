@@ -14,7 +14,7 @@ import me.whereareiam.anvil.capability.world.model.level.ServerLevels;
 import me.whereareiam.anvil.capability.world.type.Environment;
 import me.whereareiam.anvil.capability.world.type.LevelGeneration;
 import me.whereareiam.anvil.capability.world.type.WeatherType;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

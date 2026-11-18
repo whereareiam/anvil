@@ -8,7 +8,7 @@ import me.whereareiam.anvil.edition.java.physics.geometry.Vector;
 import me.whereareiam.anvil.edition.java.physics.world.BlockReader;
 import me.whereareiam.anvil.edition.java.protocol.JavaWorld;
 import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
+import me.whereareiam.anvil.player.api.model.player.ViewRotation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

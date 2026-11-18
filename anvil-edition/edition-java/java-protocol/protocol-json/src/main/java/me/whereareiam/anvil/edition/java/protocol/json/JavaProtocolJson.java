@@ -23,9 +23,9 @@ import me.whereareiam.anvil.edition.java.protocol.model.overlay.BossEventOperati
 import me.whereareiam.anvil.edition.java.protocol.model.world.chunk.LevelChunkSection;
 import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPackets;
-import me.whereareiam.anvil.protocol.api.model.text.click.TextClick;
-import me.whereareiam.anvil.protocol.api.model.text.content.TextContent;
-import me.whereareiam.anvil.protocol.api.model.text.hover.TextHover;
+import me.whereareiam.anvil.player.api.model.text.click.TextClick;
+import me.whereareiam.anvil.player.api.model.text.content.TextContent;
+import me.whereareiam.anvil.player.api.model.text.hover.TextHover;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;

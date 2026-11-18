@@ -5,7 +5,7 @@ import me.whereareiam.anvil.capability.cookies.model.CookieKey;
 import me.whereareiam.anvil.capability.cookies.model.CookieRequest;
 import me.whereareiam.anvil.capability.cookies.model.HeldCookies;
 import me.whereareiam.anvil.capability.cookies.model.StoredCookie;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;

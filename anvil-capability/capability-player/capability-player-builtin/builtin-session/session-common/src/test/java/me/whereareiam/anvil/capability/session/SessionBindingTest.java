@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.capability.session;
 
-import me.whereareiam.anvil.protocol.worker.TestOperations;
-import me.whereareiam.anvil.protocol.worker.TestWorkerPlayer;
+import me.whereareiam.anvil.player.worker.TestOperations;
+import me.whereareiam.anvil.player.worker.TestWorkerPlayer;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
