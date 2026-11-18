@@ -81,7 +81,7 @@ abstract class MinecraftDataGeneratorArguments : CommandLineArgumentProvider {
 	abstract val destination: DirectoryProperty
 
 	/**
-	 * The package the data belongs to, relative to [destination], such as `me/whereareiam/anvil/protocol/java/block`.
+	 * The package the data belongs to, relative to [destination], such as `me/whereareiam/anvil/edition/java/data/block`.
 	 */
 	@get:Input
 	abstract val packagePath: Property<String>

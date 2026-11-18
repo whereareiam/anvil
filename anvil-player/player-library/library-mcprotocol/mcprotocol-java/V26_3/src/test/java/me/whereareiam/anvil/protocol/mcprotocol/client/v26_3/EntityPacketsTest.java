@@ -1,15 +1,15 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_3;
 
-import me.whereareiam.anvil.protocol.java.api.model.entity.DisplayText;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
-import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundEntityPositionSync;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetEntityMotion;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundTeleportEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
-import me.whereareiam.anvil.protocol.java.api.type.entity.Relative;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.DisplayText;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityTypeKey;
+import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.ClientboundAddEntity;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundEntityPositionSync;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundTeleportEntity;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundSetEntityData;
+import me.whereareiam.anvil.edition.java.protocol.type.entity.Relative;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.ComponentItemTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.TextTranslator;
 import net.kyori.adventure.text.Component;

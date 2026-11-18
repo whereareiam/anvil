@@ -1,12 +1,12 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5;
 
 import com.github.steveice10.mc.protocol.packet.ingame.server.world.ServerWorldBorderPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundInitializeBorder;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderCenter;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderLerpSize;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderSize;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderWarningDelay;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderWarningDistance;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundInitializeBorder;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundSetBorderCenter;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundSetBorderLerpSize;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundSetBorderSize;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundSetBorderWarningDelay;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundSetBorderWarningDistance;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

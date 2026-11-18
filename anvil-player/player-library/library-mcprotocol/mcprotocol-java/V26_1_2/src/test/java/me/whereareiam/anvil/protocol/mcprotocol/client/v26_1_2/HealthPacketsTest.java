@@ -1,11 +1,11 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundPlayerCombatKill;
-import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundSetHealth;
-import me.whereareiam.anvil.protocol.java.api.packet.health.ServerboundClientCommand;
-import me.whereareiam.anvil.protocol.java.api.type.player.ClientCommandAction;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.health.ClientboundPlayerCombatKill;
+import me.whereareiam.anvil.edition.java.protocol.packet.health.ClientboundSetHealth;
+import me.whereareiam.anvil.edition.java.protocol.packet.health.ServerboundClientCommand;
+import me.whereareiam.anvil.edition.java.protocol.type.player.ClientCommandAction;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.TextTranslator;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.protocol.data.game.ClientCommand;

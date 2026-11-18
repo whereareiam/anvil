@@ -7,8 +7,8 @@ description = "Java Edition side of the built-in sounds capability: its worker e
 
 dependencies {
 	implementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinSounds.soundsApi)
+	implementation(projects.anvilEdition.editionJava.javaProtocol.protocolApi)
 	implementation(projects.anvilPlayer.playerApi)
-	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
 
-	testImplementation(testFixtures(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker))
+	testImplementation(testFixtures(projects.anvilEdition.editionJava.javaProtocol.protocolWorker))
 }

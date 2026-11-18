@@ -2,11 +2,11 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 
 import com.github.steveice10.mc.protocol.data.game.level.sound.SoundCategory;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
-import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
-import me.whereareiam.anvil.protocol.java.api.type.world.SoundSource;
+import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.sound.ClientboundSound;
+import me.whereareiam.anvil.edition.java.protocol.packet.sound.ClientboundSoundEntity;
+import me.whereareiam.anvil.edition.java.protocol.type.world.SoundSource;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.NotNull;

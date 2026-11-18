@@ -8,12 +8,12 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntit
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityVelocityPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerRemoveEntitiesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.ServerSpawnEntityPacket;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
-import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetEntityMotion;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.ShownItem;
+import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.ClientboundRemoveEntities;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ItemTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.TextTranslator;
 import org.junit.jupiter.api.Test;
@@ -31,7 +31,7 @@ class EntityPacketsTest {
 		packets.decode(new ServerSpawnEntityPacket(7, new UUID(0, 7), EntityType.GLOW_ITEM_FRAME, 0, 0, 0, 0, 0));
 
 		assertEquals(new ClientboundSetEntityData(new EntityId(7), List.of(
-						new ShownItem(me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(40, 1)))),
+						new ShownItem(me.whereareiam.anvil.edition.java.protocol.model.inventory.ItemStack.of(40, 1)))),
 				packets.decode(new ServerEntityMetadataPacket(7, new EntityMetadata[]{
 						new EntityMetadata(7, MetadataType.INT, 140),
 						new EntityMetadata(8, MetadataType.ITEM, new ItemStack(40, 1))

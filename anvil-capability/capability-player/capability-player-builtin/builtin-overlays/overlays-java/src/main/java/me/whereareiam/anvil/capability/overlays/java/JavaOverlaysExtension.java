@@ -1,19 +1,19 @@
 package me.whereareiam.anvil.capability.overlays.java;
 
 import me.whereareiam.anvil.capability.overlays.channel.OverlaysChannel;
+import me.whereareiam.anvil.edition.java.protocol.JavaProtocol;
+import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemChat;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundBossEvent;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundClearTitles;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetActionBarText;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetSubtitleText;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetTitleText;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetTitlesAnimation;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
-import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
-import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundBossEvent;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundClearTitles;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetActionBarText;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetSubtitleText;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetTitleText;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetTitlesAnimation;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.atomic.AtomicReference;

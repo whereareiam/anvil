@@ -3,11 +3,11 @@ package me.whereareiam.anvil.capability.dialogs.java;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.capability.dialogs.model.click.DialogValue;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtByte;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtFloat;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtTag;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtByte;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtCompound;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtFloat;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtString;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

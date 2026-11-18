@@ -1,10 +1,10 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.configuration.ClientboundRegistryData;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtCompound;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.configuration.ClientboundRegistryData;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import org.cloudburstmc.nbt.NbtMap;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -43,9 +43,9 @@ public abstract class ConfigurationTranslation implements PacketTranslation<Pack
 	public final @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		if (!(packet instanceof ClientboundRegistryDataPacket registry)) return null;
 
-		List<me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry> entries = registry.getEntries()
+		List<me.whereareiam.anvil.edition.java.protocol.model.configuration.RegistryEntry> entries = registry.getEntries()
 				.stream()
-				.map(entry -> new me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry(
+				.map(entry -> new me.whereareiam.anvil.edition.java.protocol.model.configuration.RegistryEntry(
 						entry.getId().asString(), data(entry)))
 				.toList();
 		ClientboundRegistryData decoded = new ClientboundRegistryData(registry.getRegistry().asString(), entries);

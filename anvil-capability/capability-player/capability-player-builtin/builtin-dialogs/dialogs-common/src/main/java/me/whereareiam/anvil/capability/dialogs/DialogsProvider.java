@@ -5,7 +5,7 @@ import me.whereareiam.anvil.capability.commands.Commands;
 import me.whereareiam.anvil.capability.dialogs.channel.DialogsChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
-import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
+import me.whereareiam.anvil.edition.java.protocol.JavaProtocol;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;

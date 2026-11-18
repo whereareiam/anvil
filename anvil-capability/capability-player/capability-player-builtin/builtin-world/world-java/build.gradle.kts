@@ -7,9 +7,9 @@ description = "Java Edition side of the built-in world capability: its worker ex
 
 dependencies {
 	implementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinWorld.worldApi)
+	implementation(projects.anvilEdition.editionJava.javaData.dataBlock)
+	implementation(projects.anvilEdition.editionJava.javaProtocol.protocolApi)
 	implementation(projects.anvilPlayer.playerApi)
-	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
-	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaBlock)
 
-	testImplementation(testFixtures(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker))
+	testImplementation(testFixtures(projects.anvilEdition.editionJava.javaProtocol.protocolWorker))
 }

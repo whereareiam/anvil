@@ -6,6 +6,6 @@ description = "Public API and host-to-worker channel contract of the built-in pa
 
 dependencies {
 	api(projects.anvilApi)
+	api(projects.anvilEdition.editionJava.javaProtocol.protocolApi)
 	api(projects.anvilPlayer.playerApi)
-	api(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
 }

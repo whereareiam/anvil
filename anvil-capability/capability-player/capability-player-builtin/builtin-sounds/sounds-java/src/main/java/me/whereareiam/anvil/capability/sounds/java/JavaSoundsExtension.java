@@ -4,16 +4,16 @@ import me.whereareiam.anvil.capability.sounds.channel.SoundsChannel;
 import me.whereareiam.anvil.capability.sounds.model.HeardSound;
 import me.whereareiam.anvil.capability.sounds.model.SoundPosition;
 import me.whereareiam.anvil.capability.sounds.type.SoundCategory;
+import me.whereareiam.anvil.edition.java.protocol.JavaProtocol;
+import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
+import me.whereareiam.anvil.edition.java.protocol.packet.sound.ClientboundSound;
+import me.whereareiam.anvil.edition.java.protocol.packet.sound.ClientboundSoundEntity;
+import me.whereareiam.anvil.edition.java.protocol.type.world.SoundSource;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
-import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
-import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
-import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
-import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
-import me.whereareiam.anvil.protocol.java.api.type.world.SoundSource;
 import org.jetbrains.annotations.NotNull;
 
 

@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import me.whereareiam.anvil.protocol.java.api.model.world.chunk.LevelChunkSection;
+import me.whereareiam.anvil.edition.java.protocol.model.world.chunk.LevelChunkSection;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLevel;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import org.geysermc.mcprotocollib.protocol.codec.MinecraftCodec;

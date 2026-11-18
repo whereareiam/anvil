@@ -174,9 +174,9 @@ implementations own the actual packets, state, and listeners; feature APIs keep 
 types.
 
 `OperationRegistry` registers a typed handler for an `OperationDescriptor`. Every library's worker runs extensions
-through the player family's worker kits: `player-worker`'s `WorkerExtensions` enforces binding-time registration,
+through the worker kits: `player-worker`'s `WorkerExtensions` enforces binding-time registration,
 unique namespaced operation IDs, unavailability and cleanup, `NativeSessionBindings` follows session generations,
-and `protocol-java-worker`'s `JavaPacketDispatcher` is the player's `JavaProtocol` over the library's
+and Java Edition's `protocol-worker`'s `JavaPacketDispatcher` is the player's `JavaProtocol` over the library's
 `JavaConnection`, which keeps the player's `JavaWorld` from the packets it delivers and tells the library through
 `wants` which costly packets to decode. The MCProtocol worker adds only its client, segments and transport: `WorkerMessageCodec` owns
 request decoding, response type checks, and encoding on both ends of the worker's transport, so the host's

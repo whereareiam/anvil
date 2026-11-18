@@ -8,11 +8,11 @@ import com.github.steveice10.mc.protocol.data.game.level.notify.ThunderStrengthV
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.ClientboundGameEventPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.ClientboundSetDefaultSpawnPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.level.ClientboundSetTimePacket;
-import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetDefaultSpawnPosition;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetTime;
-import me.whereareiam.anvil.protocol.java.api.type.world.GameEventType;
+import me.whereareiam.anvil.edition.java.protocol.model.world.BlockPosition;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.ClientboundGameEvent;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.ClientboundSetDefaultSpawnPosition;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.ClientboundSetTime;
+import me.whereareiam.anvil.edition.java.protocol.type.world.GameEventType;
 import org.cloudburstmc.math.vector.Vector3i;
 import org.junit.jupiter.api.Test;
 

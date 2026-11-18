@@ -3,8 +3,8 @@ package me.whereareiam.anvil.capability.packets.tap;
 import me.whereareiam.anvil.capability.packets.channel.TappedFrame;
 import me.whereareiam.anvil.capability.packets.model.RecordedPackets;
 import me.whereareiam.anvil.capability.packets.model.RecordingHeader;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundFrame;
-import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundFrame;
+import me.whereareiam.anvil.edition.java.protocol.type.connection.ConnectionState;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

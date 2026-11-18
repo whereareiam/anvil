@@ -5,14 +5,14 @@ import me.whereareiam.anvil.capability.commands.model.CommandTree;
 import me.whereareiam.anvil.capability.commands.model.CommandTreeNode;
 import me.whereareiam.anvil.capability.commands.type.CommandNodeType;
 import me.whereareiam.anvil.capability.commands.type.StringArgumentMode;
+import me.whereareiam.anvil.edition.java.protocol.JavaProtocol;
+import me.whereareiam.anvil.edition.java.protocol.model.command.CommandNode;
+import me.whereareiam.anvil.edition.java.protocol.packet.command.ClientboundCommands;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
 import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
 import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
-import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
-import me.whereareiam.anvil.protocol.java.api.model.command.CommandNode;
-import me.whereareiam.anvil.protocol.java.api.packet.command.ClientboundCommands;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -82,7 +82,7 @@ public final class JavaCommandsExtension implements WorkerExtension<Object> {
 	}
 
 	private static @Nullable StringArgumentMode stringMode(
-			me.whereareiam.anvil.protocol.java.api.type.chat.@Nullable StringArgumentMode mode
+			me.whereareiam.anvil.edition.java.protocol.type.chat.@Nullable StringArgumentMode mode
 	) {
 		if (mode == null) return null;
 

@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtCompound;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLevel;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ConnectionTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SynchronizedRegistries;

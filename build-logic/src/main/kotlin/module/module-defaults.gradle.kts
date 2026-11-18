@@ -1,3 +1,4 @@
+import me.whereareiam.anvil.buildlogic.edition.Editions
 import me.whereareiam.anvil.buildlogic.module.CheckSharedTestDoubles
 import me.whereareiam.anvil.buildlogic.module.JavaRelease
 import me.whereareiam.anvil.buildlogic.module.catalog
@@ -67,14 +68,14 @@ val sharedTestDoubleContracts = mapOf(
 		to SharedTestDouble("capability-player-api's TestProtocolPlayerCapabilityContext",
 			setOf(":anvil-capability:capability-player:capability-player-api")),
 	"me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext"
-		to SharedTestDouble("player-worker's TestWorkerPlayer or protocol-java-worker's TestJavaPlayer",
+		to SharedTestDouble("player-worker's TestWorkerPlayer or protocol-worker's TestJavaPlayer",
 			setOf(":anvil-player:player-api", ":anvil-player:player-worker")),
 	"me.whereareiam.anvil.protocol.api.worker.OperationRegistry"
 		to SharedTestDouble("player-worker's TestOperations", setOf(":anvil-player:player-api", ":anvil-player:player-worker")),
-	"me.whereareiam.anvil.protocol.java.api.JavaProtocol"
-		to SharedTestDouble("protocol-java-worker's TestJavaPlayer", setOf(
-			":anvil-player:player-protocol:protocol-java:protocol-java-api",
-			":anvil-player:player-protocol:protocol-java:protocol-java-worker",
+	"me.whereareiam.anvil.edition.java.protocol.JavaProtocol"
+		to SharedTestDouble("protocol-worker's TestJavaPlayer", setOf(
+			":anvil-edition:edition-java:java-protocol:protocol-api",
+			":anvil-edition:edition-java:java-protocol:protocol-worker",
 		)),
 	"me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener"
 		to SharedTestDouble("mcprotocol-api's TestClientListener",
@@ -91,4 +92,11 @@ val sharedTestDoubles = tasks.register<CheckSharedTestDoubles>("checkSharedTestD
 
 tasks.named("check") {
 	dependsOn(sharedTestDoubles)
+}
+
+// An edition's members derive their family and published artifact ID from their folders through module-edition, so a
+// module below anvil-edition without it would publish under its bare project name in a family of its own.
+afterEvaluate {
+	if (Editions.contains(path) && !pluginManager.hasPlugin("module-edition"))
+		throw GradleException("$path lies below anvil-edition and must apply id(\"module-edition\")")
 }

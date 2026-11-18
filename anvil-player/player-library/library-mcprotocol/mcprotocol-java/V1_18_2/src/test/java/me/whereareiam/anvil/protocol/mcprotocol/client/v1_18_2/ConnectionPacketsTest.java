@@ -10,12 +10,12 @@ import com.github.steveice10.opennbt.tag.builtin.IntTag;
 import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
 import com.github.steveice10.opennbt.tag.builtin.Tag;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
-import me.whereareiam.anvil.protocol.java.api.model.world.Level;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.world.DimensionType;
+import me.whereareiam.anvil.edition.java.protocol.model.world.Level;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLevel;
 import org.junit.jupiter.api.Test;
 
@@ -87,8 +87,8 @@ class ConnectionPacketsTest {
 		ClientboundRespawn respawn = (ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(nether(),
 				"minecraft:the_nether", 0, GameMode.SPECTATOR, GameMode.UNKNOWN, false, false, false));
 
-		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.CREATIVE, login.getGameMode());
-		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.SPECTATOR, respawn.getGameMode());
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.CREATIVE, login.getGameMode());
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SPECTATOR, respawn.getGameMode());
 	}
 
 	@Test

@@ -7,11 +7,11 @@ import com.github.steveice10.mc.protocol.data.game.world.sound.SoundCategory;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerEntitySoundEffectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.world.ServerPlayBuiltinSoundPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.world.ServerPlaySoundPacket;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
-import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSound;
-import me.whereareiam.anvil.protocol.java.api.packet.sound.ClientboundSoundEntity;
-import me.whereareiam.anvil.protocol.java.api.type.world.SoundSource;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
+import me.whereareiam.anvil.edition.java.protocol.packet.sound.ClientboundSound;
+import me.whereareiam.anvil.edition.java.protocol.packet.sound.ClientboundSoundEntity;
+import me.whereareiam.anvil.edition.java.protocol.type.world.SoundSource;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

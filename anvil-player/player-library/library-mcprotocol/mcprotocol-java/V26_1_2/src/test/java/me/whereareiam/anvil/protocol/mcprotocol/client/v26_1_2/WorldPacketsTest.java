@@ -1,10 +1,10 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
-import me.whereareiam.anvil.protocol.java.api.model.world.ClockState;
-import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
-import me.whereareiam.anvil.protocol.java.api.packet.configuration.ClientboundRegistryData;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetTime;
+import me.whereareiam.anvil.edition.java.protocol.model.world.ClockState;
+import me.whereareiam.anvil.edition.java.protocol.model.world.DimensionType;
+import me.whereareiam.anvil.edition.java.protocol.packet.configuration.ClientboundRegistryData;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.ClientboundSetTime;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import net.kyori.adventure.key.Key;

@@ -5,7 +5,7 @@ import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.packet.Packet;
 import com.github.steveice10.packetlib.tcp.TcpClientSession;
 import io.netty.channel.ChannelHandlerContext;
-import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
+import me.whereareiam.anvil.edition.java.protocol.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.netty.ReceivedFrames;

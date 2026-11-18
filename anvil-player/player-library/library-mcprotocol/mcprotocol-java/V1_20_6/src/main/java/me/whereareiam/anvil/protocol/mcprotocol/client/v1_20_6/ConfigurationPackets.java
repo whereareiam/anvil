@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtCompound;
 import org.cloudburstmc.nbt.NbtMap;
 import org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry;
 import org.jetbrains.annotations.NotNull;

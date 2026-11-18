@@ -2,13 +2,13 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5;
 
 import com.github.steveice10.mc.protocol.packet.ingame.server.world.ServerWorldBorderPacket;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundInitializeBorder;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderCenter;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderLerpSize;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderSize;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderWarningDelay;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderWarningDistance;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundInitializeBorder;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundSetBorderCenter;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundSetBorderLerpSize;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundSetBorderSize;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundSetBorderWarningDelay;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundSetBorderWarningDistance;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

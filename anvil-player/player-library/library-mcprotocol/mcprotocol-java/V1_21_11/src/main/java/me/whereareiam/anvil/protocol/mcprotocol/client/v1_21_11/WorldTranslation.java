@@ -1,13 +1,13 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
-import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetDefaultSpawnPosition;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetTime;
-import me.whereareiam.anvil.protocol.java.api.type.world.GameEventType;
+import me.whereareiam.anvil.edition.java.protocol.model.world.BlockPosition;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.ClientboundGameEvent;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.ClientboundSetDefaultSpawnPosition;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.ClientboundSetTime;
+import me.whereareiam.anvil.edition.java.protocol.type.world.GameEventType;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import org.cloudburstmc.math.vector.Vector3i;
 import org.geysermc.mcprotocollib.network.packet.Packet;

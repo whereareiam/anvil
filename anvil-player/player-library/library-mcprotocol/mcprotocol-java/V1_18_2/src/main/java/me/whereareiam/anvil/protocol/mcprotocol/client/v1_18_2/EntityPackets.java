@@ -8,8 +8,8 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddPaintingPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddPlayerPacket;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

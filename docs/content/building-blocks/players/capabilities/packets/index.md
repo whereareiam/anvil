@@ -37,7 +37,7 @@ loading 312 chunk columns made 28.7 MB on the worker channel and a 4.4 MB record
 ## Name packets
 
 A packet the Java protocol models has a value of its class, such as `ClientboundBlockUpdate` or
-`ClientboundLevelChunkWithLight` from `me.whereareiam.anvil.protocol.java.api.packet`. Every packet, modelled
+`ClientboundLevelChunkWithLight` from `me.whereareiam.anvil.edition.java.protocol.packet`. Every packet, modelled
 or not, also has a name: minecraft-data's name of the packet in the player's protocol, such as `map_chunk`,
 `block_change`, `multi_block_change` or `update_light`. These are [minecraft-data's
 names](https://github.com/PrismarineJS/minecraft-data), not those of Mojang's code, and stay the same across
@@ -56,9 +56,9 @@ This fragment belongs in a live test after Alice has connected. It uses `Simulat
 import me.whereareiam.anvil.capability.packets.PacketTap;
 import me.whereareiam.anvil.capability.packets.Packets;
 import me.whereareiam.anvil.capability.packets.model.PacketSelection;
-import me.whereareiam.anvil.protocol.java.api.model.world.chunk.ChunkPosition;
-import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundBlockUpdate;
-import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundLevelChunkWithLight;
+import me.whereareiam.anvil.edition.java.protocol.model.world.chunk.ChunkPosition;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.ClientboundBlockUpdate;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.ClientboundLevelChunkWithLight;
 ```
 
 Open the tap before the action, then wait for the packets in order:

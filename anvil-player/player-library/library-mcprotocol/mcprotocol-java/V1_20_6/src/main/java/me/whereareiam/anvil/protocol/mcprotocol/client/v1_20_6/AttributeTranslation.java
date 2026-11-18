@@ -1,12 +1,12 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeSnapshot;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateAttributes;
-import me.whereareiam.anvil.protocol.java.api.type.entity.AttributeOperation;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.state.AttributeSnapshot;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundUpdateAttributes;
+import me.whereareiam.anvil.edition.java.protocol.type.entity.AttributeOperation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import net.kyori.adventure.key.Key;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -58,15 +58,15 @@ public abstract class AttributeTranslation implements PacketTranslation<Packet> 
 	protected abstract @NotNull String modifierId(@NotNull AttributeModifier modifier);
 
 	private AttributeSnapshot snapshot(Attribute attribute) {
-		List<me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeModifier> modifiers =
+		List<me.whereareiam.anvil.edition.java.protocol.model.entity.state.AttributeModifier> modifiers =
 				attribute.getModifiers().stream().map(this::modifier).toList();
 		return new AttributeSnapshot(attributeKey(attribute.getType().getIdentifier()), attribute.getValue(), modifiers);
 	}
 
-	private me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeModifier modifier(
+	private me.whereareiam.anvil.edition.java.protocol.model.entity.state.AttributeModifier modifier(
 			AttributeModifier modifier
 	) {
-		return new me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeModifier(modifierId(modifier),
+		return new me.whereareiam.anvil.edition.java.protocol.model.entity.state.AttributeModifier(modifierId(modifier),
 				modifier.getAmount(), operation(modifier.getOperation()));
 	}
 

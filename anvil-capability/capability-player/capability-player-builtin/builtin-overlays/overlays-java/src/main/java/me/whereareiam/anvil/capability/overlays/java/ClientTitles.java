@@ -2,11 +2,11 @@ package me.whereareiam.anvil.capability.overlays.java;
 
 import me.whereareiam.anvil.capability.overlays.channel.OverlaysChannel;
 import me.whereareiam.anvil.capability.overlays.model.Title;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundClearTitles;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetSubtitleText;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetTitleText;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetTitlesAnimation;
 import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundClearTitles;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetSubtitleText;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetTitleText;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetTitlesAnimation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

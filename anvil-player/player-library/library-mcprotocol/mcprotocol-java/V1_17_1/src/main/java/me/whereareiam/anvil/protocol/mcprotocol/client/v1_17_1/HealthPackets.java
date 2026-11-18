@@ -2,8 +2,8 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_17_1;
 
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerCombatKillPacket;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundPlayerCombatKill;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.packet.health.ClientboundPlayerCombatKill;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.HealthTranslation;
 import org.jetbrains.annotations.NotNull;

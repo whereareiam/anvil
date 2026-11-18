@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
-import me.whereareiam.anvil.protocol.java.api.type.player.ClientCommandAction;
+import me.whereareiam.anvil.edition.java.protocol.type.player.ClientCommandAction;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import org.geysermc.mcprotocollib.protocol.data.game.ClientCommand;
 import org.jetbrains.annotations.NotNull;

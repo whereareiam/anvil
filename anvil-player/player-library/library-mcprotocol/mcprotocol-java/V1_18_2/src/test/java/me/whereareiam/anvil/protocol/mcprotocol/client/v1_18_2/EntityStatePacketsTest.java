@@ -10,13 +10,13 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKe
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundRemoveMobEffectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundUpdateAttributesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundUpdateMobEffectPacket;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeSnapshot;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundRemoveMobEffect;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateAttributes;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateMobEffect;
-import me.whereareiam.anvil.protocol.java.api.type.entity.AttributeOperation;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.state.AttributeSnapshot;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundRemoveMobEffect;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundUpdateAttributes;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundUpdateMobEffect;
+import me.whereareiam.anvil.edition.java.protocol.type.entity.AttributeOperation;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -89,12 +89,12 @@ class EntityStatePacketsTest {
 				ClientboundRemoveMobEffect.class), packets.packets());
 	}
 
-	private static me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeModifier modifier(
+	private static me.whereareiam.anvil.edition.java.protocol.model.entity.state.AttributeModifier modifier(
 			UUID id,
 			double amount,
 			AttributeOperation operation
 	) {
-		return new me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeModifier(id.toString(), amount,
+		return new me.whereareiam.anvil.edition.java.protocol.model.entity.state.AttributeModifier(id.toString(), amount,
 				operation);
 	}
 

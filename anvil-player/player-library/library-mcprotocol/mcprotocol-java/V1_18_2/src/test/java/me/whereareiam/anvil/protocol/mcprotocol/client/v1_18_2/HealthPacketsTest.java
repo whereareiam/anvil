@@ -5,12 +5,12 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKe
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerCombatKillPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundSetHealthPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientCommandPacket;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundPlayerCombatKill;
-import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundSetHealth;
-import me.whereareiam.anvil.protocol.java.api.packet.health.ServerboundClientCommand;
-import me.whereareiam.anvil.protocol.java.api.type.player.ClientCommandAction;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.health.ClientboundPlayerCombatKill;
+import me.whereareiam.anvil.edition.java.protocol.packet.health.ClientboundSetHealth;
+import me.whereareiam.anvil.edition.java.protocol.packet.health.ServerboundClientCommand;
+import me.whereareiam.anvil.edition.java.protocol.type.player.ClientCommandAction;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;
 

@@ -1,10 +1,10 @@
 package me.whereareiam.anvil.capability.movement.java.physics.player;
 
 import me.whereareiam.anvil.capability.movement.java.physics.ClientBehaviour;
-import me.whereareiam.anvil.protocol.java.physics.EntityBehaviour;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Box;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
-import me.whereareiam.anvil.protocol.java.physics.world.Collisions;
+import me.whereareiam.anvil.edition.java.physics.EntityBehaviour;
+import me.whereareiam.anvil.edition.java.physics.geometry.Box;
+import me.whereareiam.anvil.edition.java.physics.geometry.Vector;
+import me.whereareiam.anvil.edition.java.physics.world.Collisions;
 import org.jetbrains.annotations.NotNull;
 
 /**

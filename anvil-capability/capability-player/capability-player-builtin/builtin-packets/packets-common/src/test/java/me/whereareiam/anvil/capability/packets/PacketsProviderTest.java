@@ -2,8 +2,8 @@ package me.whereareiam.anvil.capability.packets;
 
 import me.whereareiam.anvil.capability.packets.channel.PacketsChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.TestProtocolPlayerCapabilityContext;
+import me.whereareiam.anvil.edition.java.protocol.JavaProtocol;
 import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
-import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

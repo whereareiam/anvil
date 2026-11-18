@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.type.DisconnectCause;
-import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
+import me.whereareiam.anvil.edition.java.protocol.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;

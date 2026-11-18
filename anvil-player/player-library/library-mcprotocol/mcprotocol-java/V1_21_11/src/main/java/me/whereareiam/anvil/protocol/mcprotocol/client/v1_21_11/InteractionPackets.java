@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
-import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
-import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
-import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
+import me.whereareiam.anvil.edition.java.protocol.model.world.BlockPosition;
+import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundUseItem;
+import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundUseItemOn;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.InteractionTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ValueTranslator;
 import org.cloudburstmc.math.vector.Vector3i;
