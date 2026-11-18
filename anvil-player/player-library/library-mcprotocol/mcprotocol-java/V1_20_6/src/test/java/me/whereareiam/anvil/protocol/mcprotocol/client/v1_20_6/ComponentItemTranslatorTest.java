@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
+import me.whereareiam.anvil.edition.java.protocol.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.api.model.text.TextColor;
-import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponentType;

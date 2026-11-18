@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetTime;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.ClientboundSetTime;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundSetTimePacket;
 import org.jetbrains.annotations.NotNull;
 

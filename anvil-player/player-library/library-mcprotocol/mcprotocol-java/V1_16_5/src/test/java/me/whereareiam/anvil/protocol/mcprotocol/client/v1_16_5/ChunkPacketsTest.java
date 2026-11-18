@@ -10,15 +10,15 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.world.ServerChunkD
 import com.github.steveice10.mc.protocol.packet.ingame.server.world.ServerMultiBlockChangePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.world.ServerUnloadChunkPacket;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
-import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
-import me.whereareiam.anvil.protocol.java.api.model.world.chunk.BlockChange;
-import me.whereareiam.anvil.protocol.java.api.model.world.chunk.ChunkPosition;
-import me.whereareiam.anvil.protocol.java.api.model.world.chunk.LevelChunkSection;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundBlockUpdate;
-import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundForgetLevelChunk;
-import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundLevelChunkWithLight;
-import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundSectionBlocksUpdate;
+import me.whereareiam.anvil.edition.java.protocol.model.world.BlockPosition;
+import me.whereareiam.anvil.edition.java.protocol.model.world.chunk.BlockChange;
+import me.whereareiam.anvil.edition.java.protocol.model.world.chunk.ChunkPosition;
+import me.whereareiam.anvil.edition.java.protocol.model.world.chunk.LevelChunkSection;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.ClientboundBlockUpdate;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.ClientboundForgetLevelChunk;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.ClientboundLevelChunkWithLight;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.ClientboundSectionBlocksUpdate;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import org.junit.jupiter.api.Test;
 

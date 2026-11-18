@@ -10,8 +10,8 @@ architecture {
 	// Interactions name blocks by the World capability's positions.
 	dependsOnApis = setOf(
 		projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinWorld.worldApi.path,
+		projects.anvilEdition.editionJava.javaProtocol.protocolApi.path,
 		projects.anvilPlayer.playerApi.path,
-		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi.path,
 	)
 }
 

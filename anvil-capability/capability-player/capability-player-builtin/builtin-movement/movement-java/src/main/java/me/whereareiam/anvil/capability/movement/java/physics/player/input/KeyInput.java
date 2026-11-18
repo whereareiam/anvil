@@ -5,8 +5,8 @@ import me.whereareiam.anvil.capability.movement.java.physics.player.PlayerBody;
 import me.whereareiam.anvil.capability.movement.java.physics.player.Pose;
 import me.whereareiam.anvil.capability.movement.java.physics.server.PlayerAttributes;
 import me.whereareiam.anvil.capability.movement.model.MovementInput;
-import me.whereareiam.anvil.protocol.java.physics.entity.FluidState;
-import me.whereareiam.anvil.protocol.java.physics.living.effect.MobEffect;
+import me.whereareiam.anvil.edition.java.physics.entity.FluidState;
+import me.whereareiam.anvil.edition.java.physics.living.effect.MobEffect;
 import org.jetbrains.annotations.NotNull;
 
 /**

@@ -7,8 +7,8 @@ description = "Java Edition side of the built-in entities capability: its worker
 
 dependencies {
 	implementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinEntities.entitiesApi)
+	implementation(projects.anvilEdition.editionJava.javaProtocol.protocolApi)
 	implementation(projects.anvilPlayer.playerApi)
-	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
 
-	testImplementation(testFixtures(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker))
+	testImplementation(testFixtures(projects.anvilEdition.editionJava.javaProtocol.protocolWorker))
 }

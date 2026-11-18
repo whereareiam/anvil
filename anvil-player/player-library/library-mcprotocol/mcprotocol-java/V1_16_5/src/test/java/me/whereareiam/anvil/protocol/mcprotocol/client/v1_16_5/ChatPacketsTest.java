@@ -4,12 +4,12 @@ import com.github.steveice10.mc.protocol.data.game.MessageType;
 import com.github.steveice10.mc.protocol.packet.ingame.client.ClientChatPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerChatPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerKeepAlivePacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundPlayerChat;
+import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemChat;
+import me.whereareiam.anvil.edition.java.protocol.packet.chat.ServerboundChat;
+import me.whereareiam.anvil.edition.java.protocol.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.api.model.text.content.TranslatedContent;
-import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundPlayerChat;
-import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
-import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
-import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;
 

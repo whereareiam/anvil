@@ -1,17 +1,17 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
-import me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtInt;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
-import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
-import me.whereareiam.anvil.protocol.java.api.packet.configuration.ClientboundRegistryData;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
-import me.whereareiam.anvil.protocol.java.api.type.world.CardinalLight;
-import me.whereareiam.anvil.protocol.java.api.type.world.Skybox;
+import me.whereareiam.anvil.edition.java.protocol.model.configuration.RegistryEntry;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtCompound;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtInt;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtString;
+import me.whereareiam.anvil.edition.java.protocol.model.world.DimensionType;
+import me.whereareiam.anvil.edition.java.protocol.packet.configuration.ClientboundRegistryData;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundStartConfiguration;
+import me.whereareiam.anvil.edition.java.protocol.type.world.CardinalLight;
+import me.whereareiam.anvil.edition.java.protocol.type.world.Skybox;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import net.kyori.adventure.key.Key;
@@ -142,11 +142,11 @@ class ConnectionPacketsTest {
 		packets.decode(new ClientboundRegistryDataPacket(Key.key("minecraft", "dimension_type"), List.of(
 				new org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry(Key.key("minecraft", "overworld"), null))));
 
-		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.CREATIVE,
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.CREATIVE,
 				((ClientboundLogin) packets.decode(new ClientboundLoginPacket(42, false,
 						new Key[]{Key.key("minecraft", "overworld")}, 20, 10, 10, false, false, false,
 						spawnIn(Key.key("minecraft", "overworld"), 0, GameMode.CREATIVE), false))).getGameMode());
-		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.SPECTATOR,
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SPECTATOR,
 				((ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(
 						spawnIn(Key.key("minecraft", "overworld"), 0, GameMode.SPECTATOR), false, false))).getGameMode());
 	}

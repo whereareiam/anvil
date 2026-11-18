@@ -12,18 +12,18 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerClose
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerOpenWindowPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerSetSlotPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerWindowItemsPacket;
+import me.whereareiam.anvil.edition.java.protocol.PlayerInventoryLayout;
+import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerClose;
+import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerSetContent;
+import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerSetSlot;
+import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundOpenScreen;
+import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ServerboundContainerClick;
+import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ClientboundSetHeldSlot;
+import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ClientboundSetPlayerInventory;
+import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ServerboundSetCarriedItem;
+import me.whereareiam.anvil.edition.java.protocol.type.interaction.ClickType;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.java.api.PlayerInventoryLayout;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerClose;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetContent;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundContainerSetSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ClientboundOpenScreen;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.container.ServerboundContainerClick;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetHeldSlot;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ClientboundSetPlayerInventory;
-import me.whereareiam.anvil.protocol.java.api.packet.inventory.player.ServerboundSetCarriedItem;
-import me.whereareiam.anvil.protocol.java.api.type.interaction.ClickType;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -63,10 +63,10 @@ class InventoryPacketsTest {
 	@Test
 	void reportsContainersAtStateZeroWithoutACarriedStack() {
 		assertEquals(new ClientboundContainerSetContent(3, 0, Arrays.asList(
-						me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(1, 2), null), null),
+						me.whereareiam.anvil.edition.java.protocol.model.inventory.ItemStack.of(1, 2), null), null),
 				packets.decode(new ServerWindowItemsPacket(3, new ItemStack[]{new ItemStack(1, 2), null})));
 		assertEquals(new ClientboundContainerSetSlot(3, 0, 4,
-						me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(5, 1)),
+						me.whereareiam.anvil.edition.java.protocol.model.inventory.ItemStack.of(5, 1)),
 				packets.decode(new ServerSetSlotPacket(3, 4, new ItemStack(5, 1))));
 	}
 

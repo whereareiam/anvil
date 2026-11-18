@@ -1,11 +1,11 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.fixture;
 
+import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundPlayerChat;
+import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemChat;
+import me.whereareiam.anvil.edition.java.protocol.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
-import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundPlayerChat;
-import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
-import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientLogin;

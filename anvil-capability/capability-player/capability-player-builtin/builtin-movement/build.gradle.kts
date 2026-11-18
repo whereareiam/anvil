@@ -8,10 +8,11 @@ architecture {
 		projects.anvilCapability.capabilityPlayer.capabilityPlayerApi.path,
 	)
 	dependsOnApis = setOf(
+		projects.anvilEdition.editionJava.javaData.dataBlock.path,
+		projects.anvilEdition.editionJava.javaPhysics.physicsEntity.path,
+		projects.anvilEdition.editionJava.javaPhysics.physicsGeometry.path,
+		projects.anvilEdition.editionJava.javaProtocol.protocolApi.path,
 		projects.anvilPlayer.playerApi.path,
-		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi.path,
-		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaBlock.path,
-		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaPhysics.path,
 	)
 }
 

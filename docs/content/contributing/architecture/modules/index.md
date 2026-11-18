@@ -20,10 +20,10 @@ a family's API describes its services and extension points. The launcher binds t
 | `anvil-process/process-common`              | Distribution validation, effective Java/topology requirements, forwarding, and provider preparation/configuration                             |
 | `anvil-process/process-api`                     | Platform-provider contracts, version data, artifact sources, and configuration contracts                            |
 | `anvil-process/process-platform/platform-<name>` | One family per platform: its provider and, where it installs one, its platform agent assembly                |
+| `anvil-edition/edition-java`                | Java Edition, a family of its own that players, libraries and capabilities use: its protocol (`java-protocol`: the protocol `protocol-api`, its worker kit `protocol-worker`, which dispatches the protocol over a library's connection and offers extension tests a player that speaks it, and the JSON form of the protocol's values `protocol-json`, which the worker channel and packet recordings share), its data (`java-data`: the block data `data-block`, packet names `data-packet` and item registry keys `data-item` of every protocol, generated from pinned PrismarineJS minecraft-data) and its physics (`java-physics`: the vanilla client's geometry `physics-geometry` and the physics kit `physics-entity`, which moves entities and living entities over the world a client knows as the vanilla client of each version does and which Movement's player extends); each member publishes as `edition-java-<member>` |
 | `anvil-player/player-common/src`                            | Player registration, per-player library and release selection, authentication compatibility, and observations     |
 | `anvil-player/player-api`                   | Protocol library contracts, releases, players, protocol-owned channels and native worker contracts                 |
 | `anvil-player/player-worker`                | Worker runtime kit every library embeds: extension discovery and binding, session generations, and the protocols a player speaks, with the test player and operations extension tests bind to |
-| `anvil-player/player-protocol/protocol-java` | The Java Edition protocol (`protocol-java-api`), its worker kit (`protocol-java-worker`), which dispatches the protocol over a library's connection and offers extension tests a player that speaks it, the block data (`protocol-java-block`), packet names (`protocol-java-packet`) and item registry keys (`protocol-java-item`) of every protocol, generated from pinned PrismarineJS minecraft-data, the physics kit (`protocol-java-physics`), which moves entities and living entities over the world a client knows as the vanilla client of each version does and which Movement's player extends, and the JSON form of the protocol's values (`protocol-java-json`), which the worker channel and packet recordings share |
 | `anvil-player/player-library/library-mcprotocol`            | The MCProtocolLib library: release data, client port, client segments, worker host and shell, and account storage |
 | `anvil-capability/capability-api`                | Generic composition, neutral player contracts, descriptors, exceptions, and typed requests |
 | `anvil-capability/capability-common`             | Dependency validation, agent-provider adaptation and agent extensions, logical process owners, player facades, and capability cleanup |
@@ -205,6 +205,38 @@ The agent role APIs depend on their explicitly shared ancestor `agent-api`, but 
 one another. Neither role nor the shared agent API depends on `anvil-api`; libraries can consume
 agent transport and handler contracts independently of engine and capability contracts. The host
 implementation uses global player observations where needed without exposing them through client APIs.
+
+## Locate an edition
+
+An edition is the protocol a simulated player speaks, with what its client knows and computes, and owns none of the
+players, libraries or capabilities that use it. Each edition is a folder `anvil-edition/edition-<edition>` whose
+members are grouped by what each part is. Java Edition's are laid out like this:
+
+```text
+anvil-edition/edition-java/
+  java-protocol/
+    protocol-api       JavaProtocol, the packets, models and types it carries, and the client's JavaWorld
+    protocol-worker    the worker kit every library embeds, with the TestJavaPlayer extension tests bind to
+    protocol-json      the one JSON form of the protocol's values
+  java-data/
+    data-block         block data by global block state ID
+    data-packet        packet names by connection state and ID
+    data-item          item registry keys by item ID
+  java-physics/
+    physics-geometry   the vanilla client's vectors, boxes, axes and trigonometry
+    physics-entity     entity and living entity movement over the world the client knows
+```
+
+Every member applies the `module-edition` convention, which makes the edition one API family
+(`:anvil-edition:edition-java`), so its protocol, data and physics use each other without grants, and publishes it
+under its folders, such as `edition-java-protocol-api` and `edition-java-data-block`; a build file that sets its own
+artifact ID fails, and so does a module below `anvil-edition` without the convention. The edition depends on nothing
+of the player, library or capability families but `player-api`, whose styled text the protocol carries and whose
+worker contracts the worker kit runs: each member that exposes it declares it through
+`architecture.dependsOnApis`. The families that use an edition declare each of its APIs they expose the same way,
+such as Movement for `protocol-api`, `data-block`, `physics-entity` and `physics-geometry`. A capability family's
+`<feature>-<edition>` side exists for each `edition-<edition>` folder, and the family root compiles its common code
+against that edition's `protocol-api`.
 
 ## Locate a protocol library
 

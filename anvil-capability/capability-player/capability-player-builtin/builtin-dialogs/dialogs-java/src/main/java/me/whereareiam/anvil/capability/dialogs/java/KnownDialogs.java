@@ -2,9 +2,9 @@ package me.whereareiam.anvil.capability.dialogs.java;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtInt;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtCompound;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtInt;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

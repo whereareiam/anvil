@@ -7,9 +7,9 @@ description = "Java Edition side of the built-in inventory capability: its worke
 
 dependencies {
 	implementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinInventory.inventoryApi)
+	implementation(projects.anvilEdition.editionJava.javaData.dataItem)
+	implementation(projects.anvilEdition.editionJava.javaProtocol.protocolApi)
 	implementation(projects.anvilPlayer.playerApi)
-	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
-	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaItem)
 
-	testImplementation(testFixtures(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker))
+	testImplementation(testFixtures(projects.anvilEdition.editionJava.javaProtocol.protocolWorker))
 }

@@ -6,8 +6,8 @@ import com.github.steveice10.mc.protocol.data.game.entity.player.Hand;
 import com.github.steveice10.mc.protocol.data.game.entity.type.EntityType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
-import me.whereareiam.anvil.protocol.java.api.type.interaction.InteractionHand;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityTypeKey;
+import me.whereareiam.anvil.edition.java.protocol.type.interaction.InteractionHand;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,7 +41,7 @@ public final class ValueTranslator {
 	 * @param face the protocol's direction
 	 * @return the library's direction
 	 */
-	public static @NotNull Direction direction(@NotNull me.whereareiam.anvil.protocol.java.api.type.interaction.Direction face) {
+	public static @NotNull Direction direction(@NotNull me.whereareiam.anvil.edition.java.protocol.type.interaction.Direction face) {
 		return switch (face) {
 			case DOWN -> Direction.DOWN;
 			case UP -> Direction.UP;
@@ -70,12 +70,12 @@ public final class ValueTranslator {
 	 * @return the protocol's game mode
 	 * @throws IllegalArgumentException when the mode names no game mode
 	 */
-	public static me.whereareiam.anvil.protocol.java.api.type.player.@NotNull GameMode gameMode(@NotNull GameMode mode) {
+	public static me.whereareiam.anvil.edition.java.protocol.type.player.@NotNull GameMode gameMode(@NotNull GameMode mode) {
 		return switch (mode) {
-			case SURVIVAL -> me.whereareiam.anvil.protocol.java.api.type.player.GameMode.SURVIVAL;
-			case CREATIVE -> me.whereareiam.anvil.protocol.java.api.type.player.GameMode.CREATIVE;
-			case ADVENTURE -> me.whereareiam.anvil.protocol.java.api.type.player.GameMode.ADVENTURE;
-			case SPECTATOR -> me.whereareiam.anvil.protocol.java.api.type.player.GameMode.SPECTATOR;
+			case SURVIVAL -> me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SURVIVAL;
+			case CREATIVE -> me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.CREATIVE;
+			case ADVENTURE -> me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.ADVENTURE;
+			case SPECTATOR -> me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SPECTATOR;
 			default -> throw new IllegalArgumentException("The server named no game mode for the player");
 		};
 	}

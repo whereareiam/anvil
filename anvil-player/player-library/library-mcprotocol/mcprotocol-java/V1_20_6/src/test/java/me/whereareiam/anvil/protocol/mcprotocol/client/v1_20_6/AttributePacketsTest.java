@@ -1,11 +1,11 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeModifier;
-import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeSnapshot;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateAttributes;
-import me.whereareiam.anvil.protocol.java.api.type.entity.AttributeOperation;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.state.AttributeModifier;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.state.AttributeSnapshot;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundUpdateAttributes;
+import me.whereareiam.anvil.edition.java.protocol.type.entity.AttributeOperation;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.attribute.Attribute;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.attribute.AttributeType;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.attribute.ModifierOperation;

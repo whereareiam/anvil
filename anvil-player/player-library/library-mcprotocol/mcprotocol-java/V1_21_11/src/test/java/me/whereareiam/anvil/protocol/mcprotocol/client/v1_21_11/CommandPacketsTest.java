@@ -1,10 +1,10 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
-import me.whereareiam.anvil.protocol.java.api.model.command.CommandNode;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.command.ClientboundCommands;
-import me.whereareiam.anvil.protocol.java.api.type.chat.CommandNodeType;
-import me.whereareiam.anvil.protocol.java.api.type.chat.StringArgumentMode;
+import me.whereareiam.anvil.edition.java.protocol.model.command.CommandNode;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.command.ClientboundCommands;
+import me.whereareiam.anvil.edition.java.protocol.type.chat.CommandNodeType;
+import me.whereareiam.anvil.edition.java.protocol.type.chat.StringArgumentMode;
 import net.kyori.adventure.key.Key;
 import org.geysermc.mcprotocollib.protocol.data.game.command.CommandParser;
 import org.geysermc.mcprotocollib.protocol.data.game.command.CommandType;

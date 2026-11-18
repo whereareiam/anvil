@@ -2,12 +2,12 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
-import me.whereareiam.anvil.protocol.java.api.model.entity.CustomNameVisible;
-import me.whereareiam.anvil.protocol.java.api.model.entity.DisplayText;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityDataValue;
-import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
-import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.CustomName;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.CustomNameVisible;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.DisplayText;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityDataValue;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.SharedFlags;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.ShownItem;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.type.EntityDataField;
 import net.kyori.adventure.text.Component;

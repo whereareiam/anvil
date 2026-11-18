@@ -8,6 +8,6 @@ dependencies {
 	compileOnly(anvil.api)
 	compileOnly(anvil.player.worker)
 	compileOnly(anvil.protocol.api)
-	compileOnly(anvil.protocol.java.api)
-	compileOnly(anvil.protocol.java.worker)
+	compileOnly(anvil.edition.java.protocol.api)
+	compileOnly(anvil.edition.java.protocol.worker)
 }

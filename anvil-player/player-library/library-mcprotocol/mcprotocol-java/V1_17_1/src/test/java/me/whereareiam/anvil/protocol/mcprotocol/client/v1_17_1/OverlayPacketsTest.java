@@ -5,11 +5,11 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.title.ServerSetAct
 import com.github.steveice10.mc.protocol.packet.ingame.server.title.ServerSetSubtitleTextPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.title.ServerSetTitleTextPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.title.ServerSetTitlesAnimationPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundClearTitles;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetActionBarText;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetSubtitleText;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetTitleText;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetTitlesAnimation;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundClearTitles;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetActionBarText;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetSubtitleText;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetTitleText;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetTitlesAnimation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.TextTranslator;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;

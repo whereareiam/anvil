@@ -2,12 +2,12 @@ package me.whereareiam.anvil.capability.packets.recording;
 
 import me.whereareiam.anvil.capability.packets.model.RecordedPackets;
 import me.whereareiam.anvil.capability.packets.model.RecordingHeader;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundFrame;
+import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemChat;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.ClientboundRemoveEntities;
+import me.whereareiam.anvil.edition.java.protocol.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundFrame;
-import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
-import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

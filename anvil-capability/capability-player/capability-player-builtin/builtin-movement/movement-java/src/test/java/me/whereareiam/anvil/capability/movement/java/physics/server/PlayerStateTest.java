@@ -1,18 +1,18 @@
 package me.whereareiam.anvil.capability.movement.java.physics.server;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateMobEffect;
-import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundPlayerCombatKill;
-import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundSetHealth;
-import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundGameEvent;
-import me.whereareiam.anvil.protocol.java.api.type.player.GameMode;
-import me.whereareiam.anvil.protocol.java.api.type.world.GameEventType;
-import me.whereareiam.anvil.protocol.java.physics.living.effect.MobEffect;
+import me.whereareiam.anvil.edition.java.physics.living.effect.MobEffect;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.world.DimensionType;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundUpdateMobEffect;
+import me.whereareiam.anvil.edition.java.protocol.packet.health.ClientboundPlayerCombatKill;
+import me.whereareiam.anvil.edition.java.protocol.packet.health.ClientboundSetHealth;
+import me.whereareiam.anvil.edition.java.protocol.packet.player.ClientboundPlayerAbilities;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.ClientboundGameEvent;
+import me.whereareiam.anvil.edition.java.protocol.type.player.GameMode;
+import me.whereareiam.anvil.edition.java.protocol.type.world.GameEventType;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 

@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
-import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundSwing;
+import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundSwing;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ValueTranslator;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;

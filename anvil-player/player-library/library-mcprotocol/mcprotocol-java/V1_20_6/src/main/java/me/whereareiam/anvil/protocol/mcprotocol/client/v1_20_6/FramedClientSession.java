@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
 import io.netty.channel.ChannelHandlerContext;
-import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
+import me.whereareiam.anvil.edition.java.protocol.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.netty.ReceivedFrames;

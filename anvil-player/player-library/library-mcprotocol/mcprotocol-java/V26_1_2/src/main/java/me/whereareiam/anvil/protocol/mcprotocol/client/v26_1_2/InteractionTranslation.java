@@ -1,14 +1,14 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
-import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
-import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundAttack;
-import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundInteract;
-import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
-import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
+import me.whereareiam.anvil.edition.java.protocol.model.world.BlockPosition;
+import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundAttack;
+import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundInteract;
+import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundUseItem;
+import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundUseItemOn;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ValueTranslator;
 import org.cloudburstmc.math.vector.Vector3d;

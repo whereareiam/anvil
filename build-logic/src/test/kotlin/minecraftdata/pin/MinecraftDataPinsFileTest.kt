@@ -59,10 +59,10 @@ class MinecraftDataPinsFileTest {
 			),
 		)
 
-		val formatted = MinecraftDataPinsFile(kind).format(pins, ":protocol-java-block:pinBlockData")
+		val formatted = MinecraftDataPinsFile(kind).format(pins, ":data-block:pinBlockData")
 
 		assertEquals(pins.copy(releases = pins.releases.sortedBy { it.protocol }), read(formatted))
-		assertTrue(formatted.contains("./gradlew :protocol-java-block:pinBlockData"))
+		assertTrue(formatted.contains("./gradlew :data-block:pinBlockData"))
 	}
 
 	@Test

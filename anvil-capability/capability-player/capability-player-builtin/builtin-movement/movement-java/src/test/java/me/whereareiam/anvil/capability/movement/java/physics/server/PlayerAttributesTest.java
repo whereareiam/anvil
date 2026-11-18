@@ -1,9 +1,9 @@
 package me.whereareiam.anvil.capability.movement.java.physics.server;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeSnapshot;
-import me.whereareiam.anvil.protocol.java.physics.living.attribute.AttributeMap;
-import me.whereareiam.anvil.protocol.java.physics.living.attribute.LivingAttributes;
+import me.whereareiam.anvil.edition.java.physics.living.attribute.AttributeMap;
+import me.whereareiam.anvil.edition.java.physics.living.attribute.LivingAttributes;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.state.AttributeSnapshot;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 

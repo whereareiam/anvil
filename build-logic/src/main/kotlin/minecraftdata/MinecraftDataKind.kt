@@ -4,7 +4,7 @@ import java.io.Serializable
 
 /**
  * One kind of data a module generates from PrismarineJS minecraft-data, such as the block data of
- * `protocol-java-block` or the packet names of `protocol-java-packet`: the pins file naming one minecraft-data release
+ * `data-block` or the packet names of `data-packet`: the pins file naming one minecraft-data release
  * and, per protocol, the files of that release the data is made of.
  *
  * Every protocol's files of one kind are found through minecraft-data's own `data/dataPaths.json`, which names the

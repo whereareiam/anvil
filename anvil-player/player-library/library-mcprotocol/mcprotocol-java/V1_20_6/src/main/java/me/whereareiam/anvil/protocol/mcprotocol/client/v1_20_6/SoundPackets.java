@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
-import me.whereareiam.anvil.protocol.java.api.type.world.SoundSource;
+import me.whereareiam.anvil.edition.java.protocol.type.world.SoundSource;
 import org.geysermc.mcprotocollib.protocol.data.game.level.sound.SoundCategory;
 import org.jetbrains.annotations.NotNull;
 

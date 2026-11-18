@@ -2,7 +2,7 @@ package me.whereareiam.anvil.capability.movement.java.physics;
 
 import lombok.Getter;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.protocol.java.physics.EntityRules;
+import me.whereareiam.anvil.edition.java.physics.EntityRules;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;

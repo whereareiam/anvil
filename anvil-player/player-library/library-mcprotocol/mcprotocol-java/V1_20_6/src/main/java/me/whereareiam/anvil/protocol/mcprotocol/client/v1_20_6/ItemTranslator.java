@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
-import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
+import me.whereareiam.anvil.edition.java.protocol.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;

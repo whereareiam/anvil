@@ -1,14 +1,14 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.translation;
 
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemChat;
+import me.whereareiam.anvil.edition.java.protocol.packet.chat.ServerboundChat;
+import me.whereareiam.anvil.edition.java.protocol.packet.chat.ServerboundChatCommand;
+import me.whereareiam.anvil.edition.java.protocol.packet.cookie.ClientboundCookieRequest;
 import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.JavaPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
-import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
-import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChatCommand;
-import me.whereareiam.anvil.protocol.java.api.packet.cookie.ClientboundCookieRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;

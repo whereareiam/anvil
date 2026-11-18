@@ -1,5 +1,5 @@
 import me.whereareiam.anvil.buildlogic.capability.CapabilityFamilySource
-import me.whereareiam.anvil.buildlogic.capability.ProtocolEditions
+import me.whereareiam.anvil.buildlogic.edition.Editions
 import me.whereareiam.toolkit.publish.maven.extension.ToolkitPublishExtension
 
 plugins {
@@ -60,6 +60,6 @@ dependencies {
 	// The host provider in the common code names the protocols its worker extensions speak, and the root reads that
 	// code for its sources and Javadoc.
 	family.editions.forEach { edition ->
-		"compileOnly"(project(ProtocolEditions.apiPath(edition)))
+		"compileOnly"(project(Editions.apiPath(edition)))
 	}
 }

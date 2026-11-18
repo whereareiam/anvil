@@ -1,0 +1,23 @@
+package me.whereareiam.anvil.edition.java.protocol.packet.cookie;
+
+import lombok.Value;
+import lombok.experimental.FieldNameConstants;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * A cookie the server stores on the client under a key, in the configuration or game phase, replacing one with the
+ * same key. Releases before Minecraft 1.20.5 have no cookies.
+ */
+@Value
+@FieldNameConstants
+public class ClientboundStoreCookie implements ClientboundPacket {
+	/**
+	 * The cookie's key, a resource location with its namespace, such as {@code minecraft:ticket}.
+	 */
+	@NotNull String key;
+	/**
+	 * The cookie's payload, at most 5120 bytes.
+	 */
+	byte @NotNull [] payload;
+}

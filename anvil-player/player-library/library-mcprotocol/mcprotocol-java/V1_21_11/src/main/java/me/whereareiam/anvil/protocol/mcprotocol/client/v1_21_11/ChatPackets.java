@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
-import me.whereareiam.anvil.protocol.java.api.packet.chat.ServerboundChat;
+import me.whereareiam.anvil.edition.java.protocol.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ChatTranslation;
 import org.geysermc.mcprotocollib.network.packet.Packet;

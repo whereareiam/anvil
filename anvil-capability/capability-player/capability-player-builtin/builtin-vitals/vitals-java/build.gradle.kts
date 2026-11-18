@@ -7,8 +7,8 @@ description = "Java Edition side of the built-in vitals capability: its worker e
 
 dependencies {
 	implementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinVitals.vitalsApi)
+	implementation(projects.anvilEdition.editionJava.javaProtocol.protocolApi)
 	implementation(projects.anvilPlayer.playerApi)
-	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
 
-	testImplementation(testFixtures(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker))
+	testImplementation(testFixtures(projects.anvilEdition.editionJava.javaProtocol.protocolWorker))
 }

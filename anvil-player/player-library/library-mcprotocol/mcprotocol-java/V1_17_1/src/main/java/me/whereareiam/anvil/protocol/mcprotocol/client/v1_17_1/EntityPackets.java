@@ -2,7 +2,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_17_1;
 
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerRemoveEntitiesPacket;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.EntityTranslation;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ItemTranslator;

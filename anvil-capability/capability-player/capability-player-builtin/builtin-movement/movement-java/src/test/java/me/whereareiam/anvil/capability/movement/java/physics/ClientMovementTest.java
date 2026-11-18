@@ -5,23 +5,23 @@ import me.whereareiam.anvil.capability.movement.channel.MovementState;
 import me.whereareiam.anvil.capability.movement.channel.PhysicsChange;
 import me.whereareiam.anvil.capability.movement.model.MovementInput;
 import me.whereareiam.anvil.capability.movement.model.Position;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.edition.java.protocol.packet.health.ClientboundSetHealth;
+import me.whereareiam.anvil.edition.java.protocol.packet.player.ClientboundPlayerAbilities;
+import me.whereareiam.anvil.edition.java.protocol.packet.player.ClientboundPlayerPosition;
+import me.whereareiam.anvil.edition.java.protocol.packet.player.ServerboundClientTickEnd;
+import me.whereareiam.anvil.edition.java.protocol.packet.player.ServerboundPlayerAbilities;
+import me.whereareiam.anvil.edition.java.protocol.packet.player.ServerboundPlayerCommand;
+import me.whereareiam.anvil.edition.java.protocol.packet.player.ServerboundPlayerInput;
+import me.whereareiam.anvil.edition.java.protocol.packet.player.move.ServerboundMovePlayerPos;
+import me.whereareiam.anvil.edition.java.protocol.packet.player.move.ServerboundMovePlayerPosRot;
+import me.whereareiam.anvil.edition.java.protocol.packet.player.move.ServerboundMovePlayerRot;
+import me.whereareiam.anvil.edition.java.protocol.type.entity.Relative;
+import me.whereareiam.anvil.edition.java.protocol.type.player.PlayerCommandAction;
 import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetEntityMotion;
-import me.whereareiam.anvil.protocol.java.api.packet.health.ClientboundSetHealth;
-import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerAbilities;
-import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
-import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundClientTickEnd;
-import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerAbilities;
-import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerCommand;
-import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerInput;
-import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPos;
-import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerPosRot;
-import me.whereareiam.anvil.protocol.java.api.packet.player.move.ServerboundMovePlayerRot;
-import me.whereareiam.anvil.protocol.java.api.type.entity.Relative;
-import me.whereareiam.anvil.protocol.java.api.type.player.PlayerCommandAction;
 import me.whereareiam.anvil.protocol.worker.TestOperations;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -227,7 +227,7 @@ class ClientMovementTest {
 	void runsThePhysicsOfAPlayerWhoseEntityIdIsNegative() {
 		TestClient client = bind(new TestClient("1.21.11").load(0, 0));
 		client.player.connect();
-		client.player.deliver(me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin.builder()
+		client.player.deliver(me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin.builder()
 				.entityId(new EntityId(-39858984)).level("minecraft:overworld").dimension("minecraft:overworld")
 				.dimensionType(client.dimension).build());
 		client.send();

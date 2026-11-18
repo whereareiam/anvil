@@ -7,12 +7,12 @@ import me.whereareiam.anvil.capability.movement.java.physics.ClientBehaviour;
 import me.whereareiam.anvil.capability.movement.java.physics.MovementRules;
 import me.whereareiam.anvil.capability.movement.java.physics.server.PlayerState;
 import me.whereareiam.anvil.capability.movement.model.MovementInput;
-import me.whereareiam.anvil.protocol.java.api.packet.player.ServerboundPlayerAbilities;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Trigonometry;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
-import me.whereareiam.anvil.protocol.java.physics.living.LivingBody;
-import me.whereareiam.anvil.protocol.java.physics.living.attribute.LivingAttributes;
-import me.whereareiam.anvil.protocol.java.physics.world.BlockReader;
+import me.whereareiam.anvil.edition.java.physics.geometry.Trigonometry;
+import me.whereareiam.anvil.edition.java.physics.geometry.Vector;
+import me.whereareiam.anvil.edition.java.physics.living.LivingBody;
+import me.whereareiam.anvil.edition.java.physics.living.attribute.LivingAttributes;
+import me.whereareiam.anvil.edition.java.physics.world.BlockReader;
+import me.whereareiam.anvil.edition.java.protocol.packet.player.ServerboundPlayerAbilities;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

@@ -9,11 +9,11 @@ import me.whereareiam.anvil.capability.dialogs.model.dialog.DialogOption;
 import me.whereareiam.anvil.capability.dialogs.type.DialogActionType;
 import me.whereareiam.anvil.capability.dialogs.type.DialogAfterAction;
 import me.whereareiam.anvil.capability.dialogs.type.DialogInputType;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtList;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtNumber;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtTag;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtCompound;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtList;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtNumber;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtString;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.capability.messages.java;
 
-import me.whereareiam.anvil.protocol.java.api.model.chat.MessageSignature;
-import me.whereareiam.anvil.protocol.java.api.model.chat.PackedMessageSignature;
+import me.whereareiam.anvil.edition.java.protocol.model.chat.MessageSignature;
+import me.whereareiam.anvil.edition.java.protocol.model.chat.PackedMessageSignature;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

@@ -7,5 +7,5 @@ description = "Release-neutral client port that MCProtocolLib client segments im
 
 dependencies {
 	api(projects.anvilApi)
-	api(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
+	api(projects.anvilEdition.editionJava.javaProtocol.protocolApi)
 }

@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_3;
 
-import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.edition.java.protocol.model.world.DimensionType;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketDemand;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import net.kyori.adventure.key.Key;

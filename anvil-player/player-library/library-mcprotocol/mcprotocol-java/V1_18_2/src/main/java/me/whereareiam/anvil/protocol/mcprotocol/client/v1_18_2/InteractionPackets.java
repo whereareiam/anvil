@@ -4,9 +4,9 @@ import com.github.steveice10.mc.protocol.data.game.entity.metadata.Position;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundUseItemOnPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundUseItemPacket;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition;
-import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItem;
-import me.whereareiam.anvil.protocol.java.api.packet.interaction.ServerboundUseItemOn;
+import me.whereareiam.anvil.edition.java.protocol.model.world.BlockPosition;
+import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundUseItem;
+import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundUseItemOn;
 import org.jetbrains.annotations.NotNull;
 
 /**

@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client;
 
 import me.whereareiam.anvil.api.type.DisconnectCause;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.mcprotocol.client.model.ClientProfile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

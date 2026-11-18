@@ -9,8 +9,8 @@ import com.github.steveice10.opennbt.tag.builtin.IntTag;
 import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
 import com.github.steveice10.opennbt.tag.builtin.Tag;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ConnectionPackets;
 import org.junit.jupiter.api.Test;
 
@@ -29,9 +29,9 @@ class ConnectionPacketsTest {
 
 	@Test
 	void carriesTheGameModeOfTheLogin() {
-		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.CREATIVE,
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.CREATIVE,
 				((ClientboundLogin) packets.decode(login(GameMode.CREATIVE))).getGameMode());
-		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.SURVIVAL,
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SURVIVAL,
 				((ClientboundLogin) packets.decode(login(GameMode.UNKNOWN))).getGameMode());
 	}
 
@@ -39,10 +39,10 @@ class ConnectionPacketsTest {
 	void carriesTheGameModeOfTheRespawn() {
 		packets.decode(login(GameMode.SURVIVAL));
 
-		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.SPECTATOR,
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SPECTATOR,
 				((ClientboundRespawn) packets.decode(new ServerRespawnPacket(overworld(), "minecraft:overworld", 0,
 						GameMode.SPECTATOR, GameMode.SURVIVAL, false, false, true))).getGameMode());
-		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.ADVENTURE,
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.ADVENTURE,
 				((ClientboundRespawn) packets.decode(new ServerRespawnPacket(overworld(), "minecraft:overworld", 0,
 						GameMode.ADVENTURE, GameMode.SPECTATOR, false, false, true))).getGameMode());
 	}

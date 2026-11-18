@@ -18,8 +18,8 @@ dependencies {
 	// The launcher's shaded JAR carries the planner at runtime; tests only compile against it.
 	testCompileOnly(projects.anvilProcess.processCommon)
 
+	testRuntimeOnly(projects.anvilEdition.editionJava.javaProtocol.protocolWorker)
 	testRuntimeOnly(projects.anvilPlayer.playerLibrary.libraryMcprotocol)
-	testRuntimeOnly(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker)
 	testRuntimeOnly(projects.anvilPlayer.playerWorker)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.bukkitAgent)
 	testRuntimeOnly(projects.anvilProcess.processPlatform.platformBukkit.paperProvider)
