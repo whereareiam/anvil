@@ -12,10 +12,10 @@ toolkitPublish {
 }
 
 dependencies {
-	compileOnly(projects.anvilProcess.processProtocol.protocolAgent.protocolAgentApi)
+	compileOnly(projects.anvilProcess.processAgent.agentServer.serverApi)
 	compileOnly(libs.bukkit.spigot)
 
-	embedded(projects.anvilProcess.processProtocol.protocolAgent) { isTransitive = false }
+	embedded(projects.anvilProcess.processAgent.agentServer) { isTransitive = false }
 }
 
 // The agent uses only API names that Mojang and Spigot mappings share, so Paper loads it without remapping.

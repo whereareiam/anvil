@@ -19,9 +19,9 @@ neoForge {
 
 dependencies {
 	compileOnly(projects.anvilApi)
-	compileOnly(projects.anvilProcess.processProtocol.protocolAgent.protocolAgentApi)
+	compileOnly(projects.anvilProcess.processAgent.agentServer.serverApi)
 
-	embedded(projects.anvilProcess.processProtocol.protocolAgent) { isTransitive = false }
+	embedded(projects.anvilProcess.processAgent.agentServer) { isTransitive = false }
 }
 
 // NeoForge refuses a mod whose version does not start with a digit, which a branch-qualified build such as

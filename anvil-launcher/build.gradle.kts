@@ -44,7 +44,7 @@ dependencies {
     implementation(projects.anvilEnvironment.provisioning.provisioningWorkspace.workspaceApi)
     implementation(projects.anvilPlayer.playerApi)
     implementation(projects.anvilProcess.processApi)
-    implementation(projects.anvilProcess.processProtocol.protocolHost.protocolHostApi)
+    implementation(projects.anvilProcess.processAgent.agentClient.clientApi)
     implementation(projects.anvilWorkbench.workbenchApi)
 
     compileOnly(projects.anvilCapability.capabilityCommon)
@@ -52,7 +52,7 @@ dependencies {
     compileOnly(projects.anvilEnvironment.execution.executionManaged)
     compileOnly(projects.anvilPlayer.playerCommon)
     compileOnly(projects.anvilProcess.processCommon)
-    compileOnly(projects.anvilProcess.processProtocol.protocolHost.protocolHostCommon)
+    compileOnly(projects.anvilProcess.processAgent.agentClient.clientCommon)
     compileOnly(projects.anvilWorkbench)
     compileOnly(projects.anvilWorkbench.workbenchCommon)
     compileOnly(projects.anvilWorkbench.workbenchRemote)
@@ -68,7 +68,7 @@ dependencies {
     embedded(projects.anvilEnvironment.provisioning.provisioningWorkspace) { isTransitive = false }
     embedded(projects.anvilPlayer.playerCommon) { isTransitive = false }
     embedded(projects.anvilProcess.processCommon) { isTransitive = false }
-    embedded(projects.anvilProcess.processProtocol.protocolHost.protocolHostCommon) { isTransitive = false }
+    embedded(projects.anvilProcess.processAgent.agentClient.clientCommon) { isTransitive = false }
     embedded(projects.anvilWorkbench) { isTransitive = false }
     embedded(projects.anvilWorkbench.workbenchCommon) { isTransitive = false }
     embedded(projects.anvilWorkbench.workbenchProtocol) { isTransitive = false }
@@ -94,7 +94,7 @@ dependencies {
     testImplementation(projects.anvilEnvironment.provisioning.provisioningWorkspace)
     testImplementation(projects.anvilPlayer.playerCommon)
     testImplementation(projects.anvilProcess.processCommon)
-    testImplementation(projects.anvilProcess.processProtocol.protocolHost.protocolHostCommon)
+    testImplementation(projects.anvilProcess.processAgent.agentClient.clientCommon)
     testImplementation(projects.anvilWorkbench)
     testImplementation(projects.anvilWorkbench.workbenchCommon)
     testImplementation(projects.anvilWorkbench.workbenchRemote)
