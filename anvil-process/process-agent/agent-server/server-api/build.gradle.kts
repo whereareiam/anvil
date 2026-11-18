@@ -10,5 +10,5 @@ toolkitPublish {
 }
 
 dependencies {
-	api(projects.anvilProcess.processProtocol.processProtocolApi)
+	api(projects.anvilProcess.processAgent.agentApi)
 }

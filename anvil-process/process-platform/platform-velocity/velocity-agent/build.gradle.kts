@@ -12,10 +12,10 @@ toolkitPublish {
 
 dependencies {
 	compileOnly(projects.anvilApi)
-	compileOnly(projects.anvilProcess.processProtocol.protocolAgent.protocolAgentApi)
+	compileOnly(projects.anvilProcess.processAgent.agentServer.serverApi)
 	compileOnly(libs.velocity)
 
-	embedded(projects.anvilProcess.processProtocol.protocolAgent) { isTransitive = false }
+	embedded(projects.anvilProcess.processAgent.agentServer) { isTransitive = false }
 
 	annotationProcessor(libs.velocity)
 }
