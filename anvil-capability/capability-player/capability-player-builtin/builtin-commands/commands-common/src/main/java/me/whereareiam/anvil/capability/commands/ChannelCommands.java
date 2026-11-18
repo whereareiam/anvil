@@ -4,7 +4,7 @@ import me.whereareiam.anvil.capability.commands.channel.CommandsChannel;
 import me.whereareiam.anvil.capability.commands.model.CommandTree;
 import me.whereareiam.anvil.capability.commands.parse.CommandVerifier;
 import me.whereareiam.anvil.capability.commands.type.CommandCheck;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

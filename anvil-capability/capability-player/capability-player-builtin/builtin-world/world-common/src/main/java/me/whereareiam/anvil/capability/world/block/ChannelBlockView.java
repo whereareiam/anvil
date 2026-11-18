@@ -7,7 +7,7 @@ import me.whereareiam.anvil.capability.world.model.block.Block;
 import me.whereareiam.anvil.capability.world.model.block.BlockArea;
 import me.whereareiam.anvil.capability.world.model.block.BlockPosition;
 import me.whereareiam.anvil.capability.world.model.level.ChunkPosition;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;

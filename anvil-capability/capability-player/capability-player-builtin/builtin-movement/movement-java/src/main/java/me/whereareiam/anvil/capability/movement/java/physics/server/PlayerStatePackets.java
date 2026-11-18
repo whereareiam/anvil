@@ -16,7 +16,7 @@ import me.whereareiam.anvil.edition.java.protocol.packet.health.ClientboundSetHe
 import me.whereareiam.anvil.edition.java.protocol.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.ClientboundPlayerPosition;
 import me.whereareiam.anvil.edition.java.protocol.packet.world.ClientboundGameEvent;
-import me.whereareiam.anvil.protocol.api.channel.Subscription;
+import me.whereareiam.anvil.player.api.channel.Subscription;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

@@ -8,10 +8,10 @@ import me.whereareiam.anvil.capability.inventory.model.ItemDisplay;
 import me.whereareiam.anvil.capability.inventory.model.ItemType;
 import me.whereareiam.anvil.capability.inventory.type.InventoryClick;
 import me.whereareiam.anvil.capability.inventory.type.ItemNameSource;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.api.model.text.TextColor;
-import me.whereareiam.anvil.protocol.api.model.text.TextStyle;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.TextColor;
+import me.whereareiam.anvil.player.api.model.text.TextStyle;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

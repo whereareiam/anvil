@@ -8,7 +8,7 @@ import me.whereareiam.anvil.capability.interaction.type.BlockFace;
 import me.whereareiam.anvil.capability.interaction.type.EntityInteraction;
 import me.whereareiam.anvil.capability.interaction.type.Hand;
 import me.whereareiam.anvil.capability.world.model.block.BlockPosition;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

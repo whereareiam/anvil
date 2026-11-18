@@ -7,9 +7,9 @@ import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPackets;
 import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.type.connection.ConnectionState;
-import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
-import me.whereareiam.anvil.protocol.worker.TestWorkerPlayer;
-import me.whereareiam.anvil.protocol.worker.WorkerProtocols;
+import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.player.worker.TestWorkerPlayer;
+import me.whereareiam.anvil.player.worker.WorkerProtocols;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

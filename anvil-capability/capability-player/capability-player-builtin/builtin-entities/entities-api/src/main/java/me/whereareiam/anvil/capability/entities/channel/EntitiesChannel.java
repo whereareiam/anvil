@@ -4,8 +4,8 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.capability.entities.model.EntityChange;
 import me.whereareiam.anvil.capability.entities.model.KnownEntities;
-import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.player.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.player.api.model.channel.OperationDescriptor;
 
 /**
  * The channel contract between the host entities capability and its worker extensions: the capability ID both

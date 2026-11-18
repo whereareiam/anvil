@@ -5,8 +5,8 @@ import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.capability.messages.model.ChatMessage;
 import me.whereareiam.anvil.capability.messages.model.DroppedChat;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
-import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.player.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.player.api.model.channel.OperationDescriptor;
 
 /**
  * The channel contract between the host messages capability and its worker extensions: the capability ID both

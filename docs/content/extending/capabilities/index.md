@@ -76,7 +76,7 @@ contracts under `capability.api.player`. Use `PlayerCapabilityProvider` when the
 needs only player identity/version, observations, declared dependencies, and cleanup.
 
 Protocol-backed player providers use `capability-protocol-api`, and their native worker extensions implement
-`WorkerExtension` from `protocol-api`, which it includes.
+`WorkerExtension` from `player-api`, which it includes.
 `ProtocolPlayerCapabilityProvider` names what it needs from the player's library: `requiredProtocols()`, the edition
 protocols its worker extension speaks, such as `JavaProtocol`, and `workerBacked()` for an extension that needs no
 edition protocol. Only a capability that uses one library's own services restricts `supportedLibraries()`. Its

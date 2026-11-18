@@ -5,7 +5,7 @@ import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.api.history.HistoryCursor;
 import me.whereareiam.anvil.capability.sounds.channel.SoundsChannel;
 import me.whereareiam.anvil.capability.sounds.model.HeardSound;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;

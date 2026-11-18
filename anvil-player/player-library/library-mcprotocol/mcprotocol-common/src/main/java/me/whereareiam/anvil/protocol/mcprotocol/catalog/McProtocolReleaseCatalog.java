@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.catalog;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
+import me.whereareiam.anvil.player.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.mcprotocol.model.ReleaseDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

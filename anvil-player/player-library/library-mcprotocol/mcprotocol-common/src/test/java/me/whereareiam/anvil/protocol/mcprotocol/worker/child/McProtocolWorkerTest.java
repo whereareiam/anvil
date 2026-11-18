@@ -2,11 +2,12 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
-import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
-import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
-import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
-import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
+import me.whereareiam.anvil.player.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.player.api.worker.OperationRegistry;
+import me.whereareiam.anvil.player.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.player.api.worker.WorkerBinding;
+import me.whereareiam.anvil.player.api.worker.WorkerExtension;
+import me.whereareiam.anvil.player.worker.WorkerExtensions;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerConnection;
 import me.whereareiam.anvil.protocol.mcprotocol.model.worker.WorkerPlayerCapabilities;
@@ -18,7 +19,6 @@ import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerControlOperation;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.fixture.RecordingClient;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageWriter;
-import me.whereareiam.anvil.protocol.worker.WorkerExtensions;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 

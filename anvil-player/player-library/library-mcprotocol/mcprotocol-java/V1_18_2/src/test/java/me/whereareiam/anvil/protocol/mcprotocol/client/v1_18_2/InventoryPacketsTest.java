@@ -29,7 +29,7 @@ import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.Client
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ClientboundSetPlayerInventory;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ServerboundSetCarriedItem;
 import me.whereareiam.anvil.edition.java.protocol.type.interaction.ClickType;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.Text;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;
 

@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.commands.channel;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.capability.commands.model.CommandTree;
-import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.player.api.model.channel.EventDescriptor;
 
 /**
  * The channel contract between the host commands capability and its worker extensions: the capability ID both

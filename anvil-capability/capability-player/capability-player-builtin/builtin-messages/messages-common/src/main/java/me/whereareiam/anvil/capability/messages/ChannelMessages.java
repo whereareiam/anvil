@@ -7,8 +7,8 @@ import me.whereareiam.anvil.capability.messages.model.ChatLines;
 import me.whereareiam.anvil.capability.messages.model.DroppedChat;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
 import me.whereareiam.anvil.capability.messages.type.ChatDropReason;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.player.api.model.text.Text;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;

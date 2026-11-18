@@ -13,11 +13,11 @@ import me.whereareiam.anvil.edition.java.protocol.packet.world.ClientboundGameEv
 import me.whereareiam.anvil.edition.java.protocol.type.player.ClientCommandAction;
 import me.whereareiam.anvil.edition.java.protocol.type.world.GameEventType;
 import me.whereareiam.anvil.edition.java.protocol.worker.TestJavaPlayer;
-import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
-import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
-import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
-import me.whereareiam.anvil.protocol.worker.TestOperations;
-import me.whereareiam.anvil.protocol.worker.TestWorkerPlayer;
+import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.player.api.worker.WorkerBinding;
+import me.whereareiam.anvil.player.api.worker.WorkerExtension;
+import me.whereareiam.anvil.player.worker.TestOperations;
+import me.whereareiam.anvil.player.worker.TestWorkerPlayer;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

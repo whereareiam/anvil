@@ -5,8 +5,8 @@ import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.capability.dialogs.model.DialogRegistry;
 import me.whereareiam.anvil.capability.dialogs.model.click.DialogClick;
 import me.whereareiam.anvil.capability.dialogs.model.dialog.Dialog;
-import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.player.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.player.api.model.channel.OperationDescriptor;
 
 /**
  * The channel contract between the host dialogs capability and its worker extensions: the capability ID both register

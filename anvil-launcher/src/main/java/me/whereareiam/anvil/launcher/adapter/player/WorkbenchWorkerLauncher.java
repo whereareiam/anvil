@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.launcher.adapter.player;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.protocol.api.library.ProtocolWorkerLauncher;
-import me.whereareiam.anvil.protocol.api.model.WorkerLaunch;
+import me.whereareiam.anvil.player.api.library.ProtocolWorkerLauncher;
+import me.whereareiam.anvil.player.api.model.WorkerLaunch;
 import me.whereareiam.anvil.workbench.api.Workbench;
 import me.whereareiam.anvil.workbench.api.model.JavaMainLaunch;
 import org.jetbrains.annotations.NotNull;

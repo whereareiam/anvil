@@ -7,8 +7,8 @@ import me.whereareiam.anvil.capability.world.model.environment.WorldState;
 import me.whereareiam.anvil.capability.world.model.level.DimensionChange;
 import me.whereareiam.anvil.capability.world.model.level.ChunkPosition;
 import me.whereareiam.anvil.capability.world.model.level.ServerLevels;
-import me.whereareiam.anvil.protocol.api.model.channel.EventDescriptor;
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.player.api.model.channel.EventDescriptor;
+import me.whereareiam.anvil.player.api.model.channel.OperationDescriptor;
 
 /**
  * The channel contract between the host world capability and its worker extensions: the capability ID both register

@@ -5,7 +5,7 @@ import me.whereareiam.anvil.capability.commands.model.CommandTree;
 import me.whereareiam.anvil.capability.commands.model.CommandTreeNode;
 import me.whereareiam.anvil.capability.commands.type.CommandCheck;
 import me.whereareiam.anvil.capability.commands.type.CommandNodeType;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

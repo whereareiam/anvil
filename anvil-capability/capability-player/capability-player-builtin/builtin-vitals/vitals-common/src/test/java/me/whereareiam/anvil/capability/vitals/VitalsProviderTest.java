@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.vitals;
 import me.whereareiam.anvil.capability.protocol.api.player.TestProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.vitals.channel.VitalsChannel;
 import me.whereareiam.anvil.edition.java.protocol.JavaProtocol;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

@@ -3,7 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.model;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
-import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
+import me.whereareiam.anvil.player.api.model.ProtocolRelease;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

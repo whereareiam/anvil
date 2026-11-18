@@ -21,11 +21,11 @@ import me.whereareiam.anvil.edition.java.protocol.packet.interaction.Serverbound
 import me.whereareiam.anvil.edition.java.protocol.type.interaction.Direction;
 import me.whereareiam.anvil.edition.java.protocol.type.interaction.InteractAction;
 import me.whereareiam.anvil.edition.java.protocol.type.interaction.InteractionHand;
-import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
-import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
-import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
-import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
-import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
+import me.whereareiam.anvil.player.api.model.player.ViewRotation;
+import me.whereareiam.anvil.player.api.worker.OperationRegistry;
+import me.whereareiam.anvil.player.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.player.api.worker.WorkerBinding;
+import me.whereareiam.anvil.player.api.worker.WorkerExtension;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.IntFunction;

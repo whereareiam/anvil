@@ -29,11 +29,11 @@ import me.whereareiam.anvil.edition.java.protocol.packet.world.border.Clientboun
 import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundSetBorderWarningDistance;
 import me.whereareiam.anvil.edition.java.protocol.type.world.CardinalLight;
 import me.whereareiam.anvil.edition.java.protocol.type.world.Skybox;
-import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
-import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
-import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
-import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
+import me.whereareiam.anvil.player.api.channel.Subscription;
+import me.whereareiam.anvil.player.api.worker.OperationRegistry;
+import me.whereareiam.anvil.player.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.player.api.worker.WorkerBinding;
+import me.whereareiam.anvil.player.api.worker.WorkerExtension;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

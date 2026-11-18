@@ -4,8 +4,8 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.capability.movement.model.MovementInput;
 import me.whereareiam.anvil.capability.movement.model.Position;
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
-import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
+import me.whereareiam.anvil.player.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.player.api.model.player.ViewRotation;
 
 /**
  * The channel contract between the host movement capability and its worker extensions: the capability ID both

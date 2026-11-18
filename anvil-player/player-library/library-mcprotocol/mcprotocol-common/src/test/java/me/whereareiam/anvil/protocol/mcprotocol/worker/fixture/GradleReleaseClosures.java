@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.fixture;
 
-import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
+import me.whereareiam.anvil.player.api.model.ProtocolRelease;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;

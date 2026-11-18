@@ -29,8 +29,8 @@ qualified implementation class names, one per line.
 | Player capability using shared observations/dependencies | `me.whereareiam.anvil.capability.api.player.PlayerCapabilityProvider` |
 | Protocol-backed player capability provider | `me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider` |
 | Agent-backed process capability provider | `me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider` |
-| Native worker extension | `me.whereareiam.anvil.protocol.api.worker.WorkerExtension` |
-| Protocol library | `me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider` |
+| Native worker extension | `me.whereareiam.anvil.player.api.worker.WorkerExtension` |
+| Protocol library | `me.whereareiam.anvil.player.api.library.ProtocolLibraryProvider` |
 | Platform provider | `me.whereareiam.anvil.platform.api.PlatformProvider` |
 | Agent operation provider | `me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider` |
 
@@ -50,16 +50,16 @@ Use each scoped API at the same Anvil version as the host:
 | Client-side agent clients, connections, and directories | `agent-client-api` |
 | Embedded native handlers and platform agents | `agent-server-api` |
 | Shared agent request/response descriptors and payloads | `agent-api` |
-| Protocol libraries, the typed player channel, and native worker extensions | `protocol-api` |
+| Protocol libraries, the typed player channel, and native worker extensions | `player-api` |
 | Global engine extensions and public scenario, player, process, and capability contracts | `api` |
 
 Both mechanism APIs, `capability-protocol-api` and `capability-agent-api`, include `capability-api`, and
-`capability-protocol-api` also includes `protocol-api`. Neither includes the other or an agent transport API.
+`capability-protocol-api` also includes `player-api`. Neither includes the other or an agent transport API.
 Both agent role APIs include the shared `agent-api` contracts. Neither agent role API includes the other.
 Use `compileOnly` for parent-provided Anvil APIs and platform SDKs in installed agent extension JARs.
 
 The `protocol-adapter-api` compatibility coordinate supplies a POM-only dependency bundle for
-`protocol-api` and `capability-protocol-api`. It contains no classes. Prefer the direct scoped coordinates
+`player-api` and `capability-protocol-api`. It contains no classes. Prefer the direct scoped coordinates
 for new integrations; the compatibility bundle does not restore old interfaces or adapt compiled
 extension binaries. Anvil's BOM includes this coordinate alongside the canonical scoped artifacts.
 

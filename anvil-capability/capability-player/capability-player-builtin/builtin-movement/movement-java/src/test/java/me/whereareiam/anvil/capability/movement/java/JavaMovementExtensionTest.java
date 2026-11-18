@@ -5,12 +5,12 @@ import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.move.ServerboundMovePlayerPosRot;
 import me.whereareiam.anvil.edition.java.protocol.worker.TestJavaPlayer;
-import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
-import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
-import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
-import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
-import me.whereareiam.anvil.protocol.worker.TestOperations;
-import me.whereareiam.anvil.protocol.worker.TestWorkerPlayer;
+import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.player.api.model.player.ViewRotation;
+import me.whereareiam.anvil.player.api.worker.WorkerBinding;
+import me.whereareiam.anvil.player.api.worker.WorkerExtension;
+import me.whereareiam.anvil.player.worker.TestOperations;
+import me.whereareiam.anvil.player.worker.TestWorkerPlayer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 

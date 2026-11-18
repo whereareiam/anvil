@@ -5,7 +5,7 @@ import me.whereareiam.anvil.capability.api.history.HistoryCursor;
 import me.whereareiam.anvil.capability.vitals.channel.VitalsChannel;
 import me.whereareiam.anvil.capability.vitals.model.Death;
 import me.whereareiam.anvil.capability.vitals.model.VitalStatus;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;

@@ -52,7 +52,7 @@ public class RoundTripRequest {
 ```java
 package com.example.roundtrip;
 
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.player.api.model.channel.OperationDescriptor;
 
 /**
  * Shared descriptors used by the host provider and native worker extension.
@@ -85,10 +85,10 @@ uses packets); it does not compile against a client library, because it runs on 
 package com.example.roundtrip.java;
 
 import com.example.roundtrip.RoundTripOperations;
-import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
-import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
-import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
-import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
+import me.whereareiam.anvil.player.api.worker.OperationRegistry;
+import me.whereareiam.anvil.player.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.player.api.worker.WorkerBinding;
+import me.whereareiam.anvil.player.api.worker.WorkerExtension;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -126,7 +126,7 @@ binding. Keep the binding's state in the object returned from `bind`.
 `OperationRegistry` accepts the shared descriptor and a typed handler; the worker encodes and decodes the
 values outside the feature implementation.
 
-Create `src/main/resources/META-INF/services/me.whereareiam.anvil.protocol.api.worker.WorkerExtension`
+Create `src/main/resources/META-INF/services/me.whereareiam.anvil.player.api.worker.WorkerExtension`
 in the wiring artifact containing:
 
 ```text
@@ -136,7 +136,7 @@ com.example.roundtrip.java.RoundTripExtension
 The host `ProtocolPlayerCapabilityProvider` needs its own [service descriptor](../../packaging/index.md).
 Give its descriptor the matching capability ID `com.example.roundtrip` and return `Set.of(JavaProtocol.class)`
 from `requiredProtocols()`, so it applies to the players of every library that speaks the Java Edition protocol.
-Obtain `ProtocolChannel channel = context.channel()` from `protocol.api.channel` during
+Obtain `ProtocolChannel channel = context.channel()` from `player.api.channel` during
 its `create` method and construct the host capability over it. Do not check
 `channel.installedCapabilities()` yourself: composition creates the provider only for players whose worker
 installed `com.example.roundtrip`. For any other player it skips the provider and every provider that

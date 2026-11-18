@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.messages;
 import me.whereareiam.anvil.api.player.PlayerCapability;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.messages.model.ChatLines;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.Text;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;

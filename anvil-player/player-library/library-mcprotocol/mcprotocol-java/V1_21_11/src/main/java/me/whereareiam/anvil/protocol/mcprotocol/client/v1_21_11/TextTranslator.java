@@ -1,9 +1,9 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11;
 
-import me.whereareiam.anvil.protocol.api.model.text.ShadowColor;
-import me.whereareiam.anvil.protocol.api.model.text.content.PlayerHeadContent;
-import me.whereareiam.anvil.protocol.api.model.text.content.SpriteContent;
-import me.whereareiam.anvil.protocol.api.model.text.content.TextContent;
+import me.whereareiam.anvil.player.api.model.text.ShadowColor;
+import me.whereareiam.anvil.player.api.model.text.content.PlayerHeadContent;
+import me.whereareiam.anvil.player.api.model.text.content.SpriteContent;
+import me.whereareiam.anvil.player.api.model.text.content.TextContent;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;

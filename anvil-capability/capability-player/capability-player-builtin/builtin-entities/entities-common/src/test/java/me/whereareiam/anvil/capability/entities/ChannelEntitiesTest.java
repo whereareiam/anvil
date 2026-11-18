@@ -6,7 +6,7 @@ import me.whereareiam.anvil.capability.entities.model.EntityChange;
 import me.whereareiam.anvil.capability.entities.model.KnownEntities;
 import me.whereareiam.anvil.capability.entities.model.SeenEntity;
 import me.whereareiam.anvil.capability.entities.type.EntityChangeKind;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 

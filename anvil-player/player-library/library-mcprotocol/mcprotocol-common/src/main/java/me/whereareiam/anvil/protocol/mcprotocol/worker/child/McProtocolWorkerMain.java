@@ -1,10 +1,10 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
+import me.whereareiam.anvil.player.worker.WorkerExtensions;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.type.WorkerControlOperation;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageWriter;
-import me.whereareiam.anvil.protocol.worker.WorkerExtensions;
 import org.jetbrains.annotations.NotNull;
 
 /**

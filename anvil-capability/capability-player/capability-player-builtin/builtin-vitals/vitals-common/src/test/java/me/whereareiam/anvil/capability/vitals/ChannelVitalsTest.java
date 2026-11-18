@@ -4,7 +4,7 @@ import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.capability.vitals.channel.VitalsChannel;
 import me.whereareiam.anvil.capability.vitals.model.Death;
 import me.whereareiam.anvil.capability.vitals.model.VitalStatus;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

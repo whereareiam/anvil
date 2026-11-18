@@ -8,8 +8,8 @@ import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundPlayerC
 import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.edition.java.protocol.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.edition.java.protocol.packet.chat.ServerboundChatCommand;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.api.model.text.content.TranslatedContent;
+import me.whereareiam.anvil.player.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.content.TranslatedContent;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;
 
