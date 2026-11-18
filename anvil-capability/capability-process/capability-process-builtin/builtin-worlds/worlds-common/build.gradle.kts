@@ -10,12 +10,12 @@ dependencies {
 	compileOnly(projects.anvilCapability.capabilityProcess.capabilityProcessApi)
 	compileOnly(projects.anvilCapability.capabilityProcess.capabilityProcessBuiltin.builtinWorlds.worldsAgent)
 	compileOnly(projects.anvilCapability.capabilityProcess.capabilityProcessBuiltin.builtinWorlds.worldsApi)
-	compileOnly(projects.anvilProcess.processProtocol.processProtocolApi)
+	compileOnly(projects.anvilProcess.processAgent.agentApi)
 
 	testImplementation(projects.anvilApi)
 	testImplementation(projects.anvilCapability.capabilityApi)
 	testImplementation(projects.anvilCapability.capabilityProcess.capabilityProcessApi)
 	testImplementation(projects.anvilCapability.capabilityProcess.capabilityProcessBuiltin.builtinWorlds.worldsAgent)
 	testImplementation(projects.anvilCapability.capabilityProcess.capabilityProcessBuiltin.builtinWorlds.worldsApi)
-	testImplementation(projects.anvilProcess.processProtocol.processProtocolApi)
+	testImplementation(projects.anvilProcess.processAgent.agentApi)
 }

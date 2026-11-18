@@ -8,10 +8,10 @@ description = "Paper and Spigot side of the built-in worlds capability: its agen
 
 dependencies {
 	compileOnly(projects.anvilCapability.capabilityProcess.capabilityProcessBuiltin.builtinWorlds.worldsAgent)
-	compileOnly(projects.anvilProcess.processProtocol.protocolAgent.protocolAgentApi)
+	compileOnly(projects.anvilProcess.processAgent.agentServer.serverApi)
 	compileOnly(libs.bukkit.spigot)
 
 	testImplementation(projects.anvilCapability.capabilityProcess.capabilityProcessBuiltin.builtinWorlds.worldsAgent)
-	testImplementation(projects.anvilProcess.processProtocol.protocolAgent.protocolAgentApi)
+	testImplementation(projects.anvilProcess.processAgent.agentServer.serverApi)
 	testImplementation(libs.bukkit.spigot)
 }

@@ -32,11 +32,11 @@ a family's API describes its services and extension points. The launcher binds t
 | `anvil-capability/capability-process/capability-process-api` | Agent-backed process providers and scoped request-channel contexts |
 | `anvil-capability/capability-process/capability-process-builtin` | Process capability families with agent-backed host wiring: Dispatch, and Players, which reports what one server or proxy knows about the players on it from its own agent's events |
 | `anvil-capability/capability-default`            | Aggregate of every built-in capability |
-| `anvil-process/process-protocol/process-protocol-api`                          | Shared operation descriptors, payloads, identities, and exceptions                                                   |
-| `anvil-process/process-protocol/protocol-host/protocol-host-api`            | Host clients, connections, directories, and artifact lookup                               |
-| `anvil-process/process-protocol/protocol-host/protocol-host-common`                       | Connections, stable process clients and sessions, directories, and observations in the Anvil JVM                    |
-| `anvil-process/process-protocol/protocol-agent/protocol-agent-api`      | Native services, operation handlers, and embedded endpoint contracts                                                 |
-| `anvil-process/process-protocol/protocol-agent/protocol-agent-common`                       | Embedded native operation dispatch, transport endpoint, and external-handler loading                                |
+| `anvil-process/process-agent/agent-api`                          | Shared operation descriptors, payloads, identities, and exceptions                                                   |
+| `anvil-process/process-agent/agent-client/client-api`            | Client side: agent clients, connections, directories, and artifact lookup                               |
+| `anvil-process/process-agent/agent-client/client-common`                       | Connections, stable process clients and sessions, directories, and observations in the Anvil JVM                    |
+| `anvil-process/process-agent/agent-server/server-api`      | Server side: native services, operation handlers, and embedded endpoint contracts                                                 |
+| `anvil-process/process-agent/agent-server/server-common`                       | Embedded native operation dispatch, transport endpoint, and external-handler loading                                |
 | `anvil-launcher`                                | Global engine builder, default scenario factory, scoped-service bindings, and shaded assembly; no rules of its own |
 | `anvil-integration/integration-junit`                        | JUnit lifecycle, context injection, and outcome propagation                                                   |
 | `anvil-tooling`                                 | Neutral session contracts, extensible actions, and foreground/IDE runner              |
