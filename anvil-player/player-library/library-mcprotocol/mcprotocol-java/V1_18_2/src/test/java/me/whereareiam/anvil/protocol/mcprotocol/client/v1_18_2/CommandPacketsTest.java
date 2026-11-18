@@ -8,11 +8,11 @@ import com.github.steveice10.mc.protocol.data.game.command.properties.IntegerPro
 import com.github.steveice10.mc.protocol.data.game.command.properties.StringProperties;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundCommandsPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKeepAlivePacket;
-import me.whereareiam.anvil.protocol.java.api.model.command.CommandNode;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.command.ClientboundCommands;
-import me.whereareiam.anvil.protocol.java.api.type.chat.CommandNodeType;
-import me.whereareiam.anvil.protocol.java.api.type.chat.StringArgumentMode;
+import me.whereareiam.anvil.edition.java.protocol.model.command.CommandNode;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.command.ClientboundCommands;
+import me.whereareiam.anvil.edition.java.protocol.type.chat.CommandNodeType;
+import me.whereareiam.anvil.edition.java.protocol.type.chat.StringArgumentMode;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

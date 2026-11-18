@@ -4,7 +4,7 @@ import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.capability.packets.model.PacketSelection;
 import me.whereareiam.anvil.capability.packets.model.TappedPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;

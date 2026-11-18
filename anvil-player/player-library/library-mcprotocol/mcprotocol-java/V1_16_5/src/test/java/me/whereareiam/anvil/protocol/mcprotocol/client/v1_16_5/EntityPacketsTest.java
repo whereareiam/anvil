@@ -18,20 +18,20 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.Serve
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.ServerSpawnLivingEntityPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.ServerSpawnPaintingPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.ServerSpawnPlayerPacket;
-import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
-import me.whereareiam.anvil.protocol.java.api.model.entity.CustomNameVisible;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityDataValue;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
-import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
-import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
-import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityPos;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetEntityMotion;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundTeleportEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.CustomName;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.CustomNameVisible;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityDataValue;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityTypeKey;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.SharedFlags;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.ShownItem;
+import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.ClientboundAddEntity;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.ClientboundRemoveEntities;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundMoveEntityPos;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundTeleportEntity;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundSetEntityData;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;
 
@@ -87,7 +87,7 @@ class EntityPacketsTest {
 				SharedFlags.builder().onFire(true).build(),
 				new CustomName("Alice: hello"),
 				new CustomNameVisible(true),
-				new ShownItem(me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(871, 3))
+				new ShownItem(me.whereareiam.anvil.edition.java.protocol.model.inventory.ItemStack.of(871, 3))
 		), decodeData(data(15,
 				new EntityMetadata(0, MetadataType.BYTE, (byte) 0x01),
 				new EntityMetadata(2, MetadataType.OPTIONAL_CHAT,

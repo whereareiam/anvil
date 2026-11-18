@@ -2,12 +2,12 @@ package me.whereareiam.anvil.capability.dialogs.java;
 
 import me.whereareiam.anvil.capability.dialogs.model.click.DialogValue;
 import me.whereareiam.anvil.capability.dialogs.type.DialogInputType;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtByte;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtFloat;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtInt;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtList;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtByte;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtCompound;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtFloat;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtInt;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtList;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtString;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

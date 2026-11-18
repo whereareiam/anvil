@@ -4,8 +4,8 @@ import me.whereareiam.anvil.capability.interaction.channel.InteractionChannel;
 import me.whereareiam.anvil.capability.interaction.model.ItemUse;
 import me.whereareiam.anvil.capability.interaction.type.Hand;
 import me.whereareiam.anvil.capability.protocol.api.player.TestProtocolPlayerCapabilityContext;
+import me.whereareiam.anvil.edition.java.protocol.JavaProtocol;
 import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
-import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

@@ -83,7 +83,7 @@ dependencyResolutionManagement {
                 includeGroup("com.github.steveice10")
             }
         }
-        // The PrismarineJS minecraft-data files protocol-java-block's block-data.toml pins, addressed by commit:
+        // The PrismarineJS minecraft-data files data-block's block-data.toml pins, addressed by commit:
         // PrismarineJS:minecraft-data:<commit> with the file's directory below data/pc as classifier, such as
         // data/pc/1.20.5/blocks.json for the artifact blocks with classifier 1.20.5.
         exclusiveContent {

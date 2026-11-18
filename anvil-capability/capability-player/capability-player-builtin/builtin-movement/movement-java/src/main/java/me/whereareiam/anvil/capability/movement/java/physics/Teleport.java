@@ -3,11 +3,11 @@ package me.whereareiam.anvil.capability.movement.java.physics;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.capability.movement.model.Position;
-import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
-import me.whereareiam.anvil.protocol.java.api.packet.player.ClientboundPlayerPosition;
-import me.whereareiam.anvil.protocol.java.api.type.entity.Relative;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Trigonometry;
-import me.whereareiam.anvil.protocol.java.physics.geometry.Vector;
+import me.whereareiam.anvil.edition.java.physics.geometry.Trigonometry;
+import me.whereareiam.anvil.edition.java.physics.geometry.Vector;
+import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
+import me.whereareiam.anvil.edition.java.protocol.packet.player.ClientboundPlayerPosition;
+import me.whereareiam.anvil.edition.java.protocol.type.entity.Relative;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;

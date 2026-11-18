@@ -1,13 +1,13 @@
 package me.whereareiam.anvil.capability.dialogs.java;
 
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtByte;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtFloat;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtInt;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtIntArray;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtList;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtTag;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtByte;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtCompound;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtFloat;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtInt;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtIntArray;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtList;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtString;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtTag;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

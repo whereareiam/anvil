@@ -8,8 +8,8 @@ architecture {
 		projects.anvilCapability.capabilityPlayer.capabilityPlayerApi.path,
 	)
 	dependsOnApis = setOf(
+		projects.anvilEdition.editionJava.javaProtocol.protocolApi.path,
 		projects.anvilPlayer.playerApi.path,
-		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi.path,
 	)
 }
 

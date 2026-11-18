@@ -86,7 +86,7 @@ class CapabilityConventionFunctionalTest {
 
 			rootProject.name = "capability-consumer"
 			include(":builtin-demo", ":builtin-demo:demo-api", ":builtin-demo:demo-common", ":builtin-demo:demo-java", ":consumer")
-			include(":anvil-player:player-protocol:protocol-java:protocol-java-api")
+			include(":anvil-edition:edition-java:java-protocol:protocol-api")
 		""")
 		project.write("build.gradle.kts", """
 			allprojects {
@@ -104,7 +104,7 @@ class CapabilityConventionFunctionalTest {
 		""")
 		// Declares the protocol edition `java`, which makes `demo-java` an edition side of the family, and its API,
 		// which the family root compiles the common code against.
-		project.write("anvil-player/player-protocol/protocol-java/protocol-java-api/build.gradle.kts", """
+		project.write("anvil-edition/edition-java/java-protocol/protocol-api/build.gradle.kts", """
 			plugins {
 				`java-library`
 			}

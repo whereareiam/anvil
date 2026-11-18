@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.capability.movement.java.physics.player;
 
 import me.whereareiam.anvil.capability.movement.java.physics.server.PlayerState;
-import me.whereareiam.anvil.protocol.java.physics.living.Jumping;
+import me.whereareiam.anvil.edition.java.physics.living.Jumping;
 import org.jetbrains.annotations.NotNull;
 
 /**

@@ -30,23 +30,23 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.packetlib.io.stream.StreamNetInput;
 import com.github.steveice10.packetlib.io.stream.StreamNetOutput;
-import me.whereareiam.anvil.protocol.java.api.model.entity.CustomName;
-import me.whereareiam.anvil.protocol.java.api.model.entity.CustomNameVisible;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
-import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
-import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
-import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundRemoveEntities;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundSetPassengers;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityPos;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityPosRot;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundMoveEntityRot;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetEntityMotion;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundTeleportEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.CustomName;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.CustomNameVisible;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityTypeKey;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.SharedFlags;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.ShownItem;
+import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.ClientboundAddEntity;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.ClientboundRemoveEntities;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.ClientboundSetPassengers;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundMoveEntityPos;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundMoveEntityPosRot;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundMoveEntityRot;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundTeleportEntity;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundSetEntityData;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;
 
@@ -119,7 +119,7 @@ class EntityPacketsTest {
 				SharedFlags.builder().sprinting(true).swimming(true).gliding(true).build(),
 				new CustomName(null),
 				new CustomNameVisible(false),
-				new ShownItem(me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(871, 3))
+				new ShownItem(me.whereareiam.anvil.edition.java.protocol.model.inventory.ItemStack.of(871, 3))
 		)), packets.decode(data(8,
 				new ByteEntityMetadata(0, MetadataType.BYTE, (byte) 0x9C),
 				new ObjectEntityMetadata<>(2, MetadataType.OPTIONAL_CHAT, Optional.empty()),
@@ -135,9 +135,9 @@ class EntityPacketsTest {
 		add(9, EntityType.ITEM_FRAME);
 		add(10, EntityType.POTION);
 
-		assertEquals(List.of(new ShownItem(me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(40, 1))),
+		assertEquals(List.of(new ShownItem(me.whereareiam.anvil.edition.java.protocol.model.inventory.ItemStack.of(40, 1))),
 				decodeData(data(9, new ObjectEntityMetadata<>(8, MetadataType.ITEM, new ItemStack(40, 1)))));
-		assertEquals(List.of(new ShownItem(me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(5, 1))),
+		assertEquals(List.of(new ShownItem(me.whereareiam.anvil.edition.java.protocol.model.inventory.ItemStack.of(5, 1))),
 				decodeData(data(10, new ObjectEntityMetadata<>(8, MetadataType.ITEM, new ItemStack(5, 1)))));
 	}
 

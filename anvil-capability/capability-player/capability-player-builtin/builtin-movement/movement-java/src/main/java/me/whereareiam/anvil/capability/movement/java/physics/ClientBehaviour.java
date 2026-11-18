@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.capability.movement.java.physics;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.protocol.java.physics.EntityBehaviour;
+import me.whereareiam.anvil.edition.java.physics.EntityBehaviour;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

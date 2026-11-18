@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_3;
 
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
-import me.whereareiam.anvil.protocol.java.api.packet.configuration.ClientboundRegistryData;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtCompound;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtString;
+import me.whereareiam.anvil.edition.java.protocol.packet.configuration.ClientboundRegistryData;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SynchronizedRegistries;
 import net.kyori.adventure.key.Key;
 import org.cloudburstmc.nbt.NbtMap;
@@ -31,8 +31,8 @@ class ConfigurationPacketsTest {
 		));
 
 		assertEquals(new ClientboundRegistryData("minecraft:dialog", List.of(
-				new me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry("minecraft:server_links", null),
-				new me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry("example:rules", NbtCompound.builder()
+				new me.whereareiam.anvil.edition.java.protocol.model.configuration.RegistryEntry("minecraft:server_links", null),
+				new me.whereareiam.anvil.edition.java.protocol.model.configuration.RegistryEntry("example:rules", NbtCompound.builder()
 						.put("type", new NbtString("minecraft:notice"))
 						.put("title", new NbtString("Rules"))
 						.build())
@@ -46,7 +46,7 @@ class ConfigurationPacketsTest {
 		));
 
 		assertEquals(new ClientboundRegistryData("example:names", List.of(
-				new me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry("example:name", null)
+				new me.whereareiam.anvil.edition.java.protocol.model.configuration.RegistryEntry("example:name", null)
 		)), packets.decode(registry));
 	}
 

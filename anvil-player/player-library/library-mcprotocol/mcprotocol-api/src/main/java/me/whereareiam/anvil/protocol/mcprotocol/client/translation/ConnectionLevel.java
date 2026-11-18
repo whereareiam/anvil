@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.translation;
 
-import me.whereareiam.anvil.protocol.java.api.model.world.Level;
+import me.whereareiam.anvil.edition.java.protocol.model.world.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

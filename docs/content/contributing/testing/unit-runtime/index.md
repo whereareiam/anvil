@@ -75,7 +75,7 @@ and the workflow copies the new image once the change reaches `dev`.
 
 A built-in capability's worker extension, such as `JavaSoundsExtension`, is tested in its `<feature>-java` module
 against the worker kits' own test player, never against a fake of its own. `TestJavaPlayer`, from the
-`protocol-java-worker` test fixtures, speaks the real `JavaPacketDispatcher`: the test binds the extension, connects
+`protocol-worker` test fixtures, speaks the real `JavaPacketDispatcher`: the test binds the extension, connects
 the player as a worker does, delivers the packets the server would send and reads what the player sent and emitted.
 `TestOperations` calls the operations the extension registered, and `TestWorkerPlayer` is a player that speaks no
 edition protocol.
@@ -127,7 +127,7 @@ of their own. A host module adds the fixtures with
 
 A player created with a predicate, `new TestJavaPlayer("Alice", type -> type != ClientboundDeleteChat.class)`,
 carries only the packets it accepts, as an older release does. A module adds the fixtures with
-`testImplementation(testFixtures(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker))`. Modules
+`testImplementation(testFixtures(projects.anvilEdition.editionJava.javaProtocol.protocolWorker))`. Modules
 share test fixtures through the `module-test-fixtures` convention, which leaves them out of the published artifacts.
 
 ## Check cross-module discovery

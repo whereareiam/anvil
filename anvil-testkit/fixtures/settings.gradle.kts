@@ -58,8 +58,8 @@ dependencyResolutionManagement {
             library("player-worker", "me.whereareiam.anvil", "player-worker").versionRef("anvil")
             library("movement-api", "me.whereareiam.anvil", module("builtin-movement-api", "movement-api")).versionRef("anvil")
             library("protocol-api", "me.whereareiam.anvil", module("protocol-api", "player-api")).versionRef("anvil")
-            library("protocol-java-api", "me.whereareiam.anvil", "protocol-java-api").versionRef("anvil")
-            library("protocol-java-worker", "me.whereareiam.anvil", "protocol-java-worker").versionRef("anvil")
+            library("edition-java-protocol-api", "me.whereareiam.anvil", module("edition-java-protocol-api", "protocol-api")).versionRef("anvil")
+            library("edition-java-protocol-worker", "me.whereareiam.anvil", module("edition-java-protocol-worker", "protocol-worker")).versionRef("anvil")
             library("session-api", "me.whereareiam.anvil", module("builtin-session-api", "session-api")).versionRef("anvil")
         }
     }

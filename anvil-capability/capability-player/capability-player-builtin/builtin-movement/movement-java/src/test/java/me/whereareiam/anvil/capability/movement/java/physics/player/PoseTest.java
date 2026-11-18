@@ -3,9 +3,9 @@ package me.whereareiam.anvil.capability.movement.java.physics.player;
 import me.whereareiam.anvil.capability.movement.java.physics.TestClient;
 import me.whereareiam.anvil.capability.movement.java.physics.server.PlayerState;
 import me.whereareiam.anvil.capability.movement.model.MovementInput;
-import me.whereareiam.anvil.protocol.java.api.model.entity.state.AttributeSnapshot;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundUpdateAttributes;
-import me.whereareiam.anvil.protocol.java.api.type.player.GameMode;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.state.AttributeSnapshot;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundUpdateAttributes;
+import me.whereareiam.anvil.edition.java.protocol.type.player.GameMode;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

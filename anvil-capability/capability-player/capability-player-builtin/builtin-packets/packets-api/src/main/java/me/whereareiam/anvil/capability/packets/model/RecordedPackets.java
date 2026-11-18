@@ -1,9 +1,9 @@
 package me.whereareiam.anvil.capability.packets.model;
 
 import lombok.Value;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundFrame;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPackets;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundFrame;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPackets;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

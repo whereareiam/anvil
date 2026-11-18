@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
-import me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry;
-import me.whereareiam.anvil.protocol.java.api.packet.configuration.ClientboundRegistryData;
+import me.whereareiam.anvil.edition.java.protocol.model.configuration.RegistryEntry;
+import me.whereareiam.anvil.edition.java.protocol.packet.configuration.ClientboundRegistryData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -16,16 +16,16 @@ import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddPlayerPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import me.whereareiam.anvil.protocol.java.api.model.entity.DisplayText;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityDataValue;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
-import me.whereareiam.anvil.protocol.java.api.model.entity.SharedFlags;
-import me.whereareiam.anvil.protocol.java.api.model.entity.ShownItem;
-import me.whereareiam.anvil.protocol.java.api.model.world.Vec3d;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.ClientboundAddEntity;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.move.ClientboundSetEntityMotion;
-import me.whereareiam.anvil.protocol.java.api.packet.entity.state.ClientboundSetEntityData;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.DisplayText;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityDataValue;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityTypeKey;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.SharedFlags;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.ShownItem;
+import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.ClientboundAddEntity;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundSetEntityData;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ItemTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.TextTranslator;
 import net.kyori.adventure.text.Component;
@@ -85,7 +85,7 @@ class EntityPacketsTest {
 				new ObjectEntityMetadata<>(22, MetadataType.CHAT,
 						Component.text("Welcome ").append(Component.text("Alice"))),
 				new ObjectEntityMetadata<>(23, MetadataType.CHAT, Component.text("not the text")))));
-		assertEquals(List.of(new ShownItem(me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(5, 2))),
+		assertEquals(List.of(new ShownItem(me.whereareiam.anvil.edition.java.protocol.model.inventory.ItemStack.of(5, 2))),
 				decodeData(data(12,
 						new ObjectEntityMetadata<>(22, MetadataType.ITEM, new ItemStack(5, 2)),
 						new ObjectEntityMetadata<>(23, MetadataType.ITEM, new ItemStack(6, 1)))));
@@ -97,7 +97,7 @@ class EntityPacketsTest {
 
 		assertEquals(List.of(
 				SharedFlags.builder().onFire(true).build(),
-				new ShownItem(me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack.of(871, 3))
+				new ShownItem(me.whereareiam.anvil.edition.java.protocol.model.inventory.ItemStack.of(871, 3))
 		), decodeData(data(13,
 				new ByteEntityMetadata(0, MetadataType.BYTE, (byte) 0x01),
 				new ObjectEntityMetadata<>(8, MetadataType.ITEM, new ItemStack(871, 3)))));

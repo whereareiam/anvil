@@ -5,9 +5,9 @@ import com.github.steveice10.mc.protocol.data.game.entity.type.EntityType;
 import com.github.steveice10.mc.protocol.data.game.world.block.BlockFace;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityTypeKey;
-import me.whereareiam.anvil.protocol.java.api.type.interaction.Direction;
-import me.whereareiam.anvil.protocol.java.api.type.interaction.InteractionHand;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityTypeKey;
+import me.whereareiam.anvil.edition.java.protocol.type.interaction.Direction;
+import me.whereareiam.anvil.edition.java.protocol.type.interaction.InteractionHand;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

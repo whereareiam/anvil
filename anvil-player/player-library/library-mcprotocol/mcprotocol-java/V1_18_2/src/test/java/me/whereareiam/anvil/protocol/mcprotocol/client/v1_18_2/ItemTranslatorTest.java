@@ -3,9 +3,9 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
+import me.whereareiam.anvil.edition.java.protocol.model.inventory.ItemStack;
 import me.whereareiam.anvil.protocol.api.model.text.Text;
 import me.whereareiam.anvil.protocol.api.model.text.TextColor;
-import me.whereareiam.anvil.protocol.java.api.model.inventory.ItemStack;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

@@ -1,11 +1,11 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundInitializeBorder;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderCenter;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderLerpSize;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderSize;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderWarningDelay;
-import me.whereareiam.anvil.protocol.java.api.packet.world.border.ClientboundSetBorderWarningDistance;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundInitializeBorder;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundSetBorderCenter;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundSetBorderLerpSize;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundSetBorderSize;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundSetBorderWarningDelay;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.border.ClientboundSetBorderWarningDistance;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.border.ClientboundInitializeBorderPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.border.ClientboundSetBorderCenterPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.border.ClientboundSetBorderLerpSizePacket;

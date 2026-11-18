@@ -5,7 +5,7 @@ import com.github.steveice10.mc.protocol.data.game.command.CommandParser;
 import com.github.steveice10.mc.protocol.data.game.command.CommandType;
 import com.github.steveice10.mc.protocol.data.game.command.properties.LongProperties;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerDeclareCommandsPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.command.ClientboundCommands;
+import me.whereareiam.anvil.edition.java.protocol.packet.command.ClientboundCommands;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

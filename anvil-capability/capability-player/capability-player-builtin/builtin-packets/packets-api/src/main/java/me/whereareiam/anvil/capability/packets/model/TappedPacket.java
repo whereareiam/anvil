@@ -3,8 +3,8 @@ package me.whereareiam.anvil.capability.packets.model;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Value;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.type.connection.ConnectionState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

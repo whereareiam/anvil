@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.capability.dialogs.java;
 
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtTag;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

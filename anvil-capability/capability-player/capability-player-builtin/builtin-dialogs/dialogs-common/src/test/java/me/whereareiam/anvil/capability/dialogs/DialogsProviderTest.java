@@ -5,8 +5,8 @@ import me.whereareiam.anvil.capability.commands.model.CommandTree;
 import me.whereareiam.anvil.capability.commands.type.CommandCheck;
 import me.whereareiam.anvil.capability.dialogs.channel.DialogsChannel;
 import me.whereareiam.anvil.capability.protocol.api.player.TestProtocolPlayerCapabilityContext;
+import me.whereareiam.anvil.edition.java.protocol.JavaProtocol;
 import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
-import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 

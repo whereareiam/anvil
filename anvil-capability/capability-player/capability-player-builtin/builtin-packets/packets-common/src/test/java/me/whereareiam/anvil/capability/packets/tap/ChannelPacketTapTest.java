@@ -4,13 +4,13 @@ import me.whereareiam.anvil.capability.packets.channel.PacketsChannel;
 import me.whereareiam.anvil.capability.packets.channel.TappedFrame;
 import me.whereareiam.anvil.capability.packets.model.PacketSelection;
 import me.whereareiam.anvil.capability.packets.model.TappedPacket;
+import me.whereareiam.anvil.edition.java.protocol.model.world.chunk.ChunkPosition;
+import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemChat;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.ClientboundBlockUpdate;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.ClientboundLevelChunkWithLight;
+import me.whereareiam.anvil.edition.java.protocol.type.connection.ConnectionState;
 import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
 import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.java.api.model.world.chunk.ChunkPosition;
-import me.whereareiam.anvil.protocol.java.api.packet.chat.ClientboundSystemChat;
-import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundBlockUpdate;
-import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundLevelChunkWithLight;
-import me.whereareiam.anvil.protocol.java.api.type.connection.ConnectionState;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

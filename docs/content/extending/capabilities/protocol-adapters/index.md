@@ -16,7 +16,7 @@ and the listeners.
 
 Packet classes differ between releases of a client library: MCProtocolLib renamed its packets and moved them
 between packages from Minecraft 1.16.5 to 1.21.11. Your extension does not see them. It speaks the Java Edition
-protocol, `me.whereareiam.anvil:protocol-java-api`, whose packets are the same for every release; the library
+protocol, `me.whereareiam.anvil:edition-java-protocol-api`, whose packets are the same for every release; the library
 translates them for the release the player runs. Where releases say the same thing in different packets, the library
 reports the current packet for every release: a release that spawns mobs through a packet of their own reports a
 `ClientboundAddEntity`, one that addresses the player's own inventory through a container slot packet reports a
@@ -78,7 +78,7 @@ models; the bundled codec supports constructors whose parameter names are retain
 ## Bind behavior to a player
 
 Put this registration class in your wiring artifact's `src/main/java/com/example/roundtrip/java`
-directory. Its compile dependencies are your feature API and Anvil's `protocol-api` (and `protocol-java-api` once it
+directory. Its compile dependencies are your feature API and Anvil's `protocol-api` (and `edition-java-protocol-api` once it
 uses packets); it does not compile against a client library, because it runs on every release of every library.
 
 ```java
@@ -213,7 +213,7 @@ int[] column = world.read(view -> new int[] {
 });
 ```
 
-A block state is a global ID in the release's block state registry; `protocol-java-block`'s `JavaBlockData` tells
+A block state is a global ID in the release's block state registry; `edition-java-data-block`'s `JavaBlockData` tells
 what it is for the player's protocol. Each packet applies to the world whole, before its listeners see it. Every call
 of `JavaWorld` sees the world at one moment, and `read(...)` holds that moment for a whole reader, such as a physics
 tick that reads many blocks: no packet applies while it runs, so keep it short and never wait in it for the player's
@@ -249,7 +249,7 @@ direction, and interaction reads it for the current view; `player.viewRotation(r
 ## Reach a packet the protocol does not carry yet
 
 The Java Edition protocol carries the packets Anvil's own capabilities need. A packet it does not model yet belongs
-in the protocol: add it to `protocol-java-api` and its translation to the library's client segments, so every
+in the protocol: add it to `edition-java-protocol-api` and its translation to the library's client segments, so every
 capability can use it. Until then, an external capability can keep its own release-specific code in segments.
 
 For example, a family whose capability teleports a player declares the port

@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v26_1_2;
 
-import me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry;
-import me.whereareiam.anvil.protocol.java.api.model.world.ClockState;
-import me.whereareiam.anvil.protocol.java.api.packet.world.ClientboundSetTime;
+import me.whereareiam.anvil.edition.java.protocol.model.configuration.RegistryEntry;
+import me.whereareiam.anvil.edition.java.protocol.model.world.ClockState;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.ClientboundSetTime;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.SynchronizedRegistries;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.WorldTranslation;
 import org.geysermc.mcprotocollib.protocol.data.game.level.ClockNetworkState;

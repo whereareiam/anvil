@@ -10,21 +10,21 @@ import me.whereareiam.anvil.capability.world.model.block.BlockArea;
 import me.whereareiam.anvil.capability.world.model.block.BlockIdentity;
 import me.whereareiam.anvil.capability.world.model.block.BlockPosition;
 import me.whereareiam.anvil.capability.world.model.level.ChunkPosition;
+import me.whereareiam.anvil.edition.java.data.block.BlockRegistry;
+import me.whereareiam.anvil.edition.java.data.block.JavaBlockData;
+import me.whereareiam.anvil.edition.java.data.block.model.BlockState;
+import me.whereareiam.anvil.edition.java.protocol.JavaProtocol;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.world.DimensionType;
+import me.whereareiam.anvil.edition.java.protocol.model.world.chunk.BlockChange;
+import me.whereareiam.anvil.edition.java.protocol.model.world.chunk.LevelChunkSection;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.ClientboundBlockUpdate;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.ClientboundForgetLevelChunk;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.ClientboundLevelChunkWithLight;
+import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.ClientboundSectionBlocksUpdate;
+import me.whereareiam.anvil.edition.java.protocol.worker.TestJavaPlayer;
 import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.java.api.JavaProtocol;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
-import me.whereareiam.anvil.protocol.java.api.model.world.chunk.BlockChange;
-import me.whereareiam.anvil.protocol.java.api.model.world.chunk.LevelChunkSection;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
-import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundBlockUpdate;
-import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundForgetLevelChunk;
-import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundLevelChunkWithLight;
-import me.whereareiam.anvil.protocol.java.api.packet.world.chunk.ClientboundSectionBlocksUpdate;
-import me.whereareiam.anvil.protocol.java.block.BlockRegistry;
-import me.whereareiam.anvil.protocol.java.block.JavaBlockData;
-import me.whereareiam.anvil.protocol.java.block.model.BlockState;
-import me.whereareiam.anvil.protocol.java.worker.TestJavaPlayer;
 import me.whereareiam.anvil.protocol.worker.TestOperations;
 import org.junit.jupiter.api.Test;
 
@@ -144,12 +144,12 @@ class WorldBlocksTest {
 		return new ClientboundLevelChunkWithLight(chunk(x, z), List.copyOf(sections));
 	}
 
-	private static me.whereareiam.anvil.protocol.java.api.model.world.chunk.ChunkPosition chunk(int x, int z) {
-		return new me.whereareiam.anvil.protocol.java.api.model.world.chunk.ChunkPosition(x, z);
+	private static me.whereareiam.anvil.edition.java.protocol.model.world.chunk.ChunkPosition chunk(int x, int z) {
+		return new me.whereareiam.anvil.edition.java.protocol.model.world.chunk.ChunkPosition(x, z);
 	}
 
 	private static BlockChange change(BlockPosition position, int state) {
-		return new BlockChange(me.whereareiam.anvil.protocol.java.api.model.world.BlockPosition.builder()
+		return new BlockChange(me.whereareiam.anvil.edition.java.protocol.model.world.BlockPosition.builder()
 				.x(position.getX())
 				.y(position.getY())
 				.z(position.getZ())

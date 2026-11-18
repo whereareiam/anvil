@@ -10,10 +10,10 @@ plugins {
 architecture {
 	sharedApis = setOf(projects.anvilPlayer.playerApi.path, projects.anvilPlayer.playerWorker.path)
 	dependsOnApis = setOf(
-		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi.path,
-		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaJson.path,
-		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaPacket.path,
-		projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker.path,
+		projects.anvilEdition.editionJava.javaData.dataPacket.path,
+		projects.anvilEdition.editionJava.javaProtocol.protocolApi.path,
+		projects.anvilEdition.editionJava.javaProtocol.protocolJson.path,
+		projects.anvilEdition.editionJava.javaProtocol.protocolWorker.path,
 	)
 }
 
@@ -26,9 +26,9 @@ toolkitPublish {
 dependencies {
 	api(projects.anvilPlayer.playerApi)
 
+	implementation(projects.anvilEdition.editionJava.javaProtocol.protocolJson)
+	implementation(projects.anvilEdition.editionJava.javaProtocol.protocolWorker)
 	implementation(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolApi)
-	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaJson)
-	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker)
 	implementation(projects.anvilPlayer.playerWorker)
 	implementation(libs.jackson.databind)
 	implementation(libs.jackson.parameters)

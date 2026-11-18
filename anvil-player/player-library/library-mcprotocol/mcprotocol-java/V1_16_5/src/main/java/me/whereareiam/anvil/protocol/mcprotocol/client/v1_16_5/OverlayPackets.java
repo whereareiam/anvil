@@ -2,12 +2,12 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5;
 
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerTitlePacket;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundClearTitles;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetActionBarText;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetSubtitleText;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetTitleText;
-import me.whereareiam.anvil.protocol.java.api.packet.overlay.ClientboundSetTitlesAnimation;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundClearTitles;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetActionBarText;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetSubtitleText;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetTitleText;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetTitlesAnimation;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

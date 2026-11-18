@@ -3,7 +3,7 @@ package me.whereareiam.anvil.protocol.mcprotocol.client.v1_17_1;
 import com.github.steveice10.mc.protocol.data.game.command.CommandParser;
 import com.github.steveice10.mc.protocol.data.game.command.properties.CommandProperties;
 import com.github.steveice10.mc.protocol.data.game.command.properties.LongProperties;
-import me.whereareiam.anvil.protocol.java.api.model.command.CommandNode;
+import me.whereareiam.anvil.edition.java.protocol.model.command.CommandNode;
 import me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.CommandTranslation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

@@ -55,10 +55,10 @@ pin task as the remedy.
 
 ## Add the block data
 
-Simulated players read block facts, such as collision shapes and friction, from `protocol-java-block`, which
+Simulated players read block facts, such as collision shapes and friction, from `data-block`, which
 generates them at build time from [PrismarineJS minecraft-data](https://github.com/PrismarineJS/minecraft-data)
 (MIT; the notice ships as `META-INF/LICENSE-minecraft-data.txt`). Its
-`anvil-player/player-protocol/protocol-java/protocol-java-block/block-data.toml` pins one minecraft-data release
+`anvil-edition/edition-java/java-data/data-block/block-data.toml` pins one minecraft-data release
 and, per `[[release]]` row, the `blocks.json` and `blockCollisionShapes.json` of one protocol, with their SHA-256.
 Every Minecraft version of a protocol has the same block registry, so the rows and the data are keyed by protocol
 number, and a new version of a protocol Anvil already speaks needs nothing here. Gradle resolves the pinned files
@@ -71,7 +71,7 @@ protocol = 777
 ```
 
 ```shell
-./gradlew :anvil-player:player-protocol:protocol-java:protocol-java-block:pinBlockData
+./gradlew :anvil-edition:edition-java:java-data:data-block:pinBlockData
 ```
 
 The task resolves the commit of the file's minecraft-data `version` tag, finds each row's Minecraft versions in
@@ -99,21 +99,21 @@ file. Then run the data's tests, which check known facts,
 such as the state count and collision shapes, for every protocol:
 
 ```shell
-./gradlew :anvil-player:player-protocol:protocol-java:protocol-java-block:test
+./gradlew :anvil-edition:edition-java:java-data:data-block:test
 ```
 
 Add the new protocol to the state counts `BlockRegistryTest` expects and to the protocols `JavaBlockDataTest` lists.
 
 ## Add the packet names
 
-The frames a player receives are named from `protocol-java-packet`, which generates, from the same minecraft-data
+The frames a player receives are named from `data-packet`, which generates, from the same minecraft-data
 release, the names of the packets a server sends in each connection state of each protocol: the packet mappings of
 its `protocol.json` (the notice ships as `META-INF/LICENSE-minecraft-data-packets.txt`). Its
-`anvil-player/player-protocol/protocol-java/protocol-java-packet/packet-data.toml` has the layout of
+`anvil-edition/edition-java/java-data/data-packet/packet-data.toml` has the layout of
 `block-data.toml`, with one `packets` file per row. For a new protocol, add a row and pin it:
 
 ```shell
-./gradlew :anvil-player:player-protocol:protocol-java:protocol-java-packet:pinPacketData
+./gradlew :anvil-edition:edition-java:java-data:data-packet:pinPacketData
 ```
 
 `checkPacketDataReleases`, part of `check`, requires a row for the protocol of every release, as the block data's
@@ -122,14 +122,14 @@ and a tap refuses to select its packets by name. Add the new protocol to the pro
 
 ## Add the item data
 
-Inventory items carry their type's registry key from `protocol-java-item`, which generates, from the same
+Inventory items carry their type's registry key from `data-item`, which generates, from the same
 minecraft-data release, each protocol's item registry by item ID: its `items.json` (the notice ships as
 `META-INF/LICENSE-minecraft-data-items.txt`). Its
-`anvil-player/player-protocol/protocol-java/protocol-java-item/item-data.toml` has the layout of `block-data.toml`,
+`anvil-edition/edition-java/java-data/data-item/item-data.toml` has the layout of `block-data.toml`,
 with one `items` file per row. For a new protocol, add a row and pin it:
 
 ```shell
-./gradlew :anvil-player:player-protocol:protocol-java:protocol-java-item:pinItemData
+./gradlew :anvil-edition:edition-java:java-data:data-item:pinItemData
 ```
 
 `checkItemDataReleases`, part of `check`, requires a row for the protocol of every release. A protocol minecraft-data
@@ -188,7 +188,7 @@ The `check` task runs the same verification. A segment's report is
   Adventure moved one of them, as Adventure 4.22 moved a click's value, brings its own `TextTranslator` and replaces
   its base's. An older release flattens its own text components in its segment. The side's `module-adapter` convention adds the new
   child automatically.
-- **The protocol cannot express the release:** add or change the packet values in `protocol-java-api`
+- **The protocol cannot express the release:** add or change the packet values in `protocol-api`
   and the area translations of every client segment, or change `McProtocolClient` in `mcprotocol-api`
   for the client itself. An external capability with segments of its own changes its port in its API's
   `packet` package and every segment implementing it.

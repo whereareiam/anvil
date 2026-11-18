@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.buildlogic.capability
 
+import me.whereareiam.anvil.buildlogic.edition.Editions
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.ValueSource
 import org.gradle.api.provider.ValueSourceParameters
@@ -26,7 +27,7 @@ abstract class CapabilityFamilySource : ValueSource<CapabilityFamily, Capability
 
 	override fun obtain(): CapabilityFamily = CapabilityFamily.read(
 		parameters.familyDirectory.get().asFile,
-		ProtocolEditions.discover(parameters.rootDirectory.get().asFile),
+		Editions.discover(parameters.rootDirectory.get().asFile),
 		AgentPlatforms.discover(parameters.rootDirectory.get().asFile),
 	)
 }

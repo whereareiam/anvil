@@ -7,11 +7,12 @@ description = "Java Edition side of the built-in movement capability: its worker
 
 dependencies {
 	implementation(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinMovement.movementApi)
+	implementation(projects.anvilEdition.editionJava.javaData.dataBlock)
+	implementation(projects.anvilEdition.editionJava.javaPhysics.physicsEntity)
+	implementation(projects.anvilEdition.editionJava.javaPhysics.physicsGeometry)
+	implementation(projects.anvilEdition.editionJava.javaProtocol.protocolApi)
 	implementation(projects.anvilPlayer.playerApi)
-	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaApi)
-	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaBlock)
-	implementation(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaPhysics)
 
-	testImplementation(testFixtures(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaPhysics))
-	testImplementation(testFixtures(projects.anvilPlayer.playerProtocol.protocolJava.protocolJavaWorker))
+	testImplementation(testFixtures(projects.anvilEdition.editionJava.javaPhysics.physicsEntity))
+	testImplementation(testFixtures(projects.anvilEdition.editionJava.javaProtocol.protocolWorker))
 }

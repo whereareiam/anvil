@@ -7,9 +7,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import me.whereareiam.anvil.capability.packets.model.PacketDifference;
 import me.whereareiam.anvil.capability.packets.model.PacketMask;
 import me.whereareiam.anvil.capability.packets.model.RecordedPackets;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundFrame;
-import me.whereareiam.anvil.protocol.java.api.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.java.json.JavaProtocolJson;
+import me.whereareiam.anvil.edition.java.protocol.json.JavaProtocolJson;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundFrame;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -1,18 +1,18 @@
 package me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6;
 
-import me.whereareiam.anvil.protocol.java.api.model.configuration.RegistryEntry;
-import me.whereareiam.anvil.protocol.java.api.model.entity.EntityId;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtByte;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtCompound;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtInt;
-import me.whereareiam.anvil.protocol.java.api.model.nbt.NbtString;
-import me.whereareiam.anvil.protocol.java.api.model.world.DimensionType;
-import me.whereareiam.anvil.protocol.java.api.model.world.Level;
-import me.whereareiam.anvil.protocol.java.api.packet.ServerboundPacket;
-import me.whereareiam.anvil.protocol.java.api.packet.configuration.ClientboundRegistryData;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundLogin;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundRespawn;
-import me.whereareiam.anvil.protocol.java.api.packet.connection.ClientboundStartConfiguration;
+import me.whereareiam.anvil.edition.java.protocol.model.configuration.RegistryEntry;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtByte;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtCompound;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtInt;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtString;
+import me.whereareiam.anvil.edition.java.protocol.model.world.DimensionType;
+import me.whereareiam.anvil.edition.java.protocol.model.world.Level;
+import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.configuration.ClientboundRegistryData;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundStartConfiguration;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.ConnectionLevel;
 import net.kyori.adventure.key.Key;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.GameMode;
@@ -78,10 +78,10 @@ class ConnectionPacketsTest {
 		ClientboundRespawn adventure = (ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(
 				spawnIn(Key.key("minecraft", "overworld"), GameMode.ADVENTURE), false, false));
 
-		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.CREATIVE, login.getGameMode());
-		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.SPECTATOR, respawn.getGameMode());
-		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.ADVENTURE, adventure.getGameMode());
-		assertEquals(me.whereareiam.anvil.protocol.java.api.type.player.GameMode.SURVIVAL, respawnInto(0).getGameMode());
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.CREATIVE, login.getGameMode());
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SPECTATOR, respawn.getGameMode());
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.ADVENTURE, adventure.getGameMode());
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SURVIVAL, respawnInto(0).getGameMode());
 	}
 
 	@Test

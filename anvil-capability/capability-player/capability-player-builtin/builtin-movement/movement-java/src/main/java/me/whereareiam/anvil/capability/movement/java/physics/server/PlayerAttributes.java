@@ -2,9 +2,9 @@ package me.whereareiam.anvil.capability.movement.java.physics.server;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import me.whereareiam.anvil.protocol.java.physics.living.attribute.Attribute;
-import me.whereareiam.anvil.protocol.java.physics.living.attribute.AttributeSupplier;
-import me.whereareiam.anvil.protocol.java.physics.living.attribute.LivingAttributes;
+import me.whereareiam.anvil.edition.java.physics.living.attribute.Attribute;
+import me.whereareiam.anvil.edition.java.physics.living.attribute.AttributeSupplier;
+import me.whereareiam.anvil.edition.java.physics.living.attribute.LivingAttributes;
 import org.jetbrains.annotations.NotNull;
 
 /**
