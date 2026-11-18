@@ -16,7 +16,7 @@ import me.whereareiam.anvil.edition.java.protocol.model.overlay.BossEventUpdateS
 import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundBossEvent;
 import me.whereareiam.anvil.edition.java.protocol.type.overlay.BossEventColor;
 import me.whereareiam.anvil.edition.java.protocol.type.overlay.BossEventOverlay;
-import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.player.api.worker.PlayerBindingContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

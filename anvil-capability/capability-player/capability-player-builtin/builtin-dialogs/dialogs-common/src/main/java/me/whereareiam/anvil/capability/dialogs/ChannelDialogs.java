@@ -19,7 +19,7 @@ import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens.Screen;
 import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens.WaitingScreen;
 import me.whereareiam.anvil.capability.dialogs.screen.DialogPress;
 import me.whereareiam.anvil.capability.dialogs.type.DialogActionType;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

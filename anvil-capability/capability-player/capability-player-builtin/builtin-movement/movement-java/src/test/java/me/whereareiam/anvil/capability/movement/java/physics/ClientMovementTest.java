@@ -21,8 +21,8 @@ import me.whereareiam.anvil.edition.java.protocol.packet.player.move.Serverbound
 import me.whereareiam.anvil.edition.java.protocol.packet.player.move.ServerboundMovePlayerRot;
 import me.whereareiam.anvil.edition.java.protocol.type.entity.Relative;
 import me.whereareiam.anvil.edition.java.protocol.type.player.PlayerCommandAction;
-import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
-import me.whereareiam.anvil.protocol.worker.TestOperations;
+import me.whereareiam.anvil.player.api.model.player.ViewRotation;
+import me.whereareiam.anvil.player.worker.TestOperations;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;

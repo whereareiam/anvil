@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.child;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.protocol.mcprotocol.segment.SegmentDescriptor;
 import me.whereareiam.anvil.protocol.mcprotocol.segment.SegmentLinkage;

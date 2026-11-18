@@ -8,7 +8,7 @@ import me.whereareiam.anvil.capability.overlays.model.BossBar;
 import me.whereareiam.anvil.capability.overlays.model.BossBarEvent;
 import me.whereareiam.anvil.capability.overlays.model.Title;
 import me.whereareiam.anvil.capability.overlays.type.BossBarChange;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;

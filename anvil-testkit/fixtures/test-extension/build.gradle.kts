@@ -23,7 +23,7 @@ dependencies {
 	compileOnly(anvil.capability.agent.api)
 	compileOnly(anvil.capability.protocol.api)
 	compileOnly(anvil.movement.api)
-	compileOnly(anvil.protocol.api)
+	compileOnly(anvil.player.api)
 	compileOnly(anvil.session.api)
 
 	"agentCompileOnly"(anvil.agent.server.api)
@@ -31,7 +31,7 @@ dependencies {
 }
 
 val fixtureVariant = Attribute.of("me.whereareiam.anvil.testkit.variant", String::class.java)
-val protocolService = "META-INF/services/me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider"
+val protocolService = "META-INF/services/me.whereareiam.anvil.player.api.library.ProtocolLibraryProvider"
 
 // One JAR serves both sides: the host loads its providers and installs the same JAR as a server extension.
 tasks.jar {

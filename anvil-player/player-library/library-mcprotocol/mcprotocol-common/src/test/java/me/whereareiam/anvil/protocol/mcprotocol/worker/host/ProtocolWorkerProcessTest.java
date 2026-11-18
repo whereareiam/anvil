@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.host;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
-import me.whereareiam.anvil.protocol.api.model.WorkerLaunch;
+import me.whereareiam.anvil.player.api.model.ProtocolRelease;
+import me.whereareiam.anvil.player.api.model.WorkerLaunch;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.child.McProtocolWorkerMain;
 import org.junit.jupiter.api.Test;
 

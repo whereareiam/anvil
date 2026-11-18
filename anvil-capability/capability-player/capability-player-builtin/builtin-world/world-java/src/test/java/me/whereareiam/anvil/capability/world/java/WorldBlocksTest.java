@@ -24,8 +24,8 @@ import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.Clientbound
 import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.ClientboundLevelChunkWithLight;
 import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.ClientboundSectionBlocksUpdate;
 import me.whereareiam.anvil.edition.java.protocol.worker.TestJavaPlayer;
-import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.worker.TestOperations;
+import me.whereareiam.anvil.player.api.channel.Subscription;
+import me.whereareiam.anvil.player.worker.TestOperations;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

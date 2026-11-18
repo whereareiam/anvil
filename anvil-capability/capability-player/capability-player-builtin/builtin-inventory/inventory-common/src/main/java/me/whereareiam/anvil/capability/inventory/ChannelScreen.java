@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.capability.inventory;
 
 import me.whereareiam.anvil.capability.inventory.model.InventorySnapshot;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.player.api.model.text.Text;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;

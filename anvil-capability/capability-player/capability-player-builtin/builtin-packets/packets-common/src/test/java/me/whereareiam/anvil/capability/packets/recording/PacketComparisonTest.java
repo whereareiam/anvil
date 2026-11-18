@@ -10,7 +10,7 @@ import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.edition.java.protocol.packet.entity.ClientboundRemoveEntities;
 import me.whereareiam.anvil.edition.java.protocol.type.connection.ConnectionState;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.Text;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

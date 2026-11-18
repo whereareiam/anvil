@@ -26,7 +26,7 @@ import me.whereareiam.anvil.edition.java.protocol.packet.player.move.Serverbound
 import me.whereareiam.anvil.edition.java.protocol.packet.player.move.ServerboundMovePlayerRot;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.move.ServerboundMovePlayerStatusOnly;
 import me.whereareiam.anvil.edition.java.protocol.type.interaction.InteractionHand;
-import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import org.geysermc.mcprotocollib.network.ClientSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;

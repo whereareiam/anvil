@@ -4,8 +4,8 @@ import me.whereareiam.anvil.api.model.player.Expectation;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.capability.session.model.SessionState;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
-import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.model.player.PlayerConnectionEvent;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

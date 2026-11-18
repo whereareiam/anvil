@@ -177,7 +177,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `packet.<area>`, an area of more than seven packets split by subject below it (`packet.world.border`,
   `packet.world.chunk`), one class per game packet in the game's shape; the protocol owns the data types they need
   (`model.<area>`, enums in `type`) and carries text flattened to plain strings, except chat, container titles and the
-  names and lore of item stacks, which it carries as `player-api`'s `Text` (`protocol.api.model.text`): the component
+  names and lore of item stacks, which it carries as `player-api`'s `Text` (`player.api.model.text`): the component
   tree the server sent, whose `spans()` resolve what the player sees, translated by the segment's `TextTranslator`.
   Item stacks are translated by each segment's one item translator, which its adapter hands to every translation that
   reads stacks: the NBT `display` of the releases before 1.20.5 (`ItemTranslator` of `V1_16_5` and `V1_18_2`), the
@@ -222,7 +222,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   never touch native sessions or library packets: they follow connections through
   `PlayerBindingContext.bindConnection` and close their listeners together through `Subscription.all`.
   The worker contracts belong to the player family: `player-api`'s `WorkerExtension`, `PlayerBindingContext`,
-  `OperationRegistry` and `WorkerBinding` under `protocol.api.worker`, and the typed `ProtocolChannel` with
+  `OperationRegistry` and `WorkerBinding` under `player.api.worker`, and the typed `ProtocolChannel` with
   `OperationDescriptor`/`EventDescriptor` that both ends of a player's channel share. Capabilities implement and
   call them directly; nothing mirrors them on the capability side or bridges them in the launcher. Every library's
   worker runs extensions through the kits: `WorkerExtensions` discovers them, enforces the registration phase,
@@ -272,8 +272,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   themselves.
 - `PlayerBindingContext` supplies an existing player's lifecycle, client version, edition protocol, native session
   generations and release adapters to a binding; it is not another player entity, and the library's worker player implements it. `PlayerConnectionEvent`
-  and `ViewRotation` live under `protocol.api.model.player`, `OperationDescriptor<Q, R>` and `EventDescriptor<E>`
-  under `protocol.api.model.channel`. View rotation holds yaw/pitch; a descriptor pairs an ID with its payload
+  and `ViewRotation` live under `player.api.model.player`, `OperationDescriptor<Q, R>` and `EventDescriptor<E>`
+  under `player.api.model.channel`. View rotation holds yaw/pitch; a descriptor pairs an ID with its payload
   classes.
   Event payloads such as `PlayerConnectionEvent` remain separate values. Worker bindings own per-player
   state and listeners. Protocol bindings use `bindConnection` for state of one connection; only segmented code uses

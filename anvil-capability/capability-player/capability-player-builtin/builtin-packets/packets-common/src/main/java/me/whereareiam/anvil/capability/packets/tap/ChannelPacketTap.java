@@ -7,7 +7,7 @@ import me.whereareiam.anvil.capability.packets.channel.TappedFrame;
 import me.whereareiam.anvil.capability.packets.model.PacketSelection;
 import me.whereareiam.anvil.capability.packets.model.TappedPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;

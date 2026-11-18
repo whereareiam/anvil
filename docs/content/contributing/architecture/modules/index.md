@@ -185,8 +185,8 @@ The mechanism APIs add only the access their providers need. `capability-player-
 factories and their context under `capability.protocol.api.player`; the context hands a provider the player's
 `ProtocolChannel` from `player-api`. The player family owns that channel and the worker contracts: `player-api`
 holds `WorkerExtension`, `PlayerBindingContext`, `OperationRegistry` and `WorkerBinding` under
-`protocol.api.worker`, `OperationDescriptor<Q, R>` and `EventDescriptor<E>` under `protocol.api.model.channel`,
-and `PlayerConnectionEvent` and `ViewRotation` under `protocol.api.model.player`. A descriptor pairs an ID with
+`player.api.worker`, `OperationDescriptor<Q, R>` and `EventDescriptor<E>` under `player.api.model.channel`,
+and `PlayerConnectionEvent` and `ViewRotation` under `player.api.model.player`. A descriptor pairs an ID with
 the classes of its payloads; publishers and subscribers share it, and each emitted event is a separate payload
 value. `capability-process-api` groups native request factories under `capability.agent.api.process`. Both
 mechanism APIs depend on `capability-api`, without exposing the other mechanism or an agent transport API.

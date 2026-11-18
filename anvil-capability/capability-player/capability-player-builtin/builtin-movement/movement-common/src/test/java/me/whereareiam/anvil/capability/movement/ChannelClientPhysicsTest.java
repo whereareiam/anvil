@@ -6,7 +6,7 @@ import me.whereareiam.anvil.capability.movement.channel.MovementState;
 import me.whereareiam.anvil.capability.movement.channel.PhysicsChange;
 import me.whereareiam.anvil.capability.movement.model.Motion;
 import me.whereareiam.anvil.capability.movement.model.MovementInput;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 

@@ -3,7 +3,7 @@ package me.whereareiam.anvil.edition.java.protocol.packet.inventory.container;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.Text;
 import org.jetbrains.annotations.NotNull;
 
 /**

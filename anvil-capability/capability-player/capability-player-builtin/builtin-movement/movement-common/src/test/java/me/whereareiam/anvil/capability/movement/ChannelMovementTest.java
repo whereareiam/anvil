@@ -4,8 +4,8 @@ import me.whereareiam.anvil.capability.movement.channel.MovementChannel;
 import me.whereareiam.anvil.capability.movement.channel.MovementState;
 import me.whereareiam.anvil.capability.movement.model.Motion;
 import me.whereareiam.anvil.capability.movement.model.Position;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
-import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.model.player.ViewRotation;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

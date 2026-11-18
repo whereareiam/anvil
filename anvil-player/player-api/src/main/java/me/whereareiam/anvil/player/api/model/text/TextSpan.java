@@ -1,0 +1,19 @@
+package me.whereareiam.anvil.player.api.model.text;
+
+import lombok.Value;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * One run of what a player sees of a {@link Text}: text the game draws in one style.
+ */
+@Value
+public class TextSpan {
+	/**
+	 * The run's text, with its line breaks.
+	 */
+	@NotNull String text;
+	/**
+	 * The style the game draws the text in, with everything it inherits resolved.
+	 */
+	@NotNull SpanStyle style;
+}

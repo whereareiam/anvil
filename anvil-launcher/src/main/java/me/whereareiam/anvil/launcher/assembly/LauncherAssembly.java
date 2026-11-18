@@ -16,8 +16,8 @@ import me.whereareiam.anvil.launcher.adapter.provisioning.ArtifactPlatformSource
 import me.whereareiam.anvil.launcher.adapter.provisioning.ClasspathPlatformAgentSource;
 import me.whereareiam.anvil.launcher.adapter.provisioning.ProvisionedPlatformJavaSource;
 import me.whereareiam.anvil.platform.planning.DefaultPlatformPlanner;
-import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
-import me.whereareiam.anvil.protocol.player.DefaultPlayerService;
+import me.whereareiam.anvil.player.DefaultPlayerService;
+import me.whereareiam.anvil.player.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.workbench.api.Workbench;
 import me.whereareiam.anvil.workbench.local.LocalWorkbench;
 import me.whereareiam.anvil.workbench.remote.RemoteWorkbench;

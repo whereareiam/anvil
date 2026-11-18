@@ -9,7 +9,7 @@ integrate another client library. A packet-backed capability alone belongs under
 [Protocol adapters](../capabilities/protocol-adapters/index.md).
 
 Several libraries can be installed at once; Anvil selects one for each player. Create a Java library
-depending on `me.whereareiam.anvil:protocol-api` at the consumer's Anvil version. Keep
+depending on `me.whereareiam.anvil:player-api` at the consumer's Anvil version. Keep
 library-specific service interfaces in a public API artifact if capability implementations in other
 artifacts will consume them.
 
@@ -22,16 +22,16 @@ artifacts will consume them.
 | `ProtocolPlayer` | Name, client version, `libraryId()`, the selected `release()`, identity, an optional typed player channel, library services, and permanent destruction |
 
 `ProtocolLibraryProvider`, `ProtocolLibrary`, `ProtocolArtifactResolver`, and `ProtocolAuthentication`
-are in `me.whereareiam.anvil.protocol.api.library`. Player contracts are in
-`me.whereareiam.anvil.protocol.api.player`. `ProtocolLibraryContext`, `ProtocolRelease`, and
-`PlayerRequest` are in `me.whereareiam.anvil.protocol.api.model`; `ProtocolFeature` is in
-`me.whereareiam.anvil.protocol.api.type`.
+are in `me.whereareiam.anvil.player.api.library`. Player contracts are in
+`me.whereareiam.anvil.player.api.player`. `ProtocolLibraryContext`, `ProtocolRelease`, and
+`PlayerRequest` are in `me.whereareiam.anvil.player.api.model`; `ProtocolFeature` is in
+`me.whereareiam.anvil.player.api.type`.
 
 For the exact contracts, read the
-[ProtocolLibraryProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-player/player-api/src/main/java/me/whereareiam/anvil/protocol/api/library/ProtocolLibraryProvider.java),
-[ProtocolLibrary](https://github.com/whereareiam/anvil/blob/dev/anvil-player/player-api/src/main/java/me/whereareiam/anvil/protocol/api/library/ProtocolLibrary.java),
-[ProtocolRelease](https://github.com/whereareiam/anvil/blob/dev/anvil-player/player-api/src/main/java/me/whereareiam/anvil/protocol/api/model/ProtocolRelease.java), and
-[ProtocolPlayer](https://github.com/whereareiam/anvil/blob/dev/anvil-player/player-api/src/main/java/me/whereareiam/anvil/protocol/api/player/ProtocolPlayer.java)
+[ProtocolLibraryProvider](https://github.com/whereareiam/anvil/blob/dev/anvil-player/player-api/src/main/java/me/whereareiam/anvil/player/api/library/ProtocolLibraryProvider.java),
+[ProtocolLibrary](https://github.com/whereareiam/anvil/blob/dev/anvil-player/player-api/src/main/java/me/whereareiam/anvil/player/api/library/ProtocolLibrary.java),
+[ProtocolRelease](https://github.com/whereareiam/anvil/blob/dev/anvil-player/player-api/src/main/java/me/whereareiam/anvil/player/api/model/ProtocolRelease.java), and
+[ProtocolPlayer](https://github.com/whereareiam/anvil/blob/dev/anvil-player/player-api/src/main/java/me/whereareiam/anvil/player/api/player/ProtocolPlayer.java)
 source Javadocs. These links use `dev`; select your release tag when checking a released version.
 
 ## Describe the releases
@@ -42,8 +42,8 @@ release speaks exactly one wire protocol and lists every Minecraft version that 
 
 ```java
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
-import me.whereareiam.anvil.protocol.api.type.ProtocolFeature;
+import me.whereareiam.anvil.player.api.model.ProtocolRelease;
+import me.whereareiam.anvil.player.api.type.ProtocolFeature;
 
 ProtocolRelease release = ProtocolRelease.builder()
 		.libraryVersion("2.4.0")
@@ -200,7 +200,7 @@ The installed `ProtocolPlayerComposer` wraps a library-owned `ProtocolPlayer` as
 );
 ```
 
-`ProtocolPlayer` belongs to `me.whereareiam.anvil.protocol.api.player`. `SimulatedPlayer` belongs to
+`ProtocolPlayer` belongs to `me.whereareiam.anvil.player.api.player`. `SimulatedPlayer` belongs to
 `me.whereareiam.anvil.api.player`, `PlayerConnection` to `me.whereareiam.anvil.api.model.player`; `PresentationMetadata` belongs to
 `me.whereareiam.anvil.api.model`. The destruction callback uses `java.util.function.Consumer`,
 with JetBrains nullability annotations on the signature.
@@ -217,7 +217,7 @@ library; it selects library-specific behavior from `ProtocolPlayer.libraryId()`.
 
 ## Register the library
 
-Create `src/main/resources/META-INF/services/me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider`
+Create `src/main/resources/META-INF/services/me.whereareiam.anvil.player.api.library.ProtocolLibraryProvider`
 containing your provider's fully qualified class name. Add your artifact to the consumer's
 `anvilRuntimeOnly` configuration.
 

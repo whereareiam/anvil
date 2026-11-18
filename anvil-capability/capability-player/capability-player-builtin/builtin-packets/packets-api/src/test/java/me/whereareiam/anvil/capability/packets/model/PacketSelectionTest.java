@@ -3,7 +3,7 @@ package me.whereareiam.anvil.capability.packets.model;
 import me.whereareiam.anvil.edition.java.protocol.model.world.chunk.ChunkPosition;
 import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.ClientboundLevelChunkWithLight;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.Text;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

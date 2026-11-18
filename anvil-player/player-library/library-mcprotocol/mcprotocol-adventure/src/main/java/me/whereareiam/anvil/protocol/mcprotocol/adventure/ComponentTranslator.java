@@ -1,30 +1,30 @@
 package me.whereareiam.anvil.protocol.mcprotocol.adventure;
 
-import me.whereareiam.anvil.protocol.api.model.text.ShadowColor;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.api.model.text.TextColor;
-import me.whereareiam.anvil.protocol.api.model.text.TextStyle;
-import me.whereareiam.anvil.protocol.api.model.text.click.ChangePageClick;
-import me.whereareiam.anvil.protocol.api.model.text.click.CopyToClipboardClick;
-import me.whereareiam.anvil.protocol.api.model.text.click.CustomClick;
-import me.whereareiam.anvil.protocol.api.model.text.click.OpenFileClick;
-import me.whereareiam.anvil.protocol.api.model.text.click.OpenUrlClick;
-import me.whereareiam.anvil.protocol.api.model.text.click.RunCommandClick;
-import me.whereareiam.anvil.protocol.api.model.text.click.ShowDialogClick;
-import me.whereareiam.anvil.protocol.api.model.text.click.SuggestCommandClick;
-import me.whereareiam.anvil.protocol.api.model.text.click.TextClick;
-import me.whereareiam.anvil.protocol.api.model.text.content.KeybindContent;
-import me.whereareiam.anvil.protocol.api.model.text.content.LiteralContent;
-import me.whereareiam.anvil.protocol.api.model.text.content.NbtContent;
-import me.whereareiam.anvil.protocol.api.model.text.content.ScoreContent;
-import me.whereareiam.anvil.protocol.api.model.text.content.SelectorContent;
-import me.whereareiam.anvil.protocol.api.model.text.content.TextContent;
-import me.whereareiam.anvil.protocol.api.model.text.content.TranslatedContent;
-import me.whereareiam.anvil.protocol.api.model.text.hover.ShowEntityHover;
-import me.whereareiam.anvil.protocol.api.model.text.hover.ShowItemHover;
-import me.whereareiam.anvil.protocol.api.model.text.hover.ShowTextHover;
-import me.whereareiam.anvil.protocol.api.model.text.hover.TextHover;
-import me.whereareiam.anvil.protocol.api.type.NbtSource;
+import me.whereareiam.anvil.player.api.model.text.ShadowColor;
+import me.whereareiam.anvil.player.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.TextColor;
+import me.whereareiam.anvil.player.api.model.text.TextStyle;
+import me.whereareiam.anvil.player.api.model.text.click.ChangePageClick;
+import me.whereareiam.anvil.player.api.model.text.click.CopyToClipboardClick;
+import me.whereareiam.anvil.player.api.model.text.click.CustomClick;
+import me.whereareiam.anvil.player.api.model.text.click.OpenFileClick;
+import me.whereareiam.anvil.player.api.model.text.click.OpenUrlClick;
+import me.whereareiam.anvil.player.api.model.text.click.RunCommandClick;
+import me.whereareiam.anvil.player.api.model.text.click.ShowDialogClick;
+import me.whereareiam.anvil.player.api.model.text.click.SuggestCommandClick;
+import me.whereareiam.anvil.player.api.model.text.click.TextClick;
+import me.whereareiam.anvil.player.api.model.text.content.KeybindContent;
+import me.whereareiam.anvil.player.api.model.text.content.LiteralContent;
+import me.whereareiam.anvil.player.api.model.text.content.NbtContent;
+import me.whereareiam.anvil.player.api.model.text.content.ScoreContent;
+import me.whereareiam.anvil.player.api.model.text.content.SelectorContent;
+import me.whereareiam.anvil.player.api.model.text.content.TextContent;
+import me.whereareiam.anvil.player.api.model.text.content.TranslatedContent;
+import me.whereareiam.anvil.player.api.model.text.hover.ShowEntityHover;
+import me.whereareiam.anvil.player.api.model.text.hover.ShowItemHover;
+import me.whereareiam.anvil.player.api.model.text.hover.ShowTextHover;
+import me.whereareiam.anvil.player.api.model.text.hover.TextHover;
+import me.whereareiam.anvil.player.api.type.NbtSource;
 import net.kyori.adventure.text.BlockNBTComponent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
@@ -207,13 +207,13 @@ public abstract class ComponentTranslator {
 		return sent.build();
 	}
 
-	private static me.whereareiam.anvil.protocol.api.type.TextDecoration decoration(TextDecoration decoration) {
+	private static me.whereareiam.anvil.player.api.type.TextDecoration decoration(TextDecoration decoration) {
 		return switch (decoration) {
-			case OBFUSCATED -> me.whereareiam.anvil.protocol.api.type.TextDecoration.OBFUSCATED;
-			case BOLD -> me.whereareiam.anvil.protocol.api.type.TextDecoration.BOLD;
-			case STRIKETHROUGH -> me.whereareiam.anvil.protocol.api.type.TextDecoration.STRIKETHROUGH;
-			case UNDERLINED -> me.whereareiam.anvil.protocol.api.type.TextDecoration.UNDERLINED;
-			case ITALIC -> me.whereareiam.anvil.protocol.api.type.TextDecoration.ITALIC;
+			case OBFUSCATED -> me.whereareiam.anvil.player.api.type.TextDecoration.OBFUSCATED;
+			case BOLD -> me.whereareiam.anvil.player.api.type.TextDecoration.BOLD;
+			case STRIKETHROUGH -> me.whereareiam.anvil.player.api.type.TextDecoration.STRIKETHROUGH;
+			case UNDERLINED -> me.whereareiam.anvil.player.api.type.TextDecoration.UNDERLINED;
+			case ITALIC -> me.whereareiam.anvil.player.api.type.TextDecoration.ITALIC;
 		};
 	}
 

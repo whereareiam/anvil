@@ -10,8 +10,8 @@ import me.whereareiam.anvil.capability.inventory.model.InventoryItem;
 import me.whereareiam.anvil.capability.inventory.type.InventoryClick;
 import me.whereareiam.anvil.capability.inventory.type.ItemNameSource;
 import me.whereareiam.anvil.capability.messages.Messages;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.api.model.text.TextColor;
+import me.whereareiam.anvil.player.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.TextColor;
 import me.whereareiam.anvil.testkit.tests.server.fixture.FixtureServer;
 import org.junit.jupiter.api.Test;
 

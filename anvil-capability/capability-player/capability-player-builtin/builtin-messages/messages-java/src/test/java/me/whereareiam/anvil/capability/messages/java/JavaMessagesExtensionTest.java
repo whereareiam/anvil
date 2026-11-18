@@ -20,20 +20,20 @@ import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundL
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundStartConfiguration;
 import me.whereareiam.anvil.edition.java.protocol.type.chat.FilterMaskType;
 import me.whereareiam.anvil.edition.java.protocol.worker.TestJavaPlayer;
-import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.api.model.text.TextColor;
-import me.whereareiam.anvil.protocol.api.model.text.TextStyle;
-import me.whereareiam.anvil.protocol.api.model.text.click.RunCommandClick;
-import me.whereareiam.anvil.protocol.api.model.text.content.LiteralContent;
-import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
-import me.whereareiam.anvil.protocol.worker.TestOperations;
-import me.whereareiam.anvil.protocol.worker.TestWorkerPlayer;
+import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.player.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.TextColor;
+import me.whereareiam.anvil.player.api.model.text.TextStyle;
+import me.whereareiam.anvil.player.api.model.text.click.RunCommandClick;
+import me.whereareiam.anvil.player.api.model.text.content.LiteralContent;
+import me.whereareiam.anvil.player.api.worker.WorkerBinding;
+import me.whereareiam.anvil.player.worker.TestOperations;
+import me.whereareiam.anvil.player.worker.TestWorkerPlayer;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static me.whereareiam.anvil.protocol.api.type.TextDecoration.BOLD;
+import static me.whereareiam.anvil.player.api.type.TextDecoration.BOLD;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;

@@ -1,11 +1,11 @@
 package me.whereareiam.anvil.tooling.launcher;
 
-import me.whereareiam.anvil.protocol.api.library.ProtocolAuthentication;
-import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
-import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
-import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
-import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
-import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
+import me.whereareiam.anvil.player.api.library.ProtocolAuthentication;
+import me.whereareiam.anvil.player.api.library.ProtocolLibrary;
+import me.whereareiam.anvil.player.api.library.ProtocolLibraryProvider;
+import me.whereareiam.anvil.player.api.library.ProtocolLibraryRegistry;
+import me.whereareiam.anvil.player.api.model.ProtocolLibraryContext;
+import me.whereareiam.anvil.player.api.model.ProtocolRelease;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 

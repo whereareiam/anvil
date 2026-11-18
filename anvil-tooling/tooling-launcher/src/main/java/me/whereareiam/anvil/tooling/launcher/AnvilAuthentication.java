@@ -3,9 +3,9 @@ package me.whereareiam.anvil.tooling.launcher;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.engine.config.EngineDefaults;
 import me.whereareiam.anvil.engine.config.EngineProperties;
-import me.whereareiam.anvil.protocol.api.library.ProtocolAuthentication;
-import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
-import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
+import me.whereareiam.anvil.player.api.library.ProtocolAuthentication;
+import me.whereareiam.anvil.player.api.library.ProtocolLibraryProvider;
+import me.whereareiam.anvil.player.api.library.ProtocolLibraryRegistry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

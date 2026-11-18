@@ -10,9 +10,9 @@ import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemC
 import me.whereareiam.anvil.edition.java.protocol.packet.world.chunk.ClientboundLevelChunkWithLight;
 import me.whereareiam.anvil.edition.java.protocol.type.connection.ConnectionState;
 import me.whereareiam.anvil.edition.java.protocol.worker.TestJavaPlayer;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
-import me.whereareiam.anvil.protocol.worker.TestOperations;
+import me.whereareiam.anvil.player.api.model.text.Text;
+import me.whereareiam.anvil.player.api.worker.WorkerBinding;
+import me.whereareiam.anvil.player.worker.TestOperations;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

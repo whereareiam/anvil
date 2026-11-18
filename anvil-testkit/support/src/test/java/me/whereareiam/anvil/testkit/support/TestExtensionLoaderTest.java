@@ -16,7 +16,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TestExtensionLoaderTest {
-	private static final String PROTOCOL_SERVICE = "META-INF/services/me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider";
+	private static final String PROTOCOL_SERVICE = "META-INF/services/me.whereareiam.anvil.player.api.library.ProtocolLibraryProvider";
 	private static final String AGENT_SERVICE = "META-INF/services/me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider";
 
 	@TempDir

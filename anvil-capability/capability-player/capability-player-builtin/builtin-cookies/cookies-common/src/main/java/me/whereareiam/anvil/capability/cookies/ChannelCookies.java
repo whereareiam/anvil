@@ -8,7 +8,7 @@ import me.whereareiam.anvil.capability.cookies.model.CookieKey;
 import me.whereareiam.anvil.capability.cookies.model.CookieRequest;
 import me.whereareiam.anvil.capability.cookies.model.HeldCookies;
 import me.whereareiam.anvil.capability.cookies.model.StoredCookie;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

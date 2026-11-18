@@ -62,15 +62,15 @@ tasks.withType<Test>().configureEach {
 data class SharedTestDouble(val fixture: String, val owners: Set<String>)
 
 val sharedTestDoubleContracts = mapOf(
-	"me.whereareiam.anvil.protocol.api.channel.ProtocolChannel"
+	"me.whereareiam.anvil.player.api.channel.ProtocolChannel"
 		to SharedTestDouble("player-api's TestProtocolChannel", setOf(":anvil-player:player-api")),
 	"me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext"
 		to SharedTestDouble("capability-player-api's TestProtocolPlayerCapabilityContext",
 			setOf(":anvil-capability:capability-player:capability-player-api")),
-	"me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext"
+	"me.whereareiam.anvil.player.api.worker.PlayerBindingContext"
 		to SharedTestDouble("player-worker's TestWorkerPlayer or protocol-worker's TestJavaPlayer",
 			setOf(":anvil-player:player-api", ":anvil-player:player-worker")),
-	"me.whereareiam.anvil.protocol.api.worker.OperationRegistry"
+	"me.whereareiam.anvil.player.api.worker.OperationRegistry"
 		to SharedTestDouble("player-worker's TestOperations", setOf(":anvil-player:player-api", ":anvil-player:player-worker")),
 	"me.whereareiam.anvil.edition.java.protocol.JavaProtocol"
 		to SharedTestDouble("protocol-worker's TestJavaPlayer", setOf(

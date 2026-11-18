@@ -8,8 +8,8 @@ import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.cookie.ClientboundCookieRequest;
 import me.whereareiam.anvil.edition.java.protocol.packet.cookie.ClientboundStoreCookie;
 import me.whereareiam.anvil.edition.java.protocol.packet.cookie.ServerboundCookieResponse;
-import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.player.api.channel.Subscription;
+import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
