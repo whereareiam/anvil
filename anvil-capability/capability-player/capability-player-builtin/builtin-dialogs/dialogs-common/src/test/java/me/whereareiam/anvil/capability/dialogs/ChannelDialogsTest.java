@@ -18,7 +18,7 @@ import me.whereareiam.anvil.capability.dialogs.screen.ClientScreens;
 import me.whereareiam.anvil.capability.dialogs.type.DialogActionType;
 import me.whereareiam.anvil.capability.dialogs.type.DialogAfterAction;
 import me.whereareiam.anvil.capability.dialogs.type.DialogInputType;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 

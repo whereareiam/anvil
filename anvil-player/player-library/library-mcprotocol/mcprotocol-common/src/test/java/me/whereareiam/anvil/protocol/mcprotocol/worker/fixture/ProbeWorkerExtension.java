@@ -1,10 +1,10 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.fixture;
 
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
-import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
-import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
-import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
-import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
+import me.whereareiam.anvil.player.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.player.api.worker.OperationRegistry;
+import me.whereareiam.anvil.player.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.player.api.worker.WorkerBinding;
+import me.whereareiam.anvil.player.api.worker.WorkerExtension;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;

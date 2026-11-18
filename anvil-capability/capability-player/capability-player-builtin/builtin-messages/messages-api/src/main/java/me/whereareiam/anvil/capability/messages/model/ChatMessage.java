@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.capability.messages.model;
 
 import lombok.Value;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.Text;
 import org.jetbrains.annotations.NotNull;
 
 /**

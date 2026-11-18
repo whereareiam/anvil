@@ -1,11 +1,11 @@
 package me.whereareiam.anvil.protocol.mcprotocol.library;
 
 import me.whereareiam.anvil.edition.java.protocol.JavaProtocol;
-import me.whereareiam.anvil.protocol.api.library.ProtocolAuthentication;
-import me.whereareiam.anvil.protocol.api.library.ProtocolLibrary;
-import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryProvider;
-import me.whereareiam.anvil.protocol.api.model.ProtocolLibraryContext;
-import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
+import me.whereareiam.anvil.player.api.library.ProtocolAuthentication;
+import me.whereareiam.anvil.player.api.library.ProtocolLibrary;
+import me.whereareiam.anvil.player.api.library.ProtocolLibraryProvider;
+import me.whereareiam.anvil.player.api.model.ProtocolLibraryContext;
+import me.whereareiam.anvil.player.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.mcprotocol.authentication.MicrosoftAuthentication;
 import me.whereareiam.anvil.protocol.mcprotocol.catalog.McProtocolReleaseCatalog;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;

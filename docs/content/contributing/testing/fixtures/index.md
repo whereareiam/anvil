@@ -53,7 +53,7 @@ dependencies {
 The `test-fixtures-consumer` convention adds host-side test support. Put this test in the module's `src/test/java`:
 
 ```java
-import me.whereareiam.anvil.protocol.api.library.ProtocolLibraryRegistry;
+import me.whereareiam.anvil.player.api.library.ProtocolLibraryRegistry;
 import me.whereareiam.anvil.testkit.support.FixtureArtifacts;
 import me.whereareiam.anvil.testkit.support.TestExtensionLoader;
 import org.junit.jupiter.api.Test;

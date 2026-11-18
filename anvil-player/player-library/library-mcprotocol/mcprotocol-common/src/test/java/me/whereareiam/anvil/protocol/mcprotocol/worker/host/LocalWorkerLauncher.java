@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.host;
 
-import me.whereareiam.anvil.protocol.api.library.ProtocolWorkerLauncher;
-import me.whereareiam.anvil.protocol.api.model.WorkerLaunch;
+import me.whereareiam.anvil.player.api.library.ProtocolWorkerLauncher;
+import me.whereareiam.anvil.player.api.model.WorkerLaunch;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;

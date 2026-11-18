@@ -12,7 +12,7 @@ import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.edition.java.protocol.type.connection.ConnectionState;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.Text;
 import me.whereareiam.anvil.protocol.mcprotocol.client.TestClientListener;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;

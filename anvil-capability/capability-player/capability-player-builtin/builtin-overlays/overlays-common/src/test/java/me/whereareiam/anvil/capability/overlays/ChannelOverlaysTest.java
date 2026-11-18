@@ -8,7 +8,7 @@ import me.whereareiam.anvil.capability.overlays.model.Title;
 import me.whereareiam.anvil.capability.overlays.type.BossBarChange;
 import me.whereareiam.anvil.capability.overlays.type.BossBarColor;
 import me.whereareiam.anvil.capability.overlays.type.BossBarOverlay;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

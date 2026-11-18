@@ -6,12 +6,12 @@ import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.cookie.ClientboundCookieRequest;
 import me.whereareiam.anvil.edition.java.protocol.packet.cookie.ClientboundStoreCookie;
 import me.whereareiam.anvil.edition.java.protocol.packet.cookie.ServerboundCookieResponse;
-import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.api.exception.ProtocolUnavailableException;
-import me.whereareiam.anvil.protocol.api.worker.OperationRegistry;
-import me.whereareiam.anvil.protocol.api.worker.PlayerBindingContext;
-import me.whereareiam.anvil.protocol.api.worker.WorkerBinding;
-import me.whereareiam.anvil.protocol.api.worker.WorkerExtension;
+import me.whereareiam.anvil.player.api.channel.Subscription;
+import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.player.api.worker.OperationRegistry;
+import me.whereareiam.anvil.player.api.worker.PlayerBindingContext;
+import me.whereareiam.anvil.player.api.worker.WorkerBinding;
+import me.whereareiam.anvil.player.api.worker.WorkerExtension;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

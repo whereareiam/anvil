@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.protocol.mcprotocol.worker.host;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
-import me.whereareiam.anvil.protocol.api.model.ProtocolRelease;
+import me.whereareiam.anvil.player.api.model.ProtocolRelease;
 import me.whereareiam.anvil.protocol.mcprotocol.client.McProtocolClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

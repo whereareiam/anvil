@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.capability.interaction.model.BlockUse;
 import me.whereareiam.anvil.capability.interaction.model.EntityUse;
 import me.whereareiam.anvil.capability.interaction.model.ItemUse;
-import me.whereareiam.anvil.protocol.api.model.channel.OperationDescriptor;
+import me.whereareiam.anvil.player.api.model.channel.OperationDescriptor;
 
 /**
  * The channel contract between the host interaction capability and its worker extensions: the capability ID both

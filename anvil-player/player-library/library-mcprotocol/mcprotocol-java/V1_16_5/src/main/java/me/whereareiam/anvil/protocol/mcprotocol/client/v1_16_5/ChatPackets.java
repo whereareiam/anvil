@@ -10,7 +10,7 @@ import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundPlayerC
 import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.edition.java.protocol.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.edition.java.protocol.packet.chat.ServerboundChatCommand;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.Text;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import org.jetbrains.annotations.NotNull;

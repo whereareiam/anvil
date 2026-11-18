@@ -2,8 +2,8 @@ package me.whereareiam.anvil.capability.session;
 
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.capability.session.model.SessionState;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
-import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
+import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.player.api.model.player.PlayerConnectionEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

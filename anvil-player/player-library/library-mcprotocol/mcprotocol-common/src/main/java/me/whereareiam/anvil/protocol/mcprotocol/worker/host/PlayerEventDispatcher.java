@@ -2,8 +2,8 @@ package me.whereareiam.anvil.protocol.mcprotocol.worker.host;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.protocol.api.channel.Subscription;
-import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
+import me.whereareiam.anvil.player.api.channel.Subscription;
+import me.whereareiam.anvil.player.api.model.player.PlayerConnectionEvent;
 import me.whereareiam.anvil.protocol.mcprotocol.worker.transport.WorkerMessageCodec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

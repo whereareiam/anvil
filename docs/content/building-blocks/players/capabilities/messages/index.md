@@ -14,7 +14,7 @@ This fragment belongs in a live test after Alice has connected and joined `serve
 
 ```java
 import me.whereareiam.anvil.capability.messages.Messages;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.Text;
 import java.time.Duration;
 ```
 
@@ -104,11 +104,11 @@ reading order, each in the style it inherits from the components around it. `fin
 themselves, such as a translation and its arguments.
 
 ```java
-import me.whereareiam.anvil.protocol.api.model.text.SpanStyle;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
-import me.whereareiam.anvil.protocol.api.model.text.TextColor;
-import me.whereareiam.anvil.protocol.api.model.text.click.RunCommandClick;
-import me.whereareiam.anvil.protocol.api.model.text.content.TranslatedContent;
+import me.whereareiam.anvil.player.api.model.text.SpanStyle;
+import me.whereareiam.anvil.player.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.TextColor;
+import me.whereareiam.anvil.player.api.model.text.click.RunCommandClick;
+import me.whereareiam.anvil.player.api.model.text.content.TranslatedContent;
 
 Text welcome = chat.received("Welcome to Arbor", Duration.ofSeconds(10));
 SpanStyle arbor = welcome.span("Arbor").orElseThrow().getStyle();
@@ -146,7 +146,7 @@ assertEquals("Ivan", translation.getArguments().getFirst().plain());
 ```
 
 `find(type)` returns the first content of that kind in reading order, a translation's arguments before what follows
-the translation. The kinds of content are in `me.whereareiam.anvil.protocol.api.model.text.content`:
+the translation. The kinds of content are in `me.whereareiam.anvil.player.api.model.text.content`:
 `LiteralContent`, `TranslatedContent`, `KeybindContent`, `SelectorContent`, `ScoreContent`, `NbtContent`, and the
 `SpriteContent` and `PlayerHeadContent` of Minecraft 1.21.9. `getContent()`, `getStyle()` and `getChildren()` walk
 the components as the server sent them; a component's `TextStyle` holds only what it sets itself.

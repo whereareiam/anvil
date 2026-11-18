@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.capability.session;
 
 import me.whereareiam.anvil.capability.protocol.api.player.TestProtocolPlayerCapabilityContext;
-import me.whereareiam.anvil.protocol.api.channel.TestProtocolChannel;
-import me.whereareiam.anvil.protocol.api.model.player.PlayerConnectionEvent;
+import me.whereareiam.anvil.player.api.channel.TestProtocolChannel;
+import me.whereareiam.anvil.player.api.model.player.PlayerConnectionEvent;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

@@ -3,8 +3,8 @@ package me.whereareiam.anvil.capability.movement;
 import me.whereareiam.anvil.capability.movement.channel.MovementChannel;
 import me.whereareiam.anvil.capability.movement.channel.MovementState;
 import me.whereareiam.anvil.capability.movement.model.Position;
-import me.whereareiam.anvil.protocol.api.channel.ProtocolChannel;
-import me.whereareiam.anvil.protocol.api.model.player.ViewRotation;
+import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
+import me.whereareiam.anvil.player.api.model.player.ViewRotation;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;

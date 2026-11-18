@@ -8,6 +8,6 @@ dependencies {
 	compileOnly(anvil.api)
 	compileOnly(anvil.capability.api)
 	compileOnly(anvil.platform.api)
-	compileOnly(anvil.protocol.api)
+	compileOnly(anvil.player.api)
 	compileOnly(anvil.tooling.extension.api)
 }

@@ -12,7 +12,7 @@ import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemC
 import me.whereareiam.anvil.edition.java.protocol.packet.chat.ServerboundChat;
 import me.whereareiam.anvil.edition.java.protocol.packet.chat.ServerboundChatCommand;
 import me.whereareiam.anvil.edition.java.protocol.type.chat.FilterMaskType;
-import me.whereareiam.anvil.protocol.api.model.text.Text;
+import me.whereareiam.anvil.player.api.model.text.Text;
 import me.whereareiam.anvil.protocol.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.protocol.mcprotocol.client.translation.PacketTranslation;
 import net.kyori.adventure.text.Component;
