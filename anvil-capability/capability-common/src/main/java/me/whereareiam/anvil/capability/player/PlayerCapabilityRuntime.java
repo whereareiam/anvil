@@ -10,9 +10,9 @@ import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.api.player.PlayerCapabilityProvider;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityProvider;
+import me.whereareiam.anvil.player.api.ProtocolPlayer;
 import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.player.api.library.ProtocolLibraryProvider;
-import me.whereareiam.anvil.player.api.player.ProtocolPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
