@@ -2,7 +2,7 @@ package me.whereareiam.anvil.capability.worlds.neoforge.v1_21_1;
 
 import me.whereareiam.anvil.agent.api.model.AgentInfo;
 import me.whereareiam.anvil.agent.server.api.PlatformAgent;
-import me.whereareiam.anvil.capability.worlds.agent.MinecraftRelease;
+import me.whereareiam.anvil.agent.server.api.operation.MinecraftRelease;
 import me.whereareiam.anvil.capability.worlds.agent.ServerWorlds;
 import me.whereareiam.anvil.capability.worlds.agent.WorldChangeLog;
 import me.whereareiam.anvil.capability.worlds.agent.WorldEventLog;

@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6;
 
+import me.whereareiam.anvil.api.type.ClientLoader;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientSettings;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.HandPreference;
@@ -16,8 +17,8 @@ import java.util.Arrays;
  * once it has written the login acknowledgement, so the configuration starts after that packet was sent.
  */
 final class ClientConfiguration extends ConfigurationStart {
-	ClientConfiguration(@NotNull ClientSettings settings) {
-		super(settings);
+	ClientConfiguration(@NotNull ClientSettings settings, @NotNull ClientLoader loader) {
+		super(settings, loader);
 	}
 
 	@Override

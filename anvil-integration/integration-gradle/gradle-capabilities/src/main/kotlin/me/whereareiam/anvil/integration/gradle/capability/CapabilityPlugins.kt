@@ -17,6 +17,7 @@ abstract class CapabilityPlugin(private val artifact: String) : Plugin<Project> 
 
 class SessionPlugin : CapabilityPlugin("builtin-session")
 class DispatchPlugin : CapabilityPlugin("builtin-dispatch")
+class NetworkPlugin : CapabilityPlugin("builtin-network")
 class PlayersPlugin : CapabilityPlugin("builtin-players")
 class MessagesPlugin : CapabilityPlugin("builtin-messages")
 class MovementPlugin : CapabilityPlugin("builtin-movement")

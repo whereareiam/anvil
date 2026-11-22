@@ -2,13 +2,14 @@ package me.whereareiam.anvil.player.library.mcprotocol.client.model;
 
 import lombok.Builder;
 import lombok.Value;
+import me.whereareiam.anvil.api.model.player.PlayerClient;
 import me.whereareiam.anvil.player.library.mcprotocol.client.McProtocolClient;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Everything a {@link McProtocolClient} needs to log one player in: who logs in, as which version of the game, with
- * which client settings, and where to.
+ * Everything a {@link McProtocolClient} needs to log one player in: who logs in, as which version of the game and
+ * which client, vanilla or NeoForge, with which client settings, and where to.
  *
  * <pre>{@code
  * ClientLogin login = ClientLogin.builder()
@@ -42,6 +43,13 @@ public class ClientLogin {
 	/**
 	 * Client information sent after login.
 	 */
+	/**
+	 * The client the player presents itself as; a release whose segment cannot present it refuses the login.
+	 */
+	@NotNull
+	@Builder.Default
+	PlayerClient client = PlayerClient.vanilla();
+
 	@NotNull ClientSettings settings;
 
 	/**

@@ -73,8 +73,10 @@ WorkspacePlan workspace = WorkspacePlan.builder()
 		.build();
 ```
 
-Pass it to the server with `.workspace(workspace)`. A simulated player is a vanilla client: it joins a
-NeoForge server as long as no installed mod requires a matching mod on the client.
+Pass it to the server with `.workspace(workspace)`. A simulated player is a vanilla client by default: it joins a
+NeoForge server as long as no installed mod requires a matching mod on the client. To join a server whose mods do,
+declare a [NeoForge client](../../../../players/connections/index.md#present-a-neoforge-client) with the channels the
+server's [Network](../../../actions/network/index.md) capability reads.
 
 ## Use your own installer
 

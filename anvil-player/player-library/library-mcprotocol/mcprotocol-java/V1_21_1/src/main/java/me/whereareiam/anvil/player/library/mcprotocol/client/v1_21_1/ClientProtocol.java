@@ -1,5 +1,7 @@
 package me.whereareiam.anvil.player.library.mcprotocol.client.v1_21_1;
 
+import me.whereareiam.anvil.api.model.player.PlayerClient;
+import me.whereareiam.anvil.api.type.ClientLoader;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientCredentials;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientProfile;
@@ -16,11 +18,14 @@ import org.jetbrains.annotations.Nullable;
  * session that connects to its protocol, which adds the library's own listener: that listener answers the login and
  * switches the session from one phase to the next. The {@link ClientConfiguration} starts the configuration once the
  * library entered it, so it must see every packet after the library's listener, and the protocol adds it right after,
- * with the {@link KnownPacksAnswer} that names the vanilla data pack of the player's Minecraft version.
+ * with the {@link KnownPacksAnswer} that names the vanilla data pack of the player's Minecraft version, and for a
+ * NeoForge client the {@link NeoForgeConfiguration} that answers NeoForge's configuration with the player's channels
+ * and the {@link UnreadableModValues} that leaves out a game packet carrying a value only its server's mods can read.
  */
 final class ClientProtocol extends MinecraftProtocol {
 	private final String minecraftVersion;
 	private final ClientSettings settings;
+	private final PlayerClient client;
 
 	/**
 	 * Creates the protocol of a player's sessions.
@@ -31,13 +36,18 @@ final class ClientProtocol extends MinecraftProtocol {
 		super(profile(login.getProfile()), accessToken(login.getCredentials()));
 		this.minecraftVersion = login.getMinecraftVersion();
 		this.settings = login.getSettings();
+		this.client = login.getClient();
 	}
 
 	@Override
 	public void newClientSession(Session session, boolean transferring) {
 		super.newClientSession(session, transferring);
-		session.addListener(new ClientConfiguration(settings));
+		session.addListener(new ClientConfiguration(settings, client.getLoader()));
 		KnownPacksAnswer.install(session, minecraftVersion);
+		if (client.getLoader() != ClientLoader.NEOFORGE) return;
+
+		session.addListener(new NeoForgeConfiguration(client.getChannels()));
+		session.addListener(new UnreadableModValues());
 	}
 
 	private static GameProfile profile(ClientProfile profile) {

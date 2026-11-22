@@ -741,7 +741,7 @@ module = "org.geysermc.mcprotocollib:protocol:1.21-20241010.155958-24"
 protocol = 767
 minecraft = ["1.21", "1.21.1"]
 java = 17
-features = ["ONLINE_AUTHENTICATION"]
+features = ["ONLINE_AUTHENTICATION", "NEOFORGE_CLIENT"]
 
 [[release.artifact]]
 module = "org.geysermc.mcprotocollib:protocol:1.21-20241010.155958-24"

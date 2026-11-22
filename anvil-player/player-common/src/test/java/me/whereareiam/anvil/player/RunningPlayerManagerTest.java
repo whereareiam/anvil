@@ -5,6 +5,8 @@ import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.model.player.Expectation;
+import me.whereareiam.anvil.api.model.player.PayloadChannel;
+import me.whereareiam.anvil.api.model.player.PlayerClient;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;
 import me.whereareiam.anvil.api.model.player.PlayerLogin;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
@@ -21,6 +23,7 @@ import me.whereareiam.anvil.api.player.account.AccountPool.AccountLease;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.type.AuthenticationMode;
 import me.whereareiam.anvil.api.type.SupportPolicy;
+import me.whereareiam.anvil.api.type.network.ChannelPhase;
 import me.whereareiam.anvil.player.account.AccountReservations;
 import me.whereareiam.anvil.player.api.ProtocolPlayer;
 import me.whereareiam.anvil.player.api.ProtocolPlayerComposer;
@@ -44,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -121,6 +125,34 @@ class RunningPlayerManagerTest {
 
 		manager.create("alice");
 		assertEquals("en_us", library.lastRequest.getLanguage());
+	}
+
+	@Test
+	void passesANeoForgeClientToALibraryWhoseReleaseOffersOne() {
+		StubLibrary library = new StubLibrary();
+		library.features = Set.of(ProtocolFeature.NEOFORGE_CLIENT);
+		RunningPlayerManager manager = manager(library);
+		PlayerClient client = PlayerClient.neoforge(List.of(PayloadChannel.builder()
+				.id("example:sync").version("1").phase(ChannelPhase.PLAY).build()));
+
+		manager.create(PlayerOptions.builder().name("neo").client(client).build());
+		assertEquals(client, library.lastRequest.getClient());
+
+		manager.create("alice");
+		assertEquals(PlayerClient.vanilla(), library.lastRequest.getClient());
+	}
+
+	@Test
+	void aNeoForgeClientIsRefusedOnAReleaseWithoutOne() {
+		StubLibrary library = new StubLibrary();
+		RunningPlayerManager manager = manager(library);
+
+		var refused = assertThrows(ScenarioValidationException.class, () -> manager.create(PlayerOptions.builder()
+				.name("neo").client(PlayerClient.neoforge(List.of())).build()));
+
+		assertEquals("Player 'neo' declares a NeoForge client, which protocol library 'test' does not offer for client "
+				+ "version '1.21.11'", refused.getMessage());
+		assertNull(library.lastRequest);
 	}
 
 	@Test
@@ -764,6 +796,7 @@ class RunningPlayerManagerTest {
 		private StubPlayer lastPlayer;
 		private RuntimeException destructionFailure;
 		private RuntimeException creationFailure;
+		private Set<ProtocolFeature> features = Set.of(ProtocolFeature.ONLINE_AUTHENTICATION);
 
 		@Override
 		public @NotNull String id() {
@@ -779,7 +812,7 @@ class RunningPlayerManagerTest {
 					.verifiedVersion(version)
 					.protocolNumber(1)
 					.javaVersion(21)
-					.feature(ProtocolFeature.ONLINE_AUTHENTICATION)
+					.features(features)
 					.build());
 		}
 

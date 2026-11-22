@@ -20,8 +20,11 @@ neoForge {
 dependencies {
 	compileOnly(projects.anvilApi)
 	compileOnly(projects.anvilProcess.processAgent.agentServer.serverApi)
+	compileOnly(projects.anvilProcess.processAgent.agentServer.serverNeoforgeApi)
 
 	embedded(projects.anvilProcess.processAgent.agentServer) { isTransitive = false }
+	// The services the agent offers the capabilities' NeoForge sides, which find them in the agent's own JAR.
+	embedded(projects.anvilProcess.processAgent.agentServer.serverNeoforgeApi) { isTransitive = false }
 }
 
 // NeoForge refuses a mod whose version does not start with a digit, which a branch-qualified build such as

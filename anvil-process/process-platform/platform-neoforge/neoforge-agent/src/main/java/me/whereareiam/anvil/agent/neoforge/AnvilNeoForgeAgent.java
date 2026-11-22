@@ -3,6 +3,8 @@ package me.whereareiam.anvil.agent.neoforge;
 import me.whereareiam.anvil.agent.api.model.AgentInfo;
 import me.whereareiam.anvil.agent.api.model.AgentProfile;
 import me.whereareiam.anvil.agent.api.type.AgentRole;
+import me.whereareiam.anvil.agent.neoforge.api.PayloadRegistrations;
+import me.whereareiam.anvil.agent.neoforge.network.AccessorPayloadRegistrations;
 import me.whereareiam.anvil.agent.server.api.PlatformAgent;
 import me.whereareiam.anvil.agent.server.api.transport.AgentServer;
 import me.whereareiam.anvil.agent.server.api.transport.AgentServerProvider;
@@ -92,6 +94,8 @@ public final class AnvilNeoForgeAgent implements PlatformAgent {
 			return Optional.of(type.cast(server));
 		if (type.isInstance(this))
 			return Optional.of(type.cast(this));
+		if (type == PayloadRegistrations.class)
+			return Optional.of(type.cast(new AccessorPayloadRegistrations()));
 		return Optional.empty();
 	}
 

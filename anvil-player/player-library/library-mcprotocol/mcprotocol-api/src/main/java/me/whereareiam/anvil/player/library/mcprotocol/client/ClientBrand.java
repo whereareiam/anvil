@@ -2,15 +2,14 @@ package me.whereareiam.anvil.player.library.mcprotocol.client;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import me.whereareiam.anvil.api.type.ClientLoader;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
-
 /**
- * The brand a vanilla client announces to the server: the custom payload on the {@code minecraft:brand} channel that
- * carries {@code vanilla} as a protocol string. Every release since Minecraft 1.13 names the channel and writes the
- * brand the same way; when a release sends it is up to that release's client segment.
+ * The brand a client announces to the server: the custom payload on the {@code minecraft:brand} channel that carries
+ * the client's name as a protocol string, {@code vanilla} for a vanilla client and {@code neoforge} for a NeoForge
+ * one. Every release since Minecraft 1.13 names the channel and writes the brand the same way; when a release sends
+ * it is up to that release's client segment.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ClientBrand {
@@ -22,27 +21,32 @@ public final class ClientBrand {
 	 * The brand of a client without mods.
 	 */
 	public static final String VANILLA = "vanilla";
-
-	private static final int SEGMENT_BITS = 0x7F;
-	private static final int CONTINUE_BIT = 0x80;
+	/**
+	 * The brand of a NeoForge client.
+	 */
+	public static final String NEOFORGE = "neoforge";
 
 	/**
-	 * Returns the payload of the brand a vanilla client announces: the brand's UTF-8 length as a variable-length
-	 * integer, followed by its bytes.
+	 * Returns the payload of the brand a vanilla client announces.
 	 *
 	 * @return a new array with the payload
 	 */
 	public static byte @NotNull [] payload() {
-		byte[] brand = VANILLA.getBytes(StandardCharsets.UTF_8);
-		ByteArrayOutputStream payload = new ByteArrayOutputStream(brand.length + 1);
-		int length = brand.length;
-		while ((length & ~SEGMENT_BITS) != 0) {
-			payload.write((length & SEGMENT_BITS) | CONTINUE_BIT);
-			length >>>= 7;
-		}
-		payload.write(length);
-		payload.writeBytes(brand);
+		return payload(ClientLoader.VANILLA);
+	}
 
-		return payload.toByteArray();
+	/**
+	 * Returns the payload of the brand a client of a mod loader announces: the brand as a protocol string.
+	 *
+	 * @param loader the mod loader the client presents itself as
+	 * @return a new array with the payload
+	 */
+	public static byte @NotNull [] payload(@NotNull ClientLoader loader) {
+		String brand = switch (loader) {
+			case VANILLA -> VANILLA;
+			case NEOFORGE -> NEOFORGE;
+		};
+
+		return new ProtocolWriter().string(brand).toByteArray();
 	}
 }

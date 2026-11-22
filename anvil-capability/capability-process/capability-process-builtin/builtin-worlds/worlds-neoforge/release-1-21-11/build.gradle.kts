@@ -11,7 +11,7 @@ toolkitPublish {
 }
 
 neoForge {
-	version = libs.versions.worldsNeoforge12111.get()
+	version = libs.versions.neoforge12111.get()
 }
 
 dependencies {

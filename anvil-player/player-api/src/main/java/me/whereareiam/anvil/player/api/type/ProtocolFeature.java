@@ -8,5 +8,10 @@ public enum ProtocolFeature {
 	/**
 	 * Licensed Java Edition online-mode authentication.
 	 */
-	ONLINE_AUTHENTICATION
+	ONLINE_AUTHENTICATION,
+	/**
+	 * A client that presents itself as NeoForge: it claims a player's payload channels and answers NeoForge's
+	 * configuration.
+	 */
+	NEOFORGE_CLIENT
 }
