@@ -41,5 +41,13 @@ Explain the concrete behavior change and the checks you ran. Use an `Area: Title
 and one release category label: `feature`, `change`, `bug`, or `dependencies`. `major` can accompany
 a category; `skip-changelog` excludes a change from release notes.
 
+The title's description is past tense and says what changed for people who test with Anvil or extend
+it: `Introduced`, `Changed`, `Fixed` or `Removed`, such as `Players: Fixed reconnects after a proxy
+transfer`. The release notes sort by the area, so spell it exactly as one of these: `Engine`,
+`Environments`, `Workspaces`, `Execution`, `Processes`, `Platforms`, `Players`, `Capabilities`,
+`Protocol`, `Yggdrasil`, `JUnit`, `Gradle`, `IntelliJ`, `Launcher`. A change to one platform only may
+use its name: `Paper`, `Spigot`, `NeoForge`, `Velocity`, `BungeeCord`. A `skip-changelog` pull request
+may also use `CI`, `Build`, `Docs` or `Tests`.
+
 Quick checks run on every pull request; a maintainer requests live verification through the manual
 workflow. See [Building and publication](./publishing/index.md#verify-a-pull-request) for both.
