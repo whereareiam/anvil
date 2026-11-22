@@ -4,6 +4,7 @@ import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
 import me.whereareiam.anvil.edition.java.protocol.model.world.BlockPosition;
 import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
 import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ClientboundAnimate;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundAttack;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundInteract;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundSwing;
@@ -121,6 +122,7 @@ class InteractionPacketsTest {
 	@Test
 	void carriesTheInteractionPacketsWithTheAttack() {
 		assertEquals(Set.of(
+				ClientboundAnimate.class,
 				ServerboundSwing.class,
 				ServerboundUseItem.class,
 				ServerboundUseItemOn.class,

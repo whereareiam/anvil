@@ -3,6 +3,7 @@ package me.whereareiam.anvil.edition.java.physics;
 import lombok.Getter;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.edition.java.physics.geometry.Trigonometry;
+import me.whereareiam.anvil.edition.java.physics.geometry.VectorLength;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -51,5 +52,16 @@ public final class EntityRules {
 	 */
 	public @NotNull Trigonometry trigonometry() {
 		return has(EntityBehaviour.DOUBLE_TRIGONOMETRY) ? Trigonometry.DOUBLE : Trigonometry.FLOAT;
+	}
+
+	/**
+	 * Returns the length and direction of vectors the client computes with.
+	 *
+	 * @return the client's vector length
+	 */
+	public @NotNull VectorLength vectorLength() {
+		if (has(EntityBehaviour.FLOAT_VECTOR_LENGTH)) return VectorLength.FLOAT;
+
+		return has(EntityBehaviour.FINE_NORMALIZATION) ? VectorLength.FINE_DOUBLE : VectorLength.DOUBLE;
 	}
 }

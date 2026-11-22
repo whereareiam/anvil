@@ -15,10 +15,10 @@ import org.jetbrains.annotations.NotNull;
 /**
  * One tick of the vanilla client's own player at a time, as {@code LocalPlayer.tick} runs it without a vehicle,
  * gliding, swimming or item use, on the physics kit's living entity: {@code Player.tick} around the base tick, the
- * keys, crouching, sprinting and flight of {@code LocalPlayer.aiStep} around the living entity's own step, the keys as
- * its input ({@code LocalPlayer.serverAiStep}), a flying player's travel ({@code Player.travel}) and the pose of
- * {@code Player.updatePlayerPose}, all on one {@link PlayerBody}, which keeps the flight changes a tick tells the
- * server. A dead player holds no keys.
+ * keys, auto-jump, crouching, sprinting and flight of {@code LocalPlayer.aiStep} around the living entity's own step,
+ * the keys as its input ({@code LocalPlayer.serverAiStep}), a flying player's travel ({@code Player.travel}) and the
+ * pose of {@code Player.updatePlayerPose}, all on one {@link PlayerBody}, which keeps the flight changes a tick tells
+ * the server. A dead player holds no keys.
  *
  * <p>Not thread-safe; its owner serializes ticks and placements.</p>
  */
@@ -27,6 +27,7 @@ public final class PlayerSimulation extends LivingSimulation {
 	private final @NotNull Pose pose;
 	private final @NotNull Flight flight;
 	private final @NotNull KeyInput input;
+	private final @NotNull AutoJump autoJump;
 	private @NotNull MovementInput keys = MovementInput.NONE;
 
 	private PlayerSimulation(@NotNull PlayerBody body) {
@@ -35,6 +36,7 @@ public final class PlayerSimulation extends LivingSimulation {
 		this.pose = new Pose(body);
 		this.flight = new Flight(body, jumping());
 		this.input = KeyInput.of(body, pose, fluids());
+		this.autoJump = new AutoJump(body, input, blockEffects());
 	}
 
 	/**
@@ -137,7 +139,8 @@ public final class PlayerSimulation extends LivingSimulation {
 
 	/**
 	 * {@code Player.tick}: a spectator moves through blocks off the ground, the eyes' water is remembered, the pose's
-	 * dimensions apply, then the base tick, the player's own step, the world's border and the pose for the next tick.
+	 * dimensions apply, then the base tick, the player's own step, the world's border and the pose for the next tick;
+	 * the tick's report then sets auto-jump as the client's options say ({@code LocalPlayer.sendPosition}).
 	 */
 	@Override
 	public void tick() {
@@ -152,6 +155,7 @@ public final class PlayerSimulation extends LivingSimulation {
 			aiStep();
 			clampToWorld();
 			pose.update();
+			autoJump.reported();
 		});
 	}
 
@@ -162,9 +166,10 @@ public final class PlayerSimulation extends LivingSimulation {
 	 */
 	@Override
 	public void aiStep() {
-		boolean wasJumping = body.getKeys().isJump();
+		boolean wasJumping = body.isJumpDown();
 		input.read(body.getServer().isDead() ? MovementInput.NONE : keys);
-		flight.toggle(wasJumping);
+		boolean autoJumped = autoJump.press();
+		flight.toggle(wasJumping, autoJumped);
 		if (fluids().isTouchingWater() && body.isShiftKeyDown() && body.isAffectedByFluids())
 			body.addDeltaMovement(0.0, -0.04F, 0.0);
 		flight.steer();
@@ -186,18 +191,17 @@ public final class PlayerSimulation extends LivingSimulation {
 	}
 
 	/**
-	 * {@code Player.travel}: a flying player keeps {@code 0.6} of the vertical speed its travel started with.
+	 * {@code Player.travel}: a flying player keeps {@code 0.6} of the vertical speed its travel started with; after the
+	 * movement, auto-jump decides whether to jump next tick ({@code LocalPlayer.move}).
 	 */
 	@Override
 	protected void travel(@NotNull Vector input) {
-		if (!body.getServer().isFlying()) {
-			super.travel(input);
-			return;
-		}
-
+		Vector from = body.getPosition();
+		boolean flying = body.getServer().isFlying();
 		double vertical = body.getDeltaMovement().y;
 		super.travel(input);
-		body.setDeltaMovement(body.getDeltaMovement().with(Axis.Y, vertical * 0.6));
+		if (flying) body.setDeltaMovement(body.getDeltaMovement().with(Axis.Y, vertical * 0.6));
+		autoJump.moved(from.x, from.z);
 	}
 
 	/**

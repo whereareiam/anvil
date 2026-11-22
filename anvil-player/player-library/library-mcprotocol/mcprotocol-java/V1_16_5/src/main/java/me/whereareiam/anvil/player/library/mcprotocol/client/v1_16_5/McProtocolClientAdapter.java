@@ -8,8 +8,8 @@ import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketT
 import java.util.List;
 
 /**
- * The client segment's adapter for the MCProtocolLib 1.16.5 release: the {@link JavaClient} with the release's answers
- * and packet table.
+ * The client segment's adapter for the MCProtocolLib 1.16.5 release: the {@link JavaClient} with the release's client
+ * information and packet table.
  */
 public final class McProtocolClientAdapter extends JavaClient {
 	private static final TextTranslator TEXT = new TextTranslator();
@@ -19,7 +19,7 @@ public final class McProtocolClientAdapter extends JavaClient {
 	 * Creates the client of the MCProtocolLib 1.16.5 release.
 	 */
 	public McProtocolClientAdapter() {
-		super(new ReleaseAnswers(), TEXT, McProtocolClientAdapter::packets);
+		super(new ReleaseClientInformation(), TEXT, McProtocolClientAdapter::packets);
 	}
 
 	/**

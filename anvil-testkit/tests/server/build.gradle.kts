@@ -1,4 +1,5 @@
 import me.whereareiam.anvil.buildlogic.matrix.LiveMatrix
+import me.whereareiam.anvil.buildlogic.module.TestDirectoryArgument
 
 plugins {
 	id("module-java")
@@ -16,8 +17,10 @@ dependencies {
 	testImplementation(projects.anvilIntegration.integrationJunit)
 	testImplementation(projects.anvilLauncher)
 	testImplementation(projects.anvilPlayer.playerApi)
+	testImplementation(projects.anvilEdition.editionJava.javaData.dataBlock)
 	testImplementation(projects.anvilProcess.processApi)
 	testImplementation(projects.anvilTooling.toolingRunner)
+	testImplementation(libs.jackson.toml)
 
 	// The launcher's shaded JAR carries the planner at runtime; the matrix data test only compiles against it.
 	testCompileOnly(projects.anvilProcess.processCommon)
@@ -44,9 +47,14 @@ val liveMatrix = layout.settingsDirectory.file("live-matrix.toml")
 val releases = LiveMatrix.parse(providers.fileContents(liveMatrix).asText.get()).minecraftVersions("paper")
 // Plans the live matrix without starting a process to check that each scenario runs what the version data verifies.
 val matrixDataTest = "*.CompatibilityScenarioFactoryTest"
+// Checks without a server that Anvil ships block data for every release of the live matrix, which physics needs.
+val blockDataCheck = "*.LiveMatrixBlockDataTest"
+// The physics courses, which the physics suite runs and the vanilla client's reference traces were generated from.
+val physicsCourses = layout.settingsDirectory.dir("anvil-testkit/physics/courses")
 
 // Each suite is one package of the tests and runs only with -Panvil.testMode=full: `release` against the server of
-// one release, `platform` on Spigot, the proxies and NeoForge, and `behavior` for lifecycles, sessions and extensions.
+// one release, `physics` the physics courses on the server of one release, `platform` on Spigot, the proxies and
+// NeoForge, and `behavior` for lifecycles, sessions and extensions.
 fun Test.liveSuite(suite: String) {
 	group = LifecycleBasePlugin.VERIFICATION_GROUP
 	testClassesDirs = sourceSets.test.get().output.classesDirs
@@ -73,6 +81,23 @@ val releaseTest = tasks.register("releaseTest") {
 	description = "Runs the release suite against every release of the live matrix, one release at a time."
 	dependsOn(releaseTests)
 }
+// One task per release, as for the release suite: each runs every physics course on that release's Paper server.
+val physicsTests = releases.map { release ->
+	tasks.register<Test>("physicsTest-$release") {
+		description = "Runs every physics course with client physics on the Paper server of Minecraft $release."
+		liveSuite("physics")
+		systemProperty("anvil.release", release)
+		jvmArgumentProviders.add(objects.newInstance<TestDirectoryArgument>().apply {
+			property.set("anvil.physics.courses")
+			directory.set(physicsCourses)
+		})
+	}
+}
+val physicsTest = tasks.register("physicsTest") {
+	group = LifecycleBasePlugin.VERIFICATION_GROUP
+	description = "Runs the physics suite against every release of the live matrix, one release at a time."
+	dependsOn(physicsTests)
+}
 val platformTest = tasks.register<Test>("platformTest") {
 	description = "Runs the platform suite on Spigot, the proxies and NeoForge, or on those -PanvilPlatforms lists."
 	liveSuite("platform")
@@ -86,8 +111,8 @@ val behaviorTest = tasks.register<Test>("behaviorTest") {
 
 // The live suites have tasks of their own; `test` runs them all with -Panvil.testMode=full.
 tasks.test {
-	onlyIf("The live suites run in releaseTest, platformTest and behaviorTest") { false }
-	dependsOn(releaseTest, platformTest, behaviorTest)
+	onlyIf("The live suites run in releaseTest, physicsTest, platformTest and behaviorTest") { false }
+	dependsOn(releaseTest, physicsTest, platformTest, behaviorTest)
 }
 
 // The matrix data check starts no server, so every build runs it, unlike the real-server tests above.
@@ -101,8 +126,19 @@ val matrixTest = tasks.register<Test>("matrixTest") {
 	}
 }
 
+// Like the matrix data check, the block data check starts no server, so every build runs it.
+val blockDataTest = tasks.register<Test>("blockDataTest") {
+	group = LifecycleBasePlugin.VERIFICATION_GROUP
+	description = "Checks that Anvil ships block data for every release of the live matrix, which client physics needs."
+	testClassesDirs = sourceSets.test.get().output.classesDirs
+	classpath = sourceSets.test.get().runtimeClasspath
+	filter {
+		includeTestsMatching(blockDataCheck)
+	}
+}
+
 tasks.check {
-	dependsOn(matrixTest)
+	dependsOn(matrixTest, blockDataTest)
 }
 
 fixtures {

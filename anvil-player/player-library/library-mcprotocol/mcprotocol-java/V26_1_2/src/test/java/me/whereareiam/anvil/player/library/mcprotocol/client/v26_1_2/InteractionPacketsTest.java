@@ -4,16 +4,20 @@ import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
 import me.whereareiam.anvil.edition.java.protocol.model.world.BlockPosition;
 import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
 import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ClientboundAnimate;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundAttack;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundInteract;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundSwing;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundUseItem;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundUseItemOn;
+import me.whereareiam.anvil.edition.java.protocol.type.interaction.AnimateAction;
 import me.whereareiam.anvil.edition.java.protocol.type.interaction.Direction;
 import me.whereareiam.anvil.edition.java.protocol.type.interaction.InteractAction;
 import me.whereareiam.anvil.edition.java.protocol.type.interaction.InteractionHand;
 import org.cloudburstmc.math.vector.Vector3d;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Animation;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundAttackPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundInteractPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
@@ -134,8 +138,19 @@ class InteractionPacketsTest {
 	}
 
 	@Test
+	void readsTheAnimationsTheServerPlaysOfEntities() {
+		assertEquals(new ClientboundAnimate(new EntityId(42), AnimateAction.SWING_MAIN_HAND),
+				packets.decode(new ClientboundAnimatePacket(42, Animation.SWING_ARM)));
+		assertEquals(new ClientboundAnimate(new EntityId(42), AnimateAction.SWING_OFF_HAND),
+				packets.decode(new ClientboundAnimatePacket(42, Animation.SWING_OFFHAND)));
+		assertEquals(new ClientboundAnimate(new EntityId(7), AnimateAction.MAGIC_CRITICAL_HIT),
+				packets.decode(new ClientboundAnimatePacket(7, Animation.ENCHANTMENT_CRITICAL_HIT)));
+	}
+
+	@Test
 	void carriesTheInteractionPacketsAndTheAttack() {
 		assertEquals(Set.of(
+				ClientboundAnimate.class,
 				ServerboundSwing.class,
 				ServerboundUseItem.class,
 				ServerboundUseItemOn.class,

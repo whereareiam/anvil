@@ -6,14 +6,30 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A behaviour of the vanilla client's own player ({@code Player} and {@code LocalPlayer}) that only some Minecraft
- * versions have, with the versions that have it: from {@code since}, when set, up to before {@code until}, when set.
- * Each constant names the vanilla code it stands for. What every entity or living entity does differently by version
- * is the physics kit's {@link EntityBehaviour}. Anvil supports no release between 1.21.1 and 1.21.11, so a change that
+ * How the vanilla client moves its own player ({@code Player} and {@code LocalPlayer}) where only some Minecraft
+ * versions do so, with the versions that do: from {@code since}, when set, up to before {@code until}, when set. Each
+ * constant names the vanilla code it stands for. What every entity or living entity does differently by version is the
+ * physics kit's {@link EntityBehaviour}; how the client ticks its player, loads its level and accepts teleports, which
+ * every Java player does, is the Java worker kit's. Anvil supports no release between 1.21.1 and 1.21.11, so a change that
  * lies between them is placed at the version that brought it as the client's code shows it, which no supported release
  * can tell apart.
  */
 public enum ClientBehaviour {
+	/**
+	 * Before 1.18 the client reports its position once it moved more than {@code 0.03} since its last report, a squared
+	 * distance of {@code 9.0E-4} ({@code LocalPlayer.sendPosition}); from 1.18 once it moved more than {@code 2.0E-4}.
+	 */
+	COARSE_POSITION_REPORT(null, "1.18"),
+	/**
+	 * Before 1.18 {@code Player.aiStep} raises a sprinting player's air control speed by the double
+	 * {@code 0.005999999865889549} and rounds the sum to a float; from 1.18 it adds {@code 0.006F}.
+	 */
+	DOUBLE_SPRINT_AIR_SPEED(null, "1.18"),
+	/**
+	 * Before 1.19 the client's default options turn auto-jump on ({@code Options.autoJump}), so the player jumps onto a
+	 * block it walks into ({@code LocalPlayer.updateAutoJump}); from 1.19 they turn it off.
+	 */
+	AUTO_JUMP(null, "1.19"),
 	/**
 	 * From 1.18 a sprint stops at a wall only when the player does not run almost along it
 	 * ({@code isHorizontalCollisionMinor}).
@@ -35,10 +51,6 @@ public enum ClientBehaviour {
 	 */
 	FLIGHT_RESETS_FALL_FIRST("1.21.2", null),
 	/**
-	 * From 1.21.2 a server teleport clamps the pitch to a quarter turn ({@code PositionMoveRotation.calculateAbsolute}).
-	 */
-	CLAMPED_TELEPORT_PITCH("1.21.2", null),
-	/**
 	 * From 1.21.2 the movement packets report horizontal collision, and a change of it alone is reported.
 	 */
 	REPORTED_HORIZONTAL_COLLISION("1.21.2", null),
@@ -47,12 +59,7 @@ public enum ClientBehaviour {
 	 * 0.98, sneaking and the square-movement correction ({@code LocalPlayer.modifyInput}), and backs off edges with its
 	 * box inset by {@code 1.0E-7}.
 	 */
-	VECTOR_INPUT("1.21.5", null),
-	/**
-	 * Before 26.3 the client follows the acceptance of a teleport with its position and view
-	 * ({@code ClientPacketListener.handleMovePlayer}); from 26.3 the acceptance carries them itself.
-	 */
-	TELEPORT_CONFIRMATION(null, "26.3");
+	VECTOR_INPUT("1.21.5", null);
 
 	private final @Nullable MinecraftVersion since;
 	private final @Nullable MinecraftVersion until;

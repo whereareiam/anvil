@@ -11,6 +11,7 @@ description = "Java Edition worker kit that protocol libraries embed: the player
 
 dependencies {
 	api(projects.anvilEdition.editionJava.javaData.dataPacket)
+	api(projects.anvilEdition.editionJava.javaPhysics.physicsGeometry)
 	api(projects.anvilEdition.editionJava.javaProtocol.protocolApi)
 	api(projects.anvilPlayer.playerApi)
 

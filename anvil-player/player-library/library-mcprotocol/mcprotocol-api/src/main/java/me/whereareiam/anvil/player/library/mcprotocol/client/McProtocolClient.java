@@ -14,11 +14,11 @@ import org.jetbrains.annotations.NotNull;
  *
  * <p>The worker shell never links against MCProtocolLib: it opens, connects and disconnects native sessions and
  * exchanges Java Edition packets only through this port, and the segment translates them to and from the release's
- * own packets. A segment owns every packet the client must answer on its own, such as sending its
- * brand and client information, accepting teleports and announcing that the player loaded, and swinging back an arm
- * the server swings of the player's own entity, and reports the
- * resulting state through {@link ClientListener}. Sessions are opaque to the shell and are passed back to the
- * segment that created them.</p>
+ * own packets. A segment owns what the client must answer on its own about its connection, such as sending its brand and
+ * client information or acknowledging chunk batches, and reports the resulting state through {@link ClientListener};
+ * what the vanilla client answers between its ticks, such as accepting teleports, pings and swinging back an arm the
+ * server swings of the player's own entity, the worker kit's client answers. Sessions are opaque to the shell and are
+ * passed back to the segment that created them.</p>
  *
  * <p>Segments register their implementation in
  * {@code META-INF/services/me.whereareiam.anvil.player.library.mcprotocol.client.McProtocolClient}: an adapter per segment,
@@ -29,7 +29,7 @@ import org.jetbrains.annotations.NotNull;
  * <pre>{@code
  * public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
  *     public McProtocolClientAdapter() {
- *         super(new NetworkClientSessions(ReleaseAnswers::new), McProtocolClientAdapter::packets);
+ *         super(new NetworkClientSessions(TEXT), McProtocolClientAdapter::packets);
  *     }
  *
  *     static PacketTable<Packet> packets(PacketDemand demand) {
@@ -84,7 +84,8 @@ public interface McProtocolClient<S> {
 	void connect(@NotNull S session);
 
 	/**
-	 * Tests whether a session currently has an open connection.
+	 * Tests whether a session's channel currently has an open connection. A channel closes before its listener hears of
+	 * the close, so the {@link ClientListener} decides when a session it reported open counts as gone.
 	 *
 	 * @param session session to test
 	 * @return whether the session is connected

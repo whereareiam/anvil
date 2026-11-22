@@ -18,7 +18,6 @@ import me.whereareiam.anvil.player.library.mcprotocol.client.v1_21_11.CookiePack
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_21_11.DialogPackets;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_21_11.InventoryPackets;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_21_11.NetworkClientSessions;
-import me.whereareiam.anvil.player.library.mcprotocol.client.v1_21_11.PlayerPackets;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_21_11.SoundPackets;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_21_11.TextTranslator;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v26_1_2.ConnectionPackets;
@@ -31,8 +30,8 @@ import java.util.List;
 
 /**
  * The client segment's adapter for the MCProtocolLib 26.3 release: the chain's {@link JavaClient} with the 1.21.11
- * network sessions, which answer teleports through this release's {@link ReleaseAnswers}, and the 26.1 packet table
- * with this release's configuration, entity and interaction translations.
+ * network sessions and the 26.1 packet table
+ * with this release's configuration, entity, interaction and player translations.
  */
 public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 	private static final TextTranslator TEXT = new TextTranslator();
@@ -42,7 +41,7 @@ public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
 	 * Creates the client of the MCProtocolLib 26.3 release.
 	 */
 	public McProtocolClientAdapter() {
-		super(new NetworkClientSessions(TEXT, ReleaseAnswers::new), McProtocolClientAdapter::packets);
+		super(new NetworkClientSessions(TEXT), McProtocolClientAdapter::packets);
 	}
 
 	/**

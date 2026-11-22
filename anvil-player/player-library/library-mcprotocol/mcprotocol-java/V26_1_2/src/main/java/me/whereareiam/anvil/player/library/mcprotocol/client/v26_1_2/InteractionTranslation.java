@@ -1,19 +1,24 @@
 package me.whereareiam.anvil.player.library.mcprotocol.client.v26_1_2;
 
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
 import me.whereareiam.anvil.edition.java.protocol.model.world.BlockPosition;
 import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
 import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ClientboundAnimate;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundAttack;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundInteract;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundUseItem;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundUseItemOn;
+import me.whereareiam.anvil.edition.java.protocol.type.interaction.AnimateAction;
 import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTranslation;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.ValueTranslator;
 import org.cloudburstmc.math.vector.Vector3d;
 import org.cloudburstmc.math.vector.Vector3i;
 import org.geysermc.mcprotocollib.network.packet.Packet;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Animation;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundAttackPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundInteractPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundUseItemOnPacket;
@@ -28,12 +33,14 @@ import java.util.Set;
  * Interaction of the MCProtocolLib releases from 26.1 on, which send an attack in a packet of its own and every
  * interaction with the hand and the point of the entity, its position when the interaction names none. Each release's
  * {@code InteractionPackets} carries what changed after 26.1: the arm swing, which Minecraft 26.3 leaves to the
- * server, and the punch that 26.3 sends after an attack.
+ * server, and the punch that 26.3 sends after an attack, and reads the animations of the server's animate packets,
+ * from which 26.3 took the swings.
  */
 public abstract class InteractionTranslation implements PacketTranslation<Packet> {
 	@Override
 	public final @NotNull Set<Class<? extends JavaPacket>> packets() {
 		Set<Class<? extends JavaPacket>> packets = new HashSet<>(Set.of(
+				ClientboundAnimate.class,
 				ServerboundUseItem.class,
 				ServerboundUseItemOn.class,
 				ServerboundInteract.class,
@@ -46,7 +53,9 @@ public abstract class InteractionTranslation implements PacketTranslation<Packet
 
 	@Override
 	public final @Nullable ClientboundPacket decode(@NotNull Packet packet) {
-		return null;
+		if (!(packet instanceof ClientboundAnimatePacket animate)) return null;
+
+		return new ClientboundAnimate(new EntityId(animate.getEntityId()), action(animate.getAnimation()));
 	}
 
 	@Override
@@ -60,6 +69,14 @@ public abstract class InteractionTranslation implements PacketTranslation<Packet
 			default -> encodeRelease(packet);
 		};
 	}
+
+	/**
+	 * Reads an animation of the release.
+	 *
+	 * @param animation the library's animation
+	 * @return the protocol's action
+	 */
+	protected abstract @NotNull AnimateAction action(@NotNull Animation animation);
 
 	/**
 	 * Returns the interaction packets only the release carries.

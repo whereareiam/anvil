@@ -17,6 +17,10 @@ import org.jetbrains.annotations.Nullable;
  * {@link ReceivedFrames}, translated and, while the listener wants frames, as its frame. The release's session
  * interface keeps the channel to itself, so the session puts the handlers into its pipeline when its channel becomes
  * active, before any packet arrives. The release reads both directions in one state, which MCProtocolLib 1.21 split.
+ *
+ * <p>The release hands most packets to its session listeners on an event loop of its own, after later packets were
+ * delivered and answered; the session calls them on the channel's thread instead, right after the delivery, so what
+ * they and MCProtocolLib answer leaves in the order the packets arrived, as the vanilla client answers.</p>
  */
 final class FramedClientSession extends TcpClientSession {
 	private static final int ANY_PORT = 0;
@@ -69,6 +73,11 @@ final class FramedClientSession extends TcpClientSession {
 	public void channelActive(ChannelHandlerContext context) throws Exception {
 		frames.install(context.pipeline());
 		super.channelActive(context);
+	}
+
+	@Override
+	protected void channelRead0(ChannelHandlerContext context, Packet packet) {
+		callPacketReceived(packet);
 	}
 
 	private ReceivedFrames<Session, Packet> frames(

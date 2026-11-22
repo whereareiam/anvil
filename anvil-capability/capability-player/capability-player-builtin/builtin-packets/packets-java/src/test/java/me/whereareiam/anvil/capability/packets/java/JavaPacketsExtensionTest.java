@@ -27,23 +27,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JavaPacketsExtensionTest {
 	/**
-	 * The ID of {@code system_chat} in the play state of protocol 774.
+	 * The protocol of the test's player, that of Minecraft 1.21.1, whose client reads no chunks itself, so only the
+	 * taps decide whether the player decodes a chunk column.
 	 */
-	private static final int SYSTEM_CHAT = 0x77;
+	private static final int PROTOCOL = 767;
+	private static final int SYSTEM_CHAT = id("system_chat");
 	/**
-	 * The ID of {@code block_change} in the play state of protocol 774, which the test delivers without a value.
+	 * The ID of {@code block_change}, which the test delivers without a value.
 	 */
-	private static final int BLOCK_CHANGE = 0x08;
-	/**
-	 * The ID of {@code map_chunk} in the play state of protocol 774.
-	 */
-	private static final int MAP_CHUNK = JavaPacketData.shipped().find(TestJavaPlayer.PROTOCOL).orElseThrow()
-			.clientboundId(ConnectionState.PLAY, "map_chunk").orElseThrow();
+	private static final int BLOCK_CHANGE = id("block_change");
+	private static final int MAP_CHUNK = id("map_chunk");
 	private static final ClientboundLevelChunkWithLight CHUNK = new ClientboundLevelChunkWithLight(
 			new ChunkPosition(1, 2), List.of());
 	private static final ClientboundSystemChat WELCOME = new ClientboundSystemChat(Text.literal("welcome"), false);
 
-	private final TestJavaPlayer player = new TestJavaPlayer("Alice");
+	private final TestJavaPlayer player = new TestJavaPlayer("Alice", MinecraftVersion.parse("1.21.1"), PROTOCOL,
+			type -> true);
 	private final TestOperations operations = new TestOperations();
 	private final WorkerBinding binding = new JavaPacketsExtension().bind(player, operations);
 
@@ -55,7 +54,7 @@ class JavaPacketsExtensionTest {
 	void listensToFramesOnlyWhileATapIsOpen() {
 		assertFalse(player.protocol().wantsFrames());
 
-		assertEquals(TestJavaPlayer.PROTOCOL, operations.call(PacketsChannel.TAP, every(1, false)));
+		assertEquals(PROTOCOL, operations.call(PacketsChannel.TAP, every(1, false)));
 		assertTrue(player.protocol().wantsFrames());
 
 		operations.call(PacketsChannel.UNTAP, 1);
@@ -139,7 +138,7 @@ class JavaPacketsExtensionTest {
 		IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> operations.call(
 				PacketsChannel.TAP, new TapRequest(1, false, Set.of(), Set.of("level_chunk_with_light"), false)));
 
-		assertEquals("Protocol 774 has no packet named level_chunk_with_light that a server sends",
+		assertEquals("Protocol " + PROTOCOL + " has no packet named level_chunk_with_light that a server sends",
 				failure.getMessage());
 		assertFalse(player.protocol().wantsFrames());
 	}
@@ -172,5 +171,9 @@ class JavaPacketsExtensionTest {
 
 	private static TapRequest every(int id, boolean payloads) {
 		return new TapRequest(id, true, Set.of(), Set.of(), payloads);
+	}
+
+	private static int id(String name) {
+		return JavaPacketData.shipped().find(PROTOCOL).orElseThrow().clientboundId(ConnectionState.PLAY, name).orElseThrow();
 	}
 }

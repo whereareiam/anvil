@@ -1,7 +1,9 @@
 package me.whereareiam.anvil.player.library.mcprotocol.client.v26_3;
 
 import me.whereareiam.anvil.edition.java.protocol.model.world.DimensionType;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundPing;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ServerboundPong;
 import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketDemand;
 import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTable;
 import net.kyori.adventure.key.Key;
@@ -10,6 +12,8 @@ import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.RegistryEntry;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.GameMode;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerSpawnInfo;
+import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundPingPacket;
+import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundPongPacket;
 import org.geysermc.mcprotocollib.protocol.packet.configuration.clientbound.ClientboundRegistryDataPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
 import org.junit.jupiter.api.Test;
@@ -18,6 +22,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -93,5 +98,11 @@ class ConnectionPacketsTest {
 	private ClientboundRespawn respawnInto(int type) {
 		return (ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(new PlayerSpawnInfo(type,
 				Key.key("minecraft:arena"), 0, GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, null, 0, 63), false, false));
+	}
+
+	@Test
+	void carriesThePingAndItsPong() {
+		assertEquals(new ClientboundPing(-7), packets.decode(new ClientboundPingPacket(-7)));
+		assertEquals(-7, assertInstanceOf(ServerboundPongPacket.class, packets.encode(new ServerboundPong(-7))).getId());
 	}
 }

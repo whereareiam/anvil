@@ -4,6 +4,7 @@ import com.github.steveice10.mc.protocol.data.game.entity.player.PlayerState;
 import com.github.steveice10.mc.protocol.data.game.entity.player.PositionElement;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerAbilitiesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerPosPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerPosRotPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerRotPacket;
@@ -17,6 +18,7 @@ import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.ClientboundPlayerPosition;
+import me.whereareiam.anvil.edition.java.protocol.packet.player.ServerboundAcceptTeleportation;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.ServerboundPlayerAbilities;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.ServerboundPlayerCommand;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.move.ServerboundMovePlayerPos;
@@ -48,6 +50,7 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 		return Set.of(
 				ClientboundPlayerAbilities.class,
 				ClientboundPlayerPosition.class,
+				ServerboundAcceptTeleportation.class,
 				ServerboundMovePlayerPos.class,
 				ServerboundMovePlayerPosRot.class,
 				ServerboundMovePlayerRot.class,
@@ -61,6 +64,7 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		return switch (packet) {
 			case ClientboundPlayerPositionPacket position -> ClientboundPlayerPosition.builder()
+					.id(position.getTeleportId())
 					.position(new Vec3d(position.getX(), position.getY(), position.getZ()))
 					.yaw(position.getYaw())
 					.pitch(position.getPitch())
@@ -81,6 +85,7 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 	@Override
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		return switch (packet) {
+			case ServerboundAcceptTeleportation accept -> new ServerboundAcceptTeleportationPacket(accept.getId());
 			case ServerboundMovePlayerPosRot move -> new ServerboundMovePlayerPosRotPacket(move.isOnGround(),
 					move.getPosition().getX(), move.getPosition().getY(), move.getPosition().getZ(), move.getYaw(),
 					move.getPitch());

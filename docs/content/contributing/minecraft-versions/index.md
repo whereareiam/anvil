@@ -265,7 +265,8 @@ java = 21
 
 - A release key runs directly on Paper: add a `[[paper]]` row with the version, its pinned Paper build and its Java,
   in version order. The build registers its `releaseTest-<minecraft>` task, which runs the release suite against it,
-  and CI gives it a job of its own. A version the IDE should list as its own scenario also gets a
+  and its `physicsTest-<minecraft>` task, which runs the physics courses there, and CI gives each a job of its own.
+  Client physics needs block data for the version's protocol, which `blockDataTest` requires for every Paper row. A version the IDE should list as its own scenario also gets a
   `Paper<version>SystemScenario` definition, such as `Paper2612SystemScenario`, that returns
   `CompatibilityScenarioFactory.releaseScenario(...)`.
 - A current version also runs on Spigot, and behind Velocity and BungeeCord beside its Paper server: add a
@@ -279,17 +280,18 @@ as the `[verified]` table, and writes each MCProtocolLib release's `verified` ve
 release a matrix server runs, into the shipped `mcprotocol-releases.toml`. A hand-written `[verified]` table or
 `verified` field fails the build, and so does a matrix server no release speaks. The scenarios request each row's
 Java, and `CompatibilityScenarioFactoryTest` plans them without starting a server against the data the build wrote;
-every build runs it through the server suite's `matrixTest` task:
+every build runs it through the server suite's `matrixTest` task, beside `blockDataTest`:
 
 ```shell
-./gradlew :anvil-testkit:tests:server:matrixTest
+./gradlew :anvil-testkit:tests:server:matrixTest :anvil-testkit:tests:server:blockDataTest
 ```
 
-Run the release suite against the new version, then the platform suite when the version runs on the other
-platforms:
+Run the release and physics suites against the new version, then the platform suite when the version runs on the
+other platforms:
 
 ```shell
 ./gradlew :anvil-testkit:tests:server:releaseTest-1.21.11 -Panvil.testMode=full
+./gradlew :anvil-testkit:tests:server:physicsTest-1.21.11 -Panvil.testMode=full
 ./gradlew :anvil-testkit:tests:server:platformTest -Panvil.testMode=full
 ```
 

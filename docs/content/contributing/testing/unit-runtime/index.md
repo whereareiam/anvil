@@ -77,6 +77,9 @@ A built-in capability's worker extension, such as `JavaSoundsExtension`, is test
 against the worker kits' own test player, never against a fake of its own. `TestJavaPlayer`, from the
 `protocol-worker` test fixtures, speaks the real `JavaPacketDispatcher`: the test binds the extension, connects
 the player as a worker does, delivers the packets the server would send and reads what the player sent and emitted.
+Its client does not tick on its own, so the test stays deterministic: `player.tick()` runs one client tick, as the
+client's loop does twenty times a second, and a test that wants the real loop starts it with
+`player.protocol().start()` and stops it with `player.close()`.
 `TestOperations` calls the operations the extension registered, and `TestWorkerPlayer` is a player that speaks no
 edition protocol.
 

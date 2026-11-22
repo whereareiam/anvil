@@ -10,7 +10,6 @@ import me.whereareiam.anvil.edition.java.physics.geometry.Coordinates;
 import me.whereareiam.anvil.edition.java.physics.geometry.Vector;
 import me.whereareiam.anvil.edition.java.physics.world.BlockReader;
 import me.whereareiam.anvil.edition.java.physics.world.EntityContext;
-import me.whereareiam.anvil.edition.java.protocol.model.world.chunk.ChunkPosition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -105,13 +104,16 @@ public class EntityBody {
 	}
 
 	/**
-	 * Changes the entity's dimensions and rebuilds its box ({@code Entity.refreshDimensions}).
+	 * Changes the entity's dimensions and rebuilds its box ({@code Entity.refreshDimensions}): around its position, and
+	 * before 1.17, unless it narrows, from the old box's lower corner, where the next movement reads the position back.
 	 *
 	 * @param dimensions the new dimensions
 	 */
 	public void setDimensions(@NotNull EntityDimensions dimensions) {
+		boolean narrower = dimensions.getWidth() < this.dimensions.getWidth();
 		this.dimensions = dimensions;
-		box = Box.at(position, dimensions.getWidth(), dimensions.getHeight());
+		box = rules.has(EntityBehaviour.BOX_DRIVEN_POSITION) && !narrower ? box.resized(dimensions.getWidth(),
+				dimensions.getHeight()) : Box.at(position, dimensions.getWidth(), dimensions.getHeight());
 	}
 
 	/**
@@ -130,7 +132,7 @@ public class EntityBody {
 	 * @return the entity's collision context
 	 */
 	public @NotNull EntityContext context() {
-		return new EntityContext(position.y, isShiftKeyDown(), fallDistance);
+		return new EntityContext(position.y, isShiftKeyDown(), fallDistance, canWalkOnPowderSnow());
 	}
 
 	/**
@@ -149,15 +151,6 @@ public class EntityBody {
 	 */
 	public void addDeltaMovement(double dx, double dy, double dz) {
 		deltaMovement = deltaMovement.add(dx, dy, dz);
-	}
-
-	/**
-	 * Returns the chunk column the entity is in.
-	 *
-	 * @return the column's position
-	 */
-	public @NotNull ChunkPosition chunk() {
-		return ChunkPosition.containing(Coordinates.floor(position.x), Coordinates.floor(position.z));
 	}
 
 	/**
@@ -198,8 +191,17 @@ public class EntityBody {
 	}
 
 	/**
-	 * Tells whether the entity lands on a bouncy block without bouncing ({@code Entity.isSuppressingBounce}), as a
-	 * sneaking player does.
+	 * Tells whether the entity walks on powder snow ({@code PowderSnowBlock.canEntityWalkOnPowderSnow}): an entity of a
+	 * type in {@code minecraft:powder_snow_walkable_mobs}, or a living entity wearing leather boots.
+	 *
+	 * @return {@code false} by default
+	 */
+	public boolean canWalkOnPowderSnow() {
+		return false;
+	}
+
+	/**
+	 * Tells whether the entity lands on a bouncy block without bouncing ({@code Entity.isSuppressingBounce}).
 	 *
 	 * @return {@code false} by default
 	 */
@@ -217,8 +219,7 @@ public class EntityBody {
 	}
 
 	/**
-	 * The factor of the entity's velocity after a movement, from the factor the blocks give
-	 * ({@code Entity.getBlockSpeedFactor}), which {@code LivingEntity} eases by its movement efficiency.
+	 * The factor of the entity's velocity after a movement, from the blocks' ({@code Entity.getBlockSpeedFactor}).
 	 *
 	 * @param blockFactor the speed factor of the blocks in and below the entity
 	 * @return the factor to apply

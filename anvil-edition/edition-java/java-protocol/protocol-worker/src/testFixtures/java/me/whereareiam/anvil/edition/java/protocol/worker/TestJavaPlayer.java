@@ -2,12 +2,14 @@ package me.whereareiam.anvil.edition.java.protocol.worker;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.edition.java.protocol.JavaProtocol;
+import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
 import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPackets;
 import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.type.connection.ConnectionState;
 import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
+import me.whereareiam.anvil.player.api.model.player.ViewRotation;
 import me.whereareiam.anvil.player.worker.TestWorkerPlayer;
 import me.whereareiam.anvil.player.worker.WorkerProtocols;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +28,12 @@ import java.util.function.Predicate;
  * does.
  *
  * <p>Packets travel only on an open session: delivering or sending one while the player is disconnected fails, as no
- * library's connection carries it. Disconnecting tells the dispatcher, so the player's world forgets its level.</p>
+ * library's connection carries it. Disconnecting tells the dispatcher first, as a library tells it of a closed
+ * connection before anything else counts the session as gone, so the player's world forgets its level and its client
+ * its player, and a tick after it sends nothing. The player's view is its client's, as a library's is.</p>
+ *
+ * <p>The client does not tick on its own, so a test stays deterministic: it runs each client tick with {@link #tick()},
+ * or starts the client's own 20 ticks a second through {@link #protocol()} and closes them with {@link #close()}.</p>
  *
  * <pre>{@code
  * TestJavaPlayer player = new TestJavaPlayer("Alice");
@@ -84,7 +91,7 @@ public final class TestJavaPlayer extends TestWorkerPlayer {
 	) {
 		super(name, clientVersion);
 		this.carried = carried;
-		this.protocol = new JavaPacketDispatcher(LIBRARY_ID, protocolNumber, new TestConnection());
+		this.protocol = new JavaPacketDispatcher(LIBRARY_ID, protocolNumber, clientVersion, name, new TestConnection());
 		this.protocols = WorkerProtocols.builder(LIBRARY_ID)
 				.speak(JavaProtocol.class, protocol, protocol::scoped)
 				.build();
@@ -153,6 +160,42 @@ public final class TestJavaPlayer extends TestWorkerPlayer {
 	 */
 	public <P extends ServerboundPacket> @NotNull List<P> sent(@NotNull Class<P> type) {
 		return sent.stream().filter(type::isInstance).map(type::cast).toList();
+	}
+
+	/**
+	 * Runs one tick of the player's client, as its loop does 20 times a second.
+	 */
+	public void tick() {
+		protocol.client().tick();
+	}
+
+	/**
+	 * Places the client's player at rest in a level its client has loaded, without the server's handshake, as the
+	 * reference traces' placed courses start the vanilla client's player; the player told the server nothing.
+	 *
+	 * @param at the position of the player's feet
+	 * @param view where it looks
+	 * @param onGround whether it stands on the ground
+	 */
+	public void place(@NotNull Vec3d at, @NotNull ViewRotation view, boolean onGround) {
+		protocol.client().place(at, view, onGround);
+	}
+
+	/**
+	 * Stops the client's ticks for good, as a library closes its player.
+	 */
+	public void close() {
+		protocol.close();
+	}
+
+	@Override
+	public @NotNull ViewRotation viewRotation() {
+		return protocol.player().rotation();
+	}
+
+	@Override
+	public void viewRotation(@NotNull ViewRotation rotation) {
+		protocol.player().rotation(rotation);
 	}
 
 	@Override

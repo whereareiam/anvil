@@ -10,7 +10,8 @@ Connect the player before moving it.
 A player starts without physics: it goes exactly where the test moves it and stays there. With client
 physics on, it moves as a vanilla client of its Minecraft version does: it falls, walks, sprints, sneaks and
 jumps with the keys the test holds, collides with the blocks its world knows, steps up, climbs, moves through
-water and lava, and sends the movement packets that client sends.
+water and lava, and sends the movement packets that client sends. Before Minecraft 1.19, whose default options
+turn auto-jump on, it also jumps onto a block it walks into, as that client does.
 
 ## Send a controlled movement
 
@@ -76,14 +77,26 @@ Physics follows what the server tells the client, as the vanilla client does:
   when the player starts or stops flying itself, by pressing jump twice or by landing, it tells the server;
 - its game mode, from the join, each respawn and each game mode change;
 - the dimension type of its level, whose fast lava, as in the nether, pushes the player harder;
-- its attributes, such as movement speed, jump strength, gravity and step height;
+- its attributes, such as movement speed, jump strength, gravity and step height, and from 26.2 bounciness,
+  friction modifier and air drag modifier;
 - its effects, such as jump boost, levitation, slow falling and dolphin's grace;
 - the velocity the server sets, such as a knockback, and every teleport;
 - its death: a dead player holds no keys and sends no movement until it respawns.
 
 The blocks come from the chunks the player's client keeps, named by the block data Anvil ships for every
-supported protocol. `enable()` throws `CapabilityUnavailableException` with the reason for a release it
-cannot simulate. A tick that fails turns physics off; `physics.failure()` then tells why.
+supported protocol, which was read from each release's own vanilla client. A block collides, slows, bounces and
+lets water and lava flow as that client says: scaffolding and powder snow by where the player's feet are, whether
+it sneaks and how far it fell, and bamboo and pointed dripstone where their position moves them. `enable()`
+throws `CapabilityUnavailableException` with the reason for a release it cannot simulate. A tick that fails
+turns physics off; `physics.failure()` then tells why.
+
+Every Java Edition player answers the server about its own position as the vanilla client does, whether it has
+the Movement capability or not: its client accepts every teleport as it arrives with the position and view the
+teleport leaves the player at, and before Minecraft 26.3 follows the acceptance with that position; from 1.21.2 it
+ends each of its twenty ticks a second; and from Minecraft 1.21.4, after a join or a respawn, it waits for its
+level: once the server started the level's loading and the chunk the player is in has loaded with the eight around
+it, the player ticks and the client tells the server it loaded. Movement adds physics on top of that client: with
+physics on, its tick moves the client's player within the client's tick, and `move` and `look` place and turn it.
 
 Movement does not choose where to go: it has no pathfinding or autonomous navigation. Hold the keys and turn
 the view from your Java journey.
@@ -93,11 +106,14 @@ the view from your Java journey.
 Physics reproduces the vanilla client's own movement of its body. It does not yet reproduce:
 
 - collisions with other entities, and the world border;
-- sprint-swimming, gliding with an elytra, riding vehicles, using items, and auto-jump;
-- what equipment changes before Minecraft 1.21, where it is not an attribute: depth strider, soul speed,
-  swift sneak, and leather boots on powder snow;
+- sprint-swimming, gliding with an elytra, riding vehicles, and using items;
+- what equipment changes before Minecraft 1.21, where it is not an attribute: depth strider, soul speed and
+  swift sneak; and leather boots, on which a vanilla player walks on and climbs out of powder snow in every
+  release that has it;
 - blocks the server added that are not vanilla's, such as a modded server's: a tick that meets one turns
   physics off with the reason.
 
-Its numbers were checked against the vanilla client of Minecraft 1.21.1, 1.21.11 and 26.1.2; the other
-supported versions follow the same rules with the differences their releases are known to have.
+Its numbers and the packets it sends are compared bit for bit, tick by tick, with reference traces of the real
+vanilla client of every supported release, which the vanilla client recorded walking, sprinting, jumping, sneaking,
+climbing, swimming and falling over the physics courses of the repository, joining a server whose terrain arrives
+with the login or later, and being teleported, relative, absolute and with a velocity.

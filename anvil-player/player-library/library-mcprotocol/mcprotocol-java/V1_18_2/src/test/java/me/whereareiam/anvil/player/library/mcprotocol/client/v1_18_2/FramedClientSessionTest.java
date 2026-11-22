@@ -7,6 +7,8 @@ import com.github.steveice10.mc.protocol.data.game.MessageType;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundChatPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKeepAlivePacket;
 import com.github.steveice10.packetlib.Session;
+import com.github.steveice10.packetlib.event.session.DisconnectedEvent;
+import com.github.steveice10.packetlib.event.session.SessionAdapter;
 import com.github.steveice10.packetlib.packet.Packet;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -26,6 +28,7 @@ import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.UUID;
@@ -36,12 +39,13 @@ class FramedClientSessionTest {
 	private final TestClientListener<Session> listener = new TestClientListener<>();
 	private final Deque<Packet> decoded = new ArrayDeque<>();
 	private final MinecraftProtocol protocol = new MinecraftProtocol(new GameProfile(new UUID(0, 1), "Alice"), null);
+	private final FramedClientSession session = new FramedClientSession("localhost", 25565, protocol, listener,
+			McProtocolClientAdapter.packets(PacketDemand.EVERY));
 	private final EmbeddedChannel channel = new EmbeddedChannel(new ChannelInitializer<>() {
 		@Override
 		protected void initChannel(Channel channel) {
 			channel.pipeline().addLast(ReceivedFrames.CODEC, new TestDecoder());
-			channel.pipeline().addLast("manager", new FramedClientSession("localhost", 25565, protocol, listener,
-					McProtocolClientAdapter.packets(PacketDemand.EVERY)));
+			channel.pipeline().addLast("manager", session);
 		}
 	});
 
@@ -68,6 +72,37 @@ class FramedClientSessionTest {
 				new TestClientListener.Frame(ConnectionState.PLAY, 0x1F, new byte[]{3}, null)
 		), listener.frames());
 		assertEquals(List.of(), listener.received());
+	}
+
+	@Test
+	void callsItsListenersOnTheChannelsThreadRightAfterDeliveringEachPacket() {
+		List<String> calls = new ArrayList<>();
+		session.addListener(new SessionAdapter() {
+			@Override
+			public void packetReceived(Session ignored, Packet packet) {
+				calls.add(packet.getClass().getSimpleName() + " after " + listener.received().size());
+			}
+		});
+
+		receive(new ClientboundChatPacket(Component.text("anvil:welcome"), MessageType.SYSTEM), 0x0E);
+		receive(new ClientboundKeepAlivePacket(7), 0x1F);
+
+		assertEquals(List.of("ClientboundChatPacket after 1", "ClientboundKeepAlivePacket after 1"), calls);
+	}
+
+	@Test
+	void tellsItsListenerOfTheOpenConnectionAndOfItsCloseBeforeTheSessionHandlesTheClose() {
+		List<String> calls = new ArrayList<>();
+		session.addListener(new SessionAdapter() {
+			@Override
+			public void disconnected(DisconnectedEvent event) {
+				calls.add("session disconnected after " + listener.events());
+			}
+		});
+
+		channel.close();
+
+		assertEquals(List.of("session disconnected after [opened, closed]"), calls);
 	}
 
 	/**

@@ -45,7 +45,14 @@ public final class PlayerBody extends LivingBody {
 	/**
 	 * The keys the client holds this tick ({@code input.keyPresses}).
 	 */
+	@Setter(AccessLevel.NONE)
 	private @NotNull MovementInput keys = MovementInput.NONE;
+	/**
+	 * Whether auto-jump presses jump this tick, as {@code LocalPlayer.aiStep} sets {@code input.jumping}.
+	 */
+	@Getter(AccessLevel.NONE)
+	@Setter(AccessLevel.NONE)
+	private boolean autoJumping;
 	/**
 	 * Whether the client crouches for its input ({@code LocalPlayer.crouching}), which may differ from its pose.
 	 */
@@ -116,10 +123,43 @@ public final class PlayerBody extends LivingBody {
 	}
 
 	/**
-	 * Keeps the air control speed for the next tick, as {@code Player.aiStep} sets it before 1.19.4.
+	 * Keeps the air control speed for the next tick, as {@code Player.aiStep} sets it before 1.19.4: {@code 0.02F},
+	 * raised while it sprints.
 	 */
 	public void rememberFlyingSpeed() {
-		legacyFlyingSpeed = isSprinting() ? 0.02F + 0.006F : 0.02F;
+		legacyFlyingSpeed = 0.02F;
+		if (!isSprinting()) return;
+
+		legacyFlyingSpeed = client.has(ClientBehaviour.DOUBLE_SPRINT_AIR_SPEED)
+				? (float) (legacyFlyingSpeed + 0.005999999865889549)
+				: legacyFlyingSpeed + 0.006F;
+	}
+
+	/**
+	 * Holds the keys the client reads this tick ({@code Input.tick}), which releases an auto-jump's press.
+	 *
+	 * @param keys the held keys
+	 */
+	public void setKeys(@NotNull MovementInput keys) {
+		this.keys = keys;
+		autoJumping = false;
+	}
+
+	/**
+	 * Presses jump for this tick on auto-jump's behalf.
+	 */
+	public void pressAutoJump() {
+		autoJumping = true;
+	}
+
+	/**
+	 * Tells whether the client's input jumps this tick ({@code input.jumping}): its jump key is held or auto-jump
+	 * pressed it.
+	 *
+	 * @return whether it jumps
+	 */
+	public boolean isJumpDown() {
+		return keys.isJump() || autoJumping;
 	}
 
 	@Override

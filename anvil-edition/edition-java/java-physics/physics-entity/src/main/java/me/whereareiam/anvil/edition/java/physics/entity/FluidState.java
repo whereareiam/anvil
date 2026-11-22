@@ -6,6 +6,7 @@ import me.whereareiam.anvil.edition.java.physics.EntityBehaviour;
 import me.whereareiam.anvil.edition.java.physics.geometry.Box;
 import me.whereareiam.anvil.edition.java.physics.geometry.Coordinates;
 import me.whereareiam.anvil.edition.java.physics.geometry.Vector;
+import me.whereareiam.anvil.edition.java.physics.geometry.VectorLength;
 import me.whereareiam.anvil.edition.java.physics.world.BlockReader;
 import me.whereareiam.anvil.edition.java.physics.world.Fluids;
 import org.jetbrains.annotations.NotNull;
@@ -42,7 +43,7 @@ public final class FluidState {
 	public FluidState(@NotNull EntityBody body) {
 		this.body = body;
 		this.reader = body.getLevel();
-		this.fluids = new Fluids(reader);
+		this.fluids = new Fluids(reader, body.getRules().vectorLength());
 	}
 
 	/**
@@ -52,8 +53,7 @@ public final class FluidState {
 		waterHeight = 0.0;
 		lavaHeight = 0.0;
 		updateWater();
-		Contact lava = contact(FluidType.LAVA, reader.fastLava() ? FAST_LAVA_PUSH : LAVA_PUSH);
-		if (lava != null) lavaHeight = lava.depth();
+		lavaHeight = contact(FluidType.LAVA, reader.fastLava() ? FAST_LAVA_PUSH : LAVA_PUSH).depth();
 		updateEyes();
 		if (isInLava()) body.setFallDistance(body.has(EntityBehaviour.DOUBLE_FALL_DISTANCE)
 				? body.getFallDistance() * 0.5
@@ -66,8 +66,8 @@ public final class FluidState {
 	 */
 	public void updateWater() {
 		Contact contact = contact(FluidType.WATER, WATER_PUSH);
-		if (contact != null) waterHeight = contact.depth();
-		touchingWater = contact != null && contact.touching();
+		waterHeight = contact.depth();
+		touchingWater = contact.touching();
 		if (touchingWater) body.resetFallDistance();
 	}
 
@@ -90,16 +90,12 @@ public final class FluidState {
 	}
 
 	/**
-	 * Measures how deep the entity is in a fluid and pushes it along the fluid's flow; in a box touching an unloaded
-	 * column nothing changes.
+	 * Measures how deep the entity is in a fluid and pushes it along the fluid's flow. The vanilla client first asks its
+	 * level for the chunks around the entity ({@code hasChunksAt}), which a client level always has.
 	 *
-	 * @return whether the entity touches the fluid and how deep it is in it, or {@code null} for an unloaded column
+	 * @return whether the entity touches the fluid and how deep it is in it
 	 */
-	private Contact contact(@NotNull FluidType type, double pushScale) {
-		Box around = body.getBox().inflate(1.0);
-		if (!reader.hasChunksAt(Coordinates.floor(around.minX), Coordinates.floor(around.minZ),
-				Coordinates.ceil(around.maxX), Coordinates.ceil(around.maxZ))) return null;
-
+	private @NotNull Contact contact(@NotNull FluidType type, double pushScale) {
 		Box inner = body.getBox().deflate(0.001);
 		Flow flow = new Flow();
 		for (int x = Coordinates.floor(inner.minX); x < Coordinates.ceil(inner.maxX); x++)
@@ -112,14 +108,15 @@ public final class FluidState {
 	}
 
 	private void push(@NotNull Flow flow, double pushScale) {
-		if (!(flow.push.length() > 0.0)) return;
+		VectorLength vectors = body.getRules().vectorLength();
+		if (!(vectors.length(flow.push) > 0.0)) return;
 
 		Vector push = flow.push;
 		if (flow.pushes > 0) push = push.scale(1.0 / flow.pushes);
 		push = push.scale(pushScale);
 		Vector delta = body.getDeltaMovement();
-		if (Math.abs(delta.x) < 0.003 && Math.abs(delta.z) < 0.003 && push.length() < MIN_PUSH)
-			push = push.normalize().scale(MIN_PUSH);
+		if (Math.abs(delta.x) < 0.003 && Math.abs(delta.z) < 0.003 && vectors.length(push) < MIN_PUSH)
+			push = vectors.normalize(push).scale(MIN_PUSH);
 		body.setDeltaMovement(delta.add(push));
 	}
 

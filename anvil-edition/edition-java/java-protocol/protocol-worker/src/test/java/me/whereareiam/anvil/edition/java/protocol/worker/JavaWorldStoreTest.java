@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.edition.java.protocol.worker;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.edition.java.protocol.JavaWorld;
 import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
 import me.whereareiam.anvil.edition.java.protocol.model.world.BlockPosition;
@@ -43,7 +44,7 @@ class JavaWorldStoreTest {
 	private static final int DIRT = 10;
 	private static final int GLASS = 20;
 
-	private final JavaPacketDispatcher protocol = new JavaPacketDispatcher("test", 774, new SilentConnection());
+	private final JavaPacketDispatcher protocol = dispatcher("1.21.11", 774);
 	private final JavaWorld world = protocol.world();
 
 	@Test
@@ -73,8 +74,8 @@ class JavaWorldStoreTest {
 	}
 
 	@Test
-	void keepsNoChunksBeforeAnythingAskedForTheWorld() {
-		JavaPacketDispatcher unasked = new JavaPacketDispatcher("test", 774, new SilentConnection());
+	void keepsNoChunksBeforeAnythingAskedForTheWorldWhereTheClientReadsNone() {
+		JavaPacketDispatcher unasked = dispatcher("1.21.1", 767);
 		unasked.deliver(login("minecraft:overworld", OVERWORLD));
 		assertFalse(unasked.wants(ClientboundLevelChunkWithLight.class));
 
@@ -86,6 +87,15 @@ class JavaWorldStoreTest {
 
 		unasked.deliver(chunk(0, 0));
 		assertEquals(Set.of(new ChunkPosition(0, 0)), asked.loadedChunks());
+	}
+
+	@Test
+	void keepsChunksFromTheStartWhereTheClientsOwnRulesReadThem() {
+		for (JavaPacketDispatcher reading : List.of(dispatcher("1.16.5", 754), dispatcher("1.21.11", 774))) {
+			reading.deliver(login("minecraft:overworld", OVERWORLD));
+
+			assertTrue(reading.wants(ClientboundLevelChunkWithLight.class));
+		}
 	}
 
 	@Test
@@ -232,6 +242,10 @@ class JavaWorldStoreTest {
 			Thread.currentThread().interrupt();
 			throw new IllegalStateException(interrupted);
 		}
+	}
+
+	private static @NotNull JavaPacketDispatcher dispatcher(@NotNull String version, int protocol) {
+		return new JavaPacketDispatcher("test", protocol, MinecraftVersion.parse(version), "Alice", new SilentConnection());
 	}
 
 	private static final class SilentConnection implements JavaConnection {

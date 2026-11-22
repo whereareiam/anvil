@@ -16,11 +16,16 @@ import java.util.function.Supplier;
 
 /**
  * Hands each packet one MCProtocolLib session receives to its {@link ClientListener}, translated, in the order the
- * packets arrive on the wire, and while the listener wants frames as its frame. Every release's session decodes in a
- * netty pipeline that names its decoder {@value #CODEC}; this class puts two handlers around it, before any packet
- * arrives: one before the decoder that copies a frame's bytes while frames are wanted, and one after it that
- * translates the packet decoded from them and delivers both. Releases hand decoded packets to session listeners on
- * other threads or out of order, so translation and delivery happen here, on the channel's own thread, once per packet.
+ * packets arrive on the wire, and while the listener wants frames as its frame, and tells the listener when the
+ * session's connection opened and closed. Every release's session decodes in a netty pipeline that names its decoder
+ * {@value #CODEC}; this class puts two handlers around it once the channel became active, before any packet arrives:
+ * one before the decoder that copies a frame's bytes while frames are wanted, and one after it that translates the
+ * packet decoded from them and delivers both. Releases hand decoded packets to session listeners on other threads or
+ * out of order, so translation and delivery happen here, on the channel's own thread, once per packet.
+ *
+ * <p>The delivering handler also hears the channel's close before the session's own handler, which follows it in the
+ * pipeline, so the listener learns of the close after the last packet and before the session, or anything it reports,
+ * treats the connection as gone.</p>
  *
  * <p>A release that inserts its decompression before the decoder once the server enables compression would put it
  * between the frame handler and the decoder; after each packet the delivering handler moves the frame handler back next
@@ -84,7 +89,8 @@ public final class ReceivedFrames<S, P> {
 	}
 
 	/**
-	 * Puts the handlers around the decoder of the session's pipeline.
+	 * Puts the handlers around the decoder of the session's pipeline as its channel becomes active, and tells the
+	 * listener that the session's connection opened.
 	 *
 	 * @param pipeline the session's channel pipeline
 	 * @throws IllegalStateException when the pipeline has no decoder named {@value #CODEC}
@@ -95,6 +101,7 @@ public final class ReceivedFrames<S, P> {
 
 		pipeline.addBefore(CODEC, FRAMES, new FrameCopy());
 		pipeline.addAfter(CODEC, DELIVERY, new Delivery());
+		listener.opened(session);
 	}
 
 	/**
@@ -123,9 +130,19 @@ public final class ReceivedFrames<S, P> {
 	}
 
 	/**
-	 * Translates each decoded packet and delivers it, with its frame when one was copied, then lets the session have it.
+	 * Translates each decoded packet and delivers it, with its frame when one was copied, then lets the session have it,
+	 * and tells the listener of the channel's close before the session hears of it.
 	 */
 	private final class Delivery extends ChannelInboundHandlerAdapter {
+		@Override
+		public void channelInactive(ChannelHandlerContext context) {
+			try {
+				listener.closed(session);
+			} finally {
+				context.fireChannelInactive();
+			}
+		}
+
 		@Override
 		public void channelRead(ChannelHandlerContext context, Object message) {
 			if (!packetType.isInstance(message)) {

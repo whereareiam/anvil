@@ -12,8 +12,10 @@ import org.jetbrains.annotations.Nullable;
  * Receives the connection state and the translated packets of sessions opened by a {@link McProtocolClient}.
  *
  * <p>Callbacks arrive on the release's network threads. A login is reported after the client sent its client
- * information, and a teleport before the client accepts it. Each callback names the session it belongs to; a
- * session that was replaced by a reconnect can still deliver callbacks while it closes.</p>
+ * information. Each callback names the session it belongs to; a session that was replaced by a reconnect can still
+ * deliver callbacks while it closes. The session's channel reports when its connection {@linkplain #opened opened} and
+ * {@linkplain #closed closed}, the close before anything else hears of it, so the listener decides when the session
+ * counts as connected.</p>
  *
  * <p>The listener is also the demand of the session's translations: a packet that is costly to decode, such as a chunk
  * column, is decoded only while the listener {@linkplain #wants(Class) wants} it. While it {@linkplain #wantsFrames()
@@ -44,14 +46,22 @@ public interface ClientListener<S> extends PacketDemand {
 	void loggedIn(@NotNull S session, @NotNull ClientProfile granted);
 
 	/**
-	 * Reports a server-set position and view before the client accepts the teleport, so that whoever observes the
-	 * server completing the teleport already reads the new view.
+	 * Reports, from the session's channel, that its connection opened: the channel became active, before any packet
+	 * arrives. Until then the session sends nothing.
 	 *
-	 * @param session session that was teleported
-	 * @param yaw view yaw in degrees, as sent by the server
-	 * @param pitch view pitch in degrees, as sent by the server
+	 * @param session session whose connection opened
 	 */
-	void teleported(@NotNull S session, float yaw, float pitch);
+	void opened(@NotNull S session);
+
+	/**
+	 * Reports, from the session's channel, that its connection closed: on the channel's thread, after the packets that
+	 * arrived before the close and before the session itself, or anything it reports, handles the close, so the
+	 * listener learns of it first. Until then the session counts as connected to its listener, although the channel may
+	 * already refuse what it is sent. A session reports its close once, and only when it opened.
+	 *
+	 * @param session session whose connection closed
+	 */
+	void closed(@NotNull S session);
 
 	/**
 	 * Reports that a session's connection ended. A session can report more than one disconnect, in either

@@ -6,25 +6,27 @@ import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.ClientboundPlayerAbilities;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.ClientboundPlayerPosition;
+import me.whereareiam.anvil.edition.java.protocol.packet.player.ServerboundAcceptTeleportation;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.ServerboundClientTickEnd;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.ServerboundPlayerAbilities;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.ServerboundPlayerCommand;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.ServerboundPlayerInput;
+import me.whereareiam.anvil.edition.java.protocol.packet.player.ServerboundPlayerLoaded;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.move.ServerboundMovePlayerPos;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.move.ServerboundMovePlayerPosRot;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.move.ServerboundMovePlayerRot;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.move.ServerboundMovePlayerStatusOnly;
-import me.whereareiam.anvil.edition.java.protocol.type.entity.Relative;
 import me.whereareiam.anvil.edition.java.protocol.type.player.PlayerCommandAction;
 import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTranslation;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.ValueTranslator;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerState;
-import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PositionElement;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerAbilitiesPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.ServerboundClientTickEndPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.ServerboundPlayerLoadedPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundPlayerInputPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerPosPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerPosRotPacket;
@@ -35,14 +37,12 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.Serv
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
 import java.util.Set;
 
 /**
  * The player of the MCProtocolLib releases from 1.21.11 on: its movement packets carry the horizontal collision flag,
- * its client tells the keys it holds and the end of each tick and sneaks only through those keys, the server's
+ * its client accepts a teleport by its ID, tells the keys it holds, the end of each tick and that it loaded its level,
+ * and sneaks only through those keys, the server's
  * placement of the player also sets its velocity, the server grants the player's abilities, and the player tells the
  * flight it starts or stops on its own, whose abilities packet carries only whether it flies.
  */
@@ -52,6 +52,7 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 		return Set.of(
 				ClientboundPlayerAbilities.class,
 				ClientboundPlayerPosition.class,
+				ServerboundAcceptTeleportation.class,
 				ServerboundClientTickEnd.class,
 				ServerboundMovePlayerPos.class,
 				ServerboundMovePlayerPosRot.class,
@@ -59,7 +60,8 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 				ServerboundMovePlayerStatusOnly.class,
 				ServerboundPlayerAbilities.class,
 				ServerboundPlayerCommand.class,
-				ServerboundPlayerInput.class
+				ServerboundPlayerInput.class,
+				ServerboundPlayerLoaded.class
 		);
 	}
 
@@ -67,11 +69,12 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 	public @Nullable ClientboundPacket decode(@NotNull Packet packet) {
 		return switch (packet) {
 			case ClientboundPlayerPositionPacket position -> ClientboundPlayerPosition.builder()
+					.id(position.getId())
 					.position(ValueTranslator.vec3d(position.getPosition()))
 					.yaw(position.getYRot())
 					.pitch(position.getXRot())
 					.deltaMovement(ValueTranslator.vec3d(position.getDeltaMovement()))
-					.relatives(relatives(position.getRelatives()))
+					.relatives(RelativeElements.translate(position.getRelatives()))
 					.build();
 			case ClientboundPlayerAbilitiesPacket abilities -> ClientboundPlayerAbilities.builder()
 					.invulnerable(abilities.isInvincible())
@@ -104,7 +107,9 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 					new ServerboundMovePlayerStatusOnlyPacket(status.isOnGround(), status.isHorizontalCollision());
 			case ServerboundPlayerInput input -> new ServerboundPlayerInputPacket(input.isForward(), input.isBackward(),
 					input.isLeft(), input.isRight(), input.isJump(), input.isShift(), input.isSprint());
+			case ServerboundAcceptTeleportation accept -> new ServerboundAcceptTeleportationPacket(accept.getId());
 			case ServerboundClientTickEnd ignored -> ServerboundClientTickEndPacket.INSTANCE;
+			case ServerboundPlayerLoaded ignored -> ServerboundPlayerLoadedPacket.INSTANCE;
 			case ServerboundPlayerAbilities abilities -> new ServerboundPlayerAbilitiesPacket(abilities.isFlying());
 			case ServerboundPlayerCommand command ->
 					new ServerboundPlayerCommandPacket(command.getEntityId().getValue(), state(command.getAction()));
@@ -112,27 +117,6 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 		};
 	}
 
-	/**
-	 * Names the coordinates, angles and velocity components a placement adds to the current ones.
-	 *
-	 * @param elements the release's relative elements
-	 * @return the protocol's relatives
-	 */
-	static @NotNull Set<Relative> relatives(@NotNull List<PositionElement> elements) {
-		Set<Relative> relatives = EnumSet.noneOf(Relative.class);
-		for (PositionElement element : elements) relatives.add(switch (element) {
-			case X -> Relative.X;
-			case Y -> Relative.Y;
-			case Z -> Relative.Z;
-			case Y_ROT -> Relative.YAW;
-			case X_ROT -> Relative.PITCH;
-			case DELTA_X -> Relative.DELTA_X;
-			case DELTA_Y -> Relative.DELTA_Y;
-			case DELTA_Z -> Relative.DELTA_Z;
-			case ROTATE_DELTA -> Relative.ROTATE_DELTA;
-		});
-		return Collections.unmodifiableSet(relatives);
-	}
 
 	/**
 	 * Names the player state of a command; since Minecraft 1.21.6 the release's player command carries no sneaking,

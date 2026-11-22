@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,7 @@ public final class TestWorld {
 	public final @NotNull BlockRegistry registry;
 	public final @NotNull DimensionType dimension;
 	private final @NotNull Map<List<Integer>, Integer> blocks = new HashMap<>();
+	private final @NotNull Set<List<Integer>> sectionsWithBlocks = new HashSet<>();
 	private final @NotNull Set<ChunkPosition> loaded = new LinkedHashSet<>();
 
 	/**
@@ -140,14 +142,21 @@ public final class TestWorld {
 	}
 
 	/**
-	 * Sets a block in the state whose properties have the given values.
+	 * Sets a block in its default state with the given properties changed, as vanilla reads a block state such as
+	 * {@code minecraft:oak_stairs[facing=north]}.
+	 *
+	 * @throws IllegalArgumentException when the block or a property value does not exist in the version's protocol
 	 */
 	public @NotNull TestWorld set(int x, int y, int z, @NotNull String block, @NotNull Map<String, String> properties) {
-		BlockType type = registry.block(block).orElseThrow();
+		BlockType type = registry.block(block)
+				.orElseThrow(() -> new IllegalArgumentException("Protocol " + registry.protocol() + " has no block " + block));
+		Map<String, String> wanted = new HashMap<>(registry.state(type.getDefaultStateId()).getProperties());
+		wanted.putAll(properties);
 		BlockState state = registry.states(type).stream()
-				.filter(candidate -> candidate.getProperties().entrySet().containsAll(properties.entrySet()))
+				.filter(candidate -> candidate.getProperties().equals(wanted))
 				.findFirst()
-				.orElseThrow();
+				.orElseThrow(() -> new IllegalArgumentException(
+						"Protocol " + registry.protocol() + " has no state of " + block + " with " + properties));
 		return state(x, y, z, state.getId());
 	}
 
@@ -157,6 +166,7 @@ public final class TestWorld {
 
 	public @NotNull TestWorld state(int x, int y, int z, int state) {
 		blocks.put(List.of(x, y, z), state);
+		sectionsWithBlocks.add(List.of(x >> 4, y >> 4, z >> 4));
 		return this;
 	}
 
@@ -196,6 +206,8 @@ public final class TestWorld {
 	}
 
 	private @NotNull LevelChunkSection section(@NotNull ChunkPosition chunk, int bottom) {
+		if (!sectionsWithBlocks.contains(List.of(chunk.getX(), bottom >> 4, chunk.getZ()))) return LevelChunkSection.EMPTY;
+
 		int[] states = new int[4096];
 		List<Integer> palette = new ArrayList<>(List.of(LevelChunkSection.AIR));
 		for (int y = 0; y < 16; y++)

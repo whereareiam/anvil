@@ -26,13 +26,13 @@ final class InsideBlocks {
 	}
 
 	/**
-	 * Applies {@code entityInside} of every block a box touches, east-west outermost, then up, then north-south, where
-	 * the client has every column it touches.
+	 * Applies {@code entityInside} of every block a box touches, east-west outermost, then up, then north-south. The
+	 * vanilla client first asks its level for the chunks the box touches ({@code hasChunksAt}), which a client level
+	 * always has.
 	 */
 	void apply(@NotNull Box box) {
 		int[] min = {Coordinates.floor(box.minX), Coordinates.floor(box.minY), Coordinates.floor(box.minZ)};
 		int[] max = {Coordinates.floor(box.maxX), Coordinates.floor(box.maxY), Coordinates.floor(box.maxZ)};
-		if (!reader.hasChunksAt(min[0], min[2], max[0], max[2])) return;
 
 		for (int x = min[0]; x <= max[0]; x++)
 			for (int y = min[1]; y <= max[1]; y++)

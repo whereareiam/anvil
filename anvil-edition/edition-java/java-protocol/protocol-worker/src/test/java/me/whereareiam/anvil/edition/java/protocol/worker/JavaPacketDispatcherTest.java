@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.edition.java.protocol.worker;
 
+import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundFrame;
 import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
@@ -28,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JavaPacketDispatcherTest {
 	private final RecordingConnection connection = new RecordingConnection(true);
-	private final JavaPacketDispatcher protocol = new JavaPacketDispatcher("test", 774, connection);
+	private final JavaPacketDispatcher protocol = dispatcher(774, connection);
 
 	@Test
 	void wantsThePacketsOfItsListenersWhileTheyListen() {
@@ -127,10 +128,11 @@ class JavaPacketDispatcherTest {
 		view.listenSent(ServerboundChat.class, packet -> received.add(packet.getText()));
 		view.send(new ServerboundChat("sent"));
 		protocol.deliver(new ClientboundSystemChat(Text.literal("received"), false));
+		view.player().onTick(() -> received.add("ticked"));
 		tracked.forEach(Subscription::close);
 		protocol.deliver(new ClientboundSystemChat(Text.literal("after close"), false));
 
-		assertEquals(2, tracked.size());
+		assertEquals(3, tracked.size());
 		assertEquals(List.of("sent", "received"), received);
 	}
 
@@ -181,7 +183,7 @@ class JavaPacketDispatcherTest {
 
 	@Test
 	void leavesTheFramesOfAProtocolWithoutPacketDataUnnamed() {
-		JavaPacketDispatcher unnamed = new JavaPacketDispatcher("test", 777, connection);
+		JavaPacketDispatcher unnamed = dispatcher(777, connection);
 		List<ClientboundFrame> frames = new ArrayList<>();
 		unnamed.listenFrames(frames::add);
 
@@ -205,13 +207,21 @@ class JavaPacketDispatcherTest {
 
 	@Test
 	void refusesFrameListenersOfALibraryThatHandsOverNoFrames() {
-		JavaPacketDispatcher unframed = new JavaPacketDispatcher("test", 774, new RecordingConnection(false));
+		JavaPacketDispatcher unframed = dispatcher(774, new RecordingConnection(false));
 
 		ProtocolUnavailableException failure = assertThrows(ProtocolUnavailableException.class,
 				() -> unframed.listenFrames(frame -> {
 				}));
 
 		assertEquals("the test library does not hand over the frames its players receive", failure.getMessage());
+	}
+
+	/**
+	 * Creates the protocol of a player whose client of 1.21.1 reads no chunks itself, so only the test's listeners and
+	 * wants decide what is wanted.
+	 */
+	private static @NotNull JavaPacketDispatcher dispatcher(int protocol, @NotNull JavaConnection connection) {
+		return new JavaPacketDispatcher("test", protocol, MinecraftVersion.parse("1.21.1"), "Alice", connection);
 	}
 
 	private static final class RecordingConnection implements JavaConnection {

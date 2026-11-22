@@ -122,6 +122,15 @@ public class LivingSimulation {
 	}
 
 	/**
+	 * Returns what the blocks around the entity do to it, such as their jump factor.
+	 *
+	 * @return its block effects
+	 */
+	public @NotNull BlockEffects blockEffects() {
+		return blocks;
+	}
+
+	/**
 	 * Returns the entity whose ticks this runs.
 	 *
 	 * @return its body

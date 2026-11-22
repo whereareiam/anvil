@@ -17,14 +17,14 @@ import java.util.function.BiConsumer;
  * A {@link ClientListener} that records what a client segment reports, for the tests of the segments and of what they
  * share. It writes each report as one line to its events, which a test may share with its own lines, such as the
  * packets its session sent:
- * {@code granted <name> <uuid>}, {@code logged in as <name> <uuid>}, {@code teleported <yaw> <pitch>} and
+ * {@code opened}, {@code granted <name> <uuid>}, {@code logged in as <name> <uuid>}, {@code closed} and
  * {@code disconnected <cause> <reason>}. It keeps the delivered packets and frames apart, wants every packet, and wants
  * frames once the test {@linkplain #wantFrames(boolean) asks for them}.
  *
  * <pre>{@code
  * TestClientListener<Session> listener = new TestClientListener<>();
  * session.addListener(new ClientPacketListener(login, listener, answers, text));
- * assertEquals(List.of("teleported 90.0 0.0"), listener.events());
+ * assertEquals(List.of("disconnected SERVER kicked"), listener.events());
  * }</pre>
  *
  * @param <S> native session type of the release
@@ -98,6 +98,16 @@ public final class TestClientListener<S> implements ClientListener<S> {
 	}
 
 	@Override
+	public void opened(@NotNull S session) {
+		events.add("opened");
+	}
+
+	@Override
+	public void closed(@NotNull S session) {
+		events.add("closed");
+	}
+
+	@Override
 	public void granted(@NotNull S session, @NotNull ClientProfile granted) {
 		events.add("granted " + granted.getName() + " " + granted.getUniqueId());
 	}
@@ -105,11 +115,6 @@ public final class TestClientListener<S> implements ClientListener<S> {
 	@Override
 	public void loggedIn(@NotNull S session, @NotNull ClientProfile granted) {
 		events.add("logged in as " + granted.getName() + " " + granted.getUniqueId());
-	}
-
-	@Override
-	public void teleported(@NotNull S session, float yaw, float pitch) {
-		events.add("teleported " + yaw + " " + pitch);
 	}
 
 	@Override

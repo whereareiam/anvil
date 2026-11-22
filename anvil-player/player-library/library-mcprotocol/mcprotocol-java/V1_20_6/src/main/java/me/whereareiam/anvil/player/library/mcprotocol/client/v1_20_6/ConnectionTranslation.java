@@ -12,8 +12,10 @@ import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundPing;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundStartConfiguration;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ServerboundPong;
 import me.whereareiam.anvil.edition.java.protocol.type.player.GameMode;
 import me.whereareiam.anvil.edition.java.protocol.type.world.CardinalLight;
 import me.whereareiam.anvil.edition.java.protocol.type.world.Skybox;
@@ -22,6 +24,8 @@ import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketT
 import net.kyori.adventure.key.Key;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerSpawnInfo;
+import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundPingPacket;
+import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundPongPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundStartConfigurationPacket;
@@ -32,17 +36,17 @@ import java.util.Arrays;
 import java.util.Set;
 
 /**
- * The moments the MCProtocolLib releases from 1.20.5 on join a level, respawn and return to the configuration phase.
- * A login and a respawn name the game mode the player is in. These releases name the dimension type by its ID in the
- * {@code minecraft:dimension_type} registry, which the translation looks up in the connection's
- * {@link SynchronizedRegistries}. A vanilla type arrives without its description when the client named the vanilla
- * core pack among those it knows, and the client takes it from its own data pack, as
- * {@link DimensionType#known(String)} describes it. A description gives the type's block heights, names
- * its effects before Minecraft 1.21.11 and its skybox and shading from then on; one without either takes the
- * overworld's. From Minecraft 26.1 it also names the world clock its day follows. Each release's
- * {@code ConnectionPackets} names the clock of a vanilla type sent without its description, and reads whether a
- * described type's lava is fast where the release keeps it: the type's {@code ultrawarm} before Minecraft 1.21.11, its
- * {@code minecraft:gameplay/fast_lava} environment attribute from then on.
+ * The moments the MCProtocolLib releases from 1.20.5 on join a level, respawn and return to the configuration phase,
+ * and the pings of the game and the configuration, which share one packet and which the worker kit's client answers
+ * with their pongs. A login and a respawn name the game mode the player is in. These releases name the dimension type
+ * by its ID in the {@code minecraft:dimension_type} registry, which the translation looks up in the connection's {@link
+ * SynchronizedRegistries}. A vanilla type arrives without its description when the client named the vanilla core pack
+ * among those it knows, and the client takes it from its own data pack, as {@link DimensionType#known(String)}
+ * describes it. A description gives the type's block heights, names its effects before Minecraft 1.21.11 and its skybox
+ * and shading from then on; one without either takes the overworld's. From Minecraft 26.1 it also names the world clock
+ * its day follows. Each release's {@code ConnectionPackets} names the clock of a vanilla type sent without its
+ * description, and reads whether a described type's lava is fast where the release keeps it: the type's {@code
+ * ultrawarm} before Minecraft 1.21.11, its {@code minecraft:gameplay/fast_lava} environment attribute from then on.
  *
  * <p>A type the configuration did not list, a description without block heights or its release's fast lava, and a
  * type without its description that no vanilla client knows break the protocol: a vanilla client cannot read the
@@ -69,7 +73,8 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 
 	@Override
 	public final @NotNull Set<Class<? extends JavaPacket>> packets() {
-		return Set.of(ClientboundLogin.class, ClientboundRespawn.class, ClientboundStartConfiguration.class);
+		return Set.of(ClientboundLogin.class, ClientboundPing.class, ClientboundRespawn.class,
+				ClientboundStartConfiguration.class, ServerboundPong.class);
 	}
 
 	@Override
@@ -100,13 +105,14 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 						.build());
 			}
 			case ClientboundStartConfigurationPacket ignored -> new ClientboundStartConfiguration();
+			case ClientboundPingPacket ping -> new ClientboundPing(ping.getId());
 			default -> null;
 		};
 	}
 
 	@Override
 	public final @Nullable Packet encode(@NotNull ServerboundPacket packet) {
-		return null;
+		return packet instanceof ServerboundPong pong ? new ServerboundPongPacket(pong.getId()) : null;
 	}
 
 	/**

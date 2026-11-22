@@ -6,7 +6,6 @@ import me.whereareiam.anvil.capability.entities.model.EntityChange;
 import me.whereareiam.anvil.capability.entities.model.KnownEntities;
 import me.whereareiam.anvil.edition.java.protocol.JavaProtocol;
 import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
-import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
 import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
@@ -20,8 +19,6 @@ import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.Clientbound
 import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundMoveEntityRot;
 import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundTeleportEntity;
 import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundSetEntityData;
-import me.whereareiam.anvil.edition.java.protocol.packet.player.ClientboundPlayerPosition;
-import me.whereareiam.anvil.edition.java.protocol.packet.player.move.ServerboundMovePlayerPosRot;
 import me.whereareiam.anvil.edition.java.protocol.type.entity.Relative;
 import me.whereareiam.anvil.player.api.channel.Subscription;
 import me.whereareiam.anvil.player.api.worker.OperationRegistry;
@@ -31,6 +28,7 @@ import me.whereareiam.anvil.player.api.worker.WorkerExtension;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,7 +40,9 @@ import java.util.function.Consumer;
 /**
  * Installs the built-in entities capability for players that speak the Java Edition protocol. Each connection of the
  * player gets its own {@link EntityTracker}, numbered as the player's next connection, which applies the packets the
- * connection receives and the moves the player sends. The extension emits the facts the tracker reports and answers
+ * connection receives and measures the entities against the client's own player ({@code JavaProtocol.player()}),
+ * which knows where the server placed the player and where it moved itself. The extension emits the facts the tracker
+ * reports and answers
  * reads of the entities from the tracker of the current connection, so positions, which change with every move, never
  * travel as events. When a connection ends or is replaced, its entities disappear; when the player is destroyed,
  * nothing more is emitted.
@@ -51,6 +51,11 @@ import java.util.function.Consumer;
  * where the player's release carries it.</p>
  */
 public final class JavaEntitiesExtension implements WorkerExtension<Object> {
+	/**
+	 * The coordinates a move of an entity adds to where it is.
+	 */
+	private static final Set<Relative> DELTA = EnumSet.of(Relative.X, Relative.Y, Relative.Z);
+
 	@Override
 	public @NotNull String id() {
 		return EntitiesChannel.ID;
@@ -85,8 +90,10 @@ public final class JavaEntitiesExtension implements WorkerExtension<Object> {
 		private final List<Subscription> listening = new ArrayList<>();
 
 		private KnownEntities known() {
-			EntityTracker tracker = current.get();
-			return new KnownEntities(tracker == null ? List.of() : tracker.known());
+			return protocol.player().get(() -> {
+				EntityTracker tracker = current.get();
+				return new KnownEntities(tracker == null ? List.of() : tracker.known());
+			});
 		}
 
 		private WorkerBinding listen() {
@@ -118,50 +125,34 @@ public final class JavaEntitiesExtension implements WorkerExtension<Object> {
 		 * was destroyed first.
 		 */
 		private Subscription connected() {
-			EntityTracker tracker = new EntityTracker(connections.incrementAndGet());
+			EntityTracker tracker = new EntityTracker(connections.incrementAndGet(), new PlayerMeasure(protocol.player()));
 			current.set(tracker);
 			return () -> {
-				if (current.compareAndSet(tracker, null)) emit(tracker.clear());
+				protocol.player().run(() -> {
+					if (current.compareAndSet(tracker, null)) emit(tracker.clear());
+				});
 			};
 		}
 
 		private void moves() {
-			state(ClientboundMoveEntityPos.class, (tracker, move) -> {
-				Vec3d delta = move.getDelta();
-				tracker.move(move.getEntityId().getValue(), delta.getX(), delta.getY(), delta.getZ(), true, true, true);
-			});
+			state(ClientboundMoveEntityPos.class, (tracker, move) ->
+					tracker.move(move.getEntityId().getValue(), move.getDelta(), DELTA));
 			state(ClientboundMoveEntityPosRot.class, (tracker, move) -> {
-				Vec3d delta = move.getDelta();
-				tracker.move(move.getEntityId().getValue(), delta.getX(), delta.getY(), delta.getZ(), true, true, true);
-				tracker.turn(move.getEntityId().getValue(), move.getYaw(), move.getPitch(), false, false);
+				tracker.move(move.getEntityId().getValue(), move.getDelta(), DELTA);
+				tracker.turn(move.getEntityId().getValue(), move.getYaw(), move.getPitch(), Set.of());
 			});
 			state(ClientboundMoveEntityRot.class, (tracker, turn) ->
-					tracker.turn(turn.getEntityId().getValue(), turn.getYaw(), turn.getPitch(), false, false));
+					tracker.turn(turn.getEntityId().getValue(), turn.getYaw(), turn.getPitch(), Set.of()));
 			state(ClientboundTeleportEntity.class, (tracker, teleport) -> {
-				Vec3d position = teleport.getPosition();
-				Set<Relative> relatives = teleport.getRelatives();
-				tracker.move(teleport.getEntityId().getValue(), position.getX(), position.getY(), position.getZ(),
-						relatives.contains(Relative.X), relatives.contains(Relative.Y), relatives.contains(Relative.Z));
+				tracker.move(teleport.getEntityId().getValue(), teleport.getPosition(), teleport.getRelatives());
 				tracker.turn(teleport.getEntityId().getValue(), teleport.getYaw(), teleport.getPitch(),
-						relatives.contains(Relative.YAW), relatives.contains(Relative.PITCH));
+						teleport.getRelatives());
 			});
 			if (protocol.supports(ClientboundEntityPositionSync.class))
 				state(ClientboundEntityPositionSync.class, (tracker, sync) -> {
-					Vec3d position = sync.getPosition();
-					tracker.move(sync.getEntityId().getValue(), position.getX(), position.getY(), position.getZ(),
-							false, false, false);
-					tracker.turn(sync.getEntityId().getValue(), sync.getYaw(), sync.getPitch(), false, false);
+					tracker.move(sync.getEntityId().getValue(), sync.getPosition(), Set.of());
+					tracker.turn(sync.getEntityId().getValue(), sync.getYaw(), sync.getPitch(), Set.of());
 				});
-			state(ClientboundPlayerPosition.class, (tracker, placed) -> {
-				Vec3d position = placed.getPosition();
-				Set<Relative> relatives = placed.getRelatives();
-				tracker.movePlayer(position.getX(), position.getY(), position.getZ(), relatives.contains(Relative.X),
-						relatives.contains(Relative.Y), relatives.contains(Relative.Z));
-			});
-			listening.add(protocol.listenSent(ServerboundMovePlayerPosRot.class, move -> withTracker(tracker -> {
-				Vec3d position = move.getPosition();
-				tracker.movePlayer(position.getX(), position.getY(), position.getZ(), false, false, false);
-			})));
 		}
 
 		/**

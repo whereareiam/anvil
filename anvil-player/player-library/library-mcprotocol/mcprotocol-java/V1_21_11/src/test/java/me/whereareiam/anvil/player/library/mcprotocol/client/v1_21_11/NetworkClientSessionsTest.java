@@ -23,6 +23,9 @@ import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.KnownPacksA
 import me.whereareiam.anvil.player.library.mcprotocol.netty.ReceivedFrames;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.network.ClientSession;
+import org.geysermc.mcprotocollib.network.Session;
+import org.geysermc.mcprotocollib.network.event.session.DisconnectedEvent;
+import org.geysermc.mcprotocollib.network.event.session.SessionAdapter;
 import org.geysermc.mcprotocollib.network.event.session.SessionListener;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.ClientListener;
@@ -43,6 +46,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.UUID;
@@ -66,7 +70,7 @@ class NetworkClientSessionsTest {
 	void reportsTheServersReasonWhenAnAnswerFailsAfterTheServerClosed() throws Exception {
 		CompletableFuture<String> disconnect = new CompletableFuture<>();
 		try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
-			NetworkClientSessions sessions = new NetworkClientSessions(new TextTranslator(), ReleaseAnswers::new);
+			NetworkClientSessions sessions = sessions();
 			ClientSession session = sessions.open(login(server.getLocalPort()), disconnects(disconnect),
 					McProtocolClientAdapter.packets(PacketDemand.EVERY));
 			sessions.connect(session);
@@ -99,7 +103,7 @@ class NetworkClientSessionsTest {
 
 	@Test
 	void startsTheConfigurationAfterTheLibrarysOwnListenerAndAnswersKnownPacks() {
-		ClientSession session = new NetworkClientSessions(new TextTranslator(), ReleaseAnswers::new)
+		ClientSession session = sessions()
 				.open(login(25565), new TestClientListener<>(), McProtocolClientAdapter.packets(PacketDemand.EVERY));
 
 		session.getPacketProtocol().newClientSession(session);
@@ -107,17 +111,15 @@ class NetworkClientSessionsTest {
 		List<Class<?>> listeners = session.getListeners().stream()
 				.<Class<?>>map(SessionListener::getClass)
 				.toList();
-		assertEquals(List.of(ReleaseAnswers.class, ClientPacketListener.class,
-				ClientListener.class, ClientConfiguration.class,
-				KnownPacksAnswer.class),
-				listeners);
+		assertEquals(List.of(ClientPacketListener.class, ClientListener.class, ClientConfiguration.class,
+				KnownPacksAnswer.class), listeners);
 		assertFalse(session.getFlag(MinecraftConstants.SEND_BLANK_KNOWN_PACKS_RESPONSE, true));
 	}
 
 	@Test
 	void handsEveryPacketOverOnceConnectedAndAsItsFrameWhileTheListenerWantsFrames() {
 		TestClientListener<ClientSession> listener = new TestClientListener<>();
-		ClientSession session = new NetworkClientSessions(new TextTranslator(), ReleaseAnswers::new)
+		ClientSession session = sessions()
 				.open(login(25565), listener, McProtocolClientAdapter.packets(PacketDemand.EVERY));
 		Deque<Packet> decoded = new ArrayDeque<>();
 		EmbeddedChannel channel = new EmbeddedChannel(new ChannelInitializer<>() {
@@ -145,6 +147,69 @@ class NetworkClientSessionsTest {
 		assertEquals(List.of(welcome), listener.received());
 		assertEquals(List.of(new TestClientListener.Frame(ConnectionState.PLAY, 0x2B, new byte[]{7}, null)),
 				listener.frames());
+	}
+
+	@Test
+	void callsItsListenersOnTheChannelsThreadRightAfterDeliveringEachPacket() {
+		TestClientListener<ClientSession> listener = new TestClientListener<>();
+		ClientSession session = sessions()
+				.open(login(25565), listener, McProtocolClientAdapter.packets(PacketDemand.EVERY));
+		List<String> calls = new ArrayList<>();
+		session.addListener(new SessionAdapter() {
+			@Override
+			public void packetReceived(Session ignored, Packet packet) {
+				calls.add(packet.getClass().getSimpleName() + " after " + listener.received().size());
+			}
+		});
+		Deque<Packet> decoded = new ArrayDeque<>();
+		EmbeddedChannel channel = new EmbeddedChannel(new ChannelInitializer<>() {
+			@Override
+			protected void initChannel(Channel channel) {
+				channel.pipeline().addLast(ReceivedFrames.CODEC, new ChannelInboundHandlerAdapter() {
+					@Override
+					public void channelRead(ChannelHandlerContext context, Object message) {
+						ReferenceCountUtil.release(message);
+						context.fireChannelRead(decoded.remove());
+					}
+				});
+				channel.pipeline().addLast("manager", (ChannelHandler) session);
+			}
+		});
+
+		decoded.add(new ClientboundSystemChatPacket(Component.text("anvil:welcome"), false));
+		channel.writeInbound(Unpooled.wrappedBuffer(new byte[]{0x77}));
+
+		assertEquals(List.of("ClientboundSystemChatPacket after 1"), calls);
+	}
+
+	@Test
+	void tellsItsListenerOfTheOpenConnectionAndOfItsCloseBeforeTheSessionReportsTheDisconnect() {
+		TestClientListener<ClientSession> listener = new TestClientListener<>();
+		ClientSession session = sessions()
+				.open(login(25565), listener, McProtocolClientAdapter.packets(PacketDemand.EVERY));
+		List<String> calls = new ArrayList<>();
+		session.addListener(new SessionAdapter() {
+			@Override
+			public void disconnected(DisconnectedEvent event) {
+				calls.add("session disconnected after " + listener.events());
+			}
+		});
+		EmbeddedChannel channel = new EmbeddedChannel(new ChannelInitializer<>() {
+			@Override
+			protected void initChannel(Channel channel) {
+				channel.pipeline().addLast(ReceivedFrames.CODEC, new ChannelInboundHandlerAdapter());
+				channel.pipeline().addLast("manager", (ChannelHandler) session);
+			}
+		});
+
+		channel.close();
+
+		assertEquals(List.of("session disconnected after [opened, closed, disconnected CONNECTION_LOST "
+				+ "disconnect.endOfStream]"), calls);
+	}
+
+	private static NetworkClientSessions sessions() {
+		return new NetworkClientSessions(new TextTranslator());
 	}
 
 	private static ClientLogin login(int port) {

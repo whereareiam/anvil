@@ -1,19 +1,24 @@
 package me.whereareiam.anvil.player.library.mcprotocol.client.v1_18_2;
 
+import com.github.steveice10.mc.protocol.data.game.entity.player.Animation;
 import com.github.steveice10.mc.protocol.data.game.entity.player.Hand;
 import com.github.steveice10.mc.protocol.data.game.entity.player.InteractAction;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundAnimatePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundInteractPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundSwingPacket;
 import com.github.steveice10.packetlib.packet.Packet;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
 import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
 import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ClientboundAnimate;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundAttack;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundInteract;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundSwing;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundUseItem;
 import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ServerboundUseItemOn;
+import me.whereareiam.anvil.edition.java.protocol.type.interaction.AnimateAction;
 import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTranslation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,7 +28,9 @@ import java.util.Set;
 /**
  * Interaction of the MCProtocolLib releases from 1.18.2 until 1.19.4. Attacks and interactions share one entity
  * packet, so an attack is sent as its attack action, which carries neither a hand nor a point. Each release's
- * {@code InteractionPackets} builds the item and block uses, which gained the block-change sequence in Minecraft 1.19.
+ * {@code InteractionPackets} builds the item and block uses, which gained the block-change sequence in Minecraft 1.19,
+ * and reads the animations of the server's animate packets, of which Minecraft 1.19.4 gave the hurt one a packet of its
+ * own.
  */
 public abstract class InteractionTranslation implements PacketTranslation<Packet> {
 	/**
@@ -38,6 +45,7 @@ public abstract class InteractionTranslation implements PacketTranslation<Packet
 	@Override
 	public final @NotNull Set<Class<? extends JavaPacket>> packets() {
 		return Set.of(
+				ClientboundAnimate.class,
 				ServerboundSwing.class,
 				ServerboundUseItem.class,
 				ServerboundUseItemOn.class,
@@ -48,7 +56,9 @@ public abstract class InteractionTranslation implements PacketTranslation<Packet
 
 	@Override
 	public final @Nullable ClientboundPacket decode(@NotNull Packet packet) {
-		return null;
+		if (!(packet instanceof ClientboundAnimatePacket animate)) return null;
+
+		return new ClientboundAnimate(new EntityId(animate.getEntityId()), action(animate.getAnimation()));
 	}
 
 	@Override
@@ -63,6 +73,14 @@ public abstract class InteractionTranslation implements PacketTranslation<Packet
 			default -> null;
 		};
 	}
+
+	/**
+	 * Reads an animation of the release.
+	 *
+	 * @param animation the library's animation
+	 * @return the protocol's action
+	 */
+	protected abstract @NotNull AnimateAction action(@NotNull Animation animation);
 
 	/**
 	 * Builds the release's item use.

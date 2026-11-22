@@ -100,16 +100,17 @@ public class TestWorkerPlayer implements PlayerBindingContext<Object> {
 	}
 
 	/**
-	 * Ends the open session, if any, and closes the bindings of its connection.
+	 * Ends the open session, if any: tells its protocol that the connection closed, then ends the session and closes the
+	 * bindings of its connection.
 	 */
 	@Override
 	public synchronized void disconnect() {
 		Object current = session;
 		if (current == null) return;
 
+		disconnected();
 		session = null;
 		sessions.end(current);
-		disconnected();
 	}
 
 	@Override
@@ -198,8 +199,9 @@ public class TestWorkerPlayer implements PlayerBindingContext<Object> {
 	}
 
 	/**
-	 * Runs once the player's session ended, after the bindings of its connection closed, as a library tells its
-	 * protocol that the connection closed.
+	 * Runs as the player's session ends, before the session or the bindings of its connection count it as gone, as a
+	 * library tells its protocol first that the connection closed: whatever runs after it, such as a tick of an
+	 * edition's client, finds no connection.
 	 */
 	protected void disconnected() {
 	}

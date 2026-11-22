@@ -67,6 +67,18 @@ public final class Box {
 	}
 
 	/**
+	 * Builds a box of an entity's new size from this box's lower corner, as {@code Entity.refreshDimensions} does before
+	 * 1.17 unless the entity narrows.
+	 *
+	 * @param width the entity's new width
+	 * @param height the entity's new height
+	 * @return the resized box
+	 */
+	public @NotNull Box resized(float width, float height) {
+		return new Box(new Vector(minX, minY, minZ), new Vector(minX + width, minY + height, minZ + width));
+	}
+
+	/**
 	 * Returns the lower face along an axis.
 	 *
 	 * @param axis the axis

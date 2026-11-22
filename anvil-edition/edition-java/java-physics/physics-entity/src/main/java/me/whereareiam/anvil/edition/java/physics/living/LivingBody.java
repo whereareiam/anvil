@@ -4,11 +4,14 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import me.whereareiam.anvil.edition.java.physics.EntityRules;
+import me.whereareiam.anvil.edition.java.physics.entity.Bounciness;
 import me.whereareiam.anvil.edition.java.physics.entity.EntityBody;
 import me.whereareiam.anvil.edition.java.physics.entity.EntityDimensions;
+import me.whereareiam.anvil.edition.java.physics.living.attribute.Attribute;
 import me.whereareiam.anvil.edition.java.physics.living.attribute.AttributeMap;
 import me.whereareiam.anvil.edition.java.physics.living.attribute.LivingAttributes;
 import me.whereareiam.anvil.edition.java.physics.living.effect.Effects;
+import me.whereareiam.anvil.edition.java.physics.living.effect.MobEffect;
 import me.whereareiam.anvil.edition.java.physics.world.BlockReader;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
  */
 @Getter
 @Setter
-public class LivingBody extends EntityBody {
+public class LivingBody extends EntityBody implements Bounciness {
 	@Setter(AccessLevel.NONE)
 	private final @NotNull AttributeMap attributes;
 	@Setter(AccessLevel.NONE)
@@ -96,6 +99,63 @@ public class LivingBody extends EntityBody {
 	public float blockSpeedFactor(float blockFactor) {
 		float efficiency = (float) attributes.value(LivingAttributes.MOVEMENT_EFFICIENCY);
 		return blockFactor + efficiency * (1.0F - blockFactor);
+	}
+
+	/**
+	 * {@code LivingEntity.getEffectiveGravity}: the gravity attribute, at most {@code 0.01} while the entity falls with
+	 * slow falling.
+	 *
+	 * @return the gravity
+	 */
+	@Override
+	public double effectiveGravity() {
+		double gravity = attributes.value(LivingAttributes.GRAVITY);
+		boolean slow = getDeltaMovement().y <= 0.0 && effects.has(MobEffect.SLOW_FALLING);
+		return slow ? Math.min(gravity, 0.01) : gravity;
+	}
+
+	/**
+	 * {@code LivingEntity.getEntityBounciness}: the bounciness attribute, from 26.2.
+	 *
+	 * @return the share of its speed it keeps, reversed, when it hits a block
+	 */
+	@Override
+	public double entityBounciness() {
+		return attributes.value(LivingAttributes.BOUNCINESS);
+	}
+
+	/**
+	 * {@code Entity.getBlockBounciness}: a living entity takes a block's whole bounce.
+	 *
+	 * @param restitution the block's bounce restitution
+	 * @return the restitution
+	 */
+	@Override
+	public double blockBounciness(float restitution) {
+		return restitution;
+	}
+
+	/**
+	 * {@code LivingEntity.getAirDrag}: {@code 0.98F} modified by the air drag modifier attribute.
+	 *
+	 * @return the air drag
+	 */
+	@Override
+	public float airDrag() {
+		return modifiedFriction(0.98F, LivingAttributes.AIR_DRAG_MODIFIER);
+	}
+
+	/**
+	 * {@code LivingEntity.computeModifiedFriction}: the share of speed a friction leaves, with the share it takes scaled
+	 * by a modifier attribute, from 26.2.
+	 *
+	 * @param friction the friction
+	 * @param modifier the attribute that scales it
+	 * @return the modified friction, between zero and one
+	 */
+	public float modifiedFriction(float friction, @NotNull Attribute modifier) {
+		float modified = 1.0F - (1.0F - friction) * (float) attributes.value(modifier);
+		return modified < 0.0F ? 0.0F : Math.min(modified, 1.0F);
 	}
 
 	/**

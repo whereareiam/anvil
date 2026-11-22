@@ -11,13 +11,17 @@ import me.whereareiam.anvil.edition.java.protocol.model.world.Level;
 import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.configuration.ClientboundRegistryData;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundPing;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundStartConfiguration;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ServerboundPong;
 import me.whereareiam.anvil.player.library.mcprotocol.client.translation.ConnectionLevel;
 import net.kyori.adventure.key.Key;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.GameMode;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerSpawnInfo;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
+import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundPingPacket;
+import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundPongPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundStartConfigurationPacket;
@@ -29,6 +33,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -167,8 +172,8 @@ class ConnectionPacketsTest {
 
 	@Test
 	void carriesEveryConnectionPacket() {
-		assertEquals(Set.of(ClientboundLogin.class, ClientboundRespawn.class, ClientboundStartConfiguration.class),
-				packets.packets());
+		assertEquals(Set.of(ClientboundLogin.class, ClientboundPing.class, ClientboundRespawn.class,
+				ClientboundStartConfiguration.class, ServerboundPong.class), packets.packets());
 	}
 
 	private void synchronize(RegistryEntry... types) {
@@ -178,6 +183,12 @@ class ConnectionPacketsTest {
 	private ClientboundRespawn respawnInto(int type) {
 		return (ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(spawnIn(Key.key("minecraft", "overworld"),
 				type, false, false), false, false));
+	}
+
+	@Test
+	void carriesThePingAndItsPong() {
+		assertEquals(new ClientboundPing(-7), packets.decode(new ClientboundPingPacket(-7)));
+		assertEquals(-7, assertInstanceOf(ServerboundPongPacket.class, packets.encode(new ServerboundPong(-7))).getId());
 	}
 
 	private static NbtCompound described(int minY, int height) {

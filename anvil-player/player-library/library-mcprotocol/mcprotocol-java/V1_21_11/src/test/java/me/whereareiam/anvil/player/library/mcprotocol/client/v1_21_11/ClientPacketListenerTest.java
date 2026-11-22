@@ -13,7 +13,6 @@ import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerSpawnIn
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundDisconnectPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundPingPacket;
-import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundPongPacket;
 import org.geysermc.mcprotocollib.protocol.packet.configuration.clientbound.ClientboundRegistryDataPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchFinishedPacket;
@@ -71,11 +70,11 @@ class ClientPacketListenerTest {
 	}
 
 	@Test
-	void answersAPingWithAPongCarryingItsIdentifier() {
+	void leavesAPingToThePlayersClient() {
 		receive(new ClientboundPingPacket(42));
 
-		assertEquals(List.of("sent ServerboundPongPacket"), events);
-		assertEquals(42, assertInstanceOf(ServerboundPongPacket.class, sent.getFirst()).getId());
+		assertEquals(List.of(), events);
+		assertTrue(sent.isEmpty());
 	}
 
 	@Test

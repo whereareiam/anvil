@@ -100,5 +100,10 @@ class JavaProtocolTest {
 		public @NotNull JavaWorld world() {
 			throw new UnsupportedOperationException("This test's protocol keeps no world");
 		}
+
+		@Override
+		public @NotNull LocalPlayer player() {
+			throw new UnsupportedOperationException("This test's protocol keeps no player");
+		}
 	}
 }

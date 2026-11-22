@@ -28,6 +28,16 @@ public final class VectorInput implements KeyInput {
 	}
 
 	@Override
+	public float leftImpulse() {
+		return leftImpulse;
+	}
+
+	@Override
+	public float forwardImpulse() {
+		return forwardImpulse;
+	}
+
+	@Override
 	public void read(@NotNull MovementInput keys) {
 		if (sprintTriggerTime > 0) sprintTriggerTime--;
 
@@ -85,7 +95,7 @@ public final class VectorInput implements KeyInput {
 	 */
 	@Override
 	public void apply() {
-		body.setJumping(body.getKeys().isJump());
+		body.setJumping(body.isJumpDown());
 		float x = leftImpulse;
 		float y = forwardImpulse;
 		if (x * x + y * y == 0.0F) {

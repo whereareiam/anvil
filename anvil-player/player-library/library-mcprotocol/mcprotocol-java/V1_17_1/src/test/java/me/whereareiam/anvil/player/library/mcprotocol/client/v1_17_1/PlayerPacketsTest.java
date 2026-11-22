@@ -40,7 +40,7 @@ class PlayerPacketsTest {
 
 	@Test
 	void decodesThePlacementKeepingTheVelocityAlongEachRelativeCoordinate() {
-		assertEquals(ClientboundPlayerPosition.builder().position(new Vec3d(0.5, -32, 0.5)).yaw(0).pitch(10)
+		assertEquals(ClientboundPlayerPosition.builder().id(3).position(new Vec3d(0.5, -32, 0.5)).yaw(0).pitch(10)
 						.relatives(Set.of(Relative.Y, Relative.DELTA_Y, Relative.PITCH)).build(),
 				packets.decode(new ServerPlayerPositionRotationPacket(0.5, -32, 0.5, 0, 10, 3, true,
 						List.of(PositionElement.Y, PositionElement.PITCH))));

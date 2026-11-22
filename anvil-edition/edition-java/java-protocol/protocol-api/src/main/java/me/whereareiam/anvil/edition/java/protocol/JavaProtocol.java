@@ -19,8 +19,10 @@ import java.util.function.Consumer;
  *
  * <p>The protocol belongs to the player, not to one connection. A listener receives the packets of whichever
  * connection is current until its subscription closes; packets a replaced connection still delivers never reach it.
- * Listeners run on the connection's packet thread, in the order the packets arrive. Bindings can also observe the
- * packets the player sends through the protocol, such as the movement another capability sends.</p>
+ * Listeners run on the connection's packet thread, in the order the packets arrive, under the lock of the client's
+ * {@link #player() own player}, which has applied the packet before them, so they never overlap the client's ticks.
+ * Bindings can also observe the packets the player sends through the protocol, such as the movement another capability
+ * sends.</p>
  *
  * <pre>{@code
  * JavaProtocol protocol = player.protocol(JavaProtocol.class);
@@ -92,8 +94,10 @@ public interface JavaProtocol {
 
 	/**
 	 * Observes the packets of one type the player sends through this protocol, whichever binding sends them, once
-	 * each was sent on the current connection. Packets the player's library sends on its own, such as the acceptance
-	 * of a teleport, are not reported. Listeners run on the sender's thread.
+	 * each was sent on the current connection, those the client sends on its own between ticks, such as its
+	 * {@link #player() own player}'s acceptance of a teleport and the answer to a ping, among them. Packets the player's
+	 * library sends on its own, as the vanilla client does on its network thread, such as the answer to a keep-alive,
+	 * are not reported. Listeners run on the sender's thread.
 	 *
 	 * <pre>{@code
 	 * Subscription moves = protocol.listenSent(ServerboundMovePlayerPosRot.class, move -> position = move.getPosition());
@@ -146,6 +150,20 @@ public interface JavaProtocol {
 	 * @return the player's world
 	 */
 	@NotNull JavaWorld world();
+
+	/**
+	 * Returns the client's own player, which accepts the server's teleports, follows what the server sets of its own
+	 * entity and ticks 20 times a second, whatever features the player installs. Every call returns the same player,
+	 * which belongs to the player, not to one connection.
+	 *
+	 * <pre>{@code
+	 * LocalPlayer client = protocol.player();
+	 * Optional<Vec3d> at = client.position();
+	 * }</pre>
+	 *
+	 * @return the client's own player
+	 */
+	@NotNull LocalPlayer player();
 
 	/**
 	 * Requires the packets a feature needs, so that a binding whose feature the loaded release lacks, such as cookies

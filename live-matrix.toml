@@ -3,8 +3,8 @@
 # (proxies) with its `java` is a combination the live suites run, and the build writes them into that provider's
 # version data as VERIFIED. Every server row's Minecraft version is also verified for the protocol library release
 # that speaks it. The scenarios request each row's Java explicitly, so verified data is exactly what runs. The server
-# test module builds the scenarios from this file and registers one releaseTest-<minecraft> task per Paper row, which
-# CI runs as one job each.
+# test module builds the scenarios from this file and registers one releaseTest-<minecraft> and one
+# physicsTest-<minecraft> task per Paper row, which CI runs as one job each.
 
 # One direct Paper server per MCProtocolLib release key, oldest first. The release suite runs every player capability
 # against it.

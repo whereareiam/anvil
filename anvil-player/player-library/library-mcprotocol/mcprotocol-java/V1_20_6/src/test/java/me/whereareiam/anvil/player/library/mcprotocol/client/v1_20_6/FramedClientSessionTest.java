@@ -20,6 +20,8 @@ import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketD
 import me.whereareiam.anvil.player.library.mcprotocol.netty.ReceivedFrames;
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.network.Session;
+import org.geysermc.mcprotocollib.network.event.session.DisconnectedEvent;
+import org.geysermc.mcprotocollib.network.event.session.SessionAdapter;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.ProtocolState;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundKeepAlivePacket;
@@ -27,6 +29,7 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.Clientbound
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.UUID;
@@ -44,12 +47,13 @@ class FramedClientSessionTest {
 	private final TestClientListener<Session> listener = new TestClientListener<>();
 	private final Deque<Packet> decoded = new ArrayDeque<>();
 	private final ClientProtocol protocol = new ClientProtocol(LOGIN);
+	private final FramedClientSession session = new FramedClientSession("localhost", 25565, protocol, listener,
+			McProtocolClientAdapter.packets(PacketDemand.EVERY));
 	private final EmbeddedChannel channel = new EmbeddedChannel(new ChannelInitializer<>() {
 		@Override
 		protected void initChannel(Channel channel) {
 			channel.pipeline().addLast(ReceivedFrames.CODEC, new TestDecoder());
-			channel.pipeline().addLast("manager", new FramedClientSession("localhost", 25565, protocol, listener,
-					McProtocolClientAdapter.packets(PacketDemand.EVERY)));
+			channel.pipeline().addLast("manager", session);
 		}
 	});
 
@@ -76,6 +80,37 @@ class FramedClientSessionTest {
 				new TestClientListener.Frame(ConnectionState.PLAY, 0x1F, new byte[]{3}, null)
 		), listener.frames());
 		assertEquals(List.of(), listener.received());
+	}
+
+	@Test
+	void callsItsListenersOnTheChannelsThreadRightAfterDeliveringEachPacket() {
+		List<String> calls = new ArrayList<>();
+		session.addListener(new SessionAdapter() {
+			@Override
+			public void packetReceived(Session ignored, Packet packet) {
+				calls.add(packet.getClass().getSimpleName() + " after " + listener.received().size());
+			}
+		});
+
+		receive(new ClientboundSystemChatPacket(Component.text("anvil:welcome"), false), 0x0E);
+		receive(new ClientboundKeepAlivePacket(7), 0x1F);
+
+		assertEquals(List.of("ClientboundSystemChatPacket after 1", "ClientboundKeepAlivePacket after 1"), calls);
+	}
+
+	@Test
+	void tellsItsListenerOfTheOpenConnectionAndOfItsCloseBeforeTheSessionHandlesTheClose() {
+		List<String> calls = new ArrayList<>();
+		session.addListener(new SessionAdapter() {
+			@Override
+			public void disconnected(DisconnectedEvent event) {
+				calls.add("session disconnected after " + listener.events());
+			}
+		});
+
+		channel.close();
+
+		assertEquals(List.of("session disconnected after [opened, closed]"), calls);
 	}
 
 	/**

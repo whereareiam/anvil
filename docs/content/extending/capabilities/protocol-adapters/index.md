@@ -176,8 +176,9 @@ protocol's tags in `model.nbt`: `NbtCompound` keeps its entries in order, finds 
 The protocol belongs to the player, not to one connection: a listener receives the packets of whichever connection
 is current, never a late packet of a replaced one, and `send` uses the current connection and fails while the
 player is disconnected. `protocol.listenSent(type, listener)` observes the packets the player sends through the
-protocol, whichever capability sends them, such as the moves of Movement; packets the library sends on its own,
-such as the acceptance of a teleport, are not reported. Close your subscriptions from `WorkerBinding.close()`, and
+protocol, whichever capability sends them, such as the moves of Movement, and the client's own answers, such as the
+acceptance of a teleport and the pong of a ping; packets the library sends on its own, such as the answer to a
+keep-alive, are not reported. Close your subscriptions from `WorkerBinding.close()`, and
 keep state such as counters in an object created by `bind`, so different players cannot share it.
 `Subscription.all(...)` closes several subscriptions together, each one even when another fails:
 
@@ -196,6 +197,27 @@ carries it. When your capability cannot work without some packets, require them 
 unavailable with that message, and the player keeps its other capabilities. `listen` and `send` throw it themselves
 for a packet the release cannot carry. A player of a library that does not speak the Java Edition protocol throws it
 from `protocol(JavaProtocol.class)`.
+
+### Read and move the client's own player
+
+`protocol.player()` returns the client's own player, its `LocalPlayer`, which every Java Edition player has whatever
+it installs: the position, view, velocity and ground state its client knows, and the entity ID, game mode and death
+the server set. It accepts each server teleport as the vanilla client does, ends each tick from Minecraft 1.21.2 and
+tells the server once it loaded its level from 1.21.4, and its client answers each ping, so an extension never
+answers these itself. The client applies
+every packet and runs its twenty ticks a second under one lock, which packet listeners run under too; take it with
+`run(...)` or `get(...)` to read and change the player at one moment, and never wait in it for the player's packets.
+
+```java
+LocalPlayer client = protocol.player();
+Optional<Vec3d> at = client.position();
+Subscription ticks = client.onTick(() -> client.position().ifPresent(position ->
+		client.position(new Vec3d(position.getX(), position.getY() - 0.1, position.getZ()))));
+```
+
+`onTick(...)` runs your own tick of the player within the client's tick, between the connection's tick and the tick
+end, while the player has joined a level, its position is known and its level has loaded; this is how Movement's
+client physics moves the player. Moving the player tells the server nothing: send what the vanilla client would.
 
 ### Read the world the client knows
 
@@ -243,7 +265,8 @@ login, or the reason the connection ended. Use `Void` with a `null` payload when
 
 Register host subscription cleanup with `context.on(Closed.class, closed -> ...)`; a player reports only
 `Closed`, when it is destroyed for good. `player.viewRotation()` returns the shared
-`ViewRotation`: yaw and pitch in degrees, including server corrections. Movement updates it when sending a new
+`ViewRotation`: yaw and pitch in degrees, including server corrections. For a Java Edition player it is the view of
+the client's own player, `protocol.player()`, which every teleport turns; Movement updates it when sending a new
 direction, and interaction reads it for the current view; `player.viewRotation(rotation)` only records the value.
 
 ## Reach a packet the protocol does not carry yet

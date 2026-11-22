@@ -1,19 +1,13 @@
 package me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5;
 
 import com.github.steveice10.mc.auth.data.GameProfile;
-import com.github.steveice10.mc.protocol.data.game.entity.player.Animation;
 import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
-import com.github.steveice10.mc.protocol.data.game.entity.player.Hand;
 import com.github.steveice10.mc.protocol.data.handshake.HandshakeIntent;
 import com.github.steveice10.mc.protocol.packet.handshake.client.HandshakePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.ClientPluginMessagePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.ClientSettingsPacket;
-import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerSwingArmPacket;
-import com.github.steveice10.mc.protocol.packet.ingame.client.window.ClientConfirmTransactionPacket;
-import com.github.steveice10.mc.protocol.packet.ingame.client.world.ClientTeleportConfirmPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerDisconnectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerJoinGamePacket;
-import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityAnimationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerPositionRotationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerConfirmTransactionPacket;
 import com.github.steveice10.mc.protocol.packet.login.server.EncryptionRequestPacket;
@@ -62,7 +56,7 @@ class ClientPacketListenerTest {
 	private final List<Packet> sent = new ArrayList<>();
 	private final Session session = session();
 	private final ClientPacketListener listener = new ClientPacketListener(LOGIN, new TestClientListener<>(events),
-			new ReleaseAnswers(), new TextTranslator());
+			new ReleaseClientInformation(), new TextTranslator());
 
 	@Test
 	void answersTheJoinWithClientSettingsAndTheBrandBeforeReportingTheLoginWithTheGrantedProfile() {
@@ -81,24 +75,19 @@ class ClientPacketListenerTest {
 	}
 
 	@Test
-	void reportsATeleportBeforeConfirmingIt() {
+	void leavesATeleportToThePlayersClient() {
 		receive(new ServerPlayerPositionRotationPacket(1, 64, -2, 90, -15, 7));
 
-		assertEquals(List.of("teleported 90.0 -15.0", "sent ClientTeleportConfirmPacket"), events);
-		assertEquals(7, assertInstanceOf(ClientTeleportConfirmPacket.class, sent.getFirst()).getId());
+		assertEquals(List.of(), events);
+		assertTrue(sent.isEmpty());
 	}
 
 	@Test
-	void acknowledgesARejectedTransactionAndNothingElse() {
-		receive(new ServerConfirmTransactionPacket(3, 12, true));
-		receive(new ServerConfirmTransactionPacket(3, 13, false));
+	void leavesARejectedTransactionToThePlayersClient() {
+		receive(new ServerConfirmTransactionPacket(0, -13, false));
 
-		ClientConfirmTransactionPacket acknowledged = assertInstanceOf(ClientConfirmTransactionPacket.class,
-				sent.getFirst());
-		assertEquals(1, sent.size());
-		assertEquals(3, acknowledged.getWindowId());
-		assertEquals(13, acknowledged.getActionId());
-		assertTrue(acknowledged.isAccepted());
+		assertEquals(List.of(), events);
+		assertTrue(sent.isEmpty());
 	}
 
 	@Test
@@ -135,7 +124,7 @@ class ClientPacketListenerTest {
 				new HandshakePacket(754, "127.0.0.1", 25577, HandshakeIntent.LOGIN));
 
 		new ClientPacketListener(virtual, new TestClientListener<>(events),
-				new ReleaseAnswers(), new TextTranslator()).packetSending(handshake);
+				new ReleaseClientInformation(), new TextTranslator()).packetSending(handshake);
 
 		HandshakePacket announced = assertInstanceOf(HandshakePacket.class, handshake.getPacket());
 		assertEquals("lobby.example.test", announced.getHostname());
@@ -147,23 +136,6 @@ class ClientPacketListenerTest {
 		receive(new LoginSuccessPacket(new GameProfile(GRANTED, "Alice_Renamed")));
 
 		assertEquals(List.of("granted Alice_Renamed " + GRANTED), events);
-	}
-
-	@Test
-	void swingsBackTheArmTheServerSwingsOfThePlayersOwnEntity() {
-		receive(new LoginSuccessPacket(new GameProfile(GRANTED, "Alice_Renamed")));
-		receive(new ServerJoinGamePacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL, 1,
-				new String[0], codec(), overworld(), "minecraft:overworld", 0, 20, 10, false, true, false, false));
-		sent.clear();
-
-		receive(new ServerEntityAnimationPacket(42, Animation.SWING_ARM));
-		receive(new ServerEntityAnimationPacket(42, Animation.EAT_FOOD));
-		receive(new ServerEntityAnimationPacket(7, Animation.SWING_ARM));
-		receive(new ServerEntityAnimationPacket(42, Animation.CRITICAL_HIT));
-
-		assertEquals(List.of(Hand.MAIN_HAND, Hand.OFF_HAND), sent.stream()
-				.map(packet -> assertInstanceOf(ClientPlayerSwingArmPacket.class, packet).getHand())
-				.toList());
 	}
 
 	private void receive(Packet packet) {

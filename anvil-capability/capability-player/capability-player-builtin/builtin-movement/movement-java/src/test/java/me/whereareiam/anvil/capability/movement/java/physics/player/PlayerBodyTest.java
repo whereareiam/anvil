@@ -9,10 +9,8 @@ import me.whereareiam.anvil.edition.java.protocol.model.entity.state.AttributeSn
 import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundUpdateAttributes;
 import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundUpdateMobEffect;
 import me.whereareiam.anvil.edition.java.protocol.packet.player.ClientboundPlayerAbilities;
-import me.whereareiam.anvil.edition.java.protocol.packet.world.ClientboundGameEvent;
 import me.whereareiam.anvil.edition.java.protocol.type.entity.AttributeOperation;
 import me.whereareiam.anvil.edition.java.protocol.type.player.GameMode;
-import me.whereareiam.anvil.edition.java.protocol.type.world.GameEventType;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -35,8 +33,7 @@ class PlayerBodyTest {
 	void passesThroughBlocksAsASpectator() {
 		TestClient client = new TestClient("1.21.11").join().load(0, 0).floor(0, 15, 64, 0, 15, "minecraft:stone");
 		for (int y = 65; y < 68; y++) client.floor(0, 15, y, 10, 10, "minecraft:stone");
-		PlayerState state = client.send().state(GameMode.SURVIVAL);
-		state.gameEvent(new ClientboundGameEvent(GameEventType.CHANGE_GAME_MODE, 3.0F));
+		PlayerState state = client.send().state(GameMode.SPECTATOR);
 		PlayerSimulation player = client.simulation(state, 8.5, 65.0, 8.5);
 
 		for (int tick = 0; tick < 60; tick++) player.tick(FORWARD);

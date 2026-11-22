@@ -4,8 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.edition.java.protocol.JavaProtocol;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.world.DimensionType;
 import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemChat;
 import me.whereareiam.anvil.edition.java.protocol.packet.chat.ServerboundChat;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.player.api.channel.Subscription;
 import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.player.api.model.channel.EventDescriptor;
@@ -51,6 +54,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class McProtocolPlayerTest {
+	private static final String OVERWORLD = "minecraft:overworld";
+
 	private final ByteArrayOutputStream output = new ByteArrayOutputStream();
 	private final RecordingClient client = new RecordingClient();
 	private final UUID uuid = UUID.randomUUID();
@@ -79,7 +84,16 @@ class McProtocolPlayerTest {
 	}
 
 	@Test
-	void reportsConnectionEventsAndViewOnlyForTheCurrentSession() {
+	void sharesItsViewWithItsClientsOwnPlayer() {
+		try (McProtocolPlayer player = player(null)) {
+			player.viewRotation(new ViewRotation(30, 40));
+
+			assertEquals(new ViewRotation(30, 40), player.protocol(JavaProtocol.class).player().rotation());
+		}
+	}
+
+	@Test
+	void reportsConnectionEventsOnlyForTheCurrentSession() {
 		try (McProtocolPlayer player = player(null)) {
 			player.connect();
 			Object first = client.sessions().getFirst();
@@ -87,14 +101,11 @@ class McProtocolPlayerTest {
 			Object second = client.sessions().get(1);
 
 			client.listener(first).loggedIn(first, granted("Alice"));
-			client.listener(first).teleported(first, 10, 20);
 			client.listener(first).disconnected(first, DisconnectCause.SERVER, "replaced");
 			client.listener(second).loggedIn(second, granted("Alice_Renamed"));
-			client.listener(second).teleported(second, 30, 40);
 			client.listener(second).disconnected(second, DisconnectCause.SERVER, "kicked anvil:requested-kick");
 			client.listener(second).disconnected(second, DisconnectCause.CONNECTION_LOST, "closed");
 
-			assertEquals(new ViewRotation(30, 40), player.viewRotation());
 			assertEquals(List.of("Disconnected by Anvil"), client.disconnects());
 			assertEquals(List.of(
 					new PlayerConnectionEvent(true, null, null, new PlayerProfile("Alice_Renamed", uuid)),
@@ -164,6 +175,67 @@ class McProtocolPlayerTest {
 
 			assertEquals(List.of("attach", "close with 0 events"), bindings);
 			assertEquals(1, events().size());
+		}
+	}
+
+	@Test
+	void keepsSendingOnASessionWhoseChannelClosedUntilItsProtocolHeardOfTheClose() {
+		try (McProtocolPlayer player = player(null)) {
+			JavaProtocol protocol = player.protocol(JavaProtocol.class);
+			player.connect();
+			Object session = client.sessions().getFirst();
+			client.listener(session).received(session, login());
+
+			client.closeChannel(session);
+			protocol.send(new ServerboundChat("sent by a tick before the close arrived"));
+			client.listener(session).closed(session);
+
+			assertEquals(List.of(new ServerboundChat("sent by a tick before the close arrived")), client.sent(session));
+			assertTrue(protocol.player().entityId().isEmpty());
+			assertThrows(IllegalStateException.class, player::nativeSession);
+		}
+	}
+
+	@Test
+	void tellsItsProtocolOfTheCloseBeforeTheConnectionsBindingsEndAndItReportsTheDisconnect() {
+		try (McProtocolPlayer player = player(null)) {
+			JavaProtocol protocol = player.protocol(JavaProtocol.class);
+			List<String> order = new ArrayList<>();
+			player.bindConnection(() -> () -> order.add("bindings end, client knows entity "
+					+ protocol.player().entityId().isPresent()));
+			player.connect();
+			Object session = client.sessions().getFirst();
+			client.listener(session).received(session, login());
+
+			client.closeChannel(session);
+			client.listener(session).closed(session);
+			order.add("closed, client knows entity " + protocol.player().entityId().isPresent()
+					+ ", " + events().size() + " events");
+			client.listener(session).disconnected(session, DisconnectCause.SERVER, "anvil:kicked");
+
+			assertEquals(List.of("closed, client knows entity false, 0 events",
+					"bindings end, client knows entity false"), order);
+			assertEquals(1, events().size());
+		}
+	}
+
+	@Test
+	void closesTheConnectionForItsProtocolBeforeItDisconnectsOrRejoins() {
+		try (McProtocolPlayer player = player(null)) {
+			JavaProtocol protocol = player.protocol(JavaProtocol.class);
+			player.connect();
+			Object first = client.sessions().getFirst();
+			client.listener(first).received(first, login());
+
+			player.rejoin();
+
+			assertTrue(protocol.player().entityId().isEmpty());
+			assertSame(client.sessions().get(1), player.nativeSession());
+			Object second = client.sessions().get(1);
+			client.listener(second).received(second, login());
+			client.closeChannel(second);
+			player.connect();
+			assertTrue(protocol.player().entityId().isEmpty(), "a session replaced before its close arrived");
 		}
 	}
 
@@ -325,6 +397,11 @@ class McProtocolPlayerTest {
 				return binding.apply(player, operations);
 			}
 		};
+	}
+
+	private static ClientboundLogin login() {
+		return ClientboundLogin.builder().entityId(new EntityId(7)).level(OVERWORLD).dimension(OVERWORLD)
+				.dimensionType(DimensionType.known(OVERWORLD)).build();
 	}
 
 	private ClientProfile granted(String name) {

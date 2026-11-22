@@ -16,7 +16,6 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.Serv
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerCloseWindowPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerOpenWindowPacket;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.edition.java.protocol.PlayerInventoryLayout;
 import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
@@ -25,16 +24,19 @@ import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.Cli
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerSetContent;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundOpenScreen;
+import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ServerboundContainerClick;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ClientboundSetHeldSlot;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ClientboundSetPlayerInventory;
-import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ServerboundContainerClick;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ServerboundSetCarriedItem;
+import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.player.library.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTranslation;
 import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -83,7 +85,8 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 
 	@Override
 	public final @NotNull Set<Class<? extends JavaPacket>> packets() {
-		return Set.of(
+		Set<Class<? extends JavaPacket>> packets = new HashSet<>(releasePackets());
+		packets.addAll(List.of(
 				ClientboundOpenScreen.class,
 				ClientboundContainerClose.class,
 				ClientboundContainerSetContent.class,
@@ -92,7 +95,8 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 				ClientboundSetHeldSlot.class,
 				ServerboundSetCarriedItem.class,
 				ServerboundContainerClick.class
-		);
+		));
+		return Set.copyOf(packets);
 	}
 
 	@Override
@@ -103,7 +107,7 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 		if (packet instanceof ServerCloseWindowPacket close) return new ClientboundContainerClose(close.getWindowId());
 		if (packet instanceof ServerPlayerChangeHeldItemPacket held) return new ClientboundSetHeldSlot(held.getSlot());
 
-		return decodeContents(packet);
+		return decodeRelease(packet);
 	}
 
 	@Override
@@ -112,17 +116,34 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 			return new ClientPlayerChangeHeldItemPacket(carried.getSlot());
 		if (packet instanceof ServerboundContainerClick click) return click(click, action(click), param(click));
 
-		return null;
+		return encodeRelease(packet);
 	}
 
 	/**
-	 * Reads a packet that fills a container or changes one slot: of a container, of the cursor or of the player's own
-	 * inventory.
+	 * Returns the packets the release carries beyond those every release of the chain carries alike: before Minecraft
+	 * 1.17 the server's confirmation of a container action and the client's acknowledgement of a rejected one.
+	 *
+	 * @return the release's own packets of the area
+	 */
+	protected abstract @NotNull Set<Class<? extends JavaPacket>> releasePackets();
+
+	/**
+	 * Reads a packet the release reads its own way: one that fills a container or changes one slot, of a container, of
+	 * the cursor or of the player's own inventory, whose state IDs Minecraft 1.17 introduced, or one of the release's
+	 * {@linkplain #releasePackets() own packets}.
 	 *
 	 * @param packet a packet the release received
-	 * @return the protocol's packet, or {@code null} when the packet changes no container
+	 * @return the protocol's packet, or {@code null} when the packet is none of these
 	 */
-	protected abstract @Nullable ClientboundPacket decodeContents(@NotNull Packet packet);
+	protected abstract @Nullable ClientboundPacket decodeRelease(@NotNull Packet packet);
+
+	/**
+	 * Builds the release's packet of one of its {@linkplain #releasePackets() own packets}.
+	 *
+	 * @param packet the protocol's packet to send
+	 * @return the release's packet, or {@code null} when the packet is none of the release's own
+	 */
+	protected abstract @Nullable Packet encodeRelease(@NotNull ServerboundPacket packet);
 
 	/**
 	 * Builds the release's click packet, which predicts no changed slots and no picked up stack.
