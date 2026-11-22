@@ -77,7 +77,7 @@ val sharedTestDoubleContracts = mapOf(
 			":anvil-edition:edition-java:java-protocol:protocol-api",
 			":anvil-edition:edition-java:java-protocol:protocol-worker",
 		)),
-	"me.whereareiam.anvil.protocol.mcprotocol.client.ClientListener"
+	"me.whereareiam.anvil.player.library.mcprotocol.client.ClientListener"
 		to SharedTestDouble("mcprotocol-api's TestClientListener",
 			setOf(":anvil-player:player-library:library-mcprotocol:mcprotocol-api")),
 )

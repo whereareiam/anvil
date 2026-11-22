@@ -1,0 +1,41 @@
+package me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5;
+
+import com.github.steveice10.mc.protocol.packet.ingame.server.ServerTitlePacket;
+import com.github.steveice10.packetlib.packet.Packet;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundClearTitles;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetActionBarText;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetSubtitleText;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetTitleText;
+import me.whereareiam.anvil.edition.java.protocol.packet.overlay.ClientboundSetTitlesAnimation;
+import me.whereareiam.anvil.player.library.mcprotocol.adventure.ComponentTranslator;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+/**
+ * Titles of the MCProtocolLib 1.16.5 release, which shows, times, clears and resets titles and shows action bars
+ * through one title packet whose action says what it does; the translation reports each action as the packet
+ * Minecraft 1.17 gave it. Clearing keeps the title times, resetting restores the default ones.
+ */
+final class OverlayPackets extends OverlayTranslation {
+	private static final boolean KEEP_TIMES = false;
+	private static final boolean RESET_TIMES = true;
+
+	OverlayPackets(@NotNull ComponentTranslator text) {
+		super(text);
+	}
+
+	@Override
+	protected @Nullable ClientboundPacket decodeTitle(@NotNull Packet packet) {
+		if (!(packet instanceof ServerTitlePacket title)) return null;
+
+		return switch (title.getAction()) {
+			case TITLE -> new ClientboundSetTitleText(text.translate(title.getTitle()).plain());
+			case SUBTITLE -> new ClientboundSetSubtitleText(text.translate(title.getTitle()).plain());
+			case ACTION_BAR -> new ClientboundSetActionBarText(text.translate(title.getTitle()).plain());
+			case TIMES -> new ClientboundSetTitlesAnimation(title.getFadeIn(), title.getStay(), title.getFadeOut());
+			case CLEAR -> new ClientboundClearTitles(KEEP_TIMES);
+			case RESET -> new ClientboundClearTitles(RESET_TIMES);
+		};
+	}
+}

@@ -1,0 +1,64 @@
+package me.whereareiam.anvil.player.library.mcprotocol.client.v1_21_11;
+
+import me.whereareiam.anvil.player.library.mcprotocol.client.translation.ConnectionLevel;
+import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketDemand;
+import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTable;
+import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.ConfigurationPackets;
+import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.EffectPackets;
+import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.HealthPackets;
+import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.ItemTranslator;
+import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.JavaClient;
+import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.OverlayPackets;
+import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.SynchronizedRegistries;
+import me.whereareiam.anvil.player.library.mcprotocol.client.v1_21_1.AttributePackets;
+import org.geysermc.mcprotocollib.network.ClientSession;
+import org.geysermc.mcprotocollib.network.packet.Packet;
+
+import java.util.List;
+
+/**
+ * The client segment's adapter for the MCProtocolLib 1.21.11 release: the 1.21 {@link JavaClient} with the release's
+ * network sessions and packet table, which keeps the 1.21 attribute, connection, effect and overlay translations.
+ */
+public final class McProtocolClientAdapter extends JavaClient<ClientSession> {
+	private static final TextTranslator TEXT = new TextTranslator();
+	private static final ItemTranslator ITEMS = new ComponentItemTranslator(TEXT);
+
+	/**
+	 * Creates the client of the MCProtocolLib 1.21.11 release.
+	 */
+	public McProtocolClientAdapter() {
+		super(new NetworkClientSessions(TEXT, ReleaseAnswers::new), McProtocolClientAdapter::packets);
+	}
+
+	/**
+	 * Returns a new packet table of the MCProtocolLib 1.21.11 release.
+	 *
+	 * @param demand the packets the session wants decoded
+	 * @return the release's translations
+	 */
+	static PacketTable<Packet> packets(PacketDemand demand) {
+		SynchronizedRegistries registries = new SynchronizedRegistries();
+		ConnectionLevel level = new ConnectionLevel();
+		return new PacketTable<>(List.of(
+				new AttributePackets(),
+				new BorderPackets(),
+				new ChatPackets(TEXT),
+				new ChunkPackets(level, demand),
+				new CommandPackets(),
+				new ConfigurationPackets(registries),
+				new ConnectionPackets(registries, level),
+				new CookiePackets(),
+				new DialogPackets(),
+				new EffectPackets(),
+				new EntityPackets(TEXT, ITEMS),
+				new HealthPackets(TEXT),
+				new InteractionPackets(),
+				new InventoryPackets(TEXT, ITEMS),
+				new PlayerPackets(),
+				new OverlayPackets(TEXT),
+				new SoundPackets(),
+				new WorldPackets()
+		));
+	}
+}

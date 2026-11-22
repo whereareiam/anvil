@@ -30,7 +30,7 @@ import javax.inject.Inject
  * ```kotlin
  * segment {
  *     extends(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolJava.v12111)
- *     replaces("me.whereareiam.anvil.protocol.mcprotocol.client.v1_21_11.InteractionPackets")
+ *     replaces("me.whereareiam.anvil.player.library.mcprotocol.client.v1_21_11.InteractionPackets")
  * }
  * ```
  */

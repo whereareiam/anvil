@@ -1,0 +1,24 @@
+package me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5;
+
+import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityDestroyPacket;
+import com.github.steveice10.packetlib.packet.Packet;
+import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
+import me.whereareiam.anvil.player.library.mcprotocol.adventure.ComponentTranslator;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+/**
+ * Entities of the MCProtocolLib 1.16.5 release, which removes entities through its destroy packet.
+ */
+final class EntityPackets extends EntityTranslation {
+	EntityPackets(@NotNull ComponentTranslator text, @NotNull ItemTranslator items) {
+		super(EntityDataTable.LAYOUT, text, items);
+	}
+
+	@Override
+	protected @Nullable ClientboundPacket decodeRemoval(@NotNull Packet packet) {
+		if (!(packet instanceof ServerEntityDestroyPacket destroy)) return null;
+
+		return removed(destroy.getEntityIds());
+	}
+}

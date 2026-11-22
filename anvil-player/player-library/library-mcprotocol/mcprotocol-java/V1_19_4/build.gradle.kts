@@ -8,15 +8,15 @@ plugins {
 segment {
 	extends(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolJava.v1182)
 	replaces(
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ChatPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ChunkPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.CommandPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.ConnectionPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.EntityDataTable",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.EntityPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.InteractionPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.SoundPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_18_2.WorldPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_18_2.ChatPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_18_2.ChunkPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_18_2.CommandPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_18_2.ConnectionPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_18_2.EntityDataTable",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_18_2.EntityPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_18_2.InteractionPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_18_2.SoundPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_18_2.WorldPackets",
 	)
 }
 

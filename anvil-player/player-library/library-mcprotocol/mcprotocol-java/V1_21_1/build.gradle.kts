@@ -10,12 +10,12 @@ plugins {
 segment {
 	extends(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolJava.v1206)
 	replaces(
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.AttributePackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ClientConfiguration",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.ClientProtocol",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.FramedClientSession",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.InteractionPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_20_6.TcpClientSessions",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.AttributePackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.ClientConfiguration",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.ClientProtocol",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.FramedClientSession",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.InteractionPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.TcpClientSessions",
 	)
 }
 

@@ -10,16 +10,16 @@ plugins {
 segment {
 	extends(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolJava.v1165)
 	replaces(
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.BorderPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.CommandPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.EffectPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.EntityDataTable",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.EntityPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.HealthPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.InventoryPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.ReleaseAnswers",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.OverlayPackets",
-		"me.whereareiam.anvil.protocol.mcprotocol.client.v1_16_5.WorldPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.BorderPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.CommandPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.EffectPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.EntityDataTable",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.EntityPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.HealthPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.InventoryPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.ReleaseAnswers",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.OverlayPackets",
+		"me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.WorldPackets",
 	)
 }
 
