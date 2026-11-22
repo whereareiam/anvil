@@ -20,8 +20,8 @@ class ClientBehaviourTest {
 
 	@Test
 	void appliesUntilTheVersionThatEndedABehaviour() {
-		assertTrue(ClientBehaviour.TELEPORT_CONFIRMATION.appliesTo(version("26.2")));
-		assertFalse(ClientBehaviour.TELEPORT_CONFIRMATION.appliesTo(version("26.3")));
+		assertTrue(ClientBehaviour.AUTO_JUMP.appliesTo(version("1.18.2")));
+		assertFalse(ClientBehaviour.AUTO_JUMP.appliesTo(version("1.19")));
 	}
 
 	@Test

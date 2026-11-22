@@ -13,6 +13,7 @@ import me.whereareiam.anvil.edition.java.protocol.model.entity.SharedFlags;
 import me.whereareiam.anvil.edition.java.protocol.model.entity.ShownItem;
 import me.whereareiam.anvil.edition.java.protocol.model.inventory.ItemStack;
 import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
+import me.whereareiam.anvil.edition.java.protocol.type.entity.Relative;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,28 +27,20 @@ import java.util.UUID;
 
 /**
  * The entities one connection of a player knows, built from the packets of the connection as a client builds them.
- * It separates the facts about an entity from its continuous state: a packet that spawns or removes an entity, or
- * changes what it shows or what it rides, returns the changes it caused, in order, while moves and turns of an entity
- * or the player only update the state that {@link #known()} reads. A spawn over a known ID first removes the old
- * entity, and a change of passengers also changes every entity whose riding of the player it changes.
+ * A packet that spawns or removes an entity, or changes what it shows or what it rides, returns the changes it caused,
+ * in order, while moves and turns of an entity only update the state that {@link #known()} reads. A spawn over a known
+ * ID first removes the old entity, and a change of passengers also changes every entity whose riding of the player it
+ * changes. What depends on the player, riding it and the distance to it, its {@link PlayerMeasure} measures whenever a
+ * change or {@link #known()} returns an entity.
  *
- * <p>Entities are kept without what depends on the player; their riding of the player and their distance to it are
- * measured whenever a change or {@link #known()} returns them, against the player's position at that moment.</p>
- *
- * <p>Received packets arrive on the connection's thread, the player's own moves on the thread that sends them and
- * reads on the worker's, so every access holds the monitor.</p>
+ * <p>Received packets arrive under the client's lock and reads take that lock first too, so every access holds the
+ * monitor after the client's lock.</p>
  */
 @RequiredArgsConstructor
 final class EntityTracker {
-	private static final int NO_PLAYER = -1;
-
 	private final int connection;
+	private final @NotNull PlayerMeasure measure;
 	private Map<Integer, SeenEntity> entities = new LinkedHashMap<>();
-	private int playerId = NO_PLAYER;
-	private double playerX;
-	private double playerY;
-	private double playerZ;
-	private boolean playerPlaced;
 
 	/**
 	 * The server let the player into a level with an entity ID of its own; the client forgets every entity it knew.
@@ -57,7 +50,7 @@ final class EntityTracker {
 	 */
 	synchronized @NotNull List<EntityChange> join(int entityId) {
 		List<EntityChange> changes = clear();
-		playerId = entityId;
+		measure.join(entityId);
 		return changes;
 	}
 
@@ -70,28 +63,10 @@ final class EntityTracker {
 	synchronized @NotNull List<EntityChange> clear() {
 		List<EntityChange> changes = new ArrayList<>();
 		for (SeenEntity entity : entities.values())
-			changes.add(new EntityChange(EntityChangeKind.DISAPPEARED, measure(entity, entities), null));
+			changes.add(new EntityChange(EntityChangeKind.DISAPPEARED, measure.measure(entity, entities), null));
 
 		entities = new LinkedHashMap<>();
 		return changes;
-	}
-
-	/**
-	 * Moves the player: the server placed it, or the player sent its own movement. Each coordinate is either absolute
-	 * or added to the current one.
-	 */
-	synchronized void movePlayer(
-			double x,
-			double y,
-			double z,
-			boolean relativeX,
-			boolean relativeY,
-			boolean relativeZ
-	) {
-		playerX = relativeX ? playerX + x : x;
-		playerY = relativeY ? playerY + y : y;
-		playerZ = relativeZ ? playerZ + z : z;
-		playerPlaced = true;
 	}
 
 	/**
@@ -127,36 +102,28 @@ final class EntityTracker {
 				.passengerIds(List.of())
 				.build();
 		entities.put(entityId, entity);
-		changes.add(new EntityChange(EntityChangeKind.APPEARED, measure(entity, entities), null));
+		changes.add(new EntityChange(EntityChangeKind.APPEARED, measure.measure(entity, entities), null));
 		return changes;
 	}
 
 	/**
-	 * Moves a known entity. Each coordinate is either absolute or added to the current one.
+	 * Moves a known entity. Each coordinate the relatives name is added to the current one, every other is absolute.
 	 */
-	synchronized void move(
-			int entityId,
-			double x,
-			double y,
-			double z,
-			boolean relativeX,
-			boolean relativeY,
-			boolean relativeZ
-	) {
+	synchronized void move(int entityId, @NotNull Vec3d position, @NotNull Set<Relative> relatives) {
 		entities.computeIfPresent(entityId, (id, entity) -> entity.toBuilder()
-				.x(relativeX ? entity.getX() + x : x)
-				.y(relativeY ? entity.getY() + y : y)
-				.z(relativeZ ? entity.getZ() + z : z)
+				.x(relatives.contains(Relative.X) ? entity.getX() + position.getX() : position.getX())
+				.y(relatives.contains(Relative.Y) ? entity.getY() + position.getY() : position.getY())
+				.z(relatives.contains(Relative.Z) ? entity.getZ() + position.getZ() : position.getZ())
 				.build());
 	}
 
 	/**
-	 * Turns a known entity. Each angle, in degrees, is either absolute or added to the current one.
+	 * Turns a known entity. Each angle in degrees the relatives name is added to the current one, every other is set.
 	 */
-	synchronized void turn(int entityId, float yaw, float pitch, boolean relativeYaw, boolean relativePitch) {
+	synchronized void turn(int entityId, float yaw, float pitch, @NotNull Set<Relative> relatives) {
 		entities.computeIfPresent(entityId, (id, entity) -> entity.toBuilder()
-				.yaw(relativeYaw ? entity.getYaw() + yaw : yaw)
-				.pitch(relativePitch ? entity.getPitch() + pitch : pitch)
+				.yaw(relatives.contains(Relative.YAW) ? entity.getYaw() + yaw : yaw)
+				.pitch(relatives.contains(Relative.PITCH) ? entity.getPitch() + pitch : pitch)
 				.build());
 	}
 
@@ -227,7 +194,7 @@ final class EntityTracker {
 		for (SeenEntity entity : entities.values()) {
 			if (!removed.contains(entity.getId())) continue;
 
-			changes.add(new EntityChange(EntityChangeKind.DISAPPEARED, measure(entity, entities), null));
+			changes.add(new EntityChange(EntityChangeKind.DISAPPEARED, measure.measure(entity, entities), null));
 		}
 		if (changes.isEmpty()) return changes;
 
@@ -246,13 +213,12 @@ final class EntityTracker {
 	}
 
 	/**
-	 * Returns every entity the connection knows now, in the order they appeared, measured against the player's
-	 * current position.
+	 * Returns every entity the connection knows now, in the order they appeared, measured against the player now.
 	 *
 	 * @return the known entities
 	 */
 	synchronized @NotNull List<SeenEntity> known() {
-		return entities.values().stream().map(entity -> measure(entity, entities)).toList();
+		return entities.values().stream().map(entity -> measure.measure(entity, entities)).toList();
 	}
 
 	/**
@@ -266,46 +232,11 @@ final class EntityTracker {
 		List<EntityChange> changes = new ArrayList<>();
 		for (SeenEntity entity : next.values()) {
 			SeenEntity before = previous.get(entity.getId());
-			if (before == null || facts(before, previous).equals(facts(entity, next))) continue;
+			if (before == null || measure.facts(before, previous).equals(measure.facts(entity, next))) continue;
 
-			changes.add(new EntityChange(EntityChangeKind.CHANGED, measure(entity, next), measure(before, previous)));
+			changes.add(new EntityChange(EntityChangeKind.CHANGED, measure.measure(entity, next), measure.measure(before, previous)));
 		}
 		return changes;
-	}
-
-	private SeenEntity facts(SeenEntity entity, Map<Integer, SeenEntity> known) {
-		return entity.toBuilder().ridingPlayer(ridesPlayer(entity, known)).build();
-	}
-
-	private SeenEntity measure(SeenEntity entity, Map<Integer, SeenEntity> known) {
-		return entity.toBuilder()
-				.ridingPlayer(ridesPlayer(entity, known))
-				.playerDistance(playerPlaced ? distance(entity) : null)
-				.build();
-	}
-
-	/**
-	 * Follows the entity's vehicles down to the one that rides nothing, stopping at an unknown vehicle or a loop.
-	 */
-	private boolean ridesPlayer(SeenEntity entity, Map<Integer, SeenEntity> known) {
-		if (playerId == NO_PLAYER) return false;
-
-		Set<Integer> visited = new HashSet<>();
-		Integer vehicleId = entity.getVehicleId();
-		while (vehicleId != null && visited.add(vehicleId)) {
-			if (vehicleId == playerId) return true;
-
-			SeenEntity vehicle = known.get(vehicleId);
-			vehicleId = vehicle == null ? null : vehicle.getVehicleId();
-		}
-		return false;
-	}
-
-	private double distance(SeenEntity entity) {
-		double x = entity.getX() - playerX;
-		double y = entity.getY() - playerY;
-		double z = entity.getZ() - playerZ;
-		return Math.sqrt(x * x + y * y + z * z);
 	}
 
 	/**

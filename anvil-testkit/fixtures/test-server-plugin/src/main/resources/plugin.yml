@@ -19,3 +19,6 @@ commands:
   anvil-entity:
     description: Shows text above a player as an armor stand or a text display, drops a glowing item, or removes an entity, from the console
     usage: /anvil-entity <player> <bubble <text>|display <text>|drop|remove <id>>
+  anvil-blocks:
+    description: Fills a box of the main world with one block state without block updates, from the console
+    usage: /anvil-blocks <x1> <y1> <z1> <x2> <y2> <z2> <state>

@@ -1,7 +1,9 @@
 package me.whereareiam.anvil.player.library.mcprotocol.client.v1_19_4;
 
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundPingPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundPongPacket;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.IntTag;
 import com.github.steveice10.opennbt.tag.builtin.ListTag;
@@ -15,7 +17,9 @@ import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundPing;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ServerboundPong;
 import me.whereareiam.anvil.player.library.mcprotocol.client.translation.ConnectionLevel;
 import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTranslation;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_18_2.ValueTranslator;
@@ -28,7 +32,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The moments the MCProtocolLib 1.19.4 release joins a level and respawns. The release has no configuration phase,
+ * The moments the MCProtocolLib 1.19.4 release joins a level and respawns, and its pings, which the worker kit's client
+ * answers with their pongs. The release has no configuration phase,
  * so it never returns to one. It names the dimension type by its key and sends the dimension types of the whole server
  * with the login, which give each type its effects, block heights and whether it is {@code ultrawarm}, whose lava is
  * fast; one translation serves one session. A type the login did not list, or described without its block heights or
@@ -52,7 +57,7 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 
 	@Override
 	public @NotNull Set<Class<? extends JavaPacket>> packets() {
-		return Set.of(ClientboundLogin.class, ClientboundRespawn.class);
+		return Set.of(ClientboundLogin.class, ClientboundPing.class, ClientboundRespawn.class, ServerboundPong.class);
 	}
 
 	@Override
@@ -79,13 +84,14 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 					.debug(respawn.isDebug())
 					.flat(respawn.isFlat())
 					.build());
+		if (packet instanceof ClientboundPingPacket ping) return new ClientboundPing(ping.getId());
 
 		return null;
 	}
 
 	@Override
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
-		return null;
+		return packet instanceof ServerboundPong pong ? new ServerboundPongPacket(pong.getId()) : null;
 	}
 
 	/**

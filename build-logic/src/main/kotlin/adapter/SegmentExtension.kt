@@ -24,8 +24,9 @@ import javax.inject.Inject
  * and lists their references in its linkage manifest, so the worker still loads one segment per side and the
  * linkage check covers every class the segment brings.
  *
- * A base class that no longer links against the segment's release is replaced by a class of the segment's own, which
- * the segment names explicitly; the replaced class then leaves the segment's JAR and its linkage manifest:
+ * A base class that no longer links against the segment's release is replaced by a class of the segment's own, or left
+ * out where the release needs none, which the segment names explicitly; the replaced class then leaves the segment's JAR
+ * and its linkage manifest:
  *
  * ```kotlin
  * segment {
@@ -73,7 +74,8 @@ abstract class SegmentExtension @Inject constructor(
 	/**
 	 * Replaces base classes with classes of this segment's own: the segment no longer carries [classes] nor their
 	 * nested classes, and the build fails when one of them is not a class of the base chain or a class the segment
-	 * still takes from its base uses it. The segment's adapter then names its own class instead.
+	 * still takes from its base uses it. The segment's adapter then names its own class instead, or none where the release
+	 * needs none.
 	 *
 	 * @param classes binary names of top-level base classes, such as `a.b.v1_21_11.InteractionPackets`
 	 * @throws GradleException when the segment extends no base or a name is not a binary class name

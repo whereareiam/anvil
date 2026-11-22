@@ -17,6 +17,28 @@ public enum EntityBehaviour {
 	 */
 	BOX_DRIVEN_POSITION(null, "1.17"),
 	/**
+	 * Before 1.17 a vector's length is a float ({@code Vec3.length} and {@code Vec3.normalize} call
+	 * {@code Mth.sqrt(double)}, which returns a float); later versions keep it a double.
+	 */
+	FLOAT_VECTOR_LENGTH(null, "1.17"),
+	/**
+	 * Before 1.18 a movement stops the entity's velocity along each horizontal axis whose collided distance differs from
+	 * the requested one at all ({@code Entity.move} compares them with {@code !=}), such as one below {@code 1.0E-7}
+	 * that the collision took for none; from 1.18 only along an axis the entity collided on ({@code Mth.equal}).
+	 */
+	EXACT_COLLISION_STOP(null, "1.18"),
+	/**
+	 * Before 1.18 the world border's shape is among the colliders of every entity inside it ({@code Entity.collide}), so
+	 * a movement along an axis shorter than {@code 1.0E-7} is none even with no block near ({@code Shapes.collide}); from
+	 * 1.18 the border joins the colliders only near it ({@code isInsideCloseToBorder}).
+	 */
+	WORLD_BORDER_COLLIDER(null, "1.18"),
+	/**
+	 * From 1.18 a shape splits into boxes walking its cells up first ({@code BitSetDiscreteVoxelShape.forAllBoxes});
+	 * before, east-west first, which orders the boxes an entity's collision queries see differently.
+	 */
+	HEIGHT_FIRST_SHAPE_BOXES("1.18", null),
+	/**
 	 * From 1.20 an entity on the ground remembers the block it stands on ({@code checkSupportingBlock}), whose friction
 	 * and factors apply, instead of the block below its centre, and finds the blocks it is inside with its box inset by
 	 * {@code 1.0E-7} instead of {@code 0.001}.
@@ -46,6 +68,11 @@ public enum EntityBehaviour {
 	 */
 	DOUBLE_TRIGONOMETRY("1.21.2", null),
 	/**
+	 * From 1.21.2 a vector has a direction down to a length of {@code 1.0E-5F} ({@code Vec3.normalize}); before, down to
+	 * {@code 1.0E-4}.
+	 */
+	FINE_NORMALIZATION("1.21.2", null),
+	/**
 	 * From 1.21.2 a jump keeps a higher upward speed ({@code Math.max(jumpPower, deltaMovement.y)}), an entity moves even
 	 * when its collided movement is tiny but unobstructed, and the effects of the blocks it passes through apply after
 	 * its movement along its path ({@code applyEffectsFromBlocks}).
@@ -70,7 +97,24 @@ public enum EntityBehaviour {
 	 * From 1.21.5 an entity keeps its fall distance as a double and counts a fall before landing resets it
 	 * ({@code Entity.checkFallDamage}); before, as a float, reset on landing before it counts.
 	 */
-	DOUBLE_FALL_DISTANCE("1.21.5", null);
+	DOUBLE_FALL_DISTANCE("1.21.5", null),
+	/**
+	 * From 26.2 a collision restitutes the entity's velocity ({@code Entity.restituteMovementAfterCollisions}): a blocked
+	 * component is reversed and scaled by the bounciness instead of set to zero, and a landing bounces by the larger of
+	 * the entity's bounciness attribute and the block's bounce instead of the block's
+	 * {@code updateEntityMovementAfterFallOn}.
+	 */
+	RESTITUTION("26.2", null),
+	/**
+	 * From 26.3 a landing bounces only when it falls faster than gravity; 26.2 bounces one as fast as gravity too.
+	 */
+	BOUNCE_ABOVE_GRAVITY("26.3", null),
+	/**
+	 * From 26.2 the friction and air drag attributes modify the friction of the block below and the air's drag
+	 * ({@code computeModifiedFriction}), and on a block whose friction is at most {@code 0.6} the entity walks at its
+	 * plain speed ({@code getFrictionInfluencedSpeed}).
+	 */
+	FRICTION_MODIFIERS("26.2", null);
 
 	private final @Nullable MinecraftVersion since;
 	private final @Nullable MinecraftVersion until;

@@ -7,7 +7,6 @@ import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketT
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.AttributePackets;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.ChatPackets;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.ChunkPackets;
-import me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.ConnectionPackets;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.InteractionPackets;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.ItemTranslator;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.JavaClient;
@@ -19,7 +18,7 @@ import java.util.List;
 
 /**
  * The client segment's adapter for the MCProtocolLib 1.17.1 release: the 1.16.5 {@link JavaClient} with the release's
- * answers and packet table, which keeps the 1.16.5 attribute, chat, connection, interaction, player and sound
+ * client information and packet table, which keeps the 1.16.5 attribute, chat, interaction, player and sound
  * translations.
  */
 public final class McProtocolClientAdapter extends JavaClient {
@@ -30,7 +29,7 @@ public final class McProtocolClientAdapter extends JavaClient {
 	 * Creates the client of the MCProtocolLib 1.17.1 release.
 	 */
 	public McProtocolClientAdapter() {
-		super(new ReleaseAnswers(), TEXT, McProtocolClientAdapter::packets);
+		super(new ReleaseClientInformation(), TEXT, McProtocolClientAdapter::packets);
 	}
 
 	/**

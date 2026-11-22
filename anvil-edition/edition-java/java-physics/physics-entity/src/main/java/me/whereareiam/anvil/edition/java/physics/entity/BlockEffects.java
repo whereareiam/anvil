@@ -82,16 +82,6 @@ public final class BlockEffects {
 	}
 
 	/**
-	 * Tells whether the client has the chunk column of the block below the entity.
-	 *
-	 * @return whether it is loaded
-	 */
-	public boolean hasChunkBelow() {
-		int[] below = below();
-		return reader.hasChunkAt(below[0], below[2]);
-	}
-
-	/**
 	 * The jump factor of the block the entity is in, else of the block below it ({@code getBlockJumpFactor}).
 	 *
 	 * @return the factor

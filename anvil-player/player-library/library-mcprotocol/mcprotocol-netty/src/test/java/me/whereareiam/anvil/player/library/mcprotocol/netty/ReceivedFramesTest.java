@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -32,7 +33,8 @@ class ReceivedFramesTest {
 	private static final int COMPRESS = 0x03;
 	private static final byte COMPRESSED = (byte) 0xC0;
 
-	private final TestClientListener<String> listener = new TestClientListener<>();
+	private final List<String> events = new CopyOnWriteArrayList<>();
+	private final TestClientListener<String> listener = new TestClientListener<>(events);
 	private final List<Integer> handled = new ArrayList<>();
 	private final EmbeddedChannel channel = new EmbeddedChannel();
 
@@ -81,6 +83,17 @@ class ReceivedFramesTest {
 	}
 
 	@Test
+	void reportsTheOpenConnectionOnceInstalledAndItsCloseAfterItsPacketsBeforeTheSessionHearsOfIt() {
+		assertEquals(List.of("opened"), events);
+
+		channel.writeInbound(frame(CHAT, 'h', 'i'));
+		channel.close();
+
+		assertEquals(List.of("opened", "handled " + CHAT, "closed", "session closed"), events);
+		assertEquals(List.of(chat("hi")), listener.received());
+	}
+
+	@Test
 	void refusesAPipelineWithoutDecoder() {
 		EmbeddedChannel bare = new EmbeddedChannel();
 		ReceivedFrames<String, TestPacket> frames = new ReceivedFrames<>("session", TestPacket.class,
@@ -124,14 +137,21 @@ class ReceivedFramesTest {
 	}
 
 	/**
-	 * Handles packets as a release's session does; the compression packet inserts a decompression before the decoder.
+	 * Handles packets and the channel's close as a release's session does; the compression packet inserts a
+	 * decompression before the decoder.
 	 */
 	private final class TestSession extends ChannelInboundHandlerAdapter {
 		@Override
 		public void channelRead(ChannelHandlerContext context, Object message) {
 			TestPacket packet = (TestPacket) message;
 			handled.add(packet.id());
+			events.add("handled " + packet.id());
 			if (packet.id() == COMPRESS) context.pipeline().addBefore(ReceivedFrames.CODEC, "compression", new Decompression());
+		}
+
+		@Override
+		public void channelInactive(ChannelHandlerContext context) {
+			events.add("session closed");
 		}
 	}
 

@@ -138,26 +138,6 @@ public final class Vector {
 	}
 
 	/**
-	 * Returns the vector of length one in this direction, or zero for a vector shorter than {@code 1.0E-5F}, as
-	 * {@code Vec3.normalize} does.
-	 *
-	 * @return the direction
-	 */
-	public @NotNull Vector normalize() {
-		double length = Math.sqrt(x * x + y * y + z * z);
-		return length < 1.0E-5F ? ZERO : new Vector(x / length, y / length, z / length);
-	}
-
-	/**
-	 * Returns the length.
-	 *
-	 * @return the length
-	 */
-	public double length() {
-		return Math.sqrt(x * x + y * y + z * z);
-	}
-
-	/**
 	 * Returns the squared length.
 	 *
 	 * @return the squared length

@@ -6,17 +6,21 @@ import com.github.steveice10.mc.protocol.data.game.window.MoveToHotbarParam;
 import com.github.steveice10.mc.protocol.data.game.window.WindowAction;
 import com.github.steveice10.mc.protocol.data.game.window.WindowType;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerChangeHeldItemPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.client.window.ClientConfirmTransactionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.window.ClientWindowActionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerChangeHeldItemPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerCloseWindowPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerConfirmTransactionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerOpenWindowPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerSetSlotPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerWindowItemsPacket;
 import me.whereareiam.anvil.edition.java.protocol.PlayerInventoryLayout;
+import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerAck;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerClose;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerSetContent;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundOpenScreen;
+import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ServerboundContainerAck;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ServerboundContainerClick;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ClientboundSetHeldSlot;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ClientboundSetPlayerInventory;
@@ -33,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class InventoryPacketsTest {
 	private final InventoryPackets packets = new InventoryPackets(new TextTranslator(), new ItemTranslator(new TextTranslator()));
@@ -116,5 +121,21 @@ class InventoryPacketsTest {
 	void selectsTheHeldItem() {
 		assertEquals(5, assertInstanceOf(ClientPlayerChangeHeldItemPacket.class,
 				packets.encode(new ServerboundSetCarriedItem(5))).getSlot());
+	}
+
+	@Test
+	void readsTheConfirmationOfAContainerActionWithItsSignedActionNumber() {
+		assertEquals(new ClientboundContainerAck(0, (short) -13, false),
+				packets.decode(new ServerConfirmTransactionPacket(0, -13, false)));
+	}
+
+	@Test
+	void acknowledgesARejectedActionAsTheReleasesTransactionConfirmation() {
+		ClientConfirmTransactionPacket acknowledged = assertInstanceOf(ClientConfirmTransactionPacket.class,
+				packets.encode(new ServerboundContainerAck(0, (short) -13, true)));
+
+		assertEquals(0, acknowledged.getWindowId());
+		assertEquals(-13, acknowledged.getActionId());
+		assertTrue(acknowledged.isAccepted());
 	}
 }

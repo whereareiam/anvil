@@ -1,7 +1,9 @@
 package me.whereareiam.anvil.player.library.mcprotocol.client.v1_17_1;
 
 import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
+import com.github.steveice10.mc.protocol.packet.ingame.client.ClientPongPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerJoinGamePacket;
+import com.github.steveice10.mc.protocol.packet.ingame.server.ServerPingPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerRespawnPacket;
 import com.github.steveice10.opennbt.tag.builtin.ByteTag;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
@@ -10,19 +12,22 @@ import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
 import com.github.steveice10.opennbt.tag.builtin.Tag;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundPing;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
-import me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5.ConnectionPackets;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ServerboundPong;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The connection translation of the 1.16 chain on the MCProtocolLib 1.17.1 release, which reads the game mode of the
- * login and the respawn into the library's game mode as 1.16.5 does, and fast lava from a type's {@code ultrawarm}.
+ * login and the respawn into the library's game mode as 1.16.5 does, and fast lava from a type's {@code ultrawarm}, and
+ * carries the ping Minecraft 1.17 introduced with its pong.
  */
 class ConnectionPacketsTest {
 	private final ConnectionPackets packets = new ConnectionPackets();
@@ -45,6 +50,12 @@ class ConnectionPacketsTest {
 		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.ADVENTURE,
 				((ClientboundRespawn) packets.decode(new ServerRespawnPacket(overworld(), "minecraft:overworld", 0,
 						GameMode.ADVENTURE, GameMode.SPECTATOR, false, false, true))).getGameMode());
+	}
+
+	@Test
+	void carriesThePingAndItsPong() {
+		assertEquals(new ClientboundPing(-7), packets.decode(new ServerPingPacket(-7)));
+		assertEquals(-7, assertInstanceOf(ClientPongPacket.class, packets.encode(new ServerboundPong(-7))).getId());
 	}
 
 	@Test

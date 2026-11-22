@@ -11,15 +11,19 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Set;
 
 /**
- * The server places the player, turns its view and sets its velocity, which the player's library accepts on its own.
- * Releases before Minecraft 1.21.2 carry no velocity: their client keeps the velocity along each relative coordinate
- * and stops it along each absolute one, which they report as a zero velocity that is relative along each relative
- * coordinate.
+ * The server places the player, turns its view and sets its velocity, and waits for the client to accept the teleport
+ * by its {@link #id} ({@link ServerboundAcceptTeleportation}). Releases before Minecraft 1.21.2 carry no velocity: their
+ * client keeps the velocity along each relative coordinate and stops it along each absolute one, which they report as
+ * a zero velocity that is relative along each relative coordinate.
  */
 @Value
 @FieldNameConstants
 @Builder
 public class ClientboundPlayerPosition implements ClientboundPacket {
+	/**
+	 * The teleport's ID, which the client's acceptance names.
+	 */
+	int id;
 	/**
 	 * The position of the player's feet, each coordinate named in {@link #relatives} added to the current one.
 	 */

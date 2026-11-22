@@ -19,8 +19,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * In-memory client whose sessions are plain objects; tests drive the listener callbacks a release would send. Like a
- * release without disguised chat or chat commands, it carries only system chat, player chat and chat messages.
+ * In-memory client whose sessions are plain objects; tests drive the listener callbacks a release would send, but for
+ * the open connection, which a session reports when it connects. Like a release without disguised chat or chat
+ * commands, it carries only system chat, player chat and chat messages.
  */
 public final class RecordingClient implements McProtocolClient<Object> {
 	private static final Set<Class<? extends JavaPacket>> SUPPORTED = Set.of(ClientboundSystemChat.class, ClientboundPlayerChat.class, ServerboundChat.class);
@@ -49,9 +50,18 @@ public final class RecordingClient implements McProtocolClient<Object> {
 		return session;
 	}
 
+	/**
+	 * Connects a session, whose channel reports the connection open to its listener as a release's does.
+	 */
 	@Override
-	public synchronized void connect(@NotNull Object session) {
-		connected.add(session);
+	public void connect(@NotNull Object session) {
+		ClientListener<? super Object> listener;
+		synchronized (this) {
+			connected.add(session);
+			listener = listeners.get(session);
+		}
+
+		listener.opened(session);
 	}
 
 	@Override
@@ -95,5 +105,13 @@ public final class RecordingClient implements McProtocolClient<Object> {
 
 	public synchronized @NotNull List<ServerboundPacket> sent(@NotNull Object session) {
 		return List.copyOf(sent.getOrDefault(session, List.of()));
+	}
+
+	/**
+	 * Closes a session's channel as the server or the network does, before the close travels up its pipeline: the
+	 * session no longer counts as connected, and its listener has not heard of the close yet.
+	 */
+	public synchronized void closeChannel(@NotNull Object session) {
+		connected.remove(session);
 	}
 }

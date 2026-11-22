@@ -1,8 +1,6 @@
 package me.whereareiam.anvil.edition.java.physics.world;
 
 import me.whereareiam.anvil.edition.java.data.block.model.BlockState;
-import me.whereareiam.anvil.edition.java.data.block.model.collision.CollisionBox;
-import me.whereareiam.anvil.edition.java.data.block.model.collision.CollisionShape;
 import me.whereareiam.anvil.edition.java.data.block.type.BlockKind;
 import me.whereareiam.anvil.edition.java.physics.geometry.Axis;
 import me.whereareiam.anvil.edition.java.physics.geometry.Box;
@@ -19,15 +17,13 @@ import java.util.TreeSet;
 
 /**
  * Moves boxes against the collision shapes of the blocks the client knows, as vanilla's {@code BlockCollisions},
- * {@code Shapes.collide} and {@code Entity.collideWithShapes} do for an entity. Scaffolding and powder snow get the
- * shape their {@code getCollisionShape} gives the entity ({@link EntityContext}); entity collisions, such as boats, and
- * the world border are not part of the world the client knows here.
+ * {@code Shapes.collide} and {@code Entity.collideWithShapes} do for an entity, each block with the shape it gives the
+ * entity ({@link BlockReader#shape(BlockState, int[], EntityContext)}); entity collisions, such as boats, are not part
+ * of the world the client knows here. The world border's shape stops no entity inside it, but where it is among the
+ * colliders it takes a movement shorter than {@code 1.0E-7} for none.
  */
 public final class Collisions {
 	private static final double EPSILON = 1.0E-7;
-	private static final BlockShape SCAFFOLDING_BOTTOM = box(0.125);
-	private static final BlockShape POWDER_SNOW_FALLING = box(0.9F);
-	private static final BlockShape EMPTY = BlockShape.of(CollisionShape.EMPTY);
 
 	private final @NotNull BlockReader reader;
 
@@ -67,38 +63,13 @@ public final class Collisions {
 
 	private @Nullable PlacedShape placed(int @NotNull [] block, int edges, @NotNull Box box, @NotNull EntityContext who) {
 		BlockState state = reader.state(block[0], block[1], block[2]);
-		BlockShape shape = shape(state, block[1], who);
-		if (shape.isEmpty()) return null;
-		if (edges == 1 && !shape.isLarge()) return null;
+		if (edges == 1 && !reader.hasLargeCollisionShape(state)) return null;
 		if (edges == 2 && state.getBlock().getKind() != BlockKind.MOVING_PISTON) return null;
-		if (!shape.intersects(block, box)) return null;
+
+		BlockShape shape = reader.shape(state, block, who);
+		if (shape.isEmpty() || !shape.intersects(block, box)) return null;
 
 		return new PlacedShape(shape, block);
-	}
-
-	/**
-	 * The collision shape a block gives the entity: the data's shape, or for scaffolding and powder snow what their
-	 * {@code getCollisionShape} gives an entity in its context. An entity wears no leather boots here, so it never walks
-	 * on powder snow.
-	 */
-	private @NotNull BlockShape shape(@NotNull BlockState state, int blockY, @NotNull EntityContext context) {
-		return switch (state.getBlock().getKind()) {
-			case SCAFFOLDING -> scaffolding(state, blockY, context);
-			case POWDER_SNOW -> context.getFallDistance() > 2.5 ? POWDER_SNOW_FALLING : EMPTY;
-			default -> reader.shape(state.getCollision());
-		};
-	}
-
-	/**
-	 * {@code ScaffoldingBlock.getCollisionShape}: the stable shape, which the data records, for an entity above the
-	 * block that does not descend; the unstable bottom of a hanging bottom block for an entity above its bottom.
-	 */
-	private @NotNull BlockShape scaffolding(@NotNull BlockState state, int blockY, @NotNull EntityContext context) {
-		if (context.isAbove(blockY, 1.0) && !context.isDescending()) return reader.shape(state.getCollision());
-
-		boolean hanging = !"0".equals(state.property("distance").orElse("0"));
-		boolean bottom = "true".equals(state.property("bottom").orElse("false"));
-		return hanging && bottom && context.isAbove(blockY, 0.0) ? SCAFFOLDING_BOTTOM : EMPTY;
 	}
 
 	/**
@@ -125,6 +96,19 @@ public final class Collisions {
 	}
 
 	/**
+	 * Moves a box against the blocks around it with the world border among the colliders, as an entity before 1.18
+	 * collides: along each axis a movement shorter than {@code 1.0E-7} is none, with or without a block near.
+	 *
+	 * @param movement the movement
+	 * @param box the moving box
+	 * @param context the moving entity
+	 * @return the movement the blocks allow
+	 */
+	public @NotNull Vector collideBoundingBoxWithBorder(@NotNull Vector movement, @NotNull Box box, @NotNull EntityContext context) {
+		return collide(movement, box, blockCollisions(box.expandTowards(movement), context), true);
+	}
+
+	/**
 	 * Moves a box against shapes one axis at a time, vertically first and then along the longer horizontal axis
 	 * ({@code collideWithShapes}); a movement shorter than {@code 1.0E-7} before a shape is none ({@code Shapes.collide}).
 	 *
@@ -138,7 +122,16 @@ public final class Collisions {
 			@NotNull Box box,
 			@NotNull List<PlacedShape> shapes
 	) {
-		if (shapes.isEmpty()) return movement;
+		return collide(movement, box, shapes, false);
+	}
+
+	private static @NotNull Vector collide(
+			@NotNull Vector movement,
+			@NotNull Box box,
+			@NotNull List<PlacedShape> shapes,
+			boolean border
+	) {
+		if (shapes.isEmpty() && !border) return movement;
 
 		Vector result = Vector.ZERO;
 		Axis[] order = Math.abs(movement.x) < Math.abs(movement.z)
@@ -148,7 +141,7 @@ public final class Collisions {
 			double distance = movement.get(axis);
 			if (distance == 0.0) continue;
 
-			result = result.with(axis, collide(axis, box.move(result), shapes, distance));
+			result = result.with(axis, border && Math.abs(distance) < EPSILON ? 0.0 : collide(axis, box.move(result), shapes, distance));
 		}
 
 		return result;
@@ -242,9 +235,5 @@ public final class Collisions {
 
 	private static int edge(int value, int min, int max) {
 		return value == min || value == max ? 1 : 0;
-	}
-
-	private static @NotNull BlockShape box(double height) {
-		return BlockShape.of(new CollisionShape(List.of(new CollisionBox(0.0, 0.0, 0.0, 1.0, height, 1.0))));
 	}
 }

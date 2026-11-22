@@ -2,6 +2,7 @@ package me.whereareiam.anvil.player.library.mcprotocol.client.v1_16_5;
 
 import com.github.steveice10.mc.protocol.MinecraftProtocol;
 import com.github.steveice10.packetlib.Session;
+import com.github.steveice10.packetlib.event.session.PacketReceivedEvent;
 import com.github.steveice10.packetlib.packet.Packet;
 import com.github.steveice10.packetlib.tcp.TcpClientSession;
 import io.netty.channel.ChannelHandlerContext;
@@ -16,6 +17,11 @@ import org.jetbrains.annotations.Nullable;
  * A packetlib 2.0 TCP client session that hands each packet it receives to its listener through {@link ReceivedFrames},
  * translated and, while the listener wants frames, as its frame. Packetlib 2.0 keeps the session's channel to itself,
  * so the session puts the handlers into its pipeline when the channel becomes active, before any packet arrives.
+ *
+ * <p>Packetlib 2.0 hands every packet but a few login packets to its session listeners on a thread of its own, after
+ * later packets were delivered and answered; the session calls them on the channel's thread instead, right after the
+ * delivery, so what they and MCProtocolLib answer leaves in the order the packets arrived, as the vanilla client
+ * answers.</p>
  */
 final class FramedClientSession extends TcpClientSession {
 	private static final int ANY_PORT = 0;
@@ -68,6 +74,11 @@ final class FramedClientSession extends TcpClientSession {
 	public void channelActive(ChannelHandlerContext context) throws Exception {
 		frames.install(context.pipeline());
 		super.channelActive(context);
+	}
+
+	@Override
+	protected void channelRead0(ChannelHandlerContext context, Packet packet) {
+		callEvent(new PacketReceivedEvent(this, packet));
 	}
 
 	private ReceivedFrames<Session, Packet> frames(

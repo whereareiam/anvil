@@ -9,6 +9,7 @@ import me.whereareiam.anvil.edition.java.protocol.packet.chat.ClientboundSystemC
 import me.whereareiam.anvil.edition.java.protocol.packet.command.ClientboundCommands;
 import me.whereareiam.anvil.edition.java.protocol.packet.configuration.ClientboundRegistryData;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundPing;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundStartConfiguration;
 import me.whereareiam.anvil.edition.java.protocol.packet.cookie.ClientboundCookieRequest;
@@ -30,6 +31,8 @@ import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.Clientboun
 import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundUpdateMobEffect;
 import me.whereareiam.anvil.edition.java.protocol.packet.health.ClientboundPlayerCombatKill;
 import me.whereareiam.anvil.edition.java.protocol.packet.health.ClientboundSetHealth;
+import me.whereareiam.anvil.edition.java.protocol.packet.interaction.ClientboundAnimate;
+import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerAck;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerClose;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerSetContent;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerSetSlot;
@@ -97,6 +100,7 @@ public final class ClientboundPackets {
 			ClientboundCommands.class,
 			ClientboundRegistryData.class,
 			ClientboundLogin.class,
+			ClientboundPing.class,
 			ClientboundRespawn.class,
 			ClientboundStartConfiguration.class,
 			ClientboundCookieRequest.class,
@@ -118,6 +122,8 @@ public final class ClientboundPackets {
 			ClientboundUpdateMobEffect.class,
 			ClientboundPlayerCombatKill.class,
 			ClientboundSetHealth.class,
+			ClientboundAnimate.class,
+			ClientboundContainerAck.class,
 			ClientboundContainerClose.class,
 			ClientboundContainerSetContent.class,
 			ClientboundContainerSetSlot.class,

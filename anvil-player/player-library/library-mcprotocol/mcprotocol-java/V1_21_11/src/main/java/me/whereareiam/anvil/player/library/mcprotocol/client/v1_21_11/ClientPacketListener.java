@@ -5,8 +5,8 @@ import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.edition.java.protocol.type.connection.ConnectionState;
 import me.whereareiam.anvil.player.library.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.player.library.mcprotocol.client.ClientListener;
-import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientProfile;
+import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.ChunkBatchPacing;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.ValueTranslator;
 import me.whereareiam.anvil.player.library.mcprotocol.netty.ReceivedFrames;
@@ -18,15 +18,12 @@ import org.geysermc.mcprotocollib.network.event.session.SessionAdapter;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.UnexpectedEncryptionException;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundDisconnectPacket;
-import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundPingPacket;
-import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundPongPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchFinishedPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundChunkBatchStartPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundChunkBatchReceivedPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginFinishedPacket;
-
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
@@ -36,9 +33,11 @@ import java.util.Objects;
  * chunk batch with the rate {@link ChunkBatchPacing} wants next, and reports login and disconnects with their reason
  * flattened to plain text. The brand and the player's settings, its language among them, go out at the start of the
  * configuration through the release's {@link ClientConfiguration}. The login reports the profile the server granted in
- * its login success, which arrives before the game starts. Teleports are answered by the release's teleport listener,
- * which the segment's adapter hands to {@link NetworkClientSessions}. When the session connects, the listener puts
- * {@link ReceivedFrames} into its pipeline, which hand the packets themselves over in the order they arrive.
+ * its login success, which arrives before the game starts. When the session connects, the listener puts
+ * {@link ReceivedFrames} into its pipeline, which hand the packets themselves over in the order they arrive; the
+ * session then calls its listeners on the channel's thread ({@link NetworkClientSessions}), where the vanilla client
+ * answers a chunk batch too. What the client answers between its ticks, such as a teleport or a ping, the worker kit's
+ * client answers.
  */
 @RequiredArgsConstructor
 final class ClientPacketListener extends SessionAdapter {
@@ -72,9 +71,6 @@ final class ClientPacketListener extends SessionAdapter {
 		if (packet instanceof ClientboundChunkBatchStartPacket) chunkBatches.started();
 		if (packet instanceof ClientboundChunkBatchFinishedPacket finished)
 			session.send(new ServerboundChunkBatchReceivedPacket(chunkBatches.finished(finished.getBatchSize())));
-		// A vanilla client answers every ping; NeoForge waits for the answer to tell a vanilla client from a modded
-		// one.
-		if (packet instanceof ClientboundPingPacket ping) session.send(new ServerboundPongPacket(ping.getId()));
 		if (packet instanceof ClientboundDisconnectPacket disconnect)
 			listener.disconnected(session, DisconnectCause.SERVER, text.translate(disconnect.getReason()).plain());
 		if (packet instanceof ClientboundLoginDisconnectPacket disconnect)

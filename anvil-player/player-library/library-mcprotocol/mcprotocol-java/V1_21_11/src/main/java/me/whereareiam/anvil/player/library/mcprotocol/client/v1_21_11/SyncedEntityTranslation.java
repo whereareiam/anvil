@@ -16,8 +16,8 @@ import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.Clientbound
 import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundSetEntityData;
 import me.whereareiam.anvil.edition.java.protocol.type.entity.Relative;
 import me.whereareiam.anvil.player.library.mcprotocol.adventure.ComponentTranslator;
-import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.ItemTranslator;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.EntityTranslation;
+import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.ItemTranslator;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.ValueTranslator;
 import org.cloudburstmc.math.vector.Vector3d;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -80,7 +80,7 @@ public abstract class SyncedEntityTranslation extends EntityTranslation {
 					.position(ValueTranslator.vec3d(teleport.getPosition()))
 					.yaw(teleport.getYRot())
 					.pitch(teleport.getXRot())
-					.relatives(placement(PlayerPackets.relatives(teleport.getRelatives())))
+					.relatives(placement(RelativeElements.translate(teleport.getRelatives())))
 					.build();
 			case ClientboundEntityPositionSyncPacket sync -> ClientboundEntityPositionSync.builder()
 					.entityId(new EntityId(sync.getId()))

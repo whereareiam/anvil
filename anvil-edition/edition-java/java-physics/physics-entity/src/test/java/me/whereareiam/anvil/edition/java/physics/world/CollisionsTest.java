@@ -1,9 +1,13 @@
 package me.whereareiam.anvil.edition.java.physics.world;
 
+import me.whereareiam.anvil.edition.java.data.block.model.collision.BlockOffset;
 import me.whereareiam.anvil.edition.java.physics.TestEntity;
 import me.whereareiam.anvil.edition.java.physics.TestWorld;
 import me.whereareiam.anvil.edition.java.physics.living.LivingSimulation;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,5 +47,23 @@ class CollisionsTest {
 
 		assertTrue(stepping.body().getPosition().y < 62.0, "the entity sank to " + stepping.body().getPosition());
 		assertTrue(landedOnTheSnow, "the fall landed on the snow's falling shape");
+	}
+
+	@Test
+	void walksIntoBambooWhereItsPositionMovedIt() {
+		TestWorld world = new TestWorld("1.21.11").join().load(0, 0).floor(0, 15, 64, 0, 15, "minecraft:stone")
+				.set(8, 65, 8, "minecraft:bamboo").send();
+		LivingSimulation entity = TestEntity.living(world, 8.5, 65.0, 4.5);
+		entity.body().setZza(1.0F);
+
+		for (int tick = 0; tick < 60; tick++) entity.tick();
+
+		double face = 8.0 + (0.40625 + PositionOffset.at(bamboo(world), 8, 8).z);
+		assertEquals(face - 0.3F, entity.body().getPosition().z, 1.0E-6);
+		assertTrue(entity.body().isHorizontalCollision());
+	}
+
+	private static @NotNull BlockOffset bamboo(@NotNull TestWorld world) {
+		return Objects.requireNonNull(world.registry.block("minecraft:bamboo").orElseThrow().getOffset());
 	}
 }

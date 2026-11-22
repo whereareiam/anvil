@@ -2,12 +2,13 @@ package me.whereareiam.anvil.edition.java.physics.world;
 
 import me.whereareiam.anvil.edition.java.data.block.BlockRegistry;
 import me.whereareiam.anvil.edition.java.data.block.model.BlockState;
+import me.whereareiam.anvil.edition.java.data.block.model.collision.BlockOffset;
 import me.whereareiam.anvil.edition.java.data.block.model.collision.CollisionShape;
+import me.whereareiam.anvil.edition.java.physics.geometry.Vector;
 import me.whereareiam.anvil.edition.java.physics.world.shape.BlockShape;
 import me.whereareiam.anvil.edition.java.protocol.JavaWorld;
 import me.whereareiam.anvil.edition.java.protocol.WorldView;
 import me.whereareiam.anvil.edition.java.protocol.model.world.Level;
-import me.whereareiam.anvil.edition.java.protocol.model.world.chunk.ChunkPosition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,7 +19,8 @@ import java.util.OptionalInt;
 /**
  * The blocks the player's client knows, as vanilla's client level answers movement: the state of every block of the
  * loaded chunk columns by the release's block data, and void air wherever the client has no block, outside the level's
- * heights or in a column it does not have. A tick reads the world at one moment through {@link #read}, as the vanilla
+ * heights or in a column it does not have. A client level claims every chunk column ({@code ClientLevel.hasChunk}), so
+ * an entity in a column the client lacks moves as through void air. A tick reads the world at one moment through {@link #read}, as the vanilla
  * client runs its packets between ticks.
  *
  * <p>The reader is not thread-safe; its owner serializes ticks.</p>
@@ -28,6 +30,7 @@ public final class BlockReader {
 	private final @NotNull BlockRegistry registry;
 	private final @NotNull BlockState voidAir;
 	private final @NotNull Map<CollisionShape, BlockShape> shapes = new HashMap<>();
+	private final @NotNull Map<Moved, BlockShape> moved = new HashMap<>();
 	private @Nullable WorldView view;
 
 	/**
@@ -87,32 +90,43 @@ public final class BlockReader {
 	}
 
 	/**
-	 * Tells whether the client has the chunk column holding a block column, as {@code Level.hasChunkAt} does.
+	 * Returns the collision shape a block gives an entity ({@code BlockState.getCollisionShape}): the shape the block
+	 * data records for the entity's case at the block ({@link EntityContext#collisionCase}), which differs from the
+	 * standing shape only for a block whose shape depends on the entity, such as scaffolding and powder snow, moved by the
+	 * block's offset at its position for an offset block, such as bamboo and pointed dripstone ({@link PositionOffset}).
 	 *
-	 * @param x the block column's east-west coordinate
-	 * @param z the block column's north-south coordinate
-	 * @return whether the column is loaded
+	 * @param state the block's state
+	 * @param block the block's east-west, height and north-south coordinates
+	 * @param context the entity
+	 * @return the shape in block-local coordinates
 	 */
-	public boolean hasChunkAt(int x, int z) {
-		return view().isLoaded(ChunkPosition.containing(x, z));
+	public @NotNull BlockShape shape(@NotNull BlockState state, int @NotNull [] block, @NotNull EntityContext context) {
+		CollisionShape collision = state.getCollisionCases().isEmpty() ? state.getCollision()
+				: state.collision(context.collisionCase(block[1]));
+		return placed(state, collision, block[0], block[2]);
 	}
 
 	/**
-	 * Tells whether the client has every chunk column a range of block columns touches, as {@code hasChunksAt} does.
+	 * Tells whether a block's collision shape may reach beyond the block ({@code BlockState.hasLargeCollisionShape}),
+	 * as vanilla caches it for the state: from the shape it gives no entity at the origin, which is the standing shape
+	 * the block data records, moved by the block's offset there.
 	 *
-	 * @param fromX the lowest east-west block coordinate
-	 * @param fromZ the lowest north-south block coordinate
-	 * @param toX the highest east-west block coordinate
-	 * @param toZ the highest north-south block coordinate
-	 * @return whether every column is loaded
+	 * @param state the block's state
+	 * @return whether the shape reaches out of its block
 	 */
-	public boolean hasChunksAt(int fromX, int fromZ, int toX, int toZ) {
-		for (int chunkX = fromX >> 4; chunkX <= toX >> 4; chunkX++)
-			for (int chunkZ = fromZ >> 4; chunkZ <= toZ >> 4; chunkZ++)
-				if (!view().isLoaded(new ChunkPosition(chunkX, chunkZ))) return false;
-
-		return true;
+	public boolean hasLargeCollisionShape(@NotNull BlockState state) {
+		return placed(state, state.getCollision(), 0, 0).isLarge();
 	}
+
+	private @NotNull BlockShape placed(@NotNull BlockState state, @NotNull CollisionShape collision, int x, int z) {
+		BlockOffset offset = state.getBlock().getOffset();
+		if (offset == null || collision.isEmpty()) return shape(collision);
+
+		Vector by = PositionOffset.at(offset, x, z);
+		return moved.computeIfAbsent(new Moved(collision, by.x, by.y, by.z), key -> shape(collision).moved(by));
+	}
+
+
 
 	/**
 	 * Returns the lowest height of the level the client is in, as {@code Level.getMinY} does.
@@ -139,5 +153,11 @@ public final class BlockReader {
 		if (current == null) throw new IllegalStateException("The client's blocks are read outside a tick");
 
 		return current;
+	}
+
+	/**
+	 * A collision shape moved by an offset, which the reader builds once.
+	 */
+	private record Moved(@NotNull CollisionShape shape, double x, double y, double z) {
 	}
 }

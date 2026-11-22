@@ -28,6 +28,16 @@ public final class LegacyInput implements KeyInput {
 	}
 
 	@Override
+	public float leftImpulse() {
+		return leftImpulse;
+	}
+
+	@Override
+	public float forwardImpulse() {
+		return forwardImpulse;
+	}
+
+	@Override
 	public void read(@NotNull MovementInput keys) {
 		if (sprintTriggerTime > 0) sprintTriggerTime--;
 
@@ -89,6 +99,6 @@ public final class LegacyInput implements KeyInput {
 	public void apply() {
 		body.setXxa(leftImpulse);
 		body.setZza(forwardImpulse);
-		body.setJumping(body.getKeys().isJump());
+		body.setJumping(body.isJumpDown());
 	}
 }

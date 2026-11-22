@@ -2,4 +2,4 @@ plugins {
 	id("module-edition")
 }
 
-description = "Geometry of Minecraft: Java Edition physics: vectors, boxes, axes and the vanilla client's trigonometry"
+description = "Vanilla's math of Minecraft: Java Edition, bit for bit as the client of each version computes it: vectors, boxes, axes and its table sine"

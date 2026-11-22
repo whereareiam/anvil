@@ -12,6 +12,7 @@ architecture {
 	dependsOnApis = setOf(
 		projects.anvilEdition.editionJava.javaData.dataPacket.path,
 		projects.anvilEdition.editionJava.javaProtocol.protocolApi.path,
+		projects.anvilEdition.editionJava.javaPhysics.physicsGeometry.path,
 		projects.anvilEdition.editionJava.javaProtocol.protocolJson.path,
 		projects.anvilEdition.editionJava.javaProtocol.protocolWorker.path,
 	)

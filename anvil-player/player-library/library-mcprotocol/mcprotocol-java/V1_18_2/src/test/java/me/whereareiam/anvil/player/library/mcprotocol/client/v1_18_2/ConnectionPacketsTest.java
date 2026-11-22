@@ -3,7 +3,9 @@ package me.whereareiam.anvil.player.library.mcprotocol.client.v1_18_2;
 import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundPingPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundPongPacket;
 import com.github.steveice10.opennbt.tag.builtin.ByteTag;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.IntTag;
@@ -15,7 +17,9 @@ import me.whereareiam.anvil.edition.java.protocol.model.world.DimensionType;
 import me.whereareiam.anvil.edition.java.protocol.model.world.Level;
 import me.whereareiam.anvil.edition.java.protocol.packet.ServerboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundPing;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ServerboundPong;
 import me.whereareiam.anvil.player.library.mcprotocol.client.translation.ConnectionLevel;
 import org.junit.jupiter.api.Test;
 
@@ -25,6 +29,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -117,13 +122,20 @@ class ConnectionPacketsTest {
 
 	@Test
 	void carriesJoiningALevelAndRespawningButNoConfigurationPhase() {
-		assertEquals(Set.of(ClientboundLogin.class, ClientboundRespawn.class), packets.packets());
+		assertEquals(Set.of(ClientboundLogin.class, ClientboundPing.class, ClientboundRespawn.class, ServerboundPong.class),
+				packets.packets());
 	}
 
 	@Test
 	void carriesWhetherTheClientShowsTheDeathScreen() {
 		assertTrue(((ClientboundLogin) packets.decode(login(overworld()))).isShowDeathScreen());
 		assertFalse(((ClientboundLogin) packets.decode(login(overworld()).withEnableRespawnScreen(false))).isShowDeathScreen());
+	}
+
+	@Test
+	void carriesThePingAndItsPong() {
+		assertEquals(new ClientboundPing(-7), packets.decode(new ClientboundPingPacket(-7)));
+		assertEquals(-7, assertInstanceOf(ServerboundPongPacket.class, packets.encode(new ServerboundPong(-7))).getId());
 	}
 
 	private static ClientboundLoginPacket login(CompoundTag dimension) {
