@@ -1,0 +1,122 @@
+package me.whereareiam.anvil.player.library.mcprotocol.client.v1_19_4;
+
+import com.github.steveice10.mc.protocol.codec.MinecraftCodec;
+import com.github.steveice10.mc.protocol.codec.MinecraftCodecHelper;
+import com.github.steveice10.mc.protocol.data.game.entity.metadata.EntityMetadata;
+import com.github.steveice10.mc.protocol.data.game.entity.metadata.ItemStack;
+import com.github.steveice10.mc.protocol.data.game.entity.metadata.MetadataType;
+import com.github.steveice10.mc.protocol.data.game.entity.metadata.type.ByteEntityMetadata;
+import com.github.steveice10.mc.protocol.data.game.entity.metadata.type.ObjectEntityMetadata;
+import com.github.steveice10.mc.protocol.data.game.entity.type.EntityType;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundKeepAlivePacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityMotionPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddExperienceOrbPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddPlayerPacket;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.DisplayText;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityDataValue;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityTypeKey;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.SharedFlags;
+import me.whereareiam.anvil.edition.java.protocol.model.entity.ShownItem;
+import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.ClientboundAddEntity;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundSetEntityMotion;
+import me.whereareiam.anvil.edition.java.protocol.packet.entity.state.ClientboundSetEntityData;
+import me.whereareiam.anvil.player.library.mcprotocol.client.v1_18_2.ItemTranslator;
+import me.whereareiam.anvil.player.library.mcprotocol.client.v1_18_2.TextTranslator;
+import net.kyori.adventure.text.Component;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+class EntityPacketsTest {
+	private static final UUID ZOMBIE = new UUID(0, 7);
+
+	private final EntityPackets packets = new EntityPackets(new TextTranslator(), new ItemTranslator(new TextTranslator()));
+
+	@Test
+	void decodesMobsAndPaintingsThroughTheEntitySpawnAndPlayersAndOrbsThroughTheirOwn() {
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(7)).uniqueId(ZOMBIE).type(EntityTypeKey.minecraft("zombie"))
+						.position(new Vec3d(1.5, 64, -2.5)).yaw(90).pitch(10).build(),
+				packets.decode(new ClientboundAddEntityPacket(7, ZOMBIE, EntityType.ZOMBIE, 1.5, 64, -2.5, 90, 10,
+						90)));
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(8)).uniqueId(new UUID(0, 8))
+						.type(EntityTypeKey.minecraft("painting")).position(new Vec3d(4, 65, 4)).build(),
+				packets.decode(new ClientboundAddEntityPacket(8, new UUID(0, 8), EntityType.PAINTING, 4, 65, 4, 0, 0,
+						0)));
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(9)).uniqueId(new UUID(0, 9))
+						.type(EntityTypeKey.minecraft("player")).position(new Vec3d(2, 64, 2)).yaw(270).pitch(-30)
+						.build(),
+				packets.decode(new ClientboundAddPlayerPacket(9, new UUID(0, 9), 2, 64, 2, 270, -30)));
+		assertEquals(ClientboundAddEntity.builder().entityId(new EntityId(10)).type(EntityTypeKey.minecraft("experience_orb"))
+						.position(new Vec3d(1, 2, 3)).build(),
+				packets.decode(new ClientboundAddExperienceOrbPacket(10, 1, 2, 3, 5)));
+	}
+
+	@Test
+	void decodesTheVelocityTheServerGivesAnEntityInBlocksPerTick() throws IOException {
+		MinecraftCodecHelper helper = MinecraftCodec.CODEC.getHelperFactory().get();
+		ByteBuf wire = Unpooled.buffer();
+		helper.writeVarInt(wire, 7);
+		wire.writeShort(1000);
+		wire.writeShort(-4000);
+		wire.writeShort(0);
+
+		assertEquals(new ClientboundSetEntityMotion(new EntityId(7), new Vec3d(0.125, -0.5, 0)),
+				packets.decode(new ClientboundSetEntityMotionPacket(wire, helper)));
+	}
+
+	@Test
+	void decodesTheTextAndItemOfDisplaysAtTheirReleaseIndex() {
+		add(11, EntityType.TEXT_DISPLAY);
+		add(12, EntityType.ITEM_DISPLAY);
+
+		assertEquals(List.of(new DisplayText("Welcome Alice")), decodeData(data(11,
+				new ObjectEntityMetadata<>(22, MetadataType.CHAT,
+						Component.text("Welcome ").append(Component.text("Alice"))),
+				new ObjectEntityMetadata<>(23, MetadataType.CHAT, Component.text("not the text")))));
+		assertEquals(List.of(new ShownItem(me.whereareiam.anvil.edition.java.protocol.model.inventory.ItemStack.of(5, 2))),
+				decodeData(data(12,
+						new ObjectEntityMetadata<>(22, MetadataType.ITEM, new ItemStack(5, 2)),
+						new ObjectEntityMetadata<>(23, MetadataType.ITEM, new ItemStack(6, 1)))));
+	}
+
+	@Test
+	void decodesTheItemOfADroppedItemAndTheFlagsEveryEntityKeeps() {
+		add(13, EntityType.ITEM);
+
+		assertEquals(List.of(
+				SharedFlags.builder().onFire(true).build(),
+				new ShownItem(me.whereareiam.anvil.edition.java.protocol.model.inventory.ItemStack.of(871, 3))
+		), decodeData(data(13,
+				new ByteEntityMetadata(0, MetadataType.BYTE, (byte) 0x01),
+				new ObjectEntityMetadata<>(8, MetadataType.ITEM, new ItemStack(871, 3)))));
+	}
+
+	@Test
+	void leavesPacketsOfOtherAreasToOtherTranslations() {
+		assertNull(packets.decode(new ClientboundKeepAlivePacket(7)));
+	}
+
+	private void add(int entityId, EntityType type) {
+		packets.decode(new ClientboundAddEntityPacket(entityId, new UUID(0, entityId), type, 0, 0, 0, 0, 0, 0));
+	}
+
+	private List<EntityDataValue> decodeData(ClientboundSetEntityDataPacket data) {
+		return assertInstanceOf(ClientboundSetEntityData.class, packets.decode(data)).getValues();
+	}
+
+	private static ClientboundSetEntityDataPacket data(int entityId, EntityMetadata<?, ?>... metadata) {
+		return new ClientboundSetEntityDataPacket(entityId, metadata);
+	}
+}

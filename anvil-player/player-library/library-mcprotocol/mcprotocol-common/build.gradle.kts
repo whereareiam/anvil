@@ -49,6 +49,6 @@ val writeReleaseData = tasks.register<WriteVerifiedReleases>("writeReleaseData")
 
 tasks.named<ProcessResources>("processResources") {
 	from(writeReleaseData) {
-		into("me/whereareiam/anvil/protocol/mcprotocol")
+		into("me/whereareiam/anvil/player/library/mcprotocol")
 	}
 }
