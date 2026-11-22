@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.player.api.player;
+package me.whereareiam.anvil.player.api;
 
 import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.player.PlayerConnection;

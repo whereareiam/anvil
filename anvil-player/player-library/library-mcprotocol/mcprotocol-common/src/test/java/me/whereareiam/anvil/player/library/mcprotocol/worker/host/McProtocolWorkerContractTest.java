@@ -2,11 +2,11 @@ package me.whereareiam.anvil.player.library.mcprotocol.worker.host;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.capability.messages.model.MessageText;
+import me.whereareiam.anvil.player.api.ProtocolPlayer;
 import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
 import me.whereareiam.anvil.player.api.model.GameConnection;
 import me.whereareiam.anvil.player.api.model.PlayerRequest;
 import me.whereareiam.anvil.player.api.model.ProtocolRelease;
-import me.whereareiam.anvil.player.api.player.ProtocolPlayer;
 import me.whereareiam.anvil.player.library.mcprotocol.catalog.McProtocolReleaseCatalog;
 import me.whereareiam.anvil.player.library.mcprotocol.worker.fixture.EventWorkerExtension;
 import me.whereareiam.anvil.player.library.mcprotocol.worker.fixture.GradleReleaseClosures;

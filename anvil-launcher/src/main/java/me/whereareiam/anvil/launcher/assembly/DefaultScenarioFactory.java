@@ -17,7 +17,7 @@ import me.whereareiam.anvil.launcher.adapter.process.ScenarioPlatforms;
 import me.whereareiam.anvil.platform.api.PlatformPlanner;
 import me.whereareiam.anvil.platform.api.model.PlatformPlan;
 import me.whereareiam.anvil.player.DefaultPlayerService;
-import me.whereareiam.anvil.player.api.player.ProtocolPlayerComposer;
+import me.whereareiam.anvil.player.api.ProtocolPlayerComposer;
 import me.whereareiam.anvil.workbench.api.Workbench;
 import me.whereareiam.anvil.workbench.requirement.RequirementCheck;
 import org.jetbrains.annotations.NotNull;

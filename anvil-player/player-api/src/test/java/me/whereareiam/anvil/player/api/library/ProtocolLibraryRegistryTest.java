@@ -1,9 +1,9 @@
 package me.whereareiam.anvil.player.api.library;
 
+import me.whereareiam.anvil.player.api.ProtocolPlayer;
 import me.whereareiam.anvil.player.api.model.PlayerRequest;
 import me.whereareiam.anvil.player.api.model.ProtocolLibraryContext;
 import me.whereareiam.anvil.player.api.model.ProtocolRelease;
-import me.whereareiam.anvil.player.api.player.ProtocolPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 

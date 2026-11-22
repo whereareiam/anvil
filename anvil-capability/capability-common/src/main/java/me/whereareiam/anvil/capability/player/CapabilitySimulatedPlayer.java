@@ -16,8 +16,8 @@ import me.whereareiam.anvil.capability.api.CapabilityContext;
 import me.whereareiam.anvil.capability.api.event.CapabilityEvent;
 import me.whereareiam.anvil.capability.api.exception.CapabilityException;
 import me.whereareiam.anvil.capability.protocol.api.player.ProtocolPlayerCapabilityContext;
+import me.whereareiam.anvil.player.api.ProtocolPlayer;
 import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
-import me.whereareiam.anvil.player.api.player.ProtocolPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

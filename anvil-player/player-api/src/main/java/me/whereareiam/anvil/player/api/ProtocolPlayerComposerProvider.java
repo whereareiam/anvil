@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.player.api.player;
+package me.whereareiam.anvil.player.api;
 
 import org.jetbrains.annotations.NotNull;
 

@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.launcher.assembly;
 
-import me.whereareiam.anvil.player.api.player.ProtocolPlayerComposer;
-import me.whereareiam.anvil.player.api.player.ProtocolPlayerComposerProvider;
+import me.whereareiam.anvil.player.api.ProtocolPlayerComposer;
+import me.whereareiam.anvil.player.api.ProtocolPlayerComposerProvider;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
