@@ -4,81 +4,56 @@ The Minecraft test framework that got tired of watching you test everything by h
 
 [Documentation](https://anvil.whereareiam.me)
 
-Anvil gives JUnit control over:
+Anvil tests whatever runs on a Minecraft server: plugins, mods, server and proxy software itself. It
+gives your tests control over:
 
-- real Paper, Spigot, NeoForge, Velocity, and BungeeCord processes
-- the packaged plugin your users will actually install
+- real server and proxy processes, running the exact JARs, plugins and mods your users will install
 - lightweight clients speaking the real Minecraft protocol
-- complete environments that can also stay open for a developer to join
+- complete environments of servers and proxies, which can also stay open for a developer to join
+
+Nothing in it is a closed list. Platforms, the players' abilities, protocol libraries and the way tests
+run are all extension points: Anvil ships Paper, Spigot, NeoForge, Velocity and BungeeCord, a set of
+built-in capabilities and a JUnit integration, and your own library can add more without forking it.
 
 No mocked server. No full game client. No small orchestra of terminals waiting for you to conduct.
 The only fake part is Alice, and she is far more consistent than you are after the twentieth
 reconnect.
 
-## The test is simple. Repeating it is not.
+## Why
 
-Suppose your plugin should show a message when a player meets some condition.
+Testing a change once is easy: build the JAR, start the server, join, recreate the condition, look at
+chat. Then a permission check changes, or a dependency, or the platform, or the Minecraft version, and
+it is back to step one. Multiply that by every player journey your plugin, mod or server has, new and
+returning players, kicks, reconnects, proxy transfers, restarts, and by every supported version, and
+"we tested it" quietly becomes "we remembered most of it."
 
-Testing it once is easy:
+With Anvil you describe the environment once, let simulated players walk the journey, and check what
+the players and servers actually observed. The same journey runs after every change, against any
+supported version, and keeps the process logs when it fails.
 
-1. Build the JAR.
-2. Start the server.
-3. Join the server.
-4. Recreate the condition.
-5. Look at chat.
+## What Anvil tests against
 
-Then something changes:
+- **The real server, not a model of it.** Your code runs in the actual server or proxy process, with
+  its scheduler, its event order, its other plugins or mods and its quirks, so a test passes only when
+  the real thing works.
+- **Both sides of the connection.** Anvil puts its own agent inside every server and proxy it starts.
+  A test asks the player what it saw and the server what it knows: who is online and as whom, which
+  backend a proxy sent them to, which world they are in. Your own extension can teach the agent more,
+  so a test can check your plugin's or mod's state from inside the server, not only through chat.
+- **Real players.** Players are clients that speak the game's protocol and move like an ordinary game
+  client, log in through proxies, get kicked and reconnect, and see what a player would see.
+- **Every version you support.** The same test runs on old and new Minecraft versions, on a single
+  server and behind a proxy, and gives the same answer on every machine.
+- **Whole environments.** A test can span a proxy and several servers, and the same scenario opens for
+  a developer to join when a human eye is needed.
+- **Failures you can read.** When a wait fails, Anvil says what it saw instead and keeps the server
+  logs of the failed run.
 
-- a permission check
-- a dependency
-- the server platform
-- the Minecraft version
+Fast unit tests of your logic stay where they are; Anvil covers what only a running server can tell you.
 
-Back to step one. The check did not become difficult; it simply acquired a permanent claim on a
-developer's time.
+## Quick start
 
-**And that was one message.**
-
-A larger plugin accumulates whole player journeys. An authentication plugin may need to verify:
-
-- new and returning players
-- accepted and rejected credentials
-- kicks and repeated reconnects
-- direct joins and proxy joins
-- backend transfers and forwarded identities
-- restarts and persisted state
-
-Now multiply that by the supported server platforms and Minecraft versions, then perform the sacred
-ritual before every release. Eventually “we tested it” means “we remembered most of it.” Inspiring.
-
-### Make the journey executable
-
-With Anvil, the test does the boring part:
-
-1. Describe the real environment once.
-2. Create however many players the journey needs.
-3. Let them join, chat, run commands, click, move, reconnect, or cross a proxy.
-4. Verify what the players and servers actually observe.
-
-Run the same journey after every change and before every release. Point it at another Minecraft
-version instead of reenacting it. If a developer genuinely needs to look around, start the same
-scenario in the foreground and hand them the join address.
-
-When something fails, Anvil keeps the process logs. This is slightly more useful than remembering
-that the message definitely appeared yesterday.
-
-Keep your unit tests. Anvil handles the ugly part where the packaged plugin must survive contact
-with an actual Minecraft server.
-
-## Replace yourself with Alice
-
-Anvil requires Java 21 or newer. It runs each Minecraft server on the LTS JDK that server's version
-prefers ([the Java table](https://anvil.whereareiam.me/docs/dev/building-blocks/environments/provisioning/java#java-per-platform-version)
-lists them), because naturally the server and the test framework cannot always agree on one.
-
-### Teach Gradle the trick
-
-Add the repositories to `settings.gradle.kts`:
+Anvil needs Java 21 or newer. Add the repositories to `settings.gradle.kts`:
 
 ```kotlin
 pluginManagement {
@@ -93,47 +68,17 @@ dependencyResolutionManagement {
         mavenCentral()
         maven("https://registry.whereareiam.me/maven/packages")
         maven("https://repo.opencollab.dev/main/")
-        maven("https://repo.opencollab.dev/maven-snapshots/")
     }
 }
 ```
 
-Choose the plugin that matches the workflow:
-
-| Plugin ID                    | What it installs                                                          |
-|------------------------------|---------------------------------------------------------------------------|
-| `me.whereareiam.anvil`       | `anvilScenarios`, `anvilRun`, `anvilLogin`, `anvilLogout`, and IDE discovery |
-| `me.whereareiam.anvil.junit` | Automated `anvilTest`, suite tasks, and `anvil` to run them all           |
-
-Neither plugin installs capabilities or a protocol library. Apply capability units, such as
-`me.whereareiam.anvil.capability.default` for the whole built-in set, and add a protocol library, such
-as the bundled `protocol-mcprotocol`, to `anvilRuntimeOnly` when scenarios use simulated players.
-
-Platform units are applied separately: `me.whereareiam.anvil.platform.paper`,
-`me.whereareiam.anvil.platform.spigot`, `me.whereareiam.anvil.platform.neoforge`,
-`me.whereareiam.anvil.platform.velocity`, and
-`me.whereareiam.anvil.platform.bungeecord`. Single capability units such as
-`me.whereareiam.anvil.capability.inventory` replace the default set when only some are wanted.
-
-Each player speaks through one protocol library. `anvil { engine { protocolLibrary("mcprotocol") } }`
-makes one library the default; without it, each player uses the installed library with the strongest
-support for its Minecraft version, and a scenario or player can still choose another one.
-Authentication belongs to the protocol library. Manage local account files from the Anvil IntelliJ
-panel, sign in with `./gradlew anvilLogin --account=<id>`, or place account files generated by the
-library in the configured account directory. MCProtocolLib supplies Microsoft device-code
-authentication through both of those entry points and keeps its own account files.
-Global accounts default to `~/.anvil/accounts`; project-specific account directories and account
-pools are managed from the **Accounts** action in the Anvil tool window. Named pools are declared in
-the account directory's `pools.properties`, which other machines can write by hand. Account IDs are referenced
-from a player's `PlayerLogin`, while the library retrieves the real username and UUID.
-
-Apply Anvil where the scenarios live. Capabilities, platforms, and the protocol library are always
-explicit:
+Apply Anvil in the project you test, in `build.gradle.kts`. The example tests a Paper plugin with
+JUnit; a mod, a server JAR or a proxy plugin is registered and installed the same way:
 
 ```kotlin
 plugins {
     java
-    id("me.whereareiam.anvil") version "0.0.1"
+    id("me.whereareiam.anvil.junit") version "0.0.1"
     id("me.whereareiam.anvil.capability.default") version "0.0.1"
     id("me.whereareiam.anvil.platform.paper") version "0.0.1"
 }
@@ -144,118 +89,16 @@ dependencies {
 
 anvil {
     acceptEula()
-    engine {
-        protocolLibrary("mcprotocol")
-    }
-    artifact("plugin-under-test", project(":plugin"))
+    artifact("plugin-under-test", tasks.named("jar"))
 }
 ```
 
-The EULA setting records your acceptance of the
-[Minecraft EULA](https://www.minecraft.net/eula). Anvil can start five servers before breakfast,
-but it will not accept legal agreements on your behalf.
+`acceptEula()` records your acceptance of the [Minecraft EULA](https://www.minecraft.net/eula). Anvil
+can start five servers before breakfast, but it will not accept legal agreements on your behalf.
 
-The plugin creates a dedicated `anvil` source set under `src/anvil`. Production code stays in
-`src/main`, ordinary unit tests stay in `src/test`, and server scenarios get their own little
-dimension. In a single-project build, register the artifact from `tasks.named("jar")` instead of
-`project(":plugin")`.
-
-For direct embedding without the Gradle plugin, use
-`me.whereareiam.anvil:launcher`; do not depend on `engine` directly. The launcher distribution
-contains the executable composition root and public contracts. Protocol libraries and platform
-providers are selected runtime dependencies, so the launcher itself does not impose MCProtocolLib or a
-platform SDK on consumers. Add the selected library, platform providers, and matching platform-agent
-artifacts to the embedding application's runtime classpath, and set `EngineOptions.protocolLibrary`
-when players should default to one library.
-Create an API `ScenarioEngine` with `AnvilLauncher.create(options)`; `EngineOptions` lives in
-`me.whereareiam.anvil.api.model`.
-
-Use `AnvilLauncher.builder().options(options).extension(extension).build()` to add application
-diagnostics or scenario lifecycle observers. Engine extensions use the global API; capabilities,
-platforms, protocols, and agents have their own extension contracts in the
-[documentation](https://anvil.whereareiam.me).
-
-For another tooling integration that needs the foreground shell, use
-`me.whereareiam.anvil:tooling-runner`. Supply `AnvilRunner` with terminal streams and a factory
-for an owned `ScenarioEngine`. For executable CLI and IDE entry points using the default engine,
-use `me.whereareiam.anvil:tooling-launcher`; the Gradle plugin supplies that runtime automatically.
-
-Add the bundled MCProtocolLib library to `anvilRuntimeOnly` when using simulated players. Apply one
-platform unit for every platform used by the scenario, alongside the Anvil plugin:
-
-```kotlin
-plugins {
-    id("me.whereareiam.anvil") version "0.0.1"
-    id("me.whereareiam.anvil.platform.paper") version "0.0.1"
-    id("me.whereareiam.anvil.platform.velocity") version "0.0.1"
-}
-```
-
-Each unit owns its provider and matching agent artifacts. The selected agent is installed
-automatically into the managed workspace; consumers do not configure agent ports, tokens, or plugin
-paths.
-
-Custom capabilities can call typed operations installed in a server or proxy's platform agent.
-Package the native handler separately and install it as a workspace asset. Anvil supplies
-process-scoped request channels to the host capability and replaces their underlying agent connections
-when a process restarts. The [documentation](https://anvil.whereareiam.me) covers the complete extension workflow.
-
-### Select only the capabilities you need
-
-The umbrella plugin includes `default`, the aggregate of all built-in capabilities. For a smaller
-compile and runtime surface, use `me.whereareiam.anvil` and apply individual capability
-units:
-
-```kotlin
-plugins {
-    id("me.whereareiam.anvil") version "0.0.1"
-    id("me.whereareiam.anvil.capability.session") version "0.0.1"
-    id("me.whereareiam.anvil.capability.messages") version "0.0.1"
-    id("me.whereareiam.anvil.capability.players") version "0.0.1"
-}
-```
-
-The available built-in unit IDs are `session`, `messages`, `movement`, `inventory`, `interaction`,
-`commands`, `dialogs`, `cookies`, `overlays`, `sounds`, and `entities` for players, and `dispatch` and `players` for servers and proxies. The umbrella plugin uses the separate `default` unit internally to include the
-aggregate artifact. Unit plugins own their capability artifact coordinates; the scenarios plugin has
-no built-in capability catalog.
-
-An external capability is installed on the Anvil source set:
-
-```kotlin
-dependencies {
-    add("anvilImplementation", "com.example:combat:1.4.0")
-}
-```
-
-Omit the block entirely when no simulated-player behavior is needed. A scenarios-only project can
-then start a real environment for a developer to join. A JUnit-only project can test process,
-artifact, or server lifecycle behavior without installing `Session` or any other player capability.
-
-### Describe the mess once
-
-Create `src/anvil/java/com/example/test/PaperScenario.java`:
+Describe the environment in `src/anvil/java`:
 
 ```java
-package com.example.test;
-
-import me.whereareiam.anvil.api.model.process.Distribution;
-import me.whereareiam.anvil.api.model.process.MinecraftServer;
-import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
-import me.whereareiam.anvil.api.model.workspace.AssetSource;
-import me.whereareiam.anvil.api.model.workspace.WorkspaceAsset;
-import me.whereareiam.anvil.api.model.workspace.WorkspaceCache;
-import me.whereareiam.anvil.api.model.workspace.WorkspaceCleanup;
-import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
-import me.whereareiam.anvil.api.scenario.AnvilScenarioDefinition;
-import me.whereareiam.anvil.api.type.Platforms;
-import me.whereareiam.anvil.api.type.AssetInstallMode;
-import me.whereareiam.anvil.api.type.CachePolicy;
-import me.whereareiam.anvil.api.type.CleanupPhase;
-import me.whereareiam.anvil.api.type.WorkspaceMode;
-
-import java.nio.file.Path;
-
 public final class PaperScenario implements AnvilScenarioDefinition {
     @Override
     public AnvilScenario define() {
@@ -264,227 +107,103 @@ public final class PaperScenario implements AnvilScenarioDefinition {
                 .platform(Platforms.PAPER)
                 .distribution(Distribution.remote("1.21.11", "132"))
                 .workspace(WorkspacePlan.builder()
-                        .mode(WorkspaceMode.PERSISTENT)
                         .asset(WorkspaceAsset.builder()
-                                .group("plugin")
                                 .source(AssetSource.artifact("plugin-under-test"))
                                 .target(Path.of("plugins", "plugin-under-test.jar"))
-                                .mode(AssetInstallMode.ALWAYS)
-                                .build())
-                        .cache(WorkspaceCache.builder()
-                                .group("plugin-libraries")
-                                .path(Path.of("plugins", "ExamplePlugin", ".libraries"))
-                                .key("example-plugin-libraries")
-                                .policy(CachePolicy.RESTORE_AND_SAVE)
-                                .build())
-                        .cleanup(WorkspaceCleanup.builder()
-                                .group("generated")
-                                .path(Path.of("logs", "previous-run"))
-                                .phase(CleanupPhase.BEFORE_START)
                                 .build())
                         .build())
-                .memoryMegabytes(1024)
                 .build();
 
-        return AnvilScenario.builder()
-                .name("paper-1.21.11")
-                .entrypoint(paper.getName())
-                .server(paper)
-                .build();
+        return AnvilScenario.builder().name("paper").entrypoint("server").server(paper).build();
     }
 }
 ```
 
-That class defines the environment. It does not reserve three players, predict their names, or ask
-how many friends you have. Players belong to the running test and are created when needed.
-
-### Let Alice take over
+And let Alice do the boring part:
 
 ```java
-package com.example.test;
-
-import me.whereareiam.anvil.api.player.SimulatedPlayer;
-import me.whereareiam.anvil.api.scenario.ScenarioContext;
-import me.whereareiam.anvil.capability.messages.Messages;
-import me.whereareiam.anvil.capability.session.Session;
-import me.whereareiam.anvil.integration.junit.AnvilTest;
-import org.junit.jupiter.api.Test;
-
 final class PluginTest {
     @Test
     @AnvilTest(PaperScenario.class)
     void reportsThatItIsReady(ScenarioContext anvil) {
         SimulatedPlayer alice = anvil.players().create("Alice");
-        Session session = alice.capability(Session.class);
+        alice.capability(Session.class).connect();
+
         Messages messages = alice.capability(Messages.class);
-
-        session.connect();
-        session.connected();
-
         messages.command("myplugin status");
         messages.received("Ready");
     }
 }
 ```
 
-Run it:
-
 ```shell
 ./gradlew anvilTest
 ```
 
-Anvil provisions the server, installs the asset, restores declared caches, waits until everything is ready, connects
-Alice, runs the test, and cleans up afterward. Alice never asks whether this can wait until tomorrow.
+Anvil downloads the pinned server, installs your plugin, waits until everything is ready, connects
+Alice, runs the test and cleans up. [Your first test](https://anvil.whereareiam.me/docs/dev/getting-started/first-test)
+has the same files with their imports, and [Getting started](https://anvil.whereareiam.me/docs/dev/getting-started)
+covers the rest: choosing plugins, workspaces and caches, accounts, and embedding Anvil without Gradle.
 
-Assets, caches, and cleanup are separate declarations. Asset targets are process-workspace-relative:
-file sources are copied to the target file and directory sources copy their contents into the target
-directory. `SEED_ONCE` only installs into an empty persistent target; `ALWAYS` refreshes it on every
-start. Cache paths are also relative and are stored below Anvil's global cache directory. Paper and
-Velocity may contribute safe default caches such as `libraries/`; a scenario can add a custom cache,
-replace a default by path, or disable it with `CachePolicy.DISABLED`. Cleanup declarations never imply
-cache or asset behavior, and overlapping cache/cleanup paths are rejected.
+## What Alice can do
 
-## Alice starts with a toolkit, not a ceiling
+Players, servers and proxies get their abilities from capabilities, typed APIs you ask for by class. The
+built-in set lets a player connect and reconnect, chat and run commands, move with the vanilla client's
+physics, use inventories, interact with blocks and entities, answer dialogs and cookies, and wait for
+titles, sounds, entities and blocks. Servers and proxies can run console commands and report which
+players they see and where a proxy sent them.
 
-`SimulatedPlayer` is not one enormous interface Anvil must keep feeding forever. A capability is a
-global Anvil API concept, while a capability provider is only the runtime mechanism that supplies
-its implementation. Anvil ships a useful starting set:
+Your own library can add more as an ordinary dependency, without forking Anvil:
+[Capabilities](https://anvil.whereareiam.me/docs/dev/building-blocks/players/capabilities) lists the
+built-in ones, and [Extending capabilities](https://anvil.whereareiam.me/docs/dev/extending/capabilities) shows how to write one.
 
-| Built-in capability | What your test can do                                                          |
-|---------------------|--------------------------------------------------------------------------------|
-| `Session`           | Connect, disconnect, rejoin, inspect connection state, and verify kick reasons |
-| `Messages`          | Send chat and commands, capture messages, wait for output, and model the chat  |
-| `Movement`          | Send position, rotation, and on-ground state                                   |
-| `Inventory`         | Inspect containers, select held slots, and click inventory slots               |
-| `Interaction`       | Use held items and interact with blocks or entities                            |
-| `Commands`          | Read the command tree and check commands as the client does                    |
-| `Dialogs`           | Observe dialogs, fill their inputs, and press their buttons (1.21.6+)          |
-| `Cookies`           | Hold cookies, answer the server's requests, and observe them (1.20.5+)         |
-| `Overlays`          | Wait for titles, action bars, and boss bars the server shows                   |
-| `Sounds`            | Wait for the sounds the server plays, named or by registry ID                  |
-| `Entities`          | Follow spawned entities: positions, passengers, names, text, items and flags   |
+## Run it your way
 
-Servers and proxies have capabilities of their own: `Dispatch` runs commands as the console, and
-`Players` reports who is on that process, the username and UUID it sees, and on a proxy the backend it
-connected each player to:
+JUnit is the standard way to run scenarios automatically (`@AnvilTest`, `./gradlew anvilTest`), not the
+only one. The same scenarios run in the foreground, in the IntelliJ plugin, and in your own application
+through the [launcher](https://anvil.whereareiam.me/docs/dev/integrations/embedding), and the
+[tooling](https://anvil.whereareiam.me/docs/dev/extending/tooling) lets another tool drive them.
 
-```java
-Players lobby = anvil.processes().server("lobby").capability(Players.class);
-PlayerWatch arrivals = lobby.watch();
-alice.capability(Session.class).connect();
-arrivals.joined(alice);
-```
+## Real environments, not one server
 
-These are what Anvil includes, not everything Alice will ever be allowed to learn. An
-external library can ship another capability wiring bundle as a normal dependency. Anvil discovers
-its provider, attaches the typed capability to compatible players, and exposes it through the same
-global API:
+A scenario can start a proxy and several backends as one environment, with forwarding negotiated and
+configured for you, and check where each player lands and which identity each server sees.
 
-```java
-Combat combat = alice.capability(Combat.class);
-```
-
-No core fork. No giant player interface. No waiting for the next Anvil release because somebody
-invented a packet you care about.
-
-The built-in observations wait for a sensible timeout and fail with recent history when the
-expected event never arrives. Add a `Duration` when your server needs special treatment.
-
-Providers can retrieve only the capability dependencies declared in their `CapabilityDescriptor`.
-Registered cleanup runs in reverse order, including when capability construction fails. Cleanup
-failures are reported after the remaining resources are released.
-
-The `Players` capability reads its process's platform agent and has no `Session` dependency. Agent
-operations can be used with another protocol library or without any packet-capability adapter.
-
-Players can be created dynamically, disconnected, rejoined, or destroyed independently. Installed
-capabilities decide what else they can do.
-
-### Build an external capability
-
-Publish the public capability separately from its implementation so tests can use your domain
-operations. A provider can compose declared capabilities, send typed requests to a native worker,
-or call a server/proxy agent. Native worker extensions bind to the actual client SDK and own their
-packet handling and listener cleanup.
-
-Use your own Maven group and packages, register the provider's service descriptor, and install the
-selected implementation through `anvilImplementation`. The [documentation](https://anvil.whereareiam.me)
-walks through contracts, host and worker adapters, agent handlers, and packaged consumer tests.
-
-## One server would have been too reasonable
-
-A scenario can launch a proxy and multiple backends as one supervised environment. Players connect
-through the declared entrypoint while the test observes where they land, which identity each server
-sees, and whether transfers actually happened.
-
-Velocity with Paper. Velocity with Spigot. BungeeCord with Paper. BungeeCord with Spigot. Modern
-forwarding, legacy forwarding, multiple backends, real processes. All the configuration normally
-spread across several directories and one developer's increasingly fragile patience.
-
-Providers declare supported identity-forwarding modes. Anvil negotiates one mode for each connected
-proxy/server group before launch, including overlapping proxy routes, and supplies shared per-run
-forwarding settings to each provider. Incompatible groups fail preflight; provider implementations
-do not select forwarding by inspecting another platform's name.
-
-Platform configuration writers parse existing YAML or TOML, preserve unrelated values, and replace
-runtime-owned settings structurally. Repeated configuration does not append duplicate YAML sections,
-and direct-server runs disable forwarding retained in persistent workspaces. Serialization rewrites
-formatting and comments. Malformed configuration and duplicate YAML keys fail with diagnostics.
-
-Velocity `.setting(key, value)` values use TOML literal syntax: `"128"` represents an integer,
-`"true"` a boolean, `"[1, 2]"` an array, and `"'hello'"` a string. Dotted keys update nested tables;
-runtime-owned roots such as `servers` cannot be overridden. Quote string values that previously
-relied on implicit string detection. BungeeCord settings use YAML values; server properties remain
-plain strings.
-
-## Humans may still enter
-
-Sometimes you genuinely want to join the server. Fine. Run the same scenario in the foreground:
+When you do want to look around yourself, run the same scenario in the foreground:
 
 ```shell
-./gradlew anvilScenarios
-./gradlew anvilRun --scenario=manual-paper
+./gradlew anvilRun --scenario=paper
 ```
 
-Anvil prints the vanilla-client join address and gives you status, logs, restarts, scenario
-switching, and routed console commands. Manual testing remains available; it simply stops being the
-entire quality strategy.
+Anvil prints the join address and gives you logs, restarts and the server consoles. The
+[IntelliJ plugin](https://anvil.whereareiam.me/docs/dev/integrations/intellij/installation) does the same
+from a tool window.
 
-Prefer buttons? The [Anvil plugin for IntelliJ IDEA](https://anvil.whereareiam.me/docs/dev/integrations/intellij/installation)
-lists the same scenarios in a tool window, starts whole environments or single servers, and keeps
-each process's console, commands, and players one click away. Install it from JetBrains Marketplace.
+## Built in, and what you can add
 
-## What it actually supports
-
-| Role                     | Platforms            |
+| Role                     | Built-in platforms   |
 |--------------------------|----------------------|
 | Direct or backend server | Paper, Spigot        |
 | Direct server            | NeoForge             |
 | Proxy                    | Velocity, BungeeCord |
 
-Players speak Minecraft `1.16.5`, `1.17.1`, `1.18.2`, `1.19.4`, `1.20.6`, `1.21.1`, `1.21.11`, `26.1.2`, `26.2`, and `26.3`
-through MCProtocolLib, plus `1.16.4`, `1.20.5`, `1.21`, `26.1`, and `26.1.1`, which share those protocols. The
-live matrix runs those versions on Paper and `1.21.1` and newer on NeoForge, and verifies `1.21.11`
-and `26.1.2` on Spigot and across every supported proxy/backend combination; the other supported
-versions are compatible but not live-tested. Release data you supply can add newer versions. The
+Players speak Minecraft 1.16.5 to 26.3 through the built-in MCProtocolLib library. The
 [version support page](https://anvil.whereareiam.me/docs/dev/building-blocks/environments/platforms/versions)
-lists every release, platform range, and support level. Distributions may come from pinned remote
-builds, local JARs, Maven artifacts, or Gradle project artifacts.
+lists every release, which ones the live matrix runs, and which Java each server gets.
 
-Anvil uses native Java protocol clients. Local JVM execution is the standard workflow; an embedded
-Docker setup requires explicit image mappings and local-daemon access. The documentation explains
-that setup and its limits. Kubernetes, SSH/hosted orchestration, Fabric, Sponge, and Bedrock are
-outside the current scope.
+Another server or proxy software is a [platform provider](https://anvil.whereareiam.me/docs/dev/extending/platform-providers),
+another client library a [protocol library](https://anvil.whereareiam.me/docs/dev/extending/protocol-libraries), and an action
+inside a running server an [agent operation](https://anvil.whereareiam.me/docs/dev/extending/agent-operations), each shipped as an
+ordinary dependency. [Extending Anvil](https://anvil.whereareiam.me/docs/dev/extending) covers them all.
 
-## Distrust the README
+## See it work
 
-Good instinct. The repository contains an executable authentication use case:
+[`examples/proof-of-patience`](examples/proof-of-patience) is a complete plugin with its unit test,
+its scenarios, and the release journey Alice performs instead of you.
 
-- [The plugin](examples/proof-of-patience/src/main/java/me/whereareiam/anvil/example/patience/plugin/ProofOfPatiencePlugin.java), which accepts patience where credentials would usually go
-- [Its ordinary unit test](examples/proof-of-patience/src/test/java/me/whereareiam/anvil/example/patience/plugin/ReconnectChallengeTest.java)
-- [Its reusable scenario definitions](examples/proof-of-patience/src/anvil/java/me/whereareiam/anvil/example/patience/scenario/)
-- [The release journey Alice performs instead of you](examples/proof-of-patience/src/anvil/java/me/whereareiam/anvil/example/patience/journey/ProofOfPatienceJourneyTest.java)
+## Contributing
 
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
