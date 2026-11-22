@@ -1,0 +1,39 @@
+description = "Walks on a stone floor and is teleported with a velocity: launched up and sideways, its velocity turned with its view"
+since = "1.21.2"
+ticks = 60
+
+[join]
+x = 0.5
+y = 64.0
+z = 0.5
+yaw = 0.0
+pitch = 0.0
+chunksAfterTicks = 0
+
+[[blocks]]
+from = [-8, 63, -3]
+to = [12, 63, 20]
+state = "minecraft:stone"
+
+[[keys]]
+tick = 5
+held = ["forward"]
+
+[[keys]]
+tick = 50
+held = []
+
+# The server pings during the join's handshake, after the login and right before the first position packet, as an
+# anticheat pings before each teleport.
+[[server]]
+tick = -1
+ping = { id = -1 }
+
+# The server pings right before the teleport, as an anticheat does.
+[[server]]
+tick = 20
+ping = { id = -2 }
+
+[[server]]
+tick = 20
+teleport = { id = 2, x = 0.0, y = 0.0, z = 0.0, yaw = 90.0, pitch = 0.0, dx = 0.0, dy = 0.42, dz = 0.25, relatives = ["x", "y", "z", "pitch", "delta_x", "rotate_delta"] }

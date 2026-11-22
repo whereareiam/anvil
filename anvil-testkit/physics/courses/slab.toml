@@ -1,0 +1,47 @@
+description = "Walks up bottom slabs and full blocks in half-block steps, then walks off the top and falls to the floor"
+ticks = 80
+
+[start]
+x = 0.5
+y = 64.0
+z = 0.5
+yaw = 0.0
+pitch = 0.0
+
+[[blocks]]
+from = [-3, 63, -3]
+to = [3, 63, 24]
+state = "minecraft:stone"
+
+[[blocks]]
+from = [-1, 64, 4]
+to = [1, 64, 5]
+state = "minecraft:stone_slab[type=bottom]"
+
+[[blocks]]
+from = [-1, 64, 6]
+to = [1, 64, 8]
+state = "minecraft:stone"
+
+[[blocks]]
+from = [-1, 64, 9]
+to = [1, 64, 10]
+state = "minecraft:stone"
+
+[[blocks]]
+from = [-1, 65, 9]
+to = [1, 65, 10]
+state = "minecraft:stone_slab[type=bottom]"
+
+[[blocks]]
+from = [-1, 64, 11]
+to = [1, 65, 11]
+state = "minecraft:stone"
+
+[[keys]]
+tick = 5
+held = ["forward"]
+
+[[keys]]
+tick = 60
+held = []

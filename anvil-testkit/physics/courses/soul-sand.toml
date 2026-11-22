@@ -1,0 +1,27 @@
+description = "Walks from stone onto soul sand, which is lower than a full block and slows the player down"
+ticks = 70
+
+[start]
+x = 0.5
+y = 64.0
+z = 0.5
+yaw = 0.0
+pitch = 0.0
+
+[[blocks]]
+from = [-3, 63, -3]
+to = [3, 63, 30]
+state = "minecraft:stone"
+
+[[blocks]]
+from = [-3, 63, 3]
+to = [3, 63, 30]
+state = "minecraft:soul_sand"
+
+[[keys]]
+tick = 5
+held = ["forward"]
+
+[[keys]]
+tick = 55
+held = []

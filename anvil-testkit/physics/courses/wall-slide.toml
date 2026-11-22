@@ -1,0 +1,27 @@
+description = "Sprints at an angle into a wall, which stops the sprint, and slides along it"
+ticks = 60
+
+[start]
+x = 0.5
+y = 64.0
+z = 0.5
+yaw = -30.0
+pitch = 0.0
+
+[[blocks]]
+from = [-3, 63, -3]
+to = [30, 63, 6]
+state = "minecraft:stone"
+
+[[blocks]]
+from = [-3, 64, 6]
+to = [30, 65, 6]
+state = "minecraft:stone"
+
+[[keys]]
+tick = 5
+held = ["forward", "sprint"]
+
+[[keys]]
+tick = 50
+held = []

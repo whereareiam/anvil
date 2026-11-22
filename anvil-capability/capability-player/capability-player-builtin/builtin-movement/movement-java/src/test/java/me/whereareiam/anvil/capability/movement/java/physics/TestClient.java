@@ -52,6 +52,14 @@ public final class TestClient {
 		this(new TestWorld(version, dimension));
 	}
 
+	/**
+	 * Creates a disconnected player of a client version that speaks the given protocol, such as one Anvil ships no
+	 * block data of.
+	 */
+	public TestClient(@NotNull String version, int protocol) {
+		this(new TestWorld(version, protocol));
+	}
+
 	private TestClient(@NotNull TestWorld world) {
 		this.version = world.version;
 		this.player = world.player;

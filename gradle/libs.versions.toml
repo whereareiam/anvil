@@ -9,6 +9,8 @@ kotlin = "2.4.21"
 shadow = "9.6.1"
 freefair = "9.8.3"
 toolkit = "0.3.0"
+# Remaps the obfuscated vanilla clients that generateVanillaData runs to Mojang's names.
+auto-renaming-tool = "2.0.17"
 
 # compile time processing
 lombok = "1.18.42"
@@ -65,6 +67,7 @@ shadow = { group = "com.gradleup.shadow", name = "shadow-gradle-plugin", version
 toolkit-publish-maven = { group = "me.whereareiam.toolkit", name = "publish-maven", version.ref = "toolkit" }
 toolkit-project-discovery = { group = "me.whereareiam.toolkit", name = "project-discovery", version.ref = "toolkit" }
 toolkit-architecture = { group = "me.whereareiam.toolkit", name = "architecture", version.ref = "toolkit" }
+auto-renaming-tool = { group = "net.neoforged", name = "AutoRenamingTool", version.ref = "auto-renaming-tool" }
 
 # compile time processing
 lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }

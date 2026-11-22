@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.buildlogic.minecraftdata.pin
 
 /**
- * The pins of one kind's pins file, such as `block-data.toml`: the PrismarineJS minecraft-data release the data comes
+ * The pins of one kind's pins file, such as `packet-data.toml`: the PrismarineJS minecraft-data release the data comes
  * from, and for each protocol, the minecraft-data files its data is made of.
  *
  * @property source the pinned minecraft-data release
@@ -44,7 +44,7 @@ data class MinecraftDataPins(val source: Source, val releases: List<Release>) {
 	 * A file of the minecraft-data repository at the pinned commit, below `data/pc`, which the settings' `minecraft-data`
 	 * repository resolves as the artifact [name] with the [directory] as classifier.
 	 *
-	 * @property path the path below the repository root, such as `data/pc/1.16.2/blocks.json`
+	 * @property path the path below the repository root, such as `data/pc/1.16.2/protocol.json`
 	 * @property sha256 the checksum of the file's bytes
 	 */
 	data class PinnedFile(val path: String, val sha256: String) {
@@ -57,7 +57,7 @@ data class MinecraftDataPins(val source: Source, val releases: List<Release>) {
 			get() = parts.groupValues[1]
 
 		/**
-		 * The file's name without its extension, such as `blocks`.
+		 * The file's name without its extension, such as `protocol`.
 		 */
 		val name: String
 			get() = parts.groupValues[2]

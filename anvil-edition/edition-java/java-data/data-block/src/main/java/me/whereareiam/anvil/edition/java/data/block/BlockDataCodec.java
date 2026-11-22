@@ -6,12 +6,16 @@ import me.whereareiam.anvil.edition.java.data.block.model.BlockDataSource;
 import me.whereareiam.anvil.edition.java.data.block.model.BlockProperty;
 import me.whereareiam.anvil.edition.java.data.block.model.BlockState;
 import me.whereareiam.anvil.edition.java.data.block.model.BlockType;
+import me.whereareiam.anvil.edition.java.data.block.model.collision.BlockOffset;
 import me.whereareiam.anvil.edition.java.data.block.model.collision.CollisionBox;
+import me.whereareiam.anvil.edition.java.data.block.model.collision.CollisionCase;
 import me.whereareiam.anvil.edition.java.data.block.model.collision.CollisionShape;
 import me.whereareiam.anvil.edition.java.data.block.model.movement.BlockMovement;
 import me.whereareiam.anvil.edition.java.data.block.model.movement.StuckSpeed;
+import me.whereareiam.anvil.edition.java.data.block.type.BlockFace;
 import me.whereareiam.anvil.edition.java.data.block.type.BlockKind;
 import me.whereareiam.anvil.edition.java.data.block.type.CollisionKind;
+import me.whereareiam.anvil.edition.java.data.block.type.EntityBottom;
 import me.whereareiam.anvil.edition.java.data.block.type.FluidType;
 import me.whereareiam.anvil.edition.java.data.block.type.MovementBehaviour;
 import org.jetbrains.annotations.NotNull;
@@ -22,9 +26,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.zip.GZIPInputStream;
@@ -36,8 +43,8 @@ import java.util.zip.GZIPOutputStream;
  * format version. Enums are written by name and checked by {@code valueOf} when read.
  *
  * <p>A registry is its protocol, its {@link BlockDataSource}, the collision shapes its states use, and each block
- * with its states' shape and fluid; property values follow from {@link BlockType#propertiesAt(int)}. The index lists
- * each supported protocol, with the reason when it has no data.</p>
+ * with its states' shapes, fluid and faces; property values follow from {@link BlockType#propertiesAt(int)}. The index
+ * lists each supported protocol, with the reason when it has no data.</p>
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 final class BlockDataCodec {
@@ -50,8 +57,12 @@ final class BlockDataCodec {
 			writeSource(data, registry.source());
 
 			Map<CollisionShape, Integer> shapes = new LinkedHashMap<>();
-			for (int stateId = 0; stateId < registry.stateCount(); stateId++)
-				shapes.putIfAbsent(registry.state(stateId).getCollision(), shapes.size());
+			for (int stateId = 0; stateId < registry.stateCount(); stateId++) {
+				BlockState state = registry.state(stateId);
+				shapes.putIfAbsent(state.getCollision(), shapes.size());
+				for (CollisionShape shape : state.getCollisionCases().values())
+					shapes.putIfAbsent(shape, shapes.size());
+			}
 			data.writeInt(shapes.size());
 			for (CollisionShape shape : shapes.keySet())
 				writeShape(data, shape);
@@ -59,10 +70,8 @@ final class BlockDataCodec {
 			data.writeInt(registry.blocks().size());
 			for (BlockType block : registry.blocks()) {
 				writeBlock(data, block);
-				for (BlockState state : registry.states(block)) {
-					data.writeInt(shapes.get(state.getCollision()));
-					data.writeUTF(state.getFluid().name());
-				}
+				for (BlockState state : registry.states(block))
+					writeState(data, state, shapes);
 			}
 		}
 	}
@@ -85,8 +94,7 @@ final class BlockDataCodec {
 				BlockType block = readBlock(data, id);
 				blocks.add(block);
 				for (int stateId = block.getMinStateId(); stateId <= block.getMaxStateId(); stateId++)
-					states.add(new BlockState(stateId, block, block.propertiesAt(stateId), shapes.get(data.readInt()),
-							FluidType.valueOf(data.readUTF())));
+					states.add(readState(data, stateId, block, shapes));
 			}
 
 			return new BlockRegistry(protocol, source, blocks, states.toArray(BlockState[]::new));
@@ -128,21 +136,53 @@ final class BlockDataCodec {
 	}
 
 	private static void writeSource(DataOutputStream data, BlockDataSource source) throws IOException {
-		data.writeUTF(source.getRepository());
-		data.writeUTF(source.getVersion());
-		data.writeUTF(source.getCommit());
-		data.writeUTF(source.getBlocks());
-		data.writeUTF(source.getCollisionShapes());
+		data.writeUTF(source.getMinecraft());
 	}
 
 	private static BlockDataSource readSource(DataInputStream data) throws IOException {
-		return BlockDataSource.builder()
-				.repository(data.readUTF())
-				.version(data.readUTF())
-				.commit(data.readUTF())
-				.blocks(data.readUTF())
-				.collisionShapes(data.readUTF())
-				.build();
+		return new BlockDataSource(data.readUTF());
+	}
+
+	private static void writeState(DataOutputStream data, BlockState state, Map<CollisionShape, Integer> shapes) throws IOException {
+		data.writeInt(shapes.get(state.getCollision()));
+		data.writeUTF(state.getFluid().name());
+		data.writeByte(state.getFluidAmount());
+		data.writeBoolean(state.isFluidSource());
+		data.writeBoolean(state.isFluidFalling());
+		data.writeBoolean(state.isBlocksFluidFlow());
+		int faces = 0;
+		for (BlockFace face : state.getSturdyFaces())
+			faces |= 1 << face.ordinal();
+		data.writeByte(faces);
+		data.writeInt(state.getCollisionCases().size());
+		for (Map.Entry<CollisionCase, CollisionShape> entry : state.getCollisionCases().entrySet()) {
+			CollisionCase context = entry.getKey();
+			data.writeUTF(context.getBottom().name());
+			data.writeBoolean(context.isDescending());
+			data.writeBoolean(context.isFalling());
+			data.writeBoolean(context.isLeatherBoots());
+			data.writeInt(shapes.get(entry.getValue()));
+		}
+	}
+
+	private static BlockState readState(DataInputStream data, int stateId, BlockType block, List<CollisionShape> shapes) throws IOException {
+		CollisionShape collision = shapes.get(data.readInt());
+		FluidType fluid = FluidType.valueOf(data.readUTF());
+		int amount = data.readByte();
+		boolean source = data.readBoolean();
+		boolean falling = data.readBoolean();
+		boolean blocksFlow = data.readBoolean();
+		int faces = data.readByte();
+		Set<BlockFace> sturdy = EnumSet.noneOf(BlockFace.class);
+		for (BlockFace face : BlockFace.values())
+			if ((faces & 1 << face.ordinal()) != 0) sturdy.add(face);
+		Map<CollisionCase, CollisionShape> cases = new LinkedHashMap<>();
+		for (int count = data.readInt(), index = 0; index < count; index++)
+			cases.put(new CollisionCase(EntityBottom.valueOf(data.readUTF()), data.readBoolean(), data.readBoolean(), data.readBoolean()),
+					shapes.get(data.readInt()));
+
+		return new BlockState(stateId, block, block.propertiesAt(stateId), collision, fluid, Collections.unmodifiableMap(cases), amount,
+				source, falling, blocksFlow, Collections.unmodifiableSet(sturdy));
 	}
 
 	private static void writeShape(DataOutputStream data, CollisionShape shape) throws IOException {
@@ -174,6 +214,16 @@ final class BlockDataCodec {
 		data.writeUTF(block.getKind().name());
 		data.writeUTF(block.getCollision().name());
 		writeMovement(data, block.getMovement());
+		BlockOffset offset = block.getOffset();
+		data.writeBoolean(offset != null);
+		if (offset != null) {
+			data.writeBoolean(offset.isVertical());
+			data.writeDouble(offset.getMaxHorizontal());
+			data.writeDouble(offset.getMaxVertical());
+		}
+		data.writeInt(block.getTags().size());
+		for (String tag : new TreeSet<>(block.getTags()))
+			data.writeUTF(tag);
 		data.writeInt(block.getProperties().size());
 		for (BlockProperty property : block.getProperties()) {
 			data.writeUTF(property.getName());
@@ -193,6 +243,9 @@ final class BlockDataCodec {
 				.kind(BlockKind.valueOf(data.readUTF()))
 				.collision(CollisionKind.valueOf(data.readUTF()))
 				.movement(readMovement(data));
+		if (data.readBoolean()) block.offset(new BlockOffset(data.readBoolean(), data.readDouble(), data.readDouble()));
+		for (int count = data.readInt(), index = 0; index < count; index++)
+			block.tag(data.readUTF());
 		for (int count = data.readInt(), index = 0; index < count; index++) {
 			String name = data.readUTF();
 			List<String> values = new ArrayList<>();
