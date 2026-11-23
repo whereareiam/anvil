@@ -30,6 +30,7 @@ dependencies {
 	implementation(projects.anvilEdition.editionJava.javaProtocol.protocolWorker)
 	implementation(projects.anvilPlayer.playerLibrary.libraryMcprotocol.mcprotocolApi)
 	implementation(projects.anvilPlayer.playerWorker)
+	implementation(libs.asm)
 	implementation(libs.jackson.databind)
 	implementation(libs.jackson.parameters)
 	implementation(libs.jackson.toml)

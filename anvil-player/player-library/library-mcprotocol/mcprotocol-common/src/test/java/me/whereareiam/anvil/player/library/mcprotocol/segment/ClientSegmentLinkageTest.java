@@ -3,6 +3,8 @@ package me.whereareiam.anvil.player.library.mcprotocol.segment;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.player.api.model.ProtocolRelease;
 import me.whereareiam.anvil.player.library.mcprotocol.catalog.McProtocolReleaseCatalog;
+import me.whereareiam.anvil.player.library.mcprotocol.segment.linkage.ClassPath;
+import me.whereareiam.anvil.player.library.mcprotocol.segment.linkage.JdkClasses;
 import me.whereareiam.anvil.player.library.mcprotocol.worker.fixture.GradleReleaseClosures;
 import org.junit.jupiter.api.Test;
 
@@ -11,7 +13,6 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -26,8 +27,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Feeds the linkage manifests that the build wrote into the real client segment JARs to the runtime reader, and
- * verifies each against the locked closure of every release the segment serves, as a worker's self-check does. It
- * fails when the build's manifest format and the runtime reader drift apart, or a release no longer links.
+ * verifies each against the class files of the locked closure of every release the segment serves, as a worker's
+ * self-check does. It fails when the build's manifest format and the runtime reader drift apart, or a release no
+ * longer links.
  */
 class ClientSegmentLinkageTest {
 	private static final String CLIENT = "mcprotocol-java";
@@ -44,8 +46,8 @@ class ClientSegmentLinkageTest {
 			assertTrue(manifest.lines().allMatch(ClientSegmentLinkageTest::recordsRequirements),
 					"segment " + since + " records requirements for every reference:\n" + manifest);
 
-			try (URLClassLoader loader = closure(release)) {
-				Optional<String> failure = linkage(segments.get(since)).firstFailure(loader);
+			try (ClassPath closure = closure(release)) {
+				Optional<String> failure = linkage(segments.get(since)).firstFailure(closure);
 				assertEquals(Optional.empty(), failure, "segment " + since + " against MCProtocolLib " + release.getLibraryVersion());
 			}
 		}
@@ -58,8 +60,8 @@ class ClientSegmentLinkageTest {
 				.max(Comparator.comparing(ProtocolRelease::version))
 				.orElseThrow();
 
-		try (URLClassLoader loader = closure(modern)) {
-			Optional<String> failure = linkage(segments.get(MinecraftVersion.parse("1.18.2"))).firstFailure(loader);
+		try (ClassPath closure = closure(modern)) {
+			Optional<String> failure = linkage(segments.get(MinecraftVersion.parse("1.18.2"))).firstFailure(closure);
 			assertTrue(failure.isPresent() && failure.get().startsWith("missing "), failure.toString());
 		}
 	}
@@ -110,13 +112,10 @@ class ClientSegmentLinkageTest {
 	}
 
 	/**
-	 * Loads a release's locked closure on top of the JDK alone, as a worker does.
+	 * Opens a release's locked closure on top of the JDK alone, as a worker runs it.
 	 */
-	private URLClassLoader closure(ProtocolRelease release) throws IOException {
+	private ClassPath closure(ProtocolRelease release) {
 		List<Path> files = GradleReleaseClosures.of(release);
-		URL[] urls = new URL[files.size()];
-		for (int index = 0; index < urls.length; index++) urls[index] = files.get(index).toUri().toURL();
-
-		return new URLClassLoader(urls, ClassLoader.getPlatformClassLoader());
+		return ClassPath.open(files, JdkClasses.running());
 	}
 }

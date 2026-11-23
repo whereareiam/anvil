@@ -5,6 +5,7 @@ import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.player.library.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.player.library.mcprotocol.segment.SegmentDescriptor;
 import me.whereareiam.anvil.player.library.mcprotocol.segment.SegmentLinkage;
+import me.whereareiam.anvil.player.library.mcprotocol.segment.linkage.ClassPath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,12 +30,12 @@ import java.util.function.Consumer;
  * The segments on a worker's class path, the result of their linkage self-check against the loaded release, and
  * the adapters they provide.
  *
- * <p>The host selects one segment per owner before launch. The worker verifies each selected segment's linkage
- * manifest with its own class loader, then hands out adapters on request: the adapter of a port is its one service
- * provider that {@link ServiceLoader} finds, which must come from the class path root of a selected segment. The
- * provider is created only once its segment is known to link. A port without a provider, a provider outside a
- * segment or in a segment that does not link, more than one provider, or a provider that cannot be loaded or
- * created makes the adapter unavailable with that reason. The client segment's {@link McProtocolClient} is obtained
+ * <p>The host selects one segment per owner before launch. The worker checks each selected segment's linkage
+ * manifest against the class files of the class path it runs on, without loading a class, then hands out adapters on
+ * request: the adapter of a port is its one service provider that {@link ServiceLoader} finds, which must come from
+ * the class path root of a selected segment. The provider is created only once its segment is known to link. A port
+ * without a provider, a provider outside a segment or in a segment that does not link, more than one provider, or a
+ * provider that cannot be loaded or created makes the adapter unavailable with that reason. The client segment's {@link McProtocolClient} is obtained
  * the same way and must be available, or the worker cannot start.</p>
  */
 final class WorkerSegments {
@@ -52,6 +53,7 @@ final class WorkerSegments {
 	 * Reads and verifies every MCProtocolLib segment visible to a class loader.
 	 *
 	 * @param loader loader that defines the worker's classes
+	 * @param classPath the class files that loader defines classes from, on which each segment's manifest is checked
 	 * @param version key version of the loaded release, used in messages
 	 * @param warnings receiver of one line per segment that does not link
 	 * @return verified segments
@@ -59,6 +61,7 @@ final class WorkerSegments {
 	 */
 	static @NotNull WorkerSegments verify(
 			@NotNull ClassLoader loader,
+			@NotNull ClassPath classPath,
 			@NotNull MinecraftVersion version,
 			@NotNull Consumer<String> warnings
 	) {
@@ -70,7 +73,7 @@ final class WorkerSegments {
 			if (owners.putIfAbsent(descriptor.getOwner(), descriptor.getSince()) != null)
 				throw new IllegalStateException("The worker class path holds more than one segment of " + descriptor.getOwner());
 
-			Optional<String> failure = read(root + SegmentDescriptor.LINKAGE, SegmentLinkage::read).firstFailure(loader);
+			Optional<String> failure = read(root + SegmentDescriptor.LINKAGE, SegmentLinkage::read).firstFailure(classPath);
 			Segment segment = new Segment(descriptor, failure.orElse(null));
 			verified.segments.put(root, segment);
 			if (failure.isPresent()) warnings.accept("[Anvil] Warning: " + verified.unlinked(segment) + "; its adapters are unavailable");

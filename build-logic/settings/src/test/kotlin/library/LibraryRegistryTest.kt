@@ -35,6 +35,11 @@ class LibraryRegistryTest {
 	}
 
 	@Test
+	fun `names the common project of a library`() {
+		assertEquals(":anvil-player:player-library:library-mcprotocol:mcprotocol-common", LibraryRegistry.commonProjectPath("mcprotocol"))
+	}
+
+	@Test
 	fun `names the one library among a side folder's words`() {
 		assertEquals("mcprotocol", LibraryRegistry.libraryOf("messages-mcprotocol", listOf("mcprotocol", "other")))
 		assertEquals("mcprotocol", LibraryRegistry.libraryOf("mcprotocol-java", listOf("mcprotocol")))

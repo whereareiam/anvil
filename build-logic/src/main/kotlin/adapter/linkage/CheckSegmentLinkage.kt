@@ -16,6 +16,8 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.jvm.toolchain.JavaLauncher
+import org.gradle.workers.WorkerExecutor
+import javax.inject.Inject
 
 /**
  * Verifies that a segment links against every library release it serves, as workers load them.
@@ -26,6 +28,9 @@ import org.gradle.jvm.toolchain.JavaLauncher
  * inherited members resolve through superclasses and interfaces, classes stay classes or interfaces, members stay
  * static or instance, and access is not narrower than on the compiled release. References outside the library do
  * not change between releases.
+ *
+ * The check runs the library's own segment linkage tool, the code the worker checks the manifest with at run time, so
+ * the build and the worker apply one rule.
  */
 @CacheableTask
 abstract class CheckSegmentLinkage : DefaultTask() {
@@ -55,6 +60,12 @@ abstract class CheckSegmentLinkage : DefaultTask() {
 	abstract val laterReleases: ListProperty<ReleaseClasspath>
 
 	/**
+	 * The library's common project with its runtime dependencies, which provides the segment linkage tool.
+	 */
+	@get:Classpath
+	abstract val linkageTool: ConfigurableFileCollection
+
+	/**
 	 * The JDK of the project's toolchain, whose classes resolve members inherited from JDK supertypes.
 	 */
 	@get:Nested
@@ -66,18 +77,29 @@ abstract class CheckSegmentLinkage : DefaultTask() {
 	@get:OutputFile
 	abstract val report: RegularFileProperty
 
+	/**
+	 * Runs the linkage tool in a class loader of its own.
+	 */
+	@get:Inject
+	abstract val workers: WorkerExecutor
+
 	@TaskAction
 	fun check() {
-		val references = linkage.get().asFile.readLines().filter(String::isNotBlank).map(LinkageReference::parse)
+		val tool = SegmentLinkageTool(workers, linkageTool, temporaryDir)
+		val options = listOf(
+			"--linkage", linkage.get().asFile.path,
+			"--library", SegmentLinkageTool.paths(library.files),
+			"--jdk", jdk.get().metadata.installationPath.asFile.path,
+		)
+		val libraryReferences = tool.run("references", *options.toTypedArray())
 		val compiled = release.get()
-		val (ownFailures, laterFailures) = JdkClasses.open(jdk.get().metadata.installationPath.asFile).use { jdkClasses ->
-			val libraryClasses = ClassIndex.of(library.files, jdkClasses)
-			val libraryReferences = references.filter { it.owner in libraryClasses }
-			val own = failures(compiled, libraryReferences, jdkClasses)
-			val later = laterReleases.get().flatMap { failures(it, libraryReferences, jdkClasses) }
-			writeReport(libraryReferences.size, own + later)
-			own to later
-		}
+		fun failures(release: ReleaseClasspath): List<String> =
+			tool.run("check", *options.toTypedArray(), "--classpath", SegmentLinkageTool.paths(release.files))
+				.map { "${release.version.get()} (Minecraft ${release.minecraft.get()}): $it" }
+
+		val ownFailures = failures(compiled)
+		val laterFailures = laterReleases.get().flatMap(::failures)
+		writeReport(libraryReferences.size, ownFailures + laterFailures)
 
 		if (ownFailures.isNotEmpty())
 			throw GradleException("Segment does not link against the closure that release data locks for its own release "
@@ -86,13 +108,6 @@ abstract class CheckSegmentLinkage : DefaultTask() {
 		if (laterFailures.isNotEmpty())
 			throw GradleException("Segment does not link against every release it serves; add a segment for the first failing release:\n"
 				+ laterFailures.joinToString("\n") { "  $it" })
-	}
-
-	private fun failures(release: ReleaseClasspath, references: List<LinkageReference>, jdkClasses: JdkClasses): List<String> {
-		val index = ClassIndex.of(release.files, jdkClasses)
-		return references.mapNotNull { reference ->
-			index.linkageFailure(reference)?.let { "${release.version.get()} (Minecraft ${release.minecraft.get()}): $it" }
-		}
 	}
 
 	private fun writeReport(libraryReferences: Int, failures: List<String>) {

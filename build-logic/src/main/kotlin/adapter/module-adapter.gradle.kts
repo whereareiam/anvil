@@ -1,5 +1,6 @@
 import me.whereareiam.anvil.buildlogic.adapter.CheckAdapterLookup
 import me.whereareiam.anvil.buildlogic.adapter.LibrarySideSource
+import me.whereareiam.anvil.buildlogic.adapter.linkage.segmentLinkageTool
 
 plugins {
 	java
@@ -26,6 +27,7 @@ val adapterLookup = tasks.register<CheckAdapterLookup>("checkAdapterLookup") {
 	group = LifecycleBasePlugin.VERIFICATION_GROUP
 	description = "Verifies that the side's classes obtain adapters through the worker instead of a service lookup."
 	classes.from(sourceSets.main.map { it.output.classesDirs })
+	linkageTool.from(segmentLinkageTool(side.library))
 	report.set(layout.buildDirectory.file("reports/segment/adapter-lookup.txt"))
 }
 

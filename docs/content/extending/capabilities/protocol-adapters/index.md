@@ -275,14 +275,15 @@ and two resources the worker reads:
 | Resource | Content |
 |---|---|
 | `META-INF/anvil/segment.properties` | `library` (the library ID, such as `mcprotocol`), `owner` (the side, such as `roundtrip-mcprotocol`), and `since` (the release key the segment starts at, such as `1.16.5`) |
-| `META-INF/anvil/segment/linkage.txt` | One line per class, field, or method of the library that the segment uses, which the worker verifies against the loaded release |
+| `META-INF/anvil/segment/linkage.txt` | One line per class, field, or method of the library that the segment uses, which the worker verifies against the class files of the loaded release |
 
 For a release, the worker keeps the segment of each owner with the greatest `since` that does not
 exceed the release key, and removes the owner's other segments from its class path. A linkage line
 names a class (`class a.b.C`), a field (`field a.b.C name:Ldescriptor;`), or a method
 (`method a.b.C name(parameters)return`) with binary names and JVM descriptors, followed by optional
 requirements such as `public`, `static` or `instance`, and `class` or `interface`. The worker reads
-the file even when it is empty, and an empty file verifies nothing.
+the file even when it is empty, and an empty file verifies nothing. It resolves each line on the class files of
+its class path and its JDK, as the JVM would link it, without loading a class.
 
 Anvil's own families apply internal build conventions that compile each segment against the release
 named by its folder, generate both resources, and fail the build when a segment does not link against

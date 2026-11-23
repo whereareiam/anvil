@@ -9,7 +9,6 @@ import me.whereareiam.anvil.player.library.mcprotocol.worker.fixture.TestSegment
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,8 +42,8 @@ class WorkerSegmentsTest {
 		TestSegment other = TestSegment.create(temporary.resolve("other"), "otherlib", "probe-otherlib", "1.16.5",
 				"class example.Missing\n");
 
-		try (URLClassLoader loader = SegmentRoots.loader(roots(client, probe, other))) {
-			WorkerSegments segments = WorkerSegments.verify(loader, MinecraftVersion.parse("1.18.2"), warnings::add);
+		try (SegmentRoots worker = SegmentRoots.open(roots(client, probe, other))) {
+			WorkerSegments segments = worker.verify(MinecraftVersion.parse("1.18.2"), warnings::add);
 
 			assertEquals(Map.of("mcprotocol-java", "1.16.5", "probe-mcprotocol", "1.18.2"), segments.selected());
 			McProtocolClient<Object> created = segments.client();
@@ -53,7 +52,7 @@ class WorkerSegmentsTest {
 			ProbePackets adapter = segments.adapter(ProbePackets.class);
 			assertEquals("probe", adapter.name());
 			assertEquals(PROBE, adapter.getClass().getName());
-			assertSame(loader, adapter.getClass().getClassLoader(), "The adapter's class comes from its segment");
+			assertSame(worker.loader(), adapter.getClass().getClassLoader(), "The adapter's class comes from its segment");
 			assertSame(adapter, segments.adapter(ProbePackets.class), "Adapters are shared by every player");
 			assertEquals(List.of(), warnings);
 		}
@@ -65,8 +64,8 @@ class WorkerSegmentsTest {
 		TestSegment probe = TestSegment.create(temporary.resolve("probe"), "mcprotocol", "probe-mcprotocol", "1.16.5",
 				PROBE_LINKAGE + "method " + PROBE + " name()Ljava/lang/String; public static class\n").probe(PROBE);
 
-		try (URLClassLoader loader = SegmentRoots.loader(roots(client, probe))) {
-			WorkerSegments segments = WorkerSegments.verify(loader, MinecraftVersion.parse("1.17.1"), warnings::add);
+		try (SegmentRoots worker = SegmentRoots.open(roots(client, probe))) {
+			WorkerSegments segments = worker.verify(MinecraftVersion.parse("1.17.1"), warnings::add);
 
 			String reason = "segment probe-mcprotocol 1.16.5 does not link against the MCProtocolLib release for Minecraft 1.17.1: "
 					+ "method " + PROBE + " name()Ljava/lang/String; is not static, linked as static";
@@ -119,8 +118,8 @@ class WorkerSegmentsTest {
 	void failsTheWorkerWhenTheClientSegmentDoesNotLinkOrIsMissing() throws Exception {
 		TestSegment client = client("client", "method " + RecordingClient.class.getName() + " absent()V public instance class\n");
 
-		try (URLClassLoader loader = SegmentRoots.loader(roots(client))) {
-			WorkerSegments segments = WorkerSegments.verify(loader, MinecraftVersion.parse("1.16.5"), warnings::add);
+		try (SegmentRoots worker = SegmentRoots.open(roots(client))) {
+			WorkerSegments segments = worker.verify(MinecraftVersion.parse("1.16.5"), warnings::add);
 			IllegalStateException failure = assertThrows(IllegalStateException.class, segments::client);
 			assertTrue(
 					failure.getMessage().startsWith("Cannot load the MCProtocolLib client: segment mcprotocol-java 1.16.5"),
@@ -131,9 +130,9 @@ class WorkerSegmentsTest {
 					failure.getMessage()
 			);
 		}
-		try (URLClassLoader loader = SegmentRoots.loader()) {
+		try (SegmentRoots worker = SegmentRoots.open()) {
 			IllegalStateException failure = assertThrows(IllegalStateException.class,
-					() -> WorkerSegments.verify(loader, MinecraftVersion.parse("1.16.5"), warnings::add).client());
+					() -> worker.verify(MinecraftVersion.parse("1.16.5"), warnings::add).client());
 			assertTrue(failure.getMessage().contains("provides an adapter for " + McProtocolClient.class.getName()), failure.getMessage());
 		}
 	}
@@ -143,16 +142,16 @@ class WorkerSegmentsTest {
 		TestSegment probe = TestSegment.create(temporary.resolve("probe"), "mcprotocol", "probe-mcprotocol", "1.16.5", "");
 		TestSegment duplicate = TestSegment.create(temporary.resolve("duplicate"), "mcprotocol", "probe-mcprotocol", "1.18.2", "");
 
-		try (URLClassLoader loader = SegmentRoots.loader(roots(probe, duplicate))) {
+		try (SegmentRoots worker = SegmentRoots.open(roots(probe, duplicate))) {
 			IllegalStateException failure = assertThrows(IllegalStateException.class,
-					() -> WorkerSegments.verify(loader, MinecraftVersion.parse("1.18.2"), warnings::add));
+					() -> worker.verify(MinecraftVersion.parse("1.18.2"), warnings::add));
 			assertTrue(failure.getMessage().contains("more than one segment of probe-mcprotocol"), failure.getMessage());
 		}
 	}
 
 	private void assertUnavailable(String message, TestSegment... segments) throws Exception {
-		try (URLClassLoader loader = SegmentRoots.loader(roots(segments))) {
-			WorkerSegments verified = WorkerSegments.verify(loader, MinecraftVersion.parse("1.18.2"), warnings::add);
+		try (SegmentRoots worker = SegmentRoots.open(roots(segments))) {
+			WorkerSegments verified = worker.verify(MinecraftVersion.parse("1.18.2"), warnings::add);
 			ProtocolUnavailableException failure = assertThrows(ProtocolUnavailableException.class,
 					() -> verified.adapter(ProbePackets.class));
 			assertEquals(message, failure.getMessage());

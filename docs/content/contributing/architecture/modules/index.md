@@ -250,7 +250,7 @@ every such library. MCProtocolLib's family is laid out like this:
 | `mcprotocol-api` | The release-neutral client port `McProtocolClient<S>` that client segments implement, and, in `client.translation`, what their translations share: `PacketTranslation`, the `PacketTable` that carries a release's translations, `EntityDataLayout`, the `PacketDemand` that tells a session's translations what the player wants decoded, and the `ConnectionLevel` that the connection translation records and the chunk translation reads |
 | `mcprotocol-adventure` | `ComponentTranslator`, which translates Adventure components to the protocol's `Text` through Adventure API that has not changed since 4.0, for the segments of releases whose components are Adventure's (MCProtocolLib for Minecraft 1.16 on). Each chain extends it once as its `TextTranslator` with what its releases' Adventure keeps differently, such as a translation's arguments, a click's value, the shadow colour and object components, and the segment's adapter hands that translator to every translation that reads text; Adventure itself comes from each release's closure |
 | `mcprotocol-netty` | `ReceivedFrames`, the netty handlers every client segment puts around its session's decoder: one copies each frame's bytes while the player wants frames, the other translates the packet decoded from them and hands both to the session's `ClientListener` on the channel's own thread, so packets reach the player in the order they arrive on the wire whatever thread the release hands decoded packets to; netty itself comes from each release's closure |
-| `mcprotocol-common` | `McProtocolLibraryProvider`, the release catalog, worker host and segment selection, the worker shell, and the private account store |
+| `mcprotocol-common` | `McProtocolLibraryProvider`, the release catalog, worker host and segment selection, the worker shell, the private account store, and the segments' linkage: the one writer and checker of each segment's `linkage.txt`, which reads class files instead of loading classes, which the worker's self-check uses and which the build runs as the `anvil-segment-linkage` tool to write manifests and check them against every release |
 | `mcprotocol-java` | Source-free side folder whose `V*` children are the client segments |
 | `mcprotocol-java/V1_16_5`, `V1_17_1`, `V1_18_2`, `V1_19_4`, `V1_20_6`, `V1_21_1`, `V1_21_11`, `V26_1_2` and `V26_3` | One client segment per range of releases. `V1_16_5` starts the chain of the client and server packet names, `V1_18_2` the chain of the clientbound and serverbound names in the `com.github.steveice10` packages and `V1_20_6` the chain of the `org.geysermc` packages, each with the chain's public `JavaClient` base; `V1_17_1` extends `V1_16_5`, `V1_19_4` extends `V1_18_2`, `V1_21_1` extends `V1_20_6`, `V1_21_11` extends `V1_21_1`, `V26_1_2` extends `V1_21_11` and `V26_3` extends `V26_1_2`, replacing the base classes that changed. Every segment has a `McProtocolClientAdapter` listing its release's translations |
 
@@ -259,8 +259,9 @@ after the release key it starts at, under a side folder named after its owner an
 `mcprotocol-java` or an external capability's `teleport-mcprotocol`. A segment holds only the adapters of library-neutral ports
 and their service descriptors; it never wires anything. Its package ends in the folder name in lower
 case, such as `.v1_18_2`. For a release, the worker keeps the segment of each side with the greatest
-start version that does not exceed the release key. A new segment is added only when a release breaks
-the code of the previous one, which `checkSegmentLinkage` reports; see
+start version that does not exceed the release key, and checks its linkage manifest against the class files
+of the class path it runs on. A new segment is added only when a release breaks the code of the previous one,
+which `checkSegmentLinkage` reports with the same code; see
 [Adding a Minecraft version](../../minecraft-versions/index.md).
 
 A capability that needs packets the protocol does not model can still repeat the pattern: its API declares a

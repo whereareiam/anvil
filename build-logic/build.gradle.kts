@@ -40,6 +40,16 @@ dependencies {
 	implementation(libs.toolkit.publish.maven)
 }
 
+// The segment conventions run the segment linkage tool of a library's common project, so the functional tests build
+// the consumer's MCProtocolLib common project from the tool's own sources.
+val linkageToolRoot = layout.settingsDirectory.dir("../anvil-player/player-library/library-mcprotocol/mcprotocol-common/src/main")
+val linkageToolSources = fileTree(linkageToolRoot) {
+	include("java/me/whereareiam/anvil/player/library/mcprotocol/segment/SegmentLinkage.java")
+	include("java/me/whereareiam/anvil/player/library/mcprotocol/segment/SegmentLinkageTool.java")
+	include("java/me/whereareiam/anvil/player/library/mcprotocol/segment/linkage/**")
+	include("resources/META-INF/services/java.util.spi.ToolProvider")
+}
+
 testing {
 	suites {
 		named<JvmTestSuite>("test") {
@@ -57,6 +67,7 @@ testing {
 			targets.configureEach {
 				testTask.configure {
 					jvmArgumentProviders.add(VersionCatalogArgument(layout.settingsDirectory.file("../gradle/libs.versions.toml")))
+					jvmArgumentProviders.add(LinkageToolSources(linkageToolRoot, linkageToolSources))
 				}
 			}
 		}
@@ -88,4 +99,22 @@ class VersionCatalogArgument(
 	val catalog: RegularFile,
 ) : CommandLineArgumentProvider {
 	override fun asArguments(): Iterable<String> = listOf("-Danvil.buildlogic.catalog=${catalog.asFile.absolutePath}")
+}
+
+/**
+ * Passes the sources of the segment linkage tool to the functional tests, which copy them into their consumer's
+ * library common project: the root they are relative to and the files. The files' content is the input and their
+ * location is not, so the build cache stays relocatable.
+ */
+class LinkageToolSources(
+	@get:Internal
+	val root: Directory,
+	@get:InputFiles
+	@get:PathSensitive(PathSensitivity.RELATIVE)
+	val sources: FileTree,
+) : CommandLineArgumentProvider {
+	override fun asArguments(): Iterable<String> = listOf(
+		"-Danvil.buildlogic.linkageTool.root=${root.asFile.absolutePath}",
+		"-Danvil.buildlogic.linkageTool.files=" + sources.files.joinToString(File.pathSeparator) { it.absolutePath },
+	)
 }

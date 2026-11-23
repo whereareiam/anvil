@@ -76,8 +76,8 @@ For packet or worker changes, run the worker contracts before live coverage. The
 every release in `mcprotocol-releases.toml` on the release's locked runtime closure, the `[[release.artifact]]`
 modules Gradle resolves exactly as listed, and check the protocol number, the selected client segment and
 that every built-in capability is installed, none reported unavailable. `ClientSegmentLinkageTest` reads the
-linkage manifests of the built client segments and checks them against every release they serve, as the worker
-does:
+linkage manifests of the built client segments and checks them against the class files of every release they
+serve, as the worker does:
 
 ```shell
 ./gradlew :anvil-player:player-library:library-mcprotocol:mcprotocol-common:test --tests '*McProtocolWorkerContractTest'

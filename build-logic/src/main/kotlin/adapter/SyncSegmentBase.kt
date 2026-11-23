@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.buildlogic.adapter
 
-import me.whereareiam.anvil.buildlogic.adapter.linkage.LinkageCollector
+import me.whereareiam.anvil.buildlogic.adapter.linkage.SegmentLinkageTool
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
@@ -8,13 +8,16 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.workers.WorkerExecutor
 import java.io.File
+import javax.inject.Inject
 
 /**
  * Collects the classes a segment takes from its base chain: every class of the bases except their adapters, the
@@ -47,10 +50,23 @@ abstract class SyncSegmentBase : DefaultTask() {
 	abstract val replaced: SetProperty<String>
 
 	/**
+	 * The library's common project with its runtime dependencies, whose segment linkage tool finds the classes a
+	 * class file uses.
+	 */
+	@get:Classpath
+	abstract val linkageTool: ConfigurableFileCollection
+
+	/**
 	 * Directory receiving the shared classes.
 	 */
 	@get:OutputDirectory
 	abstract val destination: DirectoryProperty
+
+	/**
+	 * Runs the linkage tool in a class loader of its own.
+	 */
+	@get:Inject
+	abstract val workers: WorkerExecutor
 
 	@TaskAction
 	fun sync() {
@@ -91,11 +107,14 @@ abstract class SyncSegmentBase : DefaultTask() {
 	 * Fails when a kept class still uses a replaced one, which the extending segment would not carry.
 	 */
 	private fun requireUnused(kept: Map<String, File>, replaced: Set<String>) {
-		if (replaced.isEmpty()) return
+		if (replaced.isEmpty() || kept.isEmpty()) return
 
+		val uses = SegmentLinkageTool(workers, linkageTool, temporaryDir)
+			.run("uses", "--of", replaced.joinToString(","), "--files", SegmentLinkageTool.paths(kept.values))
+			.map { it.split('\t', limit = 2) }
+			.groupBy({ it[0] }, { it[1] })
 		for ((name, file) in kept) {
-			val references = LinkageCollector().apply { add(file.readBytes(), file.path) }.referencedClasses
-			val used = references.firstOrNull { topLevel(it) in replaced } ?: continue
+			val used = uses[file.path]?.first() ?: continue
 			throw GradleException(
 				"Segment ${segmentPath.get()} replaces ${binaryName(topLevel(used))}, which its base class "
 					+ "${binaryName(name)} still uses; replace ${binaryName(topLevel(name))} too"

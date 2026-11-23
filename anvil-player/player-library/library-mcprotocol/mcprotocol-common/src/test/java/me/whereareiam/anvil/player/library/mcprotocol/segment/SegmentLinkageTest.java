@@ -1,11 +1,15 @@
 package me.whereareiam.anvil.player.library.mcprotocol.segment;
 
+import me.whereareiam.anvil.player.library.mcprotocol.segment.linkage.ClassPath;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -17,6 +21,18 @@ class SegmentLinkageTest {
 	private static final String TARGET = Target.class.getName();
 	private static final String CONTRACT = Contract.class.getName();
 	private static final AtomicInteger INITIALIZATIONS = new AtomicInteger();
+
+	private static ClassPath classPath;
+
+	@BeforeAll
+	static void openTheTestClassPath() {
+		classPath = ClassPath.running();
+	}
+
+	@AfterAll
+	static void closeTheTestClassPath() throws IOException {
+		classPath.close();
+	}
 
 	@Test
 	void resolvesClassesAndDeclaredOrInheritedMembersWithTheirRequirementsWithoutInitializingThem() {
@@ -38,7 +54,7 @@ class SegmentLinkageTest {
 				method java.lang.Runnable run()V public instance interface
 				""".formatted(TARGET, CONTRACT));
 
-		assertEquals(Optional.empty(), linkage.firstFailure(getClass().getClassLoader()));
+		assertEquals(Optional.empty(), linkage.firstFailure(classPath));
 		assertEquals(0, INITIALIZATIONS.get());
 	}
 
@@ -64,7 +80,7 @@ class SegmentLinkageTest {
 		String hidden = Hidden.class.getName();
 		SegmentLinkage linkage = read("class " + TARGET + "\n" + reference.formatted(TARGET, CONTRACT, hidden) + "\nclass example.Later\n");
 
-		assertEquals(Optional.of(failure.formatted(TARGET, CONTRACT, hidden)), linkage.firstFailure(getClass().getClassLoader()));
+		assertEquals(Optional.of(failure.formatted(TARGET, CONTRACT, hidden)), linkage.firstFailure(classPath));
 	}
 
 	@ParameterizedTest

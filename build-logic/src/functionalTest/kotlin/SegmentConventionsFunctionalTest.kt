@@ -366,12 +366,23 @@ class SegmentConventionsFunctionalTest {
 			include(":anvil-player:player-library:library-mcprotocol:mcprotocol-common")
 		""")
 		project.write("anvil-player/player-library/library-mcprotocol/build.gradle.kts", "plugins {\n\tid(\"module-library\")\n}\n")
+		// The library's common project provides the segment linkage tool that the segment conventions run, built from
+		// the tool's own sources.
 		project.write("anvil-player/player-library/library-mcprotocol/mcprotocol-common/build.gradle.kts", """
 			plugins {
 				id("module-java")
 				id("test-library-closures")
 			}
+
+			dependencies {
+				implementation(libs.asm)
+			}
 		""")
+		val toolRoot = File(System.getProperty("anvil.buildlogic.linkageTool.root"))
+		val commonSources = project.file("anvil-player/player-library/library-mcprotocol/mcprotocol-common/src/main")
+		System.getProperty("anvil.buildlogic.linkageTool.files").split(File.pathSeparator).map(::File).forEach { source ->
+			source.copyTo(File(commonSources, source.relativeTo(toolRoot).path))
+		}
 		project.write("build.gradle.kts", """
 			allprojects {
 				group = "me.whereareiam.anvil"
