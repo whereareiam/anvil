@@ -78,7 +78,7 @@ class ChatPacketsTest {
 								.click(new RunCommandClick("/arbor help"))
 								.build())
 						.build())
-				.build(), decoded.getText());
+				.build(), decoded.text());
 	}
 
 	@Test

@@ -17,6 +17,6 @@ public final class PlayerEventsHandler implements AgentOperationHandler<AgentPla
 
 	@Override
 	public @NotNull AgentPlayerEventsResponse execute(@NotNull PlatformAgent platform, @NotNull AgentPlayerEventsRequest request) {
-		return events.after(request.getAfter());
+		return events.after(request.after());
 	}
 }

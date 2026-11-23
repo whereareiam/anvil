@@ -25,29 +25,29 @@ class McProtocolReleaseReaderTest {
 		List<ReleaseDefinition> releases = read(release("1.16.5-2", "\"1.16.4\", \"1.16.5\"", "1.16.5") + native_);
 
 		ReleaseDefinition definition = releases.getFirst();
-		assertEquals("demo:protocol:1.16.5-2", definition.getModule());
+		assertEquals("demo:protocol:1.16.5-2", definition.module());
 		assertEquals(
 				List.of(MinecraftVersion.parse("1.16.4"), MinecraftVersion.parse("1.16.5")),
-				definition.getRelease().getMinecraftVersions()
+				definition.release().minecraftVersions()
 		);
-		assertEquals(Set.of(MinecraftVersion.parse("1.16.5")), definition.getRelease().getVerifiedVersions());
-		assertEquals(754, definition.getRelease().getProtocolNumber());
-		assertEquals(17, definition.getRelease().getJavaVersion());
+		assertEquals(Set.of(MinecraftVersion.parse("1.16.5")), definition.release().verifiedVersions());
+		assertEquals(754, definition.release().protocolNumber());
+		assertEquals(17, definition.release().javaVersion());
 		assertEquals(List.of("demo:protocol:1.16.5-2", "demo:transport:1.0:linux-x86_64"),
-				definition.getArtifacts().stream().map(ReleaseArtifact::getModule).toList());
+				definition.artifacts().stream().map(ReleaseArtifact::module).toList());
 
-		ReleaseArtifact jar = definition.getArtifacts().getFirst();
-		assertEquals(URI.create("https://repository.example/protocol-1.16.5-2.jar"), jar.getUrl());
+		ReleaseArtifact jar = definition.artifacts().getFirst();
+		assertEquals(URI.create("https://repository.example/protocol-1.16.5-2.jar"), jar.url());
 		assertEquals("protocol-1.16.5-2.jar", jar.fileName());
 		assertTrue(jar.pinned());
-		assertFalse(definition.getArtifacts().getLast().pinned());
+		assertFalse(definition.artifacts().getLast().pinned());
 	}
 
 	@Test
 	void readsReleasesWithoutFeatures() {
 		String text = release("1.18.2-1", "\"1.18.2\"", "1.18.2").replace("features = [\"ONLINE_AUTHENTICATION\"]\n", "");
 
-		assertTrue(read(text).getFirst().getRelease().getFeatures().isEmpty());
+		assertTrue(read(text).getFirst().release().features().isEmpty());
 	}
 
 	@ParameterizedTest(name = "{0}")

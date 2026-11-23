@@ -15,15 +15,15 @@ import java.nio.file.Path;
  */
 final class BungeeCordDistributionResolver {
 	ResolvedDistribution resolve(MinecraftProxy proxy, PlatformContext context) {
-		var distribution = proxy.getDistribution();
+		var distribution = proxy.distribution();
 		if (distribution.isLocal()) {
-			Path jar = distribution.getLocalJar().toAbsolutePath().normalize();
+			Path jar = distribution.localJar().toAbsolutePath().normalize();
 			if (!Files.isRegularFile(jar))
 				throw new PlatformException("BungeeCord JAR does not exist: " + jar);
 
-			return ResolvedDistribution.builder().jar(context.getArtifactSource().store(jar)).description("local BungeeCord").build();
+			return ResolvedDistribution.builder().jar(context.artifactSource().store(jar)).description("local BungeeCord").build();
 		}
-		String build = distribution.getBuild();
+		String build = distribution.build();
 		if (build == null || build.isBlank()) {
 			throw new PlatformException("BungeeCord build is required for a remote distribution");
 		}
@@ -31,10 +31,10 @@ final class BungeeCordDistributionResolver {
 		String selected = build.equals("latest") ? "lastStableBuild" : build;
 		URI uri = URI.create("https://ci.md-5.net/job/BungeeCord/" + selected
 				+ "/artifact/bootstrap/target/BungeeCord.jar");
-		Path destination = context.getCacheDirectory().resolve("distributions/bungeecord")
+		Path destination = context.cacheDirectory().resolve("distributions/bungeecord")
 				.resolve(build).resolve("BungeeCord.jar");
 
-		Path jar = context.getArtifactSource().obtain(uri, destination, distribution.getSha256());
+		Path jar = context.artifactSource().obtain(uri, destination, distribution.sha256());
 		return ResolvedDistribution.builder().jar(jar).description("BungeeCord build " + build).build();
 	}
 }

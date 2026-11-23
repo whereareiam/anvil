@@ -58,7 +58,7 @@ public final class WorldsProvider implements AgentProcessCapabilityProvider<Worl
 	@Override
 	public @NotNull Worlds create(@NotNull AgentProcessCapabilityContext context) {
 		AgentWorlds worlds = new AgentWorlds(context.processName(), context.channel());
-		context.on(ScenarioFinished.class, finished -> worlds.finishScenario(finished.isPassed()));
+		context.on(ScenarioFinished.class, finished -> worlds.finishScenario(finished.passed()));
 
 		return worlds;
 	}

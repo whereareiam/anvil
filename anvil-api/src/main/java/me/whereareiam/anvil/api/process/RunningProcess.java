@@ -64,7 +64,7 @@ public interface RunningProcess extends CapabilityOwner<ProcessCapability> {
 	@NotNull ProcessConsole console();
 
 	/**
-	 * Returns where the test reaches one of the process's {@link MinecraftProcess#getListeners() listeners}.
+	 * Returns where the test reaches one of the process's {@link MinecraftProcess#listeners() listeners}.
 	 *
 	 * @param name the listener's name
 	 * @return the listener's address on the host

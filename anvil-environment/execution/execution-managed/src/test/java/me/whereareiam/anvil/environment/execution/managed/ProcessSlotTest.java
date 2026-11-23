@@ -29,7 +29,7 @@ class ProcessSlotTest {
 		assertEquals(ProcessState.STOPPED, original.state());
 		assertEquals(ProcessState.READY, replacement.state());
 		assertEquals(List.of("1", "2"), fixture.targets.get("server").commands.stream()
-				.map(command -> command.getEnvironment().get("GENERATION")).toList());
+				.map(command -> command.environment().get("GENERATION")).toList());
 		assertEquals(1, fixture.calls.stream().filter("prepare:server"::equals).count());
 		assertTrue(fixture.calls.indexOf("detach:server:1") < fixture.calls.indexOf("stop:server"));
 		assertTrue(fixture.calls.indexOf("stop:server") < fixture.calls.indexOf("configure:server:2"));
@@ -53,7 +53,7 @@ class ProcessSlotTest {
 			fixture.failingConfiguration = null;
 			assertEquals(ProcessState.READY, group.start("server").state());
 			assertEquals(List.of("1", "3"), fixture.targets.get("server").commands.stream()
-					.map(command -> command.getEnvironment().get("GENERATION")).toList());
+					.map(command -> command.environment().get("GENERATION")).toList());
 			assertEquals(1, fixture.calls.stream().filter("prepare:server"::equals).count());
 		}
 		assertEquals(1, fixture.calls.stream().filter("detach:server:3"::equals).count());

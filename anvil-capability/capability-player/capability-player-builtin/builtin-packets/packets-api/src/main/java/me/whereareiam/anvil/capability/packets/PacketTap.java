@@ -24,8 +24,8 @@ import java.util.function.Predicate;
  * PacketSelection repair = PacketSelection.of(ClientboundLevelChunkWithLight.class, ClientboundBlockUpdate.class);
  * try (PacketTap tap = packets.tap(repair)) {
  *     console.run("ptest reload-chunk");
- *     tap.received(ClientboundLevelChunkWithLight.class, chunk -> chunk.getPosition().equals(position));
- *     tap.received(ClientboundBlockUpdate.class, update -> update.getChange().getPosition().equals(fake));
+ *     tap.received(ClientboundLevelChunkWithLight.class, chunk -> chunk.position().equals(position));
+ *     tap.received(ClientboundBlockUpdate.class, update -> update.change().position().equals(fake));
  * }
  * }</pre>
  */

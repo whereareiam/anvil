@@ -27,9 +27,9 @@ public class JavaSelection {
 	 * Fills omitted members from another selection without changing either value.
 	 *
 	 * <pre>{@code
-	 * JavaSelection effective = process.getJavaSelection()
-	 *     .withDefaults(scenario.getJavaSelection())
-	 *     .withDefaults(engineOptions.getJavaSelection());
+	 * JavaSelection effective = process.javaSelection()
+	 *     .withDefaults(scenario.javaSelection())
+	 *     .withDefaults(engineOptions.javaSelection());
 	 * }</pre>
 	 *
 	 * @param defaults selection supplying omitted requirements and source

@@ -56,7 +56,7 @@ public sealed interface KeyInput permits VectorInput, LegacyInput {
 	 * @return whether it crouches
 	 */
 	static boolean crouches(@NotNull PlayerBody body, @NotNull Pose pose, boolean wasSneaking) {
-		return !body.getServer().isFlying() && pose.canCrouch() && (wasSneaking || !pose.canStand());
+		return !body.server().flying() && pose.canCrouch() && (wasSneaking || !pose.canStand());
 	}
 
 	/**
@@ -68,7 +68,7 @@ public sealed interface KeyInput permits VectorInput, LegacyInput {
 	 * @return whether its input is scaled by the sneaking speed
 	 */
 	static boolean movesSlowly(@NotNull PlayerBody body, @NotNull Pose pose, @NotNull FluidState fluids) {
-		return body.isCrouching() || pose.isSwimmingPose() && !fluids.isTouchingWater();
+		return body.crouching() || pose.isSwimmingPose() && !fluids.touchingWater();
 	}
 
 	/**
@@ -81,7 +81,7 @@ public sealed interface KeyInput permits VectorInput, LegacyInput {
 	 * @return whether it may sprint
 	 */
 	static boolean sprintingPossible(@NotNull PlayerBody body, @NotNull FluidState fluids, boolean allowShallowWater) {
-		return !body.getEffects().has(MobEffect.BLINDNESS) && body.getServer().hasEnoughFood()
+		return !body.effects().has(MobEffect.BLINDNESS) && body.server().hasEnoughFood()
 				&& (allowShallowWater || !inShallowWater(body, fluids));
 	}
 
@@ -94,7 +94,7 @@ public sealed interface KeyInput permits VectorInput, LegacyInput {
 	 * @return whether it wades
 	 */
 	static boolean inShallowWater(@NotNull PlayerBody body, @NotNull FluidState fluids) {
-		return fluids.isTouchingWater() && !body.isUnderWater();
+		return fluids.touchingWater() && !body.underWater();
 	}
 
 	/**
@@ -104,7 +104,7 @@ public sealed interface KeyInput permits VectorInput, LegacyInput {
 	 * @return the factor of the input while it moves slowly
 	 */
 	static float sneakingSpeed(@NotNull PlayerBody body) {
-		return (float) body.getAttributes().value(PlayerAttributes.SNEAKING_SPEED);
+		return (float) body.attributes().value(PlayerAttributes.SNEAKING_SPEED);
 	}
 
 	/**

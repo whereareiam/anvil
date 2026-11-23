@@ -26,18 +26,18 @@ class PresentationMetadataTest {
 				.name("proxy")
 				.platform("velocity")
 				.distribution(Distribution.remote("3.4.0", "1"))
-				.defaultServer(server.getName())
-				.server(server.getName())
+				.defaultServer(server.name())
+				.server(server.name())
 				.build();
 
-		assertNull(metadata.getDisplayName());
-		assertNull(metadata.getDescription());
-		assertNull(metadata.getCategory());
-		assertTrue(metadata.getTags().isEmpty());
-		assertNull(AnvilScenario.builder().name("scenario").entrypoint("paper").build().getMetadata());
-		assertNull(PlayerOptions.builder().name("alice").build().getMetadata());
-		assertNull(server.getMetadata());
-		assertNull(proxy.getMetadata());
+		assertNull(metadata.displayName());
+		assertNull(metadata.description());
+		assertNull(metadata.category());
+		assertTrue(metadata.tags().isEmpty());
+		assertNull(AnvilScenario.builder().name("scenario").entrypoint("paper").build().metadata());
+		assertNull(PlayerOptions.builder().name("alice").build().metadata());
+		assertNull(server.metadata());
+		assertNull(proxy.metadata());
 	}
 
 	@Test
@@ -52,15 +52,15 @@ class PresentationMetadataTest {
 		PlayerOptions player = PlayerOptions.builder().name("alice").metadata(metadata).build();
 		AnvilScenario scenario = AnvilScenario.builder()
 				.name("registration")
-				.entrypoint(server.getName())
+				.entrypoint(server.name())
 				.metadata(metadata)
 				.build();
-		assertEquals("registration", scenario.getName());
-		assertEquals("paper", server.getName());
-		assertEquals("alice", player.getName());
-		assertSame(metadata, server.getMetadata());
-		assertSame(metadata, player.getMetadata());
-		assertSame(metadata, scenario.toBuilder().build().getMetadata());
+		assertEquals("registration", scenario.name());
+		assertEquals("paper", server.name());
+		assertEquals("alice", player.name());
+		assertSame(metadata, server.metadata());
+		assertSame(metadata, player.metadata());
+		assertSame(metadata, scenario.toBuilder().build().metadata());
 	}
 
 	@Test
@@ -72,9 +72,9 @@ class PresentationMetadataTest {
 		builder.tag("builder-change");
 		PresentationMetadata edited = original.toBuilder().tag("proxy").build();
 
-		assertEquals(Set.of("auth"), original.getTags());
-		assertEquals(Set.of("auth", "proxy"), edited.getTags());
-		assertThrows(UnsupportedOperationException.class, () -> original.getTags().add("mutation"));
+		assertEquals(Set.of("auth"), original.tags());
+		assertEquals(Set.of("auth", "proxy"), edited.tags());
+		assertThrows(UnsupportedOperationException.class, () -> original.tags().add("mutation"));
 	}
 
 	private MinecraftServer server() {

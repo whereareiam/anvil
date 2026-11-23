@@ -109,7 +109,7 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 	@Override
 	public final @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		if (packet instanceof ServerboundSetCarriedItem carried)
-			return new ClientPlayerChangeHeldItemPacket(carried.getSlot());
+			return new ClientPlayerChangeHeldItemPacket(carried.slot());
 		if (packet instanceof ServerboundContainerClick click) return click(click, action(click), param(click));
 
 		return null;
@@ -144,7 +144,7 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 	}
 
 	private static WindowAction action(ServerboundContainerClick click) {
-		return switch (click.getClickType()) {
+		return switch (click.clickType()) {
 			case PICKUP -> WindowAction.CLICK_ITEM;
 			case QUICK_MOVE -> WindowAction.SHIFT_CLICK_ITEM;
 			case SWAP -> WindowAction.MOVE_TO_HOTBAR_SLOT;
@@ -156,8 +156,8 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 	}
 
 	private static WindowActionParam param(ServerboundContainerClick click) {
-		int button = click.getButton();
-		return switch (click.getClickType()) {
+		int button = click.button();
+		return switch (click.clickType()) {
 			case PICKUP -> constant(ClickItemParam.values(), button, click);
 			case QUICK_MOVE -> constant(ShiftClickItemParam.values(), button, click);
 			case SWAP -> hotbar(click);
@@ -171,11 +171,11 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 	}
 
 	private static MoveToHotbarParam hotbar(ServerboundContainerClick click) {
-		if (click.getButton() == PlayerInventoryLayout.OFF_HAND)
+		if (click.button() == PlayerInventoryLayout.OFF_HAND)
 			throw new ProtocolUnavailableException("MCProtocolLib releases before 1.18 cannot swap a slot with the "
 					+ "off hand");
 
-		return constant(MoveToHotbarParam.values(), click.getButton(), click);
+		return constant(MoveToHotbarParam.values(), click.button(), click);
 	}
 
 	private static <P extends WindowActionParam> P constant(P[] params, int index, ServerboundContainerClick click) {
@@ -185,7 +185,7 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 	}
 
 	private static <P> P invalid(ServerboundContainerClick click) {
-		throw new IllegalArgumentException("Invalid button " + click.getButton() + " for a " + click.getClickType()
+		throw new IllegalArgumentException("Invalid button " + click.button() + " for a " + click.clickType()
 				+ " click");
 	}
 }

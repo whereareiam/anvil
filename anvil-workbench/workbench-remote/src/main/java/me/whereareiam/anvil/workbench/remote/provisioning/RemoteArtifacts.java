@@ -23,7 +23,7 @@ public final class RemoteArtifacts implements ArtifactResolver {
 
 	@Override
 	public @NotNull Path obtain(@NotNull URI uri, @NotNull Path destination, @Nullable String expectedSha256) {
-		return connection.call(new ObtainArtifact(uri, destination, expectedSha256)).getPath();
+		return connection.call(new ObtainArtifact(uri, destination, expectedSha256)).path();
 	}
 
 	/**
@@ -42,7 +42,7 @@ public final class RemoteArtifacts implements ArtifactResolver {
 	 */
 	@Override
 	public @NotNull String read(@NotNull URI uri, @NotNull Predicate<String> usable) {
-		String document = connection.call(new ReadArtifact(uri)).getContent();
+		String document = connection.call(new ReadArtifact(uri)).content();
 		if (!usable.test(document)) throw new IllegalStateException("The workbench returned an unusable document for " + uri);
 		return document;
 	}

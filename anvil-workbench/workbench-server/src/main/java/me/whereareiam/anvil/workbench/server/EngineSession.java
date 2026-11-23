@@ -74,9 +74,9 @@ final class EngineSession {
 
 	private void answer(Request request) {
 		try {
-			send(new Response(request.getId(), mapper.valueToTree(operations.handle(request.getRequest())), null));
+			send(new Response(request.id(), mapper.valueToTree(operations.handle(request.request())), null));
 		} catch (Throwable failure) {
-			send(new Response(request.getId(), null, WireErrors.describe(failure)));
+			send(new Response(request.id(), null, WireErrors.describe(failure)));
 		}
 	}
 

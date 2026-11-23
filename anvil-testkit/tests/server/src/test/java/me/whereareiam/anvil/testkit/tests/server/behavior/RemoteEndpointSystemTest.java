@@ -36,7 +36,7 @@ class RemoteEndpointSystemTest {
 		String announced = InetAddress.getByName("127.0.0.1").getHostName();
 		AnvilScenario original = CompatibilityScenarioFactory.proxyScenario(Platforms.VELOCITY, Platforms.PAPER,
 				MinecraftVersion.parse("1.21.11"));
-		var proxy = original.getProxies().getFirst().toBuilder()
+		var proxy = original.proxies().getFirst().toBuilder()
 				.setting("advanced.login-ratelimit", "0")
 				.setting("forced-hosts.\"" + announced + "\"", "[\"game\"]")
 				.build();

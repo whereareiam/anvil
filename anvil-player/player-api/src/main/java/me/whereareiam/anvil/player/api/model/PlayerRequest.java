@@ -64,7 +64,7 @@ public class PlayerRequest {
 	 *
 	 * @return the login's username, or the player name when the login declares none
 	 */
-	public @NotNull String getUsername() {
-		return login.getUsername() == null ? name : login.getUsername();
+	public @NotNull String username() {
+		return login.username() == null ? name : login.username();
 	}
 }

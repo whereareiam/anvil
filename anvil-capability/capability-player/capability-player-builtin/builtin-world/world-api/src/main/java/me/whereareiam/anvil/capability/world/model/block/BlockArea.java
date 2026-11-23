@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * <pre>{@code
  * BlockArea room = BlockArea.of(new BlockPosition(10, 64, 10), new BlockPosition(4, 70, 2));
- * assertEquals(new BlockPosition(4, 64, 2), room.getMin());
+ * assertEquals(new BlockPosition(4, 64, 2), room.min());
  * assertTrue(room.contains(new BlockPosition(7, 66, 5)));
  * }</pre>
  */
@@ -38,14 +38,14 @@ public class BlockArea {
 	public static @NotNull BlockArea of(@NotNull BlockPosition corner, @NotNull BlockPosition opposite) {
 		return new BlockArea(
 				new BlockPosition(
-						Math.min(corner.getX(), opposite.getX()),
-						Math.min(corner.getY(), opposite.getY()),
-						Math.min(corner.getZ(), opposite.getZ())
+						Math.min(corner.x(), opposite.x()),
+						Math.min(corner.y(), opposite.y()),
+						Math.min(corner.z(), opposite.z())
 				),
 				new BlockPosition(
-						Math.max(corner.getX(), opposite.getX()),
-						Math.max(corner.getY(), opposite.getY()),
-						Math.max(corner.getZ(), opposite.getZ())
+						Math.max(corner.x(), opposite.x()),
+						Math.max(corner.y(), opposite.y()),
+						Math.max(corner.z(), opposite.z())
 				)
 		);
 	}
@@ -67,8 +67,8 @@ public class BlockArea {
 	 * @return whether it lies between the corners, both included
 	 */
 	public boolean contains(@NotNull BlockPosition block) {
-		return block.getX() >= min.getX() && block.getX() <= max.getX()
-				&& block.getY() >= min.getY() && block.getY() <= max.getY()
-				&& block.getZ() >= min.getZ() && block.getZ() <= max.getZ();
+		return block.x() >= min.x() && block.x() <= max.x()
+				&& block.y() >= min.y() && block.y() <= max.y()
+				&& block.z() >= min.z() && block.z() <= max.z();
 	}
 }

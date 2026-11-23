@@ -187,7 +187,7 @@ class DefaultScenarioFactoryIntegrationTest {
 
 		ScenarioStartupException failure = assertThrows(ScenarioStartupException.class,
 				() -> start(false, new TestPlatform(), scenario, this::library));
-		assertEquals("test", failure.getScenarioName());
+		assertEquals("test", failure.scenarioName());
 		assertSame(cause, failure.getCause());
 		assertFalse(Files.exists(Path.of(captured.get().processes().server("server").files().location()).getParent()));
 	}
@@ -240,7 +240,7 @@ class DefaultScenarioFactoryIntegrationTest {
 	@EnumSource(WorkspaceMode.class)
 	void rejectsCollidingProcessDirectoriesBeforePreparingAnyWorkspace(WorkspaceMode mode) {
 		var workspace = WorkspacePlan.builder().mode(mode).build();
-		var server = scenario(null).getServers().getFirst().toBuilder().workspace(workspace);
+		var server = scenario(null).servers().getFirst().toBuilder().workspace(workspace);
 		var scenario = scenario(null).toBuilder()
 				.clearServers()
 				.server(server.name("server/a").build())
@@ -290,7 +290,7 @@ class DefaultScenarioFactoryIntegrationTest {
 		} else {
 			failure = assertThrows(ProcessException.class, () -> start(false, provider, scenario(null), this::library));
 		}
-		assertEquals("server", failure.getProcessName());
+		assertEquals("server", failure.processName());
 		assertSame(cause, failure.getCause());
 		assertNoRunDirectories();
 	}
@@ -305,7 +305,7 @@ class DefaultScenarioFactoryIntegrationTest {
 		};
 		ProcessException failure = assertThrows(ProcessException.class,
 				() -> start(false, provider, scenario(null), this::library));
-		assertEquals("server", failure.getProcessName());
+		assertEquals("server", failure.processName());
 		assertNoRunDirectories();
 	}
 
@@ -353,7 +353,7 @@ class DefaultScenarioFactoryIntegrationTest {
 			var replacement = processes.restart("proxy");
 			assertEquals(2, resolves.get(), "Restart must not resolve either distribution again");
 			var proxyContexts = configurations.stream()
-					.filter(configuration -> configuration.getWorkDirectory().getFileName().toString().equals("proxy"))
+					.filter(configuration -> configuration.workDirectory().getFileName().toString().equals("proxy"))
 					.toList();
 			assertEquals(2, proxyContexts.size());
 			assertEquals(proxyContexts.getFirst(), proxyContexts.getLast(), "Restart uses the same prepared provider inputs");
@@ -463,7 +463,7 @@ class DefaultScenarioFactoryIntegrationTest {
 
 			@Override
 			public @NotNull List<String> programArguments(@NotNull MinecraftProcess process) {
-				return List.of(order.toString(), process.getName());
+				return List.of(order.toString(), process.name());
 			}
 		};
 		var scenario = scenario(null).toBuilder().server(MinecraftServer.builder().name("second").platform("test")
@@ -511,7 +511,7 @@ class DefaultScenarioFactoryIntegrationTest {
 
 			@Override
 			public void configure(@NotNull MinecraftProcess process, @NotNull PlatformContext context) {
-				contexts.put(process.getName(), context);
+				contexts.put(process.name(), context);
 			}
 		};
 		var scenario = scenario(null).toBuilder()
@@ -523,16 +523,16 @@ class DefaultScenarioFactoryIntegrationTest {
 				.build();
 		String previous;
 		try (var run = start(true, provider, scenario, this::library)) {
-			previous = contexts.get("server").getForwarding().getSecret();
+			previous = contexts.get("server").forwarding().secret();
 			assertNotNull(previous);
-			assertEquals(previous, contexts.get("proxy").getForwarding().getSecret());
-			assertNotEquals(previous, contexts.get("other").getForwarding().getSecret());
-			assertEquals(contexts.get("other").getForwarding(), contexts.get("second").getForwarding());
+			assertEquals(previous, contexts.get("proxy").forwarding().secret());
+			assertNotEquals(previous, contexts.get("other").forwarding().secret());
+			assertEquals(contexts.get("other").forwarding(), contexts.get("second").forwarding());
 			run.processes().restart("proxy");
-			assertEquals(previous, contexts.get("proxy").getForwarding().getSecret());
+			assertEquals(previous, contexts.get("proxy").forwarding().secret());
 		}
 		try (var ignored = start(true, provider, scenario, this::library)) {
-			assertNotEquals(previous, contexts.get("server").getForwarding().getSecret());
+			assertNotEquals(previous, contexts.get("server").forwarding().secret());
 		}
 	}
 
@@ -572,9 +572,9 @@ class DefaultScenarioFactoryIntegrationTest {
 			kept = first.processes().server("server");
 			server = kept.executionId();
 			proxy = first.processes().proxy("proxy").executionId();
-			secret = contexts.get("server").getForwarding().getSecret();
-			assertEquals(secret, contexts.get("proxy").getForwarding().getSecret());
-			assertEquals(kept.address(), contexts.get("proxy").getProcessAddresses().get("server"));
+			secret = contexts.get("server").forwarding().secret();
+			assertEquals(secret, contexts.get("proxy").forwarding().secret());
+			assertEquals(kept.address(), contexts.get("proxy").processAddresses().get("server"));
 			assertEquals(List.of("server", "proxy"), first.processes().all().stream().map(RunningProcess::name).toList());
 		}
 		assertEquals(ProcessState.READY, kept.state(), "An engine process outlives its scenario");
@@ -582,7 +582,7 @@ class DefaultScenarioFactoryIntegrationTest {
 		try (var second = engine.start(network(ProcessLifetime.ENGINE))) {
 			assertEquals(server, second.processes().server("server").executionId());
 			assertNotEquals(proxy, second.processes().proxy("proxy").executionId());
-			assertEquals(secret, contexts.get("proxy").getForwarding().getSecret(), "A later proxy adopts the secret its server runs with");
+			assertEquals(secret, contexts.get("proxy").forwarding().secret(), "A later proxy adopts the secret its server runs with");
 		}
 
 		engine.close();
@@ -684,7 +684,7 @@ class DefaultScenarioFactoryIntegrationTest {
 
 		AnvilScenario changed = network(ProcessLifetime.ENGINE);
 		changed = changed.toBuilder().clearServers()
-				.server(changed.getServers().getFirst().toBuilder().setting("difficulty", "hard").build()).build();
+				.server(changed.servers().getFirst().toBuilder().setting("difficulty", "hard").build()).build();
 		try (var second = engine.start(changed)) {
 			assertNotEquals(original, second.processes().server("server").executionId());
 		}
@@ -732,7 +732,7 @@ class DefaultScenarioFactoryIntegrationTest {
 
 			@Override
 			public void configure(@NotNull MinecraftProcess process, @NotNull PlatformContext context) {
-				contexts.put(process.getName(), context);
+				contexts.put(process.name(), context);
 			}
 		};
 	}
@@ -771,10 +771,10 @@ class DefaultScenarioFactoryIntegrationTest {
 	}
 
 	private AnvilScenario withWorkspace(AnvilScenario scenario) {
-		return scenario.toBuilder().clearServers().servers(scenario.getServers().stream().map(server -> server.toBuilder()
+		return scenario.toBuilder().clearServers().servers(scenario.servers().stream().map(server -> server.toBuilder()
 				.workspace(WorkspacePlan.builder()
 						.cleanup(WorkspaceCleanup.builder().path(Path.of("failure-marker")).phase(CleanupPhase.ON_FAILURE).build())
-						.cache(WorkspaceCache.builder().path(Path.of("data")).key(server.getName()).policy(CachePolicy.SAVE_ONLY).build())
+						.cache(WorkspaceCache.builder().path(Path.of("data")).key(server.name()).policy(CachePolicy.SAVE_ONLY).build())
 						.build()).build()).toList()).build();
 	}
 
@@ -791,8 +791,8 @@ class DefaultScenarioFactoryIntegrationTest {
 
 			@Override
 			public <T> T request(@NotNull String operation, @NotNull Object arguments, @NotNull Class<T> responseType) {
-				if (!operation.equals(AgentOperations.COMMAND.getName())) throw new UnsupportedOperationException(operation);
-				commands.accept(((AgentCommandRequest) arguments).getCommand());
+				if (!operation.equals(AgentOperations.COMMAND.name())) throw new UnsupportedOperationException(operation);
+				commands.accept(((AgentCommandRequest) arguments).command());
 
 				return responseType.cast(AgentCommandResponse.builder().accepted(true).build());
 			}
@@ -898,7 +898,7 @@ class DefaultScenarioFactoryIntegrationTest {
 		var players = new DefaultPlayerService(new ProtocolLibraryRegistry(libraries), options, workbench.cacheDirectory(),
 				new WorkbenchProtocolArtifacts(workbench), new WorkbenchWorkerLauncher(workbench));
 		var retained = new RetainedProcesses<RetainedProcessSet>();
-		var factory = new DefaultScenarioFactory(workbench, options.getExecutionProviderId(), platforms, processes, players, retained);
+		var factory = new DefaultScenarioFactory(workbench, options.executionProviderId(), platforms, processes, players, retained);
 		var engine = new AnvilEngineBuilder(factory).options(options).extension(registration -> {
 			registration.own(workbench);
 			registration.own(players);
@@ -1013,7 +1013,7 @@ class DefaultScenarioFactoryIntegrationTest {
 		@Override
 		public @NotNull FinishRecording create(@NotNull AgentProcessCapabilityContext context) {
 			context.on(ScenarioFinished.class, finished -> {
-				EVENTS.add(context.processName() + ":" + finished.isPassed());
+				EVENTS.add(context.processName() + ":" + finished.passed());
 				if (FAILING.contains(context.processName()))
 					throw new IllegalStateException(context.processName() + " cannot finish the scenario");
 			});

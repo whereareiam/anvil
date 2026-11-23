@@ -57,7 +57,7 @@ class ManagedProcessTest {
 					List.of("sh", "-c", "while read line; do [ \"$line\" = stop ] && exit 0; done"),
 					Map.of(), Pattern.compile("READY"), Duration.ofMillis(100)
 			));
-			assertEquals("timeout", failure.getProcessName());
+			assertEquals("timeout", failure.processName());
 			assertEquals(ProcessState.FAILED, process.state());
 		} finally {
 			process.stop(Duration.ofSeconds(1));

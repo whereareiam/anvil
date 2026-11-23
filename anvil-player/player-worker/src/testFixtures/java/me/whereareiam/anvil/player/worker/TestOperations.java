@@ -29,8 +29,8 @@ public final class TestOperations implements OperationRegistry {
 			@NotNull OperationDescriptor<Q, R> operation,
 			@NotNull Function<Q, R> handler
 	) {
-		if (operations.putIfAbsent(operation.getId(), new WorkerOperation<>(operation, handler)) != null)
-			throw new IllegalArgumentException("Operation already registered: " + operation.getId());
+		if (operations.putIfAbsent(operation.id(), new WorkerOperation<>(operation, handler)) != null)
+			throw new IllegalArgumentException("Operation already registered: " + operation.id());
 	}
 
 	/**
@@ -56,12 +56,12 @@ public final class TestOperations implements OperationRegistry {
 	public <Q, R> @Nullable R call(@NotNull OperationDescriptor<Q, R> operation, @Nullable Q request) {
 		WorkerOperation<?, ?> registered;
 		synchronized (this) {
-			registered = operations.get(operation.getId());
+			registered = operations.get(operation.id());
 		}
 		if (registered == null)
-			throw new IllegalArgumentException("Operation not registered: " + operation.getId());
-		if (!registered.getDescriptor().equals(operation))
-			throw new IllegalArgumentException("Operation " + operation.getId() + " is registered with another schema");
+			throw new IllegalArgumentException("Operation not registered: " + operation.id());
+		if (!registered.descriptor().equals(operation))
+			throw new IllegalArgumentException("Operation " + operation.id() + " is registered with another schema");
 
 		@SuppressWarnings("unchecked")
 		WorkerOperation<Q, R> typed = (WorkerOperation<Q, R>) registered;

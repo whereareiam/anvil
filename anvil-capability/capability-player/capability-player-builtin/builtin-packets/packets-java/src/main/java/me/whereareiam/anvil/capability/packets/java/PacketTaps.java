@@ -67,14 +67,14 @@ final class PacketTaps {
 	}
 
 	private synchronized Integer open(TapRequest request) {
-		if (taps.containsKey(request.getId()))
-			throw new IllegalArgumentException("Tap " + request.getId() + " is already open");
+		if (taps.containsKey(request.id()))
+			throw new IllegalArgumentException("Tap " + request.id() + " is already open");
 
 		PacketSelection selection = selection(request);
 		Set<Class<? extends ClientboundPacket>> costly = new HashSet<>();
-		for (Class<? extends ClientboundPacket> type : selection.getTypes())
+		for (Class<? extends ClientboundPacket> type : selection.types())
 			if (ClientboundPackets.isCostly(type)) costly.add(type);
-		taps.put(request.getId(), new Tap(selection, request.isPayloads(), want(costly)));
+		taps.put(request.id(), new Tap(selection, request.payloads(), want(costly)));
 		if (frames == null) frames = protocol.listenFrames(this::received);
 
 		return protocol.protocolNumber();
@@ -129,7 +129,7 @@ final class PacketTaps {
 		}
 		if (taking.isEmpty()) return;
 
-		player.emit(PacketsChannel.FRAMES, new TappedFrame(List.copyOf(taking), frame.getState(), frame.getId(), name,
+		player.emit(PacketsChannel.FRAMES, new TappedFrame(List.copyOf(taking), frame.state(), frame.id(), name,
 				payloads ? frame.payload() : null, value ? packet : null));
 	}
 
@@ -137,12 +137,12 @@ final class PacketTaps {
 	 * Reads the selection a request names, checking each kind and name.
 	 */
 	private PacketSelection selection(TapRequest request) {
-		if (request.isEvery()) return PacketSelection.every();
+		if (request.every()) return PacketSelection.every();
 
 		List<PacketSelection> parts = new ArrayList<>();
-		if (!request.getKinds().isEmpty()) parts.add(PacketSelection.of(kinds(request.getKinds())));
-		if (!request.getNames().isEmpty()) parts.add(PacketSelection.named(names(request.getNames())));
-		if (parts.isEmpty()) throw new IllegalArgumentException("Tap " + request.getId() + " takes no packet");
+		if (!request.kinds().isEmpty()) parts.add(PacketSelection.of(kinds(request.kinds())));
+		if (!request.names().isEmpty()) parts.add(PacketSelection.named(names(request.names())));
+		if (parts.isEmpty()) throw new IllegalArgumentException("Tap " + request.id() + " takes no packet");
 
 		return parts.stream().reduce(PacketSelection::and).orElseThrow();
 	}

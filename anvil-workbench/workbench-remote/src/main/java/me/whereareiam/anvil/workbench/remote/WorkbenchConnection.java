@@ -63,7 +63,7 @@ public final class WorkbenchConnection implements AutoCloseable {
 		this.tls = tls;
 		this.reverseConnections = reverseConnections;
 		this.control = stream(Control::new);
-		Thread.ofPlatform().daemon().name("anvil-workbench-" + pairing.getName()).start(this::receive);
+		Thread.ofPlatform().daemon().name("anvil-workbench-" + pairing.name()).start(this::receive);
 	}
 
 	/**
@@ -76,9 +76,9 @@ public final class WorkbenchConnection implements AutoCloseable {
 	 */
 	public static @NotNull WorkbenchConnection open(@NotNull Pairing pairing, @NotNull Consumer<ReverseConnection> reverseConnections) {
 		try {
-			return new WorkbenchConnection(pairing, tls(new PinnedTrustManager(pairing.getFingerprint())), reverseConnections);
+			return new WorkbenchConnection(pairing, tls(new PinnedTrustManager(pairing.fingerprint())), reverseConnections);
 		} catch (IOException failure) {
-			throw new WorkbenchException("Could not reach workbench '" + pairing.getName() + "' at " + pairing.getAddress()
+			throw new WorkbenchException("Could not reach workbench '" + pairing.name() + "' at " + pairing.address()
 					+ ": " + failure.getMessage(), failure);
 		}
 	}
@@ -106,8 +106,8 @@ public final class WorkbenchConnection implements AutoCloseable {
 		try (SSLSocket socket = socket(unpaired, tls(trust))) {
 			WireLines.write(mapper, socket.getOutputStream(), new Pair(code, engine));
 			return switch (answer(mapper, socket, "the pairing")) {
-				case Paired paired -> unpaired.toBuilder().fingerprint(trust.seen()).token(paired.getToken()).build();
-				case Refused refused -> throw new IOException(refused.getReason());
+				case Paired paired -> unpaired.toBuilder().fingerprint(trust.seen()).token(paired.token()).build();
+				case Refused refused -> throw new IOException(refused.reason());
 				case Accepted ignored -> throw new IOException("The workbench accepted a pairing without pairing");
 				case Uploaded ignored -> throw new IOException("The workbench answered a pairing with an upload");
 			};
@@ -157,7 +157,7 @@ public final class WorkbenchConnection implements AutoCloseable {
 	 * @throws IOException when the request failed with one, or the connection failed
 	 */
 	public <R> @NotNull R request(@NotNull WorkbenchRequest<R> request) throws IOException {
-		if (closed) throw new WorkbenchException("The connection to workbench '" + pairing.getName() + "' is closed");
+		if (closed) throw new WorkbenchException("The connection to workbench '" + pairing.name() + "' is closed");
 
 		long id = ids.incrementAndGet();
 		CompletableFuture<Response> answer = new CompletableFuture<>();
@@ -165,16 +165,16 @@ public final class WorkbenchConnection implements AutoCloseable {
 		try {
 			WireLines.write(mapper, control.getOutputStream(), new Request(id, request));
 			Response response = answer.get();
-			if (response.getFailure() == null) return mapper.treeToValue(response.getResult(), request.responseType());
+			if (response.failure() == null) return mapper.treeToValue(response.result(), request.responseType());
 
-			Exception failure = WireErrors.restore(response.getFailure());
+			Exception failure = WireErrors.restore(response.failure());
 			if (failure instanceof IOException io) throw io;
 			throw (RuntimeException) failure;
 		} catch (InterruptedException interrupted) {
 			Thread.currentThread().interrupt();
-			throw new WorkbenchException("Interrupted while waiting for workbench '" + pairing.getName() + "'", interrupted);
+			throw new WorkbenchException("Interrupted while waiting for workbench '" + pairing.name() + "'", interrupted);
 		} catch (ExecutionException lost) {
-			throw new WorkbenchException("Lost workbench '" + pairing.getName() + "': " + lost.getCause().getMessage(), lost.getCause());
+			throw new WorkbenchException("Lost workbench '" + pairing.name() + "': " + lost.getCause().getMessage(), lost.getCause());
 		} finally {
 			pending.remove(id);
 		}
@@ -190,14 +190,14 @@ public final class WorkbenchConnection implements AutoCloseable {
 	public @NotNull SSLSocket stream(@NotNull Function<String, EngineConnection> header) throws IOException {
 		SSLSocket socket = socket(pairing, tls);
 		try {
-			WireLines.write(mapper, socket.getOutputStream(), header.apply(pairing.getToken()));
+			WireLines.write(mapper, socket.getOutputStream(), header.apply(pairing.token()));
 			switch (answer(mapper, socket, "a connection")) {
 				case Accepted ignored -> {
 				}
-				case Refused refused -> throw new IOException(refused.getReason());
-				case Paired ignored -> throw new IOException("Workbench '" + pairing.getName() + "' answered a connection with a pairing");
+				case Refused refused -> throw new IOException(refused.reason());
+				case Paired ignored -> throw new IOException("Workbench '" + pairing.name() + "' answered a connection with a pairing");
 				case Uploaded ignored ->
-						throw new IOException("Workbench '" + pairing.getName() + "' answered a connection with an upload");
+						throw new IOException("Workbench '" + pairing.name() + "' answered a connection with an upload");
 			}
 			return socket;
 		} catch (IOException | RuntimeException failure) {
@@ -232,7 +232,7 @@ public final class WorkbenchConnection implements AutoCloseable {
 			while ((message = WireLines.read(mapper, control.getInputStream(), ServerMessage.class)) != null) {
 				switch (message) {
 					case Response response -> {
-						CompletableFuture<Response> answer = pending.get(response.getId());
+						CompletableFuture<Response> answer = pending.get(response.id());
 						if (answer != null) answer.complete(response);
 					}
 					case ReverseConnection reverse -> reverseConnections.accept(reverse);

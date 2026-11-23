@@ -31,14 +31,14 @@ class SessionBindingTest {
 		new SessionBinding().bind(player, operations);
 
 		assertNull(operations.call(SessionOperations.CONNECT, null));
-		assertTrue(player.isConnected());
+		assertTrue(player.connected());
 		Object first = player.nativeSession();
 
 		assertNull(operations.call(SessionOperations.REJOIN, null));
 		assertNotSame(first, player.nativeSession());
 
 		assertNull(operations.call(SessionOperations.DISCONNECT, null));
-		assertFalse(player.isConnected());
+		assertFalse(player.connected());
 		assertEquals(List.of("session.connect", "session.disconnect", "session.rejoin"), operations.registered());
 	}
 

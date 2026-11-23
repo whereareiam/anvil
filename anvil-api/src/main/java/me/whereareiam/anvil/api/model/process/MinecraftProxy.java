@@ -41,12 +41,12 @@ public class MinecraftProxy implements MinecraftProcess {
 	boolean onlineMode = false;
 
 	/**
-	 * Session server that verifies online logins instead of Mojang's; see {@link MinecraftProcess#getSessionServer()}.
+	 * Session server that verifies online logins instead of Mojang's; see {@link MinecraftProcess#sessionServer()}.
 	 */
 	@Nullable URI sessionServer;
 
 	/**
-	 * How long the process keeps running; see {@link MinecraftProcess#getLifetime()}.
+	 * How long the process keeps running; see {@link MinecraftProcess#lifetime()}.
 	 */
 	@NotNull
 	@Builder.Default
@@ -68,7 +68,7 @@ public class MinecraftProxy implements MinecraftProcess {
 	List<String> jvmArguments;
 
 	/**
-	 * Listeners the process binds besides its game port; see {@link MinecraftProcess#getListeners()}.
+	 * Listeners the process binds besides its game port; see {@link MinecraftProcess#listeners()}.
 	 */
 	@NotNull
 	@Singular

@@ -49,15 +49,15 @@ public final class AnvilRunner {
 	 */
 	public void run(@NotNull String[] arguments) throws Exception {
 		RunnerArguments parsed = RunnerArgumentsParser.parse(arguments);
-		ScenarioRepository repository = parsed.getDefinition() == null
+		ScenarioRepository repository = parsed.definition() == null
 				? ScenarioRepository.discover()
-				: ScenarioRepository.load(List.of(parsed.getDefinition()));
-		if (parsed.isList()) {
+				: ScenarioRepository.load(List.of(parsed.definition()));
+		if (parsed.list()) {
 			terminal.showScenarios(repository.scenarios());
 			return;
 		}
 
-		String selection = parsed.getDefinition() == null ? parsed.getScenario() : parsed.getDefinition();
+		String selection = parsed.definition() == null ? parsed.scenario() : parsed.definition();
 		if (selection == null) throw new IllegalArgumentException("A scenario or definition selection is required");
 		repository.require(selection);
 		try (RunnerSession session = new RunnerSession(engineFactory, repository)) {

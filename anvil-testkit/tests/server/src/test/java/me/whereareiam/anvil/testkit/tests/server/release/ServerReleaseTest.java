@@ -36,7 +36,7 @@ class ServerReleaseTest {
 
 		SimulatedPlayer player = new FixtureServer(anvil).join();
 
-		assertEquals(player.name(), arrivals.joined(player, Duration.ofSeconds(10)).getProfile().getUsername());
-		assertEquals(player.name(), players.profile(player).orElseThrow().getUsername());
+		assertEquals(player.name(), arrivals.joined(player, Duration.ofSeconds(10)).profile().username());
+		assertEquals(player.name(), players.profile(player).orElseThrow().username());
 	}
 }

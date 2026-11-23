@@ -46,7 +46,7 @@ class CookiesReleaseTest {
 
 		messages.received("anvil:cookie:anvil:ticket:day-pass", Duration.ofSeconds(10));
 		CookieRequest request = asked.requested("anvil:ticket", Duration.ofSeconds(10));
-		assertEquals("day-pass", new String(request.getAnswer(), StandardCharsets.UTF_8));
+		assertEquals("day-pass", new String(request.answer(), StandardCharsets.UTF_8));
 		asked.neverRequested("anvil:unasked", Duration.ofSeconds(1));
 	}
 

@@ -54,12 +54,12 @@ class McProtocolWorkerTest {
 		var empty = JsonNodeFactory.instance.objectNode();
 		String input = String.join("\n",
 				request(1, "create", codec.payload(options)),
-				request(2, IDENTITY.getId(), codec.envelope(null)),
-				request(3, GREET.getId(), codec.envelope("Bob")),
-				request(4, GREET.getId(), codec.envelope(null)),
+				request(2, IDENTITY.id(), codec.envelope(null)),
+				request(3, GREET.id(), codec.envelope("Bob")),
+				request(4, GREET.id(), codec.envelope(null)),
 				request(5, "create", codec.payload(options)),
 				request(6, "destroy", empty),
-				request(7, IDENTITY.getId(), codec.envelope(null)),
+				request(7, IDENTITY.id(), codec.envelope(null)),
 				request(8, "shutdown", empty),
 				request(9, "create", codec.payload(options))
 		);
@@ -78,18 +78,18 @@ class McProtocolWorkerTest {
 		var responses = output.toString(StandardCharsets.UTF_8).lines()
 				.map(line -> assertInstanceOf(WorkerResponse.class, codec.decodeMessage(line).orElseThrow())).toList();
 		assertEquals(8, responses.size());
-		assertTrue(responses.getFirst().isSuccess());
+		assertTrue(responses.getFirst().success());
 		assertEquals(
 				Set.of("example.identity"),
-				codec.decodePayload(responses.getFirst().getResult(), WorkerPlayerCapabilities.class).getCapabilities()
+				codec.decodePayload(responses.getFirst().result(), WorkerPlayerCapabilities.class).capabilities()
 		);
-		assertEquals(identity.toString(), codec.open(responses.get(1).getResult(), String.class));
-		assertEquals("Alice greets Bob", codec.open(responses.get(2).getResult(), String.class));
-		assertEquals("IllegalArgumentException: Invalid player message for java.lang.String", responses.get(3).getError());
-		assertTrue(responses.get(4).getError().contains("already exists"));
-		assertTrue(responses.get(5).isSuccess());
-		assertTrue(responses.get(6).getError().contains("Unknown worker player"));
-		assertTrue(responses.get(7).isSuccess());
+		assertEquals(identity.toString(), codec.open(responses.get(1).result(), String.class));
+		assertEquals("Alice greets Bob", codec.open(responses.get(2).result(), String.class));
+		assertEquals("IllegalArgumentException: Invalid player message for java.lang.String", responses.get(3).error());
+		assertTrue(responses.get(4).error().contains("already exists"));
+		assertTrue(responses.get(5).success());
+		assertTrue(responses.get(6).error().contains("Unknown worker player"));
+		assertTrue(responses.get(7).success());
 	}
 
 	private String request(long id, String operation, JsonNode arguments) {

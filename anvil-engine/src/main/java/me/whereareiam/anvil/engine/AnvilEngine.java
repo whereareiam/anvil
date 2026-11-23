@@ -46,7 +46,7 @@ public final class AnvilEngine implements ScenarioEngine {
 		try {
 			if (closed) throw new IllegalStateException("Cannot prepare a scenario after the engine is closed");
 
-			new ScenarioValidator().validate(scenario, options.isEulaAccepted());
+			new ScenarioValidator().validate(scenario, options.eulaAccepted());
 			ScenarioObserver observed = observers.wrap(observer);
 			ScenarioContext context = Objects.requireNonNull(
 					scenarioFactory.create(scenario, observed),

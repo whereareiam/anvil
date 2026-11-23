@@ -23,6 +23,6 @@ public final class InspectScenarioAction extends ScenarioAction {
 			@NotNull ScenarioAccess scenario,
 			@NotNull ToolingArguments arguments
 	) {
-		return ActionResult.builder().message(scenario.definition().getName()).build();
+		return ActionResult.builder().message(scenario.definition().name()).build();
 	}
 }

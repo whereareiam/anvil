@@ -39,7 +39,7 @@ public interface ProtocolLibraryProvider {
 
 	/**
 	 * Returns every release this library can run, including additional user-supplied releases named by
-	 * {@link ProtocolLibraryContext#getAdditionalReleases()}.
+	 * {@link ProtocolLibraryContext#additionalReleases()}.
 	 *
 	 * @param context engine-scoped directories, artifact resolution, and optional additional release data
 	 * @return immutable releases; each Minecraft version appears in at most one release

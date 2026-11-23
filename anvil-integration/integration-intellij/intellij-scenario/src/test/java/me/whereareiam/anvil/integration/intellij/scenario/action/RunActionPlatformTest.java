@@ -47,7 +47,7 @@ public class RunActionPlatformTest extends ScenarioPlatformTestCase {
 		var project = ControlledProject.install(getTestRootDisposable(), this::tooling, "main");
 		var lifecycle = EnvironmentLifecycle.getInstance(getProject());
 		EnvironmentSession session = lifecycle.run(project.source("main"), scenario(), "lobby");
-		ControlledProject.await(() -> session.getSnapshot().getState().name().equals("RUNNING"));
+		ControlledProject.await(() -> session.getSnapshot().state().name().equals("RUNNING"));
 		var event = event(context(project.source("main"), scenario(), "proxy", session));
 		action.update(event);
 		assertEquals("Start Proxy", event.getPresentation().getText());

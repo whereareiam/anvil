@@ -26,10 +26,10 @@ class RecordedPacketsTest {
 				new ClientboundFrame(ConnectionState.PLAY, 0x77, "system_chat", new byte[]{3}, welcome)
 		));
 
-		ClientboundFrame chunk = recording.getFrames().get(0);
+		ClientboundFrame chunk = recording.frames().get(0);
 		assertEquals(Optional.empty(), chunk.packet());
 		assertEquals(Optional.of("map_chunk"), chunk.name());
 		assertArrayEquals(new byte[]{1, 2}, chunk.payload());
-		assertEquals(Optional.of(welcome), recording.getFrames().get(1).packet());
+		assertEquals(Optional.of(welcome), recording.frames().get(1).packet());
 	}
 }

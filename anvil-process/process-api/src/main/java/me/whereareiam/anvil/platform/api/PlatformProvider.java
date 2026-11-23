@@ -47,10 +47,10 @@ public interface PlatformProvider {
 	 * @throws PlatformException when the selected distribution is invalid for this provider
 	 */
 	default void validateDistribution(@NotNull MinecraftProcess process) {
-		var distribution = process.getDistribution();
+		var distribution = process.distribution();
 		if (distribution.isLocal() || distribution.isArtifact())
 			return;
-		if (distribution.getBuild() == null || distribution.getBuild().isBlank())
+		if (distribution.build() == null || distribution.build().isBlank())
 			throw new PlatformException("Remote distribution requires an immutable build identifier");
 	}
 
@@ -186,8 +186,8 @@ public interface PlatformProvider {
 	 * @throws PlatformException when this platform cannot be redirected
 	 */
 	default @NotNull List<String> sessionServerArguments(@NotNull MinecraftProcess process, @NotNull URI sessionServer) {
-		throw new PlatformException("Platform '" + process.getPlatform() + "' cannot verify logins against another "
-				+ "session server; remove sessionServer from process '" + process.getName() + "'");
+		throw new PlatformException("Platform '" + process.platform() + "' cannot verify logins against another "
+				+ "session server; remove sessionServer from process '" + process.name() + "'");
 	}
 
 	/**

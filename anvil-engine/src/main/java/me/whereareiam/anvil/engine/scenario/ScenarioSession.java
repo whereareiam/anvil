@@ -173,14 +173,14 @@ public final class ScenarioSession implements ScenarioContext {
 		}
 
 		AnvilScenario scenario = definition();
-		if (scenario.getSetupHook() == null) return;
+		if (scenario.setupHook() == null) return;
 
 		try {
-			scenario.getSetupHook().execute(this);
+			scenario.setupHook().execute(this);
 		} catch (AnvilException failure) {
 			throw failure;
 		} catch (Exception failure) {
-			throw new ScenarioStartupException(scenario.getName(), "Setup failed for scenario '" + scenario.getName() + "'", failure);
+			throw new ScenarioStartupException(scenario.name(), "Setup failed for scenario '" + scenario.name() + "'", failure);
 		}
 	}
 

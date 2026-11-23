@@ -18,11 +18,11 @@ final class NeoForgeConfiguration {
 	private static final String SERVER_PROPERTIES = "server.properties";
 
 	void write(MinecraftServer server, PlatformContext context) throws IOException {
-		if (context.getForwarding().getMode() != ForwardingMode.NONE)
+		if (context.forwarding().mode() != ForwardingMode.NONE)
 			throw new PlatformException("NeoForge does not support identity forwarding");
 
-		writeProperties(server, context.getFiles(), context);
-		context.getFiles().write("eula.txt", "eula=" + context.isEulaAccepted() + "\n");
+		writeProperties(server, context.files(), context);
+		context.files().write("eula.txt", "eula=" + context.eulaAccepted() + "\n");
 	}
 
 	private void writeProperties(MinecraftServer server, ProcessFiles files, PlatformContext context) throws IOException {
@@ -30,11 +30,11 @@ final class NeoForgeConfiguration {
 		if (files.exists(SERVER_PROPERTIES))
 			properties.load(new StringReader(files.read(SERVER_PROPERTIES)));
 
-		server.getSettings().forEach(properties::setProperty);
-		properties.setProperty("server-ip", context.getBindAddress());
-		properties.setProperty("server-port", Integer.toString(context.getPort()));
-		properties.setProperty("online-mode", Boolean.toString(server.isOnlineMode()));
-		properties.setProperty("motd", "Anvil: " + server.getName());
+		server.settings().forEach(properties::setProperty);
+		properties.setProperty("server-ip", context.bindAddress());
+		properties.setProperty("server-port", Integer.toString(context.port()));
+		properties.setProperty("online-mode", Boolean.toString(server.onlineMode()));
+		properties.setProperty("motd", "Anvil: " + server.name());
 		properties.setProperty("spawn-protection", "0");
 		properties.setProperty("enable-rcon", "false");
 

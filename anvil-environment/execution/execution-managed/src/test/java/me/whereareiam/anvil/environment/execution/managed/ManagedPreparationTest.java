@@ -42,7 +42,7 @@ class ManagedPreparationTest {
 				fixture.spec("lobby", false), fixture.spec("game", false));
 		ProcessGroup group = fixture.service().prepare(plan, fixture.preparation, process -> {
 			assertEquals(ProcessState.CREATED, process.state());
-			assertTrue(process.console().watchFromStart().read(10).getLines().isEmpty());
+			assertTrue(process.console().watchFromStart().read(10).lines().isEmpty());
 			assertSame(process, exposed.get().get(process.name()));
 			observed.add(process);
 		});
@@ -67,7 +67,7 @@ class ManagedPreparationTest {
 			assertSame(first.files(), next.files(), "Every generation of a process shares its workspace files");
 			assertEquals(1, fixture.calls.stream().filter("prepare:proxy"::equals).count());
 			assertEquals(List.of("1", "2"), fixture.targets.get("proxy").commands.stream()
-					.map(command -> command.getEnvironment().get("GENERATION")).toList());
+					.map(command -> command.environment().get("GENERATION")).toList());
 			group.startAll();
 			assertEquals(3, group.all().size());
 			assertSame(next, group.proxy("proxy"));
@@ -153,7 +153,7 @@ class ManagedPreparationTest {
 			fixture.failingConfiguration = null;
 			assertEquals(ProcessState.READY, group.start("server").state());
 			assertEquals(1, fixture.calls.stream().filter("prepare:server"::equals).count());
-			assertEquals("2", fixture.targets.get("server").commands.getFirst().getEnvironment().get("GENERATION"));
+			assertEquals("2", fixture.targets.get("server").commands.getFirst().environment().get("GENERATION"));
 		}
 		assertFalse(fixture.calls.contains("detach:server:1"));
 		assertEquals(1, fixture.calls.stream().filter("detach:server:2"::equals).count());
@@ -172,7 +172,7 @@ class ManagedPreparationTest {
 		assertSame(rejected, assertThrows(IllegalArgumentException.class, () -> group.start("server")));
 		assertFalse(fixture.calls.contains("start:server"));
 		assertEquals(ProcessState.STOPPED, observed.get().state());
-		assertTrue(observed.get().console().watchFromStart().read(10).isClosed());
+		assertTrue(observed.get().console().watchFromStart().read(10).closed());
 		group.finish(true);
 		assertEquals("finish:false", fixture.calls.getLast());
 	}

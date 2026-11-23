@@ -25,6 +25,6 @@ public final class ArtifactJavaPackageSource implements JavaPackageSource {
 
 	@Override
 	public @NotNull Path archive(@NotNull JavaArchive archive, @NotNull Path destination) throws IOException {
-		return artifacts.obtain(archive.getUri(), destination, archive.getSha256());
+		return artifacts.obtain(archive.uri(), destination, archive.sha256());
 	}
 }

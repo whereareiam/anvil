@@ -56,14 +56,14 @@ public final class RemoteWorkbench implements Workbench {
 		this.connection = WorkbenchConnection.open(pairing, this::carryBack);
 		try {
 			Greeting greeting = connection.call(new Hello(WireProtocol.VERSION));
-			name = pairing.getName();
-			workDirectory = greeting.getWorkDirectory();
-			cacheDirectory = greeting.getCacheDirectory();
+			name = pairing.name();
+			workDirectory = greeting.workDirectory();
+			cacheDirectory = greeting.cacheDirectory();
 
 			Map<String, BoundExecutionProvider> providers = new LinkedHashMap<>();
-			for (OfferedExecution offered : greeting.getExecutions())
-				providers.put(offered.getId(), new RemoteExecutionProvider(connection, offered,
-						() -> facts().getUnavailableExecutions().get(offered.getId()), mirrorAddress));
+			for (OfferedExecution offered : greeting.executions())
+				providers.put(offered.id(), new RemoteExecutionProvider(connection, offered,
+						() -> facts().unavailableExecutions().get(offered.id()), mirrorAddress));
 			executions = Map.copyOf(providers);
 		} catch (RuntimeException failure) {
 			try {
@@ -146,7 +146,7 @@ public final class RemoteWorkbench implements Workbench {
 
 	@Override
 	public @NotNull Process launch(@NotNull JavaMainLaunch launch) throws IOException {
-		return new RemoteProcess(connection, connection.request(new Launch(launch)).getHandle());
+		return new RemoteProcess(connection, connection.request(new Launch(launch)).handle());
 	}
 
 	@Override
@@ -171,8 +171,8 @@ public final class RemoteWorkbench implements Workbench {
 		Thread.ofVirtual().name("anvil-reverse").start(() -> {
 			try {
 				Socket local = new Socket();
-				local.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), reverse.getPort()), 5000);
-				Socket remote = connection.stream(token -> new Reverse(token, reverse.getId()));
+				local.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), reverse.port()), 5000);
+				Socket remote = connection.stream(token -> new Reverse(token, reverse.id()));
 				relay(local, remote);
 				relay(remote, local);
 			} catch (IOException unreachable) {

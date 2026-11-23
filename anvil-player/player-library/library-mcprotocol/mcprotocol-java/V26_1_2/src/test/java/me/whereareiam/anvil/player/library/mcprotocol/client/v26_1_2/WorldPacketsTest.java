@@ -46,13 +46,13 @@ class WorldPacketsTest {
 				0, new ClockNetworkState(13000, 0.5F, 1),
 				1, new ClockNetworkState(40, 0, 0))));
 
-		assertEquals("minecraft:world_clock", registry.getRegistry());
+		assertEquals("minecraft:world_clock", registry.registry());
 		assertEquals(ClientboundSetTime.builder()
 				.gameTime(500)
 				.clockUpdate("minecraft:overworld", new ClockState(13000, 0.5F, 1))
 				.clockUpdate("minecraft:the_end", new ClockState(40, 0, 0))
 				.build(), time);
-		assertNull(time.getDayTime());
+		assertNull(time.dayTime());
 	}
 
 	@Test
@@ -75,9 +75,9 @@ class WorldPacketsTest {
 		)));
 
 		assertEquals(DimensionType.known("minecraft:overworld").toBuilder().defaultClock("minecraft:overworld").build(),
-				respawnInto(0).getDimensionType());
-		assertNull(respawnInto(1).getDimensionType().getDefaultClock());
-		assertEquals("example:slow", respawnInto(2).getDimensionType().getDefaultClock());
+				respawnInto(0).dimensionType());
+		assertNull(respawnInto(1).dimensionType().defaultClock());
+		assertEquals("example:slow", respawnInto(2).dimensionType().defaultClock());
 	}
 
 	private ClientboundRespawn respawnInto(int type) {

@@ -21,10 +21,10 @@ class JavaSelectionTest {
 
 		var effective = process.withDefaults(scenario).withDefaults(engine);
 
-		assertSame(scenarioRequirement, effective.getRequirement());
-		assertSame(processSource, effective.getSource());
-		assertNull(process.getRequirement());
-		assertNull(scenario.getSource());
+		assertSame(scenarioRequirement, effective.requirement());
+		assertSame(processSource, effective.source());
+		assertNull(process.requirement());
+		assertNull(scenario.source());
 	}
 
 	@Test
@@ -39,8 +39,8 @@ class JavaSelectionTest {
 
 		var effective = declared.withDefaults(defaults);
 
-		assertSame(platformRequirement, effective.getRequirement());
-		assertSame(source, effective.getSource());
+		assertSame(platformRequirement, effective.requirement());
+		assertSame(source, effective.source());
 	}
 
 	@Test
@@ -50,7 +50,7 @@ class JavaSelectionTest {
 				.requirement(JavaRequirement.builder().build())
 				.build());
 
-		assertNotNull(effective.getRequirement());
-		assertNull(effective.getSource());
+		assertNotNull(effective.requirement());
+		assertNull(effective.source());
 	}
 }

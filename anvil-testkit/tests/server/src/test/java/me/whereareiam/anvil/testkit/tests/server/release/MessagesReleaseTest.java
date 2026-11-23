@@ -143,9 +143,9 @@ class MessagesReleaseTest {
 
 		Text message = chat.received("anvil:translated", Duration.ofSeconds(10));
 		TranslatedContent joined = message.find(TranslatedContent.class).orElseThrow();
-		assertEquals("multiplayer.player.joined", joined.getKey());
-		assertEquals("Ivan", joined.getArguments().getFirst().plain());
-		assertEquals(TextColor.AQUA, message.span("Ivan").orElseThrow().getStyle().getColor());
+		assertEquals("multiplayer.player.joined", joined.key());
+		assertEquals("Ivan", joined.arguments().getFirst().plain());
+		assertEquals(TextColor.AQUA, message.span("Ivan").orElseThrow().style().color());
 		assertEquals("anvil:translated multiplayer.player.joined Ivan", message.plain());
 	}
 
@@ -166,6 +166,6 @@ class MessagesReleaseTest {
 
 		List<String> expected = new ArrayList<>(Collections.nCopies(ChatLines.MAX_LINES - 1, ""));
 		expected.add("anvil:after");
-		assertEquals(expected, messages.chatLines().getLines());
+		assertEquals(expected, messages.chatLines().lines());
 	}
 }

@@ -11,6 +11,6 @@ final class FixtureChannels {
 	static final ChannelOperation<Void, String> GET_PREFIX = channel(FixtureOperations.GET_PREFIX);
 
 	private static <Q, R> @NotNull ChannelOperation<Q, R> channel(@NotNull AgentOperation<Q, R> operation) {
-		return new ChannelOperation<>(operation.getName(), operation.getRequestType(), operation.getResponseType());
+		return new ChannelOperation<>(operation.name(), operation.requestType(), operation.responseType());
 	}
 }

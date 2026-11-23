@@ -53,20 +53,20 @@ public final class ItemDataGenerator {
 	 * @throws IllegalStateException when an item file breaks the expected shape
 	 */
 	public static void generate(@NotNull GenerationRequest request) throws IOException {
-		Path output = clean(request.getOutput());
+		Path output = clean(request.output());
 		Set<Integer> protocols = new TreeSet<>();
-		for (GenerationRequest.PinnedProtocol pinned : request.getProtocols()) {
-			ItemRegistry registry = registry(request.getRelease(), pinned);
-			try (OutputStream file = Files.newOutputStream(output.resolve(JavaItemData.registryResource(pinned.getProtocol())))) {
+		for (GenerationRequest.PinnedProtocol pinned : request.protocols()) {
+			ItemRegistry registry = registry(request.release(), pinned);
+			try (OutputStream file = Files.newOutputStream(output.resolve(JavaItemData.registryResource(pinned.protocol())))) {
 				ItemDataCodec.writeRegistry(registry, file);
 			}
-			protocols.add(pinned.getProtocol());
+			protocols.add(pinned.protocol());
 		}
 
 		Map<Integer, String> missing = new TreeMap<>();
-		GenerationRequest.Release release = request.getRelease();
-		for (int protocol : request.getMissing())
-			missing.put(protocol, release.getRepository() + " " + release.getVersion() + " has no item file for it");
+		GenerationRequest.Release release = request.release();
+		for (int protocol : request.missing())
+			missing.put(protocol, release.repository() + " " + release.version() + " has no item file for it");
 		try (OutputStream file = Files.newOutputStream(output.resolve(JavaItemData.indexResource()))) {
 			ItemDataCodec.writeIndex(new JavaItemData(protocols, missing), file);
 		}
@@ -74,16 +74,16 @@ public final class ItemDataGenerator {
 
 	private static ItemRegistry registry(GenerationRequest.Release release, GenerationRequest.PinnedProtocol pinned)
 			throws IOException {
-		GenerationRequest.PinnedFile file = pinned.getFiles().getItems();
-		String context = "minecraft-data " + file.getPath() + " for protocol " + pinned.getProtocol();
+		GenerationRequest.PinnedFile file = pinned.files().items();
+		String context = "minecraft-data " + file.path() + " for protocol " + pinned.protocol();
 		ItemDataSource source = ItemDataSource.builder()
-				.repository(release.getRepository())
-				.version(release.getVersion())
-				.commit(release.getCommit())
-				.items(file.getPath())
+				.repository(release.repository())
+				.version(release.version())
+				.commit(release.commit())
+				.items(file.path())
 				.build();
 
-		return new ItemRegistry(pinned.getProtocol(), source, ItemList.keys(context, JSON.readTree(file.getFile().toFile())));
+		return new ItemRegistry(pinned.protocol(), source, ItemList.keys(context, JSON.readTree(file.file().toFile())));
 	}
 
 	/**

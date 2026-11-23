@@ -86,11 +86,11 @@ public class ConsolePanelPlatformTest extends ScenarioPlatformTestCase {
 		String selection = editor.getSelectionModel().getSelectedText();
 		long stamp = editor.getDocument().getModificationStamp();
 		Object selected = sources.getSelectedValue();
-		var stopped = run.getSnapshot().getProcesses().getFirst().toBuilder().state(ProcessState.STOPPED).build();
+		var stopped = run.getSnapshot().processes().getFirst().toBuilder().state(ProcessState.STOPPED).build();
 
 				EnvironmentSessionFixture.update(run,
 				run.getSnapshot().toBuilder()
-						.processes(List.of(stopped, run.getSnapshot().getProcesses().getLast()))
+						.processes(List.of(stopped, run.getSnapshot().processes().getLast()))
 						.build());
 		UIUtil.dispatchAllInvocationEvents();
 		consoleText(panel);
@@ -108,7 +108,7 @@ public class ConsolePanelPlatformTest extends ScenarioPlatformTestCase {
 
 				EnvironmentSessionFixture.update(run,
 				run.getSnapshot().toBuilder()
-						.processes(List.of(stopped, run.getSnapshot().getProcesses().getLast(), extra))
+						.processes(List.of(stopped, run.getSnapshot().processes().getLast(), extra))
 						.build());
 		UIUtil.dispatchAllInvocationEvents();
 		consoleText(panel);
@@ -158,11 +158,11 @@ public class ConsolePanelPlatformTest extends ScenarioPlatformTestCase {
 		sources(panel).setSelectedIndex(1);
 		target(panel).setSelectedIndex(2);
 		command(panel).setText("send Alice game");
-		var stopped = run.getSnapshot().getProcesses().getLast().toBuilder().state(ProcessState.STOPPED).build();
+		var stopped = run.getSnapshot().processes().getLast().toBuilder().state(ProcessState.STOPPED).build();
 
 				EnvironmentSessionFixture.update(run,
 				run.getSnapshot().toBuilder()
-						.processes(List.of(run.getSnapshot().getProcesses().getFirst(), stopped))
+						.processes(List.of(run.getSnapshot().processes().getFirst(), stopped))
 						.build());
 		UIUtil.dispatchAllInvocationEvents();
 		assertEquals("Paper backend", sources(panel).getSelectedValue().toString());
@@ -178,7 +178,7 @@ public class ConsolePanelPlatformTest extends ScenarioPlatformTestCase {
 				run.getSnapshot().toBuilder()
 						.processes(
 								List.of(
-										run.getSnapshot().getProcesses().getFirst(),
+										run.getSnapshot().processes().getFirst(),
 										stopped.toBuilder().state(ProcessState.READY).build()))
 						.build());
 		UIUtil.dispatchAllInvocationEvents();
@@ -193,11 +193,11 @@ public class ConsolePanelPlatformTest extends ScenarioPlatformTestCase {
 		sources(panel).setSelectedIndex(1);
 		command(panel).setText("list");
 		assertTrue(send(panel).isEnabled());
-		var stopped = run.getSnapshot().getProcesses().getFirst().toBuilder().state(ProcessState.STOPPED).build();
+		var stopped = run.getSnapshot().processes().getFirst().toBuilder().state(ProcessState.STOPPED).build();
 
 				EnvironmentSessionFixture.update(run,
 				run.getSnapshot().toBuilder()
-						.processes(List.of(stopped, run.getSnapshot().getProcesses().getLast()))
+						.processes(List.of(stopped, run.getSnapshot().processes().getLast()))
 						.build());
 		assertTrue("The queued UI refresh has not run yet", send(panel).isEnabled());
 		command(panel).postActionEvent();

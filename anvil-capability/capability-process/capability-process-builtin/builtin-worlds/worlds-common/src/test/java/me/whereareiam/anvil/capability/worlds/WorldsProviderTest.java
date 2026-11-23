@@ -14,8 +14,8 @@ class WorldsProviderTest {
 
 	@Test
 	void describesTheWorldsCapabilityWithoutDependencies() {
-		assertEquals("anvil.worlds", provider.descriptor().getId());
-		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
+		assertEquals("anvil.worlds", provider.descriptor().id());
+		assertTrue(provider.descriptor().requiredCapabilities().isEmpty());
 		assertEquals(Worlds.class, provider.capability());
 	}
 

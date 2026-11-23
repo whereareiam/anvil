@@ -37,8 +37,8 @@ class PartialScenarioLifecycleSystemTest {
 	void controlsIndividualProcessesThenCompletesTwoProxyThreeServerEnvironment() throws Exception {
 		AnvilScenario original = CompatibilityScenarioFactory.proxyScenario(Platforms.VELOCITY, Platforms.PAPER,
 				MinecraftVersion.parse("1.21.11"));
-		var auxiliary = original.getServers().getFirst().toBuilder().name("auxiliary").build();
-		var proxy = original.getProxies().getFirst().toBuilder()
+		var auxiliary = original.servers().getFirst().toBuilder().name("auxiliary").build();
+		var proxy = original.proxies().getFirst().toBuilder()
 				.server("auxiliary").setting("advanced.login-ratelimit", "0").build();
 		AtomicInteger setup = new AtomicInteger();
 		AnvilScenario network = original.toBuilder().name("partial-network")
@@ -54,7 +54,7 @@ class PartialScenarioLifecycleSystemTest {
 			boolean successful = false;
 			try {
 				assertTrue(context.processes().all().isEmpty());
-				assertNull(context.definition().getProcessTimeouts().getShutdown());
+				assertNull(context.definition().processTimeouts().shutdown());
 				assertEquals(0, setup.get());
 				var gateway = context.processes().start("proxy");
 				assertNotNull(gateway.executionId());
@@ -101,8 +101,8 @@ class PartialScenarioLifecycleSystemTest {
 				again.capability(Session.class).connected(Duration.ofSeconds(30));
 				arrivalsElsewhere.joined(again, Duration.ofSeconds(20));
 				secondary.joined(again, "auxiliary", Duration.ofSeconds(20));
-				assertEquals("PartialAlice", again.requestedProfile().getUsername());
-				assertEquals(alice.requestedProfile().getUniqueId(), again.requestedProfile().getUniqueId());
+				assertEquals("PartialAlice", again.requestedProfile().username());
+				assertEquals(alice.requestedProfile().uniqueId(), again.requestedProfile().uniqueId());
 				assertEquals(Optional.of("lobby"), context.processes().proxy("proxy").capability(Players.class).backend(alice));
 				again.destroy();
 				var game = context.processes().get("game");

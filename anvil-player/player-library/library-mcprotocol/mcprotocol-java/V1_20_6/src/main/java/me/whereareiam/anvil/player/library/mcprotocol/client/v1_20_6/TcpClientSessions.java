@@ -51,16 +51,16 @@ final class TcpClientSessions implements ClientSessions<Session> {
 			@NotNull ClientListener<? super Session> listener,
 			@NotNull PacketTable<Packet> packets
 	) {
-		ClientCredentials credentials = login.getCredentials();
-		ClientConnection connection = login.getConnection();
+		ClientCredentials credentials = login.credentials();
+		ClientConnection connection = login.connection();
 		ClientProtocol protocol = new ClientProtocol(login);
-		Session session = connection.getSourceAddress() == null
-				? new FramedClientSession(connection.getHost(), connection.getPort(), protocol, listener, packets)
-				: new FramedClientSession(connection.getHost(), connection.getPort(), connection.getSourceAddress(),
+		Session session = connection.sourceAddress() == null
+				? new FramedClientSession(connection.host(), connection.port(), protocol, listener, packets)
+				: new FramedClientSession(connection.host(), connection.port(), connection.sourceAddress(),
 						protocol, listener, packets);
-		if (credentials != null && credentials.getSessionServer() != null) {
+		if (credentials != null && credentials.sessionServer() != null) {
 			SessionService sessionService = new SessionService();
-			sessionService.setBaseUri(credentials.getSessionServer() + PATH_SEPARATOR);
+			sessionService.setBaseUri(credentials.sessionServer() + PATH_SEPARATOR);
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, sessionService);
 		}
 		KeepAliveAnswers.install(session);

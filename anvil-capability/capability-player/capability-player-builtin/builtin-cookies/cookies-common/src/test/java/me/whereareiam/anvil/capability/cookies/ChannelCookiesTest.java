@@ -35,8 +35,8 @@ class ChannelCookiesTest {
 
 		List<CookieRequest> requests = cookies.requests();
 		assertEquals(2, requests.size());
-		assertArrayEquals(TICKET, requests.get(0).getAnswer());
-		assertNull(requests.get(1).getAnswer());
+		assertArrayEquals(TICKET, requests.get(0).answer());
+		assertNull(requests.get(1).answer());
 	}
 
 	@Test
@@ -54,7 +54,7 @@ class ChannelCookiesTest {
 
 		assertTrue(asked.expectRequested("example:ticket").met());
 		assertThrows(IllegalStateException.class, () -> asked.neverRequested("example:ticket", WAIT));
-		assertNull(asked.requested("example:ticket", WAIT).getAnswer());
+		assertNull(asked.requested("example:ticket", WAIT).answer());
 		assertEquals(List.of(), asked.unread());
 		assertThrows(IllegalStateException.class, () -> asked.requested("example:ticket", WAIT));
 		asked.neverRequested("example:ticket", WAIT);
@@ -69,7 +69,7 @@ class ChannelCookiesTest {
 		CookieWatch asked = cookies.watch();
 		channel.publish(CookiesChannel.REQUESTED, new CookieRequest("minecraft:ticket", TICKET));
 
-		assertArrayEquals(TICKET, asked.requested("ticket", WAIT).getAnswer());
+		assertArrayEquals(TICKET, asked.requested("ticket", WAIT).answer());
 		assertArrayEquals(TICKET, cookies.stored("ticket", WAIT));
 	}
 
@@ -99,10 +99,10 @@ class ChannelCookiesTest {
 		payload[0] = 'X';
 		cookies.remove("example:ticket");
 
-		assertEquals(List.of(CookiesChannel.STORE.getId(), CookiesChannel.REMOVE.getId()), channel.requests());
+		assertEquals(List.of(CookiesChannel.STORE.id(), CookiesChannel.REMOVE.id()), channel.requests());
 		StoredCookie stored = (StoredCookie) channel.payloads().get(0);
-		assertEquals("minecraft:ticket", stored.getKey());
-		assertArrayEquals(TICKET, stored.getPayload());
+		assertEquals("minecraft:ticket", stored.key());
+		assertArrayEquals(TICKET, stored.payload());
 		assertEquals(new CookieKey("example:ticket"), channel.payloads().get(1));
 	}
 
@@ -128,7 +128,7 @@ class ChannelCookiesTest {
 		assertThrows(IllegalArgumentException.class, () -> cookies.store("example:ticket", new byte[Cookies.MAX_PAYLOAD + 1]));
 
 		cookies.store("example:ticket", new byte[Cookies.MAX_PAYLOAD]);
-		assertEquals(List.of(CookiesChannel.STORE.getId()), channel.requests());
+		assertEquals(List.of(CookiesChannel.STORE.id()), channel.requests());
 	}
 
 	@Test

@@ -99,12 +99,12 @@ public final class TestClientListener<S> implements ClientListener<S> {
 
 	@Override
 	public void granted(@NotNull S session, @NotNull ClientProfile granted) {
-		events.add("granted " + granted.getName() + " " + granted.getUniqueId());
+		events.add("granted " + granted.name() + " " + granted.uniqueId());
 	}
 
 	@Override
 	public void loggedIn(@NotNull S session, @NotNull ClientProfile granted) {
-		events.add("logged in as " + granted.getName() + " " + granted.getUniqueId());
+		events.add("logged in as " + granted.name() + " " + granted.uniqueId());
 	}
 
 	@Override

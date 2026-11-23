@@ -16,7 +16,7 @@ public class DialogValue {
 	 */
 	@NotNull DialogInputType type;
 	/**
-	 * The value as {@link me.whereareiam.anvil.capability.dialogs.model.dialog.DialogInput#getInitial()} writes it.
+	 * The value as {@link me.whereareiam.anvil.capability.dialogs.model.dialog.DialogInput#initial()} writes it.
 	 */
 	@NotNull String value;
 }

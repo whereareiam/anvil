@@ -40,14 +40,14 @@ final class PreparedContainer implements PreparedProcess {
 			@NotNull ProcessAddresses addresses
 	) {
 		try {
-			Files.createDirectories(process.getRequest().getWorkspace());
+			Files.createDirectories(process.request().workspace());
 		} catch (IOException failure) {
-			throw new ProvisioningException("Could not prepare the directory of container '" + container.getName() + "'", failure);
+			throw new ProvisioningException("Could not prepare the directory of container '" + container.name() + "'", failure);
 		}
 
 		ImageLaunch.ImageLaunchBuilder launch = ImageLaunch.builder();
-		container.getEnvironment().forEach((name, value) -> launch.environmentVariable(name, addresses.resolve(value)));
-		container.getCommand().forEach(argument -> launch.argument(addresses.resolve(argument)));
+		container.environment().forEach((name, value) -> launch.environmentVariable(name, addresses.resolve(value)));
+		container.command().forEach(argument -> launch.argument(addresses.resolve(argument)));
 
 		return new PreparedContainer(launch.build(), files);
 	}

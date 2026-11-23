@@ -47,12 +47,12 @@ class BungeeCordPlatformProviderTest {
 				.name("proxy's \"quoted\" name")
 				.platform(Platforms.BUNGEECORD)
 				.distribution(Distribution.local(jar))
-				.server(server.getName())
-				.defaultServer(server.getName())
+				.server(server.name())
+				.defaultServer(server.name())
 				.build();
 		AnvilScenario scenario = AnvilScenario.builder()
 				.name("bungee")
-				.entrypoint(proxy.getName())
+				.entrypoint(proxy.name())
 				.server(server)
 				.proxy(proxy)
 				.build();
@@ -76,14 +76,14 @@ class BungeeCordPlatformProviderTest {
 		assertTrue(provider.jvmArguments(proxy, false).isEmpty(), "Ordinary engine runs retain native console defaults");
 		assertEquals(List.of("-Dorg.jline.terminal.dumb.color=true"),
 				provider.jvmArguments(proxy, true));
-		assertEquals(jar.toAbsolutePath(), provider.resolve(proxy, context).getJar());
+		assertEquals(jar.toAbsolutePath(), provider.resolve(proxy, context).jar());
 		provider.configure(proxy, context);
 
 		var config = new YAMLMapper().readTree(work.resolve("config.yml").toFile());
 		assertTrue(config.path("ip_forward").asBoolean());
 		assertEquals("127.0.0.1:25566", config.at("/servers/lobby/address").asText());
 		assertTrue(config.at("/servers/stale").isMissingNode());
-		assertEquals("Anvil: " + proxy.getName(), config.at("/listeners/0/motd").asText());
+		assertEquals("Anvil: " + proxy.name(), config.at("/listeners/0/motd").asText());
 		assertEquals("retained", config.path("custom").asText());
 		provider.configure(proxy, context);
 	}

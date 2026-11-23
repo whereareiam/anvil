@@ -17,7 +17,7 @@ import java.util.function.Predicate;
  * <pre>{@code
  * SoundWatch sounds = alice.capability(Sounds.class).watch();
  * messages.command("example announce");
- * HeardSound ping = sounds.heard(sound -> sound.is("block.note_block.pling") && sound.getPitch() > 1F, timeout);
+ * HeardSound ping = sounds.heard(sound -> sound.is("block.note_block.pling") && sound.pitch() > 1F, timeout);
  * }</pre>
  */
 public interface SoundWatch {

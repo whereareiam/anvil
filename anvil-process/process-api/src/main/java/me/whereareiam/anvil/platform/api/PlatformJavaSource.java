@@ -13,7 +13,7 @@ import java.util.OptionalInt;
  *
  * <pre>{@code
  * PlatformJavaSource sources = source -> provisioner.inspect(source)
- *         .map(installation -> OptionalInt.of(installation.getFeatureVersion()))
+ *         .map(installation -> OptionalInt.of(installation.featureVersion()))
  *         .orElse(OptionalInt.empty());
  * }</pre>
  */

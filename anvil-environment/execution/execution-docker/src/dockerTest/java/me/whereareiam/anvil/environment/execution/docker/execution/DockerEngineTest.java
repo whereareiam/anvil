@@ -102,7 +102,7 @@ class DockerEngineTest {
 				.runtimeValidator((properties, request) -> {
 					assertTrue(metadata.isHeldByCurrentThread());
 					assertTrue(properties.contains("java.specification.version = 21"));
-					assertEquals(21, request.getJavaSelection().getRequirement().getFeatureVersion());
+					assertEquals(21, request.javaSelection().requirement().featureVersion());
 					validated.set(true);
 				})
 				.ports(new PortSelection()).build();
@@ -131,7 +131,7 @@ class DockerEngineTest {
 			process.terminate(true);
 
 			assertTrue(process.await(Duration.ofSeconds(10)), "the killed container is still running");
-			assertFalse(process.isAlive());
+			assertFalse(process.alive());
 		});
 	}
 

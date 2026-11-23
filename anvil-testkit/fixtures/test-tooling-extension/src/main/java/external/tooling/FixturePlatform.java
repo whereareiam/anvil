@@ -19,7 +19,7 @@ public final class FixturePlatform implements PlatformProvider {
 	@Override public @NotNull String id() { return "fixture-tooling"; }
 	@Override public @NotNull Class<? extends MinecraftProcess> configurationType() { return MinecraftServer.class; }
 	@Override public @NotNull ResolvedDistribution resolve(@NotNull MinecraftProcess process, @NotNull PlatformContext context) {
-		return ResolvedDistribution.builder().jar(process.getDistribution().getLocalJar()).description("Gradle-built process fixture").build();
+		return ResolvedDistribution.builder().jar(process.distribution().localJar()).description("Gradle-built process fixture").build();
 	}
 	@Override public void configure(@NotNull MinecraftProcess process, @NotNull PlatformContext context) { }
 	@Override public @NotNull Pattern readinessPattern() { return Pattern.compile("READY"); }

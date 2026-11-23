@@ -49,7 +49,7 @@ public final class ProcessLease {
 		LifetimeSplit split = LifetimeSplit.of(scenario);
 		if (split == null) return new ProcessLease(scenario, null, retained);
 		if (!execution.connectsEnvironments(scenario))
-			throw new ScenarioValidationException("Scenario '" + scenario.getScenario().getName() + "' declares processes with the engine"
+			throw new ScenarioValidationException("Scenario '" + scenario.scenario().name() + "' declares processes with the engine"
 					+ " lifetime, which its execution provider cannot connect to the processes of a later scenario");
 
 		RetainedProcessSet set = retained.lease(split.identity(), () -> RetainedProcessSet.start(split.retained(), execution));
@@ -64,7 +64,7 @@ public final class ProcessLease {
 			throw failure;
 		}
 
-		return new ProcessLease(split.own(set.getPlan()), set, retained);
+		return new ProcessLease(split.own(set.plan()), set, retained);
 	}
 
 	/**
@@ -85,7 +85,7 @@ public final class ProcessLease {
 		Map<String, InetSocketAddress> addresses = new LinkedHashMap<>();
 		if (set == null) return addresses;
 
-		for (String name : set.getPlan().getProcesses().keySet())
+		for (String name : set.plan().processes().keySet())
 			addresses.put(name, set.get(name).address());
 
 		return addresses;
@@ -100,7 +100,7 @@ public final class ProcessLease {
 	public @NotNull AgentDirectory agents(@NotNull AgentDirectory own) {
 		if (set == null) return own;
 
-		AgentDirectory lent = set.getAgents();
+		AgentDirectory lent = set.agents();
 		return () -> {
 			Map<String, AgentClient> agents = new LinkedHashMap<>(lent.agents());
 			agents.putAll(own.agents());
@@ -130,7 +130,7 @@ public final class ProcessLease {
 	public @NotNull ProcessGroup join(@NotNull ProcessGroup own) {
 		if (set == null) return own;
 
-		return new JoinedProcessGroup(own, set, set.getPlan().getProcesses().keySet(), this::release);
+		return new JoinedProcessGroup(own, set, set.plan().processes().keySet(), this::release);
 	}
 
 	/**

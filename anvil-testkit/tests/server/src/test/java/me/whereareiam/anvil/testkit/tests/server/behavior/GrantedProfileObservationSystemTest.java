@@ -35,13 +35,13 @@ class GrantedProfileObservationSystemTest {
 
 		assertObservedAsGranted("steve", lower, lowerProfile);
 		assertObservedAsGranted("Steve", upper, upperProfile);
-		assertNotEquals(lowerProfile.getUniqueId(), upperProfile.getUniqueId());
+		assertNotEquals(lowerProfile.uniqueId(), upperProfile.uniqueId());
 	}
 
 	private static void assertObservedAsGranted(String username, SimulatedPlayer player, PlayerProfile observed) {
 		PlayerProfile granted = player.grantedProfile();
 		assertNotNull(granted);
-		assertEquals(username, granted.getUsername());
+		assertEquals(username, granted.username());
 		assertEquals(granted, observed);
 	}
 

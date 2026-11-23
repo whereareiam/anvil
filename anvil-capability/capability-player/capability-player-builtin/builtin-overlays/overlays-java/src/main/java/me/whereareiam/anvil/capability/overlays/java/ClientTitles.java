@@ -42,14 +42,14 @@ final class ClientTitles {
 
 	void title(@NotNull ClientboundSetTitleText packet) {
 		expire();
-		title = packet.getText();
+		title = packet.text();
 		shownUntil = nanoClock.getAsLong() + displayNanos();
 		player.emit(OverlaysChannel.TITLE, shown(title));
 	}
 
 	void subtitle(@NotNull ClientboundSetSubtitleText packet) {
 		expire();
-		subtitle = packet.getText();
+		subtitle = packet.text();
 		if (title != null) player.emit(OverlaysChannel.TITLE, shown(title));
 	}
 
@@ -58,16 +58,16 @@ final class ClientTitles {
 	 */
 	void times(@NotNull ClientboundSetTitlesAnimation packet) {
 		expire();
-		if (packet.getFadeIn() >= 0) fadeInTicks = packet.getFadeIn();
-		if (packet.getStay() >= 0) stayTicks = packet.getStay();
-		if (packet.getFadeOut() >= 0) fadeOutTicks = packet.getFadeOut();
+		if (packet.fadeIn() >= 0) fadeInTicks = packet.fadeIn();
+		if (packet.stay() >= 0) stayTicks = packet.stay();
+		if (packet.fadeOut() >= 0) fadeOutTicks = packet.fadeOut();
 		if (title != null) shownUntil = nanoClock.getAsLong() + displayNanos();
 	}
 
 	void cleared(@NotNull ClientboundClearTitles packet) {
 		title = null;
 		subtitle = null;
-		if (!packet.isResetTimes()) return;
+		if (!packet.resetTimes()) return;
 
 		fadeInTicks = DEFAULT_FADE_IN_TICKS;
 		stayTicks = DEFAULT_STAY_TICKS;

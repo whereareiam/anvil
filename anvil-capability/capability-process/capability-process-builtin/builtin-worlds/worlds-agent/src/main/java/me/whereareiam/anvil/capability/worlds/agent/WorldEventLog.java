@@ -59,7 +59,7 @@ public final class WorldEventLog {
 	 * @return this log's identity and the events after the request
 	 */
 	public synchronized @NotNull AgentWorldEvents since(@NotNull AgentLogRequest request) {
-		long after = Objects.equals(request.getLog(), identity) ? request.getAfter() : 0;
+		long after = Objects.equals(request.log(), identity) ? request.after() : 0;
 		int from = (int) Math.min(Math.max(after, 0), events.size());
 
 		return AgentWorldEvents.builder()

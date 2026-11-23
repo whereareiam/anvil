@@ -25,10 +25,10 @@ final class WorkspaceSnapshotIdentity {
 	}
 
 	static @NotNull String of(@NotNull MinecraftProcess process) {
-		Distribution distribution = process.getDistribution();
-		return process.getName() + "|" + process.getPlatform() + "|"
-				+ Objects.toString(distribution.getVersion(), "") + "|" + Objects.toString(distribution.getBuild(), "") + "|"
-				+ Objects.toString(distribution.getSha256(), "") + "|" + Objects.toString(distribution.getLocalJar(), "");
+		Distribution distribution = process.distribution();
+		return process.name() + "|" + process.platform() + "|"
+				+ Objects.toString(distribution.version(), "") + "|" + Objects.toString(distribution.build(), "") + "|"
+				+ Objects.toString(distribution.sha256(), "") + "|" + Objects.toString(distribution.localJar(), "");
 	}
 
 	static @NotNull String key(@NotNull String identity, @NotNull String key) {
@@ -45,13 +45,13 @@ final class WorkspaceSnapshotIdentity {
 		try {
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
 			for (WorkspaceAsset asset : assets) {
-				digest.update(asset.getGroup().getBytes(StandardCharsets.UTF_8));
-				digest.update(asset.getTarget().toString().getBytes(StandardCharsets.UTF_8));
-				digest.update(asset.getMode().name().getBytes(StandardCharsets.UTF_8));
-				Path source = asset.getSource().getPath();
+				digest.update(asset.group().getBytes(StandardCharsets.UTF_8));
+				digest.update(asset.target().toString().getBytes(StandardCharsets.UTF_8));
+				digest.update(asset.mode().name().getBytes(StandardCharsets.UTF_8));
+				Path source = asset.source().path();
 				if (source != null)
 					fingerprint(source.toAbsolutePath().normalize(), digest);
-				String text = asset.getSource().getText();
+				String text = asset.source().text();
 				if (text != null)
 					digest.update(text.getBytes(StandardCharsets.UTF_8));
 			}

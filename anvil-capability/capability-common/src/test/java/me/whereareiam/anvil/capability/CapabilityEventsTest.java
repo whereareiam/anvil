@@ -20,9 +20,9 @@ class CapabilityEventsTest {
 	void runsOnlyTheEventsActionsInReverseRegistrationOrderEachTimeItIsReported() {
 		List<String> runs = new ArrayList<>();
 		CapabilityEvents events = new CapabilityEvents("Process 'lobby'", Set.of(ScenarioFinished.class));
-		events.on(ScenarioFinished.class, finished -> runs.add("first:" + finished.isPassed()));
+		events.on(ScenarioFinished.class, finished -> runs.add("first:" + finished.passed()));
 		events.on(Closed.class, closed -> runs.add("close"));
-		events.on(ScenarioFinished.class, finished -> runs.add("second:" + finished.isPassed()));
+		events.on(ScenarioFinished.class, finished -> runs.add("second:" + finished.passed()));
 
 		assertNull(events.fire(new ScenarioFinished(true), null));
 		assertNull(events.fire(new ScenarioFinished(false), null));

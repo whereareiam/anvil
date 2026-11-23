@@ -86,7 +86,7 @@ public interface Dialogs extends PlayerCapability {
 	 * <pre>{@code
 	 * DialogWatch shown = dialogs.watch();
 	 * dialogs.press("Log in", Map.of("password", "wrong"));
-	 * Dialog again = shown.shown(dialog -> dialog.getBody().contains("Invalid password."), timeout);
+	 * Dialog again = shown.shown(dialog -> dialog.body().contains("Invalid password."), timeout);
 	 * }</pre>
 	 *
 	 * @return a watch that starts after the last dialog shown so far
@@ -134,7 +134,7 @@ public interface Dialogs extends PlayerCapability {
 	 * <p>Afterwards the dialog stays open, closes or gives way to the waiting screen, as its after-action says.</p>
 	 *
 	 * @param button the button's label, matched exactly
-	 * @param inputs values by input key, written as {@link me.whereareiam.anvil.capability.dialogs.model.dialog.DialogInput#getInitial()}
+	 * @param inputs values by input key, written as {@link me.whereareiam.anvil.capability.dialogs.model.dialog.DialogInput#initial()}
 	 *               writes them; inputs left out keep their initial value
 	 * @throws IllegalStateException when no dialog is open or it has no such button, or when the server replaced or
 	 *                               cleared the dialog of a pressed custom action before its click was sent

@@ -21,7 +21,7 @@ public final class FixtureAgentOperations implements AgentOperationProvider {
 
 	@Override
 	public boolean supports(@NotNull AgentInfo platform) {
-		return platform.getRole() == AgentRole.SERVER;
+		return platform.role() == AgentRole.SERVER;
 	}
 
 	@Override

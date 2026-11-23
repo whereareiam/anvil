@@ -75,7 +75,7 @@ public final class PlayerBody extends LivingBody {
 	 * @param server what the server set of the player, whose attributes and effects the player has
 	 */
 	public PlayerBody(@NotNull MovementRules client, @NotNull BlockReader level, @NotNull PlayerState server) {
-		super(client.entity(), level, Pose.STANDING, server.getAttributes(), server.getEffects());
+		super(client.entity(), level, Pose.STANDING, server.attributes(), server.effects());
 		this.client = client;
 		this.server = server;
 		this.edge = new EdgeBackOff(this);
@@ -96,7 +96,7 @@ public final class PlayerBody extends LivingBody {
 	 * starts or stops flying on its own; the packet leaves with the packets of the tick.
 	 */
 	public void updateAbilities() {
-		abilityUpdates.add(new ServerboundPlayerAbilities(server.isFlying()));
+		abilityUpdates.add(new ServerboundPlayerAbilities(server.flying()));
 	}
 
 	/**
@@ -119,27 +119,27 @@ public final class PlayerBody extends LivingBody {
 	 * Keeps the air control speed for the next tick, as {@code Player.aiStep} sets it before 1.19.4.
 	 */
 	public void rememberFlyingSpeed() {
-		legacyFlyingSpeed = isSprinting() ? 0.02F + 0.006F : 0.02F;
+		legacyFlyingSpeed = sprinting() ? 0.02F + 0.006F : 0.02F;
 	}
 
 	@Override
-	public boolean isShiftKeyDown() {
-		return keys.isSneak();
+	public boolean shiftKeyDown() {
+		return keys.sneak();
 	}
 
 	@Override
-	public boolean isSpectator() {
+	public boolean spectator() {
 		return server.isSpectator();
 	}
 
 	@Override
-	public boolean isPushedByFluid() {
-		return !server.isFlying();
+	public boolean pushedByFluid() {
+		return !server.flying();
 	}
 
 	@Override
-	public boolean isSuppressingBounce() {
-		return isShiftKeyDown();
+	public boolean suppressingBounce() {
+		return shiftKeyDown();
 	}
 
 	@Override
@@ -154,12 +154,12 @@ public final class PlayerBody extends LivingBody {
 	public boolean isHorizontalCollisionMinor(@NotNull Vector movement) {
 		if (!client.has(ClientBehaviour.MINOR_HORIZONTAL_COLLISION)) return false;
 
-		Trigonometry trigonometry = getRules().trigonometry();
-		float radians = getYaw() * (float) (Math.PI / 180.0);
+		Trigonometry trigonometry = rules().trigonometry();
+		float radians = yaw() * (float) (Math.PI / 180.0);
 		double sin = trigonometry.sin(radians);
 		double cos = trigonometry.cos(radians);
-		double inputX = getXxa() * cos - getZza() * sin;
-		double inputZ = getZza() * cos + getXxa() * sin;
+		double inputX = xxa() * cos - zza() * sin;
+		double inputZ = zza() * cos + xxa() * sin;
 		double inputSqr = inputX * inputX + inputZ * inputZ;
 		double movementSqr = movement.x * movement.x + movement.z * movement.z;
 		if (inputSqr < 1.0E-5F || movementSqr < 1.0E-5F) return false;
@@ -169,16 +169,16 @@ public final class PlayerBody extends LivingBody {
 	}
 
 	@Override
-	public boolean isImmobile() {
-		return server.isDead();
+	public boolean immobile() {
+		return server.dead();
 	}
 
 	/**
 	 * {@code Player.getSpeed}: the movement speed attribute at this moment.
 	 */
 	@Override
-	public float getSpeed() {
-		return (float) getAttributes().value(LivingAttributes.MOVEMENT_SPEED);
+	public float speed() {
+		return (float) attributes().value(LivingAttributes.MOVEMENT_SPEED);
 	}
 
 	/**
@@ -187,24 +187,24 @@ public final class PlayerBody extends LivingBody {
 	 */
 	@Override
 	public float flyingSpeed() {
-		if (server.isFlying()) return isSprinting() ? server.getFlyingSpeed() * 2.0F : server.getFlyingSpeed();
+		if (server.flying()) return sprinting() ? server.flyingSpeed() * 2.0F : server.flyingSpeed();
 		if (!client.has(ClientBehaviour.LIVE_FLYING_SPEED)) return legacyFlyingSpeed;
 
-		return isSprinting() ? 0.025999999F : 0.02F;
+		return sprinting() ? 0.025999999F : 0.02F;
 	}
 
 	@Override
-	public boolean isAffectedByFluids() {
-		return !server.isFlying();
+	public boolean affectedByFluids() {
+		return !server.flying();
 	}
 
 	@Override
 	public boolean onClimbable() {
-		return !server.isFlying() && super.onClimbable();
+		return !server.flying() && super.onClimbable();
 	}
 
 	@Override
-	public boolean isSuppressingSlidingDownLadder() {
-		return isShiftKeyDown();
+	public boolean suppressingSlidingDownLadder() {
+		return shiftKeyDown();
 	}
 }

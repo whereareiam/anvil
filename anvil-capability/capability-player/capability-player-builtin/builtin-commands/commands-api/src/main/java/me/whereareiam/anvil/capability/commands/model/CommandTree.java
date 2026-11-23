@@ -26,9 +26,9 @@ public class CommandTree {
 	 * @return the command's node, or empty when the player may not run the command
 	 */
 	public @NotNull Optional<CommandTreeNode> literal(@NotNull String name) {
-		return nodes.get(root).getChildren().stream()
+		return nodes.get(root).children().stream()
 				.map(nodes::get)
-				.filter(node -> node.getType() == CommandNodeType.LITERAL && node.getName().equals(name))
+				.filter(node -> node.type() == CommandNodeType.LITERAL && node.name().equals(name))
 				.findFirst();
 	}
 }

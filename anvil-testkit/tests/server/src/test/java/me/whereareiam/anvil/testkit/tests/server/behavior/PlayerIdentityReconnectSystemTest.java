@@ -44,7 +44,7 @@ class PlayerIdentityReconnectSystemTest {
 		session.connect();
 		session.connected();
 
-		UUID initialUuid = arrivals.joined(alice).getProfile().getUniqueId();
+		UUID initialUuid = arrivals.joined(alice).profile().uniqueId();
 		assertNotNull(initialUuid);
 		assertNotEquals(AUTHENTICATED_UUID, initialUuid);
 
@@ -60,11 +60,11 @@ class PlayerIdentityReconnectSystemTest {
 
 		session.rejoin();
 		session.connected();
-		UUID authenticated = arrivals.joined(alice).getProfile().getUniqueId();
-		assertEquals(AUTHENTICATED_UUID, alice.grantedProfile().getUniqueId());
+		UUID authenticated = arrivals.joined(alice).profile().uniqueId();
+		assertEquals(AUTHENTICATED_UUID, alice.grantedProfile().uniqueId());
 		assertEquals(AUTHENTICATED_UUID, authenticated);
 		assertNotEquals(initialUuid, authenticated);
-		assertEquals(AUTHENTICATED_UUID, server.profile(alice).orElseThrow().getUniqueId());
+		assertEquals(AUTHENTICATED_UUID, server.profile(alice).orElseThrow().uniqueId());
 		assertEquals(1, server.online().size());
 	}
 }

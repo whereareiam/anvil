@@ -41,7 +41,7 @@ public final class AccountDirectoryRepository {
 		List<AvailableAccount> accounts = new ArrayList<>();
 		List<String> problems = new ArrayList<>();
 		readDirectory(directory, source, accounts, problems);
-		accounts.sort(Comparator.comparing(account -> account.getAccount().getAccountId()));
+		accounts.sort(Comparator.comparing(account -> account.getAccount().accountId()));
 
 		return new Listing(List.copyOf(accounts), List.copyOf(problems));
 	}
@@ -61,7 +61,7 @@ public final class AccountDirectoryRepository {
 			{
 				try {
 					AuthenticationAccount account = readMetadata(file);
-					if (!file.getFileName().toString().equals(account.getAccountId() + ".json"))
+					if (!file.getFileName().toString().equals(account.accountId() + ".json"))
 						throw new IOException("File name must match the account ID.");
 
 					accounts.add(new AvailableAccount(account, file, source));
@@ -91,7 +91,7 @@ public final class AccountDirectoryRepository {
 	) throws IOException {
 		AuthenticationAccount account = readMetadata(source);
 		Files.createDirectories(directory);
-		copyOpaqueFile(source, directory.resolve(account.getAccountId() + ".json"));
+		copyOpaqueFile(source, directory.resolve(account.accountId() + ".json"));
 
 		return account;
 	}

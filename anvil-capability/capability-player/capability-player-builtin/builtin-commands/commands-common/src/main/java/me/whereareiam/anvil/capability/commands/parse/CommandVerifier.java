@@ -48,7 +48,7 @@ public final class CommandVerifier {
 	 */
 	private record Parse(int cursor, int length, boolean failed, @Nullable CommandTreeNode last, boolean signed) {
 		boolean valid() {
-			return cursor >= length && !failed && last != null && last.isExecutable();
+			return cursor >= length && !failed && last != null && last.executable();
 		}
 
 		boolean consumed() {
@@ -73,7 +73,7 @@ public final class CommandVerifier {
 
 		private Parse parse(String command) {
 			input = command;
-			return parseNodes(node(tree.getRoot()), 0, null, false);
+			return parseNodes(node(tree.root()), 0, null, false);
 		}
 
 		private Parse parseNodes(CommandTreeNode node, int cursor, @Nullable CommandTreeNode last, boolean signed) {
@@ -81,7 +81,7 @@ public final class CommandVerifier {
 			boolean failed = false;
 
 			for (CommandTreeNode child : relevant(node, cursor)) {
-				if (child.isRestricted() && !withRestricted) continue;
+				if (child.restricted() && !withRestricted) continue;
 
 				int end = read(child, cursor);
 				if (end < 0 || end < input.length() && input.charAt(end) != ' ') {
@@ -89,7 +89,7 @@ public final class CommandVerifier {
 					continue;
 				}
 
-				potentials.add(parseAfter(child, end, signed || SIGNED_ARGUMENT.equals(child.getParser())));
+				potentials.add(parseAfter(child, end, signed || SIGNED_ARGUMENT.equals(child.parser())));
 			}
 
 			if (potentials.isEmpty()) return new Parse(cursor, input.length(), failed || cursor < input.length(), last, signed);
@@ -109,7 +109,7 @@ public final class CommandVerifier {
 		 * when input is left for them, otherwise the command ends at the node.
 		 */
 		private Parse parseAfter(CommandTreeNode child, int end, boolean signed) {
-			Integer redirect = child.getRedirect();
+			Integer redirect = child.redirect();
 			if (end + (redirect == null ? 2 : 1) > input.length()) return new Parse(end, input.length(), false, child, signed);
 
 			CommandTreeNode next = redirect == null ? child : node(redirect);
@@ -123,10 +123,10 @@ public final class CommandVerifier {
 			int space = input.indexOf(' ', cursor);
 			String word = input.substring(cursor, space < 0 ? input.length() : space);
 			List<CommandTreeNode> arguments = new ArrayList<>();
-			for (int index : node.getChildren()) {
+			for (int index : node.children()) {
 				CommandTreeNode child = node(index);
-				if (child.getType() == CommandNodeType.LITERAL && word.equals(child.getName())) return List.of(child);
-				if (child.getType() == CommandNodeType.ARGUMENT) arguments.add(child);
+				if (child.type() == CommandNodeType.LITERAL && word.equals(child.name())) return List.of(child);
+				if (child.type() == CommandNodeType.ARGUMENT) arguments.add(child);
 			}
 			return arguments;
 		}
@@ -137,15 +137,15 @@ public final class CommandVerifier {
 		 * @return the position after the node, or {@code -1} when the node does not parse there
 		 */
 		private int read(CommandTreeNode node, int cursor) {
-			if (node.getType() == CommandNodeType.LITERAL) {
-				int end = cursor + node.getName().length();
-				return input.startsWith(node.getName(), cursor) ? end : -1;
+			if (node.type() == CommandNodeType.LITERAL) {
+				int end = cursor + node.name().length();
+				return input.startsWith(node.name(), cursor) ? end : -1;
 			}
 			return new ArgumentReader(input, cursor).read(node);
 		}
 
 		private CommandTreeNode node(int index) {
-			return tree.getNodes().get(index);
+			return tree.nodes().get(index);
 		}
 	}
 }

@@ -31,10 +31,10 @@ class PlayerSimulationTest {
 			y += velocity;
 			velocity = (velocity - 0.08) * (double) 0.98F;
 
-			assertEquals(velocity, player.body().getDeltaMovement().y, "velocity after tick " + (tick + 1));
-			assertEquals(y, player.body().getPosition().y, "height after tick " + (tick + 1));
+			assertEquals(velocity, player.body().deltaMovement().y, "velocity after tick " + (tick + 1));
+			assertEquals(y, player.body().position().y, "height after tick " + (tick + 1));
 		}
-		assertFalse(player.body().isOnGround());
+		assertFalse(player.body().onGround());
 	}
 
 	@ParameterizedTest
@@ -45,9 +45,9 @@ class PlayerSimulationTest {
 
 		for (int tick = 0; tick < 40; tick++) player.tick(MovementInput.NONE);
 
-		assertEquals(65.0, player.body().getPosition().y);
-		assertTrue(player.body().isOnGround());
-		assertEquals(-0.0784000015258789, player.body().getDeltaMovement().y);
+		assertEquals(65.0, player.body().position().y);
+		assertTrue(player.body().onGround());
+		assertEquals(-0.0784000015258789, player.body().deltaMovement().y);
 	}
 
 	@ParameterizedTest
@@ -68,7 +68,7 @@ class PlayerSimulationTest {
 		PlayerSimulation player = client.simulation(8.5, 65.0, 2.5);
 		settle(player);
 
-		double z = player.body().getPosition().z;
+		double z = player.body().position().z;
 		double velocity = 0.0;
 		float acceleration = 0.1F * (0.21600002F / (friction * friction * friction));
 		double drag = friction * 0.91F;
@@ -79,9 +79,9 @@ class PlayerSimulationTest {
 			z += velocity;
 			velocity *= drag;
 
-			assertEquals(z, player.body().getPosition().z, "position after tick " + (tick + 1));
-			assertEquals(8.5, player.body().getPosition().x);
-			assertTrue(player.body().isOnGround());
+			assertEquals(z, player.body().position().z, "position after tick " + (tick + 1));
+			assertEquals(8.5, player.body().position().x);
+			assertTrue(player.body().onGround());
 		}
 	}
 
@@ -93,10 +93,10 @@ class PlayerSimulationTest {
 		PlayerSimulation player = client.simulation(8.5, 65.0, 2.5);
 		settle(player);
 
-		for (int tick = 0; tick < 30 && player.body().getPosition().y < 65.5; tick++) player.tick(FORWARD);
+		for (int tick = 0; tick < 30 && player.body().position().y < 65.5; tick++) player.tick(FORWARD);
 
-		assertEquals(65.5, player.body().getPosition().y);
-		assertTrue(player.body().getPosition().z > 5.7, "the player stands on the slab at " + player.body().getPosition());
+		assertEquals(65.5, player.body().position().y);
+		assertTrue(player.body().position().z > 5.7, "the player stands on the slab at " + player.body().position());
 	}
 
 	@ParameterizedTest
@@ -108,11 +108,11 @@ class PlayerSimulationTest {
 
 		for (int tick = 0; tick < 60; tick++) player.tick(SNEAK_FORWARD);
 
-		assertEquals(65.0, player.body().getPosition().y);
-		assertTrue(player.body().isOnGround());
-		double z = player.body().getPosition().z;
+		assertEquals(65.0, player.body().position().y);
+		assertTrue(player.body().onGround());
+		double z = player.body().position().z;
 		assertTrue(z < 9.3 && z > 9.2, "the player stays on the block at " + z);
-		assertEquals(1.5, player.body().getBox().maxY - player.body().getBox().minY, 1.0E-6);
+		assertEquals(1.5, player.body().box().maxY - player.body().box().minY, 1.0E-6);
 	}
 
 	@ParameterizedTest
@@ -124,7 +124,7 @@ class PlayerSimulationTest {
 
 		for (int tick = 0; tick < 30; tick++) player.tick(FORWARD);
 
-		assertTrue(player.body().getPosition().y < 64.0, "the player fell to " + player.body().getPosition());
+		assertTrue(player.body().position().y < 64.0, "the player fell to " + player.body().position());
 	}
 
 	@ParameterizedTest
@@ -136,12 +136,12 @@ class PlayerSimulationTest {
 
 		player.tick(JUMP);
 
-		assertEquals((0.42F - 0.08) * (double) 0.98F, player.body().getDeltaMovement().y);
-		assertEquals(65.0 + 0.42F, player.body().getPosition().y);
+		assertEquals((0.42F - 0.08) * (double) 0.98F, player.body().deltaMovement().y);
+		assertEquals(65.0 + 0.42F, player.body().position().y);
 		int landed = 0;
 		for (int tick = 0; tick < 40 && landed == 0; tick++) {
 			player.tick(JUMP);
-			if (player.body().isOnGround()) landed = tick + 1;
+			if (player.body().onGround()) landed = tick + 1;
 		}
 		assertTrue(landed > 0, "the player landed");
 	}
@@ -155,12 +155,12 @@ class PlayerSimulationTest {
 		boolean bounced = false;
 		for (int tick = 0; tick < 40 && !bounced; tick++) {
 			player.tick(MovementInput.NONE);
-			fastest = Math.min(fastest, player.body().getDeltaMovement().y);
-			bounced = player.body().getDeltaMovement().y > 0.0;
+			fastest = Math.min(fastest, player.body().deltaMovement().y);
+			bounced = player.body().deltaMovement().y > 0.0;
 		}
 
 		assertTrue(bounced, "the player bounced");
-		assertTrue(player.body().getDeltaMovement().y > -fastest * 0.8, "it kept most of its fall speed");
+		assertTrue(player.body().deltaMovement().y > -fastest * 0.8, "it kept most of its fall speed");
 	}
 
 	@ParameterizedTest
@@ -172,7 +172,7 @@ class PlayerSimulationTest {
 
 		for (int tick = 0; tick < 20; tick++) player.tick(MovementInput.NONE);
 
-		assertTrue(player.body().getPosition().y > 68.0, "the cobweb held the player at " + player.body().getPosition());
+		assertTrue(player.body().position().y > 68.0, "the cobweb held the player at " + player.body().position());
 	}
 
 	@ParameterizedTest
@@ -186,7 +186,7 @@ class PlayerSimulationTest {
 
 		for (int tick = 0; tick < 20; tick++) player.tick(MovementInput.builder().jump(true).forward(true).build());
 
-		assertTrue(player.body().getPosition().y > 67.0, "the player climbed to " + player.body().getPosition());
+		assertTrue(player.body().position().y > 67.0, "the player climbed to " + player.body().position());
 	}
 
 	@ParameterizedTest
@@ -197,11 +197,11 @@ class PlayerSimulationTest {
 		PlayerSimulation player = client.send().simulation(8.5, 61.0, 8.5);
 
 		for (int tick = 0; tick < 5; tick++) player.tick(MovementInput.NONE);
-		double sunk = player.body().getPosition().y;
+		double sunk = player.body().position().y;
 		for (int tick = 0; tick < 20; tick++) player.tick(JUMP);
 
-		assertTrue(player.body().getPosition().y > sunk + 1.0, "the player swam up from " + sunk);
-		assertTrue(Math.abs(player.body().getDeltaMovement().y) < 0.2, "water slowed it");
+		assertTrue(player.body().position().y > sunk + 1.0, "the player swam up from " + sunk);
+		assertTrue(Math.abs(player.body().deltaMovement().y) < 0.2, "water slowed it");
 	}
 
 	@ParameterizedTest
@@ -220,20 +220,20 @@ class PlayerSimulationTest {
 			sprinter.tick(sprint);
 		}
 
-		assertTrue(sprinter.body().isSprinting());
-		assertFalse(walker.body().isSprinting());
-		double walked = walker.body().getPosition().z - 2.5;
-		double sprinted = sprinter.body().getPosition().z - 2.5;
+		assertTrue(sprinter.body().sprinting());
+		assertFalse(walker.body().sprinting());
+		double walked = walker.body().position().z - 2.5;
+		double sprinted = sprinter.body().position().z - 2.5;
 		assertTrue(sprinted > walked * 1.25 && sprinted < walked * 1.35, "sprinted " + sprinted + " against " + walked);
 
-		double before = sprinter.body().getPosition().z;
+		double before = sprinter.body().position().z;
 		sprinter.tick(MovementInput.builder().forward(true).sprint(true).jump(true).build());
-		assertTrue(sprinter.body().getPosition().z - before > 0.4, "the sprint jump boosted the player");
+		assertTrue(sprinter.body().position().z - before > 0.4, "the sprint jump boosted the player");
 	}
 
 	static void settle(@NotNull PlayerSimulation player) {
 		for (int tick = 0; tick < 5; tick++) player.tick(MovementInput.NONE);
 
-		assertTrue(player.body().isOnGround(), "the player stands on the ground");
+		assertTrue(player.body().onGround(), "the player stands on the ground");
 	}
 }

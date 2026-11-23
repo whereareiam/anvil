@@ -64,12 +64,12 @@ class ChunkPacketsTest {
 		ClientboundLevelChunkWithLight chunk = assertInstanceOf(ClientboundLevelChunkWithLight.class,
 				packets.decode(chunk(-2, 5, paletted, uniform(7), direct)));
 
-		assertEquals(new ChunkPosition(-2, 5), chunk.getPosition());
-		assertEquals(3, chunk.getSections().size());
-		assertEquals(9, chunk.getSections().getFirst().blockState(1, 2, 3));
-		assertEquals(LevelChunkSection.AIR, chunk.getSections().getFirst().blockState(0, 0, 0));
-		assertEquals(LevelChunkSection.uniform(7), chunk.getSections().get(1));
-		assertEquals(300, chunk.getSections().get(2).blockState(300 % 16, 1, (300 / 16) % 16));
+		assertEquals(new ChunkPosition(-2, 5), chunk.position());
+		assertEquals(3, chunk.sections().size());
+		assertEquals(9, chunk.sections().getFirst().blockState(1, 2, 3));
+		assertEquals(LevelChunkSection.AIR, chunk.sections().getFirst().blockState(0, 0, 0));
+		assertEquals(LevelChunkSection.uniform(7), chunk.sections().get(1));
+		assertEquals(300, chunk.sections().get(2).blockState(300 % 16, 1, (300 / 16) % 16));
 	}
 
 	@Test

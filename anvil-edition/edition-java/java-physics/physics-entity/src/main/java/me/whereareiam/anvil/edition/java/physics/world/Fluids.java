@@ -42,7 +42,7 @@ public final class Fluids {
 	 * @return the fluid, {@link FluidType#NONE} without one
 	 */
 	public @NotNull FluidType type(int x, int y, int z) {
-		return reader.state(x, y, z).getFluid();
+		return reader.state(x, y, z).fluid();
 	}
 
 	/**
@@ -56,8 +56,8 @@ public final class Fluids {
 	 */
 	public float height(int x, int y, int z) {
 		BlockState state = reader.state(x, y, z);
-		if (state.getFluid() == FluidType.NONE) return 0.0F;
-		if (reader.state(x, y + 1, z).getFluid() == state.getFluid()) return 1.0F;
+		if (state.fluid() == FluidType.NONE) return 0.0F;
+		if (reader.state(x, y + 1, z).fluid() == state.fluid()) return 1.0F;
 
 		return ownHeight(state);
 	}
@@ -84,21 +84,21 @@ public final class Fluids {
 		}
 
 		Vector flow = new Vector(flowX, 0.0, flowZ);
-		if (falling(state) && besideSolidFace(state.getFluid(), x, y, z)) flow = flow.normalize().add(0.0, -6.0, 0.0);
+		if (falling(state) && besideSolidFace(state.fluid(), x, y, z)) flow = flow.normalize().add(0.0, -6.0, 0.0);
 
 		return flow.normalize();
 	}
 
 	private float difference(@NotNull BlockState state, int x, int y, int z) {
 		BlockState neighbour = reader.state(x, y, z);
-		if (!affectsFlow(neighbour, state.getFluid())) return 0.0F;
+		if (!affectsFlow(neighbour, state.fluid())) return 0.0F;
 
 		float height = ownHeight(neighbour);
 		if (height != 0.0F) return ownHeight(state) - height;
 		if (blocksMotion(neighbour)) return 0.0F;
 
 		BlockState below = reader.state(x, y - 1, z);
-		if (!affectsFlow(below, state.getFluid())) return 0.0F;
+		if (!affectsFlow(below, state.fluid())) return 0.0F;
 
 		float belowHeight = ownHeight(below);
 		return belowHeight > 0.0F ? ownHeight(state) - (belowHeight - 0.8888889F) : 0.0F;
@@ -131,14 +131,14 @@ public final class Fluids {
 	 * The fluid's amount, from 1 to 8 for a source or a falling fluid, as {@code FluidState.getAmount}; 0 without fluid.
 	 */
 	private static int amount(@NotNull BlockState state) {
-		if (state.getFluid() == FluidType.NONE) return 0;
+		if (state.fluid() == FluidType.NONE) return 0;
 
 		int level = level(state);
 		return level == 0 || level >= SOURCE ? SOURCE : SOURCE - level;
 	}
 
 	private static boolean falling(@NotNull BlockState state) {
-		return state.getFluid() != FluidType.NONE && level(state) >= SOURCE;
+		return state.fluid() != FluidType.NONE && level(state) >= SOURCE;
 	}
 
 	/**
@@ -149,7 +149,7 @@ public final class Fluids {
 	}
 
 	private static boolean affectsFlow(@NotNull BlockState state, @NotNull FluidType type) {
-		return state.getFluid() == FluidType.NONE || state.getFluid() == type;
+		return state.fluid() == FluidType.NONE || state.fluid() == type;
 	}
 
 	/**
@@ -157,12 +157,12 @@ public final class Fluids {
 	 * ({@code calculateSolid}): bounds of at least about three quarters of a block on average, or a full block high.
 	 */
 	private static boolean blocksMotion(@NotNull BlockState state) {
-		if (state.getCollision().isEmpty()) return false;
+		if (state.collision().isEmpty()) return false;
 
 		Box bounds = null;
-		for (CollisionBox box : state.getCollision().getBoxes()) {
-			Box part = new Box(new Vector(box.getMinX(), box.getMinY(), box.getMinZ()),
-					new Vector(box.getMaxX(), box.getMaxY(), box.getMaxZ()));
+		for (CollisionBox box : state.collision().boxes()) {
+			Box part = new Box(new Vector(box.minX(), box.minY(), box.minZ()),
+					new Vector(box.maxX(), box.maxY(), box.maxZ()));
 			bounds = bounds == null ? part : bounds.union(part);
 		}
 
@@ -175,22 +175,22 @@ public final class Fluids {
 	 */
 	private boolean solidFace(int x, int y, int z, int @NotNull [] direction, @NotNull FluidType type) {
 		BlockState state = reader.state(x, y, z);
-		if (state.getFluid() == type || state.getBlock().getKind() == BlockKind.ICE) return false;
+		if (state.fluid() == type || state.block().kind() == BlockKind.ICE) return false;
 
-		for (CollisionBox box : state.getCollision().getBoxes())
+		for (CollisionBox box : state.collision().boxes())
 			if (coversFace(box, direction)) return true;
 
 		return false;
 	}
 
 	private static boolean coversFace(@NotNull CollisionBox box, int @NotNull [] direction) {
-		if (box.getMinY() > 0.0 || box.getMaxY() < 1.0) return false;
+		if (box.minY() > 0.0 || box.maxY() < 1.0) return false;
 		if (direction[0] != 0)
-			return box.getMinZ() <= 0.0 && box.getMaxZ() >= 1.0
-					&& (direction[0] < 0 ? box.getMinX() <= 0.0 : box.getMaxX() >= 1.0);
+			return box.minZ() <= 0.0 && box.maxZ() >= 1.0
+					&& (direction[0] < 0 ? box.minX() <= 0.0 : box.maxX() >= 1.0);
 
-		return box.getMinX() <= 0.0 && box.getMaxX() >= 1.0
-				&& (direction[1] < 0 ? box.getMinZ() <= 0.0 : box.getMaxZ() >= 1.0);
+		return box.minX() <= 0.0 && box.maxX() >= 1.0
+				&& (direction[1] < 0 ? box.minZ() <= 0.0 : box.maxZ() >= 1.0);
 	}
 
 	private static int level(@NotNull BlockState state) {

@@ -62,6 +62,6 @@ public final class ScenarioConfigurationProducer extends LazyRunConfigurationPro
 		var catalog = ScenarioCatalog.getInstance(configuration.getProject()).snapshot();
 		ScenarioDescriptor loaded = catalog.isFor(source) ? catalog.find(definition.getQualifiedName()) : null;
 
-		return loaded != null ? loaded.getDisplayName() : String.valueOf(definition.getName());
+		return loaded != null ? loaded.displayName() : String.valueOf(definition.getName());
 	}
 }

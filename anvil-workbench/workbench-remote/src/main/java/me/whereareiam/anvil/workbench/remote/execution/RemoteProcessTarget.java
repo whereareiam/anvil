@@ -28,9 +28,9 @@ final class RemoteProcessTarget implements ProcessTarget {
 		this.prepared = prepared;
 		this.mirror = new PortMirror(connection, mirrorAddress);
 		try {
-			mirror.mirror(prepared.getAddress());
-			if (prepared.getAgentAddress() != null) mirror.mirror(prepared.getAgentAddress());
-			prepared.getListeners().values().forEach(mirror::mirror);
+			mirror.mirror(prepared.address());
+			if (prepared.agentAddress() != null) mirror.mirror(prepared.agentAddress());
+			prepared.listeners().values().forEach(mirror::mirror);
 		} catch (RuntimeException failure) {
 			close();
 			throw failure;
@@ -39,56 +39,56 @@ final class RemoteProcessTarget implements ProcessTarget {
 
 	@Override
 	public @NotNull InetSocketAddress address() {
-		return prepared.getAddress();
+		return prepared.address();
 	}
 
 	@Override
 	public @NotNull InetSocketAddress peerAddress() {
-		return prepared.getPeerAddress();
+		return prepared.peerAddress();
 	}
 
 	@Override
 	public @NotNull String bindAddress() {
-		return prepared.getBindAddress();
+		return prepared.bindAddress();
 	}
 
 	@Override
 	public @NotNull InetSocketAddress agentAddress() {
-		if (prepared.getAgentAddress() == null) throw new UnsupportedOperationException(prepared.getNoAgent());
-		return prepared.getAgentAddress();
+		if (prepared.agentAddress() == null) throw new UnsupportedOperationException(prepared.noAgent());
+		return prepared.agentAddress();
 	}
 
 	@Override
 	public int agentPort() {
 		agentAddress();
-		return prepared.getAgentPort();
+		return prepared.agentPort();
 	}
 
 	@Override
 	public @NotNull String agentBindAddress() {
-		if (prepared.getAgentBindAddress() == null) throw new UnsupportedOperationException(prepared.getNoAgent());
-		return prepared.getAgentBindAddress();
+		if (prepared.agentBindAddress() == null) throw new UnsupportedOperationException(prepared.noAgent());
+		return prepared.agentBindAddress();
 	}
 
 	@Override
 	public @NotNull Map<String, InetSocketAddress> listeners() {
-		return prepared.getListeners();
+		return prepared.listeners();
 	}
 
 	@Override
 	public @NotNull Map<String, InetSocketAddress> peerListeners() {
-		return prepared.getPeerListeners();
+		return prepared.peerListeners();
 	}
 
 	@Override
 	public @NotNull ProcessExecution start(@NotNull ProcessLaunch launch) {
-		return RemoteProcessExecution.attach(connection, connection.call(new StartProcess(prepared.getHandle(), launch)).getHandle());
+		return RemoteProcessExecution.attach(connection, connection.call(new StartProcess(prepared.handle(), launch)).handle());
 	}
 
 	@Override
 	public void close() {
 		try (mirror) {
-			connection.call(new CloseTarget(prepared.getHandle()));
+			connection.call(new CloseTarget(prepared.handle()));
 		}
 	}
 }

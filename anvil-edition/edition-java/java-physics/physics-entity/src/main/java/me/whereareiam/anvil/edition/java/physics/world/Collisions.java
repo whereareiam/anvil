@@ -70,7 +70,7 @@ public final class Collisions {
 		BlockShape shape = shape(state, block[1], who);
 		if (shape.isEmpty()) return null;
 		if (edges == 1 && !shape.isLarge()) return null;
-		if (edges == 2 && state.getBlock().getKind() != BlockKind.MOVING_PISTON) return null;
+		if (edges == 2 && state.block().kind() != BlockKind.MOVING_PISTON) return null;
 		if (!shape.intersects(block, box)) return null;
 
 		return new PlacedShape(shape, block);
@@ -82,10 +82,10 @@ public final class Collisions {
 	 * on powder snow.
 	 */
 	private @NotNull BlockShape shape(@NotNull BlockState state, int blockY, @NotNull EntityContext context) {
-		return switch (state.getBlock().getKind()) {
+		return switch (state.block().kind()) {
 			case SCAFFOLDING -> scaffolding(state, blockY, context);
-			case POWDER_SNOW -> context.getFallDistance() > 2.5 ? POWDER_SNOW_FALLING : EMPTY;
-			default -> reader.shape(state.getCollision());
+			case POWDER_SNOW -> context.fallDistance() > 2.5 ? POWDER_SNOW_FALLING : EMPTY;
+			default -> reader.shape(state.collision());
 		};
 	}
 
@@ -94,7 +94,7 @@ public final class Collisions {
 	 * block that does not descend; the unstable bottom of a hanging bottom block for an entity above its bottom.
 	 */
 	private @NotNull BlockShape scaffolding(@NotNull BlockState state, int blockY, @NotNull EntityContext context) {
-		if (context.isAbove(blockY, 1.0) && !context.isDescending()) return reader.shape(state.getCollision());
+		if (context.isAbove(blockY, 1.0) && !context.descending()) return reader.shape(state.collision());
 
 		boolean hanging = !"0".equals(state.property("distance").orElse("0"));
 		boolean bottom = "true".equals(state.property("bottom").orElse("false"));
@@ -159,7 +159,7 @@ public final class Collisions {
 		for (PlacedShape shape : shapes) {
 			if (Math.abs(allowed) < EPSILON) return 0.0;
 
-			allowed = shape.getShape().collide(axis, shape.getBlock(), box, allowed);
+			allowed = shape.shape().collide(axis, shape.block(), box, allowed);
 		}
 
 		return allowed;
@@ -184,8 +184,8 @@ public final class Collisions {
 	) {
 		TreeSet<Float> heights = new TreeSet<>();
 		for (PlacedShape shape : shapes)
-			for (double coordinate : shape.getShape().coordinates(Axis.Y)) {
-				float height = (float) (coordinate + shape.getBlock()[1] - base.minY);
+			for (double coordinate : shape.shape().coordinates(Axis.Y)) {
+				float height = (float) (coordinate + shape.block()[1] - base.minY);
 				if (height < 0.0F || height == reached) continue;
 				if (height > stepHeight) break;
 
@@ -212,7 +212,7 @@ public final class Collisions {
 		int[] best = null;
 		double bestDistance = Double.MAX_VALUE;
 		for (PlacedShape shape : blockCollisions(box, context)) {
-			int[] block = shape.getBlock();
+			int[] block = shape.block();
 			double dx = block[0] + 0.5 - position.x;
 			double dy = block[1] + 0.5 - position.y;
 			double dz = block[2] + 0.5 - position.z;

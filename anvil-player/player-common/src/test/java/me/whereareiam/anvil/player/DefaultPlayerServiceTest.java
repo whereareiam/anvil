@@ -58,7 +58,7 @@ class DefaultPlayerServiceTest {
 		create(manager, "Carol", "second");
 		assertEquals(1, first.created);
 		assertEquals(1, second.created);
-		assertEquals(directory, first.context.getCacheDirectory());
+		assertEquals(directory, first.context.cacheDirectory());
 		assertEquals(List.of("Alice", "Bob"), first.requests);
 
 		first.onClose = () -> assertThrows(IllegalStateException.class, () -> manager.create("late"));
@@ -178,8 +178,8 @@ class DefaultPlayerServiceTest {
 
 		create(manager, "Alice", null);
 
-		assertEquals(releases, provider.context.getAdditionalReleases());
-		assertEquals(directory.resolve("accounts"), provider.context.getAccountsDirectory());
+		assertEquals(releases, provider.context.additionalReleases());
+		assertEquals(directory.resolve("accounts"), provider.context.accountsDirectory());
 		service.close();
 	}
 
@@ -282,7 +282,7 @@ class DefaultPlayerServiceTest {
 
 				@Override
 				public @NotNull ProtocolPlayer create(@NotNull PlayerRequest request) {
-					requests.add(request.getName());
+					requests.add(request.name());
 					throw new UnsupportedOperationException("stub library creates no players");
 				}
 

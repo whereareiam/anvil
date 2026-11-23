@@ -51,7 +51,7 @@ final class BlockDataCodec {
 
 			Map<CollisionShape, Integer> shapes = new LinkedHashMap<>();
 			for (int stateId = 0; stateId < registry.stateCount(); stateId++)
-				shapes.putIfAbsent(registry.state(stateId).getCollision(), shapes.size());
+				shapes.putIfAbsent(registry.state(stateId).collision(), shapes.size());
 			data.writeInt(shapes.size());
 			for (CollisionShape shape : shapes.keySet())
 				writeShape(data, shape);
@@ -60,8 +60,8 @@ final class BlockDataCodec {
 			for (BlockType block : registry.blocks()) {
 				writeBlock(data, block);
 				for (BlockState state : registry.states(block)) {
-					data.writeInt(shapes.get(state.getCollision()));
-					data.writeUTF(state.getFluid().name());
+					data.writeInt(shapes.get(state.collision()));
+					data.writeUTF(state.fluid().name());
 				}
 			}
 		}
@@ -84,7 +84,7 @@ final class BlockDataCodec {
 			for (int id = 0; id < blockCount; id++) {
 				BlockType block = readBlock(data, id);
 				blocks.add(block);
-				for (int stateId = block.getMinStateId(); stateId <= block.getMaxStateId(); stateId++)
+				for (int stateId = block.minStateId(); stateId <= block.maxStateId(); stateId++)
 					states.add(new BlockState(stateId, block, block.propertiesAt(stateId), shapes.get(data.readInt()),
 							FluidType.valueOf(data.readUTF())));
 			}
@@ -128,11 +128,11 @@ final class BlockDataCodec {
 	}
 
 	private static void writeSource(DataOutputStream data, BlockDataSource source) throws IOException {
-		data.writeUTF(source.getRepository());
-		data.writeUTF(source.getVersion());
-		data.writeUTF(source.getCommit());
-		data.writeUTF(source.getBlocks());
-		data.writeUTF(source.getCollisionShapes());
+		data.writeUTF(source.repository());
+		data.writeUTF(source.version());
+		data.writeUTF(source.commit());
+		data.writeUTF(source.blocks());
+		data.writeUTF(source.collisionShapes());
 	}
 
 	private static BlockDataSource readSource(DataInputStream data) throws IOException {
@@ -146,14 +146,14 @@ final class BlockDataCodec {
 	}
 
 	private static void writeShape(DataOutputStream data, CollisionShape shape) throws IOException {
-		data.writeInt(shape.getBoxes().size());
-		for (CollisionBox box : shape.getBoxes()) {
-			data.writeDouble(box.getMinX());
-			data.writeDouble(box.getMinY());
-			data.writeDouble(box.getMinZ());
-			data.writeDouble(box.getMaxX());
-			data.writeDouble(box.getMaxY());
-			data.writeDouble(box.getMaxZ());
+		data.writeInt(shape.boxes().size());
+		for (CollisionBox box : shape.boxes()) {
+			data.writeDouble(box.minX());
+			data.writeDouble(box.minY());
+			data.writeDouble(box.minZ());
+			data.writeDouble(box.maxX());
+			data.writeDouble(box.maxY());
+			data.writeDouble(box.maxZ());
 		}
 	}
 
@@ -167,18 +167,18 @@ final class BlockDataCodec {
 	}
 
 	private static void writeBlock(DataOutputStream data, BlockType block) throws IOException {
-		data.writeUTF(block.getName());
-		data.writeInt(block.getMinStateId());
-		data.writeInt(block.getMaxStateId());
-		data.writeInt(block.getDefaultStateId());
-		data.writeUTF(block.getKind().name());
-		data.writeUTF(block.getCollision().name());
-		writeMovement(data, block.getMovement());
-		data.writeInt(block.getProperties().size());
-		for (BlockProperty property : block.getProperties()) {
-			data.writeUTF(property.getName());
-			data.writeInt(property.getValues().size());
-			for (String value : property.getValues())
+		data.writeUTF(block.name());
+		data.writeInt(block.minStateId());
+		data.writeInt(block.maxStateId());
+		data.writeInt(block.defaultStateId());
+		data.writeUTF(block.kind().name());
+		data.writeUTF(block.collision().name());
+		writeMovement(data, block.movement());
+		data.writeInt(block.properties().size());
+		for (BlockProperty property : block.properties()) {
+			data.writeUTF(property.name());
+			data.writeInt(property.values().size());
+			for (String value : property.values())
 				data.writeUTF(value);
 		}
 	}
@@ -205,18 +205,18 @@ final class BlockDataCodec {
 	}
 
 	private static void writeMovement(DataOutputStream data, BlockMovement movement) throws IOException {
-		data.writeFloat(movement.getFriction());
-		data.writeFloat(movement.getSpeedFactor());
-		data.writeFloat(movement.getJumpFactor());
-		data.writeDouble(movement.getBounceFactor());
-		StuckSpeed stuck = movement.getStuckSpeed();
+		data.writeFloat(movement.friction());
+		data.writeFloat(movement.speedFactor());
+		data.writeFloat(movement.jumpFactor());
+		data.writeDouble(movement.bounceFactor());
+		StuckSpeed stuck = movement.stuckSpeed();
 		data.writeBoolean(stuck != null);
 		if (stuck != null) {
-			data.writeDouble(stuck.getHorizontal());
-			data.writeDouble(stuck.getVertical());
+			data.writeDouble(stuck.horizontal());
+			data.writeDouble(stuck.vertical());
 		}
-		data.writeInt(movement.getBehaviours().size());
-		for (MovementBehaviour behaviour : movement.getBehaviours())
+		data.writeInt(movement.behaviours().size());
+		for (MovementBehaviour behaviour : movement.behaviours())
 			data.writeUTF(behaviour.name());
 	}
 

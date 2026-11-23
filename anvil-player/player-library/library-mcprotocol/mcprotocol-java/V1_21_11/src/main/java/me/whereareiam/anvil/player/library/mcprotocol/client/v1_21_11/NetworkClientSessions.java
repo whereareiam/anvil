@@ -58,21 +58,21 @@ public final class NetworkClientSessions implements ClientSessions<ClientSession
 			@NotNull ClientListener<? super ClientSession> listener,
 			@NotNull PacketTable<Packet> packets
 	) {
-		ClientCredentials credentials = login.getCredentials();
-		ClientConnection connection = login.getConnection();
-		InetSocketAddress source = connection.getSourceAddress() == null
+		ClientCredentials credentials = login.credentials();
+		ClientConnection connection = login.connection();
+		InetSocketAddress source = connection.sourceAddress() == null
 				? null
-				: new InetSocketAddress(connection.getSourceAddress(), ANY_PORT);
+				: new InetSocketAddress(connection.sourceAddress(), ANY_PORT);
 		ClientSession session = ClientNetworkSessionFactory.factory()
-				.setAddress(connection.getHost(), connection.getPort())
+				.setAddress(connection.host(), connection.port())
 				.setBindSocketAddress(source)
 				.setProtocol(new ClientProtocol(login))
 				.create();
-		if (connection.getVirtualHost() != null)
-			session.setFlag(MinecraftConstants.CLIENT_HOST, connection.getVirtualHost());
-		if (credentials != null && credentials.getSessionServer() != null)
+		if (connection.virtualHost() != null)
+			session.setFlag(MinecraftConstants.CLIENT_HOST, connection.virtualHost());
+		if (credentials != null && credentials.sessionServer() != null)
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY,
-					new RedirectedSessionService(credentials.getSessionServer()));
+					new RedirectedSessionService(credentials.sessionServer()));
 		session.addListener(answers.apply(session, listener));
 		session.addListener(new ClientPacketListener(session, listener, packets, text));
 

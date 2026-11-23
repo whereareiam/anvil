@@ -15,7 +15,7 @@ import java.util.UUID;
  *
  * <p>The session server is the base address whose {@code join} endpoint the client reports its login to,
  * for example {@code http://127.0.0.1:25580/session/minecraft}. The process the player joins must verify
- * logins against the same server; see {@code MinecraftProcess.getSessionServer()}. A Mojang account does not
+ * logins against the same server; see {@code MinecraftProcess.sessionServer()}. A Mojang account does not
  * use this model: it stays a stored account selected by ID or lease.</p>
  *
  * <pre>{@code

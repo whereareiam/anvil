@@ -19,12 +19,12 @@ class CollisionsTest {
 		LivingSimulation entity = TestEntity.living(world.send(), 8.5, 66.0, 8.5);
 
 		for (int tick = 0; tick < 20; tick++) entity.tick();
-		assertEquals(65.0, entity.body().getPosition().y);
-		assertTrue(entity.body().isOnGround());
+		assertEquals(65.0, entity.body().position().y);
+		assertTrue(entity.body().onGround());
 
-		entity.body().setShiftKeyDown(true);
+		entity.body().shiftKeyDown(true);
 		for (int tick = 0; tick < 80; tick++) entity.tick();
-		assertEquals(61.0, entity.body().getPosition().y, 1.0E-6);
+		assertEquals(61.0, entity.body().position().y, 1.0E-6);
 	}
 
 	@Test
@@ -38,10 +38,10 @@ class CollisionsTest {
 		for (int tick = 0; tick < 60; tick++) {
 			stepping.tick();
 			falling.tick();
-			landedOnTheSnow |= falling.body().isOnGround() && falling.body().getPosition().y == 61.0 + 0.9F;
+			landedOnTheSnow |= falling.body().onGround() && falling.body().position().y == 61.0 + 0.9F;
 		}
 
-		assertTrue(stepping.body().getPosition().y < 62.0, "the entity sank to " + stepping.body().getPosition());
+		assertTrue(stepping.body().position().y < 62.0, "the entity sank to " + stepping.body().position());
 		assertTrue(landedOnTheSnow, "the fall landed on the snow's falling shape");
 	}
 }

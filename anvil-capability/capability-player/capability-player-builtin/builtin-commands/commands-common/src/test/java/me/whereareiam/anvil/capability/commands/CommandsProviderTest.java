@@ -18,8 +18,8 @@ class CommandsProviderTest {
 		CommandsProvider provider = new CommandsProvider();
 
 		assertEquals("me.whereareiam.anvil.commands", CommandsChannel.ID);
-		assertEquals(CommandsChannel.ID, provider.descriptor().getId());
-		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
+		assertEquals(CommandsChannel.ID, provider.descriptor().id());
+		assertTrue(provider.descriptor().requiredCapabilities().isEmpty());
 		assertEquals(Set.of(JavaProtocol.class), provider.requiredProtocols());
 		assertEquals(Commands.class, provider.capability());
 	}
@@ -29,7 +29,7 @@ class CommandsProviderTest {
 		TestProtocolChannel channel = new TestProtocolChannel(Set.of(CommandsChannel.ID));
 		Commands commands = new CommandsProvider().create(new TestProtocolPlayerCapabilityContext(channel));
 
-		assertEquals(List.of(CommandsChannel.TREE.getId(), CommandsChannel.RESET.getId()), channel.subscriptions());
+		assertEquals(List.of(CommandsChannel.TREE.id(), CommandsChannel.RESET.id()), channel.subscriptions());
 		assertTrue(channel.requests().isEmpty());
 		assertTrue(commands.tree().isEmpty());
 	}

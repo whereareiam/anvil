@@ -27,9 +27,9 @@ class ChannelPacketRecordingTest {
 		RecordedPackets recorded = recording.stop();
 		recording.receive(frame(0x08, 3));
 
-		assertEquals(HEADER, recorded.getHeader());
+		assertEquals(HEADER, recorded.header());
 		assertEquals(List.of(new ClientboundFrame(ConnectionState.PLAY, 0x2a, "update_light", new byte[]{1}, null),
-				new ClientboundFrame(ConnectionState.PLAY, 0x08, "update_light", new byte[]{2}, null)), recorded.getFrames());
+				new ClientboundFrame(ConnectionState.PLAY, 0x08, "update_light", new byte[]{2}, null)), recorded.frames());
 		assertEquals(List.of(3), closed);
 	}
 

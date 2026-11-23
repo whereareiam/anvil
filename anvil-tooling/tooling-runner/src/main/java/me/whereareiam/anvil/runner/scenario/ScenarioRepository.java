@@ -44,7 +44,7 @@ public final class ScenarioRepository {
 		for (Entry entry : entries) {
 			if (definitions.putIfAbsent(entry.definition(), entry) != null)
 				throw new IllegalArgumentException("Duplicate scenario definition: " + entry.definition());
-			names.computeIfAbsent(entry.scenario().getName(), ignored -> new ArrayList<>()).add(entry);
+			names.computeIfAbsent(entry.scenario().name(), ignored -> new ArrayList<>()).add(entry);
 		}
 		this.byDefinition = Collections.unmodifiableMap(definitions);
 		Map<String, List<Entry>> immutableNames = new LinkedHashMap<>();
@@ -61,7 +61,7 @@ public final class ScenarioRepository {
 	public static @NotNull ScenarioRepository fromScenarios(@NotNull List<AnvilScenario> scenarios) {
 		List<Entry> entries = new ArrayList<>(scenarios.size());
 		for (AnvilScenario scenario : scenarios)
-			entries.add(new Entry("embedded:" + scenario.getName(), scenario));
+			entries.add(new Entry("embedded:" + scenario.name(), scenario));
 
 		return new ScenarioRepository(entries);
 	}
@@ -153,7 +153,7 @@ public final class ScenarioRepository {
 		}
 
 		AnvilScenario scenario = definition.define();
-		if (scenario.getName().isBlank())
+		if (scenario.name().isBlank())
 			throw new IllegalArgumentException("Scenario name must not be blank: " + name);
 
 		return new Entry(name, scenario);

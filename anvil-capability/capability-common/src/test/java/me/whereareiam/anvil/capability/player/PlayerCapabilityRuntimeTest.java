@@ -72,7 +72,7 @@ class PlayerCapabilityRuntimeTest {
 				"me.whereareiam.anvil.world",
 				"me.whereareiam.anvil.packets"
 		), PlayerCapabilityRuntime.discover().providers().stream()
-				.map(CapabilityDescriptor::getId)
+				.map(CapabilityDescriptor::id)
 				.collect(Collectors.toSet()));
 	}
 
@@ -82,9 +82,9 @@ class PlayerCapabilityRuntimeTest {
 				"me.whereareiam.anvil.inventory", "me.whereareiam.anvil.interaction");
 		int tested = 0;
 		for (ProtocolPlayerCapabilityProvider<?> provider : ServiceLoader.load(ProtocolPlayerCapabilityProvider.class)) {
-			if (!independent.contains(provider.descriptor().getId())) continue;
+			if (!independent.contains(provider.descriptor().id())) continue;
 			StubPlayer stub = new StubPlayer();
-			stub.channel = new TestProtocolChannel(Set.of(provider.descriptor().getId()));
+			stub.channel = new TestProtocolChannel(Set.of(provider.descriptor().id()));
 			SimulatedPlayer player = new PlayerCapabilityRuntime(List.of(), List.of(provider))
 					.compose(stub, null, PlayerConnection.to("proxy"), ignored -> { });
 			assertTrue(player.hasCapability(provider.capability()));
@@ -103,7 +103,7 @@ class PlayerCapabilityRuntimeTest {
 
 			Files.writeString(services.resolve(PlayerCapabilityProvider.class.getName()), BaseProvider.class.getName());
 			var runtime = PlayerCapabilityRuntime.discover(loader, "discovery-test");
-			var ids = runtime.providers().stream().map(CapabilityDescriptor::getId).toList();
+			var ids = runtime.providers().stream().map(CapabilityDescriptor::id).toList();
 			assertTrue(ids.indexOf("base") < ids.indexOf("discovered-dependent"));
 		}
 	}
@@ -269,7 +269,7 @@ class PlayerCapabilityRuntimeTest {
 
 		SimulatedPlayer player = runtime.compose(new StubPlayer(), null, PlayerConnection.to("proxy"), removed -> { });
 
-		assertEquals(List.of("own"), runtime.providers().stream().map(CapabilityDescriptor::getId).toList());
+		assertEquals(List.of("own"), runtime.providers().stream().map(CapabilityDescriptor::id).toList());
 		assertEquals("own", player.capability(BaseCapability.class).value());
 		player.destroy();
 	}
@@ -339,7 +339,7 @@ class PlayerCapabilityRuntimeTest {
 		SimulatedPlayer player = runtime.compose(driven, null, PlayerConnection.to("proxy"), ignored -> removed.set(true));
 
 		assertEquals(List.of("base", "dependent", "summary"), runtime.providers().stream()
-				.map(CapabilityDescriptor::getId)
+				.map(CapabilityDescriptor::id)
 				.toList());
 		assertEquals(3, created.get());
 		assertEquals("base-dependent", player.capability(DependentCapability.class).value());
@@ -357,10 +357,10 @@ class PlayerCapabilityRuntimeTest {
 		var provider = sharedProvider("identity", BaseCapability.class, Set.of(), context -> {
 			assertEquals("Alice", context.playerName());
 			assertEquals(MinecraftVersion.parse("1.21.11"), context.clientVersion());
-			assertEquals("proxy", context.connection().getTarget());
+			assertEquals("proxy", context.connection().target());
 			assertNull(context.grantedProfile());
 			context.on(Closed.class, closed -> released.add("shared"));
-			return () -> context.requestedProfile().getUsername();
+			return () -> context.requestedProfile().username();
 		});
 		var plain = new StubPlayer();
 		SimulatedPlayer player = new PlayerCapabilityRuntime(List.of(provider))

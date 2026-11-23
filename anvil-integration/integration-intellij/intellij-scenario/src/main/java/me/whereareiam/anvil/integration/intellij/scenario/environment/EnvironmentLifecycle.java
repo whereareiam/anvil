@@ -55,13 +55,13 @@ public final class EnvironmentLifecycle implements Disposable {
 		if (current == null) {
 			EnvironmentSession closing = active;
 			if (closing != null && closing.isActive())
-				return EnvironmentSession.Availability.unavailable("Wait until “" + closing.getScenario().getDisplayName() + "” has stopped");
+				return EnvironmentSession.Availability.unavailable("Wait until “" + closing.getScenario().displayName() + "” has stopped");
 
 			return EnvironmentSession.Availability.AVAILABLE;
 		}
 
 		if (!current.runs(source, scenario))
-			return EnvironmentSession.Availability.unavailable("Stop “" + current.getScenario().getDisplayName() + "” to run another scenario");
+			return EnvironmentSession.Availability.unavailable("Stop “" + current.getScenario().displayName() + "” to run another scenario");
 
 		return current.availability(process);
 	}

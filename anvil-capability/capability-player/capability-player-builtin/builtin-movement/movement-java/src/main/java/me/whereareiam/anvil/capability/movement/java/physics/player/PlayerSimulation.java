@@ -54,10 +54,10 @@ public final class PlayerSimulation extends LivingSimulation {
 			@NotNull Position at,
 			@NotNull Vector deltaMovement
 	) {
-		server.getAttributes().sprinting(false);
+		server.attributes().sprinting(false);
 		PlayerSimulation simulation = new PlayerSimulation(new PlayerBody(rules, reader, server));
-		simulation.place(new Vector(at.getX(), at.getY(), at.getZ()), deltaMovement, at.getYaw(), at.getPitch());
-		simulation.body.setOnGround(at.isOnGround());
+		simulation.place(new Vector(at.x(), at.y(), at.z()), deltaMovement, at.yaw(), at.pitch());
+		simulation.body.onGround(at.onGround());
 		return simulation;
 	}
 
@@ -68,12 +68,12 @@ public final class PlayerSimulation extends LivingSimulation {
 	 */
 	public @NotNull Position position() {
 		return Position.builder()
-				.x(body.getPosition().x)
-				.y(body.getPosition().y)
-				.z(body.getPosition().z)
-				.yaw(body.getYaw())
-				.pitch(body.getPitch())
-				.onGround(body.isOnGround())
+				.x(body.position().x)
+				.y(body.position().y)
+				.z(body.position().z)
+				.yaw(body.yaw())
+				.pitch(body.pitch())
+				.onGround(body.onGround())
 				.build();
 	}
 
@@ -83,8 +83,8 @@ public final class PlayerSimulation extends LivingSimulation {
 	 * @param at the player's position, view and ground state
 	 */
 	public void moveTo(@NotNull Position at) {
-		place(new Vector(at.getX(), at.getY(), at.getZ()), Vector.ZERO, at.getYaw(), at.getPitch());
-		body.setOnGround(at.isOnGround());
+		place(new Vector(at.x(), at.y(), at.z()), Vector.ZERO, at.yaw(), at.pitch());
+		body.onGround(at.onGround());
 		body.resetFallDistance();
 	}
 
@@ -108,10 +108,10 @@ public final class PlayerSimulation extends LivingSimulation {
 	 * @param pitch the new vertical view direction
 	 */
 	public void place(@NotNull Vector position, @NotNull Vector deltaMovement, float yaw, float pitch) {
-		body.setPosition(position);
-		body.setDeltaMovement(deltaMovement);
-		body.setYaw(yaw);
-		body.setPitch(pitch);
+		body.position(position);
+		body.deltaMovement(deltaMovement);
+		body.yaw(yaw);
+		body.pitch(pitch);
 	}
 
 	/**
@@ -121,8 +121,8 @@ public final class PlayerSimulation extends LivingSimulation {
 	 * @param pitch the vertical view direction
 	 */
 	public void look(float yaw, float pitch) {
-		body.setYaw(yaw);
-		body.setPitch(pitch);
+		body.yaw(yaw);
+		body.pitch(pitch);
 	}
 
 	/**
@@ -141,12 +141,12 @@ public final class PlayerSimulation extends LivingSimulation {
 	 */
 	@Override
 	public void tick() {
-		body.getLevel().read(() -> {
+		body.level().read(() -> {
 			body.startTick();
-			body.setOldPosition(body.getPosition());
-			body.setNoPhysics(body.isSpectator());
-			if (body.isSpectator()) body.setOnGround(false);
-			body.setUnderWater(fluids().isEyeInWater());
+			body.oldPosition(body.position());
+			body.noPhysics(body.spectator());
+			if (body.spectator()) body.onGround(false);
+			body.underWater(fluids().eyeInWater());
 			pose.refresh();
 			baseTick();
 			aiStep();
@@ -162,14 +162,14 @@ public final class PlayerSimulation extends LivingSimulation {
 	 */
 	@Override
 	public void aiStep() {
-		boolean wasJumping = body.getKeys().isJump();
-		input.read(body.getServer().isDead() ? MovementInput.NONE : keys);
+		boolean wasJumping = body.keys().jump();
+		input.read(body.server().dead() ? MovementInput.NONE : keys);
 		flight.toggle(wasJumping);
-		if (fluids().isTouchingWater() && body.isShiftKeyDown() && body.isAffectedByFluids())
+		if (fluids().touchingWater() && body.shiftKeyDown() && body.affectedByFluids())
 			body.addDeltaMovement(0.0, -0.04F, 0.0);
 		flight.steer();
 		flight.countDown();
-		boolean flying = body.getServer().isFlying();
+		boolean flying = body.server().flying();
 		if (flying && body.has(ClientBehaviour.FLIGHT_RESETS_FALL_FIRST)) body.resetFallDistance();
 		super.aiStep();
 		if (flying && !body.has(ClientBehaviour.FLIGHT_RESETS_FALL_FIRST)) body.resetFallDistance();
@@ -190,23 +190,23 @@ public final class PlayerSimulation extends LivingSimulation {
 	 */
 	@Override
 	protected void travel(@NotNull Vector input) {
-		if (!body.getServer().isFlying()) {
+		if (!body.server().flying()) {
 			super.travel(input);
 			return;
 		}
 
-		double vertical = body.getDeltaMovement().y;
+		double vertical = body.deltaMovement().y;
 		super.travel(input);
-		body.setDeltaMovement(body.getDeltaMovement().with(Axis.Y, vertical * 0.6));
+		body.deltaMovement(body.deltaMovement().with(Axis.Y, vertical * 0.6));
 	}
 
 	/**
 	 * Keeps the player inside the world's border of thirty million blocks ({@code Player.tick}).
 	 */
 	private void clampToWorld() {
-		Vector position = body.getPosition();
+		Vector position = body.position();
 		double x = Math.clamp(position.x, -2.9999999E7, 2.9999999E7);
 		double z = Math.clamp(position.z, -2.9999999E7, 2.9999999E7);
-		if (x != position.x || z != position.z) body.setPosition(new Vector(x, position.y, z));
+		if (x != position.x || z != position.z) body.position(new Vector(x, position.y, z));
 	}
 }

@@ -60,7 +60,7 @@ public final class RunAction extends DumbAwareAction {
 					.run(selection.getSource(), selection.getScenario(), selection.getProcess());
 			ToolWindowController.reveal(selection.getProject(), session);
 		} catch (RuntimeException failure) {
-			ScenarioNotifications.error(selection.getProject(), "Could not run " + selection.getScenario().getDisplayName(),
+			ScenarioNotifications.error(selection.getProject(), "Could not run " + selection.getScenario().displayName(),
 					String.valueOf(failure.getMessage()));
 		}
 	}
@@ -86,6 +86,6 @@ public final class RunAction extends DumbAwareAction {
 			return "Start " + selection.getProcess() + " and the processes it depends on";
 		if (selection.runningSession() != null) return "Start the scenario's remaining processes and its setup";
 
-		return "Prepare the project and start " + selection.getScenario().getDisplayName();
+		return "Prepare the project and start " + selection.getScenario().displayName();
 	}
 }

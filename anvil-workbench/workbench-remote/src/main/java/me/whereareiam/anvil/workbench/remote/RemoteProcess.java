@@ -77,7 +77,7 @@ final class RemoteProcess extends Process {
 		if (exitCode != null) return true;
 		if (Thread.interrupted()) throw new InterruptedException();
 
-		Integer code = connection.call(new AwaitLaunched(handle, unit.toMillis(timeout))).getExitCode();
+		Integer code = connection.call(new AwaitLaunched(handle, unit.toMillis(timeout))).exitCode();
 		if (code == null) return false;
 
 		exitCode = code;

@@ -77,7 +77,7 @@ public final class RemoteAddressResolver {
 		try {
 			return IDN.toASCII(target);
 		} catch (IllegalArgumentException invalid) {
-			throw new ScenarioValidationException("Remote '" + remote.getName() + "' at '" + remote.getAddress()
+			throw new ScenarioValidationException("Remote '" + remote.name() + "' at '" + remote.address()
 					+ "' cannot be reached: its SRV record names the invalid host '" + target + "'", invalid);
 		}
 	}
@@ -86,7 +86,7 @@ public final class RemoteAddressResolver {
 		try {
 			return lookup.address(host);
 		} catch (UnknownHostException unknown) {
-			throw new ScenarioValidationException("Remote '" + remote.getName() + "' at '" + remote.getAddress()
+			throw new ScenarioValidationException("Remote '" + remote.name() + "' at '" + remote.address()
 					+ "' cannot be reached: the host '" + host + "' does not resolve", unknown);
 		}
 	}

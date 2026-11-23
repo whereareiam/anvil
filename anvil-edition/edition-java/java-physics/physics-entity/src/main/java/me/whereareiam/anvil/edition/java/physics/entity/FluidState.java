@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * How an entity is in water and lava, as {@code Entity.baseTick} measures it each tick: whether it touches water and
  * how deep it is in each fluid ({@code updateFluidHeightAndDoFluidPushing}), which also pushes it along the flow where
- * the fluid pushes it ({@link EntityBody#isPushedByFluid}), and whether its eyes are in water
+ * the fluid pushes it ({@link EntityBody#pushedByFluid}), and whether its eyes are in water
  * ({@code updateFluidOnEyes}); in lava its fall distance halves.
  */
 public final class FluidState {
@@ -41,7 +41,7 @@ public final class FluidState {
 	 */
 	public FluidState(@NotNull EntityBody body) {
 		this.body = body;
-		this.reader = body.getLevel();
+		this.reader = body.level();
 		this.fluids = new Fluids(reader);
 	}
 
@@ -55,9 +55,9 @@ public final class FluidState {
 		Contact lava = contact(FluidType.LAVA, reader.fastLava() ? FAST_LAVA_PUSH : LAVA_PUSH);
 		if (lava != null) lavaHeight = lava.depth();
 		updateEyes();
-		if (isInLava()) body.setFallDistance(body.has(EntityBehaviour.DOUBLE_FALL_DISTANCE)
-				? body.getFallDistance() * 0.5
-				: (float) body.getFallDistance() * 0.5F);
+		if (isInLava()) body.fallDistance(body.has(EntityBehaviour.DOUBLE_FALL_DISTANCE)
+				? body.fallDistance() * 0.5
+				: (float) body.fallDistance() * 0.5F);
 	}
 
 	/**
@@ -77,7 +77,7 @@ public final class FluidState {
 	 * @return whether it is in lava
 	 */
 	public boolean isInLava() {
-		return !body.isFirstTick() && lavaHeight > 0.0;
+		return !body.firstTick() && lavaHeight > 0.0;
 	}
 
 	/**
@@ -86,7 +86,7 @@ public final class FluidState {
 	 * @return the threshold
 	 */
 	public double fluidJumpThreshold() {
-		return body.getDimensions().getEyeHeight() < 0.4 ? 0.0 : 0.4;
+		return body.dimensions().eyeHeight() < 0.4 ? 0.0 : 0.4;
 	}
 
 	/**
@@ -96,18 +96,18 @@ public final class FluidState {
 	 * @return whether the entity touches the fluid and how deep it is in it, or {@code null} for an unloaded column
 	 */
 	private Contact contact(@NotNull FluidType type, double pushScale) {
-		Box around = body.getBox().inflate(1.0);
+		Box around = body.box().inflate(1.0);
 		if (!reader.hasChunksAt(Coordinates.floor(around.minX), Coordinates.floor(around.minZ),
 				Coordinates.ceil(around.maxX), Coordinates.ceil(around.maxZ))) return null;
 
-		Box inner = body.getBox().deflate(0.001);
+		Box inner = body.box().deflate(0.001);
 		Flow flow = new Flow();
 		for (int x = Coordinates.floor(inner.minX); x < Coordinates.ceil(inner.maxX); x++)
 			for (int y = Coordinates.floor(inner.minY); y < Coordinates.ceil(inner.maxY); y++)
 				for (int z = Coordinates.floor(inner.minZ); z < Coordinates.ceil(inner.maxZ); z++)
 					if (fluids.type(x, y, z) == type) flow.take(new int[] {x, y, z}, inner.minY);
 
-		if (body.isPushedByFluid()) push(flow, pushScale);
+		if (body.pushedByFluid()) push(flow, pushScale);
 		return new Contact(flow.touching, flow.depth);
 	}
 
@@ -117,19 +117,19 @@ public final class FluidState {
 		Vector push = flow.push;
 		if (flow.pushes > 0) push = push.scale(1.0 / flow.pushes);
 		push = push.scale(pushScale);
-		Vector delta = body.getDeltaMovement();
+		Vector delta = body.deltaMovement();
 		if (Math.abs(delta.x) < 0.003 && Math.abs(delta.z) < 0.003 && push.length() < MIN_PUSH)
 			push = push.normalize().scale(MIN_PUSH);
-		body.setDeltaMovement(delta.add(push));
+		body.deltaMovement(delta.add(push));
 	}
 
 	private void updateEyes() {
 		eyeInWater = false;
 		double offset = body.has(EntityBehaviour.LOWERED_EYE_FLUID_TEST) ? 0.11111111F : 0.0;
-		double eyes = body.getPosition().y + body.getDimensions().getEyeHeight() - offset;
-		int x = Coordinates.floor(body.getPosition().x);
+		double eyes = body.position().y + body.dimensions().eyeHeight() - offset;
+		int x = Coordinates.floor(body.position().x);
 		int y = Coordinates.floor(eyes);
-		int z = Coordinates.floor(body.getPosition().z);
+		int z = Coordinates.floor(body.position().z);
 		if (fluids.type(x, y, z) != FluidType.WATER) return;
 
 		eyeInWater = y + fluids.height(x, y, z) > eyes;
@@ -150,7 +150,7 @@ public final class FluidState {
 
 			touching = true;
 			depth = Math.max(surface - bottom, depth);
-			if (!body.isPushedByFluid()) return;
+			if (!body.pushedByFluid()) return;
 
 			Vector direction = fluids.flow(block[0], block[1], block[2]);
 			push = push.add(depth < 0.4 ? direction.scale(depth) : direction);

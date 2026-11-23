@@ -69,11 +69,11 @@ public final class AnvilExtension implements BeforeEachCallback, ParameterResolv
 		}
 
 		Class<?> type = parameterContext.getParameter().getType();
-		if (type.equals(ScenarioContext.class)) return state.getContext();
+		if (type.equals(ScenarioContext.class)) return state.context();
 		if (!type.equals(AccountPool.class)) return state.resource(type);
-		if (state.getAccounts() == null)
+		if (state.accounts() == null)
 			throw new ExtensionConfigurationException("An AccountPool parameter requires @AnvilAccounts on the test or its class");
 
-		return state.getAccounts();
+		return state.accounts();
 	}
 }

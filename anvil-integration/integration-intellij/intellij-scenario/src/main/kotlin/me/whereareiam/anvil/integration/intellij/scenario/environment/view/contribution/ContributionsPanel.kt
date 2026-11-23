@@ -28,7 +28,7 @@ class ContributionsPanel(session: EnvironmentSession) : ToolWindowPanel(BorderLa
 	var multipleScopes = false
 	@JvmField internal val actions = JComboBox<ActionDescriptor>().apply {
 		renderer = textListCellRenderer {
-			label(it.definition) + if (multipleScopes) " · ${kind(it.target)}" else ""
+			label(it.definition()) + if (multipleScopes) " · ${kind(it.target())}" else ""
 		}
 	}
 	@JvmField internal val invoke = JButton("Open action…")
@@ -61,24 +61,24 @@ class ContributionsPanel(session: EnvironmentSession) : ToolWindowPanel(BorderLa
 	private class ObservationRenderer : ColoredListCellRenderer<ObservationDescriptor>() {
 		override fun customizeCellRenderer(list: JList<out ObservationDescriptor>, value: ObservationDescriptor?, index: Int, selected: Boolean, focus: Boolean) {
 			if (value == null) return
-			append("${value.definition.displayName ?: value.definition.id}: ", SimpleTextAttributes.REGULAR_ATTRIBUTES)
-			val color = when (value.value.tone) {
+			append("${value.definition().displayName() ?: value.definition().id()}: ", SimpleTextAttributes.REGULAR_ATTRIBUTES)
+			val color = when (value.value().tone()) {
 				ObservationTone.INFO -> null
 				ObservationTone.SUCCESS -> JBColor(0x28733c, 0x73bd8b)
 				ObservationTone.WARNING -> JBColor(0x966000, 0xe6ad4c)
 				ObservationTone.ERROR -> JBColor.RED
 			}
-			append(value.value.text, if (selected || color == null) SimpleTextAttributes.REGULAR_ATTRIBUTES
+			append(value.value().text(), if (selected || color == null) SimpleTextAttributes.REGULAR_ATTRIBUTES
 				else SimpleTextAttributes(SimpleTextAttributes.STYLE_PLAIN, color))
 		}
 	}
 
 	companion object {
-		@JvmStatic fun kind(target: ActionTarget): String = when (target.type) {
+		@JvmStatic fun kind(target: ActionTarget): String = when (target.type()) {
 			ActionTargetType.SCENARIO -> "Scenario"
 			ActionTargetType.PROCESS -> "Process"
 			ActionTargetType.PLAYER -> "Player"
 		}
-		@JvmStatic fun label(definition: ActionDefinition): String = definition.displayName ?: definition.id
+		@JvmStatic fun label(definition: ActionDefinition): String = definition.displayName() ?: definition.id()
 	}
 }

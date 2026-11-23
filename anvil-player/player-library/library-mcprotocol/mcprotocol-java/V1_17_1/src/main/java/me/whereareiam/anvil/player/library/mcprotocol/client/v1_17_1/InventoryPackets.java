@@ -52,7 +52,7 @@ final class InventoryPackets extends InventoryTranslation {
 			@NotNull WindowAction action,
 			@NotNull WindowActionParam param
 	) {
-		return new ClientWindowActionPacket(click.getContainerId(), click.getStateId(), click.getSlot(), action, param,
+		return new ClientWindowActionPacket(click.containerId(), click.stateId(), click.slot(), action, param,
 				null, Map.of());
 	}
 }

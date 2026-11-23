@@ -34,23 +34,23 @@ final class Flight {
 	 * @param wasJumping whether the jump key was held in the previous tick
 	 */
 	void toggle(boolean wasJumping) {
-		PlayerState server = body.getServer();
-		if (!server.isMayFly()) return;
+		PlayerState server = body.server();
+		if (!server.mayFly()) return;
 		if (server.isSpectator()) {
-			if (server.isFlying()) return;
+			if (server.flying()) return;
 
-			server.setFlying(true);
+			server.flying(true);
 			body.updateAbilities();
 			return;
 		}
-		if (wasJumping || !body.getKeys().isJump()) return;
+		if (wasJumping || !body.keys().jump()) return;
 		if (jumpTriggerTime == 0) {
 			jumpTriggerTime = DOUBLE_TAP_WINDOW;
 			return;
 		}
 
-		server.setFlying(!server.isFlying());
-		if (server.isFlying() && body.isOnGround()) jumping.jumpFromGround();
+		server.flying(!server.flying());
+		if (server.flying() && body.onGround()) jumping.jumpFromGround();
 		body.updateAbilities();
 		jumpTriggerTime = 0;
 	}
@@ -59,11 +59,11 @@ final class Flight {
 	 * Steers a flying player up with jump and down with sneak, by three times its flying speed.
 	 */
 	void steer() {
-		PlayerState server = body.getServer();
-		if (!server.isFlying()) return;
+		PlayerState server = body.server();
+		if (!server.flying()) return;
 
-		int direction = (body.getKeys().isSneak() ? -1 : 0) + (body.getKeys().isJump() ? 1 : 0);
-		if (direction != 0) body.addDeltaMovement(0.0, direction * server.getFlyingSpeed() * 3.0F, 0.0);
+		int direction = (body.keys().sneak() ? -1 : 0) + (body.keys().jump() ? 1 : 0);
+		if (direction != 0) body.addDeltaMovement(0.0, direction * server.flyingSpeed() * 3.0F, 0.0);
 	}
 
 	/**
@@ -77,9 +77,9 @@ final class Flight {
 	 * Lands the flight of a player that is not a spectator and tells the server, after the player's own movement.
 	 */
 	void land() {
-		if (!body.isOnGround() || !body.getServer().isFlying() || body.getServer().isSpectator()) return;
+		if (!body.onGround() || !body.server().flying() || body.server().isSpectator()) return;
 
-		body.getServer().setFlying(false);
+		body.server().flying(false);
 		body.updateAbilities();
 	}
 }

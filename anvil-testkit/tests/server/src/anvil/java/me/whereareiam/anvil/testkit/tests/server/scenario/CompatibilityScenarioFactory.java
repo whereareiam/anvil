@@ -50,7 +50,7 @@ public final class CompatibilityScenarioFactory {
 	 * @return release versions
 	 */
 	public static @NotNull List<MinecraftVersion> releases() {
-		return MATRIX.getReleases().stream().map(LiveMatrix.Release::minecraft).toList();
+		return MATRIX.releases().stream().map(LiveMatrix.Release::minecraft).toList();
 	}
 
 	/**
@@ -59,7 +59,7 @@ public final class CompatibilityScenarioFactory {
 	 * @return one direct Paper scenario per release
 	 */
 	public static @NotNull List<AnvilScenario> releaseScenarios() {
-		return MATRIX.getReleases().stream().map(CompatibilityScenarioFactory::paperScenario).toList();
+		return MATRIX.releases().stream().map(CompatibilityScenarioFactory::paperScenario).toList();
 	}
 
 	/**
@@ -85,7 +85,7 @@ public final class CompatibilityScenarioFactory {
 	 */
 	public static @NotNull List<AnvilScenario> platformScenarios() {
 		List<AnvilScenario> scenarios = new ArrayList<>();
-		for (LiveMatrix.SpigotRelease spigot : MATRIX.getSpigot()) {
+		for (LiveMatrix.SpigotRelease spigot : MATRIX.spigot()) {
 			scenarios.add(directScenario("spigot-" + spigot.minecraft(), Platforms.SPIGOT, spigot(spigot), spigot.java()));
 			for (String proxy : List.of(Platforms.VELOCITY, Platforms.BUNGEECORD))
 				for (String server : List.of(Platforms.PAPER, Platforms.SPIGOT))
@@ -109,7 +109,7 @@ public final class CompatibilityScenarioFactory {
 			@NotNull String serverPlatform,
 			@NotNull MinecraftVersion version
 	) {
-		LiveMatrix.SpigotRelease spigot = MATRIX.getSpigot().stream()
+		LiveMatrix.SpigotRelease spigot = MATRIX.spigot().stream()
 				.filter(candidate -> candidate.minecraft().equals(version))
 				.findFirst()
 				.orElseThrow(() -> new IllegalArgumentException("The live matrix runs no platforms on " + version));
@@ -124,7 +124,7 @@ public final class CompatibilityScenarioFactory {
 	 * @return one direct NeoForge scenario per verified Minecraft version
 	 */
 	public static @NotNull List<AnvilScenario> neoForgeScenarios() {
-		return MATRIX.getNeoForge().stream().map(CompatibilityScenarioFactory::neoForgeScenario).toList();
+		return MATRIX.neoForge().stream().map(CompatibilityScenarioFactory::neoForgeScenario).toList();
 	}
 
 	private static AnvilScenario paperScenario(LiveMatrix.Release release) {
@@ -170,7 +170,7 @@ public final class CompatibilityScenarioFactory {
 						.description("Single NeoForge server without fixture plugins for checking native login, server-side "
 								+ "player observation and console commands through the NeoForge agent.")
 						.category("Native compatibility").tag("login").build())
-				.entrypoint(server.getName())
+				.entrypoint(server.name())
 				.server(server)
 				.build();
 	}
@@ -180,12 +180,12 @@ public final class CompatibilityScenarioFactory {
 		return AnvilScenario.builder()
 				.name(name)
 				.metadata(PresentationMetadata.builder()
-						.displayName("Direct login · " + platformLabel(platform) + " " + distribution.getVersion())
+						.displayName("Direct login · " + platformLabel(platform) + " " + distribution.version())
 						.description("Single-server fixture for checking native login, plugin commands, server-side player observation "
 								+ "and agent extension calls. Restart tests reuse it to verify reconnection with the same player "
 								+ "identity, address and workspace.")
 						.category("Native compatibility").tag("login").tag("restart").build())
-				.entrypoint(server.getName())
+				.entrypoint(server.name())
 				.server(server)
 				.build();
 	}
@@ -199,18 +199,18 @@ public final class CompatibilityScenarioFactory {
 	) {
 		MinecraftServer lobby = server("lobby", serverPlatform, distribution, java);
 		MinecraftServer game = server("game", serverPlatform, distribution, java);
-		MinecraftProxy proxy = proxy("proxy", proxyPlatform, lobby.getName(), game.getName());
+		MinecraftProxy proxy = proxy("proxy", proxyPlatform, lobby.name(), game.name());
 		return AnvilScenario.builder()
 				.name(name)
 				.metadata(PresentationMetadata.builder()
 						.displayName("Backend switching · " + platformLabel(proxyPlatform) + " / "
-								+ platformLabel(serverPlatform) + " " + distribution.getVersion())
+								+ platformLabel(serverPlatform) + " " + distribution.version())
 						.description("Two backends let compatibility tests join through " + platformLabel(proxyPlatform)
 								+ ", move from Lobby to Game, and verify that plugin commands reach the new backend. "
 								+ "Restart tests reuse this environment to check reconnection, preserved player identity "
 								+ "and agent extension calls after restarting the proxy or Lobby.")
 						.category("Native compatibility").tag("routing").tag("restart").build())
-				.entrypoint(proxy.getName())
+				.entrypoint(proxy.name())
 				.server(lobby)
 				.server(game)
 				.proxy(proxy)
@@ -242,7 +242,7 @@ public final class CompatibilityScenarioFactory {
 	}
 
 	private static MinecraftProxy proxy(String name, String platform, String defaultServer, String otherServer) {
-		LiveMatrix.Proxies proxies = MATRIX.getProxies();
+		LiveMatrix.Proxies proxies = MATRIX.proxies();
 		boolean velocity = Platforms.VELOCITY.equals(platform);
 		Distribution distribution = velocity
 				? Distribution.remote(proxies.velocityVersion(), proxies.velocityBuild())

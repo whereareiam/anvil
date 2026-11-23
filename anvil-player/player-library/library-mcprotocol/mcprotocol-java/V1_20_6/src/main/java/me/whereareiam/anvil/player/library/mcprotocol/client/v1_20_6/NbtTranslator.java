@@ -83,7 +83,7 @@ public final class NbtTranslator {
 	 */
 	public static @NotNull NbtMap map(@NotNull NbtCompound compound) {
 		NbtMapBuilder map = NbtMap.builder();
-		compound.getEntries().forEach((key, tag) -> map.put(key, value(tag)));
+		compound.entries().forEach((key, tag) -> map.put(key, value(tag)));
 
 		return map.build();
 	}
@@ -96,16 +96,16 @@ public final class NbtTranslator {
 	 */
 	static @NotNull Object value(@NotNull NbtTag tag) {
 		return switch (tag) {
-			case NbtByte number -> number.getValue();
-			case NbtShort number -> number.getValue();
-			case NbtInt number -> number.getValue();
-			case NbtLong number -> number.getValue();
-			case NbtFloat number -> number.getValue();
-			case NbtDouble number -> number.getValue();
-			case NbtString text -> text.getValue();
-			case NbtByteArray array -> array.getValues();
-			case NbtIntArray array -> array.getValues();
-			case NbtLongArray array -> array.getValues();
+			case NbtByte number -> number.value();
+			case NbtShort number -> number.value();
+			case NbtInt number -> number.value();
+			case NbtLong number -> number.value();
+			case NbtFloat number -> number.value();
+			case NbtDouble number -> number.value();
+			case NbtString text -> text.value();
+			case NbtByteArray array -> array.values();
+			case NbtIntArray array -> array.values();
+			case NbtLongArray array -> array.values();
 			case NbtList list -> list(list);
 			case NbtCompound compound -> map(compound);
 		};
@@ -120,10 +120,10 @@ public final class NbtTranslator {
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	private static org.cloudburstmc.nbt.NbtList<?> list(NbtList list) {
-		if (list.getElements().isEmpty()) return org.cloudburstmc.nbt.NbtList.EMPTY;
+		if (list.elements().isEmpty()) return org.cloudburstmc.nbt.NbtList.EMPTY;
 
 		List<Object> values = new ArrayList<>();
-		for (NbtTag element : list.getElements()) values.add(value(element));
+		for (NbtTag element : list.elements()) values.add(value(element));
 		if (values.stream().map(Object::getClass).distinct().count() == 1)
 			return new org.cloudburstmc.nbt.NbtList(NbtType.byClass(values.getFirst().getClass()), values);
 

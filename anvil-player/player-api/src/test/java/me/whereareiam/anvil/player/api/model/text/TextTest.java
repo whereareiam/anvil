@@ -74,7 +74,7 @@ class TextTest {
 				.child(Text.literal("child"))
 				.build();
 
-		assertEquals("arbor.welcome", message.find(TranslatedContent.class).orElseThrow().getKey());
+		assertEquals("arbor.welcome", message.find(TranslatedContent.class).orElseThrow().key());
 		assertEquals(new LiteralContent("argument"), message.find(LiteralContent.class).orElseThrow());
 		assertTrue(message.find(KeybindContent.class).isEmpty());
 	}
@@ -87,7 +87,7 @@ class TextTest {
 				.child(text("/help", TextStyle.builder().hover(tip).build()))
 				.build();
 
-		assertEquals(tip, message.span("help").orElseThrow().getStyle().getHover());
+		assertEquals(tip, message.span("help").orElseThrow().style().hover());
 		assertTrue(message.span("Use /help").isEmpty());
 	}
 

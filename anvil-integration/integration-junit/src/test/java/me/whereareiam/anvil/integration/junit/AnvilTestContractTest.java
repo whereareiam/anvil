@@ -18,7 +18,7 @@ class AnvilTestContractTest {
 		AnvilTest annotation = method.getAnnotation(AnvilTest.class);
 
 		assertEquals(ExampleScenario.class, annotation.value());
-		assertEquals("typed", annotation.value().getDeclaredConstructor().newInstance().define().getName());
+		assertEquals("typed", annotation.value().getDeclaredConstructor().newInstance().define().name());
 	}
 
 	private static final class Fixture {
@@ -36,7 +36,7 @@ class AnvilTestContractTest {
 					.build();
 			return AnvilScenario.builder()
 					.name("typed")
-					.entrypoint(server.getName())
+					.entrypoint(server.name())
 					.server(server)
 					.build();
 		}

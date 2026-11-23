@@ -33,8 +33,8 @@ class KeyInputTest {
 		float scaled = unit * 0.98F;
 		float length = (float) Math.sqrt(scaled * scaled + scaled * scaled);
 		float corner = scaled * (1.0F / length) * Math.min(length * (float) Math.sqrt(2.0F), 1.0F);
-		assertEquals(corner, player.body().getXxa());
-		assertEquals(corner, player.body().getZza());
+		assertEquals(corner, player.body().xxa());
+		assertEquals(corner, player.body().zza());
 	}
 
 	@Test
@@ -43,8 +43,8 @@ class KeyInputTest {
 
 		player.tick(DIAGONAL);
 
-		assertEquals(1.0F * 0.98F, player.body().getXxa());
-		assertEquals(1.0F * 0.98F, player.body().getZza());
+		assertEquals(1.0F * 0.98F, player.body().xxa());
+		assertEquals(1.0F * 0.98F, player.body().zza());
 	}
 
 	@ParameterizedTest
@@ -65,9 +65,9 @@ class KeyInputTest {
 		PlayerSimulation hungryPlayer = settle(starved.simulation(hungry, 8.5, 65.0, 8.5));
 		hungryPlayer.tick(SPRINT);
 
-		assertTrue(sighted.body().isSprinting());
-		assertFalse(blindPlayer.body().isSprinting());
-		assertFalse(hungryPlayer.body().isSprinting());
+		assertTrue(sighted.body().sprinting());
+		assertFalse(blindPlayer.body().sprinting());
+		assertFalse(hungryPlayer.body().sprinting());
 	}
 
 	@ParameterizedTest
@@ -78,10 +78,10 @@ class KeyInputTest {
 
 		player.tick(forward);
 		player.tick(MovementInput.NONE);
-		assertFalse(player.body().isSprinting());
+		assertFalse(player.body().sprinting());
 		player.tick(forward);
 
-		assertTrue(player.body().isSprinting());
+		assertTrue(player.body().sprinting());
 	}
 
 	private static @NotNull PlayerSimulation standing(@NotNull TestClient client, @NotNull GameMode mode) {

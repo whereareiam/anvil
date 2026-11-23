@@ -43,7 +43,7 @@ class CapabilityRuntimeTest {
 		var first = runtime.compose("Agent 'lobby'", Function.identity());
 		var second = runtime.compose("Agent 'proxy'", Function.identity());
 
-		assertEquals(List.of("status", "command"), runtime.providers().stream().map(CapabilityDescriptor::getId).toList());
+		assertEquals(List.of("status", "command"), runtime.providers().stream().map(CapabilityDescriptor::id).toList());
 		assertEquals(1, first.capability(Command.class).execute());
 		assertEquals(2, second.capability(Command.class).execute());
 		assertNotSame(first.capability(Status.class), second.capability(Status.class));
@@ -207,7 +207,7 @@ class CapabilityRuntimeTest {
 		});
 		var withStatus = runtime(List.of(command, status));
 
-		assertEquals(List.of("status", "command"), withStatus.providers().stream().map(CapabilityDescriptor::getId).toList());
+		assertEquals(List.of("status", "command"), withStatus.providers().stream().map(CapabilityDescriptor::id).toList());
 		try (var capabilities = withStatus.compose("Agent 'lobby'", Function.identity())) {
 			assertEquals(7, capabilities.capability(Command.class).execute());
 		}

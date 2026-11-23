@@ -37,22 +37,22 @@ class WireErrorsTest {
 		assertEquals("config/paper-global.yml", missing.getFile());
 
 		ProcessException process = (ProcessException) roundTrip(new ProcessException("lobby", "exited before becoming ready"));
-		assertEquals("lobby", process.getProcessName());
+		assertEquals("lobby", process.processName());
 		assertEquals("exited before becoming ready", process.getMessage());
 
 		ScenarioRequirementsException refused = (ScenarioRequirementsException) roundTrip(
 				new ScenarioRequirementsException("network", "workstation", List.of("its processes may not reach api.mojang.com")));
-		assertEquals("network", refused.getScenarioName());
-		assertEquals("workstation", refused.getWorkbenchName());
-		assertEquals(List.of("its processes may not reach api.mojang.com"), refused.getUnmet());
+		assertEquals("network", refused.scenarioName());
+		assertEquals("workstation", refused.workbenchName());
+		assertEquals(List.of("its processes may not reach api.mojang.com"), refused.unmet());
 	}
 
 	@Test
 	void namesAFailureByItsMostSpecificKind() {
-		assertEquals(WireFailure.MISSING_FILE, WireErrors.describe(new NoSuchFileException("x")).getKind());
+		assertEquals(WireFailure.MISSING_FILE, WireErrors.describe(new NoSuchFileException("x")).kind());
 		assertEquals(
 				WireFailure.PROVISIONING,
-				WireErrors.describe(new JavaVersionMismatchException("Java 21 required, 17 found")).getKind()
+				WireErrors.describe(new JavaVersionMismatchException("Java 21 required, 17 found")).kind()
 		);
 	}
 

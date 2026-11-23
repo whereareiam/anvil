@@ -52,12 +52,12 @@ public final class RecordingFiles {
 	public void write(@NotNull RecordedPackets recording, @NotNull Path file) throws IOException {
 		try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
 				new GZIPOutputStream(Files.newOutputStream(file)), StandardCharsets.UTF_8))) {
-			out.write(json.writeValueAsString(recording.getHeader()));
+			out.write(json.writeValueAsString(recording.header()));
 			out.newLine();
-			List<ClientboundFrame> frames = recording.getFrames();
+			List<ClientboundFrame> frames = recording.frames();
 			for (int seq = 0; seq < frames.size(); seq++) {
 				ClientboundFrame frame = frames.get(seq);
-				out.write(json.writeValueAsString(new Line(seq, frame.getState(), frame.getId(), frame.name().orElse(null),
+				out.write(json.writeValueAsString(new Line(seq, frame.state(), frame.id(), frame.name().orElse(null),
 						frame.payload(), frame.packet().orElse(null))));
 				out.newLine();
 			}
@@ -90,8 +90,8 @@ public final class RecordingFiles {
 		if (text == null) throw new IllegalArgumentException(file + " is empty, not a packet recording");
 
 		RecordingHeader header = parse(file, "its header", text, RecordingHeader.class);
-		if (header.getFormat() != RecordingHeader.FORMAT)
-			throw new IllegalArgumentException(file + " is a packet recording of format " + header.getFormat()
+		if (header.format() != RecordingHeader.FORMAT)
+			throw new IllegalArgumentException(file + " is a packet recording of format " + header.format()
 					+ ", which this Anvil does not read; it reads format " + RecordingHeader.FORMAT);
 
 		return header;

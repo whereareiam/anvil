@@ -25,9 +25,9 @@ class DialogsProviderTest {
 		DialogsProvider provider = new DialogsProvider();
 
 		assertEquals("me.whereareiam.anvil.dialogs", DialogsChannel.ID);
-		assertEquals(DialogsChannel.ID, provider.descriptor().getId());
-		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
-		assertEquals(Set.of(Commands.class), provider.descriptor().getOptionalCapabilities());
+		assertEquals(DialogsChannel.ID, provider.descriptor().id());
+		assertTrue(provider.descriptor().requiredCapabilities().isEmpty());
+		assertEquals(Set.of(Commands.class), provider.descriptor().optionalCapabilities());
 		assertEquals(Set.of(JavaProtocol.class), provider.requiredProtocols());
 		assertEquals(Dialogs.class, provider.capability());
 	}
@@ -38,8 +38,8 @@ class DialogsProviderTest {
 		Dialogs dialogs = new DialogsProvider().create(new TestProtocolPlayerCapabilityContext(channel)
 				.withCapability(Commands.class, COMMANDS));
 
-		assertEquals(List.of(DialogsChannel.REGISTRY.getId(), DialogsChannel.SHOWN.getId(), DialogsChannel.CLEARED.getId(),
-				DialogsChannel.RESET.getId()), channel.subscriptions());
+		assertEquals(List.of(DialogsChannel.REGISTRY.id(), DialogsChannel.SHOWN.id(), DialogsChannel.CLEARED.id(),
+				DialogsChannel.RESET.id()), channel.subscriptions());
 		assertTrue(channel.requests().isEmpty());
 		assertTrue(dialogs.current().isEmpty());
 	}

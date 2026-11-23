@@ -31,37 +31,37 @@ final class ProcessDebugging {
 	 * @return the scenario, unchanged when it debugs none of its processes
 	 */
 	static @NotNull AnvilScenario apply(@NotNull AnvilScenario scenario, @NotNull EngineOptions options) {
-		if (options.getDebugProcesses().isEmpty()) return scenario;
+		if (options.debugProcesses().isEmpty()) return scenario;
 
 		boolean[] debugged = {false};
-		var servers = scenario.getServers().stream().map(server -> {
-			if (!debugs(options, server.getName())) return server;
+		var servers = scenario.servers().stream().map(server -> {
+			if (!debugs(options, server.name())) return server;
 			debugged[0] = true;
-			return server.toBuilder().listener(LISTENER).jvmArgument(agent(server.getName(), options)).build();
+			return server.toBuilder().listener(LISTENER).jvmArgument(agent(server.name(), options)).build();
 		}).toList();
-		var proxies = scenario.getProxies().stream().map(proxy -> {
-			if (!debugs(options, proxy.getName())) return proxy;
+		var proxies = scenario.proxies().stream().map(proxy -> {
+			if (!debugs(options, proxy.name())) return proxy;
 			debugged[0] = true;
-			return proxy.toBuilder().listener(LISTENER).jvmArgument(agent(proxy.getName(), options)).build();
+			return proxy.toBuilder().listener(LISTENER).jvmArgument(agent(proxy.name(), options)).build();
 		}).toList();
 		if (!debugged[0]) return scenario;
 
 		var debuggable = scenario.toBuilder().clearServers().servers(servers).clearProxies().proxies(proxies);
-		if (options.isDebugSuspend()) debuggable.processTimeouts(longStartup(scenario.getProcessTimeouts()));
+		if (options.debugSuspend()) debuggable.processTimeouts(longStartup(scenario.processTimeouts()));
 		return debuggable.build();
 	}
 
 	private static boolean debugs(EngineOptions options, String name) {
-		return options.getDebugProcesses().contains(EVERY) || options.getDebugProcesses().contains(name);
+		return options.debugProcesses().contains(EVERY) || options.debugProcesses().contains(name);
 	}
 
 	private static String agent(String process, EngineOptions options) {
-		return "-agentlib:jdwp=transport=dt_socket,server=y,suspend=" + (options.isDebugSuspend() ? "y" : "n")
+		return "-agentlib:jdwp=transport=dt_socket,server=y,suspend=" + (options.debugSuspend() ? "y" : "n")
 				+ ",address=*:${anvil.process." + process + ".listener." + LISTENER + "}";
 	}
 
 	private static ProcessTimeouts longStartup(ProcessTimeouts timeouts) {
-		return timeouts.toBuilder().startup(timeouts.getStartup() == null || timeouts.getStartup().compareTo(SUSPENDED_STARTUP) < 0
-				? SUSPENDED_STARTUP : timeouts.getStartup()).build();
+		return timeouts.toBuilder().startup(timeouts.startup() == null || timeouts.startup().compareTo(SUSPENDED_STARTUP) < 0
+				? SUSPENDED_STARTUP : timeouts.startup()).build();
 	}
 }

@@ -85,15 +85,15 @@ class ToolingExtensionRegistryTest {
 	void invokesAnExternalCapabilityAndReturnsPortableResults() {
 		ToolingExtensionRegistry registry = new ToolingExtensionRegistry(List.of(extension()));
 		ActionDescriptor action = registry.actions(context).getFirst();
-		assertEquals("fixture.counter.add", action.getDefinition().getId());
-		assertTrue(action.getAvailability().isEnabled());
-		assertEquals(ActionTargetType.PROCESS, action.getTarget().getType());
-		assertEquals("0", registry.observations(context).getFirst().getValue().getText());
+		assertEquals("fixture.counter.add", action.definition().id());
+		assertTrue(action.availability().enabled());
+		assertEquals(ActionTargetType.PROCESS, action.target().type());
+		assertEquals("0", registry.observations(context).getFirst().value().text());
 
 		ActionResult result = registry.invoke(context, request(Map.of("amount", "3")));
-		assertEquals(List.of("Count"), result.getColumns());
-		assertEquals(List.of(List.of("3")), result.getRows());
-		assertEquals("3", registry.observations(context).getFirst().getValue().getText());
+		assertEquals(List.of("Count"), result.columns());
+		assertEquals(List.of(List.of("3")), result.rows());
+		assertEquals("3", registry.observations(context).getFirst().value().text());
 	}
 
 	@Test
@@ -104,18 +104,18 @@ class ToolingExtensionRegistryTest {
 		ActionDescriptor action = assertDoesNotThrow(() -> registry.actions(context)).getFirst();
 		ObservationDescriptor observation = assertDoesNotThrow(() -> registry.observations(context)).getFirst();
 
-		assertFalse(action.getAvailability().isEnabled());
-		assertTrue(action.getAvailability().getReason().contains("Capability lookup failed"));
-		assertEquals(ObservationTone.ERROR, observation.getValue().getTone());
-		assertTrue(observation.getValue().getText().contains("Capability lookup failed"));
+		assertFalse(action.availability().enabled());
+		assertTrue(action.availability().reason().contains("Capability lookup failed"));
+		assertEquals(ObservationTone.ERROR, observation.value().tone());
+		assertTrue(observation.value().text().contains("Capability lookup failed"));
 	}
 
 	@Test
 	void rechecksReadinessCapabilitiesAndTargetExistenceAtInvocation() {
 		ToolingExtensionRegistry registry = new ToolingExtensionRegistry(List.of(extension()));
-		assertTrue(registry.actions(context).getFirst().getAvailability().isEnabled());
+		assertTrue(registry.actions(context).getFirst().availability().enabled());
 		state.set(ProcessState.STOPPED);
-		assertFalse(registry.actions(context).getFirst().getAvailability().isEnabled());
+		assertFalse(registry.actions(context).getFirst().availability().enabled());
 		assertThrows(IllegalStateException.class, () -> registry.invoke(context, request(Map.of())));
 		state.set(ProcessState.READY);
 		supported = false;
@@ -164,8 +164,8 @@ class ToolingExtensionRegistryTest {
 
 		ActionResult result = registry.invoke(context, request(Map.of("amount", "2")));
 		assertSame(activeCounter, checkedCapability.get());
-		assertEquals(List.of(List.of("12")), result.getRows());
-		assertEquals("12", registry.observations(context).getFirst().getValue().getText());
+		assertEquals(List.of(List.of("12")), result.rows());
+		assertEquals("12", registry.observations(context).getFirst().value().text());
 		assertEquals(0, count.get());
 	}
 
@@ -200,9 +200,9 @@ class ToolingExtensionRegistryTest {
 			});
 		}));
 		assertEquals(2, registry.observations(context).size());
-		assertEquals(ObservationTone.ERROR, registry.observations(context).getLast().getValue().getTone());
-		assertFalse(registry.actions(context).getLast().getAvailability().isEnabled());
-		assertTrue(registry.actions(context).getFirst().getAvailability().isEnabled());
+		assertEquals(ObservationTone.ERROR, registry.observations(context).getLast().value().tone());
+		assertFalse(registry.actions(context).getLast().availability().enabled());
+		assertTrue(registry.actions(context).getFirst().availability().enabled());
 	}
 
 	@Test

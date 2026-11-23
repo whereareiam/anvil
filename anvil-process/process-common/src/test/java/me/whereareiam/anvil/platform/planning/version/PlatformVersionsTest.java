@@ -42,31 +42,31 @@ class PlatformVersionsTest {
 	void selectsTheRowWithTheGreatestStartNotNewerThanTheVersion(String version, String since) {
 		JavaCompatibility row = SAMPLE.javaCompatibility(MinecraftVersion.parse(version)).orElseThrow();
 
-		assertEquals(MinecraftVersion.parse(since), row.getSince());
+		assertEquals(MinecraftVersion.parse(since), row.since());
 	}
 
 	@Test
 	void readsRowsInVersionOrderWithOptionalMaximumBypassAndAgent() {
-		JavaCompatibility legacy = SAMPLE.getJavaCompatibilities().getFirst();
+		JavaCompatibility legacy = SAMPLE.javaCompatibilities().getFirst();
 
-		assertEquals(3, SAMPLE.getJavaCompatibilities().size());
+		assertEquals(3, SAMPLE.javaCompatibilities().size());
 		assertEquals(MinecraftVersion.parse("1.16.5"), SAMPLE.firstVersion());
-		assertEquals(11, SAMPLE.getAgentMinimumJava());
-		assertEquals(11, legacy.getMinimum());
-		assertEquals(16, legacy.getMaximum());
-		assertEquals(11, legacy.getPreferred());
-		assertEquals("Sample.IgnoreJavaVersion", legacy.getMaximumBypassProperty());
+		assertEquals(11, SAMPLE.agentMinimumJava());
+		assertEquals(11, legacy.minimum());
+		assertEquals(16, legacy.maximum());
+		assertEquals(11, legacy.preferred());
+		assertEquals("Sample.IgnoreJavaVersion", legacy.maximumBypassProperty());
 		assertTrue(legacy.exceedsMaximum(17));
 		assertFalse(legacy.exceedsMaximum(16));
-		JavaCompatibility modern = SAMPLE.getJavaCompatibilities().getLast();
-		assertNull(modern.getMaximum());
-		assertNull(modern.getMaximumBypassProperty());
+		JavaCompatibility modern = SAMPLE.javaCompatibilities().getLast();
+		assertNull(modern.maximum());
+		assertNull(modern.maximumBypassProperty());
 		assertFalse(modern.exceedsMaximum(29));
 	}
 
 	@Test
 	void usesTheNewestRowForAProcessWithoutVersionAndNoRowBeforeTheFirst() {
-		assertEquals(MinecraftVersion.parse("1.20.5"), SAMPLE.javaCompatibility(null).orElseThrow().getSince());
+		assertEquals(MinecraftVersion.parse("1.20.5"), SAMPLE.javaCompatibility(null).orElseThrow().since());
 		assertEquals(Optional.empty(), SAMPLE.javaCompatibility(MinecraftVersion.parse("1.16.4")));
 	}
 
@@ -79,9 +79,9 @@ class PlatformVersionsTest {
 				""");
 
 		assertNull(unversioned.firstVersion());
-		assertNull(unversioned.getAgentMinimumJava());
-		assertEquals(21, unversioned.javaCompatibility(null).orElseThrow().getPreferred());
-		assertEquals(17, unversioned.javaCompatibility(MinecraftVersion.parse("1.8.8")).orElseThrow().getMinimum());
+		assertNull(unversioned.agentMinimumJava());
+		assertEquals(21, unversioned.javaCompatibility(null).orElseThrow().preferred());
+		assertEquals(17, unversioned.javaCompatibility(MinecraftVersion.parse("1.8.8")).orElseThrow().minimum());
 		assertEquals(SupportLevel.UNTESTED, unversioned.support(MinecraftVersion.parse("1.8.8")));
 		assertEquals(Set.of(), unversioned.verifiedJava(null));
 	}

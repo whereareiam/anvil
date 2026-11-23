@@ -56,7 +56,7 @@ class ScenarioInvocationTest {
 		invocation.register(registered::set);
 		assertTrue(actions.isEmpty());
 		assertEquals(1, context.starts);
-		assertSame(context, registered.get().getContext());
+		assertSame(context, registered.get().context());
 		registered.get().close();
 		assertEquals(List.of("context"), actions);
 	}
@@ -151,7 +151,7 @@ class ScenarioInvocationTest {
 
 		assertEquals(1, context.starts);
 		assertEquals(List.of("alice", "bob"), context.pooled);
-		assertEquals(2, invocation.getAccounts().accounts().size());
+		assertEquals(2, invocation.accounts().accounts().size());
 		invocation.close();
 		assertTrue(context.poolClosed);
 	}
@@ -213,7 +213,7 @@ class ScenarioInvocationTest {
 	private ScenarioEngine refusing() {
 		return new ScenarioEngine() {
 			public @NotNull ScenarioContext prepare(@NotNull AnvilScenario scenario, @Nullable ScenarioObserver observer) {
-				throw new ScenarioRequirementsException(scenario.getName(), "local", List.of("its processes may not reach api.mojang.com"));
+				throw new ScenarioRequirementsException(scenario.name(), "local", List.of("its processes may not reach api.mojang.com"));
 			}
 			public void close() { throw new AssertionError("The invocation borrows its engine"); }
 		};
@@ -256,7 +256,7 @@ class ScenarioInvocationTest {
 					return new AccountPool() {
 						public @NonNull AccountLease lease() { throw new AssertionError("No lease expected"); }
 						public @NonNull Collection<AuthenticationAccount> accounts() {
-							return stored.stream().filter(account -> pooled.contains(account.getAccountId())).toList();
+							return stored.stream().filter(account -> pooled.contains(account.accountId())).toList();
 						}
 						public void close() { poolClosed = true; }
 					};

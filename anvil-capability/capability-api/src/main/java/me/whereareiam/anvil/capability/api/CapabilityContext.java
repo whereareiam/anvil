@@ -63,7 +63,7 @@ public interface CapabilityContext<C extends Capability> {
 	 * Connection connection = connect();
 	 * context.on(Closed.class, closed -> connection.close());
 	 * context.on(ScenarioFinished.class, finished -> {
-	 *     if (finished.isPassed()) removeWhatThisScenarioCreated();
+	 *     if (finished.passed()) removeWhatThisScenarioCreated();
 	 * });
 	 * }</pre>
 	 *

@@ -1,9 +1,11 @@
 package me.whereareiam.anvil.integration.intellij.scenario.tooling.protocol;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -28,7 +30,11 @@ import org.jetbrains.annotations.Nullable;
  * Maps protocol envelopes and shared tooling payloads at the JSON boundary.
  */
 final class ToolingMessageCodec {
+	// Tooling payloads read through fluent accessors, which are no JavaBean getters: their fields are their members.
 	private final @NotNull ObjectMapper json = JsonMapper.builder()
+			.visibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
+			.visibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
+			.visibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE)
 			.disable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
 			.disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
 			.enable(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS)
@@ -68,11 +74,11 @@ final class ToolingMessageCodec {
 			@NotNull ToolingOperation<Q, R> operation,
 			@Nullable Q payload
 	) throws IOException {
-		if (payload == null && operation.getRequestType() != Void.class)
-			throw new IllegalArgumentException("Missing request for tooling operation '" + operation.getName() + "'");
+		if (payload == null && operation.requestType() != Void.class)
+			throw new IllegalArgumentException("Missing request for tooling operation '" + operation.name() + "'");
 
-		Q request = operation.getRequestType().cast(payload);
-		return json.writeValueAsString(new Outgoing<>(id, operation.getName(), request));
+		Q request = operation.requestType().cast(payload);
+		return json.writeValueAsString(new Outgoing<>(id, operation.name(), request));
 	}
 
 	<R> @NotNull R decode(@NotNull JsonNode payload, @NotNull TypeReference<R> responseType) throws IOException {

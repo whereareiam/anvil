@@ -60,7 +60,7 @@ final class Uploads {
 			try {
 				String sha256 = sha256(content);
 				String name = absolute.getFileName().toString();
-				Path found = connection.call(new FindStored(sha256, name)).getPath();
+				Path found = connection.call(new FindStored(sha256, name)).path();
 				Path path = found == null ? upload(content, sha256, name, directory) : found;
 				if (!directory) stored.put(key, path);
 				return path;
@@ -68,7 +68,7 @@ final class Uploads {
 				if (directory) Files.deleteIfExists(content);
 			}
 		} catch (IOException failure) {
-			throw new WorkbenchException("Could not hand " + absolute + " to workbench '" + connection.pairing().getName() + "': "
+			throw new WorkbenchException("Could not hand " + absolute + " to workbench '" + connection.pairing().name() + "': "
 					+ failure.getMessage(), failure);
 		}
 	}
@@ -81,8 +81,8 @@ final class Uploads {
 			output.flush();
 
 			return switch (WorkbenchConnection.answer(connection.mapper(), socket, "the upload of " + name)) {
-				case Uploaded uploaded -> uploaded.getPath();
-				case Refused refused -> throw new IOException(refused.getReason());
+				case Uploaded uploaded -> uploaded.path();
+				case Refused refused -> throw new IOException(refused.reason());
 				case Accepted ignored -> throw new IOException("the workbench did not say where it keeps " + name);
 				case Paired ignored -> throw new IOException("the workbench answered an upload with a pairing");
 			};

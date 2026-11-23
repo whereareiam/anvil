@@ -61,7 +61,7 @@ final class WorldBlocks {
 		operations.register(WorldChannel.BLOCK, position -> world.read(view -> lookup(view, position)));
 		operations.register(WorldChannel.CHUNK, chunk -> world.isLoaded(chunk(chunk)));
 		operations.register(WorldChannel.CHUNKS, ignored -> new LoadedChunks(world.loadedChunks().stream()
-				.map(chunk -> new ChunkPosition(chunk.getX(), chunk.getZ()))
+				.map(chunk -> new ChunkPosition(chunk.x(), chunk.z()))
 				.toList()));
 		operations.register(WorldChannel.WATCH, this::watch);
 		operations.register(WorldChannel.UNWATCH, this::unwatch);
@@ -72,16 +72,16 @@ final class WorldBlocks {
 	 */
 	@NotNull Subscription listen() {
 		return Subscription.all(
-				protocol.listen(ClientboundBlockUpdate.class, update -> updated(List.of(update.getChange()))),
-				protocol.listen(ClientboundSectionBlocksUpdate.class, update -> updated(update.getChanges())),
+				protocol.listen(ClientboundBlockUpdate.class, update -> updated(List.of(update.change()))),
+				protocol.listen(ClientboundSectionBlocksUpdate.class, update -> updated(update.changes())),
 				protocol.listen(ClientboundLevelChunkWithLight.class, this::loaded),
 				areas::clear
 		);
 	}
 
 	private Void watch(AreaWatch watch) {
-		if (areas.putIfAbsent(watch.getId(), watch.getArea()) != null)
-			throw new IllegalArgumentException("Watch " + watch.getId() + " is already open");
+		if (areas.putIfAbsent(watch.id(), watch.area()) != null)
+			throw new IllegalArgumentException("Watch " + watch.id() + " is already open");
 
 		return null;
 	}
@@ -97,14 +97,14 @@ final class WorldBlocks {
 	private void updated(List<BlockChange> changes) {
 		if (areas.isEmpty()) return;
 
-		String level = world.level().map(Level::getKey).orElse(null);
+		String level = world.level().map(Level::key).orElse(null);
 		if (level == null) return;
 
 		for (Map.Entry<Integer, BlockArea> watch : areas.entrySet()) {
 			List<BlockReading> blocks = new ArrayList<>();
 			for (BlockChange change : changes) {
-				BlockPosition position = position(change.getPosition());
-				if (watch.getValue().contains(position)) blocks.add(reading(position, change.getBlockState()));
+				BlockPosition position = position(change.position());
+				if (watch.getValue().contains(position)) blocks.add(reading(position, change.blockState()));
 			}
 			emit(watch.getKey(), level, blocks);
 		}
@@ -118,7 +118,7 @@ final class WorldBlocks {
 		if (areas.isEmpty()) return;
 
 		Map<Integer, BlockArea> open = Map.copyOf(areas);
-		Loaded loaded = world.read(view -> read(view, chunk.getPosition(), open));
+		Loaded loaded = world.read(view -> read(view, chunk.position(), open));
 		if (loaded == null) return;
 
 		loaded.blocks().forEach((watch, blocks) -> emit(watch, loaded.level(), blocks));
@@ -134,24 +134,24 @@ final class WorldBlocks {
 
 		Map<Integer, List<BlockReading>> blocks = new LinkedHashMap<>();
 		for (Map.Entry<Integer, BlockArea> watch : open.entrySet())
-			blocks.put(watch.getKey(), column(view, level, new ChunkPosition(chunk.getX(), chunk.getZ()),
+			blocks.put(watch.getKey(), column(view, level, new ChunkPosition(chunk.x(), chunk.z()),
 					watch.getValue()));
 
-		return new Loaded(level.getKey(), blocks);
+		return new Loaded(level.key(), blocks);
 	}
 
 	/**
 	 * Reads the blocks of an area that lie in one chunk column of a level.
 	 */
 	private List<BlockReading> column(WorldView view, Level level, ChunkPosition chunk, BlockArea area) {
-		int westX = chunk.getX() * ChunkPosition.SIZE;
-		int northZ = chunk.getZ() * ChunkPosition.SIZE;
-		int fromX = Math.max(area.getMin().getX(), westX);
-		int toX = Math.min(area.getMax().getX(), westX + ChunkPosition.SIZE - 1);
-		int fromZ = Math.max(area.getMin().getZ(), northZ);
-		int toZ = Math.min(area.getMax().getZ(), northZ + ChunkPosition.SIZE - 1);
-		int fromY = Math.max(area.getMin().getY(), level.minY());
-		int toY = Math.min(area.getMax().getY(), level.minY() + level.sectionCount() * ChunkPosition.SIZE - 1);
+		int westX = chunk.x() * ChunkPosition.SIZE;
+		int northZ = chunk.z() * ChunkPosition.SIZE;
+		int fromX = Math.max(area.min().x(), westX);
+		int toX = Math.min(area.max().x(), westX + ChunkPosition.SIZE - 1);
+		int fromZ = Math.max(area.min().z(), northZ);
+		int toZ = Math.min(area.max().z(), northZ + ChunkPosition.SIZE - 1);
+		int fromY = Math.max(area.min().y(), level.minY());
+		int toY = Math.min(area.max().y(), level.minY() + level.sectionCount() * ChunkPosition.SIZE - 1);
 
 		List<BlockReading> blocks = new ArrayList<>();
 		for (int y = fromY; y <= toY; y++)
@@ -169,7 +169,7 @@ final class WorldBlocks {
 	}
 
 	private BlockLookup lookup(WorldView view, BlockPosition position) {
-		OptionalInt state = view.blockState(position.getX(), position.getY(), position.getZ());
+		OptionalInt state = view.blockState(position.x(), position.y(), position.z());
 		return new BlockLookup(state.isPresent() ? reading(position, state.getAsInt()) : null);
 	}
 
@@ -185,15 +185,15 @@ final class WorldBlocks {
 		if (registry == null || state < 0 || state >= registry.stateCount()) return null;
 
 		BlockState named = registry.state(state);
-		return new BlockIdentity(named.getBlock().getName(), named.getProperties(), named.isAir());
+		return new BlockIdentity(named.block().name(), named.properties(), named.isAir());
 	}
 
 	private static BlockPosition position(me.whereareiam.anvil.edition.java.protocol.model.world.BlockPosition position) {
-		return new BlockPosition(position.getX(), position.getY(), position.getZ());
+		return new BlockPosition(position.x(), position.y(), position.z());
 	}
 
 	private static me.whereareiam.anvil.edition.java.protocol.model.world.chunk.ChunkPosition chunk(ChunkPosition chunk) {
-		return new me.whereareiam.anvil.edition.java.protocol.model.world.chunk.ChunkPosition(chunk.getX(), chunk.getZ());
+		return new me.whereareiam.anvil.edition.java.protocol.model.world.chunk.ChunkPosition(chunk.x(), chunk.z());
 	}
 
 	/**

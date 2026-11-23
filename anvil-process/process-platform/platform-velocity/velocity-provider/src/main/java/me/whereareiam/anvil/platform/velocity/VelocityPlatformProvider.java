@@ -80,12 +80,12 @@ public final class VelocityPlatformProvider implements PlatformProvider {
 	 */
 	@Override
 	public @Nullable MinecraftVersion platformVersion(@NotNull MinecraftProcess process) {
-		var distribution = process.getDistribution();
-		if (distribution.isLocal() || distribution.isArtifact() || distribution.getVersion() == null) return null;
+		var distribution = process.distribution();
+		if (distribution.isLocal() || distribution.isArtifact() || distribution.version() == null) return null;
 
-		Matcher release = RELEASE.matcher(distribution.getVersion());
+		Matcher release = RELEASE.matcher(distribution.version());
 		if (!release.matches())
-			throw new PlatformException("Velocity version '" + distribution.getVersion() + "' is not a Velocity release");
+			throw new PlatformException("Velocity version '" + distribution.version() + "' is not a Velocity release");
 
 		return MinecraftVersion.parse(release.group(1));
 	}

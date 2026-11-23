@@ -24,7 +24,7 @@ import java.util.Optional;
  * physics.enable();
  * physics.input(MovementInput.builder().forward(true).sprint(true).build());
  * physics.awaitTicks(40);
- * assertTrue(physics.motion().getX() != 0 || physics.motion().getZ() != 0);
+ * assertTrue(physics.motion().x() != 0 || physics.motion().z() != 0);
  * }</pre>
  */
 public interface ClientPhysics {
@@ -46,7 +46,7 @@ public interface ClientPhysics {
 	 *
 	 * @return whether it ticks
 	 */
-	boolean isEnabled();
+	boolean enabled();
 
 	/**
 	 * Returns why physics turned itself off, after a tick failed.

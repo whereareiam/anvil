@@ -19,8 +19,8 @@ import java.util.function.Predicate;
  * <pre>{@code
  * BossBarWatch bars = overlays.watchBossBars();
  * messages.command("event start");
- * BossBar event = bars.shown(bar -> bar.getText().contains("Event") && bar.getProgress() >= 0.5F, timeout);
- * bars.removed(bar -> bar.getId().equals(event.getId()), timeout);
+ * BossBar event = bars.shown(bar -> bar.text().contains("Event") && bar.progress() >= 0.5F, timeout);
+ * bars.removed(bar -> bar.id().equals(event.id()), timeout);
  * }</pre>
  */
 public interface BossBarWatch {
@@ -44,7 +44,7 @@ public interface BossBarWatch {
 	 * @throws IllegalStateException when no such change arrives in time
 	 */
 	default @NotNull BossBar shown(@NotNull String text, @NotNull Duration timeout) {
-		return shown(bar -> bar.getText().contains(text), timeout);
+		return shown(bar -> bar.text().contains(text), timeout);
 	}
 
 	/**
@@ -77,7 +77,7 @@ public interface BossBarWatch {
 	 * @throws IllegalStateException when no such bar is removed in time
 	 */
 	default @NotNull BossBar removed(@NotNull String text, @NotNull Duration timeout) {
-		return removed(bar -> bar.getText().contains(text), timeout);
+		return removed(bar -> bar.text().contains(text), timeout);
 	}
 
 	/**
@@ -99,7 +99,7 @@ public interface BossBarWatch {
 	 * @throws IllegalStateException as soon as such a bar has been shown since the previous wait
 	 */
 	default void neverShown(@NotNull String text, @NotNull Duration duration) {
-		neverShown(bar -> bar.getText().contains(text), duration);
+		neverShown(bar -> bar.text().contains(text), duration);
 	}
 
 	/**

@@ -77,16 +77,16 @@ final class ProtocolLibrarySelector {
 	 * @throws ScenarioValidationException when the scenario names a library that is not installed
 	 */
 	void validate(@NotNull AnvilScenario scenario) {
-		if (scenario.getProtocolLibrary() != null)
-			requireInstalled(scenario.getProtocolLibrary(), "Scenario '" + scenario.getName() + "'");
+		if (scenario.protocolLibrary() != null)
+			requireInstalled(scenario.protocolLibrary(), "Scenario '" + scenario.name() + "'");
 
 		for (Map.Entry<String, MinecraftVersion> target : nativeVersions(scenario).entrySet()) {
 			Optional<Selection> selection = defaultSelection(scenario, target.getValue());
 			if (selection.isEmpty() || selection.get().release().isLaunchable()) continue;
 
-			notices.accept("[Anvil] Warning: scenario '" + scenario.getName() + "' cannot create players for "
+			notices.accept("[Anvil] Warning: scenario '" + scenario.name() + "' cannot create players for "
 					+ target.getKey() + " unless they declare another protocol library: "
-					+ selection.get().release().getLaunchRefusal());
+					+ selection.get().release().launchRefusal());
 		}
 	}
 
@@ -104,7 +104,7 @@ final class ProtocolLibrarySelector {
 	 * @return distinct library identifiers, ranked libraries in the order of the servers, then the remotes
 	 */
 	@NotNull List<String> scenarioLibraries(@NotNull AnvilScenario scenario) {
-		if (scenario.getProtocolLibrary() != null) return List.of(scenario.getProtocolLibrary());
+		if (scenario.protocolLibrary() != null) return List.of(scenario.protocolLibrary());
 		if (engineLibrary != null) return List.of(engineLibrary);
 
 		SupportPolicy policy = policy(scenario);
@@ -129,19 +129,19 @@ final class ProtocolLibrarySelector {
 	 * @throws ScenarioValidationException when no permitted, launchable release can be selected
 	 */
 	@NotNull Selection select(@NotNull PlayerOptions options, @NotNull AnvilScenario scenario, @NotNull MinecraftVersion version) {
-		String player = "player '" + options.getName() + "'";
+		String player = "player '" + options.name() + "'";
 		String declared = declared(options, scenario);
 		Selection selection = declared == null ? rank(player, version) : declared(player, declared, version);
 
 		apply(policy(scenario), selection, version);
 		if (!selection.release().isLaunchable())
-			throw new ScenarioValidationException("Cannot create " + player + ": " + selection.release().getLaunchRefusal());
+			throw new ScenarioValidationException("Cannot create " + player + ": " + selection.release().launchRefusal());
 
 		return selection;
 	}
 
 	private Optional<Selection> defaultSelection(AnvilScenario scenario, MinecraftVersion version) {
-		String declared = scenario.getProtocolLibrary() == null ? engineLibrary : scenario.getProtocolLibrary();
+		String declared = scenario.protocolLibrary() == null ? engineLibrary : scenario.protocolLibrary();
 		if (declared != null)
 			return release(declared, version).map(release -> new Selection(declared, release, release.support(version)));
 
@@ -150,12 +150,12 @@ final class ProtocolLibrarySelector {
 	}
 
 	private SupportPolicy policy(AnvilScenario scenario) {
-		return scenario.getSupportPolicy() == null ? enginePolicy : scenario.getSupportPolicy();
+		return scenario.supportPolicy() == null ? enginePolicy : scenario.supportPolicy();
 	}
 
 	private @Nullable String declared(PlayerOptions options, AnvilScenario scenario) {
-		if (options.getProtocolLibrary() != null) return options.getProtocolLibrary();
-		if (scenario.getProtocolLibrary() != null) return scenario.getProtocolLibrary();
+		if (options.protocolLibrary() != null) return options.protocolLibrary();
+		if (scenario.protocolLibrary() != null) return scenario.protocolLibrary();
 
 		return engineLibrary;
 	}
@@ -204,10 +204,10 @@ final class ProtocolLibrarySelector {
 	 */
 	private static Map<String, MinecraftVersion> nativeVersions(AnvilScenario scenario) {
 		Map<String, MinecraftVersion> versions = new LinkedHashMap<>();
-		for (MinecraftServer server : scenario.getServers())
-			nativeVersion(server::nativeVersion).ifPresent(version -> versions.put("server '" + server.getName() + "'", version));
-		for (RemoteEndpoint remote : scenario.getRemotes())
-			nativeVersion(remote::nativeVersion).ifPresent(version -> versions.put("remote '" + remote.getName() + "'", version));
+		for (MinecraftServer server : scenario.servers())
+			nativeVersion(server::nativeVersion).ifPresent(version -> versions.put("server '" + server.name() + "'", version));
+		for (RemoteEndpoint remote : scenario.remotes())
+			nativeVersion(remote::nativeVersion).ifPresent(version -> versions.put("remote '" + remote.name() + "'", version));
 
 		return versions;
 	}
@@ -222,12 +222,12 @@ final class ProtocolLibrarySelector {
 
 	private void apply(SupportPolicy policy, Selection selection, MinecraftVersion version) {
 		String subject = "protocol library '" + selection.library() + "' release '"
-				+ selection.release().getLibraryVersion() + "' with Minecraft " + version;
+				+ selection.release().libraryVersion() + "' with Minecraft " + version;
 		if (!policy.permits(selection.level()))
 			throw new ScenarioValidationException("The " + policy + " support policy refuses " + subject
 					+ " because it is " + selection.level());
 
-		String key = selection.library() + '|' + selection.release().getLibraryVersion() + '|' + version;
+		String key = selection.library() + '|' + selection.release().libraryVersion() + '|' + version;
 		if (selection.level() == SupportLevel.COMPATIBLE && reported.add(key))
 			notices.accept("[Anvil] Info: " + subject + " is supported by Anvil's release data but not live-tested.");
 		if (selection.level() == SupportLevel.UNTESTED && reported.add(key))
@@ -237,7 +237,7 @@ final class ProtocolLibrarySelector {
 
 	private Optional<ProtocolRelease> release(String library, MinecraftVersion version) {
 		for (ProtocolRelease release : releases.apply(library))
-			if (release.getMinecraftVersions().contains(version)) return Optional.of(release);
+			if (release.minecraftVersions().contains(version)) return Optional.of(release);
 
 		return Optional.empty();
 	}
@@ -245,7 +245,7 @@ final class ProtocolLibrarySelector {
 	private List<String> versions(String library) {
 		List<String> versions = new ArrayList<>();
 		for (ProtocolRelease release : releases.apply(library))
-			release.getMinecraftVersions().forEach(version -> versions.add(version.toString()));
+			release.minecraftVersions().forEach(version -> versions.add(version.toString()));
 
 		return versions;
 	}

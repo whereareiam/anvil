@@ -49,13 +49,13 @@ public class DockerExecutionSettings {
 	 * @throws ProvisioningException when the requirement has no feature version
 	 */
 	public @NotNull String key(@NotNull JavaRequirement requirement) {
-		if (requirement.getFeatureVersion() == null)
+		if (requirement.featureVersion() == null)
 			throw new ProvisioningException("Java requirement " + requirement + " has no feature version; platform "
 					+ "planning selects an exact LTS release before execution");
 
-		String distribution = requirement.getDistribution() == null
+		String distribution = requirement.distribution() == null
 				? "temurin"
-				: requirement.getDistribution();
-		return distribution + ":" + requirement.getFeatureVersion();
+				: requirement.distribution();
+		return distribution + ":" + requirement.featureVersion();
 	}
 }

@@ -42,11 +42,11 @@ public final class BlockFacts {
 	public static @NotNull BlockFacts read(@NotNull Path file) throws IOException {
 		Document document = new TomlMapper().readValue(file.toFile(), Document.class);
 		Map<String, BlockFactMerge> merges = new HashMap<>();
-		for (int index = 0; index < document.getBlock().size(); index++) {
-			BlockFactEntry entry = document.getBlock().get(index);
+		for (int index = 0; index < document.block().size(); index++) {
+			BlockFactEntry entry = document.block().get(index);
 			String position = file.getFileName() + " block #" + (index + 1);
 			check(entry, position);
-			for (String name : entry.getNames())
+			for (String name : entry.names())
 				merges.computeIfAbsent(name, BlockFactMerge::new).add(entry);
 		}
 
@@ -75,14 +75,14 @@ public final class BlockFacts {
 	}
 
 	private static void check(BlockFactEntry entry, String position) {
-		if (entry.getSource().isBlank())
+		if (entry.source().isBlank())
 			throw new IllegalStateException(position + " must name the vanilla source of its values");
-		if (entry.getNames().isEmpty()) throw new IllegalStateException(position + " must name at least one block");
+		if (entry.names().isEmpty()) throw new IllegalStateException(position + " must name at least one block");
 
-		entry.getNames().stream().filter(name -> !NAME.matcher(name).matches()).findFirst().ifPresent(name -> {
+		entry.names().stream().filter(name -> !NAME.matcher(name).matches()).findFirst().ifPresent(name -> {
 			throw new IllegalStateException(position + " names '" + name + "', which is not a minecraft: block name");
 		});
-		entry.getPropertyStarts().forEach((property, start) -> {
+		entry.propertyStarts().forEach((property, start) -> {
 			if (start < 1) throw new IllegalStateException(position + " starts " + property + " at " + start
 					+ "; property-start names only properties that start above 0");
 		});

@@ -83,7 +83,7 @@ public final class WorkspaceSession implements PreparedWorkspace {
 		WorkspaceSession session = new WorkspaceSession(
 				directory,
 				plan,
-				snapshots.identity(process, plan.getAssets()),
+				snapshots.identity(process, plan.assets()),
 				snapshots.identity(process),
 				text,
 				files,
@@ -132,22 +132,22 @@ public final class WorkspaceSession implements PreparedWorkspace {
 	 */
 	private List<WorkspaceAsset> current(WorkspaceRefresh refresh) {
 		Map<Path, AssetSource> sources = new LinkedHashMap<>();
-		for (AssetRefresh asset : refresh.getAssets()) {
-			Path target = files.resolveRelative(workspace, asset.getTarget(), "Asset target");
-			if (sources.put(target, asset.getSource()) != null)
-				throw new IllegalArgumentException("The refresh names the asset target " + asset.getTarget() + " twice");
+		for (AssetRefresh asset : refresh.assets()) {
+			Path target = files.resolveRelative(workspace, asset.target(), "Asset target");
+			if (sources.put(target, asset.source()) != null)
+				throw new IllegalArgumentException("The refresh names the asset target " + asset.target() + " twice");
 		}
 
 		List<WorkspaceAsset> assets = new ArrayList<>();
-		for (WorkspaceAsset planned : plan.getAssets()) {
-			AssetSource source = sources.remove(files.resolveRelative(workspace, planned.getTarget(), "Asset target"));
+		for (WorkspaceAsset planned : plan.assets()) {
+			AssetSource source = sources.remove(files.resolveRelative(workspace, planned.target(), "Asset target"));
 			assets.add(source == null ? planned : planned.toBuilder().source(source).build());
 		}
 		if (!sources.isEmpty())
 			throw new IllegalArgumentException("The workspace's plan has no asset at " + sources.keySet() + ": " + workspace);
 
 		return new WorkspacePlanValidator(files).validate(WorkspacePlan.builder().assets(assets).build(), List.of())
-				.getAssets();
+				.assets();
 	}
 
 	/**
@@ -164,10 +164,10 @@ public final class WorkspaceSession implements PreparedWorkspace {
 		List<Throwable> failures = new ArrayList<>();
 		if (ownsWorkspace) {
 			if (successful) attempt(this::saveCaches, failures);
-			for (WorkspaceCleanup cleanup : plan.getCleanups()) {
-				boolean applies = cleanup.getPhase() == CleanupPhase.AFTER_STOP
-						|| ((!successful || !failures.isEmpty()) && cleanup.getPhase() == CleanupPhase.ON_FAILURE);
-				if (applies) attempt(() -> files.delete(workspace, cleanup.getPath()), failures);
+			for (WorkspaceCleanup cleanup : plan.cleanups()) {
+				boolean applies = cleanup.phase() == CleanupPhase.AFTER_STOP
+						|| ((!successful || !failures.isEmpty()) && cleanup.phase() == CleanupPhase.ON_FAILURE);
+				if (applies) attempt(() -> files.delete(workspace, cleanup.path()), failures);
 			}
 		}
 		attempt(this::release, failures);
@@ -190,7 +190,7 @@ public final class WorkspaceSession implements PreparedWorkspace {
 	}
 
 	private void acquire(Path root) {
-		if (plan.getMode() == WorkspaceMode.FRESH) {
+		if (plan.mode() == WorkspaceMode.FRESH) {
 			ownsWorkspace = true;
 			files.recreate(root, workspace);
 			return;
@@ -210,50 +210,50 @@ public final class WorkspaceSession implements PreparedWorkspace {
 	}
 
 	private void saveCaches() {
-		for (WorkspaceCache cache : plan.getCaches())
-			if (cache.getPolicy() == CachePolicy.RESTORE_AND_SAVE || cache.getPolicy() == CachePolicy.SAVE_ONLY)
+		for (WorkspaceCache cache : plan.caches())
+			if (cache.policy() == CachePolicy.RESTORE_AND_SAVE || cache.policy() == CachePolicy.SAVE_ONLY)
 				snapshots.save(identity(cache), cache.effectiveKey(),
-						files.resolveRelative(workspace, cache.getPath(), "Cache path"));
+						files.resolveRelative(workspace, cache.path(), "Cache path"));
 	}
 
 	private String identity(WorkspaceCache cache) {
-		return switch (cache.getIdentity()) {
+		return switch (cache.identity()) {
 			case PROCESS_AND_ASSETS -> snapshotIdentity;
 			case PROCESS -> processIdentity;
 		};
 	}
 
 	private void install() {
-		for (WorkspaceCleanup cleanup : plan.getCleanups())
-			if (cleanup.getPhase() == CleanupPhase.BEFORE_START)
-				files.delete(workspace, cleanup.getPath());
+		for (WorkspaceCleanup cleanup : plan.cleanups())
+			if (cleanup.phase() == CleanupPhase.BEFORE_START)
+				files.delete(workspace, cleanup.path());
 
-		for (WorkspaceCache cache : plan.getCaches())
-			if (cache.getPolicy() == CachePolicy.RESTORE_AND_SAVE
-					|| cache.getPolicy() == CachePolicy.RESTORE_ONLY)
+		for (WorkspaceCache cache : plan.caches())
+			if (cache.policy() == CachePolicy.RESTORE_AND_SAVE
+					|| cache.policy() == CachePolicy.RESTORE_ONLY)
 				snapshots.restore(identity(cache), cache.effectiveKey(),
-						files.resolveRelative(workspace, cache.getPath(), "Cache path"));
+						files.resolveRelative(workspace, cache.path(), "Cache path"));
 
-		installAssets(plan.getAssets());
+		installAssets(plan.assets());
 	}
 
 	private void installAssets(List<WorkspaceAsset> assets) {
 		for (WorkspaceAsset asset : assets) {
-			Path target = files.resolveRelative(workspace, asset.getTarget(), "Asset target");
-			if (asset.getMode() == AssetInstallMode.SEED_ONCE && Files.exists(target))
+			Path target = files.resolveRelative(workspace, asset.target(), "Asset target");
+			if (asset.mode() == AssetInstallMode.SEED_ONCE && Files.exists(target))
 				continue;
-			AssetSource source = asset.getSource();
+			AssetSource source = asset.source();
 			if (source.isText()) {
-				files.write(text.apply(source.getText()), workspace, asset.getTarget());
+				files.write(text.apply(source.text()), workspace, asset.target());
 				continue;
 			}
 
-			Path sourcePath = source.getPath();
+			Path sourcePath = source.path();
 			if (sourcePath == null)
 				throw new ProvisioningException("Workspace asset source must be resolved to a local path: " + source);
-			if (asset.getMode() == AssetInstallMode.ALWAYS && Files.isDirectory(sourcePath))
+			if (asset.mode() == AssetInstallMode.ALWAYS && Files.isDirectory(sourcePath))
 				files.deleteAbsolute(target);
-			files.copy(sourcePath, workspace, asset.getTarget());
+			files.copy(sourcePath, workspace, asset.target());
 		}
 	}
 

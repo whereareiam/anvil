@@ -40,9 +40,9 @@ class ConnectionPacketsTest {
 		)));
 
 		assertEquals(DimensionType.known("minecraft:the_end").toBuilder().defaultClock("minecraft:the_end").build(),
-				respawnInto(0).getDimensionType());
+				respawnInto(0).dimensionType());
 		assertEquals(DimensionType.withEffects("example:void", "minecraft:the_nether", 0, 128),
-				respawnInto(1).getDimensionType());
+				respawnInto(1).dimensionType());
 	}
 
 	@Test
@@ -58,9 +58,9 @@ class ConnectionPacketsTest {
 						.build())
 		)));
 
-		assertEquals("minecraft:overworld", respawnInto(0).getDimensionType().getDefaultClock());
-		assertNull(respawnInto(1).getDimensionType().getDefaultClock());
-		assertEquals("example:slow", respawnInto(2).getDimensionType().getDefaultClock());
+		assertEquals("minecraft:overworld", respawnInto(0).dimensionType().defaultClock());
+		assertNull(respawnInto(1).dimensionType().defaultClock());
+		assertEquals("example:slow", respawnInto(2).dimensionType().defaultClock());
 	}
 
 	@Test
@@ -85,9 +85,9 @@ class ConnectionPacketsTest {
 						.build())
 		)));
 
-		assertTrue(respawnInto(0).getDimensionType().isFastLava());
-		assertTrue(respawnInto(1).getDimensionType().isFastLava());
-		assertFalse(respawnInto(2).getDimensionType().isFastLava());
+		assertTrue(respawnInto(0).dimensionType().fastLava());
+		assertTrue(respawnInto(1).dimensionType().fastLava());
+		assertFalse(respawnInto(2).dimensionType().fastLava());
 	}
 
 	private ClientboundRespawn respawnInto(int type) {

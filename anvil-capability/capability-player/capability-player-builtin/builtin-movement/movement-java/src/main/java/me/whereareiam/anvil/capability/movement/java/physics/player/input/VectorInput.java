@@ -31,24 +31,24 @@ public final class VectorInput implements KeyInput {
 	public void read(@NotNull MovementInput keys) {
 		if (sprintTriggerTime > 0) sprintTriggerTime--;
 
-		boolean wasSneaking = body.getKeys().isSneak();
+		boolean wasSneaking = body.keys().sneak();
 		boolean hadForwardImpulse = hasForwardImpulse();
-		body.setCrouching(KeyInput.crouches(body, pose, wasSneaking));
-		body.setKeys(keys);
-		float left = KeyInput.impulse(keys.isLeft(), keys.isRight());
-		float forward = KeyInput.impulse(keys.isForward(), keys.isBackward());
+		body.crouching(KeyInput.crouches(body, pose, wasSneaking));
+		body.keys(keys);
+		float left = KeyInput.impulse(keys.left(), keys.right());
+		float forward = KeyInput.impulse(keys.forward(), keys.backward());
 		float length = (float) Math.sqrt(left * left + forward * forward);
 		leftImpulse = length < 1.0E-4F ? 0.0F : left / length;
 		forwardImpulse = length < 1.0E-4F ? 0.0F : forward / length;
-		if (wasSneaking || keys.isBackward()) sprintTriggerTime = 0;
+		if (wasSneaking || keys.backward()) sprintTriggerTime = 0;
 
-		if (canStartSprinting()) startSprinting(hadForwardImpulse, keys.isSprint());
-		if (body.isSprinting() && shouldStopSprinting()) body.setSprinting(false);
+		if (canStartSprinting()) startSprinting(hadForwardImpulse, keys.sprint());
+		if (body.sprinting() && shouldStopSprinting()) body.sprinting(false);
 	}
 
 	private void startSprinting(boolean hadForwardImpulse, boolean sprintKey) {
 		if (!hadForwardImpulse) pressForward();
-		if (sprintKey) body.setSprinting(true);
+		if (sprintKey) body.sprinting(true);
 	}
 
 	/**
@@ -56,7 +56,7 @@ public final class VectorInput implements KeyInput {
 	 */
 	private void pressForward() {
 		if (sprintTriggerTime > 0) {
-			body.setSprinting(true);
+			body.sprinting(true);
 			return;
 		}
 
@@ -64,16 +64,16 @@ public final class VectorInput implements KeyInput {
 	}
 
 	private boolean canStartSprinting() {
-		return !body.isSprinting()
+		return !body.sprinting()
 				&& hasForwardImpulse()
-				&& KeyInput.sprintingPossible(body, fluids, body.getServer().isFlying())
-				&& (!KeyInput.movesSlowly(body, pose, fluids) || body.isUnderWater());
+				&& KeyInput.sprintingPossible(body, fluids, body.server().flying())
+				&& (!KeyInput.movesSlowly(body, pose, fluids) || body.underWater());
 	}
 
 	private boolean shouldStopSprinting() {
-		return !KeyInput.sprintingPossible(body, fluids, body.getServer().isFlying())
+		return !KeyInput.sprintingPossible(body, fluids, body.server().flying())
 				|| !hasForwardImpulse()
-				|| body.isHorizontalCollision() && !body.isMinorHorizontalCollision();
+				|| body.horizontalCollision() && !body.minorHorizontalCollision();
 	}
 
 	private boolean hasForwardImpulse() {
@@ -85,12 +85,12 @@ public final class VectorInput implements KeyInput {
 	 */
 	@Override
 	public void apply() {
-		body.setJumping(body.getKeys().isJump());
+		body.jumping(body.keys().jump());
 		float x = leftImpulse;
 		float y = forwardImpulse;
 		if (x * x + y * y == 0.0F) {
-			body.setXxa(x);
-			body.setZza(y);
+			body.xxa(x);
+			body.zza(y);
 			return;
 		}
 
@@ -111,8 +111,8 @@ public final class VectorInput implements KeyInput {
 	private void squareMovement(float x, float y) {
 		float length = (float) Math.sqrt(x * x + y * y);
 		if (length <= 0.0F) {
-			body.setXxa(x);
-			body.setZza(y);
+			body.xxa(x);
+			body.zza(y);
 			return;
 		}
 
@@ -122,7 +122,7 @@ public final class VectorInput implements KeyInput {
 		float absY = Math.abs(unitY);
 		float ratio = absY > absX ? absX / absY : absY / absX;
 		float scale = Math.min(length * (float) Math.sqrt(1.0F + ratio * ratio), 1.0F);
-		body.setXxa(unitX * scale);
-		body.setZza(unitY * scale);
+		body.xxa(unitX * scale);
+		body.zza(unitY * scale);
 	}
 }

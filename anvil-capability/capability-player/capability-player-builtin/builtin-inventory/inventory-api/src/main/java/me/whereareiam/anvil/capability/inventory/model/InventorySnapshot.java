@@ -14,7 +14,7 @@ import java.util.List;
  * uses as a menu, or the player's own inventory when no other container is open.
  *
  * <p>Each container the server opens, and each return to the player's own inventory, is a new screen, which
- * {@link #getScreen()} numbers in the order the player saw them; every later state of one screen keeps its number. A
+ * {@link #screen()} numbers in the order the player saw them; every later state of one screen keeps its number. A
  * screen is published once the server filled it, so its contents are never missing.</p>
  */
 @Value

@@ -38,10 +38,10 @@ class ScenarioRepositoryTest {
 		);
 
 		ScenarioDescriptor descriptor = repository.scenarios().getFirst();
-		assertEquals(RegistrationScenario.class.getName(), descriptor.getDefinition());
-		assertEquals("registration", descriptor.getName());
-		assertEquals("Player registration", descriptor.getDisplayName());
-		assertEquals(List.of("auth"), descriptor.getTags());
+		assertEquals(RegistrationScenario.class.getName(), descriptor.definition());
+		assertEquals("registration", descriptor.name());
+		assertEquals("Player registration", descriptor.displayName());
+		assertEquals(List.of("auth"), descriptor.tags());
 	}
 
 	@Test

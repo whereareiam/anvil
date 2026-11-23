@@ -45,7 +45,7 @@ public final class ChannelPacketTaps {
 		this.player = player;
 		this.minecraft = minecraft;
 		channel.subscribe(PacketsChannel.FRAMES, frame -> {
-			for (int tap : frame.getTaps()) {
+			for (int tap : frame.taps()) {
 				Consumer<TappedFrame> receiver = receivers.get(tap);
 				if (receiver != null) receiver.accept(frame);
 			}
@@ -61,7 +61,7 @@ public final class ChannelPacketTaps {
 	public @NotNull PacketTap tap(@NotNull PacketSelection selection) {
 		int id = ids.incrementAndGet();
 		ChannelPacketTap tap = new ChannelPacketTap(id, selection, channel, this::closed);
-		open(id, tap::receive, new TapRequest(id, selection.isEvery(), kinds(selection), selection.getNames(), false));
+		open(id, tap::receive, new TapRequest(id, selection.everyPacket(), kinds(selection), selection.names(), false));
 
 		return tap;
 	}
@@ -102,7 +102,7 @@ public final class ChannelPacketTaps {
 	}
 
 	private static Set<String> kinds(PacketSelection selection) {
-		return selection.getTypes().stream().map(ClientboundPackets::kind).collect(Collectors.toUnmodifiableSet());
+		return selection.types().stream().map(ClientboundPackets::kind).collect(Collectors.toUnmodifiableSet());
 	}
 
 	/**

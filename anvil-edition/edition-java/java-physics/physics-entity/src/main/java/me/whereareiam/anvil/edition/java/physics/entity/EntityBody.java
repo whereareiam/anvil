@@ -81,7 +81,7 @@ public class EntityBody {
 		this.rules = rules;
 		this.level = level;
 		this.dimensions = dimensions;
-		this.box = Box.at(position, dimensions.getWidth(), dimensions.getHeight());
+		this.box = Box.at(position, dimensions.width(), dimensions.height());
 	}
 
 	/**
@@ -89,9 +89,9 @@ public class EntityBody {
 	 *
 	 * @param position the new position
 	 */
-	public void setPosition(@NotNull Vector position) {
+	public void position(@NotNull Vector position) {
 		this.position = position;
-		this.box = Box.at(position, dimensions.getWidth(), dimensions.getHeight());
+		this.box = Box.at(position, dimensions.width(), dimensions.height());
 	}
 
 	/**
@@ -109,9 +109,9 @@ public class EntityBody {
 	 *
 	 * @param dimensions the new dimensions
 	 */
-	public void setDimensions(@NotNull EntityDimensions dimensions) {
+	public void dimensions(@NotNull EntityDimensions dimensions) {
 		this.dimensions = dimensions;
-		box = Box.at(position, dimensions.getWidth(), dimensions.getHeight());
+		box = Box.at(position, dimensions.width(), dimensions.height());
 	}
 
 	/**
@@ -130,7 +130,7 @@ public class EntityBody {
 	 * @return the entity's collision context
 	 */
 	public @NotNull EntityContext context() {
-		return new EntityContext(position.y, isShiftKeyDown(), fallDistance);
+		return new EntityContext(position.y, shiftKeyDown(), fallDistance);
 	}
 
 	/**
@@ -175,7 +175,7 @@ public class EntityBody {
 	 *
 	 * @return whether it sneaks
 	 */
-	public boolean isShiftKeyDown() {
+	public boolean shiftKeyDown() {
 		return shiftKeyDown;
 	}
 
@@ -184,7 +184,7 @@ public class EntityBody {
 	 *
 	 * @return {@code false} by default
 	 */
-	public boolean isSpectator() {
+	public boolean spectator() {
 		return false;
 	}
 
@@ -193,7 +193,7 @@ public class EntityBody {
 	 *
 	 * @return {@code true} by default
 	 */
-	public boolean isPushedByFluid() {
+	public boolean pushedByFluid() {
 		return true;
 	}
 
@@ -203,7 +203,7 @@ public class EntityBody {
 	 *
 	 * @return {@code false} by default
 	 */
-	public boolean isSuppressingBounce() {
+	public boolean suppressingBounce() {
 		return false;
 	}
 

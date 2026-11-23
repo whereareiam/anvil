@@ -55,10 +55,10 @@ public final class LocalExecutionProvider implements ExecutionProvider {
 
 	@Override
 	public @NotNull ExecutionSession open(@NotNull ExecutionContext context, @NotNull ExecutionServices services) {
-		if (context.getProcessPriority() == ProcessPriority.LOW && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win"))
+		if (context.processPriority() == ProcessPriority.LOW && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win"))
 			throw new ProvisioningException("Local execution lowers process priority through nice, which Windows does not have");
 
-		LocalRuntimePreparation selected = runtime == null ? services.getLocalRuntime() : runtime;
+		LocalRuntimePreparation selected = runtime == null ? services.localRuntime() : runtime;
 		return new LocalExecutionSession(context, services, settings, selected);
 	}
 }

@@ -58,8 +58,8 @@ class SpigotDistributionResolverTest {
 			}
 		};
 		var result = new SpigotDistributionResolver().resolve(server, context(server, artifacts));
-		assertTrue(Files.isRegularFile(result.getJar()));
-		assertTrue(result.getDescription().startsWith("GetBukkit Spigot " + version));
+		assertTrue(Files.isRegularFile(result.jar()));
+		assertTrue(result.description().startsWith("GetBukkit Spigot " + version));
 	}
 
 	@Test

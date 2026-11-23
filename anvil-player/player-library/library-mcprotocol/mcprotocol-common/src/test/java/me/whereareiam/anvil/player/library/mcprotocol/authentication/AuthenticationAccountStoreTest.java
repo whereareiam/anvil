@@ -43,9 +43,9 @@ class AuthenticationAccountStoreTest {
 		var uuid = UUID.randomUUID();
 		store.write("developer", "mcprotocol", "Developer", uuid, "{\"refresh\":\"secret\"}");
 		var account = store.accounts("mcprotocol").getFirst();
-		assertEquals("developer", account.getAccountId());
-		assertEquals("Developer", account.getUsername());
-		assertEquals(uuid, account.getUniqueId());
+		assertEquals("developer", account.accountId());
+		assertEquals("Developer", account.username());
+		assertEquals(uuid, account.uniqueId());
 	}
 
 	@Test

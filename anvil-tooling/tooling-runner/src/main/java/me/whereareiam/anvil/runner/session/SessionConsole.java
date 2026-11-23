@@ -86,11 +86,11 @@ public final class SessionConsole {
 		pendingLogs.clear();
 		Stream.concat(retiredConsoles.stream(), consoles.values().stream()).forEach(cursor -> {
 			ConsoleOutput output = cursor.output.read(2000);
-			if (output.isTruncated())
+			if (output.truncated())
 				events.add(cursor.event(cursor.sequence, "[Anvil] Earlier console output was evicted from bounded history."));
-			output.getLines().forEach(line -> events.add(cursor.event(line.getSequence(), line.getText())));
-			if (!output.getLines().isEmpty()) cursor.sequence = output.getLines().getLast().getSequence();
-			cursor.drained = output.isClosed() && output.getLines().size() < 2000;
+			output.lines().forEach(line -> events.add(cursor.event(line.sequence(), line.text())));
+			if (!output.lines().isEmpty()) cursor.sequence = output.lines().getLast().sequence();
+			cursor.drained = output.closed() && output.lines().size() < 2000;
 		});
 		retiredConsoles.removeIf(cursor -> cursor.drained);
 		return List.copyOf(events);
@@ -100,8 +100,8 @@ public final class SessionConsole {
 		if (pendingLogs.size() <= PENDING_LOG_LIMIT) return;
 		LogEvent lastEvicted = pendingLogs.get(pendingLogs.size() - PENDING_LOG_LIMIT);
 		pendingLogs.subList(0, pendingLogs.size() - PENDING_LOG_LIMIT + 1).clear();
-		pendingLogs.addFirst(LogEvent.builder().sessionId(lastEvicted.getSessionId()).process(lastEvicted.getProcess())
-				.executionId(lastEvicted.getExecutionId()).sequence(lastEvicted.getSequence())
+		pendingLogs.addFirst(LogEvent.builder().sessionId(lastEvicted.sessionId()).process(lastEvicted.process())
+				.executionId(lastEvicted.executionId()).sequence(lastEvicted.sequence())
 				.text("[Anvil] Earlier undelivered session output was evicted from bounded history.").build());
 	}
 

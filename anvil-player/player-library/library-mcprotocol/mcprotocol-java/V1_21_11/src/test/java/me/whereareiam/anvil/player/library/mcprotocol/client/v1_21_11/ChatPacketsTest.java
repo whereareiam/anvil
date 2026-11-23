@@ -88,7 +88,7 @@ class ChatPacketsTest {
 								.click(new RunCommandClick("/arbor help"))
 								.build())
 						.build())
-				.build(), decoded.getText());
+				.build(), decoded.text());
 	}
 
 	@Test
@@ -103,13 +103,13 @@ class ChatPacketsTest {
 
 		var decoded = (ClientboundSystemChat) packets.decode(new ClientboundSystemChatPacket(message, false));
 
-		List<Text> parts = decoded.getText().getChildren();
-		assertEquals(new ChangePageClick(3), decoded.getText().getStyle().getClick());
-		assertEquals(new CustomClick("arbor:vote"), parts.get(0).getStyle().getClick());
-		assertEquals(new CopyToClipboardClick("copied"), parts.get(1).getStyle().getClick());
-		assertEquals(new me.whereareiam.anvil.player.api.model.text.ShadowColor(0x80123456), parts.get(1).getStyle().getShadowColor());
-		assertEquals(new SpriteContent("minecraft:blocks", "minecraft:block/stone"), parts.get(2).getContent());
-		assertEquals(new PlayerHeadContent(null, owner, null, true), parts.get(3).getContent());
+		List<Text> parts = decoded.text().children();
+		assertEquals(new ChangePageClick(3), decoded.text().style().click());
+		assertEquals(new CustomClick("arbor:vote"), parts.get(0).style().click());
+		assertEquals(new CopyToClipboardClick("copied"), parts.get(1).style().click());
+		assertEquals(new me.whereareiam.anvil.player.api.model.text.ShadowColor(0x80123456), parts.get(1).style().shadowColor());
+		assertEquals(new SpriteContent("minecraft:blocks", "minecraft:block/stone"), parts.get(2).content());
+		assertEquals(new PlayerHeadContent(null, owner, null, true), parts.get(3).content());
 	}
 
 	@Test

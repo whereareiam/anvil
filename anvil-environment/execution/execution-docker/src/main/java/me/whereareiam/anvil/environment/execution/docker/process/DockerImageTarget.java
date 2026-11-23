@@ -43,17 +43,17 @@ public final class DockerImageTarget implements ProcessTarget {
 	@Override
 	public synchronized @NotNull ProcessExecution start(@NotNull ProcessLaunch launch) {
 		if (!(launch instanceof ImageLaunch image))
-			throw new IllegalArgumentException("Container '" + request.getName() + "' starts its image, not a Java application");
+			throw new IllegalArgumentException("Container '" + request.name() + "' starts its image, not a Java application");
 
 		close();
 		Container created = docker.createImage(ImageContainerConfiguration.builder()
 				.name("anvil-container-" + UUID.randomUUID())
 				.network(network)
 				.alias(alias)
-				.image(Objects.requireNonNull(request.getImage()).getImage())
+				.image(Objects.requireNonNull(request.image()).image())
 				.ports(published)
-				.environment(image.getEnvironment())
-				.command(image.getCommand())
+				.environment(image.environment())
+				.command(image.command())
 				.cpuShares(cpuShares)
 				.build());
 
@@ -78,17 +78,17 @@ public final class DockerImageTarget implements ProcessTarget {
 
 	@Override
 	public @NotNull InetSocketAddress agentAddress() {
-		throw new UnsupportedOperationException("Container '" + request.getName() + "' runs no Anvil agent");
+		throw new UnsupportedOperationException("Container '" + request.name() + "' runs no Anvil agent");
 	}
 
 	@Override
 	public int agentPort() {
-		throw new UnsupportedOperationException("Container '" + request.getName() + "' runs no Anvil agent");
+		throw new UnsupportedOperationException("Container '" + request.name() + "' runs no Anvil agent");
 	}
 
 	@Override
 	public @NotNull String agentBindAddress() {
-		throw new UnsupportedOperationException("Container '" + request.getName() + "' runs no Anvil agent");
+		throw new UnsupportedOperationException("Container '" + request.name() + "' runs no Anvil agent");
 	}
 
 	@Override

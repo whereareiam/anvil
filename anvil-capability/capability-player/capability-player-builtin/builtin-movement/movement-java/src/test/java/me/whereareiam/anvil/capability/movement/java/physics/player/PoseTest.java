@@ -22,11 +22,11 @@ class PoseTest {
 				.send().simulation(8.5, 65.0, 8.5);
 
 		player.tick(MovementInput.builder().sneak(true).build());
-		assertEquals(1.5F, player.body().getDimensions().getHeight());
-		assertEquals(1.27F, player.body().getDimensions().getEyeHeight());
+		assertEquals(1.5F, player.body().dimensions().height());
+		assertEquals(1.27F, player.body().dimensions().eyeHeight());
 
 		player.tick(MovementInput.NONE);
-		assertEquals(1.8F, player.body().getDimensions().getHeight());
+		assertEquals(1.8F, player.body().dimensions().height());
 	}
 
 	@Test
@@ -36,8 +36,8 @@ class PoseTest {
 
 		player.tick(MovementInput.NONE);
 
-		assertEquals(0.6F, player.body().getDimensions().getHeight());
-		assertEquals(0.4F, player.body().getDimensions().getEyeHeight());
+		assertEquals(0.6F, player.body().dimensions().height());
+		assertEquals(0.4F, player.body().dimensions().eyeHeight());
 	}
 
 	@Test
@@ -50,8 +50,8 @@ class PoseTest {
 
 		player.tick(MovementInput.NONE);
 
-		assertEquals(1.2F, player.body().getDimensions().getWidth());
-		assertEquals(3.6F, player.body().getDimensions().getHeight());
-		assertEquals(3.6F, (float) (player.body().getBox().maxY - player.body().getBox().minY));
+		assertEquals(1.2F, player.body().dimensions().width());
+		assertEquals(3.6F, player.body().dimensions().height());
+		assertEquals(3.6F, (float) (player.body().box().maxY - player.body().box().minY));
 	}
 }

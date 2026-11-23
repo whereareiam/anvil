@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <pre>{@code
  * JavaBlockData data = JavaBlockData.shipped();
  * BlockRegistry registry = data.require(766);
- * float friction = registry.state(stateId).getBlock().getMovement().getFriction();
+ * float friction = registry.state(stateId).block().movement().friction();
  * }</pre>
  */
 public final class JavaBlockData {

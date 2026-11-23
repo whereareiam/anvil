@@ -49,8 +49,8 @@ public final class RunConfigurationService {
 			@Nullable ProcessDefinition process
 	) {
 		RunManager manager = RunManager.getInstance(project);
-		String processId = process == null ? "" : process.getName();
-		var settings = find(manager, source, scenario.getDefinition(), processId);
+		String processId = process == null ? "" : process.name();
+		var settings = find(manager, source, scenario.definition(), processId);
 		if (settings == null) {
 			var type = AnvilConfigurationType.getInstance();
 			settings = manager.createConfiguration(manager.suggestUniqueName(displayName(scenario, process), type), type.factory());
@@ -58,7 +58,7 @@ public final class RunConfigurationService {
 
 		var configuration = (AnvilRunConfiguration) settings.getConfiguration();
 		configuration.setSourceId(source.getId());
-		configuration.setDefinition(scenario.getDefinition());
+		configuration.setDefinition(scenario.definition());
 		configuration.setProcessId(processId);
 		manager.addConfiguration(settings);
 		manager.setSelectedConfiguration(settings);
@@ -147,11 +147,11 @@ public final class RunConfigurationService {
 	}
 
 	private static @NotNull String displayName(@NotNull ScenarioDescriptor scenario, @Nullable ProcessDefinition process) {
-		if (process == null) return scenario.getDisplayName();
-		if (!process.getDisplayName().equals(scenario.getDisplayName()))
-			return scenario.getDisplayName() + " · " + process.getDisplayName();
+		if (process == null) return scenario.displayName();
+		if (!process.displayName().equals(scenario.displayName()))
+			return scenario.displayName() + " · " + process.displayName();
 
-		return scenario.getDisplayName() + " · " + (process.getRole() == ProcessRole.PROXY ? "Proxy" : "Server");
+		return scenario.displayName() + " · " + (process.role() == ProcessRole.PROXY ? "Proxy" : "Server");
 	}
 
 	private static @NotNull String hint(@NotNull SourceListing listing, @Nullable ScenarioSource selected, @NotNull String savedId) {

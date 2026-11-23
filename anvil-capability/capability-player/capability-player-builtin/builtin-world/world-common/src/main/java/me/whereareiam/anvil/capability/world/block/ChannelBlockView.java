@@ -36,14 +36,14 @@ public final class ChannelBlockView implements BlockView {
 	public ChannelBlockView(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
 		channel.subscribe(WorldChannel.CHANGES, changes -> {
-			ChannelBlockWatch watch = watches.get(changes.getWatch());
+			ChannelBlockWatch watch = watches.get(changes.watch());
 			if (watch != null) watch.receive(changes);
 		});
 	}
 
 	@Override
 	public @NotNull Optional<Block> block(@NotNull BlockPosition position) {
-		return Optional.ofNullable(channel.request(WorldChannel.BLOCK, position).getReading()).map(ChannelBlockView::block);
+		return Optional.ofNullable(channel.request(WorldChannel.BLOCK, position).reading()).map(ChannelBlockView::block);
 	}
 
 	@Override
@@ -67,7 +67,7 @@ public final class ChannelBlockView implements BlockView {
 
 	@Override
 	public @NotNull Set<ChunkPosition> loadedChunks() {
-		return Set.copyOf(channel.request(WorldChannel.CHUNKS, null).getChunks());
+		return Set.copyOf(channel.request(WorldChannel.CHUNKS, null).chunks());
 	}
 
 	@Override
@@ -82,7 +82,7 @@ public final class ChannelBlockView implements BlockView {
 	 * @return the block
 	 */
 	static @NotNull Block block(@NotNull BlockReading reading) {
-		return new Block(reading.getPosition(), reading.getState(), reading.getIdentity(), reading.getProtocol());
+		return new Block(reading.position(), reading.state(), reading.identity(), reading.protocol());
 	}
 
 	/**

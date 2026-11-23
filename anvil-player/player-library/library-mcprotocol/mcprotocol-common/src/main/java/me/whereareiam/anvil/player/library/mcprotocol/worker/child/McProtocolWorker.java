@@ -47,13 +47,13 @@ final class McProtocolWorker implements AutoCloseable {
 
 	private void handle(WorkerRequest request) {
 		try {
-			var control = WorkerControlOperation.find(request.getOperation());
+			var control = WorkerControlOperation.find(request.operation());
 			JsonNode result = control.isPresent()
 					? execute(control.get(), request)
-					: require(request.getPlayer()).execute(request.getOperation(), request.getArguments());
-			responses.success(request.getId(), result);
+					: require(request.player()).execute(request.operation(), request.arguments());
+			responses.success(request.id(), result);
 		} catch (Exception | LinkageError | AssertionError failure) {
-			responses.failure(request.getId(), failure);
+			responses.failure(request.id(), failure);
 		}
 	}
 
@@ -61,7 +61,7 @@ final class McProtocolWorker implements AutoCloseable {
 		if (operation == WorkerControlOperation.CREATE_PLAYER) return codec.payload(create(request));
 
 		switch (operation) {
-			case DESTROY_PLAYER -> destroy(request.getPlayer());
+			case DESTROY_PLAYER -> destroy(request.player());
 			case SHUTDOWN -> running = false;
 			default -> throw new IllegalStateException("Unhandled control operation: " + operation);
 		}
@@ -69,11 +69,11 @@ final class McProtocolWorker implements AutoCloseable {
 	}
 
 	private WorkerPlayerCapabilities create(WorkerRequest request) {
-		String id = requirePlayerId(request.getPlayer());
+		String id = requirePlayerId(request.player());
 		if (players.containsKey(id)) throw new IllegalArgumentException("Player already exists: " + id);
 
-		WorkerPlayerOptions options = codec.decodePayload(request.getArguments(), WorkerPlayerOptions.class);
-		int port = options.getConnection().getPort();
+		WorkerPlayerOptions options = codec.decodePayload(request.arguments(), WorkerPlayerOptions.class);
+		int port = options.connection().port();
 		if (port < 1 || port > 65535) throw new IllegalArgumentException("Invalid worker player options");
 		McProtocolPlayer player = new McProtocolPlayer(
 				id,

@@ -48,19 +48,19 @@ public final class ForwardingNegotiator {
 		ForwardingMode mode = compatible.getFirst();
 		if (mode != ForwardingMode.NONE)
 			for (String name : component.processes())
-				if (topology.process(name) instanceof MinecraftServer server && server.isOnlineMode())
+				if (topology.process(name) instanceof MinecraftServer server && server.onlineMode())
 					throw new ScenarioValidationException("Forwarded server '" + name + "' must use offline game authentication");
 
 		if (mode == ForwardingMode.MODERN)
 			for (String name : component.processes())
-				if (topology.process(name) instanceof MinecraftProxy proxy && proxy.isOnlineMode() != entry.isOnlineMode())
+				if (topology.process(name) instanceof MinecraftProxy proxy && proxy.onlineMode() != entry.onlineMode())
 					throw new ScenarioValidationException(
 							"Modern forwarding requires matching proxy authentication modes: " + component.processes());
 
-		return new ForwardingPlan.Group(component.processes(), mode, entry.isOnlineMode());
+		return new ForwardingPlan.Group(component.processes(), mode, entry.onlineMode());
 	}
 
 	private PlatformProvider provider(@NotNull MinecraftProcess process, @NotNull Map<String, PlatformProvider> providers) {
-		return providers.get(process.getPlatform());
+		return providers.get(process.platform());
 	}
 }

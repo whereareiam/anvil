@@ -43,22 +43,22 @@ public final class LocalProcessTarget implements ProcessTarget {
 		List<String> arguments = new ArrayList<>(wrapper);
 		arguments.add(executable.toString());
 		arguments.add("-Xms256m");
-		arguments.add("-Xmx" + command.getMemoryMegabytes() + "m");
-		arguments.addAll(command.getJvmArguments());
+		arguments.add("-Xmx" + command.memoryMegabytes() + "m");
+		arguments.addAll(command.jvmArguments());
 		arguments.add("-jar");
-		arguments.add(command.getJar().toAbsolutePath().toString());
-		arguments.addAll(command.getArguments());
+		arguments.add(command.jar().toAbsolutePath().toString());
+		arguments.addAll(command.arguments());
 
 		try {
-			Files.createDirectories(request.getWorkspace());
+			Files.createDirectories(request.workspace());
 			ProcessBuilder builder = new ProcessBuilder(arguments)
-					.directory(request.getWorkspace().toFile())
+					.directory(request.workspace().toFile())
 					.redirectErrorStream(true);
-			builder.environment().putAll(command.getEnvironment());
+			builder.environment().putAll(command.environment());
 
 			return new LocalProcess(builder.start());
 		} catch (IOException failure) {
-			throw new ProcessException(request.getName(), "Could not launch local Java process", failure);
+			throw new ProcessException(request.name(), "Could not launch local Java process", failure);
 		}
 	}
 

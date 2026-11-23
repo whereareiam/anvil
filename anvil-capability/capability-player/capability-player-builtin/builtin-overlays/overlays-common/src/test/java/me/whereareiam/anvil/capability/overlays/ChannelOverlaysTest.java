@@ -67,7 +67,7 @@ class ChannelOverlaysTest {
 		channel.publish(OverlaysChannel.TITLE, title("Announcement", "by Alice"));
 		assertEquals(title("Announcement", "by Alice"), titles.shown("Alice", TIMEOUT));
 		assertEquals(List.of(), titles.unread());
-		assertThrows(IllegalStateException.class, () -> titles.shown(title -> title.getTitle().equals("Announcement"), TIMEOUT));
+		assertThrows(IllegalStateException.class, () -> titles.shown(title -> title.title().equals("Announcement"), TIMEOUT));
 	}
 
 	@Test
@@ -87,7 +87,7 @@ class ChannelOverlaysTest {
 		ActionBarWatch actionBars = overlays.watchActionBars();
 		Expectation follower = actionBars.expectShown(text -> text.contains("follower"));
 		assertFalse(follower.met());
-		assertEquals("see a matching action bar", follower.getDescription());
+		assertEquals("see a matching action bar", follower.description());
 
 		channel.publish(OverlaysChannel.ACTION_BAR, "+1 follower");
 		channel.publish(OverlaysChannel.ACTION_BAR, "-1 follower");
@@ -105,10 +105,10 @@ class ChannelOverlaysTest {
 		channel.publish(OverlaysChannel.BOSS_BAR, added(bar(EVENT, "Event", 0F)));
 		channel.publish(OverlaysChannel.BOSS_BAR, new BossBarEvent(BossBarChange.UPDATED, bar(EVENT, "Event", 0.25F)));
 		channel.publish(OverlaysChannel.BOSS_BAR, new BossBarEvent(BossBarChange.UPDATED, bar(EVENT, "Event", 0.75F)));
-		Expectation removed = bars.expectRemoved(bar -> bar.getId().equals(EVENT));
+		Expectation removed = bars.expectRemoved(bar -> bar.id().equals(EVENT));
 		assertFalse(removed.met());
 
-		assertEquals(bar(EVENT, "Event", 0.75F), bars.shown(bar -> bar.getProgress() >= 0.5F, TIMEOUT));
+		assertEquals(bar(EVENT, "Event", 0.75F), bars.shown(bar -> bar.progress() >= 0.5F, TIMEOUT));
 		assertEquals("Player did not see a matching boss bar change", assertThrows(IllegalStateException.class,
 				() -> bars.removed("Event", TIMEOUT)).getMessage());
 

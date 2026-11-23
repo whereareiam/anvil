@@ -81,17 +81,17 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 	@Override
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		return switch (packet) {
-			case ServerboundMovePlayerPosRot move -> new ServerboundMovePlayerPosRotPacket(move.isOnGround(),
-					move.getPosition().getX(), move.getPosition().getY(), move.getPosition().getZ(), move.getYaw(),
-					move.getPitch());
-			case ServerboundMovePlayerPos move -> new ServerboundMovePlayerPosPacket(move.isOnGround(),
-					move.getPosition().getX(), move.getPosition().getY(), move.getPosition().getZ());
+			case ServerboundMovePlayerPosRot move -> new ServerboundMovePlayerPosRotPacket(move.onGround(),
+					move.position().x(), move.position().y(), move.position().z(), move.yaw(),
+					move.pitch());
+			case ServerboundMovePlayerPos move -> new ServerboundMovePlayerPosPacket(move.onGround(),
+					move.position().x(), move.position().y(), move.position().z());
 			case ServerboundMovePlayerRot turn ->
-					new ServerboundMovePlayerRotPacket(turn.isOnGround(), turn.getYaw(), turn.getPitch());
-			case ServerboundMovePlayerStatusOnly status -> new ServerboundMovePlayerStatusOnlyPacket(status.isOnGround());
+					new ServerboundMovePlayerRotPacket(turn.onGround(), turn.yaw(), turn.pitch());
+			case ServerboundMovePlayerStatusOnly status -> new ServerboundMovePlayerStatusOnlyPacket(status.onGround());
 			case ServerboundPlayerCommand command ->
-					new ServerboundPlayerCommandPacket(command.getEntityId().getValue(), state(command.getAction()));
-			case ServerboundPlayerAbilities abilities -> new ServerboundPlayerAbilitiesPacket(abilities.isFlying());
+					new ServerboundPlayerCommandPacket(command.entityId().value(), state(command.action()));
+			case ServerboundPlayerAbilities abilities -> new ServerboundPlayerAbilitiesPacket(abilities.flying());
 			default -> null;
 		};
 	}

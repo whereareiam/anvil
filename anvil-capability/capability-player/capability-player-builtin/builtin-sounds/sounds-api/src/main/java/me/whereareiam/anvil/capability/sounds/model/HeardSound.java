@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * A sound the server told the player to play. It plays either at a position or following an entity, so exactly one
- * of {@link #getPosition()} and {@link #getEntityId()} is set.
+ * of {@link #position()} and {@link #entityId()} is set.
  */
 @Value
 @Builder

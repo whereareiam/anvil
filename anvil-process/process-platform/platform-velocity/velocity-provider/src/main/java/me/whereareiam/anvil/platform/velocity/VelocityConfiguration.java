@@ -27,38 +27,38 @@ final class VelocityConfiguration {
 	private final TomlMapper toml = new TomlMapper();
 
 	void write(MinecraftProxy proxy, PlatformContext context) throws IOException {
-		var forwarding = context.getForwarding();
-		if (forwarding.getMode() == ForwardingMode.NONE || forwarding.getSecret() == null)
+		var forwarding = context.forwarding();
+		if (forwarding.mode() == ForwardingMode.NONE || forwarding.secret() == null)
 			throw new PlatformException("Velocity requires negotiated forwarding settings and a secret");
 
-		ProcessFiles files = context.getFiles();
+		ProcessFiles files = context.files();
 		ObjectNode config = read(files);
-		for (var setting : proxy.getSettings().entrySet()) {
+		for (var setting : proxy.settings().entrySet()) {
 			applySetting(config, setting.getKey(), setting.getValue());
 		}
 
 		// Velocity migrates the file to its own version on start; a restart keeps that version, or Velocity reruns
 		// migrations its file already has, which Velocity 4 cannot do.
 		if (!config.has(VERSION)) config.put(VERSION, INITIAL_VERSION);
-		config.put("bind", context.getBindAddress() + ":" + context.getPort());
-		config.put("motd", "Anvil: " + proxy.getName());
+		config.put("bind", context.bindAddress() + ":" + context.port());
+		config.put("motd", "Anvil: " + proxy.name());
 		config.put("show-max-players", 20);
-		config.put("online-mode", proxy.isOnlineMode());
-		config.put("force-key-authentication", proxy.isOnlineMode());
-		config.put("player-info-forwarding-mode", forwarding.getMode().name().toLowerCase(Locale.ROOT));
+		config.put("online-mode", proxy.onlineMode());
+		config.put("force-key-authentication", proxy.onlineMode());
+		config.put("player-info-forwarding-mode", forwarding.mode().name().toLowerCase(Locale.ROOT));
 		config.put("forwarding-secret-file", "forwarding.secret");
 		config.put("announce-forge", false);
 
 		ObjectNode servers = config.putObject("servers");
-		for (String server : proxy.getServers()) {
-			servers.put(server, context.getProcessAddresses().get(server).getHostString() + ":"
-					+ context.getProcessAddresses().get(server).getPort());
+		for (String server : proxy.servers()) {
+			servers.put(server, context.processAddresses().get(server).getHostString() + ":"
+					+ context.processAddresses().get(server).getPort());
 		}
 
-		servers.putArray("try").add(proxy.getDefaultServer());
+		servers.putArray("try").add(proxy.defaultServer());
 		config.withObject("/forced-hosts");
 		files.write(CONFIGURATION, toml.writeValueAsString(config));
-		files.write("forwarding.secret", forwarding.getSecret());
+		files.write("forwarding.secret", forwarding.secret());
 	}
 
 	private JsonNode literal(String key, String value) {

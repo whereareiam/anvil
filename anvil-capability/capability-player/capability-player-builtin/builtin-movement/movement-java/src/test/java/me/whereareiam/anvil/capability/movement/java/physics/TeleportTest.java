@@ -52,8 +52,8 @@ class TeleportTest {
 	void clampsThePitchOnlyFromMinecraft1212() {
 		ClientboundPlayerPosition packet = teleport(new Vec3d(0, 0, 0), 0, 80, Set.of(Relative.PITCH));
 
-		assertEquals(90, Teleport.resolve(FROM, MOVING, packet, MODERN).at().getPitch());
-		assertEquals(100, Teleport.resolve(FROM, MOVING, packet, LEGACY).at().getPitch());
+		assertEquals(90, Teleport.resolve(FROM, MOVING, packet, MODERN).at().pitch());
+		assertEquals(100, Teleport.resolve(FROM, MOVING, packet, LEGACY).at().pitch());
 	}
 
 	private static ClientboundPlayerPosition teleport(Vec3d position, float yaw, float pitch, Set<Relative> relatives) {

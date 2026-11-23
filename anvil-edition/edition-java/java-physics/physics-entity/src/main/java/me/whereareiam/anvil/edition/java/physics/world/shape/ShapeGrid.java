@@ -54,8 +54,8 @@ final class ShapeGrid {
 
 	private static boolean inside(@NotNull List<CollisionBox> boxes, double x, double y, double z) {
 		for (CollisionBox box : boxes)
-			if (x >= box.getMinX() && x <= box.getMaxX() && y >= box.getMinY() && y <= box.getMaxY()
-					&& z >= box.getMinZ() && z <= box.getMaxZ()) return true;
+			if (x >= box.minX() && x <= box.maxX() && y >= box.minY() && y <= box.maxY()
+					&& z >= box.minZ() && z <= box.maxZ()) return true;
 
 		return false;
 	}
@@ -104,9 +104,9 @@ final class ShapeGrid {
 
 	private static double bound(@NotNull CollisionBox box, @NotNull Axis axis, boolean upper) {
 		return switch (axis) {
-			case X -> upper ? box.getMaxX() : box.getMinX();
-			case Y -> upper ? box.getMaxY() : box.getMinY();
-			case Z -> upper ? box.getMaxZ() : box.getMinZ();
+			case X -> upper ? box.maxX() : box.minX();
+			case Y -> upper ? box.maxY() : box.minY();
+			case Z -> upper ? box.maxZ() : box.minZ();
 		};
 	}
 }

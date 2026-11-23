@@ -40,11 +40,11 @@ class EntitiesReleaseTest {
 
 		SeenEntity bubble = shown.appeared(EntityQuery.labelled("anvil:bubble-text").and(EntityQuery.ridingPlayer()),
 				Duration.ofSeconds(10));
-		assertEquals(id, bubble.getId());
-		assertEquals("minecraft:armor_stand", bubble.getType());
-		assertEquals("anvil:bubble-text", bubble.getCustomName());
-		assertTrue(bubble.isCustomNameVisible());
-		assertTrue(bubble.isInvisible());
+		assertEquals(id, bubble.id());
+		assertEquals("minecraft:armor_stand", bubble.type());
+		assertEquals("anvil:bubble-text", bubble.customName());
+		assertTrue(bubble.customNameVisible());
+		assertTrue(bubble.invisible());
 		assertTrue(entities.all().stream().anyMatch(bubble::sameEntity));
 		server.fixture("anvil-entity", player, "remove " + id);
 		shown.disappeared(bubble, Duration.ofSeconds(10));
@@ -60,13 +60,13 @@ class EntitiesReleaseTest {
 		server.fixture("anvil-entity", player, "drop");
 		int id = Integer.parseInt(server.reply(player, "anvil:dropped:"));
 
-		SeenEntity dropped = shown.appeared(EntityQuery.ofType("item").and(SeenEntity::isGlowing)
-				.and(entity -> entity.getItem() != null), Duration.ofSeconds(10));
-		assertEquals(id, dropped.getId());
-		assertEquals(3, dropped.getItem().getAmount());
+		SeenEntity dropped = shown.appeared(EntityQuery.ofType("item").and(SeenEntity::glowing)
+				.and(entity -> entity.item() != null), Duration.ofSeconds(10));
+		assertEquals(id, dropped.id());
+		assertEquals(3, dropped.item().amount());
 		EntityQuery nearItem = EntityQuery.ofType("item").and(EntityQuery.nearPlayer(4));
 		SeenEntity near = entities.present(nearItem, Duration.ofSeconds(10));
-		assertEquals(id, near.getId());
+		assertEquals(id, near.id());
 		server.fixture("anvil-entity", player, "remove " + id);
 		shown.disappeared(dropped, Duration.ofSeconds(10));
 	}
@@ -82,9 +82,9 @@ class EntitiesReleaseTest {
 
 		SeenEntity display = shown.appeared(EntityQuery.labelled("anvil:display-text").and(EntityQuery.nearPlayer(4)),
 				Duration.ofSeconds(10));
-		assertEquals("minecraft:text_display", display.getType());
-		assertEquals("anvil:display-text", display.getText());
-		server.fixture("anvil-entity", player, "remove " + display.getId());
+		assertEquals("minecraft:text_display", display.type());
+		assertEquals("anvil:display-text", display.text());
+		server.fixture("anvil-entity", player, "remove " + display.id());
 		shown.disappeared(display, Duration.ofSeconds(10));
 	}
 

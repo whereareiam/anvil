@@ -110,15 +110,15 @@ class DialogReaderTest {
 		Dialog shownNotice = reader.read(notice);
 		Dialog shownConfirmation = reader.read(confirmation);
 
-		assertEquals("menu.paused", shownNotice.getTitle());
-		assertEquals(List.of("First", "Shiny"), shownNotice.getBody());
-		assertEquals(List.of(new DialogButton("gui.ok", null, true)), shownNotice.getButtons());
-		assertTrue(shownNotice.isCloseWithEscape());
-		assertEquals(DialogAfterAction.CLOSE, shownNotice.getAfterAction());
+		assertEquals("menu.paused", shownNotice.title());
+		assertEquals(List.of("First", "Shiny"), shownNotice.body());
+		assertEquals(List.of(new DialogButton("gui.ok", null, true)), shownNotice.buttons());
+		assertTrue(shownNotice.closeWithEscape());
+		assertEquals(DialogAfterAction.CLOSE, shownNotice.afterAction());
 		assertEquals(List.of(
 				new DialogButton("Yes", DialogAction.custom(DialogActionType.CUSTOM, "example:leave", 1), false),
 				new DialogButton("No", null, true)
-		), shownConfirmation.getButtons());
+		), shownConfirmation.buttons());
 	}
 
 	@Test
@@ -140,14 +140,14 @@ class DialogReaderTest {
 
 		Dialog list = reader.read(menu);
 
-		Dialog nested = list.getButtons().getFirst().getAction().getDialog();
-		assertEquals("Server rules", list.getButtons().getFirst().getLabel());
-		assertEquals("Rules", nested.getTitle());
-		assertEquals(new DialogButton("Back", DialogAction.show("example:main", null), true), list.getButtons().get(1));
-		assertEquals(List.of(), reader.read(tagged).getButtons());
+		Dialog nested = list.buttons().getFirst().action().dialog();
+		assertEquals("Server rules", list.buttons().getFirst().label());
+		assertEquals("Rules", nested.title());
+		assertEquals(new DialogButton("Back", DialogAction.show("example:main", null), true), list.buttons().get(1));
+		assertEquals(List.of(), reader.read(tagged).buttons());
 		assertEquals(List.of(new DialogButton("example:rules", DialogAction.show("example:rules", null), false)),
-				reader.read(named).getButtons());
-		assertEquals(DialogAction.show("", reader.read(rules)), reader.read(opening).getButtons().getFirst().getAction());
+				reader.read(named).buttons());
+		assertEquals(DialogAction.show("", reader.read(rules)), reader.read(opening).buttons().getFirst().action());
 	}
 
 	@Test
@@ -170,7 +170,7 @@ class DialogReaderTest {
 				DialogAction.of(DialogActionType.CHANGE_PAGE, "3"),
 				DialogAction.custom(DialogActionType.CUSTOM, "example:ping", 1),
 				DialogAction.of(DialogActionType.OTHER, "example:wave")
-		), reader.read(actions).getButtons().stream().map(DialogButton::getAction).toList());
+		), reader.read(actions).buttons().stream().map(DialogButton::action).toList());
 		assertEquals(List.of(new CustomAction("example:ping", compound("ping", NbtByte.of(true)))), retained);
 	}
 
@@ -185,10 +185,10 @@ class DialogReaderTest {
 
 		Dialog dialog = reader.read(unknown);
 
-		assertEquals("example:wizard", dialog.getType());
+		assertEquals("example:wizard", dialog.type());
 		assertEquals(List.of(new DialogButton("Next", DialogAction.of(DialogActionType.RUN_COMMAND, "next"), false)),
-				dialog.getButtons());
-		assertEquals(DialogAfterAction.OTHER, dialog.getAfterAction());
+				dialog.buttons());
+		assertEquals(DialogAfterAction.OTHER, dialog.afterAction());
 	}
 
 	@Test
@@ -200,12 +200,12 @@ class DialogReaderTest {
 						"start", new NbtInt(0), "end", new NbtInt(10))
 		);
 
-		DialogInput volume = reader.read(slider).getInputs().getFirst();
+		DialogInput volume = reader.read(slider).inputs().getFirst();
 
-		assertEquals("5", volume.getInitial());
-		assertEquals(0F, volume.getStart());
-		assertEquals(10F, volume.getEnd());
-		assertNull(volume.getStep());
+		assertEquals("5", volume.initial());
+		assertEquals(0F, volume.start());
+		assertEquals(10F, volume.end());
+		assertNull(volume.step());
 	}
 
 	private static NbtCompound button(String label, NbtCompound action) {

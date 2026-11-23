@@ -31,7 +31,7 @@ public interface ProcessExecution {
 	 *
 	 * @return workload liveness
 	 */
-	boolean isAlive();
+	boolean alive();
 
 	/**
 	 * Completes when the workload exits.

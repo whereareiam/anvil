@@ -20,28 +20,28 @@ public interface MinecraftProcess {
 	 *
 	 * @return process name
 	 */
-	@NotNull String getName();
+	@NotNull String name();
 
 	/**
 	 * Returns optional labels for tooling without changing the process name used for routing.
 	 *
 	 * @return presentation metadata, or null when none is supplied
 	 */
-	@Nullable PresentationMetadata getMetadata();
+	@Nullable PresentationMetadata metadata();
 
 	/**
 	 * Returns the platform-provider identifier.
 	 *
 	 * @return platform identifier
 	 */
-	@NotNull String getPlatform();
+	@NotNull String platform();
 
 	/**
 	 * Returns the executable distribution selection.
 	 *
 	 * @return selected distribution
 	 */
-	@NotNull Distribution getDistribution();
+	@NotNull Distribution distribution();
 
 	/**
 	 * Returns process-specific Java requirements and installation source.
@@ -49,14 +49,14 @@ public interface MinecraftProcess {
 	 *
 	 * @return declared Java selection
 	 */
-	@NotNull JavaSelection getJavaSelection();
+	@NotNull JavaSelection javaSelection();
 
 	/**
 	 * Returns whether the process authenticates players with Mojang services.
 	 *
 	 * @return whether online mode is enabled
 	 */
-	boolean isOnlineMode();
+	boolean onlineMode();
 
 	/**
 	 * Returns how long the process keeps running. A process with {@link ProcessLifetime#ENGINE} is started once
@@ -65,28 +65,28 @@ public interface MinecraftProcess {
 	 *
 	 * @return declared lifetime
 	 */
-	@NotNull ProcessLifetime getLifetime();
+	@NotNull ProcessLifetime lifetime();
 
 	/**
 	 * Returns the maximum heap size in MiB.
 	 *
 	 * @return maximum heap size
 	 */
-	int getMemoryMegabytes();
+	int memoryMegabytes();
 
 	/**
 	 * Returns independent asset, cache, and cleanup declarations for the process workspace.
 	 *
 	 * @return workspace plan
 	 */
-	@NotNull WorkspacePlan getWorkspace();
+	@NotNull WorkspacePlan workspace();
 
 	/**
 	 * Returns platform settings applied before Anvil-owned runtime values.
 	 *
 	 * @return platform settings
 	 */
-	@NotNull Map<String, String> getSettings();
+	@NotNull Map<String, String> settings();
 
 	/**
 	 * Returns the session server this process verifies online logins against instead of Mojang's.
@@ -95,14 +95,14 @@ public interface MinecraftProcess {
 	 *
 	 * @return session server base address, or null to verify against Mojang
 	 */
-	@Nullable URI getSessionServer();
+	@Nullable URI sessionServer();
 
 	/**
 	 * Returns additional JVM arguments.
 	 *
 	 * @return JVM arguments
 	 */
-	@NotNull List<String> getJvmArguments();
+	@NotNull List<String> jvmArguments();
 
 	/**
 	 * Returns the names of the listeners the process binds besides its game port, such as a plugin's own server
@@ -112,5 +112,5 @@ public interface MinecraftProcess {
 	 *
 	 * @return listener names, lowercase letters, digits and dashes
 	 */
-	@NotNull List<String> getListeners();
+	@NotNull List<String> listeners();
 }

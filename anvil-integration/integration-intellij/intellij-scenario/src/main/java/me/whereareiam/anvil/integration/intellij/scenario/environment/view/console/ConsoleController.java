@@ -89,7 +89,7 @@ public final class ConsoleController {
 	) {
 		Map<String, ProcessChoice> choices = new LinkedHashMap<>();
 		for (ScenarioPresentation.ScenarioProcess process : ScenarioPresentation.processes(scenario, snapshot)) {
-			ProcessRole role = process.getDefinition() == null ? null : process.getDefinition().getRole();
+			ProcessRole role = process.getDefinition() == null ? null : process.getDefinition().role();
 			choices.put(process.getName(), new ProcessChoice(process.getName(), process.getDisplayName(), role));
 		}
 
@@ -98,8 +98,8 @@ public final class ConsoleController {
 
 	private static @NotNull Map<String, ProcessSnapshot> liveProcesses(@NotNull SessionSnapshot snapshot) {
 		Map<String, ProcessSnapshot> live = new LinkedHashMap<>();
-		for (ProcessSnapshot process : snapshot.getProcesses())
-			live.put(process.getName(), process);
+		for (ProcessSnapshot process : snapshot.processes())
+			live.put(process.name(), process);
 
 		return Map.copyOf(live);
 	}
@@ -163,9 +163,9 @@ public final class ConsoleController {
 		command.scope(selectedName, "console");
 		ProcessSnapshot process = selectedName == null ? null : session.process(selectedName);
 		boolean available = session.isActive()
-				&& snapshot.getState() == SessionState.RUNNING
+				&& snapshot.state() == SessionState.RUNNING
 				&& process != null
-				&& process.getState() == ProcessState.READY;
+				&& process.state() == ProcessState.READY;
 
 		command.setEnabled(available);
 		send.setEnabled(available);
@@ -175,7 +175,7 @@ public final class ConsoleController {
 				: selected.displayName()
 				+ " · "
 				+ StatusPresentation.processDescription(
-				process == null ? null : process.getState(), snapshot.getState()));
+				process == null ? null : process.state(), snapshot.state()));
 	}
 
 	private @Nullable ProcessChoice selectedTarget() {

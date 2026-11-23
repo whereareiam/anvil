@@ -20,20 +20,20 @@ public final class EngineDefaults {
 	 * @return options containing the effective local paths
 	 */
 	public static @NotNull EngineOptions resolve(@NotNull EngineOptions options) {
-		ProcessScheduling scheduling = options.getProcessScheduling();
+		ProcessScheduling scheduling = options.processScheduling();
 
 		return options.toBuilder()
-				.cacheDirectory(options.getCacheDirectory() == null ? cacheDirectory() : options.getCacheDirectory())
-				.accountsDirectory(options.getAccountsDirectory() == null ? accountsDirectory() : options.getAccountsDirectory())
-				.processTimeouts(options.getProcessTimeouts().withDefaults(EngineOptions.builder().build().getProcessTimeouts()))
+				.cacheDirectory(options.cacheDirectory() == null ? cacheDirectory() : options.cacheDirectory())
+				.accountsDirectory(options.accountsDirectory() == null ? accountsDirectory() : options.accountsDirectory())
+				.processTimeouts(options.processTimeouts().withDefaults(EngineOptions.builder().build().processTimeouts()))
 				.processScheduling(scheduling.toBuilder()
-						.parallelism(scheduling.getParallelism() == null ? detectedParallelism() : scheduling.getParallelism())
-						.startupMemoryMegabytes(scheduling.getStartupMemoryMegabytes() == null
-								? detectedStartupMemory() : scheduling.getStartupMemoryMegabytes())
-						.priority(scheduling.getPriority() == null ? ProcessPriority.NORMAL : scheduling.getPriority())
+						.parallelism(scheduling.parallelism() == null ? detectedParallelism() : scheduling.parallelism())
+						.startupMemoryMegabytes(scheduling.startupMemoryMegabytes() == null
+								? detectedStartupMemory() : scheduling.startupMemoryMegabytes())
+						.priority(scheduling.priority() == null ? ProcessPriority.NORMAL : scheduling.priority())
 						.build())
-				.downloadParallelism(options.getDownloadParallelism() == null
-						? detectedDownloadParallelism() : options.getDownloadParallelism())
+				.downloadParallelism(options.downloadParallelism() == null
+						? detectedDownloadParallelism() : options.downloadParallelism())
 				.build();
 	}
 

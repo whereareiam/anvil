@@ -151,7 +151,7 @@ public final class YggdrasilMock implements AutoCloseable {
 	 *
 	 * <pre>{@code
 	 * SessionIdentity alice = yggdrasil.register("Alice");
-	 * SessionIdentity alicia = yggdrasil.rename(alice.getUniqueId(), "Alicia");
+	 * SessionIdentity alicia = yggdrasil.rename(alice.uniqueId(), "Alicia");
 	 * }</pre>
 	 *
 	 * @param uniqueId identity of the registered account
@@ -161,20 +161,20 @@ public final class YggdrasilMock implements AutoCloseable {
 	 */
 	public synchronized @NotNull SessionIdentity rename(@NotNull UUID uniqueId, @NotNull String username) {
 		SessionIdentity current = profiles.values().stream()
-				.filter(profile -> profile.getUniqueId().equals(uniqueId))
+				.filter(profile -> profile.uniqueId().equals(uniqueId))
 				.findFirst()
 				.orElseThrow(() -> new IllegalArgumentException("No account is registered as " + uniqueId));
 		SessionIdentity holder = profiles.get(key(username));
 		if (holder != null && holder != current)
-			throw new IllegalArgumentException("The name " + username + " belongs to the account " + holder.getUniqueId());
+			throw new IllegalArgumentException("The name " + username + " belongs to the account " + holder.uniqueId());
 
 		SessionIdentity renamed = SessionIdentity.builder()
 				.username(username)
 				.uniqueId(uniqueId)
-				.accessToken(current.getAccessToken())
-				.sessionServer(current.getSessionServer())
+				.accessToken(current.accessToken())
+				.sessionServer(current.sessionServer())
 				.build();
-		profiles.remove(key(current.getUsername()));
+		profiles.remove(key(current.username()));
 		profiles.put(key(username), renamed);
 
 		return renamed;
@@ -229,8 +229,8 @@ public final class YggdrasilMock implements AutoCloseable {
 		String selected = request.path("selectedProfile").asText();
 		String serverId = request.path("serverId").asText();
 		for (SessionIdentity profile : profiles.values()) {
-			if (!undashed(profile.getUniqueId()).equals(selected)) continue;
-			if (!profile.getAccessToken().equals(request.path("accessToken").asText())) break;
+			if (!undashed(profile.uniqueId()).equals(selected)) continue;
+			if (!profile.accessToken().equals(request.path("accessToken").asText())) break;
 
 			joins.add(login(profile, serverId));
 			return Response.status(204);
@@ -284,7 +284,7 @@ public final class YggdrasilMock implements AutoCloseable {
 	 * A reported login belongs to the account, not to its name, so it survives a rename until it is verified.
 	 */
 	private static String login(SessionIdentity profile, String serverId) {
-		return undashed(profile.getUniqueId()) + '\n' + serverId;
+		return undashed(profile.uniqueId()) + '\n' + serverId;
 	}
 
 	private static String key(String username) {
@@ -306,8 +306,8 @@ public final class YggdrasilMock implements AutoCloseable {
 
 		private static Response profile(ObjectMapper json, SessionIdentity profile) {
 			ObjectNode body = json.createObjectNode()
-					.put("id", undashed(profile.getUniqueId()))
-					.put("name", profile.getUsername());
+					.put("id", undashed(profile.uniqueId()))
+					.put("name", profile.username());
 			body.putArray("properties");
 
 			return new Response(200, body.toString().getBytes(StandardCharsets.UTF_8));

@@ -18,8 +18,8 @@ class MovementProviderTest {
 	void describesTheMovementCapabilityForTheLibrariesWithAWorkerSide() {
 		MovementProvider provider = new MovementProvider();
 
-		assertEquals(MovementChannel.ID, provider.descriptor().getId());
-		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
+		assertEquals(MovementChannel.ID, provider.descriptor().id());
+		assertTrue(provider.descriptor().requiredCapabilities().isEmpty());
 		assertEquals(Set.of(JavaProtocol.class), provider.requiredProtocols());
 		assertEquals(Movement.class, provider.capability());
 	}
@@ -34,7 +34,7 @@ class MovementProviderTest {
 		Position position = Position.builder().x(1).y(64).z(-2).yaw(90).pitch(10).onGround(true).build();
 		movement.move(position);
 
-		assertEquals(List.of(MovementChannel.MOVE.getId()), channel.requests());
+		assertEquals(List.of(MovementChannel.MOVE.id()), channel.requests());
 		assertEquals(List.of(position), channel.payloads());
 	}
 }

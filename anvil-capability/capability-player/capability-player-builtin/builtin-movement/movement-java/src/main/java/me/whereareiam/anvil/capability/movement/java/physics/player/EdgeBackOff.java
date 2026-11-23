@@ -27,7 +27,7 @@ final class EdgeBackOff {
 	 */
 	EdgeBackOff(@NotNull PlayerBody body) {
 		this.body = body;
-		this.collisions = new Collisions(body.getLevel());
+		this.collisions = new Collisions(body.level());
 	}
 
 	/**
@@ -38,7 +38,7 @@ final class EdgeBackOff {
 	 * @return the movement that keeps it on the edge
 	 */
 	@NotNull Vector backOff(@NotNull Vector movement, float stepHeight) {
-		if (!body.isShiftKeyDown() || body.getServer().isFlying()) return movement;
+		if (!body.shiftKeyDown() || body.server().flying()) return movement;
 		if (!body.has(ClientBehaviour.FALL_TESTING_EDGE_BACK_OFF)) return legacy(movement, stepHeight);
 		if (movement.y > 0.0 || !aboveGround(stepHeight)) return movement;
 
@@ -47,16 +47,16 @@ final class EdgeBackOff {
 	}
 
 	private boolean aboveGround(float stepHeight) {
-		if (body.isOnGround()) return true;
+		if (body.onGround()) return true;
 		if (body.has(EntityBehaviour.DOUBLE_FALL_DISTANCE))
-			return body.getFallDistance() < stepHeight && !canFallAtLeast(0.0, 0.0, stepHeight - body.getFallDistance());
+			return body.fallDistance() < stepHeight && !canFallAtLeast(0.0, 0.0, stepHeight - body.fallDistance());
 
-		float fallDistance = (float) body.getFallDistance();
+		float fallDistance = (float) body.fallDistance();
 		return fallDistance < stepHeight && !canFallAtLeast(0.0, 0.0, stepHeight - fallDistance);
 	}
 
 	private boolean canFallAtLeast(double dx, double dz, double distance) {
-		Box box = body.getBox();
+		Box box = body.box();
 		if (body.has(ClientBehaviour.VECTOR_INPUT))
 			return collisions.noCollision(new Box(
 					new Vector(box.minX + 1.0E-7 + dx, box.minY - distance - 1.0E-7, box.minZ + 1.0E-7 + dz),
@@ -71,12 +71,12 @@ final class EdgeBackOff {
 	 * The back-off before 1.20.5: the box moved down the step height must touch a block.
 	 */
 	private @NotNull Vector legacy(@NotNull Vector movement, float stepHeight) {
-		float fallDistance = (float) body.getFallDistance();
-		boolean aboveGround = body.isOnGround() || fallDistance < stepHeight
-				&& !collisions.noCollision(body.getBox().move(0.0, fallDistance - stepHeight, 0.0), body.context());
+		float fallDistance = (float) body.fallDistance();
+		boolean aboveGround = body.onGround() || fallDistance < stepHeight
+				&& !collisions.noCollision(body.box().move(0.0, fallDistance - stepHeight, 0.0), body.context());
 		if (!aboveGround) return movement;
 
-		Fall fall = (dx, dz) -> collisions.noCollision(body.getBox().move(dx, -stepHeight, dz), body.context());
+		Fall fall = (dx, dz) -> collisions.noCollision(body.box().move(dx, -stepHeight, dz), body.context());
 		return shortenLegacy(movement, fall);
 	}
 

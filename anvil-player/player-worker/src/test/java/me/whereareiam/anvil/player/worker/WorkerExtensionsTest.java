@@ -177,14 +177,14 @@ class WorkerExtensionsTest {
 					return closed::incrementAndGet;
 				}),
 				new Extension("duplicate", (player, operations) -> {
-					var conflicting = new OperationDescriptor<>(COUNT.getId(), String.class, String.class);
+					var conflicting = new OperationDescriptor<>(COUNT.id(), String.class, String.class);
 					operations.register(conflicting, Function.identity());
 					return () -> { };
 				})
 		));
 
 		var failure = assertThrows(IllegalStateException.class, () -> bind(extensions, new Player("Alice")));
-		assertTrue(failure.getMessage().contains(COUNT.getId()), failure.getMessage());
+		assertTrue(failure.getMessage().contains(COUNT.id()), failure.getMessage());
 		assertEquals(1, closed.get());
 	}
 
@@ -201,7 +201,7 @@ class WorkerExtensionsTest {
 
 		try (var bindings = bind(extensions, new Player("Alice"))) {
 			assertEquals(1, count(bindings));
-			assertThrows(IllegalArgumentException.class, () -> bindings.operation(ECHO.getId()));
+			assertThrows(IllegalArgumentException.class, () -> bindings.operation(ECHO.id()));
 			assertEquals(Set.of("counter"), extensions.capabilities());
 			assertEquals(Map.of("adapted", "no adapter for java.lang.Runnable"), extensions.unavailable());
 		}
@@ -251,8 +251,8 @@ class WorkerExtensionsTest {
 			player.rejoin();
 			assertEquals(List.of("attached", "detached"), listeners);
 			assertEquals(1, count(bindings));
-			var rejected = assertThrows(IllegalArgumentException.class, () -> bindings.operation(ECHO.getId()));
-			assertTrue(rejected.getMessage().contains(ECHO.getId()));
+			var rejected = assertThrows(IllegalArgumentException.class, () -> bindings.operation(ECHO.id()));
+			assertTrue(rejected.getMessage().contains(ECHO.id()));
 			assertEquals(Map.of("partial", "NoClassDefFoundError: org/example/MissingPacket"),
 					extensions.unavailable());
 			assertEquals(Set.of("counter"), extensions.capabilities());
@@ -274,7 +274,7 @@ class WorkerExtensionsTest {
 		try (var first = bind(extensions, new Player("Alice")); var second = bind(extensions, new Player("Bob"))) {
 			assertEquals(1, count(first));
 			assertEquals(1, count(second));
-			assertThrows(IllegalArgumentException.class, () -> first.operation(ECHO.getId()));
+			assertThrows(IllegalArgumentException.class, () -> first.operation(ECHO.id()));
 			assertEquals(1, attempts.get(), "An unavailable capability is not bound for later players");
 			assertEquals(Set.of("counter"), extensions.capabilities());
 			String reason = "ServiceConfigurationError: org.example.Port: Provider org.example.MissingPort not found";
@@ -369,8 +369,8 @@ class WorkerExtensionsTest {
 			OperationDescriptor<Q, R> descriptor,
 			@Nullable Q request
 	) {
-		var operation = (WorkerOperation<Q, R>) bindings.operation(descriptor.getId());
-		assertEquals(descriptor, operation.getDescriptor());
+		var operation = (WorkerOperation<Q, R>) bindings.operation(descriptor.id());
+		assertEquals(descriptor, operation.descriptor());
 
 		return operation.apply(request);
 	}

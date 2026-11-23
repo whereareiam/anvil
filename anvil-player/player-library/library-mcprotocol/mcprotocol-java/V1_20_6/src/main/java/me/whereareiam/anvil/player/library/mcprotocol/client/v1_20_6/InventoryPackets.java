@@ -67,7 +67,7 @@ public final class InventoryPackets extends InventoryTranslation {
 			@NotNull ContainerActionType type,
 			@NotNull ContainerAction action
 	) {
-		return new ServerboundContainerClickPacket(click.getContainerId(), click.getStateId(), click.getSlot(), type,
+		return new ServerboundContainerClickPacket(click.containerId(), click.stateId(), click.slot(), type,
 				action, null, Map.of());
 	}
 }

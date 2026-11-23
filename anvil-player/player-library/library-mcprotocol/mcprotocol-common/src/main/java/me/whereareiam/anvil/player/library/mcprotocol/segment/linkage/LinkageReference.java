@@ -16,7 +16,7 @@ import java.util.Set;
 /**
  * A class, field or method that compiled code links against, with what the JVM requires of it when linking.
  *
- * <p>{@link #getOwner()} is a JVM internal class name ({@code a/b/C$D}); {@link #getMember()} is
+ * <p>{@link #owner()} is a JVM internal class name ({@code a/b/C$D}); {@link #member()} is
  * {@code name:descriptor} for a field and {@code name(parameters)return} for a method, and empty for a class. A
  * segment's linkage manifest holds one reference per line: the kind, the owner as a binary class name, the member,
  * then the requirements as keywords in a fixed order:</p>
@@ -33,9 +33,9 @@ import java.util.Set;
  */
 @Value
 public class LinkageReference implements Comparable<LinkageReference> {
-	private static final Comparator<LinkageReference> ORDER = Comparator.comparing(LinkageReference::getOwner)
-			.thenComparing(LinkageReference::getKind)
-			.thenComparing(LinkageReference::getMember)
+	private static final Comparator<LinkageReference> ORDER = Comparator.comparing(LinkageReference::owner)
+			.thenComparing(LinkageReference::kind)
+			.thenComparing(LinkageReference::member)
 			.thenComparing(LinkageReference::line);
 
 	@NotNull Kind kind;

@@ -22,8 +22,8 @@ public class UnknownBlockNameException extends IllegalStateException {
 	 * @param block the block without a name
 	 */
 	public UnknownBlockNameException(@NotNull Block block) {
-		super("Anvil cannot name block state " + block.getState() + " of protocol " + block.getProtocol() + " at "
-				+ block.getPosition() + ": it ships no block data for the protocol, or the state is not vanilla's");
+		super("Anvil cannot name block state " + block.state() + " of protocol " + block.protocol() + " at "
+				+ block.position() + ": it ships no block data for the protocol, or the state is not vanilla's");
 		this.block = block;
 	}
 }

@@ -11,5 +11,5 @@ public sealed interface EngineConnection extends ConnectionHeader permits Contro
 	 *
 	 * @return token the workbench issued when pairing
 	 */
-	@NotNull String getToken();
+	@NotNull String token();
 }

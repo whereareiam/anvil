@@ -35,30 +35,30 @@ final class Teleport {
 			@NotNull ClientboundPlayerPosition teleport,
 			@NotNull MovementRules rules
 	) {
-		Set<Relative> relatives = teleport.getRelatives();
-		float yaw = (relatives.contains(Relative.YAW) ? from.getYaw() : 0.0F) + teleport.getYaw();
-		float pitch = (relatives.contains(Relative.PITCH) ? from.getPitch() : 0.0F) + teleport.getPitch();
+		Set<Relative> relatives = teleport.relatives();
+		float yaw = (relatives.contains(Relative.YAW) ? from.yaw() : 0.0F) + teleport.yaw();
+		float pitch = (relatives.contains(Relative.PITCH) ? from.pitch() : 0.0F) + teleport.pitch();
 		if (rules.has(ClientBehaviour.CLAMPED_TELEPORT_PITCH)) pitch = Math.clamp(pitch, -90.0F, 90.0F);
 
 		Vector delta = velocity;
 		if (relatives.contains(Relative.ROTATE_DELTA))
-			delta = delta.xRot((float) Math.toRadians(from.getPitch() - pitch), Trigonometry.DOUBLE)
-					.yRot((float) Math.toRadians(from.getYaw() - yaw), Trigonometry.DOUBLE);
+			delta = delta.xRot((float) Math.toRadians(from.pitch() - pitch), Trigonometry.DOUBLE)
+					.yRot((float) Math.toRadians(from.yaw() - yaw), Trigonometry.DOUBLE);
 
-		Vec3d to = teleport.getPosition();
-		Vec3d sent = teleport.getDeltaMovement();
+		Vec3d to = teleport.position();
+		Vec3d sent = teleport.deltaMovement();
 		Position at = Position.builder()
-				.x(base(relatives, Relative.X, from.getX()) + to.getX())
-				.y(base(relatives, Relative.Y, from.getY()) + to.getY())
-				.z(base(relatives, Relative.Z, from.getZ()) + to.getZ())
+				.x(base(relatives, Relative.X, from.x()) + to.x())
+				.y(base(relatives, Relative.Y, from.y()) + to.y())
+				.z(base(relatives, Relative.Z, from.z()) + to.z())
 				.yaw(yaw)
 				.pitch(pitch)
-				.onGround(from.isOnGround())
+				.onGround(from.onGround())
 				.build();
 		Vector kept = new Vector(
-				delta(relatives, Relative.DELTA_X, delta.x, sent.getX()),
-				delta(relatives, Relative.DELTA_Y, delta.y, sent.getY()),
-				delta(relatives, Relative.DELTA_Z, delta.z, sent.getZ())
+				delta(relatives, Relative.DELTA_X, delta.x, sent.x()),
+				delta(relatives, Relative.DELTA_Y, delta.y, sent.y()),
+				delta(relatives, Relative.DELTA_Z, delta.z, sent.z())
 		);
 
 		return new Resolved(at, kept);

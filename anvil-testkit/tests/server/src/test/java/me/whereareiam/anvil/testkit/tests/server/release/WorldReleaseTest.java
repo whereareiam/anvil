@@ -31,22 +31,22 @@ class WorldReleaseTest {
 		FixtureServer server = new FixtureServer(anvil);
 		SimulatedPlayer player = server.join();
 		BlockView blocks = player.capability(World.class).blocks();
-		String at = FAR.getX() + " " + FAR.getY() + " " + FAR.getZ();
+		String at = FAR.x() + " " + FAR.y() + " " + FAR.z();
 
 		assertEquals(Optional.empty(), blocks.block(FAR));
 		assertFalse(blocks.isLoaded(ChunkPosition.containing(FAR)));
 
-		server.console("forceload add " + FAR.getX() + " " + FAR.getZ());
+		server.console("forceload add " + FAR.x() + " " + FAR.z());
 		try {
 			server.console("setblock " + at + " minecraft:gold_block");
-			server.console("tp " + player.name() + " " + FAR.getX() + " " + (FAR.getY() + 1) + " " + FAR.getZ());
+			server.console("tp " + player.name() + " " + FAR.x() + " " + (FAR.y() + 1) + " " + FAR.z());
 
 			Block gold = blocks.until(FAR, BlockQuery.named("gold_block"), TIMEOUT);
 
-			assertEquals(FAR, gold.getPosition());
+			assertEquals(FAR, gold.position());
 		} finally {
 			server.console("setblock " + at + " minecraft:air");
-			server.console("forceload remove " + FAR.getX() + " " + FAR.getZ());
+			server.console("forceload remove " + FAR.x() + " " + FAR.z());
 		}
 	}
 }

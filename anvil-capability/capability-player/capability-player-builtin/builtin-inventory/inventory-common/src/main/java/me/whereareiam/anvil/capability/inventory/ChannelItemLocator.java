@@ -71,7 +71,7 @@ final class ChannelItemLocator implements ItemLocator {
 	@Override
 	public @NotNull ItemLocator type(@NotNull String identifier) {
 		return with("of type " + identifier, item -> {
-			String key = item.getType().getIdentifier();
+			String key = item.type().identifier();
 			if (key == null)
 				throw new IllegalStateException("Cannot find an item of type " + identifier + ": the player's items have no "
 						+ "type, because Anvil ships no item data for its protocol");
@@ -92,7 +92,7 @@ final class ChannelItemLocator implements ItemLocator {
 
 	@Override
 	public @NotNull ItemLocator named(@NotNull String description, @NotNull Predicate<Text> name) {
-		return with(description, item -> item.getDisplay().getName() != null && name.test(item.getDisplay().getName()));
+		return with(description, item -> item.display().name() != null && name.test(item.display().name()));
 	}
 
 	@Override
@@ -107,7 +107,7 @@ final class ChannelItemLocator implements ItemLocator {
 
 	@Override
 	public @NotNull ItemLocator lore(@NotNull String description, @NotNull Predicate<Text> line) {
-		return with(description, item -> item.getDisplay().getLore().stream().anyMatch(line));
+		return with(description, item -> item.display().lore().stream().anyMatch(line));
 	}
 
 	@Override
@@ -125,7 +125,7 @@ final class ChannelItemLocator implements ItemLocator {
 
 	@Override
 	public @NotNull List<InventoryItem> all() {
-		List<InventoryItem> matches = screen.get().getItems().stream()
+		List<InventoryItem> matches = screen.get().items().stream()
 				.filter(item -> conditions.stream().allMatch(condition -> condition.item().test(item)))
 				.toList();
 		if (pick == null) return matches;
@@ -155,7 +155,7 @@ final class ChannelItemLocator implements ItemLocator {
 	@Override
 	public void click(@NotNull InventoryClick click, int button) {
 		InventoryItem item = item(SimulatedPlayer.DEFAULT_TIMEOUT);
-		inventory.click(item.getSlot(), click, button);
+		inventory.click(item.slot(), click, button);
 	}
 
 	@Override
@@ -189,7 +189,7 @@ final class ChannelItemLocator implements ItemLocator {
 	}
 
 	private static String slots(List<InventoryItem> items) {
-		return items.stream().map(item -> String.valueOf(item.getSlot())).collect(Collectors.joining(", "));
+		return items.stream().map(item -> String.valueOf(item.slot())).collect(Collectors.joining(", "));
 	}
 
 	/**

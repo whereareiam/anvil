@@ -74,7 +74,7 @@ public final class InteractiveSession {
 	}
 
 	private boolean execute(RunnerCommand command) {
-		return switch (command.getType()) {
+		return switch (command.type()) {
 			case QUIT, EXIT -> true;
 			case STATUS -> {
 				terminal.showScenario(session.snapshot());
@@ -117,7 +117,7 @@ public final class InteractiveSession {
 				yield false;
 			}
 			case UNKNOWN -> {
-				terminal.showUnknownCommand(command.getToken());
+				terminal.showUnknownCommand(command.token());
 				yield false;
 			}
 		};
@@ -129,7 +129,7 @@ public final class InteractiveSession {
 
 	private void start(RunnerCommand command) {
 		requireArguments(command, 1, "Usage: start <scenario-or-definition>");
-		String selection = command.getArguments().getFirst();
+		String selection = command.arguments().getFirst();
 		scenarios.require(selection);
 		session.start(selection, null);
 		terminal.showScenario(session.snapshot());
@@ -137,25 +137,25 @@ public final class InteractiveSession {
 
 	private void restart() {
 		SessionSnapshot current = session.snapshot();
-		if (current.getState() != SessionState.RUNNING)
+		if (current.state() != SessionState.RUNNING)
 			throw new IllegalStateException("No scenario is running. Use start <scenario> first");
 
-		session.start(current.getDefinition(), null);
+		session.start(current.definition(), null);
 		terminal.showScenario(session.snapshot());
 	}
 
 	private void showLogs(RunnerCommand command) {
 		requireArguments(command, 1, "Usage: logs <process> [lines]");
-		int lines = command.getArguments().size() < 2 ? 30 : parseLineCount(command.getArguments().get(1));
-		terminal.showLogs(session.logs(command.getArguments().getFirst(), lines));
+		int lines = command.arguments().size() < 2 ? 30 : parseLineCount(command.arguments().get(1));
+		terminal.showLogs(session.logs(command.arguments().getFirst(), lines));
 	}
 
 	private void action(RunnerCommand command) {
 		requireArguments(command, 3, "Usage: action <id> <scenario|process|player> <target> [JSON inputs]");
 		Map<String, String> arguments = new LinkedHashMap<>();
-		if (command.getArguments().size() > 3) {
+		if (command.arguments().size() > 3) {
 			try {
-				var values = new ObjectMapper().readTree(command.getArguments().get(3));
+				var values = new ObjectMapper().readTree(command.arguments().get(3));
 				if (values == null || !values.isObject()) throw new IllegalArgumentException("Action inputs must be a JSON object");
 				values.properties().forEach(entry -> {
 					if (!entry.getValue().isValueNode() || entry.getValue().isNull())
@@ -167,20 +167,20 @@ public final class InteractiveSession {
 			}
 		}
 		SessionSnapshot snapshot = session.snapshot();
-		if (snapshot.getSessionId() == null) throw new IllegalStateException("No environment is running");
-		terminal.showActionResult(session.invoke(ActionRequest.builder().sessionId(snapshot.getSessionId())
-				.actionId(command.getArguments().getFirst()).arguments(arguments)
-				.target(ActionTarget.builder().type(ActionTargetType.valueOf(command.getArguments().get(1).toUpperCase(Locale.ROOT)))
-						.name(command.getArguments().get(2)).build()).build()));
+		if (snapshot.sessionId() == null) throw new IllegalStateException("No environment is running");
+		terminal.showActionResult(session.invoke(ActionRequest.builder().sessionId(snapshot.sessionId())
+				.actionId(command.arguments().getFirst()).arguments(arguments)
+				.target(ActionTarget.builder().type(ActionTargetType.valueOf(command.arguments().get(1).toUpperCase(Locale.ROOT)))
+						.name(command.arguments().get(2)).build()).build()));
 	}
 
 	private void send(RunnerCommand command) {
 		requireArguments(command, 2, "Usage: send <process> <command>");
-		session.console(command.getArguments().getFirst(), command.getArguments().get(1));
+		session.console(command.arguments().getFirst(), command.arguments().get(1));
 	}
 
 	private static void requireArguments(RunnerCommand command, int required, String usage) {
-		if (command.getArguments().size() < required) throw new IllegalArgumentException(usage);
+		if (command.arguments().size() < required) throw new IllegalArgumentException(usage);
 	}
 
 	private static int parseLineCount(String value) {

@@ -64,12 +64,12 @@ class PaperPlatformProviderTest {
 				.platform(Platforms.VELOCITY)
 				.distribution(Distribution.remote("3.5.1", "615"))
 				.onlineMode(true)
-				.server(server.getName())
-				.defaultServer(server.getName())
+				.server(server.name())
+				.defaultServer(server.name())
 				.build();
 		AnvilScenario scenario = AnvilScenario.builder()
 				.name("paper-forwarding")
-				.entrypoint(proxy.getName())
+				.entrypoint(proxy.name())
 				.server(server)
 				.proxy(proxy)
 				.build();
@@ -79,7 +79,7 @@ class PaperPlatformProviderTest {
 		assertTrue(provider.jvmArguments(server, false).isEmpty(), "Ordinary engine runs retain native console defaults");
 		assertEquals(List.of("-Dterminal.ansi=true", "-Dterminal.jline=false"),
 				provider.jvmArguments(server, true));
-		assertEquals(localJar.toAbsolutePath(), provider.resolve(server, context).getJar());
+		assertEquals(localJar.toAbsolutePath(), provider.resolve(server, context).jar());
 		provider.configure(server, context);
 
 		Properties properties = new Properties();
@@ -168,9 +168,9 @@ class PaperPlatformProviderTest {
 				.distribution(Distribution.remote(version, "1")).build();
 
 		List<WorkspaceCache> caches = new PaperPlatformProvider().defaultCaches(server);
-		assertEquals(Arrays.stream(paths.split(" ")).map(Path::of).toList(), caches.stream().map(WorkspaceCache::getPath).toList());
-		assertTrue(caches.stream().allMatch(cache -> cache.getGroup().equals("paper")));
-		assertTrue(caches.stream().allMatch(cache -> cache.getIdentity() == CacheIdentity.PROCESS),
+		assertEquals(Arrays.stream(paths.split(" ")).map(Path::of).toList(), caches.stream().map(WorkspaceCache::path).toList());
+		assertTrue(caches.stream().allMatch(cache -> cache.group().equals("paper")));
+		assertTrue(caches.stream().allMatch(cache -> cache.identity() == CacheIdentity.PROCESS),
 				"Paperclip's outputs follow from the distribution, so a rebuilt plugin must not start new snapshots");
 	}
 

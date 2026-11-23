@@ -69,9 +69,9 @@ public final class LauncherAssembly implements AutoCloseable {
 	 * the one in this JVM, which alone has the runner's own execution providers.
 	 */
 	private static Workbench workbench(EngineOptions options, Map<String, ExecutionProvider> executions) {
-		return WorkbenchChoice.chosen(options.getWorkbench(), System.getenv(WorkbenchChoice.ENVIRONMENT), Pairings.standard())
+		return WorkbenchChoice.chosen(options.workbench(), System.getenv(WorkbenchChoice.ENVIRONMENT), Pairings.standard())
 				.<Workbench>map(pairing -> {
-					System.err.println("[Anvil] Running scenarios on workbench '" + pairing.getName() + "' at " + pairing.getAddress());
+					System.err.println("[Anvil] Running scenarios on workbench '" + pairing.name() + "' at " + pairing.address());
 					return RemoteWorkbench.connect(pairing);
 				})
 				.orElseGet(() -> new LocalWorkbench(options, executions));
@@ -94,7 +94,7 @@ public final class LauncherAssembly implements AutoCloseable {
 					.plans(new ExecutionPlanMapper(options, workbench))
 					.build();
 
-			return new DefaultScenarioFactory(workbench, options.getExecutionProviderId(), platforms, execution, players,
+			return new DefaultScenarioFactory(workbench, options.executionProviderId(), platforms, execution, players,
 					retained);
 		} catch (RuntimeException | Error failure) {
 			try (players) {

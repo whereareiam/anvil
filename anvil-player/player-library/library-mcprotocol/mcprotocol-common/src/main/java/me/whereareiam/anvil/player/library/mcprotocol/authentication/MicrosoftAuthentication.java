@@ -39,7 +39,7 @@ public final class MicrosoftAuthentication implements ProtocolAuthentication {
 					prompt
 			);
 			AuthenticationSession session = refreshAndSave(accountId, manager);
-			output.accept("Authenticated " + session.getUsername() + " (" + session.getUuid()
+			output.accept("Authenticated " + session.username() + " (" + session.uuid()
 					+ ") as account '" + accountId + "'.");
 		} catch (IOException exception) {
 			throw new IllegalStateException("Microsoft authentication failed for account '" + accountId + "'", exception);

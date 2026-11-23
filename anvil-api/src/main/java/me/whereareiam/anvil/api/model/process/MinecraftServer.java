@@ -44,12 +44,12 @@ public class MinecraftServer implements MinecraftProcess {
 	boolean onlineMode = false;
 
 	/**
-	 * Session server that verifies online logins instead of Mojang's; see {@link MinecraftProcess#getSessionServer()}.
+	 * Session server that verifies online logins instead of Mojang's; see {@link MinecraftProcess#sessionServer()}.
 	 */
 	@Nullable URI sessionServer;
 
 	/**
-	 * How long the process keeps running; see {@link MinecraftProcess#getLifetime()}.
+	 * How long the process keeps running; see {@link MinecraftProcess#lifetime()}.
 	 */
 	@NotNull
 	@Builder.Default
@@ -71,7 +71,7 @@ public class MinecraftServer implements MinecraftProcess {
 	List<String> jvmArguments;
 
 	/**
-	 * Listeners the process binds besides its game port; see {@link MinecraftProcess#getListeners()}.
+	 * Listeners the process binds besides its game port; see {@link MinecraftProcess#listeners()}.
 	 */
 	@NotNull
 	@Singular
@@ -79,7 +79,7 @@ public class MinecraftServer implements MinecraftProcess {
 
 	/**
 	 * Returns the Minecraft version this server speaks: the remote distribution version, or the
-	 * declared {@link #getMinecraftVersion() minecraftVersion} for local and artifact distributions.
+	 * declared {@link #minecraftVersion() minecraftVersion} for local and artifact distributions.
 	 *
 	 * @return the native version, or null when a local or artifact distribution declares none
 	 * @throws IllegalArgumentException when the version is not a release version
@@ -87,7 +87,7 @@ public class MinecraftServer implements MinecraftProcess {
 	public @Nullable MinecraftVersion nativeVersion() {
 		String version = distribution.isLocal() || distribution.isArtifact()
 				? minecraftVersion
-				: distribution.getVersion();
+				: distribution.version();
 		if (version == null || version.isBlank()) return null;
 
 		return MinecraftVersion.parse(version);

@@ -36,15 +36,15 @@ class FlightTest {
 		PlayerSimulation player = client.simulation(state, 8.5, 100.0, 8.5);
 
 		for (int tick = 0; tick < 10; tick++) player.tick(MovementInput.NONE);
-		assertEquals(100.0, player.body().getPosition().y);
+		assertEquals(100.0, player.body().position().y);
 
 		player.tick(JUMP);
-		assertEquals(100.0 + 1 * 0.05F * 3.0F, player.body().getPosition().y);
-		assertEquals((1 * 0.05F * 3.0F) * 0.6, player.body().getDeltaMovement().y);
+		assertEquals(100.0 + 1 * 0.05F * 3.0F, player.body().position().y);
+		assertEquals((1 * 0.05F * 3.0F) * 0.6, player.body().deltaMovement().y);
 
 		for (int tick = 0; tick < 10; tick++) player.tick(SNEAK);
-		assertTrue(player.body().getPosition().y < 100.0);
-		assertTrue(state.isFlying());
+		assertTrue(player.body().position().y < 100.0);
+		assertTrue(state.flying());
 	}
 
 	@Test
@@ -55,10 +55,10 @@ class FlightTest {
 
 		player.tick(JUMP);
 		player.tick(MovementInput.NONE);
-		assertFalse(state.isFlying());
+		assertFalse(state.flying());
 		player.tick(JUMP);
 
-		assertTrue(state.isFlying());
+		assertTrue(state.flying());
 	}
 
 	@Test
@@ -79,7 +79,7 @@ class FlightTest {
 		player.tick(MovementInput.NONE);
 		player.tick(JUMP);
 
-		assertFalse(state.isFlying());
+		assertFalse(state.flying());
 		assertEquals(List.of(new ServerboundPlayerAbilities(false)), player.body().abilityUpdates());
 	}
 
@@ -92,13 +92,13 @@ class FlightTest {
 		PlayerSimulation player = client.simulation(state, 8.5, 66.0, 8.5);
 
 		List<ServerboundPlayerAbilities> told = new ArrayList<>();
-		for (int tick = 0; tick < 20 && state.isFlying(); tick++) {
+		for (int tick = 0; tick < 20 && state.flying(); tick++) {
 			player.tick(SNEAK);
 			told.addAll(player.body().abilityUpdates());
 		}
 
-		assertFalse(state.isFlying());
-		assertTrue(player.body().isOnGround());
+		assertFalse(state.flying());
+		assertTrue(player.body().onGround());
 		assertEquals(List.of(new ServerboundPlayerAbilities(false)), told);
 	}
 
@@ -113,7 +113,7 @@ class FlightTest {
 		state.abilities(ClientboundPlayerAbilities.builder().flying(false).mayFly(true).flyingSpeed(0.05F).build());
 		player.tick(MovementInput.NONE);
 
-		assertTrue(state.isFlying());
+		assertTrue(state.flying());
 		assertEquals(List.of(new ServerboundPlayerAbilities(true)), player.body().abilityUpdates());
 	}
 
@@ -125,7 +125,7 @@ class FlightTest {
 
 		for (int tick = 0; tick < 6; tick++) player.tick(tick % 2 == 0 ? JUMP : MovementInput.NONE);
 
-		assertFalse(state.isFlying());
+		assertFalse(state.flying());
 		assertEquals(List.of(), player.body().abilityUpdates());
 	}
 

@@ -37,22 +37,22 @@ class WorldChangeLogTest {
 		log.record(ALICE, "Alice", "minecraft:the_nether", "minecraft:overworld");
 
 		assertEquals(List.of(change(2, "minecraft:the_nether", "minecraft:overworld", 1_000)),
-				log.since(request("log-1", 1)).getChanges());
-		assertEquals(List.of(), log.since(request("log-1", 2)).getChanges());
-		assertEquals(List.of(), log.since(request("log-1", 5)).getChanges());
+				log.since(request("log-1", 1)).changes());
+		assertEquals(List.of(), log.since(request("log-1", 2)).changes());
+		assertEquals(List.of(), log.since(request("log-1", 5)).changes());
 	}
 
 	@Test
 	void returnsEveryChangeToAHostThatReadAnotherLog() {
 		log.record(ALICE, "Alice", "minecraft:overworld", "minecraft:the_nether");
 
-		assertEquals(1, log.since(request("log-of-the-previous-process", 7)).getChanges().size());
+		assertEquals(1, log.since(request("log-of-the-previous-process", 7)).changes().size());
 	}
 
 	@Test
 	void startsEachLogUnderANewIdentity() {
-		assertNotEquals(new WorldChangeLog().since(request(null, 0)).getLog(),
-				new WorldChangeLog().since(request(null, 0)).getLog());
+		assertNotEquals(new WorldChangeLog().since(request(null, 0)).log(),
+				new WorldChangeLog().since(request(null, 0)).log());
 	}
 
 	private static AgentLogRequest request(String log, long after) {

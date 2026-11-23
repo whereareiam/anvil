@@ -46,7 +46,7 @@ public class SidebarRowsPlatformTest extends ScenarioPlatformTestCase {
 		tree.expandRow(0);
 		JList<?> sources = SwingTestSupport.find(console, JList.class);
 		for (int index : List.of(1, 2)) {
-			String name = run.getScenario().getProcesses().get(index - 1).getDisplayName();
+			String name = run.getScenario().processes().get(index - 1).displayName();
 			for (SimpleColoredComponent renderer :
 					List.of(treeRow(tree, index), listRow(sources, index))) {
 				assertEquals(name, renderer.getCharSequence(false).toString());
@@ -127,7 +127,7 @@ public class SidebarRowsPlatformTest extends ScenarioPlatformTestCase {
 		SwingTestSupport.useTheme(getTestRootDisposable(), true);
 		var base = ScenarioFixtures.scenario();
 		var scenario =
-				base.toBuilder().clearProcesses().process(base.getProcesses().getFirst()).build();
+				base.toBuilder().clearProcesses().process(base.processes().getFirst()).build();
 		var run = run(scenario);
 		var environment = new OverviewPanel(getProject(), run);
 		environment.update();
@@ -155,17 +155,17 @@ public class SidebarRowsPlatformTest extends ScenarioPlatformTestCase {
 						.state(SessionState.RUNNING)
 						.setupComplete(true)
 						.processes(
-								scenario.getProcesses().stream()
+								scenario.processes().stream()
 										.map(
 												process ->
 														ProcessSnapshot.builder()
-																.name(process.getName())
-																.executionId(EnvironmentSessionFixture.executionId(process.getName()))
-																.displayName(process.getDisplayName())
+																.name(process.name())
+																.executionId(EnvironmentSessionFixture.executionId(process.name()))
+																.displayName(process.displayName())
 																.state(ProcessState.READY)
 																.host("127.0.0.1")
 																.port(25565)
-																.workDirectory("/work/" + process.getName())
+																.workDirectory("/work/" + process.name())
 																.build())
 										.toList())
 						.build());

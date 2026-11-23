@@ -68,19 +68,19 @@ public abstract class JavaClient implements McProtocolClient<Session> {
 
 	@Override
 	public @NotNull Session open(@NotNull ClientLogin login, @NotNull ClientListener<? super Session> listener) {
-		ClientProfile profile = login.getProfile();
-		ClientCredentials credentials = login.getCredentials();
-		ClientConnection connection = login.getConnection();
-		MinecraftProtocol protocol = new MinecraftProtocol(new GameProfile(profile.getUniqueId(), profile.getName()),
-				credentials == null ? null : credentials.getAccessToken());
+		ClientProfile profile = login.profile();
+		ClientCredentials credentials = login.credentials();
+		ClientConnection connection = login.connection();
+		MinecraftProtocol protocol = new MinecraftProtocol(new GameProfile(profile.uniqueId(), profile.name()),
+				credentials == null ? null : credentials.accessToken());
 		PacketTable<Packet> table = tables.apply(listener);
-		Session session = connection.getSourceAddress() == null
-				? new FramedClientSession(connection.getHost(), connection.getPort(), protocol, listener, table)
-				: new FramedClientSession(connection.getHost(), connection.getPort(), connection.getSourceAddress(),
+		Session session = connection.sourceAddress() == null
+				? new FramedClientSession(connection.host(), connection.port(), protocol, listener, table)
+				: new FramedClientSession(connection.host(), connection.port(), connection.sourceAddress(),
 						protocol, listener, table);
-		if (credentials != null && credentials.getSessionServer() != null) {
+		if (credentials != null && credentials.sessionServer() != null) {
 			SessionService sessionService = new SessionService();
-			sessionService.setBaseUri(credentials.getSessionServer() + PATH_SEPARATOR);
+			sessionService.setBaseUri(credentials.sessionServer() + PATH_SEPARATOR);
 			session.setFlag(MinecraftConstants.SESSION_SERVICE_KEY, sessionService);
 		}
 		session.addListener(new ClientPacketListener(login, listener, answers, text));

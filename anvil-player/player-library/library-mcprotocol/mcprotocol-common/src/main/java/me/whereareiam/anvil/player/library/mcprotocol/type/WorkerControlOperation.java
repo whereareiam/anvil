@@ -27,7 +27,7 @@ public enum WorkerControlOperation {
 	 * @return immutable wire names
 	 */
 	public static @NotNull Set<String> wireNames() {
-		return Arrays.stream(values()).map(WorkerControlOperation::getWireName).collect(Collectors.toUnmodifiableSet());
+		return Arrays.stream(values()).map(WorkerControlOperation::wireName).collect(Collectors.toUnmodifiableSet());
 	}
 
 	public static @NotNull Optional<WorkerControlOperation> find(@NotNull String wireName) {

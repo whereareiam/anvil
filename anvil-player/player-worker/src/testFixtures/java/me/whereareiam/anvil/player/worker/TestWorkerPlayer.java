@@ -123,7 +123,7 @@ public class TestWorkerPlayer implements PlayerBindingContext<Object> {
 	 *
 	 * @return whether the player is connected
 	 */
-	public boolean isConnected() {
+	public boolean connected() {
 		return session != null;
 	}
 
@@ -157,7 +157,7 @@ public class TestWorkerPlayer implements PlayerBindingContext<Object> {
 
 	@Override
 	public <E> void emit(@NotNull EventDescriptor<E> event, @Nullable E payload) {
-		emitted.add(new Emitted(event.getId(), payload));
+		emitted.add(new Emitted(event.id(), payload));
 	}
 
 	/**
@@ -169,8 +169,8 @@ public class TestWorkerPlayer implements PlayerBindingContext<Object> {
 	 */
 	public <E> @NotNull List<E> emitted(@NotNull EventDescriptor<E> event) {
 		return emitted.stream()
-				.filter(emitted -> emitted.id().equals(event.getId()))
-				.map(emitted -> event.getPayloadType().cast(emitted.payload()))
+				.filter(emitted -> emitted.id().equals(event.id()))
+				.map(emitted -> event.payloadType().cast(emitted.payload()))
 				.toList();
 	}
 

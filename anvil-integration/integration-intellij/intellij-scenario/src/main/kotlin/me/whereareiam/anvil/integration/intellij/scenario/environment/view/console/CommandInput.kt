@@ -66,7 +66,7 @@ class CommandInput(
 		val selected = target?.let {
 			CommandHistory.Scope.builder()
 				.source(session.source.id)
-				.definition(session.scenario.definition)
+				.definition(session.scenario.definition())
 				.target(it)
 				.operation(operation)
 				.build()

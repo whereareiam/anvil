@@ -36,16 +36,16 @@ final class PlatformSelection {
 	}
 
 	private static String entrypointPlatform(AnvilScenario scenario) {
-		String entrypoint = scenario.getEntrypoint();
-		return scenario.getProxies().stream()
-				.filter(proxy -> proxy.getName().equals(entrypoint))
-				.map(proxy -> proxy.getPlatform())
+		String entrypoint = scenario.entrypoint();
+		return scenario.proxies().stream()
+				.filter(proxy -> proxy.name().equals(entrypoint))
+				.map(proxy -> proxy.platform())
 				.findFirst()
-				.orElseGet(() -> scenario.getServers().stream()
-						.filter(server -> server.getName().equals(entrypoint))
-						.map(server -> server.getPlatform())
+				.orElseGet(() -> scenario.servers().stream()
+						.filter(server -> server.name().equals(entrypoint))
+						.map(server -> server.platform())
 						.findFirst()
-						.orElseThrow(() -> new IllegalStateException("Scenario " + scenario.getName()
+						.orElseThrow(() -> new IllegalStateException("Scenario " + scenario.name()
 								+ " has no entrypoint " + entrypoint)));
 	}
 }

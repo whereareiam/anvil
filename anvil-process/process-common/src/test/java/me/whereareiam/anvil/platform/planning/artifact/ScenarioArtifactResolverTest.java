@@ -36,16 +36,16 @@ class ScenarioArtifactResolverTest {
 				.distribution(Distribution.artifact("test")).workspace(workspace).build();
 		AnvilScenario scenario = AnvilScenario.builder().name("test").entrypoint("server").server(server).build();
 
-		MinecraftServer resolved = resolver.resolve(scenario).getServers().getFirst();
+		MinecraftServer resolved = resolver.resolve(scenario).servers().getFirst();
 
-		assertEquals(jar, resolved.getDistribution().getLocalJar());
-		assertEquals(jar, resolved.getWorkspace().getAssets().getFirst().getSource().getPath());
-		assertTrue(server.getDistribution().isArtifact());
-		assertTrue(workspace.getAssets().getFirst().getSource().isArtifact());
-		WorkspacePlan installed = resolver.installAgent(resolved.getWorkspace(), "test", PlatformAgentDescriptor.builder()
+		assertEquals(jar, resolved.distribution().localJar());
+		assertEquals(jar, resolved.workspace().assets().getFirst().source().path());
+		assertTrue(server.distribution().isArtifact());
+		assertTrue(workspace.assets().getFirst().source().isArtifact());
+		WorkspacePlan installed = resolver.installAgent(resolved.workspace(), "test", PlatformAgentDescriptor.builder()
 				.entrypointClassName("test.Agent").build());
-		assertEquals(2, installed.getAssets().size());
-		assertEquals(1, resolved.getWorkspace().getAssets().size());
+		assertEquals(2, installed.assets().size());
+		assertEquals(1, resolved.workspace().assets().size());
 	}
 
 	@Test
@@ -70,9 +70,9 @@ class ScenarioArtifactResolverTest {
 
 		assertEquals(List.of(Path.of("plugins", "anvil-platform-agent.jar"),
 						Path.of("plugins", "anvil-agent-extensions", "echo-agent-bukkit.jar")),
-				paper.getAssets().stream().map(WorkspaceAsset::getTarget).toList());
-		assertEquals(extension, paper.getAssets().get(1).getSource().getPath());
-		assertEquals(1, velocity.getAssets().size());
+				paper.assets().stream().map(WorkspaceAsset::target).toList());
+		assertEquals(extension, paper.assets().get(1).source().path());
+		assertEquals(1, velocity.assets().size());
 	}
 
 	@Test
@@ -89,9 +89,9 @@ class ScenarioArtifactResolverTest {
 
 		MinecraftServer resolved = resolver
 				.resolve(AnvilScenario.builder().name("test").entrypoint("server").server(server).build())
-				.getServers().getFirst();
+				.servers().getFirst();
 
-		assertEquals(asset, resolved.getWorkspace().getAssets().getFirst());
+		assertEquals(asset, resolved.workspace().assets().getFirst());
 	}
 
 	@Test

@@ -18,9 +18,9 @@ import java.util.List;
  * three as data components. Either way the protocol carries them as the text the server sent.</p>
  *
  * <pre>{@code
- * ItemStack stack = slot.getItem();
- * String name = stack.getCustomName() == null ? null : stack.getCustomName().plain();
- * List<String> lore = stack.getLore().stream().map(Text::plain).toList();
+ * ItemStack stack = slot.item();
+ * String name = stack.customName() == null ? null : stack.customName().plain();
+ * List<String> lore = stack.lore().stream().map(Text::plain).toList();
  * }</pre>
  */
 @Value

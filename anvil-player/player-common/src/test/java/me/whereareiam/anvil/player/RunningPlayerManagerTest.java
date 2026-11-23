@@ -71,7 +71,7 @@ class RunningPlayerManagerTest {
 		SimulatedPlayer alice = manager.create("Alice");
 
 		assertEquals(MinecraftVersion.parse("1.21.11"), alice.clientVersion());
-		assertEquals(MinecraftVersion.parse("1.21.11"), library.lastRequest.getClientVersion());
+		assertEquals(MinecraftVersion.parse("1.21.11"), library.lastRequest.clientVersion());
 		assertFalse(alice instanceof AutoCloseable);
 		assertEquals(1, manager.all().size());
 
@@ -87,13 +87,13 @@ class RunningPlayerManagerTest {
 		RunningPlayerManager manager = manager(library);
 
 		manager.create("Alice");
-		assertEquals("Alice", library.lastRequest.getUsername());
+		assertEquals("Alice", library.lastRequest.username());
 
 		SimulatedPlayer again = manager.create(PlayerOptions.builder().name("alice-again").login(PlayerLogin.offline("Alice")).build());
 
 		assertEquals("alice-again", again.name());
-		assertEquals("alice-again", library.lastRequest.getName());
-		assertEquals("Alice", library.lastRequest.getUsername());
+		assertEquals("alice-again", library.lastRequest.name());
+		assertEquals("Alice", library.lastRequest.username());
 		assertEquals(2, manager.all().size());
 		assertSame(again, manager.get("alice-again"));
 	}
@@ -117,10 +117,10 @@ class RunningPlayerManagerTest {
 		RunningPlayerManager manager = manager(library);
 
 		manager.create(PlayerOptions.builder().name("ivan").language("ru_ru").build());
-		assertEquals("ru_ru", library.lastRequest.getLanguage());
+		assertEquals("ru_ru", library.lastRequest.language());
 
 		manager.create("alice");
-		assertEquals("en_us", library.lastRequest.getLanguage());
+		assertEquals("en_us", library.lastRequest.language());
 	}
 
 	@Test
@@ -144,13 +144,13 @@ class RunningPlayerManagerTest {
 		manager.create(PlayerOptions.builder().name("alice").connection(PlayerConnection.builder()
 				.target("server").virtualHost("lobby.example.test").sourceAddress("127.0.0.1").build()).build());
 
-		assertEquals("lobby.example.test", library.lastRequest.getConnection().getVirtualHost());
-		assertEquals(InetAddress.getLoopbackAddress(), library.lastRequest.getConnection().getSourceAddress());
-		assertEquals("127.0.0.1", library.lastRequest.getConnection().getAddress().getHostString());
+		assertEquals("lobby.example.test", library.lastRequest.connection().virtualHost());
+		assertEquals(InetAddress.getLoopbackAddress(), library.lastRequest.connection().sourceAddress());
+		assertEquals("127.0.0.1", library.lastRequest.connection().address().getHostString());
 
 		manager.create("bob");
-		assertNull(library.lastRequest.getConnection().getVirtualHost());
-		assertNull(library.lastRequest.getConnection().getSourceAddress());
+		assertNull(library.lastRequest.connection().virtualHost());
+		assertNull(library.lastRequest.connection().sourceAddress());
 	}
 
 	@Test
@@ -158,7 +158,7 @@ class RunningPlayerManagerTest {
 		StubLibrary library = new StubLibrary();
 		AtomicReference<String> target = new AtomicReference<>();
 		ProtocolPlayerComposer composer = (player, connection, metadata, onDestroyed) -> {
-			target.set(connection.getTarget());
+			target.set(connection.target());
 			return composer().compose(player, connection, metadata, onDestroyed);
 		};
 
@@ -250,12 +250,12 @@ class RunningPlayerManagerTest {
 		RunningProcess original = processes.get("server");
 		RunningPlayerManager manager = manager(scenario(), library, processes, composer(), ignored -> { });
 		manager.create("Before");
-		assertEquals(original.address(), library.lastRequest.getConnection().getAddress());
+		assertEquals(original.address(), library.lastRequest.connection().address());
 
 		RunningProcess replacement = processes.restart("server");
 		manager.create("After");
 
-		assertEquals(replacement.address(), library.lastRequest.getConnection().getAddress());
+		assertEquals(replacement.address(), library.lastRequest.connection().address());
 		assertEquals(25565, original.address().getPort());
 		assertEquals(25566, replacement.address().getPort());
 	}
@@ -355,8 +355,8 @@ class RunningPlayerManagerTest {
 
 		assertEquals("alice", manager.create(online("alice").toBuilder()
 				.login(PlayerLogin.account(AuthenticationMode.ON_REQUEST, "alice")).build()).name());
-		assertEquals(AuthenticationMode.ON_REQUEST, library.lastRequest.getLogin().getAuthentication());
-		assertEquals("alice", library.lastRequest.getLogin().getAccountId());
+		assertEquals(AuthenticationMode.ON_REQUEST, library.lastRequest.login().authentication());
+		assertEquals("alice", library.lastRequest.login().accountId());
 	}
 
 	@Test
@@ -367,7 +367,7 @@ class RunningPlayerManagerTest {
 				new AuthenticationAccount("alice", "test", "Alice", null));
 
 		assertEquals("alice", manager.create(online("alice")).name());
-		assertEquals("alice", library.lastRequest.getLogin().getAccountId());
+		assertEquals("alice", library.lastRequest.login().accountId());
 	}
 
 	@Test
@@ -380,7 +380,7 @@ class RunningPlayerManagerTest {
 				.login(PlayerLogin.session(AuthenticationMode.ONLINE, identity)).build();
 
 		onlineManager(selector(library), library, new AccountReservations(), sessionServer).create(options);
-		assertSame(identity, library.lastRequest.getLogin().getSessionIdentity());
+		assertSame(identity, library.lastRequest.login().sessionIdentity());
 
 		RunningPlayerManager mojang = onlineManager(library, new AccountReservations());
 		var refused = assertThrows(ScenarioValidationException.class, () -> mojang.create(options));
@@ -413,8 +413,8 @@ class RunningPlayerManagerTest {
 
 		manager.create(PlayerOptions.builder().name("alice").login(PlayerLogin.leased(AuthenticationMode.ON_REQUEST)).build(), lease);
 
-		assertEquals("stored", library.lastRequest.getLogin().getAccountId());
-		assertEquals(AuthenticationMode.ON_REQUEST, library.lastRequest.getLogin().getAuthentication());
+		assertEquals("stored", library.lastRequest.login().accountId());
+		assertEquals(AuthenticationMode.ON_REQUEST, library.lastRequest.login().authentication());
 		assertFalse(lease.closed);
 	}
 
@@ -459,7 +459,7 @@ class RunningPlayerManagerTest {
 
 		SimulatedPlayer player = manager.create("alice", lease);
 
-		assertEquals("alice", library.lastRequest.getLogin().getAccountId());
+		assertEquals("alice", library.lastRequest.login().accountId());
 		assertFalse(lease.closed);
 		player.destroy();
 		assertTrue(lease.closed);
@@ -480,7 +480,7 @@ class RunningPlayerManagerTest {
 		lookup.addresses.put("play.example.test.", InetAddress.getByAddress("play.example.test.", new byte[]{(byte) 203, 0, 113, 7}));
 		AtomicReference<String> target = new AtomicReference<>();
 		ProtocolPlayerComposer composer = (player, connection, metadata, onDestroyed) -> {
-			target.set(connection.getTarget());
+			target.set(connection.target());
 			return composer().compose(player, connection, metadata, onDestroyed);
 		};
 		RunningPlayerManager manager = manager(remoteScenario("example.test"), library,
@@ -490,10 +490,10 @@ class RunningPlayerManagerTest {
 
 		assertEquals(MinecraftVersion.parse("1.21.11"), alice.clientVersion());
 		assertEquals("network", target.get());
-		assertEquals("203.0.113.7", library.lastRequest.getConnection().getAddress().getHostString());
-		assertEquals(25570, library.lastRequest.getConnection().getAddress().getPort());
-		assertEquals("play.example.test.", library.lastRequest.getConnection().getVirtualHost());
-		assertNull(library.lastRequest.getConnection().getSourceAddress());
+		assertEquals("203.0.113.7", library.lastRequest.connection().address().getHostString());
+		assertEquals(25570, library.lastRequest.connection().address().getPort());
+		assertEquals("play.example.test.", library.lastRequest.connection().virtualHost());
+		assertNull(library.lastRequest.connection().sourceAddress());
 	}
 
 	@Test
@@ -506,8 +506,8 @@ class RunningPlayerManagerTest {
 		manager.create(PlayerOptions.builder().name("alice")
 				.connection(PlayerConnection.builder().virtualHost("lobby.example.test").build()).build());
 
-		assertEquals("lobby.example.test", library.lastRequest.getConnection().getVirtualHost());
-		assertEquals(25565, library.lastRequest.getConnection().getAddress().getPort());
+		assertEquals("lobby.example.test", library.lastRequest.connection().virtualHost());
+		assertEquals(25565, library.lastRequest.connection().address().getPort());
 	}
 
 	@Test
@@ -548,10 +548,10 @@ class RunningPlayerManagerTest {
 				ignored -> { }, () -> List.of(account), new AccountReservations(), remoteAddresses(), true);
 
 		manager.create("bob");
-		assertEquals(AuthenticationMode.OFFLINE, library.lastRequest.getLogin().getAuthentication());
+		assertEquals(AuthenticationMode.OFFLINE, library.lastRequest.login().authentication());
 
 		manager.create(online("alice"));
-		assertEquals(AuthenticationMode.ONLINE, library.lastRequest.getLogin().getAuthentication());
+		assertEquals(AuthenticationMode.ONLINE, library.lastRequest.login().authentication());
 
 		var missing = assertThrows(ScenarioValidationException.class, () -> manager.create(online("carol")));
 		assertEquals("Authenticated account 'carol' is not available", missing.getMessage());
@@ -661,7 +661,7 @@ class RunningPlayerManagerTest {
 				.build();
 		return AnvilScenario.builder()
 				.name("players")
-				.entrypoint(server.getName())
+				.entrypoint(server.name())
 				.server(server)
 				.build();
 	}
@@ -818,18 +818,18 @@ class RunningPlayerManagerTest {
 			this.request = request;
 			this.release = release;
 			this.destructionFailure = destructionFailure;
-			this.requested = new PlayerProfile(request.getName(), UUID.nameUUIDFromBytes(("OfflinePlayer:" + request.getName())
+			this.requested = new PlayerProfile(request.name(), UUID.nameUUIDFromBytes(("OfflinePlayer:" + request.name())
 					.getBytes(StandardCharsets.UTF_8)));
 		}
 
 		@Override
 		public @NotNull String name() {
-			return request.getName();
+			return request.name();
 		}
 
 		@Override
 		public @NotNull MinecraftVersion clientVersion() {
-			return request.getClientVersion();
+			return request.clientVersion();
 		}
 
 		@Override

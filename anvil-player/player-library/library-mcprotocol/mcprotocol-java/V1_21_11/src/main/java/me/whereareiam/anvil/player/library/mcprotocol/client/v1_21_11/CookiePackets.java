@@ -42,6 +42,6 @@ public final class CookiePackets implements PacketTranslation<Packet> {
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		if (!(packet instanceof ServerboundCookieResponse response)) return null;
 
-		return new ServerboundCookieResponsePacket(Key.key(response.getKey()), response.getPayload());
+		return new ServerboundCookieResponsePacket(Key.key(response.key()), response.payload());
 	}
 }

@@ -40,7 +40,7 @@ public class FixtureLibraryProvider implements ProtocolLibraryProvider {
 
 	@Override
 	public @NotNull ProtocolLibrary create(@NotNull ProtocolLibraryContext context) {
-		Path trace = context.getCacheDirectory().resolve(id() + ".lifecycle");
+		Path trace = context.cacheDirectory().resolve(id() + ".lifecycle");
 		trace(trace, "created");
 		List<ProtocolRelease> releases = releases(context);
 		return new ProtocolLibrary() {
@@ -57,9 +57,9 @@ public class FixtureLibraryProvider implements ProtocolLibraryProvider {
 			@Override
 			public @NotNull ProtocolPlayer create(@NotNull PlayerRequest request) {
 				ProtocolRelease release = releases.stream()
-						.filter(candidate -> candidate.getMinecraftVersions().contains(request.getClientVersion()))
+						.filter(candidate -> candidate.minecraftVersions().contains(request.clientVersion()))
 						.findFirst()
-						.orElseThrow(() -> new IllegalArgumentException("No fixture release speaks Minecraft " + request.getClientVersion()));
+						.orElseThrow(() -> new IllegalArgumentException("No fixture release speaks Minecraft " + request.clientVersion()));
 				return player(request, release);
 			}
 
@@ -77,12 +77,12 @@ public class FixtureLibraryProvider implements ProtocolLibraryProvider {
 
 			@Override
 			public @NotNull String name() {
-				return request.getName();
+				return request.name();
 			}
 
 			@Override
 			public @NotNull MinecraftVersion clientVersion() {
-				return request.getClientVersion();
+				return request.clientVersion();
 			}
 
 			@Override

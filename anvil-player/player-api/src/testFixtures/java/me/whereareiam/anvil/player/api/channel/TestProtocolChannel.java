@@ -76,7 +76,7 @@ public final class TestProtocolChannel implements ProtocolChannel {
 	 */
 	@SuppressWarnings("unchecked")
 	public <Q, R> void answer(@NotNull OperationDescriptor<Q, R> operation, @NotNull Function<Q, R> handler) {
-		answers.put(operation.getId(), request -> handler.apply((Q) request));
+		answers.put(operation.id(), request -> handler.apply((Q) request));
 	}
 
 	/**
@@ -87,7 +87,7 @@ public final class TestProtocolChannel implements ProtocolChannel {
 	 * @param <E> payload type
 	 */
 	public <E> void publish(@NotNull EventDescriptor<E> event, @Nullable E payload) {
-		for (Consumer<Object> listener : listeners.getOrDefault(event.getId(), List.of())) listener.accept(payload);
+		for (Consumer<Object> listener : listeners.getOrDefault(event.id(), List.of())) listener.accept(payload);
 	}
 
 	/**
@@ -138,11 +138,11 @@ public final class TestProtocolChannel implements ProtocolChannel {
 
 	@Override
 	public <Q, R> @Nullable R request(@NotNull OperationDescriptor<Q, R> operation, @Nullable Q request) {
-		requests.add(operation.getId());
+		requests.add(operation.id());
 		payloads.add(request == null ? Optional.empty() : request);
-		Function<Object, Object> handler = answers.get(operation.getId());
+		Function<Object, Object> handler = answers.get(operation.id());
 		if (handler == null)
-			throw new IllegalStateException("The test's worker does not answer " + operation.getId());
+			throw new IllegalStateException("The test's worker does not answer " + operation.id());
 
 		return operation.response(handler.apply(request));
 	}
@@ -150,8 +150,8 @@ public final class TestProtocolChannel implements ProtocolChannel {
 	@Override
 	@SuppressWarnings("unchecked")
 	public <E> @NotNull Subscription subscribe(@NotNull EventDescriptor<E> event, @NotNull Consumer<E> listener) {
-		subscriptions.add(event.getId());
-		List<Consumer<Object>> subscribed = listeners.computeIfAbsent(event.getId(),
+		subscriptions.add(event.id());
+		List<Consumer<Object>> subscribed = listeners.computeIfAbsent(event.id(),
 				ignored -> new CopyOnWriteArrayList<>());
 		Consumer<Object> typed = payload -> listener.accept((E) payload);
 		subscribed.add(typed);

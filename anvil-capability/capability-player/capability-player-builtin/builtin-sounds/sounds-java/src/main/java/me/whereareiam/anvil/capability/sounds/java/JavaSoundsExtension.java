@@ -38,17 +38,17 @@ public final class JavaSoundsExtension implements WorkerExtension<Object> {
 
 		Subscription heard = Subscription.all(
 				protocol.listen(ClientboundSound.class, sound -> heard(player, HeardSound.builder()
-						.key(sound.getSound())
-						.category(category(sound.getSource()))
-						.volume(sound.getVolume())
-						.pitch(sound.getPitch())
-						.position(position(sound.getPosition())))),
+						.key(sound.sound())
+						.category(category(sound.source()))
+						.volume(sound.volume())
+						.pitch(sound.pitch())
+						.position(position(sound.position())))),
 				protocol.listen(ClientboundSoundEntity.class, sound -> heard(player, HeardSound.builder()
-						.key(sound.getSound())
-						.category(category(sound.getSource()))
-						.volume(sound.getVolume())
-						.pitch(sound.getPitch())
-						.entityId(sound.getEntityId().getValue())))
+						.key(sound.sound())
+						.category(category(sound.source()))
+						.volume(sound.volume())
+						.pitch(sound.pitch())
+						.entityId(sound.entityId().value())))
 		);
 
 		return heard::close;
@@ -62,7 +62,7 @@ public final class JavaSoundsExtension implements WorkerExtension<Object> {
 	 * Copies a protocol position into the capability's own position.
 	 */
 	private static SoundPosition position(Vec3d position) {
-		return new SoundPosition(position.getX(), position.getY(), position.getZ());
+		return new SoundPosition(position.x(), position.y(), position.z());
 	}
 
 	private static SoundCategory category(SoundSource source) {

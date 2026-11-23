@@ -71,7 +71,7 @@ public final class BlockQuery implements Predicate<Block> {
 	 * @return the query, which throws {@link UnknownBlockNameException} for a block known only by its state ID
 	 */
 	public static @NotNull BlockQuery air() {
-		return matching("air", Block::isAir);
+		return matching("air", Block::air);
 	}
 
 	/**
@@ -81,7 +81,7 @@ public final class BlockQuery implements Predicate<Block> {
 	 * @return the query
 	 */
 	public static @NotNull BlockQuery state(int stateId) {
-		return matching("in state " + stateId, block -> block.getState() == stateId);
+		return matching("in state " + stateId, block -> block.state() == stateId);
 	}
 
 	/**

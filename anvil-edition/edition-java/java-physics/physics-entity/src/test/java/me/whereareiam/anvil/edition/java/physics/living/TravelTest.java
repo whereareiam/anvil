@@ -36,10 +36,10 @@ class TravelTest {
 			y += velocity;
 			velocity = (velocity - 0.08) * (double) 0.98F;
 
-			assertEquals(velocity, entity.body().getDeltaMovement().y, "velocity after tick " + (tick + 1));
-			assertEquals(y, entity.body().getPosition().y, "height after tick " + (tick + 1));
+			assertEquals(velocity, entity.body().deltaMovement().y, "velocity after tick " + (tick + 1));
+			assertEquals(y, entity.body().position().y, "height after tick " + (tick + 1));
 		}
-		assertFalse(entity.body().isOnGround());
+		assertFalse(entity.body().onGround());
 	}
 
 	@Test
@@ -48,9 +48,9 @@ class TravelTest {
 				.floor(0, 15, 64, 0, 47, "minecraft:ice").send();
 		LivingSimulation entity = TestEntity.living(world, 8.5, 65.0, 2.5);
 		TestEntity.settle(entity);
-		entity.body().setZza(1.0F);
+		entity.body().zza(1.0F);
 
-		double z = entity.body().getPosition().z;
+		double z = entity.body().position().z;
 		double velocity = 0.0;
 		float acceleration = 0.1F * (0.21600002F / (0.98F * 0.98F * 0.98F));
 		for (int tick = 0; tick < 40; tick++) {
@@ -60,7 +60,7 @@ class TravelTest {
 			z += velocity;
 			velocity *= 0.98F * 0.91F;
 
-			assertEquals(z, entity.body().getPosition().z, "position after tick " + (tick + 1));
+			assertEquals(z, entity.body().position().z, "position after tick " + (tick + 1));
 		}
 	}
 
@@ -71,12 +71,12 @@ class TravelTest {
 		LivingSimulation entity = inTheAir(effects, null);
 
 		entity.tick();
-		assertEquals((0.0 + (0.05 * 1 - 0.0) * 0.2) * 0.98F, entity.body().getDeltaMovement().y);
+		assertEquals((0.0 + (0.05 * 1 - 0.0) * 0.2) * 0.98F, entity.body().deltaMovement().y);
 		for (int tick = 0; tick < 40; tick++) entity.tick();
 
-		assertTrue(entity.body().getPosition().y > 101.0, "it rose to " + entity.body().getPosition());
-		assertTrue(entity.body().getDeltaMovement().y < 0.05);
-		assertEquals(0.0, entity.body().getFallDistance());
+		assertTrue(entity.body().position().y > 101.0, "it rose to " + entity.body().position());
+		assertTrue(entity.body().deltaMovement().y < 0.05);
+		assertEquals(0.0, entity.body().fallDistance());
 	}
 
 	@Test
@@ -88,7 +88,7 @@ class TravelTest {
 		entity.tick();
 		entity.tick();
 
-		assertEquals(((0.0 - 0.01) * 0.98F - 0.01) * 0.98F, entity.body().getDeltaMovement().y);
+		assertEquals(((0.0 - 0.01) * 0.98F - 0.01) * 0.98F, entity.body().deltaMovement().y);
 	}
 
 	@Test
@@ -97,7 +97,7 @@ class TravelTest {
 
 		entity.tick();
 
-		assertEquals((0.0 - 0.04) * 0.98F, entity.body().getDeltaMovement().y);
+		assertEquals((0.0 - 0.04) * 0.98F, entity.body().deltaMovement().y);
 	}
 
 	private static @NotNull LivingSimulation inTheAir(@NotNull Effects effects, @Nullable AttributeSnapshot attribute) {

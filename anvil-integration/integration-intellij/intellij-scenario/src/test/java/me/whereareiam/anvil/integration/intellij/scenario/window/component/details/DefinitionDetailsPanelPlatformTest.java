@@ -43,7 +43,7 @@ public class DefinitionDetailsPanelPlatformTest extends ScenarioPlatformTestCase
 		ScenarioDescriptor scenario = ScenarioFixtures.scenario();
 		details.showProcess(
 				scenario,
-				scenario.getProcesses().getLast(),
+				scenario.processes().getLast(),
 				live("proxy", "/work/proxy"),
 				SessionState.RUNNING);
 
@@ -103,7 +103,7 @@ public class DefinitionDetailsPanelPlatformTest extends ScenarioPlatformTestCase
 				ScenarioFixtures.scenario().toBuilder().definition(definition).build();
 		details.showProcess(
 				scenario,
-				scenario.getProcesses().getLast(),
+				scenario.processes().getLast(),
 				live("proxy", workspace),
 				SessionState.RUNNING);
 		arrange(details, 360);
@@ -140,7 +140,7 @@ public class DefinitionDetailsPanelPlatformTest extends ScenarioPlatformTestCase
 				"Inspect this configured server and its complete launch inputs. ".repeat(8);
 		ScenarioDescriptor scenario = ScenarioFixtures.scenario();
 		var process =
-				scenario.getProcesses().getFirst().toBuilder()
+				scenario.processes().getFirst().toBuilder()
 						.distribution(distribution)
 						.description(description)
 						.build();
@@ -177,11 +177,11 @@ public class DefinitionDetailsPanelPlatformTest extends ScenarioPlatformTestCase
 		DefinitionDetailsPanel details = details();
 		ScenarioDescriptor scenario = ScenarioFixtures.scenario();
 		details.showScenario(scenario);
-		JTextArea name = value(details, scenario.getName());
+		JTextArea name = value(details, scenario.name());
 		name.select(0, 7);
 		details.showScenario(scenario.toBuilder().build());
-		assertSame(name, value(details, scenario.getName()));
-		assertEquals(scenario.getName().substring(0, 7), name.getSelectedText());
+		assertSame(name, value(details, scenario.name()));
+		assertEquals(scenario.name().substring(0, 7), name.getSelectedText());
 
 		details.showScenario(
 				ScenarioDescriptor.builder()
@@ -285,7 +285,7 @@ public class DefinitionDetailsPanelPlatformTest extends ScenarioPlatformTestCase
 		assertTrue(SwingTestSupport.text(details).contains("Completed"));
 		assertTrue(SwingTestSupport.text(details).contains("Join address"));
 
-		details.showProcess(scenario, scenario.getProcesses().getLast(), null, SessionState.IDLE);
+		details.showProcess(scenario, scenario.processes().getLast(), null, SessionState.IDLE);
 		assertTrue(SwingTestSupport.text(details).contains("VELOCITY"));
 		assertFalse(SwingTestSupport.text(details).contains("Address"));
 		assertFalse(SwingTestSupport.text(details).contains("Workspace"));
@@ -297,7 +297,7 @@ public class DefinitionDetailsPanelPlatformTest extends ScenarioPlatformTestCase
 		ScenarioDescriptor scenario = ScenarioFixtures.scenario();
 		details.showProcess(
 				scenario,
-				scenario.getProcesses().getLast(),
+				scenario.processes().getLast(),
 				live("proxy", "/work/player-registration/proxy"),
 				SessionState.RUNNING);
 		for (int width : new int[] {1100, 760, 360}) {
@@ -333,7 +333,7 @@ public class DefinitionDetailsPanelPlatformTest extends ScenarioPlatformTestCase
 		assertNoOverlap(details);
 		details.showNavigationStatus("Opened workspace in Project.");
 		assertFalse(SwingTestSupport.text(details).contains(status));
-		details.showProcess(scenario, scenario.getProcesses().getLast(), null, SessionState.IDLE);
+		details.showProcess(scenario, scenario.processes().getLast(), null, SessionState.IDLE);
 		assertFalse(SwingTestSupport.text(details).contains("Opened workspace"));
 	}
 
@@ -350,9 +350,9 @@ public class DefinitionDetailsPanelPlatformTest extends ScenarioPlatformTestCase
 		details.showEnvironment(scenario, snapshot, EnvironmentSession.Status.STOPPED);
 		assertTrue(SwingTestSupport.text(details).contains("0 of 2 running"));
 		assertFalse(SwingTestSupport.text(details).contains("Join address"));
-		details.showProcess(scenario, scenario.getProcesses().getLast(), process, SessionState.RUNNING);
+		details.showProcess(scenario, scenario.processes().getLast(), process, SessionState.RUNNING);
 		assertTrue(SwingTestSupport.text(details).contains("Running"));
-		details.showProcess(scenario, scenario.getProcesses().getLast(), process, SessionState.STOPPED);
+		details.showProcess(scenario, scenario.processes().getLast(), process, SessionState.STOPPED);
 		assertTrue(SwingTestSupport.text(details).contains("Stopped"));
 		assertFalse(SwingTestSupport.text(details).contains("Running"));
 		details.showEnvironment(scenario, snapshot.toBuilder().state(SessionState.FAILED).build(), EnvironmentSession.Status.FAILED);
@@ -396,7 +396,7 @@ public class DefinitionDetailsPanelPlatformTest extends ScenarioPlatformTestCase
 			}
 			details.showProcess(
 					scenario,
-					scenario.getProcesses().getLast(),
+					scenario.processes().getLast(),
 					live("proxy", "/work/proxy"),
 					SessionState.FAILED);
 			arrange(details, 240);
@@ -502,11 +502,11 @@ public class DefinitionDetailsPanelPlatformTest extends ScenarioPlatformTestCase
 
 	private static void assertTheme(DefinitionDetailsPanel details, ScenarioDescriptor scenario) {
 		assertEquals(JBUI.CurrentTheme.ToolWindow.background(), details.getBackground());
-		assertEquals(UIUtil.getLabelForeground(), value(details, scenario.getName()).getForeground());
+		assertEquals(UIUtil.getLabelForeground(), value(details, scenario.name()).getForeground());
 		assertEquals(
 				UIUtil.getContextHelpForeground(),
-				value(details, scenario.getDescription()).getForeground());
-		assertEquals(UIUtil.getLabelFont(), value(details, scenario.getName()).getFont());
+				value(details, scenario.description()).getForeground());
+		assertEquals(UIUtil.getLabelFont(), value(details, scenario.name()).getFont());
 	}
 
 	private static void assertNoOverlap(Container root) {

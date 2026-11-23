@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <pre>{@code
  * ItemRegistry registry = JavaItemData.shipped().require(767);
- * Optional<String> key = registry.key(stack.getId());
+ * Optional<String> key = registry.key(stack.id());
  * }</pre>
  */
 public final class JavaItemData {

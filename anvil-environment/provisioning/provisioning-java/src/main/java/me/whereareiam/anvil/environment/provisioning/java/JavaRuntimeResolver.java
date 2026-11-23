@@ -88,10 +88,10 @@ public final class JavaRuntimeResolver implements JavaProvisioner {
 	public @NotNull Path resolve(@NotNull JavaRequirement selection, @Nullable JavaSource source) {
 		int version = inspector.featureVersion(selection);
 		if (source instanceof LocalJavaHome home)
-			return requireSource(JavaExecutables.atHome(home.getHome()), selection, version);
+			return requireSource(JavaExecutables.atHome(home.home()), selection, version);
 
 		if (source instanceof LocalJavaExecutable executable)
-			return requireSource(executable.getExecutable(), selection, version);
+			return requireSource(executable.executable(), selection, version);
 
 		if (source instanceof JavaArchive archive) return archive(archive, selection, version);
 
@@ -105,9 +105,9 @@ public final class JavaRuntimeResolver implements JavaProvisioner {
 			if (inspector.matches(executable, selection)) return executable;
 		}
 
-		String distribution = selection.getDistribution() == null ? "temurin" : selection.getDistribution();
+		String distribution = selection.distribution() == null ? "temurin" : selection.distribution();
 		JavaPlatform platform = JavaPlatform.current();
-		String release = selection.getRelease() == null ? "selected" : selection.getRelease();
+		String release = selection.release() == null ? "selected" : selection.release();
 		if (!distribution.matches("[a-z0-9-]+") || !release.matches("[a-zA-Z0-9.+_-]+"))
 			throw new ProvisioningException("Invalid Java distribution or release selector");
 
@@ -116,7 +116,7 @@ public final class JavaRuntimeResolver implements JavaProvisioner {
 			Path marker = installation.resolve("executable");
 			if (!refresh && Files.isRegularFile(marker)) {
 				Path executable = installation.resolve(Files.readString(marker));
-				if (Files.isExecutable(executable)) return inspector.require(executable, selection).getExecutable();
+				if (Files.isExecutable(executable)) return inspector.require(executable, selection).executable();
 			}
 
 			if (!download)
@@ -126,7 +126,7 @@ public final class JavaRuntimeResolver implements JavaProvisioner {
 						+ ", which does not match") + ", and nothing is cached at " + installation + ". Set " + variable
 						+ " or enable downloads with anvil.java.download=true.");
 
-			FoojayJavaCatalog.Package selected = catalog.select(distribution, version, selection.getRelease(), platform);
+			FoojayJavaCatalog.Package selected = catalog.select(distribution, version, selection.release(), platform);
 			Path archive = packages.archive(JavaArchive.builder().uri(selected.uri()).sha256(selected.sha256()).build(),
 					root.resolve("java-archives").resolve(selected.sha256() + selected.extension()));
 			Path contents = installation.resolve(selected.sha256());
@@ -148,9 +148,9 @@ public final class JavaRuntimeResolver implements JavaProvisioner {
 	@Override
 	public @NotNull Optional<JavaInstallation> inspect(@NotNull JavaSource source) {
 		if (source instanceof LocalJavaHome home)
-			return Optional.of(inspector.installation(JavaExecutables.atHome(home.getHome())));
+			return Optional.of(inspector.installation(JavaExecutables.atHome(home.home())));
 		if (source instanceof LocalJavaExecutable executable)
-			return Optional.of(inspector.installation(executable.getExecutable()));
+			return Optional.of(inspector.installation(executable.executable()));
 
 		return Optional.empty();
 	}
@@ -164,47 +164,47 @@ public final class JavaRuntimeResolver implements JavaProvisioner {
 		JavaInstallation installation = inspector.installation(executable);
 		try {
 			inspector.validate(installation, selection);
-			return installation.getExecutable();
+			return installation.executable();
 		} catch (JavaVersionMismatchException mismatch) {
-			throw new ProvisioningException(mismatch.getMessage() + "; request Java " + installation.getFeatureVersion()
+			throw new ProvisioningException(mismatch.getMessage() + "; request Java " + installation.featureVersion()
 					+ " instead, point the Java source at Java " + version + ", or remove the source so Anvil uses "
 					+ "JAVA_" + version + "_HOME, the cache or a download", mismatch);
 		}
 	}
 
 	private Path archive(JavaArchive source, JavaRequirement selection, int version) {
-		Path destination = root.resolve("java-sources").resolve(source.getSha256()).resolve("jdk");
+		Path destination = root.resolve("java-sources").resolve(source.sha256()).resolve("jdk");
 		try (JavaInstallationAccess ignored = storage.acquire(destination)) {
 			Path executable = Files.isDirectory(destination) ? findJava(destination) : null;
 			if (executable != null && Files.isExecutable(executable))
 				return requireArchive(executable, selection, source, version);
 
 			if (!download)
-				throw new ProvisioningException("Java archive is not cached and downloads are disabled: " + source.getUri());
+				throw new ProvisioningException("Java archive is not cached and downloads are disabled: " + source.uri());
 
 			Path archive = packages.archive(source, archivePath(source));
 			new JavaArchiveInstaller().install(archive, destination);
 
 			return requireArchive(findJava(destination), selection, source, version);
 		} catch (IOException failure) {
-			throw new ProvisioningException("Could not prepare Java archive " + source.getUri(), failure);
+			throw new ProvisioningException("Could not prepare Java archive " + source.uri(), failure);
 		}
 	}
 
 	private Path requireArchive(Path executable, JavaRequirement selection, JavaArchive source, int version) {
 		try {
-			return inspector.require(executable, selection).getExecutable();
+			return inspector.require(executable, selection).executable();
 		} catch (JavaVersionMismatchException mismatch) {
-			throw new ProvisioningException(mismatch.getMessage() + "; point the Java archive source " + source.getUri()
+			throw new ProvisioningException(mismatch.getMessage() + "; point the Java archive source " + source.uri()
 					+ " at a Java " + version + " package, or remove it so Anvil uses JAVA_" + version
 					+ "_HOME, the cache or a download", mismatch);
 		}
 	}
 
 	private Path archivePath(JavaArchive source) {
-		String path = source.getUri().getPath();
+		String path = source.uri().getPath();
 		String extension = path != null && path.toLowerCase(Locale.ROOT).endsWith(".zip") ? ".zip" : ".tar.gz";
-		return root.resolve("java-archives").resolve(source.getSha256() + extension);
+		return root.resolve("java-archives").resolve(source.sha256() + extension);
 	}
 
 	private Path findJava(Path root) throws IOException {

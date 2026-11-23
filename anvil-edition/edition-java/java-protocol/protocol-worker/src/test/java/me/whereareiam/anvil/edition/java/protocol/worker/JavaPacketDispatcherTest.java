@@ -45,9 +45,9 @@ class JavaPacketDispatcherTest {
 	@Test
 	void deliversAPacketOnlyToTheListenersOfItsClass() {
 		List<String> received = new ArrayList<>();
-		protocol.listen(ClientboundSystemChat.class, packet -> received.add("first " + packet.getText().plain()));
-		protocol.listen(ClientboundSystemChat.class, packet -> received.add("second " + packet.getText().plain()));
-		protocol.listen(ClientboundPlayerChat.class, packet -> received.add("player " + packet.getText().plain()));
+		protocol.listen(ClientboundSystemChat.class, packet -> received.add("first " + packet.text().plain()));
+		protocol.listen(ClientboundSystemChat.class, packet -> received.add("second " + packet.text().plain()));
+		protocol.listen(ClientboundPlayerChat.class, packet -> received.add("player " + packet.text().plain()));
 
 		protocol.deliver(new ClientboundSystemChat(Text.literal("welcome"), false));
 
@@ -87,7 +87,7 @@ class JavaPacketDispatcherTest {
 	void handsEachSentPacketToTheListenersOfSentPacketsOfItsClassAfterSendingIt() {
 		List<String> observed = new ArrayList<>();
 		Subscription subscription = protocol.listenSent(ServerboundChat.class, packet ->
-				observed.add(packet.getText() + " after " + connection.sent.size()));
+				observed.add(packet.text() + " after " + connection.sent.size()));
 
 		protocol.send(new ServerboundChat("first"));
 		subscription.close();
@@ -123,8 +123,8 @@ class JavaPacketDispatcherTest {
 		List<String> received = new ArrayList<>();
 		var view = protocol.scoped(tracked::add);
 
-		view.listen(ClientboundSystemChat.class, packet -> received.add(packet.getText().plain()));
-		view.listenSent(ServerboundChat.class, packet -> received.add(packet.getText()));
+		view.listen(ClientboundSystemChat.class, packet -> received.add(packet.text().plain()));
+		view.listenSent(ServerboundChat.class, packet -> received.add(packet.text()));
 		view.send(new ServerboundChat("sent"));
 		protocol.deliver(new ClientboundSystemChat(Text.literal("received"), false));
 		tracked.forEach(Subscription::close);
@@ -167,8 +167,8 @@ class JavaPacketDispatcherTest {
 	@Test
 	void deliversAFrameNamedByThePlayersProtocolAfterItsValue() {
 		List<String> received = new ArrayList<>();
-		protocol.listen(ClientboundSystemChat.class, packet -> received.add("value " + packet.getText().plain()));
-		protocol.listenFrames(frame -> received.add("frame " + frame.getState() + " " + frame.getId() + " "
+		protocol.listen(ClientboundSystemChat.class, packet -> received.add("value " + packet.text().plain()));
+		protocol.listenFrames(frame -> received.add("frame " + frame.state() + " " + frame.id() + " "
 				+ frame.name().orElseThrow() + " " + frame.size() + " " + frame.packet().isPresent()));
 		ClientboundSystemChat welcome = new ClientboundSystemChat(Text.literal("welcome"), false);
 

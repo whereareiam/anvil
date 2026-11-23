@@ -30,7 +30,7 @@ public class PacketSelection {
 	/**
 	 * Whether every packet is selected.
 	 */
-	boolean every;
+	boolean everyPacket;
 	/**
 	 * The packet classes whose values are selected.
 	 */
@@ -112,7 +112,7 @@ public class PacketSelection {
 		Set<String> joinedNames = new HashSet<>(names);
 		joinedNames.addAll(other.names);
 
-		return new PacketSelection(every || other.every, Set.copyOf(joinedTypes), Set.copyOf(joinedNames));
+		return new PacketSelection(everyPacket || other.everyPacket, Set.copyOf(joinedTypes), Set.copyOf(joinedNames));
 	}
 
 	/**
@@ -135,7 +135,7 @@ public class PacketSelection {
 	 * @return whether the packet is selected
 	 */
 	public boolean selects(@Nullable String name, @Nullable ClientboundPacket packet) {
-		if (every) return true;
+		if (everyPacket) return true;
 		if (packet != null && types.contains(packet.getClass())) return true;
 
 		return name != null && names.contains(name);

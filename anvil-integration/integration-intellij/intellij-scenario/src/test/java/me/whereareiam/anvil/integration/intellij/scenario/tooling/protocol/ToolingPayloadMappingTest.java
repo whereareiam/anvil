@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.List;
 
+import me.whereareiam.anvil.integration.intellij.RunnerJson;
 import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
 import me.whereareiam.anvil.tooling.api.model.process.ProcessDefinition;
 import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
@@ -19,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ToolingPayloadMappingTest {
-	private final ObjectMapper json = new ObjectMapper();
+	private final ObjectMapper json = RunnerJson.mapper();
 
 	@Test
 	void preservesResolvedNamesAndOptionalPresentation() throws Exception {
@@ -32,10 +33,10 @@ class ToolingPayloadMappingTest {
 									"javaRequirement":"Project default","startupTimeoutMillis":120000}]
 								"""));
 
-		assertEquals("Registration", scenarios.getFirst().getDisplayName());
-		assertEquals("registration", scenarios.getFirst().getName());
-		assertNull(scenarios.getFirst().getCategory());
-		assertEquals(0, scenarios.getFirst().getTags().size());
+		assertEquals("Registration", scenarios.getFirst().displayName());
+		assertEquals("registration", scenarios.getFirst().name());
+		assertNull(scenarios.getFirst().category());
+		assertEquals(0, scenarios.getFirst().tags().size());
 	}
 
 	@Test
@@ -65,11 +66,11 @@ class ToolingPayloadMappingTest {
 						.getFirst();
 
 		assertEquals(selection, decoded);
-		assertNull(decoded.getEntrypoint());
-		assertNull(decoded.getExecutionProviderId());
-		assertNull(decoded.getJavaRequirement());
-		assertEquals(0, decoded.getStartupTimeoutMillis());
-		assertEquals(List.of(), decoded.getProcesses());
+		assertNull(decoded.entrypoint());
+		assertNull(decoded.executionProviderId());
+		assertNull(decoded.javaRequirement());
+		assertEquals(0, decoded.startupTimeoutMillis());
+		assertEquals(List.of(), decoded.processes());
 	}
 
 	@Test
@@ -154,14 +155,14 @@ class ToolingPayloadMappingTest {
 								"observations":[{"definition":{"id":"fixture.connection","displayName":"Connection"},"target":{"type":"PLAYER","name":"alice"},"value":{"text":"Disconnected","tone":"WARNING"}}]}
 								"""));
 
-		assertEquals(SessionState.FAILED, snapshot.getState());
-		assertEquals("Paper stopped", snapshot.getFailure());
-		assertEquals("Paper Backend", snapshot.getProcesses().getFirst().getDisplayName());
+		assertEquals(SessionState.FAILED, snapshot.state());
+		assertEquals("Paper stopped", snapshot.failure());
+		assertEquals("Paper Backend", snapshot.processes().getFirst().displayName());
 		assertEquals(
 				"00000000-0000-0000-0000-000000000041",
-				snapshot.getProcesses().getFirst().getExecutionId().toString());
-		assertEquals("Disconnected", snapshot.getObservations().getFirst().getValue().getText());
-		assertFalse(snapshot.getActions().getFirst().getAvailability().isEnabled());
+				snapshot.processes().getFirst().executionId().toString());
+		assertEquals("Disconnected", snapshot.observations().getFirst().value().text());
+		assertFalse(snapshot.actions().getFirst().availability().enabled());
 	}
 
 	@Test
@@ -179,7 +180,7 @@ class ToolingPayloadMappingTest {
 		assertFalse(first.equals(replacement));
 		assertEquals(
 				"00000000-0000-0000-0000-000000000041",
-				replacement.getProcesses().getFirst().getExecutionId().toString());
+				replacement.processes().getFirst().executionId().toString());
 	}
 
 	@Test

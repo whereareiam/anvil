@@ -43,42 +43,42 @@ public final class DockerContainerFactory {
 		Ports bindings = new Ports();
 		List<ExposedPort> exposed = new ArrayList<>();
 
-		if (configuration.getPorts().getGame() != null) {
-			bindings.bind(game, Ports.Binding.bindIpAndPort(configuration.getPorts().getGame().getHostString(),
-					configuration.getPorts().getGame().getPort()));
+		if (configuration.ports().game() != null) {
+			bindings.bind(game, Ports.Binding.bindIpAndPort(configuration.ports().game().getHostString(),
+					configuration.ports().game().getPort()));
 			exposed.add(game);
 		}
-		if (configuration.getPorts().getAgent() != null) {
-			bindings.bind(agent, Ports.Binding.bindIpAndPort(configuration.getPorts().getAgent().getHostString(),
-					configuration.getPorts().getAgent().getPort()));
+		if (configuration.ports().agent() != null) {
+			bindings.bind(agent, Ports.Binding.bindIpAndPort(configuration.ports().agent().getHostString(),
+					configuration.ports().agent().getPort()));
 			exposed.add(agent);
 		}
 
-		configuration.getPorts().getListeners().forEach((port, published) -> {
+		configuration.ports().listeners().forEach((port, published) -> {
 			ExposedPort listener = ExposedPort.tcp(port);
 			bindings.bind(listener, Ports.Binding.bindIpAndPort(published.getHostString(), published.getPort()));
 			exposed.add(listener);
 		});
 
 		HostConfig host = HostConfig.newHostConfig()
-				.withNetworkMode(configuration.getNetwork())
+				.withNetworkMode(configuration.network())
 				.withPortBindings(bindings)
-				.withBinds(new Bind(configuration.getWorkspace().toAbsolutePath().toString(), new Volume("/workspace")),
-						new Bind(configuration.getJar().toAbsolutePath().toString(), new Volume("/anvil/application.jar")))
+				.withBinds(new Bind(configuration.workspace().toAbsolutePath().toString(), new Volume("/workspace")),
+						new Bind(configuration.jar().toAbsolutePath().toString(), new Volume("/anvil/application.jar")))
 				.withAutoRemove(false);
-		if (configuration.getCpuShares() != null) host.withCpuShares(configuration.getCpuShares());
+		if (configuration.cpuShares() != null) host.withCpuShares(configuration.cpuShares());
 
-		String id = client.createContainerCmd(configuration.getImage())
-				.withName(configuration.getName())
+		String id = client.createContainerCmd(configuration.image())
+				.withName(configuration.name())
 				.withHostConfig(host)
-				.withAliases(configuration.getAlias())
+				.withAliases(configuration.alias())
 				.withExposedPorts(exposed.toArray(ExposedPort[]::new))
 				.withWorkingDir("/workspace")
 				.withEntrypoint("java")
-				.withEnv(configuration.getEnvironment().entrySet().stream()
+				.withEnv(configuration.environment().entrySet().stream()
 						.map(entry -> entry.getKey() + "=" + entry.getValue())
 						.toList())
-				.withCmd(configuration.getCommand())
+				.withCmd(configuration.command())
 				.exec()
 				.getId();
 
@@ -91,29 +91,29 @@ public final class DockerContainerFactory {
 	public Container createImage(ImageContainerConfiguration configuration) {
 		Ports bindings = new Ports();
 		List<ExposedPort> exposed = new ArrayList<>();
-		configuration.getPorts().forEach((port, published) -> {
+		configuration.ports().forEach((port, published) -> {
 			ExposedPort exposedPort = ExposedPort.tcp(port);
 			bindings.bind(exposedPort, Ports.Binding.bindIpAndPort(published.getHostString(), published.getPort()));
 			exposed.add(exposedPort);
 		});
 
 		HostConfig host = HostConfig.newHostConfig()
-				.withNetworkMode(configuration.getNetwork())
+				.withNetworkMode(configuration.network())
 				.withPortBindings(bindings)
 				.withAutoRemove(false);
-		if (configuration.getCpuShares() != null) host.withCpuShares(configuration.getCpuShares());
+		if (configuration.cpuShares() != null) host.withCpuShares(configuration.cpuShares());
 
-		var create = client.createContainerCmd(configuration.getImage())
-				.withName(configuration.getName())
+		var create = client.createContainerCmd(configuration.image())
+				.withName(configuration.name())
 				.withLabels(Map.of("me.whereareiam.anvil", "true"))
 				.withHostConfig(host)
-				.withAliases(configuration.getAlias())
+				.withAliases(configuration.alias())
 				.withExposedPorts(exposed.toArray(ExposedPort[]::new))
 				.withStdinOpen(true)
-				.withEnv(configuration.getEnvironment().entrySet().stream()
+				.withEnv(configuration.environment().entrySet().stream()
 						.map(entry -> entry.getKey() + "=" + entry.getValue())
 						.toList());
-		if (!configuration.getCommand().isEmpty()) create.withCmd(configuration.getCommand());
+		if (!configuration.command().isEmpty()) create.withCmd(configuration.command());
 
 		return new Container(client, create.exec().getId());
 	}

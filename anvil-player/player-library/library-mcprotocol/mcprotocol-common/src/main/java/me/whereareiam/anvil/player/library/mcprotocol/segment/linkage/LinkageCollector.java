@@ -68,7 +68,7 @@ public final class LinkageCollector {
 	 */
 	public @NotNull SortedSet<String> referencedClasses() {
 		SortedSet<String> classes = new TreeSet<>();
-		references.forEach(reference -> classes.add(reference.getOwner()));
+		references.forEach(reference -> classes.add(reference.owner()));
 		return classes;
 	}
 
@@ -87,7 +87,7 @@ public final class LinkageCollector {
 
 		SortedSet<LinkageReference> manifest = new TreeSet<>();
 		for (LinkageReference reference : externalReferences(classpath)) {
-			if (buildPackages.contains(packageOf(reference.getOwner())) || classpath.jdk().contains(reference.getOwner())) continue;
+			if (buildPackages.contains(packageOf(reference.owner())) || classpath.jdk().contains(reference.owner())) continue;
 
 			manifest.add(reference);
 		}
@@ -109,17 +109,17 @@ public final class LinkageCollector {
 	public @NotNull SortedSet<LinkageReference> externalReferences(@NotNull ClassPath classpath) {
 		List<LinkageReference> external = new ArrayList<>();
 		for (LinkageReference reference : references) {
-			if (!headers.containsKey(reference.getOwner())) {
+			if (!headers.containsKey(reference.owner())) {
 				external.add(reference);
 				continue;
 			}
-			if (reference.getKind() == Kind.CLASS) continue;
+			if (reference.kind() == Kind.CLASS) continue;
 
 			String owner = inheritedFrom(reference, classpath);
 			if (owner == null) continue;
 
 			Set<Requirement> requirements = EnumSet.noneOf(Requirement.class);
-			requirements.addAll(reference.getRequirements());
+			requirements.addAll(reference.requirements());
 			requirements.remove(Requirement.CLASS);
 			requirements.remove(Requirement.INTERFACE);
 			external.add(reference.with(owner, requirements));
@@ -128,12 +128,12 @@ public final class LinkageCollector {
 		Map<String, Set<Requirement>> classes = new LinkedHashMap<>();
 		List<LinkageReference> merged = new ArrayList<>();
 		for (LinkageReference reference : external) {
-			if (reference.getKind() != Kind.CLASS) continue;
+			if (reference.kind() != Kind.CLASS) continue;
 
-			classes.computeIfAbsent(reference.getOwner(), owner -> EnumSet.noneOf(Requirement.class)).addAll(reference.getRequirements());
+			classes.computeIfAbsent(reference.owner(), owner -> EnumSet.noneOf(Requirement.class)).addAll(reference.requirements());
 		}
 		classes.forEach((owner, requirements) -> merged.add(new LinkageReference(Kind.CLASS, owner, "", requirements)));
-		external.stream().filter(reference -> reference.getKind() != Kind.CLASS).forEach(merged::add);
+		external.stream().filter(reference -> reference.kind() != Kind.CLASS).forEach(merged::add);
 
 		SortedSet<LinkageReference> granted = new TreeSet<>();
 		for (LinkageReference reference : merged) {
@@ -144,18 +144,18 @@ public final class LinkageCollector {
 			}
 
 			Set<Requirement> requirements = EnumSet.of(access);
-			requirements.addAll(reference.getRequirements());
-			granted.add(reference.with(reference.getOwner(), requirements));
+			requirements.addAll(reference.requirements());
+			granted.add(reference.with(reference.owner(), requirements));
 		}
 		return granted;
 	}
 
 	private @Nullable String inheritedFrom(LinkageReference reference, ClassPath classpath) {
 		List<String> external = new ArrayList<>();
-		if (declares(reference, reference.getOwner(), external, new HashSet<>())) return null;
+		if (declares(reference, reference.owner(), external, new HashSet<>())) return null;
 
 		for (String type : external) {
-			String declaring = classpath.declaringClass(reference.with(type, reference.getRequirements()));
+			String declaring = classpath.declaringClass(reference.with(type, reference.requirements()));
 			if (declaring != null) return declaring;
 		}
 		return external.stream().filter(type -> !classpath.jdk().contains(type)).findFirst().orElse(null);

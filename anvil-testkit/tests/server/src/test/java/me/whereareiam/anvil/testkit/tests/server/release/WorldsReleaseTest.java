@@ -102,19 +102,19 @@ class WorldsReleaseTest {
 		// The server lists its main world first; the order of the others changes once another test of this server
 		// unloads and loads a world.
 		List<ServerWorld> loaded = worlds.worlds();
-		assertEquals("minecraft:overworld", loaded.get(0).getKey());
+		assertEquals("minecraft:overworld", loaded.get(0).key());
 		assertEquals(Map.of("minecraft:overworld", WorldKind.OVERWORLD, "minecraft:the_nether", WorldKind.NETHER,
 				"minecraft:the_end", WorldKind.END),
-				loaded.stream().collect(Collectors.toMap(ServerWorld::getKey, ServerWorld::getKind)));
+				loaded.stream().collect(Collectors.toMap(ServerWorld::key, ServerWorld::kind)));
 		assertEquals(Optional.of("minecraft:overworld"), player.capability(World.class).dimension());
-		assertEquals("minecraft:overworld", worlds.location(player).orElseThrow().getWorld());
+		assertEquals("minecraft:overworld", worlds.location(player).orElseThrow().world());
 		World world = player.capability(World.class);
 		// Minecraft 1.18 lowered the overworld's floor and raised its ceiling; the nether and the end kept theirs.
 		DimensionType overworld = TestedRelease.isAtLeast(CAVES_AND_CLIFFS)
 				? new DimensionType("minecraft:overworld", Environment.OVERWORLD, -64, 384)
 				: new DimensionType("minecraft:overworld", Environment.OVERWORLD, 0, 256);
 		assertEquals(new Level("minecraft:overworld", overworld, LevelGeneration.NORMAL), world.level().orElseThrow());
-		List<String> levels = world.server().orElseThrow().getLevels();
+		List<String> levels = world.server().orElseThrow().levels();
 		assertEquals("minecraft:overworld", levels.get(0));
 		assertEquals(Set.of("minecraft:overworld", "minecraft:the_nether", "minecraft:the_end"), Set.copyOf(levels));
 	}
@@ -130,13 +130,13 @@ class WorldsReleaseTest {
 
 		worlds.send(player, ABOVE_THE_NETHER);
 
-		assertEquals("minecraft:overworld", changes.changed(player, "the_nether", TIMEOUT).getFrom());
-		assertEquals("minecraft:overworld", dimensions.entered("minecraft:the_nether", TIMEOUT).getFrom());
+		assertEquals("minecraft:overworld", changes.changed(player, "the_nether", TIMEOUT).from());
+		assertEquals("minecraft:overworld", dimensions.entered("minecraft:the_nether", TIMEOUT).from());
 		assertEquals(Optional.of("minecraft:the_nether"), world.dimension());
 		assertEquals(new DimensionType("minecraft:the_nether", Environment.NETHER, 0, 256),
-				world.level().orElseThrow().getType());
+				world.level().orElseThrow().type());
 		WorldLocation location = worlds.location(player).orElseThrow();
-		assertEquals(List.of("minecraft:the_nether", 140D), List.of(location.getWorld(), location.getY()));
+		assertEquals(List.of("minecraft:the_nether", 140D), List.of(location.world(), location.y()));
 
 		worlds.send(player, "overworld");
 
@@ -161,7 +161,7 @@ class WorldsReleaseTest {
 				.generator(WorldGenerator.FLAT)
 				.build());
 
-		assertEquals(List.of("minecraft:anvil_flat", WorldKind.OVERWORLD), List.of(flat.getKey(), flat.getKind()));
+		assertEquals(List.of("minecraft:anvil_flat", WorldKind.OVERWORLD), List.of(flat.key(), flat.kind()));
 		assertEquals(Optional.of(flat), worlds.world("anvil_flat"));
 		events.loaded("minecraft:anvil_flat", TIMEOUT);
 		worlds.send(player, "anvil_flat");
@@ -179,7 +179,7 @@ class WorldsReleaseTest {
 
 		ServerWorld loaded = worlds.load("anvil_flat");
 		events.loaded("anvil_flat", TIMEOUT);
-		assertEquals(List.of("minecraft:anvil_flat", WorldKind.OVERWORLD), List.of(loaded.getKey(), loaded.getKind()));
+		assertEquals(List.of("minecraft:anvil_flat", WorldKind.OVERWORLD), List.of(loaded.key(), loaded.kind()));
 		worlds.delete("anvil_flat");
 		assertThrows(IllegalArgumentException.class, () -> worlds.load("anvil_flat"));
 	}
@@ -196,8 +196,8 @@ class WorldsReleaseTest {
 				.generator(WorldGenerator.EMPTY)
 				.build());
 
-		assertEquals(List.of("minecraft:anvil_empty_nether", WorldKind.NETHER), List.of(empty.getKey(), empty.getKind()));
-		assertEquals(List.of(0D, 64D, 0D), List.of(empty.getSpawn().getX(), empty.getSpawn().getY(), empty.getSpawn().getZ()));
+		assertEquals(List.of("minecraft:anvil_empty_nether", WorldKind.NETHER), List.of(empty.key(), empty.kind()));
+		assertEquals(List.of(0D, 64D, 0D), List.of(empty.spawn().x(), empty.spawn().y(), empty.spawn().z()));
 		// Since 26.1 a server keeps every dimension below its main world's folder.
 		String folder = server.files().exists("anvil_empty_nether") ? "anvil_empty_nether"
 				: "world/dimensions/minecraft/anvil_empty_nether";
@@ -216,10 +216,10 @@ class WorldsReleaseTest {
 
 		server.console("time set 6000");
 
-		WorldState noon = world.states().until(state -> state.getTime() != null
-				&& state.getTime().timeOfDay().orElse(-1) >= 6000 && state.getTime().timeOfDay().orElse(-1) < 8000, TIMEOUT);
-		assertTrue(noon.getTime().isAdvancing());
-		assertEquals(TestedRelease.isAtLeast(WORLD_CLOCKS), noon.getTime().getClocks().containsKey("minecraft:overworld"));
+		WorldState noon = world.states().until(state -> state.time() != null
+				&& state.time().timeOfDay().orElse(-1) >= 6000 && state.time().timeOfDay().orElse(-1) < 8000, TIMEOUT);
+		assertTrue(noon.time().advancing());
+		assertEquals(TestedRelease.isAtLeast(WORLD_CLOCKS), noon.time().clocks().containsKey("minecraft:overworld"));
 	}
 
 	@Test
@@ -227,7 +227,7 @@ class WorldsReleaseTest {
 		FixtureServer server = new FixtureServer(anvil);
 		World world = server.join().capability(World.class);
 		WorldStateWatch states = world.states();
-		assertEquals(WeatherType.CLEAR, states.until(state -> state.getWeather() != null, TIMEOUT).weatherType());
+		assertEquals(WeatherType.CLEAR, states.until(state -> state.weather() != null, TIMEOUT).weatherType());
 
 		try {
 			server.console("weather thunder");
@@ -243,38 +243,38 @@ class WorldsReleaseTest {
 	void followsTheWorldBorderOfThePlayersLevel(ScenarioContext anvil) {
 		FixtureServer server = new FixtureServer(anvil);
 		World world = server.join().capability(World.class);
-		WorldBorder initial = world.states().until(state -> state.getBorder() != null, TIMEOUT).getBorder();
+		WorldBorder initial = world.states().until(state -> state.border() != null, TIMEOUT).border();
 
 		try {
 			// Whole coordinates center the border on the middle of a block, so the test names the middle itself.
 			server.console("worldborder center 10.5 20.5");
 			server.console("worldborder set 200");
-			WorldBorder border = world.states().until(state -> state.getBorder().getSize() == 200
-					&& state.getBorder().getCenterX() == 10.5, TIMEOUT).getBorder();
-			assertEquals(List.of(10.5D, 20.5D, 0L), List.of(border.getCenterX(), border.getCenterZ(), border.getLerpTicks()));
+			WorldBorder border = world.states().until(state -> state.border().size() == 200
+					&& state.border().centerX() == 10.5, TIMEOUT).border();
+			assertEquals(List.of(10.5D, 20.5D, 0L), List.of(border.centerX(), border.centerZ(), border.lerpTicks()));
 		} finally {
-			server.console("worldborder center " + initial.getCenterX() + " " + initial.getCenterZ());
-			server.console("worldborder set " + BigDecimal.valueOf(initial.getSize()).toPlainString());
+			server.console("worldborder center " + initial.centerX() + " " + initial.centerZ());
+			server.console("worldborder set " + BigDecimal.valueOf(initial.size()).toPlainString());
 		}
 
-		world.states().until(state -> state.getBorder().getSize() == initial.getSize(), TIMEOUT);
+		world.states().until(state -> state.border().size() == initial.size(), TIMEOUT);
 	}
 
 	@Test
 	void followsTheSpawnPointOfTheWorld(ScenarioContext anvil) {
 		FixtureServer server = new FixtureServer(anvil);
 		World world = server.join().capability(World.class);
-		SpawnPoint initial = world.states().until(state -> state.getSpawn() != null, TIMEOUT).getSpawn();
-		assertEquals("minecraft:overworld", initial.getDimension());
+		SpawnPoint initial = world.states().until(state -> state.spawn() != null, TIMEOUT).spawn();
+		assertEquals("minecraft:overworld", initial.dimension());
 
 		try {
-			server.console("setworldspawn " + (initial.getX() + 1) + " " + initial.getY() + " " + initial.getZ());
-			SpawnPoint moved = world.states().until(state -> state.getSpawn().getX() == initial.getX() + 1, TIMEOUT)
-					.getSpawn();
-			assertEquals(List.of("minecraft:overworld", initial.getY(), initial.getZ()),
-					List.of(moved.getDimension(), moved.getY(), moved.getZ()));
+			server.console("setworldspawn " + (initial.x() + 1) + " " + initial.y() + " " + initial.z());
+			SpawnPoint moved = world.states().until(state -> state.spawn().x() == initial.x() + 1, TIMEOUT)
+					.spawn();
+			assertEquals(List.of("minecraft:overworld", initial.y(), initial.z()),
+					List.of(moved.dimension(), moved.y(), moved.z()));
 		} finally {
-			server.console("setworldspawn " + initial.getX() + " " + initial.getY() + " " + initial.getZ());
+			server.console("setworldspawn " + initial.x() + " " + initial.y() + " " + initial.z());
 		}
 	}
 }

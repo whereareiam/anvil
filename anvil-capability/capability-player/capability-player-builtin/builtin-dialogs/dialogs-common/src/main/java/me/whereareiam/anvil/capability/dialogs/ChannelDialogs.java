@@ -122,14 +122,14 @@ final class ChannelDialogs implements Dialogs {
 		synchronized (screens) {
 			open = openDialog();
 			Dialog dialog = open.dialog();
-			pressed = dialog.getButtons().stream()
-					.filter(candidate -> candidate.getLabel().equals(button))
+			pressed = dialog.buttons().stream()
+					.filter(candidate -> candidate.label().equals(button))
 					.findFirst()
-					.orElseThrow(() -> new IllegalStateException("The open dialog '" + dialog.getTitle() + "' has no button '" + button
-							+ "'; buttons: " + dialog.getButtons().stream().map(DialogButton::getLabel).toList()));
-			next = screens.after(open, dialog.getAfterAction());
+					.orElseThrow(() -> new IllegalStateException("The open dialog '" + dialog.title() + "' has no button '" + button
+							+ "'; buttons: " + dialog.buttons().stream().map(DialogButton::label).toList()));
+			next = screens.after(open, dialog.afterAction());
 		}
-		run(open, pressed.getAction(), inputs, next);
+		run(open, pressed.action(), inputs, next);
 	}
 
 	@Override
@@ -151,14 +151,14 @@ final class ChannelDialogs implements Dialogs {
 				}
 				case null -> throw new IllegalStateException("Player has no screen open");
 			}
-			if (!open.dialog().isCloseWithEscape())
-				throw new IllegalStateException("The open dialog '" + open.dialog().getTitle() + "' cannot be closed with Escape");
+			if (!open.dialog().closeWithEscape())
+				throw new IllegalStateException("The open dialog '" + open.dialog().title() + "' cannot be closed with Escape");
 		}
 
-		DialogAction exit = open.dialog().getButtons().stream()
-				.filter(DialogButton::isExit)
+		DialogAction exit = open.dialog().buttons().stream()
+				.filter(DialogButton::exit)
 				.findFirst()
-				.map(DialogButton::getAction)
+				.map(DialogButton::action)
 				.orElse(null);
 		run(open, exit, Map.of(), open.previous());
 	}
@@ -171,8 +171,8 @@ final class ChannelDialogs implements Dialogs {
 			confirmation = confirm.confirmation();
 			screens.set(confirm.confirmed());
 		}
-		if (confirmation.getReason() != CommandCheck.SIGNATURE_REQUIRED)
-			channel.request(DialogsChannel.CLICK, DialogClick.command(confirmation.getCommand()));
+		if (confirmation.reason() != CommandCheck.SIGNATURE_REQUIRED)
+			channel.request(DialogsChannel.CLICK, DialogClick.command(confirmation.command()));
 	}
 
 	@Override
@@ -188,16 +188,16 @@ final class ChannelDialogs implements Dialogs {
 	 * requests to the worker run outside the lock that events take.
 	 */
 	private void run(DialogScreen open, @Nullable DialogAction action, Map<String, String> inputs, @Nullable Screen next) {
-		DialogClick click = DialogPress.click(action, open.dialog().getInputs(), inputs);
-		if (action != null && action.getType() == DialogActionType.SHOW_DIALOG) {
-			Dialog nested = nested(action).toBuilder().configuration(open.dialog().isConfiguration()).build();
+		DialogClick click = DialogPress.click(action, open.dialog().inputs(), inputs);
+		if (action != null && action.type() == DialogActionType.SHOW_DIALOG) {
+			Dialog nested = nested(action).toBuilder().configuration(open.dialog().configuration()).build();
 			synchronized (screens) {
 				still(open);
 				open(nested, next);
 			}
 			return;
 		}
-		if (click == null || click.getCommand() == null) {
+		if (click == null || click.command() == null) {
 			synchronized (screens) {
 				still(open);
 				screens.set(next);
@@ -207,16 +207,16 @@ final class ChannelDialogs implements Dialogs {
 		}
 
 		// The client runs no commands during configuration and leaves the dialog as it is.
-		if (open.dialog().isConfiguration()) return;
+		if (open.dialog().configuration()) return;
 		if (commands == null)
 			throw new IllegalStateException("The button runs a command, which the client checks against its command tree first; "
 					+ "install the Commands capability to press it");
 
-		CommandCheck check = commands.check(click.getCommand());
+		CommandCheck check = commands.check(click.command());
 		synchronized (screens) {
 			still(open);
 			if (check != CommandCheck.NO_ISSUES) {
-				screens.confirm(click.getCommand(), check, next);
+				screens.confirm(click.command(), check, next);
 				return;
 			}
 
@@ -226,16 +226,16 @@ final class ChannelDialogs implements Dialogs {
 	}
 
 	private void still(DialogScreen open) {
-		if (screens.screen() != open) throw new IllegalStateException("The server replaced the dialog '" + open.dialog().getTitle()
+		if (screens.screen() != open) throw new IllegalStateException("The server replaced the dialog '" + open.dialog().title()
 				+ "' while its button was pressed");
 	}
 
 	private Dialog nested(DialogAction action) {
-		if (action.getDialog() != null) return action.getDialog();
+		if (action.dialog() != null) return action.dialog();
 
-		Dialog found = registry.find(action.getValue());
+		Dialog found = registry.find(action.value());
 		if (found == null)
-			throw new IllegalArgumentException("The button opens the registry dialog " + action.getValue()
+			throw new IllegalArgumentException("The button opens the registry dialog " + action.value()
 					+ ", which the server did not send");
 		return found;
 	}
@@ -255,29 +255,29 @@ final class ChannelDialogs implements Dialogs {
 	 */
 	private Dialog resolve(Dialog dialog) {
 		DialogRegistry known = registry;
-		Dialog resolved = dialog.getRegistryId() == null || dialog.getRegistryName() != null ? dialog : known.resolve(dialog);
-		if (resolved.getButtons().stream().noneMatch(button -> unresolved(button.getAction()))) return resolved;
+		Dialog resolved = dialog.registryId() == null || dialog.registryName() != null ? dialog : known.resolve(dialog);
+		if (resolved.buttons().stream().noneMatch(button -> unresolved(button.action()))) return resolved;
 
 		Dialog.DialogBuilder builder = resolved.toBuilder().clearButtons();
-		for (DialogButton button : resolved.getButtons()) {
-			DialogAction action = button.getAction();
-			Dialog target = unresolved(action) ? known.find(action.getValue()) : null;
+		for (DialogButton button : resolved.buttons()) {
+			DialogAction action = button.action();
+			Dialog target = unresolved(action) ? known.find(action.value()) : null;
 			if (target == null) {
 				builder.button(button);
 				continue;
 			}
 
-			String label = button.getLabel().equals(action.getValue()) ? target.getExternalTitle() : button.getLabel();
-			builder.button(new DialogButton(label, DialogAction.show(action.getValue(), target), button.isExit()));
+			String label = button.label().equals(action.value()) ? target.externalTitle() : button.label();
+			builder.button(new DialogButton(label, DialogAction.show(action.value(), target), button.exit()));
 		}
 		return builder.build();
 	}
 
 	private static boolean unresolved(@Nullable DialogAction action) {
 		return action != null
-				&& action.getType() == DialogActionType.SHOW_DIALOG
-				&& action.getDialog() == null
-				&& !action.getValue().isEmpty();
+				&& action.type() == DialogActionType.SHOW_DIALOG
+				&& action.dialog() == null
+				&& !action.value().isEmpty();
 	}
 
 	private DialogScreen openDialog() {
@@ -292,7 +292,7 @@ final class ChannelDialogs implements Dialogs {
 
 	private @Nullable Dialog openTitled(String title) {
 		Dialog dialog = current().orElse(null);
-		return dialog != null && dialog.getTitle().contains(title) ? dialog : null;
+		return dialog != null && dialog.title().contains(title) ? dialog : null;
 	}
 
 	/**
@@ -317,7 +317,7 @@ final class ChannelDialogs implements Dialogs {
 			}
 
 			throw new IllegalStateException("Player was shown a dialog it must not be shown: "
-					+ Objects.requireNonNull(cursor.find(matcher)).getTitle());
+					+ Objects.requireNonNull(cursor.find(matcher)).title());
 		}
 
 		@Override

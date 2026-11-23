@@ -53,7 +53,7 @@ final class RemoteProcessExecution implements ProcessExecution {
 			return new RemoteProcessExecution(connection, handle, connection.stream(token -> new Stdio(token, handle)));
 		} catch (IOException failure) {
 			connection.call(new TerminateProcess(handle, true));
-			throw new WorkbenchException("Could not attach to a process on workbench '" + connection.pairing().getName() + "'", failure);
+			throw new WorkbenchException("Could not attach to a process on workbench '" + connection.pairing().name() + "'", failure);
 		}
 	}
 
@@ -89,8 +89,8 @@ final class RemoteProcessExecution implements ProcessExecution {
 	}
 
 	@Override
-	public boolean isAlive() {
-		return !exit.isDone() && connection.call(new CheckProcess(handle)).isAlive();
+	public boolean alive() {
+		return !exit.isDone() && connection.call(new CheckProcess(handle)).alive();
 	}
 
 	@Override
@@ -103,7 +103,7 @@ final class RemoteProcessExecution implements ProcessExecution {
 		if (exit.isDone()) return true;
 		if (Thread.interrupted()) throw new InterruptedException();
 
-		return connection.call(new AwaitProcess(handle, timeout.toMillis())).isEnded();
+		return connection.call(new AwaitProcess(handle, timeout.toMillis())).ended();
 	}
 
 	@Override
@@ -124,6 +124,6 @@ final class RemoteProcessExecution implements ProcessExecution {
 	@Override
 	public @NotNull RunningContainer.CommandResult execute(@NotNull Duration timeout, @NotNull String... command) {
 		CommandOutput result = connection.call(new ExecuteInProcess(handle, timeout.toMillis(), List.of(command)));
-		return new RunningContainer.CommandResult(result.getExitCode(), result.getOutput());
+		return new RunningContainer.CommandResult(result.exitCode(), result.output());
 	}
 }

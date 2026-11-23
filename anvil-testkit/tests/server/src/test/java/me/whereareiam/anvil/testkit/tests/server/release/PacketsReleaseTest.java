@@ -57,8 +57,8 @@ class PacketsReleaseTest {
 			server.console(setblock(block, "minecraft:air"));
 			ClientboundBlockUpdate removed = tap.received(ClientboundBlockUpdate.class, at(block), TIMEOUT);
 
-			assertNotEquals(0, placed.getChange().getBlockState());
-			assertEquals(0, removed.getChange().getBlockState());
+			assertNotEquals(0, placed.change().blockState());
+			assertEquals(0, removed.change().blockState());
 		}
 	}
 
@@ -80,15 +80,15 @@ class PacketsReleaseTest {
 					.isPresent()), "A tap of every packet received a chunk's value");
 		}
 
-		assertTrue(recorded.getFrames().stream().noneMatch(frame -> frame.packet()
+		assertTrue(recorded.frames().stream().noneMatch(frame -> frame.packet()
 						.filter(ClientboundLevelChunkWithLight.class::isInstance).isPresent()),
 				"The recording kept a chunk's value, though a chunk tap was open");
 
-		List<ClientboundFrame> updates = recorded.getFrames().stream()
+		List<ClientboundFrame> updates = recorded.frames().stream()
 				.filter(frame -> frame.packet().filter(ClientboundBlockUpdate.class::isInstance).isPresent())
 				.toList();
 		assertTrue(updates.stream().allMatch(frame -> frame.size() > 0), "A recorded frame has no bytes");
-		assertEquals(TestedRelease.version().toString(), recorded.getHeader().getMinecraft());
+		assertEquals(TestedRelease.version().toString(), recorded.header().minecraft());
 
 		Path file = directory.resolve("recording.packets.jsonl.gz");
 		packets.write(recorded, file);
@@ -105,23 +105,23 @@ class PacketsReleaseTest {
 		Packets packets = player.capability(Packets.class);
 		try (PacketTap chunks = packets.tap(PacketSelection.of(ClientboundLevelChunkWithLight.class))) {
 			server.console("tp " + player.name() + " " + FAR + " " + HEIGHT + " " + FAR);
-			chunks.received(ClientboundLevelChunkWithLight.class, chunk -> chunk.getPosition().getX() == FAR / 16
-					&& chunk.getPosition().getZ() == FAR / 16, TIMEOUT);
+			chunks.received(ClientboundLevelChunkWithLight.class, chunk -> chunk.position().x() == FAR / 16
+					&& chunk.position().z() == FAR / 16, TIMEOUT);
 		}
 
 		return BlockPosition.builder().x(FAR + 1).y(HEIGHT - 10).z(FAR + 1).build();
 	}
 
 	private static String setblock(BlockPosition block, String state) {
-		return "setblock " + block.getX() + " " + block.getY() + " " + block.getZ() + " " + state;
+		return "setblock " + block.x() + " " + block.y() + " " + block.z() + " " + state;
 	}
 
 	private static Predicate<ClientboundBlockUpdate> at(BlockPosition block) {
-		return update -> update.getChange().getPosition().equals(block);
+		return update -> update.change().position().equals(block);
 	}
 
 	private static void assertSequenced(List<TappedPacket> history) {
 		for (int index = 0; index < history.size(); index++)
-			assertEquals(index, history.get(index).getSequence());
+			assertEquals(index, history.get(index).sequence());
 	}
 }

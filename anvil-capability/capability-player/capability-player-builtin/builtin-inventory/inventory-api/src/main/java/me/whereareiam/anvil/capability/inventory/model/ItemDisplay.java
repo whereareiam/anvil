@@ -14,7 +14,7 @@ import java.util.List;
  * The text a player reads on an item: its name and the lore below it.
  *
  * <p>The client names a stack by its custom name, else by its item name, else by the game's translation of its type,
- * which a simulated player does not have; an item named only by its type has no {@link #getName() name} here and is
+ * which a simulated player does not have; an item named only by its type has no {@link #name() name} here and is
  * found by its {@link ItemType}.</p>
  */
 @Value

@@ -80,8 +80,8 @@ class PlatformJavaPlanningIntegrationTest {
 	void runsEveryKnownServerVersionOnItsPreferredLtsUnderTheStrictPolicy(String platform, String version, int java) {
 		ProcessPlan plan = plan(server(platform, version, null), SupportPolicy.STRICT);
 
-		assertEquals(java, plan.getJavaSelection().getRequirement().getFeatureVersion());
-		assertTrue(plan.getJvmArguments().isEmpty(), plan.getJvmArguments().toString());
+		assertEquals(java, plan.javaSelection().requirement().featureVersion());
+		assertTrue(plan.jvmArguments().isEmpty(), plan.jvmArguments().toString());
 	}
 
 	@ParameterizedTest(name = "Velocity {0} runs Java {1} by default")
@@ -113,15 +113,15 @@ class PlatformJavaPlanningIntegrationTest {
 	@Test
 	void runsPaperOneSixteenOnItsPreferredLtsAndOnJavaSeventeenThroughTheBypass() {
 		ProcessPlan preferred = plan(server(Platforms.PAPER, "1.16.5", null), SupportPolicy.STRICT);
-		assertEquals(11, preferred.getJavaSelection().getRequirement().getFeatureVersion());
-		assertTrue(preferred.getJvmArguments().isEmpty(), preferred.getJvmArguments().toString());
+		assertEquals(11, preferred.javaSelection().requirement().featureVersion());
+		assertTrue(preferred.jvmArguments().isEmpty(), preferred.jvmArguments().toString());
 
 		ProcessPlan bypassed = plan(server(Platforms.PAPER, "1.16.5", 17), SupportPolicy.LENIENT);
-		assertEquals(17, bypassed.getJavaSelection().getRequirement().getFeatureVersion());
-		assertEquals(List.of("-DPaper.IgnoreJavaVersion=true"), bypassed.getJvmArguments());
+		assertEquals(17, bypassed.javaSelection().requirement().featureVersion());
+		assertEquals(List.of("-DPaper.IgnoreJavaVersion=true"), bypassed.jvmArguments());
 
 		ProcessPlan seventeen = plan(server(Platforms.PAPER, "1.17.1", 21), SupportPolicy.LENIENT);
-		assertEquals(List.of("-DPaper.IgnoreJavaVersion=true"), seventeen.getJvmArguments());
+		assertEquals(List.of("-DPaper.IgnoreJavaVersion=true"), seventeen.jvmArguments());
 	}
 
 	@ParameterizedTest(name = "Spigot {0} refuses Java {1} above its maximum {2}")
@@ -151,7 +151,7 @@ class PlatformJavaPlanningIntegrationTest {
 		assertTrue(strict.getMessage().contains("is UNTESTED"), strict.getMessage());
 
 		ProcessPlan lenient = plan(server(Platforms.PAPER, "1.16.5", 21), SupportPolicy.LENIENT);
-		assertEquals(List.of("-DPaper.IgnoreJavaVersion=true"), lenient.getJvmArguments());
+		assertEquals(List.of("-DPaper.IgnoreJavaVersion=true"), lenient.jvmArguments());
 	}
 
 	@Test
@@ -171,7 +171,7 @@ class PlatformJavaPlanningIntegrationTest {
 	}
 
 	private static int java(MinecraftProcess process, SupportPolicy policy) {
-		return plan(process, policy).getJavaSelection().getRequirement().getFeatureVersion();
+		return plan(process, policy).javaSelection().requirement().featureVersion();
 	}
 
 	private static ProcessPlan plan(MinecraftProcess process, SupportPolicy policy) {
@@ -193,13 +193,13 @@ class PlatformJavaPlanningIntegrationTest {
 		};
 		var planner = new DefaultPlatformPlanner(EngineOptions.builder().supportPolicy(policy).build(), PROVIDERS,
 				artifacts, agent -> Path.of("agent.jar"), source -> OptionalInt.empty());
-		var scenario = AnvilScenario.builder().name("java").entrypoint(process.getName());
+		var scenario = AnvilScenario.builder().name("java").entrypoint(process.name());
 		if (process instanceof MinecraftProxy proxy)
 			scenario.proxy(proxy).server(server(Platforms.PAPER, "1.21.11", null));
 		if (process instanceof MinecraftServer server)
 			scenario.server(server);
 
-		return planner.plan(scenario.build()).getProcesses().get(process.getName());
+		return planner.plan(scenario.build()).processes().get(process.name());
 	}
 
 	private static MinecraftServer server(String platform, String version, @Nullable Integer java) {

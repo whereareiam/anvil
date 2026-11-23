@@ -248,7 +248,7 @@ class EntityPacketsTest {
 	}
 
 	private List<?> decodeData(ClientboundSetEntityDataPacket packet) {
-		return ((ClientboundSetEntityData) packets.decode(packet)).getValues();
+		return ((ClientboundSetEntityData) packets.decode(packet)).values();
 	}
 
 	private static ClientboundSetEntityDataPacket data(int entityId, EntityMetadata<?, ?>... metadata) {

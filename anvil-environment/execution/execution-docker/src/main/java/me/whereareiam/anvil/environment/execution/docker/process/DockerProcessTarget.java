@@ -51,12 +51,12 @@ public final class DockerProcessTarget implements ProcessTarget {
 	@Override
 	public synchronized @NotNull ProcessExecution start(@NotNull ProcessLaunch launch) {
 		if (!(launch instanceof JavaCommand command))
-			throw new IllegalArgumentException("Process '" + request.getName() + "' starts a Java application, not an image");
+			throw new IllegalArgumentException("Process '" + request.name() + "' starts a Java application, not an image");
 		close();
 
 		PortBindings.PortBindingsBuilder ports = PortBindings.builder()
-				.game(request.isPublishGame() ? address : null)
-				.agent(request.isAgent() ? agentAddress : null);
+				.game(request.publishGame() ? address : null)
+				.agent(request.agent() ? agentAddress : null);
 		listenerPorts.forEach((listener, port) -> ports.listener(port, listeners.get(listener)));
 
 
@@ -65,11 +65,11 @@ public final class DockerProcessTarget implements ProcessTarget {
 				.network(network)
 				.alias(alias)
 				.image(image)
-				.workspace(request.getWorkspace())
-				.jar(command.getJar())
+				.workspace(request.workspace())
+				.jar(command.jar())
 				.ports(ports.build())
 				.command(javaArguments(command))
-				.environment(command.getEnvironment())
+				.environment(command.environment())
 				.cpuShares(cpuShares)
 				.build());
 
@@ -80,11 +80,11 @@ public final class DockerProcessTarget implements ProcessTarget {
 	private List<String> javaArguments(JavaCommand command) {
 		List<String> arguments = new ArrayList<>();
 		arguments.add("-Xms256m");
-		arguments.add("-Xmx" + command.getMemoryMegabytes() + "m");
-		arguments.addAll(command.getJvmArguments());
+		arguments.add("-Xmx" + command.memoryMegabytes() + "m");
+		arguments.addAll(command.jvmArguments());
 		arguments.add("-jar");
 		arguments.add("/anvil/application.jar");
-		arguments.addAll(command.getArguments());
+		arguments.addAll(command.arguments());
 
 		return arguments;
 	}

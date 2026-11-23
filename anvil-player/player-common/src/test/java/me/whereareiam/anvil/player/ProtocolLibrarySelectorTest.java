@@ -89,7 +89,7 @@ class ProtocolLibrarySelectorTest {
 
 		assertEquals("verified", selection.library());
 		assertEquals(SupportLevel.VERIFIED, selection.level());
-		assertEquals("verified-release", selection.release().getLibraryVersion());
+		assertEquals("verified-release", selection.release().libraryVersion());
 		assertTrue(notices.isEmpty());
 	}
 

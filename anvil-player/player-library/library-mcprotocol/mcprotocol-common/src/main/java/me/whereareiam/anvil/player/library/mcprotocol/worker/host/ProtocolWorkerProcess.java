@@ -123,7 +123,7 @@ public final class ProtocolWorkerProcess implements AutoCloseable {
 	}
 
 	@NotNull JsonNode control(@NotNull WorkerControlOperation operation, @Nullable String playerId, @NotNull Object arguments) {
-		return request(operation.getWireName(), playerId, codec.payload(arguments), REQUEST_TIMEOUT);
+		return request(operation.wireName(), playerId, codec.payload(arguments), REQUEST_TIMEOUT);
 	}
 
 	private JsonNode request(String operation, @Nullable String playerId, JsonNode arguments, Duration timeout) {
@@ -156,8 +156,8 @@ public final class ProtocolWorkerProcess implements AutoCloseable {
 				// ring per loop, which exhausts the locked-memory limit on machines with many processors.
 				.jvmArgument("-Dio.netty.eventLoopThreads=" + EVENT_LOOP_THREADS)
 				.argument(release.version().toString())
-				.argument(Integer.toString(release.getProtocolNumber()))
-				.javaVersion(release.getJavaVersion())
+				.argument(Integer.toString(release.protocolNumber()))
+				.javaVersion(release.javaVersion())
 				.build();
 
 		try {
@@ -169,7 +169,7 @@ public final class ProtocolWorkerProcess implements AutoCloseable {
 
 	private IllegalStateException startupFailure(Exception cause) {
 		return new IllegalStateException("Could not start protocol worker for MCProtocolLib "
-				+ release.getLibraryVersion() + diagnostics.tail(), cause);
+				+ release.libraryVersion() + diagnostics.tail(), cause);
 	}
 
 	private void startReaders() {
@@ -202,31 +202,31 @@ public final class ProtocolWorkerProcess implements AutoCloseable {
 			case WorkerResponse response -> requests.accept(response);
 			case WorkerReady announcement -> acceptReady(announcement);
 			case WorkerEvent event -> {
-				RemoteProtocolPlayer player = players.get(event.getPlayer());
-				if (player != null) player.event(event.getEvent(), event.getPayload());
+				RemoteProtocolPlayer player = players.get(event.player());
+				if (player != null) player.event(event.event(), event.payload());
 			}
 		}
 	}
 
 	private void acceptReady(WorkerReady message) {
-		int actual = message.getProtocol();
-		if (actual != release.getProtocolNumber()) {
+		int actual = message.protocol();
+		if (actual != release.protocolNumber()) {
 			ready.completeExceptionally(new IllegalStateException("Resolved worker protocol " + actual
-					+ " but expected " + release.getProtocolNumber()));
+					+ " but expected " + release.protocolNumber()));
 			return;
 		}
 
 		String key = release.version().toString();
-		if (!key.equals(message.getRelease())) {
-			ready.completeExceptionally(new IllegalStateException("Resolved worker release " + message.getRelease()
+		if (!key.equals(message.release())) {
+			ready.completeExceptionally(new IllegalStateException("Resolved worker release " + message.release()
 					+ " but expected " + key));
 			return;
 		}
 
 		// Later failures of this worker report the segments it runs with its output.
-		diagnostics.remember("[Anvil] Info: the MCProtocolLib " + release.getLibraryVersion() + " worker selected the segments "
-				+ new TreeMap<>(message.getSegments()));
-		unavailableCapabilities = Map.copyOf(message.getUnavailable());
+		diagnostics.remember("[Anvil] Info: the MCProtocolLib " + release.libraryVersion() + " worker selected the segments "
+				+ new TreeMap<>(message.segments()));
+		unavailableCapabilities = Map.copyOf(message.unavailable());
 		ready.complete(null);
 	}
 
@@ -243,7 +243,7 @@ public final class ProtocolWorkerProcess implements AutoCloseable {
 		if (!process.isAlive()) return;
 
 		try {
-			request(WorkerControlOperation.SHUTDOWN.getWireName(), null,
+			request(WorkerControlOperation.SHUTDOWN.wireName(), null,
 					JsonNodeFactory.instance.objectNode(), SHUTDOWN_TIMEOUT);
 		} catch (RuntimeException ignored) {
 			process.destroy();

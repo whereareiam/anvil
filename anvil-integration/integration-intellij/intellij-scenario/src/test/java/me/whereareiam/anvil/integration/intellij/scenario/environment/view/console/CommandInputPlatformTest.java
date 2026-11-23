@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.integration.intellij.scenario.environment.view.console;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intellij.execution.impl.ConsoleViewImpl;
 import com.intellij.ide.ui.UISettings;
 import com.intellij.openapi.Disposable;
@@ -26,6 +25,7 @@ import javax.swing.JComboBox;
 import javax.swing.JPasswordField;
 
 import me.whereareiam.anvil.integration.intellij.ControlledToolingProcess;
+import me.whereareiam.anvil.integration.intellij.RunnerJson;
 import me.whereareiam.anvil.integration.intellij.ScenarioFixtures;
 import me.whereareiam.anvil.integration.intellij.ScenarioPlatformTestCase;
 import me.whereareiam.anvil.integration.intellij.SwingTestSupport;
@@ -110,7 +110,7 @@ public class CommandInputPlatformTest extends ScenarioPlatformTestCase {
 				getTestRootDisposable());
 		Disposer.register(
 				getTestRootDisposable(), () -> processes.forEach(process -> process.complete(0)));
-		String catalog = new ObjectMapper().writeValueAsString(List.of(scenario));
+		String catalog = RunnerJson.mapper().writeValueAsString(List.of(scenario));
 		EnvironmentLifecycle session =
 				tooling(
 						builder -> {
@@ -128,34 +128,34 @@ public class CommandInputPlatformTest extends ScenarioPlatformTestCase {
 		run = session.run(source, scenario, null);
 		presentation = new ConsolePresentation(getProject(), run.getLog(), run::stop, run);
 		presentation.start();
-		SwingTestSupport.await(() -> run.getSnapshot().getState() == SessionState.RUNNING);
+		SwingTestSupport.await(() -> run.getSnapshot().state() == SessionState.RUNNING);
 		runner = processes.getLast();
 		SessionSnapshot ready =
 				SessionSnapshot.builder()
 						.sessionId("fixture-session")
-						.definition(scenario.getDefinition())
+						.definition(scenario.definition())
 						.state(SessionState.RUNNING)
 						.setupComplete(true)
 						.processes(
-								scenario.getProcesses().stream()
+								scenario.processes().stream()
 										.map(
 												process ->
 														ProcessSnapshot.builder()
-																.name(process.getName())
-																.executionId(EnvironmentSessionFixture.executionId(process.getName()))
-																.displayName(process.getDisplayName())
+																.name(process.name())
+																.executionId(EnvironmentSessionFixture.executionId(process.name()))
+																.displayName(process.displayName())
 																.state(ProcessState.READY)
 																.host("127.0.0.1")
 																.port(25565)
-																.workDirectory("/work/" + process.getName())
+																.workDirectory("/work/" + process.name())
 																.build())
 										.toList())
 						.actions(List.of(action("fixture.command"), action("fixture.chat")))
 						.players(List.of(PlayerDescriptor.builder().name("alice").displayName("Alice").build()))
 						.build();
 		runner.emit(
-				new ObjectMapper().writeValueAsString(Map.of("type", "snapshot", "snapshot", ready)));
-		SwingTestSupport.await(() -> "fixture-session".equals(run.getSnapshot().getSessionId()));
+				RunnerJson.mapper().writeValueAsString(Map.of("type", "snapshot", "snapshot", ready)));
+		SwingTestSupport.await(() -> "fixture-session".equals(run.getSnapshot().sessionId()));
 	}
 
 	public void testPickingNativeHistoryNeverSendsUntilExplicitEditorEnter() throws Exception {
@@ -361,7 +361,7 @@ public class CommandInputPlatformTest extends ScenarioPlatformTestCase {
 						.orElseThrow();
 		assertEquals("fixture-session", request.path("sessionId").asText());
 		runner.emit(
-				new ObjectMapper()
+				RunnerJson.mapper()
 						.writeValueAsString(
 								Map.of(
 										"type",
@@ -384,7 +384,7 @@ public class CommandInputPlatformTest extends ScenarioPlatformTestCase {
 		ActionDescriptor sensitive =
 				action.toBuilder()
 						.definition(
-								action.getDefinition().toBuilder()
+								action.definition().toBuilder()
 										.id("fixture.secret")
 										.clearInputs()
 										.inputs(
@@ -495,7 +495,7 @@ public class CommandInputPlatformTest extends ScenarioPlatformTestCase {
 	private CommandHistory.Scope key(String target, String operation) {
 		return CommandHistory.Scope.builder()
 				.source(source.getId())
-				.definition(scenario.getDefinition())
+				.definition(scenario.definition())
 				.target(target)
 				.operation(operation)
 				.build();

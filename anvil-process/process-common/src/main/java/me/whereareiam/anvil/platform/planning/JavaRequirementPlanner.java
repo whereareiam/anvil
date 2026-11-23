@@ -73,7 +73,7 @@ final class JavaRequirementPlanner {
 			@NotNull PrintStream diagnostics
 	) {
 		this.options = options;
-		this.defaults = options.getJavaSelection().withDefaults(JavaSelection.builder()
+		this.defaults = options.javaSelection().withDefaults(JavaSelection.builder()
 				.requirement(JavaRequirement.builder().build())
 				.build());
 		this.providers = new TreeMap<>(providers);
@@ -91,11 +91,11 @@ final class JavaRequirementPlanner {
 	 * @throws ScenarioValidationException when the version data, the version, or the Java request is refused
 	 */
 	@NotNull PlannedJava plan(@NotNull AnvilScenario scenario, @NotNull MinecraftProcess declaration) {
-		JavaSelection selection = declaration.getJavaSelection()
-				.withDefaults(scenario.getJavaSelection())
+		JavaSelection selection = declaration.javaSelection()
+				.withDefaults(scenario.javaSelection())
 				.withDefaults(defaults);
-		JavaRequirement requirement = selection.getRequirement();
-		Subject subject = subject(scenario, declaration, providers.get(declaration.getPlatform()));
+		JavaRequirement requirement = selection.requirement();
+		Subject subject = subject(scenario, declaration, providers.get(declaration.platform()));
 		SupportLevel versionLevel = subject.versionLevel();
 		if (versionLevel == SupportLevel.UNSUPPORTED)
 			throw new ScenarioValidationException("Process '" + subject.name() + "': " + subject.label()
@@ -103,9 +103,9 @@ final class JavaRequirementPlanner {
 					+ subject.versions().firstVersion() + ").");
 
 		JavaRange range = range(subject);
-		SupportPolicy policy = scenario.getSupportPolicy() == null ? options.getSupportPolicy() : scenario.getSupportPolicy();
+		SupportPolicy policy = scenario.supportPolicy() == null ? options.supportPolicy() : scenario.supportPolicy();
 		Integer requested = requested(subject, requirement);
-		Integer declared = requested == null ? declared(selection.getSource()) : null;
+		Integer declared = requested == null ? declared(selection.source()) : null;
 		Integer asked = requested != null ? requested : declared;
 		int java = asked == null ? preferred(subject, range) : asked;
 		if (requested != null)
@@ -128,7 +128,7 @@ final class JavaRequirementPlanner {
 		JavaSelection planned = selection.toBuilder()
 				.requirement(requirement.toBuilder().featureVersion(java).build())
 				.build();
-		List<String> arguments = bypass ? List.of("-D" + range.row().getMaximumBypassProperty() + "=true") : List.of();
+		List<String> arguments = bypass ? List.of("-D" + range.row().maximumBypassProperty() + "=true") : List.of();
 
 		return new PlannedJava(planned, arguments, level);
 	}
@@ -136,9 +136,9 @@ final class JavaRequirementPlanner {
 	private Subject subject(AnvilScenario scenario, MinecraftProcess declaration, PlatformProvider provider) {
 		try {
 			return new Subject(declaration, provider, versions(provider), provider.platformVersion(declaration),
-					origin(scenario, declaration), declaration.getJavaSelection().getRequirement() != null);
+					origin(scenario, declaration), declaration.javaSelection().requirement() != null);
 		} catch (PlatformException invalid) {
-			throw new ScenarioValidationException("Process '" + declaration.getName() + "': " + invalid.getMessage(), invalid);
+			throw new ScenarioValidationException("Process '" + declaration.name() + "': " + invalid.getMessage(), invalid);
 		}
 	}
 
@@ -150,7 +150,7 @@ final class JavaRequirementPlanner {
 		JavaCompatibility row = subject.versions().javaCompatibility(subject.version()).orElseThrow();
 		if (subject.provider().platformAgent() == null) return new JavaRange(row, null);
 
-		Integer agent = subject.versions().getAgentMinimumJava();
+		Integer agent = subject.versions().agentMinimumJava();
 		if (agent != null) return new JavaRange(row, agent);
 
 		throw new ScenarioValidationException("Process '" + subject.name() + "': platform '" + subject.provider().id()
@@ -158,15 +158,15 @@ final class JavaRequirementPlanner {
 	}
 
 	private String origin(AnvilScenario scenario, MinecraftProcess declaration) {
-		if (declaration.getJavaSelection().getRequirement() != null) return "process '" + declaration.getName() + "'";
-		if (scenario.getJavaSelection().getRequirement() != null) return "scenario '" + scenario.getName() + "'";
+		if (declaration.javaSelection().requirement() != null) return "process '" + declaration.name() + "'";
+		if (scenario.javaSelection().requirement() != null) return "scenario '" + scenario.name() + "'";
 
 		return "the engine Java selection";
 	}
 
 	private @Nullable Integer requested(Subject subject, JavaRequirement requirement) {
-		Integer feature = requirement.getFeatureVersion();
-		String release = requirement.getRelease();
+		Integer feature = requirement.featureVersion();
+		String release = requirement.release();
 		if (release == null) return feature;
 
 		Integer releaseFeature = releaseFeature(release);
@@ -195,18 +195,18 @@ final class JavaRequirementPlanner {
 	}
 
 	private static String sourceOrigin(AnvilScenario scenario, MinecraftProcess declaration) {
-		if (declaration.getJavaSelection().getSource() != null)
-			return "declared by process '" + declaration.getName() + "'";
-		if (scenario.getJavaSelection().getSource() != null) return "declared by scenario '" + scenario.getName() + "'";
+		if (declaration.javaSelection().source() != null)
+			return "declared by process '" + declaration.name() + "'";
+		if (scenario.javaSelection().source() != null) return "declared by scenario '" + scenario.name() + "'";
 
 		return "declared by the engine Java selection";
 	}
 
 	private static String sourceHint(AnvilScenario scenario, MinecraftProcess declaration) {
-		if (declaration.getJavaSelection().getSource() != null) return "";
+		if (declaration.javaSelection().source() != null) return "";
 
 		return " The source applies to every process without its own; declare a JavaSelection on process '"
-				+ declaration.getName() + "' to override it, or request a Java version for it.";
+				+ declaration.name() + "' to override it, or request a Java version for it.";
 	}
 
 	private @Nullable Integer releaseFeature(String release) {
@@ -221,10 +221,10 @@ final class JavaRequirementPlanner {
 		if (range.defaultFits()) return range.preferred();
 
 		JavaCompatibility row = range.row();
-		String bypass = row.getMaximumBypassProperty() == null ? "" : " Request Java " + range.preferred()
-				+ " explicitly to run it above the maximum with -D" + row.getMaximumBypassProperty() + "=true.";
+		String bypass = row.maximumBypassProperty() == null ? "" : " Request Java " + range.preferred()
+				+ " explicitly to run it above the maximum with -D" + row.maximumBypassProperty() + "=true.";
 		throw new ScenarioValidationException("Process '" + subject.name() + "': " + subject.label() + " runs at most Java "
-				+ row.getMaximum() + ", but the Anvil agent installed into " + subject.provider().id() + " requires Java "
+				+ row.maximum() + ", but the Anvil agent installed into " + subject.provider().id() + " requires Java "
 				+ range.agentMinimum() + " or newer, so no LTS release runs both by default." + bypass);
 	}
 
@@ -253,10 +253,10 @@ final class JavaRequirementPlanner {
 		if (range.agentMinimum() != null && java < range.agentMinimum())
 			throw new ScenarioValidationException(request + ", but the Anvil agent installed into "
 					+ subject.provider().id() + " requires Java " + range.agentMinimum() + " or newer." + accepted);
-		if (java < row.getMinimum())
+		if (java < row.minimum())
 			throw new ScenarioValidationException(request + ", but " + subject.label() + " requires Java "
-					+ row.getMinimum() + " or newer." + accepted);
-		if (!row.exceedsMaximum(java) || row.getMaximumBypassProperty() != null) return;
+					+ row.minimum() + " or newer." + accepted);
+		if (!row.exceedsMaximum(java) || row.maximumBypassProperty() != null) return;
 
 		List<String> remedies = new ArrayList<>();
 		if (range.defaultFits()) remedies.add(removal + " to use Java " + range.preferred() + " (default)");
@@ -264,7 +264,7 @@ final class JavaRequirementPlanner {
 		if (!platforms.isEmpty()) remedies.add((remedies.isEmpty() ? "Use " : "use ") + String.join(" or ", platforms));
 		String remedy = remedies.isEmpty() ? "" : " " + String.join(", or ", remedies) + ".";
 		throw new ScenarioValidationException(request + ", but " + subject.label() + " refuses Java above "
-				+ row.getMaximum() + " and has no bypass." + remedy + hint);
+				+ row.maximum() + " and has no bypass." + remedy + hint);
 	}
 
 	private List<String> alternatives(Subject subject, int java, SupportPolicy policy) {
@@ -293,15 +293,15 @@ final class JavaRequirementPlanner {
 
 		JavaCompatibility row = version == null ? null : data.javaCompatibility(version).orElse(null);
 		if (row == null) return null;
-		Integer agent = other.platformAgent() == null ? null : data.getAgentMinimumJava();
+		Integer agent = other.platformAgent() == null ? null : data.agentMinimumJava();
 		if (other.platformAgent() != null && agent == null) return null;
 		if (java < new JavaRange(row, agent).minimum()) return null;
 		boolean bypass = row.exceedsMaximum(java);
-		if (bypass && row.getMaximumBypassProperty() == null) return null;
+		if (bypass && row.maximumBypassProperty() == null) return null;
 		if (!policy.permits(data.support(version).weakest(javaLevel(data, version, java, bypass)))) return null;
 
 		String alternative = "'" + other.id() + "', which runs Minecraft " + version + " on Java " + java;
-		return bypass ? alternative + " with -D" + row.getMaximumBypassProperty() + "=true" : alternative;
+		return bypass ? alternative + " with -D" + row.maximumBypassProperty() + "=true" : alternative;
 	}
 
 	private static SupportLevel javaLevel(PlatformVersions versions, @Nullable MinecraftVersion version, int java, boolean bypass) {
@@ -326,8 +326,8 @@ final class JavaRequirementPlanner {
 				? "no Java version is verified for " + subject.label()
 				: "verified Java for " + subject.label() + ": " + javaList(verified);
 		if (bypass) {
-			reasons.add("Java " + java + " is above the maximum Java " + range.row().getMaximum() + " for this version and runs with -D"
-					+ range.row().getMaximumBypassProperty() + "=true; " + (verified.contains(java)
+			reasons.add("Java " + java + " is above the maximum Java " + range.row().maximum() + " for this version and runs with -D"
+					+ range.row().maximumBypassProperty() + "=true; " + (verified.contains(java)
 					? "Anvil's live matrix verifies this combination although the platform does not support it"
 					: verifiedJava));
 			return reasons;
@@ -363,9 +363,9 @@ final class JavaRequirementPlanner {
 	}
 
 	private static String bounds(JavaRange range) {
-		if (range.row().getMaximum() == null) return "Java " + range.minimum() + " or newer";
+		if (range.row().maximum() == null) return "Java " + range.minimum() + " or newer";
 
-		return "Java " + range.minimum() + " to " + range.row().getMaximum();
+		return "Java " + range.minimum() + " to " + range.row().maximum();
 	}
 
 	private static String describe(JavaRange range) {
@@ -373,10 +373,10 @@ final class JavaRequirementPlanner {
 		String text = "runs " + bounds(new JavaRange(row, null));
 		if (range.raisedByAgent()) text += ", and its Anvil agent requires Java " + range.agentMinimum() + " or newer";
 		if (range.defaultFits()) text += " (default " + range.preferred() + ")";
-		if (row.getMaximum() == null) return text;
-		if (row.getMaximumBypassProperty() == null) return text + " and refuses newer Java";
+		if (row.maximum() == null) return text;
+		if (row.maximumBypassProperty() == null) return text + " and refuses newer Java";
 
-		return text + "; newer Java runs only with -D" + row.getMaximumBypassProperty() + "=true";
+		return text + "; newer Java runs only with -D" + row.maximumBypassProperty() + "=true";
 	}
 
 	private static String javaList(Set<Integer> versions) {
@@ -405,11 +405,11 @@ final class JavaRequirementPlanner {
 	 */
 	private record JavaRange(@NotNull JavaCompatibility row, @Nullable Integer agentMinimum) {
 		int minimum() {
-			return agentMinimum == null ? row.getMinimum() : Math.max(row.getMinimum(), agentMinimum);
+			return agentMinimum == null ? row.minimum() : Math.max(row.minimum(), agentMinimum);
 		}
 
 		int preferred() {
-			if (row.getPreferred() >= minimum()) return row.getPreferred();
+			if (row.preferred() >= minimum()) return row.preferred();
 
 			return JavaCompatibility.nextLongTermSupport(minimum());
 		}
@@ -419,7 +419,7 @@ final class JavaRequirementPlanner {
 		}
 
 		boolean raisedByAgent() {
-			return agentMinimum != null && agentMinimum > row.getMinimum();
+			return agentMinimum != null && agentMinimum > row.minimum();
 		}
 	}
 
@@ -432,7 +432,7 @@ final class JavaRequirementPlanner {
 			boolean ownRequirement
 	) {
 		String name() {
-			return declaration.getName();
+			return declaration.name();
 		}
 
 		String label() {

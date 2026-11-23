@@ -17,7 +17,7 @@ public final class ReleaseScenarios implements AnvilScenarioFactory<Release> {
 
 		return release.toBuilder()
 				.clearServers()
-				.servers(release.getServers().stream()
+				.servers(release.servers().stream()
 						.map(server -> server.toBuilder().lifetime(ProcessLifetime.ENGINE).build())
 						.toList())
 				.build();

@@ -39,7 +39,7 @@ public class LivingBody extends EntityBody {
 	 */
 	private float zza;
 	/**
-	 * The speed the entity's controls set ({@code LivingEntity.speed}); {@link #getSpeed} reads it.
+	 * The speed the entity's controls set ({@code LivingEntity.speed}); {@link #speed} reads it.
 	 */
 	@Getter(AccessLevel.NONE)
 	private float speed;
@@ -70,7 +70,7 @@ public class LivingBody extends EntityBody {
 	 *
 	 * @param sprinting whether the entity sprints
 	 */
-	public void setSprinting(boolean sprinting) {
+	public void sprinting(boolean sprinting) {
 		this.sprinting = sprinting;
 		attributes.sprinting(sprinting);
 	}
@@ -104,7 +104,7 @@ public class LivingBody extends EntityBody {
 	 *
 	 * @return {@code false} by default
 	 */
-	public boolean isImmobile() {
+	public boolean immobile() {
 		return false;
 	}
 
@@ -114,7 +114,7 @@ public class LivingBody extends EntityBody {
 	 *
 	 * @return the speed its controls set
 	 */
-	public float getSpeed() {
+	public float speed() {
 		return speed;
 	}
 
@@ -134,7 +134,7 @@ public class LivingBody extends EntityBody {
 	 *
 	 * @return {@code true} by default
 	 */
-	public boolean isAffectedByFluids() {
+	public boolean affectedByFluids() {
 		return true;
 	}
 
@@ -145,7 +145,7 @@ public class LivingBody extends EntityBody {
 	 * @return whether it climbs
 	 */
 	public boolean onClimbable() {
-		return !isSpectator() && Climbing.isClimbable(getLevel(), blockPosition());
+		return !spectator() && Climbing.isClimbable(level(), blockPosition());
 	}
 
 	/**
@@ -154,7 +154,7 @@ public class LivingBody extends EntityBody {
 	 *
 	 * @return {@code false} by default
 	 */
-	public boolean isSuppressingSlidingDownLadder() {
+	public boolean suppressingSlidingDownLadder() {
 		return false;
 	}
 }

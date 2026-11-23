@@ -47,8 +47,8 @@ public final class ToolingClient {
 				case ToolingMessageCodec.Snapshot event -> snapshots.accept(event.value());
 				case ToolingMessageCodec.Output event -> {
 					var entry = event.value();
-					output.accept(new SessionLogEntry(entry.getProcess(), entry.getExecutionId(),
-							entry.getSequence(), entry.getText() + "\n", false));
+					output.accept(new SessionLogEntry(entry.process(), entry.executionId(),
+							entry.sequence(), entry.text() + "\n", false));
 				}
 				case ToolingMessageCodec.Failure event -> throw new IOException(event.message());
 				case ToolingMessageCodec.Response event -> complete(event);
@@ -81,7 +81,7 @@ public final class ToolingClient {
 		Pending<R> request;
 		try {
 			String id = UUID.randomUUID().toString();
-			request = new Pending<>(id, codec.write(id, operation, payload), operation.getResponseType());
+			request = new Pending<>(id, codec.write(id, operation, payload), operation.responseType());
 		} catch (Exception failure) {
 			return new Exchange<>(CompletableFuture.completedFuture(false), CompletableFuture.failedFuture(failure));
 		}

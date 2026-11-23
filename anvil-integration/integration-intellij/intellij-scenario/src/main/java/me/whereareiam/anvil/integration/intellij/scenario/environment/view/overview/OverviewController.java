@@ -161,7 +161,7 @@ final class OverviewController {
 					process.getDisplayName(),
 					process.getDefinition(),
 					process.getLive(),
-					snapshot.getState()));
+					snapshot.state()));
 		}
 
 		return processes;
@@ -180,7 +180,7 @@ final class OverviewController {
 	) {
 		EnvironmentSession.Status state = session.getStatus();
 		return new ScenarioItem(
-				scenario.getDisplayName(),
+				scenario.displayName(),
 				state,
 				StatusPresentation.environmentDescription(scenario, snapshot, state));
 	}
@@ -244,17 +244,17 @@ final class OverviewController {
 			return;
 		}
 		if (selected.definition() != null) {
-			details.showProcess(scenario, selected.definition(), selected.live(), snapshot.getState());
+			details.showProcess(scenario, selected.definition(), selected.live(), snapshot.state());
 			return;
 		}
-		if (selected.live() != null) details.showRuntimeProcess(selected.live(), snapshot.getState());
+		if (selected.live() != null) details.showRuntimeProcess(selected.live(), snapshot.state());
 	}
 
 	private void updateContributions(
 			@NotNull ScenarioDescriptor scenario,
 			@Nullable ProcessItem selected
 	) {
-		ActionTarget scenarioTarget = target(ActionTargetType.SCENARIO, scenario.getName());
+		ActionTarget scenarioTarget = target(ActionTargetType.SCENARIO, scenario.name());
 		if (selected == null) {
 			contributions.update(scenarioTarget);
 			return;

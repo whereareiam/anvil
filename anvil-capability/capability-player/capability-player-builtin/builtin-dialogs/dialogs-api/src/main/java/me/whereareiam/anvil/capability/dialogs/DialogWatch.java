@@ -17,7 +17,7 @@ import java.util.function.Predicate;
  * <pre>{@code
  * DialogWatch shown = dialogs.watch();
  * dialogs.press("Log in", Map.of("password", "wrong"));
- * shown.shown(dialog -> dialog.getBody().contains("Invalid password."), timeout);
+ * shown.shown(dialog -> dialog.body().contains("Invalid password."), timeout);
  * }</pre>
  */
 public interface DialogWatch {
@@ -28,7 +28,7 @@ public interface DialogWatch {
 	 * @return the matching dialog
 	 */
 	default @NotNull Dialog shown(@NotNull String title) {
-		return shown(dialog -> dialog.getTitle().contains(title), SimulatedPlayer.DEFAULT_TIMEOUT);
+		return shown(dialog -> dialog.title().contains(title), SimulatedPlayer.DEFAULT_TIMEOUT);
 	}
 
 	/**

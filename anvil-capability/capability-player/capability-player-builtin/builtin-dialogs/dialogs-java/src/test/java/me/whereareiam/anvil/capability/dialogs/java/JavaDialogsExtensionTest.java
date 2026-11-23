@@ -188,7 +188,7 @@ class JavaDialogsExtensionTest {
 
 		player.deliver(new ClientboundRegistryData("minecraft:dialog", List.of(new RegistryEntry("example:rules", rules))));
 		DialogRegistry registry = player.emitted(DialogsChannel.REGISTRY).getLast();
-		long handle = registry.getDialogs().getFirst().getDialog().getButtons().getFirst().getAction().getHandle();
+		long handle = registry.dialogs().getFirst().dialog().buttons().getFirst().action().handle();
 		player.deliver(new ClientboundShowDialog(0, null, false));
 		player.deliver(new ClientboundClearDialog());
 		operations.call(DialogsChannel.CLICK, DialogClick.custom(handle, List.of()));
@@ -369,15 +369,15 @@ class JavaDialogsExtensionTest {
 				new RegistryEntry("minecraft:quick_actions", null)
 		)));
 
-		List<RegistryDialog> dialogs = player.emitted(DialogsChannel.REGISTRY).getFirst().getDialogs();
+		List<RegistryDialog> dialogs = player.emitted(DialogsChannel.REGISTRY).getFirst().dialogs();
 		assertEquals(List.of("minecraft:server_links", "minecraft:dialog_list", "minecraft:dialog_list"),
-				dialogs.stream().map(registered -> registered.getDialog().getType()).toList());
+				dialogs.stream().map(registered -> registered.dialog().type()).toList());
 		assertEquals(List.of("menu.server_links.title", "menu.custom_options.title", "menu.quick_actions.title"),
-				dialogs.stream().map(registered -> registered.getDialog().getTitle()).toList());
+				dialogs.stream().map(registered -> registered.dialog().title()).toList());
 		assertEquals(List.of("menu.server_links", "menu.custom_options", "menu.quick_actions"),
-				dialogs.stream().map(registered -> registered.getDialog().getExternalTitle()).toList());
-		assertEquals(List.of("gui.back"), dialogs.getFirst().getDialog().getButtons().stream()
-				.map(DialogButton::getLabel)
+				dialogs.stream().map(registered -> registered.dialog().externalTitle()).toList());
+		assertEquals(List.of("gui.back"), dialogs.getFirst().dialog().buttons().stream()
+				.map(DialogButton::label)
 				.toList());
 	}
 
@@ -449,7 +449,7 @@ class JavaDialogsExtensionTest {
 	 */
 	private static long handle(TestJavaPlayer player, int button) {
 		Dialog shown = player.emitted(DialogsChannel.SHOWN).getLast();
-		return Objects.requireNonNull(shown.getButtons().get(button).getAction().getHandle());
+		return Objects.requireNonNull(shown.buttons().get(button).action().handle());
 	}
 
 	private static NbtCompound button(String label, NbtCompound action) {

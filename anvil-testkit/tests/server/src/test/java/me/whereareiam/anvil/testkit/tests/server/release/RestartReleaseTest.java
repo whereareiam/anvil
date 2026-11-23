@@ -31,7 +31,7 @@ class RestartReleaseTest {
 		PlayerWatch arrivals = players.watch();
 		SimulatedPlayer player = new FixtureServer(anvil).join();
 		Session session = player.capability(Session.class);
-		PlayerProfile identity = arrivals.joined(player, Duration.ofSeconds(10)).getProfile();
+		PlayerProfile identity = arrivals.joined(player, Duration.ofSeconds(10)).profile();
 		RunningProcess before = anvil.processes().server("server");
 		Dispatch dispatch = before.capability(Dispatch.class);
 		before.files().write("restart-marker", "preserved");
@@ -48,8 +48,8 @@ class RestartReleaseTest {
 		session.disconnected();
 		session.rejoin();
 		session.connected(Duration.ofSeconds(30));
-		PlayerProfile rejoined = arrivals.joined(player, Duration.ofSeconds(10)).getProfile();
-		assertEquals(identity.getUniqueId(), rejoined.getUniqueId());
+		PlayerProfile rejoined = arrivals.joined(player, Duration.ofSeconds(10)).profile();
+		assertEquals(identity.uniqueId(), rejoined.uniqueId());
 		assertSame(players, anvil.processes().server("server").capability(Players.class));
 		assertEquals("external:after", after.capability(FixtureAgentProbeProvider.Probe.class).echo("after"));
 	}

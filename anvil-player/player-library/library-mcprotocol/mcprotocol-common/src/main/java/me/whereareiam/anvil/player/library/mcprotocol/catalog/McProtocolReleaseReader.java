@@ -84,9 +84,9 @@ final class McProtocolReleaseReader {
 			Set<MinecraftVersion> minecraft = new HashSet<>();
 			for (int index = 0; index < rows.size(); index++) {
 				ReleaseDefinition definition = release(rows.get(index), "release #" + (index + 1));
-				ProtocolRelease release = definition.getRelease();
-				if (!versions.add(release.getLibraryVersion())) fail("declares release " + release.getLibraryVersion() + " more than once");
-				for (MinecraftVersion version : release.getMinecraftVersions())
+				ProtocolRelease release = definition.release();
+				if (!versions.add(release.libraryVersion())) fail("declares release " + release.libraryVersion() + " more than once");
+				for (MinecraftVersion version : release.minecraftVersions())
 					if (!minecraft.add(version)) fail("assigns Minecraft " + version + " to more than one release");
 
 				releases.add(definition);
@@ -109,7 +109,7 @@ final class McProtocolReleaseReader {
 
 			String module = module(row, "module", context, MODULE);
 			List<ReleaseArtifact> artifacts = artifacts(row.path("artifact"), context);
-			if (artifacts.stream().noneMatch(artifact -> artifact.getModule().equals(module)))
+			if (artifacts.stream().noneMatch(artifact -> artifact.module().equals(module)))
 				fail(context + " must include its module " + module + " in its artifacts");
 
 			ProtocolRelease release = ProtocolRelease.builder()
@@ -130,7 +130,7 @@ final class McProtocolReleaseReader {
 				if (artifact.pinned()) continue;
 
 				String remedy = additional ? "set its sha256 in " + source : "run `" + PIN_TASK + "`";
-				return "MCProtocolLib release " + version + " has no pinned checksum for " + artifact.getModule() + "; " + remedy;
+				return "MCProtocolLib release " + version + " has no pinned checksum for " + artifact.module() + "; " + remedy;
 			}
 			return null;
 		}

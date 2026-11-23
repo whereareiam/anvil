@@ -74,9 +74,9 @@ final class NeoForgeWorlds implements ServerWorlds {
 		ServerPlayer player = server.getPlayerList().getPlayer(uniqueId);
 		if (player == null) throw new IllegalArgumentException("No player " + uniqueId + " is on the server");
 
-		ServerLevel level = level(location.getWorld());
-		return player.teleportTo(level, location.getX(), location.getY(), location.getZ(), Set.of(), location.getYaw(),
-				location.getPitch(), true);
+		ServerLevel level = level(location.world());
+		return player.teleportTo(level, location.x(), location.y(), location.z(), Set.of(), location.yaw(),
+				location.pitch(), true);
 	}
 
 	@Override

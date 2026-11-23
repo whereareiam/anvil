@@ -23,24 +23,24 @@ final class ProvisioningServices implements AutoCloseable {
 	private final @NotNull DefaultWorkspaceProvisioner workspaces;
 
 	ProvisioningServices(@NotNull EngineOptions options) {
-		cache = new FileCache(options.getCacheDirectory());
+		cache = new FileCache(options.cacheDirectory());
 		artifacts = new HttpArtifactAcquirer(
-				options.getCacheDirectory(),
+				options.cacheDirectory(),
 				new CacheArtifactStorage(cache),
-				options.isOffline(),
-				options.isRefresh(),
-				options.getDownloadParallelism()
+				options.offline(),
+				options.refresh(),
+				options.downloadParallelism()
 		);
 		try {
 			java = new JavaRuntimeResolver(
-					options.getCacheDirectory(),
+					options.cacheDirectory(),
 					new ArtifactJavaPackageSource(artifacts),
 					new CacheJavaInstallationStorage(cache),
-					options.isDownloadJava(),
-					options.isRefresh()
+					options.downloadJava(),
+					options.refresh()
 			);
 			workspaces = new DefaultWorkspaceProvisioner(
-					options.getCacheDirectory(),
+					options.cacheDirectory(),
 					new CacheWorkspaceSnapshotStore(cache)
 			);
 		} catch (RuntimeException | Error failure) {

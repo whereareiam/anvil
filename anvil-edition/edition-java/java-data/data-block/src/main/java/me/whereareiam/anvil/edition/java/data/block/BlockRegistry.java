@@ -23,8 +23,8 @@ import java.util.stream.Collectors;
  * <pre>{@code
  * BlockRegistry registry = JavaBlockData.shipped().require(767);
  * BlockState state = registry.state(stateId);
- * if (!state.isAir() && state.getCollision().isFullBlock())
- *     System.out.println(state.getBlock().getName() + " is a full block");
+ * if (!state.isAir() && state.collision().isFullBlock())
+ *     System.out.println(state.block().name() + " is a full block");
  * }</pre>
  */
 public final class BlockRegistry {
@@ -44,7 +44,7 @@ public final class BlockRegistry {
 		this.protocol = protocol;
 		this.source = source;
 		this.blocks = List.copyOf(blocks);
-		this.blocksByName = blocks.stream().collect(Collectors.toUnmodifiableMap(BlockType::getName, Function.identity()));
+		this.blocksByName = blocks.stream().collect(Collectors.toUnmodifiableMap(BlockType::name, Function.identity()));
 		this.states = states;
 	}
 
@@ -56,17 +56,17 @@ public final class BlockRegistry {
 		int next = 0;
 		for (int id = 0; id < blocks.size(); id++) {
 			BlockType block = blocks.get(id);
-			if (block.getId() != id || block.getMinStateId() != next || block.getMaxStateId() < next)
-				throw new IllegalArgumentException("Protocol " + protocol + " numbers " + block.getName() + " out of order");
-			next = block.getMaxStateId() + 1;
+			if (block.id() != id || block.minStateId() != next || block.maxStateId() < next)
+				throw new IllegalArgumentException("Protocol " + protocol + " numbers " + block.name() + " out of order");
+			next = block.maxStateId() + 1;
 		}
 		if (next != states.length)
 			throw new IllegalArgumentException(
 					"Protocol " + protocol + " has " + states.length + " states for " + next + " state IDs");
 
 		for (int id = 0; id < states.length; id++) {
-			BlockType block = states[id].getBlock();
-			if (states[id].getId() != id || id < block.getMinStateId() || id > block.getMaxStateId())
+			BlockType block = states[id].block();
+			if (states[id].id() != id || id < block.minStateId() || id > block.maxStateId())
 				throw new IllegalArgumentException("Protocol " + protocol + " misplaces state " + id);
 		}
 	}
@@ -132,10 +132,10 @@ public final class BlockRegistry {
 	 * @throws IllegalArgumentException when the block is not this registry's
 	 */
 	public @NotNull List<BlockState> states(@NotNull BlockType block) {
-		if (blocksByName.get(block.getName()) != block)
-			throw new IllegalArgumentException(block.getName() + " is not a block of protocol " + protocol);
+		if (blocksByName.get(block.name()) != block)
+			throw new IllegalArgumentException(block.name() + " is not a block of protocol " + protocol);
 
-		return List.of(Arrays.copyOfRange(states, block.getMinStateId(), block.getMaxStateId() + 1));
+		return List.of(Arrays.copyOfRange(states, block.minStateId(), block.maxStateId() + 1));
 	}
 
 	/**

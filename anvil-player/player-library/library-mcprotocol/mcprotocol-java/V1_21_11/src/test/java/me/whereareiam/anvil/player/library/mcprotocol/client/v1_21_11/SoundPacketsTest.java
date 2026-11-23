@@ -73,7 +73,7 @@ class SoundPacketsTest {
 	void mapsEveryCategoryOfTheReleaseByNameIncludingTheUserInterface() {
 		List<SoundSource> sources = Arrays.stream(SoundCategory.values())
 				.map(category -> new ClientboundSoundEntityPacket(BuiltinSound.ENTITY_PLAYER_LEVELUP, category, 42, 1F, 1F, 0L))
-				.map(sound -> assertInstanceOf(ClientboundSoundEntity.class, packets.decode(sound)).getSource())
+				.map(sound -> assertInstanceOf(ClientboundSoundEntity.class, packets.decode(sound)).source())
 				.toList();
 
 		assertEquals(List.of(

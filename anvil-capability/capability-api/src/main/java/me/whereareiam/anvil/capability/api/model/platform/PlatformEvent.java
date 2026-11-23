@@ -21,7 +21,7 @@ public class PlatformEvent {
 	@NotNull String process;
 
 	/**
-	 * Whether the process is a proxy, whose events name the backend in {@link #getServer()}.
+	 * Whether the process is a proxy, whose events name the backend in {@link #server()}.
 	 */
 	boolean proxy;
 

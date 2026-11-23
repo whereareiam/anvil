@@ -35,7 +35,7 @@ class ReportedPlayersTest {
 				.joined(premium, null);
 		Players players = new ReportedPlayers("lobby", lobby);
 
-		assertEquals(List.of(bob, premium), players.online().stream().map(PlayerVisit::getProfile).toList());
+		assertEquals(List.of(bob, premium), players.online().stream().map(PlayerVisit::profile).toList());
 		assertEquals(Optional.of(premium), players.profile(alice));
 		assertEquals(Optional.empty(), players.profile(player("Carol")));
 		assertEquals(Optional.empty(), players.backend(alice));
@@ -72,9 +72,9 @@ class ReportedPlayersTest {
 
 		assertTrue(joins.met());
 		PlayerVisit visit = watch.joined(alice, WAIT);
-		assertEquals(premium, visit.getProfile());
-		assertEquals(Optional.of(Instant.ofEpochSecond(5)), visit.getLeftAt());
-		assertEquals(Instant.ofEpochSecond(4), watch.left(alice, WAIT).getJoinedAt());
+		assertEquals(premium, visit.profile());
+		assertEquals(Optional.of(Instant.ofEpochSecond(5)), visit.leftAt());
+		assertEquals(Instant.ofEpochSecond(4), watch.left(alice, WAIT).joinedAt());
 		watch.neverJoined(alice, WAIT);
 		assertThrows(IllegalStateException.class, () -> watch.joined(alice, WAIT));
 	}
@@ -87,7 +87,7 @@ class ReportedPlayersTest {
 
 		watch.neverJoined(alice, WAIT);
 		proxy.joined(offline, null);
-		assertEquals(offline, watch.joined(alice, WAIT).getProfile());
+		assertEquals(offline, watch.joined(alice, WAIT).profile());
 	}
 
 	@Test
@@ -100,14 +100,14 @@ class ReportedPlayersTest {
 		proxy.joined(offline, "lobby").left(offline, "lobby").joined(offline, "game");
 
 		assertTrue(game.met());
-		assertEquals(Instant.ofEpochSecond(2), watch.joined(alice, "lobby", WAIT).getJoinedAt());
-		assertEquals(Optional.of(Instant.ofEpochSecond(3)), watch.left(alice, "lobby", WAIT).getLeftAt());
-		assertEquals(Optional.empty(), watch.joined(alice, "game", WAIT).getLeftAt());
+		assertEquals(Instant.ofEpochSecond(2), watch.joined(alice, "lobby", WAIT).joinedAt());
+		assertEquals(Optional.of(Instant.ofEpochSecond(3)), watch.left(alice, "lobby", WAIT).leftAt());
+		assertEquals(Optional.empty(), watch.joined(alice, "game", WAIT).leftAt());
 		watch.neverJoined(alice, "lobby", WAIT);
 
 		proxy.left(offline, "game").left(offline, null);
-		assertEquals(Instant.ofEpochSecond(4), watch.left(alice, "game", WAIT).getJoinedAt());
-		assertEquals(Instant.ofEpochSecond(1), watch.left(alice, WAIT).getJoinedAt());
+		assertEquals(Instant.ofEpochSecond(4), watch.left(alice, "game", WAIT).joinedAt());
+		assertEquals(Instant.ofEpochSecond(1), watch.left(alice, WAIT).joinedAt());
 	}
 
 	@Test

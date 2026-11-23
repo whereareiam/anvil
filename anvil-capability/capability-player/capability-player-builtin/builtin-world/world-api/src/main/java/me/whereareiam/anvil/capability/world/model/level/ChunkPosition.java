@@ -30,7 +30,7 @@ public class ChunkPosition {
 	 * @return the chunk column it lies in
 	 */
 	public static @NotNull ChunkPosition containing(@NotNull BlockPosition block) {
-		return new ChunkPosition(Math.floorDiv(block.getX(), SIZE), Math.floorDiv(block.getZ(), SIZE));
+		return new ChunkPosition(Math.floorDiv(block.x(), SIZE), Math.floorDiv(block.z(), SIZE));
 	}
 
 	/**

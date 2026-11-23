@@ -46,36 +46,36 @@ class ScenarioTreeRenderer : ColoredTreeCellRenderer() {
 	}
 
 	private fun renderScenario(scenario: ScenarioDescriptor) {
-		append(scenario.displayName)
+		append(scenario.displayName())
 		val process = ScenarioPresentation.standaloneProcess(scenario)
 		icon = process?.let(ScenarioPresentation::processIcon) ?: ScenarioPresentation.scenarioIcon()
-		if (process != null) appendPlatform(scenario.displayName, process)
+		if (process != null) appendPlatform(scenario.displayName(), process)
 
-		toolTipText = scenario.description
+		toolTipText = scenario.description()
 		if (executionFor(scenario) == null) return
 		val state = executionEnvironmentState ?: return
 		val label = StatusPresentation.environmentLabel(state)
 		icon = StatusIcon.overlay(StatusPresentation.environmentTone(state), label, icon)
-		toolTipText = tooltip(scenario.description, label)
+		toolTipText = tooltip(scenario.description(), label)
 	}
 
 	private fun renderProcess(node: DefaultMutableTreeNode, process: ProcessDefinition) {
-		append(process.displayName)
-		appendPlatform(process.displayName, process)
+		append(process.displayName())
+		appendPlatform(process.displayName(), process)
 		icon = ScenarioPresentation.processIcon(process)
-		toolTipText = tooltip(process.description, ScenarioPresentation.platformLabel(process))
+		toolTipText = tooltip(process.description(), ScenarioPresentation.platformLabel(process))
 
 		val scenario = (node.parent as? DefaultMutableTreeNode)?.userObject as? ScenarioDescriptor ?: return
 		val snapshot = executionFor(scenario) ?: return
-		val state = snapshot.processes.firstOrNull { it.name == process.name }?.state
-		val label = StatusPresentation.processLabel(state, snapshot.state)
-		icon = StatusIcon.overlay(StatusPresentation.processTone(state, snapshot.state), label, icon)
-		toolTipText = tooltip(toolTipText, StatusPresentation.processDescription(state, snapshot.state))
+		val state = snapshot.processes().firstOrNull { it.name() == process.name() }?.state()
+		val label = StatusPresentation.processLabel(state, snapshot.state())
+		icon = StatusIcon.overlay(StatusPresentation.processTone(state, snapshot.state()), label, icon)
+		toolTipText = tooltip(toolTipText, StatusPresentation.processDescription(state, snapshot.state()))
 	}
 
 	private fun executionFor(scenario: ScenarioDescriptor): SessionSnapshot? {
 		val current = executionScenario ?: return null
-		if (current.definition != scenario.definition) return null
+		if (current.definition() != scenario.definition()) return null
 
 		return executionSnapshot
 	}

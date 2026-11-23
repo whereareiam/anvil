@@ -53,19 +53,19 @@ final class ProvisioningOperations {
 
 	@NotNull Object artifact(@NotNull ArtifactRequest<?> request) {
 		return switch (request) {
-			case ObtainArtifact obtain -> new ObtainedArtifact(workbench.artifacts().obtain(obtain.getUri(), obtain.getDestination(),
-					obtain.getSha256()));
-			case ReadArtifact read -> new ArtifactDocument(workbench.artifacts().read(read.getUri()));
+			case ObtainArtifact obtain -> new ObtainedArtifact(workbench.artifacts().obtain(obtain.uri(), obtain.destination(),
+					obtain.sha256()));
+			case ReadArtifact read -> new ArtifactDocument(workbench.artifacts().read(read.uri()));
 		};
 	}
 
 	@NotNull Object java(@NotNull JavaRequest<?> request) {
 		return switch (request) {
-			case ResolveJava resolve -> new ResolvedJava(workbench.java().resolve(resolve.getRequirement(), resolve.getSource()));
-			case InspectJavaSource inspect -> new InspectedJava(workbench.java().inspect(inspect.getSource()).orElse(null));
-			case InspectJava inspect -> new InspectedJava(workbench.java().inspect(inspect.getProperties(), inspect.getExecutable()));
+			case ResolveJava resolve -> new ResolvedJava(workbench.java().resolve(resolve.requirement(), resolve.source()));
+			case InspectJavaSource inspect -> new InspectedJava(workbench.java().inspect(inspect.source()).orElse(null));
+			case InspectJava inspect -> new InspectedJava(workbench.java().inspect(inspect.properties(), inspect.executable()));
 			case ValidateJava validate -> {
-				workbench.java().validate(validate.getInstallation(), validate.getRequirement());
+				workbench.java().validate(validate.installation(), validate.requirement());
 				yield new Done();
 			}
 		};
@@ -77,35 +77,35 @@ final class ProvisioningOperations {
 	@NotNull Object workspace(@NotNull WorkspaceProvisioningRequest<?> request) {
 		var workspaces = workbench.workspaces();
 		return switch (request) {
-			case LayoutWorkspaces layout -> workspaces.layout(layout.getRoot(), layout.getScenario());
+			case LayoutWorkspaces layout -> workspaces.layout(layout.root(), layout.scenario());
 			case PrepareWorkspace prepare -> {
 				PreparedWorkspace prepared = workspaces.prepare(WorkspaceRequest.builder()
-						.root(prepare.getRoot())
-						.directory(prepare.getDirectory())
-						.process(prepare.getProcess())
-						.plan(prepare.getPlan())
-						.providerDefaults(prepare.getProviderDefaults())
+						.root(prepare.root())
+						.directory(prepare.directory())
+						.process(prepare.process())
+						.plan(prepare.plan())
+						.providerDefaults(prepare.providerDefaults())
 						.build());
 				yield new PreparedWorkspaceHandle(handles.register(owner, prepared, () -> prepared.finish(false)), prepared.workspace());
 			}
 			case RefreshWorkspace refresh -> {
-				handles.get(owner, refresh.getHandle(), PreparedWorkspace.class).refresh(refresh.getRefresh());
+				handles.get(owner, refresh.handle(), PreparedWorkspace.class).refresh(refresh.refresh());
 				yield new Done();
 			}
 			case FinishWorkspace finish -> {
-				if (handles.remove(owner, finish.getHandle()) instanceof PreparedWorkspace prepared) prepared.finish(finish.isSuccessful());
+				if (handles.remove(owner, finish.handle()) instanceof PreparedWorkspace prepared) prepared.finish(finish.successful());
 				yield new Done();
 			}
 			case RecreateRunDirectory recreate -> {
-				workspaces.recreateRunDirectory(recreate.getRoot(), recreate.getDirectory());
+				workspaces.recreateRunDirectory(recreate.root(), recreate.directory());
 				yield new Done();
 			}
 			case FinishRunDirectory finish -> {
-				workspaces.finishRunDirectory(finish.getRoot(), finish.getDirectory(), finish.isSuccessful(), finish.isKeepFailed());
+				workspaces.finishRunDirectory(finish.root(), finish.directory(), finish.successful(), finish.keepFailed());
 				yield new Done();
 			}
 			case DeleteRunDirectory delete -> {
-				workspaces.deleteRunDirectory(delete.getRoot(), delete.getDirectory());
+				workspaces.deleteRunDirectory(delete.root(), delete.directory());
 				yield new Done();
 			}
 		};
@@ -113,14 +113,14 @@ final class ProvisioningOperations {
 
 	@NotNull Object file(@NotNull FileRequest<?> request) throws IOException {
 		return switch (request) {
-			case CheckFile check -> new FilePresence(files(check.getWorkspace()).exists(check.getPath()));
-			case ReadFile read -> new FileContent(files(read.getWorkspace()).read(read.getPath()));
+			case CheckFile check -> new FilePresence(files(check.workspace()).exists(check.path()));
+			case ReadFile read -> new FileContent(files(read.workspace()).read(read.path()));
 			case WriteFile write -> {
-				files(write.getWorkspace()).write(write.getPath(), write.getContent());
+				files(write.workspace()).write(write.path(), write.content());
 				yield new Done();
 			}
-			case ListFiles list -> new FileNames(files(list.getWorkspace()).list(list.getPath()));
-			case DeleteFile delete -> new FileDeletion(files(delete.getWorkspace()).delete(delete.getPath()));
+			case ListFiles list -> new FileNames(files(list.workspace()).list(list.path()));
+			case DeleteFile delete -> new FileDeletion(files(delete.workspace()).delete(delete.path()));
 		};
 	}
 

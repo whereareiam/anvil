@@ -113,10 +113,10 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		this.remoteAddresses = remoteAddresses;
 		this.sourceAddressesPreserved = sourceAddressesPreserved;
 		this.declarations = declarations(scenario);
-		this.servers = scenario.getServers().stream()
-				.collect(Collectors.toUnmodifiableMap(MinecraftServer::getName, Function.identity()));
-		this.remotes = scenario.getRemotes().stream()
-				.collect(Collectors.toUnmodifiableMap(RemoteEndpoint::getName, Function.identity()));
+		this.servers = scenario.servers().stream()
+				.collect(Collectors.toUnmodifiableMap(MinecraftServer::name, Function.identity()));
+		this.remotes = scenario.remotes().stream()
+				.collect(Collectors.toUnmodifiableMap(RemoteEndpoint::name, Function.identity()));
 	}
 
 	@Override
@@ -147,13 +147,13 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	 */
 	@Override
 	public synchronized @NotNull SimulatedPlayer create(@NotNull PlayerOptions options, @NotNull AccountLease lease) {
-		String name = options.getName();
-		PlayerLogin login = options.getLogin();
+		String name = options.name();
+		PlayerLogin login = options.login();
 		if (!login.isLeased())
-			throw new IllegalArgumentException("Player '" + name + "' declares a " + login.getAuthentication()
+			throw new IllegalArgumentException("Player '" + name + "' declares a " + login.authentication()
 					+ " login that takes no lease; declare PlayerLogin.leased(AuthenticationMode) to sign in with a leased account");
 		if (!lease.claim())
-			throw new IllegalStateException("Account lease for '" + lease.account().getAccountId() + "' is no longer available");
+			throw new IllegalStateException("Account lease for '" + lease.account().accountId() + "' is no longer available");
 
 		// Recorded before the player exists, so a player destroyed immediately still returns its lease.
 		Runnable returnLease = lease::close;
@@ -164,8 +164,8 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 
 		try {
 			return create(options.toBuilder()
-					.protocolLibrary(lease.account().getLibraryId())
-					.login(PlayerLogin.account(login.getAuthentication(), lease.account().getAccountId())).build());
+					.protocolLibrary(lease.account().libraryId())
+					.login(PlayerLogin.account(login.authentication(), lease.account().accountId())).build());
 		} catch (RuntimeException | Error failure) {
 			accountReturns.remove(name, returnLease);
 			lease.close();
@@ -176,24 +176,24 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	@Override
 	public synchronized @NotNull SimulatedPlayer create(@NotNull PlayerOptions options) {
 		ensureOpen();
-		if (options.getName().isBlank())
+		if (options.name().isBlank())
 			throw new IllegalArgumentException("Simulated player name must not be blank");
-		if (players.containsKey(options.getName()))
-			throw new IllegalArgumentException("Simulated player '" + options.getName() + "' already exists");
-		if (!LANGUAGE_CODE.matcher(options.getLanguage()).matches())
-			throw new ScenarioValidationException("Player '" + options.getName() + "' declares the language '"
-					+ options.getLanguage() + "'; a Minecraft language code has lowercase letters with an optional "
+		if (players.containsKey(options.name()))
+			throw new IllegalArgumentException("Simulated player '" + options.name() + "' already exists");
+		if (!LANGUAGE_CODE.matcher(options.language()).matches())
+			throw new ScenarioValidationException("Player '" + options.name() + "' declares the language '"
+					+ options.language() + "'; a Minecraft language code has lowercase letters with an optional "
 					+ "region, such as ru_ru");
 
-		PlayerConnection connection = options.getConnection();
-		String targetName = connection.getTarget() == null ? scenario.getEntrypoint() : connection.getTarget();
+		PlayerConnection connection = options.connection();
+		String targetName = connection.target() == null ? scenario.entrypoint() : connection.target();
 		MinecraftProcess target = declarations.get(targetName);
 		RemoteEndpoint remote = remotes.get(targetName);
 		if (target == null && remote == null)
-			throw new ScenarioValidationException("Player '" + options.getName() + "' cannot connect to unknown target '"
+			throw new ScenarioValidationException("Player '" + options.name() + "' cannot connect to unknown target '"
 					+ targetName + "'. Available: " + targetNames());
-		if (options.getLogin().isLeased())
-			throw new ScenarioValidationException("Player '" + options.getName() + "' declares a leased login; create it "
+		if (options.login().isLeased())
+			throw new ScenarioValidationException("Player '" + options.name() + "' declares a leased login; create it "
 					+ "with PlayerManager.create(PlayerOptions, AccountLease)");
 
 		MinecraftVersion version = remote == null ? selectVersion(options, target) : selectVersion(options, remote);
@@ -211,29 +211,29 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		try {
 			// Creation can fail after the account is marked in use, for example when a token refresh fails.
 			driven = library.create(PlayerRequest.builder()
-					.name(options.getName())
-					.login(options.getLogin())
+					.name(options.name())
+					.login(options.login())
 					.clientVersion(version)
-					.language(options.getLanguage())
+					.language(options.language())
 					.connection(gameConnection)
 					.build());
 			player = playerComposer.compose(
 					driven,
 					connection.toBuilder().target(targetName).build(),
-					options.getMetadata(),
+					options.metadata(),
 					destroyed -> {
-					players.remove(options.getName(), destroyed);
-					Runnable accountReturn = accountReturns.remove(options.getName());
+					players.remove(options.name(), destroyed);
+					Runnable accountReturn = accountReturns.remove(options.name());
 					if (accountReturn != null) accountReturn.run();
 				}
 			);
 		} catch (RuntimeException | Error failure) {
-			if (directReturn != null && accountReturns.remove(options.getName(), directReturn)) directReturn.run();
+			if (directReturn != null && accountReturns.remove(options.name(), directReturn)) directReturn.run();
 			if (driven != null) destroyAfterFailure(driven, failure);
 			throw failure;
 		}
 
-		players.put(options.getName(), player);
+		players.put(options.name(), player);
 		return player;
 	}
 
@@ -243,15 +243,15 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	 * @return the action that unreserves the account, or null when nothing was reserved here
 	 */
 	private @Nullable Runnable reserveDirectly(@NotNull PlayerOptions options) {
-		String accountId = options.getLogin().getAccountId();
+		String accountId = options.login().accountId();
 		if (accountId == null) return null;
-		if (accountReturns.containsKey(options.getName())) return null;
+		if (accountReturns.containsKey(options.name())) return null;
 
 		if (!reservations.reserve(accountId))
 			throw new ScenarioValidationException("Authenticated account '" + accountId + "' is already in use");
 
 		Runnable unreserve = () -> reservations.unreserve(accountId);
-		accountReturns.put(options.getName(), unreserve);
+		accountReturns.put(options.name(), unreserve);
 
 		return unreserve;
 	}
@@ -319,18 +319,18 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 				.map(this::nativeVersion)
 				.collect(Collectors.toCollection(LinkedHashSet::new));
 		if (nativeVersions.isEmpty())
-			throw new ScenarioValidationException("Connection target '" + target.getName() + "' reaches no Minecraft servers");
+			throw new ScenarioValidationException("Connection target '" + target.name() + "' reaches no Minecraft servers");
 		if (nativeVersions.size() > 1)
-			throw new ScenarioValidationException("Connection target '" + target.getName()
+			throw new ScenarioValidationException("Connection target '" + target.name()
 					+ "' reaches servers with different native versions " + nativeVersions
 					+ "; no exact-fidelity client can traverse all of them");
 
 		MinecraftVersion compatible = nativeVersions.iterator().next();
-		if (options.getClientVersion() == null)
+		if (options.clientVersion() == null)
 			return compatible;
 		if (!compatible.equals(clientVersion(options)))
-			throw new ScenarioValidationException("Native client version '" + options.getClientVersion()
-					+ "' does not match servers reachable through '" + target.getName()
+			throw new ScenarioValidationException("Native client version '" + options.clientVersion()
+					+ "' does not match servers reachable through '" + target.name()
 					+ "' using version '" + compatible + "'");
 		return compatible;
 	}
@@ -343,10 +343,10 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 			throw new ScenarioValidationException(invalid.getMessage(), invalid);
 		}
 
-		if (options.getClientVersion() == null) return version;
+		if (options.clientVersion() == null) return version;
 		if (!version.equals(clientVersion(options)))
-			throw new ScenarioValidationException("Native client version '" + options.getClientVersion()
-					+ "' does not match remote '" + remote.getName() + "' using version '" + version + "'");
+			throw new ScenarioValidationException("Native client version '" + options.clientVersion()
+					+ "' does not match remote '" + remote.name() + "' using version '" + version + "'");
 
 		return version;
 	}
@@ -355,7 +355,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		if (target instanceof MinecraftServer server)
 			return List.of(server);
 		MinecraftProxy proxy = (MinecraftProxy) target;
-		return proxy.getServers().stream().map(servers::get).toList();
+		return proxy.servers().stream().map(servers::get).toList();
 	}
 
 	private MinecraftVersion nativeVersion(MinecraftServer server) {
@@ -363,21 +363,21 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		try {
 			version = server.nativeVersion();
 		} catch (IllegalArgumentException invalid) {
-			throw new ScenarioValidationException("Server '" + server.getName()
+			throw new ScenarioValidationException("Server '" + server.name()
 					+ "' declares an invalid native Minecraft version: " + invalid.getMessage(), invalid);
 		}
 
 		if (version == null)
-			throw new ScenarioValidationException("Server '" + server.getName() + "' does not declare its native Minecraft version");
+			throw new ScenarioValidationException("Server '" + server.name() + "' does not declare its native Minecraft version");
 
 		return version;
 	}
 
 	private MinecraftVersion clientVersion(PlayerOptions options) {
 		try {
-			return MinecraftVersion.parse(options.getClientVersion());
+			return MinecraftVersion.parse(options.clientVersion());
 		} catch (IllegalArgumentException invalid) {
-			throw new ScenarioValidationException("Player '" + options.getName() + "' declares an invalid client version: "
+			throw new ScenarioValidationException("Player '" + options.name() + "' declares an invalid client version: "
 					+ invalid.getMessage(), invalid);
 		}
 	}
@@ -387,11 +387,11 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	 * must verify against that same server; Mojang would refuse it.
 	 */
 	private void validateSessionIdentity(PlayerOptions options, SessionIdentity identity, MinecraftProcess target) {
-		URI sessionServer = identity.getSessionServer();
-		if (!sessionServer.equals(target.getSessionServer()))
-			throw new ScenarioValidationException("Player '" + options.getName() + "' is verified by session server "
-					+ sessionServer + ", but process '" + target.getName() + "' verifies logins against "
-					+ (target.getSessionServer() == null ? "Mojang" : target.getSessionServer())
+		URI sessionServer = identity.sessionServer();
+		if (!sessionServer.equals(target.sessionServer()))
+			throw new ScenarioValidationException("Player '" + options.name() + "' is verified by session server "
+					+ sessionServer + ", but process '" + target.name() + "' verifies logins against "
+					+ (target.sessionServer() == null ? "Mojang" : target.sessionServer())
 					+ "; declare the same sessionServer on the process");
 	}
 
@@ -399,17 +399,17 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	 * A process declares how it authenticates, so a login it would refuse fails before the player connects.
 	 */
 	private void validateProcessAuthentication(PlayerOptions options, MinecraftProcess target) {
-		PlayerLogin login = options.getLogin();
-		if (login.getAuthentication() == AuthenticationMode.OFFLINE && target.isOnlineMode())
-			throw new ScenarioValidationException("Offline player '" + options.getName()
-					+ "' cannot join online-mode process '" + target.getName() + "'");
-		if (!login.getAuthentication().usesAccount()) return;
-		if (login.getAuthentication() == AuthenticationMode.ONLINE && !target.isOnlineMode())
-			throw new ScenarioValidationException("Online player '" + options.getName()
+		PlayerLogin login = options.login();
+		if (login.authentication() == AuthenticationMode.OFFLINE && target.onlineMode())
+			throw new ScenarioValidationException("Offline player '" + options.name()
+					+ "' cannot join online-mode process '" + target.name() + "'");
+		if (!login.authentication().usesAccount()) return;
+		if (login.authentication() == AuthenticationMode.ONLINE && !target.onlineMode())
+			throw new ScenarioValidationException("Online player '" + options.name()
 					+ "' requires an online-mode entrypoint; use AuthenticationMode.ON_REQUEST when a plugin of an "
 					+ "offline-mode entrypoint requests authentication itself");
-		if (login.getSessionIdentity() != null)
-			validateSessionIdentity(options, login.getSessionIdentity(), target);
+		if (login.sessionIdentity() != null)
+			validateSessionIdentity(options, login.sessionIdentity(), target);
 	}
 
 	/**
@@ -417,23 +417,23 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	 * A session identity names its own session server and needs no stored account.
 	 */
 	private void validateAccount(PlayerOptions options, Selection selection, MinecraftVersion version) {
-		PlayerLogin login = options.getLogin();
-		if (!login.getAuthentication().usesAccount()) return;
-		if (login.getSessionIdentity() != null) return;
+		PlayerLogin login = options.login();
+		if (!login.authentication().usesAccount()) return;
+		if (login.sessionIdentity() != null) return;
 
 		// Account IDs are library-local: the player needs the account its selected library stores under that ID.
-		String accountId = login.getAccountId();
+		String accountId = login.accountId();
 		List<String> owners = accounts.list().stream()
-				.filter(candidate -> candidate.getAccountId().equals(accountId))
-				.map(AuthenticationAccount::getLibraryId)
+				.filter(candidate -> candidate.accountId().equals(accountId))
+				.map(AuthenticationAccount::libraryId)
 				.toList();
 		if (owners.isEmpty())
 			throw new ScenarioValidationException("Authenticated account '" + accountId + "' is not available");
 		if (!owners.contains(selection.library()))
 			throw new ScenarioValidationException("Authenticated account '" + accountId
 					+ "' is not stored by protocol library '" + selection.library() + "' selected for player '"
-					+ options.getName() + "'; it is stored by " + owners);
-		if (!selection.release().getFeatures().contains(ProtocolFeature.ONLINE_AUTHENTICATION))
+					+ options.name() + "'; it is stored by " + owners);
+		if (!selection.release().features().contains(ProtocolFeature.ONLINE_AUTHENTICATION))
 			throw new ScenarioValidationException("Protocol library '" + selection.library()
 					+ "' does not support online authentication for client version '" + version + "'");
 	}
@@ -441,7 +441,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	private GameConnection processConnection(PlayerOptions options, RunningProcess target) {
 		return GameConnection.builder()
 				.address(target.address())
-				.virtualHost(options.getConnection().getVirtualHost())
+				.virtualHost(options.connection().virtualHost())
 				.sourceAddress(sourceAddress(options, target))
 				.build();
 	}
@@ -452,14 +452,14 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	 * could not reach it.
 	 */
 	private GameConnection remoteConnection(PlayerOptions options, RemoteEndpoint remote) {
-		String declared = options.getConnection().getSourceAddress();
+		String declared = options.connection().sourceAddress();
 		if (declared != null)
-			throw new ScenarioValidationException("Player '" + options.getName() + "' declares the source address "
-					+ declared + ", but its target '" + remote.getName() + "' is a remote that Anvil does not run; a "
+			throw new ScenarioValidationException("Player '" + options.name() + "' declares the source address "
+					+ declared + ", but its target '" + remote.name() + "' is a remote that Anvil does not run; a "
 					+ "loopback source address only reaches a process of the scenario. Declare no source address");
 
 		Resolution resolution = remoteAddresses.resolve(remote);
-		String virtualHost = options.getConnection().getVirtualHost();
+		String virtualHost = options.connection().virtualHost();
 
 		return GameConnection.builder()
 				.address(resolution.address())
@@ -473,10 +473,10 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 	 * must be able to bind the address. Any other case is refused rather than connecting from another address.
 	 */
 	private @Nullable InetAddress sourceAddress(PlayerOptions options, RunningProcess target) {
-		String declared = options.getConnection().getSourceAddress();
+		String declared = options.connection().sourceAddress();
 		if (declared == null) return null;
 
-		String player = "Player '" + options.getName() + "' declares the source address " + declared;
+		String player = "Player '" + options.name() + "' declares the source address " + declared;
 		if (!sourceAddressesPreserved)
 			throw new ScenarioValidationException(player + ", but the scenario's execution provider translates game "
 					+ "connections, so process '" + target.name() + "' would see another address; Docker execution, for "
@@ -510,8 +510,8 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 
 	private Map<String, MinecraftProcess> declarations(AnvilScenario scenario) {
 		Map<String, MinecraftProcess> result = new LinkedHashMap<>();
-		scenario.getServers().forEach(server -> result.put(server.getName(), server));
-		scenario.getProxies().forEach(proxy -> result.put(proxy.getName(), proxy));
+		scenario.servers().forEach(server -> result.put(server.name(), server));
+		scenario.proxies().forEach(proxy -> result.put(proxy.name(), proxy));
 		return Map.copyOf(result);
 	}
 
@@ -524,6 +524,6 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 
 	private void ensureOpen() {
 		if (closed)
-			throw new IllegalStateException("Anvil scenario '" + scenario.getName() + "' is closed");
+			throw new IllegalStateException("Anvil scenario '" + scenario.name() + "' is closed");
 	}
 }

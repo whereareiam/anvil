@@ -121,14 +121,14 @@ class PositionReporterTest {
 			reported |= fixture.report().stream().anyMatch(PositionReporterTest::collides);
 		}
 
-		assertTrue(fixture.player.body().isHorizontalCollision());
+		assertTrue(fixture.player.body().horizontalCollision());
 		assertEquals(modern, reported);
 	}
 
 	private static boolean collides(@NotNull ServerboundPacket packet) {
-		return packet instanceof ServerboundMovePlayerPos move && move.isHorizontalCollision()
-				|| packet instanceof ServerboundMovePlayerStatusOnly status && status.isHorizontalCollision()
-				|| packet instanceof ServerboundMovePlayerPosRot move && move.isHorizontalCollision();
+		return packet instanceof ServerboundMovePlayerPos move && move.horizontalCollision()
+				|| packet instanceof ServerboundMovePlayerStatusOnly status && status.horizontalCollision()
+				|| packet instanceof ServerboundMovePlayerPosRot move && move.horizontalCollision();
 	}
 
 	private static @NotNull ServerboundPlayerCommand command(@NotNull PlayerCommandAction action) {

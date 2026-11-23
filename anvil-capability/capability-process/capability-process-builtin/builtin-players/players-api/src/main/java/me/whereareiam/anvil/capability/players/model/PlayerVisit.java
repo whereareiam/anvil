@@ -36,7 +36,7 @@ public class PlayerVisit {
 	 *
 	 * @return when it left, or empty while the player is still there
 	 */
-	public @NotNull Optional<Instant> getLeftAt() {
+	public @NotNull Optional<Instant> leftAt() {
 		return Optional.ofNullable(leftAt);
 	}
 }

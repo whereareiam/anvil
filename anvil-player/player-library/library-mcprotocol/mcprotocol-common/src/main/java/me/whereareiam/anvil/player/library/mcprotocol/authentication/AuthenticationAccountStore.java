@@ -82,7 +82,7 @@ final class AuthenticationAccountStore {
 		}
 
 		return accounts.stream()
-				.sorted(Comparator.comparing(AuthenticationAccount::getAccountId))
+				.sorted(Comparator.comparing(AuthenticationAccount::accountId))
 				.toList();
 	}
 

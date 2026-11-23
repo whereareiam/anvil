@@ -62,12 +62,12 @@ class ScenarioSelectionTest {
 
 		AnvilScenario scenario = ScenarioSelection.scenario(Stocked.class.getDeclaredMethod("stocked"), Stocked.class, resources);
 
-		assertEquals("stocked-12", scenario.getName());
+		assertEquals("stocked-12", scenario.name());
 		assertEquals(new Stock(12), resources.find(Stock.class));
 	}
 
 	private static String select(Class<?> type, String method) throws ReflectiveOperationException {
-		return ScenarioSelection.scenario(type.getDeclaredMethod(method), type, new OwnedResources()).getName();
+		return ScenarioSelection.scenario(type.getDeclaredMethod(method), type, new OwnedResources()).name();
 	}
 
 	@Target({ElementType.TYPE, ElementType.METHOD})
@@ -181,6 +181,6 @@ class ScenarioSelectionTest {
 	private static AnvilScenario scenario(String name) {
 		MinecraftServer server = MinecraftServer.builder().name("server").platform("test")
 				.distribution(Distribution.remote("1.21.11", "1")).build();
-		return AnvilScenario.builder().name(name).entrypoint(server.getName()).server(server).build();
+		return AnvilScenario.builder().name(name).entrypoint(server.name()).server(server).build();
 	}
 }

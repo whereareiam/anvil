@@ -54,33 +54,33 @@ public final class InteractionPackets implements PacketTranslation<Packet> {
 	@Override
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		return switch (packet) {
-			case ServerboundSwing swing -> new ClientPlayerSwingArmPacket(ValueTranslator.hand(swing.getHand()));
-			case ServerboundUseItem use -> new ClientPlayerUseItemPacket(ValueTranslator.hand(use.getHand()));
+			case ServerboundSwing swing -> new ClientPlayerSwingArmPacket(ValueTranslator.hand(swing.hand()));
+			case ServerboundUseItem use -> new ClientPlayerUseItemPacket(ValueTranslator.hand(use.hand()));
 			case ServerboundUseItemOn use -> useItemOn(use);
 			case ServerboundInteract interact -> interact(interact);
-			case ServerboundAttack attack -> new ClientPlayerInteractEntityPacket(attack.getEntityId().getValue(),
+			case ServerboundAttack attack -> new ClientPlayerInteractEntityPacket(attack.entityId().value(),
 					InteractAction.ATTACK, ATTACK_SNEAKING);
 			default -> null;
 		};
 	}
 
 	private static Packet useItemOn(ServerboundUseItemOn use) {
-		BlockPosition position = use.getPosition();
-		return new ClientPlayerPlaceBlockPacket(new Position(position.getX(), position.getY(), position.getZ()),
-				ValueTranslator.face(use.getFace()), ValueTranslator.hand(use.getHand()), use.getCursorX(),
-				use.getCursorY(), use.getCursorZ(), use.isInsideBlock());
+		BlockPosition position = use.position();
+		return new ClientPlayerPlaceBlockPacket(new Position(position.x(), position.y(), position.z()),
+				ValueTranslator.face(use.face()), ValueTranslator.hand(use.hand()), use.cursorX(),
+				use.cursorY(), use.cursorZ(), use.insideBlock());
 	}
 
 	private static Packet interact(ServerboundInteract interact) {
-		Hand hand = ValueTranslator.hand(interact.getHand());
-		return switch (interact.getAction()) {
-			case INTERACT -> new ClientPlayerInteractEntityPacket(interact.getEntityId().getValue(),
-					InteractAction.INTERACT, hand, interact.isSneaking());
+		Hand hand = ValueTranslator.hand(interact.hand());
+		return switch (interact.action()) {
+			case INTERACT -> new ClientPlayerInteractEntityPacket(interact.entityId().value(),
+					InteractAction.INTERACT, hand, interact.sneaking());
 			case INTERACT_AT -> {
-				Vec3d point = interact.getPoint() == null ? Vec3d.ZERO : interact.getPoint();
-				yield new ClientPlayerInteractEntityPacket(interact.getEntityId().getValue(),
-						InteractAction.INTERACT_AT, (float) point.getX(), (float) point.getY(), (float) point.getZ(),
-						hand, interact.isSneaking());
+				Vec3d point = interact.point() == null ? Vec3d.ZERO : interact.point();
+				yield new ClientPlayerInteractEntityPacket(interact.entityId().value(),
+						InteractAction.INTERACT_AT, (float) point.x(), (float) point.y(), (float) point.z(),
+						hand, interact.sneaking());
 			}
 		};
 	}

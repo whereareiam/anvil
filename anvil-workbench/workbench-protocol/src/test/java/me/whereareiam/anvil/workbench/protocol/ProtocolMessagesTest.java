@@ -49,8 +49,8 @@ class ProtocolMessagesTest {
 
 		assertEquals(done, roundTrip(done, ServerMessage.class));
 		Response carried = (Response) roundTrip(failed, ServerMessage.class);
-		assertEquals(8, carried.getId());
-		assertEquals(((Response) failed).getFailure(), carried.getFailure());
+		assertEquals(8, carried.id());
+		assertEquals(((Response) failed).failure(), carried.failure());
 		assertEquals(reverse, roundTrip(reverse, ServerMessage.class));
 		assertEquals(upload, roundTrip(upload, ConnectionHeader.class));
 	}

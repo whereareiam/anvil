@@ -27,9 +27,9 @@ final class ClientProtocol extends MinecraftProtocol {
 	 * @param login the player's login, whose profile and credentials the library logs in with
 	 */
 	ClientProtocol(@NotNull ClientLogin login) {
-		super(profile(login.getProfile()), accessToken(login.getCredentials()));
-		this.minecraftVersion = login.getMinecraftVersion();
-		this.settings = login.getSettings();
+		super(profile(login.profile()), accessToken(login.credentials()));
+		this.minecraftVersion = login.minecraftVersion();
+		this.settings = login.settings();
 	}
 
 	@Override
@@ -40,10 +40,10 @@ final class ClientProtocol extends MinecraftProtocol {
 	}
 
 	private static GameProfile profile(ClientProfile profile) {
-		return new GameProfile(profile.getUniqueId(), profile.getName());
+		return new GameProfile(profile.uniqueId(), profile.name());
 	}
 
 	private static @Nullable String accessToken(@Nullable ClientCredentials credentials) {
-		return credentials == null ? null : credentials.getAccessToken();
+		return credentials == null ? null : credentials.accessToken();
 	}
 }

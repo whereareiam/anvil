@@ -24,17 +24,17 @@ final class RemoteProcessFiles implements ProcessFiles {
 
 	@Override
 	public @NotNull String location() {
-		return "workbench '" + connection.pairing().getName() + "': " + workspace;
+		return "workbench '" + connection.pairing().name() + "': " + workspace;
 	}
 
 	@Override
 	public boolean exists(@NotNull String path) throws IOException {
-		return connection.request(new CheckFile(workspace, path)).isExists();
+		return connection.request(new CheckFile(workspace, path)).exists();
 	}
 
 	@Override
 	public @NotNull String read(@NotNull String path) throws IOException {
-		return connection.request(new ReadFile(workspace, path)).getContent();
+		return connection.request(new ReadFile(workspace, path)).content();
 	}
 
 	@Override
@@ -44,11 +44,11 @@ final class RemoteProcessFiles implements ProcessFiles {
 
 	@Override
 	public @NotNull List<String> list(@NotNull String directory) throws IOException {
-		return connection.request(new ListFiles(workspace, directory)).getNames();
+		return connection.request(new ListFiles(workspace, directory)).names();
 	}
 
 	@Override
 	public boolean delete(@NotNull String path) throws IOException {
-		return connection.request(new DeleteFile(workspace, path)).isDeleted();
+		return connection.request(new DeleteFile(workspace, path)).deleted();
 	}
 }

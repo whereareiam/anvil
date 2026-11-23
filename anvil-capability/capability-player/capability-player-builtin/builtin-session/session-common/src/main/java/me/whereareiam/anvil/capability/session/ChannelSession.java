@@ -24,11 +24,11 @@ final class ChannelSession implements Session {
 	ChannelSession(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
 		channel.subscribe(PlayerConnectionEvent.CHANGED, event -> {
-			connected.set(event.isConnected());
-			if (event.isConnected()) return;
+			connected.set(event.connected());
+			if (event.connected()) return;
 
-			disconnectCause = event.getCause();
-			kickReason = event.getReason();
+			disconnectCause = event.cause();
+			kickReason = event.reason();
 		});
 		channel.subscribe(PlayerConnectionEvent.DESTROYED, ignored -> connected.set(false));
 	}

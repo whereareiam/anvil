@@ -114,7 +114,7 @@ public final class ClientPacketListener extends SessionAdapter {
 	@Override
 	public void packetSending(PacketSendingEvent event) {
 		Packet packet = event.getPacket();
-		String virtualHost = login.getConnection().getVirtualHost();
+		String virtualHost = login.connection().virtualHost();
 		if (virtualHost != null && packet instanceof ClientIntentionPacket intention)
 			event.setPacket(intention.withHostname(virtualHost));
 	}

@@ -63,18 +63,18 @@ final class DockerExecutionSession implements ExecutionSession {
 			throw new ProvisioningException("Docker execution requires a local daemon with access to the scenario workspace");
 
 		String network = "anvil-" + UUID.randomUUID();
-		dockerNetwork = docker.createNetwork(network, context.getNetworkPolicy().getNetworkServerAccess()
+		dockerNetwork = docker.createNetwork(network, context.networkPolicy().networkServerAccess()
 				== NetworkServerAccess.PROXY_ONLY
-				&& context.getNetworkPolicy().getBackendNetworkExposure()
+				&& context.networkPolicy().backendNetworkExposure()
 				== NetworkExposure.PRIVATE);
 	}
 
 	@Override
 	public @NotNull ProcessTarget prepare(@NotNull ProcessRequest request) {
-		if (request.getImage() != null) return prepareImage(request, request.getImage());
-		if (request.getJavaSelection() == null)
-			throw new ProvisioningException("Process '" + request.getName() + "' names neither Java nor an image");
-		if (request.getJavaSelection().getSource() != null)
+		if (request.image() != null) return prepareImage(request, request.image());
+		if (request.javaSelection() == null)
+			throw new ProvisioningException("Process '" + request.name() + "' names neither Java nor an image");
+		if (request.javaSelection().source() != null)
 			throw new ProvisioningException(
 					"Docker execution does not support explicit host Java sources; configure a Docker image instead"
 			);
@@ -84,10 +84,10 @@ final class DockerExecutionSession implements ExecutionSession {
 		synchronized (this) {
 			if (closed) throw new IllegalStateException("Docker environment is closed");
 
-			String bindAddress = context.getNetworkPolicy().getBindAddress();
+			String bindAddress = context.networkPolicy().bindAddress();
 			Map<String, InetSocketAddress> listeners = new LinkedHashMap<>();
 			Map<String, Integer> listenerPorts = new LinkedHashMap<>();
-			for (String listener : request.getListeners()) {
+			for (String listener : request.listeners()) {
 				listeners.put(listener, new InetSocketAddress(bindAddress, port(bindAddress)));
 				listenerPorts.put(listener, FIRST_LISTENER_PORT + listenerPorts.size());
 			}
@@ -104,13 +104,13 @@ final class DockerExecutionSession implements ExecutionSession {
 	}
 
 	private ProcessTarget prepareImage(ProcessRequest request, ContainerImage image) {
-		images.ensure(image.getImage());
+		images.ensure(image.image());
 		synchronized (this) {
 			if (closed) throw new IllegalStateException("Docker environment is closed");
 
-			String bindAddress = context.getNetworkPolicy().getBindAddress();
+			String bindAddress = context.networkPolicy().bindAddress();
 			Map<Integer, InetSocketAddress> published = new LinkedHashMap<>();
-			image.getPorts().forEach(port -> published.put(port, new InetSocketAddress(bindAddress, port(bindAddress))));
+			image.ports().forEach(port -> published.put(port, new InetSocketAddress(bindAddress, port(bindAddress))));
 
 			DockerImageTarget target = new DockerImageTarget(containers, dockerNetwork.id(), alias(request), request,
 					Collections.unmodifiableMap(published), cpuShares());
@@ -120,15 +120,15 @@ final class DockerExecutionSession implements ExecutionSession {
 	}
 
 	private @Nullable Integer cpuShares() {
-		return context.getProcessPriority() == ProcessPriority.LOW ? LOW_PRIORITY_CPU_SHARES : null;
+		return context.processPriority() == ProcessPriority.LOW ? LOW_PRIORITY_CPU_SHARES : null;
 	}
 
 	private static String alias(ProcessRequest request) {
-		return "p-" + UUID.nameUUIDFromBytes(request.getName().getBytes(StandardCharsets.UTF_8));
+		return "p-" + UUID.nameUUIDFromBytes(request.name().getBytes(StandardCharsets.UTF_8));
 	}
 
 	private int port(String address) {
-		int port = services.getPorts().reserve(address);
+		int port = services.ports().reserve(address);
 		ports.add(port);
 
 		return port;
@@ -151,7 +151,7 @@ final class DockerExecutionSession implements ExecutionSession {
 	}
 
 	private void releasePorts() {
-		ports.forEach(services.getPorts()::release);
+		ports.forEach(services.ports()::release);
 		ports.clear();
 	}
 

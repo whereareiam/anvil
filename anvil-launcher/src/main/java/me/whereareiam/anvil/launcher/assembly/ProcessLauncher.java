@@ -50,7 +50,7 @@ public final class ProcessLauncher {
 			@Nullable ScenarioObserver observer,
 			@NotNull Map<String, InetSocketAddress> peers
 	) {
-		var layout = workspaces.layout(workbench.workDirectory(), platformPlan.getScenario());
+		var layout = workspaces.layout(workbench.workDirectory(), platformPlan.scenario());
 		var preparation = new ScenarioProcessPreparation(
 				options,
 				workbench,
@@ -73,7 +73,7 @@ public final class ProcessLauncher {
 	 * @return whether its execution provider preserves client addresses
 	 */
 	public boolean preservesClientAddress(@NotNull PlatformPlan platformPlan) {
-		return processes.preservesClientAddress(plans.executionProviderId(platformPlan.getScenario()));
+		return processes.preservesClientAddress(plans.executionProviderId(platformPlan.scenario()));
 	}
 
 	/**
@@ -83,6 +83,6 @@ public final class ProcessLauncher {
 	 * @return whether its execution provider connects separate execution environments
 	 */
 	public boolean connectsEnvironments(@NotNull PlatformPlan platformPlan) {
-		return processes.connectsEnvironments(plans.executionProviderId(platformPlan.getScenario()));
+		return processes.connectsEnvironments(plans.executionProviderId(platformPlan.scenario()));
 	}
 }

@@ -300,7 +300,7 @@ final class ManagedProcessConsole implements ProcessConsole {
 						.limit(maximumLines)
 						.map(line -> new ConsoleLine(line.sequence(), line.text()))
 						.toList();
-				if (!batch.isEmpty()) position = batch.getLast().getSequence();
+				if (!batch.isEmpty()) position = batch.getLast().sequence();
 
 				return new ConsoleOutput(truncated, closed, batch);
 			}

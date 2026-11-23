@@ -65,7 +65,7 @@ class NbtTranslatorTest {
 
 	@Test
 	void keepsTheOrderOfACompoundsEntries() {
-		assertEquals(List.copyOf(LIBRARY.keySet()), List.copyOf(NbtTranslator.compound(LIBRARY).getEntries().keySet()));
+		assertEquals(List.copyOf(LIBRARY.keySet()), List.copyOf(NbtTranslator.compound(LIBRARY).entries().keySet()));
 	}
 
 	@Test

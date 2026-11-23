@@ -81,13 +81,13 @@ class OverlayPacketsTest {
 	void mapsEveryColorAndOverlayOfTheRelease() {
 		List<BossEventColor> colors = Arrays.stream(BossBarColor.values())
 				.map(color -> assertInstanceOf(ClientboundBossEvent.class,
-						packets.decode(new ClientboundBossEventPacket(BAR, color, BossBarDivision.NONE))).getOperation())
-				.map(operation -> assertInstanceOf(BossEventUpdateStyle.class, operation).getColor())
+						packets.decode(new ClientboundBossEventPacket(BAR, color, BossBarDivision.NONE))).operation())
+				.map(operation -> assertInstanceOf(BossEventUpdateStyle.class, operation).color())
 				.toList();
 		List<BossEventOverlay> overlays = Arrays.stream(BossBarDivision.values())
 				.map(division -> assertInstanceOf(ClientboundBossEvent.class,
-						packets.decode(new ClientboundBossEventPacket(BAR, BossBarColor.PINK, division))).getOperation())
-				.map(operation -> assertInstanceOf(BossEventUpdateStyle.class, operation).getOverlay())
+						packets.decode(new ClientboundBossEventPacket(BAR, BossBarColor.PINK, division))).operation())
+				.map(operation -> assertInstanceOf(BossEventUpdateStyle.class, operation).overlay())
 				.toList();
 
 		assertEquals(List.of(BossEventColor.values()), colors);

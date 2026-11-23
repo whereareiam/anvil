@@ -52,11 +52,11 @@ public abstract class InteractionTranslation implements PacketTranslation<Packet
 	@Override
 	public final @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		return switch (packet) {
-			case ServerboundUseItem use -> new ServerboundUseItemPacket(ValueTranslator.hand(use.getHand()),
-					use.getSequence(), use.getYaw(), use.getPitch());
+			case ServerboundUseItem use -> new ServerboundUseItemPacket(ValueTranslator.hand(use.hand()),
+					use.sequence(), use.yaw(), use.pitch());
 			case ServerboundUseItemOn use -> useItemOn(use);
 			case ServerboundInteract interact -> interact(interact);
-			case ServerboundAttack attack -> new ServerboundAttackPacket(attack.getEntityId().getValue());
+			case ServerboundAttack attack -> new ServerboundAttackPacket(attack.entityId().value());
 			default -> encodeRelease(packet);
 		};
 	}
@@ -77,16 +77,16 @@ public abstract class InteractionTranslation implements PacketTranslation<Packet
 	protected abstract @Nullable Packet encodeRelease(@NotNull ServerboundPacket packet);
 
 	private static Packet useItemOn(ServerboundUseItemOn use) {
-		BlockPosition position = use.getPosition();
-		return new ServerboundUseItemOnPacket(Vector3i.from(position.getX(), position.getY(), position.getZ()),
-				ValueTranslator.direction(use.getFace()), ValueTranslator.hand(use.getHand()), use.getCursorX(),
-				use.getCursorY(), use.getCursorZ(), use.isInsideBlock(), use.isWorldBorderHit(), use.getSequence());
+		BlockPosition position = use.position();
+		return new ServerboundUseItemOnPacket(Vector3i.from(position.x(), position.y(), position.z()),
+				ValueTranslator.direction(use.face()), ValueTranslator.hand(use.hand()), use.cursorX(),
+				use.cursorY(), use.cursorZ(), use.insideBlock(), use.worldBorderHit(), use.sequence());
 	}
 
 	private static Packet interact(ServerboundInteract interact) {
-		Vec3d point = interact.getPoint() == null ? Vec3d.ZERO : interact.getPoint();
-		return new ServerboundInteractPacket(interact.getEntityId().getValue(),
-				ValueTranslator.hand(interact.getHand()), Vector3d.from(point.getX(), point.getY(), point.getZ()),
-				interact.isSneaking());
+		Vec3d point = interact.point() == null ? Vec3d.ZERO : interact.point();
+		return new ServerboundInteractPacket(interact.entityId().value(),
+				ValueTranslator.hand(interact.hand()), Vector3d.from(point.x(), point.y(), point.z()),
+				interact.sneaking());
 	}
 }

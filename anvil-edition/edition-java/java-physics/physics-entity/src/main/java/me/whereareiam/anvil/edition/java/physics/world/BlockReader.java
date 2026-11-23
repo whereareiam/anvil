@@ -39,7 +39,7 @@ public final class BlockReader {
 	public BlockReader(@NotNull JavaWorld world, @NotNull BlockRegistry registry) {
 		this.world = world;
 		this.registry = registry;
-		this.voidAir = registry.state(registry.block("minecraft:void_air").orElseThrow().getDefaultStateId());
+		this.voidAir = registry.state(registry.block("minecraft:void_air").orElseThrow().defaultStateId());
 	}
 
 	/**
@@ -131,7 +131,7 @@ public final class BlockReader {
 	 * @return whether lava pushes fast, or {@code false} before the client knows a level
 	 */
 	public boolean fastLava() {
-		return view().level().map(level -> level.getType().isFastLava()).orElse(false);
+		return view().level().map(level -> level.type().fastLava()).orElse(false);
 	}
 
 	private @NotNull WorldView view() {

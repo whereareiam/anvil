@@ -35,9 +35,9 @@ public final class WireErrors {
 			case NoSuchFileException missing ->
 					new Failure(WireFailure.MISSING_FILE, message, missing.getFile(), null, null, null, List.of());
 			case ProcessException process ->
-					new Failure(WireFailure.PROCESS, message, null, process.getProcessName(), null, null, List.of());
+					new Failure(WireFailure.PROCESS, message, null, process.processName(), null, null, List.of());
 			case ScenarioRequirementsException refused -> new Failure(WireFailure.REQUIREMENTS, message, null, null,
-					refused.getScenarioName(), refused.getWorkbenchName(), refused.getUnmet());
+					refused.scenarioName(), refused.workbenchName(), refused.unmet());
 			default -> new Failure(kind(described), message, null, null, null, null, List.of());
 		};
 	}
@@ -49,18 +49,18 @@ public final class WireErrors {
 	 * @return the exception its kind stands for
 	 */
 	public static @NotNull Exception restore(@NotNull Failure failure) {
-		String message = failure.getMessage();
-		return switch (failure.getKind()) {
-			case MISSING_FILE -> new NoSuchFileException(failure.getFile() == null ? message : failure.getFile());
+		String message = failure.message();
+		return switch (failure.kind()) {
+			case MISSING_FILE -> new NoSuchFileException(failure.file() == null ? message : failure.file());
 			case IO -> new IOException(message);
 			case INVALID_ARGUMENT -> new IllegalArgumentException(message);
 			case INVALID_STATE -> new IllegalStateException(message);
 			case UNSUPPORTED -> new UnsupportedOperationException(message);
 			case SCENARIO_VALIDATION -> new ScenarioValidationException(message);
 			case PROVISIONING -> new ProvisioningException(message);
-			case PROCESS -> new ProcessException(String.valueOf(failure.getProcessName()), message);
-			case REQUIREMENTS -> new ScenarioRequirementsException(String.valueOf(failure.getScenarioName()),
-					String.valueOf(failure.getWorkbenchName()), failure.getUnmet());
+			case PROCESS -> new ProcessException(String.valueOf(failure.processName()), message);
+			case REQUIREMENTS -> new ScenarioRequirementsException(String.valueOf(failure.scenarioName()),
+					String.valueOf(failure.workbenchName()), failure.unmet());
 			case WORKBENCH -> new WorkbenchException(message);
 		};
 	}

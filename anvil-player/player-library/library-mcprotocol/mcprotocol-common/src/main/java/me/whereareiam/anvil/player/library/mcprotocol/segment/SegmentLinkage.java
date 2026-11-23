@@ -81,7 +81,7 @@ public final class SegmentLinkage {
 	 * @return the references whose owner the library holds, in file order
 	 */
 	public @NotNull SegmentLinkage within(@NotNull ClassPath library) {
-		return new SegmentLinkage(references.stream().filter(reference -> library.contains(reference.getOwner())).toList());
+		return new SegmentLinkage(references.stream().filter(reference -> library.contains(reference.owner())).toList());
 	}
 
 	/**

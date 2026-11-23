@@ -46,20 +46,20 @@ final class ClientBossBars {
 	 * @param event the packet
 	 */
 	void apply(@NotNull ClientboundBossEvent event) {
-		UUID id = event.getId();
-		switch (event.getOperation()) {
+		UUID id = event.id();
+		switch (event.operation()) {
 			case BossEventAdd add -> add(bar(id, add));
 			case BossEventRemove ignored -> remove(id);
-			case BossEventUpdateProgress update -> update(id, bar -> bar.toBuilder().progress(update.getProgress()).build());
-			case BossEventUpdateName update -> update(id, bar -> bar.toBuilder().text(update.getName()).build());
+			case BossEventUpdateProgress update -> update(id, bar -> bar.toBuilder().progress(update.progress()).build());
+			case BossEventUpdateName update -> update(id, bar -> bar.toBuilder().text(update.name()).build());
 			case BossEventUpdateStyle update -> update(id, bar -> bar.toBuilder()
-					.color(color(update.getColor()))
-					.overlay(overlay(update.getOverlay()))
+					.color(color(update.color()))
+					.overlay(overlay(update.overlay()))
 					.build());
 			case BossEventUpdateProperties update -> update(id, bar -> bar.toBuilder()
-					.darkensSky(update.isDarkenScreen())
-					.playsBossMusic(update.isPlayMusic())
-					.createsFog(update.isCreateWorldFog())
+					.darkensSky(update.darkenScreen())
+					.playsBossMusic(update.playMusic())
+					.createsFog(update.createWorldFog())
 					.build());
 		}
 	}
@@ -87,7 +87,7 @@ final class ClientBossBars {
 
 	private void add(BossBar bar) {
 		synchronized (this) {
-			bars.put(bar.getId(), bar);
+			bars.put(bar.id(), bar);
 		}
 		emit(BossBarChange.ADDED, bar);
 	}
@@ -115,13 +115,13 @@ final class ClientBossBars {
 	private static BossBar bar(UUID id, BossEventAdd add) {
 		return BossBar.builder()
 				.id(id)
-				.text(add.getName())
-				.progress(add.getProgress())
-				.color(color(add.getColor()))
-				.overlay(overlay(add.getOverlay()))
-				.darkensSky(add.isDarkenScreen())
-				.playsBossMusic(add.isPlayMusic())
-				.createsFog(add.isCreateWorldFog())
+				.text(add.name())
+				.progress(add.progress())
+				.color(color(add.color()))
+				.overlay(overlay(add.overlay()))
+				.darkensSky(add.darkenScreen())
+				.playsBossMusic(add.playMusic())
+				.createsFog(add.createWorldFog())
 				.build();
 	}
 

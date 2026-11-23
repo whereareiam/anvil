@@ -180,7 +180,7 @@ public final class PlayerCapabilityRuntime {
 		Map<String, String> unsupported = new LinkedHashMap<>();
 		for (ProtocolPlayerCapabilityProvider<?> provider : protocolProviders) {
 			String reason = unsupportedReason(provider, library);
-			if (reason != null) unsupported.put(provider.descriptor().getId(), reason);
+			if (reason != null) unsupported.put(provider.descriptor().id(), reason);
 		}
 
 		return unsupported;
@@ -214,11 +214,11 @@ public final class PlayerCapabilityRuntime {
 		Set<Class<?>> applicable = new LinkedHashSet<>();
 		for (PlayerCapabilityProvider<?> provider : providers) applicable.add(provider.capability());
 		for (ProtocolPlayerCapabilityProvider<?> provider : protocolProviders)
-			if (!unsupported.containsKey(provider.descriptor().getId())) applicable.add(provider.capability());
+			if (!unsupported.containsKey(provider.descriptor().id())) applicable.add(provider.capability());
 
 		List<ProtocolPlayerCapabilityProvider<?>> selected = new ArrayList<>();
 		for (ProtocolPlayerCapabilityProvider<?> provider : protocolProviders) {
-			boolean yields = unsupported.containsKey(provider.descriptor().getId())
+			boolean yields = unsupported.containsKey(provider.descriptor().id())
 					&& applicable.contains(provider.capability());
 			if (!yields) selected.add(provider);
 		}
@@ -264,7 +264,7 @@ public final class PlayerCapabilityRuntime {
 		if (channel.isEmpty()) {
 			for (ProtocolPlayerCapabilityProvider<?> provider : protocolProviders)
 				if (provider.workerBacked())
-					skipped.putIfAbsent(provider.descriptor().getId(), "the players of the " + player.libraryId()
+					skipped.putIfAbsent(provider.descriptor().id(), "the players of the " + player.libraryId()
 							+ " library run no worker extensions");
 
 			return skipped;
@@ -273,7 +273,7 @@ public final class PlayerCapabilityRuntime {
 		Set<String> installed = channel.get().installedCapabilities();
 		Map<String, String> reported = channel.get().unavailableCapabilities();
 		for (ProtocolPlayerCapabilityProvider<?> provider : protocolProviders) {
-			String id = provider.descriptor().getId();
+			String id = provider.descriptor().id();
 			if (installed.contains(id) || skipped.containsKey(id)) continue;
 
 			String reason = reported.get(id);

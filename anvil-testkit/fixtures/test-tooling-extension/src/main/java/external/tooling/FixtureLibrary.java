@@ -36,10 +36,10 @@ public final class FixtureLibrary implements ProtocolLibraryProvider {
 			@Override public @NotNull List<ProtocolRelease> releases() { return releases; }
 			@Override public @NotNull ProtocolPlayer create(@NotNull PlayerRequest request) {
 				return new ProtocolPlayer() {
-					private final PlayerProfile requested = new PlayerProfile(request.getName(), UUID.randomUUID());
+					private final PlayerProfile requested = new PlayerProfile(request.name(), UUID.randomUUID());
 					private boolean destroyed;
-					@Override public @NotNull String name() { return request.getName(); }
-					@Override public @NotNull MinecraftVersion clientVersion() { return request.getClientVersion(); }
+					@Override public @NotNull String name() { return request.name(); }
+					@Override public @NotNull MinecraftVersion clientVersion() { return request.clientVersion(); }
 					@Override public @NotNull String libraryId() { return ID; }
 					@Override public @NotNull ProtocolRelease release() { return releases.getFirst(); }
 					@Override public @NotNull PlayerProfile requestedProfile() { return requested; }

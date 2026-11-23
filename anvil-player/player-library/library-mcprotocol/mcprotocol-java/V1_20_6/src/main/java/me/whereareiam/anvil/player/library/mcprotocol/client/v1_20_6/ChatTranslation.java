@@ -122,7 +122,7 @@ public abstract class ChatTranslation implements PacketTranslation<Packet> {
 	public final @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		if (packet instanceof ServerboundChat chat) return chat(chat);
 		if (packet instanceof ServerboundChatCommand command)
-			return new ServerboundChatCommandPacket(command.getCommand());
+			return new ServerboundChatCommandPacket(command.command());
 
 		return null;
 	}

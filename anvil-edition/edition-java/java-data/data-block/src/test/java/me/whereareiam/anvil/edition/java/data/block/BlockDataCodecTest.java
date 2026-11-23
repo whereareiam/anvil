@@ -45,7 +45,7 @@ class BlockDataCodecTest {
 		assertEquals(written.blocks(), read.blocks());
 		for (int stateId = 0; stateId < written.stateCount(); stateId++)
 			assertEquals(written.state(stateId), read.state(stateId));
-		assertSame(CollisionShape.EMPTY, read.state(0).getCollision());
+		assertSame(CollisionShape.EMPTY, read.state(0).collision());
 	}
 
 	@Test

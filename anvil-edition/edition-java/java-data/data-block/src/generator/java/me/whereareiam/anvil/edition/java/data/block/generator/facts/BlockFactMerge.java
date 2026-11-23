@@ -41,20 +41,20 @@ final class BlockFactMerge {
 	 * @throws IllegalStateException when the entry sets a value another entry set, or names a default
 	 */
 	void add(@NotNull BlockFactEntry entry) {
-		kind = once("kind", kind, notDefault("kind", entry.getKind(), BlockKind.OTHER));
-		collision = once("collision", collision, notDefault("collision", entry.getCollision(), CollisionKind.FIXED));
-		fluid = once("fluid", fluid, notDefault("fluid", entry.getFluid(), FluidType.NONE));
-		friction = once("friction", friction, entry.getFriction() == null ? null : entry.getFriction().asFloat("friction"));
+		kind = once("kind", kind, notDefault("kind", entry.kind(), BlockKind.OTHER));
+		collision = once("collision", collision, notDefault("collision", entry.collision(), CollisionKind.FIXED));
+		fluid = once("fluid", fluid, notDefault("fluid", entry.fluid(), FluidType.NONE));
+		friction = once("friction", friction, entry.friction() == null ? null : entry.friction().asFloat("friction"));
 		speedFactor = once("speed-factor", speedFactor,
-				entry.getSpeedFactor() == null ? null : entry.getSpeedFactor().asFloat("speed-factor"));
+				entry.speedFactor() == null ? null : entry.speedFactor().asFloat("speed-factor"));
 		jumpFactor = once("jump-factor", jumpFactor,
-				entry.getJumpFactor() == null ? null : entry.getJumpFactor().asFloat("jump-factor"));
-		bounce = once("bounce", bounce, entry.getBounce() == null ? null : entry.getBounce().asDouble());
-		BlockFactEntry.Stuck slowdown = entry.getStuck();
+				entry.jumpFactor() == null ? null : entry.jumpFactor().asFloat("jump-factor"));
+		bounce = once("bounce", bounce, entry.bounce() == null ? null : entry.bounce().asDouble());
+		BlockFactEntry.Stuck slowdown = entry.stuck();
 		stuck = once("stuck", stuck, slowdown == null ? null
-				: new StuckSpeed(slowdown.getHorizontal().asDouble(), slowdown.getVertical().asDouble()));
-		behaviours.addAll(entry.getBehaviours());
-		entry.getPropertyStarts().forEach((property, start) -> {
+				: new StuckSpeed(slowdown.horizontal().asDouble(), slowdown.vertical().asDouble()));
+		behaviours.addAll(entry.behaviours());
+		entry.propertyStarts().forEach((property, start) -> {
 			if (propertyStarts.putIfAbsent(property, start) != null)
 				throw new IllegalStateException(
 						"block-facts.toml sets the start of " + name + "'s " + property + " more than once");
@@ -67,18 +67,18 @@ final class BlockFactMerge {
 	@NotNull BlockFact fact() {
 		BlockFact defaults = BlockFact.DEFAULT;
 		BlockMovement movement = BlockMovement.builder()
-				.friction(friction == null ? defaults.getMovement().getFriction() : friction)
-				.speedFactor(speedFactor == null ? defaults.getMovement().getSpeedFactor() : speedFactor)
-				.jumpFactor(jumpFactor == null ? defaults.getMovement().getJumpFactor() : jumpFactor)
-				.bounceFactor(bounce == null ? defaults.getMovement().getBounceFactor() : bounce)
+				.friction(friction == null ? defaults.movement().friction() : friction)
+				.speedFactor(speedFactor == null ? defaults.movement().speedFactor() : speedFactor)
+				.jumpFactor(jumpFactor == null ? defaults.movement().jumpFactor() : jumpFactor)
+				.bounceFactor(bounce == null ? defaults.movement().bounceFactor() : bounce)
 				.stuckSpeed(stuck)
 				.behaviours(behaviours)
 				.build();
 
 		return BlockFact.builder()
-				.kind(kind == null ? defaults.getKind() : kind)
-				.collision(collision == null ? defaults.getCollision() : collision)
-				.fluid(fluid == null ? defaults.getFluid() : fluid)
+				.kind(kind == null ? defaults.kind() : kind)
+				.collision(collision == null ? defaults.collision() : collision)
+				.fluid(fluid == null ? defaults.fluid() : fluid)
 				.movement(movement)
 				.propertyStarts(Map.copyOf(propertyStarts))
 				.build();

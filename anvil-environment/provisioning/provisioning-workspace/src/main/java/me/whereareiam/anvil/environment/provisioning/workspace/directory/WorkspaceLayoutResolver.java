@@ -27,28 +27,28 @@ public final class WorkspaceLayoutResolver {
 	 */
 	public @NotNull WorkspaceLayout resolve(@NotNull Path root, @NotNull AnvilScenario scenario) {
 		String runId = Instant.now().toEpochMilli() + "-" + UUID.randomUUID().toString().substring(0, 8);
-		Path scenarioDirectory = root.toAbsolutePath().normalize().resolve(safeName(scenario.getName()));
+		Path scenarioDirectory = root.toAbsolutePath().normalize().resolve(safeName(scenario.name()));
 		Path runDirectory = scenarioDirectory.resolve(runId);
 		var layout = WorkspaceLayout.builder().runDirectory(runDirectory);
 		Map<Path, String> names = new HashMap<>();
-		Stream.concat(scenario.getServers().stream(), scenario.getProxies().stream()).forEach(process -> {
-			Path parent = process.getWorkspace().getMode() == WorkspaceMode.PERSISTENT
+		Stream.concat(scenario.servers().stream(), scenario.proxies().stream()).forEach(process -> {
+			Path parent = process.workspace().mode() == WorkspaceMode.PERSISTENT
 					? scenarioDirectory.resolve("persistent") : runDirectory;
-			Path directory = parent.resolve(safeName(process.getName()));
-			String previous = names.putIfAbsent(directory, process.getName());
+			Path directory = parent.resolve(safeName(process.name()));
+			String previous = names.putIfAbsent(directory, process.name());
 			if (previous != null)
-				throw new ScenarioValidationException("Processes '" + previous + "' and '" + process.getName()
+				throw new ScenarioValidationException("Processes '" + previous + "' and '" + process.name()
 						+ "' resolve to the same workspace directory: " + directory);
-			layout.processDirectory(process.getName(), directory);
+			layout.processDirectory(process.name(), directory);
 		});
 		// A container keeps no files of its own; its directory holds its console log for the run.
-		scenario.getContainers().forEach(container -> {
-			Path directory = runDirectory.resolve(safeName(container.getName()));
-			String previous = names.putIfAbsent(directory, container.getName());
+		scenario.containers().forEach(container -> {
+			Path directory = runDirectory.resolve(safeName(container.name()));
+			String previous = names.putIfAbsent(directory, container.name());
 			if (previous != null)
-				throw new ScenarioValidationException("Processes '" + previous + "' and '" + container.getName()
+				throw new ScenarioValidationException("Processes '" + previous + "' and '" + container.name()
 						+ "' resolve to the same workspace directory: " + directory);
-			layout.processDirectory(container.getName(), directory);
+			layout.processDirectory(container.name(), directory);
 		});
 
 		return layout.build();

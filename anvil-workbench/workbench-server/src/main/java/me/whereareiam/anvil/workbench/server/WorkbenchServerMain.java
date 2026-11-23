@@ -54,24 +54,24 @@ public final class WorkbenchServerMain {
 			}
 		}));
 
-		System.out.println("Anvil workbench '" + settings.getName() + "' listens on port " + server.port()
+		System.out.println("Anvil workbench '" + settings.name() + "' listens on port " + server.port()
 				+ " with certificate " + server.fingerprint());
-		System.out.println("It runs processes with " + String.join(", ", settings.getExecutions())
-				+ "; data in " + settings.getDataDirectory());
+		System.out.println("It runs processes with " + String.join(", ", settings.executions())
+				+ "; data in " + settings.dataDirectory());
 		if (!server.paired()) printPairing(settings, server.newPairingCode(), server.port());
 		server.serve();
 	}
 
 	private static void pair(ServerSettings settings) throws IOException {
 		try (WorkbenchServer server = new WorkbenchServer(settings.toBuilder().port(0).bindAddress("127.0.0.1").build())) {
-			printPairing(settings, server.newPairingCode(), settings.getPort());
+			printPairing(settings, server.newPairingCode(), settings.port());
 		}
 	}
 
 	private static void printPairing(ServerSettings settings, String code, int port) {
 		System.out.println();
 		System.out.println("Pair an engine within 15 minutes, on the engine's machine:");
-		System.out.println("  java -jar anvil-workbench.jar add " + settings.getName() + " <this-host>:" + port + " " + code);
+		System.out.println("  java -jar anvil-workbench.jar add " + settings.name() + " <this-host>:" + port + " " + code);
 		System.out.println();
 	}
 

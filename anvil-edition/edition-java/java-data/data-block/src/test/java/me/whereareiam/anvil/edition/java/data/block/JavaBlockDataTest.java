@@ -39,7 +39,7 @@ class JavaBlockDataTest {
 	void reportsWhyAMissingProtocolHasNoBlockData() {
 		BlockDataUnavailableException failure = assertThrows(BlockDataUnavailableException.class, () -> DATA.require(777));
 
-		assertEquals(777, failure.getProtocol());
+		assertEquals(777, failure.protocol());
 		assertEquals("No block data for protocol 777: PrismarineJS/minecraft-data 3.117.0 has no block data for it",
 				failure.getMessage());
 	}

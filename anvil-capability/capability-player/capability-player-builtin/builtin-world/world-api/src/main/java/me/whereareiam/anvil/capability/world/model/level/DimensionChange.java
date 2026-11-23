@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 public class DimensionChange {
 	/**
 	 * The dimension the player was in before, or {@code null} when its connection had not joined a level yet. It
-	 * equals {@link #getTo()} when the server respawned the player in the dimension it was in.
+	 * equals {@link #to()} when the server respawned the player in the dimension it was in.
 	 */
 	@Nullable String from;
 	/**

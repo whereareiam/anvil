@@ -18,8 +18,8 @@ class WorldProviderTest {
 		WorldProvider provider = new WorldProvider();
 
 		assertEquals("me.whereareiam.anvil.world", WorldChannel.ID);
-		assertEquals(WorldChannel.ID, provider.descriptor().getId());
-		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
+		assertEquals(WorldChannel.ID, provider.descriptor().id());
+		assertTrue(provider.descriptor().requiredCapabilities().isEmpty());
 		assertEquals(Set.of(JavaProtocol.class), provider.requiredProtocols());
 		assertEquals(World.class, provider.capability());
 	}
@@ -29,8 +29,8 @@ class WorldProviderTest {
 		TestProtocolChannel channel = new TestProtocolChannel(Set.of(WorldChannel.ID));
 		World world = new WorldProvider().create(new TestProtocolPlayerCapabilityContext(channel));
 
-		assertEquals(List.of(WorldChannel.SERVER.getId(), WorldChannel.DIMENSION.getId(), WorldChannel.LEFT.getId(),
-				WorldChannel.STATE.getId(), WorldChannel.CHANGES.getId()), channel.subscriptions());
+		assertEquals(List.of(WorldChannel.SERVER.id(), WorldChannel.DIMENSION.id(), WorldChannel.LEFT.id(),
+				WorldChannel.STATE.id(), WorldChannel.CHANGES.id()), channel.subscriptions());
 		assertTrue(channel.requests().isEmpty());
 		assertTrue(world.dimension().isEmpty());
 	}

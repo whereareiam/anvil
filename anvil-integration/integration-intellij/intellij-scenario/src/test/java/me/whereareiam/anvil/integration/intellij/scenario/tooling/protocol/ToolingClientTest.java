@@ -31,10 +31,10 @@ class ToolingClientTest {
 			assertNotEquals(fixture.process.getRequests().get(0).path("id"), fixture.process.getRequests().get(1).path("id"));
 
 			fixture.reply(1, "{\"accepted\":false}");
-			assertFalse(second.result().join().getAccepted());
+			assertFalse(second.result().join().accepted());
 			assertFalse(first.result().isDone());
 			fixture.reply(0, "{\"accepted\":true}");
-			assertTrue(first.result().join().getAccepted());
+			assertTrue(first.result().join().accepted());
 		}
 	}
 

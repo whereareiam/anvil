@@ -56,10 +56,10 @@ class AgentTransportLifecycleTest {
 		     AgentClient client = new JsonLineAgentConnectionProvider().connect(port, "token", Duration.ofSeconds(2))) {
 			assertTrue(client.available());
 			AgentPingResponse ping = client.request(AgentOperations.PING, Map.of());
-			assertEquals("test", ping.getPlatform());
-			assertEquals("proxy", ping.getRole());
-			assertTrue(client.request(AgentOperations.COMMAND, AgentCommandRequest.builder().command("accepted").build()).isAccepted());
-			assertFalse(client.request(AgentOperations.COMMAND, AgentCommandRequest.builder().command("rejected").build()).isAccepted());
+			assertEquals("test", ping.platform());
+			assertEquals("proxy", ping.role());
+			assertTrue(client.request(AgentOperations.COMMAND, AgentCommandRequest.builder().command("accepted").build()).accepted());
+			assertFalse(client.request(AgentOperations.COMMAND, AgentCommandRequest.builder().command("rejected").build()).accepted());
 
 			AgentProfile alice = AgentProfile.builder().username("Alice").uniqueId(UUID.randomUUID()).build();
 			server.playerEvents().joined(alice, "lobby");
@@ -67,13 +67,13 @@ class AgentTransportLifecycleTest {
 			AgentPlayerEventsResponse events = client.request(AgentOperations.PLAYER_EVENTS,
 					AgentPlayerEventsRequest.builder().after(0).build());
 			assertEquals(List.of(AgentPlayerEventType.JOINED, AgentPlayerEventType.LEFT),
-					events.getEvents().stream().map(AgentPlayerEvent::getType).toList());
-			assertEquals(alice, events.getEvents().getFirst().getProfile());
-			assertEquals("lobby", events.getEvents().getFirst().getServer());
+					events.events().stream().map(AgentPlayerEvent::type).toList());
+			assertEquals(alice, events.events().getFirst().profile());
+			assertEquals("lobby", events.events().getFirst().server());
 			AgentPlayerEventsResponse later = client.request(AgentOperations.PLAYER_EVENTS,
 					AgentPlayerEventsRequest.builder().after(1).build());
-			assertEquals(events.getGeneration(), later.getGeneration());
-			assertEquals(1, later.getEvents().size());
+			assertEquals(events.generation(), later.generation());
+			assertEquals(1, later.events().size());
 			client.close();
 			assertFalse(client.available());
 			assertThrows(AgentUnavailableException.class, () -> client.request(AgentOperations.PING, Map.of()));

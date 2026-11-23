@@ -46,7 +46,7 @@ class EntityQueryTest {
 	@Test
 	void combinesQueriesAndDescribesTheCombination() {
 		EntityQuery bubble = EntityQuery.labelled("hello").and(EntityQuery.nearPlayer(4).or(EntityQuery.ridingPlayer()));
-		EntityQuery visible = EntityQuery.any().and(entity -> !entity.isInvisible()).negate();
+		EntityQuery visible = EntityQuery.any().and(entity -> !entity.invisible()).negate();
 
 		assertTrue(bubble.test(NAMED_STAND));
 		assertTrue(bubble.test(RIDING_DISPLAY));

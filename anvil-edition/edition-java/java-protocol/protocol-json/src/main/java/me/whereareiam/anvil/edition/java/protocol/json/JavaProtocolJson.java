@@ -1,8 +1,10 @@
 package me.whereareiam.anvil.edition.java.protocol.json;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -80,6 +82,10 @@ public final class JavaProtocolJson {
 	 * @return the same mapper
 	 */
 	public static @NotNull ObjectMapper configure(@NotNull ObjectMapper mapper) {
+		// The values read through fluent accessors, which are no JavaBean getters: their fields are their members.
+		mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
+				.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
+				.setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);
 		mapper.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
 		for (Class<?> type : SEALED)
 			sealed(mapper, type);
@@ -122,7 +128,7 @@ public final class JavaProtocolJson {
 		}
 
 		@JsonProperty(ENTITY)
-		abstract int getValue();
+		abstract int value();
 	}
 
 	/**

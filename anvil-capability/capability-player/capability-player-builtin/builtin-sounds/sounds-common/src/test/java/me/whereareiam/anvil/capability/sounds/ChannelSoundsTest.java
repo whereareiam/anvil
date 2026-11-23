@@ -58,7 +58,7 @@ class ChannelSoundsTest {
 		channel.publish(SoundsChannel.HEARD, PLING);
 		channel.publish(SoundsChannel.HEARD, sound("minecraft:block.note_block.pling", 0.5F));
 		assertEquals(List.of(LEVEL_UP, PLING, sound("minecraft:block.note_block.pling", 0.5F)), watch.unread());
-		assertEquals(PLING, watch.heard(sound -> sound.is("block.note_block.pling") && sound.getPitch() > 1F, TIMEOUT));
+		assertEquals(PLING, watch.heard(sound -> sound.is("block.note_block.pling") && sound.pitch() > 1F, TIMEOUT));
 		assertEquals(sound("minecraft:block.note_block.pling", 0.5F), watch.heard("block.note_block.pling", TIMEOUT));
 		assertThrows(IllegalStateException.class, () -> watch.heard("block.note_block.pling", TIMEOUT));
 		assertEquals(List.of(), sounds.watch().unread());
@@ -71,7 +71,7 @@ class ChannelSoundsTest {
 		Expectation alert = watch.expectHeard(sound -> sound.is("example:alert"));
 
 		assertFalse(alert.met());
-		assertEquals("hear a matching sound", alert.getDescription());
+		assertEquals("hear a matching sound", alert.description());
 
 		channel.publish(SoundsChannel.HEARD, ALERT);
 		assertTrue(alert.met());

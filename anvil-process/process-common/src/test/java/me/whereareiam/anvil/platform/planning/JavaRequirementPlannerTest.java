@@ -61,7 +61,7 @@ class JavaRequirementPlannerTest {
 	 * Local Java homes whose directory name is their feature version, such as {@code /opt/jdk-25}.
 	 */
 	private static final PlatformJavaSource LOCAL_JDKS = source -> source instanceof LocalJavaHome home
-			? OptionalInt.of(Integer.parseInt(home.getHome().getFileName().toString().substring("jdk-".length())))
+			? OptionalInt.of(Integer.parseInt(home.home().getFileName().toString().substring("jdk-".length())))
 			: OptionalInt.empty();
 	private static final Map<String, PlatformProvider> UNUSUAL_PROVIDERS = Map.of(
 			"legacy", new TablePlatform("legacy", MinecraftServer.class, true, true),
@@ -105,7 +105,7 @@ class JavaRequirementPlannerTest {
 	) {
 		var planned = plan(PROVIDERS, process(platform, version, requested), policy, new ByteArrayOutputStream());
 
-		assertEquals(java, planned.selection().getRequirement().getFeatureVersion());
+		assertEquals(java, planned.selection().requirement().featureVersion());
 		assertEquals(level, planned.support());
 		assertEquals(bypass ? List.of(BYPASS) : List.of(), planned.jvmArguments());
 	}
@@ -114,14 +114,14 @@ class JavaRequirementPlannerTest {
 	void runsTheVersionOfADeclaredLocalJavaWhenNoneIsRequested() {
 		var server = declaring("paper", "1.21.11", JavaSource.home(Path.of("/opt/jdk-25")), null);
 
-		assertEquals(25, planWithSources(server).selection().getRequirement().getFeatureVersion());
+		assertEquals(25, planWithSources(server).selection().requirement().featureVersion());
 	}
 
 	@Test
 	void runsARequestedVersionOverTheVersionOfADeclaredJava() {
 		var server = declaring("paper", "1.21.11", JavaSource.home(Path.of("/opt/jdk-25")), 21);
 
-		assertEquals(21, planWithSources(server).selection().getRequirement().getFeatureVersion());
+		assertEquals(21, planWithSources(server).selection().requirement().featureVersion());
 	}
 
 	@Test
@@ -129,7 +129,7 @@ class JavaRequirementPlannerTest {
 		var archive = JavaSource.archive(URI.create("https://example.test/jdk.tar.gz"), "0".repeat(64));
 		var server = declaring("paper", "1.21.11", archive, null);
 
-		assertEquals(21, planWithSources(server).selection().getRequirement().getFeatureVersion());
+		assertEquals(21, planWithSources(server).selection().requirement().featureVersion());
 	}
 
 	@Test
@@ -218,7 +218,7 @@ class JavaRequirementPlannerTest {
 				+ "above the maximum with -DLegacy.IgnoreJavaVersion=true.", failure.getMessage());
 
 		var planned = plan(UNUSUAL_PROVIDERS, process("legacy", "1.16.5", 17), SupportPolicy.LENIENT, new ByteArrayOutputStream());
-		assertEquals(17, planned.selection().getRequirement().getFeatureVersion());
+		assertEquals(17, planned.selection().requirement().featureVersion());
 		assertEquals(SupportLevel.UNTESTED, planned.support());
 		assertEquals(List.of("-DLegacy.IgnoreJavaVersion=true"), planned.jvmArguments());
 
@@ -254,7 +254,7 @@ class JavaRequirementPlannerTest {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 
 		var planned = plan(PROVIDERS, local, SupportPolicy.STRICT, output);
-		assertEquals(25, planned.selection().getRequirement().getFeatureVersion());
+		assertEquals(25, planned.selection().requirement().featureVersion());
 		assertEquals(SupportLevel.COMPATIBLE, planned.support());
 		assertTrue(output.toString(StandardCharsets.UTF_8).startsWith("[Anvil] Info: process 'velocity' runs velocity on "
 				+ "Java 25 (COMPATIBLE): the velocity distribution carries no version Anvil can assess"), output.toString());
@@ -301,7 +301,7 @@ class JavaRequirementPlannerTest {
 		var modern = server("paper", "1.21.11", null);
 		var scenario = scenario(legacy);
 
-		assertEquals(21, planner.plan(scenario(modern), modern).selection().getRequirement().getFeatureVersion());
+		assertEquals(21, planner.plan(scenario(modern), modern).selection().requirement().featureVersion());
 		var failure = assertThrows(ScenarioValidationException.class, () -> planner.plan(scenario, legacy));
 		assertTrue(failure.getMessage().startsWith("Process 'spigot' requests Java 21 (requested by the engine Java selection)"),
 				failure.getMessage());
@@ -320,12 +320,12 @@ class JavaRequirementPlannerTest {
 				.javaSelection(JavaSelection.builder().requirement(release).build()).build(), SupportPolicy.STRICT,
 				new ByteArrayOutputStream());
 
-		assertEquals(release.toBuilder().featureVersion(17).build(), planned.selection().getRequirement());
+		assertEquals(release.toBuilder().featureVersion(17).build(), planned.selection().requirement());
 		var distributionOnly = plan(PROVIDERS, server("paper", "1.18.2", null).toBuilder()
 				.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().distribution("temurin").build()).build())
 				.build(), SupportPolicy.STRICT, new ByteArrayOutputStream());
-		assertEquals(17, distributionOnly.selection().getRequirement().getFeatureVersion());
-		assertEquals("temurin", distributionOnly.selection().getRequirement().getDistribution());
+		assertEquals(17, distributionOnly.selection().requirement().featureVersion());
+		assertEquals("temurin", distributionOnly.selection().requirement().distribution());
 		var mismatch = refuse(PROVIDERS, server("paper", "1.18.2", null).toBuilder()
 				.javaSelection(JavaSelection.builder().requirement(release.toBuilder().featureVersion(21).build()).build())
 				.build(), SupportPolicy.LENIENT);
@@ -367,10 +367,10 @@ class JavaRequirementPlannerTest {
 				NO_SOURCES);
 		var server = server("paper", "1.16.5", 17).toBuilder().jvmArgument("-Ddeclared=true").build();
 
-		ProcessPlan plan = planner.plan(scenario(server)).getProcesses().get("paper");
-		assertEquals(List.of("-XX:ActiveProcessorCount=4", BYPASS, "-Dplatform.colors=true", "-Ddeclared=true"), plan.getJvmArguments(),
+		ProcessPlan plan = planner.plan(scenario(server)).processes().get("paper");
+		assertEquals(List.of("-XX:ActiveProcessorCount=4", BYPASS, "-Dplatform.colors=true", "-Ddeclared=true"), plan.jvmArguments(),
 				"A later argument overrides an earlier one, so the declaration's own come last and the engine's limit first");
-		assertEquals(17, plan.getJavaSelection().getRequirement().getFeatureVersion());
+		assertEquals(17, plan.javaSelection().requirement().featureVersion());
 	}
 
 	private static JavaRequirementPlanner.PlannedJava plan(
@@ -412,7 +412,7 @@ class JavaRequirementPlannerTest {
 	}
 
 	private static AnvilScenario scenario(MinecraftProcess process) {
-		var scenario = AnvilScenario.builder().name("java").entrypoint(process.getName());
+		var scenario = AnvilScenario.builder().name("java").entrypoint(process.name());
 		if (process instanceof MinecraftServer server) return scenario.server(server).build();
 
 		return scenario.proxy((MinecraftProxy) process).build();
@@ -467,7 +467,7 @@ class JavaRequirementPlannerTest {
 			if (process instanceof MinecraftServer) return PlatformProvider.super.platformVersion(process);
 			if (!versioned) return null;
 
-			String version = process.getDistribution().getVersion();
+			String version = process.distribution().version();
 			return version == null ? null : MinecraftVersion.parse(version);
 		}
 

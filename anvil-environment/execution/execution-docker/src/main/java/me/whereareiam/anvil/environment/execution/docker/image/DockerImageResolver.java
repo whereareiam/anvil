@@ -27,13 +27,13 @@ public final class DockerImageResolver {
 	private final DockerExecutionSettings settings;
 
 	public String resolve(ProcessRequest request) {
-		String requested = settings.image(request.getJavaSelection().getRequirement());
+		String requested = settings.image(request.javaSelection().requirement());
 		String key = UUID.nameUUIDFromBytes(requested.getBytes(StandardCharsets.UTF_8)).toString();
-		Path directory = services.getCacheDirectory().resolve("docker-images").resolve(key);
+		Path directory = services.cacheDirectory().resolve("docker-images").resolve(key);
 
-		try (ImageLease ignored = services.getImageLocks().acquire(directory)) {
+		try (ImageLease ignored = services.imageLocks().acquire(directory)) {
 			Path lock = directory.resolve("image");
-			String reference = !context.isRefresh() && Files.isRegularFile(lock)
+			String reference = !context.refresh() && Files.isRegularFile(lock)
 					? Files.readString(lock)
 					: requested;
 
@@ -68,13 +68,13 @@ public final class DockerImageResolver {
 	 */
 	void validate(String details, ProcessRequest request, String image) {
 		try {
-			services.getRuntimeValidator().validate(details, request);
+			services.runtimeValidator().validate(details, request);
 		} catch (JavaVersionMismatchException mismatch) {
-			JavaRequirement requirement = request.getJavaSelection().getRequirement();
+			JavaRequirement requirement = request.javaSelection().requirement();
 			String key = settings.key(requirement);
 			throw new ProvisioningException(mismatch.getMessage() + "; the Docker execution settings map " + key
 					+ " to image " + image + ", so map " + key + " to an image that ships Java "
-					+ requirement.getFeatureVersion(), mismatch);
+					+ requirement.featureVersion(), mismatch);
 		}
 	}
 
@@ -89,12 +89,12 @@ public final class DockerImageResolver {
 	}
 
 	private DockerImageClient.DockerImageMetadata obtain(String reference) {
-		if (context.isRefresh() && !reference.startsWith("sha256:")) docker.pull(reference);
+		if (context.refresh() && !reference.startsWith("sha256:")) docker.pull(reference);
 
 		try {
 			return docker.inspectMetadata(reference);
 		} catch (ProvisioningException missing) {
-			if (context.isOffline())
+			if (context.offline())
 				throw new ProvisioningException("Docker image is unavailable offline: " + reference, missing);
 			docker.pull(reference);
 			return docker.inspectMetadata(reference);

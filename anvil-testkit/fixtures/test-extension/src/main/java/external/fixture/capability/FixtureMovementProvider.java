@@ -52,7 +52,7 @@ public final class FixtureMovementProvider implements ProtocolPlayerCapabilityPr
 	private record FixtureMovement(FixtureConnection connection) implements Movement {
 		@Override
 		public void move(@NotNull Position position) {
-			connection.send("move:" + position.getX() + ":" + position.getY() + ":" + position.getZ());
+			connection.send("move:" + position.x() + ":" + position.y() + ":" + position.z());
 		}
 
 		@Override
@@ -89,7 +89,7 @@ public final class FixtureMovementProvider implements ProtocolPlayerCapabilityPr
 		}
 
 		@Override
-		public boolean isEnabled() {
+		public boolean enabled() {
 			return false;
 		}
 

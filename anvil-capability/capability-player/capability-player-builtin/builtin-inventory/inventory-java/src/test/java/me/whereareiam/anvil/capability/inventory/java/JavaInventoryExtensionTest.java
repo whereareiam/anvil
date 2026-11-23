@@ -159,7 +159,7 @@ class JavaInventoryExtensionTest {
 			operations.call(InventoryChannel.CLICK,
 					new InventoryAction(4, click, click == InventoryClick.HOTBAR_SWAP ? 8 : 0));
 			ServerboundContainerClick packet = (ServerboundContainerClick) player.sent().getLast();
-			assertEquals(expected.get(click), List.<Object>of(packet.getClickType(), packet.getButton()), click.name());
+			assertEquals(expected.get(click), List.<Object>of(packet.clickType(), packet.button()), click.name());
 		}
 	}
 
@@ -296,13 +296,13 @@ class JavaInventoryExtensionTest {
 						.nameSource(ItemNameSource.CUSTOM)
 						.lore(Text.literal("Costs 64 coins"))
 						.build())
-				.build(), snapshots().getLast().getItems().getFirst());
+				.build(), snapshots().getLast().items().getFirst());
 		player.deliver(new ClientboundSetPlayerInventory(9, named.toBuilder().customName(null).build()));
 		assertEquals(ItemDisplay.builder()
 				.name(Text.literal("Token"))
 				.nameSource(ItemNameSource.ITEM)
 				.lore(Text.literal("Costs 64 coins"))
-				.build(), snapshots().getLast().getItems().getFirst().getDisplay());
+				.build(), snapshots().getLast().items().getFirst().display());
 	}
 
 	@Test
@@ -314,7 +314,7 @@ class JavaInventoryExtensionTest {
 		unknown.deliver(content(0, 1));
 		unknown.deliver(new ClientboundSetPlayerInventory(9, stack(1)));
 
-		assertNull(unknown.emitted(InventoryChannel.CHANGED).getLast().getItems().getFirst().getType().getIdentifier());
+		assertNull(unknown.emitted(InventoryChannel.CHANGED).getLast().items().getFirst().type().identifier());
 	}
 
 	@Test
@@ -424,10 +424,10 @@ class JavaInventoryExtensionTest {
 	 */
 	private ClientboundContainerSetContent chestContent(int stateId) {
 		ItemStack[] items = new ItemStack[CHEST_SLOTS];
-		for (InventoryItem item : snapshots().getLast().getItems()) {
-			int index = PlayerInventoryLayout.inventoryIndex(item.getSlot()).orElseThrow();
+		for (InventoryItem item : snapshots().getLast().items()) {
+			int index = PlayerInventoryLayout.inventoryIndex(item.slot()).orElseThrow();
 			PlayerInventoryLayout.menuSlot(index, CHEST_SLOTS).ifPresent(slot ->
-					items[slot] = ItemStack.of(item.getType().getProtocolId(), item.getAmount()));
+					items[slot] = ItemStack.of(item.type().protocolId(), item.amount()));
 		}
 		return new ClientboundContainerSetContent(2, stateId, Arrays.asList(items), null);
 	}

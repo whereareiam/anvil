@@ -210,11 +210,11 @@ class JavaOverlaysExtensionTest {
 			player.deliver(new ClientboundBossEvent(EVENT, new BossEventUpdateStyle(BossEventColor.PINK, overlay)));
 
 		List<BossBar> updated = player.emitted(OverlaysChannel.BOSS_BAR).stream()
-				.filter(event -> event.getChange() == BossBarChange.UPDATED)
-				.map(BossBarEvent::getBar)
+				.filter(event -> event.change() == BossBarChange.UPDATED)
+				.map(BossBarEvent::bar)
 				.toList();
-		assertEquals(List.of(BossBarColor.values()), updated.subList(0, 7).stream().map(BossBar::getColor).toList());
-		assertEquals(List.of(BossBarOverlay.values()), updated.subList(7, 12).stream().map(BossBar::getOverlay).toList());
+		assertEquals(List.of(BossBarColor.values()), updated.subList(0, 7).stream().map(BossBar::color).toList());
+		assertEquals(List.of(BossBarOverlay.values()), updated.subList(7, 12).stream().map(BossBar::overlay).toList());
 	}
 
 	@Test

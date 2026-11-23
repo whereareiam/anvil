@@ -32,7 +32,7 @@ public final class EntityMove {
 	 */
 	public EntityMove(@NotNull EntityBody body, @NotNull BlockEffects effects, @NotNull FluidState fluids) {
 		this.body = body;
-		this.collisions = new Collisions(body.getLevel());
+		this.collisions = new Collisions(body.level());
 		this.effects = effects;
 		this.fluids = fluids;
 	}
@@ -43,10 +43,10 @@ public final class EntityMove {
 	 * @param requested the movement, usually the entity's velocity
 	 */
 	public void move(@NotNull Vector requested) {
-		if (body.isNoPhysics()) {
-			body.setPosition(body.getPosition().add(requested));
-			body.setHorizontalCollision(false);
-			body.setMinorHorizontalCollision(false);
+		if (body.noPhysics()) {
+			body.position(body.position().add(requested));
+			body.horizontalCollision(false);
+			body.minorHorizontalCollision(false);
 			return;
 		}
 
@@ -55,15 +55,15 @@ public final class EntityMove {
 		place(movement, collided);
 		land(movement, collided);
 		float factor = effects.speedFactor();
-		body.setDeltaMovement(body.getDeltaMovement().multiply(factor, 1.0, factor));
+		body.deltaMovement(body.deltaMovement().multiply(factor, 1.0, factor));
 	}
 
 	private @NotNull Vector unstuck(@NotNull Vector movement) {
-		Vector stuck = body.getStuckSpeedMultiplier();
+		Vector stuck = body.stuckSpeedMultiplier();
 		if (!(stuck.lengthSqr() > 1.0E-7)) return movement;
 
-		body.setStuckSpeedMultiplier(Vector.ZERO);
-		body.setDeltaMovement(Vector.ZERO);
+		body.stuckSpeedMultiplier(Vector.ZERO);
+		body.deltaMovement(Vector.ZERO);
 		return movement.multiply(stuck);
 	}
 
@@ -73,27 +73,27 @@ public final class EntityMove {
 		if (!(lengthSqr > 1.0E-7) && !tiny) return;
 
 		if (body.has(EntityBehaviour.BOX_DRIVEN_POSITION)) body.moveBox(collided);
-		else body.setPosition(body.getPosition().add(collided));
+		else body.position(body.position().add(collided));
 	}
 
 	private void land(@NotNull Vector movement, @NotNull Vector collided) {
 		boolean collidedX = !equal(movement.x, collided.x);
 		boolean collidedZ = !equal(movement.z, collided.z);
 		boolean vertical = movement.y != collided.y;
-		body.setHorizontalCollision(collidedX || collidedZ);
-		body.setOnGround(vertical && movement.y < 0.0);
+		body.horizontalCollision(collidedX || collidedZ);
+		body.onGround(vertical && movement.y < 0.0);
 		if (body.has(EntityBehaviour.SUPPORTING_BLOCK)) effects.checkSupportingBlock(collided);
-		body.setMinorHorizontalCollision(body.isHorizontalCollision() && body.isHorizontalCollisionMinor(collided));
+		body.minorHorizontalCollision(body.horizontalCollision() && body.isHorizontalCollisionMinor(collided));
 
 		int[] landed = effects.onPos(0.2F);
 		checkFallDamage(collided.y);
-		Vector delta = body.getDeltaMovement();
-		if (body.isHorizontalCollision())
-			body.setDeltaMovement(new Vector(collidedX ? 0.0 : delta.x, delta.y, collidedZ ? 0.0 : delta.z));
+		Vector delta = body.deltaMovement();
+		if (body.horizontalCollision())
+			body.deltaMovement(new Vector(collidedX ? 0.0 : delta.x, delta.y, collidedZ ? 0.0 : delta.z));
 		if (vertical) effects.fallOn(landed);
 		if (body.has(EntityBehaviour.PATH_BLOCK_EFFECTS)) return;
 
-		if (body.isOnGround()) effects.stepOn(landed);
+		if (body.onGround()) effects.stepOn(landed);
 		effects.insideDuringMove();
 	}
 
@@ -107,32 +107,32 @@ public final class EntityMove {
 	 * water.
 	 */
 	private void checkFallDamage(double movedY) {
-		if (!fluids.isTouchingWater()) fluids.updateWater();
+		if (!fluids.touchingWater()) fluids.updateWater();
 
 		if (body.has(EntityBehaviour.DOUBLE_FALL_DISTANCE)) {
-			if (!fluids.isTouchingWater() && movedY < 0.0) body.setFallDistance(body.getFallDistance() - (float) movedY);
-			if (body.isOnGround()) body.resetFallDistance();
+			if (!fluids.touchingWater() && movedY < 0.0) body.fallDistance(body.fallDistance() - (float) movedY);
+			if (body.onGround()) body.resetFallDistance();
 			return;
 		}
 
-		if (body.isOnGround()) {
+		if (body.onGround()) {
 			body.resetFallDistance();
 			return;
 		}
-		if (movedY < 0.0) body.setFallDistance((float) body.getFallDistance() - (float) movedY);
+		if (movedY < 0.0) body.fallDistance((float) body.fallDistance() - (float) movedY);
 	}
 
 	/**
 	 * {@code Entity.collide}: moves the entity against the blocks and steps up onto what stops it horizontally.
 	 */
 	private @NotNull Vector collide(@NotNull Vector movement) {
-		Box box = body.getBox();
+		Box box = body.box();
 		EntityContext context = body.context();
 		Vector collided = movement.lengthSqr() == 0.0 ? movement : collisions.collideBoundingBox(movement, box, context);
 		boolean landing = movement.y != collided.y && movement.y < 0.0;
 		boolean blocked = movement.x != collided.x || movement.z != collided.z;
 		float stepHeight = body.maxUpStep();
-		if (!(stepHeight > 0.0F) || !(landing || body.isOnGround()) || !blocked) return collided;
+		if (!(stepHeight > 0.0F) || !(landing || body.onGround()) || !blocked) return collided;
 		if (body.has(EntityBehaviour.CANDIDATE_STEP_HEIGHTS)) return stepUp(movement, collided, landing, stepHeight);
 
 		return legacyStepUp(movement, collided, stepHeight);
@@ -142,7 +142,7 @@ public final class EntityMove {
 	 * Stepping up from 1.21: the candidate heights of the shapes around, lowest first, until one gets further.
 	 */
 	private @NotNull Vector stepUp(@NotNull Vector movement, @NotNull Vector collided, boolean landing, float stepHeight) {
-		Box box = body.getBox();
+		Box box = body.box();
 		Box base = landing ? box.move(0.0, collided.y, 0.0) : box;
 		Box reach = base.expandTowards(movement.x, stepHeight, movement.z);
 		if (!landing) reach = reach.expandTowards(0.0, -1.0E-5F, 0.0);
@@ -162,7 +162,7 @@ public final class EntityMove {
 	 * further, set back down onto what is below.
 	 */
 	private @NotNull Vector legacyStepUp(@NotNull Vector movement, @NotNull Vector collided, float stepHeight) {
-		Box box = body.getBox();
+		Box box = body.box();
 		EntityContext context = body.context();
 		Vector stepped = collisions.collideBoundingBox(new Vector(movement.x, stepHeight, movement.z), box, context);
 		Vector rise = collisions.collideBoundingBox(new Vector(0.0, stepHeight, 0.0),

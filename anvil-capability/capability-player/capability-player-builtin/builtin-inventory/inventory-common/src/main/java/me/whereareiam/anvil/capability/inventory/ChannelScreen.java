@@ -38,12 +38,12 @@ final class ChannelScreen implements Screen {
 
 	@Override
 	public @NotNull Text title() {
-		return Objects.requireNonNull(snapshot().getTitle());
+		return Objects.requireNonNull(snapshot().title());
 	}
 
 	@Override
 	public @NotNull String menuType() {
-		return Objects.requireNonNull(snapshot().getMenuType());
+		return Objects.requireNonNull(snapshot().menuType());
 	}
 
 	@Override
@@ -53,7 +53,7 @@ final class ChannelScreen implements Screen {
 
 	@Override
 	public boolean open() {
-		return history.latest().getScreen() == screen;
+		return history.latest().screen() == screen;
 	}
 
 	@Override

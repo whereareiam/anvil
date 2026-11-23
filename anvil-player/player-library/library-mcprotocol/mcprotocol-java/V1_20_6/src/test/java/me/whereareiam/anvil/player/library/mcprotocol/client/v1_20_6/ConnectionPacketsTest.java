@@ -44,7 +44,7 @@ class ConnectionPacketsTest {
 
 		ClientboundRespawn respawn = respawnInto(1);
 
-		assertEquals(Optional.of(new Level("minecraft:overworld", respawn.getDimensionType())), level.current());
+		assertEquals(Optional.of(new Level("minecraft:overworld", respawn.dimensionType())), level.current());
 	}
 
 	@Test
@@ -78,10 +78,10 @@ class ConnectionPacketsTest {
 		ClientboundRespawn adventure = (ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(
 				spawnIn(Key.key("minecraft", "overworld"), GameMode.ADVENTURE), false, false));
 
-		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.CREATIVE, login.getGameMode());
-		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SPECTATOR, respawn.getGameMode());
-		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.ADVENTURE, adventure.getGameMode());
-		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SURVIVAL, respawnInto(0).getGameMode());
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.CREATIVE, login.gameMode());
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SPECTATOR, respawn.gameMode());
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.ADVENTURE, adventure.gameMode());
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SURVIVAL, respawnInto(0).gameMode());
 	}
 
 	@Test
@@ -98,7 +98,7 @@ class ConnectionPacketsTest {
 				.build(), packets.decode(new ClientboundRespawnPacket(spawnIn(Key.key("minecraft", "the_nether"), 1, true,
 				false), false, false)));
 		assertEquals(DimensionType.withEffects("minecraft:overworld", "minecraft:overworld", -64, 384), respawnInto(0)
-				.getDimensionType());
+				.dimensionType());
 	}
 
 	@Test
@@ -106,7 +106,7 @@ class ConnectionPacketsTest {
 		synchronize(new RegistryEntry("example:plain", described(-16, 64)));
 
 		assertEquals(DimensionType.withEffects("example:plain", "minecraft:overworld", -16, 64),
-				respawnInto(0).getDimensionType());
+				respawnInto(0).dimensionType());
 	}
 
 	@Test
@@ -115,7 +115,7 @@ class ConnectionPacketsTest {
 				described(0, 256).with("effects", new NbtString("example:fog"))));
 
 		assertEquals(DimensionType.builder().key("example:modded").minY(0).height(256).build(),
-				respawnInto(0).getDimensionType());
+				respawnInto(0).dimensionType());
 	}
 
 	@Test
@@ -124,8 +124,8 @@ class ConnectionPacketsTest {
 		synchronize(new RegistryEntry("example:hot", described(0, 256).with("ultrawarm", NbtByte.of(true))),
 				new RegistryEntry("example:attributed", described(0, 256).with("attributes", attribute)));
 
-		assertTrue(respawnInto(0).getDimensionType().isFastLava());
-		assertFalse(respawnInto(1).getDimensionType().isFastLava());
+		assertTrue(respawnInto(0).dimensionType().fastLava());
+		assertFalse(respawnInto(1).dimensionType().fastLava());
 	}
 
 	@Test

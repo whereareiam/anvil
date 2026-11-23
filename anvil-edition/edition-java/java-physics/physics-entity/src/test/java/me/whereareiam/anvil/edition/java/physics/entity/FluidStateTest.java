@@ -38,11 +38,11 @@ class FluidStateTest {
 			for (int z = 6; z <= 10; z++)
 				world.set(x, 65, z, "minecraft:lava", Map.of("level", String.valueOf(x - 6)));
 		LivingSimulation entity = TestEntity.living(world.send(), 8.5, 65.0, 8.5);
-		entity.body().setFirstTick(false);
-		entity.body().setOnGround(true);
+		entity.body().firstTick(false);
+		entity.body().onGround(true);
 
 		entity.tick();
 
-		return entity.body().getDeltaMovement().x;
+		return entity.body().deltaMovement().x;
 	}
 }

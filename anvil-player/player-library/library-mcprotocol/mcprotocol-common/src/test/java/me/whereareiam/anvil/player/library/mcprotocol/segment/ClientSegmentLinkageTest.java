@@ -48,7 +48,7 @@ class ClientSegmentLinkageTest {
 
 			try (ClassPath closure = closure(release)) {
 				Optional<String> failure = linkage(segments.get(since)).firstFailure(closure);
-				assertEquals(Optional.empty(), failure, "segment " + since + " against MCProtocolLib " + release.getLibraryVersion());
+				assertEquals(Optional.empty(), failure, "segment " + since + " against MCProtocolLib " + release.libraryVersion());
 			}
 		}
 	}
@@ -77,7 +77,7 @@ class ClientSegmentLinkageTest {
 			String root = location.substring(0, location.length() - SegmentDescriptor.PROPERTIES.length());
 			try (InputStream input = found.openStream()) {
 				SegmentDescriptor descriptor = SegmentDescriptor.read(input, location);
-				if (descriptor.getOwner().equals(CLIENT)) segments.put(descriptor.getSince(), root);
+				if (descriptor.owner().equals(CLIENT)) segments.put(descriptor.since(), root);
 			}
 		}
 

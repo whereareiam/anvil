@@ -67,9 +67,9 @@ final class JavaFixturePlayer implements ProtocolPlayer, PlayerBindingContext<Ob
 		this.request = request;
 		this.release = release;
 		this.extensions = extensions;
-		this.profile = new PlayerProfile(request.getUsername(),
-				UUID.nameUUIDFromBytes(request.getUsername().getBytes(StandardCharsets.UTF_8)));
-		this.protocol = new JavaPacketDispatcher(JavaFixtureLibraryProvider.ID, release.getProtocolNumber(),
+		this.profile = new PlayerProfile(request.username(),
+				UUID.nameUUIDFromBytes(request.username().getBytes(StandardCharsets.UTF_8)));
+		this.protocol = new JavaPacketDispatcher(JavaFixtureLibraryProvider.ID, release.protocolNumber(),
 				new EchoConnection());
 		this.protocols = WorkerProtocols.builder(JavaFixtureLibraryProvider.ID)
 				.speak(JavaProtocol.class, protocol, protocol::scoped)
@@ -79,17 +79,17 @@ final class JavaFixturePlayer implements ProtocolPlayer, PlayerBindingContext<Ob
 
 	@Override
 	public @NotNull String name() {
-		return request.getName();
+		return request.name();
 	}
 
 	@Override
 	public @NotNull UUID uniqueId() {
-		return profile.getUniqueId();
+		return profile.uniqueId();
 	}
 
 	@Override
 	public @NotNull MinecraftVersion clientVersion() {
-		return request.getClientVersion();
+		return request.clientVersion();
 	}
 
 	@Override
@@ -183,7 +183,7 @@ final class JavaFixturePlayer implements ProtocolPlayer, PlayerBindingContext<Ob
 
 	@Override
 	public <E> void emit(@NotNull EventDescriptor<E> event, @Nullable E payload) {
-		for (Consumer<Object> listener : listeners.getOrDefault(event.getId(), List.of())) listener.accept(payload);
+		for (Consumer<Object> listener : listeners.getOrDefault(event.id(), List.of())) listener.accept(payload);
 	}
 
 	@Override
@@ -246,9 +246,9 @@ final class JavaFixturePlayer implements ProtocolPlayer, PlayerBindingContext<Ob
 		public <Q, R> @Nullable R request(@NotNull OperationDescriptor<Q, R> operation, @Nullable Q request) {
 			if (destroyed) throw new IllegalStateException("Player '" + name() + "' has been destroyed");
 
-			WorkerOperation<?, ?> registered = bindings.operation(operation.getId());
-			if (!registered.getDescriptor().equals(operation))
-				throw new IllegalArgumentException("Operation " + operation.getId()
+			WorkerOperation<?, ?> registered = bindings.operation(operation.id());
+			if (!registered.descriptor().equals(operation))
+				throw new IllegalArgumentException("Operation " + operation.id()
 						+ " is registered with another schema");
 
 			@SuppressWarnings("unchecked")
@@ -258,9 +258,9 @@ final class JavaFixturePlayer implements ProtocolPlayer, PlayerBindingContext<Ob
 
 		@Override
 		public <E> @NotNull Subscription subscribe(@NotNull EventDescriptor<E> event, @NotNull Consumer<E> listener) {
-			Consumer<Object> typed = payload -> listener.accept(event.getPayloadType().cast(payload));
+			Consumer<Object> typed = payload -> listener.accept(event.payloadType().cast(payload));
 			List<Consumer<Object>> subscribed =
-					listeners.computeIfAbsent(event.getId(), ignored -> new CopyOnWriteArrayList<>());
+					listeners.computeIfAbsent(event.id(), ignored -> new CopyOnWriteArrayList<>());
 			subscribed.add(typed);
 
 			return () -> subscribed.remove(typed);

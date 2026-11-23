@@ -69,10 +69,10 @@ class ChannelInventoryTest {
 		ChannelInventory inventory = new ChannelInventory(channel);
 
 		IllegalStateException failure = assertThrows(IllegalStateException.class,
-				() -> inventory.matching(snapshot -> snapshot.getContainerId() == 2, TIMEOUT));
+				() -> inventory.matching(snapshot -> snapshot.containerId() == 2, TIMEOUT));
 		assertEquals("Player did not receive matching inventory", failure.getMessage());
 
 		channel.publish(InventoryChannel.CHANGED, CHEST);
-		assertSame(CHEST, inventory.matching(snapshot -> snapshot.getContainerId() == 2, TIMEOUT));
+		assertSame(CHEST, inventory.matching(snapshot -> snapshot.containerId() == 2, TIMEOUT));
 	}
 }

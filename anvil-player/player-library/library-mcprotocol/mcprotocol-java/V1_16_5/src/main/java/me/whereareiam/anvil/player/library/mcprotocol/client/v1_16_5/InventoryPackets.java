@@ -63,6 +63,6 @@ final class InventoryPackets extends InventoryTranslation {
 			@NotNull WindowActionParam param
 	) {
 		int actionNumber = actions.updateAndGet(previous -> previous % ACTION_NUMBERS + 1);
-		return new ClientWindowActionPacket(click.getContainerId(), actionNumber, click.getSlot(), null, action, param);
+		return new ClientWindowActionPacket(click.containerId(), actionNumber, click.slot(), null, action, param);
 	}
 }

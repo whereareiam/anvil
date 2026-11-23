@@ -47,14 +47,14 @@ public final class PacketComparison {
 			@NotNull RecordedPackets actual,
 			@NotNull PacketMask mask
 	) {
-		int protocol = expected.getHeader().getProtocol();
-		if (actual.getHeader().getProtocol() != protocol)
+		int protocol = expected.header().protocol();
+		if (actual.header().protocol() != protocol)
 			throw new IllegalArgumentException("A recording of protocol " + protocol + " cannot be compared with one of "
-					+ "protocol " + actual.getHeader().getProtocol() + ", whose packets mean other things");
+					+ "protocol " + actual.header().protocol() + ", whose packets mean other things");
 		checkFields(mask);
 
-		Stream left = Stream.of(expected.getFrames(), mask);
-		Stream right = Stream.of(actual.getFrames(), mask);
+		Stream left = Stream.of(expected.frames(), mask);
+		Stream right = Stream.of(actual.frames(), mask);
 		List<StreamAlignment.Step> steps = StreamAlignment.align(left.keys(), right.keys());
 		if (steps == null) return List.of(diverging(left, right));
 
@@ -89,7 +89,7 @@ public final class PacketComparison {
 	private @Nullable String compare(ClientboundFrame expected, ClientboundFrame actual, PacketMask mask, EntityPairing entities) {
 		ClientboundPacket expectedValue = expected.packet().orElse(null);
 		ClientboundPacket actualValue = actual.packet().orElse(null);
-		Set<String> ignored = expectedValue == null ? null : mask.getFields().get(expectedValue.getClass());
+		Set<String> ignored = expectedValue == null ? null : mask.fields().get(expectedValue.getClass());
 		if (ignored != null) return values(expectedValue, actualValue, ignored, entities);
 
 		byte[] expectedBytes = expected.payload();
@@ -199,7 +199,7 @@ public final class PacketComparison {
 	 * Checks that each field a mask names is a property of its packet class in the Java protocol's JSON form.
 	 */
 	private void checkFields(PacketMask mask) {
-		for (Map.Entry<Class<? extends ClientboundPacket>, Set<String>> masked : mask.getFields().entrySet()) {
+		for (Map.Entry<Class<? extends ClientboundPacket>, Set<String>> masked : mask.fields().entrySet()) {
 			Set<String> properties = new TreeSet<>();
 			for (BeanPropertyDefinition property : json.getSerializationConfig()
 					.introspect(json.constructType(masked.getKey())).findProperties())
@@ -222,10 +222,10 @@ public final class PacketComparison {
 			for (int position = 0; position < all.size(); position++) {
 				ClientboundFrame frame = all.get(position);
 				String name = frame.name().orElse(null);
-				if (name != null && mask.getNames().contains(name)) continue;
+				if (name != null && mask.names().contains(name)) continue;
 
 				frames.add(frame);
-				keys.add(frame.getState() + " " + (name == null ? "#" + frame.getId() : name));
+				keys.add(frame.state() + " " + (name == null ? "#" + frame.id() : name));
 				positions.add(position);
 			}
 

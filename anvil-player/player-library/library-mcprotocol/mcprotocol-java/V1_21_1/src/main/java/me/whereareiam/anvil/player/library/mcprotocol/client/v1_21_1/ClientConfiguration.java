@@ -31,7 +31,7 @@ final class ClientConfiguration extends ConfigurationStart {
 
 	@Override
 	protected @NotNull Packet information(@NotNull ClientSettings settings) {
-		return new ServerboundClientInformationPacket(settings.getLocale(), settings.getViewDistance(), ChatVisibility.FULL,
+		return new ServerboundClientInformationPacket(settings.locale(), settings.viewDistance(), ChatVisibility.FULL,
 				CHAT_COLORS, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, TEXT_FILTERING, SERVER_LISTING);
 	}
 }

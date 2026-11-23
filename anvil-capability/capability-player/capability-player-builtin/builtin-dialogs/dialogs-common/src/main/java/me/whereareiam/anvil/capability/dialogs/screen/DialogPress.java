@@ -46,67 +46,67 @@ public final class DialogPress {
 		Map<String, Filled> filled = fill(inputs, values);
 		if (action == null) return null;
 
-		return switch (action.getType()) {
-			case RUN_COMMAND -> DialogClick.command(withoutSlash(action.getValue()));
-			case DYNAMIC_RUN_COMMAND -> DialogClick.command(withoutSlash(substitute(action.getValue(), filled)));
+		return switch (action.type()) {
+			case RUN_COMMAND -> DialogClick.command(withoutSlash(action.value()));
+			case DYNAMIC_RUN_COMMAND -> DialogClick.command(withoutSlash(substitute(action.value(), filled)));
 			case CUSTOM -> DialogClick.custom(handle(action), List.of());
 			case DYNAMIC_CUSTOM -> DialogClick.custom(handle(action), filled.values().stream()
 					.map(Filled::value)
 					.toList());
 			case SUGGEST_COMMAND, OPEN_URL, COPY_TO_CLIPBOARD, CHANGE_PAGE, SHOW_DIALOG -> null;
-			case OTHER -> throw new IllegalArgumentException("The button runs the action " + action.getValue()
+			case OTHER -> throw new IllegalArgumentException("The button runs the action " + action.value()
 					+ ", which Anvil does not know");
 		};
 	}
 
 	private static long handle(DialogAction action) {
-		if (action.getHandle() == null)
-			throw new IllegalArgumentException("The custom action " + action.getValue()
+		if (action.handle() == null)
+			throw new IllegalArgumentException("The custom action " + action.value()
 					+ " has no handle; only actions of a dialog the server showed can be pressed");
 
-		return action.getHandle();
+		return action.handle();
 	}
 
 	private static Map<String, Filled> fill(List<DialogInput> inputs, Map<String, String> values) {
 		Map<String, DialogInput> byKey = new LinkedHashMap<>();
-		for (DialogInput input : inputs) byKey.put(input.getKey(), input);
+		for (DialogInput input : inputs) byKey.put(input.key(), input);
 		for (String key : values.keySet())
 			if (!byKey.containsKey(key))
 				throw new IllegalArgumentException("The dialog has no input " + key + "; inputs: " + byKey.keySet());
 
 		Map<String, Filled> filled = new LinkedHashMap<>();
 		for (DialogInput input : inputs) {
-			if (input.getType() == DialogInputType.OTHER) {
-				if (values.containsKey(input.getKey()))
-					throw new IllegalArgumentException("Input " + input.getKey() + " has a type Anvil does not know");
+			if (input.type() == DialogInputType.OTHER) {
+				if (values.containsKey(input.key()))
+					throw new IllegalArgumentException("Input " + input.key() + " has a type Anvil does not know");
 				continue;
 			}
 
-			String value = values.getOrDefault(input.getKey(), input.getInitial());
-			filled.put(input.getKey(), new Filled(input, check(input, value)));
+			String value = values.getOrDefault(input.key(), input.initial());
+			filled.put(input.key(), new Filled(input, check(input, value)));
 		}
 		return filled;
 	}
 
 	private static DialogValue check(DialogInput input, String value) {
-		switch (input.getType()) {
+		switch (input.type()) {
 			case TEXT -> {
-				if (input.getMaxLength() != null && value.length() > input.getMaxLength())
-					throw new IllegalArgumentException("Input " + input.getKey() + " accepts at most " + input.getMaxLength()
+				if (input.maxLength() != null && value.length() > input.maxLength())
+					throw new IllegalArgumentException("Input " + input.key() + " accepts at most " + input.maxLength()
 							+ " characters");
 			}
 			case BOOLEAN -> {
 				if (!value.equals("true") && !value.equals("false"))
-					throw new IllegalArgumentException("Input " + input.getKey() + " accepts true or false, not " + value);
+					throw new IllegalArgumentException("Input " + input.key() + " accepts true or false, not " + value);
 			}
 			case SINGLE_OPTION -> {
-				if (input.getOptions().stream().map(DialogOption::getId).noneMatch(value::equals))
-					throw new IllegalArgumentException("Input " + input.getKey() + " has no option " + value);
+				if (input.options().stream().map(DialogOption::id).noneMatch(value::equals))
+					throw new IllegalArgumentException("Input " + input.key() + " has no option " + value);
 			}
 			case NUMBER_RANGE -> checkNumber(input, value);
 			case OTHER -> throw new IllegalStateException("Inputs of unknown types are not filled");
 		}
-		return new DialogValue(input.getKey(), input.getType(), value);
+		return new DialogValue(input.key(), input.type(), value);
 	}
 
 	private static void checkNumber(DialogInput input, String value) {
@@ -114,13 +114,13 @@ public final class DialogPress {
 		try {
 			number = Float.parseFloat(value);
 		} catch (NumberFormatException failure) {
-			throw new IllegalArgumentException("Input " + input.getKey() + " accepts a number, not " + value);
+			throw new IllegalArgumentException("Input " + input.key() + " accepts a number, not " + value);
 		}
 
-		float start = input.getStart() == null ? Float.NEGATIVE_INFINITY : input.getStart();
-		float end = input.getEnd() == null ? Float.POSITIVE_INFINITY : input.getEnd();
+		float start = input.start() == null ? Float.NEGATIVE_INFINITY : input.start();
+		float end = input.end() == null ? Float.POSITIVE_INFINITY : input.end();
 		if (number < Math.min(start, end) || number > Math.max(start, end))
-			throw new IllegalArgumentException("Input " + input.getKey() + " accepts numbers from " + start + " to " + end
+			throw new IllegalArgumentException("Input " + input.key() + " accepts numbers from " + start + " to " + end
 					+ ", not " + value);
 	}
 
@@ -144,12 +144,12 @@ public final class DialogPress {
 
 	private record Filled(DialogInput input, DialogValue value) {
 		String substitution() {
-			return switch (input.getType()) {
-				case BOOLEAN -> Boolean.parseBoolean(value.getValue())
-						? orDefault(input.getOnTrue(), "true")
-						: orDefault(input.getOnFalse(), "false");
-				case NUMBER_RANGE -> number(Float.parseFloat(value.getValue()));
-				default -> value.getValue();
+			return switch (input.type()) {
+				case BOOLEAN -> Boolean.parseBoolean(value.value())
+						? orDefault(input.onTrue(), "true")
+						: orDefault(input.onFalse(), "false");
+				case NUMBER_RANGE -> number(Float.parseFloat(value.value()));
+				default -> value.value();
 			};
 		}
 

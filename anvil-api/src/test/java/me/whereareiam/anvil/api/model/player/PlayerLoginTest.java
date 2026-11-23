@@ -25,19 +25,19 @@ class PlayerLoginTest {
 	void defaultsToAnOfflineLoginAsThePlayerName() {
 		PlayerOptions options = PlayerOptions.builder().name("alice").build();
 
-		assertSame(PlayerLogin.offline(), options.getLogin());
-		assertEquals(AuthenticationMode.OFFLINE, options.getLogin().getAuthentication());
-		assertNull(options.getLogin().getUsername());
-		assertFalse(options.getLogin().isLeased());
+		assertSame(PlayerLogin.offline(), options.login());
+		assertEquals(AuthenticationMode.OFFLINE, options.login().authentication());
+		assertNull(options.login().username());
+		assertFalse(options.login().isLeased());
 	}
 
 	@Test
 	void offlineLoginCarriesOnlyAUsername() {
 		PlayerLogin login = PlayerLogin.offline("Alice");
 
-		assertEquals("Alice", login.getUsername());
-		assertNull(login.getAccountId());
-		assertNull(login.getSessionIdentity());
+		assertEquals("Alice", login.username());
+		assertNull(login.accountId());
+		assertNull(login.sessionIdentity());
 		assertThrows(IllegalArgumentException.class, () -> PlayerLogin.offline(" "));
 	}
 
@@ -45,9 +45,9 @@ class PlayerLoginTest {
 	void accountLoginsRequireAnAccountModeAndANonBlankId() {
 		PlayerLogin login = PlayerLogin.account(AuthenticationMode.ON_REQUEST, "main");
 
-		assertEquals(AuthenticationMode.ON_REQUEST, login.getAuthentication());
-		assertEquals("main", login.getAccountId());
-		assertNull(login.getUsername());
+		assertEquals(AuthenticationMode.ON_REQUEST, login.authentication());
+		assertEquals("main", login.accountId());
+		assertNull(login.username());
 		assertFalse(login.isLeased());
 		assertThrows(IllegalArgumentException.class, () -> PlayerLogin.account(AuthenticationMode.OFFLINE, "main"));
 		assertThrows(IllegalArgumentException.class, () -> PlayerLogin.account(AuthenticationMode.ONLINE, ""));
@@ -57,8 +57,8 @@ class PlayerLoginTest {
 	void sessionLoginsReplaceTheAccountId() {
 		PlayerLogin login = PlayerLogin.session(AuthenticationMode.ONLINE, IDENTITY);
 
-		assertSame(IDENTITY, login.getSessionIdentity());
-		assertNull(login.getAccountId());
+		assertSame(IDENTITY, login.sessionIdentity());
+		assertNull(login.accountId());
 		assertFalse(login.isLeased());
 		assertThrows(IllegalArgumentException.class, () -> PlayerLogin.session(AuthenticationMode.OFFLINE, IDENTITY));
 	}
@@ -68,8 +68,8 @@ class PlayerLoginTest {
 		PlayerLogin login = PlayerLogin.leased(AuthenticationMode.ONLINE);
 
 		assertTrue(login.isLeased());
-		assertNull(login.getAccountId());
-		assertNull(login.getSessionIdentity());
+		assertNull(login.accountId());
+		assertNull(login.sessionIdentity());
 		assertThrows(IllegalArgumentException.class, () -> PlayerLogin.leased(AuthenticationMode.OFFLINE));
 	}
 }

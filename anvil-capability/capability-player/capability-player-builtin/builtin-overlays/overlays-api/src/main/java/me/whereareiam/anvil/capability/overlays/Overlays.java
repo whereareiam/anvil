@@ -23,7 +23,7 @@ import java.util.List;
  * BossBarWatch bars = overlays.watchBossBars();
  * messages.command("event start");
  * titles.shown("Event started");
- * BossBar event = bars.shown(bar -> bar.getText().contains("Event") && bar.getProgress() == 1F, timeout);
+ * BossBar event = bars.shown(bar -> bar.text().contains("Event") && bar.progress() == 1F, timeout);
  * }</pre>
  */
 public interface Overlays extends PlayerCapability {
@@ -62,7 +62,7 @@ public interface Overlays extends PlayerCapability {
 	 * <pre>{@code
 	 * TitleWatch titles = overlays.watchTitles();
 	 * messages.command("example announce");
-	 * titles.shown(title -> title.getTitle().contains("Announcement") && title.getSubtitle().contains("Alice"), timeout);
+	 * titles.shown(title -> title.title().contains("Announcement") && title.subtitle().contains("Alice"), timeout);
 	 * }</pre>
 	 *
 	 * @return a watch that starts after the last title shown so far
@@ -88,7 +88,7 @@ public interface Overlays extends PlayerCapability {
 	 * <pre>{@code
 	 * BossBarWatch bars = overlays.watchBossBars();
 	 * BossBar trending = bars.shown("Trending");
-	 * bars.removed(bar -> bar.getId().equals(trending.getId()), timeout);
+	 * bars.removed(bar -> bar.id().equals(trending.id()), timeout);
 	 * }</pre>
 	 *
 	 * @return a watch that starts after the last boss bar change so far

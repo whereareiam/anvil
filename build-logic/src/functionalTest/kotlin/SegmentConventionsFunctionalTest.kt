@@ -383,6 +383,7 @@ class SegmentConventionsFunctionalTest {
 		System.getProperty("anvil.buildlogic.linkageTool.files").split(File.pathSeparator).map(::File).forEach { source ->
 			source.copyTo(File(commonSources, source.relativeTo(toolRoot).path))
 		}
+		File(System.getProperty("anvil.buildlogic.linkageTool.lombokConfig")).copyTo(project.file("lombok.config"))
 		project.write("build.gradle.kts", """
 			allprojects {
 				group = "me.whereareiam.anvil"

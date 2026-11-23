@@ -44,7 +44,7 @@ public final class ProcessSlot {
 	private volatile boolean cancelled;
 
 	public @NotNull String name() {
-		return spec.getRequest().getName();
+		return spec.request().name();
 	}
 
 	public void prepare() {
@@ -70,8 +70,8 @@ public final class ProcessSlot {
 
 			current.start(() -> target.start(
 							preparedLaunch.command()),
-					spec.getReadinessPattern(),
-					spec.getStopCommand(),
+					spec.readinessPattern(),
+					spec.stopCommand(),
 					startupTimeout
 			);
 			attach(preparedLaunch, current);
@@ -88,9 +88,9 @@ public final class ProcessSlot {
 	}
 
 	private ManagedProcess create(PreparedProcess prepared) {
-		if (spec.isContainer())
+		if (spec.container())
 			return new ManagedContainer(name(), target.address(), target.listeners(), spec.consoleDirectory(), prepared.files());
-		if (spec.isProxy())
+		if (spec.proxy())
 			return new ManagedProxy(name(), target.address(), target.listeners(), spec.consoleDirectory(), prepared.files(),
 					prepared.capabilities());
 

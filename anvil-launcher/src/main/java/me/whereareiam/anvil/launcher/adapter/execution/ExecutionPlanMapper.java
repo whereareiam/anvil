@@ -39,7 +39,7 @@ public final class ExecutionPlanMapper {
 	 * @return execution provider identifier
 	 */
 	public @NotNull String executionProviderId(@NotNull AnvilScenario scenario) {
-		return scenario.getExecutionProviderId() == null ? options.getExecutionProviderId() : scenario.getExecutionProviderId();
+		return scenario.executionProviderId() == null ? options.executionProviderId() : scenario.executionProviderId();
 	}
 
 	/**
@@ -55,22 +55,22 @@ public final class ExecutionPlanMapper {
 			@NotNull WorkspaceLayout layout,
 			@NotNull Map<String, InetSocketAddress> peers
 	) {
-		AnvilScenario scenario = platforms.getScenario();
+		AnvilScenario scenario = platforms.scenario();
 		var plan = ExecutionPlan.builder()
 				.executionProviderId(executionProviderId(scenario))
 				.context(ExecutionContext.builder()
-						.processPriority(options.getProcessScheduling().getPriority())
-						.offline(options.isOffline())
-						.refresh(options.isRefresh())
-						.networkPolicy(scenario.getNetworkPolicy())
+						.processPriority(options.processScheduling().priority())
+						.offline(options.offline())
+						.refresh(options.refresh())
+						.networkPolicy(scenario.networkPolicy())
 						.build())
-				.processTimeouts(scenario.getProcessTimeouts().withDefaults(options.getProcessTimeouts()))
-				.processScheduling(options.getProcessScheduling())
+				.processTimeouts(scenario.processTimeouts().withDefaults(options.processTimeouts()))
+				.processScheduling(options.processScheduling())
 				.peers(peers);
-		List<String> containers = scenario.getContainers().stream().map(ContainerProcess::getName).toList();
-		scenario.getContainers().forEach(container -> plan.process(container(container, layout)));
-		platforms.getProcesses().forEach((name, process) ->
-				plan.process(process(name, process, layout, platforms.getProcesses().keySet(), containers)));
+		List<String> containers = scenario.containers().stream().map(ContainerProcess::name).toList();
+		scenario.containers().forEach(container -> plan.process(container(container, layout)));
+		platforms.processes().forEach((name, process) ->
+				plan.process(process(name, process, layout, platforms.processes().keySet(), containers)));
 
 		return plan.build();
 	}
@@ -82,27 +82,27 @@ public final class ExecutionPlanMapper {
 			@NotNull Set<String> planned,
 			@NotNull List<String> containers
 	) {
-		MinecraftProcess declaration = plan.getDeclaration();
+		MinecraftProcess declaration = plan.declaration();
 		var request = ProcessRequest.builder()
 				.name(name)
 				.workspace(layout.processDirectory(name))
-				.javaSelection(plan.getJavaSelection())
-				.agent(plan.isAgent())
-				.publishGame(plan.isPublishGame())
-				.listeners(plan.getDeclaration().getListeners())
+				.javaSelection(plan.javaSelection())
+				.agent(plan.agent())
+				.publishGame(plan.publishGame())
+				.listeners(plan.declaration().listeners())
 				.build();
 
 		return ProcessSpec.builder()
 				.request(request)
 				.consoleDirectory(consoleDirectory(request))
-				.proxy(plan.isProxy())
+				.proxy(plan.proxy())
 				// A dependency outside the plan is a peer that already runs.
-				.dependencies(plan.getDependencies().stream().filter(planned::contains).toList())
+				.dependencies(plan.dependencies().stream().filter(planned::contains).toList())
 				// The scenario's containers, such as a database a plugin connects to, run before its servers and proxies.
 				.dependencies(containers)
-				.readinessPattern(plan.getReadinessPattern())
-				.stopCommand(plan.getStopCommand())
-				.memoryMegabytes(declaration.getMemoryMegabytes())
+				.readinessPattern(plan.readinessPattern())
+				.stopCommand(plan.stopCommand())
+				.memoryMegabytes(declaration.memoryMegabytes())
 				.build();
 	}
 
@@ -111,20 +111,20 @@ public final class ExecutionPlanMapper {
 	 * directory, at the place the workspace has below the workbench's.
 	 */
 	private @NotNull Path consoleDirectory(@NotNull ProcessRequest request) {
-		Path workspace = request.getWorkspace();
-		if (workbench.workDirectory().equals(options.getWorkDirectory()) || !workspace.startsWith(workbench.workDirectory()))
+		Path workspace = request.workspace();
+		if (workbench.workDirectory().equals(options.workDirectory()) || !workspace.startsWith(workbench.workDirectory()))
 			return workspace;
 
-		return options.getWorkDirectory().resolve(workbench.workDirectory().relativize(workspace).toString());
+		return options.workDirectory().resolve(workbench.workDirectory().relativize(workspace).toString());
 	}
 
 	private @NotNull ProcessSpec container(@NotNull ContainerProcess container, @NotNull WorkspaceLayout layout) {
 		var request = ProcessRequest.builder()
-				.name(container.getName())
-				.workspace(layout.processDirectory(container.getName()))
+				.name(container.name())
+				.workspace(layout.processDirectory(container.name()))
 				.image(ContainerImage.builder()
-						.image(container.getImage())
-						.ports(container.getPorts())
+						.image(container.image())
+						.ports(container.ports())
 						.build())
 				.build();
 
@@ -132,9 +132,9 @@ public final class ExecutionPlanMapper {
 				.request(request)
 				.consoleDirectory(consoleDirectory(request))
 				.container(true)
-				.readinessPattern(container.getReadyLog() == null ? null : Pattern.compile(container.getReadyLog()))
-				.memoryMegabytes(container.getMemoryMegabytes())
-				.executionProviderId(container.getExecutionProviderId())
+				.readinessPattern(container.readyLog() == null ? null : Pattern.compile(container.readyLog()))
+				.memoryMegabytes(container.memoryMegabytes())
+				.executionProviderId(container.executionProviderId())
 				.build();
 	}
 }

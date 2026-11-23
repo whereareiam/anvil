@@ -92,24 +92,24 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 				protocol.listen(ClientboundGameEvent.class, dimension::event),
 				protocol.listen(ClientboundInitializeBorder.class, dimension::border),
 				protocol.listen(ClientboundSetBorderCenter.class, center -> dimension.border(border -> border.toBuilder()
-						.centerX(center.getCenterX())
-						.centerZ(center.getCenterZ())
+						.centerX(center.centerX())
+						.centerZ(center.centerZ())
 						.build())),
 				protocol.listen(ClientboundSetBorderLerpSize.class, lerp -> dimension.border(border -> border.toBuilder()
-						.size(lerp.getNewSize())
-						.lerpFrom(lerp.getOldSize())
-						.lerpTicks(lerp.getLerpTime())
+						.size(lerp.newSize())
+						.lerpFrom(lerp.oldSize())
+						.lerpTicks(lerp.lerpTime())
 						.build())),
 				protocol.listen(ClientboundSetBorderSize.class, size -> dimension.border(border -> border.toBuilder()
-						.size(size.getSize())
-						.lerpFrom(size.getSize())
+						.size(size.size())
+						.lerpFrom(size.size())
 						.lerpTicks(0)
 						.build())),
 				protocol.listen(ClientboundSetBorderWarningDelay.class, delay -> dimension.border(border -> border.toBuilder()
-						.warningTime(delay.getWarningDelay())
+						.warningTime(delay.warningDelay())
 						.build())),
 				protocol.listen(ClientboundSetBorderWarningDistance.class, distance -> dimension.border(border -> border.toBuilder()
-						.warningBlocks(distance.getWarningBlocks())
+						.warningBlocks(distance.warningBlocks())
 						.build())),
 				protocol.listen(ClientboundSetDefaultSpawnPosition.class, dimension::spawn),
 				blocks.listen(),
@@ -145,25 +145,25 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 			state = WorldState.EMPTY;
 			if (observed)
 				player.emit(WorldChannel.SERVER, ServerLevels.builder()
-						.hardcore(login.isHardcore())
-						.levels(login.getLevels())
+						.hardcore(login.hardcore())
+						.levels(login.levels())
 						.build());
-			entered(login.getDimension(), login.getDimensionType(), login.isDebug(), login.isFlat());
+			entered(login.dimension(), login.dimensionType(), login.debug(), login.flat());
 		}
 
 		private synchronized void respawned(ClientboundRespawn respawn) {
-			entered(respawn.getDimension(), respawn.getDimensionType(), respawn.isDebug(), respawn.isFlat());
+			entered(respawn.dimension(), respawn.dimensionType(), respawn.debug(), respawn.flat());
 		}
 
 		private void entered(String dimension, DimensionType type, boolean debug, boolean flat) {
 			if (!observed) return;
 
-			var levelType = new me.whereareiam.anvil.capability.world.model.level.DimensionType(type.getKey(),
-					environment(type), type.getMinY(), type.getHeight());
+			var levelType = new me.whereareiam.anvil.capability.world.model.level.DimensionType(type.key(),
+					environment(type), type.minY(), type.height());
 			Level level = new Level(dimension, levelType, generation(debug, flat));
-			player.emit(WorldChannel.DIMENSION, new DimensionChange(current == null ? null : current.getDimension(),
+			player.emit(WorldChannel.DIMENSION, new DimensionChange(current == null ? null : current.dimension(),
 					dimension, level));
-			boolean anotherLevel = current == null || !current.getDimension().equals(dimension);
+			boolean anotherLevel = current == null || !current.dimension().equals(dimension);
 			current = level;
 			this.type = type;
 
@@ -176,8 +176,8 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 			if (!observed || current == null) return;
 
 			lastTime = time;
-			for (Map.Entry<String, ClockState> update : time.getClockUpdates().entrySet())
-				clocks.put(update.getKey(), new Clock(update.getValue().getTotalTicks(), update.getValue().getRate()));
+			for (Map.Entry<String, ClockState> update : time.clockUpdates().entrySet())
+				clocks.put(update.getKey(), new Clock(update.getValue().totalTicks(), update.getValue().rate()));
 			emit(state.toBuilder().time(time()).build());
 		}
 
@@ -188,19 +188,19 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 		private @Nullable WorldTime time() {
 			ClientboundSetTime time = lastTime;
 			if (time == null) return null;
-			if (time.getDayTime() != null)
+			if (time.dayTime() != null)
 				return WorldTime.builder()
-						.gameTime(time.getGameTime())
-						.dayTime(time.getDayTime())
-						.advancing(time.isTickDayTime())
+						.gameTime(time.gameTime())
+						.dayTime(time.dayTime())
+						.advancing(time.tickDayTime())
 						.build();
 
-			String clockKey = type == null ? null : type.getDefaultClock();
+			String clockKey = type == null ? null : type.defaultClock();
 			Clock clock = clockKey == null ? null : clocks.get(clockKey);
 			return WorldTime.builder()
-					.gameTime(time.getGameTime())
-					.dayTime(clock == null ? null : clock.getTicks())
-					.advancing(clock != null && clock.getRate() != 0)
+					.gameTime(time.gameTime())
+					.dayTime(clock == null ? null : clock.ticks())
+					.advancing(clock != null && clock.rate() != 0)
 					.clocks(clocks)
 					.build();
 		}
@@ -212,12 +212,12 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 		private synchronized void event(ClientboundGameEvent event) {
 			if (!observed || current == null) return;
 
-			Weather weather = state.getWeather() == null ? Weather.CLEAR : state.getWeather();
-			Weather next = switch (event.getEvent()) {
+			Weather weather = state.weather() == null ? Weather.CLEAR : state.weather();
+			Weather next = switch (event.event()) {
 				case START_RAINING -> weather.toBuilder().rainLevel(0).build();
 				case STOP_RAINING -> weather.toBuilder().rainLevel(1).build();
-				case RAIN_LEVEL_CHANGE -> weather.toBuilder().rainLevel(event.getValue()).build();
-				case THUNDER_LEVEL_CHANGE -> weather.toBuilder().thunderLevel(event.getValue()).build();
+				case RAIN_LEVEL_CHANGE -> weather.toBuilder().rainLevel(event.value()).build();
+				case THUNDER_LEVEL_CHANGE -> weather.toBuilder().thunderLevel(event.value()).build();
 				default -> null;
 			};
 			if (next != null) emit(state.toBuilder().weather(next).build());
@@ -227,14 +227,14 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 			if (!observed || current == null) return;
 
 			emit(state.toBuilder().border(WorldBorder.builder()
-					.centerX(border.getCenterX())
-					.centerZ(border.getCenterZ())
-					.size(border.getNewSize())
-					.lerpFrom(border.getOldSize())
-					.lerpTicks(border.getLerpTime())
-					.absoluteMaxSize(border.getAbsoluteMaxSize())
-					.warningBlocks(border.getWarningBlocks())
-					.warningTime(border.getWarningTime())
+					.centerX(border.centerX())
+					.centerZ(border.centerZ())
+					.size(border.newSize())
+					.lerpFrom(border.oldSize())
+					.lerpTicks(border.lerpTime())
+					.absoluteMaxSize(border.absoluteMaxSize())
+					.warningBlocks(border.warningBlocks())
+					.warningTime(border.warningTime())
 					.build()).build());
 		}
 
@@ -245,21 +245,21 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 		private synchronized void border(UnaryOperator<WorldBorder> change) {
 			if (!observed || current == null) return;
 
-			WorldBorder border = state.getBorder() == null ? DEFAULT_BORDER : state.getBorder();
+			WorldBorder border = state.border() == null ? DEFAULT_BORDER : state.border();
 			emit(state.toBuilder().border(change.apply(border)).build());
 		}
 
 		private synchronized void spawn(ClientboundSetDefaultSpawnPosition spawn) {
 			if (!observed || current == null) return;
 
-			BlockPosition position = spawn.getPosition();
+			BlockPosition position = spawn.position();
 			emit(state.toBuilder().spawn(SpawnPoint.builder()
-					.dimension(spawn.getDimension() == null ? current.getDimension() : spawn.getDimension())
-					.x(position.getX())
-					.y(position.getY())
-					.z(position.getZ())
-					.yaw(spawn.getYaw())
-					.pitch(spawn.getPitch())
+					.dimension(spawn.dimension() == null ? current.dimension() : spawn.dimension())
+					.x(position.x())
+					.y(position.y())
+					.z(position.z())
+					.yaw(spawn.yaw())
+					.pitch(spawn.pitch())
 					.build()).build());
 		}
 
@@ -278,7 +278,7 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 			state = WorldState.EMPTY;
 			if (!observed) return;
 			if (known) player.emit(WorldChannel.STATE, WorldState.EMPTY);
-			if (left != null) player.emit(WorldChannel.LEFT, left.getDimension());
+			if (left != null) player.emit(WorldChannel.LEFT, left.dimension());
 		}
 
 		/**
@@ -301,10 +301,10 @@ public final class JavaWorldExtension implements WorkerExtension<Object> {
 		 * other pair, such as a mod's.
 		 */
 		private static Environment environment(DimensionType type) {
-			if (type.getSkybox() == Skybox.OVERWORLD && type.getCardinalLight() == CardinalLight.DEFAULT)
+			if (type.skybox() == Skybox.OVERWORLD && type.cardinalLight() == CardinalLight.DEFAULT)
 				return Environment.OVERWORLD;
-			if (type.getSkybox() == Skybox.NONE && type.getCardinalLight() == CardinalLight.NETHER) return Environment.NETHER;
-			if (type.getSkybox() == Skybox.END && type.getCardinalLight() == CardinalLight.DEFAULT) return Environment.END;
+			if (type.skybox() == Skybox.NONE && type.cardinalLight() == CardinalLight.NETHER) return Environment.NETHER;
+			if (type.skybox() == Skybox.END && type.cardinalLight() == CardinalLight.DEFAULT) return Environment.END;
 
 			return Environment.CUSTOM;
 		}

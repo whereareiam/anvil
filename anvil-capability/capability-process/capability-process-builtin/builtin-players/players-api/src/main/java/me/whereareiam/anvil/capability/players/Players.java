@@ -23,7 +23,7 @@ import java.util.Optional;
  * PlayerWatch joins = lobby.watch();
  * session.connect();
  * joins.joined(alice);
- * assertEquals("Alice", lobby.profile(alice).orElseThrow().getUsername());
+ * assertEquals("Alice", lobby.profile(alice).orElseThrow().username());
  * }</pre>
  */
 public interface Players extends ProcessCapability {

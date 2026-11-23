@@ -23,8 +23,8 @@ class AnvilLauncherTest {
 		AnvilScenario invalid = AnvilScenario.builder().name("empty").entrypoint("missing").build();
 		ScenarioEngine engine = AnvilLauncher.create(options);
 		try (engine) {
-			assertNull(options.getCacheDirectory());
-			assertNull(options.getJavaSelection().getRequirement().getFeatureVersion());
+			assertNull(options.cacheDirectory());
+			assertNull(options.javaSelection().requirement().featureVersion());
 			assertThrows(ScenarioValidationException.class, () -> engine.start(invalid));
 		}
 

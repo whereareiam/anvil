@@ -66,7 +66,7 @@ public class Block {
 	 * @throws UnknownBlockNameException when Anvil cannot name the state
 	 */
 	public @NotNull String name() {
-		return requireIdentity().getName();
+		return requireIdentity().name();
 	}
 
 	/**
@@ -87,7 +87,7 @@ public class Block {
 	 * @throws UnknownBlockNameException when Anvil cannot name the state
 	 */
 	public @NotNull Map<String, String> properties() {
-		return requireIdentity().getProperties();
+		return requireIdentity().properties();
 	}
 
 	/**
@@ -96,7 +96,7 @@ public class Block {
 	 * @return whether the state is one of air's
 	 * @throws UnknownBlockNameException when Anvil cannot name the state
 	 */
-	public boolean isAir() {
-		return requireIdentity().isAir();
+	public boolean air() {
+		return requireIdentity().air();
 	}
 }

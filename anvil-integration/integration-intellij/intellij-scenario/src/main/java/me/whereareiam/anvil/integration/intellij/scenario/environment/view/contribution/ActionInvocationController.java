@@ -56,9 +56,9 @@ final class ActionInvocationController {
 	private CommandHistory.Scope key(ActionInput input) {
 		return CommandHistory.Scope.builder()
 				.source(session.getSource().getId())
-				.definition(session.getScenario().getDefinition())
-				.target(action.getTarget().getType() + ":" + action.getTarget().getName())
-				.operation(action.getDefinition().getId() + ":" + input.getName())
+				.definition(session.getScenario().definition())
+				.target(action.target().type() + ":" + action.target().name())
+				.operation(action.definition().id() + ":" + input.name())
 				.build();
 	}
 
@@ -96,33 +96,33 @@ final class ActionInvocationController {
 
 		Objects.requireNonNull(result, "A successful invocation must return an action result");
 		form.showResult(result);
-		if (result.isSuccessful()) remember(arguments);
+		if (result.successful()) remember(arguments);
 
 	}
 
 	private void remember(Map<String, String> arguments) {
-		for (ActionInput input : action.getDefinition().getInputs()) {
-			if (input.isSensitive() || input.getType() == ActionInputType.BOOLEAN
-					|| input.getType() == ActionInputType.CHOICE
-					|| !arguments.containsKey(input.getName())) {
+		for (ActionInput input : action.definition().inputs()) {
+			if (input.sensitive() || input.type() == ActionInputType.BOOLEAN
+					|| input.type() == ActionInputType.CHOICE
+					|| !arguments.containsKey(input.name())) {
 				continue;
 			}
 
 			session.getIdeProject().getService(CommandHistory.class)
-					.submitted(key(input), arguments.get(input.getName()));
+					.submitted(key(input), arguments.get(input.name()));
 		}
 	}
 
 	private boolean canInvoke() {
 		return session.isActive()
-				&& session.getSnapshot().getSessionId() != null
-				&& session.getSnapshot().getState() == SessionState.RUNNING
-				&& session.getSnapshot().getActions()
+				&& session.getSnapshot().sessionId() != null
+				&& session.getSnapshot().state() == SessionState.RUNNING
+				&& session.getSnapshot().actions()
 					.stream()
 					.anyMatch(current ->
-							current.getTarget().equals(action.getTarget())
-									&& current.getDefinition().getId().equals(action.getDefinition().getId())
-									&& current.getAvailability().isEnabled());
+							current.target().equals(action.target())
+									&& current.definition().id().equals(action.definition().id())
+									&& current.availability().enabled());
 	}
 
 	private void updateAvailability() {

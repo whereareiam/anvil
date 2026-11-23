@@ -14,8 +14,8 @@ import java.util.Optional;
  *
  * <pre>{@code
  * BlockState state = registry.state(stateId);
- * boolean solid = !state.getCollision().isEmpty();
- * boolean wet = state.getFluid() == FluidType.WATER;
+ * boolean solid = !state.collision().isEmpty();
+ * boolean wet = state.fluid() == FluidType.WATER;
  * }</pre>
  */
 @Value
@@ -34,7 +34,7 @@ public class BlockState {
 	@NotNull Map<String, String> properties;
 	/**
 	 * The state's collision shape; empty for no collision. It holds for every entity and position only where the
-	 * block's {@link BlockType#getCollision() collision kind} is {@code FIXED}.
+	 * block's {@link BlockType#collision() collision kind} is {@code FIXED}.
 	 */
 	@NotNull CollisionShape collision;
 	/**
@@ -58,6 +58,6 @@ public class BlockState {
 	 * @return whether the block is {@code air}, {@code cave_air} or {@code void_air}
 	 */
 	public boolean isAir() {
-		return block.getKind() == BlockKind.AIR;
+		return block.kind() == BlockKind.AIR;
 	}
 }

@@ -30,7 +30,7 @@ public class GameConnection {
 	@NotNull InetSocketAddress address;
 
 	/**
-	 * Host the client writes into its handshake instead of the {@link #getAddress() address}'s host, or null for
+	 * Host the client writes into its handshake instead of the {@link #address() address}'s host, or null for
 	 * that host. The client still connects to the address and announces its port.
 	 */
 	@Nullable String virtualHost;

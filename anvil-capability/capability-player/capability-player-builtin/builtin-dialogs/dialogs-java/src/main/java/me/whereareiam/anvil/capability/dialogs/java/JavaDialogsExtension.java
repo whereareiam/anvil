@@ -105,7 +105,7 @@ public final class JavaDialogsExtension implements WorkerExtension<Object> {
 				protocol.listen(ClientboundRespawn.class, ignored -> reset(player, actions)),
 				protocol.listen(ClientboundStartConfiguration.class, ignored -> reset(player, actions)),
 				protocol.listen(ClientboundRegistryData.class, registry -> {
-					if (!registry.getRegistry().equals(DIALOG_REGISTRY)) return;
+					if (!registry.registry().equals(DIALOG_REGISTRY)) return;
 
 					actions.releaseRegistry();
 					player.emit(DialogsChannel.REGISTRY, registry(registry, registryReader));
@@ -132,13 +132,13 @@ public final class JavaDialogsExtension implements WorkerExtension<Object> {
 	 * @throws IllegalStateException when the named action is no longer kept
 	 */
 	private static ServerboundPacket packet(DialogClick click, ShownActions actions) {
-		if (click.getCommand() != null) return new ServerboundChatCommand(click.getCommand());
-		if (click.getAction() == null)
+		if (click.command() != null) return new ServerboundChatCommand(click.command());
+		if (click.action() == null)
 			throw new IllegalArgumentException("A click is a command or names a custom action");
 
-		ShownActions.CustomAction action = actions.find(click.getAction());
+		ShownActions.CustomAction action = actions.find(click.action());
 
-		return new ServerboundCustomClickAction(action.id(), ClickPayload.of(action.payload(), click.getValues()));
+		return new ServerboundCustomClickAction(action.id(), ClickPayload.of(action.payload(), click.values()));
 	}
 
 	/**
@@ -146,10 +146,10 @@ public final class JavaDialogsExtension implements WorkerExtension<Object> {
 	 * the default closing behaviour, until the host resolves it from the registry.
 	 */
 	private static Dialog shown(ClientboundShowDialog packet, DialogReader reader) {
-		Dialog.DialogBuilder shown = packet.getDialog() == null
-				? reference(packet.getRegistryId())
-				: reader.read(packet.getDialog()).toBuilder();
-		return shown.configuration(packet.isConfiguration()).build();
+		Dialog.DialogBuilder shown = packet.dialog() == null
+				? reference(packet.registryId())
+				: reader.read(packet.dialog()).toBuilder();
+		return shown.configuration(packet.configuration()).build();
 	}
 
 	private static Dialog.DialogBuilder reference(@Nullable Integer registryId) {
@@ -167,9 +167,9 @@ public final class JavaDialogsExtension implements WorkerExtension<Object> {
 	 */
 	private static DialogRegistry registry(ClientboundRegistryData packet, DialogReader reader) {
 		List<RegistryDialog> dialogs = new ArrayList<>();
-		for (RegistryEntry entry : packet.getEntries()) {
-			NbtCompound data = entry.getData() == null ? KnownDialogs.find(entry.getKey()) : entry.getData();
-			dialogs.add(new RegistryDialog(entry.getKey(), data == null ? null : reader.read(data)));
+		for (RegistryEntry entry : packet.entries()) {
+			NbtCompound data = entry.data() == null ? KnownDialogs.find(entry.key()) : entry.data();
+			dialogs.add(new RegistryDialog(entry.key(), data == null ? null : reader.read(data)));
 		}
 
 		return new DialogRegistry(dialogs);

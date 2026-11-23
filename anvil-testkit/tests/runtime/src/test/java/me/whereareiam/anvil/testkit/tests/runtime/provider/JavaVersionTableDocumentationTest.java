@@ -65,16 +65,16 @@ class JavaVersionTableDocumentationTest {
 
 	private static List<String> rows(String label, PlatformProvider provider) {
 		PlatformVersions versions = new PlatformVersionsReader().read(provider.id(), provider.versionData());
-		List<JavaCompatibility> compatibilities = versions.getJavaCompatibilities();
-		TreeSet<MinecraftVersion> known = new TreeSet<>(versions.getKnownVersions());
-		known.addAll(versions.getVerifiedJavaVersions().keySet());
+		List<JavaCompatibility> compatibilities = versions.javaCompatibilities();
+		TreeSet<MinecraftVersion> known = new TreeSet<>(versions.knownVersions());
+		known.addAll(versions.verifiedJavaVersions().keySet());
 		List<String> rows = new ArrayList<>();
 		for (int index = 0; index < compatibilities.size(); index++) {
 			JavaCompatibility row = compatibilities.get(index);
-			MinecraftVersion next = index + 1 < compatibilities.size() ? compatibilities.get(index + 1).getSince() : null;
-			rows.add("| " + label + " | " + versions(row.getSince(), next, known) + " | " + range(row, versions.getAgentMinimumJava())
-					+ " | " + plannedDefault(provider, representative(row.getSince(), next, known)) + " | "
-					+ verified(row.getSince(), next, versions) + " |");
+			MinecraftVersion next = index + 1 < compatibilities.size() ? compatibilities.get(index + 1).since() : null;
+			rows.add("| " + label + " | " + versions(row.since(), next, known) + " | " + range(row, versions.agentMinimumJava())
+					+ " | " + plannedDefault(provider, representative(row.since(), next, known)) + " | "
+					+ verified(row.since(), next, versions) + " |");
 		}
 
 		return rows;
@@ -107,17 +107,17 @@ class JavaVersionTableDocumentationTest {
 
 	private static String range(JavaCompatibility row, Integer agent) {
 		String range = bounds(row);
-		if (row.getMaximumBypassProperty() != null) range += "; newer with `-D" + row.getMaximumBypassProperty() + "=true`";
-		if (agent != null && agent > row.getMinimum()) range += "; the Anvil agent needs " + agent;
+		if (row.maximumBypassProperty() != null) range += "; newer with `-D" + row.maximumBypassProperty() + "=true`";
+		if (agent != null && agent > row.minimum()) range += "; the Anvil agent needs " + agent;
 
 		return range;
 	}
 
 	private static String bounds(JavaCompatibility row) {
-		if (row.getMaximum() == null) return "Java " + row.getMinimum() + " or newer";
-		if (row.getMaximum() == row.getMinimum()) return "Java " + row.getMinimum();
+		if (row.maximum() == null) return "Java " + row.minimum() + " or newer";
+		if (row.maximum() == row.minimum()) return "Java " + row.minimum();
 
-		return "Java " + row.getMinimum() + " to " + row.getMaximum();
+		return "Java " + row.minimum() + " to " + row.maximum();
 	}
 
 	/**
@@ -126,12 +126,12 @@ class JavaVersionTableDocumentationTest {
 	 */
 	private static int plannedDefault(PlatformProvider provider, @Nullable MinecraftVersion version) {
 		MinecraftProcess process = process(provider, "process", version);
-		var scenario = AnvilScenario.builder().name("java-table").entrypoint(process.getName());
+		var scenario = AnvilScenario.builder().name("java-table").entrypoint(process.name());
 		if (process instanceof MinecraftProxy proxy) scenario.proxy(proxy).server(backend());
 		if (process instanceof MinecraftServer server) scenario.server(server);
 
-		return planner().plan(scenario.build()).getProcesses().get(process.getName())
-				.getJavaSelection().getRequirement().getFeatureVersion();
+		return planner().plan(scenario.build()).processes().get(process.name())
+				.javaSelection().requirement().featureVersion();
 	}
 
 	private static MinecraftProcess process(PlatformProvider provider, String name, @Nullable MinecraftVersion version) {
@@ -188,7 +188,7 @@ class JavaVersionTableDocumentationTest {
 
 	private static String verified(MinecraftVersion since, MinecraftVersion next, PlatformVersions versions) {
 		Map<Set<Integer>, List<String>> byJava = new LinkedHashMap<>();
-		new TreeMap<>(versions.getVerifiedJavaVersions()).forEach((version, java) -> {
+		new TreeMap<>(versions.verifiedJavaVersions()).forEach((version, java) -> {
 			if (since != null && version.compareTo(since) < 0) return;
 			if (next != null && version.compareTo(next) >= 0) return;
 

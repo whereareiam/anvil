@@ -27,10 +27,10 @@ class PlayerRenderer(
 		val current = status.apply(player)
 		icon = StatusIcon.overlay(current.tone, current.label, AllIcons.General.User)
 		append(
-			player.displayName,
+			player.displayName(),
 			if (current == PlayerStatus.PRESENT) SimpleTextAttributes.REGULAR_ATTRIBUTES else SimpleTextAttributes.GRAYED_ATTRIBUTES
 		)
-		toolTipText = "${player.displayName} · ${current.label}"
+		toolTipText = "${player.displayName()} · ${current.label}"
 		accessibleContext?.accessibleDescription = toolTipText
 	}
 }

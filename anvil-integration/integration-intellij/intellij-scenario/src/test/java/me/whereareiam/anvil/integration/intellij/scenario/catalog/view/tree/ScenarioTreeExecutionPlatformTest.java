@@ -51,13 +51,13 @@ public class ScenarioTreeExecutionPlatformTest extends ScenarioPlatformTestCase 
 		assertStatus(tree, child(group, 0), "Running");
 		assertStatus(tree, child(group, 1), "Not started");
 		assertStatus(tree, child(group, 2), "Not started");
-		assertEquals(scenario.getDisplayName(), render(tree, group).getCharSequence(false).toString());
+		assertEquals(scenario.displayName(), render(tree, group).getCharSequence(false).toString());
 		assertEquals(firstText, render(tree, child(group, 0)).getCharSequence(false).toString());
-		assertTrue(render(tree, group).getToolTipText().contains(scenario.getDescription()));
+		assertTrue(render(tree, group).getToolTipText().contains(scenario.description()));
 		assertTrue(
 				render(tree, child(group, 0))
 						.getToolTipText()
-						.contains(scenario.getProcesses().getFirst().getDescription()));
+						.contains(scenario.processes().getFirst().description()));
 		assertEquals(
 				render(tree, group).getToolTipText(),
 				render(tree, group).getAccessibleContext().getAccessibleDescription());
@@ -77,7 +77,7 @@ public class ScenarioTreeExecutionPlatformTest extends ScenarioPlatformTestCase 
 		assertStatus(tree, node(tree, 0), "Partially running");
 		assertSame(ScenarioPresentation.scenarioIcon(), render(tree, node(tree, 1)).getIcon());
 		assertSame(ScenarioPresentation.scenarioIcon(), render(tree, node(tree, 2)).getIcon());
-		assertEquals(otherProvider.getDescription(), render(tree, node(tree, 1)).getToolTipText());
+		assertEquals(otherProvider.description(), render(tree, node(tree, 1)).getToolTipText());
 	}
 
 	public void testStatusUpdatesPreserveNodesSelectionExpansionAndSearchResults() {
@@ -120,7 +120,7 @@ public class ScenarioTreeExecutionPlatformTest extends ScenarioPlatformTestCase 
 		assertStatus(tree, child(group, 0), "Stopped");
 		showExecution(tree, null, null);
 		assertSame(ScenarioPresentation.scenarioIcon(), render(tree, group).getIcon());
-		assertEquals(scenario.getDescription(), render(tree, group).getToolTipText());
+		assertEquals(scenario.description(), render(tree, group).getToolTipText());
 		assertFalse(render(tree, child(group, 0)).getToolTipText().contains("Running"));
 
 		showExecution(tree, scenario, snapshot(SessionState.RUNNING, live("paper", "READY")));
@@ -142,9 +142,9 @@ public class ScenarioTreeExecutionPlatformTest extends ScenarioPlatformTestCase 
 				tree, child(group, 2), StatusIcon.overlay(StatusPresentation.Tone.RUNNING, "Running", ScenarioPresentation.processIcon(ProcessRole.PROXY)));
 		assertIcon(tree, group, StatusIcon.overlay(StatusPresentation.Tone.TRANSITION, "Partially running", ScenarioPresentation.scenarioIcon()));
 		for (int index : List.of(0, 2)) {
-			var process = scenario.getProcesses().get(index);
+			var process = scenario.processes().get(index);
 			var standalone =
-					scenario.toBuilder().name(process.getName()).clearProcesses().process(process).build();
+					scenario.toBuilder().name(process.name()).clearProcesses().process(process).build();
 			tree.showScenarios(List.of(standalone), "");
 			showExecution(tree, standalone, snapshot(SessionState.STARTING));
 			assertEquals(0, node(tree, 0).getChildCount());
@@ -170,13 +170,13 @@ public class ScenarioTreeExecutionPlatformTest extends ScenarioPlatformTestCase 
 		var base = ScenarioFixtures.scenario();
 		return base.toBuilder()
 				.clearProcesses()
-				.process(base.getProcesses().getFirst())
+				.process(base.processes().getFirst())
 				.process(
-						base.getProcesses().getFirst().toBuilder()
+						base.processes().getFirst().toBuilder()
 								.name("game")
 								.displayName("Game backend")
 								.build())
-				.process(base.getProcesses().getLast())
+				.process(base.processes().getLast())
 				.build();
 	}
 

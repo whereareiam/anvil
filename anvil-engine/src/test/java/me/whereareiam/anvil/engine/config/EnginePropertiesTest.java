@@ -43,22 +43,22 @@ final class EnginePropertiesTest {
 
 		EngineOptions options = EngineProperties.from(properties);
 
-		assertEquals("mcprotocol", options.getProtocolLibrary());
-		assertEquals(SupportPolicy.STRICT, options.getSupportPolicy());
-		assertEquals(Map.of("mcprotocol", Path.of("releases.toml")), options.getProtocolReleases());
+		assertEquals("mcprotocol", options.protocolLibrary());
+		assertEquals(SupportPolicy.STRICT, options.supportPolicy());
+		assertEquals(Map.of("mcprotocol", Path.of("releases.toml")), options.protocolReleases());
 	}
 
 	@Test
 	void leavesProcessorsUnlimitedAndPriorityNormalUnlessConfigured() {
-		assertNull(EngineProperties.from(new Properties()).getProcessScheduling().getProcessors());
-		assertEquals(ProcessPriority.NORMAL, EngineProperties.from(new Properties()).getProcessScheduling().getPriority());
+		assertNull(EngineProperties.from(new Properties()).processScheduling().processors());
+		assertEquals(ProcessPriority.NORMAL, EngineProperties.from(new Properties()).processScheduling().priority());
 
 		Properties properties = new Properties();
 		properties.setProperty(EngineProperties.PROCESSORS_PROPERTY, "4");
 		properties.setProperty(EngineProperties.PROCESS_PRIORITY_PROPERTY, "Low");
-		var scheduling = EngineProperties.from(properties).getProcessScheduling();
-		assertEquals(4, scheduling.getProcessors());
-		assertEquals(ProcessPriority.LOW, scheduling.getPriority());
+		var scheduling = EngineProperties.from(properties).processScheduling();
+		assertEquals(4, scheduling.processors());
+		assertEquals(ProcessPriority.LOW, scheduling.priority());
 	}
 
 	@Test
@@ -74,7 +74,7 @@ final class EnginePropertiesTest {
 
 	@Test
 	void defaultsToLenientSupportAndRejectsUnknownPolicies() {
-		assertEquals(SupportPolicy.LENIENT, EngineProperties.from(new Properties()).getSupportPolicy());
+		assertEquals(SupportPolicy.LENIENT, EngineProperties.from(new Properties()).supportPolicy());
 
 		Properties properties = new Properties();
 		properties.setProperty(EngineProperties.SUPPORT_POLICY_PROPERTY, "relaxed");
@@ -92,12 +92,12 @@ final class EnginePropertiesTest {
 
 		EngineOptions options = EngineProperties.fromSystemProperties();
 
-		assertEquals("mcprotocol", options.getProtocolLibrary());
-		assertTrue(options.isEulaAccepted());
-		assertEquals(Path.of("cache"), options.getCacheDirectory());
-		assertEquals(Path.of("work"), options.getWorkDirectory());
-		assertEquals(21, options.getJavaSelection().getRequirement().getFeatureVersion());
-		assertEquals(Path.of("server.jar"), options.getArtifacts().get("server"));
+		assertEquals("mcprotocol", options.protocolLibrary());
+		assertTrue(options.eulaAccepted());
+		assertEquals(Path.of("cache"), options.cacheDirectory());
+		assertEquals(Path.of("work"), options.workDirectory());
+		assertEquals(21, options.javaSelection().requirement().featureVersion());
+		assertEquals(Path.of("server.jar"), options.artifacts().get("server"));
 	}
 
 	@Test
@@ -113,14 +113,14 @@ final class EnginePropertiesTest {
 
 		EngineOptions options = EngineProperties.from(properties);
 		properties.setProperty(EngineProperties.JAVA_VERSION_PROPERTY, "32");
-		assertEquals(32, options.getJavaSelection().getRequirement().getFeatureVersion());
-		assertFalse(options.isKeepFailedWorkspaces());
-		assertFalse(options.isDownloadJava());
-		assertEquals(Duration.ofSeconds(7), options.getProcessTimeouts().getShutdown());
-		assertEquals(Duration.ofMinutes(3), options.getProcessTimeouts().getStartup());
-		assertEquals(32, options.getJavaSelection().getRequirement().getFeatureVersion());
-		assertEquals(Path.of("plugin.jar"), options.getArtifacts().get("plugin"));
-		assertThrows(UnsupportedOperationException.class, () -> options.getArtifacts().clear());
+		assertEquals(32, options.javaSelection().requirement().featureVersion());
+		assertFalse(options.keepFailedWorkspaces());
+		assertFalse(options.downloadJava());
+		assertEquals(Duration.ofSeconds(7), options.processTimeouts().shutdown());
+		assertEquals(Duration.ofMinutes(3), options.processTimeouts().startup());
+		assertEquals(32, options.javaSelection().requirement().featureVersion());
+		assertEquals(Path.of("plugin.jar"), options.artifacts().get("plugin"));
+		assertThrows(UnsupportedOperationException.class, () -> options.artifacts().clear());
 	}
 
 	@Test
@@ -130,7 +130,7 @@ final class EnginePropertiesTest {
 
 		EngineOptions options = EngineProperties.from(properties);
 
-		assertEquals(new LocalJavaExecutable(Path.of("/opt/jdk-25/bin/java")), options.getJavaSelection().getSource());
+		assertEquals(new LocalJavaExecutable(Path.of("/opt/jdk-25/bin/java")), options.javaSelection().source());
 	}
 
 	@Test
@@ -143,7 +143,7 @@ final class EnginePropertiesTest {
 
 		assertEquals(
 				JavaArchive.builder().uri(URI.create("https://example.test/jdk.tar.gz")).sha256("a".repeat(64)).build(),
-				options.getJavaSelection().getSource()
+				options.javaSelection().source()
 		);
 		properties.remove(EngineProperties.JAVA_ARCHIVE_SHA256_PROPERTY);
 		assertThrows(IllegalArgumentException.class, () -> EngineProperties.from(properties));
@@ -168,13 +168,13 @@ final class EnginePropertiesTest {
 
 	@Test
 	void consoleColorsDefaultToPlatformBehaviorAndDecodeExplicitRequests() {
-		assertFalse(EngineOptions.builder().build().isConsoleColors());
-		assertFalse(EngineProperties.from(new Properties()).isConsoleColors());
+		assertFalse(EngineOptions.builder().build().consoleColors());
+		assertFalse(EngineProperties.from(new Properties()).consoleColors());
 		Properties properties = new Properties();
 		properties.setProperty(EngineProperties.CONSOLE_COLORS_PROPERTY, "true");
-		assertTrue(EngineProperties.from(properties).isConsoleColors());
+		assertTrue(EngineProperties.from(properties).consoleColors());
 		properties.setProperty(EngineProperties.CONSOLE_COLORS_PROPERTY, "FALSE");
-		assertFalse(EngineProperties.from(properties).isConsoleColors());
+		assertFalse(EngineProperties.from(properties).consoleColors());
 		assertEquals("FALSE", properties.getProperty(EngineProperties.CONSOLE_COLORS_PROPERTY));
 	}
 

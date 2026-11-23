@@ -78,22 +78,22 @@ final class BukkitWorlds implements ServerWorlds, Listener {
 		Player player = server.getPlayer(uniqueId);
 		if (player == null) throw new IllegalArgumentException("No player " + uniqueId + " is on the server");
 
-		World world = find(location.getWorld());
-		if (world == null) throw new IllegalArgumentException("The server has not loaded the world " + location.getWorld());
+		World world = find(location.world());
+		if (world == null) throw new IllegalArgumentException("The server has not loaded the world " + location.world());
 
-		return player.teleport(new Location(world, location.getX(), location.getY(), location.getZ(), location.getYaw(),
-				location.getPitch()));
+		return player.teleport(new Location(world, location.x(), location.y(), location.z(), location.yaw(),
+				location.pitch()));
 	}
 
 	@Override
 	public @NotNull AgentWorld create(@NotNull AgentWorldCreation creation) {
-		String key = creation.getKey();
+		String key = creation.key();
 		if (find(key) != null) throw new IllegalArgumentException("The server has already loaded the world " + key);
 
-		WorldCreator creator = new WorldCreator(name(key)).environment(environment(creation.getKind()));
-		if (creation.getSeed() != null) creator.seed(creation.getSeed());
-		if (creation.getGenerator().equals("FLAT")) creator.type(WorldType.FLAT);
-		if (creation.getGenerator().equals("EMPTY")) creator.generator(new EmptyGenerator());
+		WorldCreator creator = new WorldCreator(name(key)).environment(environment(creation.kind()));
+		if (creation.seed() != null) creator.seed(creation.seed());
+		if (creation.generator().equals("FLAT")) creator.type(WorldType.FLAT);
+		if (creation.generator().equals("EMPTY")) creator.generator(new EmptyGenerator());
 
 		World world = server.createWorld(creator);
 		if (world == null) throw new IllegalStateException("The server did not create the world " + key);
@@ -103,7 +103,7 @@ final class BukkitWorlds implements ServerWorlds, Listener {
 
 	@Override
 	public @NotNull AgentWorld load(@NotNull AgentWorldLoad load) {
-		String key = load.getKey();
+		String key = load.key();
 		if (find(key) != null) throw new IllegalArgumentException("The server has already loaded the world " + key);
 
 		String name = name(key);
@@ -111,7 +111,7 @@ final class BukkitWorlds implements ServerWorlds, Listener {
 			throw new IllegalArgumentException("The server keeps no folder for the world " + key + ": neither " + name
 					+ " nor " + dimensions().resolve(name) + " in " + server.getWorldContainer());
 
-		World world = server.createWorld(new WorldCreator(name).environment(environment(load.getKind())));
+		World world = server.createWorld(new WorldCreator(name).environment(environment(load.kind())));
 		if (world == null) throw new IllegalStateException("The server did not load the world " + key);
 
 		return world(world);

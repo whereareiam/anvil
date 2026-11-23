@@ -47,12 +47,12 @@ class SpigotPlatformProviderTest {
 				.name("proxy")
 				.platform(Platforms.BUNGEECORD)
 				.distribution(Distribution.remote("BungeeCord", "1"))
-				.server(server.getName())
-				.defaultServer(server.getName())
+				.server(server.name())
+				.defaultServer(server.name())
 				.build();
 		AnvilScenario scenario = AnvilScenario.builder()
 				.name("spigot")
-				.entrypoint(proxy.getName())
+				.entrypoint(proxy.name())
 				.server(server)
 				.proxy(proxy)
 				.build();
@@ -76,7 +76,7 @@ class SpigotPlatformProviderTest {
 		assertTrue(provider.jvmArguments(server, false).isEmpty(), "Ordinary engine runs retain native console defaults");
 		assertEquals(List.of("-Dorg.jline.terminal.dumb.color=true"),
 				provider.jvmArguments(server, true));
-		assertEquals(jar.toAbsolutePath(), provider.resolve(server, context).getJar());
+		assertEquals(jar.toAbsolutePath(), provider.resolve(server, context).jar());
 		provider.configure(server, context);
 
 		assertTrue(Files.readString(work.resolve("spigot.yml")).contains("bungeecord: true"));

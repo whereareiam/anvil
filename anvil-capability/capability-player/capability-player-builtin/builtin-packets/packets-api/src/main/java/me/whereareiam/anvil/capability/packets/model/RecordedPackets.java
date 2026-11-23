@@ -43,6 +43,6 @@ public class RecordedPackets {
 		ClientboundPacket packet = frame.packet().orElse(null);
 		if (packet == null || !ClientboundPackets.isCostly(packet.getClass())) return frame;
 
-		return new ClientboundFrame(frame.getState(), frame.getId(), frame.name().orElse(null), frame.payload(), null);
+		return new ClientboundFrame(frame.state(), frame.id(), frame.name().orElse(null), frame.payload(), null);
 	}
 }

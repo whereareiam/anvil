@@ -76,7 +76,7 @@ class ChannelBlockViewTest {
 
 		Block door = blocks.until(DOOR, BlockQuery.named("oak_door"));
 
-		assertEquals(1234, door.getState());
+		assertEquals(1234, door.state());
 		assertEquals(List.of(new AreaWatch(1, BlockArea.of(DOOR))), opened);
 		assertEquals(List.of(1), closed);
 	}
@@ -89,7 +89,7 @@ class ChannelBlockViewTest {
 
 		Block door = blocks.until(DOOR, BlockQuery.withProperty("open", "true"));
 
-		assertEquals(1235, door.getState());
+		assertEquals(1235, door.state());
 		assertEquals(List.of(1), closed);
 	}
 
@@ -99,7 +99,7 @@ class ChannelBlockViewTest {
 		channel.meanwhile(() -> channel.publish(WorldChannel.CHANGES,
 				new WatchedChanges(1, OVERWORLD, List.of(reading(1234, CLOSED)))));
 
-		assertEquals(1234, blocks.until(DOOR, BlockQuery.any()).getState());
+		assertEquals(1234, blocks.until(DOOR, BlockQuery.any()).state());
 	}
 
 	@Test

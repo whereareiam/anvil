@@ -19,8 +19,8 @@ public final class GraalVmDistribution implements JavaDistributionDescriptor {
 
 	@Override
 	public boolean matches(@NotNull JavaInstallation installation) {
-		return installation.getVendor().contains("GraalVM Community")
-				|| installation.getVirtualMachine().contains("GraalVM CE");
+		return installation.vendor().contains("GraalVM Community")
+				|| installation.virtualMachine().contains("GraalVM CE");
 	}
 
 }

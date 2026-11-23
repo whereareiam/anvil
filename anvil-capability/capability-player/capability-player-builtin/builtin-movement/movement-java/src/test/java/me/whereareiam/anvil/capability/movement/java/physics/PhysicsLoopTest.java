@@ -42,7 +42,7 @@ class PhysicsLoopTest {
 
 		assertTrue(thread.get().isVirtual());
 		assertEquals("anvil-physics-Alice", thread.get().getName());
-		assertFalse(loop.isRunning());
+		assertFalse(loop.running());
 		sleep(50);
 		assertEquals(stopped, ticks.get());
 	}
@@ -73,7 +73,7 @@ class PhysicsLoopTest {
 		assertEquals("turned off", waited.get().getMessage());
 		sleep(30);
 		assertEquals(List.of(failure), failures);
-		assertFalse(loop.isRunning());
+		assertFalse(loop.running());
 	}
 
 	@Test
@@ -86,7 +86,7 @@ class PhysicsLoopTest {
 
 		sleep(50);
 		assertEquals(0, ticks.get());
-		assertFalse(loop.isRunning());
+		assertFalse(loop.running());
 		assertThrows(IllegalStateException.class, loop::start);
 	}
 

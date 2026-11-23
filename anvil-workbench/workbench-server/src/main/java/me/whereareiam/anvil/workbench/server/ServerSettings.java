@@ -109,8 +109,8 @@ public class ServerSettings {
 		return facts.toBuilder()
 				.workbenchName(name)
 				.local(false)
-				.processors(processors > 0 ? Math.min(processors, facts.getProcessors()) : facts.getProcessors())
-				.memoryMegabytes(memoryMegabytes > 0 ? Math.min(memoryMegabytes, facts.getMemoryMegabytes()) : facts.getMemoryMegabytes())
+				.processors(processors > 0 ? Math.min(processors, facts.processors()) : facts.processors())
+				.memoryMegabytes(memoryMegabytes > 0 ? Math.min(memoryMegabytes, facts.memoryMegabytes()) : facts.memoryMegabytes())
 				.clearReachableHosts()
 				.reachableHosts(reaches)
 				.build();

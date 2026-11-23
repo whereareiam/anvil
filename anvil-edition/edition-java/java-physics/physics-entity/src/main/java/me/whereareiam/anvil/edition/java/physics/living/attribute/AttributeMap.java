@@ -70,7 +70,7 @@ public final class AttributeMap {
 	 */
 	public void update(@NotNull List<AttributeSnapshot> snapshots) {
 		for (AttributeSnapshot snapshot : snapshots)
-			supplier.byKey(snapshot.getAttribute())
+			supplier.byKey(snapshot.attribute())
 					.filter(attribute -> attribute.existsIn(version))
 					.ifPresent(attribute -> instances.put(attribute, Instance.of(snapshot)));
 	}
@@ -82,8 +82,8 @@ public final class AttributeMap {
 	 */
 	public void sprinting(boolean sprinting) {
 		Instance speed = instances.get(LivingAttributes.MOVEMENT_SPEED);
-		speed.modifiers.remove(this.sprinting.getId());
-		if (sprinting) speed.modifiers.put(this.sprinting.getId(), this.sprinting);
+		speed.modifiers.remove(this.sprinting.id());
+		if (sprinting) speed.modifiers.put(this.sprinting.id(), this.sprinting);
 	}
 
 	/**
@@ -106,26 +106,26 @@ public final class AttributeMap {
 	private record Instance(double base, @NotNull Map<String, AttributeModifier> modifiers) {
 		private static @NotNull Instance of(@NotNull AttributeSnapshot snapshot) {
 			Map<String, AttributeModifier> modifiers = new LinkedHashMap<>();
-			for (AttributeModifier modifier : snapshot.getModifiers()) modifiers.put(modifier.getId(), modifier);
+			for (AttributeModifier modifier : snapshot.modifiers()) modifiers.put(modifier.id(), modifier);
 
-			return new Instance(snapshot.getBase(), modifiers);
+			return new Instance(snapshot.base(), modifiers);
 		}
 
 		private double value(@NotNull Attribute attribute) {
 			double added = base;
-			for (AttributeModifier modifier : of(AttributeOperation.ADD_VALUE)) added += modifier.getAmount();
+			for (AttributeModifier modifier : of(AttributeOperation.ADD_VALUE)) added += modifier.amount();
 
 			double value = added;
 			for (AttributeModifier modifier : of(AttributeOperation.ADD_MULTIPLIED_BASE))
-				value += added * modifier.getAmount();
+				value += added * modifier.amount();
 			for (AttributeModifier modifier : of(AttributeOperation.ADD_MULTIPLIED_TOTAL))
-				value *= 1.0 + modifier.getAmount();
+				value *= 1.0 + modifier.amount();
 
 			return attribute.sanitize(value);
 		}
 
 		private @NotNull List<AttributeModifier> of(@NotNull AttributeOperation operation) {
-			return modifiers.values().stream().filter(modifier -> modifier.getOperation() == operation).toList();
+			return modifiers.values().stream().filter(modifier -> modifier.operation() == operation).toList();
 		}
 	}
 }

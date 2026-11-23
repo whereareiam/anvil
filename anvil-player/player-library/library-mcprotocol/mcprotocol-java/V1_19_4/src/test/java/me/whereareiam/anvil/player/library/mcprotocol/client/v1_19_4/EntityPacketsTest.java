@@ -113,7 +113,7 @@ class EntityPacketsTest {
 	}
 
 	private List<EntityDataValue> decodeData(ClientboundSetEntityDataPacket data) {
-		return assertInstanceOf(ClientboundSetEntityData.class, packets.decode(data)).getValues();
+		return assertInstanceOf(ClientboundSetEntityData.class, packets.decode(data)).values();
 	}
 
 	private static ClientboundSetEntityDataPacket data(int entityId, EntityMetadata<?, ?>... metadata) {

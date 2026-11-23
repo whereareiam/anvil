@@ -25,7 +25,7 @@ public final class ChatPackets extends ChatTranslation {
 
 	@Override
 	protected @NotNull Packet chat(@NotNull ServerboundChat chat) {
-		return new ServerboundChatPacket(chat.getText(), Instant.now().toEpochMilli(), UNSIGNED_SALT, NO_SIGNATURE,
+		return new ServerboundChatPacket(chat.text(), Instant.now().toEpochMilli(), UNSIGNED_SALT, NO_SIGNATURE,
 				NO_ACKNOWLEDGED_OFFSET, new BitSet(ACKNOWLEDGED_MESSAGES));
 	}
 }

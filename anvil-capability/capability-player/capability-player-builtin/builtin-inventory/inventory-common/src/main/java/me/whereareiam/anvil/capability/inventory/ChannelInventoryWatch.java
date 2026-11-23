@@ -38,7 +38,7 @@ final class ChannelInventoryWatch implements InventoryWatch {
 
 	@Override
 	public @NotNull Screen screen(@NotNull String title, @NotNull Duration timeout) {
-		return screen("titled '" + title + "'", snapshot -> title.equals(Objects.requireNonNull(snapshot.getTitle()).plain()),
+		return screen("titled '" + title + "'", snapshot -> title.equals(Objects.requireNonNull(snapshot.title()).plain()),
 				timeout);
 	}
 
@@ -50,7 +50,7 @@ final class ChannelInventoryWatch implements InventoryWatch {
 	) {
 		InventorySnapshot found = take("see a screen " + description, snapshot -> !snapshot.playerInventory()
 				&& screen.test(snapshot), timeout);
-		return new ChannelScreen(inventory, channel, history, found.getScreen());
+		return new ChannelScreen(inventory, channel, history, found.screen());
 	}
 
 	@Override

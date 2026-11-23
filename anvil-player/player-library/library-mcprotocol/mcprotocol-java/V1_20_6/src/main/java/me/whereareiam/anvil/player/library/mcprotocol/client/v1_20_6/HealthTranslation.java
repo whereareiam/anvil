@@ -57,7 +57,7 @@ public abstract class HealthTranslation implements PacketTranslation<Packet> {
 	public final @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		if (!(packet instanceof ServerboundClientCommand command)) return null;
 
-		return new ServerboundClientCommandPacket(command(command.getAction()));
+		return new ServerboundClientCommandPacket(command(command.action()));
 	}
 
 	/**

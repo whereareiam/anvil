@@ -130,7 +130,7 @@ public class ProtocolRelease {
 	/**
 	 * Tests whether a client of this release can be launched.
 	 *
-	 * @return whether {@link #getLaunchRefusal()} is {@code null}
+	 * @return whether {@link #launchRefusal()} is {@code null}
 	 */
 	public boolean isLaunchable() {
 		return launchRefusal == null;

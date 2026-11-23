@@ -158,7 +158,7 @@ final class CapabilitySimulatedPlayer implements SimulatedPlayer {
 	private static @NotNull String describe(@NotNull Expectation... expectations) {
 		StringJoiner joined = new StringJoiner(" or ");
 		for (Expectation expectation : expectations)
-			joined.add(expectation.getDescription());
+			joined.add(expectation.description());
 
 		return joined.toString();
 	}

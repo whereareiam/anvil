@@ -38,12 +38,12 @@ class ChunkPacketsTest {
 				new ServerChunkDataPacket(new Column(-2, 5, chunks, new CompoundTag[0], new CompoundTag(""),
 						new int[1536]))));
 
-		assertEquals(new ChunkPosition(-2, 5), chunk.getPosition());
-		assertEquals(MASK_BITS, chunk.getSections().size());
-		assertEquals(9, chunk.getSections().getFirst().blockState(1, 2, 3));
-		assertEquals(LevelChunkSection.EMPTY, chunk.getSections().get(1));
-		assertEquals(7, chunk.getSections().get(23).blockState(15, 15, 15));
-		assertEquals(LevelChunkSection.EMPTY, chunk.getSections().get(24));
+		assertEquals(new ChunkPosition(-2, 5), chunk.position());
+		assertEquals(MASK_BITS, chunk.sections().size());
+		assertEquals(9, chunk.sections().getFirst().blockState(1, 2, 3));
+		assertEquals(LevelChunkSection.EMPTY, chunk.sections().get(1));
+		assertEquals(7, chunk.sections().get(23).blockState(15, 15, 15));
+		assertEquals(LevelChunkSection.EMPTY, chunk.sections().get(24));
 	}
 
 	private static Chunk airFirst() {

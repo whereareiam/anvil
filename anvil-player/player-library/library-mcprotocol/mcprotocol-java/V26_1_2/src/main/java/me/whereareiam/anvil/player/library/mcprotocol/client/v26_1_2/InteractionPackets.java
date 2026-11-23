@@ -24,6 +24,6 @@ final class InteractionPackets extends InteractionTranslation {
 	protected @Nullable Packet encodeRelease(@NotNull ServerboundPacket packet) {
 		if (!(packet instanceof ServerboundSwing swing)) return null;
 
-		return new ServerboundSwingPacket(ValueTranslator.hand(swing.getHand()));
+		return new ServerboundSwingPacket(ValueTranslator.hand(swing.hand()));
 	}
 }

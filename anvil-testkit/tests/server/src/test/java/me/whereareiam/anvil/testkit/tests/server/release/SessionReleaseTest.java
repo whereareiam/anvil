@@ -22,7 +22,7 @@ class SessionReleaseTest {
 		SimulatedPlayer player = new FixtureServer(anvil).join();
 
 		assertTrue(player.capability(Session.class).state().connected());
-		assertEquals(player.name(), player.requestedProfile().getUsername());
+		assertEquals(player.name(), player.requestedProfile().username());
 	}
 
 	@Test

@@ -47,7 +47,7 @@ final class ReportedPlayers implements Players {
 	@Override
 	public @NotNull List<PlayerVisit> online() {
 		return visits(own()).values().stream()
-				.filter(visit -> visit.getLeftAt().isEmpty())
+				.filter(visit -> visit.leftAt().isEmpty())
 				.toList();
 	}
 
@@ -56,9 +56,9 @@ final class ReportedPlayers implements Players {
 		Set<UUID> uniqueIds = uniqueIds(player);
 
 		return online().stream()
-				.filter(visit -> uniqueIds.contains(visit.getProfile().getUniqueId()))
+				.filter(visit -> uniqueIds.contains(visit.profile().uniqueId()))
 				.reduce((first, second) -> second)
-				.map(PlayerVisit::getProfile);
+				.map(PlayerVisit::profile);
 	}
 
 	@Override
@@ -66,10 +66,10 @@ final class ReportedPlayers implements Players {
 		Set<UUID> uniqueIds = uniqueIds(player);
 		Map<String, PlatformEvent> open = new LinkedHashMap<>();
 		for (PlatformEvent event : platform.events()) {
-			if (event.getServer() == null || !uniqueIds.contains(event.getProfile().getUniqueId())) continue;
+			if (event.server() == null || !uniqueIds.contains(event.profile().uniqueId())) continue;
 
-			open.remove(event.getServer());
-			if (event.getType() == PlatformEventType.JOINED) open.put(event.getServer(), event);
+			open.remove(event.server());
+			if (event.type() == PlatformEventType.JOINED) open.put(event.server(), event);
 		}
 
 		return open.keySet().stream().reduce((first, second) -> second);
@@ -86,7 +86,7 @@ final class ReportedPlayers implements Players {
 	 */
 	private @NotNull List<PlatformEvent> own() {
 		return platform.events().stream()
-				.filter(event -> event.getServer() == null)
+				.filter(event -> event.server() == null)
 				.toList();
 	}
 
@@ -100,12 +100,12 @@ final class ReportedPlayers implements Players {
 		Map<Long, PlayerVisit> visits = new LinkedHashMap<>();
 		Map<String, Long> open = new HashMap<>();
 		for (PlatformEvent event : events) {
-			String stay = event.getProfile().getUniqueId() + "@" + event.getServer();
-			if (event.getType() == PlatformEventType.JOINED) {
-				open.put(stay, event.getPosition());
-				visits.put(event.getPosition(), PlayerVisit.builder()
-						.profile(event.getProfile())
-						.joinedAt(event.getAt())
+			String stay = event.profile().uniqueId() + "@" + event.server();
+			if (event.type() == PlatformEventType.JOINED) {
+				open.put(stay, event.position());
+				visits.put(event.position(), PlayerVisit.builder()
+						.profile(event.profile())
+						.joinedAt(event.at())
 						.build());
 				continue;
 			}
@@ -114,7 +114,7 @@ final class ReportedPlayers implements Players {
 			if (joined == null) continue;
 
 			visits.computeIfPresent(joined, (position, visit) -> visit.toBuilder()
-					.leftAt(event.getAt())
+					.leftAt(event.at())
 					.build());
 		}
 
@@ -127,35 +127,35 @@ final class ReportedPlayers implements Players {
 	private static long joinEndedBy(@NotNull List<PlatformEvent> events, @NotNull PlatformEvent leave) {
 		Map<String, Long> open = new HashMap<>();
 		for (PlatformEvent event : events) {
-			String stay = event.getProfile().getUniqueId() + "@" + event.getServer();
-			if (event.getType() == PlatformEventType.JOINED) {
-				open.put(stay, event.getPosition());
+			String stay = event.profile().uniqueId() + "@" + event.server();
+			if (event.type() == PlatformEventType.JOINED) {
+				open.put(stay, event.position());
 				continue;
 			}
 
 			Long joined = open.remove(stay);
-			if (event.getPosition() == leave.getPosition() && joined != null) return joined;
+			if (event.position() == leave.position() && joined != null) return joined;
 		}
 
-		throw new IllegalStateException("No join of '" + leave.getProfile().getUsername() + "' precedes the leave at "
-				+ leave.getAt());
+		throw new IllegalStateException("No join of '" + leave.profile().username() + "' precedes the leave at "
+				+ leave.at());
 	}
 
 	private static @NotNull Set<UUID> uniqueIds(@NotNull SimulatedPlayer player) {
 		return player.grantedProfiles().stream()
-				.map(PlayerProfile::getUniqueId)
+				.map(PlayerProfile::uniqueId)
 				.collect(Collectors.toSet());
 	}
 
 	private static @NotNull Predicate<PlatformEvent> of(@NotNull SimulatedPlayer player, @Nullable String backend,
 			@NotNull PlatformEventType type) {
-		return event -> event.getType() == type
-				&& Objects.equals(event.getServer(), backend)
-				&& uniqueIds(player).contains(event.getProfile().getUniqueId());
+		return event -> event.type() == type
+				&& Objects.equals(event.server(), backend)
+				&& uniqueIds(player).contains(event.profile().uniqueId());
 	}
 
 	private @NotNull String whoIsOn() {
-		List<String> names = online().stream().map(visit -> visit.getProfile().getUsername()).toList();
+		List<String> names = online().stream().map(visit -> visit.profile().username()).toList();
 		return names.isEmpty() ? "nobody is on '" + process + "'" : "on '" + process + "': " + names;
 	}
 
@@ -259,8 +259,8 @@ final class ReportedPlayers implements Players {
 			poll(() -> cursor.find(matcher) != null, timeout, failure);
 			PlatformEvent event = Objects.requireNonNull(cursor.take(matcher));
 			List<PlatformEvent> events = platform.events();
-			if (event.getType() == PlatformEventType.JOINED)
-				return Objects.requireNonNull(visits(events).get(event.getPosition()));
+			if (event.type() == PlatformEventType.JOINED)
+				return Objects.requireNonNull(visits(events).get(event.position()));
 
 			return Objects.requireNonNull(visits(events).get(joinEndedBy(events, event)));
 		}

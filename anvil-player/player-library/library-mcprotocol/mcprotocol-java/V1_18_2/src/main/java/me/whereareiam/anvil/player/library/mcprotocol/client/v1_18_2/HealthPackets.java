@@ -49,7 +49,7 @@ public final class HealthPackets implements PacketTranslation<Packet> {
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		if (!(packet instanceof ServerboundClientCommand command)) return null;
 
-		return new ServerboundClientCommandPacket(switch (command.getAction()) {
+		return new ServerboundClientCommandPacket(switch (command.action()) {
 			case PERFORM_RESPAWN -> ClientCommand.RESPAWN;
 			case REQUEST_STATS -> ClientCommand.STATS;
 		});

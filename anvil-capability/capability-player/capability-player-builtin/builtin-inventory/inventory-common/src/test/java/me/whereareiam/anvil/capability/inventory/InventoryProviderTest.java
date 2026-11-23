@@ -20,8 +20,8 @@ class InventoryProviderTest {
 	void describesTheInventoryCapabilityForTheLibrariesWithAWorkerSide() {
 		InventoryProvider provider = new InventoryProvider();
 
-		assertEquals("me.whereareiam.anvil.inventory", provider.descriptor().getId());
-		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
+		assertEquals("me.whereareiam.anvil.inventory", provider.descriptor().id());
+		assertTrue(provider.descriptor().requiredCapabilities().isEmpty());
 		assertEquals(Set.of(JavaProtocol.class), provider.requiredProtocols());
 		assertEquals(Inventory.class, provider.capability());
 	}
@@ -33,12 +33,12 @@ class InventoryProviderTest {
 		channel.answer(InventoryChannel.CLICK, action -> null);
 		Inventory inventory = new InventoryProvider().create(new TestProtocolPlayerCapabilityContext(channel));
 		assertTrue(channel.requests().isEmpty());
-		assertEquals(List.of(InventoryChannel.CHANGED.getId()), channel.subscriptions());
+		assertEquals(List.of(InventoryChannel.CHANGED.id()), channel.subscriptions());
 
 		inventory.selectSlot(0);
 		inventory.click(4, InventoryClick.LEFT, 0);
 
-		assertEquals(List.of(InventoryChannel.SELECT.getId(), InventoryChannel.CLICK.getId()), channel.requests());
+		assertEquals(List.of(InventoryChannel.SELECT.id(), InventoryChannel.CLICK.id()), channel.requests());
 		assertEquals(List.of(new SlotSelection(0), new InventoryAction(4, InventoryClick.LEFT, 0)), channel.payloads());
 	}
 }

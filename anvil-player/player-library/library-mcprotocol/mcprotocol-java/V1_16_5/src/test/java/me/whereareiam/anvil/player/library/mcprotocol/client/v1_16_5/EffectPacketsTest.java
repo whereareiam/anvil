@@ -65,7 +65,7 @@ class EffectPacketsTest {
 
 	private String key(Effect effect) {
 		return assertInstanceOf(ClientboundRemoveMobEffect.class,
-				packets.decode(new ServerEntityRemoveEffectPacket(7, effect))).getEffect();
+				packets.decode(new ServerEntityRemoveEffectPacket(7, effect))).effect();
 	}
 
 	private static final class UnknownPacket implements ServerboundPacket {

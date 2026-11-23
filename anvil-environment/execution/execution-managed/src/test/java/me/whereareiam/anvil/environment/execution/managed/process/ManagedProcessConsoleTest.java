@@ -38,18 +38,18 @@ class ManagedProcessConsoleTest {
 		ConsoleWatch firstReader = console.watchFromStart();
 		ConsoleWatch secondReader = console.watchFromStart();
 
-		assertEquals(List.of("first"), firstReader.read(1).getLines().stream().map(ConsoleLine::getText).toList());
-		assertEquals(2, secondReader.read(10).getLines().size());
-		assertEquals("second", firstReader.read(1).getLines().getFirst().getText());
-		assertTrue(firstReader.read(1).getLines().isEmpty());
-		assertTrue(console.watch().read(1).getLines().isEmpty());
+		assertEquals(List.of("first"), firstReader.read(1).lines().stream().map(ConsoleLine::text).toList());
+		assertEquals(2, secondReader.read(10).lines().size());
+		assertEquals("second", firstReader.read(1).lines().getFirst().text());
+		assertTrue(firstReader.read(1).lines().isEmpty());
+		assertTrue(console.watch().read(1).lines().isEmpty());
 
 		for (int index = 0; index < 2100; index++) console.append("extra " + index);
 		ConsoleOutput evicted = firstReader.read(1);
-		assertTrue(evicted.isTruncated());
-		assertEquals(103, evicted.getLines().getFirst().getSequence());
-		assertFalse(firstReader.read(1).isTruncated());
-		assertEquals(103, console.watchFromStart().read(1).getLines().getFirst().getSequence());
+		assertTrue(evicted.truncated());
+		assertEquals(103, evicted.lines().getFirst().sequence());
+		assertFalse(firstReader.read(1).truncated());
+		assertEquals(103, console.watchFromStart().read(1).lines().getFirst().sequence());
 		assertThrows(IllegalArgumentException.class, () -> firstReader.read(0));
 	}
 
@@ -125,7 +125,7 @@ class ManagedProcessConsoleTest {
 		public @NotNull OutputStream input() { return OutputStream.nullOutputStream(); }
 
 		@Override
-		public boolean isAlive() { return false; }
+		public boolean alive() { return false; }
 
 		@Override
 		public @NotNull CompletableFuture<Void> onExit() { return CompletableFuture.completedFuture(null); }

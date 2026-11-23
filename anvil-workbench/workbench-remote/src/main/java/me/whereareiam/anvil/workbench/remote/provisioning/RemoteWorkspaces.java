@@ -37,15 +37,15 @@ public final class RemoteWorkspaces implements WorkspaceProvisioner {
 	 */
 	@Override
 	public @NotNull PreparedWorkspace prepare(@NotNull WorkspaceRequest request) {
-		WorkspacePlan plan = request.getPlan().toBuilder().clearAssets().assets(request.getPlan().getAssets().stream()
-				.map(asset -> asset.getSource().isText()
-						? asset.toBuilder().source(AssetSource.text(request.getText().apply(asset.getSource().getText()))).build()
+		WorkspacePlan plan = request.plan().toBuilder().clearAssets().assets(request.plan().assets().stream()
+				.map(asset -> asset.source().isText()
+						? asset.toBuilder().source(AssetSource.text(request.text().apply(asset.source().text()))).build()
 						: asset)
 				.toList()).build();
-		PreparedWorkspaceHandle prepared = connection.call(new PrepareWorkspace(request.getRoot(), request.getDirectory(),
-				request.getProcess(), plan, request.getProviderDefaults()));
+		PreparedWorkspaceHandle prepared = connection.call(new PrepareWorkspace(request.root(), request.directory(),
+				request.process(), plan, request.providerDefaults()));
 
-		return new RemotePreparedWorkspace(connection, prepared.getHandle(), prepared.getWorkspace());
+		return new RemotePreparedWorkspace(connection, prepared.handle(), prepared.workspace());
 	}
 
 	@Override

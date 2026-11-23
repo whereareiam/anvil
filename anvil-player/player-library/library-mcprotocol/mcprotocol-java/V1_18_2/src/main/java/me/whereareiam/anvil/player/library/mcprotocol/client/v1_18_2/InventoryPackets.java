@@ -116,10 +116,10 @@ public final class InventoryPackets implements PacketTranslation<Packet> {
 	@Override
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		if (packet instanceof ServerboundSetCarriedItem carried)
-			return new ServerboundSetCarriedItemPacket(carried.getSlot());
+			return new ServerboundSetCarriedItemPacket(carried.slot());
 		if (!(packet instanceof ServerboundContainerClick click)) return null;
 
-		return new ServerboundContainerClickPacket(click.getContainerId(), click.getStateId(), click.getSlot(),
+		return new ServerboundContainerClickPacket(click.containerId(), click.stateId(), click.slot(),
 				type(click), action(click), null, Map.of());
 	}
 
@@ -142,7 +142,7 @@ public final class InventoryPackets implements PacketTranslation<Packet> {
 	}
 
 	private static ContainerActionType type(ServerboundContainerClick click) {
-		return switch (click.getClickType()) {
+		return switch (click.clickType()) {
 			case PICKUP -> ContainerActionType.CLICK_ITEM;
 			case QUICK_MOVE -> ContainerActionType.SHIFT_CLICK_ITEM;
 			case SWAP -> ContainerActionType.MOVE_TO_HOTBAR_SLOT;
@@ -154,8 +154,8 @@ public final class InventoryPackets implements PacketTranslation<Packet> {
 	}
 
 	private static ContainerAction action(ServerboundContainerClick click) {
-		int button = click.getButton();
-		return switch (click.getClickType()) {
+		int button = click.button();
+		return switch (click.clickType()) {
 			case PICKUP -> constant(ClickItemAction.values(), button, click);
 			case QUICK_MOVE -> constant(ShiftClickItemAction.values(), button, click);
 			case SWAP -> button == PlayerInventoryLayout.OFF_HAND ? MoveToHotbarAction.OFF_HAND
@@ -176,7 +176,7 @@ public final class InventoryPackets implements PacketTranslation<Packet> {
 	}
 
 	private static <A> A invalid(ServerboundContainerClick click) {
-		throw new IllegalArgumentException("Invalid button " + click.getButton() + " for a " + click.getClickType()
+		throw new IllegalArgumentException("Invalid button " + click.button() + " for a " + click.clickType()
 				+ " click");
 	}
 }

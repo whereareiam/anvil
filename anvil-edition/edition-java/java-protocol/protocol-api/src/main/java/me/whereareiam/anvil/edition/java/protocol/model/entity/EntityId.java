@@ -14,7 +14,7 @@ import lombok.Value;
  *
  * <pre>{@code
  * protocol.listen(ClientboundRemoveEntities.class, removed -> {
- *     if (removed.getEntityIds().contains(tracked)) tracked = null;
+ *     if (removed.entityIds().contains(tracked)) tracked = null;
  * });
  * }</pre>
  */

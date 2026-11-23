@@ -82,7 +82,7 @@ class JavaRuntimeResolverTest {
 		var archive = JavaSource.archive(URI.create("https://example.test/jdk.tar.gz"), "0".repeat(64));
 
 		assertEquals(Runtime.version().feature(),
-				java.inspect(JavaSource.executable(JavaExecutables.current())).orElseThrow().getFeatureVersion());
+				java.inspect(JavaSource.executable(JavaExecutables.current())).orElseThrow().featureVersion());
 		assertTrue(java.inspect(archive).isEmpty());
 	}
 

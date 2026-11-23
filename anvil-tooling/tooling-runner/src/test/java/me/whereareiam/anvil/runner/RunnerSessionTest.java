@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RunnerSessionTest {
 	private ActionRequest request(RunnerSession session, String action, String text) {
-		return ActionRequest.builder().sessionId(session.snapshot().getSessionId()).actionId(action)
+		return ActionRequest.builder().sessionId(session.snapshot().sessionId()).actionId(action)
 				.target(ActionTarget.builder().type(ActionTargetType.PLAYER).name("alice").build()).arguments(Map.of("text", text)).build();
 	}
 
@@ -55,11 +55,11 @@ class RunnerSessionTest {
 	void routesCoreCommandsAndRejectsUnknownOrStaleExtensionRequests() {
 		Harness fixture = new Harness();
 		try (RunnerSession session = fixture.session()) {
-			assertEquals("User registration", session.scenarios().getFirst().getDisplayName());
-			assertEquals("user-registration", session.scenarios().getFirst().getName());
+			assertEquals("User registration", session.scenarios().getFirst().displayName());
+			assertEquals("user-registration", session.scenarios().getFirst().name());
 			session.start("user-registration", null);
-			assertEquals("Lobby", session.snapshot().getProcesses().getFirst().getDisplayName());
-			assertEquals(fixture.process.executionId(), session.snapshot().getProcesses().getFirst().getExecutionId());
+			assertEquals("Lobby", session.snapshot().processes().getFirst().displayName());
+			assertEquals(fixture.process.executionId(), session.snapshot().processes().getFirst().executionId());
 			session.console("server", "say hi");
 			assertThrows(NoSuchElementException.class, () -> session.invoke(request(session, "fixture.unknown", "value")));
 			assertThrows(IllegalStateException.class, () -> session.invoke(request(session, "fixture.unknown", "value")
@@ -81,7 +81,7 @@ class RunnerSessionTest {
 
 			assertTrue(failure.getMessage().contains("example.RenamedDefinition"));
 			assertEquals(0, fixture.setupCalls);
-			assertEquals("IDLE", session.snapshot().getState().name());
+			assertEquals("IDLE", session.snapshot().state().name());
 		}
 	}
 
@@ -96,9 +96,9 @@ class RunnerSessionTest {
 			assertSame(fixture.setupFailure, failure);
 			assertEquals(List.of(fixture.cleanupFailure), List.of(failure.getSuppressed()));
 			assertEquals(List.of(false), fixture.finishes);
-			assertEquals("FAILED", session.snapshot().getState().name());
-			assertTrue(session.snapshot().getFailure().contains("Setup failed"));
-			assertTrue(session.snapshot().getFailure().contains("Cleanup failed"));
+			assertEquals("FAILED", session.snapshot().state().name());
+			assertTrue(session.snapshot().failure().contains("Setup failed"));
+			assertTrue(session.snapshot().failure().contains("Cleanup failed"));
 		}
 		assertEquals(1, fixture.closedContexts);
 		assertEquals(1, fixture.closedEngines);
@@ -112,8 +112,8 @@ class RunnerSessionTest {
 			fixture.restartFailure = new IllegalStateException("Replacement failed");
 			assertThrows(IllegalStateException.class, () -> session.restartProcess("server"));
 			assertEquals(List.of(false), fixture.finishes);
-			assertEquals("FAILED", session.snapshot().getState().name());
-			assertTrue(session.snapshot().getFailure().contains("Replacement failed"));
+			assertEquals("FAILED", session.snapshot().state().name());
+			assertTrue(session.snapshot().failure().contains("Replacement failed"));
 			session.stop();
 			assertEquals(List.of(false), fixture.finishes);
 		}
@@ -125,10 +125,10 @@ class RunnerSessionTest {
 		try (RunnerSession session = fixture.session()) {
 			session.start("user-registration", null);
 			fixture.processFailed = true;
-			assertEquals("FAILED", session.snapshot().getState().name());
+			assertEquals("FAILED", session.snapshot().state().name());
 			session.stop();
 			assertEquals(List.of(false), fixture.finishes);
-			assertEquals("FAILED", session.snapshot().getState().name());
+			assertEquals("FAILED", session.snapshot().state().name());
 		}
 	}
 
@@ -149,16 +149,16 @@ class RunnerSessionTest {
 			starter.start();
 			try {
 				assertTrue(fixture.started.await(5, TimeUnit.SECONDS));
-				assertEquals("STARTING", session.snapshot().getState().name());
-				assertEquals(List.of("Preparing server"), session.drainLogs().stream().map(LogEvent::getText).toList());
-				assertEquals("server", session.snapshot().getProcesses().getFirst().getName());
+				assertEquals("STARTING", session.snapshot().state().name());
+				assertEquals(List.of("Preparing server"), session.drainLogs().stream().map(LogEvent::text).toList());
+				assertEquals("server", session.snapshot().processes().getFirst().name());
 			} finally {
 				fixture.release.countDown();
 				starter.join(5000);
 			}
 			assertFalse(starter.isAlive());
 			assertNull(failure.get());
-			assertEquals("RUNNING", session.snapshot().getState().name());
+			assertEquals("RUNNING", session.snapshot().state().name());
 		}
 	}
 
@@ -168,17 +168,17 @@ class RunnerSessionTest {
 		try (RunnerSession session = fixture.session()) {
 			session.start("user-registration", null);
 			fixture.output.add("first");
-			assertEquals(List.of("first"), session.drainLogs().stream().map(LogEvent::getText).toList());
+			assertEquals(List.of("first"), session.drainLogs().stream().map(LogEvent::text).toList());
 			assertTrue(session.drainLogs().isEmpty());
 			session.restartProcess("server");
 			fixture.output.add("second");
 			LogEvent replacement = session.drainLogs().getFirst();
-			assertEquals(fixture.process.executionId(), replacement.getExecutionId());
-			assertEquals(1, replacement.getSequence());
+			assertEquals(fixture.process.executionId(), replacement.executionId());
+			assertEquals(1, replacement.sequence());
 			session.stop();
-			assertEquals("STOPPED", session.snapshot().getState().name());
+			assertEquals("STOPPED", session.snapshot().state().name());
 			assertEquals(List.of("second", "closed"), session.logs("server", 10));
-			assertEquals(List.of("closed"), session.drainLogs().stream().map(LogEvent::getText).toList());
+			assertEquals(List.of("closed"), session.drainLogs().stream().map(LogEvent::text).toList());
 			session.stop();
 			assertEquals(1, fixture.closedContexts);
 		}
@@ -196,10 +196,10 @@ class RunnerSessionTest {
 			fixture.observer.processCreated(previous);
 			fixture.output.add("Current generation");
 			LogEvent event = session.drainLogs().getFirst();
-			assertEquals(replacementId, event.getExecutionId());
-			assertEquals(replacementId, session.snapshot().getProcesses().getFirst().getExecutionId());
-			assertEquals("Current generation", event.getText());
-			assertEquals(me.whereareiam.anvil.tooling.api.type.ProcessState.READY, session.snapshot().getProcesses().getFirst().getState());
+			assertEquals(replacementId, event.executionId());
+			assertEquals(replacementId, session.snapshot().processes().getFirst().executionId());
+			assertEquals("Current generation", event.text());
+			assertEquals(me.whereareiam.anvil.tooling.api.type.ProcessState.READY, session.snapshot().processes().getFirst().state());
 		}
 	}
 
@@ -208,13 +208,13 @@ class RunnerSessionTest {
 		Harness fixture = new Harness();
 		try (RunnerSession session = fixture.session()) {
 			session.start("user-registration", null);
-			String oldId = session.snapshot().getSessionId();
+			String oldId = session.snapshot().sessionId();
 			fixture.output.add("old run");
 			session.start("user-registration", null);
 			List<LogEvent> retained = session.drainLogs();
-			assertEquals(List.of("old run", "closed"), retained.stream().map(LogEvent::getText).toList());
-			assertTrue(retained.stream().allMatch(event -> oldId.equals(event.getSessionId())));
-			assertNotEquals(oldId, session.snapshot().getSessionId());
+			assertEquals(List.of("old run", "closed"), retained.stream().map(LogEvent::text).toList());
+			assertTrue(retained.stream().allMatch(event -> oldId.equals(event.sessionId())));
+			assertNotEquals(oldId, session.snapshot().sessionId());
 		}
 	}
 
@@ -234,15 +234,15 @@ class RunnerSessionTest {
 			start.start();
 			try {
 				assertTrue(starting.await(5, TimeUnit.SECONDS));
-				assertEquals("STARTING", session.snapshot().getState().name());
+				assertEquals("STARTING", session.snapshot().state().name());
 				assertTrue(session.drainLogs().isEmpty());
 			} finally {
 				finish.countDown();
 				start.join(5000);
 			}
 			assertFalse(start.isAlive());
-			assertEquals("FAILED", session.snapshot().getState().name());
-			assertTrue(session.snapshot().getFailure().contains("startup failed"));
+			assertEquals("FAILED", session.snapshot().state().name());
+			assertTrue(session.snapshot().failure().contains("startup failed"));
 		}
 	}
 
@@ -251,25 +251,25 @@ class RunnerSessionTest {
 		Harness fixture = new Harness();
 		try (RunnerSession session = fixture.session()) {
 			session.start("user-registration", "server");
-			String runId = session.snapshot().getSessionId();
+			String runId = session.snapshot().sessionId();
 			assertEquals(List.of("prepare", "start:server"), fixture.lifecycle);
 			assertEquals(0, fixture.setupCalls);
-			assertFalse(session.snapshot().isSetupComplete());
-			assertEquals(me.whereareiam.anvil.tooling.api.type.ProcessState.READY, session.snapshot().getProcesses().getFirst().getState());
+			assertFalse(session.snapshot().setupComplete());
+			assertEquals(me.whereareiam.anvil.tooling.api.type.ProcessState.READY, session.snapshot().processes().getFirst().state());
 			session.stopProcess("server");
 			assertEquals(
 					me.whereareiam.anvil.tooling.api.type.ProcessState.STOPPED,
-					session.snapshot().getProcesses().getFirst().getState()
+					session.snapshot().processes().getFirst().state()
 			);
 			session.startProcess("server");
-			assertEquals(me.whereareiam.anvil.tooling.api.type.ProcessState.READY, session.snapshot().getProcesses().getFirst().getState());
+			assertEquals(me.whereareiam.anvil.tooling.api.type.ProcessState.READY, session.snapshot().processes().getFirst().state());
 			session.startAll();
 			session.startAll();
 			assertEquals(1, fixture.setupCalls);
-			assertTrue(session.snapshot().isSetupComplete());
-			assertEquals(runId, session.snapshot().getSessionId());
+			assertTrue(session.snapshot().setupComplete());
+			assertEquals(runId, session.snapshot().sessionId());
 			assertThrows(NoSuchElementException.class, () -> session.startProcess("absent"));
-			assertEquals("RUNNING", session.snapshot().getState().name());
+			assertEquals("RUNNING", session.snapshot().state().name());
 		}
 	}
 

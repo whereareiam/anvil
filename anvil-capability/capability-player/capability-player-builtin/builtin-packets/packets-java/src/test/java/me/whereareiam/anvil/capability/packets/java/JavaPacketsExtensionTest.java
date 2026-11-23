@@ -71,10 +71,10 @@ class JavaPacketsExtensionTest {
 
 		TappedFrame frame = player.emitted(PacketsChannel.FRAMES).getFirst();
 		assertEquals(1, player.emitted(PacketsChannel.FRAMES).size());
-		assertEquals(List.of(1), frame.getTaps());
-		assertEquals("system_chat", frame.getName());
-		assertEquals(WELCOME, frame.getPacket());
-		assertNull(frame.getPayload());
+		assertEquals(List.of(1), frame.taps());
+		assertEquals("system_chat", frame.name());
+		assertEquals(WELCOME, frame.packet());
+		assertNull(frame.payload());
 	}
 
 	@Test
@@ -86,8 +86,8 @@ class JavaPacketsExtensionTest {
 
 		List<TappedFrame> frames = player.emitted(PacketsChannel.FRAMES);
 		assertEquals(1, frames.size());
-		assertEquals(BLOCK_CHANGE, frames.getFirst().getId());
-		assertNull(frames.getFirst().getPacket());
+		assertEquals(BLOCK_CHANGE, frames.getFirst().id());
+		assertNull(frames.getFirst().packet());
 	}
 
 	@Test
@@ -99,9 +99,9 @@ class JavaPacketsExtensionTest {
 		player.deliver(ConnectionState.PLAY, BLOCK_CHANGE, new byte[]{1}, null);
 
 		List<TappedFrame> frames = player.emitted(PacketsChannel.FRAMES);
-		assertEquals(List.of(List.of(1, 2), List.of(2)), frames.stream().map(TappedFrame::getTaps)
+		assertEquals(List.of(List.of(1, 2), List.of(2)), frames.stream().map(TappedFrame::taps)
 				.map(taps -> taps.stream().sorted().toList()).toList());
-		assertArrayEquals(new byte[]{2, 3}, frames.getFirst().getPayload());
+		assertArrayEquals(new byte[]{2, 3}, frames.getFirst().payload());
 	}
 
 	@Test
@@ -112,9 +112,9 @@ class JavaPacketsExtensionTest {
 		player.deliver(ConnectionState.PLAY, MAP_CHUNK, new byte[]{4}, CHUNK);
 
 		TappedFrame frame = player.emitted(PacketsChannel.FRAMES).getFirst();
-		assertEquals("map_chunk", frame.getName());
-		assertArrayEquals(new byte[]{4}, frame.getPayload());
-		assertNull(frame.getPacket());
+		assertEquals("map_chunk", frame.name());
+		assertArrayEquals(new byte[]{4}, frame.payload());
+		assertNull(frame.packet());
 	}
 
 	@Test
@@ -129,8 +129,8 @@ class JavaPacketsExtensionTest {
 		player.deliver(ConnectionState.PLAY, MAP_CHUNK, new byte[]{5}, CHUNK);
 
 		List<TappedFrame> frames = player.emitted(PacketsChannel.FRAMES);
-		assertEquals(CHUNK, frames.get(0).getPacket());
-		assertNull(frames.get(1).getPacket());
+		assertEquals(CHUNK, frames.get(0).packet());
+		assertNull(frames.get(1).packet());
 		assertFalse(player.protocol().wants(ClientboundLevelChunkWithLight.class));
 	}
 

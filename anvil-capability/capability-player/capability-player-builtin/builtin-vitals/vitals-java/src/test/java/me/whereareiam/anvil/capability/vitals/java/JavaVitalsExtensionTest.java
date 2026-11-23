@@ -128,7 +128,7 @@ class JavaVitalsExtensionTest {
 
 		assertEquals(List.of(VitalStatus.INITIAL), player.emitted(VitalsChannel.STATUS));
 		assertTrue(player.emitted(VitalsChannel.DIED).isEmpty());
-		assertEquals(List.of(VitalsChannel.STATUS.getId()), player.emittedEvents());
+		assertEquals(List.of(VitalsChannel.STATUS.id()), player.emittedEvents());
 	}
 
 	@Test

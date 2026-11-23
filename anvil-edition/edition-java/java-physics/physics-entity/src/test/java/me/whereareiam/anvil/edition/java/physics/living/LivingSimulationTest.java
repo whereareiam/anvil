@@ -24,14 +24,14 @@ class LivingSimulationTest {
 	void dampsTheInputAfterTheJumpBefore1_21_5() {
 		LivingSimulation older = TestEntity.living(floored("1.21.1"), 8.5, 65.0, 8.5);
 		LivingSimulation newer = TestEntity.living(floored("1.21.11"), 8.5, 65.0, 8.5);
-		older.body().setZza(1.0F);
-		newer.body().setZza(1.0F);
+		older.body().zza(1.0F);
+		newer.body().zza(1.0F);
 
 		older.tick();
 		newer.tick();
 
-		assertEquals(0.98F, older.body().getZza());
-		assertEquals(1.0F, newer.body().getZza());
+		assertEquals(0.98F, older.body().zza());
+		assertEquals(1.0F, newer.body().zza());
 	}
 
 	@Test
@@ -40,19 +40,19 @@ class LivingSimulationTest {
 		LivingBody body = new LivingBody(world.rules(), world.reader(), TestEntity.ZOMBIE, attributes(world),
 				new Effects()) {
 			@Override
-			public boolean isImmobile() {
+			public boolean immobile() {
 				return true;
 			}
 		};
-		body.setPosition(new Vector(8.5, 65.0, 8.5));
-		body.setZza(1.0F);
-		body.setJumping(true);
+		body.position(new Vector(8.5, 65.0, 8.5));
+		body.zza(1.0F);
+		body.jumping(true);
 
 		new LivingSimulation(body).tick();
 
-		assertEquals(0.0F, body.getZza());
-		assertFalse(body.isJumping());
-		assertEquals(8.5, body.getPosition().z);
+		assertEquals(0.0F, body.zza());
+		assertFalse(body.jumping());
+		assertEquals(8.5, body.position().z);
 	}
 
 	@Test
@@ -60,13 +60,13 @@ class LivingSimulationTest {
 		TestWorld world = floored("1.21.11");
 		LivingBody body = new LivingBody(world.rules(), world.reader(), TestEntity.ZOMBIE, attributes(world),
 				new Effects());
-		body.setSpeed(0.1F);
-		body.setPosition(new Vector(8.5, 65.0, 8.5));
+		body.speed(0.1F);
+		body.position(new Vector(8.5, 65.0, 8.5));
 		List<Vector> travelled = new ArrayList<>();
 		LivingSimulation controlled = new LivingSimulation(body) {
 			@Override
 			protected void serverAiStep() {
-				body.setXxa(1.0F);
+				body.xxa(1.0F);
 			}
 
 			@Override

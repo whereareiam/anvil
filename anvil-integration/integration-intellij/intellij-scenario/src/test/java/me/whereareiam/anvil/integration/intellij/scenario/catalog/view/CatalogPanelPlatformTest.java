@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.integration.intellij.scenario.catalog.view;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intellij.execution.RunManager;
 import com.intellij.ide.DataManager;
 import com.intellij.notification.Notification;
@@ -21,6 +20,7 @@ import javax.swing.JTextArea;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
+import me.whereareiam.anvil.integration.intellij.RunnerJson;
 import me.whereareiam.anvil.integration.intellij.ScenarioFixtures;
 import me.whereareiam.anvil.integration.intellij.ScenarioPlatformTestCase;
 import me.whereareiam.anvil.integration.intellij.SwingTestSupport;
@@ -84,7 +84,7 @@ public class CatalogPanelPlatformTest extends ScenarioPlatformTestCase {
 
 		var context = DataManager.getInstance().getDataContext(tree);
 		assertEquals(project.source("main"), context.getData(ScenarioSource.DATA_KEY));
-		assertEquals(ScenarioFixtures.scenario().getDefinition(), context.getData(ScenarioDataKeys.SCENARIO).getDefinition());
+		assertEquals(ScenarioFixtures.scenario().definition(), context.getData(ScenarioDataKeys.SCENARIO).definition());
 		assertEquals("paper", context.getData(ScenarioDataKeys.PROCESS));
 		assertNotNull("Jump to Source and double-click open the definition", context.getData(CommonDataKeys.NAVIGATABLE));
 
@@ -189,8 +189,8 @@ public class CatalogPanelPlatformTest extends ScenarioPlatformTestCase {
 		var tree = SwingTestSupport.find(panel, ScenarioTree.class);
 		var catalog = ScenarioFixtures.scenario();
 		var current = catalog.toBuilder().clearProcesses()
-				.process(catalog.getProcesses().getFirst().toBuilder().displayName("Current backend").memoryMegabytes(2048).build())
-				.process(catalog.getProcesses().getLast())
+				.process(catalog.processes().getFirst().toBuilder().displayName("Current backend").memoryMegabytes(2048).build())
+				.process(catalog.processes().getLast())
 				.build();
 		var run = EnvironmentSessionFixture.create(getProject(), project.source("main"), current, getTestRootDisposable());
 		panel.controller.observe(run);
@@ -232,10 +232,10 @@ public class CatalogPanelPlatformTest extends ScenarioPlatformTestCase {
 		assertSame(distribution, textValue(details, "Pinned Paper distribution"));
 		assertEquals("Pinned", distribution.getSelectedText());
 
-		var stopped = run.getSnapshot().getProcesses().getFirst().toBuilder().state(ProcessState.STOPPED).build();
+		var stopped = run.getSnapshot().processes().getFirst().toBuilder().state(ProcessState.STOPPED).build();
 		EnvironmentSessionFixture.update(run, run.getSnapshot().toBuilder().processes(List.of(stopped)).build());
 		SwingTestSupport.await(() -> "Stopped".equals(SwingTestSupport.find(details, StatusBadge.class).getText()));
-		assertEquals("paper", tree.selectedProcess().getName());
+		assertEquals("paper", tree.selectedProcess().name());
 
 		EnvironmentSessionFixture.finish(run, 1);
 		SwingTestSupport.await(() -> "Not started".equals(SwingTestSupport.find(details, StatusBadge.class).getText()));
@@ -278,7 +278,7 @@ public class CatalogPanelPlatformTest extends ScenarioPlatformTestCase {
 				.resolve("missing-anvil-workspace").toString();
 		var live = runningSnapshot();
 		EnvironmentSessionFixture.update(run, live.toBuilder()
-				.processes(List.of(live.getProcesses().getFirst().toBuilder().workDirectory(missing).build())).build());
+				.processes(List.of(live.processes().getFirst().toBuilder().workDirectory(missing).build())).build());
 		panel.controller.observe(run);
 		tree.expandRow(0);
 		tree.setSelectionRow(1);
@@ -333,9 +333,9 @@ public class CatalogPanelPlatformTest extends ScenarioPlatformTestCase {
 
 	public void testGroupedProcessesAreNotRepeatedAsStandaloneEntries() throws Exception {
 		var network = ScenarioFixtures.scenario();
-		var server = network.getProcesses().getFirst();
+		var server = network.processes().getFirst();
 		var standalone = ScenarioDescriptor.builder().definition("example.PaperOnly").name("paper").displayName("Paper 1.21.11")
-				.entrypoint(server.getName()).process(server).build();
+				.entrypoint(server.name()).process(server).build();
 		project.setScenariosJson(json(standalone, network));
 		var panel = panel();
 		var tree = SwingTestSupport.find(panel, ScenarioTree.class);
@@ -345,12 +345,12 @@ public class CatalogPanelPlatformTest extends ScenarioPlatformTestCase {
 		DefaultMutableTreeNode grouped = null;
 		for (int index = 0; index < root.getChildCount(); index++) {
 			var candidate = (DefaultMutableTreeNode) root.getChildAt(index);
-			if (((ScenarioDescriptor) candidate.getUserObject()).getDefinition().equals(network.getDefinition())) grouped = candidate;
+			if (((ScenarioDescriptor) candidate.getUserObject()).definition().equals(network.definition())) grouped = candidate;
 		}
 		assertNotNull(grouped);
 		assertEquals(2, grouped.getChildCount());
 		tree.setSelectionPath(new TreePath(((DefaultMutableTreeNode) grouped.getFirstChild()).getPath()));
-		assertEquals(server.getName(), tree.selectedProcess().getName());
+		assertEquals(server.name(), tree.selectedProcess().name());
 	}
 
 	private CatalogPanel panel() throws Exception {
@@ -362,7 +362,7 @@ public class CatalogPanelPlatformTest extends ScenarioPlatformTestCase {
 	}
 
 	private static String json(ScenarioDescriptor... scenarios) throws Exception {
-		return new ObjectMapper().writeValueAsString(List.of(scenarios));
+		return RunnerJson.mapper().writeValueAsString(List.of(scenarios));
 	}
 
 	private static SessionSnapshot runningSnapshot() {

@@ -89,7 +89,7 @@ class ChannelMessagesTest {
 
 		assertEquals(welcome, received);
 		assertEquals(SpanStyle.builder().color(TextColor.GOLD).bold(true).click(new RunCommandClick("/arbor help")).build(),
-				received.span("Arbor").orElseThrow().getStyle());
+				received.span("Arbor").orElseThrow().style());
 		assertEquals(welcome, messages.received("Arbor", TIMEOUT));
 	}
 
@@ -161,7 +161,7 @@ class ChannelMessagesTest {
 		Expectation invalid = chat.expectReceived(text -> text.contains("Invalid code"));
 
 		assertFalse(invalid.met());
-		assertEquals("see a matching message in chat", invalid.getDescription());
+		assertEquals("see a matching message in chat", invalid.description());
 
 		show(channel, 1, "Invalid code");
 		assertTrue(invalid.met());

@@ -18,8 +18,8 @@ class CookiesProviderTest {
 		CookiesProvider provider = new CookiesProvider();
 
 		assertEquals("me.whereareiam.anvil.cookies", CookiesChannel.ID);
-		assertEquals(CookiesChannel.ID, provider.descriptor().getId());
-		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
+		assertEquals(CookiesChannel.ID, provider.descriptor().id());
+		assertTrue(provider.descriptor().requiredCapabilities().isEmpty());
 		assertEquals(Set.of(JavaProtocol.class), provider.requiredProtocols());
 		assertEquals(Cookies.class, provider.capability());
 	}
@@ -29,7 +29,7 @@ class CookiesProviderTest {
 		TestProtocolChannel channel = new TestProtocolChannel(Set.of(CookiesChannel.ID));
 		new CookiesProvider().create(new TestProtocolPlayerCapabilityContext(channel));
 
-		assertEquals(List.of(CookiesChannel.REQUESTED.getId(), CookiesChannel.HELD.getId()), channel.subscriptions());
+		assertEquals(List.of(CookiesChannel.REQUESTED.id(), CookiesChannel.HELD.id()), channel.subscriptions());
 		assertTrue(channel.requests().isEmpty());
 	}
 }

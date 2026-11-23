@@ -49,7 +49,7 @@ class VelocityPlatformProviderTest {
 				.platform(Platforms.PAPER)
 				.distribution(Distribution.remote("1.21.11", "132"))
 				.build();
-		MinecraftProxy proxy = proxy(jar, server.getName()).toBuilder()
+		MinecraftProxy proxy = proxy(jar, server.name()).toBuilder()
 				.setting("advanced.compression-threshold", "128")
 				.setting("custom-list", "[1, 2, 3]")
 				.setting("custom-string", "'value with \"quotes\"'")
@@ -61,7 +61,7 @@ class VelocityPlatformProviderTest {
 		assertTrue(provider.jvmArguments(proxy, false).isEmpty(), "Ordinary engine runs retain native console defaults");
 		assertEquals(List.of("-Dterminal.ansi=true", "-Dterminal.jline=false"),
 				provider.jvmArguments(proxy, true));
-		assertEquals(jar.toAbsolutePath(), provider.resolve(proxy, context).getJar());
+		assertEquals(jar.toAbsolutePath(), provider.resolve(proxy, context).jar());
 		provider.configure(proxy, context);
 		var config = new TomlMapper().readTree(work.resolve("velocity.toml").toFile());
 		assertEquals("modern", config.path("player-info-forwarding-mode").asText());
@@ -97,7 +97,7 @@ class VelocityPlatformProviderTest {
 				.platform(Platforms.PAPER)
 				.distribution(Distribution.remote("1.21.11", "132"))
 				.build();
-		MinecraftProxy proxy = proxy(temporary.resolve("velocity.jar"), server.getName());
+		MinecraftProxy proxy = proxy(temporary.resolve("velocity.jar"), server.name());
 
 		new VelocityPlatformProvider().configure(proxy, context(scenario(proxy, server), work));
 
@@ -154,7 +154,7 @@ class VelocityPlatformProviderTest {
 	private AnvilScenario scenario(MinecraftProxy proxy, MinecraftServer server) {
 		return AnvilScenario.builder()
 				.name("velocity")
-				.entrypoint(proxy.getName())
+				.entrypoint(proxy.name())
 				.server(server)
 				.proxy(proxy)
 				.build();

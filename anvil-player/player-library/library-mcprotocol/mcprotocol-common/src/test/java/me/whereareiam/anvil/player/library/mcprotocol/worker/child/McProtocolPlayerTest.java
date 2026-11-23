@@ -63,16 +63,16 @@ class McProtocolPlayerTest {
 
 			ClientLogin login = client.logins().getFirst();
 			assertEquals(1, client.logins().size());
-			assertEquals("Alice", login.getProfile().getName());
-			assertEquals(uuid, login.getProfile().getUniqueId());
-			assertEquals("token", login.getCredentials().getAccessToken());
-			assertEquals("1.20.5", login.getMinecraftVersion());
-			assertEquals("ru_ru", login.getSettings().getLocale());
-			assertEquals(8, login.getSettings().getViewDistance());
-			assertEquals("localhost", login.getConnection().getHost());
-			assertEquals(25565, login.getConnection().getPort());
-			assertEquals("lobby.example.test", login.getConnection().getVirtualHost());
-			assertEquals("127.0.0.2", login.getConnection().getSourceAddress());
+			assertEquals("Alice", login.profile().name());
+			assertEquals(uuid, login.profile().uniqueId());
+			assertEquals("token", login.credentials().accessToken());
+			assertEquals("1.20.5", login.minecraftVersion());
+			assertEquals("ru_ru", login.settings().locale());
+			assertEquals(8, login.settings().viewDistance());
+			assertEquals("localhost", login.connection().host());
+			assertEquals(25565, login.connection().port());
+			assertEquals("lobby.example.test", login.connection().virtualHost());
+			assertEquals("127.0.0.2", login.connection().sourceAddress());
 			assertFalse(login.toString().contains("token"));
 			assertSame(client.sessions().getFirst(), player.nativeSession());
 		}
@@ -140,12 +140,12 @@ class McProtocolPlayerTest {
 			client.listener(first).disconnected(first, DisconnectCause.CONNECTION_LOST, "disconnect.endOfStream");
 			assertEquals(List.of(), events());
 			Thread.sleep(600);
-			assertEquals(DisconnectCause.CONNECTION_LOST, events().getFirst().getCause());
+			assertEquals(DisconnectCause.CONNECTION_LOST, events().getFirst().cause());
 
 			player.rejoin();
 			Object second = client.sessions().get(1);
 			client.listener(second).disconnected(second, DisconnectCause.AUTHENTICATION_REQUIRED, "encryption");
-			assertEquals(DisconnectCause.AUTHENTICATION_REQUIRED, events().get(1).getCause());
+			assertEquals(DisconnectCause.AUTHENTICATION_REQUIRED, events().get(1).cause());
 		}
 	}
 
@@ -232,13 +232,13 @@ class McProtocolPlayerTest {
 		var codec = new WorkerMessageCodec();
 
 		try (McProtocolPlayer player = player(null, extension)) {
-			JsonNode response = player.execute(echo.getId(), codec.envelope("hello"));
+			JsonNode response = player.execute(echo.id(), codec.envelope("hello"));
 
 			assertEquals("Alice:hello", codec.open(response, String.class));
 			String line = output.toString(StandardCharsets.UTF_8).strip();
 			WorkerEvent event = (WorkerEvent) codec.decodeMessage(line).orElseThrow();
-			assertEquals(changed.getId(), event.getEvent());
-			assertEquals("Alice:hello", codec.open(event.getPayload(), String.class));
+			assertEquals(changed.id(), event.event());
+			assertEquals("Alice:hello", codec.open(event.payload(), String.class));
 		}
 	}
 
@@ -252,10 +252,10 @@ class McProtocolPlayerTest {
 		try (McProtocolPlayer player = player(null, extension)) {
 			WorkerPlayerCapabilities report = player.initialize();
 
-			assertEquals(Set.of(), report.getCapabilities());
+			assertEquals(Set.of(), report.capabilities());
 			String reason = "no mcprotocol segment selected for Minecraft 1.21.11 provides an adapter for "
 					+ Runnable.class.getName();
-			assertEquals(Map.of("adapted", reason), report.getUnavailable());
+			assertEquals(Map.of("adapted", reason), report.unavailable());
 		}
 	}
 
@@ -264,14 +264,14 @@ class McProtocolPlayerTest {
 		List<String> received = new ArrayList<>();
 		WorkerExtension<Object> partial = extension("partial", (player, operations) -> {
 			player.protocol(JavaProtocol.class)
-					.listen(ClientboundSystemChat.class, packet -> received.add("partial " + packet.getText().plain()));
+					.listen(ClientboundSystemChat.class, packet -> received.add("partial " + packet.text().plain()));
 			throw new NoClassDefFoundError("org/example/MissingPacket");
 		});
 		WorkerExtension<Object> listening = extension("listening", (player, operations) -> {
 			JavaProtocol protocol = player.protocol(JavaProtocol.class);
 
 			Subscription subscription = protocol.listen(ClientboundSystemChat.class,
-					packet -> received.add("listening " + packet.getText().plain()));
+					packet -> received.add("listening " + packet.text().plain()));
 
 			return subscription::close;
 		});
@@ -336,8 +336,8 @@ class McProtocolPlayerTest {
 		List<PlayerProfile> grants = new ArrayList<>();
 		for (String line : output.toString(StandardCharsets.UTF_8).lines().toList()) {
 			WorkerEvent event = (WorkerEvent) codec.decodeMessage(line).orElseThrow();
-			assertEquals(PlayerConnectionEvent.GRANTED.getId(), event.getEvent());
-			grants.add(codec.open(event.getPayload(), PlayerProfile.class));
+			assertEquals(PlayerConnectionEvent.GRANTED.id(), event.event());
+			grants.add(codec.open(event.payload(), PlayerProfile.class));
 		}
 
 		return grants;
@@ -348,8 +348,8 @@ class McProtocolPlayerTest {
 		List<PlayerConnectionEvent> events = new ArrayList<>();
 		for (String line : output.toString(StandardCharsets.UTF_8).lines().toList()) {
 			WorkerEvent event = (WorkerEvent) codec.decodeMessage(line).orElseThrow();
-			assertEquals(PlayerConnectionEvent.CHANGED.getId(), event.getEvent());
-			events.add(codec.open(event.getPayload(), PlayerConnectionEvent.class));
+			assertEquals(PlayerConnectionEvent.CHANGED.id(), event.event());
+			events.add(codec.open(event.payload(), PlayerConnectionEvent.class));
 		}
 
 		return events;

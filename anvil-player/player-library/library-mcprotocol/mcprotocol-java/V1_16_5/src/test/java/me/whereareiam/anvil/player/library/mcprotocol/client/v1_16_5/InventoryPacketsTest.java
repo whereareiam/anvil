@@ -47,12 +47,12 @@ class InventoryPacketsTest {
 		ClientboundOpenScreen open = assertInstanceOf(ClientboundOpenScreen.class, packets.decode(
 				new ServerOpenWindowPacket(3, WindowType.GENERIC_9X3, "{\"text\":\"Anvil \",\"extra\":[{\"text\":\"Menu\"}]}")));
 
-		assertEquals(3, open.getContainerId());
-		assertEquals("minecraft:generic_9x3", open.getMenuType());
-		assertEquals("Anvil Menu", open.getTitle().plain());
-		assertEquals(List.of(Text.literal("Menu")), open.getTitle().getChildren());
+		assertEquals(3, open.containerId());
+		assertEquals("minecraft:generic_9x3", open.menuType());
+		assertEquals("Anvil Menu", open.title().plain());
+		assertEquals(List.of(Text.literal("Menu")), open.title().children());
 		assertEquals("minecraft:cartography_table", assertInstanceOf(ClientboundOpenScreen.class,
-				packets.decode(new ServerOpenWindowPacket(4, WindowType.CARTOGRAPHY, "\"Map\""))).getMenuType());
+				packets.decode(new ServerOpenWindowPacket(4, WindowType.CARTOGRAPHY, "\"Map\""))).menuType());
 	}
 
 	@Test
