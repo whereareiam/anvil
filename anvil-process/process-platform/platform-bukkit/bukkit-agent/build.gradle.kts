@@ -1,7 +1,7 @@
 plugins {
 	id("module-assembly")
-	id("packaging-shaded-jar")
 	id("module-java-legacy")
+	id("packaging-shaded-jar")
 	id("packaging-version-stamp")
 }
 

@@ -1,8 +1,8 @@
 import me.whereareiam.anvil.buildlogic.minecraftdata.MinecraftDataKind
 
 plugins {
-	id("module-minecraft-data")
 	id("module-edition")
+	id("module-minecraft-data")
 }
 
 description = "Item registry keys of every Minecraft: Java Edition release Anvil supports, looked up by item ID"

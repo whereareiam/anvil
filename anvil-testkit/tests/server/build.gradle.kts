@@ -1,9 +1,9 @@
 import me.whereareiam.anvil.buildlogic.matrix.LiveMatrix
 
 plugins {
+	id("me.whereareiam.anvil")
 	id("module-java")
 	id("test-fixtures-consumer")
-	id("me.whereareiam.anvil")
 }
 
 description = "Sessions, capabilities, extensions, and routing against real Minecraft servers and proxies"

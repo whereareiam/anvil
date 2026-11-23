@@ -478,7 +478,8 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 - Order dependency groups: `api`, `implementation`, `compileOnly`, `embedded`, `runtimeOnly`,
   `annotationProcessor`, then test configurations. Put project dependencies before external ones,
   sort within groups, and separate nonempty groups with a blank line.
-- Plugin blocks put built-ins first, catalog aliases second, local conventions last.
+- Plugin blocks put built-ins first, catalog aliases and external ids second, local conventions last, each kind sorted
+  by the plugin name's length, then alphabetically.
 - Consumer live scenarios and journeys live in `src/anvil`; ordinary plugin tests remain in `src/test`.
 - Every public consumer task is in the `anvil` group: `anvil` (all live tests), `anvilTest`, `anvil<Name>Test`
   per suite, `anvilScenarios`, `anvilRun`, `anvilLogin` and `anvilLogout`. `anvilTooling` has no group because
