@@ -7,7 +7,9 @@ import java.util.List;
 
 import me.whereareiam.anvil.tooling.api.ScenarioOperations;
 import me.whereareiam.anvil.tooling.api.ToolingSession;
+import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
 import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioLaunchRequest;
+import me.whereareiam.anvil.tooling.api.type.SessionState;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,6 +33,20 @@ class ToolingMessageCodecTest {
 				ScenarioLaunchRequest.builder().definition("example.Definition").scenario("registration").build()));
 		assertFalse(whole.has("target"));
 
+	}
+
+	@Test
+	void writesAndReadsPayloadsUnderTheNamesOfTheirFields() throws Exception {
+		var request = ScenarioLaunchRequest.builder()
+				.definition("example.Definition").scenario("registration").target("lobby").build();
+
+		assertEquals("{\"id\":\"request-1\",\"operation\":\"start\",\"definition\":\"example.Definition\","
+						+ "\"scenario\":\"registration\",\"target\":\"lobby\"}",
+				codec.write("request-1", ScenarioOperations.START, request));
+		assertEquals(new ToolingMessageCodec.Snapshot(SessionSnapshot.builder()
+						.sessionId("session").state(SessionState.RUNNING).setupComplete(true).build()),
+				codec.read("{\"type\":\"snapshot\",\"snapshot\":{\"sessionId\":\"session\",\"state\":\"RUNNING\","
+						+ "\"setupComplete\":true,\"processes\":[]}}"));
 	}
 
 	@Test

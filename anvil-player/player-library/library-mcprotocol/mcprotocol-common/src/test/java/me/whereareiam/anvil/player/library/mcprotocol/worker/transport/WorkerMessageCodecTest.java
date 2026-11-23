@@ -103,6 +103,32 @@ class WorkerMessageCodecTest {
 	}
 
 	@Test
+	void writesEnvelopesAndValuesUnderTheNamesOfTheirFields() {
+		var ready = WorkerReady.builder().release("1.21.11").protocol(774).segment("mcprotocol-java", "1.21.11")
+				.capability("example.capability").unavailableCapability("example.missing", "missing").build();
+		var response = WorkerResponse.builder().id(3).success(false).error("refused").build();
+		var options = WorkerPlayerOptions.builder()
+				.profile(WorkerProfile.builder().name("Alice").uniqueId(new UUID(0, 1)).build())
+				.minecraftVersion("1.21")
+				.language("en_us")
+				.connection(WorkerConnection.builder().host("localhost").port(25565).build())
+				.build();
+		var reading = new BlockReading(new BlockPosition(1, 64, -3), 1, new BlockIdentity("minecraft:air", Map.of(), true), 767);
+
+		assertEquals("ANVIL:{\"event\":\"ready\",\"release\":\"1.21.11\",\"protocol\":774,\"segments\":{\"mcprotocol-java\":\"1.21.11\"},"
+				+ "\"capabilities\":[\"example.capability\"],\"unavailable\":{\"example.missing\":\"missing\"}}",
+				codec.encodeMessage(ready));
+		assertEquals("ANVIL:{\"id\":3,\"success\":false,\"error\":\"refused\"}", codec.encodeMessage(response));
+		assertEquals("{\"profile\":{\"name\":\"Alice\",\"uniqueId\":\"00000000-0000-0000-0000-000000000001\"},"
+				+ "\"credentials\":null,\"minecraftVersion\":\"1.21\",\"language\":\"en_us\",\"connection\":{\"host\":\"localhost\","
+				+ "\"port\":25565,\"virtualHost\":null,\"sourceAddress\":null}}",
+				codec.payload(options).toString());
+		assertEquals("{\"value\":{\"position\":{\"x\":1,\"y\":64,\"z\":-3},\"state\":1,\"identity\":{\"name\":\"minecraft:air\","
+				+ "\"properties\":{},\"air\":true},\"protocol\":767}}",
+				codec.envelope(reading).toString());
+	}
+
+	@Test
 	void carriesCredentialsPrivatelyWithoutIncludingThemInModelDiagnostics() {
 		var options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder().name("Alice").uniqueId(UUID.randomUUID()).build())

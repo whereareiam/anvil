@@ -2,11 +2,13 @@ package me.whereareiam.anvil.edition.java.protocol.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import me.whereareiam.anvil.edition.java.protocol.model.entity.CustomName;
 import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
 import me.whereareiam.anvil.edition.java.protocol.model.entity.SharedFlags;
 import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtCompound;
 import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtInt;
+import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtIntArray;
 import me.whereareiam.anvil.edition.java.protocol.model.nbt.NbtString;
 import me.whereareiam.anvil.edition.java.protocol.model.overlay.BossEventUpdateProgress;
 import me.whereareiam.anvil.edition.java.protocol.model.world.BlockPosition;
@@ -64,6 +66,25 @@ class JavaProtocolJsonTest {
 		JsonNode removed = mapper.valueToTree(new ClientboundRemoveEntities(List.of(new EntityId(42))));
 
 		assertEquals("{\"kind\":\"ClientboundRemoveEntities\",\"entityIds\":[{\"entity\":42}]}", removed.toString());
+	}
+
+	@Test
+	void writesEachValueUnderTheNamesOfItsFields() throws Exception {
+		ObjectWriter packets = mapper.writerFor(ClientboundPacket.class);
+
+		assertEquals("{\"kind\":\"ClientboundSystemChat\",\"text\":{\"content\":{\"kind\":\"LiteralContent\","
+				+ "\"text\":\"welcome\"},\"style\":{\"color\":null,\"shadowColor\":null,\"decorations\":{},"
+				+ "\"font\":null,\"insertion\":null,\"click\":null,\"hover\":null},\"children\":[]},\"overlay\":true}",
+				packets.writeValueAsString(new ClientboundSystemChat(Text.literal("welcome"), true)));
+		assertEquals("{\"kind\":\"ClientboundSetEntityData\",\"entityId\":{\"entity\":42},\"values\":[{\"kind\":\"SharedFlags\","
+				+ "\"onFire\":true,\"sneaking\":false,\"sprinting\":false,\"swimming\":false,\"invisible\":false,"
+				+ "\"glowing\":false,\"gliding\":false}]}",
+				packets.writeValueAsString(new ClientboundSetEntityData(new EntityId(42),
+						List.of(SharedFlags.builder().onFire(true).build()))));
+		assertEquals("{\"kind\":\"ClientboundShowDialog\",\"registryId\":null,\"dialog\":{\"kind\":\"NbtCompound\","
+				+ "\"entries\":{\"ids\":{\"kind\":\"NbtIntArray\",\"values\":[1,2]}}},\"configuration\":false}",
+				packets.writeValueAsString(new ClientboundShowDialog(null,
+						new NbtCompound(Map.of("ids", new NbtIntArray(new int[]{1, 2}))), false)));
 	}
 
 	@Test
