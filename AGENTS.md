@@ -878,7 +878,12 @@ then rerun the `Release drafter` workflow; text typed into the draft is lost on 
   convention. `compileForLegacyJava` compiles a source set for the legacy Java release and registers its
   `check<SourceSet>ClassRelease`; the `module-java-legacy` convention applies it to the main classes, and no other
   compilation gets the check. The platform provider convention checks the agent JAR against its version data.
-- `settings.gradle.kts` declares the included builds and the standalone discovery exclusions; the root build
+- `settings.gradle.kts` declares the included builds and, through `projectDiscovery { exclude(...) }`, the projects a
+  build leaves out: the server suite in a bootstrap build and the IntelliJ modules with `-Panvil.intellij=false`.
+  Discovery skips every directory with a settings script of its own, such as the examples and the fixtures build, by
+  itself. Never remove a discovered project from `ProjectDescriptor.children`: Gradle keeps it registered, so the
+  type-safe project accessors of builds with and without the removal share one cache entry in the Gradle user home,
+  and whichever build ran first decides which getters every later one gets. The root build
   wires their lifecycle (`check` runs the convention builds' checks, `build` builds the fixtures). Module build
   files must not repeat included-build task wiring.
 - The root build's `prepareGradleFixtureRepository` publishes framework artifacts to the fixture repository.

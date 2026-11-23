@@ -23,7 +23,9 @@ pluginManagement {
 
 plugins {
     id("org.jetbrains.intellij.platform.settings") version "2.20.1"
-    id("me.whereareiam.toolkit.project-discovery") version "0.3.0"
+    // Includes every directory with a build script, except separate builds such as the examples and the fixtures
+    // build, and the directories projectDiscovery excludes below.
+    id("me.whereareiam.toolkit.project-discovery") version "dev-d3eaa4a"
     // Adds the repositories from which the NeoForge agent's build resolves Minecraft and NeoForge.
     id("net.neoforged.moddev.repositories") version "2.0.148"
     // Owns the protocol library repositories below and checks the conventions of library projects.
@@ -42,18 +44,18 @@ libraryRepositories {
 }
 
 rootProject.name = "Anvil"
-// Consumer examples resolve the published plugin independently of the build that produces it.
-rootProject.children.removeAll { it.name == "examples" }
-project(":anvil-testkit").children.removeAll { it.name == "fixtures" }
-// The server suite applies the Anvil plugin at this build's own version, which a clean machine has not published
-// yet. A bootstrap build leaves the suite out, so that publishToMavenLocal can publish the plugin first.
-if (providers.gradleProperty("anvil.bootstrap").isPresent)
-    project(":anvil-testkit:tests").children.removeAll { it.name == "server" }
-// Resolving the IntelliJ plugin's IDE distribution indexes it, which fails now and then on a fresh machine
-// (JetBrains/intellij-platform-gradle-plugin#2192). CI builds the plugin in a job of its own and leaves it out of the
-// others with -Panvil.intellij=false.
-if (providers.gradleProperty("anvil.intellij").orNull == "false")
-    project(":anvil-integration").children.removeAll { it.name == "integration-intellij" }
+
+projectDiscovery {
+    // The server suite applies the Anvil plugin at this build's own version, which a clean machine has not published
+    // yet. A bootstrap build leaves the suite out, so that publishToMavenLocal can publish the plugin first.
+    if (providers.gradleProperty("anvil.bootstrap").isPresent)
+        exclude("anvil-testkit/tests/server")
+    // Resolving the IntelliJ plugin's IDE distribution indexes it, which fails now and then on a fresh machine
+    // (JetBrains/intellij-platform-gradle-plugin#2192). CI builds the plugin in a job of its own and leaves it out of
+    // the others with -Panvil.intellij=false.
+    if (providers.gradleProperty("anvil.intellij").orNull == "false")
+        exclude("anvil-integration/integration-intellij")
+}
 
 includeBuild(".")
 
