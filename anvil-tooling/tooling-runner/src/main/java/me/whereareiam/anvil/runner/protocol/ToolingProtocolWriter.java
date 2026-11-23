@@ -21,7 +21,7 @@ import java.io.PrintWriter;
 @RequiredArgsConstructor
 final class ToolingProtocolWriter {
 	private final @NotNull PrintWriter output;
-	private final @NotNull ObjectMapper json = ToolingJson.configure(new ObjectMapper());
+	private final @NotNull ObjectMapper json = ToolingJson.builder().build();
 
 	void ready() {
 		write(new Ready(Kind.READY, ToolingSession.PROTOCOL_VERSION));

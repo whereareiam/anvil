@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.integration.intellij.scenario.environment.view.console;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intellij.execution.impl.ConsoleViewImpl;
 import com.intellij.ide.ui.UISettings;
 import com.intellij.openapi.Disposable;
@@ -111,7 +110,7 @@ public class CommandInputPlatformTest extends ScenarioPlatformTestCase {
 				getTestRootDisposable());
 		Disposer.register(
 				getTestRootDisposable(), () -> processes.forEach(process -> process.complete(0)));
-		String catalog = ToolingJson.configure(new ObjectMapper()).writeValueAsString(List.of(scenario));
+		String catalog = ToolingJson.builder().build().writeValueAsString(List.of(scenario));
 		EnvironmentLifecycle session =
 				tooling(
 						builder -> {
@@ -155,7 +154,7 @@ public class CommandInputPlatformTest extends ScenarioPlatformTestCase {
 						.players(List.of(PlayerDescriptor.builder().name("alice").displayName("Alice").build()))
 						.build();
 		runner.emit(
-				ToolingJson.configure(new ObjectMapper()).writeValueAsString(Map.of("type", "snapshot", "snapshot", ready)));
+				ToolingJson.builder().build().writeValueAsString(Map.of("type", "snapshot", "snapshot", ready)));
 		SwingTestSupport.await(() -> "fixture-session".equals(run.getSnapshot().sessionId()));
 	}
 
@@ -362,7 +361,7 @@ public class CommandInputPlatformTest extends ScenarioPlatformTestCase {
 						.orElseThrow();
 		assertEquals("fixture-session", request.path("sessionId").asText());
 		runner.emit(
-				ToolingJson.configure(new ObjectMapper())
+				ToolingJson.builder().build()
 						.writeValueAsString(
 								Map.of(
 										"type",

@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.integration.intellij.scenario.catalog.view;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intellij.execution.RunManager;
 import com.intellij.ide.DataManager;
 import com.intellij.notification.Notification;
@@ -363,7 +362,7 @@ public class CatalogPanelPlatformTest extends ScenarioPlatformTestCase {
 	}
 
 	private static String json(ScenarioDescriptor... scenarios) throws Exception {
-		return ToolingJson.configure(new ObjectMapper()).writeValueAsString(List.of(scenarios));
+		return ToolingJson.builder().build().writeValueAsString(List.of(scenarios));
 	}
 
 	private static SessionSnapshot runningSnapshot() {
