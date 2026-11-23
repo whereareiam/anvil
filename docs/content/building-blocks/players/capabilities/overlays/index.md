@@ -33,7 +33,7 @@ Title title = titles.shown("Announcement", Duration.ofSeconds(10));
 
 `shown(text)` matches a title whose title or subtitle contains the text. Any predicate on the `Title`
 works too, so one wait can require both lines:
-`titles.shown(shown -> shown.getTitle().contains("Announcement") && shown.getSubtitle().contains("Alice"), timeout)`.
+`titles.shown(shown -> shown.title().contains("Announcement") && shown.subtitle().contains("Alice"), timeout)`.
 A `Title` also carries the fade-in, stay and fade-out ticks it was shown with.
 
 A title is recorded when its text arrives, together with the subtitle shown under it. A subtitle shows only
@@ -63,9 +63,9 @@ you need, and `removed` the moment it disappears:
 ```java
 BossBarWatch bossBars = overlays.watchBossBars();
 messages.command("example event start");
-BossBar event = bossBars.shown(bar -> bar.getText().contains("Event") && bar.getProgress() >= 0.5F,
+BossBar event = bossBars.shown(bar -> bar.text().contains("Event") && bar.progress() >= 0.5F,
 		Duration.ofSeconds(10));
-bossBars.removed(bar -> bar.getId().equals(event.getId()), Duration.ofSeconds(60));
+bossBars.removed(bar -> bar.id().equals(event.id()), Duration.ofSeconds(60));
 ```
 
 Import `me.whereareiam.anvil.capability.overlays.BossBarWatch` and

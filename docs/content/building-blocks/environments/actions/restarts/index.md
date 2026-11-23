@@ -141,7 +141,7 @@ assert that outcome before continuing the journey.
 ## Handle restart failures
 
 Let unexpected restart failures fail the test and inspect the affected process's console log.
-A `ProcessException` exposes its name through `getProcessName()`.
+A `ProcessException` exposes its name through `processName()`.
 A failed restart marks the scenario lifecycle unsuccessful even if your test catches the exception;
 success-only caches are not finalized as a successful run.
 

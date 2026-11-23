@@ -46,7 +46,7 @@ import java.time.Duration;
 final class ContextExample {
 	static String announceReady(ScenarioContext anvil) {
 		var console = anvil.processes().server("server").console();
-		String marker = "context-ready-" + anvil.definition().getName();
+		String marker = "context-ready-" + anvil.definition().name();
 		var output = console.watch();
 		console.sendCommand("say " + marker);
 		return output.printed(marker, Duration.ofSeconds(10));

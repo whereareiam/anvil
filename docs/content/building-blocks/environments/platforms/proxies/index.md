@@ -40,12 +40,12 @@ public final class ProxyEnvironment implements AnvilScenarioDefinition {
 				.name("proxy")
 				.platform(Platforms.VELOCITY)
 				.distribution(Distribution.remote("4.3.1", "45"))
-				.server(lobby.getName())
-				.defaultServer(lobby.getName())
+				.server(lobby.name())
+				.defaultServer(lobby.name())
 				.build();
 		return AnvilScenario.builder()
 				.name("proxy-environment")
-				.entrypoint(proxy.getName())
+				.entrypoint(proxy.name())
 				.server(lobby)
 				.proxy(proxy)
 				.build();

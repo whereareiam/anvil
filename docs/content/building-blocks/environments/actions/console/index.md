@@ -63,11 +63,11 @@ watch once, from the oldest kept line, then repeat the read to consume available
 var output = console.watchFromStart();
 // repeat:
 var batch = output.read(50);
-batch.getLines().forEach(line -> System.out.println(line.getText()));
+batch.lines().forEach(line -> System.out.println(line.text()));
 ```
 
-`batch.isTruncated()` reports that unread lines were evicted from bounded history. Treat it as an
-output gap. `batch.isClosed()` means no future lines will be captured; consume any remaining buffered
+`batch.truncated()` reports that unread lines were evicted from bounded history. Treat it as an
+output gap. `batch.closed()` means no future lines will be captured; consume any remaining buffered
 lines before ending the reader. Keep a separate watch for each replacement process generation.
 Use `process.executionId()` to identify the console stream; the runtime assigns a fresh opaque UUID
 to each process execution. The scenario and process name describe its logical ownership.

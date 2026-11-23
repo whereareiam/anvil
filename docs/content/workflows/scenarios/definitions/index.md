@@ -30,7 +30,7 @@ public final class LocalPaperScenario implements AnvilScenarioDefinition {
 						.category("Development")
 						.tag("paper")
 						.build())
-				.entrypoint(server.getName())
+				.entrypoint(server.name())
 				.server(server)
 				.manual(true)
 				.build();

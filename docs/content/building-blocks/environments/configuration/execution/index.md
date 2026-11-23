@@ -71,7 +71,7 @@ public final class DockerScenario {
 
 		try (ScenarioEngine engine = AnvilLauncher.create(options, docker);
 		     ScenarioContext context = engine.start(scenario.toBuilder().executionProviderId("docker").build())) {
-			System.out.println(context.processes().get(scenario.getEntrypoint()).address());
+			System.out.println(context.processes().get(scenario.entrypoint()).address());
 		}
 	}
 }

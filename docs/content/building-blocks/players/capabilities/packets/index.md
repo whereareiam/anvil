@@ -68,8 +68,8 @@ Packets packets = alice.capability(Packets.class);
 PacketSelection repair = PacketSelection.of(ClientboundLevelChunkWithLight.class, ClientboundBlockUpdate.class);
 try (PacketTap tap = packets.tap(repair)) {
 	lobby.console().sendCommand("ptest reload-chunk 0 0");
-	tap.received(ClientboundLevelChunkWithLight.class, chunk -> chunk.getPosition().equals(new ChunkPosition(0, 0)));
-	tap.received(ClientboundBlockUpdate.class, update -> update.getChange().getBlockState() != 0);
+	tap.received(ClientboundLevelChunkWithLight.class, chunk -> chunk.position().equals(new ChunkPosition(0, 0)));
+	tap.received(ClientboundBlockUpdate.class, update -> update.change().blockState() != 0);
 }
 ```
 

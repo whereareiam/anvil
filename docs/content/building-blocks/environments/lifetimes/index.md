@@ -41,9 +41,9 @@ MinecraftProxy proxy = MinecraftProxy.builder()
 		.name("proxy")
 		.platform(Platforms.VELOCITY)
 		.distribution(Distribution.remote("4.3.1", "45"))
-		.server(lobby.getName())
-		.server(survival.getName())
-		.defaultServer(lobby.getName())
+		.server(lobby.name())
+		.server(survival.name())
+		.defaultServer(lobby.name())
 		.build();
 ```
 

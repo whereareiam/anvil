@@ -23,7 +23,7 @@ commands.tree(tree -> tree.literal("spawn").isPresent(), Duration.ofSeconds(10))
 
 `tree()` returns the tree the player holds now without waiting. The tree is the last one the player's
 current connection received; after a reconnect it is empty until the server sends one again.
-`CommandTree.literal(name)` finds a command by its name, and `getNodes()` gives every node with its
+`CommandTree.literal(name)` finds a command by its name, and `nodes()` gives every node with its
 children, redirect, parser and whether it needs permissions.
 
 ## Check a command as the client does

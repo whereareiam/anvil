@@ -98,18 +98,18 @@ position stays where it spawned while it rides along.
 
 `SeenEntity` holds what the client knows about the entity:
 
-- `getId()`, the entity ID the server gave it, which [Interaction](../interaction/index.md) uses to interact
-  with it, `getUniqueId()` and `getType()`, such as `minecraft:armor_stand`;
-- `getX()`, `getY()` and `getZ()`, where the server last placed it, and `getYaw()` and `getPitch()`,
+- `id()`, the entity ID the server gave it, which [Interaction](../interaction/index.md) uses to interact
+  with it, `uniqueId()` and `type()`, such as `minecraft:armor_stand`;
+- `x()`, `y()` and `z()`, where the server last placed it, and `yaw()` and `pitch()`,
   which way it faces;
-- `getCustomName()`, `isCustomNameVisible()` and `getText()`, a text display's text, each flattened to
+- `customName()`, `customNameVisible()` and `text()`, a text display's text, each flattened to
   plain text like a chat message;
-- `getItem()`, the item a dropped item, item frame, item display, thrown item or firework shows, with
+- `item()`, the item a dropped item, item frame, item display, thrown item or firework shows, with
   its protocol ID and amount; protocol IDs depend on the release, as in [Inventory](../inventory/index.md);
-- `isInvisible()`, `isGlowing()`, `isOnFire()`, `isSneaking()`, `isSprinting()`, `isSwimming()` and
-  `isGliding()`, the flags every entity carries;
-- `getVehicleId()`, `getPassengerIds()` and `isRidingPlayer()`;
-- `getPlayerDistance()`, the distance from Alice when the value was taken, or `null` before the
+- `invisible()`, `glowing()`, `onFire()`, `sneaking()`, `sprinting()`, `swimming()` and
+  `gliding()`, the flags every entity carries;
+- `vehicleId()`, `passengerIds()` and `ridingPlayer()`;
+- `playerDistance()`, the distance from Alice when the value was taken, or `null` before the
   server placed her;
 - `label()`, the custom name or else the display text.
 
@@ -119,7 +119,7 @@ them as they are now, and a change carries them as they were when it happened.
 ## Entities and connections
 
 Each connection starts with no entities. When Alice reconnects, every entity of the previous connection
-disappears, and `getConnection()` numbers the connection an entity belongs to, so an entity ID that the
+disappears, and `connection()` numbers the connection an entity belongs to, so an entity ID that the
 server reuses on the next connection names another entity. A respawn or a change of world also makes
 every entity disappear, as it does in the client.
 

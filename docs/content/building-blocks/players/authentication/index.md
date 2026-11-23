@@ -221,7 +221,7 @@ A name change keeps the account's UUID and token. `rename` returns the identity 
 name; from then on the lookup and login verification answer to the new name only, and the old one is free:
 
 ```java
-SessionIdentity alicia = yggdrasil.rename(alice.getUniqueId(), "Alicia");
+SessionIdentity alicia = yggdrasil.rename(alice.uniqueId(), "Alicia");
 ```
 
 Renaming to a name another account holds fails; a change of letter case alone is allowed.
