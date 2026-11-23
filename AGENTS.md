@@ -84,14 +84,14 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
 | `anvil-process/process-api`                                         | Platform-provider/planning SPI, version data contract, artifact sources, distribution validation, and configuration contracts                                                      |
 | `anvil-process/process-common`                                    | Platform declaration validation, version data reading, effective Java/topology requirements, forwarding negotiation, the split of a plan by process lifetime, artifact planning, and provider preparation/configuration      |
 | `anvil-process/process-platform/platform-<name>`                      | One family per platform: its provider (`<name>-provider`) and, where it installs one, its platform agent assembly (`<name>-agent`); Paper and Spigot share `platform-bukkit` |
-| `anvil-process/process-agent/agent-api`                                               | Shared operation descriptors, payloads, identities, types, and exceptions; no client/server contracts or core dependency                                                            |
+| `anvil-process/process-agent/agent-api`                                               | Shared operation descriptors, payloads, identities, types, and exceptions, and the payloads' JSON form both ends use (`AgentJson`); no client/server contracts or core dependency |
 | `anvil-process/process-agent/agent-client/client-api`                                 | Client side: agent clients, directories, connections, and artifact lookup; exports shared agent contracts without core or capability APIs                                                    |
 | `anvil-process/process-agent/agent-server/server-api`                           | Server side: embedded endpoint, native service, and operation provider contracts; exports only shared agent contracts                                                                            |
 | `anvil-process/process-agent/agent-client/client-common`                                            | Client connections, stable process clients/directories, agent sessions, player observations, and artifact location                                                                    |
 | `anvil-process/process-agent/agent-server/server-common`                                            | Embedded authenticated endpoint, native operation dispatch, extension loading, and the shaded agent artifact used by platform agents                                         |
 | `anvil-integration/integration-junit`                                             | JUnit annotations, context injection, and lifecycle integration                                                                                                                     |
 | `anvil-integration/integration-gradle/gradle-junit`                                      | Optional `AnvilTest` tasks (`anvilTest` and one per suite) and JUnit dependency wiring                                                                                             |
-| `anvil-tooling/tooling-api`                                           | Editor-independent scenario, session, target, and log contracts                                                                                                                     |
+| `anvil-tooling/tooling-api`                                           | Editor-independent scenario, session, target, and log contracts, and the payloads' JSON form both peers use (`ToolingJson`)                                                         |
 | `anvil-integration/integration-gradle/gradle-tooling`                             | Gradle task discovery, definition indexing, source-set preparation, and tooling runtime                                                                                             |
 | `anvil-tooling/tooling-runner`                                        | Reusable sessions, direct scenario-definition discovery, terminal commands, and structured protocol; supplied engine factory, no default launcher dependency                      |
 | `anvil-integration/integration-intellij`                                                  | IntelliJ plugin assembly: `plugin.xml` including each module's descriptor fragment, the Settings → Tools → Anvil group, branding, and packaging; no code |
@@ -472,7 +472,10 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `anvil-integration/integration-intellij` (IntelliJ's `XmlSerializer`); such a module still calls other modules'
   types by their fluent names. Jackson does not take fluent accessors for getters, so every mapper that writes or
   reads Anvil's values sees their fields instead (field visibility `ANY`, getter and is-getter visibility `NONE`),
-  which keeps the JSON as the fields name it.
+  which keeps the JSON as the fields name it. Each wire protocol sets that once, in the class that owns its JSON
+  form, and both ends take their mapper's configuration from it: `JavaProtocolJson` (`protocol-json`) for the Java
+  protocol's values, the MCProtocolLib worker channel and packet recordings, `AgentJson` (`agent-api`) for the agent
+  protocol, `ToolingJson` (`tooling-api`) for the tooling protocol, and `WireMapper` for the workbench protocol.
 - For long constructor parameter lists, put each parameter on its own line and the closing
   parenthesis on its own line.
 - Use JetBrains `@NotNull`/`@Nullable` consistently. Guard actual input/failure boundaries; do not
@@ -835,8 +838,9 @@ then rerun the `Release drafter` workflow; text typed into the draft is lost on 
   execution; commands never look up a replacement through a project service. `SourceDiscovery`, once
   initialized, observes the project independently of open views, and reloads wait for environment cleanup.
 - `ToolingClient` owns handshake, ordered request submission, response correlation, and pending-result
-  completion on closure or failure. `ToolingMessageCodec` owns typed JSON binding and version checks;
-  transport frames stay internal. Portable `tooling-api` payloads use Jackson-compatible Lombok builders
+  completion on closure or failure. `ToolingMessageCodec` owns typed JSON binding and version checks over the
+  payloads' field-based JSON form, which `tooling-api`'s `ToolingJson` sets for both peers; transport frames stay
+  internal. Portable `tooling-api` payloads use Jackson-compatible Lombok builders
   and are reused by both peers; do not recreate their fields in a manual JSON model reader.
   `ScenarioOperations`, `EnvironmentOperations`, and `ProcessOperations` declare predefined
   `ToolingOperation<Q, R>` schemas at the `tooling-api` root. `ToolingOperationRegistry` binds typed runner

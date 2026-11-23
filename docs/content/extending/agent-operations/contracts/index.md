@@ -42,8 +42,10 @@ public final class EchoOperations {
 ```
 
 Use a name beginning with the provider ID followed by a dot. Request and response types must be
-supported by the selected transport. The bundled transport uses Jackson and writes a model's fields, not its
-getters, so a value is named after its fields whichever accessors it has; immutable custom models can use Lombok
+supported by the selected transport. The bundled transport writes them in `AgentJson`'s form, which `agent-api`
+owns for both ends of the connection: Jackson writes a model's fields, not its getters, so a value is named after
+its fields whichever accessors it has. A test that checks a payload's JSON can use
+`AgentJson.configure(new ObjectMapper())`; immutable custom models can use Lombok
 `@Builder` with `@Jacksonized`. Keep platform types out of serialized models.
 
 ## Register a handler

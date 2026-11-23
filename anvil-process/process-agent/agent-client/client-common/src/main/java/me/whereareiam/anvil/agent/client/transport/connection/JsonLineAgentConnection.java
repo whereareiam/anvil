@@ -1,10 +1,9 @@
 package me.whereareiam.anvil.agent.client.transport.connection;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import me.whereareiam.anvil.agent.api.AgentJson;
 import me.whereareiam.anvil.agent.api.exception.AgentException;
 import me.whereareiam.anvil.agent.client.api.connection.AgentConnection;
 import me.whereareiam.anvil.agent.client.api.exception.AgentUnavailableException;
@@ -30,11 +29,7 @@ final class JsonLineAgentConnection implements AgentConnection {
 	private final BufferedReader reader;
 	private final BufferedWriter writer;
 
-	// Agent payloads read through fluent accessors, which are no JavaBean getters: their fields are their members.
-	private final ObjectMapper mapper = new ObjectMapper()
-			.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
-			.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
-			.setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);
+	private final ObjectMapper mapper = AgentJson.configure(new ObjectMapper());
 	private final AtomicLong ids = new AtomicLong();
 	private final Socket socket = new Socket();
 

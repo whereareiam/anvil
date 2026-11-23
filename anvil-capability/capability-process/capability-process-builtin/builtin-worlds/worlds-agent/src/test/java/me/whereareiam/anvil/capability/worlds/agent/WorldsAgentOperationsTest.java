@@ -1,8 +1,7 @@
 package me.whereareiam.anvil.capability.worlds.agent;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import me.whereareiam.anvil.agent.api.AgentJson;
 import me.whereareiam.anvil.agent.api.model.AgentInfo;
 import me.whereareiam.anvil.agent.api.model.AgentOperation;
 import me.whereareiam.anvil.agent.api.type.AgentRole;
@@ -102,11 +101,7 @@ class WorldsAgentOperationsTest {
 
 	@Test
 	void carriesEveryPayloadThroughTheJsonMapperOfTheAgentAndTheHost() throws Exception {
-		// The agent's and the host's mappers read the payloads' fields, since their accessors are fluent.
-		ObjectMapper mapper = new ObjectMapper()
-				.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
-				.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
-				.setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);
+		ObjectMapper mapper = AgentJson.configure(new ObjectMapper());
 		List<Object> payloads = List.of(
 				AgentWorldList.builder().world(AgentWorld.builder().key("minecraft:arena").kind("CUSTOM").spawn(ARENA).build()).build(),
 				AgentPlacements.builder().placement(placement(SPAWN)).build(),

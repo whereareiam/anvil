@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.runner;
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
@@ -13,6 +12,7 @@ import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.runner.scenario.ScenarioDescriptorFactory;
 import me.whereareiam.anvil.runner.scenario.ScenarioRepository;
+import me.whereareiam.anvil.tooling.api.ToolingJson;
 import me.whereareiam.anvil.tooling.api.model.process.ProcessDefinition;
 import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
 import me.whereareiam.anvil.tooling.api.type.ProcessRole;
@@ -106,11 +106,8 @@ class ScenarioDescriptorFactoryTest {
 		assertThrows(UnsupportedOperationException.class, () -> route.backendNames().add("other"));
 		assertThrows(UnsupportedOperationException.class, () -> topology.processes().clear());
 
-		// As the tooling protocol writes them: through their fields, since their accessors are fluent.
-		var json = new ObjectMapper()
-				.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
-				.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
-				.setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);
+		// As the tooling protocol writes them.
+		var json = ToolingJson.configure(new ObjectMapper());
 		var encoded = json.readTree(json.writeValueAsString(scenarios));
 		assertEquals("PROXY", encoded.get(1).path("processes").get(2).path("role").asText());
 		assertFalse(encoded.get(1).has("setupHook"));
