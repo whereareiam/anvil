@@ -12,7 +12,9 @@ process's workspace.
 
 The JUnit extension passes the final test outcome to workspace finalization. A failed assertion
 therefore retains disposable workspaces when `keepFailedWorkspaces` is enabled and prevents
-success-only cache saves. Directly owned contexts need an explicit `finish(false)` when their caller fails.
+success-only cache saves. A test skipped by a failed assumption, such as `assumeTrue`, did not fail: its
+scenario finishes normally, removes its workspaces and returns processes with the engine lifetime for the
+next test. Directly owned contexts need an explicit `finish(false)` when their caller fails.
 
 For a test whose files you need to inspect, declare `WorkspaceMode.PERSISTENT` in that process's
 `WorkspacePlan`. This retains its directory across runs, so reset or reseed plugin state explicitly

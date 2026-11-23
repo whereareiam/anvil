@@ -8,9 +8,11 @@ import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.opentest4j.TestAbortedException;
 
-import java.util.function.BooleanSupplier;
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Owns one JUnit invocation's scenario from its preparation until ownership transfers to its extension store.
@@ -19,7 +21,10 @@ import java.util.function.Consumer;
 final class ScenarioInvocation implements AutoCloseable {
 	@Getter
 	private final @NotNull ScenarioContext context;
-	private final @NotNull BooleanSupplier successful;
+	/**
+	 * What ended the test, as JUnit records it: empty when the test passed.
+	 */
+	private final @NotNull Supplier<Optional<Throwable>> outcome;
 	@Getter
 	private final @Nullable AccountPool accounts;
 	private final @NotNull OwnedResources resources;
@@ -27,8 +32,8 @@ final class ScenarioInvocation implements AutoCloseable {
 	private boolean registrationFailed;
 	private boolean closed;
 
-	ScenarioInvocation(@NotNull ScenarioEngine engine, @NotNull AnvilScenario scenario, @NotNull BooleanSupplier successful) {
-		this(engine, scenario, successful, null);
+	ScenarioInvocation(@NotNull ScenarioEngine engine, @NotNull AnvilScenario scenario, @NotNull Supplier<Optional<Throwable>> outcome) {
+		this(engine, scenario, outcome, null);
 	}
 
 	/**
@@ -38,10 +43,10 @@ final class ScenarioInvocation implements AutoCloseable {
 	ScenarioInvocation(
 			@NotNull ScenarioEngine engine,
 			@NotNull AnvilScenario scenario,
-			@NotNull BooleanSupplier successful,
+			@NotNull Supplier<Optional<Throwable>> outcome,
 			@Nullable AccountRequirement requirement
 	) {
-		this(engine, scenario, successful, requirement, new OwnedResources());
+		this(engine, scenario, outcome, requirement, new OwnedResources());
 	}
 
 	/**
@@ -51,11 +56,11 @@ final class ScenarioInvocation implements AutoCloseable {
 	ScenarioInvocation(
 			@NotNull ScenarioEngine engine,
 			@NotNull AnvilScenario scenario,
-			@NotNull BooleanSupplier successful,
+			@NotNull Supplier<Optional<Throwable>> outcome,
 			@Nullable AccountRequirement requirement,
 			@NotNull OwnedResources resources
 	) {
-		this(engine, scenario, successful, requirement, resources, RequirementMode.SKIP);
+		this(engine, scenario, outcome, requirement, resources, RequirementMode.SKIP);
 	}
 
 	/**
@@ -65,12 +70,12 @@ final class ScenarioInvocation implements AutoCloseable {
 	ScenarioInvocation(
 			@NotNull ScenarioEngine engine,
 			@NotNull AnvilScenario scenario,
-			@NotNull BooleanSupplier successful,
+			@NotNull Supplier<Optional<Throwable>> outcome,
 			@Nullable AccountRequirement requirement,
 			@NotNull OwnedResources resources,
 			@NotNull RequirementMode requirements
 	) {
-		this.successful = successful;
+		this.outcome = outcome;
 		this.resources = resources;
 
 		ScenarioContext prepared;
@@ -118,8 +123,16 @@ final class ScenarioInvocation implements AutoCloseable {
 			try {
 				if (accounts != null) accounts.close();
 			} finally {
-				context.finish(!registrationFailed && successful.getAsBoolean());
+				context.finish(!registrationFailed && passed());
 			}
 		}
+	}
+
+	/**
+	 * A test that aborted, as one does when an assumption does not hold, was skipped rather than failed: its
+	 * scenario ends normally, so the engine keeps its processes for the next test and keeps no failed workspace.
+	 */
+	private boolean passed() {
+		return outcome.get().filter(failure -> !(failure instanceof TestAbortedException)).isEmpty();
 	}
 }

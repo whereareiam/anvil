@@ -21,7 +21,7 @@ import org.opentest4j.TestAbortedException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,7 +37,7 @@ class ScenarioInvocationTest {
 			public void close() { throw new AssertionError("The invocation borrows its engine"); }
 		};
 
-		assertSame(start, assertThrows(RuntimeException.class, () -> new ScenarioInvocation(engine, definition, () -> true)));
+		assertSame(start, assertThrows(RuntimeException.class, () -> new ScenarioInvocation(engine, definition, Optional::empty)));
 		assertEquals(0, start.getSuppressed().length);
 	}
 
@@ -45,7 +45,7 @@ class ScenarioInvocationTest {
 	void transfersOpenResourcesToRegistrationUntilInvocationEnds() {
 		List<String> actions = new ArrayList<>();
 		var context = new Context(() -> actions.add("context"));
-		var invocation = new ScenarioInvocation(engine(context), definition, () -> true);
+		var invocation = new ScenarioInvocation(engine(context), definition, Optional::empty);
 		var registered = new AtomicReference<ScenarioInvocation>();
 
 		invocation.register(registered::set);
@@ -61,7 +61,7 @@ class ScenarioInvocationTest {
 		RuntimeException registration = new IllegalStateException("registration");
 		RuntimeException contextClose = new IllegalStateException("context close");
 		var context = new Context(() -> { throw contextClose; });
-		var invocation = new ScenarioInvocation(engine(context), definition, () -> true);
+		var invocation = new ScenarioInvocation(engine(context), definition, Optional::empty);
 
 		assertSame(registration, assertThrows(RuntimeException.class,
 				() -> invocation.register(ignored -> { throw registration; })));
@@ -72,11 +72,11 @@ class ScenarioInvocationTest {
 	@Test
 	void readsTheFinalTestOutcomeWhenTheInvocationCloses() {
 		List<String> actions = new ArrayList<>();
-		AtomicBoolean successful = new AtomicBoolean(true);
+		AtomicReference<Throwable> failure = new AtomicReference<>();
 		Context context = new Context(() -> actions.add("context"));
-		var invocation = new ScenarioInvocation(engine(context), definition, successful::get);
+		var invocation = new ScenarioInvocation(engine(context), definition, () -> Optional.ofNullable(failure.get()));
 		assertEquals(1, context.starts);
-		successful.set(false);
+		failure.set(new AssertionError("failed"));
 		invocation.close();
 		invocation.close();
 		assertFalse(context.successful);
@@ -84,11 +84,21 @@ class ScenarioInvocationTest {
 	}
 
 	@Test
+	void finishesTheScenarioOfASkippedTestAsSuccessful() {
+		Context context = new Context(() -> { });
+		var invocation = new ScenarioInvocation(engine(context), definition,
+				() -> Optional.of(new TestAbortedException("Assumption failed")));
+
+		invocation.close();
+		assertTrue(context.successful, "A test that an assumption skipped did not fail");
+	}
+
+	@Test
 	void closesOwnedResourcesAfterTheScenario() {
 		List<String> actions = new ArrayList<>();
 		OwnedResources resources = new OwnedResources();
 		resources.own((AutoCloseable) () -> actions.add("resource"));
-		var invocation = new ScenarioInvocation(engine(new Context(() -> actions.add("context"))), definition, () -> true, null, resources);
+		var invocation = new ScenarioInvocation(engine(new Context(() -> actions.add("context"))), definition, Optional::empty, null, resources);
 
 		assertTrue(invocation.resource(AutoCloseable.class) != null);
 		invocation.close();
@@ -107,7 +117,7 @@ class ScenarioInvocationTest {
 		};
 
 		assertSame(start, assertThrows(RuntimeException.class,
-				() -> new ScenarioInvocation(engine, definition, () -> true, null, resources)));
+				() -> new ScenarioInvocation(engine, definition, Optional::empty, null, resources)));
 		assertEquals(List.of("resource"), actions);
 	}
 
@@ -118,7 +128,7 @@ class ScenarioInvocationTest {
 		context.stored.add(new AuthenticationAccount("alice", "library", "Alice", null));
 
 		assertThrows(TestAbortedException.class, () -> new ScenarioInvocation(
-				engine(context), definition, () -> true, requirement("twoAccounts")));
+				engine(context), definition, Optional::empty, requirement("twoAccounts")));
 		assertEquals(0, context.starts);
 		assertEquals(List.of("context"), actions);
 		assertTrue(context.successful, "A scenario that was skipped did not fail");
@@ -132,7 +142,7 @@ class ScenarioInvocationTest {
 		context.stored.add(new AuthenticationAccount("shared", "library", null, null));
 		context.stored.add(new AuthenticationAccount("shared", "other-library", null, null));
 
-		var invocation = new ScenarioInvocation(engine(context), definition, () -> true, requirement("twoAccounts"));
+		var invocation = new ScenarioInvocation(engine(context), definition, Optional::empty, requirement("twoAccounts"));
 
 		assertEquals(1, context.starts);
 		assertEquals(List.of("alice", "bob"), context.pooled);
@@ -146,7 +156,7 @@ class ScenarioInvocationTest {
 		Context context = new Context(() -> { });
 
 		TestAbortedException skipped = assertThrows(TestAbortedException.class, () -> new ScenarioInvocation(
-				engine(context), definition, () -> true, requirement("namedPool")));
+				engine(context), definition, Optional::empty, requirement("namedPool")));
 		assertTrue(skipped.getMessage().contains("testers"), skipped.getMessage());
 		assertEquals(0, context.starts);
 	}
@@ -158,7 +168,7 @@ class ScenarioInvocationTest {
 		resources.own((AutoCloseable) () -> actions.add("resource"));
 
 		TestAbortedException skipped = assertThrows(TestAbortedException.class, () -> new ScenarioInvocation(
-				refusing(), definition, () -> true, null, resources, RequirementMode.SKIP));
+				refusing(), definition, Optional::empty, null, resources, RequirementMode.SKIP));
 		assertTrue(skipped.getMessage().contains("may not reach api.mojang.com"), skipped.getMessage());
 		assertEquals(List.of("resource"), actions);
 	}
@@ -166,7 +176,7 @@ class ScenarioInvocationTest {
 	@Test
 	void failsAScenarioTheWorkbenchRefusesInStrictMode() {
 		assertThrows(ScenarioRequirementsException.class, () -> new ScenarioInvocation(
-				refusing(), definition, () -> true, null, new OwnedResources(), RequirementMode.STRICT));
+				refusing(), definition, Optional::empty, null, new OwnedResources(), RequirementMode.STRICT));
 	}
 
 	@Test
