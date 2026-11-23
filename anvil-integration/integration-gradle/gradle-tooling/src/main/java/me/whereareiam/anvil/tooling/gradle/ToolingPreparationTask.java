@@ -49,12 +49,12 @@ public abstract class ToolingPreparationTask extends DefaultTask {
 	@Classpath
 	public abstract @NotNull ConfigurableFileCollection getScenarioClasses();
 
-	/** Existing project resources whose scenario index entries should be preserved. */
+	/** Existing project resources whose registered scenario definitions should be preserved. */
 	@InputFiles
 	@PathSensitive(PathSensitivity.RELATIVE)
 	public abstract @NotNull ConfigurableFileCollection getScenarioResources();
 
-	/** Generated definition index placed on the prepared tooling classpath. */
+	/** Generated definition index, the definitions' service file, placed on the prepared tooling classpath. */
 	@OutputDirectory
 	public abstract @NotNull DirectoryProperty getDefinitionIndex();
 
@@ -111,7 +111,7 @@ public abstract class ToolingPreparationTask extends DefaultTask {
 		}
 		List<String> definitions = ScenarioDefinitionScanner.scan(getScenarioClasses(), getScenarioResources());
 		Path index = getDefinitionIndex().get().getAsFile().toPath();
-		ScenarioDefinitionScanner.writeIndex(index, definitions);
+		ScenarioDefinitionScanner.writeServiceFile(index, definitions);
 		var launch = ToolingLaunchModel.builder().schemaVersion(ToolingLaunchModel.SCHEMA_VERSION)
 				.toolingJavaExecutable(getJavaLauncher().get().getExecutablePath().getAsFile().getAbsolutePath())
 				.classpath(Stream.concat(

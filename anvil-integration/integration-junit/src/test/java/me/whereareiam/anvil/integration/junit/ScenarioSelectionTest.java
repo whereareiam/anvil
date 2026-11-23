@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.integration.junit;
 
+import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
@@ -14,6 +15,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -37,6 +39,21 @@ class ScenarioSelectionTest {
 				assertThrows(ExtensionConfigurationException.class, () -> select(Undeclared.class, "none")).getMessage());
 		assertTrue(assertThrows(ExtensionConfigurationException.class, () -> select(Inherits.class, "ambiguous")).getMessage()
 				.endsWith("declares several Anvil environments; declare exactly one"));
+	}
+
+	@Test
+	void namesAFactoryOrDefinitionThatCannotBeCreated() {
+		ExtensionConfigurationException factory = assertThrows(ExtensionConfigurationException.class,
+				() -> select(Unbuildable.class, "configured"));
+		assertEquals("Could not instantiate " + ConfiguredScenarios.class.getName() + "; it needs a no-argument constructor"
+				+ " that completes", factory.getMessage());
+		assertInstanceOf(NoSuchMethodException.class, factory.getCause());
+
+		ExtensionConfigurationException definition = assertThrows(ExtensionConfigurationException.class,
+				() -> select(Unbuildable.class, "failing"));
+		assertEquals("Could not instantiate " + FailingDefinition.class.getName() + "; it needs a no-argument constructor"
+				+ " that completes", definition.getMessage());
+		assertEquals("refused", definition.getCause().getMessage());
 	}
 
 	@Test
@@ -120,6 +137,41 @@ class ScenarioSelectionTest {
 		void environment() { }
 
 		void inherited() { }
+	}
+
+	@Target(ElementType.METHOD)
+	@Retention(RetentionPolicy.RUNTIME)
+	@AnvilEnvironment(ConfiguredScenarios.class)
+	@interface Configured {
+	}
+
+	@RequiredArgsConstructor
+	public static final class ConfiguredScenarios implements AnvilScenarioFactory<Configured> {
+		private final String name;
+
+		@Override
+		public @NotNull AnvilScenario create(@NotNull Configured configured) {
+			return scenario(name);
+		}
+	}
+
+	public static final class FailingDefinition implements AnvilScenarioDefinition {
+		public FailingDefinition() {
+			throw new IllegalStateException("refused");
+		}
+
+		@Override
+		public @NotNull AnvilScenario define() {
+			return scenario("failing");
+		}
+	}
+
+	private static final class Unbuildable {
+		@Configured
+		void configured() { }
+
+		@AnvilTest(FailingDefinition.class)
+		void failing() { }
 	}
 
 	private static final class Undeclared {

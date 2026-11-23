@@ -24,6 +24,9 @@ import java.util.Set;
  * A definition is a public, concrete class that reaches {@code AnvilScenarioDefinition} through its
  * superclasses or interfaces, including abstract bases and sub-interfaces in the scanned classes.
  * Supertypes outside the scanned directories are not inspected.
+ * <p>
+ * The definitions found are registered as {@code AnvilScenarioDefinition} service providers in
+ * {@value #SERVICE_FILE}, which the tooling runtime reads through {@link java.util.ServiceLoader}.
  */
 public final class ScenarioDefinitionScanner {
 	private static final int CLASS_MAGIC = 0xCAFEBABE;
@@ -34,10 +37,16 @@ public final class ScenarioDefinitionScanner {
 	private static final String DEFINITION_INTERFACE = "me.whereareiam.anvil.api.scenario.AnvilScenarioDefinition";
 
 	/**
-	 * Returns definition class names from compiled classes and existing project index resources.
+	 * The Java service file that registers scenario definitions, relative to a class path root.
+	 */
+	public static final String SERVICE_FILE = "META-INF/services/" + DEFINITION_INTERFACE;
+
+	/**
+	 * Returns definition class names from compiled classes and the definitions the project's resources
+	 * already register in {@value #SERVICE_FILE}.
 	 *
 	 * @param classes compiled class directories to scan
-	 * @param resources resource directories that may contain {@code META-INF/anvil/scenarios}
+	 * @param resources resource directories that may contain {@value #SERVICE_FILE}
 	 * @return sorted definition class names
 	 * @throws IOException when a directory or class file cannot be read
 	 */
@@ -60,7 +69,7 @@ public final class ScenarioDefinitionScanner {
 			}
 		}
 
-		Set<String> names = new LinkedHashSet<>(indexed(resources));
+		Set<String> names = new LinkedHashSet<>(registered(resources));
 		for (TypeHeader type : types.values())
 			if (type.instantiable() && reachesDefinition(type.name(), types, new HashSet<>())) names.add(type.name());
 
@@ -68,29 +77,29 @@ public final class ScenarioDefinitionScanner {
 	}
 
 	/**
-	 * Writes an index resource into a caller-owned directory for a prepared JVM classpath.
+	 * Writes the service file registering the definitions into a caller-owned class path root.
 	 *
-	 * @param output directory that receives {@code META-INF/anvil/scenarios}
+	 * @param output class path root that receives {@value #SERVICE_FILE}
 	 * @param definitions definition class names
-	 * @throws IOException when the index cannot be written
+	 * @throws IOException when the service file cannot be written
 	 */
-	public static void writeIndex(@NotNull Path output, @NotNull List<String> definitions) throws IOException {
-		Path index = output.resolve("META-INF/anvil/scenarios");
-		Files.createDirectories(index.getParent());
+	public static void writeServiceFile(@NotNull Path output, @NotNull List<String> definitions) throws IOException {
+		Path file = output.resolve(SERVICE_FILE);
+		Files.createDirectories(file.getParent());
 		String content = definitions.isEmpty() ? "" : String.join("\n", definitions) + "\n";
-		Files.writeString(index, content, StandardCharsets.UTF_8,
+		Files.writeString(file, content, StandardCharsets.UTF_8,
 				StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
 	}
 
-	private static @NotNull List<String> indexed(@NotNull Iterable<File> resources) throws IOException {
+	private static @NotNull List<String> registered(@NotNull Iterable<File> resources) throws IOException {
 		List<String> names = new ArrayList<>();
 		for (File entry : resources) {
-			Path index = entry.toPath().resolve("META-INF/anvil/scenarios");
-			if (!Files.isRegularFile(index)) continue;
+			Path file = entry.toPath().resolve(SERVICE_FILE);
+			if (!Files.isRegularFile(file)) continue;
 
-			for (String line : Files.readAllLines(index, StandardCharsets.UTF_8)) {
-				String name = line.strip();
-				if (!name.isEmpty() && !name.startsWith("#")) names.add(name);
+			for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
+				String name = line.split("#", 2)[0].strip();
+				if (!name.isEmpty()) names.add(name);
 			}
 		}
 
@@ -174,7 +183,7 @@ public final class ScenarioDefinitionScanner {
 	 */
 	private record TypeHeader(String name, int access, List<String> supertypes) {
 		/**
-		 * Whether the runner can instantiate this class reflectively as a definition.
+		 * Whether this class can be a service provider: public, concrete and not synthetic.
 		 */
 		boolean instantiable() {
 			return (access & ACC_PUBLIC) != 0 && (access & (ACC_INTERFACE | ACC_ABSTRACT | ACC_SYNTHETIC)) == 0;
