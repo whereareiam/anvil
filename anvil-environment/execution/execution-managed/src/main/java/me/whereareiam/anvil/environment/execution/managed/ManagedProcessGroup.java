@@ -61,7 +61,10 @@ final class ManagedProcessGroup implements ProcessGroup {
 		for (ProcessSpec process : plan.getProcesses())
 			sessions.computeIfAbsent(executionOf(process), id -> executions.get(id).open(plan.getContext()));
 
-		ProcessScheduler tasks = new ProcessScheduler(plan.getProcessScheduling().getParallelism(), plan.getProcessScheduling().getStartupMemoryMegabytes());
+		ProcessScheduler tasks = new ProcessScheduler(
+				plan.getProcessScheduling().getParallelism(),
+				plan.getProcessScheduling().getStartupMemoryMegabytes()
+		);
 		tasks.run(plan.getProcesses(), process -> {
 			ProcessTarget target = sessions.get(executionOf(process)).prepare(process.getRequest());
 			targets.put(process.getRequest().getName(), target);
@@ -114,7 +117,10 @@ final class ManagedProcessGroup implements ProcessGroup {
 		synchronized (this) {
 			if (closed) throw new IllegalStateException("Cannot start a finalized process group");
 		}
-		ProcessScheduler tasks = new ProcessScheduler(plan.getProcessScheduling().getParallelism(), plan.getProcessScheduling().getStartupMemoryMegabytes());
+		ProcessScheduler tasks = new ProcessScheduler(
+				plan.getProcessScheduling().getParallelism(),
+				plan.getProcessScheduling().getStartupMemoryMegabytes()
+		);
 		for (List<ProcessSpec> layer : startupOrder)
 			tasks.start(layer, process -> processes.start(process.getRequest().getName()));
 	}

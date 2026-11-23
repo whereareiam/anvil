@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.player.library.mcprotocol.worker.child;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import lombok.experimental.Accessors;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
@@ -51,7 +50,6 @@ import java.util.function.Function;
  * events and the view rotation, and its Java Edition protocol, a {@link JavaPacketDispatcher} over the release's
  * client, follows the current session. Adapters come from the worker's verified segments.
  */
-@Accessors(fluent = true)
 final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoCloseable {
 	private static final int VIEW_DISTANCE = 8;
 	/**

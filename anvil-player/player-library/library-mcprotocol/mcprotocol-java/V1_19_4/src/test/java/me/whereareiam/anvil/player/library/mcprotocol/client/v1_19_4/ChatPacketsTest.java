@@ -68,7 +68,11 @@ class ChatPacketsTest {
 	void decodesPlayerChatAsItsUnsignedContentWhenTheServerDecoratedIt() {
 		Component decorated = Component.text("decorated ").append(Component.text("hello"));
 
-		assertEquals(ClientboundPlayerChat.unsigned(Text.builder().content(new LiteralContent("decorated ")).child(Text.literal("hello")).build()),
+		assertEquals(
+				ClientboundPlayerChat.unsigned(Text.builder()
+						.content(new LiteralContent("decorated "))
+						.child(Text.literal("hello"))
+						.build()),
 				packets.decode(playerChat("signed hello", decorated)));
 	}
 

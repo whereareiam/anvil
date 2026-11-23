@@ -31,10 +31,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class McProtocolWorkerTest {
-	private static final OperationDescriptor<Void, String> IDENTITY = new OperationDescriptor<>("example.identity", Void.class, String.class);
+	private static final OperationDescriptor<Void, String> IDENTITY =
+			new OperationDescriptor<>("example.identity", Void.class, String.class);
 	private static final OperationDescriptor<String, String> GREET = new OperationDescriptor<>("example.greet", String.class, String.class);
 
 	private final WorkerMessageCodec codec = new WorkerMessageCodec();
@@ -76,7 +79,10 @@ class McProtocolWorkerTest {
 				.map(line -> assertInstanceOf(WorkerResponse.class, codec.decodeMessage(line).orElseThrow())).toList();
 		assertEquals(8, responses.size());
 		assertTrue(responses.getFirst().isSuccess());
-		assertEquals(Set.of("example.identity"), codec.decodePayload(responses.getFirst().getResult(), WorkerPlayerCapabilities.class).getCapabilities());
+		assertEquals(
+				Set.of("example.identity"),
+				codec.decodePayload(responses.getFirst().getResult(), WorkerPlayerCapabilities.class).getCapabilities()
+		);
 		assertEquals(identity.toString(), codec.open(responses.get(1).getResult(), String.class));
 		assertEquals("Alice greets Bob", codec.open(responses.get(2).getResult(), String.class));
 		assertEquals("IllegalArgumentException: Invalid player message for java.lang.String", responses.get(3).getError());

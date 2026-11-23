@@ -111,7 +111,10 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 					capabilities == null ? null : capabilities.owner(declaration.getName())
 			);
 		} catch (IOException failure) {
-			ProvisioningException contextual = new ProvisioningException("Could not prepare process '" + declaration.getName() + "'", failure);
+			ProvisioningException contextual = new ProvisioningException(
+					"Could not prepare process '" + declaration.getName() + "'",
+					failure
+			);
 			rollback(workspace, contextual);
 			throw contextual;
 		} catch (RuntimeException | Error failure) {

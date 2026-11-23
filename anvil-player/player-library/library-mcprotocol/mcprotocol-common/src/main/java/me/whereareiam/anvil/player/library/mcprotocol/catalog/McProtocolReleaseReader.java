@@ -35,7 +35,8 @@ import java.util.regex.Pattern;
  * checks segments.</p>
  */
 final class McProtocolReleaseReader {
-	private static final Set<String> RELEASE_FIELDS = Set.of("version", "module", "protocol", "minecraft", "verified", "java", "features", "artifact");
+	private static final Set<String> RELEASE_FIELDS =
+			Set.of("version", "module", "protocol", "minecraft", "verified", "java", "features", "artifact");
 	private static final Set<String> ARTIFACT_FIELDS = Set.of("module", "url", "sha256");
 	private static final Pattern MODULE = Pattern.compile("[^:\\s]+:[^:\\s]+:[^:\\s]+");
 	private static final Pattern ARTIFACT_MODULE = Pattern.compile("[^:\\s]+:[^:\\s]+:[^:\\s]+(:[^:\\s]+)?");

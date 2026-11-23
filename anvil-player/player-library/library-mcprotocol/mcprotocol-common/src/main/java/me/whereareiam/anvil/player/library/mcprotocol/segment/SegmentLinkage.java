@@ -104,7 +104,10 @@ public final class SegmentLinkage {
 		PUBLIC, PROTECTED, STATIC, INSTANCE, CLASS, INTERFACE;
 
 		private static @Nullable Requirement of(String keyword) {
-			return Arrays.stream(values()).filter(requirement -> requirement.name().toLowerCase(Locale.ROOT).equals(keyword)).findFirst().orElse(null);
+			return Arrays.stream(values())
+					.filter(requirement -> requirement.name().toLowerCase(Locale.ROOT).equals(keyword))
+					.findFirst()
+					.orElse(null);
 		}
 	}
 
@@ -159,7 +162,8 @@ public final class SegmentLinkage {
 
 			if (requirements.contains(Requirement.STATIC) && !resolution.isStatic()) return described + " is not static, linked as static";
 			if (requirements.contains(Requirement.INSTANCE) && resolution.isStatic()) return described + " is static, linked as instance";
-			if (requirements.contains(Requirement.PUBLIC) && !Modifier.isPublic(resolution.modifiers())) return described + " is no longer public";
+			if (requirements.contains(Requirement.PUBLIC) && !Modifier.isPublic(resolution.modifiers()))
+				return described + " is no longer public";
 			if (requirements.contains(Requirement.PROTECTED) && !Modifier.isPublic(resolution.modifiers())
 					&& !Modifier.isProtected(resolution.modifiers())) return described + " is no longer protected";
 			return null;

@@ -14,13 +14,13 @@ import me.whereareiam.anvil.workbench.protocol.model.execution.ThawProcess;
 import me.whereareiam.anvil.workbench.remote.WorkbenchConnection;
 import org.jetbrains.annotations.NotNull;
 
-import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import javax.net.ssl.SSLSocket;
 
 /**
  * A process running on a workbench on another machine. Its output and input travel over a stream connection of

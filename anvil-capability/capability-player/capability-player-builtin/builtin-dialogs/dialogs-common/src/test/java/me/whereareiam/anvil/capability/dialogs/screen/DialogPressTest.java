@@ -30,7 +30,10 @@ class DialogPressTest {
 
 	@Test
 	void fillsCommandTemplatesWithEveryKindOfValue() {
-		DialogAction register = DialogAction.of(DialogActionType.DYNAMIC_RUN_COMMAND, "/register $(password) $(remember) $(amount) $(mode)");
+		DialogAction register = DialogAction.of(
+				DialogActionType.DYNAMIC_RUN_COMMAND,
+				"/register $(password) $(remember) $(amount) $(mode)"
+		);
 		DialogAction set = DialogAction.of(DialogActionType.DYNAMIC_RUN_COMMAND, "set $(amount) $(remember)");
 
 		assertEquals(DialogClick.command("register Pass 1$ yes 5 easy"),
@@ -40,7 +43,10 @@ class DialogPressTest {
 
 	@Test
 	void runsStaticCommandsWithoutTheirSlash() {
-		assertEquals(DialogClick.command("hub"), DialogPress.click(DialogAction.of(DialogActionType.RUN_COMMAND, "/hub"), INPUTS, Map.of()));
+		assertEquals(
+				DialogClick.command("hub"),
+				DialogPress.click(DialogAction.of(DialogActionType.RUN_COMMAND, "/hub"), INPUTS, Map.of())
+		);
 	}
 
 	@Test
@@ -71,7 +77,10 @@ class DialogPressTest {
 		assertEquals("The dialog has no input name; inputs: [password, remember, amount, mode, colour]",
 				assertThrows(IllegalArgumentException.class, () -> DialogPress.click(go, INPUTS, Map.of("name", "Alice"))).getMessage());
 		assertEquals("Input password accepts at most 8 characters",
-				assertThrows(IllegalArgumentException.class, () -> DialogPress.click(go, INPUTS, Map.of("password", "too long secret"))).getMessage());
+				assertThrows(
+						IllegalArgumentException.class,
+						() -> DialogPress.click(go, INPUTS, Map.of("password", "too long secret"))
+				).getMessage());
 		assertEquals("Input remember accepts true or false, not yes",
 				assertThrows(IllegalArgumentException.class, () -> DialogPress.click(go, INPUTS, Map.of("remember", "yes"))).getMessage());
 		assertEquals("Input amount accepts numbers from 0.0 to 10.0, not 11",

@@ -1,10 +1,10 @@
 package me.whereareiam.anvil.capability.interaction;
 
 import me.whereareiam.anvil.api.player.PlayerCapability;
-import me.whereareiam.anvil.capability.world.model.block.BlockPosition;
 import me.whereareiam.anvil.capability.interaction.type.BlockFace;
 import me.whereareiam.anvil.capability.interaction.type.EntityInteraction;
 import me.whereareiam.anvil.capability.interaction.type.Hand;
+import me.whereareiam.anvil.capability.world.model.block.BlockPosition;
 import org.jetbrains.annotations.NotNull;
 
 /**

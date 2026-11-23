@@ -141,7 +141,10 @@ final class EnginePropertiesTest {
 
 		EngineOptions options = EngineProperties.from(properties);
 
-		assertEquals(JavaArchive.builder().uri(URI.create("https://example.test/jdk.tar.gz")).sha256("a".repeat(64)).build(), options.getJavaSelection().getSource());
+		assertEquals(
+				JavaArchive.builder().uri(URI.create("https://example.test/jdk.tar.gz")).sha256("a".repeat(64)).build(),
+				options.getJavaSelection().getSource()
+		);
 		properties.remove(EngineProperties.JAVA_ARCHIVE_SHA256_PROPERTY);
 		assertThrows(IllegalArgumentException.class, () -> EngineProperties.from(properties));
 	}

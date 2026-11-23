@@ -29,10 +29,14 @@ class WorldPacketsTest {
 
 	@Test
 	void reportsTheWeatherEventsByTheGamesIds() {
-		assertEquals(new ClientboundGameEvent(GameEventType.START_RAINING, 0), packets.decode(new ServerNotifyClientPacket(ClientNotification.STOP_RAIN, new RainStrengthValue(0))));
-		assertEquals(new ClientboundGameEvent(GameEventType.STOP_RAINING, 0), packets.decode(new ServerNotifyClientPacket(ClientNotification.START_RAIN, new RainStrengthValue(0))));
-		assertEquals(new ClientboundGameEvent(GameEventType.RAIN_LEVEL_CHANGE, 0.5F), packets.decode(new ServerNotifyClientPacket(ClientNotification.RAIN_STRENGTH, new RainStrengthValue(0.5F))));
-		assertEquals(new ClientboundGameEvent(GameEventType.THUNDER_LEVEL_CHANGE, 1), packets.decode(new ServerNotifyClientPacket(ClientNotification.THUNDER_STRENGTH, new ThunderStrengthValue(1))));
+		assertEquals(new ClientboundGameEvent(GameEventType.START_RAINING, 0),
+				packets.decode(new ServerNotifyClientPacket(ClientNotification.STOP_RAIN, new RainStrengthValue(0))));
+		assertEquals(new ClientboundGameEvent(GameEventType.STOP_RAINING, 0),
+				packets.decode(new ServerNotifyClientPacket(ClientNotification.START_RAIN, new RainStrengthValue(0))));
+		assertEquals(new ClientboundGameEvent(GameEventType.RAIN_LEVEL_CHANGE, 0.5F),
+				packets.decode(new ServerNotifyClientPacket(ClientNotification.RAIN_STRENGTH, new RainStrengthValue(0.5F))));
+		assertEquals(new ClientboundGameEvent(GameEventType.THUNDER_LEVEL_CHANGE, 1),
+				packets.decode(new ServerNotifyClientPacket(ClientNotification.THUNDER_STRENGTH, new ThunderStrengthValue(1))));
 	}
 
 	@Test

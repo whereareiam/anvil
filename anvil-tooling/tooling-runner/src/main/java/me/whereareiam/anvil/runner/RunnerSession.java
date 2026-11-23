@@ -2,24 +2,24 @@ package me.whereareiam.anvil.runner;
 
 
 import me.whereareiam.anvil.api.model.PresentationMetadata;
-import me.whereareiam.anvil.tooling.extension.api.ToolingRegistry;
-import me.whereareiam.anvil.runner.scenario.DisplayNameResolver;
-import me.whereareiam.anvil.runner.session.SessionConsole;
-import me.whereareiam.anvil.runner.scenario.ScenarioRepository;
-import me.whereareiam.anvil.runner.extension.ToolingExtensionRegistry;
-import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionRequest;
-import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionResult;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
+import me.whereareiam.anvil.runner.extension.ToolingExtensionRegistry;
+import me.whereareiam.anvil.runner.scenario.DisplayNameResolver;
+import me.whereareiam.anvil.runner.scenario.ScenarioRepository;
+import me.whereareiam.anvil.runner.session.SessionConsole;
 import me.whereareiam.anvil.tooling.api.ToolingSession;
 import me.whereareiam.anvil.tooling.api.model.LogEvent;
 import me.whereareiam.anvil.tooling.api.model.PlayerDescriptor;
+import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
+import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionRequest;
+import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionResult;
 import me.whereareiam.anvil.tooling.api.model.process.ProcessSnapshot;
 import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
-import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
 import me.whereareiam.anvil.tooling.api.type.SessionState;
+import me.whereareiam.anvil.tooling.extension.api.ToolingRegistry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -207,7 +207,8 @@ public final class RunnerSession implements ToolingSession {
 		lifecycle.lock();
 		try {
 			RunningProcess target = requireRunning().processes().get(process);
-			if (target.state() != me.whereareiam.anvil.api.type.ProcessState.READY) throw new IllegalStateException("Process is not ready: " + process);
+			if (target.state() != me.whereareiam.anvil.api.type.ProcessState.READY)
+				throw new IllegalStateException("Process is not ready: " + process);
 			target.console().sendCommand(command);
 		} finally {
 			lifecycle.unlock();
@@ -274,7 +275,11 @@ public final class RunnerSession implements ToolingSession {
 			try {
 				current.finish(latest.getFailure() == null);
 				latest = latest.toBuilder().state(latest.getFailure() == null ? SessionState.STOPPED : SessionState.FAILED)
-						.processes(latest.getProcesses().stream().map(process -> process.toBuilder().state(me.whereareiam.anvil.tooling.api.type.ProcessState.STOPPED).build()).toList())
+						.processes(latest.getProcesses().stream()
+								.map(process -> process.toBuilder()
+										.state(me.whereareiam.anvil.tooling.api.type.ProcessState.STOPPED)
+										.build())
+								.toList())
 						.players(List.of()).actions(List.of()).observations(List.of()).build();
 			} catch (RuntimeException | Error failure) {
 				fail(failure);
@@ -321,7 +326,8 @@ public final class RunnerSession implements ToolingSession {
 				.build()).toList();
 		latest = latest.toBuilder().processes(processes).players(players)
 				.actions(extensions.actions(context)).observations(extensions.observations(context)).build();
-		if (latest.getState() == SessionState.RUNNING && processes.stream().anyMatch(process -> process.getState() == me.whereareiam.anvil.tooling.api.type.ProcessState.FAILED))
+		if (latest.getState() == SessionState.RUNNING
+				&& processes.stream().anyMatch(process -> process.getState() == me.whereareiam.anvil.tooling.api.type.ProcessState.FAILED))
 			latest = latest.toBuilder().state(SessionState.FAILED).failure("A scenario process failed; inspect retained logs.").build();
 	}
 

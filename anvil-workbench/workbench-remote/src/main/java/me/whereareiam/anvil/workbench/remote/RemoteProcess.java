@@ -6,11 +6,11 @@ import me.whereareiam.anvil.workbench.protocol.model.launch.AwaitLaunched;
 import me.whereareiam.anvil.workbench.protocol.model.launch.DestroyLaunched;
 import org.jetbrains.annotations.NotNull;
 
-import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLSocket;
 
 /**
  * A JVM a workbench on another machine started outside managed execution, such as a player worker. Its standard

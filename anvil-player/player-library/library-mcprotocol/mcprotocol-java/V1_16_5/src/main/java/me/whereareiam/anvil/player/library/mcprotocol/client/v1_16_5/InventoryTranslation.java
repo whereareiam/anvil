@@ -16,7 +16,6 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.Serv
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerCloseWindowPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerOpenWindowPacket;
 import com.github.steveice10.packetlib.packet.Packet;
-import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.edition.java.protocol.PlayerInventoryLayout;
 import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.JavaPacket;
@@ -25,10 +24,11 @@ import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.Cli
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerSetContent;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundOpenScreen;
+import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ServerboundContainerClick;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ClientboundSetHeldSlot;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ClientboundSetPlayerInventory;
-import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ServerboundContainerClick;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ServerboundSetCarriedItem;
+import me.whereareiam.anvil.player.api.exception.ProtocolUnavailableException;
 import me.whereareiam.anvil.player.library.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTranslation;
 import net.kyori.adventure.key.Key;

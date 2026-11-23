@@ -3,6 +3,7 @@ package me.whereareiam.anvil.player.library.mcprotocol.client.v1_18_2;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
+import com.github.steveice10.opennbt.tag.builtin.Tag;
 import me.whereareiam.anvil.edition.java.protocol.model.inventory.ItemStack;
 import me.whereareiam.anvil.player.api.model.text.Text;
 import me.whereareiam.anvil.player.api.model.text.TextColor;
@@ -60,7 +61,7 @@ class ItemTranslatorTest {
 		return new com.github.steveice10.mc.protocol.data.game.entity.metadata.ItemStack(791, 3, nbt);
 	}
 
-	private static CompoundTag display(com.github.steveice10.opennbt.tag.builtin.Tag... tags) {
+	private static CompoundTag display(Tag... tags) {
 		CompoundTag display = new CompoundTag("display");
 		for (var tag : tags) display.put(tag);
 		return display;

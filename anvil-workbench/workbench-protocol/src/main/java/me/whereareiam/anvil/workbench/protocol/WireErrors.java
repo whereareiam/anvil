@@ -32,8 +32,10 @@ public final class WireErrors {
 		Throwable described = failure instanceof UncheckedIOException unchecked ? unchecked.getCause() : failure;
 		String message = described.getMessage() == null ? described.getClass().getSimpleName() : described.getMessage();
 		return switch (described) {
-			case NoSuchFileException missing -> new Failure(WireFailure.MISSING_FILE, message, missing.getFile(), null, null, null, List.of());
-			case ProcessException process -> new Failure(WireFailure.PROCESS, message, null, process.getProcessName(), null, null, List.of());
+			case NoSuchFileException missing ->
+					new Failure(WireFailure.MISSING_FILE, message, missing.getFile(), null, null, null, List.of());
+			case ProcessException process ->
+					new Failure(WireFailure.PROCESS, message, null, process.getProcessName(), null, null, List.of());
 			case ScenarioRequirementsException refused -> new Failure(WireFailure.REQUIREMENTS, message, null, null,
 					refused.getScenarioName(), refused.getWorkbenchName(), refused.getUnmet());
 			default -> new Failure(kind(described), message, null, null, null, null, List.of());

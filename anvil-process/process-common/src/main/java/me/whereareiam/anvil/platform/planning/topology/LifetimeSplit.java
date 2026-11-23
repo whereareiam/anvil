@@ -90,7 +90,12 @@ public final class LifetimeSplit {
 		AnvilScenario declaration = retained.getScenario();
 		List<Identity.Process> processes = retained.getProcesses().values().stream().map(Identity.Process::of).toList();
 
-		return new Identity(declaration.getExecutionProviderId(), declaration.getNetworkPolicy(), declaration.getProcessTimeouts(), processes);
+		return new Identity(
+				declaration.getExecutionProviderId(),
+				declaration.getNetworkPolicy(),
+				declaration.getProcessTimeouts(),
+				processes
+		);
 	}
 
 	/**

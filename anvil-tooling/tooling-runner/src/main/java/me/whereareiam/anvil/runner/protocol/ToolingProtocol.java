@@ -3,6 +3,8 @@ package me.whereareiam.anvil.runner.protocol;
 import me.whereareiam.anvil.tooling.api.ToolingSession;
 import me.whereareiam.anvil.tooling.api.model.LogEvent;
 import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,8 +16,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Versioned JSON-lines protocol. A serialized command worker owns mutations while snapshots

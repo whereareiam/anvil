@@ -184,7 +184,10 @@ class BlockRegistryTest {
 	void startsIntegerPropertiesAtTheirVanillaMinimum(int protocol) {
 		BlockRegistry registry = registry(protocol);
 
-		assertEquals(List.of("1", "2", "3", "4", "5", "6", "7", "8"), block(registry, "minecraft:snow").getProperties().getFirst().getValues());
+		assertEquals(
+				List.of("1", "2", "3", "4", "5", "6", "7", "8"),
+				block(registry, "minecraft:snow").getProperties().getFirst().getValues()
+		);
 		assertEquals("1", state(registry, "minecraft:snow").property("layers").orElseThrow());
 		assertEquals("0", state(registry, "minecraft:wheat").property("age").orElseThrow());
 	}

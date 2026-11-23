@@ -49,8 +49,12 @@ public final class ScenarioDescriptorFactory {
 				).toList())
 				.manual(scenario.isManual())
 				.setupAvailable(scenario.getSetupHook() != null)
-				.startupTimeoutMillis(scenario.getProcessTimeouts().getStartup() == null ? 0 : scenario.getProcessTimeouts().getStartup().toMillis())
-				.shutdownTimeoutMillis(scenario.getProcessTimeouts().getShutdown() == null ? 0 : scenario.getProcessTimeouts().getShutdown().toMillis())
+				.startupTimeoutMillis(scenario.getProcessTimeouts().getStartup() == null
+						? 0
+						: scenario.getProcessTimeouts().getStartup().toMillis())
+				.shutdownTimeoutMillis(scenario.getProcessTimeouts().getShutdown() == null
+						? 0
+						: scenario.getProcessTimeouts().getShutdown().toMillis())
 				.executionProviderId(scenario.getExecutionProviderId())
 				.javaRequirement(javaSelection(scenario.getJavaSelection(), null))
 				.build();

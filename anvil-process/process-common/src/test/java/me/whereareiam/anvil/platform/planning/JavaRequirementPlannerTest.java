@@ -184,16 +184,25 @@ class JavaRequirementPlannerTest {
 
 	@ParameterizedTest(name = "{0} {1} requesting Java {2} under {3} is refused")
 	@CsvSource(delimiter = '|', quoteCharacter = '"', value = {
-			"paper      | 1.16.5  | 21 | STRICT  | is UNTESTED: Java 21 is above the maximum Java 16 for this version and runs with -DPaper.IgnoreJavaVersion=true; verified Java for paper 1.16.5: 11, 17. The STRICT support policy refuses UNTESTED processes; use Java 11 (default) or a verified Java version (11, 17), or run under the LENIENT support policy.",
-			"paper      | 1.16.5  | 16 | LENIENT | requests Java 16 (requested by process 'paper'), which is not an LTS release. Anvil runs processes on LTS releases only: 11, 17, 21, 25, then every fourth release. paper 1.16.5 runs Java 11 to 16 (default 11); newer Java runs only with -DPaper.IgnoreJavaVersion=true.",
+			"paper      | 1.16.5  | 21 | STRICT  | is UNTESTED: Java 21 is above the maximum Java 16 for this version and runs with " +
+					"-DPaper.IgnoreJavaVersion=true; verified Java for paper 1.16.5: 11, 17. The STRICT support policy refuses UNTESTED " +
+					"processes; use Java 11 (default) or a verified Java version (11, 17), or run under the LENIENT support policy.",
+			"paper      | 1.16.5  | 16 | LENIENT | requests Java 16 (requested by process 'paper'), which is not an LTS release. Anvil " +
+					"runs processes on LTS releases only: 11, 17, 21, 25, then every fourth release. paper 1.16.5 runs Java 11 to 16 " +
+					"(default 11); newer Java runs only with -DPaper.IgnoreJavaVersion=true.",
 			"paper      | 1.16.5  | 8  | LENIENT | requests Java 8 (requested by process 'paper'), which is not an LTS release",
 			"paper      | 1.21.11 | 17 | LENIENT | but paper 1.21.11 requires Java 21 or newer",
-			"paper      | 1.12.2  |    | LENIENT | paper 1.12.2 is UNSUPPORTED; it is older than the first version Anvil supports for this platform (1.16.5)",
+			"paper      | 1.12.2  |    | LENIENT | paper 1.12.2 is UNSUPPORTED; it is older than the first version Anvil supports for " +
+					"this platform (1.16.5)",
 			"paper      | 26.2    |    | STRICT  | paper 26.2 is not a version Anvil knows (newest known: 26.1.2)",
 			"spigot     | 1.20.6  | 25 | LENIENT | spigot 1.20.6 refuses Java above 22 and has no bypass",
-			"spigot     | 1.17.1  | 21 | LENIENT | Remove the Java requirement to use Java 17 (default), or use 'paper', which runs Minecraft 1.17.1 on Java 21 with -DPaper.IgnoreJavaVersion=true",
-			"velocity   | 3.4.0   | 17 | LENIENT | requests Java 17 (requested by process 'velocity'), but the Anvil agent installed into velocity requires Java 21 or newer. velocity 3.4 runs Java 17 or newer, and its Anvil agent requires Java 21 or newer (default 21).",
-			"bungeecord |         | 17 | LENIENT | but the Anvil agent installed into bungeecord requires Java 21 or newer. bungeecord runs Java 17 or newer, and its Anvil agent requires Java 21 or newer (default 21)."
+			"spigot     | 1.17.1  | 21 | LENIENT | Remove the Java requirement to use Java 17 (default), or use 'paper', which runs " +
+					"Minecraft 1.17.1 on Java 21 with -DPaper.IgnoreJavaVersion=true",
+			"velocity   | 3.4.0   | 17 | LENIENT | requests Java 17 (requested by process 'velocity'), but the Anvil agent installed " +
+					"into velocity requires Java 21 or newer. velocity 3.4 runs Java 17 or newer, and its Anvil agent requires Java 21 " +
+					"or newer (default 21).",
+			"bungeecord |         | 17 | LENIENT | but the Anvil agent installed into bungeecord requires Java 21 or newer. bungeecord " +
+					"runs Java 17 or newer, and its Anvil agent requires Java 21 or newer (default 21)."
 	})
 	void refusesRequestsBeforeAnythingStarts(String platform, String version, Integer requested, SupportPolicy policy, String message) {
 		var failure = refuse(PROVIDERS, process(platform, version, requested), policy);
@@ -392,7 +401,11 @@ class JavaRequirementPlannerTest {
 				.build();
 	}
 
-	private static ScenarioValidationException refuse(Map<String, PlatformProvider> providers, MinecraftProcess process, SupportPolicy policy) {
+	private static ScenarioValidationException refuse(
+			Map<String, PlatformProvider> providers,
+			MinecraftProcess process,
+			SupportPolicy policy
+	) {
 		var planner = new JavaRequirementPlanner(EngineOptions.builder().supportPolicy(policy).build(), providers,
 				NO_SOURCES, new PrintStream(new ByteArrayOutputStream()));
 		return assertThrows(ScenarioValidationException.class, () -> planner.plan(scenario(process), process));

@@ -137,7 +137,11 @@ class JavaInteractionExtensionTest {
 		assertEquals(List.of(
 				new ServerboundAttack(new EntityId(42)),
 				new ServerboundSwing(InteractionHand.MAIN_HAND),
-				ServerboundInteract.builder().entityId(new EntityId(43)).action(InteractAction.INTERACT).hand(InteractionHand.OFF_HAND).build(),
+				ServerboundInteract.builder()
+						.entityId(new EntityId(43))
+						.action(InteractAction.INTERACT)
+						.hand(InteractionHand.OFF_HAND)
+						.build(),
 				new ServerboundSwing(InteractionHand.OFF_HAND),
 				new ServerboundSwing(InteractionHand.MAIN_HAND),
 				ServerboundUseItem.builder().hand(InteractionHand.MAIN_HAND).sequence(1).build()
@@ -164,7 +168,11 @@ class JavaInteractionExtensionTest {
 		assertEquals(List.of(
 				new ServerboundAttack(new EntityId(42)),
 				new ServerboundPunch(),
-				ServerboundInteract.builder().entityId(new EntityId(43)).action(InteractAction.INTERACT).hand(InteractionHand.OFF_HAND).build(),
+				ServerboundInteract.builder()
+						.entityId(new EntityId(43))
+						.action(InteractAction.INTERACT)
+						.hand(InteractionHand.OFF_HAND)
+						.build(),
 				ServerboundUseItem.builder().hand(InteractionHand.MAIN_HAND).sequence(1).build()
 		), punching.sent());
 	}

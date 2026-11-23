@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.agent.client.transport;
 
-import me.whereareiam.anvil.agent.client.api.AgentArtifactLocator;
 import me.whereareiam.anvil.agent.api.exception.AgentException;
+import me.whereareiam.anvil.agent.client.api.AgentArtifactLocator;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;

@@ -28,7 +28,8 @@ class ReleaseAnswersTest {
 	void reportsATeleportBeforeAcceptingItWithItsTargetAndAnnouncingThatThePlayerLoaded() {
 		receive(new ClientboundPlayerPositionPacket(7, 1, 64, -2, 0, 0, 0, 90, -15));
 
-		assertEquals(List.of("teleported 90.0 -15.0", "sent ServerboundAcceptTeleportationPacket", "sent ServerboundPlayerLoadedPacket"), events);
+		assertEquals(List.of("teleported 90.0 -15.0", "sent ServerboundAcceptTeleportationPacket", "sent ServerboundPlayerLoadedPacket"),
+				events);
 		assertEquals(new ServerboundAcceptTeleportationPacket(7, 1, 64, -2, 90, -15), sent.getFirst());
 		assertEquals(ServerboundPlayerLoadedPacket.INSTANCE, sent.get(1));
 	}
@@ -44,7 +45,8 @@ class ReleaseAnswersTest {
 		receive(new ClientboundPlayerPositionPacket(2, 0, 2, -4, 0, 0, 0, 5, 30,
 				PositionElement.X, PositionElement.Y, PositionElement.Z, PositionElement.Y_ROT));
 
-		assertEquals(List.of("teleported 5.0 30.0", "sent ServerboundAcceptTeleportationPacket", "sent ServerboundPlayerLoadedPacket"), events);
+		assertEquals(List.of("teleported 5.0 30.0", "sent ServerboundAcceptTeleportationPacket", "sent ServerboundPlayerLoadedPacket"),
+				events);
 		assertEquals(new ServerboundAcceptTeleportationPacket(2, 12, 67, 16, 50, 30), sent.getFirst());
 	}
 

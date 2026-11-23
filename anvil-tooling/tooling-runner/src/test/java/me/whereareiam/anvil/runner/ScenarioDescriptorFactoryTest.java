@@ -1,16 +1,15 @@
 package me.whereareiam.anvil.runner;
-import me.whereareiam.anvil.runner.scenario.ScenarioDescriptorFactory;
-
-import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
-import me.whereareiam.anvil.api.model.java.JavaSelection;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.runner.scenario.ScenarioDescriptorFactory;
 import me.whereareiam.anvil.runner.scenario.ScenarioRepository;
 import me.whereareiam.anvil.tooling.api.model.process.ProcessDefinition;
 import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
@@ -45,8 +44,12 @@ class ScenarioDescriptorFactoryTest {
 				.metadata(PresentationMetadata.builder().displayName("Proxy investigation")
 						.description("Two backends behind one proxy").category("Routing").tag("matrix").build())
 				.entrypoint("proxy").server(lobby).server(game).proxy(proxy)
-				.manual(true).executionProviderId("local").processTimeouts(ProcessTimeouts.builder().startup(Duration.ofSeconds(75)).shutdown(Duration.ofSeconds(7)).build())
-				.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().featureVersion(21).distribution("temurin").release("21.0.10").build()).build())
+				.manual(true)
+				.executionProviderId("local")
+				.processTimeouts(ProcessTimeouts.builder().startup(Duration.ofSeconds(75)).shutdown(Duration.ofSeconds(7)).build())
+				.javaSelection(JavaSelection.builder()
+						.requirement(JavaRequirement.builder().featureVersion(21).distribution("temurin").release("21.0.10").build())
+						.build())
 				.setupHook(ignored -> { throw new AssertionError("Scenario inspection must not execute setup"); }).build();
 		List<ScenarioDescriptor> scenarios;
 		try (RunnerSession session = new RunnerSession(() -> {
@@ -118,14 +121,25 @@ class ScenarioDescriptorFactoryTest {
 	@Test
 	void describesJavaRequirementsAndSourcesWithIndependentInheritance() {
 		AnvilScenario scenario = AnvilScenario.builder().name("java-overrides").entrypoint("inherited")
-				.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().featureVersion(21).build()).source(JavaSource.home(Path.of("unresolved", "scenario-jdk"))).build())
+				.javaSelection(JavaSelection.builder()
+						.requirement(JavaRequirement.builder().featureVersion(21).build())
+						.source(JavaSource.home(Path.of("unresolved", "scenario-jdk")))
+						.build())
 				.server(server("inherited", Distribution.remote("1.21.11", "132")))
 				.server(server("requirement", Distribution.remote("26.1.2", "74")).toBuilder()
-						.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().featureVersion(25).build()).build()).build())
+						.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().featureVersion(25).build()).build())
+						.build())
 				.server(server("source", Distribution.remote("1.21.11", "132")).toBuilder()
-						.javaSelection(JavaSelection.builder().source(JavaSource.archive(URI.create("https://invalid.example/jdk.tar.gz"), "b".repeat(64))).build()).build())
+						.javaSelection(JavaSelection.builder()
+								.source(JavaSource.archive(URI.create("https://invalid.example/jdk.tar.gz"), "b".repeat(64)))
+								.build())
+						.build())
 				.server(server("executable", Distribution.remote("1.21.11", "132")).toBuilder()
-						.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().build()).source(JavaSource.executable(Path.of("unresolved", "custom-java"))).build()).build())
+						.javaSelection(JavaSelection.builder()
+								.requirement(JavaRequirement.builder().build())
+								.source(JavaSource.executable(Path.of("unresolved", "custom-java")))
+								.build())
+						.build())
 				.build();
 		ScenarioDescriptor descriptor = ScenarioDescriptorFactory.describe("example.Definition", scenario);
 		String home = "Java home: " + Path.of("unresolved", "scenario-jdk");
@@ -133,7 +147,10 @@ class ScenarioDescriptorFactoryTest {
 		assertEquals("Java 21; " + home, descriptor.getJavaRequirement());
 		assertEquals("Java 21 (scenario); " + home + " (scenario)", descriptor.getProcesses().get(0).getJavaRequirement());
 		assertEquals("Java 25; " + home + " (scenario)", descriptor.getProcesses().get(1).getJavaRequirement());
-		assertEquals("Java 21 (scenario); Java archive: https://invalid.example/jdk.tar.gz", descriptor.getProcesses().get(2).getJavaRequirement());
+		assertEquals(
+				"Java 21 (scenario); Java archive: https://invalid.example/jdk.tar.gz",
+				descriptor.getProcesses().get(2).getJavaRequirement()
+		);
 		assertEquals("Planned default LTS; Java executable: " + Path.of("unresolved", "custom-java"),
 				descriptor.getProcesses().get(3).getJavaRequirement());
 	}

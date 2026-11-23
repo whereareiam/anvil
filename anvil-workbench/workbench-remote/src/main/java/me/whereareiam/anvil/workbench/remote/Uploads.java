@@ -9,7 +9,6 @@ import me.whereareiam.anvil.workbench.protocol.model.connection.Uploaded;
 import me.whereareiam.anvil.workbench.protocol.model.store.FindStored;
 import org.jetbrains.annotations.NotNull;
 
-import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import javax.net.ssl.SSLSocket;
 
 /**
  * Hands files of the engine's machine to the workbench by the SHA-256 of their content, so content the workbench

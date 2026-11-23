@@ -37,7 +37,8 @@ class McProtocolReleaseCatalogTest {
 
 			[[release.artifact]]
 			module = "org.geysermc.mcprotocollib:protocol:1.21.11-20260512.221357-18"
-			url = "https://repo.opencollab.dev/maven-snapshots/org/geysermc/mcprotocollib/protocol/1.21.11-SNAPSHOT/protocol-1.21.11-20260512.221357-18.jar"
+			url = "https://repo.opencollab.dev/maven-snapshots/org/geysermc/mcprotocollib/protocol/1.21.11-SNAPSHOT/\
+			protocol-1.21.11-20260512.221357-18.jar"
 			sha256 = "00d9ae3464dac8dcfe861303d728cb3361a9794d8ad0455aa340229ee83ee709"
 			""";
 

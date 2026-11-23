@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -62,7 +63,10 @@ class SpigotPlatformProviderTest {
 				.files(new WorkspaceProcessFiles(work, new WorkspaceFiles()))
 				.bindAddress("127.0.0.1")
 				.port(25566)
-				.processAddresses(Map.of("proxy", new java.net.InetSocketAddress("127.0.0.1", 25565), "server", new java.net.InetSocketAddress("127.0.0.1", 25566)))
+				.processAddresses(Map.of(
+						"proxy", new InetSocketAddress("127.0.0.1", 25565),
+						"server", new InetSocketAddress("127.0.0.1", 25566)
+				))
 				.eulaAccepted(true)
 				.artifactSource(artifactSource())
 				.forwarding(ForwardingConfiguration.builder().mode(ForwardingMode.LEGACY).build())

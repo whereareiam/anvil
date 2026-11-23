@@ -23,7 +23,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LocalWorkbenchTest {
 	@TempDir
@@ -60,7 +63,9 @@ class LocalWorkbenchTest {
 				contexts.add(opened);
 				services.add(with);
 				return new ExecutionSession() {
-					public @NotNull ProcessTarget prepare(@NotNull ProcessRequest request) { throw new AssertionError("No process is prepared"); }
+					public @NotNull ProcessTarget prepare(@NotNull ProcessRequest request) {
+						throw new AssertionError("No process is prepared");
+					}
 					public void close() { }
 				};
 			}
@@ -113,7 +118,9 @@ class LocalWorkbenchTest {
 			public boolean preservesClientAddress() { return true; }
 			public boolean connectsEnvironments() { return true; }
 			public @Nullable String unavailableReason() { return unavailable; }
-			public @NotNull ExecutionSession open(@NotNull ExecutionContext context, @NotNull ExecutionServices services) { throw new AssertionError("No session is opened"); }
+			public @NotNull ExecutionSession open(@NotNull ExecutionContext context, @NotNull ExecutionServices services) {
+				throw new AssertionError("No session is opened");
+			}
 		};
 	}
 }

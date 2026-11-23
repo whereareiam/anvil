@@ -53,7 +53,8 @@ class SegmentLinkageTest {
 			"method %1$s missingType(Lexample/MissingClass;)V | missing method %1$s missingType(Lexample/MissingClass;)V",
 			"class %2$s class | %2$s is an interface, linked as a class",
 			"method %1$s visible()V instance interface | %1$s is a class, linked as an interface",
-			"method %1$s staticMethod(Ljava/lang/String;)Ljava/lang/String; instance | method %1$s staticMethod(Ljava/lang/String;)Ljava/lang/String; is static, linked as instance",
+			"method %1$s staticMethod(Ljava/lang/String;)Ljava/lang/String; instance | "
+					+ "method %1$s staticMethod(Ljava/lang/String;)Ljava/lang/String; is static, linked as instance",
 			"field %1$s value:Ljava/lang/String; static | field %1$s value:Ljava/lang/String; is not static, linked as static",
 			"method %1$s guarded()V public instance | method %1$s guarded()V is no longer public",
 			"method %1$s privateMethod()J protected instance | method %1$s privateMethod()J is no longer protected",

@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.launcher.adapter.process;
 
-import me.whereareiam.anvil.agent.api.model.AgentPlayerEvent;
 import me.whereareiam.anvil.agent.api.model.AgentOperations;
+import me.whereareiam.anvil.agent.api.model.AgentPlayerEvent;
 import me.whereareiam.anvil.agent.api.model.transport.command.AgentCommandRequest;
 import me.whereareiam.anvil.agent.api.model.transport.command.AgentCommandResponse;
 import me.whereareiam.anvil.agent.api.model.transport.event.AgentPlayerEventsRequest;
@@ -50,7 +50,11 @@ final class AgentProcessPlatform implements ProcessPlatform {
 	 * @param since the moment the scenario began; a process that already ran then, such as one kept for the
 	 *              engine's lifetime, reported what happened before, which this platform leaves out
 	 */
-	AgentProcessPlatform(@NotNull String process, @NotNull Supplier<Optional<? extends AgentConnection>> connection, @NotNull Instant since) {
+	AgentProcessPlatform(
+			@NotNull String process,
+			@NotNull Supplier<Optional<? extends AgentConnection>> connection,
+			@NotNull Instant since
+	) {
 		this.process = process;
 		this.connection = connection;
 		this.since = since;
@@ -147,7 +151,11 @@ final class AgentProcessPlatform implements ProcessPlatform {
 	 */
 	private @Nullable AgentPlayerEventsResponse fetch(long after) {
 		try {
-			return request(AgentOperations.PLAYER_EVENTS.getName(), AgentPlayerEventsRequest.builder().after(after).build(), AgentPlayerEventsResponse.class);
+			return request(
+					AgentOperations.PLAYER_EVENTS.getName(),
+					AgentPlayerEventsRequest.builder().after(after).build(),
+					AgentPlayerEventsResponse.class
+			);
 		} catch (ChannelUnavailableException unavailable) {
 			return null;
 		}

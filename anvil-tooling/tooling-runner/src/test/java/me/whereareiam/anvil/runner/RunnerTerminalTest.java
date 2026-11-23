@@ -1,11 +1,10 @@
 package me.whereareiam.anvil.runner;
 
-import me.whereareiam.anvil.tooling.api.type.ProcessState;
-
 import me.whereareiam.anvil.runner.command.RunnerTerminal;
-import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
-import me.whereareiam.anvil.tooling.api.model.process.ProcessSnapshot;
 import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
+import me.whereareiam.anvil.tooling.api.model.process.ProcessSnapshot;
+import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
+import me.whereareiam.anvil.tooling.api.type.ProcessState;
 import me.whereareiam.anvil.tooling.api.type.SessionState;
 import org.junit.jupiter.api.Test;
 

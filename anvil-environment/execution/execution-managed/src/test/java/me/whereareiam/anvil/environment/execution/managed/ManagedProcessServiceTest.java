@@ -11,7 +11,11 @@ import java.util.Set;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ManagedProcessServiceTest {
 	@TempDir
@@ -72,7 +76,11 @@ class ManagedProcessServiceTest {
 				throw new IllegalStateException(name + " was stopped while the other server was not", alone);
 			}
 		};
-		var plan = fixture.plan(fixture.spec("proxy", true, "first", "second"), fixture.spec("first", false), fixture.spec("second", false));
+		var plan = fixture.plan(
+				fixture.spec("proxy", true, "first", "second"),
+				fixture.spec("first", false),
+				fixture.spec("second", false)
+		);
 		var group = fixture.service().start(plan, fixture.preparation);
 
 		group.finish(true);
@@ -99,7 +107,10 @@ class ManagedProcessServiceTest {
 		fixture.sessionCleanupFailure = new IllegalStateException("session cleanup");
 		var plan = fixture.plan(fixture.spec("server", false), fixture.spec("proxy", true, "server"));
 		assertSame(fixture.failure, assertThrows(IllegalStateException.class, () -> fixture.service().start(plan, fixture.preparation)));
-		assertEquals(List.of("open", "session-open", "target:server", "target:proxy", "target-close:server", "session-close", "finish:false"), fixture.calls);
+		assertEquals(
+				List.of("open", "session-open", "target:server", "target:proxy", "target-close:server", "session-close", "finish:false"),
+				fixture.calls
+		);
 		assertSame(fixture.targetCleanupFailure, fixture.failure.getSuppressed()[0]);
 		assertSame(fixture.sessionCleanupFailure, fixture.targetCleanupFailure.getSuppressed()[0]);
 	}

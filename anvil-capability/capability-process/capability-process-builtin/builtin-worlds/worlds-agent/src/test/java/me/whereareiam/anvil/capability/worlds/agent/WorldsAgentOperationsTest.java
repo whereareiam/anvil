@@ -55,7 +55,8 @@ class WorldsAgentOperationsTest {
 		assertEquals("me.whereareiam.anvil.worlds", new Operations().id());
 		assertEquals(List.of("me.whereareiam.anvil.worlds.worlds", "me.whereareiam.anvil.worlds.placements",
 				"me.whereareiam.anvil.worlds.send", "me.whereareiam.anvil.worlds.changes", "me.whereareiam.anvil.worlds.create",
-				"me.whereareiam.anvil.worlds.load", "me.whereareiam.anvil.worlds.unload", "me.whereareiam.anvil.worlds.delete", "me.whereareiam.anvil.worlds.events"), List.copyOf(registry.handlers.keySet()));
+				"me.whereareiam.anvil.worlds.load", "me.whereareiam.anvil.worlds.unload", "me.whereareiam.anvil.worlds.delete",
+				"me.whereareiam.anvil.worlds.events"), List.copyOf(registry.handlers.keySet()));
 	}
 
 	@Test

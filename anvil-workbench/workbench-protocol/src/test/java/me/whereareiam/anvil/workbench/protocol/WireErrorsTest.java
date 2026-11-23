@@ -15,7 +15,7 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.NoSuchFileException;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class WireErrorsTest {
 	@Test
@@ -50,7 +50,10 @@ class WireErrorsTest {
 	@Test
 	void namesAFailureByItsMostSpecificKind() {
 		assertEquals(WireFailure.MISSING_FILE, WireErrors.describe(new NoSuchFileException("x")).getKind());
-		assertEquals(WireFailure.PROVISIONING, WireErrors.describe(new JavaVersionMismatchException("Java 21 required, 17 found")).getKind());
+		assertEquals(
+				WireFailure.PROVISIONING,
+				WireErrors.describe(new JavaVersionMismatchException("Java 21 required, 17 found")).getKind()
+		);
 	}
 
 	private static Exception roundTrip(Exception failure) {

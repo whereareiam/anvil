@@ -2,12 +2,11 @@ package me.whereareiam.anvil.engine.scenario.validation;
 
 import me.whereareiam.anvil.api.exception.scenario.ScenarioValidationException;
 import me.whereareiam.anvil.api.model.NetworkPolicy;
-import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
-import java.time.Duration;
 import me.whereareiam.anvil.api.model.process.ContainerProcess;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProxy;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.model.scenario.RemoteEndpoint;
 import me.whereareiam.anvil.api.type.ProcessLifetime;
@@ -20,9 +19,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ScenarioValidatorTest {
 	private final ScenarioValidator validator = new ScenarioValidator();
@@ -89,7 +92,10 @@ class ScenarioValidatorTest {
 
 	@Test
 	void permitsNonLoopbackBindingForManualScenariosWithLanOptIn() {
-		var scenario = scenario().toBuilder().manual(true).networkPolicy(NetworkPolicy.builder().bindAddress("0.0.0.0").allowLanBinding(true).build()).build();
+		var scenario = scenario().toBuilder()
+				.manual(true)
+				.networkPolicy(NetworkPolicy.builder().bindAddress("0.0.0.0").allowLanBinding(true).build())
+				.build();
 		assertDoesNotThrow(() -> validator.validate(scenario, true));
 	}
 
@@ -165,8 +171,12 @@ class ScenarioValidatorTest {
 				Arguments.of(scenario().toBuilder().container(container().toBuilder().readyLog("(").build()).build(),
 						"Container 'redis' has an invalid ready log pattern"),
 				Arguments.of(scenario().toBuilder().clearServers().server(server().toBuilder().listener("Link").build()).build(),
-						"Listener 'Link' of process 'server' must be lowercase letters, digits and dashes, starting with a letter or digit"),
-				Arguments.of(scenario().toBuilder().clearServers().server(server().toBuilder().listener("link").listener("link").build()).build(),
+						"Listener 'Link' of process 'server' must be lowercase letters, digits and dashes, "
+								+ "starting with a letter or digit"),
+				Arguments.of(scenario().toBuilder()
+								.clearServers()
+								.server(server().toBuilder().listener("link").listener("link").build())
+								.build(),
 						"Process 'server' declares listener 'link' twice"),
 				Arguments.of(scenario().toBuilder().proxy(proxy()).proxy(proxy()).build(), "Duplicate server or proxy name: proxy"),
 				Arguments.of(scenario().toBuilder().proxy(proxy().toBuilder().name("server").build()).build(),

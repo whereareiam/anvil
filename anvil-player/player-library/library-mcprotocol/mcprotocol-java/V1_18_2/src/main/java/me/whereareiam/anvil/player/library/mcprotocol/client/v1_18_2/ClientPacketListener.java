@@ -65,8 +65,8 @@ final class ClientPacketListener extends SessionAdapter {
 		}
 		if (packet instanceof ClientboundLoginPacket game) {
 			entityId = game.getEntityId();
-			session.send(new ServerboundClientInformationPacket(login.getSettings().getLocale(), login.getSettings().getViewDistance(), ChatVisibility.FULL,
-					true, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, false, true));
+			session.send(new ServerboundClientInformationPacket(login.getSettings().getLocale(), login.getSettings().getViewDistance(),
+					ChatVisibility.FULL, true, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, false, true));
 			session.send(new ServerboundCustomPayloadPacket(ClientBrand.CHANNEL, ClientBrand.payload()));
 			listener.loggedIn(session, Objects.requireNonNull(granted, "The server started the game before it granted a profile"));
 		}

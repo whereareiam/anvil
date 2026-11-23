@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.agent.server.operation;
 
 import me.whereareiam.anvil.agent.api.model.transport.AgentPingResponse;
-import me.whereareiam.anvil.agent.server.api.operation.AgentOperationHandler;
 import me.whereareiam.anvil.agent.server.api.PlatformAgent;
+import me.whereareiam.anvil.agent.server.api.operation.AgentOperationHandler;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Locale;

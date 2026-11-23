@@ -1,12 +1,13 @@
 package me.whereareiam.anvil.tooling.api.model.action.invocation;
 
-import java.util.Map;
 import lombok.Builder;
-import lombok.Value;
 import lombok.Singular;
+import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
 import me.whereareiam.anvil.tooling.api.model.action.binding.ActionTarget;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Map;
 
 /**
  * Explicit action invocation against one environment and target.

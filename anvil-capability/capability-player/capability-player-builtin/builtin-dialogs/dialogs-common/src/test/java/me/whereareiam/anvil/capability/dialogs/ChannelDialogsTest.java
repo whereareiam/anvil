@@ -77,7 +77,10 @@ class ChannelDialogsTest {
 		assertEquals("Identica: Log in", dialogs.shown("Log in").getTitle());
 		assertEquals("Player did not show a dialog titled 'Register'",
 				assertThrows(IllegalStateException.class, () -> dialogs.shown("Register", TIMEOUT)).getMessage());
-		assertEquals("Player did not close its dialog", assertThrows(IllegalStateException.class, () -> dialogs.closed(TIMEOUT)).getMessage());
+		assertEquals(
+				"Player did not close its dialog",
+				assertThrows(IllegalStateException.class, () -> dialogs.closed(TIMEOUT)).getMessage()
+		);
 	}
 
 	@Test
@@ -207,7 +210,10 @@ class ChannelDialogsTest {
 				+ "capability to press it", assertThrows(IllegalStateException.class, () -> dialogs.press("Submit")).getMessage());
 		assertEquals(Optional.of(form), dialogs.current());
 
-		channel.publish(DialogsChannel.SHOWN, form(DialogAction.custom(DialogActionType.CUSTOM, "example:ping", 7), DialogAfterAction.CLOSE));
+		channel.publish(
+				DialogsChannel.SHOWN,
+				form(DialogAction.custom(DialogActionType.CUSTOM, "example:ping", 7), DialogAfterAction.CLOSE)
+		);
 		dialogs.press("Submit");
 		assertEquals(List.of(DialogClick.custom(7, List.of())), channel.payloads());
 	}
@@ -215,7 +221,10 @@ class ChannelDialogsTest {
 	@Test
 	void neverSendsACommandWithASignedArgument() {
 		ChannelDialogs dialogs = new ChannelDialogs(channel, commands);
-		channel.publish(DialogsChannel.SHOWN, form(DialogAction.of(DialogActionType.RUN_COMMAND, "msg Bob hello"), DialogAfterAction.CLOSE));
+		channel.publish(
+				DialogsChannel.SHOWN,
+				form(DialogAction.of(DialogActionType.RUN_COMMAND, "msg Bob hello"), DialogAfterAction.CLOSE)
+		);
 		commands.result = CommandCheck.SIGNATURE_REQUIRED;
 
 		dialogs.press("Submit");
@@ -287,7 +296,10 @@ class ChannelDialogsTest {
 	void followsTheScreensTheClientShows() {
 		MutableClock clock = new MutableClock();
 		ChannelDialogs dialogs = new ChannelDialogs(channel, commands, clock);
-		channel.publish(DialogsChannel.SHOWN, form(DialogAction.custom(DialogActionType.CUSTOM, "example:wait", 8), DialogAfterAction.WAIT_FOR_RESPONSE));
+		channel.publish(
+				DialogsChannel.SHOWN,
+				form(DialogAction.custom(DialogActionType.CUSTOM, "example:wait", 8), DialogAfterAction.WAIT_FOR_RESPONSE)
+		);
 
 		dialogs.press("Submit");
 		assertTrue(dialogs.waitingForResponse());

@@ -68,7 +68,9 @@ public final class WorkbenchCommands {
 	private static void remove(Pairings pairings, String[] arguments) throws IOException {
 		if (arguments.length != 2) usage();
 
-		System.out.println(pairings.remove(arguments[1]) ? "Removed workbench '" + arguments[1] + "'" : "No workbench '" + arguments[1] + "' is paired");
+		System.out.println(pairings.remove(arguments[1])
+				? "Removed workbench '" + arguments[1] + "'"
+				: "No workbench '" + arguments[1] + "' is paired");
 	}
 
 	private static void usage() {

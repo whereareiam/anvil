@@ -11,5 +11,5 @@ import java.nio.file.Path;
  */
 @Value
 public class LocalJavaExecutable implements JavaSource {
-    @NotNull Path executable;
+	@NotNull Path executable;
 }

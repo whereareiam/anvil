@@ -6,6 +6,7 @@ import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.session.Session;
 import me.whereareiam.anvil.launcher.AnvilLauncher;
 import me.whereareiam.anvil.runner.RunnerSession;
+import me.whereareiam.anvil.runner.scenario.ScenarioRepository;
 import me.whereareiam.anvil.testkit.tests.server.scenario.CompatibilityScenarioFactory;
 import me.whereareiam.anvil.tooling.api.model.action.binding.ActionTarget;
 import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionRequest;
@@ -18,7 +19,9 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ToolingCapabilitiesSystemTest {
 	@ParameterizedTest
@@ -40,10 +43,14 @@ class ToolingCapabilitiesSystemTest {
 		var options = EngineOptions.builder().eulaAccepted(true).workDirectory(Path.of("build", "tooling-actions-live")).build();
 		String identity = "embedded:" + scenario.getName();
 		try (RunnerSession runner = new RunnerSession(() -> AnvilLauncher.create(options),
-				me.whereareiam.anvil.runner.scenario.ScenarioRepository.fromScenarios(List.of(scenario)))) {
+				ScenarioRepository.fromScenarios(List.of(scenario)))) {
 			runner.start(identity, null);
 			assertEquals("Connected", runner.snapshot().getObservations().stream()
-					.filter(value -> value.getDefinition().getId().equals("anvil.session.connection")).findFirst().orElseThrow().getValue().getText());
+					.filter(value -> value.getDefinition().getId().equals("anvil.session.connection"))
+					.findFirst()
+					.orElseThrow()
+					.getValue()
+					.getText());
 			assertTrue(runner.invoke(request(runner, "anvil.messages.command", "anvil-fixture ping")).isSuccessful());
 			messages.get().received("anvil:pong", Duration.ofSeconds(10));
 			assertTrue(runner.invoke(request(runner, "anvil.messages.chat", "tooling-extension-chat")).isSuccessful());
@@ -51,7 +58,11 @@ class ToolingCapabilitiesSystemTest {
 			connection.get().disconnect();
 			connection.get().disconnected();
 			assertEquals("Disconnected", runner.snapshot().getObservations().stream()
-					.filter(value -> value.getDefinition().getId().equals("anvil.session.connection")).findFirst().orElseThrow().getValue().getText());
+					.filter(value -> value.getDefinition().getId().equals("anvil.session.connection"))
+					.findFirst()
+					.orElseThrow()
+					.getValue()
+					.getText());
 			assertTrue(runner.snapshot().getActions().stream().noneMatch(action -> action.getAvailability().isEnabled()));
 			assertThrows(IllegalStateException.class, () -> runner.invoke(request(runner, "anvil.messages.command", "anvil-fixture ping")));
 		}

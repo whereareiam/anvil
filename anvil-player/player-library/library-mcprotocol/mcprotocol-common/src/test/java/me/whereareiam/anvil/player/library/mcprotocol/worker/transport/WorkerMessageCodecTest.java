@@ -78,7 +78,12 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WorkerMessageCodecTest {
 	private final WorkerMessageCodec codec = new WorkerMessageCodec();
@@ -180,7 +185,11 @@ class WorkerMessageCodecTest {
 						.click(new RunCommandClick("/arbor help"))
 						.hover(new ShowTextHover(Text.literal("Open the help")))
 						.build())
-				.child(text(new KeybindContent("key.jump"), new OpenUrlClick("https://example.test"), new ShowItemHover("minecraft:diamond", 2)))
+				.child(text(
+						new KeybindContent("key.jump"),
+						new OpenUrlClick("https://example.test"),
+						new ShowItemHover("minecraft:diamond", 2)
+				))
 				.child(text(new SelectorContent("@p", Text.literal(", ")), new SuggestCommandClick("/vote "),
 						new ShowEntityHover("minecraft:zombie", UUID.randomUUID(), null)))
 				.child(text(new ScoreContent("Alice", "kills"), new ChangePageClick(2), null))
@@ -211,7 +220,10 @@ class WorkerMessageCodecTest {
 		for (JsonNode invalid : List.of(missing, codec.envelope(null), codec.envelope(Map.of()), nullPrimitive, notAnObject))
 			assertThrows(IllegalArgumentException.class, () -> codec.open(invalid, SlotSelection.class), invalid.toString());
 
-		var failure = assertThrows(IllegalArgumentException.class, () -> codec.open(codec.envelope(new MessageText("secret")), SlotSelection.class));
+		var failure = assertThrows(
+				IllegalArgumentException.class,
+				() -> codec.open(codec.envelope(new MessageText("secret")), SlotSelection.class)
+		);
 		assertEquals("Invalid player message for " + SlotSelection.class.getName(), failure.getMessage());
 		assertNull(failure.getCause());
 	}

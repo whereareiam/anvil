@@ -3,9 +3,9 @@ package me.whereareiam.anvil.workbench.protocol;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.net.ssl.X509TrustManager;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * Trusts exactly one workbench certificate, the one an engine pinned when pairing, as SSH trusts a known host. A

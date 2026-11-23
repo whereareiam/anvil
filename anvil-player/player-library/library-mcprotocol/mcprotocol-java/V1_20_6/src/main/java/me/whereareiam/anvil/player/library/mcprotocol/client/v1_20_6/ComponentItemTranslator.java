@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6;
 
 import me.whereareiam.anvil.player.library.mcprotocol.adventure.ComponentTranslator;
-
 import net.kyori.adventure.text.Component;
 import org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponentType;

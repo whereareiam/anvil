@@ -41,7 +41,9 @@ class FoojayJavaCatalogTest {
 
 			assertEquals("/disco/v3.0/ids/package-21", uri.getPath());
 			assertFalse(usable.test("{\"result\":[]}"));
-			assertFalse(usable.test("{\"result\":[{\"direct_download_uri\":\"http://example.test/jdk.tar.gz\",\"checksum\":\"" + CHECKSUM + "\"}]}"));
+			assertFalse(usable.test(
+					"{\"result\":[{\"direct_download_uri\":\"http://example.test/jdk.tar.gz\",\"checksum\":\"" + CHECKSUM + "\"}]}"
+			));
 			assertTrue(usable.test(PACKAGE));
 			return PACKAGE;
 		});

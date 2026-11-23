@@ -46,6 +46,10 @@ public final class RemoteExecutionProvider implements BoundExecutionProvider {
 
 	@Override
 	public @NotNull ExecutionSession open(@NotNull ExecutionContext context) {
-		return new RemoteExecutionSession(connection, connection.call(new OpenSession(offered.getId(), context)).getHandle(), mirrorAddress);
+		return new RemoteExecutionSession(
+				connection,
+				connection.call(new OpenSession(offered.getId(), context)).getHandle(),
+				mirrorAddress
+		);
 	}
 }

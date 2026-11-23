@@ -77,8 +77,14 @@ class VelocityPlatformProviderTest {
 
 		MinecraftProxy invalid = proxy.toBuilder().setting("bind", "0.0.0.0:1").build();
 		assertThrows(PlatformException.class, () -> provider.configure(invalid, context));
-		assertThrows(PlatformException.class, () -> provider.configure(proxy.toBuilder().setting("custom", "unquoted text").build(), context));
-		assertThrows(PlatformException.class, () -> provider.configure(proxy.toBuilder().setting("servers.fake", "'localhost:1'").build(), context));
+		assertThrows(
+				PlatformException.class,
+				() -> provider.configure(proxy.toBuilder().setting("custom", "unquoted text").build(), context)
+		);
+		assertThrows(
+				PlatformException.class,
+				() -> provider.configure(proxy.toBuilder().setting("servers.fake", "'localhost:1'").build(), context)
+		);
 	}
 
 	@Test
@@ -162,7 +168,10 @@ class VelocityPlatformProviderTest {
 				.files(new WorkspaceProcessFiles(work, new WorkspaceFiles()))
 				.bindAddress("127.0.0.1")
 				.port(25565)
-				.processAddresses(Map.of("proxy", new InetSocketAddress("127.0.0.1", 25565), "server", new InetSocketAddress("127.0.0.1", 25566)))
+				.processAddresses(Map.of(
+						"proxy", new InetSocketAddress("127.0.0.1", 25565),
+						"server", new InetSocketAddress("127.0.0.1", 25566)
+				))
 				.eulaAccepted(true)
 				.artifactSource(artifactSource())
 				.forwarding(ForwardingConfiguration.builder().mode(ForwardingMode.MODERN).secret("test-secret").build())

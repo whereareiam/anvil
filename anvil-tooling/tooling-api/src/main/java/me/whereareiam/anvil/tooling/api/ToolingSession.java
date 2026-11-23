@@ -1,10 +1,10 @@
 package me.whereareiam.anvil.tooling.api;
 
 import me.whereareiam.anvil.tooling.api.model.LogEvent;
+import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
 import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionRequest;
 import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionResult;
 import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
-import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

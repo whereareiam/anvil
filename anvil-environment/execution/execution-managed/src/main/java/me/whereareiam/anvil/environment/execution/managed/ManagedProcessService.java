@@ -55,7 +55,11 @@ public final class ManagedProcessService {
 	 * @param observer optional borrowed-generation observer
 	 * @return owned prepared process group
 	 */
-	public @NotNull ProcessGroup prepare(@NotNull ExecutionPlan plan, @NotNull ExecutionPreparation preparation, @Nullable ScenarioObserver observer) {
+	public @NotNull ProcessGroup prepare(
+			@NotNull ExecutionPlan plan,
+			@NotNull ExecutionPreparation preparation,
+			@Nullable ScenarioObserver observer
+	) {
 		Map<String, BoundExecutionProvider> used = new LinkedHashMap<>();
 		used.put(plan.getExecutionProviderId(), provider(plan.getExecutionProviderId()));
 		for (ProcessSpec process : plan.getProcesses())
@@ -101,7 +105,8 @@ public final class ManagedProcessService {
 	private BoundExecutionProvider provider(String executionProviderId) {
 		BoundExecutionProvider execution = executions.get(executionProviderId);
 		if (execution == null)
-			throw new IllegalArgumentException("No execution provider '" + executionProviderId + "'. Available: " + new TreeSet<>(executions.keySet()));
+			throw new IllegalArgumentException("No execution provider '" + executionProviderId + "'. Available: "
+					+ new TreeSet<>(executions.keySet()));
 		return execution;
 	}
 

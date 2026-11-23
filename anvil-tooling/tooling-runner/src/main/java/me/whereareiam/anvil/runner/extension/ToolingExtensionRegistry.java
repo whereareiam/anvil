@@ -7,31 +7,31 @@ import me.whereareiam.anvil.api.scenario.ScenarioAccess;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.tooling.api.model.action.binding.ActionAvailability;
+import me.whereareiam.anvil.tooling.api.model.action.binding.ActionDescriptor;
 import me.whereareiam.anvil.tooling.api.model.action.binding.ActionTarget;
 import me.whereareiam.anvil.tooling.api.model.action.definition.ActionDefinition;
-import me.whereareiam.anvil.tooling.api.model.action.binding.ActionDescriptor;
 import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionRequest;
 import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionResult;
-import me.whereareiam.anvil.tooling.api.model.action.observation.ObservationDescriptor;
 import me.whereareiam.anvil.tooling.api.model.action.observation.ObservationDefinition;
+import me.whereareiam.anvil.tooling.api.model.action.observation.ObservationDescriptor;
+import me.whereareiam.anvil.tooling.api.model.action.observation.ObservationValue;
+import me.whereareiam.anvil.tooling.api.type.ObservationTone;
 import me.whereareiam.anvil.tooling.api.type.action.ActionTargetType;
 import me.whereareiam.anvil.tooling.extension.api.ToolingExtension;
 import me.whereareiam.anvil.tooling.extension.api.ToolingRegistration;
 import me.whereareiam.anvil.tooling.extension.api.ToolingRegistry;
-import me.whereareiam.anvil.tooling.api.type.ObservationTone;
-import me.whereareiam.anvil.tooling.api.model.action.observation.ObservationValue;
-import me.whereareiam.anvil.tooling.extension.api.action.scoped.process.ProcessAction;
-import me.whereareiam.anvil.tooling.extension.api.action.scoped.player.PlayerAction;
-import me.whereareiam.anvil.tooling.extension.api.action.scoped.ScenarioAction;
 import me.whereareiam.anvil.tooling.extension.api.action.ToolingAction;
-import me.whereareiam.anvil.tooling.extension.api.observation.scoped.process.ProcessObservation;
-import me.whereareiam.anvil.tooling.extension.api.observation.scoped.player.PlayerObservation;
-import me.whereareiam.anvil.tooling.extension.api.observation.scoped.ScenarioObservation;
+import me.whereareiam.anvil.tooling.extension.api.action.scoped.ScenarioAction;
+import me.whereareiam.anvil.tooling.extension.api.action.scoped.player.PlayerAction;
+import me.whereareiam.anvil.tooling.extension.api.action.scoped.process.ProcessAction;
 import me.whereareiam.anvil.tooling.extension.api.observation.ToolingObservation;
+import me.whereareiam.anvil.tooling.extension.api.observation.scoped.ScenarioObservation;
+import me.whereareiam.anvil.tooling.extension.api.observation.scoped.player.PlayerObservation;
+import me.whereareiam.anvil.tooling.extension.api.observation.scoped.process.ProcessObservation;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.LinkedHashMap;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -248,10 +248,12 @@ public final class ToolingExtensionRegistry implements ToolingRegistry {
 		private @NotNull ActionResult invoke(@NotNull ScenarioContext context, @NotNull ActionRequest request) {
 			if (scope.type() != request.getTarget().getType()) throw new IllegalArgumentException("Action target type does not match");
 			T target = scope.targets(context).stream().filter(value -> scope.name(value).equals(request.getTarget().getName()))
-					.findFirst().orElseThrow(() -> new NoSuchElementException("Action target no longer exists: " + request.getTarget().getName()));
+					.findFirst()
+					.orElseThrow(() -> new NoSuchElementException("Action target no longer exists: " + request.getTarget().getName()));
 			if (!handler.supports(target)) throw new IllegalStateException("Target no longer supports this action");
 			ActionAvailability availability = availability(target);
-			if (!availability.isEnabled()) throw new IllegalStateException(availability.getReason() == null ? "Action is unavailable" : availability.getReason());
+			if (!availability.isEnabled())
+				throw new IllegalStateException(availability.getReason() == null ? "Action is unavailable" : availability.getReason());
 			return handler.execute(target, ToolingDefinitionValidator.arguments(definition, request.getArguments()));
 		}
 

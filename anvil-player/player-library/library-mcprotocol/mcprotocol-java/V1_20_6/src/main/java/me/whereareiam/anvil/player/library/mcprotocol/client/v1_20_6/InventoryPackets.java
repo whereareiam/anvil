@@ -2,9 +2,9 @@ package me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6;
 
 import me.whereareiam.anvil.edition.java.protocol.packet.ClientboundPacket;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerSetSlot;
+import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ServerboundContainerClick;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ClientboundSetHeldSlot;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ClientboundSetPlayerInventory;
-import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ServerboundContainerClick;
 import me.whereareiam.anvil.player.library.mcprotocol.adventure.ComponentTranslator;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.geysermc.mcprotocollib.protocol.data.game.inventory.ContainerAction;

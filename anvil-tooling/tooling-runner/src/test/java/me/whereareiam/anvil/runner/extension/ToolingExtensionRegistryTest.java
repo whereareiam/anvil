@@ -1,33 +1,37 @@
 package me.whereareiam.anvil.runner.extension;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.tooling.extension.api.action.ToolingAction;
-import me.whereareiam.anvil.tooling.extension.api.observation.ToolingObservation;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerManager;
 import me.whereareiam.anvil.api.process.ProcessCapability;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
-import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioAccess;
+import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.type.ProcessState;
-import me.whereareiam.anvil.tooling.api.model.action.binding.*;
-import me.whereareiam.anvil.tooling.api.model.action.definition.*;
-import me.whereareiam.anvil.tooling.api.model.action.invocation.*;
+import me.whereareiam.anvil.tooling.api.model.action.binding.ActionAvailability;
+import me.whereareiam.anvil.tooling.api.model.action.binding.ActionDescriptor;
+import me.whereareiam.anvil.tooling.api.model.action.binding.ActionTarget;
+import me.whereareiam.anvil.tooling.api.model.action.definition.ActionDefinition;
+import me.whereareiam.anvil.tooling.api.model.action.definition.ActionInput;
+import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionRequest;
+import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionResult;
 import me.whereareiam.anvil.tooling.api.model.action.observation.ObservationDefinition;
+import me.whereareiam.anvil.tooling.api.model.action.observation.ObservationDescriptor;
 import me.whereareiam.anvil.tooling.api.model.action.observation.ObservationValue;
+import me.whereareiam.anvil.tooling.api.type.ObservationTone;
 import me.whereareiam.anvil.tooling.api.type.action.ActionInputType;
 import me.whereareiam.anvil.tooling.api.type.action.ActionTargetType;
-import me.whereareiam.anvil.tooling.api.type.ObservationTone;
-import me.whereareiam.anvil.tooling.extension.api.action.scoped.ScenarioAction;
-import me.whereareiam.anvil.tooling.extension.api.action.scoped.process.ProcessCapabilityAction;
-import me.whereareiam.anvil.tooling.extension.api.observation.scoped.ScenarioObservation;
-import me.whereareiam.anvil.tooling.extension.api.observation.scoped.process.ProcessCapabilityObservation;
 import me.whereareiam.anvil.tooling.extension.api.ToolingExtension;
 import me.whereareiam.anvil.tooling.extension.api.ToolingRegistration;
+import me.whereareiam.anvil.tooling.extension.api.action.ToolingAction;
+import me.whereareiam.anvil.tooling.extension.api.action.scoped.ScenarioAction;
+import me.whereareiam.anvil.tooling.extension.api.action.scoped.process.ProcessCapabilityAction;
 import me.whereareiam.anvil.tooling.extension.api.model.ToolingArguments;
+import me.whereareiam.anvil.tooling.extension.api.observation.ToolingObservation;
+import me.whereareiam.anvil.tooling.extension.api.observation.scoped.ScenarioObservation;
+import me.whereareiam.anvil.tooling.extension.api.observation.scoped.process.ProcessCapabilityObservation;
 import org.jetbrains.annotations.NotNull;
-import me.whereareiam.anvil.tooling.api.model.action.observation.ObservationDescriptor;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;
@@ -38,7 +42,13 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ToolingExtensionRegistryTest {
 	private final AtomicInteger count = new AtomicInteger();
@@ -183,7 +193,10 @@ class ToolingExtensionRegistryTest {
 			});
 			registration.action(new ScenarioAction(ActionDefinition.builder().id("fixture.unavailable").build()) {
 				@Override public @NotNull ActionAvailability availability(@NotNull ScenarioAccess target) { throw failure; }
-				@Override public @NotNull ActionResult execute(@NotNull ScenarioAccess target, @NotNull ToolingArguments arguments) { throw new AssertionError(); }
+				@Override
+				public @NotNull ActionResult execute(@NotNull ScenarioAccess target, @NotNull ToolingArguments arguments) {
+					throw new AssertionError();
+				}
 			});
 		}));
 		assertEquals(2, registry.observations(context).size());
@@ -233,7 +246,8 @@ class ToolingExtensionRegistryTest {
 	private ToolingExtension extension() {
 		return registration -> {
 			registration.action(new ProcessCapabilityAction<>(Counter.class, ActionDefinition.builder().id("fixture.counter.add")
-					.inputs(List.of(ActionInput.builder().name("amount").type(ActionInputType.INTEGER).defaultValue("1").build())).build()) {
+					.inputs(List.of(ActionInput.builder().name("amount").type(ActionInputType.INTEGER).defaultValue("1").build()))
+					.build()) {
 				@Override
 				public @NotNull ActionAvailability availability(@NotNull RunningProcess target, @NotNull Counter capability) {
 					checkedCapability.set(capability);
@@ -241,7 +255,11 @@ class ToolingExtensionRegistryTest {
 				}
 
 				@Override
-				public @NotNull ActionResult execute(@NotNull RunningProcess target, @NotNull Counter capability, @NotNull ToolingArguments arguments) {
+				public @NotNull ActionResult execute(
+						@NotNull RunningProcess target,
+						@NotNull Counter capability,
+						@NotNull ToolingArguments arguments
+				) {
 					return ActionResult.builder().columns(List.of("Count"))
 							.rows(List.of(List.of(Integer.toString(capability.add((int) arguments.integer("amount")))))).build();
 				}

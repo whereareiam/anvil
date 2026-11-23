@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.agent.server.transport;
 
-import me.whereareiam.anvil.agent.api.model.AgentPlayerEvent;
 import me.whereareiam.anvil.agent.api.model.AgentInfo;
 import me.whereareiam.anvil.agent.api.model.AgentOperations;
+import me.whereareiam.anvil.agent.api.model.AgentPlayerEvent;
 import me.whereareiam.anvil.agent.api.model.AgentProfile;
 import me.whereareiam.anvil.agent.api.model.transport.AgentPingResponse;
 import me.whereareiam.anvil.agent.api.model.transport.command.AgentCommandRequest;
@@ -29,7 +29,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentTransportLifecycleTest {
 	@Test
@@ -58,11 +64,14 @@ class AgentTransportLifecycleTest {
 			AgentProfile alice = AgentProfile.builder().username("Alice").uniqueId(UUID.randomUUID()).build();
 			server.playerEvents().joined(alice, "lobby");
 			server.playerEvents().left(alice, "lobby");
-			AgentPlayerEventsResponse events = client.request(AgentOperations.PLAYER_EVENTS, AgentPlayerEventsRequest.builder().after(0).build());
-			assertEquals(List.of(AgentPlayerEventType.JOINED, AgentPlayerEventType.LEFT), events.getEvents().stream().map(AgentPlayerEvent::getType).toList());
+			AgentPlayerEventsResponse events = client.request(AgentOperations.PLAYER_EVENTS,
+					AgentPlayerEventsRequest.builder().after(0).build());
+			assertEquals(List.of(AgentPlayerEventType.JOINED, AgentPlayerEventType.LEFT),
+					events.getEvents().stream().map(AgentPlayerEvent::getType).toList());
 			assertEquals(alice, events.getEvents().getFirst().getProfile());
 			assertEquals("lobby", events.getEvents().getFirst().getServer());
-			AgentPlayerEventsResponse later = client.request(AgentOperations.PLAYER_EVENTS, AgentPlayerEventsRequest.builder().after(1).build());
+			AgentPlayerEventsResponse later = client.request(AgentOperations.PLAYER_EVENTS,
+					AgentPlayerEventsRequest.builder().after(1).build());
 			assertEquals(events.getGeneration(), later.getGeneration());
 			assertEquals(1, later.getEvents().size());
 			client.close();

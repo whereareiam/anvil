@@ -23,7 +23,8 @@ import java.util.Set;
  * release without disguised chat or chat commands, it carries only system chat, player chat and chat messages.
  */
 public final class RecordingClient implements McProtocolClient<Object> {
-	private static final Set<Class<? extends JavaPacket>> SUPPORTED = Set.of(ClientboundSystemChat.class, ClientboundPlayerChat.class, ServerboundChat.class);
+	private static final Set<Class<? extends JavaPacket>> SUPPORTED =
+			Set.of(ClientboundSystemChat.class, ClientboundPlayerChat.class, ServerboundChat.class);
 
 	private final List<ClientLogin> logins = new ArrayList<>();
 	private final Map<Object, ClientListener<? super Object>> listeners = new LinkedHashMap<>();
@@ -67,7 +68,8 @@ public final class RecordingClient implements McProtocolClient<Object> {
 
 	@Override
 	public synchronized void send(@NotNull Object session, @NotNull ServerboundPacket packet) {
-		if (!supports(packet.getClass())) throw new ProtocolUnavailableException("the recording client does not carry " + packet.getClass().getName());
+		if (!supports(packet.getClass()))
+			throw new ProtocolUnavailableException("the recording client does not carry " + packet.getClass().getName());
 
 		sent.computeIfAbsent(session, ignored -> new ArrayList<>()).add(packet);
 	}

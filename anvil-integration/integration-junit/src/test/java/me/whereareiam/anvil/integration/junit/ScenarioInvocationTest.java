@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.api.exception.scenario.ScenarioRequirementsException;
 import me.whereareiam.anvil.api.model.player.AuthenticationAccount;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
+import me.whereareiam.anvil.api.player.PlayerManager;
 import me.whereareiam.anvil.api.player.account.AccountManager;
 import me.whereareiam.anvil.api.player.account.AccountPool;
-import me.whereareiam.anvil.api.player.PlayerManager;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
@@ -24,7 +24,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ScenarioInvocationTest {
 	private final AnvilScenario definition = AnvilScenario.builder().name("invocation").entrypoint("server").build();
@@ -209,7 +214,9 @@ class ScenarioInvocationTest {
 	 */
 	private ScenarioEngine engine(ScenarioContext context) {
 		return new ScenarioEngine() {
-			public @NotNull ScenarioContext prepare(@NotNull AnvilScenario scenario, @Nullable ScenarioObserver observer) { return context; }
+			public @NotNull ScenarioContext prepare(@NotNull AnvilScenario scenario, @Nullable ScenarioObserver observer) {
+				return context;
+			}
 			public void close() { throw new AssertionError("The invocation borrows its engine"); }
 		};
 	}

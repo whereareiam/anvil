@@ -1,9 +1,9 @@
 package me.whereareiam.anvil.tooling.api.model.process;
 
 import lombok.Builder;
-import me.whereareiam.anvil.tooling.api.type.ProcessState;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
+import me.whereareiam.anvil.tooling.api.type.ProcessState;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;

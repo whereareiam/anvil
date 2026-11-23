@@ -34,7 +34,8 @@ class ReleaseAnswersTest {
 	void reportsATeleportBeforeAcceptingItAndAnnouncingThatThePlayerLoaded() {
 		listener.packetReceived(session, new ClientboundPlayerPositionPacket(7, 1, 64, -2, 0, 0, 0, 90, -15));
 
-		assertEquals(List.of("teleported 90.0 -15.0", "sent ServerboundAcceptTeleportationPacket", "sent ServerboundPlayerLoadedPacket"), events);
+		assertEquals(List.of("teleported 90.0 -15.0", "sent ServerboundAcceptTeleportationPacket", "sent ServerboundPlayerLoadedPacket"),
+				events);
 		assertEquals(7, assertInstanceOf(ServerboundAcceptTeleportationPacket.class, sent.getFirst()).getId());
 		assertEquals(ServerboundPlayerLoadedPacket.INSTANCE, sent.get(1));
 	}

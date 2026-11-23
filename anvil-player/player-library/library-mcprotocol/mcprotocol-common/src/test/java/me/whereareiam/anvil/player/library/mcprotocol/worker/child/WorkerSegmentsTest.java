@@ -79,8 +79,10 @@ class WorkerSegmentsTest {
 	void namesWhyAPortHasNoAdapter() throws Exception {
 		Path client = segment("client", "mcprotocol", "mcprotocol-java", "1.16.5", CLIENT_LINKAGE,
 				Map.of(CLIENT_SERVICE, RecordingClient.class.getName()));
-		Path first = segment("first", "mcprotocol", "probe-mcprotocol", "1.16.5", PROBE_LINKAGE, Map.of(PROBE_SERVICE, ProbePacketsAdapter.class.getName()));
-		Path second = segment("second", "mcprotocol", "other-mcprotocol", "1.16.5", PROBE_LINKAGE, Map.of(PROBE_SERVICE, ProbePacketsAdapter.class.getName()));
+		Path first = segment("first", "mcprotocol", "probe-mcprotocol", "1.16.5", PROBE_LINKAGE,
+				Map.of(PROBE_SERVICE, ProbePacketsAdapter.class.getName()));
+		Path second = segment("second", "mcprotocol", "other-mcprotocol", "1.16.5", PROBE_LINKAGE,
+				Map.of(PROBE_SERVICE, ProbePacketsAdapter.class.getName()));
 		Path plain = Files.createDirectories(temporary.resolve("plain/META-INF/services")).resolve(PROBE_SERVICE);
 		Files.writeString(plain, ProbePacketsAdapter.class.getName());
 
@@ -94,13 +96,20 @@ class WorkerSegmentsTest {
 	@Test
 	void failsTheWorkerWhenTheClientSegmentDoesNotLinkOrIsMissing() throws Exception {
 		Path client = segment("client", "mcprotocol", "mcprotocol-java", "1.16.5",
-				"method " + RecordingClient.class.getName() + " absent()V public instance class\n", Map.of(CLIENT_SERVICE, RecordingClient.class.getName()));
+				"method " + RecordingClient.class.getName() + " absent()V public instance class\n",
+				Map.of(CLIENT_SERVICE, RecordingClient.class.getName()));
 
 		try (URLClassLoader loader = SegmentRoots.loader(client)) {
 			WorkerSegments segments = WorkerSegments.verify(loader, MinecraftVersion.parse("1.16.5"), warnings::add);
 			IllegalStateException failure = assertThrows(IllegalStateException.class, segments::client);
-			assertTrue(failure.getMessage().startsWith("Cannot load the MCProtocolLib client: segment mcprotocol-java 1.16.5"), failure.getMessage());
-			assertTrue(failure.getMessage().endsWith("missing method " + RecordingClient.class.getName() + " absent()V"), failure.getMessage());
+			assertTrue(
+					failure.getMessage().startsWith("Cannot load the MCProtocolLib client: segment mcprotocol-java 1.16.5"),
+					failure.getMessage()
+			);
+			assertTrue(
+					failure.getMessage().endsWith("missing method " + RecordingClient.class.getName() + " absent()V"),
+					failure.getMessage()
+			);
 		}
 		try (URLClassLoader loader = SegmentRoots.loader()) {
 			IllegalStateException failure = assertThrows(IllegalStateException.class,
@@ -130,10 +139,20 @@ class WorkerSegmentsTest {
 		}
 	}
 
-	private Path segment(String name, String library, String owner, String since, String linkage, Map<String, String> services) throws Exception {
+	private Path segment(
+			String name,
+			String library,
+			String owner,
+			String since,
+			String linkage,
+			Map<String, String> services
+	) throws Exception {
 		Path root = temporary.resolve(name);
 		Files.createDirectories(root.resolve("META-INF/anvil/segment"));
-		Files.writeString(root.resolve("META-INF/anvil/segment.properties"), "library=" + library + "\nowner=" + owner + "\nsince=" + since + "\n");
+		Files.writeString(
+				root.resolve("META-INF/anvil/segment.properties"),
+				"library=" + library + "\nowner=" + owner + "\nsince=" + since + "\n"
+		);
 		Files.writeString(root.resolve("META-INF/anvil/segment/linkage.txt"), linkage);
 		for (Map.Entry<String, String> service : services.entrySet()) {
 			Path file = root.resolve("META-INF/services").resolve(service.getKey());

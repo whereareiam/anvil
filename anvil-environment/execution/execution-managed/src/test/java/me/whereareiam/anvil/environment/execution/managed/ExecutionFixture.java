@@ -1,10 +1,10 @@
 package me.whereareiam.anvil.environment.execution.managed;
 
+import me.whereareiam.anvil.api.model.java.JavaRequirement;
+import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.model.process.ProcessAddresses;
 import me.whereareiam.anvil.api.model.process.lifecycle.ProcessScheduling;
 import me.whereareiam.anvil.api.model.process.lifecycle.ProcessTimeouts;
-import me.whereareiam.anvil.api.model.java.JavaRequirement;
-import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.environment.execution.api.BoundExecutionProvider;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
@@ -87,8 +87,13 @@ final class ExecutionFixture {
 
 	ExecutionPlan plan(ProcessSpec... processes) {
 		ExecutionContext context = ExecutionContext.builder().build();
-		return ExecutionPlan.builder().executionProviderId("fixture").context(context).processes(List.of(processes))
-				.processScheduling(ProcessScheduling.builder().parallelism(1).startupMemoryMegabytes(1024).build()).processTimeouts(ProcessTimeouts.builder().startup(Duration.ofSeconds(3)).shutdown(Duration.ofSeconds(1)).build()).build();
+		return ExecutionPlan.builder()
+				.executionProviderId("fixture")
+				.context(context)
+				.processes(List.of(processes))
+				.processScheduling(ProcessScheduling.builder().parallelism(1).startupMemoryMegabytes(1024).build())
+				.processTimeouts(ProcessTimeouts.builder().startup(Duration.ofSeconds(3)).shutdown(Duration.ofSeconds(1)).build())
+				.build();
 	}
 
 	ProcessSpec spec(String name, boolean proxy, String... dependencies) {
@@ -240,7 +245,9 @@ final class ExecutionFixture {
 		@Override
 		public @NotNull String agentBindAddress() { return "127.0.0.1"; }
 		@Override
-		public @NotNull Map<String, InetSocketAddress> listeners() { return Map.of("link", new InetSocketAddress("127.0.0.1", 50000 + index)); }
+		public @NotNull Map<String, InetSocketAddress> listeners() {
+			return Map.of("link", new InetSocketAddress("127.0.0.1", 50000 + index));
+		}
 		@Override
 		public @NotNull Map<String, InetSocketAddress> peerListeners() { return Map.of("link", new InetSocketAddress("127.0.0.1", 25570)); }
 		@Override

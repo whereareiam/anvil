@@ -45,7 +45,10 @@ public final class ProcessCapabilityRuntime {
 	 * @param providers process names and their already adapted providers, in preparation order
 	 */
 	public ProcessCapabilityRuntime(
-			@NotNull Map<String, ? extends Collection<? extends CapabilityProvider<? extends ProcessCapability, CapabilityContext<ProcessCapability>>>> providers
+			@NotNull Map<
+					String,
+					? extends Collection<? extends CapabilityProvider<? extends ProcessCapability, CapabilityContext<ProcessCapability>>>
+			> providers
 	) {
 		providers.forEach((name, supplied) -> {
 			var runtime = new CapabilityRuntime<ProcessCapability, CapabilityContext<ProcessCapability>>(
@@ -89,7 +92,8 @@ public final class ProcessCapabilityRuntime {
 			@NotNull Function<String, ProcessPlatform> platformAccess,
 			@NotNull Collection<AgentProcessCapabilityProvider<?>> providers
 	) {
-		Map<String, List<CapabilityProvider<? extends ProcessCapability, CapabilityContext<ProcessCapability>>>> owners = new LinkedHashMap<>();
+		Map<String, List<CapabilityProvider<? extends ProcessCapability, CapabilityContext<ProcessCapability>>>> owners =
+				new LinkedHashMap<>();
 		platforms.forEach((name, platform) -> {
 			RequestChannel channel = channels.apply(name);
 			ProcessPlatform access = platformAccess.apply(name);
@@ -218,7 +222,11 @@ public final class ProcessCapabilityRuntime {
 				: new CapabilityProcessGroup(processes, Collections.unmodifiableMap(new LinkedHashMap<>(owners)), scenario);
 	}
 
-	static @Nullable Throwable finishScenario(@NotNull Collection<ProcessCapabilities> capabilities, boolean passed, @Nullable Throwable first) {
+	static @Nullable Throwable finishScenario(
+			@NotNull Collection<ProcessCapabilities> capabilities,
+			boolean passed,
+			@Nullable Throwable first
+	) {
 		for (ProcessCapabilities owner : new ArrayList<>(capabilities).reversed())
 			first = owner.report(new ScenarioFinished(passed), first);
 

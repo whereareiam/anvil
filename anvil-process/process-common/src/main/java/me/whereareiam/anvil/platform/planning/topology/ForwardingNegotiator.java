@@ -54,7 +54,8 @@ public final class ForwardingNegotiator {
 		if (mode == ForwardingMode.MODERN)
 			for (String name : component.processes())
 				if (topology.process(name) instanceof MinecraftProxy proxy && proxy.isOnlineMode() != entry.isOnlineMode())
-					throw new ScenarioValidationException("Modern forwarding requires matching proxy authentication modes: " + component.processes());
+					throw new ScenarioValidationException(
+							"Modern forwarding requires matching proxy authentication modes: " + component.processes());
 
 		return new ForwardingPlan.Group(component.processes(), mode, entry.isOnlineMode());
 	}

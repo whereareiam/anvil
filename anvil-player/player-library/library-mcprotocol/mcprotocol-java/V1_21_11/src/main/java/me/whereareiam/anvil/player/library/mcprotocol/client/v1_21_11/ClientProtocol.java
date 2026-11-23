@@ -12,11 +12,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The protocol of a player's sessions of the MCProtocolLib releases from 1.21.11 on, built from the player's login. MCProtocolLib hands each
- * session that connects to its protocol, which adds the library's own listener: that listener answers the login and
- * switches the session from one phase to the next. The {@link ClientConfiguration} starts the configuration once the
- * library entered it, so it must see every packet after the library's listener, and the protocol adds it right after,
- * with the {@link KnownPacksAnswer} that names the vanilla data pack of the player's Minecraft version.
+ * The protocol of a player's sessions of the MCProtocolLib releases from 1.21.11 on, built from the player's login.
+ * MCProtocolLib hands each session that connects to its protocol, which adds the library's own listener: that listener
+ * answers the login and switches the session from one phase to the next. The {@link ClientConfiguration} starts the
+ * configuration once the library entered it, so it must see every packet after the library's listener, and the
+ * protocol adds it right after, with the {@link KnownPacksAnswer} that names the vanilla data pack of the player's
+ * Minecraft version.
  */
 final class ClientProtocol extends MinecraftProtocol {
 	private final String minecraftVersion;

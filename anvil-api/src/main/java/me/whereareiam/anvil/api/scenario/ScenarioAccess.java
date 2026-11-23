@@ -6,6 +6,8 @@ import me.whereareiam.anvil.api.player.account.AccountManager;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 /**
  * Access to the declaration and runtime services of an active scenario.
  */
@@ -33,6 +35,6 @@ public interface ScenarioAccess {
 
 	/** @return scenario-owned authenticated account discovery and pooling */
 	default @NotNull AccountManager accounts() {
-		return java.util.List::of;
+		return List::of;
 	}
 }

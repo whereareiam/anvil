@@ -41,7 +41,9 @@ public final class GradleReleaseClosures {
 	private static Properties closures() {
 		String location = System.getProperty(PROPERTY, "");
 		if (location.isBlank())
-			throw new IllegalStateException("The test JVM names no release closures; run the tests through the mcprotocol-common Gradle test task");
+			throw new IllegalStateException(
+					"The test JVM names no release closures; run the tests through the mcprotocol-common Gradle test task"
+			);
 
 		Properties closures = new Properties();
 		try (InputStream input = Files.newInputStream(Path.of(location))) {

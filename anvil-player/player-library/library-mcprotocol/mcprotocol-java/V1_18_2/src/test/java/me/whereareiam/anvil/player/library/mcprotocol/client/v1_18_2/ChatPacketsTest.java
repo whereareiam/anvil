@@ -43,7 +43,11 @@ class ChatPacketsTest {
 	void decodesSystemMessagesAsSystemChat() {
 		Component message = Component.text("anvil:").append(Component.text("welcome"));
 
-		assertEquals(new ClientboundSystemChat(Text.builder().content(new LiteralContent("anvil:")).child(Text.literal("welcome")).build(), false),
+		assertEquals(
+				new ClientboundSystemChat(Text.builder()
+						.content(new LiteralContent("anvil:"))
+						.child(Text.literal("welcome"))
+						.build(), false),
 				packets.decode(new ClientboundChatPacket(message, MessageType.SYSTEM)));
 	}
 
@@ -79,7 +83,8 @@ class ChatPacketsTest {
 
 	@Test
 	void encodesCommandsAsChatWithALeadingSlash() {
-		ServerboundChatPacket command = assertInstanceOf(ServerboundChatPacket.class, packets.encode(new ServerboundChatCommand("anvil-fixture ping")));
+		ServerboundChatPacket command = assertInstanceOf(ServerboundChatPacket.class,
+				packets.encode(new ServerboundChatCommand("anvil-fixture ping")));
 
 		assertEquals("/anvil-fixture ping", command.getMessage());
 	}

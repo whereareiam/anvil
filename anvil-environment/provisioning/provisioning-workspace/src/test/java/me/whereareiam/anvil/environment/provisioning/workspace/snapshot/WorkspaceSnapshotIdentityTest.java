@@ -31,7 +31,10 @@ class WorkspaceSnapshotIdentityTest {
 
 	@BeforeEach
 	void prepare() {
-		snapshots = new WorkspaceSnapshotCache(temporary.resolve("cache"), new TestWorkspaceSnapshotStore(new FileCache(temporary.resolve("cache"))));
+		snapshots = new WorkspaceSnapshotCache(
+				temporary.resolve("cache"),
+				new TestWorkspaceSnapshotStore(new FileCache(temporary.resolve("cache")))
+		);
 		server = MinecraftServer.builder().name("lobby").platform(Platforms.PAPER)
 				.distribution(Distribution.remote("1.21.11", "132")).build();
 	}

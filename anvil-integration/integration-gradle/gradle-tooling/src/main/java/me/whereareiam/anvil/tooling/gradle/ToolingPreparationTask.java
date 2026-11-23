@@ -7,15 +7,15 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.ListProperty;
+import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
@@ -24,12 +24,14 @@ import org.gradle.jvm.toolchain.JavaLauncher;
 import org.gradle.work.DisableCachingByDefault;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Resolves a declared project runtime after its compilation and artifact tasks have completed.
@@ -112,9 +114,9 @@ public abstract class ToolingPreparationTask extends DefaultTask {
 		ScenarioDefinitionScanner.writeIndex(index, definitions);
 		var launch = ToolingLaunchModel.builder().schemaVersion(ToolingLaunchModel.SCHEMA_VERSION)
 				.toolingJavaExecutable(getJavaLauncher().get().getExecutablePath().getAsFile().getAbsolutePath())
-				.classpath(java.util.stream.Stream.concat(
-						getRuntimeClasspath().getFiles().stream().map(java.io.File::getAbsolutePath),
-						java.util.stream.Stream.of(index.toAbsolutePath().toString())).toList())
+				.classpath(Stream.concat(
+						getRuntimeClasspath().getFiles().stream().map(File::getAbsolutePath),
+						Stream.of(index.toAbsolutePath().toString())).toList())
 				.definitions(definitions).properties(Map.copyOf(properties)).artifacts(artifacts).build();
 		Path output = getLaunchManifest().get().getAsFile().toPath();
 		Files.createDirectories(output.getParent());

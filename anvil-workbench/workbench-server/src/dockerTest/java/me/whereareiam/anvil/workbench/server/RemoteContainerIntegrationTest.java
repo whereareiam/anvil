@@ -23,7 +23,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /**
  * Runs a container through a workbench whose operator allows only Docker, as a scenario's database would run, and
@@ -67,7 +68,10 @@ class RemoteContainerIntegrationTest {
 						OutputStream input = client.getOutputStream();
 						input.write("PING\r\n".getBytes(StandardCharsets.US_ASCII));
 						input.flush();
-						assertEquals("+PONG", new BufferedReader(new InputStreamReader(client.getInputStream(), StandardCharsets.US_ASCII)).readLine());
+						assertEquals(
+								"+PONG",
+								new BufferedReader(new InputStreamReader(client.getInputStream(), StandardCharsets.US_ASCII)).readLine()
+						);
 					}
 				} finally {
 					redis.terminate(true);

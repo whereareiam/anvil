@@ -26,7 +26,10 @@ class McProtocolReleaseReaderTest {
 
 		ReleaseDefinition definition = releases.getFirst();
 		assertEquals("demo:protocol:1.16.5-2", definition.getModule());
-		assertEquals(List.of(MinecraftVersion.parse("1.16.4"), MinecraftVersion.parse("1.16.5")), definition.getRelease().getMinecraftVersions());
+		assertEquals(
+				List.of(MinecraftVersion.parse("1.16.4"), MinecraftVersion.parse("1.16.5")),
+				definition.getRelease().getMinecraftVersions()
+		);
 		assertEquals(Set.of(MinecraftVersion.parse("1.16.5")), definition.getRelease().getVerifiedVersions());
 		assertEquals(754, definition.getRelease().getProtocolNumber());
 		assertEquals(17, definition.getRelease().getJavaVersion());
@@ -68,19 +71,25 @@ class McProtocolReleaseReaderTest {
 	void rejectsInvalidReleaseData(String violation, String message) {
 		String release = release("1.18.2-1", "\"1.18.2\"", "1.18.2");
 		String text = switch (violation) {
-			case "duplicate version" -> release + release.replace("\"1.18.2\"]", "\"1.18.1\"]").replace("verified = [\"1.18.1\"]", "verified = []");
+			case "duplicate version" -> release + release.replace("\"1.18.2\"]", "\"1.18.1\"]")
+					.replace("verified = [\"1.18.1\"]", "verified = []");
 			case "shared Minecraft version" -> release + release.replace("version = \"1.18.2-1\"", "version = \"1.18.2-2\"");
 			case "unlisted verified version" -> release.replace("verified = [\"1.18.2\"]", "verified = [\"1.18.1\"]");
 			case "missing closure" -> release.substring(0, release.indexOf("[[release.artifact]]"));
-			case "closure without module" -> release.replace("module = \"demo:protocol:1.18.2-1\"\nurl", "module = \"demo:other:1.0\"\nurl");
+			case "closure without module" ->
+					release.replace("module = \"demo:protocol:1.18.2-1\"\nurl", "module = \"demo:other:1.0\"\nurl");
 			case "malformed checksum" -> release.replace("a".repeat(64), "ABC");
-			case "classifier on the release module" -> release.replace("module = \"demo:protocol:1.18.2-1\"\nprotocol", "module = \"demo:protocol:1.18.2-1:all\"\nprotocol");
+			case "classifier on the release module" -> release.replace(
+					"module = \"demo:protocol:1.18.2-1\"\nprotocol",
+					"module = \"demo:protocol:1.18.2-1:all\"\nprotocol"
+			);
 			case "unknown field" -> release + "versoin = 1\n";
 			case "unknown feature" -> release.replace("\"ONLINE_AUTHENTICATION\"", "\"FLYING\"");
 			case "old Java" -> release.replace("java = 17", "java = 7");
 			case "relative url" -> release.replace("https://repository.example/protocol-1.18.2-1.jar", "protocol-1.18.2-1.jar");
 			case "duplicate file name" -> release + artifact("demo:copy:1.0", "https://mirror.example/protocol-1.18.2-1.jar", "");
-			case "pre-release version" -> release.replace("\"1.18.2\"]", "\"1.19-pre1\"]").replace("verified = [\"1.19-pre1\"]", "verified = []");
+			case "pre-release version" -> release.replace("\"1.18.2\"]", "\"1.19-pre1\"]")
+					.replace("verified = [\"1.19-pre1\"]", "verified = []");
 			case "no release" -> "";
 			case "invalid TOML" -> "[[release]\n";
 			default -> throw new IllegalArgumentException(violation);

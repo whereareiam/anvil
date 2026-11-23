@@ -158,11 +158,16 @@ class DefaultPlatformPlannerTest {
 		var engineSource = JavaSource.home(directory.resolve("engine-java"));
 		var scenarioSource = JavaSource.home(directory.resolve("scenario-java"));
 		var processSource = JavaSource.home(directory.resolve("process-java"));
-		var options = EngineOptions.builder().javaSelection(JavaSelection.builder().requirement(engineJava).source(engineSource).build()).build();
+		var options = EngineOptions.builder()
+				.javaSelection(JavaSelection.builder().requirement(engineJava).source(engineSource).build())
+				.build();
 		var planner = policyPlanner(options);
 		var inherited = MinecraftServer.builder().name("inherited").platform("test")
 				.distribution(Distribution.remote("1.21.11", "1")).build();
-		var overridden = inherited.toBuilder().name("overridden").javaSelection(JavaSelection.builder().requirement(processJava).source(processSource).build()).build();
+		var overridden = inherited.toBuilder()
+				.name("overridden")
+				.javaSelection(JavaSelection.builder().requirement(processJava).source(processSource).build())
+				.build();
 		var proxy = MinecraftProxy.builder().name("proxy").platform("test")
 				.distribution(Distribution.remote("1.21.11", "1"))
 				.server("inherited").server("overridden").defaultServer("inherited").build();
@@ -173,7 +178,10 @@ class DefaultPlatformPlannerTest {
 		var enginePlan = planner.plan(scenario).getProcesses();
 		assertEquals(engineJava, enginePlan.get("inherited").getJavaSelection().getRequirement());
 		assertSame(engineSource, enginePlan.get("inherited").getJavaSelection().getSource());
-		var scenarioPlan = planner.plan(scenario.toBuilder().javaSelection(JavaSelection.builder().requirement(scenarioJava).source(scenarioSource).build()).build()).getProcesses();
+		var scenarioPlan = planner.plan(scenario.toBuilder()
+						.javaSelection(JavaSelection.builder().requirement(scenarioJava).source(scenarioSource).build())
+						.build())
+				.getProcesses();
 		assertEquals(scenarioJava, scenarioPlan.get("inherited").getJavaSelection().getRequirement());
 		assertSame(scenarioSource, scenarioPlan.get("inherited").getJavaSelection().getSource());
 		assertEquals(processJava, scenarioPlan.get("overridden").getJavaSelection().getRequirement());

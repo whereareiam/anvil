@@ -26,9 +26,9 @@ import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.Cli
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerSetContent;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundContainerSetSlot;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ClientboundOpenScreen;
+import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ServerboundContainerClick;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ClientboundSetHeldSlot;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ClientboundSetPlayerInventory;
-import me.whereareiam.anvil.edition.java.protocol.packet.inventory.container.ServerboundContainerClick;
 import me.whereareiam.anvil.edition.java.protocol.packet.inventory.player.ServerboundSetCarriedItem;
 import me.whereareiam.anvil.player.library.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTranslation;

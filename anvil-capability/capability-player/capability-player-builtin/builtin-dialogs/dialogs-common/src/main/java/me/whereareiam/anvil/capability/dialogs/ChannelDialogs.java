@@ -140,8 +140,8 @@ final class ChannelDialogs implements Dialogs {
 				case DialogScreen dialog -> open = dialog;
 				case WaitingScreen waiting -> {
 					if (!screens.canLeave(waiting))
-						throw new IllegalStateException("The waiting screen allows going back " + ClientScreens.WAITING_BACK_DELAY.toSeconds()
-								+ " seconds after it appeared");
+						throw new IllegalStateException("The waiting screen allows going back "
+								+ ClientScreens.WAITING_BACK_DELAY.toSeconds() + " seconds after it appeared");
 					screens.set(waiting.previous());
 					return;
 				}
@@ -209,8 +209,8 @@ final class ChannelDialogs implements Dialogs {
 		// The client runs no commands during configuration and leaves the dialog as it is.
 		if (open.dialog().isConfiguration()) return;
 		if (commands == null)
-			throw new IllegalStateException("The button runs a command, which the client checks against its command tree first; install the "
-					+ "Commands capability to press it");
+			throw new IllegalStateException("The button runs a command, which the client checks against its command tree first; "
+					+ "install the Commands capability to press it");
 
 		CommandCheck check = commands.check(click.getCommand());
 		synchronized (screens) {
@@ -235,7 +235,8 @@ final class ChannelDialogs implements Dialogs {
 
 		Dialog found = registry.find(action.getValue());
 		if (found == null)
-			throw new IllegalArgumentException("The button opens the registry dialog " + action.getValue() + ", which the server did not send");
+			throw new IllegalArgumentException("The button opens the registry dialog " + action.getValue()
+					+ ", which the server did not send");
 		return found;
 	}
 
@@ -273,7 +274,10 @@ final class ChannelDialogs implements Dialogs {
 	}
 
 	private static boolean unresolved(@Nullable DialogAction action) {
-		return action != null && action.getType() == DialogActionType.SHOW_DIALOG && action.getDialog() == null && !action.getValue().isEmpty();
+		return action != null
+				&& action.getType() == DialogActionType.SHOW_DIALOG
+				&& action.getDialog() == null
+				&& !action.getValue().isEmpty();
 	}
 
 	private DialogScreen openDialog() {

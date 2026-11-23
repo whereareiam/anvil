@@ -54,7 +54,8 @@ public final class DialogPress {
 					.map(Filled::value)
 					.toList());
 			case SUGGEST_COMMAND, OPEN_URL, COPY_TO_CLIPBOARD, CHANGE_PAGE, SHOW_DIALOG -> null;
-			case OTHER -> throw new IllegalArgumentException("The button runs the action " + action.getValue() + ", which Anvil does not know");
+			case OTHER -> throw new IllegalArgumentException("The button runs the action " + action.getValue()
+					+ ", which Anvil does not know");
 		};
 	}
 
@@ -70,7 +71,8 @@ public final class DialogPress {
 		Map<String, DialogInput> byKey = new LinkedHashMap<>();
 		for (DialogInput input : inputs) byKey.put(input.getKey(), input);
 		for (String key : values.keySet())
-			if (!byKey.containsKey(key)) throw new IllegalArgumentException("The dialog has no input " + key + "; inputs: " + byKey.keySet());
+			if (!byKey.containsKey(key))
+				throw new IllegalArgumentException("The dialog has no input " + key + "; inputs: " + byKey.keySet());
 
 		Map<String, Filled> filled = new LinkedHashMap<>();
 		for (DialogInput input : inputs) {
@@ -90,7 +92,8 @@ public final class DialogPress {
 		switch (input.getType()) {
 			case TEXT -> {
 				if (input.getMaxLength() != null && value.length() > input.getMaxLength())
-					throw new IllegalArgumentException("Input " + input.getKey() + " accepts at most " + input.getMaxLength() + " characters");
+					throw new IllegalArgumentException("Input " + input.getKey() + " accepts at most " + input.getMaxLength()
+							+ " characters");
 			}
 			case BOOLEAN -> {
 				if (!value.equals("true") && !value.equals("false"))
@@ -117,7 +120,8 @@ public final class DialogPress {
 		float start = input.getStart() == null ? Float.NEGATIVE_INFINITY : input.getStart();
 		float end = input.getEnd() == null ? Float.POSITIVE_INFINITY : input.getEnd();
 		if (number < Math.min(start, end) || number > Math.max(start, end))
-			throw new IllegalArgumentException("Input " + input.getKey() + " accepts numbers from " + start + " to " + end + ", not " + value);
+			throw new IllegalArgumentException("Input " + input.getKey() + " accepts numbers from " + start + " to " + end
+					+ ", not " + value);
 	}
 
 	private static String substitute(String template, Map<String, Filled> filled) {
@@ -126,7 +130,8 @@ public final class DialogPress {
 		while (macro.find()) {
 			Filled input = filled.get(macro.group(1));
 			if (input == null)
-				throw new IllegalArgumentException("The template " + template + " names the input " + macro.group(1) + ", which the dialog does not have");
+				throw new IllegalArgumentException("The template " + template + " names the input " + macro.group(1)
+						+ ", which the dialog does not have");
 			macro.appendReplacement(command, Matcher.quoteReplacement(input.substitution()));
 		}
 		macro.appendTail(command);
