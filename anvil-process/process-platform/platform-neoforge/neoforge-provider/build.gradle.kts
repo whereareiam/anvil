@@ -1,6 +1,6 @@
 plugins {
-	id("module-platform-provider")
 	id("packaging-publication")
+	id("module-platform-provider")
 }
 
 description = "NeoForge platform provider for Anvil"

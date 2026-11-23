@@ -2,8 +2,8 @@ plugins {
     java
     id("me.whereareiam.anvil")
     id("me.whereareiam.anvil.junit")
-    id("me.whereareiam.anvil.capability.default")
     id("me.whereareiam.anvil.platform.paper")
+    id("me.whereareiam.anvil.capability.default")
 }
 
 dependencies {

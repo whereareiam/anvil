@@ -1,8 +1,8 @@
 import me.whereareiam.anvil.buildlogic.minecraftdata.MinecraftDataKind
 
 plugins {
-	id("module-minecraft-data")
 	id("module-edition")
+	id("module-minecraft-data")
 }
 
 description = "Block data of every Minecraft: Java Edition release Anvil supports, looked up by global block state ID"
