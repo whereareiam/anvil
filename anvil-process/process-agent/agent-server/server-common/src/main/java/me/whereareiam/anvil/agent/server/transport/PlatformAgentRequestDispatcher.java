@@ -1,10 +1,9 @@
 package me.whereareiam.anvil.agent.server.transport;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.agent.api.AgentJson;
 import me.whereareiam.anvil.agent.api.model.AgentOperation;
 import me.whereareiam.anvil.agent.api.model.AgentOperations;
 import me.whereareiam.anvil.agent.api.type.AgentRole;
@@ -35,11 +34,7 @@ import java.util.Set;
 final class PlatformAgentRequestDispatcher {
 	private final PlatformAgent platformAgent;
 	private final Map<String, TypedAgentOperation<?, ?>> operations = new LinkedHashMap<>();
-	// Agent payloads read through fluent accessors, which are no JavaBean getters: their fields are their members.
-	private final ObjectMapper mapper = new ObjectMapper()
-			.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
-			.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
-			.setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);
+	private final ObjectMapper mapper = AgentJson.configure(new ObjectMapper());
 	private final PlatformEventLog events;
 
 	/**

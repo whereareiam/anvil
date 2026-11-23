@@ -387,7 +387,11 @@ whose framework binds by JavaBean names keeps getters as a whole through its own
 `lombok.accessors.fluent = false` and a comment naming the framework; today these are the Gradle integration
 (`anvil-integration/integration-gradle`) and the IntelliJ plugin (`anvil-integration/integration-intellij`).
 Jackson does not see fluent accessors as properties, so a mapper that reads or writes Anvil's values makes
-their fields visible and getters invisible, which keeps the JSON named after the fields.
+their fields visible and getters invisible, which keeps the JSON named after the fields. Each wire protocol sets
+this once, in the class that owns its JSON form, and every mapper of that protocol takes its configuration from it:
+`JavaProtocolJson` in `protocol-json` for the Java protocol's values, which the MCProtocolLib worker channel and
+packet recordings carry, `AgentJson` in `agent-api` for the agent protocol, `ToolingJson` in `tooling-api` for the
+tooling protocol, and `WireMapper` in `workbench-protocol` for the workbench protocol.
 
 ## Verify a boundary change
 

@@ -1,11 +1,9 @@
 package me.whereareiam.anvil.integration.intellij.scenario.tooling.protocol;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,6 +17,7 @@ import com.fasterxml.jackson.databind.type.LogicalType;
 import java.io.IOException;
 import java.util.Objects;
 
+import me.whereareiam.anvil.tooling.api.ToolingJson;
 import me.whereareiam.anvil.tooling.api.ToolingSession;
 import me.whereareiam.anvil.tooling.api.model.LogEvent;
 import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
@@ -30,17 +29,13 @@ import org.jetbrains.annotations.Nullable;
  * Maps protocol envelopes and shared tooling payloads at the JSON boundary.
  */
 final class ToolingMessageCodec {
-	// Tooling payloads read through fluent accessors, which are no JavaBean getters: their fields are their members.
-	private final @NotNull ObjectMapper json = JsonMapper.builder()
-			.visibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
-			.visibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
-			.visibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE)
+	private final @NotNull ObjectMapper json = ToolingJson.configure(JsonMapper.builder()
 			.disable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
 			.disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
 			.enable(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS)
 			.enable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
 			.addMixIn(LogEvent.LogEventBuilder.class, EventPayload.class)
-			.build();
+			.build());
 
 	ToolingMessageCodec() {
 		json.coercionConfigFor(LogicalType.Textual)

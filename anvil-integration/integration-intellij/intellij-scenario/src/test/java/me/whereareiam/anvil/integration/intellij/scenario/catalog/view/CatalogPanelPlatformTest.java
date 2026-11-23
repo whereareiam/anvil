@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.integration.intellij.scenario.catalog.view;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intellij.execution.RunManager;
 import com.intellij.ide.DataManager;
 import com.intellij.notification.Notification;
@@ -20,7 +21,6 @@ import javax.swing.JTextArea;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
-import me.whereareiam.anvil.integration.intellij.RunnerJson;
 import me.whereareiam.anvil.integration.intellij.ScenarioFixtures;
 import me.whereareiam.anvil.integration.intellij.ScenarioPlatformTestCase;
 import me.whereareiam.anvil.integration.intellij.SwingTestSupport;
@@ -33,6 +33,7 @@ import me.whereareiam.anvil.integration.intellij.scenario.runconfiguration.Anvil
 import me.whereareiam.anvil.integration.intellij.scenario.tooling.ControlledProject;
 import me.whereareiam.anvil.integration.intellij.scenario.window.component.details.DefinitionDetailsPanel;
 import me.whereareiam.anvil.integration.intellij.scenario.window.component.status.StatusBadge;
+import me.whereareiam.anvil.tooling.api.ToolingJson;
 import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
 import me.whereareiam.anvil.tooling.api.model.process.ProcessSnapshot;
 import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
@@ -362,7 +363,7 @@ public class CatalogPanelPlatformTest extends ScenarioPlatformTestCase {
 	}
 
 	private static String json(ScenarioDescriptor... scenarios) throws Exception {
-		return RunnerJson.mapper().writeValueAsString(List.of(scenarios));
+		return ToolingJson.configure(new ObjectMapper()).writeValueAsString(List.of(scenarios));
 	}
 
 	private static SessionSnapshot runningSnapshot() {

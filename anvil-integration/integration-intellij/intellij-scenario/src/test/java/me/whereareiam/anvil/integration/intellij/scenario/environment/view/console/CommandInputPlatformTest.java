@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.integration.intellij.scenario.environment.view.console;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intellij.execution.impl.ConsoleViewImpl;
 import com.intellij.ide.ui.UISettings;
 import com.intellij.openapi.Disposable;
@@ -25,7 +26,6 @@ import javax.swing.JComboBox;
 import javax.swing.JPasswordField;
 
 import me.whereareiam.anvil.integration.intellij.ControlledToolingProcess;
-import me.whereareiam.anvil.integration.intellij.RunnerJson;
 import me.whereareiam.anvil.integration.intellij.ScenarioFixtures;
 import me.whereareiam.anvil.integration.intellij.ScenarioPlatformTestCase;
 import me.whereareiam.anvil.integration.intellij.SwingTestSupport;
@@ -44,6 +44,7 @@ import me.whereareiam.anvil.integration.intellij.source.BuildIntegrations;
 import me.whereareiam.anvil.integration.intellij.source.ProjectBuildIntegrations;
 import me.whereareiam.anvil.integration.intellij.type.source.ProjectChange;
 import me.whereareiam.anvil.integration.intellij.type.source.SourceListingStatus;
+import me.whereareiam.anvil.tooling.api.ToolingJson;
 import me.whereareiam.anvil.tooling.api.model.PlayerDescriptor;
 import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
 import me.whereareiam.anvil.tooling.api.model.action.binding.*;
@@ -110,7 +111,7 @@ public class CommandInputPlatformTest extends ScenarioPlatformTestCase {
 				getTestRootDisposable());
 		Disposer.register(
 				getTestRootDisposable(), () -> processes.forEach(process -> process.complete(0)));
-		String catalog = RunnerJson.mapper().writeValueAsString(List.of(scenario));
+		String catalog = ToolingJson.configure(new ObjectMapper()).writeValueAsString(List.of(scenario));
 		EnvironmentLifecycle session =
 				tooling(
 						builder -> {
@@ -154,7 +155,7 @@ public class CommandInputPlatformTest extends ScenarioPlatformTestCase {
 						.players(List.of(PlayerDescriptor.builder().name("alice").displayName("Alice").build()))
 						.build();
 		runner.emit(
-				RunnerJson.mapper().writeValueAsString(Map.of("type", "snapshot", "snapshot", ready)));
+				ToolingJson.configure(new ObjectMapper()).writeValueAsString(Map.of("type", "snapshot", "snapshot", ready)));
 		SwingTestSupport.await(() -> "fixture-session".equals(run.getSnapshot().sessionId()));
 	}
 
@@ -361,7 +362,7 @@ public class CommandInputPlatformTest extends ScenarioPlatformTestCase {
 						.orElseThrow();
 		assertEquals("fixture-session", request.path("sessionId").asText());
 		runner.emit(
-				RunnerJson.mapper()
+				ToolingJson.configure(new ObjectMapper())
 						.writeValueAsString(
 								Map.of(
 										"type",

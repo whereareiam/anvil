@@ -3,6 +3,7 @@ package me.whereareiam.anvil.agent.server.transport;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import me.whereareiam.anvil.agent.api.AgentJson;
 import me.whereareiam.anvil.agent.server.api.PlatformAgent;
 import me.whereareiam.anvil.agent.server.api.event.PlayerEvents;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider;
@@ -37,7 +38,7 @@ public final class PlatformAgentServer implements AgentServer {
 	private final Consumer<String> logger;
 	private final ServerSocket server;
 
-	private final ObjectMapper mapper = new ObjectMapper();
+	private final ObjectMapper mapper = AgentJson.configure(new ObjectMapper());
 	private final AtomicInteger clientThreads = new AtomicInteger();
 	// Daemon threads keep a blocked client read from delaying the server JVM's shutdown.
 	private final ExecutorService clients = Executors.newCachedThreadPool(task -> {

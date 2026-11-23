@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.List;
 
-import me.whereareiam.anvil.integration.intellij.RunnerJson;
+import me.whereareiam.anvil.tooling.api.ToolingJson;
 import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
 import me.whereareiam.anvil.tooling.api.model.process.ProcessDefinition;
 import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ToolingPayloadMappingTest {
-	private final ObjectMapper json = RunnerJson.mapper();
+	private final ObjectMapper json = ToolingJson.configure(new ObjectMapper());
 
 	@Test
 	void preservesResolvedNamesAndOptionalPresentation() throws Exception {

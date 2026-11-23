@@ -1,7 +1,5 @@
 package me.whereareiam.anvil.player.library.mcprotocol.worker.transport;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -29,15 +27,10 @@ import java.util.function.Function;
 public final class WorkerMessageCodec {
 	private static final String FRAME_PREFIX = "ANVIL:";
 	private static final String VALUE = "value";
-	// Envelopes and control payloads read through fluent accessors, which are no JavaBean getters: their fields are their
-	// members.
-	private final ObjectMapper mapper = new ObjectMapper()
-			.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
-			.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
-			.setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);
-	// Player operation and event values, in the Java protocol's JSON form: immutable classes read through their creator
-	// parameters, and polymorphic values, such as packets and texts, by the names of their kinds.
-	private final ObjectMapper values = JavaProtocolJson.configure(new ObjectMapper());
+	// The channel's envelopes, control payloads and player values, in the Java protocol's JSON form: immutable classes
+	// written as their fields name them and read through their builders or creator parameters, and polymorphic values,
+	// such as packets and texts, by the names of their kinds.
+	private final ObjectMapper mapper = JavaProtocolJson.configure(new ObjectMapper());
 
 	public @NotNull String encodeRequest(@NotNull WorkerRequest request) {
 		return encode(request);
@@ -98,7 +91,7 @@ public final class WorkerMessageCodec {
 	 */
 	public @NotNull ObjectNode envelope(@Nullable Object value) {
 		ObjectNode envelope = JsonNodeFactory.instance.objectNode();
-		envelope.set(VALUE, values.valueToTree(value));
+		envelope.set(VALUE, mapper.valueToTree(value));
 		return envelope;
 	}
 
@@ -127,7 +120,7 @@ public final class WorkerMessageCodec {
 		JsonNode value = envelope.get(VALUE);
 		if (value == null || value.isNull()) throw invalidValue(type);
 		try {
-			T decoded = values.readerFor(type)
+			T decoded = mapper.readerFor(type)
 					.with(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES)
 					.with(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
 					.readValue(value);
